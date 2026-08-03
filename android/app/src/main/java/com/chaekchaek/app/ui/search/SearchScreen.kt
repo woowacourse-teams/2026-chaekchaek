@@ -34,10 +34,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 import com.chaekchaek.app.data.ArchiveRepository
 import com.chaekchaek.app.data.ArchivedBook
 import com.chaekchaek.app.data.BookSearchResult
@@ -105,7 +107,15 @@ fun SearchScreen(
             ) {
               Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(modifier = Modifier.size(width = 48.dp, height = 64.dp), shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
-                  Box(contentAlignment = Alignment.Center) { Text("책", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer) }
+                  Box(contentAlignment = Alignment.Center) {
+                    Text("책", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    AsyncImage(
+                      model = book.coverUrl,
+                      contentDescription = book.title,
+                      modifier = Modifier.fillMaxSize(),
+                      contentScale = ContentScale.Crop,
+                    )
+                  }
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {

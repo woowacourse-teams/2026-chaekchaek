@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.data.BookSearchApi
 import com.chaekchaek.app.data.BookSearchResult
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,12 +23,14 @@ sealed interface SearchUiState {
 class SearchViewModel : ViewModel() {
   private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
   val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
+  private var searchJob: Job? = null
 
   fun search(query: String) {
     val trimmed = query.trim()
     if (trimmed.isEmpty()) return
+    searchJob?.cancel()
     _uiState.value = SearchUiState.Loading
-    viewModelScope.launch {
+    searchJob = viewModelScope.launch {
       _uiState.value =
         try {
           SearchUiState.Success(BookSearchApi.search(trimmed))

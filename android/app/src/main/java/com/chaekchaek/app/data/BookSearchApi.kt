@@ -29,20 +29,28 @@ object BookSearchApi {
           append("&output=js")
           append("&Version=20131101")
         }
-      val connection = (URL(url).openConnection() as HttpURLConnection)
-      connection.requestMethod = "GET"
-      connection.connectTimeout = 10_000
-      connection.readTimeout = 10_000
       try {
-        val code = connection.responseCode
-        val body =
-          (if (code in 200..299) connection.inputStream else connection.errorStream)
-            .bufferedReader(Charsets.UTF_8)
-            .use { it.readText() }
-        if (code !in 200..299) throw IOException("검색 실패: HTTP $code")
-        parseBookSearchResults(body)
-      } finally {
-        connection.disconnect()
+        fetch(url)
+      } catch (e: IOException) {
+        fetch(url)
       }
     }
+
+  private fun fetch(url: String): List<BookSearchResult> {
+    val connection = (URL(url).openConnection() as HttpURLConnection)
+    connection.requestMethod = "GET"
+    connection.connectTimeout = 10_000
+    connection.readTimeout = 10_000
+    try {
+      val code = connection.responseCode
+      val body =
+        (if (code in 200..299) connection.inputStream else connection.errorStream)
+          .bufferedReader(Charsets.UTF_8)
+          .use { it.readText() }
+      if (code !in 200..299) throw IOException("검색 실패: HTTP $code")
+      return parseBookSearchResults(body)
+    } finally {
+      connection.disconnect()
+    }
+  }
 }
