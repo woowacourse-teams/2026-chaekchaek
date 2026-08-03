@@ -27,10 +27,9 @@
     "noEmit": true,
 
     /* === 경로 / import 관련 === */
-    "baseUrl": ".",
     "paths": {
-      "@apps/*": ["apps/*"],
-      "@packages/*": ["packages/*"]
+      "@apps/*": ["./apps/*"],
+      "@packages/*": ["./packages/*"]
     },
 
     /* === 타입 안전성 === */
