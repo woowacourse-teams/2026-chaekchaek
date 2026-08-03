@@ -1,0 +1,17 @@
+commit-msg:
+  commands:
+    conventional-commit:
+      run: |
+        subject="$(head -n 1 "{1}" | tr -d '\r')"
+        pattern='^\[(BE|FE|AN|ALL)\] (feat|fix|docs|refactor|test|chore|ci|build|perf|revert|style)(\([a-z0-9_-]+\))?!?: .+$'
+
+        if ! printf '%s\n' "$subject" | grep -Eq "$pattern"; then
+          echo "커밋 메시지 형식이 올바르지 않습니다."
+          echo "형식: [영역] type(scope): 설명"
+          echo "예시: [BE] build: 프로젝트 초기 세팅"
+          echo "예시: [FE] feat(auth): 로그인 화면 구현"
+          echo "예시: [AN] fix: 토큰 만료 처리 수정"
+          echo "예시: [ALL] docs: 개발 환경 설정 안내 추가"
+          exit 1
+        fi
+
