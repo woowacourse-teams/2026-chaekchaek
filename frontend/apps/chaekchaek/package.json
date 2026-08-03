@@ -18,7 +18,8 @@
     "html-webpack-plugin": "^5.6.8",
     "swc-loader": "^0.2.7",
     "webpack": "^5.109.2",
-    "webpack-cli": "^7.2.2"
+    "webpack-cli": "^7.2.2",
+    "webpack-dev-server": "^6.0.0"
   },
   "dependencies": {
     "react": "^19.2.8",
