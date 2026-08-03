@@ -27,3 +27,19 @@
   최소치로 고정.
 - 출처: [Target API level requirements - Play Console Help](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en),
   [API Levels - apilevels.com](https://apilevels.com/)
+
+## 샘플앱: 검색·등록·아카이브 (2026-08-03)
+
+리뷰 심사 기간 단축 검증용 최소 샘플앱. 도서 검색은 알라딘(Aladin) Open API를 안드로이드
+앱에서 직접 호출하고(로그인 불필요), 등록/아카이브는 로그인 없이 기기 로컬(SharedPreferences)
+에만 저장한다. potatok(na-archive) 백엔드의 아카이브 API는 카카오 로그인 세션이 필수라
+이번 샘플 범위에서는 쓰지 않음(검토 이력: 검색만 공개 API, 등록/목록은 401 확인).
+
+- **알라딘 TTBKey는 keystore와 동일한 취급 대상이다**: `android/local.properties`
+  (`aladin.ttbkey=...`, gitignore됨)에만 존재해야 하고, 절대 커밋·코드·로그에 평문으로
+  남기지 않는다. 팀원 온보딩 시 `android/local.properties.example`을 복사한 뒤 팀 공유
+  보관소(비밀번호 관리자 등)에서 실제 키를 받아 채운다 - keystore와 마찬가지로 특정
+  팀원 1인의 로컬에만 있으면 안 된다(위 "도착 조건" 3번째 항목과 동일 원칙).
+- 앱은 `BuildConfig.ALADIN_TTB_KEY`로 키를 읽는다(`app/build.gradle.kts`가
+  `local.properties`를 읽어 주입). 릴리스 APK를 디컴파일하면 이 키 문자열이 노출된다는
+  한계를 인지하고 있음 - 서버 프록시로 전환하면 해소되나 이번 샘플 범위에서는 보류.
