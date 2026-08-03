@@ -11,6 +11,7 @@ module.exports = (_, argv) => {
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: 'main.js',
+      assetModuleFilename: 'assets/[name].[contenthash][ext][query]',
       clean: true,
     },
     resolve: {
@@ -59,6 +60,10 @@ module.exports = (_, argv) => {
           test: /\.css$/i,
           exclude: /\.module\.css$/i,
           use: ['style-loader', 'css-loader'],
+        },
+        {
+          test: /\.(png|jpe?g|gif|webp|avif)$/i,
+          type: 'asset/resource',
         },
       ],
     },
