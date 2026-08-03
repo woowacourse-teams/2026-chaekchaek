@@ -1,9 +1,9 @@
-package com.chaekchaek.app.ui.search
+package com.chamsae.chaekchaek.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chaekchaek.app.data.BookSearchApi
-import com.chaekchaek.app.data.BookSearchResult
+import com.chamsae.chaekchaek.data.BookSearchApi
+import com.chamsae.chaekchaek.data.BookSearchResult
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

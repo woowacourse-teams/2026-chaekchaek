@@ -1,4 +1,4 @@
-package com.chaekchaek.app.theme
+package com.chamsae.chaekchaek.theme
 
 import androidx.compose.ui.graphics.Color
 

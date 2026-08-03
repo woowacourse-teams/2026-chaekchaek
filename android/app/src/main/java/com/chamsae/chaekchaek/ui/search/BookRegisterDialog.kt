@@ -1,4 +1,4 @@
-package com.chaekchaek.app.ui.search
+package com.chamsae.chaekchaek.ui.search
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,7 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.chaekchaek.app.data.BookSearchResult
+import com.chamsae.chaekchaek.data.BookSearchResult
 
 @Composable
 fun BookRegisterDialog(

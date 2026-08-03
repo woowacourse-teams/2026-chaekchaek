@@ -32,10 +32,10 @@ val releaseSigningError =
   }
 
 android {
-    namespace = "com.chaekchaek.app"
+    namespace = "com.chamsae.chaekchaek"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.chaekchaek.app"
+        applicationId = "com.chamsae.chaekchaek"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

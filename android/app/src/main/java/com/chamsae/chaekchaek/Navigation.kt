@@ -1,4 +1,4 @@
-package com.chaekchaek.app
+package com.chamsae.chaekchaek
 
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable

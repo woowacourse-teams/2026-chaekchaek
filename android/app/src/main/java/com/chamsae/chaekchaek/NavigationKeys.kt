@@ -1,4 +1,4 @@
-package com.chaekchaek.app
+package com.chamsae.chaekchaek
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable

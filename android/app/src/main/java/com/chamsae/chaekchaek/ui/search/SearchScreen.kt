@@ -1,4 +1,4 @@
-package com.chaekchaek.app.ui.search
+package com.chamsae.chaekchaek.ui.search
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -40,9 +40,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
-import com.chaekchaek.app.data.ArchiveRepository
-import com.chaekchaek.app.data.ArchivedBook
-import com.chaekchaek.app.data.BookSearchResult
+import com.chamsae.chaekchaek.data.ArchiveRepository
+import com.chamsae.chaekchaek.data.ArchivedBook
+import com.chamsae.chaekchaek.data.BookSearchResult
 import java.util.UUID
 
 @Composable

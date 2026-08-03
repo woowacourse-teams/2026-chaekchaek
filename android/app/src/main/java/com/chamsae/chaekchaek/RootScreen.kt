@@ -1,4 +1,4 @@
-package com.chaekchaek.app
+package com.chamsae.chaekchaek
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -16,9 +16,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.chaekchaek.app.data.ArchiveRepository
-import com.chaekchaek.app.ui.archive.ArchiveScreen
-import com.chaekchaek.app.ui.search.SearchScreen
+import com.chamsae.chaekchaek.data.ArchiveRepository
+import com.chamsae.chaekchaek.ui.archive.ArchiveScreen
+import com.chamsae.chaekchaek.ui.search.SearchScreen
 
 private enum class RootTab(val label: String, val mark: String) {
   Search("검색", "⌕"),

@@ -1,4 +1,4 @@
-package com.chaekchaek.app.ui.archive
+package com.chamsae.chaekchaek.ui.archive
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.chaekchaek.app.data.ArchiveRepository
+import com.chamsae.chaekchaek.data.ArchiveRepository
 
 @Composable
 fun ArchiveScreen(archiveRepository: ArchiveRepository, modifier: Modifier = Modifier) {

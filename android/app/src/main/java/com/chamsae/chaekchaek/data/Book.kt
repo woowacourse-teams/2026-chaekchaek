@@ -1,4 +1,4 @@
-package com.chaekchaek.app.data
+package com.chamsae.chaekchaek.data
 
 import org.json.JSONArray
 import org.json.JSONObject

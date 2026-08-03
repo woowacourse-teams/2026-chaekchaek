@@ -1,6 +1,6 @@
-package com.chaekchaek.app.data
+package com.chamsae.chaekchaek.data
 
-import com.chaekchaek.app.BuildConfig
+import com.chamsae.chaekchaek.BuildConfig
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
