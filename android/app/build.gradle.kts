@@ -12,6 +12,25 @@ val localProperties =
     if (file.exists()) file.inputStream().use { load(it) }
   }
 
+val releaseSigningPropertiesFile = rootProject.file("keystore.properties")
+val releaseSigningProperties =
+  Properties().apply {
+    if (releaseSigningPropertiesFile.exists()) {
+      releaseSigningPropertiesFile.reader(Charsets.UTF_8).use { load(it) }
+    }
+  }
+val releaseSigningKeys = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+val hasReleaseSigning = releaseSigningKeys.all { !releaseSigningProperties.getProperty(it).isNullOrBlank() }
+val releaseStoreFile = releaseSigningProperties.getProperty("storeFile")?.let(::file)
+val releaseSigningError =
+  when {
+    !hasReleaseSigning ->
+      "Release signing is not configured. Copy keystore.properties.example to keystore.properties " +
+        "and obtain the values from the team Google Drive and private Slack channel."
+    releaseStoreFile?.isFile != true -> "Release keystore does not exist: $releaseStoreFile"
+    else -> null
+  }
+
 android {
     namespace = "com.chaekchaek.app"
     compileSdk = 36
@@ -29,8 +48,19 @@ android {
         )
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = releaseStoreFile
+                storePassword = releaseSigningProperties.getProperty("storePassword")
+                keyAlias = releaseSigningProperties.getProperty("keyAlias")
+                keyPassword = releaseSigningProperties.getProperty("keyPassword")
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -51,6 +81,19 @@ android {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
       }
     }
+}
+
+tasks.register("verifyReleaseSigning") {
+    group = "verification"
+    description = "Verifies that release signing credentials are present before a release build."
+    val error = releaseSigningError
+    doLast {
+        check(error == null) { error ?: "Release signing verification failed." }
+    }
+}
+
+tasks.configureEach {
+    if (name == "preReleaseBuild") dependsOn("verifyReleaseSigning")
 }
 
 kotlin {
