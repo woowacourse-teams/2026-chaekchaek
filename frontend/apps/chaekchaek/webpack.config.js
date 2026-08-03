@@ -39,8 +39,25 @@ module.exports = (_, argv) => {
             },
           },
         },
+        // CSS Modules
+        {
+          test: /\.module\.css$/i,
+
+          use: [
+            'style-loader',
+
+            {
+              loader: 'css-loader',
+              options: {
+                modules: true,
+              },
+            },
+          ],
+        },
+        // 일반 CSS
         {
           test: /\.css$/i,
+          exclude: /\.module\.css$/i,
           use: ['style-loader', 'css-loader'],
         },
       ],
