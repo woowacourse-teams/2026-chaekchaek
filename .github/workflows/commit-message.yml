@@ -21,7 +21,7 @@ jobs:
       - name: Validate messages
         shell: bash
         run: |
-          pattern='^\[(BE|FE|AN|ALL)\] (feat|fix|docs|refactor|test|chore|ci|build|perf|revert|style)(\([a-z0-9_-]+\))?!?: .+$'
+          pattern='^\[(BE|FE|AN|ALL)\] (feat|fix|docs|refactor|test|chore|ci|build|perf|revert|style)(\([^)]+\))?!?: .+$'
 
           git log \
             --format='%s' \

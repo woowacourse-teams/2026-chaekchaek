@@ -3,7 +3,7 @@ commit-msg:
     conventional-commit:
       run: |
         subject="$(head -n 1 "{1}" | tr -d '\r')"
-        pattern='^\[(BE|FE|AN|ALL)\] (feat|fix|docs|refactor|test|chore|ci|build|perf|revert|style)(\([a-z0-9_-]+\))?!?: .+$'
+        pattern='^\[(BE|FE|AN|ALL)\] (feat|fix|docs|refactor|test|chore|ci|build|perf|revert|style)(\([^)]+\))?!?: .+$'
 
         if ! printf '%s\n' "$subject" | grep -Eq "$pattern"; then
           echo "커밋 메시지 형식이 올바르지 않습니다."
