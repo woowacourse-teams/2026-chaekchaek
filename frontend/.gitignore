@@ -1,0 +1,48 @@
+# Node & npm
+node_modules/
+
+# Build output
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Cache
+.cache/
+.eslintcache/
+.stylelintcache/
+.next/cache/
+.storybook-out/
+turbo/
+.tmp/
+temp/
+
+# Test related
+coverage/
+jest-coverage/
+playwright-report/
+test-results/
+
+# TypeScript
+*.tsbuildinfo
+
+# Storybook build
+storybook-static/
+
+*storybook.log
