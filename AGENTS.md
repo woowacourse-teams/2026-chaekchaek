@@ -23,6 +23,13 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
   설계 설명을 README에 누적하지 않는다.
 - 새 문서에는 목적을 드러내는 kebab-case 파일명을 쓰고, 관련 README에서 링크한다.
 
+## an-develop 브랜치 운영
+
+- `an-develop`은 현재 사용자 한 명이 관리하는 통합 브랜치이므로 PR 없이 직접 push해도 된다.
+- `origin/an-develop`을 원격의 최신 기준으로 유지한다.
+- `an-develop-local`은 로컬 작업·검증 전용이며 원격 브랜치로 push하지 않는다. 작업 완료 후
+  `an-develop-local`의 HEAD를 `origin/an-develop`에 fast-forward로 반영한다.
+
 ## main 브랜치 보호 (필수)
 
 - main에 직접 push하거나 merge하지 않는다. 예외 없음.
