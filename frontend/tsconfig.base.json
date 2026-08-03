@@ -25,13 +25,7 @@
 
     /* === emit 관련 === */
     "noEmit": true,
-
-    /* === 경로 / import 관련 === */
-    "paths": {
-      "@apps/*": ["./apps/*"],
-      "@packages/*": ["./packages/*"]
-    },
-
+   
     /* === 타입 안전성 === */
     "strict": true,
     "noImplicitAny": true,
