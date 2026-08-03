@@ -39,6 +39,10 @@ module.exports = (_, argv) => {
             },
           },
         },
+        {
+          test: /\.css$/i,
+          use: ['style-loader', 'css-loader'],
+        },
       ],
     },
     plugins: [
