@@ -16,3 +16,14 @@
   targetSdk 가 스토어 정책과 연결된다는 것을 안다.
 - 업로드 키와 앱 서명 키의 차이를 이해하고, 키를 잃었을 때 무엇이 불가능해지는지
   설명할 수 있다.
+
+## SDK 버전 결정 (2026-08-03)
+
+- **minSdk 26** (Android 8.0). 근거: apilevels.com(2026-05-28 갱신, 2026년 4월 Statcounter
+  데이터) 기준 누적 기기 커버리지 96.1%. 첵췍은 일반 대중을 폭넓게 타겟하므로 최신 API
+  활용보다 기기 커버리지를 우선.
+- **targetSdk 36** (Android 16). 근거: Google Play 정책상 2026-08-31부터 신규 앱은
+  targetSdk 36 이상이어야 제출 가능(연장 시 2026-11-01까지). 선택의 여지가 없어 정책
+  최소치로 고정.
+- 출처: [Target API level requirements - Play Console Help](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en),
+  [API Levels - apilevels.com](https://apilevels.com/)
