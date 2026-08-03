@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Base TSConfig for Monorepo",
+  "compilerOptions": {
+    /* === 기본 설정 === */
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "NodeNext",
+
+    /* === 타입 시스템에서 사용할 표준 라이브러리 === */
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
+
+    /* === 파일 처리 및 호환성 === */
+    "allowJs": false,
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+
+    /* === 빌드 및 모듈 격리 === */
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "useDefineForClassFields": true,
+
+    /* === emit 관련 === */
+    "noEmit": true,
+
+    /* === 경로 / import 관련 === */
+    "baseUrl": ".",
+    "paths": {
+      "@apps/*": ["apps/*"],
+      "@packages/*": ["packages/*"]
+    },
+
+    /* === 타입 안전성 === */
+    "strict": true,
+    "noImplicitAny": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "exclude": ["node_modules", "dist", "build"]
+}
