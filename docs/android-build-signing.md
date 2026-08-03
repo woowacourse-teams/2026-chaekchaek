@@ -15,24 +15,52 @@ Android 앱은 Jetpack Compose로 만들고 Google Play에 배포한다. 향후 
 | --- | --- | --- |
 | Android Gradle Plugin | 9.0.1 | Android 앱 빌드 설정을 Gradle에 연결한다. |
 | Gradle Wrapper | 9.1.0 | 팀원이 `./gradlew`로 같은 Gradle을 쓴다. 시스템 Gradle은 쓰지 않는다. |
-| JDK | 17 | Java 컴파일과 Kotlin JVM toolchain의 기준이다. |
+| JDK | 21 | Java 컴파일과 Kotlin JVM toolchain의 기준이다. |
 | `compileSdk` | 36 | API 36으로 컴파일해 해당 API를 참조할 수 있다. |
 | `minSdk` | 26 | Android 8.0 미만 기기는 설치할 수 없다. |
 | `targetSdk` | 36 | Android 16 동작 변경·Google Play 대상 API 정책을 따른다. |
 | release 난독화 | 꺼짐 | 현재 `isMinifyEnabled = false`다. 검증 전에는 켜지 않는다. |
 
-AGP 9.0은 JDK 17, Gradle 9.1.0, Build Tools 36.0.0을 기준으로 한다. Android Studio의 JDK와
-SDK를 사용할 수 있다. 터미널 명령은 `android` 디렉터리에서 실행한다.
+이 프로젝트는 JDK 21, Gradle 9.1.0, Build Tools 36.0.0을 기준으로 한다. 터미널 명령은
+`android` 디렉터리에서 실행한다.
+
+## JDK 21 통일
+
+Gradle 실행 JVM, Java `sourceCompatibility`·`targetCompatibility`, Kotlin JVM toolchain을 모두
+21로 맞춘다. Android Studio 자체를 실행하는 JetBrains Runtime은 별개이므로 21일 필요가 없다.
+
+### Android Studio
+
+macOS에서 **Android Studio > Settings > Build, Execution, Deployment > Build Tools > Gradle**로
+이동하고 **Gradle JDK**에서 설치된 JDK 21 항목(예: `ms-21`)을 직접 선택한다. 항목 이름보다
+오른쪽에 표시되는 버전과 경로가 실제 JDK 21인지 확인한다.
+
+`GRADLE_LOCAL_JAVA_HOME`을 쓰려면 저장소 루트의 `.gradle/config.properties`에 팀원 자신의
+절대 경로를 둔다. 이 파일은 Git에서 제외한다.
+
+```properties
+java.home=/absolute/path/to/jdk-21/Contents/Home
+```
+
+### 터미널
+
+셸의 `JAVA_HOME`도 Android Studio가 사용하는 같은 JDK 21 경로로 설정한다. JDK를 바꾼 직후에는
+기존 daemon을 종료하고 두 JVM이 모두 21인지 확인한다.
 
 ```sh
 cd android
 java -version
+./gradlew --stop
 ./gradlew --version
 ./gradlew :app:assembleDebug
 ```
 
-JDK 17, Android SDK Platform 36, Build Tools 36.0.0이 필요하다. SDK 경로와 Aladin 키는
-`android/local.properties`에만 두며 Git에 추가하지 않는다.
+`./gradlew --version`의 `Launcher JVM`과 `Daemon JVM`이 모두 JDK 21을 가리켜야 한다. Gradle
+9.1.0은 Java 17~25에서 실행할 수 있으며 Java 26 지원은 Gradle 9.4.0부터다. 프로젝트 wrapper를
+올리기 전까지 Java 26으로 Gradle을 실행하지 않는다.
+
+참고: [Android 빌드의 Java 버전](https://developer.android.com/build/jdks),
+[Gradle Java 호환성 표](https://docs.gradle.org/current/userguide/compatibility.html).
 
 ## SDK 결정 기록
 
@@ -52,8 +80,8 @@ JDK 17, Android SDK Platform 36, Build Tools 36.0.0이 필요하다. SDK 경로�
 
 - 기준일: 2026-08-03
 - 대상: Android 16 (API 36)
-- 근거: Google Play 새 앱·업데이트의 대상 API 정책과 최신 플랫폼 동작 변경을 반영한다.
-  2026-08-31 기준 요구사항을 따른다.
+- 근거: 2026-08-31부터 Google Play에 제출하는 새 앱과 앱 업데이트는 Android 16(API 36) 이상을
+  대상으로 해야 한다. 현재 설정은 이 최소 요건을 충족한다.
 
 `targetSdk`는 설치 가능한 최저 버전이 아니다. 값을 올리면 권한·백그라운드 실행 같은 최신
 플랫폼 동작이 적용될 수 있으므로 릴리스 전 기기 또는 에뮬레이터에서 확인한다.
@@ -110,15 +138,22 @@ Play Console에서 업로드 키 재설정을 요청할 수 있다. Play App Sig
 
 ## 각 팀원의 로컬 설정
 
-1. Drive의 `chaekchaek-upload.jks`를 내려받아 **저장소 밖의 개인 경로**에 둔다.
-2. 아래처럼 설정 파일을 만든다.
+1. `local.properties.example`을 복사하고 Android SDK 경로와 팀 공유 보관소에서 받은 Aladin
+   TTBKey를 입력한다.
 
    ```sh
    cd android
+   cp local.properties.example local.properties
+   ```
+
+2. Drive의 `chaekchaek-upload.jks`를 내려받아 **저장소 밖의 개인 경로**에 둔다.
+3. 아래처럼 서명 설정 파일을 만든다.
+
+   ```sh
    cp keystore.properties.example keystore.properties
    ```
 
-3. Slack 고정 메시지의 값을 입력한다.
+4. Slack 고정 메시지의 값을 입력한다.
 
    ```properties
    storeFile=/Users/ME/secure/chaekchaek-upload.jks
@@ -127,8 +162,9 @@ Play Console에서 업로드 키 재설정을 요청할 수 있다. Play App Sig
    keyPassword=...
    ```
 
-`android/keystore.properties`, `.jks`, `.keystore`는 Git에 추가하지 않는다. PR 전
-`git status --short`로 확인한다. 키 파일은 공백·특수문자 없는 개인 경로에 두는 편이 안전하다.
+`android/local.properties`, `android/keystore.properties`, `.jks`, `.keystore`는 Git에 추가하지
+않는다. PR 전 `git status --short`로 확인한다. 키 파일은 공백·특수문자 없는 개인 경로에 두는
+편이 안전하다.
 
 ## 릴리스 AAB 만들기
 
@@ -137,14 +173,19 @@ cd android
 ./gradlew :app:assembleDebug
 ./gradlew :app:verifyReleaseSigning
 ./gradlew :app:bundleRelease
+jarsigner -verify app/build/outputs/bundle/release/app-release.aab
 ```
 
 - `assembleDebug`: 개발용 APK 빌드를 확인한다.
 - `verifyReleaseSigning`: 네 설정값과 키 파일 존재를 확인한다.
-- `bundleRelease`: 업로드 키가 붙은 Google Play용 AAB를 만든다.
+- `bundleRelease`: 업로드 키가 붙은 Google Play용 AAB를 만든다. 이 작업은
+  `verifyReleaseSigning`도 자동으로 실행한다.
+- `jarsigner -verify`: AAB 서명을 검사한다. 성공 기준은 `jar verified`다. 자체 서명 인증서나
+  timestamp 관련 경고는 업로드 키에서 나올 수 있지만, 서명 검증 실패는 무시하지 않는다.
 
 결과는 `android/app/build/outputs/bundle/release/app-release.aab`이다. AAB를 Play Console에 올린 뒤
-internal testing에서 설치·핵심 기능을 확인하고 production으로 승격한다.
+internal testing에서 설치·검색·등록·아카이브를 확인하고 production으로 승격한다. 새 앱은 Play
+App Signing 등록이 필수이며, 업데이트는 이전 업로드보다 큰 `versionCode`를 사용해야 한다.
 
 ## 오류와 릴리스 확인
 
@@ -153,11 +194,17 @@ internal testing에서 설치·핵심 기능을 확인하고 production으로 �
 | `Release signing is not configured` | `keystore.properties.example`을 복사하고 네 값을 모두 채운다. |
 | `Release keystore does not exist` | `storeFile`의 절대 경로와 파일 존재를 확인한다. |
 | `The -keyalg option must be specified` | 위 `keytool` 명령 한 줄 전체를 실행한다. |
-| JDK/SDK 관련 실패 | JDK 17, Platform 36, Build Tools 36.0.0, `local.properties` SDK 경로를 확인한다. |
+| `Incompatible Gradle JVM version` | Gradle JDK를 JDK 21 항목으로 직접 선택하고 `./gradlew --stop` 후 `./gradlew --version`을 확인한다. Gradle 9.1.0은 Java 26에서 실행할 수 없다. |
+| `GRADLE_LOCAL_JAVA_HOME`이 26을 가리킴 | JDK 21을 직접 선택하거나 저장소 루트 `.gradle/config.properties`의 `java.home`을 자신의 JDK 21 절대 경로로 설정한다. |
+| JDK/SDK 관련 실패 | JDK 21, Platform 36, Build Tools 36.0.0, `local.properties`의 SDK 경로를 확인한다. |
 | Play 업로드 거부 | 앱 ID, 증가한 `versionCode`, 업로드 키 지문, target API 정책을 확인한다. |
 
+- [ ] Android Studio Gradle JDK와 터미널 `JAVA_HOME`이 같은 JDK 21이다.
+- [ ] `local.properties`에 실제 Android SDK 경로와 Aladin TTBKey가 있다.
 - [ ] Drive 폴더와 Slack 채널에 담당자 두 명이 접근한다.
 - [ ] 두 담당자가 각각 `:app:verifyReleaseSigning`과 `:app:bundleRelease`에 성공했다.
+- [ ] 생성된 AAB가 `jarsigner -verify`에서 `jar verified`를 출력한다.
 - [ ] 키 파일·설정 파일·비밀번호가 Git, PR, 공개 채널에 없다.
 - [ ] `minSdk = 26`, `targetSdk = 36`의 근거와 지원하지 않는 범위를 확인했다.
-- [ ] 이전 Play 업로드보다 큰 `versionCode`와 internal testing 결과를 확인했다.
+- [ ] Play App Signing을 등록하고 업로드 키 인증서 지문을 확인했다.
+- [ ] 이전 Play 업로드보다 큰 `versionCode`와 internal testing 핵심 기능 결과를 확인했다.
