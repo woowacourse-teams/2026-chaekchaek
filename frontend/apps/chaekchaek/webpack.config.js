@@ -69,6 +69,10 @@ module.exports = (_, argv) => {
           test: /\.svg$/i,
           type: 'asset/resource',
         },
+        {
+          test: /\.(woff2?|eot|ttf|otf)$/i,
+          type: 'asset/resource',
+        },
       ],
     },
     plugins: [
