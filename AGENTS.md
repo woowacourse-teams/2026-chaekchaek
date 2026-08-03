@@ -15,3 +15,9 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 - 한 작업이 특정 스코프(android/backend/frontend)에 속하면, 명시적 요청 없이 그 스코프
   밖의 디렉터리를 수정하지 않는다.
 - 작업 중인 도구가 Codex든 Claude Code든 이 스코프 규칙은 동일하게 지킨다.
+
+## main 브랜치 보호 (필수)
+
+- main에 직접 push하거나 merge하지 않는다. 예외 없음.
+- 모든 변경은 별도 브랜치에서 작업한 뒤 PR(Pull Request)을 통해서만 main에 반영한다.
+- 작업 중인 도구가 Codex든 Claude Code든 이 규칙은 동일하게 지킨다.
