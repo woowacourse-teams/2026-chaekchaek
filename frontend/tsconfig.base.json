@@ -5,7 +5,7 @@
     /* === 기본 설정 === */
     "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Bundler",
 
     /* === 타입 시스템에서 사용할 표준 라이브러리 === */
     "lib": ["DOM", "DOM.Iterable", "ES2020"],
