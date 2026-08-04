@@ -15,5 +15,8 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [getAbsolutePath('@storybook/addon-webpack5-compiler-swc')],
   framework: getAbsolutePath('@storybook/react-webpack5'),
+  typescript: {
+    check: true,
+  },
 };
 export default config;
