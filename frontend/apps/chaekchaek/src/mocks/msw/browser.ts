@@ -1,5 +1,9 @@
 import { setupWorker } from 'msw/browser';
 
-import { handlers } from './handlers';
+export async function enableMocking() {
+  const { handlers } = await import('./handlers');
 
-export const worker = setupWorker(...handlers);
+  const worker = setupWorker(...handlers);
+
+  return worker.start();
+}
