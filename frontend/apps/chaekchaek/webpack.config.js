@@ -86,6 +86,7 @@ module.exports = (_, argv) => {
           {
             from: path.resolve(__dirname, 'public'),
             to: path.resolve(__dirname, 'dist'),
+            noErrorOnMissing: true,
             globOptions: {
               ignore: ['**/index.html'],
             },
