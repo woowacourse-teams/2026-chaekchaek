@@ -1,9 +1,14 @@
-const path = require('node:path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-module.exports = (_, argv) => {
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default (_, argv) => {
   const isDevelopment = argv.mode === 'development';
 
   return {
