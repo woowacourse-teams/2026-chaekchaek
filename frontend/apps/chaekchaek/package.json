@@ -4,8 +4,10 @@
   "description": "",
   "license": "ISC",
   "author": "",
-  "type": "commonjs",
-  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "dev": "webpack serve --mode development",
     "build": "webpack --config webpack.config.js",
