@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
@@ -97,6 +98,9 @@ export default (_, argv) => {
             },
           },
         ],
+      }),
+      new webpack.DefinePlugin({
+        __DEV__: JSON.stringify(isDevelopment),
       }),
     ].filter(Boolean),
     devServer: {
