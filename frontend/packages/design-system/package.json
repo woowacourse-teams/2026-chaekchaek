@@ -12,9 +12,15 @@
     "build-storybook": "storybook build"
   },
   "devDependencies": {
-    "storybook": "^10.5.6",
-    "@storybook/react-webpack5": "^10.5.6",
     "@storybook/addon-webpack5-compiler-swc": "^4.0.3",
-    "eslint-plugin-storybook": "^10.5.6"
+    "@storybook/react-webpack5": "^10.5.6",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "eslint-plugin-storybook": "^10.5.6",
+    "storybook": "^10.5.6"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   }
 }
