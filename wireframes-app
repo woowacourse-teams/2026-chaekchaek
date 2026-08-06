@@ -796,7 +796,7 @@
       "name": "WF 2 · 책 상세 (감상 포함)",
       "clip": true,
       "width": 390,
-      "height": 1180,
+      "height": 1390,
       "fill": "#FFFFFF",
       "stroke": "#C9C9C9",
       "strokeWidth": 1,
@@ -1792,11 +1792,11 @@
         },
         {
           "type": "frame",
-          "id": "ZnF02",
-          "name": "Review Card 2",
+          "id": "td81zQ",
+          "name": "Review Card 2 · Blurred",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 9,
+          "gap": 10,
           "padding": [
             14,
             16
@@ -1804,7 +1804,7 @@
           "children": [
             {
               "type": "frame",
-              "id": "fUQfU",
+              "id": "gufMYo",
               "name": "Header Row",
               "width": "fill_container",
               "gap": 9,
@@ -1812,7 +1812,7 @@
               "children": [
                 {
                   "type": "ellipse",
-                  "id": "tEz7Z",
+                  "id": "klZNwf",
                   "name": "Avatar",
                   "fill": "#F2F2F2",
                   "width": 34,
@@ -1822,25 +1822,34 @@
                 },
                 {
                   "type": "frame",
-                  "id": "uZeqV",
+                  "id": "tjjrXT",
                   "name": "Name Block",
                   "width": "fill_container",
                   "layout": "vertical",
                   "gap": 3,
                   "children": [
                     {
-                      "type": "text",
-                      "id": "luFqe",
-                      "name": "Name",
-                      "fill": "#1A1A1A",
-                      "content": "참새 0912 (익명)",
-                      "fontFamily": "Noto Sans KR",
-                      "fontSize": 12,
-                      "fontWeight": "600"
+                      "type": "frame",
+                      "id": "eaiPSu",
+                      "name": "Name Row",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "4rIYyq",
+                          "name": "Name",
+                          "fill": "#1A1A1A",
+                          "content": "참새 0912 (익명)",
+                          "fontFamily": "Noto Sans KR",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
                     },
                     {
                       "type": "text",
-                      "id": "Y4RGWU",
+                      "id": "KQPt4v",
                       "name": "Date",
                       "fill": "#8A8A8A",
                       "content": "2026.08.04 · p.160",
@@ -1852,11 +1861,11 @@
                 },
                 {
                   "type": "icon",
-                  "id": "cPamG",
-                  "name": "Like",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "heart",
+                  "id": "hwD8hU",
+                  "name": "More",
+                  "width": 17,
+                  "height": 17,
+                  "icon": "ellipsis",
                   "library": "lucide",
                   "fill": "#8A8A8A"
                 }
@@ -1864,25 +1873,281 @@
             },
             {
               "type": "text",
-              "id": "xd6Li",
+              "id": "CtuNHZ",
               "name": "Body",
               "fill": "#333333",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "중반부터 속도가 붙는다. 지구에서의 구조 시퀀스는 조금 길게 느껴졌지만…",
+              "content": "중반부터 속도가 붙는다. 화성과 지구가 서로의 계산을 믿고 움직이는 순간부터 긴장감이 살아난다. 마지막까지 문제를 하나씩 풀어가는 태도가 오래 남는다.",
               "lineHeight": 1.7,
               "fontFamily": "Noto Sans KR",
               "fontSize": 12.5,
               "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "ACrO1V",
+              "name": "Quote Block",
+              "width": "fill_container",
+              "fill": "#FAFAFA",
+              "stroke": "#1A1A1A",
+              "strokeWidth": {
+                "left": 2
+              },
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                10,
+                14
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "y6y2pU",
+                  "name": "Page",
+                  "fill": "#8A8A8A",
+                  "content": "p.160",
+                  "fontFamily": "Noto Sans KR",
+                  "fontSize": 10,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "Paggwm",
+                  "name": "Quote",
+                  "fill": "#333333",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "“문제를 하나씩 해결하면 된다.”",
+                  "lineHeight": 1.6,
+                  "fontFamily": "Noto Sans KR",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "nrZEBA",
+              "name": "Card Footer",
+              "width": "fill_container",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "gN6R7P",
+                  "name": "Action · 좋아요 12",
+                  "gap": 5,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "P5aSZ4",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "heart",
+                      "library": "lucide",
+                      "fill": "#8A8A8A"
+                    },
+                    {
+                      "type": "text",
+                      "id": "N9OIKl",
+                      "name": "Label",
+                      "fill": "#8A8A8A",
+                      "content": "좋아요 4",
+                      "fontFamily": "Noto Sans KR",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "MEkBBr",
+                  "name": "Action · 댓글 2",
+                  "gap": 5,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Ic59M0",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "message-circle",
+                      "library": "lucide",
+                      "fill": "#8A8A8A"
+                    },
+                    {
+                      "type": "text",
+                      "id": "iZyqNL",
+                      "name": "Label",
+                      "fill": "#8A8A8A",
+                      "content": "댓글 2",
+                      "fontFamily": "Noto Sans KR",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "42kZpQ",
+                  "name": "Spacer",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "text",
+                  "id": "1Q1NPD",
+                  "name": "Limit",
+                  "fill": "#BBBBBB",
+                  "content": "200자까지",
+                  "fontFamily": "Noto Sans KR",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
             }
-          ]
+          ],
+          "effect": {
+            "type": "blur",
+            "radius": 4
+          }
+        },
+        {
+          "type": "frame",
+          "id": "pinNQU",
+          "name": "Replies 2 · Blurred",
+          "width": "fill_container",
+          "fill": "#FBFBFB",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": [
+            12,
+            16,
+            14,
+            48
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "HpI9Ws",
+              "name": "Comment · 참새 0330 (익명)",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "ellipse",
+                  "id": "rTQMNA",
+                  "name": "Avatar",
+                  "fill": "#F2F2F2",
+                  "width": 24,
+                  "height": 24,
+                  "stroke": "#C9C9C9",
+                  "strokeWidth": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "aa5c1T",
+                  "name": "Bubble",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "w1kM3n",
+                      "name": "Name",
+                      "fill": "#1A1A1A",
+                      "content": "참새 2048 (익명)",
+                      "fontFamily": "Noto Sans KR",
+                      "fontSize": 11,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "NXGg3K",
+                      "name": "Text",
+                      "fill": "#555555",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "이 구간부터 팀 전체가 하나처럼 움직여서 좋았어요.",
+                      "lineHeight": 1.6,
+                      "fontFamily": "Noto Sans KR",
+                      "fontSize": 11.5,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "YONgPn",
+              "name": "Comment · 참새 7781 (익명)",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "ellipse",
+                  "id": "EMiSMz",
+                  "name": "Avatar",
+                  "fill": "#F2F2F2",
+                  "width": 24,
+                  "height": 24,
+                  "stroke": "#C9C9C9",
+                  "strokeWidth": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "upzZ1x",
+                  "name": "Bubble",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "8d2ux8",
+                      "name": "Name",
+                      "fill": "#1A1A1A",
+                      "content": "참새 6713 (익명)",
+                      "fontFamily": "Noto Sans KR",
+                      "fontSize": 11,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Z93jEz",
+                      "name": "Text",
+                      "fill": "#555555",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "저도 p.160 문장을 오래 기억할 것 같아요.",
+                      "lineHeight": 1.6,
+                      "fontFamily": "Noto Sans KR",
+                      "fontSize": 11.5,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "effect": {
+            "type": "blur",
+            "radius": 4
+          }
         },
         {
           "type": "frame",
           "id": "J6joH",
           "layoutPosition": "absolute",
           "x": 16,
-          "y": 1104,
+          "y": 1314,
           "name": "Compose Bar (Floating)",
           "width": 358,
           "fill": "#FFFFFF",
