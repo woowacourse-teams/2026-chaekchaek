@@ -9,7 +9,9 @@
     ".": "./src/index.ts"
   },
   "imports": {
-    "#internal/*": "./src/*.js"
+    "#internal/*": "./src/*.js",
+    "#internal/components/*": "./src/components/*/index.js",
+    "#internal/utils/*": "./src/utils/*.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
