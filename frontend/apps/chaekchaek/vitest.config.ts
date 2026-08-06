@@ -20,5 +20,9 @@ export default defineConfig({
     restoreMocks: true,
     clearMocks: true,
     mockReset: true,
+    typecheck: {
+      enabled: true,
+      tsconfig: './tsconfig.test.json',
+    },
   },
 });
