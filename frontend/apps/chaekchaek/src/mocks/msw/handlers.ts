@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 
 export const handlers = [
   http.get('/health', () => {
-    return HttpResponse.json({}, { status: 200 });
+    return HttpResponse.json({ ok: 'health' }, { status: 200 });
   }),
 ];
 
