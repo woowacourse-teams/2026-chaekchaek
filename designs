@@ -20938,6 +20938,41 @@
                           "fontWeight": "700"
                         }
                       ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TPwg7",
+                      "name": "책 평균 별점",
+                      "fill": "#FFF4DF",
+                      "cornerRadius": 4,
+                      "gap": 6,
+                      "padding": [
+                        6,
+                        9
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "X3xoz",
+                          "name": "Stars",
+                          "fill": "#FF9800",
+                          "content": "★★★★☆",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "uGykg",
+                          "name": "Value",
+                          "fill": "#000000",
+                          "content": "4.2",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -20945,69 +20980,43 @@
             },
             {
               "type": "frame",
-              "id": "a5z23",
-              "name": "Rating",
+              "id": "m5FnZ",
+              "name": "My Reading",
               "width": "fill_container",
-              "stroke": "#EEEEEE",
-              "strokeWidth": {
-                "top": 1,
-                "bottom": 1
-              },
-              "padding": [
-                14,
-                24
-              ],
-              "justifyContent": "space_between",
-              "alignItems": "center",
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 16,
               "children": [
                 {
                   "type": "frame",
-                  "id": "TPwg7",
-                  "name": "Score",
-                  "gap": 8,
+                  "id": "n842P",
+                  "name": "내 독서 기록 헤더",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "X3xoz",
-                      "name": "Stars",
-                      "fill": "#FF9800",
-                      "content": "★★★★☆",
+                      "id": "CfJoC",
+                      "name": "내 독서 기록 제목",
+                      "fill": "#1A1A1A",
+                      "content": "내 독서 기록",
                       "fontFamily": "Funnel Sans",
-                      "fontSize": 15,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "text",
-                      "id": "uGykg",
-                      "name": "Value",
-                      "fill": "#000000",
-                      "content": "4.2",
-                      "fontFamily": "Funnel Sans",
-                      "fontSize": 15,
+                      "fontSize": 14,
                       "fontWeight": "700"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "axalO",
-                  "name": "Rating Actions",
-                  "gap": 10,
-                  "alignItems": "center",
-                  "children": [
+                    },
                     {
                       "type": "frame",
                       "id": "ngWTg",
-                      "name": "Button · 별점 주기",
+                      "name": "내 별점 입력 버튼",
                       "context": "탭하면 별점 매기기 모달을 연다",
                       "fill": "#FFFFFF",
-                      "cornerRadius": 999,
+                      "cornerRadius": 4,
                       "stroke": "#1A1A1A",
                       "strokeWidth": 1,
                       "gap": 4,
                       "padding": [
-                        7,
+                        8,
                         12
                       ],
                       "alignItems": "center",
@@ -21035,18 +21044,7 @@
                       ]
                     }
                   ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "m5FnZ",
-              "name": "My Reading",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 10,
-              "padding": 16,
-              "children": [
+                },
                 {
                   "type": "frame",
                   "id": "i1dSD1",
@@ -21457,6 +21455,7 @@
                       "id": "x48Hxq",
                       "name": "Name Block",
                       "width": "fill_container",
+                      "height": 44,
                       "layout": "vertical",
                       "gap": 3,
                       "children": [
@@ -21515,15 +21514,48 @@
                           ]
                         },
                         {
-                          "type": "text",
-                          "id": "fVenA",
-                          "name": "Date",
-                          "context": "감상 작성 시점의 읽은 쪽수",
-                          "fill": "#666666",
-                          "content": "2026.08.05 · p.80까지",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 9,
-                          "fontWeight": "normal"
+                          "type": "frame",
+                          "id": "z0hzJw",
+                          "name": "감상 작성일과 읽은 위치",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "fVenA",
+                              "name": "Date",
+                              "context": "감상 작성 시점의 읽은 쪽수",
+                              "fill": "#666666",
+                              "content": "2026.08.05",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "B9cHmi",
+                              "name": "읽은 위치 배지 p.80까지",
+                              "fill": "#FFF4DF",
+                              "cornerRadius": 4,
+                              "padding": [
+                                3,
+                                7
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "UIOmV",
+                                  "name": "읽은 위치 p.80까지",
+                                  "fill": "#A05A27",
+                                  "content": "p.80까지",
+                                  "fontFamily": "Geist Mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
                         }
                       ]
                     },
@@ -21735,7 +21767,7 @@
                       "type": "frame",
                       "id": "HYJMm",
                       "name": "Reply Like",
-                      "height": "fill_container",
+                      "height": 38,
                       "layout": "vertical",
                       "gap": 2,
                       "justifyContent": "center",
@@ -21824,7 +21856,7 @@
                       "type": "frame",
                       "id": "i4J2ef",
                       "name": "Reply Like",
-                      "height": "fill_container",
+                      "height": 38,
                       "layout": "vertical",
                       "gap": 2,
                       "justifyContent": "center",
@@ -21904,6 +21936,7 @@
                       "id": "VfT9K",
                       "name": "Name Block",
                       "width": "fill_container",
+                      "height": 44,
                       "layout": "vertical",
                       "gap": 3,
                       "children": [
@@ -21923,19 +21956,52 @@
                               "fontFamily": "Funnel Sans",
                               "fontSize": 12,
                               "fontWeight": "600"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "sM5EA",
+                              "name": "이름 옆 읽은 위치 배지 p.160까지",
+                              "fill": "#FFF4DF",
+                              "cornerRadius": 4,
+                              "padding": [
+                                3,
+                                7
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "yN5hs",
+                                  "name": "읽은 위치 p.160까지",
+                                  "fill": "#A05A27",
+                                  "content": "p.160까지",
+                                  "fontFamily": "Geist Mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                }
+                              ]
                             }
                           ]
                         },
                         {
-                          "type": "text",
-                          "id": "z86pm",
-                          "name": "Date",
-                          "context": "감상 작성 시점의 읽은 쪽수",
-                          "fill": "#666666",
-                          "content": "2026.08.04 · p.160까지",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 9,
-                          "fontWeight": "normal"
+                          "type": "frame",
+                          "id": "HHIZW",
+                          "name": "감상 작성일과 읽은 위치",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "z86pm",
+                              "name": "Date",
+                              "context": "감상 작성 시점의 읽은 쪽수",
+                              "fill": "#666666",
+                              "content": "2026.08.04",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
                         }
                       ]
                     },
@@ -22147,7 +22213,7 @@
                       "type": "frame",
                       "id": "UT25s",
                       "name": "Reply Like",
-                      "height": "fill_container",
+                      "height": 38,
                       "layout": "vertical",
                       "gap": 2,
                       "justifyContent": "center",
@@ -22236,7 +22302,7 @@
                       "type": "frame",
                       "id": "rAyIt",
                       "name": "Reply Like",
-                      "height": "fill_container",
+                      "height": 38,
                       "layout": "vertical",
                       "gap": 2,
                       "justifyContent": "center",
@@ -23336,14 +23402,28 @@
                       ],
                       "children": [
                         {
-                          "type": "text",
-                          "id": "e4Tcf",
-                          "name": "Page",
-                          "fill": "#666666",
-                          "content": "p.80",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 10,
-                          "fontWeight": "600"
+                          "type": "frame",
+                          "id": "KFhbp",
+                          "name": "인용 위치 배지 p.80",
+                          "fill": "#FFF4DF",
+                          "cornerRadius": 4,
+                          "padding": [
+                            4,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "e4Tcf",
+                              "name": "Page",
+                              "fill": "#A05A27",
+                              "content": "인용 위치 · p.80",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
                         },
                         {
                           "type": "text",
@@ -23784,6 +23864,7 @@
                           "id": "txvR6",
                           "name": "Name Block",
                           "width": "fill_container",
+                          "height": 44,
                           "layout": "vertical",
                           "gap": 3,
                           "children": [
@@ -23798,14 +23879,47 @@
                               "fontWeight": "600"
                             },
                             {
-                              "type": "text",
-                              "id": "YVdbe",
-                              "name": "Date",
-                              "fill": "#666666",
-                              "content": "2026.08.04 · p.160",
-                              "fontFamily": "Geist Mono",
-                              "fontSize": 9,
-                              "fontWeight": "normal"
+                              "type": "frame",
+                              "id": "tOV0l",
+                              "name": "감상 작성일과 읽은 위치",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "YVdbe",
+                                  "name": "Date",
+                                  "fill": "#666666",
+                                  "content": "2026.08.04",
+                                  "fontFamily": "Geist Mono",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "mzajE",
+                                  "name": "읽은 위치 배지 p.160",
+                                  "fill": "#FFF4DF",
+                                  "cornerRadius": 4,
+                                  "padding": [
+                                    3,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "MLkmk",
+                                      "name": "읽은 위치 p.160",
+                                      "fill": "#A05A27",
+                                      "content": "p.160까지",
+                                      "fontFamily": "Geist Mono",
+                                      "fontSize": 11,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
                             }
                           ]
                         },
@@ -25119,8 +25233,8 @@
         {
           "type": "frame",
           "id": "cejwD",
-          "x": 1927,
-          "y": 393.7750345194072,
+          "x": 2353,
+          "y": 392.7750345194072,
           "name": "내 서재",
           "clip": true,
           "width": 390,
@@ -26331,8 +26445,8 @@
         {
           "type": "frame",
           "id": "UAwMh",
-          "x": 3281.2658272410117,
-          "y": 395.3275765000926,
+          "x": 1917,
+          "y": 394,
           "name": "감상 열람 범위 확인",
           "clip": true,
           "width": 390,
@@ -27117,14 +27231,28 @@
                       ],
                       "children": [
                         {
-                          "type": "text",
-                          "id": "gulCM",
-                          "name": "Page",
-                          "fill": "#666666",
-                          "content": "p.80",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 10,
-                          "fontWeight": "600"
+                          "type": "frame",
+                          "id": "JraDy",
+                          "name": "인용 위치 배지 p.80",
+                          "fill": "#FFF4DF",
+                          "cornerRadius": 4,
+                          "padding": [
+                            4,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "gulCM",
+                              "name": "Page",
+                              "fill": "#A05A27",
+                              "content": "인용 위치 · p.80",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
                         },
                         {
                           "type": "text",
@@ -27389,6 +27517,7 @@
                           "id": "Dn6RV",
                           "name": "Name Block",
                           "width": "fill_container",
+                          "height": 44,
                           "layout": "vertical",
                           "gap": 3,
                           "children": [
@@ -27403,14 +27532,47 @@
                               "fontWeight": "600"
                             },
                             {
-                              "type": "text",
-                              "id": "VEY8G",
-                              "name": "Date",
-                              "fill": "#666666",
-                              "content": "2026.08.04 · p.160",
-                              "fontFamily": "Geist Mono",
-                              "fontSize": 9,
-                              "fontWeight": "normal"
+                              "type": "frame",
+                              "id": "K9P5q",
+                              "name": "감상 작성일과 읽은 위치",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "VEY8G",
+                                  "name": "Date",
+                                  "fill": "#666666",
+                                  "content": "2026.08.04",
+                                  "fontFamily": "Geist Mono",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "A2epC7",
+                                  "name": "읽은 위치 배지 p.160",
+                                  "fill": "#FFF4DF",
+                                  "cornerRadius": 4,
+                                  "padding": [
+                                    3,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "uKiFg",
+                                      "name": "읽은 위치 p.160",
+                                      "fill": "#A05A27",
+                                      "content": "p.160까지",
+                                      "fontFamily": "Geist Mono",
+                                      "fontSize": 11,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
                             }
                           ]
                         },
@@ -27816,8 +27978,8 @@
         {
           "type": "frame",
           "id": "PYuSg",
-          "x": 2831.2658482553743,
-          "y": 395.1900522239266,
+          "x": 3257.2658482553743,
+          "y": 394.1900522239266,
           "name": "닉네임 설정",
           "clip": true,
           "width": 390,
@@ -29284,8 +29446,8 @@
         {
           "type": "frame",
           "id": "IwvlJ",
-          "x": 2378.7340883279467,
-          "y": 393,
+          "x": 2804.7340883279467,
+          "y": 392,
           "name": "내 서재 - 편집",
           "clip": true,
           "width": 390,
@@ -30541,1580 +30703,6 @@
           ]
         },
         {
-          "type": "frame",
-          "id": "rE8o9",
-          "x": 1473,
-          "y": 393,
-          "name": "감상 남기기",
-          "clip": true,
-          "width": 390,
-          "height": 844,
-          "fill": "#FCFAF7",
-          "stroke": "#C9C9C9",
-          "strokeWidth": 1,
-          "layout": "vertical",
-          "children": [
-            {
-              "type": "frame",
-              "id": "f4BMJO",
-              "name": "Status Bar",
-              "width": "fill_container",
-              "height": 44,
-              "padding": [
-                0,
-                20
-              ],
-              "justifyContent": "space_between",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "v6C4U",
-                  "name": "Time",
-                  "fill": "#000000",
-                  "content": "9:41",
-                  "fontFamily": "Funnel Sans",
-                  "fontSize": 12,
-                  "fontWeight": "600"
-                },
-                {
-                  "type": "text",
-                  "id": "RQcI1",
-                  "name": "Indicators",
-                  "fill": "#666666",
-                  "content": "▮▮ ▮",
-                  "fontFamily": "Geist Mono",
-                  "fontSize": 11,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "QJuKS",
-              "name": "Top Bar",
-              "width": "fill_container",
-              "gap": 12,
-              "padding": [
-                10,
-                16
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "x3ewo",
-                  "name": "Back",
-                  "width": 22,
-                  "height": 22,
-                  "icon": "chevron-left",
-                  "library": "lucide",
-                  "fill": "#000000"
-                },
-                {
-                  "type": "frame",
-                  "id": "VKyRX",
-                  "name": "Spacer",
-                  "width": "fill_container",
-                  "height": 1
-                },
-                {
-                  "type": "icon",
-                  "id": "A3u2R9",
-                  "name": "Heart",
-                  "width": 20,
-                  "height": 20,
-                  "icon": "heart",
-                  "library": "lucide",
-                  "fill": "#000000"
-                },
-                {
-                  "type": "icon",
-                  "id": "acKgZ",
-                  "name": "Share",
-                  "width": 19,
-                  "height": 19,
-                  "icon": "share-2",
-                  "library": "lucide",
-                  "fill": "#000000"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "QW9UH",
-              "name": "Hero",
-              "width": "fill_container",
-              "fill": "#000000",
-              "layout": "vertical",
-              "gap": 14,
-              "padding": [
-                8,
-                24,
-                20,
-                24
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "mG6nk",
-                  "name": "Cover",
-                  "width": 118,
-                  "height": 168,
-                  "fill": {
-                    "type": "image",
-                    "enabled": true,
-                    "url": "images/cover-13.png",
-                    "mode": "fill"
-                  },
-                  "stroke": "#C9C9C9",
-                  "strokeWidth": 1,
-                  "effect": {
-                    "type": "shadow",
-                    "shadowType": "outer",
-                    "color": "#00000022",
-                    "offset": {
-                      "x": 2,
-                      "y": 4
-                    },
-                    "blur": 8
-                  },
-                  "layout": "none",
-                  "children": [
-                    {
-                      "type": "path",
-                      "id": "MYzQj",
-                      "x": 0,
-                      "y": 0,
-                      "name": "X",
-                      "enabled": false,
-                      "geometry": "M0 0l100 100m0-100l-100 100",
-                      "viewBox": [
-                        0,
-                        0,
-                        100,
-                        100
-                      ],
-                      "width": 118,
-                      "height": 168,
-                      "stroke": "#C9C9C9",
-                      "strokeWidth": 1
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "oflVJ",
-                  "name": "Title",
-                  "fill": "#FFFFFF",
-                  "content": "마션",
-                  "fontFamily": "Newsreader",
-                  "fontSize": 28,
-                  "fontWeight": "600"
-                },
-                {
-                  "type": "text",
-                  "id": "jntjG",
-                  "name": "Author",
-                  "fill": "#FFFFFFB8",
-                  "content": "앤디 위어 · 알에이치코리아",
-                  "fontFamily": "Funnel Sans",
-                  "fontSize": 13,
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "frame",
-                  "id": "hWRXu",
-                  "name": "Meta Chips",
-                  "fill": "#FF9800",
-                  "cornerRadius": 999,
-                  "stroke": "#FF9800",
-                  "gap": 6,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "YagGi",
-                      "name": "Chip · SF",
-                      "fill": "#FF9800",
-                      "cornerRadius": 999,
-                      "stroke": "#FF9800",
-                      "strokeWidth": 1,
-                      "padding": [
-                        5,
-                        10
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "w8VtC",
-                          "name": "Label",
-                          "fill": "#000000",
-                          "content": "SF",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "G3PxY",
-                      "name": "Chip · 2026 초판",
-                      "fill": "#FF9800",
-                      "cornerRadius": 999,
-                      "stroke": "#FF9800",
-                      "strokeWidth": 1,
-                      "padding": [
-                        5,
-                        10
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "UfzFN",
-                          "name": "Label",
-                          "fill": "#000000",
-                          "content": "2026 초판",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "l8Nkw",
-                      "name": "Chip · 308쪽",
-                      "fill": "#FF9800",
-                      "cornerRadius": 999,
-                      "stroke": "#FF9800",
-                      "strokeWidth": 1,
-                      "padding": [
-                        5,
-                        10
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "skcQ4",
-                          "name": "Label",
-                          "fill": "#000000",
-                          "content": "308쪽",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "g9a2Lm",
-              "name": "Rating",
-              "width": "fill_container",
-              "stroke": "#EEEEEE",
-              "strokeWidth": {
-                "top": 1,
-                "bottom": 1
-              },
-              "padding": [
-                14,
-                24
-              ],
-              "justifyContent": "space_between",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "i8MeD7",
-                  "name": "Score",
-                  "gap": 8,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "c4euJP",
-                      "name": "Stars",
-                      "fill": "#FF9800",
-                      "content": "★★★★☆",
-                      "fontFamily": "Funnel Sans",
-                      "fontSize": 15,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "text",
-                      "id": "WaxBG",
-                      "name": "Value",
-                      "fill": "#000000",
-                      "content": "4.2",
-                      "fontFamily": "Funnel Sans",
-                      "fontSize": 15,
-                      "fontWeight": "700"
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "kLxJ3",
-                  "name": "Counts",
-                  "fill": "#666666",
-                  "content": "평점 100명 · 감상 30명",
-                  "fontFamily": "Geist Mono",
-                  "fontSize": 11,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "jj15c",
-              "name": "My Reading",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 10,
-              "padding": 16,
-              "children": [
-                {
-                  "type": "text",
-                  "id": "wIXWA",
-                  "name": "Section Label",
-                  "fill": "#000000",
-                  "content": "내 독서 기록",
-                  "fontFamily": "Funnel Sans",
-                  "fontSize": 13,
-                  "fontWeight": "600"
-                },
-                {
-                  "type": "frame",
-                  "id": "V3Ja5g",
-                  "name": "Status Segmented",
-                  "width": "fill_container",
-                  "gap": 8,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "JFnSL",
-                      "name": "Option · 읽고 싶어요",
-                      "width": 110,
-                      "height": 38,
-                      "fill": "#FFFFFF",
-                      "cornerRadius": 999,
-                      "stroke": "#C9C9C9",
-                      "strokeWidth": 1,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "Tz5EJ",
-                          "name": "Label",
-                          "fill": "#666666",
-                          "content": "읽고 싶어요",
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "tSHwY",
-                      "name": "Option · 읽는 중",
-                      "width": 110,
-                      "height": 38,
-                      "fill": "#F1E9DE",
-                      "cornerRadius": 999,
-                      "stroke": "#1A1A1A",
-                      "strokeWidth": 1,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "Nepv5",
-                          "name": "Label",
-                          "fill": "#000000",
-                          "content": "읽는 중",
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 12,
-                          "fontWeight": "600"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "qM8iR",
-                      "name": "Option · 다 읽음",
-                      "width": 110,
-                      "height": 38,
-                      "fill": "#FFFFFF",
-                      "cornerRadius": 999,
-                      "stroke": "#C9C9C9",
-                      "strokeWidth": 1,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "zDobH",
-                          "name": "Label",
-                          "fill": "#666666",
-                          "content": "다 읽음",
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "rectangle",
-              "id": "rF51j",
-              "name": "Band",
-              "fill": "#F1E9DE",
-              "width": "fill_container",
-              "height": 8
-            },
-            {
-              "type": "frame",
-              "id": "Qgb9C",
-              "name": "Reviews Header",
-              "width": "fill_container",
-              "padding": [
-                14,
-                16,
-                10,
-                16
-              ],
-              "justifyContent": "space_between",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "JyfvJ",
-                  "name": "Title",
-                  "fill": "#000000",
-                  "content": "감상 30",
-                  "fontFamily": "Newsreader",
-                  "fontSize": 20,
-                  "fontWeight": "600"
-                },
-                {
-                  "type": "text",
-                  "id": "UhO8F",
-                  "name": "More",
-                  "fill": "#666666",
-                  "content": "전체 보기 ›",
-                  "fontFamily": "Geist Mono",
-                  "fontSize": 11,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "EaMUN",
-              "name": "Sort Tabs",
-              "width": "fill_container",
-              "gap": 8,
-              "padding": [
-                10,
-                16
-              ],
-              "justifyContent": "space_between",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "uv5dx",
-                  "name": "Sort Filters",
-                  "cornerRadius": 999,
-                  "gap": 6,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "zS91k",
-                      "name": "Filter · 날짜순",
-                      "fill": "#F1E9DE",
-                      "cornerRadius": 999,
-                      "stroke": "#1A1A1A",
-                      "strokeWidth": 1,
-                      "gap": 4,
-                      "padding": [
-                        6,
-                        10
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "vhQCH",
-                          "name": "Label",
-                          "fill": "#000000",
-                          "content": "최신순",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "icon",
-                          "id": "CInPg",
-                          "name": "Caret",
-                          "width": 11,
-                          "height": 11,
-                          "icon": "chevron-down",
-                          "library": "lucide",
-                          "fill": "#000000"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "cf4rj",
-                      "name": "Filter · 인기순",
-                      "cornerRadius": 999,
-                      "stroke": "#C9C9C9",
-                      "strokeWidth": 1,
-                      "gap": 4,
-                      "padding": [
-                        6,
-                        10
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "qBF4V",
-                          "name": "Comment Icon",
-                          "width": 11,
-                          "height": 11,
-                          "icon": "message-circle",
-                          "library": "lucide",
-                          "fill": "#666666"
-                        },
-                        {
-                          "type": "text",
-                          "id": "kBxnx",
-                          "name": "Label",
-                          "fill": "#666666",
-                          "content": "인기순",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "Xh3ke",
-                  "name": "Filter · 피드 범위",
-                  "cornerRadius": 999,
-                  "stroke": "#C9C9C9",
-                  "strokeWidth": 1,
-                  "gap": 2,
-                  "padding": 2,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "PuOuN",
-                      "name": "Scope · 전체 피드",
-                      "fill": "#000000",
-                      "cornerRadius": 12,
-                      "padding": [
-                        5,
-                        10
-                      ],
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "i50NPY",
-                          "name": "Label",
-                          "fill": "#FFFFFF",
-                          "content": "전체 피드",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "600"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "f6k3Xi",
-                      "name": "Scope · 내 피드",
-                      "fill": "#FFFFFF",
-                      "cornerRadius": 12,
-                      "padding": [
-                        5,
-                        10
-                      ],
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "q7Z8Jg",
-                          "name": "Label",
-                          "fill": "#666666",
-                          "content": "내 피드",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "W9ynWV",
-              "name": "Review Card",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 10,
-              "padding": [
-                14,
-                16
-              ],
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "fQZj2",
-                  "name": "Header Row",
-                  "width": "fill_container",
-                  "gap": 9,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "id": "JXzay",
-                      "type": "ref",
-                      "ref": "MM6le",
-                      "name": "Avatar",
-                      "width": 34,
-                      "height": 34,
-                      "cornerRadius": 999
-                    },
-                    {
-                      "type": "frame",
-                      "id": "oXVBc",
-                      "name": "Name Block",
-                      "width": "fill_container",
-                      "layout": "vertical",
-                      "gap": 3,
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "wrcnO",
-                          "name": "Name Row",
-                          "gap": 6,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "AepMs",
-                              "name": "Name",
-                              "fill": "#000000",
-                              "content": "참새 1204 (익명)",
-                              "fontFamily": "Funnel Sans",
-                              "fontSize": 12,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "B9P9nQ",
-                              "name": "Badge · 완독",
-                              "fill": "#EDEDED",
-                              "cornerRadius": 9,
-                              "gap": 3,
-                              "padding": [
-                                2,
-                                7
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "icon",
-                                  "id": "JZnXW",
-                                  "name": "Check",
-                                  "width": 10,
-                                  "height": 10,
-                                  "icon": "check",
-                                  "library": "lucide",
-                                  "fill": "#555555"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "U8zwo7",
-                                  "name": "Label",
-                                  "fill": "#555555",
-                                  "content": "완독",
-                                  "fontFamily": "Geist Mono",
-                                  "fontSize": 9,
-                                  "fontWeight": "normal"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "cMQLC",
-                          "name": "Date",
-                          "fill": "#666666",
-                          "content": "2026.08.05",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 9,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "icon",
-                      "id": "euB60",
-                      "name": "More",
-                      "width": 17,
-                      "height": 17,
-                      "icon": "ellipsis",
-                      "library": "lucide",
-                      "fill": "#666666"
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "iyJkf",
-                  "name": "Body",
-                  "fill": "#000000",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "혼자 남겨진 사람이 절망 대신 계산기를 드는 이야기. 살아남기 위해 감자를 심고, 통신을 복구하고, 매일의 문제를 하나씩 처리한다. 그 반복이 지루하지 않고 오히려 씩씩하게 읽혔다.",
-                  "lineHeight": 1.7,
-                  "fontFamily": "Funnel Sans",
-                  "fontSize": 12.5,
-                  "fontWeight": "normal"
-                },
-                {
-                  "type": "frame",
-                  "id": "BOtaf",
-                  "name": "Quote Block",
-                  "width": "fill_container",
-                  "fill": "#FFF4DF",
-                  "stroke": "#1A1A1A",
-                  "strokeWidth": {
-                    "left": 2
-                  },
-                  "layout": "vertical",
-                  "gap": 6,
-                  "padding": [
-                    10,
-                    14
-                  ],
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "gQijJ",
-                      "name": "Page",
-                      "fill": "#666666",
-                      "content": "p.80",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 10,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "text",
-                      "id": "Pw80j",
-                      "name": "Quote",
-                      "fill": "#000000",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "“나는 이 행성에서 과학으로 헤쳐 나갈 것이다.”",
-                      "lineHeight": 1.6,
-                      "fontFamily": "Funnel Sans",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "D1yml",
-                  "name": "Card Footer",
-                  "width": "fill_container",
-                  "gap": 16,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "dVqXU",
-                      "name": "Action · 좋아요 12",
-                      "gap": 5,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "uMGs0",
-                          "name": "Icon",
-                          "width": 14,
-                          "height": 14,
-                          "icon": "heart",
-                          "library": "lucide",
-                          "fill": "#666666"
-                        },
-                        {
-                          "type": "text",
-                          "id": "jJ55Z",
-                          "name": "Label",
-                          "fill": "#666666",
-                          "content": "좋아요 12",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "DpSl4",
-                      "name": "Action · 답글 2",
-                      "gap": 5,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "JJA70",
-                          "name": "Icon",
-                          "width": 14,
-                          "height": 14,
-                          "icon": "message-circle",
-                          "library": "lucide",
-                          "fill": "#666666"
-                        },
-                        {
-                          "type": "text",
-                          "id": "HYvmX",
-                          "name": "Label",
-                          "fill": "#666666",
-                          "content": "답글 2",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "tpARj",
-                      "name": "Spacer",
-                      "width": "fill_container",
-                      "height": 1
-                    },
-                    {
-                      "type": "text",
-                      "id": "fwvag",
-                      "name": "Limit",
-                      "fill": "#999999",
-                      "content": "200자까지",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 10,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "unLRM",
-              "name": "Replies",
-              "width": "fill_container",
-              "fill": "#F7F2EC",
-              "layout": "vertical",
-              "gap": 12,
-              "padding": [
-                12,
-                16,
-                14,
-                48
-              ],
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "zc7mY",
-                  "name": "Reply · 참새 0330 (익명)",
-                  "width": "fill_container",
-                  "gap": 8,
-                  "children": [
-                    {
-                      "id": "V84rI",
-                      "type": "ref",
-                      "ref": "XVvB1",
-                      "name": "Avatar",
-                      "width": 24,
-                      "height": 24,
-                      "cornerRadius": 999
-                    },
-                    {
-                      "type": "frame",
-                      "id": "mABcj",
-                      "name": "Bubble",
-                      "width": "fill_container",
-                      "layout": "vertical",
-                      "gap": 3,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "dTPnN",
-                          "name": "Name",
-                          "fill": "#000000",
-                          "content": "참새 0330 (익명)",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "text",
-                          "id": "hiMxR",
-                          "name": "Text",
-                          "fill": "#555555",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "감자 파트에서 진짜 웃었어요. 저도 이 장면 표시해뒀어요.",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 11.5,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "dyJ3v",
-                  "name": "Reply · 참새 7781 (익명)",
-                  "width": "fill_container",
-                  "gap": 8,
-                  "children": [
-                    {
-                      "id": "f70htH",
-                      "type": "ref",
-                      "ref": "OKVLG",
-                      "name": "Avatar",
-                      "width": 24,
-                      "height": 24,
-                      "cornerRadius": 999
-                    },
-                    {
-                      "type": "frame",
-                      "id": "l5lDXU",
-                      "name": "Bubble",
-                      "width": "fill_container",
-                      "layout": "vertical",
-                      "gap": 3,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "HmyxD",
-                          "name": "Name",
-                          "fill": "#000000",
-                          "content": "참새 7781 (익명)",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 11,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "text",
-                          "id": "Tg9eP",
-                          "name": "Text",
-                          "fill": "#555555",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "p.80 문장 좋네요. 담아갑니다.",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 11.5,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "rectangle",
-              "id": "m2WkOo",
-              "name": "Band 2",
-              "fill": "#F1E9DE",
-              "width": "fill_container",
-              "height": 8
-            },
-            {
-              "type": "frame",
-              "id": "I4eI4",
-              "name": "Review Card 2",
-              "width": "fill_container",
-              "layout": "vertical",
-              "gap": 9,
-              "padding": [
-                14,
-                16
-              ],
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "uv4n3",
-                  "name": "Header Row",
-                  "width": "fill_container",
-                  "gap": 9,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "id": "kTdMt",
-                      "type": "ref",
-                      "ref": "lo6DO",
-                      "name": "Avatar",
-                      "width": 34,
-                      "height": 34,
-                      "cornerRadius": 999
-                    },
-                    {
-                      "type": "frame",
-                      "id": "WmRfD",
-                      "name": "Name Block",
-                      "width": "fill_container",
-                      "layout": "vertical",
-                      "gap": 3,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "OowtF",
-                          "name": "Name",
-                          "fill": "#000000",
-                          "content": "참새 0912 (익명)",
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 12,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "text",
-                          "id": "tVmnj",
-                          "name": "Date",
-                          "fill": "#666666",
-                          "content": "2026.08.04 · p.160",
-                          "fontFamily": "Geist Mono",
-                          "fontSize": 9,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "icon",
-                      "id": "CrkJK",
-                      "name": "Like",
-                      "width": 15,
-                      "height": 15,
-                      "icon": "heart",
-                      "library": "lucide",
-                      "fill": "#666666"
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "I5KbXg",
-                  "name": "Body",
-                  "fill": "#000000",
-                  "textGrowth": "fixed-width",
-                  "width": "fill_container",
-                  "content": "중반부터 속도가 붙는다. 지구에서의 구조 시퀀스는 조금 길게 느껴졌지만…",
-                  "lineHeight": 1.7,
-                  "fontFamily": "Funnel Sans",
-                  "fontSize": 12.5,
-                  "fontWeight": "normal"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "dxM40",
-              "layoutPosition": "absolute",
-              "x": 16,
-              "y": 1104,
-              "name": "Compose Bar (Floating)",
-              "width": 358,
-              "fill": "#FFFFFF",
-              "cornerRadius": 28,
-              "stroke": "#C9C9C9",
-              "strokeWidth": 1,
-              "effect": {
-                "type": "shadow",
-                "shadowType": "outer",
-                "color": "#00000026",
-                "offset": {
-                  "x": 0,
-                  "y": 3
-                },
-                "blur": 12
-              },
-              "gap": 8,
-              "padding": [
-                8,
-                10
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "kL7wM",
-                  "name": "Input",
-                  "width": "fill_container",
-                  "height": 40,
-                  "fill": "#F5F5F5",
-                  "cornerRadius": 6,
-                  "stroke": {
-                    "type": "color",
-                    "color": "#FFFFFF",
-                    "enabled": false
-                  },
-                  "strokeWidth": 1,
-                  "gap": 8,
-                  "padding": [
-                    0,
-                    14
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "xZyS2",
-                      "name": "Pen",
-                      "width": 14,
-                      "height": 14,
-                      "icon": "pencil",
-                      "library": "lucide",
-                      "fill": "#666666"
-                    },
-                    {
-                      "type": "text",
-                      "id": "Fz3ka",
-                      "name": "Placeholder",
-                      "fill": "#666666",
-                      "content": "이 순간의 감상 남기기",
-                      "fontFamily": "Funnel Sans",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "icon",
-                  "id": "hfeGE",
-                  "name": "Send",
-                  "width": 19,
-                  "height": 19,
-                  "icon": "send",
-                  "library": "lucide",
-                  "fill": "#000000"
-                }
-              ]
-            },
-            {
-              "type": "rectangle",
-              "id": "SuBIx",
-              "layoutPosition": "absolute",
-              "x": 0,
-              "y": 0,
-              "name": "Dim Overlay",
-              "fill": "#00000066",
-              "width": 390,
-              "height": 844
-            },
-            {
-              "type": "frame",
-              "id": "paFi0",
-              "layoutPosition": "absolute",
-              "x": 0,
-              "y": 328,
-              "name": "Sheet · 감상 남기기",
-              "width": 390,
-              "fill": "#FFFFFF",
-              "cornerRadius": 12,
-              "effect": {
-                "type": "shadow",
-                "shadowType": "outer",
-                "color": "#00000020",
-                "offset": {
-                  "x": 0,
-                  "y": -8
-                },
-                "blur": 24
-              },
-              "layout": "vertical",
-              "gap": 16,
-              "padding": [
-                10,
-                20,
-                24,
-                20
-              ],
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "lZuZ3",
-                  "name": "Grabber",
-                  "width": "fill_container",
-                  "justifyContent": "center",
-                  "children": [
-                    {
-                      "type": "rectangle",
-                      "cornerRadius": 2,
-                      "id": "Fw7gY",
-                      "name": "Bar",
-                      "fill": "#DDDDDD",
-                      "width": 40,
-                      "height": 4
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "vqu2x",
-                  "name": "Sheet Header",
-                  "width": "fill_container",
-                  "cornerRadius": 12,
-                  "gap": 8,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "t3D9VR",
-                      "name": "Title",
-                      "fill": "#000000",
-                      "content": "감상 남기기",
-                      "fontFamily": "Newsreader",
-                      "fontSize": 20,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "cQYKs",
-                      "name": "Spacer",
-                      "width": "fill_container",
-                      "height": 1
-                    },
-                    {
-                      "type": "icon",
-                      "id": "OFShC",
-                      "name": "Close",
-                      "width": 20,
-                      "height": 20,
-                      "icon": "x",
-                      "library": "lucide",
-                      "fill": "#000000"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "I80kQ6",
-                  "name": "Field · 느낀점",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 6,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "CzZIK",
-                      "name": "Label Row",
-                      "width": "fill_container",
-                      "gap": 4,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "Y6H5NE",
-                          "name": "Label",
-                          "fill": "#000000",
-                          "content": "느낀점",
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 12,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "frame",
-                          "id": "BwDo9",
-                          "name": "Required",
-                          "fill": "#000000",
-                          "cornerRadius": 8,
-                          "padding": [
-                            2,
-                            6
-                          ],
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "lYv1w",
-                              "name": "Label",
-                              "fill": "#FFFFFF",
-                              "content": "필수",
-                              "fontFamily": "Geist Mono",
-                              "fontSize": 9,
-                              "fontWeight": "600"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "hEIM2",
-                      "name": "Input",
-                      "width": "fill_container",
-                      "height": 132,
-                      "cornerRadius": 6,
-                      "stroke": "#C9C9C9",
-                      "strokeWidth": 1,
-                      "layout": "vertical",
-                      "padding": [
-                        10,
-                        12
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "Yyme9",
-                          "name": "Placeholder",
-                          "fill": "#999999",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "이 구간을 읽으며 든 생각을 남겨보세요",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "o2DfR2",
-                  "name": "Field · 인상 깊은 문구",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 6,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "FNxYq",
-                      "name": "Label Row",
-                      "width": "fill_container",
-                      "gap": 4,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "OZeEM",
-                          "name": "Label",
-                          "fill": "#000000",
-                          "content": "인상 깊은 문구",
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 12,
-                          "fontWeight": "600"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "Nc6tT",
-                      "name": "Input",
-                      "width": "fill_container",
-                      "height": 72,
-                      "cornerRadius": 6,
-                      "stroke": "#C9C9C9",
-                      "strokeWidth": 1,
-                      "layout": "vertical",
-                      "padding": [
-                        10,
-                        12
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "YT0Ga",
-                          "name": "Placeholder",
-                          "fill": "#999999",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "기억하고 싶은 문장을 옮겨 적어보세요",
-                          "lineHeight": 1.6,
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "iC3FF",
-                  "name": "Meta Row",
-                  "width": "fill_container",
-                  "gap": 10,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "YfT0n",
-                      "name": "Field · 쪽수",
-                      "width": 104,
-                      "layout": "vertical",
-                      "gap": 6,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "d1gazL",
-                          "name": "Label",
-                          "fill": "#000000",
-                          "content": "쪽수",
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 12,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "frame",
-                          "id": "oqOtB",
-                          "name": "Input",
-                          "width": "fill_container",
-                          "height": 44,
-                          "cornerRadius": 6,
-                          "stroke": "#C9C9C9",
-                          "strokeWidth": 1,
-                          "gap": 4,
-                          "padding": [
-                            0,
-                            12
-                          ],
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "Fq4Bz",
-                              "name": "Value",
-                              "fill": "#000000",
-                              "content": "80",
-                              "fontFamily": "Funnel Sans",
-                              "fontSize": 13,
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "text",
-                              "id": "hNKuP",
-                              "name": "Unit",
-                              "fill": "#666666",
-                              "content": "쪽",
-                              "fontFamily": "Geist Mono",
-                              "fontSize": 11,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "cgm0K",
-                      "name": "Field · 목차 / 챕터",
-                      "width": 232,
-                      "layout": "vertical",
-                      "gap": 6,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "WK0LZ",
-                          "name": "Label",
-                          "fill": "#000000",
-                          "content": "목차 / 챕터",
-                          "fontFamily": "Funnel Sans",
-                          "fontSize": 12,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "frame",
-                          "id": "nvB31",
-                          "name": "Input",
-                          "width": "fill_container",
-                          "height": 44,
-                          "cornerRadius": 6,
-                          "stroke": "#C9C9C9",
-                          "strokeWidth": 1,
-                          "padding": [
-                            0,
-                            12
-                          ],
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "YN7HA",
-                              "name": "Value",
-                              "fill": "#000000",
-                              "content": "Chapter 1",
-                              "fontFamily": "Funnel Sans",
-                              "fontSize": 13,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "aKJ5d",
-                  "name": "Submit Button",
-                  "width": "fill_container",
-                  "height": 52,
-                  "fill": "#000000",
-                  "cornerRadius": 6,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "p8ymT",
-                      "name": "Label",
-                      "fill": "#FFFFFF",
-                      "content": "감상 남기기",
-                      "fontFamily": "Funnel Sans",
-                      "fontSize": 14.5,
-                      "fontWeight": "700"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
           "type": "note",
           "id": "DRP5R",
           "x": 1473.3577473275818,
@@ -33294,6 +31882,430 @@
           "width": 250,
           "height": 219,
           "content": "감상 남기기 모달에서, 익명/실명 표시 추가하기"
+        },
+        {
+          "type": "frame",
+          "id": "z9Imy0",
+          "x": 1473,
+          "y": 394,
+          "name": "Sheet · 감상 남기기",
+          "width": 390,
+          "fill": "#FFFFFF",
+          "cornerRadius": 12,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#00000020",
+            "offset": {
+              "x": 0,
+              "y": -8
+            },
+            "blur": 24
+          },
+          "layout": "vertical",
+          "gap": 16,
+          "padding": [
+            10,
+            20,
+            24,
+            20
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "hZZyI",
+              "name": "Grabber",
+              "width": "fill_container",
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "f69ueB",
+                  "name": "Bar",
+                  "fill": "#DDDDDD",
+                  "width": 40,
+                  "height": 4
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "fZofo",
+              "name": "Sheet Header",
+              "width": "fill_container",
+              "cornerRadius": 12,
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ogsTg",
+                  "name": "Title",
+                  "fill": "#000000",
+                  "content": "감상 남기기",
+                  "fontFamily": "Newsreader",
+                  "fontSize": 20,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "w4PrPZ",
+                  "name": "Spacer",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "icon",
+                  "id": "AlcH9",
+                  "name": "Close",
+                  "width": 20,
+                  "height": 20,
+                  "icon": "x",
+                  "library": "lucide",
+                  "fill": "#000000"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "H7pKne",
+              "name": "Field · 느낀점",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "o9ubCN",
+                  "name": "Label Row",
+                  "width": "fill_container",
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "O1K8a4",
+                      "name": "Label",
+                      "fill": "#000000",
+                      "content": "느낀점",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PGKVh",
+                      "name": "Required",
+                      "fill": "#000000",
+                      "cornerRadius": 8,
+                      "padding": [
+                        2,
+                        6
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jlGsO",
+                          "name": "Label",
+                          "fill": "#FFFFFF",
+                          "content": "필수",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 9,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "AT2di",
+                  "name": "Input",
+                  "width": "fill_container",
+                  "height": 132,
+                  "cornerRadius": 6,
+                  "stroke": "#C9C9C9",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "padding": [
+                    10,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Q3fgsN",
+                      "name": "Placeholder",
+                      "fill": "#999999",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "이 구간을 읽으며 든 생각을 남겨보세요",
+                      "lineHeight": 1.6,
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "oGXul",
+              "name": "Field · 인상 깊은 문구",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "hRcTM",
+                  "name": "Label Row",
+                  "width": "fill_container",
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "TzyJZ",
+                      "name": "Label",
+                      "fill": "#000000",
+                      "content": "인상 깊은 문구",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "IdlRv",
+                  "name": "Input",
+                  "width": "fill_container",
+                  "height": 72,
+                  "cornerRadius": 6,
+                  "stroke": "#C9C9C9",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "padding": [
+                    10,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FElpZ",
+                      "name": "Placeholder",
+                      "fill": "#999999",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "기억하고 싶은 문장을 옮겨 적어보세요",
+                      "lineHeight": 1.6,
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "sEleC",
+              "name": "Meta Row",
+              "width": "fill_container",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "bz8yX",
+                  "name": "Field · 쪽수",
+                  "width": 104,
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "LrP6s",
+                      "name": "Label",
+                      "fill": "#000000",
+                      "content": "쪽수",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uA8ib",
+                      "name": "Input",
+                      "width": "fill_container",
+                      "height": 44,
+                      "cornerRadius": 6,
+                      "stroke": "#C9C9C9",
+                      "strokeWidth": 1,
+                      "gap": 4,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Og6ms",
+                          "name": "Value",
+                          "fill": "#000000",
+                          "content": "80",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "rixPp",
+                          "name": "Unit",
+                          "fill": "#666666",
+                          "content": "쪽",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "th1sW",
+                  "name": "Field · 목차 / 챕터",
+                  "width": 232,
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "DeS84",
+                      "name": "Label",
+                      "fill": "#000000",
+                      "content": "목차 / 챕터",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "O2DU47",
+                      "name": "Input",
+                      "width": "fill_container",
+                      "height": 44,
+                      "cornerRadius": 6,
+                      "stroke": "#C9C9C9",
+                      "strokeWidth": 1,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "AzZ2b",
+                          "name": "Value",
+                          "fill": "#000000",
+                          "content": "Chapter 1",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "UgX0C",
+              "name": "Field · 공개 이름",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "RuemK",
+                  "name": "Display Name Status",
+                  "width": "fill_container",
+                  "height": 40,
+                  "fill": "#F6F2EC",
+                  "cornerRadius": 6,
+                  "gap": 7,
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Yi26M",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "eye-off",
+                      "library": "lucide",
+                      "fill": "#1A1A1A"
+                    },
+                    {
+                      "type": "text",
+                      "id": "UxZ6J",
+                      "name": "Mode",
+                      "fill": "#1A1A1A",
+                      "content": "익명",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "woYM3",
+                      "name": "Preview",
+                      "fill": "#6B6B6B",
+                      "content": "‘골똘한 참새’로 표시돼요",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 11.5,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "BtCVs",
+              "name": "Submit Button",
+              "width": "fill_container",
+              "height": 52,
+              "fill": "#000000",
+              "cornerRadius": 6,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "xYATt",
+                  "name": "Label",
+                  "fill": "#FFFFFF",
+                  "content": "감상 남기기",
+                  "fontFamily": "Funnel Sans",
+                  "fontSize": 14.5,
+                  "fontWeight": "700"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -33305,19 +32317,20 @@
       "name": "웹 디자인 적용",
       "clip": true,
       "width": 3419,
-      "height": 5592,
+      "height": 5856,
       "fill": "#9fc8d1ff",
       "layout": "none",
       "children": [
         {
           "type": "frame",
           "id": "JgGmS",
-          "x": 203,
-          "y": 1360,
+          "x": 203.23942886850364,
+          "y": 1359.7106326523935,
           "name": "웹 최종안 · 다크 인트로 + 라이트 기능",
+          "rotation": -0.023030950917780943,
           "clip": true,
           "width": 1440,
-          "height": 1175,
+          "height": 1641,
           "fill": "#FCFAF7",
           "layout": "vertical",
           "children": [
@@ -33537,6 +32550,7 @@
                       "type": "frame",
                       "id": "DPZZR",
                       "name": "인트로 활동 통계",
+                      "width": 270,
                       "gap": 8,
                       "children": [
                         {
@@ -33582,7 +32596,7 @@
                               "id": "ms1hJ",
                               "name": "인트로 통계 값 감상 30",
                               "fill": "#FFFFFF",
-                              "content": "감상 30",
+                              "content": "감상 30 · 댓글 18",
                               "fontFamily": "Geist Mono",
                               "fontSize": 11,
                               "fontWeight": "700"
@@ -33779,7 +32793,7 @@
               "id": "qTMDq",
               "name": "웹 라이트 기능 영역",
               "width": "fill_container",
-              "height": 824,
+              "height": 1090,
               "fill": "#FCFAF7",
               "gap": 48,
               "padding": [
@@ -33794,7 +32808,7 @@
                   "id": "AZdep",
                   "name": "웹 책 제어 사이드",
                   "width": 350,
-                  "height": 535,
+                  "height": 617,
                   "stroke": "#E2DDD5",
                   "strokeWidth": {
                     "right": 1
@@ -33908,9 +32922,94 @@
                     },
                     {
                       "type": "frame",
+                      "id": "I04cQ8",
+                      "name": "웹 내 별점 입력",
+                      "width": "fill_container",
+                      "height": 54,
+                      "fill": "#FFF4DF",
+                      "cornerRadius": 4,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "ukzYd",
+                          "name": "웹 내 별점 상태",
+                          "height": 38,
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "A1JXvF",
+                              "name": "웹 내 별점 라벨",
+                              "fill": "#1A1A1A",
+                              "content": "내 별점",
+                              "fontFamily": "Funnel Sans",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "c0cSm5",
+                              "name": "웹 내 별점 미입력 상태",
+                              "fill": "#777777",
+                              "content": "아직 평가하지 않았어요",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "X6BtX",
+                          "name": "웹 별점 주기 버튼",
+                          "context": "클릭하면 별점 입력 팝업을 연다",
+                          "height": 34,
+                          "fill": "#1A1A1A",
+                          "cornerRadius": 4,
+                          "gap": 6,
+                          "padding": [
+                            0,
+                            11
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "h9aBbh",
+                              "name": "웹 별점 주기 아이콘",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "star",
+                              "library": "lucide",
+                              "fill": "#FFFFFF"
+                            },
+                            {
+                              "type": "text",
+                              "id": "JlIx2",
+                              "name": "웹 별점 주기 라벨",
+                              "fill": "#FFFFFF",
+                              "content": "별점 주기",
+                              "fontFamily": "Funnel Sans",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
                       "id": "K5Un0",
                       "name": "웹 읽기 진도",
                       "width": "fill_container",
+                      "height": 79,
                       "layout": "vertical",
                       "gap": 8,
                       "children": [
@@ -33963,6 +33062,29 @@
                               "height": 6
                             }
                           ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ndTa8",
+                          "name": "쪽수 입력 버튼",
+                          "width": "fill_container",
+                          "height": 36,
+                          "fill": "#1A1A1A",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "b8eNr2",
+                              "name": "쪽수 입력 버튼 라벨",
+                              "fill": "#FFFFFF",
+                              "content": "현재 읽은 쪽수 입력",
+                              "fontFamily": "Funnel Sans",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            }
+                          ]
                         }
                       ]
                     },
@@ -33989,6 +33111,12 @@
                           "id": "OE4Lq",
                           "name": "메타 장르",
                           "width": "fill_container",
+                          "padding": [
+                            0,
+                            2,
+                            0,
+                            0
+                          ],
                           "justifyContent": "space_between",
                           "children": [
                             {
@@ -34047,6 +33175,12 @@
                           "id": "o5A1y",
                           "name": "메타 분량",
                           "width": "fill_container",
+                          "padding": [
+                            0,
+                            2,
+                            0,
+                            0
+                          ],
                           "justifyContent": "space_between",
                           "children": [
                             {
@@ -34094,6 +33228,41 @@
                               "name": "메타 값 ISBN",
                               "fill": "#333333",
                               "content": "978-89-0000-013",
+                              "fontFamily": "Funnel Sans",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "y7fyY",
+                          "name": "메타 옮김",
+                          "width": "fill_container",
+                          "padding": [
+                            0,
+                            2,
+                            0,
+                            0
+                          ],
+                          "justifyContent": "space_between",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "b3aaTn",
+                              "name": "메타 키 옮김",
+                              "fill": "#888888",
+                              "content": "옮김",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "hB9GM",
+                              "name": "메타 값 옮김",
+                              "fill": "#333333",
+                              "content": "박아람",
                               "fontFamily": "Funnel Sans",
                               "fontSize": 12,
                               "fontWeight": "600"
@@ -34152,7 +33321,7 @@
                   "id": "rvjvJ",
                   "name": "웹 감상 피드",
                   "width": "fill_container",
-                  "height": 510,
+                  "height": 765,
                   "layout": "vertical",
                   "gap": 16,
                   "children": [
@@ -34186,87 +33355,110 @@
                         {
                           "type": "frame",
                           "id": "gMDGW",
-                          "name": "웹 감상 필터",
-                          "gap": 8,
+                          "name": "웹 피드 범위와 정렬",
+                          "gap": 10,
+                          "alignItems": "center",
                           "children": [
                             {
                               "type": "frame",
-                              "id": "Op2fD",
-                              "name": "웹 필터 최신순",
+                              "id": "yIRfP",
+                              "name": "웹 피드 범위 스위치",
                               "height": 34,
-                              "fill": "#1A1A1A",
                               "cornerRadius": 4,
-                              "stroke": "#1A1A1A",
+                              "stroke": "#C9C9C9",
                               "strokeWidth": 1,
+                              "gap": 2,
+                              "padding": 2,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "XBf10",
+                                  "name": "웹 범위 전체 피드",
+                                  "fill": "#000000",
+                                  "cornerRadius": 3,
+                                  "padding": [
+                                    6,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "EAuXi",
+                                      "name": "웹 범위 전체 피드 라벨",
+                                      "fill": "#FFFFFF",
+                                      "content": "전체 피드",
+                                      "fontFamily": "Funnel Sans",
+                                      "fontSize": 11,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "YCPHl",
+                                  "name": "웹 범위 내 피드",
+                                  "fill": "#FFFFFF",
+                                  "cornerRadius": 3,
+                                  "padding": [
+                                    6,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "r3jOg",
+                                      "name": "웹 범위 내 피드 라벨",
+                                      "fill": "#666666",
+                                      "content": "내 피드",
+                                      "fontFamily": "Funnel Sans",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "GBX9z",
+                              "name": "웹 감상 정렬 드롭다운",
+                              "context": "옵션: 최신순, 오래된순, 인기순, 페이지순",
+                              "height": 34,
+                              "fill": "#FCFAF7",
+                              "cornerRadius": 4,
+                              "stroke": "#CBC5BC",
+                              "strokeWidth": 1,
+                              "gap": 8,
                               "padding": [
-                                8,
-                                13
+                                0,
+                                11
                               ],
                               "alignItems": "center",
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "M2HNO6",
-                                  "name": "웹 필터 라벨 최신순",
-                                  "fill": "#FFFFFF",
+                                  "id": "x7e4U",
+                                  "name": "웹 감상 정렬 현재값",
+                                  "fill": "#555555",
                                   "content": "최신순",
                                   "fontFamily": "Funnel Sans",
                                   "fontSize": 12,
                                   "fontWeight": "700"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "SQ9ub",
-                              "name": "웹 필터 인기순",
-                              "height": 34,
-                              "fill": "#FCFAF7",
-                              "cornerRadius": 4,
-                              "stroke": "#CBC5BC",
-                              "strokeWidth": 1,
-                              "padding": [
-                                8,
-                                13
-                              ],
-                              "alignItems": "center",
-                              "children": [
+                                },
                                 {
-                                  "type": "text",
-                                  "id": "NiglN",
-                                  "name": "웹 필터 라벨 인기순",
-                                  "fill": "#666666",
-                                  "content": "인기순",
-                                  "fontFamily": "Funnel Sans",
-                                  "fontSize": 12,
-                                  "fontWeight": "700"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "g3UUK3",
-                              "name": "웹 필터 내 피드",
-                              "height": 34,
-                              "fill": "#FCFAF7",
-                              "cornerRadius": 4,
-                              "stroke": "#CBC5BC",
-                              "strokeWidth": 1,
-                              "padding": [
-                                8,
-                                13
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "ezUQM",
-                                  "name": "웹 필터 라벨 내 피드",
-                                  "fill": "#666666",
-                                  "content": "내 피드",
-                                  "fontFamily": "Funnel Sans",
-                                  "fontSize": 12,
-                                  "fontWeight": "700"
+                                  "type": "icon",
+                                  "id": "Bb59j",
+                                  "name": "웹 감상 정렬 펼치기",
+                                  "width": 14,
+                                  "height": 14,
+                                  "icon": "chevron-down",
+                                  "library": "lucide",
+                                  "fill": "#555555"
                                 }
                               ]
                             }
@@ -34315,14 +33507,47 @@
                               "gap": 2,
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "fSOmo",
-                                  "name": "작성자 이름",
-                                  "fill": "#1A1A1A",
-                                  "content": "참새 1204 (익명)",
-                                  "fontFamily": "Funnel Sans",
-                                  "fontSize": 13,
-                                  "fontWeight": "700"
+                                  "type": "frame",
+                                  "id": "kk2Yc",
+                                  "name": "작성자 이름과 페이지",
+                                  "gap": 8,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "fSOmo",
+                                      "name": "작성자 이름 · 골똘한 참새",
+                                      "fill": "#1A1A1A",
+                                      "content": "골똘한 참새 (익명)",
+                                      "fontFamily": "Funnel Sans",
+                                      "fontSize": 13,
+                                      "fontWeight": "700"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "x8EX1l",
+                                      "name": "작성자 옆 페이지 배지",
+                                      "fill": "#FFF4DF",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        4,
+                                        8
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "RaXaI",
+                                          "name": "감상 페이지",
+                                          "fill": "#A05A27",
+                                          "content": "p.80까지",
+                                          "fontFamily": "Geist Mono",
+                                          "fontSize": 11,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    }
+                                  ]
                                 },
                                 {
                                   "type": "text",
@@ -34380,16 +33605,6 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "RaXaI",
-                              "name": "인용 페이지",
-                              "fill": "#777777",
-                              "content": "p.80",
-                              "fontFamily": "Geist Mono",
-                              "fontSize": 9,
-                              "fontWeight": "normal"
-                            },
-                            {
-                              "type": "text",
                               "id": "uzWAO",
                               "name": "인용 내용",
                               "fill": "#1A1A1A",
@@ -34406,6 +33621,7 @@
                           "name": "감상 반응",
                           "width": "fill_container",
                           "gap": 20,
+                          "justifyContent": "end",
                           "alignItems": "center",
                           "children": [
                             {
@@ -34465,19 +33681,6 @@
                                   "fontWeight": "normal"
                                 }
                               ]
-                            },
-                            {
-                              "type": "text",
-                              "id": "UBWxk",
-                              "layoutPosition": "absolute",
-                              "x": 760,
-                              "y": 2,
-                              "name": "감상 글자 제한",
-                              "fill": "#999999",
-                              "content": "200자까지",
-                              "fontFamily": "Geist Mono",
-                              "fontSize": 9,
-                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -34522,9 +33725,9 @@
                                 {
                                   "type": "text",
                                   "id": "dJjdR",
-                                  "name": "참새 0330 이름",
+                                  "name": "다정한 참새 이름",
                                   "fill": "#1A1A1A",
-                                  "content": "참새 0330",
+                                  "content": "다정한 참새",
                                   "fontFamily": "Funnel Sans",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -34540,6 +33743,35 @@
                                   "lineHeight": 1.35,
                                   "fontFamily": "Funnel Sans",
                                   "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "g0ZXZ1",
+                              "name": "다정한 참새 답글 하트",
+                              "gap": 4,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "b8WX5",
+                                  "name": "다정한 참새 하트 아이콘",
+                                  "width": 14,
+                                  "height": 14,
+                                  "icon": "heart",
+                                  "library": "lucide",
+                                  "fill": "#777777"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "nDcmL",
+                                  "name": "다정한 참새 하트 수",
+                                  "fill": "#777777",
+                                  "content": "0",
+                                  "fontFamily": "Funnel Sans",
+                                  "fontSize": 10,
                                   "fontWeight": "normal"
                                 }
                               ]
@@ -34578,9 +33810,9 @@
                                 {
                                   "type": "text",
                                   "id": "gRNRa",
-                                  "name": "참새 7781 이름",
+                                  "name": "느긋한 참새 이름",
                                   "fill": "#1A1A1A",
-                                  "content": "참새 7781",
+                                  "content": "느긋한 참새",
                                   "fontFamily": "Funnel Sans",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -34596,6 +33828,261 @@
                                   "lineHeight": 1.35,
                                   "fontFamily": "Funnel Sans",
                                   "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "F0YOI",
+                              "name": "느긋한 참새 답글 하트",
+                              "gap": 4,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "K1czf",
+                                  "name": "느긋한 참새 하트 아이콘",
+                                  "width": 14,
+                                  "height": 14,
+                                  "icon": "heart",
+                                  "library": "lucide",
+                                  "fill": "#777777"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "pKClS",
+                                  "name": "느긋한 참새 하트 수",
+                                  "fill": "#777777",
+                                  "content": "0",
+                                  "fontFamily": "Funnel Sans",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Y1WUc",
+                      "name": "웹 잠긴 감상 · 짹짹짹",
+                      "width": "fill_container",
+                      "fill": "#F7F2EC",
+                      "stroke": "#DDD7CE",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 14,
+                      "padding": [
+                        20,
+                        22
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Mrhsc",
+                          "name": "대표 감상 작성자",
+                          "width": "fill_container",
+                          "gap": 11,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "id": "xHsNE",
+                              "type": "ref",
+                              "ref": "MM6le",
+                              "name": "잠긴 감상 참새 프로필",
+                              "width": 38,
+                              "height": 38,
+                              "cornerRadius": 19
+                            },
+                            {
+                              "type": "frame",
+                              "id": "IQ3yH",
+                              "name": "잠긴 감상 작성자 정보",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "v9L29",
+                                  "name": "잠긴 감상 작성자 이름과 페이지",
+                                  "gap": 8,
+                                  "padding": [
+                                    0,
+                                    2,
+                                    0,
+                                    0
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "D2CfF8",
+                                      "name": "잠긴 감상 작성자",
+                                      "fill": "#1A1A1A",
+                                      "content": "조용한 참새 (익명)",
+                                      "fontFamily": "Funnel Sans",
+                                      "fontSize": 13,
+                                      "fontWeight": "700"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "lw4Pw",
+                                      "name": "잠긴 감상 작성자 옆 페이지 배지",
+                                      "fill": "#F0ECE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        4,
+                                        8
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "PTTtu",
+                                          "name": "잠긴 감상 범위",
+                                          "fill": "#666666",
+                                          "content": "잠김 · p.160 이후",
+                                          "fontFamily": "Geist Mono",
+                                          "fontSize": 11,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "dm134",
+                                  "name": "잠긴 감상 작성 시간",
+                                  "fill": "#777777",
+                                  "content": "2026.08.04 · 읽는 중",
+                                  "fontFamily": "Geist Mono",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "tNwXG",
+                              "name": "감상 더보기",
+                              "width": 18,
+                              "height": 18,
+                              "icon": "ellipsis",
+                              "library": "lucide",
+                              "fill": "#777777"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "th3wm",
+                          "name": "잠긴 감상 본문",
+                          "fill": "#242424",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.",
+                          "lineHeight": 1.55,
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gKnB5",
+                          "name": "잠긴 감상 인용문",
+                          "width": "fill_container",
+                          "fill": "#F0ECE5",
+                          "stroke": "#1A1A1A",
+                          "strokeWidth": {
+                            "left": 3
+                          },
+                          "layout": "vertical",
+                          "gap": 5,
+                          "padding": [
+                            12,
+                            16
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "X3iyb5",
+                              "name": "잠긴 감상 인용 내용",
+                              "fill": "#555555",
+                              "content": "“짹짹짹 짹짹 짹짹짹짹 짹짹.”",
+                              "fontFamily": "Newsreader",
+                              "fontSize": 17,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Bwby3",
+                          "name": "감상 반응",
+                          "width": "fill_container",
+                          "gap": 20,
+                          "justifyContent": "end",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "d8J0FB",
+                              "name": "잠긴 감상 좋아요 4",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "wbald",
+                                  "name": "좋아요 12 아이콘",
+                                  "width": 15,
+                                  "height": 15,
+                                  "icon": "heart",
+                                  "library": "lucide",
+                                  "fill": "#666666"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "jk31w",
+                                  "name": "잠긴 감상 좋아요 라벨",
+                                  "fill": "#666666",
+                                  "content": "좋아요 4",
+                                  "fontFamily": "Funnel Sans",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "IG8U7",
+                              "name": "잠긴 감상 답글 2",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "O8ujD",
+                                  "name": "답글 2 아이콘",
+                                  "width": 15,
+                                  "height": 15,
+                                  "icon": "message-circle",
+                                  "library": "lucide",
+                                  "fill": "#666666"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "flukE",
+                                  "name": "잠긴 감상 답글 라벨",
+                                  "fill": "#666666",
+                                  "content": "답글 2",
+                                  "fontFamily": "Funnel Sans",
+                                  "fontSize": 12,
                                   "fontWeight": "normal"
                                 }
                               ]
@@ -34647,8 +34134,8 @@
                           "type": "frame",
                           "id": "HeQrN",
                           "layoutPosition": "absolute",
-                          "x": 770,
-                          "y": 7,
+                          "x": 789.9999983842381,
+                          "y": 6.991960681758428,
                           "name": "감상 보내기",
                           "width": 92,
                           "height": 40,
@@ -35205,7 +34692,7 @@
                                   "id": "MOZtL",
                                   "name": "마션 저자",
                                   "fill": "#555555",
-                                  "content": "앤디 위어 · 알에이치코리아",
+                                  "content": "앤디 위어 · 박아람 옮김",
                                   "fontFamily": "Funnel Sans",
                                   "fontSize": 13,
                                   "fontWeight": "normal"
@@ -35215,7 +34702,7 @@
                                   "id": "N0t2z",
                                   "name": "마션 메타",
                                   "fill": "#888888",
-                                  "content": "SF · 2026 · 369쪽",
+                                  "content": "알에이치코리아 · SF · 2026 · 308쪽",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 10,
                                   "fontWeight": "normal"
@@ -35238,10 +34725,36 @@
                                   "id": "VtvHa",
                                   "name": "마션 감상 수 라벨",
                                   "fill": "#1A1A1A",
-                                  "content": "감상 30",
+                                  "content": "댓글 46",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 10,
                                   "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "UEqJc",
+                              "name": "마션 읽는 중 시작",
+                              "height": 34,
+                              "fill": "#1A1A1A",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "p9jTJ",
+                                  "name": "마션 읽는 중 시작 라벨",
+                                  "fill": "#FFFFFF",
+                                  "content": "읽는 중 시작",
+                                  "fontFamily": "Funnel Sans",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
                                 }
                               ]
                             },
@@ -35312,7 +34825,7 @@
                                   "id": "T37YMz",
                                   "name": "보이지 않는 도시 저자",
                                   "fill": "#555555",
-                                  "content": "이탈로 칼비노 · 민음사",
+                                  "content": "이탈로 칼비노 · 이현경 옮김",
                                   "fontFamily": "Funnel Sans",
                                   "fontSize": 13,
                                   "fontWeight": "normal"
@@ -35322,7 +34835,7 @@
                                   "id": "c6fr8c",
                                   "name": "보이지 않는 도시 메타",
                                   "fill": "#888888",
-                                  "content": "소설 · 2024 · 196쪽",
+                                  "content": "민음사 · 소설 · 2024 · 196쪽",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 10,
                                   "fontWeight": "normal"
@@ -35345,10 +34858,36 @@
                                   "id": "EOXI4",
                                   "name": "보이지 않는 도시 감상 수 라벨",
                                   "fill": "#1A1A1A",
-                                  "content": "감상 26",
+                                  "content": "댓글 28",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 10,
                                   "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "UBJpv",
+                              "name": "보이지 않는 도시 읽는 중 시작",
+                              "height": 34,
+                              "fill": "#1A1A1A",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "sj7eB",
+                                  "name": "보이지 않는 도시 읽는 중 시작 라벨",
+                                  "fill": "#FFFFFF",
+                                  "content": "읽는 중 시작",
+                                  "fontFamily": "Funnel Sans",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
                                 }
                               ]
                             },
@@ -35419,7 +34958,7 @@
                                   "id": "oQqUS",
                                   "name": "역병 저자",
                                   "fill": "#555555",
-                                  "content": "알베르 카뮈 · 문학동네",
+                                  "content": "알베르 카뮈 · 유호식 옮김",
                                   "fontFamily": "Funnel Sans",
                                   "fontSize": 13,
                                   "fontWeight": "normal"
@@ -35429,7 +34968,7 @@
                                   "id": "I7C2eL",
                                   "name": "역병 메타",
                                   "fill": "#888888",
-                                  "content": "소설 · 2023 · 412쪽",
+                                  "content": "문학동네 · 소설 · 2023 · 412쪽",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 10,
                                   "fontWeight": "normal"
@@ -35452,10 +34991,36 @@
                                   "id": "ozkTs",
                                   "name": "역병 감상 수 라벨",
                                   "fill": "#1A1A1A",
-                                  "content": "감상 22",
+                                  "content": "댓글 19",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 10,
                                   "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "t11yFg",
+                              "name": "역병 읽는 중 시작",
+                              "height": 34,
+                              "fill": "#1A1A1A",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ybCov",
+                                  "name": "역병 읽는 중 시작 라벨",
+                                  "fill": "#FFFFFF",
+                                  "content": "읽는 중 시작",
+                                  "fontFamily": "Funnel Sans",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
                                 }
                               ]
                             },
@@ -35526,7 +35091,7 @@
                                   "id": "xKY5K",
                                   "name": "침묵하는 다수 저자",
                                   "fill": "#555555",
-                                  "content": "김하나 · 창비",
+                                  "content": "김하나",
                                   "fontFamily": "Funnel Sans",
                                   "fontSize": 13,
                                   "fontWeight": "normal"
@@ -35536,7 +35101,7 @@
                                   "id": "riTLd",
                                   "name": "침묵하는 다수 메타",
                                   "fill": "#888888",
-                                  "content": "에세이 · 2025 · 264쪽",
+                                  "content": "창비 · 에세이 · 2025 · 264쪽",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 10,
                                   "fontWeight": "normal"
@@ -35559,10 +35124,36 @@
                                   "id": "ZUvDN",
                                   "name": "침묵하는 다수 감상 수 라벨",
                                   "fill": "#1A1A1A",
-                                  "content": "감상 18",
+                                  "content": "댓글 7",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 10,
                                   "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "kZild",
+                              "name": "침묵하는 다수 읽는 중 시작",
+                              "height": 34,
+                              "fill": "#1A1A1A",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "P3SOCd",
+                                  "name": "침묵하는 다수 읽는 중 시작 라벨",
+                                  "fill": "#FFFFFF",
+                                  "content": "읽는 중 시작",
+                                  "fontFamily": "Funnel Sans",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
                                 }
                               ]
                             },
@@ -35633,7 +35224,7 @@
                                   "id": "UfaJK",
                                   "name": "장일장진 저자",
                                   "fill": "#555555",
-                                  "content": "가즈오 이시구로 · 민음사",
+                                  "content": "정세랑",
                                   "fontFamily": "Funnel Sans",
                                   "fontSize": 13,
                                   "fontWeight": "normal"
@@ -35643,7 +35234,7 @@
                                   "id": "FAM3h",
                                   "name": "장일장진 메타",
                                   "fill": "#888888",
-                                  "content": "소설 · 2026 · 336쪽",
+                                  "content": "문학과지성사 · 소설 · 2026 · 336쪽",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 10,
                                   "fontWeight": "normal"
@@ -35666,10 +35257,36 @@
                                   "id": "jx6IX",
                                   "name": "장일장진 감상 수 라벨",
                                   "fill": "#1A1A1A",
-                                  "content": "감상 14",
+                                  "content": "댓글 12",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 10,
                                   "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "H6CKc",
+                              "name": "장일장진 읽는 중 시작",
+                              "height": 34,
+                              "fill": "#1A1A1A",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "V3QlV",
+                                  "name": "장일장진 읽는 중 시작 라벨",
+                                  "fill": "#FFFFFF",
+                                  "content": "읽는 중 시작",
+                                  "fontFamily": "Funnel Sans",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
                                 }
                               ]
                             },
@@ -36114,9 +35731,9 @@
                       "id": "iow62",
                       "layoutPosition": "absolute",
                       "x": 0,
-                      "y": -25,
+                      "y": 0,
                       "name": "서재 목록 도구",
-                      "width": "fill_container(1042)",
+                      "width": 1042,
                       "height": 44,
                       "justifyContent": "space_between",
                       "alignItems": "center",
@@ -36175,9 +35792,9 @@
                       "id": "J6wH1n",
                       "layoutPosition": "absolute",
                       "x": 0,
-                      "y": 600,
+                      "y": 650,
                       "name": "서재 페이지네이션",
-                      "width": "fill_container(1042)",
+                      "width": 1042,
                       "gap": 8,
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -36314,9 +35931,9 @@
                       "id": "iJ5w0",
                       "layoutPosition": "absolute",
                       "x": 0,
-                      "y": 25,
+                      "y": 62,
                       "name": "서재 책 열",
-                      "width": "fill_container(1042)",
+                      "width": 1042,
                       "gap": 28,
                       "children": [
                         {
@@ -37478,7 +37095,7 @@
                           "id": "xkBJy",
                           "name": "배경 작성자 1",
                           "fill": "#1A1A1A",
-                          "content": "참새 1204 (익명)",
+                          "content": "골똘한 참새 (익명)",
                           "fontFamily": "Funnel Sans",
                           "fontSize": 13,
                           "fontWeight": "700"
@@ -37516,7 +37133,7 @@
                           "id": "WNfTy",
                           "name": "배경 작성자 2",
                           "fill": "#1A1A1A",
-                          "content": "참새 0912 (익명)",
+                          "content": "조용한 참새 (익명)",
                           "fontFamily": "Funnel Sans",
                           "fontSize": 13,
                           "fontWeight": "700"
@@ -37557,7 +37174,7 @@
               "y": 112,
               "name": "감상 작성 다이얼로그",
               "width": 760,
-              "height": 659,
+              "height": 721,
               "fill": "#FCFAF7",
               "cornerRadius": 8,
               "effect": {
@@ -37818,6 +37435,63 @@
                               "fontWeight": "normal"
                             }
                           ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "t9wrUh",
+                  "name": "감상 공개 이름",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Hf6RN",
+                      "name": "공개 이름 상태",
+                      "width": "fill_container",
+                      "height": 42,
+                      "fill": "#F6F2EC",
+                      "cornerRadius": 4,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "V56ZA",
+                          "name": "익명 아이콘",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "eye-off",
+                          "library": "lucide",
+                          "fill": "#1A1A1A"
+                        },
+                        {
+                          "type": "text",
+                          "id": "wgVBX",
+                          "name": "공개 모드",
+                          "fill": "#1A1A1A",
+                          "content": "익명 공개",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "rsbWu",
+                          "name": "공개 이름 미리보기",
+                          "fill": "#6B6B6B",
+                          "content": "‘골똘한 참새’로 표시돼요",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 11.5,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -39541,7 +39215,7 @@
                           "id": "y0Eb52",
                           "name": "스포일러 배경 저자",
                           "fill": "#BDBDBD",
-                          "content": "앤디 위어 · 감상 30",
+                          "content": "앤디 위어 · 감상 30 · 댓글 18",
                           "fontFamily": "Funnel Sans",
                           "fontSize": 13,
                           "fontWeight": "normal"
@@ -39591,10 +39265,34 @@
                           "id": "h2ktB",
                           "name": "스포일러 배경 작성자 1",
                           "fill": "#1A1A1A",
-                          "content": "참새 1204 (익명) · p.80",
+                          "content": "골똘한 참새 (익명)",
                           "fontFamily": "Funnel Sans",
                           "fontSize": 12,
                           "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Y1CSs",
+                          "name": "스포일러 감상 읽은 위치 배지 p.80까지",
+                          "fill": "#FFF4DF",
+                          "cornerRadius": 4,
+                          "padding": [
+                            5,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "FowYF",
+                              "name": "스포일러 감상 읽은 위치 p.80까지",
+                              "fill": "#A05A27",
+                              "content": "p.80까지",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
                         },
                         {
                           "type": "text",
@@ -39603,7 +39301,7 @@
                           "fill": "#444444",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "중반 이후의 전개와 중요한 문장을 포함한 감상입니다. 내가 읽은 범위를 확인한 뒤 안전하게 열람할 수 있어요.",
+                          "content": "짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.",
                           "lineHeight": 1.5,
                           "fontFamily": "Funnel Sans",
                           "fontSize": 14,
@@ -39629,10 +39327,34 @@
                           "id": "R91eD",
                           "name": "스포일러 배경 작성자 2",
                           "fill": "#1A1A1A",
-                          "content": "참새 0912 (익명) · p.160",
+                          "content": "조용한 참새 (익명)",
                           "fontFamily": "Funnel Sans",
                           "fontSize": 12,
                           "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "v6HuYx",
+                          "name": "스포일러 감상 읽은 위치 배지 p.160까지",
+                          "fill": "#FFF4DF",
+                          "cornerRadius": 4,
+                          "padding": [
+                            5,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "AnlNh",
+                              "name": "스포일러 감상 읽은 위치 p.160까지",
+                              "fill": "#A05A27",
+                              "content": "p.160까지",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
                         },
                         {
                           "type": "text",
@@ -39641,7 +39363,7 @@
                           "fill": "#444444",
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
-                          "content": "중반 이후의 전개와 중요한 문장을 포함한 감상입니다. 내가 읽은 범위를 확인한 뒤 안전하게 열람할 수 있어요.",
+                          "content": "짹짹 짹짹짹 짹짹 짹짹짹. 짹짹짹짹 짹짹짹짹 짹짹 짹짹짹짹.",
                           "lineHeight": 1.5,
                           "fontFamily": "Funnel Sans",
                           "fontSize": 14,
@@ -42351,6 +42073,653 @@
                       "icon": "arrow-up-right",
                       "library": "lucide",
                       "fill": "#FFFFFF"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "JGSyl",
+          "x": 1777,
+          "y": 4756,
+          "name": "웹 별점 매기기 팝업",
+          "clip": true,
+          "width": 1440,
+          "height": 960,
+          "fill": "#FCFAF7",
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Z1UFr9",
+              "x": 0,
+              "y": 0,
+              "name": "별점 팝업 글로벌 헤더",
+              "width": 1440,
+              "height": 76,
+              "fill": "#090A0C",
+              "padding": [
+                0,
+                44
+              ],
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "N1ZkpZ",
+                  "name": "웹 브랜드",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 7,
+                      "id": "xhmhZ",
+                      "name": "브랜드 앱 아이콘",
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "images/chaekchaek-app-icon.png",
+                        "mode": "fill"
+                      },
+                      "width": 26,
+                      "height": 26
+                    },
+                    {
+                      "type": "text",
+                      "id": "z4CHoE",
+                      "name": "브랜드 이름",
+                      "fill": "#FFFFFF",
+                      "content": "책책",
+                      "fontFamily": "Newsreader",
+                      "fontSize": 25,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "xgHaS",
+                  "name": "웹 주요 탐색",
+                  "gap": 30,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "v0z8d",
+                      "name": "탐색 발견",
+                      "fill": "#FFFFFF",
+                      "content": "발견",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "V9k9C",
+                      "name": "탐색 내 서재",
+                      "fill": "#BDBDBD",
+                      "content": "내 서재",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "tSwZv",
+                      "name": "탐색 기록",
+                      "fill": "#BDBDBD",
+                      "content": "기록",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "fOce5",
+                  "name": "웹 검색",
+                  "width": 250,
+                  "height": 40,
+                  "fill": "#16181C",
+                  "cornerRadius": 4,
+                  "stroke": "#FFFFFF26",
+                  "strokeWidth": 1,
+                  "gap": 10,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "u6FQcH",
+                      "name": "검색 아이콘",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "search",
+                      "library": "lucide",
+                      "fill": "#999999"
+                    },
+                    {
+                      "type": "text",
+                      "id": "dnSVO",
+                      "name": "검색 안내",
+                      "fill": "#999999",
+                      "content": "책, 작가, 감상 검색",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "o2fpyl",
+              "x": 0,
+              "y": 76,
+              "name": "별점 팝업 배경 감상",
+              "width": 1440,
+              "height": 884,
+              "fill": "#FCFAF7",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "FNzAN",
+                  "name": "스포일러 배경 책",
+                  "width": "fill_container",
+                  "height": 240,
+                  "fill": "#111216",
+                  "gap": 28,
+                  "padding": [
+                    30,
+                    110
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "E1Ujdh",
+                      "name": "스포일러 배경 표지",
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "images/cover-13.png",
+                        "mode": "fill"
+                      },
+                      "width": 96,
+                      "height": 144,
+                      "stroke": "#FFFFFF33",
+                      "strokeWidth": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XkxsJ",
+                      "name": "스포일러 배경 정보",
+                      "layout": "vertical",
+                      "gap": 7,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tuEtn",
+                          "name": "스포일러 배경 제목",
+                          "fill": "#FFFFFF",
+                          "content": "마션",
+                          "fontFamily": "Newsreader",
+                          "fontSize": 34,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "z8VZw",
+                          "name": "스포일러 배경 저자",
+                          "fill": "#BDBDBD",
+                          "content": "앤디 위어 · 감상 30 · 댓글 18",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ivO1y",
+                  "name": "스포일러 배경 피드",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": [
+                    36,
+                    180
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "j8tCB",
+                      "name": "스포일러 감상 제목",
+                      "fill": "#1A1A1A",
+                      "content": "이 책에 남긴 감상 30",
+                      "fontFamily": "Newsreader",
+                      "fontSize": 30,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MFlsz",
+                      "name": "스포일러 배경 카드 1",
+                      "width": "fill_container",
+                      "height": 190,
+                      "fill": "#FFFFFF",
+                      "stroke": "#DDD7CE",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": 20,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GrZDn",
+                          "name": "스포일러 배경 작성자 1",
+                          "fill": "#1A1A1A",
+                          "content": "골똘한 참새 (익명)",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "RdIHv",
+                          "name": "스포일러 감상 읽은 위치 배지 p.80까지",
+                          "fill": "#FFF4DF",
+                          "cornerRadius": 4,
+                          "padding": [
+                            5,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "gNqK1",
+                              "name": "스포일러 감상 읽은 위치 p.80까지",
+                              "fill": "#A05A27",
+                              "content": "p.80까지",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "EYd01",
+                          "name": "스포일러 배경 본문 1",
+                          "fill": "#444444",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.",
+                          "lineHeight": 1.5,
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qp2C4",
+                      "name": "스포일러 배경 카드 2",
+                      "width": "fill_container",
+                      "height": 190,
+                      "fill": "#F3F0EB",
+                      "stroke": "#DDD7CE",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": 20,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "MtPZx",
+                          "name": "스포일러 배경 작성자 2",
+                          "fill": "#1A1A1A",
+                          "content": "조용한 참새 (익명)",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "lnr5v",
+                          "name": "스포일러 감상 읽은 위치 배지 p.160까지",
+                          "fill": "#FFF4DF",
+                          "cornerRadius": 4,
+                          "padding": [
+                            5,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "O2KAwb",
+                              "name": "스포일러 감상 읽은 위치 p.160까지",
+                              "fill": "#A05A27",
+                              "content": "p.160까지",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "h38hlK",
+                          "name": "스포일러 배경 본문 2",
+                          "fill": "#444444",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "짹짹 짹짹짹 짹짹 짹짹짹. 짹짹짹짹 짹짹짹짹 짹짹 짹짹짹짹.",
+                          "lineHeight": 1.5,
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "cGjLq",
+              "x": 0,
+              "y": 0,
+              "name": "별점 팝업 딤",
+              "fill": "#090A0CB8",
+              "width": 1440,
+              "height": 960
+            },
+            {
+              "type": "frame",
+              "id": "k0GIBH",
+              "x": 450,
+              "y": 255,
+              "name": "별점 매기기 다이얼로그",
+              "width": 540,
+              "height": 450,
+              "fill": "#FCFAF7",
+              "cornerRadius": 8,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#00000055",
+                "offset": {
+                  "x": 0,
+                  "y": 18
+                },
+                "blur": 48
+              },
+              "layout": "vertical",
+              "gap": 20,
+              "padding": 28,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Fs9gS",
+                  "name": "별점 다이얼로그 헤더",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FO3WD",
+                      "name": "별점 다이얼로그 제목",
+                      "fill": "#1A1A1A",
+                      "content": "이 책에 별점 매기기",
+                      "fontFamily": "Newsreader",
+                      "fontSize": 26,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "j7tgmQ",
+                      "name": "별점 다이얼로그 닫기",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "x",
+                      "library": "lucide",
+                      "fill": "#1A1A1A"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "GYIQF",
+                  "name": "별점 다이얼로그 설명",
+                  "fill": "#666666",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "마션을 읽은 느낌을 별점으로 남겨보세요. 별점은 언제든 수정할 수 있어요.",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Funnel Sans",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "MSwFF",
+                  "name": "독자 평균 별점",
+                  "width": "fill_container",
+                  "height": 52,
+                  "fill": "#F7F2EC",
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "i7upE2",
+                      "name": "독자 평균 별점 라벨",
+                      "fill": "#777777",
+                      "content": "독자 평균",
+                      "fontFamily": "Geist Mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "N1FMV2",
+                      "name": "독자 평균 별점 값",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gaGfb",
+                          "name": "독자 평균 별",
+                          "fill": "#FF9800",
+                          "content": "★★★★☆",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "G6cpb",
+                          "name": "독자 평균 점수",
+                          "fill": "#1A1A1A",
+                          "content": "4.2 · 30명",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jEjLf",
+                  "name": "내 별점 선택",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "S3oxDD",
+                      "name": "내 별점 선택 라벨",
+                      "fill": "#1A1A1A",
+                      "content": "내 별점",
+                      "fontFamily": "Funnel Sans",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "a1giQj",
+                      "name": "별점 선택 별",
+                      "gap": 10,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "SCFhc",
+                          "name": "별점 1",
+                          "width": 30,
+                          "height": 30,
+                          "icon": "star",
+                          "library": "lucide",
+                          "fill": "#FF9800"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "BdAAA",
+                          "name": "별점 2",
+                          "width": 30,
+                          "height": 30,
+                          "icon": "star",
+                          "library": "lucide",
+                          "fill": "#FF9800"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "syA4i",
+                          "name": "별점 3",
+                          "width": 30,
+                          "height": 30,
+                          "icon": "star",
+                          "library": "lucide",
+                          "fill": "#FF9800"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "zspvx",
+                          "name": "별점 4",
+                          "width": 30,
+                          "height": 30,
+                          "icon": "star",
+                          "library": "lucide",
+                          "fill": "#FF9800"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "iBW0R",
+                          "name": "별점 5",
+                          "width": 30,
+                          "height": 30,
+                          "icon": "star",
+                          "library": "lucide",
+                          "fill": "#C9C3BA"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "G2WQQ0",
+                      "name": "선택한 별점",
+                      "fill": "#A05A27",
+                      "content": "4점 · 좋았어요",
+                      "fontFamily": "Geist Mono",
+                      "fontSize": 11,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "rbJpP",
+                  "name": "별점 다이얼로그 버튼",
+                  "width": "fill_container",
+                  "height": 48,
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "pxicJ",
+                      "name": "별점 취소 버튼",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "fill": "#FCFAF7",
+                      "cornerRadius": 4,
+                      "stroke": "#C9C3BA",
+                      "strokeWidth": 1,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "IBVvf",
+                          "name": "별점 취소 라벨",
+                          "fill": "#555555",
+                          "content": "취소",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "k7cbr",
+                      "name": "별점 저장 버튼",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "fill": "#1A1A1A",
+                      "cornerRadius": 4,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "smPjT",
+                          "name": "별점 저장 라벨",
+                          "fill": "#FFFFFF",
+                          "content": "별점 저장",
+                          "fontFamily": "Funnel Sans",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -50789,6 +51158,7 @@
                   "id": "HqWUB",
                   "name": "Name Block",
                   "width": "fill_container",
+                  "height": 44,
                   "layout": "vertical",
                   "gap": 3,
                   "children": [
@@ -50847,15 +51217,48 @@
                       ]
                     },
                     {
-                      "type": "text",
-                      "id": "rloKH",
-                      "name": "Date",
-                      "context": "감상 작성 시점의 읽은 쪽수",
-                      "fill": "#666666",
-                      "content": "2026.08.05 · p.80까지",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 9,
-                      "fontWeight": "normal"
+                      "type": "frame",
+                      "id": "R4Rgn",
+                      "name": "감상 작성일과 읽은 위치",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "rloKH",
+                          "name": "Date",
+                          "context": "감상 작성 시점의 읽은 쪽수",
+                          "fill": "#666666",
+                          "content": "2026.08.05",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "RFDPo",
+                          "name": "읽은 위치 배지 p.80까지",
+                          "fill": "#FFF4DF",
+                          "cornerRadius": 4,
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "QCp1Z",
+                              "name": "읽은 위치 p.80까지",
+                              "fill": "#A05A27",
+                              "content": "p.80까지",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 },
@@ -51176,6 +51579,7 @@
                   "id": "T3jukJ",
                   "name": "Name Block",
                   "width": "fill_container",
+                  "height": 44,
                   "layout": "vertical",
                   "gap": 3,
                   "children": [
@@ -51199,15 +51603,48 @@
                       ]
                     },
                     {
-                      "type": "text",
-                      "id": "bOfzf",
-                      "name": "Date",
-                      "context": "감상 작성 시점의 읽은 쪽수",
-                      "fill": "#666666",
-                      "content": "2026.08.04 · p.160까지",
-                      "fontFamily": "Geist Mono",
-                      "fontSize": 9,
-                      "fontWeight": "normal"
+                      "type": "frame",
+                      "id": "NbSry",
+                      "name": "감상 작성일과 읽은 위치",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bOfzf",
+                          "name": "Date",
+                          "context": "감상 작성 시점의 읽은 쪽수",
+                          "fill": "#666666",
+                          "content": "2026.08.04",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "VMzlc",
+                          "name": "읽은 위치 배지 p.160까지",
+                          "fill": "#FFF4DF",
+                          "cornerRadius": 4,
+                          "padding": [
+                            3,
+                            7
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Pzol4",
+                              "name": "읽은 위치 p.160까지",
+                              "fill": "#A05A27",
+                              "content": "p.160까지",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 },
