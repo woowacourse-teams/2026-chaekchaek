@@ -1,0 +1,9 @@
+// packages/design-system/.storybook/tsconfig.json
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "./**/*.ts",
+    "./**/*.tsx",
+    "../src/types/style.d.ts"
+  ]
+}
