@@ -18,5 +18,15 @@ const config: StorybookConfig = {
   typescript: {
     check: true,
   },
+  webpackFinal: async (config) => {
+    config.resolve ??= {};
+    config.resolve.extensionAlias = {
+      ...config.resolve.extensionAlias,
+      '.js': ['.ts', '.tsx', '.js'],
+      '.jsx': ['.tsx', '.jsx'],
+    };
+
+    return config;
+  },
 };
 export default config;

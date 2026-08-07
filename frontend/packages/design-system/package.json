@@ -8,6 +8,11 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "imports": {
+    "#internal/*": "./src/*.js",
+    "#internal/components/*": "./src/components/*/index.js",
+    "#internal/utils/*": "./src/utils/*.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "typecheck": "tsc --noEmit --watch",
@@ -22,9 +27,11 @@
     "@types/react-dom": "^19.2.4",
     "concurrently": "^10.0.4",
     "eslint-plugin-storybook": "^10.5.6",
-    "storybook": "^10.5.6"
+    "storybook": "^10.5.6",
+    "tsx": "^4.23.8"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   }

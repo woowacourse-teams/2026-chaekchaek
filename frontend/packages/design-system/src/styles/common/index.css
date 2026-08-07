@@ -1,0 +1,7 @@
+@import './mordern-normalize.css';
+@import './fonts.css';
+@import './common.css';
+
+body {
+  font-family: sans-serif;
+}
