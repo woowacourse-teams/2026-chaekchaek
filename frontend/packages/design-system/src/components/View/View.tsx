@@ -1,11 +1,14 @@
+import type { ElementType } from 'react';
+
 import type { Props } from './';
 
 const classnameDefault = 'ui-View';
 
-export const View = (props: Props) => {
-  const { ...restProps } = props;
+export const View = <T extends ElementType = 'div'>(props: Props<T>) => {
+  const { as, ...restProps } = props;
+  const Component = as || 'div';
 
   const classname = classnameDefault;
 
-  return <div className={classname} {...restProps} />;
+  return <Component className={classname} {...restProps} />;
 };
