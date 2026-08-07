@@ -1,0 +1,55 @@
+{
+  "name": "@chaekchaek/web",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "webpack serve --mode development",
+    "build": "webpack --config webpack.config.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "typecheck:test": "tsc --noEmit -p tsconfig.test.json",
+    "typecheck:test:watch": "tsc --noEmit -p tsconfig.test.json --watch"
+  },
+  "devDependencies": {
+    "@mswjs/source": "^0.5.0",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.6.2",
+    "@swc/core": "^1.15.47",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "copy-webpack-plugin": "^14.0.0",
+    "css-loader": "^7.1.4",
+    "html-webpack-plugin": "^5.6.8",
+    "jsdom": "^30.0.1",
+    "msw": "^2.15.0",
+    "react-refresh": "^0.18.0",
+    "style-loader": "^4.0.0",
+    "swc-loader": "^0.2.7",
+    "vitest": "^4.1.10",
+    "webpack": "^5.109.2",
+    "webpack-cli": "^7.2.2",
+    "webpack-dev-server": "^5.2.6"
+  },
+  "dependencies": {
+    "@chaekchaek/design-system": "^1.0.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router": "^8.3.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  }
+}
