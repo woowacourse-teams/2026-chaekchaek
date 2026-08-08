@@ -1,0 +1,2 @@
+export { __COMPONENT_NAME__ } from './__COMPONENT_NAME__';
+export type { Props } from './__COMPONENT_NAME__.types';
