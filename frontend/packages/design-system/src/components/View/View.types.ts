@@ -1,5 +1,6 @@
 import type { ElementType, ComponentPropsWithoutRef } from 'react';
 
-export type Props<T extends ElementType = 'div'> = {
+export type Props<T extends ElementType = 'div', P = {}> = {
   as?: T;
-} & ComponentPropsWithoutRef<T>;
+} & ComponentPropsWithoutRef<T> &
+  P;
