@@ -8,4 +8,4 @@ export type OwnProps = {
   variant: 'test';
 };
 
-export type Props<T extends ElementType> = PolymorphicProps<T, OwnProps>;
+export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;
