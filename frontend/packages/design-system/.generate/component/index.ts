@@ -11,12 +11,12 @@ fs.mkdirSync(dir);
 
 const componentDir = path.resolve('./.generate/component', './Example');
 
-fs.readdir(componentDir, (err, filelist) => {
+fs.readdir(componentDir, (err: Error, fileList: string[]) => {
   if (err) throw err;
-  filelist.forEach(async (file) => {
+  fileList.forEach(async (file) => {
     let filename = file.replace('.template', '').replace('Example', name);
 
-    fs.readFile(path.resolve(componentDir, file), 'utf8', (readErr, raw) => {
+    fs.readFile(path.resolve(componentDir, file), 'utf8', (readErr: Error, raw: string) => {
       if (readErr) throw readErr;
 
       const componentName = name;
@@ -31,7 +31,7 @@ fs.readdir(componentDir, (err, filelist) => {
         content = content.replaceAll(key, value);
       }
 
-      fs.writeFile(`${dir}/${filename}`, content, (err) => {
+      fs.writeFile(`${dir}/${filename}`, content, (err: Error) => {
         if (err) throw err;
       });
     });
