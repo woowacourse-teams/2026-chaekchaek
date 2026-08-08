@@ -18,7 +18,8 @@
     "typecheck": "tsc --noEmit --watch",
     "storybook": "storybook dev -p 6006 --quiet",
     "dev": "concurrently -k -n STORYBOOK,TSC \"npm:storybook\" \"npm:typecheck\"",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "gc:component": "tsx ./.generate/component/index.ts $1"
   },
   "devDependencies": {
     "@storybook/addon-webpack5-compiler-swc": "^4.0.3",
