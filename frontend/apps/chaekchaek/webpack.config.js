@@ -23,6 +23,10 @@ export default (_, argv) => {
     },
     resolve: {
       extensions: ['.tsx', '.ts', '.jsx', '.js'],
+      extensionAlias: {
+        '.js': ['.ts', '.js'],
+        '.jsx': ['.tsx', '.jsx'],
+      },
       alias: {
         '@': path.resolve(__dirname, 'src'),
       },
