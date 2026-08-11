@@ -15,3 +15,8 @@ spring:
               - openid
               - profile
               - email
+app:
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+    oauth-success-path: /oauth/callback
+    oauth-failure-path: /login
