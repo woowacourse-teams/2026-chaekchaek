@@ -3,8 +3,34 @@
 Android와 iOS 앱을 Kotlin Multiplatform으로 만들기 위한 모듈 구조, 의존성, 플랫폼별 구현,
 iOS 연동 방법을 정한다. 레이어 규칙은 [앱 아키텍처](app-architecture.md)에 있다.
 
-**버전은 모두 미확정이다.** 착수 시점에 Kotlin 2.3.20·AGP 9.0.1과 호환되는 조합을 확인하고
-고정한다. 이 문서는 무엇이 필요한지와 왜 그것인지를 적는다.
+## 0. 검증된 조합 (2026-08-11)
+
+실제로 빌드해서 확인한 조합이다. `:shared` 모듈이 Android + iOS 3종 타겟으로 컴파일되고,
+kotlin-inject 코드 생성과 테스트 실행까지 통과했다.
+
+| 항목 | 버전 | 확인 내용 |
+| --- | --- | --- |
+| Kotlin | 2.3.20 | |
+| AGP | 9.0.1 | |
+| Gradle | 9.1.0 | |
+| KSP | 2.3.11 | 4개 타겟 모두 코드 생성 성공 |
+| kotlin-inject | 0.9.0 | Kotlin 2.2.20 기준 빌드본이지만 2.3.20에서 동작 |
+| kotlinx-datetime | 0.8.0 | |
+| Kotest assertions | 6.2.3 | commonTest 에서 동작 |
+
+**빌드하면서 알아낸 것 세 가지다. 처음 설정할 때 반드시 확인한다.**
+
+1. **AGP 9.0부터 `com.android.library`와 KMP 플러그인을 함께 쓸 수 없다.**
+   `com.android.kotlin.multiplatform.library` 를 쓰고 `androidLibrary { }` DSL로 설정한다.
+2. **KMP·KSP 플러그인은 루트 `build.gradle.kts`에 `apply false`로 선언해야 한다.**
+   Kotlin 플러그인이 이미 classpath 에 있어 버전 충돌이 난다.
+3. **`androidLibrary { withHostTestBuilder {} }` 를 켜지 않으면 JVM 테스트 태스크가 생성되지
+   않는다.** 켜지 않으면 `allTests` 가 iOS 시뮬레이터에서만 돌아 Android 쪽 문제를 놓친다.
+
+또 하나, **`Instant`는 `kotlinx.datetime`이 아니라 `kotlin.time` 패키지에 있다.** 표준
+라이브러리로 옮겨졌고 kotlinx-datetime 0.8.0이 이를 따른다.
+
+아래 나머지 항목(Ktor, 로컬 저장, 이미지 로더, SKIE)은 아직 미검증이다.
 
 ## 1. 디렉터리 구조
 
@@ -67,16 +93,28 @@ include(":androidApp")
 
 ### 2.2 shared/build.gradle.kts
 
+실제로 동작하는 설정이다.
+
 ```kotlin
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kmp.library)   // com.android.library 아님
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.ksp)              // kotlin-inject
+    alias(libs.plugins.ksp)                   // kotlin-inject
 }
 
 kotlin {
-    androidTarget()
+    jvmToolchain(21)
+
+    // AGP 9 부터 KMP 라이브러리는 com.android.library 대신 이 DSL 을 쓴다.
+    androidLibrary {
+        namespace = "com.chaekchaek.app.shared"
+        compileSdk = 36
+        minSdk = 26
+
+        // 켜지 않으면 JVM 유닛 테스트 태스크가 생성되지 않는다.
+        withHostTestBuilder {}
+    }
 
     listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
         target.binaries.framework {
@@ -88,31 +126,39 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.serialization.kotlinx.json)
-            implementation(libs.androidx.lifecycle.viewmodel)   // KMP 지원 버전
+            implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.kotlin.inject.runtime)
+            // 서버 붙일 때 추가: ktor.client.core, content.negotiation, serialization.kotlinx.json
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotest.assertions.core)
             implementation(libs.kotlinx.coroutines.test)
         }
-        androidMain.dependencies {
-            implementation(libs.ktor.client.okhttp)
-        }
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-        }
+        // 서버 붙일 때: androidMain 에 ktor.client.okhttp, iosMain 에 ktor.client.darwin
     }
 }
 
+// kotlin-inject 는 타겟마다 KSP 설정이 필요하다.
 dependencies {
-    kspCommonMainMetadata(libs.kotlin.inject.compiler)
-    // 타겟별 ksp 설정도 필요하다. 착수 시 kotlin-inject 문서 확인
+    add("kspAndroid", libs.kotlin.inject.compiler)
+    add("kspIosX64", libs.kotlin.inject.compiler)
+    add("kspIosArm64", libs.kotlin.inject.compiler)
+    add("kspIosSimulatorArm64", libs.kotlin.inject.compiler)
+}
+```
+
+루트 `build.gradle.kts` 에 플러그인을 선언해야 한다.
+
+```kotlin
+plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.kmp.library) apply false
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.ksp) apply false
 }
 ```
 
