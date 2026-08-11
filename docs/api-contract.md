@@ -173,8 +173,12 @@ GET /books/search?query=마션&page=0&size=20
 
 **검토 필요**: 현재 앱은 알라딘 Open API를 직접 호출한다
 (`android/app/src/main/java/com/chaekchaek/app/data/BookSearchApi.kt`). 검색을 서버로 옮길지
-앱이 계속 직접 호출할지 정해야 한다. 서버로 옮기면 TTBKey가 APK에서 사라지는 이점이 있다
-(`android/AGENTS.md`에 기록된 한계 해소).
+앱이 계속 직접 호출할지 정해야 한다.
+
+서버로 옮기면 이점이 둘이다. 첫째, TTBKey가 앱 바이너리에서 사라진다
+(`android/AGENTS.md`에 기록된 한계 해소). 둘째, **iOS 앱에서 키를 다시 심을 필요가 없다.**
+앱이 직접 호출하면 Android는 `BuildConfig`, iOS는 `Info.plist`로 키를 각각 주입해야 하고,
+두 곳에서 키가 유출될 수 있다.
 
 ### GET /books/{bookId}
 

@@ -2,10 +2,17 @@
 
 Figma [node 36:3](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr/%EC%B1%85%EC%B7%8D?node-id=36-3)의
 12개 화면별 상태·액션·이동을 정리한다. 도메인 규칙은 [도메인 모델](domain-model.md), 상태 클래스
-작성 규칙은 [아키텍처](app-architecture.md#6-화면-레이어)에 있다.
+작성 규칙은 [아키텍처](app-architecture.md#7-presentation-레이어)에 있다.
+
+**여기 적힌 UiState·UiModel은 `shared/commonMain/presentation`에 있고 Android와 iOS가 공유한다.**
+Compose와 SwiftUI는 같은 상태를 받아 각자 그린다. 그래서 이 문서의 상태 정의는 두 플랫폼 공통
+계약이며, 화면 그림(ASCII)은 Android 기준이다.
 
 각 화면의 「신규 UI」 항목은 **Figma에 시안이 없어 새로 만들어야 하는 부분**이다. 구현 전에 시안
 확정이 필요하다.
+
+라벨 문자열(`"80쪽 / 308쪽"` 등)은 UiModel 매핑에서 직접 조립하지 않고
+[아키텍처 7.3의 포맷터](app-architecture.md#73-표시-문자열)를 거친다.
 
 ## 화면 목록
 
@@ -26,7 +33,7 @@ Figma [node 36:3](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr/%EC%B1%85%
 
 ---
 
-## 1. 탭 컨테이너 (`feature/root`)
+## 1. 탭 컨테이너 (`presentation/home` + `androidApp/ui/root`)
 
 하단 탭 3개를 담고 선택된 탭의 화면을 보여준다. 백스택에는 `RootKey` 하나로 존재한다.
 
@@ -46,7 +53,7 @@ enum class RootTab(val label: String) {
 
 ---
 
-## 2. 홈 피드 (`feature/home`)
+## 2. 홈 피드 (`presentation/home`)
 
 ```
 오늘, 어땠어요?                    🔔
@@ -132,9 +139,30 @@ data class GuestBannerUiModel(
 - 게스트 쿼터 소진 시의 표시 (Figma는 2/3 상태만 있음)
 - 로딩·오류 표시
 
+### 더미 데이터 (서버 준비 전)
+
+이슈 #7 범위에서 홈이 보여줄 내용이다. `images/cover-01.png` ~ `cover-12.png`를 쓴다.
+
+| 섹션 | 더미 구성 |
+| --- | --- |
+| 인기 책 콜라주 | 표지 12장을 흩뿌림. 대표 1권의 감상·댓글 수 표시 |
+| 방금 남겨진 문장 | 감상 카드 3개 (12분 전, 38분 전, 1시간 전) |
+| 밑줄이 겹친 책 | 책 1권 + 인용 발췌 |
+| 게스트 배너 | `2 / 3` 상태 |
+
+**상대 시각은 저장하지 않는다.** 「4분 전」 같은 문자열을 더미에 박아두면 시간이 지나도 그대로다.
+`Instant`를 담고 표시 시점에 계산한다. Fake DataSource는 `Clock`을 주입받아 테스트에서 시각을
+고정할 수 있게 한다.
+
+「24시간 동안 감상 18개」 같은 문장도 통째로 저장하지 않는다. 숫자만 담고 라벨 포맷터가 조립한다.
+
+**연결되지 않은 버튼은 만들지 않는다.** 목적지가 아직 없는 액션(「모두 보기」, 알림)은 눌러도
+아무 일이 없는 가짜 버튼으로 두지 않고, 그 화면이 구현될 때 콜백과 함께 추가한다. 이슈 #7에서
+실제로 동작하는 것은 하단 탭 전환과 서재 바로가기뿐이다.
+
 ---
 
-## 3. 검색 / 발견 (`feature/search`)
+## 3. 검색 / 발견 (`presentation/search`)
 
 ```
 🔍 [ 마션                    ]
@@ -201,7 +229,7 @@ sealed interface ShelfActionUiModel {
 
 ---
 
-## 4. 내 서재 (`feature/shelf`)
+## 4. 내 서재 (`presentation/shelf`)
 
 ```
 내 서재                              👤
@@ -255,7 +283,7 @@ data class ShelfBookUiModel(
 
 ---
 
-## 5. 서재 편집 (`feature/shelf`)
+## 5. 서재 편집 (`presentation/shelf`)
 
 ```
 취소            2권 선택            완료
@@ -308,7 +336,7 @@ data class AnonymousToggleUiModel(
 
 ---
 
-## 6. 닉네임 설정 (`feature/shelf`)
+## 6. 닉네임 설정 (`presentation/shelf`)
 
 ```
 ┌─────────────────────────────┐
@@ -340,7 +368,7 @@ data class NicknameDialogUiModel(
 
 ---
 
-## 7. 책 상세 (`feature/bookdetail`)
+## 7. 책 상세 (`presentation/bookdetail`)
 
 ```
 ←                                    🔖
@@ -419,7 +447,7 @@ sealed interface BookDetailDialog {
 
 ---
 
-## 8. 감상 목록 (`feature/bookdetail`)
+## 8. 감상 목록 (`presentation/bookdetail`)
 
 ```
 감상 30
@@ -438,7 +466,7 @@ sealed interface BookDetailDialog {
 
 ### 상태
 
-[아키텍처 6.2](app-architecture.md#62-uimodel)의 `NoteUiModel`을 쓴다. 가려진 감상은
+[아키텍처 7.2](app-architecture.md#72-uimodel)의 `NoteUiModel`을 쓴다. 가려진 감상은
 `NoteUiModel.Hidden`이고 **본문 문자열을 담지 않는다.**
 
 ```kotlin
@@ -473,7 +501,7 @@ sealed interface NoteListUiState {
 
 ---
 
-## 9. 스포일러 가드 (`feature/bookdetail`)
+## 9. 스포일러 가드 (`presentation/bookdetail`)
 
 ```
 ┌─────────────────────────────────────┐
@@ -512,7 +540,7 @@ data class SpoilerDialogUiModel(
 
 ---
 
-## 10. 별점 매기기 (`feature/bookdetail`)
+## 10. 별점 매기기 (`presentation/bookdetail`)
 
 ```
 ┌─────────────────────────────────────┐
@@ -558,7 +586,7 @@ data class RatingDialogUiModel(
 
 ---
 
-## 11. 감상 작성 (`feature/bookdetail`)
+## 11. 감상 작성 (`presentation/bookdetail`)
 
 ```
 ┌─────────────────────────────────────┐
@@ -623,7 +651,7 @@ Figma 폼에는 쪽수 입력칸이 **하나뿐**이다. 「읽은 지점」과 
 
 ---
 
-## 12. 답글 입력 (`feature/bookdetail`)
+## 12. 답글 입력 (`presentation/bookdetail`)
 
 ```
 │ ♡ 좋아요 12    💬 답글 2            │

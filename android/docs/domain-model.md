@@ -1,8 +1,10 @@
-# 첵췍 Android 도메인 모델
+# 첵췍 도메인 모델
 
 Figma 시안 [node 36:3](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr/%EC%B1%85%EC%B7%8D?node-id=36-3)
-의 12개 화면에서 읽어낸 도메인 개념을 코드 객체로 옮긴 설계다. 레이어 구조·DI·화면 상태 규칙은
-[앱 아키텍처](app-architecture.md)에, 서버와의 약속은 [API 계약](../../docs/api-contract.md)에 있다.
+의 12개 화면에서 읽어낸 도메인 개념을 코드 객체로 옮긴 설계다. Android와 iOS가 공유하는
+`shared/commonMain`에 놓인다. 레이어 구조·DI·화면 상태 규칙은
+[앱 아키텍처](app-architecture.md)에, 모듈 구성은 [KMP 셋업](kmp-setup.md)에, 서버와의 약속은
+[API 계약](../../docs/api-contract.md)에 있다.
 
 이 문서에 적힌 규칙은 모두 Figma에서 근거를 찾을 수 있거나, 근거가 없어 결정한 것이면 그렇다고
 표시했다. 결론만 필요하면 [10. 규칙 목록](#10-규칙-목록-테스트-대상)과
@@ -10,8 +12,9 @@ Figma 시안 [node 36:3](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr/%EC
 
 ## 1. 설계 원칙
 
-1. **도메인은 순수 Kotlin이다.** `android.*`, `androidx.*`, Retrofit, `kotlinx.serialization`
-   어노테이션을 import 하지 않는다. `java.time`은 minSdk 26이라 desugaring 없이 쓸 수 있다.
+1. **도메인은 순수 Kotlin이다.** `androidx.*`, Ktor, `kotlinx.serialization` 어노테이션을
+   import 하지 않는다. `java.*`도 쓸 수 없다(Kotlin/Native에 없다). 시각은 kotlinx-datetime의
+   `Instant`·`LocalDate`를 쓴다.
 2. **규칙이 붙는 값은 전용 타입으로 감싼다.** 쪽수·별점·닉네임·식별자가 대상이다. 감싼 값을
    원시값으로 도로 꺼내는 메서드는 만들지 않는다.
 3. **불가능한 상태는 표현할 수 없게 만든다.** 생성자 `require`와 `sealed interface`로 막는다.
@@ -22,6 +25,21 @@ Figma 시안 [node 36:3](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr/%EC
 
 원칙 2·5는 참고 프로젝트(`wtc/android-shopping-order`)에서 지켜지지 않은 부분이라 특히 적어둔다.
 자세한 내용은 [부록 A](#부록-a-참고-프로젝트에서-바꾼-것)에 있다.
+
+### 1.1 value class와 Swift 경계 (중요)
+
+Kotlin/Native의 Objective-C export는 `value class`를 **underlying 타입이나 `id`(Swift의 `Any`)로
+매핑**한다. 즉 `PageNumber`가 Swift에서 `Int32`나 `Any`로 보여 **타입 안전성이 사라진다.**
+
+그래서 **도메인 타입은 Swift 경계를 넘지 않는다.** ViewModel과 UiModel까지 `commonMain`에서
+공유하고, UI에는 완성된 `String`만 넘긴다. `value class`가 주는 안전성은 Kotlin 코드 안에서만
+유효하다는 것을 전제로 설계했다.
+
+- Kotlin 코드(도메인·데이터·presentation): `value class`가 실수를 컴파일 단계에서 막는다
+- Swift 코드: 도메인 타입을 아예 보지 않으므로 실수할 여지가 없다
+
+식별자(`BookId` 등)는 예외적으로 UiModel에 남는다. UI가 값을 읽지 않고 콜백으로 되돌려주기만
+하는 불투명한 토큰이라 Swift에서 `Any`로 보여도 문제가 없다.
 
 ## 2. 용어 사전
 
@@ -521,7 +539,23 @@ sealed interface NoteVisibility {
 ### 8.4 본문이 화면에 도달하지 않게 한다
 
 가려진 감상은 UiModel 단계에서 **본문 문자열을 담지 않는다.** 화면에 도달하지 않은 문자열은
-실수로도 그릴 수 없다. 자세한 내용은 [앱 아키텍처의 UiModel 절](app-architecture.md)에 있다.
+실수로도 그릴 수 없다.
+
+```kotlin
+sealed interface NoteUiModel {
+    data class Visible(val impression: String, ...) : NoteUiModel
+    data class Hidden(val requiredPageLabel: String, ...) : NoteUiModel   // 본문 없음
+}
+```
+
+**이 매핑은 `commonMain`의 presentation에 있다.** Android와 iOS가 같은 UiModel을 받으므로 판정이
+한 번만 존재하고, iOS가 Swift로 가림 로직을 다시 구현할 일이 없다. presentation을 공유하기로 한
+주된 이유가 이것이다.
+
+SKIE 같은 브리지를 붙이면 이 `sealed`가 Swift에서 exhaustive enum이 되어, iOS에서 `Hidden` 분기를
+빠뜨리면 컴파일 오류가 난다. 브리지 선택 기준은 [KMP 셋업](kmp-setup.md)에 있다.
+
+자세한 내용은 [앱 아키텍처의 UiModel 절](app-architecture.md#72-uimodel)에 있다.
 
 ## 9. 독자와 정체성
 
@@ -710,11 +744,14 @@ UiModel에서 완성하고 도메인 타입을 풀지 않는다.
 법칙 위반이며, `Cart`가 답해야 할 질문을 호출부가 대신 계산한다. 우리 `Shelf`는 리스트를
 `private`로 두고 `find`·`filterBy`·`countOf`로 답한다.
 
-**4. 도메인에 Android를 들이지 않는다**
+**4. 도메인에 플랫폼을 들이지 않는다**
 
 참고 프로젝트의 `domain/Product.kt`에 `import android.R.attr.name`이 남아 있다. 실제로 쓰이지는
-않지만 도메인이 Android 의존을 받아들일 수 있는 상태라는 뜻이다. 우리는 `domain` 패키지에
-Android 타입을 두지 않는다.
+않지만 도메인이 Android 의존을 받아들일 수 있는 상태라는 뜻이다.
+
+우리는 도메인이 `commonMain`에 있어 **이 실수가 컴파일 단계에서 막힌다.** `android.*`도
+`java.*`도 Kotlin/Native 타겟에서 해석되지 않으므로, 규칙이 아니라 빌드가 강제한다. 단일 모듈
+Android 프로젝트에서는 얻을 수 없던 이점이다.
 
 **5. Repository가 실제로 일을 한다**
 
