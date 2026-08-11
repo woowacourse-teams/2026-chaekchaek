@@ -24,8 +24,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "social_account",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_social_account_provider_member_id",
-                        columnNames = {"provider", "provider_member_id"}
+                        name = "uk_social_account_provider_user_id",
+                        columnNames = {"provider", "provider_user_id"}
                 )
         })
 public class SocialAccount {
@@ -43,8 +43,8 @@ public class SocialAccount {
     @Column(name = "provider", nullable = false, length = 50)
     private Provider provider;
 
-    @Column(name = "provider_member_id", nullable = false, length = 255)
-    private String providerMemberId;
+    @Column(name = "provider_user_id", nullable = false, length = 255)
+    private String providerUserId;
 
     @Column(name = "connected_at", nullable = false)
     private LocalDateTime connectedAt;
@@ -52,25 +52,25 @@ public class SocialAccount {
     private SocialAccount(
             Member member,
             Provider provider,
-            String providerMemberId,
+            String providerUserId,
             LocalDateTime connectedAt
     ) {
         this.member = member;
         this.provider = provider;
-        this.providerMemberId = providerMemberId;
+        this.providerUserId = providerUserId;
         this.connectedAt = connectedAt;
     }
 
     public static SocialAccount connect(
             Member member,
             Provider provider,
-            String providerMemberId,
+            String providerUserId,
             LocalDateTime connectedAt
     ) {
         return new SocialAccount(
                 member,
                 provider,
-                providerMemberId,
+                providerUserId,
                 connectedAt
         );
     }

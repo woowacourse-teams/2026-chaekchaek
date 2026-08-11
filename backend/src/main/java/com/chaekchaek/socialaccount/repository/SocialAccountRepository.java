@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SocialAccountRepository extends JpaRepository<SocialAccount, Long> {
 
-    Optional<SocialAccount> findByProviderAndProviderMemberId(
+    Optional<SocialAccount> findByProviderAndProviderUserId(
             Provider provider,
-            String providerMemberId
+            String providerUserId
     );
 }
