@@ -1,4 +1,4 @@
-# 구현 인수인계 (2026-08-11)
+# 구현 인수인계 (2026-08-11 15:35 갱신)
 
 Claude Code 세션에서 진행하던 KMP 전환과 이슈 #7 구현을 다른 도구(Codex 등)가 이어받기 위한
 문서다. **무엇이 끝났고, 어떤 리듬으로 일하고 있었고, 다음에 무엇을 하는지**를 적는다.
@@ -17,10 +17,13 @@ Claude Code 세션에서 진행하던 KMP 전환과 이슈 #7 구현을 다른 �
 | --- | --- |
 | 브랜치 | `feat/7-home-feed` |
 | 대상 이슈 | [#7 홈 피드와 모바일 내비게이션 구현](https://github.com/woowacourse-teams/2026-chaekchaek/issues/7) |
-| 이 브랜치의 커밋 | 4개 (아래) |
-| 테스트 | **52개 통과** (JVM + iOS 시뮬레이터 양쪽) |
+| 이 브랜치의 커밋 | 6개 (아래) |
+| 테스트 | **69개 통과** (JVM + iOS 시뮬레이터 양쪽) |
+| 다음 단계 | 6단계 presentation (ViewModel + UiModel) |
 
 ```
+1fb6f25 feat(shared): 홈 피드 도메인과 데이터 계층 추가
+f3aeeca docs(android): 구현 인수인계 문서 추가
 44b36ae feat(shared): 서재 컬렉션 Shelf 추가
 6850737 feat(shared): KMP 공유 모듈과 도메인 값 객체 추가
 830b7fb docs(android): 설계를 KMP 기준으로 전환
@@ -51,18 +54,28 @@ android/
 ├── shared/         새로 추가한 KMP 모듈
 │   └── src/
 │       ├── commonMain/kotlin/com/chaekchaek/app/
-│       │   ├── di/SharedComponent.kt
-│       │   └── domain/
-│       │       ├── book/    Book, BookId, Page(PageNumber/PageCount)
-│       │       ├── note/    NoteIds(NoteId/ReplyId)
-│       │       ├── rating/  Rating, RatingSummary
-│       │       ├── reader/  Nickname, ReaderId
-│       │       └── shelf/   ReadingProgress, ReadingStatus, ShelfBook, Shelf
+│       │   ├── di/SharedComponent.kt      아직 빈 @Component
+│       │   ├── domain/
+│       │   │   ├── book/    Book, BookId, Page(PageNumber/PageCount)
+│       │   │   ├── feed/    HomeFeed, FeedSection, 카드 3종, FeedRepository
+│       │   │   ├── note/    NoteIds(NoteId/ReplyId)
+│       │   │   ├── rating/  Rating, RatingSummary
+│       │   │   ├── reader/  Nickname, ReaderId, GuestQuota, Viewer, ReaderProfile
+│       │   │   └── shelf/   ReadingProgress, ReadingStatus, ShelfBook, Shelf
+│       │   └── data/
+│       │       ├── datasource/  FeedDataSource (interface)
+│       │       ├── fake/        FeedFakeDataSource
+│       │       ├── remote/dto/  FeedDto + toDomain()
+│       │       └── repository/  FeedRepositoryImpl
 │       └── commonTest/kotlin/com/chaekchaek/app/
-│           ├── domain/...   테스트
+│           ├── data/...     DTO 매핑 테스트
+│           ├── domain/...   도메인 테스트
 │           └── fixture/ShelfFixture.kt
 └── settings.gradle.kts   include(":app"), include(":shared")
 ```
+
+더미 표지는 `app/src/main/res/drawable-nodpi/cover_01~12.png` 에 있다. DTO 는 경로가 아니라
+`coverId`("cover-01") 만 담고 각 플랫폼이 리소스로 해석한다.
 
 ### 2.2 검증된 버전 조합
 
@@ -77,8 +90,10 @@ android/
 | kotlin-inject | 0.9.0 | Kotlin 2.2.20 기준 빌드본이나 2.3.20에서 동작 |
 | kotlinx-datetime | 0.8.0 | |
 | Kotest assertions | 6.2.3 | commonTest 동작 |
+| kotlinx-serialization-json | 1.11.0 | `@Serializable` DTO 동작 |
 
-Ktor, 로컬 저장, 이미지 로더, SKIE 는 **아직 미검증**이다.
+Ktor, 로컬 저장, 이미지 로더, SKIE, **`androidx.lifecycle.ViewModel` 의 commonMain 동작**은
+아직 미검증이다. ViewModel 은 다음 단계(6단계)에서 바로 확인된다.
 
 ### 2.3 구현된 도메인
 
@@ -92,12 +107,38 @@ Ktor, 로컬 저장, 이미지 로더, SKIE 는 **아직 미검증**이다.
 | 11~13, 13-1, 13-2 | 서재 | 완료 |
 | 14~16 | 별점 | 완료 |
 | 25, 25-1~3 | 닉네임 | 완료 |
+| 26~27 | 정체성(ReaderProfile) | 완료 |
+| 28~30 | 게스트 쿼터 | 완료 |
 | 17~19 | 감상 | **미구현** |
 | 20~24 | 스포일러 | **미구현** |
-| 26~27 | 정체성(ReaderProfile) | **미구현** |
-| 28~30 | 게스트 쿼터 | **미구현** |
+
+감상과 스포일러는 이슈 #7 범위 밖이라 책 상세 화면 이슈에서 만든다.
+
+### 2.4 홈 피드 데이터 계층
+
+서버가 없으므로 **Fake 를 DataSource 레벨에 두었다.** Repository 레벨에 두면 `toDomain()`
+매핑이 서버 붙는 날까지 한 번도 실행되지 않는다.
+
+```
+FeedRepository (domain, interface)
+      ↑
+FeedRepositoryImpl (data)  ← DTO → 도메인 매핑
+      ↓
+FeedDataSource (interface)
+      └── FeedFakeDataSource  ← 지금 쓰는 것. Clock 주입받음
+          (서버 준비 시 FeedRemoteDataSource 로 바인딩만 교체)
+```
+
+테스트로 확인된 것: 모르는 섹션 타입(`READING_CHALLENGE_2027`)을 내려줘도 **오류 없이 건너뛴다.**
+구버전 앱이 새 섹션 때문에 죽지 않아야 하므로 매핑 실패는 오류가 아니라 무시다.
+
+상대 시각(`4분 전`)은 도메인이 `Instant` 만 들고, presentation 이 표시 시점에 계산한다. 더미도
+`Clock` 을 주입받아 시각이 고정 가능하다.
 
 ## 3. 작업 리듬 (이어받을 때 지킬 것)
+
+> Claude Code 를 쓴다면 이 리듬이 `/step-by-step` 커맨드로 저장되어 있다. 다른 도구라면 아래를
+> 그대로 따른다.
 
 사용자와 합의한 진행 방식이다. **이 리듬을 유지한다.**
 
@@ -165,6 +206,11 @@ Commits 형식, 한글 본문, 서명 트레일러 없음.
 5. **백틱 테스트 함수명에 마침표를 쓸 수 없다.** `0.5 단위가...` → 컴파일 오류.
    「반개 단위」처럼 우회한다.
 6. **`.gitignore` 의 `/build` 는 최상위만 무시한다.** 하위 모듈용으로 `build/` 를 추가했다.
+7. **kotlin-serialization 플러그인만 있고 런타임 의존성이 없으면 `@Serializable` 이 엉뚱한
+   타입으로 해석된다.** `Cannot access 'typealias Serializable': it is internal in file` 이라는
+   헷갈리는 오류가 난다. `kotlinx-serialization-json` 을 commonMain 에 추가하면 해결된다.
+8. **drawable 리소스 이름에 하이픈을 쓸 수 없다.** `cover-01.png` → `cover_01.png` 로 바꿔
+   복사했다. DTO 의 `coverId` 는 `cover-01` 형태를 유지하고 매핑에서 변환한다.
 
 ## 5. 주의: 다른 도구의 미커밋 변경
 
@@ -191,45 +237,34 @@ Commits 형식, 한글 본문, 서명 트레일러 없음.
 이슈 #7 완료 조건은 **홈 피드 표시 / 탭 3개 이동 / 더미 데이터로 도서 목록 표시**다.
 서재·감상·스포일러는 이 이슈 범위 밖이다.
 
-재개할 때는 6.1의 두 파일에 대한 API·테스트 미리보기를 먼저 보여주고, 사용자 승인 뒤 구현한다.
+**6.1과 6.2는 끝났다**(커밋 `1fb6f25`). 재개 지점은 6.3이다. 6.3의 파일들에 대한 API·테스트
+미리보기를 먼저 보여주고, 사용자 승인 뒤 구현한다.
 
-### 6.1 홈 피드 도메인 + Repository 계약
+### 6.1 홈 피드 도메인 + Repository 계약 (완료)
 
-```
-domain/feed/HomeFeed.kt        FeedSection(sealed): Trending, RecentQuotes, Overlapped
-domain/feed/FeedRepository.kt  suspend fun homeFeed(): HomeFeed
-```
+`domain/feed/HomeFeed.kt`, `domain/feed/FeedRepository.kt`.
 
-[화면 명세 2절](screen-specs.md)의 상태 정의와 [API 계약 4절](../../docs/api-contract.md#4-홈-피드)의
-응답 모양을 따른다. 서버가 섹션 배열을 내려주고 **앱은 모르는 타입을 무시**한다.
+### 6.2 Fake DataSource (완료)
 
-### 6.2 Fake DataSource
+`data/` 아래 4개 파일. 위 2.4절 참고.
 
-```
-data/remote/dto/FeedDto.kt         @Serializable, API 계약과 같은 모양
-data/datasource/FeedDataSource.kt  interface, DTO 반환
-data/fake/FeedFakeDataSource.kt    더미 DTO + delay
-data/repository/FeedRepositoryImpl.kt  DTO → 도메인 매핑
-```
-
-**Fake 는 DataSource 레벨에 둔다.** Repository 레벨에 두면 매핑 코드가 서버 붙는 날까지 한 번도
-실행되지 않는다.
-
-더미 데이터는 [화면 명세의 더미 데이터 절](screen-specs.md)을 따른다. 표지는
-`images/cover-01.png` ~ `cover-12.png`. **DTO 에는 경로가 아니라 식별자(`cover-01`)를 담고 각
-플랫폼이 해석한다.** 상대 시각("4분 전")은 저장하지 않고 `Instant` 를 담아 표시 시점에 계산한다.
-
-### 6.3 HomeViewModel + UiState + UiModel
+### 6.3 HomeViewModel + UiState + UiModel ← 여기부터
 
 ```
-presentation/home/HomeViewModel.kt
-presentation/home/HomeUiState.kt
-presentation/home/FeedSectionUiModel.kt
-presentation/common/Labels.kt     표시 문자열 포맷터
+presentation/common/TimeLabels.kt   "4분 전" 상대 시각 포맷터
+presentation/common/AppError.kt     Network / NotFound / Unauthorized / Unknown
+presentation/home/HomeUiState.kt    sealed 3상태 + FeedSectionUiModel
+presentation/home/HomeViewModel.kt  androidx.lifecycle.ViewModel
 ```
 
-`androidx.lifecycle.ViewModel` 을 `commonMain` 에서 쓴다(2.10.0, KMP 지원 확인됨).
-라벨 문자열은 매핑에서 직접 조립하지 말고 포맷터를 거친다.
+`androidx.lifecycle.ViewModel` 을 `commonMain` 에서 쓴다(2.10.0, 문서상 KMP 지원. **이 단계에서
+실제 동작이 처음 확인된다**).
+
+상대 시각은 `relative(at: Instant, now: Instant): String` 처럼 **둘 다 인자로 받는다.** 안에서
+`Clock.System.now()` 를 부르면 테스트에서 고정할 수 없다. 라벨 문자열은 UiModel 매핑에서 직접
+조립하지 말고 포맷터를 거친다.
+
+테스트할 것: 로딩 → 성공, 실패 → 재시도, 빈 피드, 상대 시각 경계값(방금/N분 전/N시간 전).
 
 ### 6.4 kotlin-inject 그래프 연결
 
