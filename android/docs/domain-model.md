@@ -372,7 +372,14 @@ class Shelf(
         books.map { if (it.book.id in bookIds) it.changeStatus(next, at) else it },
     )
 
+    /** 이 일괄 변경으로 진행 기록을 잃게 될 책들. 화면이 경고를 띄울지 판단하는 근거다. */
+    fun booksLosingProgress(bookIds: Set<BookId>, next: ReadingStatus): List<ShelfBook> =
+        books.filter { it.book.id in bookIds && it.losesProgressBy(next) }
+
     fun remove(bookIds: Set<BookId>): Shelf = Shelf(books.filter { it.book.id !in bookIds })
+
+    /** 검색의 「읽는 중 시작」, 책 상세의 쪽수 기록으로 서재에 없던 책이 들어올 때. */
+    fun add(shelfBook: ShelfBook): Shelf
 }
 ```
 
@@ -702,8 +709,14 @@ interface AuthRepository {
 
 **서재**
 11. 상태 필터가 `null`이면 전체를 돌려준다.
+11-1. 상태로 걸러낼 수 있고 권수를 셀 수 있다.
+11-2. 최근 기록순으로 정렬한다.
 12. 여러 권의 상태를 한 번에 바꾸면 선택된 권만 바뀐다.
+12-1. 일괄 변경 시에도 상태-쪽수 불변식이 유지된다.
+12-2. 일괄 변경으로 기록을 잃는 책 목록을 알려준다.
 13. 삭제하면 선택된 권만 빠진다.
+13-1. 서재에 없던 책을 담을 수 있고, 이미 있는 책은 다시 담을 수 없다.
+13-2. 빈 서재를 알아볼 수 있고, 없는 책을 찾으면 `null`을 돌려준다.
 
 **별점**
 14. 0.5 단위가 아닌 별점은 만들 수 없다.
