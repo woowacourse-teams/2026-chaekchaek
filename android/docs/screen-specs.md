@@ -343,26 +343,36 @@ data class AnonymousToggleUiModel(
 │ 닉네임 설정                  │
 │ 지금부터 감상과 답글에 이     │
 │ 닉네임이 표시됩니다.          │
-│ [ 닉네임을 입력하세요  0/10 ]│
-│ 2~10자                       │
+│ [ 닉네임을 입력하세요  0/15 ]│
+│ 2~15자, 한글·영문·숫자, -, _ │
 │      [취소]      [확인]      │
 └─────────────────────────────┘
 ```
+
+**Figma와 다름**: 시안은 `0/10`, `2~10자`로 그려져 있으나 **최대 15자**로 정했고 사용 가능한
+문자도 제한된다. 카운터와 안내 문구를 위와 같이 고쳐야 한다.
 
 ### 상태
 
 ```kotlin
 data class NicknameDialogUiModel(
     val input: String,
-    val counterLabel: String,       // "0/10"
-    val helperLabel: String,        // "2~10자"
-    val confirmEnabled: Boolean,    // 2~10자일 때만
+    val counterLabel: String,       // "0/15"
+    val helperLabel: String,        // "2~15자, 한글·영문·숫자, -, _"
+    val confirmEnabled: Boolean,    // Nickname.isValid(input)
     val errorLabel: String?,
 )
 ```
 
-입력 중에는 `String`으로 들고 있다가 「확인」에서 `Nickname`으로 만든다. 길이 검사는
-`Nickname.MIN_LENGTH`/`MAX_LENGTH` 상수를 쓴다.
+입력 중에는 `String`으로 들고 있다가 「확인」에서 `Nickname`으로 만든다. 버튼 활성화 판단은
+예외를 던지지 않는 `Nickname.isValid(input)`을 쓴다.
+
+오류 문구는 원인에 따라 나눈다.
+
+| 상황 | 문구 |
+| --- | --- |
+| 2자 미만 | 2자 이상 입력해 주세요 |
+| 허용하지 않는 문자 | 한글, 영문, 숫자와 -, _ 만 쓸 수 있어요 |
 
 **미결정**: 닉네임 중복 검사 여부. 서버 결정 사항.
 
