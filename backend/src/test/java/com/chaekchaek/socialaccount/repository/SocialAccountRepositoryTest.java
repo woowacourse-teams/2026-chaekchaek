@@ -31,7 +31,7 @@ public class SocialAccountRepositoryTest {
 
     @Test
     @DisplayName("소셜 계정을 회원과 연결하여 저장하고 조회한다")
-    void should_SaveAndFindByProviderAndProviderMemberId() {
+    void should_SaveAndFindByProviderAndProviderUserId() {
         // given
         LocalDateTime now = LocalDateTime.of(2026, 8, 11, 12, 0);
 
@@ -56,7 +56,7 @@ public class SocialAccountRepositoryTest {
 
         // when
         SocialAccount foundAccount = socialAccountRepository
-                .findByProviderAndProviderMemberId(
+                .findByProviderAndProviderUserId(
                         Provider.GOOGLE,
                         "google-member-123"
                 )
@@ -66,7 +66,7 @@ public class SocialAccountRepositoryTest {
         assertAll(
                 () -> assertThat(foundAccount.getId()).isNotNull(),
                 () -> assertThat(foundAccount.getProvider()).isEqualTo(Provider.GOOGLE),
-                () -> assertThat(foundAccount.getProviderMemberId()).isEqualTo("google-member-123"),
+                () -> assertThat(foundAccount.getProviderUserId()).isEqualTo("google-member-123"),
                 () -> assertThat(foundAccount.getConnectedAt()).isEqualTo(now),
                 () -> assertThat(foundAccount.getMember().getId()).isEqualTo(savedMember.getId())
         );
@@ -118,7 +118,7 @@ public class SocialAccountRepositoryTest {
 
     @Test
     @DisplayName("제공자가 다르면 동일한 사용자 ID 연결을 성공한다")
-    void should_Allow_When_SameMemberIdFromDifferentProviders() {
+    void should_Allow_When_SameUserIdFromDifferentProviders() {
         // given
         LocalDateTime now = LocalDateTime.of(2026, 8, 11, 12, 0);
 
