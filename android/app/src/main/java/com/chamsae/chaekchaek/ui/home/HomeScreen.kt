@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
@@ -32,6 +33,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -82,20 +84,26 @@ import com.chaekchaek.app.presentation.home.HomeUiState
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.presentation.home.OverlappedCardUiModel
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
+import com.chaekchaek.app.presentation.home.ReadingBookUiModel
 import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import com.chamsae.chaekchaek.LocalSharedComponent
 import com.chamsae.chaekchaek.R
 import com.chamsae.chaekchaek.theme.ChaekAccent
 import com.chamsae.chaekchaek.theme.ChaekBand
+import com.chamsae.chaekchaek.theme.ChaekBorder
 import com.chamsae.chaekchaek.theme.ChaekBorderSoft
 import com.chamsae.chaekchaek.theme.ChaekInk
 import com.chamsae.chaekchaek.theme.ChaekInkSecondary
+import com.chamsae.chaekchaek.theme.ChaekInkTertiary
 import com.chamsae.chaekchaek.theme.ChaekSurface
 import com.chamsae.chaekchaek.theme.ChaekchaekTheme
 import kotlin.random.Random
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    onSearchBook: () -> Unit = {},
+) {
     val component = LocalSharedComponent.current
     val homeViewModel: HomeViewModel = viewModel { component.homeViewModel }
     val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -104,7 +112,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         HomeUiState.Loading -> LoadingContent(modifier)
         HomeUiState.Empty -> EmptyContent(modifier)
         is HomeUiState.Failure -> ErrorContent(state.error, homeViewModel::retry, modifier)
-        is HomeUiState.Content -> HomeContent(state, modifier)
+        is HomeUiState.Content -> HomeContent(state, onSearchBook, modifier)
     }
 }
 
@@ -139,7 +147,11 @@ private fun ErrorContent(error: AppError, retry: () -> Unit, modifier: Modifier)
 }
 
 @Composable
-private fun HomeContent(state: HomeUiState.Content, modifier: Modifier) {
+private fun HomeContent(
+    state: HomeUiState.Content,
+    onSearchBook: () -> Unit,
+    modifier: Modifier,
+) {
     val trending = state.sections.filterIsInstance<FeedSectionUiModel.TrendingBooks>().firstOrNull()
     val recent = state.sections.filterIsInstance<FeedSectionUiModel.RecentQuotes>().firstOrNull()
     val overlapped = state.sections.filterIsInstance<FeedSectionUiModel.OverlappedBooks>().firstOrNull()
@@ -159,8 +171,152 @@ private fun HomeContent(state: HomeUiState.Content, modifier: Modifier) {
                 )
             }
         }
+        item { ReadingStatusSection(state.readingBook, onSearchBook) }
     }
 }
+
+@Composable
+private fun ReadingStatusSection(
+    readingBook: ReadingBookUiModel?,
+    onSearchBook: () -> Unit,
+) {
+    if (readingBook == null) {
+        EmptyReadingSection(onSearchBook)
+    } else {
+        CurrentReadingSection(readingBook)
+    }
+}
+
+@Composable
+private fun CurrentReadingSection(book: ReadingBookUiModel) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 12.dp),
+    ) {
+        HorizontalDivider(color = ChaekInk, thickness = 1.dp)
+        Spacer(Modifier.height(22.dp))
+        Text(
+            "이어서 읽기",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
+        )
+        Spacer(Modifier.height(12.dp))
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = ChaekSurface,
+            border = BorderStroke(1.dp, ChaekBorderSoft),
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Cover(
+                    coverId = book.coverId,
+                    title = book.title,
+                    modifier = Modifier.size(width = 52.dp, height = 78.dp),
+                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(78.dp),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            book.title,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text("›", color = ChaekInkSecondary, fontSize = 18.sp, lineHeight = 18.sp)
+                    }
+                    Text(
+                        "${book.currentPage} / ${book.totalPages}쪽",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ChaekInkSecondary,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(ChaekBand),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(readingProgress(book.currentPage, book.totalPages))
+                                .fillMaxHeight()
+                                .background(ChaekInk),
+                        )
+                    }
+                    Text(
+                        "이어서 기록하기  ↗",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        color = ChaekInkSecondary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyReadingSection(onSearchBook: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, bottom = 17.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = ChaekSurface,
+        border = BorderStroke(1.dp, ChaekBorderSoft),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                "지금 읽고 있는 책이 있으세요?",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            )
+            Text(
+                "책을 등록하면 읽은 쪽수와 감상을 남길 수 있어요.",
+                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 15.sp),
+                color = ChaekInkSecondary,
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .border(1.dp, ChaekBorder, RoundedCornerShape(6.dp))
+                    .clickable(role = Role.Button, onClick = onSearchBook)
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_search),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = ChaekInkSecondary,
+                )
+                Text(
+                    "책 제목으로 찾기",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = ChaekInkTertiary,
+                )
+            }
+        }
+    }
+}
+
+internal fun readingProgress(currentPage: Int, totalPages: Int): Float =
+    if (totalPages <= 0) 0f else currentPage.toFloat().div(totalPages).coerceIn(0f, 1f)
 
 @Composable
 private fun HomeHeader() {
@@ -636,9 +792,27 @@ private fun coverResource(coverId: String): Int =
         else -> R.drawable.app_logo_square
     }
 
-@Preview(name = "홈", showBackground = true, widthDp = 390, heightDp = 844)
+@Preview(name = "홈 · 읽는 책 있음", showBackground = true, widthDp = 390, heightDp = 844)
 @Composable
-private fun HomeScreenPreview() {
+private fun HomeWithReadingBookPreview() {
+    HomePreview(
+        ReadingBookUiModel(
+            title = "역병",
+            coverId = "cover-17",
+            currentPage = 132,
+            totalPages = 320,
+        ),
+    )
+}
+
+@Preview(name = "홈 · 읽는 책 없음", showBackground = true, widthDp = 390, heightDp = 844)
+@Composable
+private fun HomeWithoutReadingBookPreview() {
+    HomePreview(readingBook = null)
+}
+
+@Composable
+private fun HomePreview(readingBook: ReadingBookUiModel?) {
     val trendingBooks = listOf(
         "cover-18" to "보이지 않는 도시",
         "cover-17" to "역병",
@@ -682,9 +856,10 @@ private fun HomeScreenPreview() {
             ),
         ),
         guestBanner = null,
+        readingBook = readingBook,
     )
 
     ChaekchaekTheme(darkTheme = false) {
-        HomeContent(state, Modifier.fillMaxSize())
+        HomeContent(state, onSearchBook = {}, modifier = Modifier.fillMaxSize())
     }
 }

@@ -53,7 +53,10 @@ fun RootScreen(modifier: Modifier = Modifier) {
     val contentModifier =
       Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = 56.dp)
     when (selectedTab) {
-      RootTab.Home -> HomeScreen(contentModifier)
+      RootTab.Home -> HomeScreen(
+        modifier = contentModifier,
+        onSearchBook = { selectedTab = RootTab.Discover },
+      )
       RootTab.Discover -> SearchScreen(archiveRepository, contentModifier)
       RootTab.Shelf -> ArchiveScreen(archiveRepository, contentModifier)
     }

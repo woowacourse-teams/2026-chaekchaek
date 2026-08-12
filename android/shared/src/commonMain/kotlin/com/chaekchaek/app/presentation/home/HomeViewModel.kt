@@ -49,6 +49,8 @@ class HomeViewModel(
                             progressLabel = HomeLabels.guestProgress(quota.viewed, quota.limit),
                             exhausted = quota.isExhausted(),
                         ),
+                        // ponytail: 읽는 책 API가 생기면 가장 최근 항목을 여기에 매핑한다.
+                        readingBook = null,
                     )
                 }
             } catch (error: CancellationException) {

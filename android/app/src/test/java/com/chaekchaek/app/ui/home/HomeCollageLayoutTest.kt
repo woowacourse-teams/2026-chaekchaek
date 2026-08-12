@@ -33,4 +33,11 @@ class HomeCollageLayoutTest {
         assertEquals(152f, moved.x)
         assertEquals(55f, moved.y)
     }
+
+    @Test
+    fun readingProgress_isClampedAndHandlesMissingTotal() {
+        assertEquals(0.4125f, readingProgress(currentPage = 132, totalPages = 320))
+        assertEquals(0f, readingProgress(currentPage = 10, totalPages = 0))
+        assertEquals(1f, readingProgress(currentPage = 400, totalPages = 320))
+    }
 }
