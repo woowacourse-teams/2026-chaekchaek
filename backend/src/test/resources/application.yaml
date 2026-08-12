@@ -1,0 +1,20 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-client-id
+            client-secret: test-client-secret
+
+app:
+  frontend:
+    base-url: http://localhost:3000
+    oauth-success-path: /oauth/callback
+    oauth-failure-path: /login
+
+  auth:
+    access-token:
+      issuer: chaekchaek
+      secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      expiration: 30m

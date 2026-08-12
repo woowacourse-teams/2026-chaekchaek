@@ -33,3 +33,9 @@ app:
     oauth-success-path: /oauth/callback
     oauth-failure-path: /login
 
+  auth:
+    access-token:
+      issuer: chaekchaek
+      secret: ${JWT_SECRET}
+      expiration: 30m
+
