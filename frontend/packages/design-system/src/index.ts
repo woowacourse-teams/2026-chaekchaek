@@ -81,3 +81,6 @@ export type { Props as SegmentedControlProps } from './components/SegmentedContr
 
 export { Field } from './components/Field';
 export type { Props as FieldProps } from './components/Field';
+
+export { Dialog } from './components/Dialog';
+export type { Props as DialogProps } from './components/Dialog';
