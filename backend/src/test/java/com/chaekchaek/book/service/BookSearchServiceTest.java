@@ -49,7 +49,7 @@ class BookSearchServiceTest {
         AladinBookItem aladinBookItem = new AladinBookItem(
                 "클린 코드",
                 "https://image.aladin.co.kr/cover.jpg",
-                "로버트 C. 마틴",
+                "로버트 C. 마틴 (지은이), 박산호 (옮긴이)",
                 "2008-08-01",
                 "9788966260959",
                 "국내도서>컴퓨터/모바일>프로그래밍",
@@ -72,7 +72,8 @@ class BookSearchServiceTest {
         BookItem item = response.items().getFirst();
         assertThat(item.title()).isEqualTo("클린 코드");
         assertThat(item.coverImageUrl()).isEqualTo("https://image.aladin.co.kr/cover.jpg");
-        assertThat(item.author()).isEqualTo("로버트 C. 마틴");
+        assertThat(item.authors()).containsExactly("로버트 C. 마틴");
+        assertThat(item.translators()).containsExactly("박산호");
         assertThat(item.publishedDate()).isEqualTo("2008-08-01");
         assertThat(item.isbn13()).isEqualTo("9788966260959");
         assertThat(item.category()).isEqualTo("국내도서>컴퓨터/모바일>프로그래밍");

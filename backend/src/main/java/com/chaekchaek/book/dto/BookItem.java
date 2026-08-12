@@ -1,9 +1,12 @@
 package com.chaekchaek.book.dto;
 
+import java.util.List;
+
 public record BookItem(
         String title,
         String coverImageUrl,
-        String author,
+        List<String> authors,
+        List<String> translators,
         String publishedDate,
         String isbn13,
         String category,

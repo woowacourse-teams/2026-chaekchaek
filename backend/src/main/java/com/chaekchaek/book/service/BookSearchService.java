@@ -32,10 +32,14 @@ public class BookSearchService {
     }
 
     private BookItem toBookItem(AladinBookItem source) {
+        AladinContributorParser.Contributors contributors =
+                AladinContributorParser.parse(source.author());
+
         return new BookItem(
                 source.title(),
                 source.cover(),
-                source.author(),
+                contributors.authors(),
+                contributors.translators(),
                 source.pubDate(),
                 source.isbn13(),
                 source.categoryName(),

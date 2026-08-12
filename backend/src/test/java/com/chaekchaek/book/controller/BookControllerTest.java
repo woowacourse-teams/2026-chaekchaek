@@ -38,7 +38,8 @@ class BookControllerTest {
         BookItem item = new BookItem(
                 "마션",
                 "https://image.aladin.co.kr/martian.jpg",
-                "앤디 위어",
+                List.of("앤디 위어"),
+                List.of("박아람"),
                 "2026-07-01",
                 "9788925568683",
                 "국내도서>소설>과학소설",
@@ -67,7 +68,10 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.items[0].title").value("마션"))
                 .andExpect(jsonPath("$.items[0].coverImageUrl")
                         .value("https://image.aladin.co.kr/martian.jpg"))
-                .andExpect(jsonPath("$.items[0].author").value("앤디 위어"))
+                .andExpect(jsonPath("$.items[0].authors.length()").value(1))
+                .andExpect(jsonPath("$.items[0].authors[0]").value("앤디 위어"))
+                .andExpect(jsonPath("$.items[0].translators.length()").value(1))
+                .andExpect(jsonPath("$.items[0].translators[0]").value("박아람"))
                 .andExpect(jsonPath("$.items[0].publishedDate").value("2026-07-01"))
                 .andExpect(jsonPath("$.items[0].isbn13").value("9788925568683"))
                 .andExpect(jsonPath("$.items[0].category").value("국내도서>소설>과학소설"))

@@ -15,13 +15,14 @@ class BookSearchResponseTest {
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Test
-    @DisplayName("JSON으로 직렬화하면 기존 속성명을 유지한다")
-    void should_PreservePropertyNames_When_SerializingToJson() throws JacksonException {
+    @DisplayName("도서 검색 응답을 JSON으로 직렬화하면 계약된 속성명을 사용한다")
+    void should_UseContractPropertyNames_When_SerializingToJson() throws JacksonException {
         // given
         BookItem book = new BookItem(
                 "마션",
                 "https://image.aladin.co.kr/martian.jpg",
-                "앤디 위어",
+                List.of("앤디 위어"),
+                List.of("박아람"),
                 "2026-07-01",
                 "9788925568683",
                 "국내도서>소설>과학소설",
@@ -43,7 +44,7 @@ class BookSearchResponseTest {
                 "totalResults", "startIndex", "itemsPerPage", "hasNext", "items"
         );
         assertThat(json.at("/items/0").propertyNames()).containsExactlyInAnyOrder(
-                "title", "coverImageUrl", "author", "publishedDate",
+                "title", "coverImageUrl", "authors", "translators", "publishedDate",
                 "isbn13", "category", "publisher"
         );
     }
