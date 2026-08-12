@@ -51,3 +51,9 @@ export type { Props as ButtonProps } from './components/Button';
 
 export { Banner } from './components/Banner';
 export type { Props as BannerProps } from './components/Banner';
+
+export { Chebkxo } from './components/Chebkxo';
+export type { Props as ChebkxoProps } from './components/Chebkxo';
+
+export { Checkbox } from './components/Checkbox';
+export type { Props as CheckboxProps } from './components/Checkbox';
