@@ -52,9 +52,6 @@ export type { Props as ButtonProps } from './components/Button';
 export { Banner } from './components/Banner';
 export type { Props as BannerProps } from './components/Banner';
 
-export { Chebkxo } from './components/Chebkxo';
-export type { Props as ChebkxoProps } from './components/Chebkxo';
-
 export { Checkbox } from './components/Checkbox';
 export type { Props as CheckboxProps } from './components/Checkbox';
 
@@ -66,9 +63,6 @@ export type { Props as EntryProps } from './components/Entry';
 
 export { Input } from './components/Input';
 export type { Props as InputProps } from './components/Input';
-
-export { git } from './components/git';
-export type { Props as gitProps } from './components/git';
 
 export { Select } from './components/Select';
 export type { Props as SelectProps } from './components/Select';
