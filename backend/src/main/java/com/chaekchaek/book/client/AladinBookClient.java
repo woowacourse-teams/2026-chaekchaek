@@ -11,6 +11,8 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 @Component
 public class AladinBookClient {
 
+    private static final int PAGE_SIZE = 10;
+
     private final RestClient restClient;
     private final String ttbKey;
 
@@ -29,6 +31,7 @@ public class AladinBookClient {
                 .queryParam("ttbkey", ttbKey)
                 .queryParam("Query", query)
                 .queryParam("Start", page)
+                .queryParam("MaxResults", PAGE_SIZE)
                 .queryParam("Cover", "Big")
                 .queryParam("Output", "JS")
                 .queryParam("InputEncoding", "utf-8")

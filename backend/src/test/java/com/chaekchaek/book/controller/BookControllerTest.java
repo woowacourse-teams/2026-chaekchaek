@@ -45,13 +45,7 @@ class BookControllerTest {
                 "국내도서>소설>과학소설",
                 "알에이치코리아(RHK)"
         );
-        BookSearchResponse response = new BookSearchResponse(
-                11,
-                1,
-                10,
-                true,
-                List.of(item)
-        );
+        BookSearchResponse response = new BookSearchResponse(11, 2, List.of(item));
         when(bookSearchService.search("마션", 1)).thenReturn(response);
 
         // when & then
@@ -60,10 +54,8 @@ class BookControllerTest {
                         .param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.totalResults").value(11))
-                .andExpect(jsonPath("$.startIndex").value(1))
-                .andExpect(jsonPath("$.itemsPerPage").value(10))
-                .andExpect(jsonPath("$.hasNext").value(true))
+                .andExpect(jsonPath("$.totalCount").value(11))
+                .andExpect(jsonPath("$.nextPage").value(2))
                 .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].title").value("마션"))
                 .andExpect(jsonPath("$.items[0].coverImageUrl")

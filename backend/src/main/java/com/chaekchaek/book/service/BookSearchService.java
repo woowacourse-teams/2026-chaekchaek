@@ -22,11 +22,13 @@ public class BookSearchService {
                 .stream()
                 .map(this::toBookItem)
                 .toList();
+        Integer nextPage = source.hasNextPage()
+                ? source.startIndex() + 1
+                : null;
+
         return new BookSearchResponse(
                 source.totalResults(),
-                source.startIndex(),
-                source.itemsPerPage(),
-                source.hasNextPage(),
+                nextPage,
                 items
         );
     }

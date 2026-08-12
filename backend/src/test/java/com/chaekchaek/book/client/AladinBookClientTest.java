@@ -37,8 +37,8 @@ class AladinBookClientTest {
     }
 
     @Test
-    @DisplayName("도서를 검색하면 알라딘 요청에 검색어와 페이지를 담는다")
-    void should_IncludeQueryAndPage_When_SearchingBooks() throws InterruptedException {
+    @DisplayName("도서를 검색하면 알라딘 요청에 검색어와 페이지 및 페이지 크기를 담는다")
+    void should_IncludeQueryPageAndPageSize_When_SearchingBooks() throws InterruptedException {
         // given
         aladinServer.검색_응답한다(AladinResponseFixture.빈_검색_결과());
 

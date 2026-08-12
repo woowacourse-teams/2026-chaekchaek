@@ -61,6 +61,8 @@ public final class AladinMockServer implements AutoCloseable {
                     .isEqualTo(query);
             softly.assertThat(url.queryParameter("Start"))
                     .isEqualTo(String.valueOf(page));
+            softly.assertThat(url.queryParameter("MaxResults"))
+                    .isEqualTo("10");
             softly.assertThat(url.queryParameter("Cover"))
                     .isEqualTo("Big");
             softly.assertThat(url.queryParameter("Output"))

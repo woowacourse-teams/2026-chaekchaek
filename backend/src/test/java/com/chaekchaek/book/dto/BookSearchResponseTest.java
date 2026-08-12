@@ -28,24 +28,32 @@ class BookSearchResponseTest {
                 "국내도서>소설>과학소설",
                 "알에이치코리아(RHK)"
         );
-        BookSearchResponse response = new BookSearchResponse(
-                6,
-                1,
-                10,
-                true,
-                List.of(book)
-        );
+        BookSearchResponse response = new BookSearchResponse(6, 2, List.of(book));
 
         // when
         JsonNode json = objectMapper.valueToTree(response);
 
         // then
         assertThat(json.propertyNames()).containsExactlyInAnyOrder(
-                "totalResults", "startIndex", "itemsPerPage", "hasNext", "items"
+                "totalCount", "nextPage", "items"
         );
         assertThat(json.at("/items/0").propertyNames()).containsExactlyInAnyOrder(
                 "title", "coverImageUrl", "authors", "translators", "publishedDate",
                 "isbn13", "category", "publisher"
         );
+    }
+
+    @Test
+    @DisplayName("다음 페이지가 없다면 JSON에 null 값을 명시한다")
+    void should_IncludeNullNextPage_When_SerializingLastPage() throws JacksonException {
+        // given
+        BookSearchResponse response = new BookSearchResponse(0, null, List.of());
+
+        // when
+        JsonNode json = objectMapper.valueToTree(response);
+
+        // then
+        assertThat(json.has("nextPage")).isTrue();
+        assertThat(json.at("/nextPage").isNull()).isTrue();
     }
 }
