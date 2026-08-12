@@ -1,0 +1,27 @@
+import type { ElementType } from 'react';
+
+import { View } from '#internal/components/View';
+import { createClassName } from '#internal/utils/classname';
+
+import styles from './__COMPONENT_NAME__.module.css';
+
+import type { Props } from './';
+
+const classnameDefault = 'ui-__COMPONENT_NAME__';
+
+export const __COMPONENT_NAME__ = <T extends ElementType>(props: Props<T>) => {
+  const { as = 'div', className, ...restProps } = props;
+
+  const modifiers = {};
+
+  const classname = createClassName({
+    styles,
+    baseName: classnameDefault,
+    modifiers,
+    className,
+  });
+
+  return (
+    <View as={as} className={classname} {...restProps} />
+  );
+};

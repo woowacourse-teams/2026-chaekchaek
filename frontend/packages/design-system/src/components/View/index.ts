@@ -1,2 +1,2 @@
 export { View } from './View';
-export type { Props } from './View.types';
+export type { Props, PolymorphicProps } from './View.types';
