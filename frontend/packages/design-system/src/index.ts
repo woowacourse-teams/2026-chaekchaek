@@ -33,3 +33,6 @@ export type { Props as ProgressBarProps } from './components/ProgressBar';
 
 export { Rating } from './components/Rating';
 export type { Props as RatingProps } from './components/Rating';
+
+export { Shell } from './components/Shell';
+export type { Props as ShellProps } from './components/Shell';
