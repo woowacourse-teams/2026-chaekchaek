@@ -5,10 +5,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.auth.principal.AuthenticatedMember;
-import com.chaekchaek.auth.token.AuthCookieProvider;
-import com.chaekchaek.auth.token.AuthTokenService;
-import com.chaekchaek.auth.token.IssuedRefreshToken;
-import com.chaekchaek.auth.token.IssuedTokens;
+import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
+import com.chaekchaek.auth.service.AuthTokenService;
+import com.chaekchaek.auth.token.refresh.IssuedRefreshToken;
+import com.chaekchaek.auth.token.dto.IssuedTokens;
 import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.BeforeEach;

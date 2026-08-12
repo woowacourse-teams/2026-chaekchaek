@@ -3,7 +3,7 @@ package com.chaekchaek.auth.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-import com.chaekchaek.auth.google.GoogleProfile;
+import com.chaekchaek.auth.oauth.google.GoogleProfile;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.chaekchaek.socialaccount.domain.Provider;
