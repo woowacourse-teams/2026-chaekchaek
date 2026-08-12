@@ -1,0 +1,54 @@
+.ui-Banner {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-height: 55px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+  border-radius: 4px;
+  background-color: #fff4df;
+}
+
+.ui-Banner-Leading,
+.ui-Banner-Trailing {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.ui-Banner-Content {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.title,
+.content {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.title {
+  color: #1a1a1a;
+  font-family: 'Funnel Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.content {
+  color: #777;
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.description {
+  display: none;
+}

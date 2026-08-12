@@ -48,3 +48,6 @@ export type { Props as TitleProps } from './components/Title';
 
 export { Button } from './components/Button';
 export type { Props as ButtonProps } from './components/Button';
+
+export { Banner } from './components/Banner';
+export type { Props as BannerProps } from './components/Banner';
