@@ -2,7 +2,9 @@ package com.chaekchaek.auth.token;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -164,5 +166,56 @@ public class AuthTokenServiceTest {
                 accessTokenProvider,
                 refreshTokenProvider
         );
+    }
+
+    @Test
+    @DisplayName("로그아웃하면 Refresh Token을 폐기한다")
+    void should_Discard_When_Logout() {
+        // given
+        RefreshToken savedToken = mock(RefreshToken.class);
+
+        Instant instant = Instant.parse("2026-08-13T00:00:00Z");
+        LocalDateTime now =
+                LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+
+        when(refreshTokenHasher.hash("refresh-token"))
+                .thenReturn("refresh-token-hash");
+        when(refreshTokenRepository.findByTokenHash("refresh-token-hash"))
+                .thenReturn(Optional.of(savedToken));
+        when(savedToken.isRevoked()).thenReturn(false);
+        when(clock.instant()).thenReturn(instant);
+
+        // when
+        authTokenService.logout("refresh-token");
+
+        // then
+        verify(savedToken).revoke(now);
+    }
+
+    @Test
+    @DisplayName("Refresh Token 없이 로그아웃해도 정상 처리한다")
+    void should_SuccessLogout_WithoutRefreshToken() {
+        authTokenService.logout(null);
+
+        verifyNoInteractions(
+                refreshTokenHasher,
+                refreshTokenRepository
+        );
+    }
+
+    @Test
+    @DisplayName("이미 폐기된 Refresh Token으로 로그아웃해도 다시 폐기하지 않는다")
+    void should_Not_Discard_When_LogoutWithRevokedRefreshToken() {
+        RefreshToken savedToken = mock(RefreshToken.class);
+
+        when(refreshTokenHasher.hash("refresh-token"))
+                .thenReturn("refresh-token-hash");
+        when(refreshTokenRepository.findByTokenHash("refresh-token-hash"))
+                .thenReturn(Optional.of(savedToken));
+        when(savedToken.isRevoked()).thenReturn(true);
+
+        authTokenService.logout("refresh-token");
+
+        verify(savedToken, never()).revoke(any());
     }
 }

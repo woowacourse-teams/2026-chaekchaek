@@ -66,16 +66,11 @@ public class AuthTokenService {
                 refreshTokenRepository.findByTokenHash(tokenHash)
                         .orElseThrow(() -> new InvalidRefreshTokenException(INVALID_REFRESH_TOKEN_ERROR_MESSAGE));
 
-        LocalDateTime now = LocalDateTime.ofInstant(
-                clock.instant(),
-                ZoneOffset.UTC
-        );
-
-        if (!savedRefreshToken.isUsable(now)) {
+        if (!savedRefreshToken.isUsable(now())) {
             throw new InvalidRefreshTokenException(EXPIRED_OR_DISCARDED_REFRESH_TOKEN_ERROR_MESSAGE);
         }
 
-        savedRefreshToken.revoke(now);
+        savedRefreshToken.revoke(now());
 
         Member member = savedRefreshToken.getMember();
 
@@ -86,6 +81,26 @@ public class AuthTokenService {
         return new IssuedTokens(
                 newAccessToken,
                 newRefreshToken
+        );
+    }
+
+    @Transactional
+    public void logout(String refreshTokenValue) {
+        if (refreshTokenValue == null || refreshTokenValue.isBlank()) {
+            return;
+        }
+
+        String tokenHash = refreshTokenHasher.hash(refreshTokenValue);
+
+        refreshTokenRepository.findByTokenHash(tokenHash)
+                .filter(refreshToken -> !refreshToken.isRevoked())
+                .ifPresent(refreshToken -> refreshToken.revoke(now()));
+    }
+
+    private LocalDateTime now() {
+        return LocalDateTime.ofInstant(
+                clock.instant(),
+                ZoneOffset.UTC
         );
     }
 }

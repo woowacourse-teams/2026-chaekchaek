@@ -44,4 +44,26 @@ public class AuthCookieProvider {
                 .maxAge(refreshTokenProperties.expiration())
                 .build();
     }
+
+    public ResponseCookie deleteAccessTokenCookie() {
+        return ResponseCookie
+                .from(ACCESS_TOKEN_COOKIE_NAME, "")
+                .httpOnly(true)
+                .secure(authCookieProperties.secure())
+                .sameSite(authCookieProperties.sameSite())
+                .path("/")
+                .maxAge(0)
+                .build();
+    }
+
+    public ResponseCookie deleteRefreshTokenCookie() {
+        return ResponseCookie
+                .from(REFRESH_TOKEN_COOKIE_NAME, "")
+                .httpOnly(true)
+                .secure(authCookieProperties.secure())
+                .sameSite(authCookieProperties.sameSite())
+                .path("/api/v1/auth")
+                .maxAge(0)
+                .build();
+    }
 }
