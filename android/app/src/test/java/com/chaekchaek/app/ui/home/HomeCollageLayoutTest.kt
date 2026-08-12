@@ -1,6 +1,5 @@
 package com.chaekchaek.app.ui.home
 
-import androidx.compose.ui.geometry.Offset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -19,19 +18,18 @@ class HomeCollageLayoutTest {
     }
 
     @Test
-    fun draggedBook_staysInsideCollage() {
-        val moved = constrainedDragOffset(
-            baseX = 120f,
-            baseY = 4f,
-            width = 118f,
-            height = 177f,
-            current = Offset.Zero,
-            delta = Offset(500f, 500f),
-            canvasWidth = 390f,
-        )
+    fun swipe_movesBooksThroughScatteredSlots() {
+        assertEquals(0, collageSlotIndex(bookIndex = 0, selectedIndex = 0, bookCount = 6))
+        assertEquals(1, collageSlotIndex(bookIndex = 1, selectedIndex = 0, bookCount = 6))
+        assertEquals(2, collageSlotIndex(bookIndex = 0, selectedIndex = 1, bookCount = 6))
+        assertEquals(0, collageSlotIndex(bookIndex = 1, selectedIndex = 1, bookCount = 6))
+    }
 
-        assertEquals(152f, moved.x)
-        assertEquals(55f, moved.y)
+    @Test
+    fun swipe_changesSelectionAfterThreshold_andWraps() {
+        assertEquals(0, collageSelectionAfterSwipe(0, 6, dragDistance = -47f, threshold = 48f))
+        assertEquals(1, collageSelectionAfterSwipe(0, 6, dragDistance = -48f, threshold = 48f))
+        assertEquals(5, collageSelectionAfterSwipe(0, 6, dragDistance = 48f, threshold = 48f))
     }
 
     @Test
