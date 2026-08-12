@@ -1,0 +1,23 @@
+.ui-Avatar {
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.ui-Avatar > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.size-medium {
+  width: 34px;
+  height: 34px;
+}
+
+.size-small {
+  width: 28px;
+  height: 28px;
+}
