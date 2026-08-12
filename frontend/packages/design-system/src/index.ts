@@ -4,6 +4,9 @@ export type { Props as HeaderProps } from './frames/Header';
 export { Layout } from './frames/Layout';
 export type { Props as LayoutProps } from './frames/Layout';
 
+export { Main } from './frames/Main';
+export type { Props as MainProps } from './frames/Main';
+
 export { Avatar } from './components/Avatar';
 export type { Props as AvatarProps } from './components/Avatar';
 
