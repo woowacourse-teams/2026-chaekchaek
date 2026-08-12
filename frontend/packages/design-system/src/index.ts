@@ -27,3 +27,6 @@ export type { Props as OptionListProps } from './components/OptionList';
 
 export { Overview } from './components/Overview';
 export type { Props as OverviewProps } from './components/Overview';
+
+export { ProgressBar } from './components/ProgressBar';
+export type { Props as ProgressBarProps } from './components/ProgressBar';
