@@ -78,3 +78,6 @@ export type { Props as TextareaProps } from './components/Textarea';
 
 export { SegmentedControl } from './components/SegmentedControl';
 export type { Props as SegmentedControlProps } from './components/SegmentedControl';
+
+export { Field } from './components/Field';
+export type { Props as FieldProps } from './components/Field';
