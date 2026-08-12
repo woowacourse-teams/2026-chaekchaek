@@ -63,3 +63,6 @@ export type { Props as RadioProps } from './components/Radio';
 
 export { Entry } from './components/Entry';
 export type { Props as EntryProps } from './components/Entry';
+
+export { Input } from './components/Input';
+export type { Props as InputProps } from './components/Input';
