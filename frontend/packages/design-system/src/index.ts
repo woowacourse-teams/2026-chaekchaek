@@ -66,3 +66,9 @@ export type { Props as EntryProps } from './components/Entry';
 
 export { Input } from './components/Input';
 export type { Props as InputProps } from './components/Input';
+
+export { git } from './components/git';
+export type { Props as gitProps } from './components/git';
+
+export { Select } from './components/Select';
+export type { Props as SelectProps } from './components/Select';
