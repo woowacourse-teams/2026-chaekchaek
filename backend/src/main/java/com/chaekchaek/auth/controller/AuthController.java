@@ -3,6 +3,8 @@ package com.chaekchaek.auth.controller;
 import com.chaekchaek.auth.token.AuthCookieProvider;
 import com.chaekchaek.auth.token.AuthTokenService;
 import com.chaekchaek.auth.token.IssuedTokens;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -46,13 +48,43 @@ public class AuthController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(
-            HttpHeaders.SET_COOKIE,
+                HttpHeaders.SET_COOKIE,
                 accessCookie.toString()
         );
         headers.add(
                 HttpHeaders.SET_COOKIE,
                 refreshCookie.toString()
         );
+
+        return new ResponseEntity<>(
+                headers,
+                HttpStatus.NO_CONTENT
+        );
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @CookieValue(
+                    name = AuthCookieProvider.REFRESH_TOKEN_COOKIE_NAME,
+                    required = false
+            )
+            String refreshToken,
+            HttpServletRequest request
+    ) {
+        authTokenService.logout(refreshToken);
+
+        HttpSession session = request.getSession(false);
+
+        if (session != null) {
+            session.invalidate();
+        }
+
+        ResponseCookie accessCookie = authCookieProvider.deleteAccessTokenCookie();
+        ResponseCookie refreshCookie = authCookieProvider.deleteRefreshTokenCookie();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        headers.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         return new ResponseEntity<>(
                 headers,

@@ -40,4 +40,62 @@ public class AuthCookieProviderTest {
                 () -> assertThat(cookie.toString()).contains("SameSite=Lax")
         );
     }
+
+    @Test
+    @DisplayName("Access Token 삭제 쿠키를 생성한다")
+    void deleteAccessTokenCookie() {
+        // given
+        AuthCookieProvider provider = new AuthCookieProvider(
+                new AccessTokenProperties(
+                        "chaekchaek",
+                        "unused",
+                        Duration.ofMinutes(30)
+                ),
+                new RefreshTokenProperties(
+                        Duration.ofDays(14)
+                ),
+                new AuthCookieProperties(false, "Lax")
+        );
+
+        // when
+        ResponseCookie cookie = provider.deleteAccessTokenCookie();
+
+        // then
+        assertAll(
+                () -> assertThat(cookie.getName()).isEqualTo("access_token"),
+                () -> assertThat(cookie.getValue()).isEmpty(),
+                () -> assertThat(cookie.getPath()).isEqualTo("/"),
+                () -> assertThat(cookie.getMaxAge()).isZero(),
+                () -> assertThat(cookie.isHttpOnly()).isTrue()
+        );
+    }
+
+    @Test
+    @DisplayName("Refresh Token 삭제 쿠키를 생성한다")
+    void should_Create_DeleteRefreshTokenCookie() {
+        // given
+        AuthCookieProvider provider = new AuthCookieProvider(
+                new AccessTokenProperties(
+                        "chaekchaek",
+                        "unused",
+                        Duration.ofMinutes(30)
+                ),
+                new RefreshTokenProperties(
+                        Duration.ofDays(14)
+                ),
+                new AuthCookieProperties(false, "Lax")
+        );
+
+        // when
+        ResponseCookie cookie = provider.deleteRefreshTokenCookie();
+
+        // then
+        assertAll(
+                () -> assertThat(cookie.getName()).isEqualTo("refresh_token"),
+                () -> assertThat(cookie.getValue()).isEmpty(),
+                () -> assertThat(cookie.getPath()).isEqualTo("/api/v1/auth"),
+                () -> assertThat(cookie.getMaxAge()).isZero(),
+                () -> assertThat(cookie.isHttpOnly()).isTrue()
+        );
+    }
 }
