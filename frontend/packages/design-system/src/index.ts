@@ -84,3 +84,6 @@ export type { Props as FieldProps } from './components/Field';
 
 export { Dialog } from './components/Dialog';
 export type { Props as DialogProps } from './components/Dialog';
+
+export { Pagination } from './components/Pagination';
+export type { Props as PaginationProps } from './components/Pagination';
