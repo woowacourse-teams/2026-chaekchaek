@@ -1,13 +1,14 @@
 package com.chaekchaek.auth.google;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.chaekchaek.auth.principal.AuthenticatedMember;
 import com.chaekchaek.auth.service.SocialLoginService;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.domain.MemberType;
-import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,18 +55,16 @@ public class GoogleOidcUserServiceTest {
         when(oidcUser.getEmail()).thenReturn("member@example.com");
         when(oidcUser.getPicture()).thenReturn("exUrl");
 
-        Member member = Member.create(
-                MemberType.MEMBER,
-                "책책-1234",
-                "exUrl",
-                LocalDateTime.of(2026, 8, 12, 12, 0)
-        );
-
         GoogleProfile expectedProfile = new GoogleProfile(
                 "google-user-123",
                 "member@example.com",
                 "exUrl"
         );
+
+        Member member = mock(Member.class);
+        when(member.getId()).thenReturn(1L);
+        when(member.getType()).thenReturn(MemberType.MEMBER);
+        when(oidcUser.getName()).thenReturn("google-user-123");
 
         when(socialLoginService.loginOrSignUp(expectedProfile))
                 .thenReturn(member);
@@ -74,7 +73,14 @@ public class GoogleOidcUserServiceTest {
         OidcUser result = googleOidcUserService.loadUser(userRequest);
 
         // then
-        assertThat(result).isSameAs(oidcUser);
+        assertThat(result).isInstanceOf(AuthenticatedMember.class);
+
+        AuthenticatedMember principal = (AuthenticatedMember) result;
+
+        assertThat(principal.getMemberId()).isEqualTo(1L);
+        assertThat(principal.getMemberType()).isEqualTo(MemberType.MEMBER);
+        assertThat(principal.getName()).isEqualTo("google-user-123");
+
         verify(socialLoginService).loginOrSignUp(expectedProfile);
     }
 }

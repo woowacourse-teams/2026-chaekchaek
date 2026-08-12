@@ -1,6 +1,8 @@
 package com.chaekchaek.auth.google;
 
+import com.chaekchaek.auth.principal.AuthenticatedMember;
 import com.chaekchaek.auth.service.SocialLoginService;
+import com.chaekchaek.member.domain.Member;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -30,9 +32,9 @@ public class GoogleOidcUserService implements OAuth2UserService<OidcUserRequest,
         OidcUser oidcUser = delegate.loadUser(userRequest);
         GoogleProfile googleProfile = GoogleProfile.from(oidcUser);
 
-        socialLoginService.loginOrSignUp(googleProfile);
+        Member member = socialLoginService.loginOrSignUp(googleProfile);
 
-        return oidcUser;
+        return AuthenticatedMember.of(member, oidcUser);
     }
 
     private void validateGoogleRegistration(OidcUserRequest userRequest) {
