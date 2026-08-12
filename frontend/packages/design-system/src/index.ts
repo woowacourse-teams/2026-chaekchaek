@@ -60,3 +60,6 @@ export type { Props as CheckboxProps } from './components/Checkbox';
 
 export { Radio } from './components/Radio';
 export type { Props as RadioProps } from './components/Radio';
+
+export { Entry } from './components/Entry';
+export type { Props as EntryProps } from './components/Entry';
