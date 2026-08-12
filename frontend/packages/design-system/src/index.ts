@@ -42,3 +42,6 @@ export type { Props as SplitProps } from './components/Split';
 
 export { Surface } from './components/Surface';
 export type { Props as SurfaceProps } from './components/Surface';
+
+export { Title } from './components/Title';
+export type { Props as TitleProps } from './components/Title';
