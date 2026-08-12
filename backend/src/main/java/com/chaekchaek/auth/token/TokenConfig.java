@@ -21,7 +21,8 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 @Configuration
 @EnableConfigurationProperties({
         AccessTokenProperties.class,
-        RefreshTokenProperties.class
+        RefreshTokenProperties.class,
+        AuthCookieProperties.class
 })
 public class TokenConfig {
 

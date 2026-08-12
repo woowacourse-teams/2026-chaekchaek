@@ -29,3 +29,7 @@ app:
 
     refresh-token:
       expiration: 14d
+
+    cookie:
+      secure: ${AUTH_COOKIE_SECURE:false}
+      same-site: Lax
