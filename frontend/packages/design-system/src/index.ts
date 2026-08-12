@@ -9,3 +9,6 @@ export type { Props as CellListProps } from './components/CellList';
 
 export { DataInfo } from './components/DataInfo';
 export type { Props as DataInfoProps } from './components/DataInfo';
+
+export { ImgBox } from './components/ImgBox';
+export type { Props as ImgBoxProps } from './components/ImgBox';
