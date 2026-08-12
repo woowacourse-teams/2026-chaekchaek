@@ -15,3 +15,9 @@ export type { Props as ImgBoxProps } from './components/ImgBox';
 
 export { List } from './components/List';
 export type { Props as ListProps } from './components/List';
+
+export { Note } from './components/Note';
+export type { Props as NoteProps } from './components/Note';
+
+export { Loading } from './components/Loading';
+export type { Props as LoadingProps } from './components/Loading';
