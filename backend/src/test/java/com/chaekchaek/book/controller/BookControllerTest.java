@@ -3,6 +3,11 @@ package com.chaekchaek.book.controller;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -17,13 +22,42 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.payload.FieldDescriptor;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(BookController.class)
+@AutoConfigureRestDocs
 class BookControllerTest {
+
+    private static final FieldDescriptor[] BOOK_SEARCH_RESPONSE_FIELDS = {
+            fieldWithPath("totalCount").type(JsonFieldType.NUMBER)
+                    .description("검색 결과의 전체 도서 수"),
+            fieldWithPath("nextPage").type(JsonFieldType.NUMBER)
+                    .description("다음 페이지 번호. 마지막 페이지라면 null"),
+            fieldWithPath("items").type(JsonFieldType.ARRAY)
+                    .description("검색된 도서 목록"),
+            fieldWithPath("items[].title").type(JsonFieldType.STRING)
+                    .description("도서 제목"),
+            fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING)
+                    .description("표지 이미지 URL"),
+            fieldWithPath("items[].authors").type(JsonFieldType.ARRAY)
+                    .description("저자 이름 목록"),
+            fieldWithPath("items[].translators").type(JsonFieldType.ARRAY)
+                    .description("옮긴이 이름 목록"),
+            fieldWithPath("items[].publishedDate").type(JsonFieldType.STRING)
+                    .description("출판일"),
+            fieldWithPath("items[].isbn13").type(JsonFieldType.STRING)
+                    .description("ISBN-13"),
+            fieldWithPath("items[].category").type(JsonFieldType.STRING)
+                    .description("도서 카테고리"),
+            fieldWithPath("items[].publisher").type(JsonFieldType.STRING)
+                    .description("출판사")
+    };
 
     @Autowired
     private MockMvc mockMvc;
@@ -67,7 +101,15 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.items[0].publishedDate").value("2026-07-01"))
                 .andExpect(jsonPath("$.items[0].isbn13").value("9788925568683"))
                 .andExpect(jsonPath("$.items[0].category").value("국내도서>소설>과학소설"))
-                .andExpect(jsonPath("$.items[0].publisher").value("알에이치코리아(RHK)"));
+                .andExpect(jsonPath("$.items[0].publisher").value("알에이치코리아(RHK)"))
+                .andDo(document(
+                        "book-search",
+                        queryParameters(
+                                parameterWithName("query").description("검색할 도서명"),
+                                parameterWithName("page").description("1부터 시작하는 페이지 번호")
+                        ),
+                        responseFields(BOOK_SEARCH_RESPONSE_FIELDS)
+                ));
 
         verify(bookSearchService).search("마션", 1);
     }
