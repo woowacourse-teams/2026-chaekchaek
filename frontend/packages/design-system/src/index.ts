@@ -72,3 +72,6 @@ export type { Props as gitProps } from './components/git';
 
 export { Select } from './components/Select';
 export type { Props as SelectProps } from './components/Select';
+
+export { Textarea } from './components/Textarea';
+export type { Props as TextareaProps } from './components/Textarea';
