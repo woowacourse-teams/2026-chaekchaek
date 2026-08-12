@@ -1,0 +1,28 @@
+package com.chaekchaek.member.controller;
+
+import com.chaekchaek.member.dto.MemberResponse;
+import com.chaekchaek.member.service.MemberService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/members")
+public class MemberController {
+
+    private final MemberService memberService;
+
+    @GetMapping("/me")
+    public ResponseEntity<MemberResponse> getMyInfo(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        Long memberId = Long.valueOf(jwt.getSubject());
+
+        return ResponseEntity.ok(memberService.getMyInfo(memberId));
+    }
+}
