@@ -1,7 +1,6 @@
 package com.chaekchaek.app.ui.home
 
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -392,13 +391,19 @@ private fun TrendingSection(section: FeedSectionUiModel.TrendingBooks) {
         val heroWidth = maxWidth
         books.forEachIndexed { index, book ->
             val placement = placements[collageSlotIndex(index, selectedIndex, books.size)]
-            val x by animateDpAsState(
-                heroWidth * (placement.x / 390f),
+            val x by animateFloatAsState(
+                heroWidth.value * (placement.x / 390f),
                 label = "${book.bookId.value} x",
             )
-            val y by animateDpAsState(placement.y.dp, label = "${book.bookId.value} y")
-            val width by animateDpAsState(placement.width.dp, label = "${book.bookId.value} 너비")
-            val height by animateDpAsState(placement.height.dp, label = "${book.bookId.value} 높이")
+            val y by animateFloatAsState(placement.y.toFloat(), label = "${book.bookId.value} y")
+            val scaleX by animateFloatAsState(
+                placement.width / HERO_COVER_WIDTH,
+                label = "${book.bookId.value} 너비",
+            )
+            val scaleY by animateFloatAsState(
+                placement.height / HERO_COVER_HEIGHT,
+                label = "${book.bookId.value} 높이",
+            )
             val rotation by animateFloatAsState(
                 placement.rotation,
                 label = "${book.bookId.value} 회전",
@@ -410,8 +415,8 @@ private fun TrendingSection(section: FeedSectionUiModel.TrendingBooks) {
                 onSelect = { selectedIndex = index },
                 x = x,
                 y = y,
-                width = width,
-                height = height,
+                scaleX = scaleX,
+                scaleY = scaleY,
                 rotation = rotation,
             )
         }
@@ -457,25 +462,27 @@ private fun HeroCover(
     rank: Int,
     selected: Boolean,
     onSelect: () -> Unit,
-    x: Dp,
-    y: Dp,
-    width: Dp,
-    height: Dp,
+    x: Float,
+    y: Float,
+    scaleX: Float,
+    scaleY: Float,
     rotation: Float,
 ) {
     if (book == null) return
-    val elevation by animateDpAsState(if (selected) 12.dp else 0.dp, label = "인기 책 선택")
     Cover(
         coverId = book.coverId,
         title = "${rank}위, ${book.title}",
         modifier = Modifier
             .zIndex(if (selected) 1f else 0f)
-            .offset(x, y)
-            .size(width, height)
+            .size(HERO_COVER_WIDTH.dp, HERO_COVER_HEIGHT.dp)
             .graphicsLayer {
+                translationX = x.dp.toPx()
+                translationY = y.dp.toPx()
+                this.scaleX = scaleX
+                this.scaleY = scaleY
                 rotationZ = rotation
                 transformOrigin = TransformOrigin(0f, 0f)
-                shadowElevation = elevation.toPx()
+                shadowElevation = if (selected) 12.dp.toPx() else 0f
                 shape = RoundedCornerShape(2.dp)
                 clip = false
             }
@@ -485,6 +492,9 @@ private fun HeroCover(
             .clickable(role = Role.Button, onClick = onSelect),
     )
 }
+
+private const val HERO_COVER_WIDTH = 118f
+private const val HERO_COVER_HEIGHT = 177f
 
 internal data class CollagePlacement(
     val x: Int,
