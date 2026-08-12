@@ -46,6 +46,8 @@ public class SecurityConfig {
 
         return http
                 .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/v1/auth/**"))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/oauth2/**",
