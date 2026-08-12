@@ -24,3 +24,6 @@ export type { Props as LoadingProps } from './components/Loading';
 
 export { OptionList } from './components/OptionList';
 export type { Props as OptionListProps } from './components/OptionList';
+
+export { Overview } from './components/Overview';
+export type { Props as OverviewProps } from './components/Overview';
