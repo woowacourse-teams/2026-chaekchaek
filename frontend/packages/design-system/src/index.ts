@@ -39,3 +39,6 @@ export type { Props as ShellProps } from './components/Shell';
 
 export { Split } from './components/Split';
 export type { Props as SplitProps } from './components/Split';
+
+export { Surface } from './components/Surface';
+export type { Props as SurfaceProps } from './components/Surface';
