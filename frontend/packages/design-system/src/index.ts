@@ -45,3 +45,6 @@ export type { Props as SurfaceProps } from './components/Surface';
 
 export { Title } from './components/Title';
 export type { Props as TitleProps } from './components/Title';
+
+export { Button } from './components/Button';
+export type { Props as ButtonProps } from './components/Button';
