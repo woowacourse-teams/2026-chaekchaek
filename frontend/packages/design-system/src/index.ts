@@ -57,3 +57,6 @@ export type { Props as ChebkxoProps } from './components/Chebkxo';
 
 export { Checkbox } from './components/Checkbox';
 export type { Props as CheckboxProps } from './components/Checkbox';
+
+export { Radio } from './components/Radio';
+export type { Props as RadioProps } from './components/Radio';
