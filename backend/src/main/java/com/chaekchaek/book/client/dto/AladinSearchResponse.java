@@ -17,4 +17,8 @@ public record AladinSearchResponse(
     public boolean hasError() {
         return errorCode != null;
     }
+
+    public boolean hasNextPage() {
+        return (long) startIndex * itemsPerPage < totalResults;
+    }
 }
