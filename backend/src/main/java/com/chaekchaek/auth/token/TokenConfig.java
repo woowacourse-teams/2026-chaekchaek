@@ -1,6 +1,7 @@
 package com.chaekchaek.auth.token;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.Base64;
 import javax.crypto.SecretKey;
@@ -61,5 +62,10 @@ public class TokenConfig {
     @Bean
     Clock clock() {
         return Clock.systemUTC();
+    }
+
+    @Bean
+    SecureRandom secureRandom() {
+        return new SecureRandom();
     }
 }
