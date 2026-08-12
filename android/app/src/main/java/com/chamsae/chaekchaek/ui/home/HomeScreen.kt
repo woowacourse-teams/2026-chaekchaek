@@ -2,15 +2,13 @@ package com.chamsae.chaekchaek.ui.home
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
-import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -42,7 +40,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -53,16 +50,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -97,6 +89,7 @@ import com.chamsae.chaekchaek.theme.ChaekInkSecondary
 import com.chamsae.chaekchaek.theme.ChaekInkTertiary
 import com.chamsae.chaekchaek.theme.ChaekSurface
 import com.chamsae.chaekchaek.theme.ChaekchaekTheme
+import kotlin.math.abs
 import kotlin.random.Random
 
 @Composable
@@ -357,9 +350,8 @@ private fun TrendingSection(section: FeedSectionUiModel.TrendingBooks) {
     val books = section.books.take(6)
     val rankingKey = books.map { it.bookId.value }
     val placements = remember(rankingKey) { collagePlacements(rankingKey) }
-    val dragOffsets = remember(rankingKey) { mutableStateMapOf<String, Offset>() }
-    val density = LocalDensity.current.density
     var selectedIndex by rememberSaveable(rankingKey) { mutableIntStateOf(0) }
+    val currentSelectedIndex by rememberUpdatedState(selectedIndex)
     val selectedBook = books.getOrNull(selectedIndex)
         ?: books.firstOrNull()
 
@@ -369,34 +361,58 @@ private fun TrendingSection(section: FeedSectionUiModel.TrendingBooks) {
             .height(236.dp)
             .background(ChaekBand)
             .clipToBounds()
-            .selectableGroup(),
+            .selectableGroup()
+            .pointerInput(rankingKey) {
+                var dragDistance = 0f
+                var handled = false
+                detectHorizontalDragGestures(
+                    onDragStart = {
+                        dragDistance = 0f
+                        handled = false
+                    },
+                    onHorizontalDrag = { change, amount ->
+                        change.consume()
+                        if (!handled) {
+                            dragDistance += amount
+                            val next = collageSelectionAfterSwipe(
+                                current = currentSelectedIndex,
+                                bookCount = books.size,
+                                dragDistance = dragDistance,
+                                threshold = 48.dp.toPx(),
+                            )
+                            if (next != currentSelectedIndex) {
+                                selectedIndex = next
+                                handled = true
+                            }
+                        }
+                    },
+                )
+            },
     ) {
         val heroWidth = maxWidth
-        placements.take(books.size).forEachIndexed { index, placement ->
-            val book = books[index]
-            val baseX = heroWidth * (placement.x / 390f)
-            val dragOffset = dragOffsets[book.bookId.value] ?: Offset.Zero
+        books.forEachIndexed { index, book ->
+            val placement = placements[collageSlotIndex(index, selectedIndex, books.size)]
+            val x by animateDpAsState(
+                heroWidth * (placement.x / 390f),
+                label = "${book.bookId.value} x",
+            )
+            val y by animateDpAsState(placement.y.dp, label = "${book.bookId.value} y")
+            val width by animateDpAsState(placement.width.dp, label = "${book.bookId.value} 너비")
+            val height by animateDpAsState(placement.height.dp, label = "${book.bookId.value} 높이")
+            val rotation by animateFloatAsState(
+                placement.rotation,
+                label = "${book.bookId.value} 회전",
+            )
             HeroCover(
                 book = book,
                 rank = index + 1,
                 selected = selectedIndex == index,
                 onSelect = { selectedIndex = index },
-                onDrag = { delta ->
-                    dragOffsets[book.bookId.value] = constrainedDragOffset(
-                        baseX = baseX.value,
-                        baseY = placement.y.toFloat(),
-                        width = placement.width.toFloat(),
-                        height = placement.height.toFloat(),
-                        current = dragOffsets[book.bookId.value] ?: Offset.Zero,
-                        delta = delta / density,
-                        canvasWidth = heroWidth.value,
-                    )
-                },
-                x = baseX + dragOffset.x.dp,
-                y = placement.y.dp + dragOffset.y.dp,
-                width = placement.width.dp,
-                height = placement.height.dp,
-                rotation = placement.rotation,
+                x = x,
+                y = y,
+                width = width,
+                height = height,
+                rotation = rotation,
             )
         }
 
@@ -441,7 +457,6 @@ private fun HeroCover(
     rank: Int,
     selected: Boolean,
     onSelect: () -> Unit,
-    onDrag: (Offset) -> Unit,
     x: Dp,
     y: Dp,
     width: Dp,
@@ -450,8 +465,6 @@ private fun HeroCover(
 ) {
     if (book == null) return
     val elevation by animateDpAsState(if (selected) 12.dp else 0.dp, label = "인기 책 선택")
-    val currentOnSelect by rememberUpdatedState(onSelect)
-    val currentOnDrag by rememberUpdatedState(onDrag)
     Cover(
         coverId = book.coverId,
         title = "${rank}위, ${book.title}",
@@ -467,26 +480,9 @@ private fun HeroCover(
                 clip = false
             }
             .semantics {
-                role = Role.Button
                 this.selected = selected
-                onClick {
-                    currentOnSelect()
-                    true
-                }
             }
-            .pointerInput(book.bookId.value) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    currentOnSelect()
-                    val longPress = awaitLongPressOrCancellation(down.id)
-                    if (longPress != null) {
-                        drag(longPress.id) { change ->
-                            currentOnDrag(change.positionChange())
-                            change.consume()
-                        }
-                    }
-                }
-            },
+            .clickable(role = Role.Button, onClick = onSelect),
     )
 }
 
@@ -498,32 +494,31 @@ internal data class CollagePlacement(
     val rotation: Float,
 )
 
-internal fun constrainedDragOffset(
-    baseX: Float,
-    baseY: Float,
-    width: Float,
-    height: Float,
-    current: Offset,
-    delta: Offset,
-    canvasWidth: Float,
-    canvasHeight: Float = 236f,
-): Offset {
-    val x = (baseX + current.x + delta.x).coerceIn(0f, (canvasWidth - width).coerceAtLeast(0f))
-    val y = (baseY + current.y + delta.y).coerceIn(0f, (canvasHeight - height).coerceAtLeast(0f))
-    return Offset(x - baseX, y - baseY)
+internal fun collageSlotIndex(bookIndex: Int, selectedIndex: Int, bookCount: Int): Int {
+    if (bookCount <= 1) return 0
+    val relative = ((bookIndex - selectedIndex) % bookCount + bookCount) % bookCount
+    return listOf(0, 1, 3, 5, 4, 2).filter { it < bookCount }[relative]
+}
+
+internal fun collageSelectionAfterSwipe(
+    current: Int,
+    bookCount: Int,
+    dragDistance: Float,
+    threshold: Float,
+): Int {
+    if (bookCount <= 1 || abs(dragDistance) < threshold) return current
+    return if (dragDistance < 0) (current + 1) % bookCount else (current - 1 + bookCount) % bookCount
 }
 
 internal fun collagePlacements(bookIds: List<String>): List<CollagePlacement> {
     val random = Random(bookIds.take(6).fold(17) { seed, id -> seed * 31 + id.hashCode() })
-    val middleSlots = listOf(Triple(64, 29, -5f), Triple(251, 31, 9f)).shuffled(random)
-    val outerSlots = listOf(Triple(31, 63, -10f), Triple(286, 68, 11f)).shuffled(random)
     val lowerSlot = if (random.nextBoolean()) Triple(121, 92, -7f) else Triple(213, 92, 7f)
     val slots = listOf(
         Triple(120, 4, listOf(-2f, 0f, 2f).random(random)),
-        middleSlots[0],
-        middleSlots[1],
-        outerSlots[0],
-        outerSlots[1],
+        Triple(251, 31, 9f),
+        Triple(64, 29, -5f),
+        Triple(286, 68, 11f),
+        Triple(31, 63, -10f),
         lowerSlot,
     )
     val sizes = listOf(118 to 177, 80 to 120, 70 to 105, 66 to 99, 63 to 94, 56 to 80)
