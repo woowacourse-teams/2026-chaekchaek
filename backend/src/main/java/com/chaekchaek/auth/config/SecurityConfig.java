@@ -1,9 +1,9 @@
 package com.chaekchaek.auth.config;
 
-import com.chaekchaek.auth.google.GoogleOidcUserService;
+import com.chaekchaek.auth.oauth.google.GoogleOidcUserService;
 import com.chaekchaek.auth.handler.OAuth2AuthenticationFailureHandler;
 import com.chaekchaek.auth.handler.OAuth2AuthenticationSuccessHandler;
-import com.chaekchaek.auth.token.CookieBearerTokenResolver;
+import com.chaekchaek.auth.token.access.CookieBearerTokenResolver;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

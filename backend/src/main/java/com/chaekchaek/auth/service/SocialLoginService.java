@@ -1,6 +1,6 @@
 package com.chaekchaek.auth.service;
 
-import com.chaekchaek.auth.google.GoogleProfile;
+import com.chaekchaek.auth.oauth.google.GoogleProfile;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.repository.MemberRepository;

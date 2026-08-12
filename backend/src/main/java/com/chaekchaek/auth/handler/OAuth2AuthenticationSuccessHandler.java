@@ -1,9 +1,9 @@
 package com.chaekchaek.auth.handler;
 
 import com.chaekchaek.auth.principal.AuthenticatedMember;
-import com.chaekchaek.auth.token.AuthCookieProvider;
-import com.chaekchaek.auth.token.AuthTokenService;
-import com.chaekchaek.auth.token.IssuedTokens;
+import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
+import com.chaekchaek.auth.service.AuthTokenService;
+import com.chaekchaek.auth.token.dto.IssuedTokens;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

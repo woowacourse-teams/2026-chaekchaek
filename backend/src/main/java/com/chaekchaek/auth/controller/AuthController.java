@@ -1,8 +1,8 @@
 package com.chaekchaek.auth.controller;
 
-import com.chaekchaek.auth.token.AuthCookieProvider;
-import com.chaekchaek.auth.token.AuthTokenService;
-import com.chaekchaek.auth.token.IssuedTokens;
+import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
+import com.chaekchaek.auth.service.AuthTokenService;
+import com.chaekchaek.auth.token.dto.IssuedTokens;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpHeaders;

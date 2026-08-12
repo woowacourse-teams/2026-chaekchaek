@@ -4,8 +4,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.chaekchaek.auth.token.AccessTokenProvider;
-import com.chaekchaek.auth.token.AuthCookieProvider;
+import com.chaekchaek.auth.token.access.AccessTokenProvider;
+import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.repository.MemberRepository;
