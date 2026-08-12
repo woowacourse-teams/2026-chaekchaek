@@ -21,3 +21,6 @@ export type { Props as NoteProps } from './components/Note';
 
 export { Loading } from './components/Loading';
 export type { Props as LoadingProps } from './components/Loading';
+
+export { OptionList } from './components/OptionList';
+export type { Props as OptionListProps } from './components/OptionList';
