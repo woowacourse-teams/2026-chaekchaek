@@ -39,3 +39,6 @@ app:
       secret: ${JWT_SECRET}
       expiration: 30m
 
+    refresh-token:
+      expiration: 14d
+
