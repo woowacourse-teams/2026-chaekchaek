@@ -1,6 +1,9 @@
 export { Header } from './frames/Header';
 export type { Props as HeaderProps } from './frames/Header';
 
+export { Layout } from './frames/Layout';
+export type { Props as LayoutProps } from './frames/Layout';
+
 export { Avatar } from './components/Avatar';
 export type { Props as AvatarProps } from './components/Avatar';
 
