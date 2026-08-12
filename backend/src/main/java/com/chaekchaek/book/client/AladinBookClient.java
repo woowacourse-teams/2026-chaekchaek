@@ -39,7 +39,7 @@ public class AladinBookClient {
                 .uri(uri)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .body(AladinSearchResponse.class);
+                .requiredBody(AladinSearchResponse.class);
 
         if (response.hasError()) {
             throw new AladinApiException(response.errorCode(), response.errorMessage());

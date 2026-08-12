@@ -35,6 +35,14 @@ public final class AladinMockServer implements AutoCloseable {
                 .setBody(responseBody));
     }
 
+    public void 본문_없는_200_응답한다() {
+        server.enqueue(new MockResponse().setResponseCode(200));
+    }
+
+    public void 콘텐츠_없는_204_응답한다() {
+        server.enqueue(new MockResponse().setResponseCode(204));
+    }
+
     public void 검색_요청을_검증한다(String query, int page) throws InterruptedException {
         RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
 

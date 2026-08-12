@@ -93,4 +93,28 @@ class AladinBookClientTest {
                         })
                 );
     }
+
+    @Test
+    @DisplayName("알라딘이 본문 없는 200 응답을 반환하면 필수 본문 예외가 발생한다")
+    void should_ThrowRequiredBodyException_When_AladinReturnsEmpty200Response() {
+        // given
+        aladinServer.본문_없는_200_응답한다();
+
+        // when & then
+        assertThatThrownBy(() -> client.searchBooks("마션", 1))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("The body must not be null");
+    }
+
+    @Test
+    @DisplayName("알라딘이 204 응답을 반환하면 필수 본문 예외가 발생한다")
+    void should_ThrowRequiredBodyException_When_AladinReturns204Response() {
+        // given
+        aladinServer.콘텐츠_없는_204_응답한다();
+
+        // when & then
+        assertThatThrownBy(() -> client.searchBooks("마션", 1))
+                .isExactlyInstanceOf(IllegalStateException.class)
+                .hasMessage("The body must not be null");
+    }
 }
