@@ -6,3 +6,6 @@ export type { Props as CalloutProps } from './components/Callout';
 
 export { CellList } from './components/CellList';
 export type { Props as CellListProps } from './components/CellList';
+
+export { DataInfo } from './components/DataInfo';
+export type { Props as DataInfoProps } from './components/DataInfo';
