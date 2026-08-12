@@ -10,6 +10,7 @@ sealed interface HomeUiState {
     data class Content(
         val sections: List<FeedSectionUiModel>,
         val guestBanner: GuestBannerUiModel?,
+        val readingBook: ReadingBookUiModel? = null,
     ) : HomeUiState
 
     data object Empty : HomeUiState

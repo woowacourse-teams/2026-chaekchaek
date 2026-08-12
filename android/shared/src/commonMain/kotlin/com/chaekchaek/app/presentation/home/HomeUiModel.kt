@@ -52,6 +52,13 @@ data class GuestBannerUiModel(
     val exhausted: Boolean,
 )
 
+data class ReadingBookUiModel(
+    val title: String,
+    val coverId: String,
+    val currentPage: Int,
+    val totalPages: Int,
+)
+
 internal object HomeLabels {
     const val RECENT_QUOTES_TITLE = "최근 감상들"
     const val OVERLAPPED_BOOKS_TITLE = "밑줄이 겹친 책"
