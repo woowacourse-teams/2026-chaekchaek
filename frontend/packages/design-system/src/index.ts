@@ -12,3 +12,6 @@ export type { Props as DataInfoProps } from './components/DataInfo';
 
 export { ImgBox } from './components/ImgBox';
 export type { Props as ImgBoxProps } from './components/ImgBox';
+
+export { List } from './components/List';
+export type { Props as ListProps } from './components/List';
