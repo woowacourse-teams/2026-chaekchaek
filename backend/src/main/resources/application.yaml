@@ -1,3 +1,10 @@
 spring:
   application:
     name: chaekchaek
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
