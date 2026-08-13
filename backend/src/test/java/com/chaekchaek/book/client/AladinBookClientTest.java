@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 class AladinBookClientTest {
 
@@ -84,37 +85,80 @@ class AladinBookClientTest {
         // when & then
         assertThatThrownBy(() -> client.searchBooks("마션", 1))
                 .isInstanceOfSatisfying(
-                        AladinApiException.class,
+                        AladinClientException.class,
                         exception -> SoftAssertions.assertSoftly(softly -> {
-                            softly.assertThat(exception.getErrorCode())
-                                    .isEqualTo(1);
+                            softly.assertThat(exception.getMessage()).contains("code=1");
                             softly.assertThat(exception.getMessage())
-                                    .contains("키를 입력해 주세요");
+                                    .contains("message=잘못된 인증키입니다.");
                         })
                 );
     }
 
     @Test
-    @DisplayName("알라딘이 본문 없는 200 응답을 반환하면 필수 본문 예외가 발생한다")
-    void should_ThrowRequiredBodyException_When_AladinReturnsEmpty200Response() {
+    @DisplayName("알라딘이 본문 없는 200 응답을 반환하면 외부 API 예외로 정규화한다")
+    void should_ThrowAladinClientException_When_AladinReturnsEmpty200Response() {
         // given
         aladinServer.본문_없는_200_응답한다();
 
         // when & then
         assertThatThrownBy(() -> client.searchBooks("마션", 1))
-                .isExactlyInstanceOf(IllegalStateException.class)
-                .hasMessage("The body must not be null");
+                .isInstanceOfSatisfying(
+                        AladinClientException.class,
+                        exception -> SoftAssertions.assertSoftly(softly -> {
+                            softly.assertThat(exception.getCause())
+                                    .isInstanceOf(IllegalStateException.class);
+                        })
+                );
     }
 
     @Test
-    @DisplayName("알라딘이 204 응답을 반환하면 필수 본문 예외가 발생한다")
-    void should_ThrowRequiredBodyException_When_AladinReturns204Response() {
+    @DisplayName("알라딘이 204 응답을 반환하면 외부 API 예외로 정규화한다")
+    void should_ThrowAladinClientException_When_AladinReturns204Response() {
         // given
         aladinServer.콘텐츠_없는_204_응답한다();
 
         // when & then
         assertThatThrownBy(() -> client.searchBooks("마션", 1))
-                .isExactlyInstanceOf(IllegalStateException.class)
-                .hasMessage("The body must not be null");
+                .isInstanceOfSatisfying(
+                        AladinClientException.class,
+                        exception -> SoftAssertions.assertSoftly(softly -> {
+                            softly.assertThat(exception.getCause())
+                                    .isInstanceOf(IllegalStateException.class);
+                        })
+                );
+    }
+
+    @Test
+    @DisplayName("알라딘이 500 응답을 반환하면 외부 API 예외로 정규화한다")
+    void should_ThrowAladinClientException_When_AladinReturnsServerError() {
+        // given
+        aladinServer.서버_오류_500_응답한다();
+
+        // when & then
+        assertThatThrownBy(() -> client.searchBooks("마션", 1))
+                .isInstanceOfSatisfying(
+                        AladinClientException.class,
+                        exception -> SoftAssertions.assertSoftly(softly -> {
+                            softly.assertThat(exception.getCause())
+                                    .isInstanceOf(RestClientException.class);
+                        })
+                );
+    }
+
+    @Test
+    @DisplayName("알라딘 연결이 중단되면 외부 API 예외로 정규화한다")
+    void should_ThrowAladinClientException_When_AladinDisconnects() {
+        // given
+        aladinServer.연결을_즉시_종료한다();
+
+        // when & then
+        assertThatThrownBy(() -> client.searchBooks("마션", 1))
+                .isInstanceOfSatisfying(
+                        AladinClientException.class,
+                        exception -> SoftAssertions.assertSoftly(softly -> {
+                            softly.assertThat(exception.getCause())
+                                    .isInstanceOf(RestClientException.class);
+                        })
+                );
     }
 }
