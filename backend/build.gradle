@@ -1,3 +1,5 @@
+import org.yaml.snakeyaml.Yaml
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.1.0'
@@ -111,43 +113,63 @@ tasks.register('verifyOpenApi') {
 			throw new GradleException("OpenAPI specification was not generated: ${sourceFile}")
 		}
 
-		def specification = sourceFile.getText('UTF-8')
-		def requiredFragments = [
-				[path: '/api/v1/books:', description: 'path /api/v1/books'],
-				[path: 'get:', description: 'GET operation']
-		]
-
-		requiredFragments.each { requiredFragment ->
-			if (!specification.contains(requiredFragment.path)) {
-				throw new GradleException("OpenAPI specification is missing ${requiredFragment.description}")
-			}
+		def specificationText = sourceFile.getText('UTF-8')
+		def specification = new Yaml().load(specificationText) as Map
+		def paths = specification?.get('paths') as Map
+		def booksPath = paths?.get('/api/v1/books') as Map
+		if (booksPath == null) {
+			throw new GradleException('OpenAPI specification is missing path /api/v1/books')
 		}
 
-		['200', '400', '500', '502'].each { responseCode ->
-			if (!specification.contains("\"${responseCode}\":")) {
+		def getOperation = booksPath.get('get') as Map
+		if (getOperation == null) {
+			throw new GradleException('OpenAPI specification is missing GET operation for /api/v1/books')
+		}
+
+		def responses = (getOperation.get('responses') as Map)?.collectEntries { status, response ->
+			[(status.toString()): response]
+		}
+		if (responses == null) {
+			throw new GradleException('OpenAPI specification is missing responses for GET /api/v1/books')
+		}
+
+		def requiredResponseCodes = ['200', '400', '500', '502'] as Set
+		requiredResponseCodes.each { responseCode ->
+			if (!responses.containsKey(responseCode)) {
 				throw new GradleException("OpenAPI specification is missing response ${responseCode}")
 			}
 		}
+		if (responses.keySet() != requiredResponseCodes) {
+			throw new GradleException('OpenAPI specification has unexpected responses for GET /api/v1/books')
+		}
 
-		def requiredProblemDetailFragments = [
-				[path: 'application/problem+json:', description: 'application/problem+json media type'],
-				[path: 'ProblemDetail:', description: 'ProblemDetail schema'],
-				[path: 'type:', description: 'ProblemDetail field type'],
-				[path: 'title:', description: 'ProblemDetail field title'],
-				[path: 'status:', description: 'ProblemDetail field status'],
-				[path: 'detail:', description: 'ProblemDetail field detail'],
-				[path: 'instance:', description: 'ProblemDetail field instance'],
-				[path: 'code:', description: 'ProblemDetail field code']
-		]
-
-		requiredProblemDetailFragments.each { requiredFragment ->
-			if (!specification.contains(requiredFragment.path)) {
-				throw new GradleException("OpenAPI specification is missing ${requiredFragment.description}")
+		['400', '500', '502'].each { responseCode ->
+			def response = responses.get(responseCode) as Map
+			def content = response?.get('content') as Map
+			def problemContent = content?.get('application/problem+json') as Map
+			if (problemContent == null) {
+				throw new GradleException("OpenAPI specification is missing application/problem+json for response ${responseCode}")
+			}
+			def schema = problemContent.get('schema') as Map
+			if (schema?.get('\$ref') != '#/components/schemas/ProblemDetail') {
+				throw new GradleException("OpenAPI specification is missing ProblemDetail schema for response ${responseCode}")
 			}
 		}
 
+		def components = specification?.get('components') as Map
+		def schemas = components?.get('schemas') as Map
+		def problemDetail = schemas?.get('ProblemDetail') as Map
+		if (problemDetail == null) {
+			throw new GradleException('OpenAPI specification is missing ProblemDetail schema')
+		}
+		def requiredProblemDetailFields = ['type', 'title', 'status', 'detail', 'instance', 'code'] as Set
+		def problemDetailFields = (problemDetail.get('properties') as Map)?.keySet()
+		if (problemDetailFields != requiredProblemDetailFields) {
+			throw new GradleException('OpenAPI specification has invalid ProblemDetail fields')
+		}
+
 		['database password leaked', 'invalid secret key'].each { forbiddenValue ->
-			if (specification.contains(forbiddenValue)) {
+			if (specificationText.contains(forbiddenValue)) {
 				throw new GradleException("OpenAPI specification exposes forbidden value: ${forbiddenValue}")
 			}
 		}
