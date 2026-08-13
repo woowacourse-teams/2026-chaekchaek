@@ -3,8 +3,8 @@ package com.chaekchaek.review.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.chaekchaek.review.exception.ReviewErrorCode;
-import com.chaekchaek.review.exception.ReviewException;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -32,9 +32,9 @@ class ReviewTest {
 
         // when & then
         assertThatThrownBy(() -> review.assertModifiableBy(2L))
-                .isInstanceOf(ReviewException.class)
-                .extracting(exception -> ((ReviewException) exception).getErrorCode())
-                .isEqualTo(ReviewErrorCode.DELETED_RESOURCE);
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.DELETED_RESOURCE);
     }
 
     @Test
@@ -45,8 +45,8 @@ class ReviewTest {
 
         // when & then
         assertThatThrownBy(() -> review.assertModifiableBy(3L))
-                .isInstanceOf(ReviewException.class)
-                .extracting(exception -> ((ReviewException) exception).getErrorCode())
-                .isEqualTo(ReviewErrorCode.FORBIDDEN);
+                .isInstanceOf(BusinessException.class)
+                .extracting(exception -> ((BusinessException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.FORBIDDEN);
     }
 }

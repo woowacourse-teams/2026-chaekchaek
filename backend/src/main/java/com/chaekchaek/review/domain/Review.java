@@ -1,7 +1,7 @@
 package com.chaekchaek.review.domain;
 
-import com.chaekchaek.review.exception.ReviewErrorCode;
-import com.chaekchaek.review.exception.ReviewException;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -96,10 +96,10 @@ public class Review {
 
     public void assertModifiableBy(long memberId) {
         if (deletedAt != null) {
-            throw new ReviewException(ReviewErrorCode.DELETED_RESOURCE);
+            throw new BusinessException(ErrorCode.DELETED_RESOURCE);
         }
         if (this.memberId != memberId) {
-            throw new ReviewException(ReviewErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.FORBIDDEN);
         }
     }
 
