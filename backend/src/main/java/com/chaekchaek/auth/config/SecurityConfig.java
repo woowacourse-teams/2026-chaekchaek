@@ -3,6 +3,7 @@ package com.chaekchaek.auth.config;
 import com.chaekchaek.auth.oauth.google.GoogleOidcUserService;
 import com.chaekchaek.auth.handler.OAuth2AuthenticationFailureHandler;
 import com.chaekchaek.auth.handler.OAuth2AuthenticationSuccessHandler;
+import com.chaekchaek.auth.handler.RestAuthenticationEntryPoint;
 import com.chaekchaek.auth.token.access.CookieBearerTokenResolver;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ public class SecurityConfig {
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final GoogleOidcUserService googleOidcUserService;
     private final CookieBearerTokenResolver cookieBearerTokenResolver;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final String frontendOrigin;
 
     public SecurityConfig(
@@ -31,12 +33,14 @@ public class SecurityConfig {
             OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler,
             GoogleOidcUserService googleOidcUserService,
             CookieBearerTokenResolver cookieBearerTokenResolver,
+            RestAuthenticationEntryPoint restAuthenticationEntryPoint,
             @Value("${app.frontend.base-url}") String frontendOrigin
     ) {
         this.oAuth2AuthenticationSuccessHandler = oAuth2AuthenticationSuccessHandler;
         this.oAuth2AuthenticationFailureHandler = oAuth2AuthenticationFailureHandler;
         this.googleOidcUserService = googleOidcUserService;
         this.cookieBearerTokenResolver = cookieBearerTokenResolver;
+        this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
         this.frontendOrigin = frontendOrigin;
     }
 
@@ -65,6 +69,7 @@ public class SecurityConfig {
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer
                         .bearerTokenResolver(cookieBearerTokenResolver)
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
                         .jwt(Customizer.withDefaults()))
                 .build();
     }
