@@ -2,4 +2,6 @@ openapi: 3.0.1
 info:
   title: ChaekChaek API Test Fixture
   version: 0.0.0-test
+servers:
+- url: ..
 paths: {}

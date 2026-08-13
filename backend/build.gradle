@@ -61,7 +61,7 @@ dependencies {
 }
 
 openapi3 {
-	server = '/'
+	server = '..'
 	title = 'ChaekChaek API'
 	description = 'ChaekChaek REST API'
 	version = project.version.toString()
@@ -125,6 +125,12 @@ tasks.register('verifyOpenApi') {
 		if (getOperation == null) {
 			throw new GradleException('OpenAPI specification is missing GET operation for /api/v1/books')
 		}
+		if (getOperation.get('summary') != '도서 검색') {
+			throw new GradleException('OpenAPI specification has invalid summary for GET /api/v1/books')
+		}
+		if (getOperation.get('description') != '도서명과 페이지 번호로 도서를 검색한다') {
+			throw new GradleException('OpenAPI specification has invalid description for GET /api/v1/books')
+		}
 
 		def responses = (getOperation.get('responses') as Map)?.collectEntries { status, response ->
 			[(status.toString()): response]
@@ -162,6 +168,14 @@ tasks.register('verifyOpenApi') {
 		def problemDetailFields = (problemDetail.get('properties') as Map)?.keySet()
 		if (problemDetailFields == null || !problemDetailFields.containsAll(requiredProblemDetailFields)) {
 			throw new GradleException('OpenAPI specification has invalid ProblemDetail fields')
+		}
+
+		def servers = specification?.get('servers') as List
+		def serverUrl = servers == null || servers.isEmpty()
+				? null
+				: (servers.first() as Map)?.get('url')
+		if (serverUrl != '..') {
+			throw new GradleException('OpenAPI specification must use relative server URL ..')
 		}
 
 		['database password leaked', 'invalid secret key'].each { forbiddenValue ->

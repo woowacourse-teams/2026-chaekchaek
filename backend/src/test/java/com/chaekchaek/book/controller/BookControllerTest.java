@@ -47,6 +47,9 @@ import org.springframework.test.web.servlet.ResultActions;
 @AutoConfigureRestDocs
 class BookControllerTest {
 
+    private static final String BOOK_SEARCH_SUMMARY = "도서 검색";
+    private static final String BOOK_SEARCH_DESCRIPTION = "도서명과 페이지 번호로 도서를 검색한다";
+
     private static final FieldDescriptor[] BOOK_SEARCH_RESPONSE_FIELDS = {
             fieldWithPath("totalCount").type(JsonFieldType.NUMBER)
                     .description("검색 결과의 전체 도서 수"),
@@ -135,8 +138,8 @@ class BookControllerTest {
                         ),
                         responseFields(BOOK_SEARCH_RESPONSE_FIELDS),
                         resource(ResourceSnippetParameters.builder()
-                                .summary("도서 검색")
-                                .description("도서명과 페이지 번호로 도서를 검색한다")
+                                .summary(BOOK_SEARCH_SUMMARY)
+                                .description(BOOK_SEARCH_DESCRIPTION)
                                 .tag("도서")
                                 .queryParameters(
                                         ResourceDocumentation.parameterWithName("query")
@@ -195,8 +198,7 @@ class BookControllerTest {
                 "INVALID_REQUEST",
                 "요청값이 올바르지 않습니다."
         ).andDo(problemDetailDocument(
-                "book-search-invalid-request",
-                "요청 파라미터가 올바르지 않으면 400 오류를 반환한다."
+                "book-search-invalid-request"
         ));
 
         verifyNoInteractions(bookSearchService);
@@ -251,8 +253,7 @@ class BookControllerTest {
                 "서버 내부 오류가 발생했습니다."
         ).andExpect(content().string(not(containsString("database password leaked"))))
                 .andDo(problemDetailDocument(
-                        "book-search-internal-server-error",
-                        "예상하지 못한 서버 오류가 발생하면 500 오류를 반환한다."
+                        "book-search-internal-server-error"
                 ));
     }
 
@@ -273,21 +274,17 @@ class BookControllerTest {
                 "외부 서비스 호출에 실패했습니다."
         ).andExpect(content().string(not(containsString("invalid secret key"))))
                 .andDo(problemDetailDocument(
-                        "book-search-external-api-error",
-                        "외부 서비스 호출에 실패하면 502 오류를 반환한다."
+                        "book-search-external-api-error"
                 ));
     }
 
-    private RestDocumentationResultHandler problemDetailDocument(
-            String identifier,
-            String description
-    ) {
+    private RestDocumentationResultHandler problemDetailDocument(String identifier) {
         return document(
                 identifier,
                 responseFields(PROBLEM_DETAIL_FIELDS),
                 resource(ResourceSnippetParameters.builder()
-                        .summary("도서 검색")
-                        .description(description)
+                        .summary(BOOK_SEARCH_SUMMARY)
+                        .description(BOOK_SEARCH_DESCRIPTION)
                         .tag("도서")
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_DETAIL_FIELDS)
