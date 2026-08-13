@@ -66,7 +66,8 @@ public class ApiExceptionHandler {
                     HttpStatus.NOT_FOUND;
             case LIBRARY_ITEM_ALREADY_EXISTS, REACTION_ALREADY_EXISTS, TOTAL_PAGES_CONFLICT ->
                     HttpStatus.CONFLICT;
-            case INVALID_REQUEST, DELETED_RESOURCE, INVALID_READING_STATE -> HttpStatus.BAD_REQUEST;
+            case INVALID_REQUEST, DELETED_RESOURCE -> HttpStatus.BAD_REQUEST;
+            case INVALID_READING_STATE -> HttpStatus.UNPROCESSABLE_CONTENT;
             case EXTERNAL_API_ERROR -> HttpStatus.BAD_GATEWAY;
             case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
         };

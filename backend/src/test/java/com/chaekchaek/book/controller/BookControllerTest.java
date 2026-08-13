@@ -23,6 +23,8 @@ import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.service.BookSearchService;
 import com.chaekchaek.book.service.BookService;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import com.epages.restdocs.apispec.ResourceDocumentation;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.epages.restdocs.apispec.Schema;
@@ -288,6 +290,24 @@ class BookControllerTest {
                 .andDo(problemDetailDocument(
                         "book-search-external-api-error"
                 ));
+    }
+
+    @Test
+    @DisplayName("읽기 상태가 유효하지 않으면 422 응답을 반환한다")
+    void should_ReturnUnprocessableEntity_When_ReadingStateIsInvalid() throws Exception {
+        // given
+        when(bookSearchService.search("마션", 1))
+                .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
+
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/books")
+                        .param("query", "마션")
+                        .param("page", "1")),
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                "INVALID_READING_STATE",
+                "현재 읽기 상태에서는 요청을 처리할 수 없습니다."
+        );
     }
 
     private RestDocumentationResultHandler problemDetailDocument(String identifier) {

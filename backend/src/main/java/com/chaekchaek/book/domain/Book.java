@@ -10,19 +10,25 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "books")
+@Table(
+        name = "books",
+        uniqueConstraints = @UniqueConstraint(name = "uk_books_isbn13", columnNames = "isbn13")
+)
 public class Book {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 13)
+    @Column(nullable = false, length = 13)
     private String isbn13;
 
     @Column(nullable = false)
@@ -92,8 +98,29 @@ public class Book {
         if (!Isbn13.isValid(isbn13)) {
             throw new IllegalArgumentException("ISBN13 must have a valid checksum");
         }
+        validateTotalPages(totalPages);
         return new Book(isbn13, title, coverImageUrl, authors, translators, publisher, category,
                 publishedDate, totalPages);
+    }
+
+    public void rememberTotalPages(Integer requestedTotalPages) {
+        if (requestedTotalPages == null) {
+            return;
+        }
+        validateTotalPages(requestedTotalPages);
+        if (totalPages == null) {
+            totalPages = requestedTotalPages;
+            return;
+        }
+        if (!totalPages.equals(requestedTotalPages)) {
+            throw new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT);
+        }
+    }
+
+    private static void validateTotalPages(Integer totalPages) {
+        if (totalPages != null && totalPages <= 0) {
+            throw new IllegalArgumentException("Total pages must be positive");
+        }
     }
 
     public Long getId() {
