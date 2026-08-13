@@ -36,8 +36,18 @@ class SwaggerDocsMvcTest {
                 .andExpect(content().string(containsString(
                         "../webjars/swagger-ui/5.32.11/swagger-ui-standalone-preset.js")))
                 .andExpect(content().string(containsString(
-                        "../webjars/swagger-ui/5.32.11/swagger-ui.css")))
-                .andExpect(content().string(containsString("supportedSubmitMethods: []")))
+                        "../webjars/swagger-ui/5.32.11/swagger-ui.css")));
+    }
+
+    @Test
+    @DisplayName("Swagger UI에서 GET 요청만 실행하고 외부 설정 및 자격 증명을 차단한다")
+    void should_ApplyReadOnlySwaggerUiSecuritySettings() throws Exception {
+        mockMvc.perform(get("/docs/swagger-ui.html"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("supportedSubmitMethods: ['get']")))
+                .andExpect(content().string(containsString("queryConfigEnabled: false")))
+                .andExpect(content().string(containsString("withCredentials: false")))
+                .andExpect(content().string(containsString("request.credentials = 'omit'")))
                 .andExpect(content().string(containsString("validatorUrl: null")));
     }
 

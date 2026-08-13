@@ -18,7 +18,13 @@
             deepLinking: true,
             presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
             layout: 'StandaloneLayout',
-            supportedSubmitMethods: [],
+            supportedSubmitMethods: ['get'],
+            queryConfigEnabled: false,
+            withCredentials: false,
+            requestInterceptor: request => {
+                request.credentials = 'omit';
+                return request;
+            },
             validatorUrl: null
         });
     };
