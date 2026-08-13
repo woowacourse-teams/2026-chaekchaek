@@ -24,6 +24,7 @@ import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.service.BookSearchService;
 import com.epages.restdocs.apispec.ResourceDocumentation;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
+import com.epages.restdocs.apispec.Schema;
 import com.epages.restdocs.apispec.SimpleType;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +38,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -71,6 +73,15 @@ class BookControllerTest {
                     .description("도서 카테고리"),
             fieldWithPath("items[].publisher").type(JsonFieldType.STRING)
                     .description("출판사")
+    };
+
+    private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
+            fieldWithPath("type").type(JsonFieldType.STRING).description("문제 유형 URI"),
+            fieldWithPath("title").type(JsonFieldType.STRING).description("HTTP 상태 설명"),
+            fieldWithPath("status").type(JsonFieldType.NUMBER).description("HTTP 상태 코드"),
+            fieldWithPath("detail").type(JsonFieldType.STRING).description("오류 상세 메시지"),
+            fieldWithPath("instance").type(JsonFieldType.STRING).description("오류가 발생한 요청 경로"),
+            fieldWithPath("code").type(JsonFieldType.STRING).description("애플리케이션 오류 코드")
     };
 
     @Autowired
@@ -183,7 +194,10 @@ class BookControllerTest {
                 HttpStatus.BAD_REQUEST,
                 "INVALID_REQUEST",
                 "요청값이 올바르지 않습니다."
-        );
+        ).andDo(problemDetailDocument(
+                "book-search-invalid-request",
+                "요청 파라미터가 올바르지 않으면 400 오류를 반환한다."
+        ));
 
         verifyNoInteractions(bookSearchService);
     }
@@ -235,7 +249,11 @@ class BookControllerTest {
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "INTERNAL_SERVER_ERROR",
                 "서버 내부 오류가 발생했습니다."
-        ).andExpect(content().string(not(containsString("database password leaked"))));
+        ).andExpect(content().string(not(containsString("database password leaked"))))
+                .andDo(problemDetailDocument(
+                        "book-search-internal-server-error",
+                        "예상하지 못한 서버 오류가 발생하면 500 오류를 반환한다."
+                ));
     }
 
     @Test
@@ -253,7 +271,28 @@ class BookControllerTest {
                 HttpStatus.BAD_GATEWAY,
                 "EXTERNAL_API_ERROR",
                 "외부 서비스 호출에 실패했습니다."
-        ).andExpect(content().string(not(containsString("invalid secret key"))));
+        ).andExpect(content().string(not(containsString("invalid secret key"))))
+                .andDo(problemDetailDocument(
+                        "book-search-external-api-error",
+                        "외부 서비스 호출에 실패하면 502 오류를 반환한다."
+                ));
+    }
+
+    private RestDocumentationResultHandler problemDetailDocument(
+            String identifier,
+            String description
+    ) {
+        return document(
+                identifier,
+                responseFields(PROBLEM_DETAIL_FIELDS),
+                resource(ResourceSnippetParameters.builder()
+                        .summary("도서 검색")
+                        .description(description)
+                        .tag("도서")
+                        .responseSchema(Schema.schema("ProblemDetail"))
+                        .responseFields(PROBLEM_DETAIL_FIELDS)
+                        .build())
+        );
     }
 
     private ResultActions expectProblemDetail(
