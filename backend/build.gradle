@@ -84,7 +84,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 }
 
 def stageOpenApiSpec = tasks.register('stageOpenApiSpec') {
-	dependsOn 'openapi3'
+	dependsOn 'verifyOpenApi'
 	inputs.file openApiSpecFile
 	outputs.file stagedOpenApiSpecFile
 	doLast {
@@ -99,6 +99,58 @@ def stageOpenApiSpec = tasks.register('stageOpenApiSpec') {
 				targetFile.toPath(),
 				java.nio.file.StandardCopyOption.REPLACE_EXISTING
 		)
+	}
+}
+
+tasks.register('verifyOpenApi') {
+	dependsOn 'openapi3'
+	inputs.file openApiSpecFile
+	doLast {
+		def sourceFile = openApiSpecFile.get().asFile
+		if (!sourceFile.isFile()) {
+			throw new GradleException("OpenAPI specification was not generated: ${sourceFile}")
+		}
+
+		def specification = sourceFile.getText('UTF-8')
+		def requiredFragments = [
+				[path: '/api/v1/books:', description: 'path /api/v1/books'],
+				[path: 'get:', description: 'GET operation']
+		]
+
+		requiredFragments.each { requiredFragment ->
+			if (!specification.contains(requiredFragment.path)) {
+				throw new GradleException("OpenAPI specification is missing ${requiredFragment.description}")
+			}
+		}
+
+		['200', '400', '500', '502'].each { responseCode ->
+			if (!specification.contains("\"${responseCode}\":")) {
+				throw new GradleException("OpenAPI specification is missing response ${responseCode}")
+			}
+		}
+
+		def requiredProblemDetailFragments = [
+				[path: 'application/problem+json:', description: 'application/problem+json media type'],
+				[path: 'ProblemDetail:', description: 'ProblemDetail schema'],
+				[path: 'type:', description: 'ProblemDetail field type'],
+				[path: 'title:', description: 'ProblemDetail field title'],
+				[path: 'status:', description: 'ProblemDetail field status'],
+				[path: 'detail:', description: 'ProblemDetail field detail'],
+				[path: 'instance:', description: 'ProblemDetail field instance'],
+				[path: 'code:', description: 'ProblemDetail field code']
+		]
+
+		requiredProblemDetailFragments.each { requiredFragment ->
+			if (!specification.contains(requiredFragment.path)) {
+				throw new GradleException("OpenAPI specification is missing ${requiredFragment.description}")
+			}
+		}
+
+		['database password leaked', 'invalid secret key'].each { forbiddenValue ->
+			if (specification.contains(forbiddenValue)) {
+				throw new GradleException("OpenAPI specification exposes forbidden value: ${forbiddenValue}")
+			}
+		}
 	}
 }
 
