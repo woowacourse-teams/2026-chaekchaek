@@ -79,14 +79,7 @@ import com.chaekchaek.app.presentation.home.ReadingBookUiModel
 import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import com.chamsae.chaekchaek.LocalSharedComponent
 import com.chamsae.chaekchaek.R
-import com.chamsae.chaekchaek.theme.ChaekAccent
 import com.chamsae.chaekchaek.theme.ChaekBand
-import com.chamsae.chaekchaek.theme.ChaekBorder
-import com.chamsae.chaekchaek.theme.ChaekBorderSoft
-import com.chamsae.chaekchaek.theme.ChaekInk
-import com.chamsae.chaekchaek.theme.ChaekInkSecondary
-import com.chamsae.chaekchaek.theme.ChaekInkTertiary
-import com.chamsae.chaekchaek.theme.ChaekSurface
 import com.chamsae.chaekchaek.theme.ChaekchaekTheme
 import kotlin.math.abs
 import kotlin.random.Random
@@ -111,7 +104,7 @@ fun HomeScreen(
 @Composable
 private fun LoadingContent(modifier: Modifier) {
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = ChaekAccent)
+        CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
     }
 }
 
@@ -144,22 +137,22 @@ private fun HomeContent(
     onSearchBook: () -> Unit,
     modifier: Modifier,
 ) {
-    val trending = state.sections.filterIsInstance<FeedSectionUiModel.TrendingBooks>().firstOrNull()
-    val recent = state.sections.filterIsInstance<FeedSectionUiModel.RecentQuotes>().firstOrNull()
-    val overlapped = state.sections.filterIsInstance<FeedSectionUiModel.OverlappedBooks>().firstOrNull()
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
         item { HomeHeader() }
-        trending?.let { item { TrendingSection(it) } }
-        if (recent != null || overlapped != null) {
-            item {
-                RecentReflectionsSection(
-                    quotes = recent?.cards.orEmpty(),
-                    overlapped = overlapped?.cards.orEmpty(),
+        items(state.sections) { section ->
+            when (section) {
+                is FeedSectionUiModel.TrendingBooks -> TrendingSection(section)
+                is FeedSectionUiModel.RecentQuotes -> RecentReflectionsSection(
+                    title = section.title,
+                    quotes = section.cards,
+                )
+                is FeedSectionUiModel.OverlappedBooks -> RecentReflectionsSection(
+                    title = section.title,
+                    overlapped = section.cards,
                 )
             }
         }
@@ -187,7 +180,7 @@ private fun CurrentReadingSection(book: ReadingBookUiModel) {
             .padding(horizontal = 20.dp)
             .padding(bottom = 12.dp),
     ) {
-        HorizontalDivider(color = ChaekInk, thickness = 1.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.onBackground, thickness = 1.dp)
         Spacer(Modifier.height(22.dp))
         Text(
             "이어서 읽기",
@@ -197,8 +190,8 @@ private fun CurrentReadingSection(book: ReadingBookUiModel) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            color = ChaekSurface,
-            border = BorderStroke(1.dp, ChaekBorderSoft),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         ) {
             Row(
                 modifier = Modifier.padding(12.dp),
@@ -226,12 +219,17 @@ private fun CurrentReadingSection(book: ReadingBookUiModel) {
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Text("›", color = ChaekInkSecondary, fontSize = 18.sp, lineHeight = 18.sp)
+                        Text(
+                            "›",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 18.sp,
+                            lineHeight = 18.sp,
+                        )
                     }
                     Text(
                         "${book.currentPage} / ${book.totalPages}쪽",
                         style = MaterialTheme.typography.bodySmall,
-                        color = ChaekInkSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Box(
                         modifier = Modifier
@@ -244,13 +242,13 @@ private fun CurrentReadingSection(book: ReadingBookUiModel) {
                             modifier = Modifier
                                 .fillMaxWidth(readingProgress(book.currentPage, book.totalPages))
                                 .fillMaxHeight()
-                                .background(ChaekInk),
+                                .background(MaterialTheme.colorScheme.onSurface),
                         )
                     }
                     Text(
                         "이어서 기록하기  ↗",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = ChaekInkSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -265,8 +263,8 @@ private fun EmptyReadingSection(onSearchBook: () -> Unit) {
             .fillMaxWidth()
             .padding(start = 20.dp, end = 20.dp, bottom = 17.dp),
         shape = RoundedCornerShape(12.dp),
-        color = ChaekSurface,
-        border = BorderStroke(1.dp, ChaekBorderSoft),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -279,13 +277,13 @@ private fun EmptyReadingSection(onSearchBook: () -> Unit) {
             Text(
                 "책을 등록하면 읽은 쪽수와 감상을 남길 수 있어요.",
                 style = MaterialTheme.typography.bodySmall.copy(lineHeight = 15.sp),
-                color = ChaekInkSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(44.dp)
-                    .border(1.dp, ChaekBorder, RoundedCornerShape(6.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
                     .clickable(role = Role.Button, onClick = onSearchBook)
                     .padding(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -295,12 +293,12 @@ private fun EmptyReadingSection(onSearchBook: () -> Unit) {
                     painter = painterResource(R.drawable.ic_search),
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = ChaekInkSecondary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     "책 제목으로 찾기",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = ChaekInkTertiary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -337,7 +335,7 @@ private fun HomeHeader() {
                     painter = painterResource(R.drawable.ic_bell),
                     contentDescription = "알림",
                     modifier = Modifier.size(20.dp),
-                    tint = ChaekInk,
+                    tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
         }
@@ -429,8 +427,8 @@ private fun TrendingSection(section: FeedSectionUiModel.TrendingBooks) {
                     .size(width = 150.dp, height = 38.dp)
                     .zIndex(2f),
                 shape = RoundedCornerShape(6.dp),
-                color = ChaekSurface,
-                border = BorderStroke(1.dp, ChaekBorderSoft),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 shadowElevation = 3.dp,
             ) {
                 Row(
@@ -448,8 +446,6 @@ private fun TrendingSection(section: FeedSectionUiModel.TrendingBooks) {
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center
                     )
-//                    Spacer(Modifier.width(8.dp))
-//                    Text("↗", color = ChaekAccent, fontSize = 14.sp)
                 }
             }
         }
@@ -546,8 +542,9 @@ internal fun collagePlacements(bookIds: List<String>): List<CollagePlacement> {
 
 @Composable
 private fun RecentReflectionsSection(
-    quotes: List<QuoteCardUiModel>,
-    overlapped: List<OverlappedCardUiModel>,
+    title: String,
+    quotes: List<QuoteCardUiModel> = emptyList(),
+    overlapped: List<OverlappedCardUiModel> = emptyList(),
 ) {
     Column(
         modifier = Modifier
@@ -556,7 +553,7 @@ private fun RecentReflectionsSection(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            "최근 감상들",
+            title,
             style = MaterialTheme.typography.headlineLarge.copy(
                 fontSize = 25.sp,
                 lineHeight = 30.sp,
@@ -606,8 +603,8 @@ private fun ReflectionCard(
     Surface(
         modifier = Modifier.size(width = 318.dp, height = 184.dp),
         shape = RoundedCornerShape(12.dp),
-        color = ChaekSurface,
-        border = BorderStroke(1.dp, ChaekBorderSoft),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
             modifier = Modifier
@@ -642,7 +639,7 @@ private fun ReflectionCard(
                     )
                     Text(
                         "›",
-                        color = ChaekInkSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 20.sp,
                         lineHeight = 20.sp,
                     )
@@ -663,12 +660,12 @@ private fun ReflectionCard(
                         painter = painterResource(R.drawable.ic_comment),
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = ChaekInkSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         replyLabel,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = ChaekInkSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -744,7 +741,7 @@ private fun AuthorLine(
         Text(
             label,
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-            color = ChaekInkSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
