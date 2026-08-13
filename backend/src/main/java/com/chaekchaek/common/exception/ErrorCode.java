@@ -7,6 +7,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ErrorCode {
     INVALID_REQUEST("INVALID_REQUEST", "요청값이 올바르지 않습니다."),
+    UNAUTHORIZED("UNAUTHORIZED", "인증이 필요합니다."),
+    FORBIDDEN("FORBIDDEN", "요청한 작업을 수행할 권한이 없습니다."),
+    BOOK_NOT_FOUND("BOOK_NOT_FOUND", "책을 찾을 수 없습니다."),
+    REVIEW_NOT_FOUND("REVIEW_NOT_FOUND", "감상을 찾을 수 없습니다."),
+    REPLY_NOT_FOUND("REPLY_NOT_FOUND", "답글을 찾을 수 없습니다."),
+    LIBRARY_ITEM_NOT_FOUND("LIBRARY_ITEM_NOT_FOUND", "서재 항목을 찾을 수 없습니다."),
+    LIBRARY_ITEM_ALREADY_EXISTS("LIBRARY_ITEM_ALREADY_EXISTS", "이미 서재에 등록된 책입니다."),
+    REACTION_ALREADY_EXISTS("REACTION_ALREADY_EXISTS", "이미 좋아요를 남겼습니다."),
+    TOTAL_PAGES_CONFLICT("TOTAL_PAGES_CONFLICT", "전체 페이지 수가 기존 정보와 다릅니다."),
+    DELETED_RESOURCE("DELETED_RESOURCE", "삭제된 리소스입니다."),
+    INVALID_READING_STATE("INVALID_READING_STATE", "현재 읽기 상태에서는 요청을 처리할 수 없습니다."),
     EXTERNAL_API_ERROR("EXTERNAL_API_ERROR", "외부 서비스 호출에 실패했습니다."),
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");
 

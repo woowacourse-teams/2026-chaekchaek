@@ -1,6 +1,13 @@
 spring:
   application:
     name: chaekchaek
+  datasource:
+    url: jdbc:h2:mem:chaekchaek;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
 
 aladin:
   base-url: http://localhost:8080

@@ -5,7 +5,11 @@ import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.client.dto.AladinSearchResponse;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
+import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.repository.BookRepository;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +18,18 @@ import org.springframework.stereotype.Service;
 public class BookSearchService {
 
     private final AladinBookClient bookClient;
+    private final BookRepository bookRepository;
 
     public BookSearchResponse search(String query, int page) {
         AladinSearchResponse source = bookClient.searchBooks(query, page);
 
+        Map<String, Book> registeredBooks = bookRepository.findAllByIsbn13In(
+                        source.items().stream().map(AladinBookItem::isbn13).toList())
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(Book::getIsbn13, Function.identity()));
         List<BookItem> items = source.items()
                 .stream()
-                .map(this::toBookItem)
+                .map(item -> toBookItem(item, registeredBooks.get(item.isbn13())))
                 .toList();
         Integer nextPage = source.hasNextPage()
                 ? source.startIndex() + 1
@@ -33,11 +42,12 @@ public class BookSearchService {
         );
     }
 
-    private BookItem toBookItem(AladinBookItem source) {
+    private BookItem toBookItem(AladinBookItem source, Book registeredBook) {
         AladinContributorParser.Contributors contributors =
                 AladinContributorParser.parse(source.author());
 
         return new BookItem(
+                registeredBook == null ? null : registeredBook.getId(),
                 source.title(),
                 source.cover(),
                 contributors.authors(),
@@ -45,7 +55,8 @@ public class BookSearchService {
                 source.pubDate(),
                 source.isbn13(),
                 source.categoryName(),
-                source.publisher()
+                source.publisher(),
+                registeredBook == null ? null : 0
         );
     }
 }

@@ -22,6 +22,7 @@ import com.chaekchaek.book.client.AladinClientException;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.service.BookSearchService;
+import com.chaekchaek.book.service.BookService;
 import com.epages.restdocs.apispec.ResourceDocumentation;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.epages.restdocs.apispec.Schema;
@@ -58,6 +59,9 @@ class BookControllerTest {
                     .optional(),
             fieldWithPath("items").type(JsonFieldType.ARRAY)
                     .description("검색된 도서 목록. 한 페이지당 최대 10개"),
+            fieldWithPath("items[].bookId").type(JsonFieldType.NUMBER)
+                    .description("등록된 도서 ID. 미등록 도서라면 null")
+                    .optional(),
             fieldWithPath("items[].title").type(JsonFieldType.STRING)
                     .description("도서 제목"),
             fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING)
@@ -75,7 +79,10 @@ class BookControllerTest {
             fieldWithPath("items[].category").type(JsonFieldType.STRING)
                     .description("도서 카테고리"),
             fieldWithPath("items[].publisher").type(JsonFieldType.STRING)
-                    .description("출판사")
+                    .description("출판사"),
+            fieldWithPath("items[].commentCount").type(JsonFieldType.NUMBER)
+                    .description("감상과 답글 수. 미등록 도서라면 null")
+                    .optional()
     };
 
     private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
@@ -93,11 +100,15 @@ class BookControllerTest {
     @MockitoBean
     private BookSearchService bookSearchService;
 
+    @MockitoBean
+    private BookService bookService;
+
     @Test
     @DisplayName("유효한 요청이라면 도서 검색 결과를 반환한다")
     void should_ReturnBookSearchResponse_When_RequestIsValid() throws Exception {
         // given
         BookItem item = new BookItem(
+                null,
                 "마션",
                 "https://image.aladin.co.kr/martian.jpg",
                 List.of("앤디 위어"),
@@ -105,7 +116,8 @@ class BookControllerTest {
                 "2026-07-01",
                 "9788925568683",
                 "국내도서>소설>과학소설",
-                "알에이치코리아(RHK)"
+                "알에이치코리아(RHK)",
+                null
         );
         BookSearchResponse response = new BookSearchResponse(1, null, List.of(item));
         when(bookSearchService.search("마션", 1)).thenReturn(response);

@@ -32,6 +32,11 @@ public class ApiExceptionHandler {
         return createProblemDetail(ErrorCode.INVALID_REQUEST, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(BusinessException.class)
+    public ProblemDetail handleBusinessException(BusinessException exception) {
+        return createProblemDetail(exception.getErrorCode(), statusOf(exception.getErrorCode()));
+    }
+
     @ExceptionHandler(AladinClientException.class)
     public ProblemDetail handleAladinClientException(AladinClientException exception) {
         log.warn("Aladin API call failed", exception);
@@ -51,5 +56,19 @@ public class ApiExceptionHandler {
         problemDetail.setType(URI.create("about:blank"));
         problemDetail.setProperty("code", errorCode.getCode());
         return problemDetail;
+    }
+
+    private HttpStatus statusOf(ErrorCode errorCode) {
+        return switch (errorCode) {
+            case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
+            case FORBIDDEN -> HttpStatus.FORBIDDEN;
+            case BOOK_NOT_FOUND, REVIEW_NOT_FOUND, REPLY_NOT_FOUND, LIBRARY_ITEM_NOT_FOUND ->
+                    HttpStatus.NOT_FOUND;
+            case LIBRARY_ITEM_ALREADY_EXISTS, REACTION_ALREADY_EXISTS, TOTAL_PAGES_CONFLICT ->
+                    HttpStatus.CONFLICT;
+            case INVALID_REQUEST, DELETED_RESOURCE, INVALID_READING_STATE -> HttpStatus.BAD_REQUEST;
+            case EXTERNAL_API_ERROR -> HttpStatus.BAD_GATEWAY;
+            case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
+        };
     }
 }
