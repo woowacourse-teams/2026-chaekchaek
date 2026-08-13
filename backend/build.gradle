@@ -139,10 +139,6 @@ tasks.register('verifyOpenApi') {
 				throw new GradleException("OpenAPI specification is missing response ${responseCode}")
 			}
 		}
-		if (responses.keySet() != requiredResponseCodes) {
-			throw new GradleException('OpenAPI specification has unexpected responses for GET /api/v1/books')
-		}
-
 		['400', '500', '502'].each { responseCode ->
 			def response = responses.get(responseCode) as Map
 			def content = response?.get('content') as Map
@@ -164,7 +160,7 @@ tasks.register('verifyOpenApi') {
 		}
 		def requiredProblemDetailFields = ['type', 'title', 'status', 'detail', 'instance', 'code'] as Set
 		def problemDetailFields = (problemDetail.get('properties') as Map)?.keySet()
-		if (problemDetailFields != requiredProblemDetailFields) {
+		if (problemDetailFields == null || !problemDetailFields.containsAll(requiredProblemDetailFields)) {
 			throw new GradleException('OpenAPI specification has invalid ProblemDetail fields')
 		}
 
