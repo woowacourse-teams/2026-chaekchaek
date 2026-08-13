@@ -1,12 +1,11 @@
 package com.chaekchaek.auth.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import com.chaekchaek.global.exception.BusinessException;
+import com.chaekchaek.global.exception.ErrorCode;
 
-@ResponseStatus(HttpStatus.UNAUTHORIZED)
-public class InvalidRefreshTokenException extends RuntimeException{
+public class InvalidRefreshTokenException extends BusinessException {
 
-    public InvalidRefreshTokenException(String message) {
-        super(message);
+    public InvalidRefreshTokenException(ErrorCode errorCode) {
+        super(errorCode);
     }
 }

@@ -8,6 +8,8 @@ import com.chaekchaek.auth.token.refresh.RefreshToken;
 import com.chaekchaek.auth.token.refresh.RefreshTokenHasher;
 import com.chaekchaek.auth.token.refresh.RefreshTokenProvider;
 import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
+import com.chaekchaek.global.exception.ErrorCode;
+import com.chaekchaek.global.exception.MemberNotFoundException;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.Clock;
@@ -18,15 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthTokenService {
-
-    private static final String MEMBER_MUST_EXIST_ERROR_MESSAGE =
-            "[ERROR] 토큰을 발급할 회원이 존재해야 합니다";
-    private static final String REFRESH_TOKEN_MUST_EXIST_ERROR_MESSAGE =
-            "[ERROR] Refresh Token이 존재해야 합니다";
-    private static final String REFRESH_TOKEN_MUST_BE_VALID_ERROR_MESSAGE =
-            "[ERROR] Refresh Token은 유효해야 합니다. 다시 로그인해 주세요";
-    private static final String REFRESH_TOKEN_MUST_BE_USABLE_ERROR_MESSAGE =
-            "[ERROR] Refresh Token은 만료되거나 폐기되지 않은 상태여야 합니다. 다시 로그인해 주세요";
 
     private final MemberRepository memberRepository;
     private final AccessTokenProvider accessTokenProvider;
@@ -54,7 +47,7 @@ public class AuthTokenService {
     @Transactional
     public IssuedTokens issue(Long memberId) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException(MEMBER_MUST_EXIST_ERROR_MESSAGE));
+                .orElseThrow(MemberNotFoundException::new);
 
         String accessToken = accessTokenProvider.issue(member);
         IssuedRefreshToken refreshToken = refreshTokenProvider.issue(member);
@@ -65,20 +58,22 @@ public class AuthTokenService {
     @Transactional
     public IssuedTokens reissue(String refreshTokenValue) {
         if (refreshTokenValue == null || refreshTokenValue.isBlank()) {
-            throw new InvalidRefreshTokenException(REFRESH_TOKEN_MUST_EXIST_ERROR_MESSAGE);
+            throw new InvalidRefreshTokenException(ErrorCode.REFRESH_TOKEN_REQUIRED);
         }
 
         String tokenHash = refreshTokenHasher.hash(refreshTokenValue);
 
         RefreshToken savedRefreshToken =
                 refreshTokenRepository.findByTokenHash(tokenHash)
-                        .orElseThrow(() -> new InvalidRefreshTokenException(REFRESH_TOKEN_MUST_BE_VALID_ERROR_MESSAGE));
+                        .orElseThrow(() -> new InvalidRefreshTokenException(ErrorCode.INVALID_REFRESH_TOKEN));
 
-        if (!savedRefreshToken.isUsable(now())) {
-            throw new InvalidRefreshTokenException(REFRESH_TOKEN_MUST_BE_USABLE_ERROR_MESSAGE);
+        LocalDateTime now = now();
+
+        if (!savedRefreshToken.isUsable(now)) {
+            throw new InvalidRefreshTokenException(ErrorCode.UNUSABLE_REFRESH_TOKEN);
         }
 
-        savedRefreshToken.revoke(now());
+        savedRefreshToken.revoke(now);
 
         Member member = savedRefreshToken.getMember();
 
