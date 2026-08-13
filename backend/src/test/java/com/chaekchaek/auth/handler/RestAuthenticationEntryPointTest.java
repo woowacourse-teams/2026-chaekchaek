@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.mock;
 
-import com.chaekchaek.global.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -34,9 +33,11 @@ class RestAuthenticationEntryPointTest {
         // then
         assertAll(
                 () -> assertThat(response.getStatus()).isEqualTo(401),
-                () -> assertThat(response.getContentType()).startsWith(MediaType.APPLICATION_JSON_VALUE),
-                () -> assertThat(response.getContentAsString()).contains("\"code\":\"UNAUTHORIZED\""),
-                () -> assertThat(response.getContentAsString()).contains(ErrorCode.UNAUTHORIZED.getMessage())
+                () -> assertThat(response.getContentType()).startsWith(MediaType.APPLICATION_PROBLEM_JSON_VALUE),
+                () -> assertThat(response.getContentAsString())
+                        .contains("\"status\":401")
+                        .contains("\"code\":\"UNAUTHORIZED\"")
+                        .contains("\"detail\":\"인증 정보가 유효하지 않습니다.\"")
         );
     }
 }
