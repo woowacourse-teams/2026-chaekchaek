@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.BDDMockito.given;
 
-import com.chaekchaek.global.exception.ErrorCode;
-import com.chaekchaek.global.exception.MemberNotFoundException;
+import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.common.exception.MemberNotFoundException;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.dto.MemberResponse;

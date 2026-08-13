@@ -57,9 +57,12 @@ class AccessTokenCookieAuthenticationIntegrationTest {
         mockMvc.perform(get("/test/protected"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(
-                        MediaType.APPLICATION_JSON
+                        MediaType.APPLICATION_PROBLEM_JSON
                 ))
-                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.detail")
+                        .value("인증 정보가 유효하지 않습니다."));
     }
 
     @Test
@@ -74,9 +77,12 @@ class AccessTokenCookieAuthenticationIntegrationTest {
                         )))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(
-                        MediaType.APPLICATION_JSON
+                        MediaType.APPLICATION_PROBLEM_JSON
                 ))
-                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andExpect(jsonPath("$.detail")
+                        .value("인증 정보가 유효하지 않습니다."));
     }
 
     private String issueAccessToken(String memberId) {

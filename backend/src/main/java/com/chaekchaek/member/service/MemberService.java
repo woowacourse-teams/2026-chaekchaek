@@ -1,6 +1,6 @@
 package com.chaekchaek.member.service;
 
-import com.chaekchaek.global.exception.MemberNotFoundException;
+import com.chaekchaek.common.exception.MemberNotFoundException;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.dto.MemberResponse;
 import com.chaekchaek.member.repository.MemberRepository;
