@@ -18,19 +18,21 @@ public record LibraryItemResponse(
         String publisher,
         String category,
         LocalDate publishedDate,
+        Integer totalPages,
+        long commentCount,
         ReadingStatus status,
         int currentPage,
-        Integer totalPages,
         BigDecimal rating,
         Instant addedAt,
         Instant readingUpdatedAt
 ) {
 
-    public static LibraryItemResponse from(LibraryItem item, Book book) {
+    public static LibraryItemResponse from(LibraryItem item, Book book, long commentCount) {
         return new LibraryItemResponse(
                 item.getBookId(), book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(),
                 book.getAuthors(), book.getTranslators(), book.getPublisher(), book.getCategory(),
-                book.getPublishedDate(), item.getStatus(), item.getCurrentPage(), item.getTotalPages(),
+                book.getPublishedDate(), book.getTotalPages(), commentCount,
+                item.getStatus(), item.getCurrentPage(),
                 item.getRating(), item.getAddedAt(), item.getReadingUpdatedAt()
         );
     }

@@ -5,7 +5,7 @@ import com.chaekchaek.library.domain.LibraryItem;
 import java.math.BigDecimal;
 
 public record RatingComparisonBookResponse(
-        long bookId,
+        Long bookId,
         String isbn13,
         String title,
         String coverImageUrl,

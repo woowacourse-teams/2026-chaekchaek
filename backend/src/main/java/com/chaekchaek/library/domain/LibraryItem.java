@@ -9,6 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -35,8 +37,6 @@ public class LibraryItem {
     @Column(nullable = false)
     private int currentPage;
 
-    private Integer totalPages;
-
     @Column(precision = 2, scale = 1)
     private BigDecimal rating;
 
@@ -56,7 +56,6 @@ public class LibraryItem {
         this.memberId = memberId;
         this.bookId = bookId;
         this.status = status;
-        this.totalPages = totalPages;
         this.currentPage = initialPage(status, totalPages);
         this.addedAt = now;
         this.readingUpdatedAt = now;
@@ -64,37 +63,30 @@ public class LibraryItem {
 
     public static LibraryItem create(long memberId, long bookId, ReadingStatus status,
                                      Integer totalPages, Instant now) {
-        validateTotalPages(totalPages);
         if (status == ReadingStatus.FINISHED && totalPages == null) {
-            throw new IllegalArgumentException("Finished books require total pages");
+            throw invalidReadingState();
         }
         return new LibraryItem(memberId, bookId, status, totalPages, now);
     }
 
     public void changeStatus(ReadingStatus status, Integer totalPages, Instant now) {
-        validateTotalPages(totalPages);
-        Integer effectiveTotalPages = totalPages != null ? totalPages : this.totalPages;
-        if (status == ReadingStatus.FINISHED && effectiveTotalPages == null) {
-            throw new IllegalArgumentException("Finished books require total pages");
+        if (status == ReadingStatus.FINISHED && totalPages == null) {
+            throw invalidReadingState();
         }
         int changedPage = status == ReadingStatus.WANT_TO_READ
                 ? 0
-                : status == ReadingStatus.FINISHED ? effectiveTotalPages : currentPage;
+                : status == ReadingStatus.FINISHED ? totalPages : currentPage;
         boolean changed = this.status != status || this.currentPage != changedPage;
         this.status = status;
-        this.totalPages = effectiveTotalPages;
         this.currentPage = changedPage;
         updateReadingTimeWhenChanged(changed, now);
     }
 
     public void changeCurrentPage(int currentPage, Integer totalPages, Instant now) {
         validatePage(currentPage, totalPages);
-        Integer effectiveTotalPages = totalPages != null ? totalPages : this.totalPages;
-        validatePage(currentPage, effectiveTotalPages);
-        ReadingStatus changedStatus = resolveStatusForPage(currentPage, effectiveTotalPages);
+        ReadingStatus changedStatus = resolveStatusForPage(currentPage, totalPages);
         boolean changed = this.currentPage != currentPage || this.status != changedStatus;
         this.currentPage = currentPage;
-        this.totalPages = effectiveTotalPages;
         this.status = changedStatus;
         updateReadingTimeWhenChanged(changed, now);
     }
@@ -134,21 +126,19 @@ public class LibraryItem {
 
     private static void validatePage(int currentPage, Integer totalPages) {
         if (currentPage < 0 || (totalPages != null && currentPage > totalPages)) {
-            throw new IllegalArgumentException("Current page must be within total pages");
+            throw invalidReadingState();
         }
     }
 
     private static void validateRating(BigDecimal rating) {
         if (rating == null || rating.compareTo(new BigDecimal("0.1")) < 0
                 || rating.compareTo(new BigDecimal("5.0")) > 0 || rating.scale() > 1) {
-            throw new IllegalArgumentException("Rating must be between 0.1 and 5.0 in 0.1 steps");
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
     }
 
-    private static void validateTotalPages(Integer totalPages) {
-        if (totalPages != null && totalPages <= 0) {
-            throw new IllegalArgumentException("Total pages must be positive");
-        }
+    private static BusinessException invalidReadingState() {
+        return new BusinessException(ErrorCode.INVALID_READING_STATE);
     }
 
     public Long getId() { return id; }
@@ -156,7 +146,6 @@ public class LibraryItem {
     public long getBookId() { return bookId; }
     public ReadingStatus getStatus() { return status; }
     public int getCurrentPage() { return currentPage; }
-    public Integer getTotalPages() { return totalPages; }
     public BigDecimal getRating() { return rating; }
     public Instant getAddedAt() { return addedAt; }
     public Instant getReadingUpdatedAt() { return readingUpdatedAt; }

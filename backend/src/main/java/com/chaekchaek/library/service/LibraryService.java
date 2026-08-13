@@ -3,6 +3,7 @@ package com.chaekchaek.library.service;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import com.chaekchaek.book.repository.BookRepository;
+import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.LibraryItem;
@@ -17,159 +18,286 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Map;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import java.util.Map;
+import java.util.function.Function;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
-@RequiredArgsConstructor
 public class LibraryService {
 
     private static final int PAGE_SIZE = 10;
 
     private final LibraryItemRepository libraryItemRepository;
     private final BookRepository bookRepository;
+    private final BookResolver bookResolver;
+    private final BookCommentCountReader commentCountReader;
     private final Clock clock;
+    private final TransactionTemplate transactionTemplate;
+
+    public LibraryService(
+            LibraryItemRepository libraryItemRepository,
+            BookRepository bookRepository,
+            BookResolver bookResolver,
+            BookCommentCountReader commentCountReader,
+            Clock clock,
+            PlatformTransactionManager transactionManager
+    ) {
+        this.libraryItemRepository = libraryItemRepository;
+        this.bookRepository = bookRepository;
+        this.bookResolver = bookResolver;
+        this.commentCountReader = commentCountReader;
+        this.clock = clock;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
+    }
 
     @Transactional(readOnly = true)
     public LibraryListResponse getLibrary(long memberId, int page, ReadingStatus status, LibrarySort sort) {
-        Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE, sortOf(sort));
-        Page<LibraryItem> result = status == null
-                ? libraryItemRepository.findAllByMemberId(memberId, pageable)
-                : libraryItemRepository.findAllByMemberIdAndStatus(memberId, status, pageable);
-        long totalCount = libraryItemRepository.countByMemberId(memberId);
-        long filteredCount = status == null ? totalCount
-                : libraryItemRepository.countByMemberIdAndStatus(memberId, status);
-        Integer nextPage = result.hasNext() ? page + 1 : null;
-        Map<Long, Book> books = result.getContent().stream()
-                .map(LibraryItem::getBookId)
-                .collect(java.util.stream.Collectors.toMap(
-                        bookId -> bookId,
-                        this::getBook
-                ));
-        return new LibraryListResponse(totalCount, filteredCount, nextPage,
-                result.getContent().stream()
-                        .map(item -> LibraryItemResponse.from(item, books.get(item.getBookId())))
-                        .toList());
+        if (page < 1) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+        List<LibraryItem> filteredItems = status == null
+                ? libraryItemRepository.findAllByMemberId(memberId)
+                : libraryItemRepository.findAllByMemberIdAndStatus(memberId, status);
+        Map<Long, Book> books = booksById(filteredItems);
+        Map<Long, Long> commentCounts = commentCountReader.getCommentCounts(books.keySet());
+        List<LibraryItem> sortedItems = filteredItems.stream()
+                .sorted(comparator(sort, books, commentCounts))
+                .toList();
+        List<LibraryItem> pageItems = pageOf(sortedItems, page);
+        Integer nextPage = page * PAGE_SIZE < sortedItems.size() ? page + 1 : null;
+        return new LibraryListResponse(
+                libraryItemRepository.countByMemberId(memberId),
+                filteredItems.size(),
+                nextPage,
+                pageItems.stream()
+                        .map(item -> response(item, books.get(item.getBookId()), commentCounts))
+                        .toList()
+        );
     }
 
     @Transactional
     public LibraryItemResponse add(long memberId, long bookId, ReadingStatus status, Integer totalPages) {
-        libraryItemRepository.findByMemberIdAndBookId(memberId, bookId)
-                .ifPresent(item -> { throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS); });
-        Book book = getBook(bookId);
-        verifyTotalPages(book, totalPages);
-        LibraryItem item = LibraryItem.create(memberId, bookId, status,
-                effectiveTotalPages(book, totalPages), now());
-        return LibraryItemResponse.from(libraryItemRepository.save(item), book);
+        Book book = getBookForUpdate(bookId);
+        rememberTotalPages(book, totalPages);
+        if (libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId).isPresent()) {
+            throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
+        }
+        return saveNewItem(memberId, book, status);
     }
 
-    @Transactional
     public LibraryItemResponse addByIsbn13(long memberId, String isbn13, ReadingStatus status,
                                            Integer totalPages) {
-        Book book = bookRepository.findByIsbn13(isbn13).orElseThrow(BookNotFoundException::new);
-        return add(memberId, book.getId(), status, totalPages);
+        Book resolvedBook = bookResolver.resolve(isbn13);
+        return transactionTemplate.execute(statusTemplate ->
+                add(memberId, resolvedBook.getId(), status, totalPages));
     }
 
     @Transactional(readOnly = true)
     public RatingComparisonResponse compareRatingsByIsbn13(long memberId, String isbn13,
                                                            BigDecimal criterion) {
-        Book book = bookRepository.findByIsbn13(isbn13).orElseThrow(BookNotFoundException::new);
-        return compareRatings(memberId, book.getId(), criterion);
+        validateRating(criterion);
+        Book currentBook = bookRepository.findByIsbn13(isbn13)
+                .orElseGet(() -> bookResolver.lookup(isbn13));
+        return comparison(memberId, currentBook, criterion);
     }
 
     @Transactional
     public LibraryItemResponse update(long memberId, long bookId, ReadingStatus status,
                                       Integer currentPage, Integer totalPages) {
         if ((status == null) == (currentPage == null)) {
-            throw new IllegalArgumentException("Exactly one of status or current page is required");
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
-        Book book = getBook(bookId);
-        verifyTotalPages(book, totalPages);
-        LibraryItem item = getItem(memberId, bookId);
-        Integer effectiveTotalPages = effectiveTotalPages(book, totalPages);
+        Book book = getBookForUpdate(bookId);
+        LibraryItem item = getItemForUpdate(memberId, bookId);
+        rememberTotalPages(book, totalPages);
+        if (currentPage != null && book.getTotalPages() == null) {
+            throw new BusinessException(ErrorCode.INVALID_READING_STATE);
+        }
         if (status != null) {
-            item.changeStatus(status, effectiveTotalPages, now());
+            item.changeStatus(status, book.getTotalPages(), now());
         } else {
-            item.changeCurrentPage(currentPage, effectiveTotalPages, now());
+            item.changeCurrentPage(currentPage, book.getTotalPages(), now());
         }
-        return LibraryItemResponse.from(item, book);
+        return response(item, book, Map.of());
     }
 
     @Transactional
     public void delete(long memberId, long bookId) {
         getBook(bookId);
-        libraryItemRepository.findByMemberIdAndBookId(memberId, bookId)
+        libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
                 .ifPresent(libraryItemRepository::delete);
     }
 
     @Transactional
     public void bulkDelete(long memberId, Collection<Long> bookIds) {
-        List<LibraryItem> items = requireAllLibraryItems(memberId, bookIds);
-        libraryItemRepository.deleteAll(items);
+        validateBulkBookIds(bookIds);
+        libraryItemRepository.deleteAll(requireAllLibraryItemsForUpdate(memberId, bookIds));
     }
 
     @Transactional
     public void bulkChangeStatus(long memberId, Collection<Long> bookIds, ReadingStatus status) {
-        List<LibraryItem> items = requireAllLibraryItems(memberId, bookIds);
+        validateBulkBookIds(bookIds);
+        List<LibraryItem> items = requireAllLibraryItemsForUpdate(memberId, bookIds);
+        if (status == ReadingStatus.FINISHED) {
+            Map<Long, Book> books = booksByIdForUpdate(items);
+            if (books.values().stream().anyMatch(book -> book.getTotalPages() == null)) {
+                throw new BusinessException(ErrorCode.INVALID_READING_STATE);
+            }
+            items.forEach(item -> item.changeStatus(status,
+                    books.get(item.getBookId()).getTotalPages(), now()));
+            return;
+        }
         Instant now = now();
         items.forEach(item -> item.changeStatus(status, null, now));
     }
 
     @Transactional
     public LibraryItemResponse rate(long memberId, long bookId, BigDecimal rating) {
+        validateRating(rating);
         Book book = getBook(bookId);
-        LibraryItem item = libraryItemRepository.findByMemberIdAndBookId(memberId, bookId)
-                .orElseGet(() -> libraryItemRepository.save(
-                        LibraryItem.create(memberId, bookId, ReadingStatus.WANT_TO_READ, null, now())));
+        LibraryItem item = libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
+                .orElseGet(() -> createForRating(memberId, book));
         item.rate(rating, now());
-        return LibraryItemResponse.from(item, book);
+        return response(item, book, Map.of());
     }
 
     @Transactional
     public void removeRating(long memberId, long bookId) {
         getBook(bookId);
-        libraryItemRepository.findByMemberIdAndBookId(memberId, bookId)
+        libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
                 .ifPresent(LibraryItem::removeRating);
     }
 
     @Transactional(readOnly = true)
     public RatingComparisonResponse compareRatings(long memberId, long currentBookId,
                                                    BigDecimal criterion) {
-        Book currentBook = getBook(currentBookId);
+        validateRating(criterion);
+        return comparison(memberId, getBook(currentBookId), criterion);
+    }
+
+    private RatingComparisonResponse comparison(long memberId, Book currentBook, BigDecimal criterion) {
+        long excludedBookId = currentBook.getId() == null ? -1L : currentBook.getId();
         RatingComparisonBookResponse lower = libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
-                        memberId, currentBookId, criterion)
+                        memberId, excludedBookId, criterion)
                 .map(item -> RatingComparisonBookResponse.from(item, getBook(item.getBookId())))
                 .orElse(null);
         RatingComparisonBookResponse higher = libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
-                        memberId, currentBookId, criterion)
+                        memberId, excludedBookId, criterion)
                 .map(item -> RatingComparisonBookResponse.from(item, getBook(item.getBookId())))
                 .orElse(null);
-        return new RatingComparisonResponse(lower,
-                new RatingComparisonBookResponse(currentBookId, currentBook.getIsbn13(),
-                        currentBook.getTitle(), currentBook.getCoverImageUrl(), currentBook.getAuthors(),
-                        criterion), higher);
+        return new RatingComparisonResponse(lower, currentResponse(currentBook, criterion), higher);
     }
 
-    private LibraryItem getItem(long memberId, long bookId) {
-        return libraryItemRepository.findByMemberIdAndBookId(memberId, bookId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND));
+    private RatingComparisonBookResponse currentResponse(Book book, BigDecimal criterion) {
+        return new RatingComparisonBookResponse(book.getId(), book.getIsbn13(), book.getTitle(),
+                book.getCoverImageUrl(), book.getAuthors(), criterion);
     }
 
-    private List<LibraryItem> requireAllLibraryItems(long memberId, Collection<Long> bookIds) {
-        List<LibraryItem> items = libraryItemRepository.findAllByMemberIdAndBookIdIn(memberId, bookIds);
+    private LibraryItemResponse saveNewItem(long memberId, Book book, ReadingStatus status) {
+        try {
+            LibraryItem item = LibraryItem.create(memberId, book.getId(), status,
+                    book.getTotalPages(), now());
+            return response(libraryItemRepository.saveAndFlush(item), book, Map.of());
+        } catch (DataIntegrityViolationException exception) {
+            throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
+        }
+    }
+
+    private LibraryItem createForRating(long memberId, Book book) {
+        try {
+            return libraryItemRepository.saveAndFlush(
+                    LibraryItem.create(memberId, book.getId(), ReadingStatus.WANT_TO_READ, null, now()));
+        } catch (DataIntegrityViolationException exception) {
+            return getItemForUpdate(memberId, book.getId());
+        }
+    }
+
+    private List<LibraryItem> requireAllLibraryItemsForUpdate(long memberId, Collection<Long> bookIds) {
+        List<LibraryItem> items = libraryItemRepository.findAllByMemberIdAndBookIdInForUpdate(memberId, bookIds);
         if (items.size() != bookIds.size()) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND);
         }
         return items;
+    }
+
+    private LibraryItem getItemForUpdate(long memberId, long bookId) {
+        return libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND));
+    }
+
+    private Map<Long, Book> booksById(Collection<LibraryItem> items) {
+        return bookRepository.findAllById(items.stream().map(LibraryItem::getBookId).toList()).stream()
+                .collect(java.util.stream.Collectors.toMap(Book::getId, Function.identity()));
+    }
+
+    private Map<Long, Book> booksByIdForUpdate(Collection<LibraryItem> items) {
+        return items.stream().map(LibraryItem::getBookId)
+                .collect(java.util.stream.Collectors.toMap(Function.identity(), this::getBookForUpdate));
+    }
+
+    private List<LibraryItem> pageOf(List<LibraryItem> items, int page) {
+        long start = (long) (page - 1) * PAGE_SIZE;
+        if (start >= items.size()) {
+            return List.of();
+        }
+        int startIndex = (int) start;
+        return items.subList(startIndex, Math.min(startIndex + PAGE_SIZE, items.size()));
+    }
+
+    private Comparator<LibraryItem> comparator(LibrarySort sort, Map<Long, Book> books,
+                                               Map<Long, Long> commentCounts) {
+        LibrarySort effectiveSort = sort == null ? LibrarySort.RECENT : sort;
+        return switch (effectiveSort) {
+            case RECENT -> Comparator.comparing(LibraryItem::getReadingUpdatedAt).reversed()
+                    .thenComparing(LibraryItem::getBookId, Comparator.reverseOrder());
+            case OLDEST -> Comparator.comparing(LibraryItem::getReadingUpdatedAt)
+                    .thenComparing(LibraryItem::getBookId);
+            case COMMENT -> Comparator.comparingLong((LibraryItem item) ->
+                            commentCounts.getOrDefault(item.getBookId(), 0L)).reversed()
+                    .thenComparing(LibraryItem::getReadingUpdatedAt, Comparator.reverseOrder())
+                    .thenComparing(LibraryItem::getBookId, Comparator.reverseOrder());
+            case RATING -> Comparator.comparing(LibraryItem::getRating,
+                            Comparator.nullsLast(Comparator.reverseOrder()))
+                    .thenComparing(LibraryItem::getRatingUpdatedAt,
+                            Comparator.nullsLast(Comparator.reverseOrder()))
+                    .thenComparing(LibraryItem::getBookId, Comparator.reverseOrder());
+            case TITLE -> Comparator.comparing((LibraryItem item) -> books.get(item.getBookId()).getTitle())
+                    .thenComparing(LibraryItem::getBookId);
+        };
+    }
+
+    private LibraryItemResponse response(LibraryItem item, Book book, Map<Long, Long> commentCounts) {
+        return LibraryItemResponse.from(item, book, commentCounts.getOrDefault(item.getBookId(), 0L));
+    }
+
+    private void rememberTotalPages(Book book, Integer totalPages) {
+        if (totalPages != null) {
+            book.rememberTotalPages(totalPages);
+        }
+    }
+
+    private void validateBulkBookIds(Collection<Long> bookIds) {
+        if (bookIds == null || bookIds.isEmpty() || bookIds.size() > PAGE_SIZE
+                || bookIds.stream().anyMatch(bookId -> bookId == null)
+                || new HashSet<>(bookIds).size() != bookIds.size()) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+    }
+
+    private void validateRating(BigDecimal rating) {
+        if (rating == null || rating.compareTo(new BigDecimal("0.1")) < 0
+                || rating.compareTo(new BigDecimal("5.0")) > 0 || rating.scale() > 1) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
     }
 
     private Instant now() {
@@ -180,26 +308,7 @@ public class LibraryService {
         return bookRepository.findById(bookId).orElseThrow(BookNotFoundException::new);
     }
 
-    private void verifyTotalPages(Book book, Integer totalPages) {
-        if (totalPages != null && book.getTotalPages() != null
-                && !totalPages.equals(book.getTotalPages())) {
-            throw new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT);
-        }
-    }
-
-    private Integer effectiveTotalPages(Book book, Integer totalPages) {
-        return totalPages != null ? totalPages : book.getTotalPages();
-    }
-
-    private Sort sortOf(LibrarySort sort) {
-        LibrarySort effectiveSort = sort == null ? LibrarySort.RECENT : sort;
-        return switch (effectiveSort) {
-            case RECENT -> Sort.by(Sort.Order.desc("readingUpdatedAt"), Sort.Order.desc("bookId"));
-            case OLDEST -> Sort.by(Sort.Order.asc("readingUpdatedAt"), Sort.Order.asc("bookId"));
-            case RATING -> Sort.by(Sort.Order.desc("rating"), Sort.Order.desc("ratingUpdatedAt"),
-                    Sort.Order.desc("bookId"));
-            // Book and review data are combined after Book/Review integration; stable local fallback.
-            case COMMENT, TITLE -> Sort.by(Sort.Order.desc("readingUpdatedAt"), Sort.Order.desc("bookId"));
-        };
+    private Book getBookForUpdate(long bookId) {
+        return bookRepository.findByIdForUpdate(bookId).orElseThrow(BookNotFoundException::new);
     }
 }

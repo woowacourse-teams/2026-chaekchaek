@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -75,6 +77,21 @@ class LibraryItemTest {
 
         // when & then
         assertThatThrownBy(() -> item.rate(new BigDecimal("4.25"), NOW))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.INVALID_REQUEST));
+    }
+
+    @Test
+    @DisplayName("전체 페이지 없이 완독 상태로 변경하면 읽기 상태 오류를 반환한다")
+    void should_ThrowInvalidReadingState_When_FinishingWithoutTotalPages() {
+        // given
+        LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.WANT_TO_READ, null, NOW);
+
+        // when & then
+        assertThatThrownBy(() -> item.changeStatus(ReadingStatus.FINISHED, null, NOW))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.INVALID_READING_STATE));
     }
 }
