@@ -2,6 +2,7 @@ package com.chaekchaek.auth.token.access;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -53,7 +55,11 @@ class AccessTokenCookieAuthenticationIntegrationTest {
     @DisplayName("Access Token 쿠키가 없으면 보호 API 접근을 거부한다")
     void should_Reject_ProtectedApi_Without_AccessTokenCookie() throws Exception {
         mockMvc.perform(get("/test/protected"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     @Test
@@ -66,7 +72,11 @@ class AccessTokenCookieAuthenticationIntegrationTest {
                                 AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME,
                                 tamperedToken
                         )))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON
+                ))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     private String issueAccessToken(String memberId) {

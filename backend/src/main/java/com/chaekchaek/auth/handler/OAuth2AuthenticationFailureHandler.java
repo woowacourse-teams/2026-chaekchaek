@@ -12,13 +12,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class OAuth2AuthenticationFailureHandler implements AuthenticationFailureHandler {
 
+    private static final String LOGIN_FAILURE_CODE = "OAUTH_LOGIN_FAILED";
+
     private final String failureRedirectedUrl;
 
     public OAuth2AuthenticationFailureHandler(
             @Value("${app.frontend.base-url}") String frontendBaseUrl,
             @Value("${app.frontend.oauth-failure-path}") String failurePath
     ) {
-        this.failureRedirectedUrl = frontendBaseUrl + failurePath;
+        this.failureRedirectedUrl =
+                        frontendBaseUrl
+                        + failurePath
+                        + "?error="
+                        + LOGIN_FAILURE_CODE;
     }
 
     @Override
