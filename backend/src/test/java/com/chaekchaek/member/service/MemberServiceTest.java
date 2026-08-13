@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.BDDMockito.given;
 
+import com.chaekchaek.global.exception.ErrorCode;
+import com.chaekchaek.global.exception.MemberNotFoundException;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.dto.MemberResponse;
@@ -64,6 +66,10 @@ class MemberServiceTest {
 
         // when & then
         assertThatThrownBy(() -> memberService.getMyInfo(999L))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOfSatisfying(
+                        MemberNotFoundException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.MEMBER_NOT_FOUND)
+                );
     }
 }
