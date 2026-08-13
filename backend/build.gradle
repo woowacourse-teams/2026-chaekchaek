@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '4.1.0'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'org.asciidoctor.jvm.convert' version '4.0.5'
+	id 'com.epages.restdocs-api-spec' version '0.20.1'
 }
 
 group = 'com.chaekchaek'
@@ -22,6 +23,11 @@ ext {
 	set('snippetsDir', file("build/generated-snippets"))
 }
 
+def openApiSpecFile = layout.buildDirectory.file('api-spec/openapi3.yaml')
+def swaggerRuntimeDir = layout.buildDirectory.dir('generated-resources/swagger')
+def swaggerStaticDocsDir = swaggerRuntimeDir.map { it.dir('static/docs') }
+def stagedOpenApiSpecFile = swaggerStaticDocsDir.map { it.file('openapi3.yaml') }
+
 dependencies {
 	// Application
 	implementation 'org.springframework.boot:spring-boot-h2console'
@@ -31,6 +37,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-restclient'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'com.mysql:mysql-connector-j'
+	runtimeOnly 'org.webjars:swagger-ui:5.32.11'
 
 	// Code generation
 	compileOnly 'org.projectlombok:lombok'
@@ -42,6 +49,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+	testImplementation 'com.epages:restdocs-api-spec-mockmvc:0.20.1'
 	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
@@ -50,9 +58,60 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+openapi3 {
+	server = '/'
+	title = 'ChaekChaek API'
+	description = 'ChaekChaek REST API'
+	version = project.version.toString()
+	format = 'yaml'
+	snippetsDirectory = snippetsDir.path
+	outputDirectory = layout.buildDirectory.dir('api-spec').get().asFile.path
+	outputFileNamePrefix = 'openapi3'
+}
+
 tasks.named('test') {
 	outputs.dir snippetsDir
 	useJUnitPlatform()
+	doFirst {
+		project.delete(snippetsDir)
+	}
+}
+
+tasks.matching { it.name == 'openapi3' }.configureEach {
+	inputs.dir snippetsDir
+	outputs.file openApiSpecFile
+	doNotTrackState('ePages exposes non-serializable Swagger model inputs on Gradle 9')
+}
+
+def stageOpenApiSpec = tasks.register('stageOpenApiSpec') {
+	dependsOn 'openapi3'
+	inputs.file openApiSpecFile
+	outputs.file stagedOpenApiSpecFile
+	doLast {
+		def sourceFile = openApiSpecFile.get().asFile
+		def targetFile = stagedOpenApiSpecFile.get().asFile
+		if (!sourceFile.isFile()) {
+			throw new GradleException("OpenAPI specification was not generated: ${sourceFile}")
+		}
+		java.nio.file.Files.createDirectories(targetFile.parentFile.toPath())
+		java.nio.file.Files.copy(
+				sourceFile.toPath(),
+				targetFile.toPath(),
+				java.nio.file.StandardCopyOption.REPLACE_EXISTING
+		)
+	}
+}
+
+tasks.named('bootRun') {
+	dependsOn stageOpenApiSpec
+	classpath += files(swaggerRuntimeDir)
+}
+
+tasks.named('bootJar') {
+	dependsOn stageOpenApiSpec
+	from(swaggerRuntimeDir) {
+		into 'BOOT-INF/classes'
+	}
 }
 
 tasks.named('asciidoctor') {

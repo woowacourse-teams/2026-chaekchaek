@@ -1,11 +1,14 @@
 package com.chaekchaek.book.controller;
 
+import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.document;
+import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.snippet.Attributes.key;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
@@ -19,6 +22,9 @@ import com.chaekchaek.book.client.AladinClientException;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.service.BookSearchService;
+import com.epages.restdocs.apispec.ResourceDocumentation;
+import com.epages.restdocs.apispec.ResourceSnippetParameters;
+import com.epages.restdocs.apispec.SimpleType;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,17 +49,20 @@ class BookControllerTest {
             fieldWithPath("totalCount").type(JsonFieldType.NUMBER)
                     .description("검색 결과의 전체 도서 수"),
             fieldWithPath("nextPage").type(JsonFieldType.NUMBER)
-                    .description("다음 페이지 번호. 마지막 페이지라면 null"),
+                    .description("다음 페이지 번호. 마지막 페이지라면 null")
+                    .optional(),
             fieldWithPath("items").type(JsonFieldType.ARRAY)
-                    .description("검색된 도서 목록"),
+                    .description("검색된 도서 목록. 한 페이지당 최대 10개"),
             fieldWithPath("items[].title").type(JsonFieldType.STRING)
                     .description("도서 제목"),
             fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING)
-                    .description("표지 이미지 URL"),
+                    .description("표지 이미지 URL. 알라딘 Big 규격(너비 200px)을 따름"),
             fieldWithPath("items[].authors").type(JsonFieldType.ARRAY)
-                    .description("저자 이름 목록"),
+                    .description("저자 이름 목록")
+                    .attributes(key("itemsType").value(JsonFieldType.STRING)),
             fieldWithPath("items[].translators").type(JsonFieldType.ARRAY)
-                    .description("옮긴이 이름 목록"),
+                    .description("옮긴이 이름 목록")
+                    .attributes(key("itemsType").value(JsonFieldType.STRING)),
             fieldWithPath("items[].publishedDate").type(JsonFieldType.STRING)
                     .description("출판일"),
             fieldWithPath("items[].isbn13").type(JsonFieldType.STRING)
@@ -84,7 +93,7 @@ class BookControllerTest {
                 "국내도서>소설>과학소설",
                 "알에이치코리아(RHK)"
         );
-        BookSearchResponse response = new BookSearchResponse(11, 2, List.of(item));
+        BookSearchResponse response = new BookSearchResponse(1, null, List.of(item));
         when(bookSearchService.search("마션", 1)).thenReturn(response);
 
         // when & then
@@ -93,8 +102,8 @@ class BookControllerTest {
                         .param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.totalCount").value(11))
-                .andExpect(jsonPath("$.nextPage").value(2))
+                .andExpect(jsonPath("$.totalCount").value(1))
+                .andExpect(jsonPath("$.nextPage").value(nullValue()))
                 .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].title").value("마션"))
                 .andExpect(jsonPath("$.items[0].coverImageUrl")
@@ -113,7 +122,21 @@ class BookControllerTest {
                                 parameterWithName("query").description("검색할 도서명"),
                                 parameterWithName("page").description("1부터 시작하는 페이지 번호")
                         ),
-                        responseFields(BOOK_SEARCH_RESPONSE_FIELDS)
+                        responseFields(BOOK_SEARCH_RESPONSE_FIELDS),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary("도서 검색")
+                                .description("도서명과 페이지 번호로 도서를 검색한다")
+                                .tag("도서")
+                                .queryParameters(
+                                        ResourceDocumentation.parameterWithName("query")
+                                                .type(SimpleType.STRING)
+                                                .description("검색할 도서명"),
+                                        ResourceDocumentation.parameterWithName("page")
+                                                .type(SimpleType.INTEGER)
+                                                .description("1부터 시작하는 페이지 번호")
+                                )
+                                .responseFields(BOOK_SEARCH_RESPONSE_FIELDS)
+                                .build())
                 ));
 
         verify(bookSearchService).search("마션", 1);
