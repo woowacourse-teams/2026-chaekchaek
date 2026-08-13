@@ -5,8 +5,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.chaekchaek.auth.oauth.google.GoogleOidcUserService;
-import com.chaekchaek.auth.oauth.google.GoogleProfile;
 import com.chaekchaek.auth.principal.AuthenticatedMember;
 import com.chaekchaek.auth.service.SocialLoginService;
 import com.chaekchaek.member.domain.Member;
@@ -44,7 +42,7 @@ public class GoogleOidcUserServiceTest {
     private GoogleOidcUserService googleOidcUserService;
 
     @Test
-    @DisplayName("Google_OIDC_사용자를_회원으로_조회하거나_가입시킨다")
+    @DisplayName("Google OIDC 사용자를 회원으로 조회하거나 가입시킨다")
     void should_FindOrRegister_When_GoogleOidcUser() {
         // given
         when(userRequest.getClientRegistration())

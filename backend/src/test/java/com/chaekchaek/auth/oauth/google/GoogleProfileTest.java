@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.when;
 
-import com.chaekchaek.auth.oauth.google.GoogleProfile;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -13,7 +12,7 @@ public class GoogleProfileTest {
 
     @Test
     @DisplayName("OIDC 사용자 정보를 Google 프로필로 변환한다")
-    void should_ConvertFromOidcUser() {
+    void should_ConvertProfile_When_OidcUserIsProvided() {
         // given
         OidcUser oidcUser = org.mockito.Mockito.mock(OidcUser.class);
 

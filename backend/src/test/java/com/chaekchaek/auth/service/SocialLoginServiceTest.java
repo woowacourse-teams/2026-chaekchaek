@@ -42,7 +42,7 @@ public class SocialLoginServiceTest {
 
     @Test
     @DisplayName("기존 소셜 계정이 있으면 연결된 회원으로 로그인한다")
-    void should_Login_When_SocialAccountExist() {
+    void should_LoginMember_When_SocialAccountExists() {
         // given
         GoogleProfile googleProfile = new GoogleProfile(
                 "google-user-123",
@@ -82,7 +82,7 @@ public class SocialLoginServiceTest {
 
     @Test
     @DisplayName("최초 소셜 로그인이면 회원과 소셜 계정을 생성한다")
-    void should_CreateMember_WhenFirstSocialLogin() {
+    void should_CreateMemberAndSocialAccount_When_FirstSocialLogin() {
         // given
         GoogleProfile googleProfile = new GoogleProfile(
                 "google-user-123",

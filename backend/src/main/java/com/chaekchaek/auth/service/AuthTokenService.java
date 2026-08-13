@@ -19,14 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthTokenService {
 
-    private static final String CANNOT_FIND_MEMBER_ERROR_MESSAGE =
-            "토큰을 발급할 회원을 찾을 수 없습니다.";
-    private static final String NO_REFRESH_TOKEN_ERROR_MESSAGE =
-            "Refresh Token이 존재하지 않습니다.";
-    private static final String INVALID_REFRESH_TOKEN_ERROR_MESSAGE =
-            "유효하지 않은 Refresh Token입니다.";
-    private static final String EXPIRED_OR_DISCARDED_REFRESH_TOKEN_ERROR_MESSAGE =
-            "만료되었거나 폐기된 Refresh Token입니다.";
+    private static final String MEMBER_MUST_EXIST_ERROR_MESSAGE =
+            "[ERROR] 토큰을 발급할 회원이 존재해야 합니다";
+    private static final String REFRESH_TOKEN_MUST_EXIST_ERROR_MESSAGE =
+            "[ERROR] Refresh Token이 존재해야 합니다";
+    private static final String REFRESH_TOKEN_MUST_BE_VALID_ERROR_MESSAGE =
+            "[ERROR] Refresh Token은 유효해야 합니다. 다시 로그인해 주세요";
+    private static final String REFRESH_TOKEN_MUST_BE_USABLE_ERROR_MESSAGE =
+            "[ERROR] Refresh Token은 만료되거나 폐기되지 않은 상태여야 합니다. 다시 로그인해 주세요";
 
     private final MemberRepository memberRepository;
     private final AccessTokenProvider accessTokenProvider;
@@ -54,7 +54,7 @@ public class AuthTokenService {
     @Transactional
     public IssuedTokens issue(Long memberId) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException(CANNOT_FIND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new IllegalArgumentException(MEMBER_MUST_EXIST_ERROR_MESSAGE));
 
         String accessToken = accessTokenProvider.issue(member);
         IssuedRefreshToken refreshToken = refreshTokenProvider.issue(member);
@@ -65,17 +65,17 @@ public class AuthTokenService {
     @Transactional
     public IssuedTokens reissue(String refreshTokenValue) {
         if (refreshTokenValue == null || refreshTokenValue.isBlank()) {
-            throw new InvalidRefreshTokenException(NO_REFRESH_TOKEN_ERROR_MESSAGE);
+            throw new InvalidRefreshTokenException(REFRESH_TOKEN_MUST_EXIST_ERROR_MESSAGE);
         }
 
         String tokenHash = refreshTokenHasher.hash(refreshTokenValue);
 
         RefreshToken savedRefreshToken =
                 refreshTokenRepository.findByTokenHash(tokenHash)
-                        .orElseThrow(() -> new InvalidRefreshTokenException(INVALID_REFRESH_TOKEN_ERROR_MESSAGE));
+                        .orElseThrow(() -> new InvalidRefreshTokenException(REFRESH_TOKEN_MUST_BE_VALID_ERROR_MESSAGE));
 
         if (!savedRefreshToken.isUsable(now())) {
-            throw new InvalidRefreshTokenException(EXPIRED_OR_DISCARDED_REFRESH_TOKEN_ERROR_MESSAGE);
+            throw new InvalidRefreshTokenException(REFRESH_TOKEN_MUST_BE_USABLE_ERROR_MESSAGE);
         }
 
         savedRefreshToken.revoke(now());

@@ -12,8 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class RefreshTokenProvider {
 
-    private static final String CANNOT_ISSUE_UNSAVED_USER_ERROR_MESSAGE =
-            "저장된 회원에게만 Refresh Token을 발급할 수 있습니다.";
+    private static final String MEMBER_MUST_BE_SAVED_ERROR_MESSAGE =
+            "[ERROR] Refresh Token을 발급할 회원은 저장된 상태여야 합니다";
     private static final int TOKEN_BYTE_LENGTH = 32;
 
     private final RefreshTokenRepository refreshTokenRepository;
@@ -39,7 +39,7 @@ public class RefreshTokenProvider {
     @Transactional
     public IssuedRefreshToken issue(Member member) {
         if (member.getId() == null) {
-            throw new IllegalArgumentException(CANNOT_ISSUE_UNSAVED_USER_ERROR_MESSAGE);
+            throw new IllegalArgumentException(MEMBER_MUST_BE_SAVED_ERROR_MESSAGE);
         }
 
         String tokenValue = generateTokenValue();

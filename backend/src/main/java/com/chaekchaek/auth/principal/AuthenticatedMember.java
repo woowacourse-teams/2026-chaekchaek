@@ -11,8 +11,8 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 
 public class AuthenticatedMember implements OidcUser {
 
-    private static final String SAVED_MEMBER_CAN_BE_AUTHENTICATION_ERROR_MESSAGE =
-            "저장된 회원만 인증 주체로 만들 수 있습니다.";
+    private static final String MEMBER_MUST_BE_SAVED_ERROR_MESSAGE =
+            "[ERROR] 인증 주체가 될 회원은 저장된 상태여야 합니다";
 
     private final Long memberId;
     private final MemberType memberType;
@@ -26,7 +26,7 @@ public class AuthenticatedMember implements OidcUser {
 
     public static AuthenticatedMember of(Member member, OidcUser oidcUser) {
         if (member.getId() == null) {
-            throw new IllegalArgumentException(SAVED_MEMBER_CAN_BE_AUTHENTICATION_ERROR_MESSAGE);
+            throw new IllegalArgumentException(MEMBER_MUST_BE_SAVED_ERROR_MESSAGE);
         }
 
         return new AuthenticatedMember(

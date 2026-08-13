@@ -71,14 +71,14 @@ public class MemberControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("AccessToken 쿠키가 없으면 내 정보를 조회가 거부된다")
+    @DisplayName("AccessToken 쿠키가 없으면 내 정보 조회를 거부한다")
     void should_RejectGetMyInfo_WithoutAccessToken() throws Exception {
         mockMvc.perform(get("/api/v1/members/me"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("변조된 Access Token으로 내 정보를 조회할 시 조회가 거부된다")
+    @DisplayName("변조된 Access Token으로 내 정보를 조회를 요청하면 거부gks다")
     void should_RejectGetMyInfo_WithTamperedAccessToken() throws Exception {
         Cookie cookie = new Cookie(
                 AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME,

@@ -1,8 +1,8 @@
 package com.chaekchaek.auth.handler;
 
 import com.chaekchaek.auth.principal.AuthenticatedMember;
-import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.auth.service.AuthTokenService;
+import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.auth.token.dto.IssuedTokens;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,7 +18,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
-    private static final String CANNOT_FIND_AUTHENTICATED_MEMBER_ERROR_MESSAGE = "인증된 회원 정보를 찾을 수 없습니다.";
+    private static final String AUTHENTICATED_MEMBER_MUST_EXIST_ERROR_MESSAGE =
+            "[ERROR] 인증된 회원 정보가 존재해야 합니다";
 
     private final AuthTokenService authTokenService;
     private final AuthCookieProvider authCookieProvider;
@@ -61,7 +62,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
     private AuthenticatedMember requireAuthenticatedMember(Authentication authentication) {
         if (!(authentication.getPrincipal() instanceof AuthenticatedMember principal)) {
-            throw new IllegalStateException(CANNOT_FIND_AUTHENTICATED_MEMBER_ERROR_MESSAGE);
+            throw new IllegalStateException(AUTHENTICATED_MEMBER_MUST_EXIST_ERROR_MESSAGE);
         }
 
         return principal;

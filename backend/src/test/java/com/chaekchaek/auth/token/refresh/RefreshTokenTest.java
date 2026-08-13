@@ -21,7 +21,7 @@ class RefreshTokenTest {
 
     @Test
     @DisplayName("Refresh Token을 발급한다")
-    void should_IssueRefreshToken() {
+    void should_IssueRefreshToken_When_ExpirationIsAfterIssuedAt() {
         // given
         Member member = mock(Member.class);
 
@@ -47,7 +47,7 @@ class RefreshTokenTest {
 
     @Test
     @DisplayName("만료 시각이 발급 시각과 같으면 발급이 거부된다")
-    void should_Reject_When_ExpirationEqualsIssuedAt() {
+    void should_ThrowException_When_ExpirationEqualsIssuedAt() {
         Member member = mock(Member.class);
 
         assertThatThrownBy(() -> RefreshToken.issue(
@@ -60,7 +60,7 @@ class RefreshTokenTest {
 
     @Test
     @DisplayName("만료 시각이 발급 시각보다 이전이면 발급할 수 없다")
-    void should_Reject_When_ExpirationBeforeIssuedAt() {
+    void should_ThrowException_When_ExpirationIsBeforeIssuedAt() {
         Member member = mock(Member.class);
 
         assertThatThrownBy(() -> RefreshToken.issue(
@@ -73,7 +73,7 @@ class RefreshTokenTest {
 
     @Test
     @DisplayName("만료 전이고 폐기되지 않은 Refresh Token은 사용할 수 있다")
-    void should_Use_RefreshToken_When_BeforeExpiration() {
+    void should_ReturnUsable_When_TokenIsNotExpiredOrRevoked() {
         Member member = mock(Member.class);
 
         RefreshToken refreshToken = RefreshToken.issue(
@@ -90,7 +90,7 @@ class RefreshTokenTest {
 
     @Test
     @DisplayName("만료 시각부터 Refresh Token을 사용할 수 없다")
-    void shouldNot_Use_RefreshToken_When_ExpiredAtExpirationTime() {
+    void should_ReturnUnusable_When_CurrentTimeEqualsExpiration() {
         Member member = mock(Member.class);
 
         RefreshToken refreshToken = RefreshToken.issue(
@@ -106,7 +106,7 @@ class RefreshTokenTest {
 
     @Test
     @DisplayName("폐기한 Refresh Token은 사용할 수 없다")
-    void shouldNot_Use_When_TokenIsRevoked() {
+    void should_ReturnUnusable_When_TokenIsRevoked() {
         Member member = mock(Member.class);
 
         RefreshToken refreshToken = RefreshToken.issue(
@@ -127,7 +127,7 @@ class RefreshTokenTest {
 
     @Test
     @DisplayName("이미 폐기된 Refresh Token을 다시 폐기할 수 없다")
-    void should_Reject_When_DuplicateRevocation() {
+    void should_ThrowException_When_TokenIsAlreadyRevoked() {
         Member member = mock(Member.class);
 
         RefreshToken refreshToken = RefreshToken.issue(

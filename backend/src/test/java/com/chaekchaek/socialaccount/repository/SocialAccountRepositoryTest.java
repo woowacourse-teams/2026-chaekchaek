@@ -31,7 +31,7 @@ public class SocialAccountRepositoryTest {
 
     @Test
     @DisplayName("소셜 계정을 회원과 연결하여 저장하고 조회한다")
-    void should_SaveAndFindByProviderAndProviderUserId() {
+    void should_ReturnMyInfo_When_AccessTokenIsValid() {
         // given
         LocalDateTime now = LocalDateTime.of(2026, 8, 11, 12, 0);
 

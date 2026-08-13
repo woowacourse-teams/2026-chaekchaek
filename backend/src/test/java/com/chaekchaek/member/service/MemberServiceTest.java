@@ -29,7 +29,7 @@ class MemberServiceTest {
 
     @Test
     @DisplayName("회원 ID로 내 정보를 조회한다")
-    void should_GetMyInfo() {
+    void should_GetMyInfo_When_MemberExists() {
         // given
         Member member = Member.create(
                 MemberType.MEMBER,

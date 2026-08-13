@@ -57,7 +57,7 @@ public class AuthTokenServiceTest {
 
     @Test
     @DisplayName("회원에게 AccessToken과 RefreshToken을 발급한다")
-    void should_IssueAccessTokenAndRefreshToken_When_Member() {
+    void should_IssueTokens_When_MemberExists() {
         // given
         Member member = mock(Member.class);
 
@@ -88,7 +88,7 @@ public class AuthTokenServiceTest {
 
     @Test
     @DisplayName("유효한 Refresh Token으로 토큰을 재발급한다")
-    void should_SuccessReissue() {
+    void should_ReissueTokens_When_RefreshTokenIsUsable() {
         // given
         String oldTokenValue = "old-refresh-token";
         String oldTokenHash = "old-refresh-token-hash";
@@ -135,7 +135,7 @@ public class AuthTokenServiceTest {
 
     @Test
     @DisplayName("존재하지 않는 Refresh Token 재발급은 거부한다")
-    void should_RejectReissue_When_RefreshTokenNotFound() {
+    void should_ThrowException_When_RefreshTokenDoesNotExist() {
         when(refreshTokenHasher.hash("invalid-token"))
                 .thenReturn("invalid-hash");
         when(refreshTokenRepository.findByTokenHash("invalid-hash"))
@@ -153,7 +153,7 @@ public class AuthTokenServiceTest {
 
     @Test
     @DisplayName("폐기되거나 만료된 Refresh Token 재발급은 거부한다")
-    void should_RejectReissue_When_UnusableToken() {
+    void should_ThrowException_When_RefreshTokenIsUnusable() {
         RefreshToken savedToken = mock(RefreshToken.class);
         Instant now = Instant.parse("2026-08-13T00:00:00Z");
         LocalDateTime nowDateTime =
@@ -178,7 +178,7 @@ public class AuthTokenServiceTest {
 
     @Test
     @DisplayName("로그아웃하면 Refresh Token을 폐기한다")
-    void should_Discard_When_Logout() {
+    void should_RevokeRefreshToken_When_Logout() {
         // given
         RefreshToken savedToken = mock(RefreshToken.class);
 
@@ -202,7 +202,7 @@ public class AuthTokenServiceTest {
 
     @Test
     @DisplayName("Refresh Token 없이 로그아웃해도 정상 처리한다")
-    void should_SuccessLogout_WithoutRefreshToken() {
+    void should_CompleteLogout_When_RefreshTokenDoesNotExist() {
         authTokenService.logout(null);
 
         verifyNoInteractions(
@@ -213,7 +213,7 @@ public class AuthTokenServiceTest {
 
     @Test
     @DisplayName("이미 폐기된 Refresh Token으로 로그아웃해도 다시 폐기하지 않는다")
-    void should_Not_Discard_When_LogoutWithRevokedRefreshToken() {
+    void should_NotRevokeAgain_When_RefreshTokenIsAlreadyRevoked() {
         RefreshToken savedToken = mock(RefreshToken.class);
 
         when(refreshTokenHasher.hash("refresh-token"))
