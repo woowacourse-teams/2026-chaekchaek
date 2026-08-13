@@ -8,6 +8,7 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
 
 public interface BookRepository extends JpaRepository<Book, Long> {
 
@@ -15,7 +16,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select book from Book book where book.id = :bookId")
-    Optional<Book> findByIdForUpdate(long bookId);
+    Optional<Book> findByIdForUpdate(@Param("bookId") long bookId);
 
     List<Book> findAllByIsbn13In(Collection<String> isbn13s);
 }
