@@ -21,7 +21,7 @@ class LibraryItemTest {
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 300, NOW);
 
         // when
-        item.changeStatus(ReadingStatus.FINISHED, null, NOW.plusSeconds(1));
+        item.changeStatus(ReadingStatus.FINISHED, 300, NOW.plusSeconds(1));
 
         // then
         assertThat(item.getStatus()).isEqualTo(ReadingStatus.FINISHED);
