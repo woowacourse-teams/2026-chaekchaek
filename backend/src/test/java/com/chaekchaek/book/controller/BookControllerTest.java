@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.chaekchaek.book.client.AladinClientException;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.service.BookSearchService;
@@ -212,6 +213,24 @@ class BookControllerTest {
                 "INTERNAL_SERVER_ERROR",
                 "서버 내부 오류가 발생했습니다."
         ).andExpect(content().string(not(containsString("database password leaked"))));
+    }
+
+    @Test
+    @DisplayName("알라딘 API 오류가 발생하면 진단 정보를 숨긴 502 응답을 반환한다")
+    void should_ReturnBadGateway_When_AladinClientExceptionOccurs() throws Exception {
+        // given
+        when(bookSearchService.search("마션", 1))
+                .thenThrow(new AladinClientException(1, "invalid secret key"));
+
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/books")
+                        .param("query", "마션")
+                        .param("page", "1")),
+                HttpStatus.BAD_GATEWAY,
+                "EXTERNAL_API_ERROR",
+                "외부 서비스 호출에 실패했습니다."
+        ).andExpect(content().string(not(containsString("invalid secret key"))));
     }
 
     private ResultActions expectProblemDetail(

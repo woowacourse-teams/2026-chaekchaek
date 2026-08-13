@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
 @Component
@@ -38,16 +39,25 @@ public class AladinBookClient {
                 .queryParam("Version", "20131101")
                 .build();
 
-        AladinSearchResponse response = restClient.get()
+        AladinSearchResponse response;
+        try {
+            response = requestBooks(uri);
+        } catch (RestClientException | IllegalStateException exception) {
+            throw new AladinClientException(exception);
+        }
+
+        if (response.hasError()) {
+            throw new AladinClientException(response.errorCode(), response.errorMessage());
+        }
+
+        return response;
+    }
+
+    private AladinSearchResponse requestBooks(URI uri) {
+        return restClient.get()
                 .uri(uri)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .requiredBody(AladinSearchResponse.class);
-
-        if (response.hasError()) {
-            throw new AladinApiException(response.errorCode(), response.errorMessage());
-        }
-
-        return response;
     }
 }

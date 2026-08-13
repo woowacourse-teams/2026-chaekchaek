@@ -5,9 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
+import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import okhttp3.mockwebserver.SocketPolicy;
 import org.assertj.core.api.SoftAssertions;
 
 public final class AladinMockServer implements AutoCloseable {
@@ -41,6 +43,28 @@ public final class AladinMockServer implements AutoCloseable {
 
     public void 콘텐츠_없는_204_응답한다() {
         server.enqueue(new MockResponse().setResponseCode(204));
+    }
+
+    public void 서버_오류_500_응답한다() {
+        server.enqueue(new MockResponse().setResponseCode(500));
+    }
+
+    public void 연결을_즉시_종료한다() {
+        server.setDispatcher(new Dispatcher() {
+            @Override
+            public MockResponse dispatch(RecordedRequest request) {
+                return disconnectAtStartResponse();
+            }
+
+            @Override
+            public MockResponse peek() {
+                return disconnectAtStartResponse();
+            }
+        });
+    }
+
+    private MockResponse disconnectAtStartResponse() {
+        return new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START);
     }
 
     public void 검색_요청을_검증한다(String query, int page) throws InterruptedException {

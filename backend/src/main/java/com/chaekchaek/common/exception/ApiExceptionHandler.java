@@ -1,5 +1,6 @@
 package com.chaekchaek.common.exception;
 
+import com.chaekchaek.book.client.AladinClientException;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import org.slf4j.Logger;
@@ -29,6 +30,12 @@ public class ApiExceptionHandler {
     })
     public ProblemDetail handleInvalidRequest(Exception exception) {
         return createProblemDetail(ErrorCode.INVALID_REQUEST, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AladinClientException.class)
+    public ProblemDetail handleAladinClientException(AladinClientException exception) {
+        log.warn("Aladin API call failed", exception);
+        return createProblemDetail(ErrorCode.EXTERNAL_API_ERROR, HttpStatus.BAD_GATEWAY);
     }
 
     @ExceptionHandler(Exception.class)

@@ -53,7 +53,7 @@ public final class AladinResponseFixture {
         return """
                 {
                   "errorCode": 1,
-                  "errorMessage": "키를 입력해 주세요"
+                  "errorMessage": "잘못된 인증키입니다."
                 }
                 """;
     }
