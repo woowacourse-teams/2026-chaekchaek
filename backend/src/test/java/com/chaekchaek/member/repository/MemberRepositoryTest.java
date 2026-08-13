@@ -1,6 +1,5 @@
 package com.chaekchaek.member.repository;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -25,7 +24,7 @@ public class MemberRepositoryTest {
 
     @Test
     @DisplayName("회원을 저장하고 ID로 조회한다")
-    void should_SaveAndFindById() {
+    void should_FindMember_When_MemberIsSaved() {
         // given
         Member member = Member.create(
                 MemberType.MEMBER,

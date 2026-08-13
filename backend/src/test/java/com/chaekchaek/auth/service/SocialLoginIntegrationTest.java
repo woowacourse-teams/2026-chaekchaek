@@ -40,7 +40,7 @@ public class SocialLoginIntegrationTest {
 
     @Test
     @DisplayName("최초 Google 로그인 시 회원과 소셜 계정을 생성한다")
-    void should_CreateMemberAndSocialAccount_When_FirstLogin() {
+    void should_CreateMemberAndSocialAccount_When_FirstGoogleLogin() {
         // given
         GoogleProfile profile = new GoogleProfile(
                 "google-user-123",
@@ -71,7 +71,7 @@ public class SocialLoginIntegrationTest {
 
     @Test
     @DisplayName("같은 Google 계정으로 다시 로그인해도 회원을 중복 생성하지 않는다")
-    void shouldNot_CreateDuplicateMember_WhenRepeatedLogin() {
+    void should_NotCreateDuplicateMember_When_GoogleLoginIsRepeated() {
         // given
         GoogleProfile profile = new GoogleProfile(
                 "google-user-123",

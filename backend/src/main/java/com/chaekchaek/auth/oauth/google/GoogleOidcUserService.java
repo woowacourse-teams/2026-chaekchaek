@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class GoogleOidcUserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
 
-    private static final String UNSUPPORTED_REGISTRATION_ID_ERROR_MESSAGE =
-            "[ERROR] 지원하지 않는 OIDC 제공자입니다. 올바른 제공자를 사용해주세요: ";
+    private static final String REGISTRATION_ID_MUST_BE_GOOGLE_ERROR_MESSAGE =
+            "[ERROR] Google 로그인을 사용해 다시 시도해 주세요";
     private static final String GOOGLE_REGISTRATION_ID = "google";
 
     private final OidcUserService delegate;
@@ -43,7 +43,7 @@ public class GoogleOidcUserService implements OAuth2UserService<OidcUserRequest,
                 .getRegistrationId();
 
         if (!GOOGLE_REGISTRATION_ID.equals(registrationId)) {
-            throw new OAuth2AuthenticationException(UNSUPPORTED_REGISTRATION_ID_ERROR_MESSAGE + registrationId);
+            throw new OAuth2AuthenticationException(REGISTRATION_ID_MUST_BE_GOOGLE_ERROR_MESSAGE + registrationId);
         }
     }
 }

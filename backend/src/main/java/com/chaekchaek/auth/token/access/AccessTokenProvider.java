@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class AccessTokenProvider {
 
-    private static final String TOKEN_CAN_ISSUE_REGISTERED_MEMBER_ERROR_MESSAGE =
-            "[ERROR]: 토큰은 저장된 회원에게만 발급할 수 있습니다.";
+    private static final String MEMBER_MUST_BE_SAVED_ERROR_MESSAGE =
+            "[ERROR] Access Token을 발급할 회원은 저장된 상태여야 합니다";
 
     private final JwtEncoder jwtEncoder;
     private final AccessTokenProperties properties;
@@ -28,12 +28,11 @@ public class AccessTokenProvider {
 
     public String issue(Member member) {
         if (member.getId() == null) {
-            throw new IllegalArgumentException(TOKEN_CAN_ISSUE_REGISTERED_MEMBER_ERROR_MESSAGE);
+            throw new IllegalArgumentException(MEMBER_MUST_BE_SAVED_ERROR_MESSAGE);
         }
 
         Instant issuedAt = clock.instant();
         Instant expiresAt = issuedAt.plus(properties.expiration());
-
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(properties.issuer())

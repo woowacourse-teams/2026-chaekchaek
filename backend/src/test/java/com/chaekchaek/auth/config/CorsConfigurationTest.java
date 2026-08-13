@@ -26,7 +26,7 @@ public class CorsConfigurationTest {
     private MockMvc mockMvc;
 
     @Test
-    @DisplayName("허용된_프론트_Origin의_Preflight_요청은_허용된다")
+    @DisplayName("허용된 프론트 Origin의 Preflight 요청은 허용된다")
     void should_Allow_PreflightRequest_When_AllowedFrontendOrigin() throws Exception {
         mockMvc.perform(options("/api/v1/members/me")
                         .header(HttpHeaders.ORIGIN, "http://localhost:3000")
@@ -55,7 +55,7 @@ public class CorsConfigurationTest {
     }
 
     @Test
-    @DisplayName("등록되지_않은_Origin의_Preflight_요청은_거부된다")
+    @DisplayName("등록되지 않은 Origin의 Preflight 요청은 거부된다")
     void should_Reject_PreflightRequest_When_UnregisteredFrontendOrigin() throws Exception {
         mockMvc.perform(options("/api/v1/members/me")
                         .header(HttpHeaders.ORIGIN, "http://localhost:4000")

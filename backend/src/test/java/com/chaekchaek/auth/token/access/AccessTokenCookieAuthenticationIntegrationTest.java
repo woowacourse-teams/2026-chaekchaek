@@ -57,7 +57,7 @@ class AccessTokenCookieAuthenticationIntegrationTest {
     }
 
     @Test
-    @DisplayName("변조된 Access Token 쿠키로 보호 API에 접근할 시 거부된다")
+    @DisplayName("변조된 Access Token 쿠키로 보호 API에 접근하면 거부한다")
     void should_Reject_ProtectedApi_With_TamperedAccessTokenCookie() throws Exception {
         String tamperedToken = issueAccessToken("1") + "tampered";
 

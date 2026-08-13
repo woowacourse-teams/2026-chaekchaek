@@ -29,7 +29,8 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 })
 public class TokenConfig {
 
-    private static final String JWT_SECRET_KEY_LESS_THAN_32BYTE_ERROR_MESSAGE = "[ERROR] JWT 비밀키는 32바이트 이상이어야 합니다.";
+    private static final String JWT_SECRET_KEY_LESS_THAN_32BYTE_ERROR_MESSAGE =
+            "[ERROR] JWT 비밀키는 32바이트 이상이어야 합니다";
 
     @Bean
     SecretKey jwtSecretKey(AccessTokenProperties properties) {

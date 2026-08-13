@@ -59,7 +59,7 @@ class RefreshTokenProviderTest {
 
     @Test
     @DisplayName("저장된 회원에게 Refresh Token을 발급한다")
-    void should_IssueRefreshToken_When_SavedUser() {
+    void should_IssueRefreshToken_When_MemberIsSaved() {
         // given
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(1L);
@@ -99,7 +99,7 @@ class RefreshTokenProviderTest {
 
     @Test
     @DisplayName("Refresh Token 원문 대신 해시를 저장한다")
-    void should_SaveHashInsteadOfRawToken() {
+    void should_SaveTokenHash_When_RefreshTokenIsIssued() {
         // given
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(1L);
@@ -128,7 +128,7 @@ class RefreshTokenProviderTest {
 
     @Test
     @DisplayName("저장되지 않은 회원에게 Refresh Token을 발급하지 않는다")
-    void should_Reject_When_UnsavedMember() {
+    void should_ThrowException_When_MemberIsUnsaved() {
         // given
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(null);
@@ -144,7 +144,7 @@ class RefreshTokenProviderTest {
 
     @Test
     @DisplayName("Refresh Token을 발급할 때마다 다른 원문을 생성한다")
-    void should_Issue_When_DifferentTokenEveryTime() {
+    void should_IssueDifferentToken_When_IssuedRepeatedly() {
         // given
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(1L);

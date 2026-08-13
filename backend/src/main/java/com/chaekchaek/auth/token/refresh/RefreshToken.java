@@ -21,10 +21,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RefreshToken {
 
-    private static final String REFRESH_TOKEN_EXPIRED_TIME_ERROR_MESSAGE =
-            "[ERROR]: Refresh Token 만료 시각은 발급 시각 이후여야 합니다.";
-    private static final String ALREADY_REVOKED_REFRESH_TOKEN_ERROR_MESSAGE =
-            "[ERROR]: 이미 폐기된 Refresh Token입니다. 재발급을 시도해주세요.";
+    private static final String EXPIRATION_MUST_BE_AFTER_ISSUED_AT_ERROR_MESSAGE =
+            "[ERROR] Refresh Token 만료 시각은 발급 시각 이후여야 합니다";
+    private static final String REFRESH_TOKEN_MUST_NOT_BE_REVOKED_ERROR_MESSAGE =
+            "[ERROR] Refresh Token은 사용 가능한 상태여야 합니다. 다시 로그인해 주세요";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -71,7 +71,7 @@ public class RefreshToken {
             LocalDateTime expiresAt
     ) {
         if (!expiresAt.isAfter(issuedAt)) {
-            throw new IllegalArgumentException(REFRESH_TOKEN_EXPIRED_TIME_ERROR_MESSAGE);
+            throw new IllegalArgumentException(EXPIRATION_MUST_BE_AFTER_ISSUED_AT_ERROR_MESSAGE);
         }
 
         return new RefreshToken(
@@ -84,7 +84,7 @@ public class RefreshToken {
 
     public void revoke(LocalDateTime revokedAt) {
         if (this.revokedAt != null) {
-            throw new IllegalStateException(ALREADY_REVOKED_REFRESH_TOKEN_ERROR_MESSAGE);
+            throw new IllegalStateException(REFRESH_TOKEN_MUST_NOT_BE_REVOKED_ERROR_MESSAGE);
         }
 
         this.revokedAt = revokedAt;

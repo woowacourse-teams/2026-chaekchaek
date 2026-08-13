@@ -12,13 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class MemberService {
 
-    private static final String CANNOT_FOUND_MEMBER_ERROR_MESSAGE = "[ERROR]: 존재하지 않는 회원입니다.";
+    private static final String MEMBER_MUST_EXIST_ERROR_MESSAGE =
+            "[ERROR] 회원이 존재해야 합니다";
 
     private final MemberRepository memberRepository;
 
     public MemberResponse getMyInfo(Long memberId) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException(CANNOT_FOUND_MEMBER_ERROR_MESSAGE));
+                .orElseThrow(() -> new IllegalArgumentException(MEMBER_MUST_EXIST_ERROR_MESSAGE));
 
         return MemberResponse.from(member);
     }

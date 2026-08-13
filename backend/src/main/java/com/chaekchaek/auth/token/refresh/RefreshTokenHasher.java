@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class RefreshTokenHasher {
 
-    private static final String UNUSABLE_ALGORITHM_ERROR_MESSAGE = "SHA-256 알고리즘을 사용할 수 없습니다. 다른 알고리즘을 사용해 주세요.";
+    private static final String HASH_ALGORITHM_MUST_BE_AVAILABLE_ERROR_MESSAGE =
+            "[ERROR] SHA-256 해시 알고리즘을 사용할 수 있는 환경이어야 합니다";
 
     public String hash(String tokenValue) {
         try {
@@ -21,7 +22,7 @@ public class RefreshTokenHasher {
 
             return HexFormat.of().formatHex(hashedBytes);
         } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException(UNUSABLE_ALGORITHM_ERROR_MESSAGE, exception);
+            throw new IllegalStateException(HASH_ALGORITHM_MUST_BE_AVAILABLE_ERROR_MESSAGE, exception);
         }
     }
 }

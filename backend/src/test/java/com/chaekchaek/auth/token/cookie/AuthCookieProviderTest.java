@@ -14,7 +14,7 @@ public class AuthCookieProviderTest {
 
     @Test
     @DisplayName("AccessToken 쿠키를 생성한다")
-    void should_CreateAccessTokenCookie() {
+    void should_CreateAccessTokenCookie_When_AccessTokenIsProvided() {
         // given
         AuthCookieProvider provider = new AuthCookieProvider(
                 new AccessTokenProperties(
@@ -45,7 +45,7 @@ public class AuthCookieProviderTest {
 
     @Test
     @DisplayName("Access Token 삭제 쿠키를 생성한다")
-    void deleteAccessTokenCookie() {
+    void should_CreateAccessTokenDeletionCookie_When_Logout() {
         // given
         AuthCookieProvider provider = new AuthCookieProvider(
                 new AccessTokenProperties(
@@ -74,7 +74,7 @@ public class AuthCookieProviderTest {
 
     @Test
     @DisplayName("Refresh Token 삭제 쿠키를 생성한다")
-    void should_Create_DeleteRefreshTokenCookie() {
+    void should_CreateRefreshTokenDeletionCookie_When_Logout() {
         // given
         AuthCookieProvider provider = new AuthCookieProvider(
                 new AccessTokenProperties(

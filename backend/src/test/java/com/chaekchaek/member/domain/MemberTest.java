@@ -11,7 +11,7 @@ public class MemberTest {
 
     @Test
     @DisplayName("신규 회원을 기본 상태로 생성한다")
-    void should_CreateActiveMember() {
+    void should_CreateActiveMember_When_NewMemberIsCreated() {
         // given
         MemberType type = MemberType.MEMBER;
         String nickname = "우아한 참새";

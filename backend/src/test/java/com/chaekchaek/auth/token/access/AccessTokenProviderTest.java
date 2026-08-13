@@ -95,7 +95,7 @@ class AccessTokenProviderTest {
 
     @Test
     @DisplayName("저장된 회원에게 Access Token을 발급한다")
-    void should_IssueAccessToken_When_SavedMember() {
+    void should_IssueAccessToken_When_MemberIsSaved() {
         // given
         Member member = org.mockito.Mockito.mock(Member.class);
 
@@ -116,7 +116,7 @@ class AccessTokenProviderTest {
 
     @Test
     @DisplayName("저장되지 않은 회원에게는 Access Token을 발급하지 않는다")
-    void shouldNot_IssueAccessToken_When_UnsavedMember() {
+    void should_ThrowException_When_MemberIsUnsaved() {
         // given
         Member member = org.mockito.Mockito.mock(Member.class);
 
@@ -129,7 +129,7 @@ class AccessTokenProviderTest {
 
     @Test
     @DisplayName("다른 비밀키로 Access Token을 검증하면 거부된다")
-    void should_RejectToken_When_SignedWithDifferentKey() {
+    void should_RejectAccessToken_When_SignedWithDifferentKey() {
         // given
         Member member = org.mockito.Mockito.mock(Member.class);
 
@@ -157,7 +157,7 @@ class AccessTokenProviderTest {
 
     @Test
     @DisplayName("만료된 Access Token은 거부된다")
-    void should_Reject_When_TokenExpired() {
+    void should_RejectAccessToken_When_TokenIsExpired() {
         // given
         AccessTokenProperties expiredProperties =
                 new AccessTokenProperties(

@@ -13,7 +13,7 @@ public class CookieBearerTokenResolverTest {
 
     @Test
     @DisplayName("쿠키가 없으면 토큰을 반환하지 않는다")
-    void should_NotReturnToken_When_NoCookie() {
+    void should_ReturnNull_When_CookieDoesNotExist() {
         MockHttpServletRequest request = new MockHttpServletRequest();
 
         assertThat(resolver.resolve(request)).isNull();
@@ -21,7 +21,7 @@ public class CookieBearerTokenResolverTest {
 
     @Test
     @DisplayName("AccessToken 쿠키의 값을 반환한다")
-    void should_Return_AccessTokenCookie() {
+    void should_ReturnAccessToken_When_AccessTokenCookieExists() {
         // given
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setCookies(
