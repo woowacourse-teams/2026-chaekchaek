@@ -1,6 +1,7 @@
 package com.chaekchaek.member.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.time.LocalDateTime;
@@ -37,5 +38,27 @@ public class MemberTest {
                 () -> assertThat(member.getCreatedAt()).isEqualTo(createdAt),
                 () -> assertThat(member.getWithdrawnAt()).isNull()
         );
+    }
+
+    @Test
+    @DisplayName("닉네임이 없으면 회원을 생성할 수 없다")
+    void should_ThrowException_When_NicknameIsNull() {
+        assertThatThrownBy(() -> Member.create(
+                MemberType.MEMBER,
+                null,
+                null,
+                LocalDateTime.now()
+        )).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("닉네임이 공백이면 회원을 생성할 수 없다")
+    void should_ThrowException_When_NicknameIsBlank() {
+        assertThatThrownBy(() -> Member.create(
+                MemberType.MEMBER,
+                " ",
+                null,
+                LocalDateTime.now()
+        )).isInstanceOf(IllegalArgumentException.class);
     }
 }
