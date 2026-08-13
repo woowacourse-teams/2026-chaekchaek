@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: chaekchaek
+
+aladin:
+  base-url: http://localhost:8080
+  ttb-key: test-ttb-key

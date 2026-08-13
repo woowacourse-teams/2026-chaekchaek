@@ -8,3 +8,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+
+aladin:
+  base-url: https://www.aladin.co.kr
+  ttb-key: ${ALADIN_TTB_KEY}
