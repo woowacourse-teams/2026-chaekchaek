@@ -1,8 +1,11 @@
+import org.yaml.snakeyaml.Yaml
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.1.0'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'org.asciidoctor.jvm.convert' version '4.0.5'
+	id 'com.epages.restdocs-api-spec' version '0.20.1'
 }
 
 group = 'com.chaekchaek'
@@ -22,6 +25,11 @@ ext {
 	set('snippetsDir', file("build/generated-snippets"))
 }
 
+def openApiSpecFile = layout.buildDirectory.file('api-spec/openapi3.yaml')
+def swaggerRuntimeDir = layout.buildDirectory.dir('generated-resources/swagger')
+def swaggerStaticDocsDir = swaggerRuntimeDir.map { it.dir('static/docs') }
+def stagedOpenApiSpecFile = swaggerStaticDocsDir.map { it.file('openapi3.yaml') }
+
 dependencies {
 	// Application
 	implementation 'org.springframework.boot:spring-boot-h2console'
@@ -31,6 +39,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-restclient'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'com.mysql:mysql-connector-j'
+	runtimeOnly 'org.webjars:swagger-ui:5.32.11'
 
 	// Code generation
 	compileOnly 'org.projectlombok:lombok'
@@ -42,6 +51,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+	testImplementation 'com.epages:restdocs-api-spec-mockmvc:0.20.1'
 	testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
@@ -50,9 +60,142 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+openapi3 {
+	server = '..'
+	title = 'ChaekChaek API'
+	description = 'ChaekChaek REST API'
+	version = project.version.toString()
+	format = 'yaml'
+	snippetsDirectory = snippetsDir.path
+	outputDirectory = layout.buildDirectory.dir('api-spec').get().asFile.path
+	outputFileNamePrefix = 'openapi3'
+}
+
 tasks.named('test') {
 	outputs.dir snippetsDir
 	useJUnitPlatform()
+	doFirst {
+		project.delete(snippetsDir)
+	}
+}
+
+tasks.matching { it.name == 'openapi3' }.configureEach {
+	inputs.dir snippetsDir
+	outputs.file openApiSpecFile
+	doNotTrackState('ePages exposes non-serializable Swagger model inputs on Gradle 9')
+}
+
+def stageOpenApiSpec = tasks.register('stageOpenApiSpec') {
+	dependsOn 'verifyOpenApi'
+	inputs.file openApiSpecFile
+	outputs.file stagedOpenApiSpecFile
+	doLast {
+		def sourceFile = openApiSpecFile.get().asFile
+		def targetFile = stagedOpenApiSpecFile.get().asFile
+		if (!sourceFile.isFile()) {
+			throw new GradleException("OpenAPI specification was not generated: ${sourceFile}")
+		}
+		java.nio.file.Files.createDirectories(targetFile.parentFile.toPath())
+		java.nio.file.Files.copy(
+				sourceFile.toPath(),
+				targetFile.toPath(),
+				java.nio.file.StandardCopyOption.REPLACE_EXISTING
+		)
+	}
+}
+
+tasks.register('verifyOpenApi') {
+	dependsOn 'openapi3'
+	inputs.file openApiSpecFile
+	doLast {
+		def sourceFile = openApiSpecFile.get().asFile
+		if (!sourceFile.isFile()) {
+			throw new GradleException("OpenAPI specification was not generated: ${sourceFile}")
+		}
+
+		def specificationText = sourceFile.getText('UTF-8')
+		def specification = new Yaml().load(specificationText) as Map
+		def paths = specification?.get('paths') as Map
+		def booksPath = paths?.get('/api/v1/books') as Map
+		if (booksPath == null) {
+			throw new GradleException('OpenAPI specification is missing path /api/v1/books')
+		}
+
+		def getOperation = booksPath.get('get') as Map
+		if (getOperation == null) {
+			throw new GradleException('OpenAPI specification is missing GET operation for /api/v1/books')
+		}
+		if (getOperation.get('summary') != '도서 검색') {
+			throw new GradleException('OpenAPI specification has invalid summary for GET /api/v1/books')
+		}
+		if (getOperation.get('description') != '도서명과 페이지 번호로 도서를 검색한다') {
+			throw new GradleException('OpenAPI specification has invalid description for GET /api/v1/books')
+		}
+
+		def responses = (getOperation.get('responses') as Map)?.collectEntries { status, response ->
+			[(status.toString()): response]
+		}
+		if (responses == null) {
+			throw new GradleException('OpenAPI specification is missing responses for GET /api/v1/books')
+		}
+
+		def requiredResponseCodes = ['200', '400', '500', '502'] as Set
+		requiredResponseCodes.each { responseCode ->
+			if (!responses.containsKey(responseCode)) {
+				throw new GradleException("OpenAPI specification is missing response ${responseCode}")
+			}
+		}
+		['400', '500', '502'].each { responseCode ->
+			def response = responses.get(responseCode) as Map
+			def content = response?.get('content') as Map
+			def problemContent = content?.get('application/problem+json') as Map
+			if (problemContent == null) {
+				throw new GradleException("OpenAPI specification is missing application/problem+json for response ${responseCode}")
+			}
+			def schema = problemContent.get('schema') as Map
+			if (schema?.get('\$ref') != '#/components/schemas/ProblemDetail') {
+				throw new GradleException("OpenAPI specification is missing ProblemDetail schema for response ${responseCode}")
+			}
+		}
+
+		def components = specification?.get('components') as Map
+		def schemas = components?.get('schemas') as Map
+		def problemDetail = schemas?.get('ProblemDetail') as Map
+		if (problemDetail == null) {
+			throw new GradleException('OpenAPI specification is missing ProblemDetail schema')
+		}
+		def requiredProblemDetailFields = ['type', 'title', 'status', 'detail', 'instance', 'code'] as Set
+		def problemDetailFields = (problemDetail.get('properties') as Map)?.keySet()
+		if (problemDetailFields == null || !problemDetailFields.containsAll(requiredProblemDetailFields)) {
+			throw new GradleException('OpenAPI specification has invalid ProblemDetail fields')
+		}
+
+		def servers = specification?.get('servers') as List
+		def serverUrl = servers == null || servers.isEmpty()
+				? null
+				: (servers.first() as Map)?.get('url')
+		if (serverUrl != '..') {
+			throw new GradleException('OpenAPI specification must use relative server URL ..')
+		}
+
+		['database password leaked', 'invalid secret key'].each { forbiddenValue ->
+			if (specificationText.contains(forbiddenValue)) {
+				throw new GradleException("OpenAPI specification exposes forbidden value: ${forbiddenValue}")
+			}
+		}
+	}
+}
+
+tasks.named('bootRun') {
+	dependsOn stageOpenApiSpec
+	classpath += files(swaggerRuntimeDir)
+}
+
+tasks.named('bootJar') {
+	dependsOn stageOpenApiSpec
+	from(swaggerRuntimeDir) {
+		into 'BOOT-INF/classes'
+	}
 }
 
 tasks.named('asciidoctor') {
