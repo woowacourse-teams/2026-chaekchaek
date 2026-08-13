@@ -19,6 +19,11 @@ import lombok.NoArgsConstructor;
 @Table(name = "member")
 public class Member {
 
+    private static final String NICKNAME_MUST_EXIST_ERROR_MESSAGE =
+            "[ERROR] 닉네임이 존재해야 합니다";
+    private static final String NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE =
+            "[ERROR] 닉네임은 100자 이하여야 합니다";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id")
@@ -28,10 +33,10 @@ public class Member {
     @Column(name = "member_type", nullable = false, length = 20)
     private MemberType type;
 
-    @Column(name = "nickname", unique = true)
+    @Column(name = "nickname", nullable = false, unique = true, length = 100)
     private String nickname;
 
-    @Column(name = "profile_image_url", length = 500)
+    @Column(name = "profile_image_url", columnDefinition = "TEXT")
     private String profileImageUrl;
 
     @Column(name = "display_anonymous", nullable = false)
@@ -58,7 +63,7 @@ public class Member {
     ) {
         this.type = type;
         this.nickname = nickname;
-        this.profileImageUrl = profileImageUrl;
+        this.profileImageUrl = normalizeProfileImageUrl(profileImageUrl);
         this.displayAnonymous = displayAnonymous;
         this.accountStatus = accountStatus;
         this.createdAt = createdAt;
@@ -71,6 +76,8 @@ public class Member {
             String profileImageUrl,
             LocalDateTime createdAt
     ) {
+        validateNickname(nickname);
+
         return new Member(
                 memberType,
                 nickname,
@@ -80,6 +87,24 @@ public class Member {
                 createdAt,
                 null
         );
+    }
+
+    private static void validateNickname(String nickname) {
+        if (nickname == null || nickname.isBlank()) {
+            throw new IllegalArgumentException(NICKNAME_MUST_EXIST_ERROR_MESSAGE);
+        }
+
+        if (nickname.length() > 100) {
+            throw new IllegalArgumentException(NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE);
+        }
+    }
+
+    private static String normalizeProfileImageUrl(String profileImageUrl) {
+        if (profileImageUrl == null || profileImageUrl.isBlank()) {
+            return null;
+        }
+
+        return profileImageUrl;
     }
 
     //TODO: updateProfile(), withdraw(), changeAnonymousDisplay()
