@@ -18,6 +18,14 @@ public interface LibraryItemRepository extends JpaRepository<LibraryItem, Long> 
 
     Optional<LibraryItem> findByMemberIdAndBookId(long memberId, long bookId);
 
+    @Query("""
+            select item.bookId as bookId, avg(item.rating) as averageRating, count(item.rating) as ratingCount
+            from LibraryItem item
+            where item.bookId in :bookIds and item.rating is not null
+            group by item.bookId
+            """)
+    List<RatingStatistics> findRatingStatisticsByBookIdIn(@Param("bookIds") Collection<Long> bookIds);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select item from LibraryItem item where item.memberId = :memberId and item.bookId = :bookId")
     Optional<LibraryItem> findByMemberIdAndBookIdForUpdate(
@@ -51,4 +59,10 @@ public interface LibraryItemRepository extends JpaRepository<LibraryItem, Long> 
 
     Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
             long memberId, long bookId, BigDecimal rating);
+
+    interface RatingStatistics {
+        long getBookId();
+        Double getAverageRating();
+        long getRatingCount();
+    }
 }

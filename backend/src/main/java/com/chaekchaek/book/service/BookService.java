@@ -1,7 +1,6 @@
 package com.chaekchaek.book.service;
 
 import com.chaekchaek.book.domain.Book;
-import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import com.chaekchaek.book.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,34 +13,16 @@ public class BookService {
 
     private final BookResolver bookResolver;
     private final BookRepository bookRepository;
+    private final BookDetailAssembler bookDetailAssembler;
 
-    public BookDetailResponse resolve(String isbn13) {
-        return toDetailResponse(bookResolver.resolve(isbn13));
+    public com.chaekchaek.book.dto.BookDetailResponse resolve(String isbn13) {
+        return bookDetailAssembler.assemble(bookResolver.resolve(isbn13));
     }
 
     @Transactional(readOnly = true)
-    public BookDetailResponse getDetail(long bookId) {
+    public com.chaekchaek.book.dto.BookDetailResponse getDetail(long bookId) {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(BookNotFoundException::new);
-        return toDetailResponse(book);
-    }
-
-    private BookDetailResponse toDetailResponse(Book book) {
-        return new BookDetailResponse(
-                book.getId(),
-                book.getIsbn13(),
-                book.getTitle(),
-                book.getCoverImageUrl(),
-                book.getAuthors(),
-                book.getTranslators(),
-                book.getPublisher(),
-                book.getCategory(),
-                book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
-                book.getTotalPages(),
-                0,
-                null,
-                0,
-                null
-        );
+        return bookDetailAssembler.assemble(book);
     }
 }

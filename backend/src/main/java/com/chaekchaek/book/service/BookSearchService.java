@@ -7,6 +7,7 @@ import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.repository.BookRepository;
+import com.chaekchaek.library.service.BookCommentCountReader;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -19,6 +20,7 @@ public class BookSearchService {
 
     private final AladinBookClient bookClient;
     private final BookRepository bookRepository;
+    private final BookCommentCountReader commentCountReader;
 
     public BookSearchResponse search(String query, int page) {
         AladinSearchResponse source = bookClient.searchBooks(query, page);
@@ -27,9 +29,11 @@ public class BookSearchService {
                         source.items().stream().map(AladinBookItem::isbn13).toList())
                 .stream()
                 .collect(java.util.stream.Collectors.toMap(Book::getIsbn13, Function.identity()));
+        Map<Long, Long> commentCounts = commentCountReader.getCommentCounts(
+                registeredBooks.values().stream().map(Book::getId).toList());
         List<BookItem> items = source.items()
                 .stream()
-                .map(item -> toBookItem(item, registeredBooks.get(item.isbn13())))
+                .map(item -> toBookItem(item, registeredBooks.get(item.isbn13()), commentCounts))
                 .toList();
         Integer nextPage = source.hasNextPage()
                 ? source.startIndex() + 1
@@ -42,7 +46,11 @@ public class BookSearchService {
         );
     }
 
-    private BookItem toBookItem(AladinBookItem source, Book registeredBook) {
+    private BookItem toBookItem(
+            AladinBookItem source,
+            Book registeredBook,
+            Map<Long, Long> commentCounts
+    ) {
         AladinContributorParser.Contributors contributors =
                 AladinContributorParser.parse(source.author());
 
@@ -56,7 +64,8 @@ public class BookSearchService {
                 source.isbn13(),
                 source.categoryName(),
                 source.publisher(),
-                registeredBook == null ? null : 0
+                registeredBook == null ? null : Math.toIntExact(
+                        commentCounts.getOrDefault(registeredBook.getId(), 0L))
         );
     }
 }
