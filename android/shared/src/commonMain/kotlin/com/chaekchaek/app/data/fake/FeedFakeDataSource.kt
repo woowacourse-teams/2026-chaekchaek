@@ -39,32 +39,12 @@ class FeedFakeDataSource(
                             noteId = "nt_1001",
                             bookId = "bk_001",
                             bookTitle = "보이지 않는 도시",
-                            coverId = "cover-01",
-                            authorLabel = "김여름의 서재",
+                            coverId = "cover-19",
+                            authorLabel = "다정한 참새",
                             createdAt = (now - 4.minutes).toString(),
                             quoteText = "도시는 기억으로 만들어진다는 문장에서 오래 멈췄다. " +
                                 "떠난 장소도 읽는 동안은 다시 현재가 된다.",
                             replyCount = 12,
-                        ),
-                        QuoteCardDto(
-                            noteId = "nt_1002",
-                            bookId = "bk_003",
-                            bookTitle = "마션",
-                            coverId = "cover-03",
-                            authorLabel = "정우의 서재",
-                            createdAt = (now - 38.minutes).toString(),
-                            quoteText = "나는 이 행성에서 과학으로 헤쳐 나갈 것이다.",
-                            replyCount = 5,
-                        ),
-                        QuoteCardDto(
-                            noteId = "nt_1003",
-                            bookId = "bk_004",
-                            bookTitle = "침묵하는 다수",
-                            coverId = "cover-04",
-                            authorLabel = "하늘의 서재",
-                            createdAt = (now - 1.hours).toString(),
-                            quoteText = "말하지 않기로 한 사람들의 자리를 오래 생각했다.",
-                            replyCount = 3,
                         ),
                     ),
                 ),
@@ -74,9 +54,9 @@ class FeedFakeDataSource(
                         OverlappedBookDto(
                             bookId = "bk_002",
                             title = "역병",
-                            coverId = "cover-02",
+                            coverId = "cover-17",
                             noteCount = 96,
-                            authorLabel = "윤서의 서재",
+                            authorLabel = "느긋한 참새",
                             createdAt = (now - 6.hours).toString(),
                             excerpt = "무너지는 세계에서 서로를 돌보는 일은 거창한 구원이 " +
                                 "아니라 매일의 선택이었다.",
@@ -89,18 +69,14 @@ class FeedFakeDataSource(
     }
 
     private fun trendingBooks(): List<TrendingBookDto> = listOf(
-        TrendingBookDto("bk_001", "보이지 않는 도시", "cover-01", noteCount = 128, replyCount = 46),
-        TrendingBookDto("bk_002", "역병", "cover-02", noteCount = 96, replyCount = 28),
-        TrendingBookDto("bk_003", "마션", "cover-03", noteCount = 30, replyCount = 12),
-        TrendingBookDto("bk_004", "침묵하는 다수", "cover-04", noteCount = 24, replyCount = 7),
-        TrendingBookDto("bk_005", "장일장진", "cover-05", noteCount = 21, replyCount = 12),
-        TrendingBookDto("bk_006", "여름의 문장들", "cover-06", noteCount = 18, replyCount = 4),
-        TrendingBookDto("bk_007", "밤의 도서관", "cover-07", noteCount = 15, replyCount = 9),
-        TrendingBookDto("bk_008", "그리고 아무도", "cover-08", noteCount = 14, replyCount = 3),
-        TrendingBookDto("bk_009", "우리가 빛의 속도로", "cover-09", noteCount = 12, replyCount = 6),
-        TrendingBookDto("bk_010", "작별하지 않는다", "cover-10", noteCount = 11, replyCount = 2),
-        TrendingBookDto("bk_011", "천 개의 파랑", "cover-11", noteCount = 9, replyCount = 5),
-        TrendingBookDto("bk_012", "구의 증명", "cover-12", noteCount = 8, replyCount = 1),
+        TrendingBookDto("bk_001", "보이지 않는 도시", "cover-18", noteCount = 128, replyCount = 46),
+        TrendingBookDto("bk_002", "역병", "cover-17", noteCount = 96, replyCount = 28),
+        TrendingBookDto("bk_003", "마션", "cover-13", noteCount = 30, replyCount = 12),
+        TrendingBookDto("bk_004", "침묵하는 다수", "cover-14", noteCount = 24, replyCount = 7),
+        TrendingBookDto("bk_005", "장일장진", "cover-15", noteCount = 21, replyCount = 12),
+        TrendingBookDto("bk_006", "여름의 문장들", "cover-16", noteCount = 18, replyCount = 4),
+        TrendingBookDto("bk_007", "밤의 도서관", "cover-20", noteCount = 15, replyCount = 9),
+        TrendingBookDto("bk_008", "그리고 아무도", "cover-19", noteCount = 14, replyCount = 3),
     )
 
     private companion object {
