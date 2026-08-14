@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
+import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
@@ -49,6 +51,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.restdocs.headers.HeaderDescriptor;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -61,6 +64,8 @@ class ReviewControllerTest {
     private static final String REVIEW_TAG = "감상";
     private static final AuthorResponse AUTHOR = new AuthorResponse("닉네임", "https://example.com/profile.jpg", false,
             true);
+    private static final HeaderDescriptor LOCATION_HEADER = headerWithName("Location")
+            .description("생성된 리소스의 상대 경로");
 
     private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
             fieldWithPath("type").type(JsonFieldType.STRING).description("문제 유형 URI"),
@@ -120,7 +125,7 @@ class ReviewControllerTest {
                 .andDo(document("review-list",
                         pathParameters(parameterWithName("bookId").description("도서 ID")),
                         queryParameters(parameterWithName("page").description("1부터 시작하는 페이지 번호"),
-                                parameterWithName("feed").optional().description("피드 범위: ALL 또는 MINE. 기본값 ALL"),
+                                parameterWithName("feed").optional().description("피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL"),
                                 parameterWithName("sort").optional().description("정렬: PAGE, LATEST, OLDEST, POPULAR. 기본값 PAGE")),
                         responseFields(pageReviewResponseFields()),
                         resource(ResourceSnippetParameters.builder()
@@ -129,7 +134,8 @@ class ReviewControllerTest {
                                 .tag(REVIEW_TAG)
                                 .pathParameters(pathParameter("bookId", "도서 ID"))
                                 .queryParameters(queryParameter("page", SimpleType.INTEGER, "1부터 시작하는 페이지 번호"),
-                                        queryParameter("feed", SimpleType.STRING, "피드 범위: ALL 또는 MINE. 기본값 ALL", true),
+                                        queryParameter("feed", SimpleType.STRING,
+                                                "피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL", true),
                                         queryParameter("sort", SimpleType.STRING, "정렬 기준. 기본값 PAGE", true))
                                 .responseFields(pageReviewResponseFields())
                                 .build())));
@@ -157,6 +163,7 @@ class ReviewControllerTest {
                 .andDo(document("review-create",
                         pathParameters(parameterWithName("bookId").description("도서 ID")),
                         requestFields(REVIEW_CREATE_REQUEST_FIELDS),
+                        responseHeaders(LOCATION_HEADER),
                         responseFields(reviewResponseFields("")),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("감상 작성")
@@ -164,6 +171,7 @@ class ReviewControllerTest {
                                 .tag(REVIEW_TAG)
                                 .pathParameters(pathParameter("bookId", "도서 ID"))
                                 .requestFields(REVIEW_CREATE_REQUEST_FIELDS)
+                                .responseHeaders(LOCATION_HEADER)
                                 .responseFields(reviewResponseFields(""))
                                 .build())));
 
@@ -257,6 +265,7 @@ class ReviewControllerTest {
                 .andDo(document("reply-create",
                         pathParameters(parameterWithName("reviewId").description("감상 ID")),
                         requestFields(REPLY_REQUEST_FIELDS),
+                        responseHeaders(LOCATION_HEADER),
                         responseFields(replyResponseFields("")),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("답글 작성")
@@ -264,6 +273,7 @@ class ReviewControllerTest {
                                 .tag(REVIEW_TAG)
                                 .pathParameters(pathParameter("reviewId", "감상 ID"))
                                 .requestFields(REPLY_REQUEST_FIELDS)
+                                .responseHeaders(LOCATION_HEADER)
                                 .responseFields(replyResponseFields(""))
                                 .build())));
     }
@@ -429,6 +439,219 @@ class ReviewControllerTest {
                         "reviewId", "감상 ID"));
     }
 
+    @Test
+    @DisplayName("내 감상 피드는 인증이 필요함을 문서화한다")
+    void should_ReturnUnauthorized_When_FindingMyReviewsWithoutAuthentication() throws Exception {
+        // given
+        when(reviewService.findReviews(42L, 1, Feed.MINE, ReviewSort.PAGE))
+                .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+
+        // when & then
+        documentProblemDetail(mockMvc.perform(get("/api/v1/books/{bookId}/reviews", 42L)
+                        .param("page", "1").param("feed", "MINE")),
+                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/books/42/reviews",
+                "review-list-mine-unauthorized", "감상 목록 조회", "도서의 감상을 페이지와 피드·정렬 조건으로 조회한다",
+                "bookId", "도서 ID");
+    }
+
+    @Test
+    @DisplayName("감상 작성의 입력과 도서 및 페이지 오류를 문서화한다")
+    void should_DocumentReviewCreateErrors_When_RequestCannotBeProcessed() throws Exception {
+        // given
+        when(reviewService.createReview(org.mockito.ArgumentMatchers.eq(404L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
+        when(reviewService.createReview(org.mockito.ArgumentMatchers.eq(409L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
+        when(reviewService.createReview(org.mockito.ArgumentMatchers.eq(422L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
+
+        // when & then
+        documentProblemDetail(mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 42L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{}")),
+                HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "/api/v1/books/42/reviews",
+                "review-create-invalid-request", "감상 작성", "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                "bookId", "도서 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 404L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.NOT_FOUND, "BOOK_NOT_FOUND", "/api/v1/books/404/reviews",
+                "review-create-book-not-found", "감상 작성", "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                "bookId", "도서 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 409L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.CONFLICT, "TOTAL_PAGES_CONFLICT", "/api/v1/books/409/reviews",
+                "review-create-total-pages-conflict", "감상 작성", "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                "bookId", "도서 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 422L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_READING_STATE", "/api/v1/books/422/reviews",
+                "review-create-invalid-reading-state", "감상 작성", "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                "bookId", "도서 ID");
+    }
+
+    @Test
+    @DisplayName("감상 수정의 입력과 리소스 및 페이지 오류를 문서화한다")
+    void should_DocumentReviewUpdateErrors_When_RequestCannotBeProcessed() throws Exception {
+        // given
+        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(400L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.INVALID_REQUEST));
+        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(404L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
+        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(409L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
+        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(410L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
+        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(422L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
+
+        // when & then
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 400L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{}")),
+                HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "/api/v1/reviews/400",
+                "review-update-invalid-request", "감상 수정", "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 404L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.NOT_FOUND, "REVIEW_NOT_FOUND", "/api/v1/reviews/404",
+                "review-update-not-found", "감상 수정", "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 409L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"currentPage\":100}")),
+                HttpStatus.CONFLICT, "TOTAL_PAGES_CONFLICT", "/api/v1/reviews/409",
+                "review-update-total-pages-conflict", "감상 수정", "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 410L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.CONFLICT, "DELETED_RESOURCE", "/api/v1/reviews/410",
+                "review-update-deleted-resource", "감상 수정", "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 422L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"currentPage\":100}")),
+                HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_READING_STATE", "/api/v1/reviews/422",
+                "review-update-invalid-reading-state", "감상 수정", "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
+    }
+
+    @Test
+    @DisplayName("감상 삭제의 권한과 리소스 오류를 문서화한다")
+    void should_DocumentReviewDeleteErrors_When_RequestCannotBeProcessed() throws Exception {
+        // given
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.FORBIDDEN)).when(reviewService).deleteReview(403L);
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND)).when(reviewService).deleteReview(404L);
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.DELETED_RESOURCE)).when(reviewService).deleteReview(409L);
+
+        // when & then
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 403L)), HttpStatus.FORBIDDEN,
+                "FORBIDDEN", "/api/v1/reviews/403", "review-delete-forbidden", "감상 삭제",
+                "작성자가 감상을 soft delete한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 404L)), HttpStatus.NOT_FOUND,
+                "REVIEW_NOT_FOUND", "/api/v1/reviews/404", "review-delete-not-found", "감상 삭제",
+                "작성자가 감상을 soft delete한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 409L)), HttpStatus.CONFLICT,
+                "DELETED_RESOURCE", "/api/v1/reviews/409", "review-delete-deleted-resource", "감상 삭제",
+                "작성자가 감상을 soft delete한다", "reviewId", "감상 ID");
+    }
+
+    @Test
+    @DisplayName("답글 작성의 입력과 부모 감상 오류를 문서화한다")
+    void should_DocumentReplyCreateErrors_When_RequestCannotBeProcessed() throws Exception {
+        // given
+        when(reviewService.createReply(org.mockito.ArgumentMatchers.eq(404L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
+        when(reviewService.createReply(org.mockito.ArgumentMatchers.eq(409L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
+
+        // when & then
+        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 101L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{}")), HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST", "/api/v1/reviews/101/replies", "reply-create-invalid-request", "답글 작성",
+                "감상에 답글을 작성한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 404L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")), HttpStatus.NOT_FOUND,
+                "REVIEW_NOT_FOUND", "/api/v1/reviews/404/replies", "reply-create-review-not-found", "답글 작성",
+                "감상에 답글을 작성한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 409L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")), HttpStatus.CONFLICT,
+                "DELETED_RESOURCE", "/api/v1/reviews/409/replies", "reply-create-deleted-resource", "답글 작성",
+                "감상에 답글을 작성한다", "reviewId", "감상 ID");
+    }
+
+    @Test
+    @DisplayName("답글 수정과 삭제의 리소스 오류를 문서화한다")
+    void should_DocumentReplyMutationErrors_When_RequestCannotBeProcessed() throws Exception {
+        // given
+        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(400L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.INVALID_REQUEST));
+        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(403L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
+        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(404L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND));
+        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(409L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.FORBIDDEN)).when(reviewService).deleteReply(403L);
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND)).when(reviewService).deleteReply(404L);
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.DELETED_RESOURCE)).when(reviewService).deleteReply(409L);
+
+        // when & then
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 400L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{}")), HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST", "/api/v1/replies/400", "reply-update-invalid-request", "답글 수정",
+                "작성자가 답글 내용을 수정한다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 403L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")), HttpStatus.FORBIDDEN,
+                "FORBIDDEN", "/api/v1/replies/403", "reply-update-forbidden", "답글 수정",
+                "작성자가 답글 내용을 수정한다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 404L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")), HttpStatus.NOT_FOUND,
+                "REPLY_NOT_FOUND", "/api/v1/replies/404", "reply-update-not-found", "답글 수정",
+                "작성자가 답글 내용을 수정한다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 409L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")), HttpStatus.CONFLICT,
+                "DELETED_RESOURCE", "/api/v1/replies/409", "reply-update-deleted-resource", "답글 수정",
+                "작성자가 답글 내용을 수정한다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}", 403L)), HttpStatus.FORBIDDEN,
+                "FORBIDDEN", "/api/v1/replies/403", "reply-delete-forbidden", "답글 삭제",
+                "작성자가 답글을 soft delete한다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}", 404L)), HttpStatus.NOT_FOUND,
+                "REPLY_NOT_FOUND", "/api/v1/replies/404", "reply-delete-not-found", "답글 삭제",
+                "작성자가 답글을 soft delete한다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}", 409L)), HttpStatus.CONFLICT,
+                "DELETED_RESOURCE", "/api/v1/replies/409", "reply-delete-deleted-resource", "답글 삭제",
+                "작성자가 답글을 soft delete한다", "replyId", "답글 ID");
+    }
+
+    @Test
+    @DisplayName("좋아요 생성과 취소의 대상 오류를 문서화한다")
+    void should_DocumentReactionErrors_When_TargetCannotBeProcessed() throws Exception {
+        // given
+        when(reviewService.createReviewReaction(404L)).thenThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
+        when(reviewService.createReviewReaction(409L)).thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND)).when(reviewService)
+                .deleteReviewReaction(404L);
+        when(reviewService.createReplyReaction(404L)).thenThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND));
+        when(reviewService.createReplyReaction(409L)).thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
+        when(reviewService.createReplyReaction(410L)).thenThrow(new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS));
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND)).when(reviewService)
+                .deleteReplyReaction(404L);
+
+        // when & then
+        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 404L)), HttpStatus.NOT_FOUND,
+                "REVIEW_NOT_FOUND", "/api/v1/reviews/404/reactions", "review-reaction-create-not-found", "감상 좋아요",
+                "감상에 좋아요를 남긴다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 409L)), HttpStatus.CONFLICT,
+                "DELETED_RESOURCE", "/api/v1/reviews/409/reactions", "review-reaction-create-deleted-resource", "감상 좋아요",
+                "감상에 좋아요를 남긴다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}/reactions", 404L)), HttpStatus.NOT_FOUND,
+                "REVIEW_NOT_FOUND", "/api/v1/reviews/404/reactions", "review-reaction-delete-not-found", "감상 좋아요 취소",
+                "감상의 좋아요를 취소한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 404L)), HttpStatus.NOT_FOUND,
+                "REPLY_NOT_FOUND", "/api/v1/replies/404/reactions", "reply-reaction-create-not-found", "답글 좋아요",
+                "답글에 좋아요를 남긴다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 409L)), HttpStatus.CONFLICT,
+                "DELETED_RESOURCE", "/api/v1/replies/409/reactions", "reply-reaction-create-deleted-resource", "답글 좋아요",
+                "답글에 좋아요를 남긴다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 410L)), HttpStatus.CONFLICT,
+                "REACTION_ALREADY_EXISTS", "/api/v1/replies/410/reactions", "reply-reaction-create-conflict", "답글 좋아요",
+                "답글에 좋아요를 남긴다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}/reactions", 404L)), HttpStatus.NOT_FOUND,
+                "REPLY_NOT_FOUND", "/api/v1/replies/404/reactions", "reply-reaction-delete-not-found", "답글 좋아요 취소",
+                "답글의 좋아요를 취소한다", "replyId", "답글 ID");
+    }
+
     private RestDocumentationResultHandler reactionDocument(
             String identifier,
             String summary,
@@ -495,6 +718,21 @@ class ReviewControllerTest {
                 .andExpect(jsonPath("$.status").value(expectedStatus.value()))
                 .andExpect(jsonPath("$.instance").value(instance))
                 .andExpect(jsonPath("$.code").value(code));
+    }
+
+    private void documentProblemDetail(
+            ResultActions result,
+            HttpStatus expectedStatus,
+            String code,
+            String instance,
+            String identifier,
+            String summary,
+            String description,
+            String pathName,
+            String pathDescription
+    ) throws Exception {
+        expectProblemDetail(result, expectedStatus, code, instance)
+                .andDo(problemDetailDocument(identifier, summary, description, pathName, pathDescription));
     }
 
     private static FieldDescriptor[] pageReviewResponseFields() {
