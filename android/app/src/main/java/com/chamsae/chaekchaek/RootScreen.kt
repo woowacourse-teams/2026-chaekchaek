@@ -47,21 +47,31 @@ fun RootScreen(modifier: Modifier = Modifier) {
   var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
 
   Box(modifier = modifier.fillMaxSize()) {
+    val showBottomBar = selectedTab != RootTab.Discover
     val contentModifier =
-      Modifier.fillMaxSize().navigationBarsPadding().padding(bottom = 56.dp)
+      Modifier
+        .fillMaxSize()
+        .navigationBarsPadding()
+        .then(if (showBottomBar) Modifier.padding(bottom = 56.dp) else Modifier)
     when (selectedTab) {
       RootTab.Home -> HomeScreen(
         modifier = contentModifier,
         onSearchBook = { selectedTab = RootTab.Discover },
       )
-      RootTab.Discover -> SearchScreen(archiveRepository, contentModifier)
+      RootTab.Discover ->
+        SearchScreen(
+          modifier = contentModifier,
+          onBack = { selectedTab = RootTab.Home },
+        )
       RootTab.Shelf -> ArchiveScreen(archiveRepository, contentModifier)
     }
-    ChaekBottomBar(
-      selectedTab = selectedTab,
-      onTabSelected = { selectedTab = it },
-      modifier = Modifier.align(Alignment.BottomCenter),
-    )
+    if (showBottomBar) {
+      ChaekBottomBar(
+        selectedTab = selectedTab,
+        onTabSelected = { selectedTab = it },
+        modifier = Modifier.align(Alignment.BottomCenter),
+      )
+    }
   }
 }
 

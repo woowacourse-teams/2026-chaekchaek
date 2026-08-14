@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chamsae.chaekchaek.data.BookSearchApi
 import com.chamsae.chaekchaek.data.BookSearchResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,15 +16,24 @@ sealed interface SearchUiState {
 
   data object Loading : SearchUiState
 
+  data object Empty : SearchUiState
+
   data class Success(val results: List<BookSearchResult>) : SearchUiState
 
   data class Error(val message: String) : SearchUiState
 }
 
-class SearchViewModel : ViewModel() {
+class SearchViewModel(
+  private val searchBooks: suspend (String) -> List<BookSearchResult> = BookSearchApi::search,
+) : ViewModel() {
   private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
   val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
   private var searchJob: Job? = null
+
+  fun clear() {
+    searchJob?.cancel()
+    _uiState.value = SearchUiState.Idle
+  }
 
   fun search(query: String) {
     val trimmed = query.trim()
@@ -33,7 +43,10 @@ class SearchViewModel : ViewModel() {
     searchJob = viewModelScope.launch {
       _uiState.value =
         try {
-          SearchUiState.Success(BookSearchApi.search(trimmed))
+          val results = searchBooks(trimmed).sortedByDescending { it.year.toIntOrNull() ?: Int.MIN_VALUE }
+          if (results.isEmpty()) SearchUiState.Empty else SearchUiState.Success(results)
+        } catch (e: CancellationException) {
+          throw e
         } catch (e: Exception) {
           SearchUiState.Error(e.message ?: "검색 중 오류가 발생했습니다")
         }
