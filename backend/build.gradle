@@ -184,12 +184,12 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def requiredLibraryOperations = [
-			'/api/v1/library'                         : ['get': ['200', '400'], 'post': ['201', '401', '404', '409', '422']],
-			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '404']],
-			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '404', '422']],
-			'/api/v1/library/{bookId}'                : ['patch': ['200', '400', '404', '409', '422'], 'delete': ['204', '404']],
-			'/api/v1/library/{bookId}/rating'         : ['put': ['200', '400', '404'], 'delete': ['204', '404']],
-			'/api/v1/members/me/ratings/comparison'   : ['get': ['200', '400', '404']]
+			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '404', '409', '422']],
+			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '404']],
+			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '404', '422']],
+			'/api/v1/library/{bookId}'                : ['patch': ['200', '400', '401', '404', '409', '422'], 'delete': ['204', '401', '404']],
+			'/api/v1/library/{bookId}/rating'         : ['put': ['200', '400', '401', '404'], 'delete': ['204', '401', '404']],
+			'/api/v1/members/me/ratings/comparison'   : ['get': ['200', '400', '401', '404']]
 		]
 		requiredLibraryOperations.each { path, expectedOperations ->
 			def pathItem = paths?.get(path) as Map
@@ -219,12 +219,12 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def problemResponseCodes = [
-			'/api/v1/library'                         : ['get': ['400'], 'post': ['401', '404', '409', '422']],
-			'/api/v1/library/bulk-delete'             : ['post': ['400', '404']],
-			'/api/v1/library/bulk-status'             : ['patch': ['400', '404', '422']],
-			'/api/v1/library/{bookId}'                : ['patch': ['400', '404', '409', '422'], 'delete': ['404']],
-			'/api/v1/library/{bookId}/rating'         : ['put': ['400', '404'], 'delete': ['404']],
-			'/api/v1/members/me/ratings/comparison'   : ['get': ['400', '404']]
+			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '404', '409', '422']],
+			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '404']],
+			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '404', '422']],
+			'/api/v1/library/{bookId}'                : ['patch': ['400', '401', '404', '409', '422'], 'delete': ['401', '404']],
+			'/api/v1/library/{bookId}/rating'         : ['put': ['400', '401', '404'], 'delete': ['401', '404']],
+			'/api/v1/members/me/ratings/comparison'   : ['get': ['400', '401', '404']]
 		]
 		problemResponseCodes.each { path, operations ->
 			operations.each { method, responseCodes ->
@@ -284,6 +284,30 @@ tasks.register('verifyOpenApi') {
 				|| ((comparisonProperties?.get('current') as Map)?.get('properties') as Map)
 				?.get('bookId')?.get('nullable') != true) {
 			throw new GradleException('OpenAPI specification has invalid nullable fields for rating comparison')
+		}
+		def requiredComparisonBookFields = ['bookId', 'isbn13', 'title', 'coverImageUrl', 'authors', 'myRating'] as Set
+		['lower', 'higher'].each { propertyName ->
+			def comparisonBook = comparisonProperties?.get(propertyName) as Map
+			def requiredFields = comparisonBook?.get('required') as List
+			def childProperties = comparisonBook?.get('properties') as Map
+			if (requiredFields == null || !requiredFields.containsAll(requiredComparisonBookFields)
+					|| requiredComparisonBookFields.any { fieldName -> childProperties?.get(fieldName)?.get('nullable') == true }) {
+				throw new GradleException("OpenAPI specification has invalid required fields for rating comparison ${propertyName}")
+			}
+		}
+		def currentComparisonBook = comparisonProperties?.get('current') as Map
+		def currentRequiredFields = currentComparisonBook?.get('required') as Set
+		if (currentRequiredFields == null || !currentRequiredFields.containsAll(
+				['isbn13', 'title', 'coverImageUrl', 'authors', 'myRating'])
+				|| currentRequiredFields.contains('bookId')) {
+			throw new GradleException('OpenAPI specification has invalid required fields for rating comparison current')
+		}
+		def comparisonExamples = (((((paths.get('/api/v1/members/me/ratings/comparison') as Map).get('get') as Map)
+				.get('responses') as Map).get('200') as Map).get('content') as Map)
+				?.get('application/json')?.get('examples') as Map
+		if (comparisonExamples == null || !comparisonExamples.keySet().containsAll(
+				['library-rating-comparison', 'library-rating-comparison-null-boundary'])) {
+			throw new GradleException('OpenAPI specification is missing normal and null-boundary rating comparison examples')
 		}
 
 		def libraryItemSchema = dereferenceSchema(((((libraryPostOperation.get('responses') as Map).get('201') as Map)

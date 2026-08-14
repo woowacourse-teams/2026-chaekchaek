@@ -374,7 +374,7 @@ class LibraryControllerTest {
     void should_ReturnRatingComparison_When_RequestIsValid() throws Exception {
         // given
         RatingComparisonResponse response = new RatingComparisonResponse(
-                null, comparisonBook(null, "4.5"), null);
+                comparisonBook(9L, "4.0"), comparisonBook(BOOK_ID, "4.5"), comparisonBook(11L, "4.8"));
         when(libraryService.compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5")))
                 .thenReturn(response);
 
@@ -383,7 +383,7 @@ class LibraryControllerTest {
                         .param("isbn13", ISBN13)
                         .param("criterion", "4.5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.current.bookId").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.current.bookId").value(BOOK_ID))
                 .andDo(document(
                         "library-rating-comparison",
                         queryParameters(ratingComparisonQueryParameters()),
@@ -401,13 +401,50 @@ class LibraryControllerTest {
     }
 
     @Test
+    @DisplayName("비교 대상이 등록되지 않았다면 null 경계 응답을 반환한다")
+    void should_ReturnNullableRatingComparison_When_ComparisonBookIsNotPersisted() throws Exception {
+        // given
+        RatingComparisonResponse response = new RatingComparisonResponse(
+                null, comparisonBook(null, "4.5"), null);
+        when(libraryService.compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5")))
+                .thenReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/members/me/ratings/comparison")
+                        .param("isbn13", ISBN13)
+                        .param("criterion", "4.5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lower").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.current.bookId").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.higher").value(org.hamcrest.Matchers.nullValue()))
+                .andDo(document(
+                        "library-rating-comparison-null-boundary",
+                        queryParameters(ratingComparisonQueryParameters()),
+                        responseFields(nullableRatingComparisonResponseFields()),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary(RATING_COMPARISON_SUMMARY)
+                                .description(RATING_COMPARISON_DESCRIPTION)
+                                .tag(LIBRARY_TAG)
+                                .queryParameters(ratingComparisonResourceQueryParameters())
+                                .responseFields(nullableRatingComparisonResponseFields())
+                                .build())
+                ));
+    }
+
+    @Test
     @DisplayName("내 서재 추가의 오류 응답을 문서화한다")
     void should_DocumentProblemDetails_When_AddingLibraryItemFails() throws Exception {
         // given
-        doThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND)).when(libraryService)
+        doThrow(new BusinessException(ErrorCode.INVALID_REQUEST)).when(libraryService)
                 .addByIsbn13(MEMBER_ID, ISBN13, ReadingStatus.READING, 368);
 
         // when & then
+        documentProblemDetail(postLibraryItem(), HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
+                "/api/v1/library", "library-add-invalid-request", LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
+
+        doThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND)).when(libraryService)
+                .addByIsbn13(MEMBER_ID, ISBN13, ReadingStatus.READING, 368);
         documentProblemDetail(postLibraryItem(), HttpStatus.NOT_FOUND, ErrorCode.BOOK_NOT_FOUND,
                 "/api/v1/library", "library-add-book-not-found", LIBRARY_ADD_SUMMARY,
                 LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
@@ -430,10 +467,6 @@ class LibraryControllerTest {
                 ErrorCode.INVALID_READING_STATE, "/api/v1/library", "library-add-invalid-reading-state",
                 LIBRARY_ADD_SUMMARY, LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
 
-        when(currentMemberIdProvider.getCurrentMemberId()).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
-        documentProblemDetail(postLibraryItem(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
-                "/api/v1/library", "library-add-unauthorized", LIBRARY_ADD_SUMMARY,
-                LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
     }
 
     @Test
@@ -559,6 +592,48 @@ class LibraryControllerTest {
                 .compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5"));
         documentProblemDetail(getRatingComparison(), HttpStatus.NOT_FOUND, ErrorCode.BOOK_NOT_FOUND,
                 "/api/v1/members/me/ratings/comparison", "library-rating-comparison-book-not-found",
+                RATING_COMPARISON_SUMMARY, RATING_COMPARISON_DESCRIPTION, noPathParameters(),
+                ratingComparisonResourceQueryParameters());
+    }
+
+    @Test
+    @DisplayName("인증이 필요하다면 모든 내 서재 API가 401 응답을 반환한다")
+    void should_DocumentUnauthorizedProblemDetails_When_MemberIsNotAuthenticated() throws Exception {
+        // given
+        when(currentMemberIdProvider.getCurrentMemberId()).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+
+        // when & then
+        documentProblemDetail(mockMvc.perform(get("/api/v1/library").param("page", "1")),
+                HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "/api/v1/library",
+                "library-list-unauthorized", LIBRARY_LIST_SUMMARY, LIBRARY_LIST_DESCRIPTION,
+                noPathParameters(), libraryListResourceQueryParameters());
+        documentProblemDetail(postLibraryItem(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
+                "/api/v1/library", "library-add-unauthorized", LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
+        documentProblemDetail(patchLibraryItem(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
+                "/api/v1/library/10", "library-update-unauthorized", LIBRARY_UPDATE_SUMMARY,
+                LIBRARY_UPDATE_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/library/{bookId}", BOOK_ID)),
+                HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "/api/v1/library/10",
+                "library-delete-unauthorized", LIBRARY_DELETE_SUMMARY, LIBRARY_DELETE_DESCRIPTION,
+                bookIdResourcePathParameters(), noQueryParameters());
+        documentProblemDetail(postBulkDelete(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
+                "/api/v1/library/bulk-delete", "library-bulk-delete-unauthorized",
+                LIBRARY_BULK_DELETE_SUMMARY, LIBRARY_BULK_DELETE_DESCRIPTION, noPathParameters(),
+                noQueryParameters());
+        documentProblemDetail(patchBulkStatus(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
+                "/api/v1/library/bulk-status", "library-bulk-status-unauthorized",
+                LIBRARY_BULK_STATUS_SUMMARY, LIBRARY_BULK_STATUS_DESCRIPTION, noPathParameters(),
+                noQueryParameters());
+        documentProblemDetail(putRating(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
+                "/api/v1/library/10/rating", "library-rate-unauthorized", LIBRARY_RATE_SUMMARY,
+                LIBRARY_RATE_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/library/{bookId}/rating", BOOK_ID)),
+                HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "/api/v1/library/10/rating",
+                "library-remove-rating-unauthorized", LIBRARY_REMOVE_RATING_SUMMARY,
+                LIBRARY_REMOVE_RATING_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
+        documentProblemDetail(getRatingComparison(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
+                "/api/v1/members/me/ratings/comparison", "library-rating-comparison-unauthorized",
                 RATING_COMPARISON_SUMMARY, RATING_COMPARISON_DESCRIPTION, noPathParameters(),
                 ratingComparisonResourceQueryParameters());
     }
@@ -758,13 +833,13 @@ class LibraryControllerTest {
         return new FieldDescriptor[]{
                 fieldWithPath("lower").type(JsonFieldType.OBJECT).description("기준보다 낮은 별점 중 가장 가까운 도서")
                         .optional().attributes(key("nullable").value(true)),
-                fieldWithPath("lower.bookId").type(JsonFieldType.NUMBER).description("도서 ID").optional(),
-                fieldWithPath("lower.isbn13").type(JsonFieldType.STRING).description("ISBN-13").optional(),
-                fieldWithPath("lower.title").type(JsonFieldType.STRING).description("도서 제목").optional(),
-                fieldWithPath("lower.coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL").optional(),
-                fieldWithPath("lower.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록").optional()
+                fieldWithPath("lower.bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
+                fieldWithPath("lower.isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
+                fieldWithPath("lower.title").type(JsonFieldType.STRING).description("도서 제목"),
+                fieldWithPath("lower.coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
+                fieldWithPath("lower.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
-                fieldWithPath("lower.myRating").type(JsonFieldType.NUMBER).description("내 별점").optional(),
+                fieldWithPath("lower.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
                 fieldWithPath("current").type(JsonFieldType.OBJECT).description("비교 기준 도서"),
                 fieldWithPath("current.bookId").type(JsonFieldType.NUMBER).description("도서 ID").optional(),
                 fieldWithPath("current.isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
@@ -775,13 +850,31 @@ class LibraryControllerTest {
                 fieldWithPath("current.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
                 fieldWithPath("higher").type(JsonFieldType.OBJECT).description("기준보다 높은 별점 중 가장 가까운 도서")
                         .optional().attributes(key("nullable").value(true)),
-                fieldWithPath("higher.bookId").type(JsonFieldType.NUMBER).description("도서 ID").optional(),
-                fieldWithPath("higher.isbn13").type(JsonFieldType.STRING).description("ISBN-13").optional(),
-                fieldWithPath("higher.title").type(JsonFieldType.STRING).description("도서 제목").optional(),
-                fieldWithPath("higher.coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL").optional(),
-                fieldWithPath("higher.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록").optional()
+                fieldWithPath("higher.bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
+                fieldWithPath("higher.isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
+                fieldWithPath("higher.title").type(JsonFieldType.STRING).description("도서 제목"),
+                fieldWithPath("higher.coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
+                fieldWithPath("higher.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
-                fieldWithPath("higher.myRating").type(JsonFieldType.NUMBER).description("내 별점").optional()
+                fieldWithPath("higher.myRating").type(JsonFieldType.NUMBER).description("내 별점")
+        };
+    }
+
+    private FieldDescriptor[] nullableRatingComparisonResponseFields() {
+        return new FieldDescriptor[]{
+                fieldWithPath("lower").type(JsonFieldType.OBJECT)
+                        .description("기준보다 낮은 별점 중 가장 가까운 도서. 없으면 null").optional(),
+                fieldWithPath("current").type(JsonFieldType.OBJECT).description("비교 기준 도서"),
+                fieldWithPath("current.bookId").type(JsonFieldType.NUMBER)
+                        .description("도서 ID. 미등록 도서라면 null").optional(),
+                fieldWithPath("current.isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
+                fieldWithPath("current.title").type(JsonFieldType.STRING).description("도서 제목"),
+                fieldWithPath("current.coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
+                fieldWithPath("current.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
+                        .attributes(key("itemsType").value(JsonFieldType.STRING)),
+                fieldWithPath("current.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
+                fieldWithPath("higher").type(JsonFieldType.OBJECT)
+                        .description("기준보다 높은 별점 중 가장 가까운 도서. 없으면 null").optional()
         };
     }
 
