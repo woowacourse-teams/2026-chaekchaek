@@ -210,6 +210,33 @@ tasks.register('verifyOpenApi') {
 			}
 		}
 
+		def reviewOperations = [
+			'/api/v1/books/{bookId}/reviews'       : [get: '200', post: '201'],
+			'/api/v1/reviews/{reviewId}'           : [patch: '200', delete: '204'],
+			'/api/v1/reviews/{reviewId}/replies'   : [get: '200', post: '201'],
+			'/api/v1/replies/{replyId}'            : [patch: '200', delete: '204'],
+			'/api/v1/reviews/{reviewId}/reactions' : [post: '201', delete: '204'],
+			'/api/v1/replies/{replyId}/reactions'  : [post: '201', delete: '204']
+		]
+		reviewOperations.each { path, operations ->
+			def pathItem = paths?.get(path) as Map
+			if (pathItem == null) {
+				throw new GradleException("OpenAPI specification is missing path ${path}")
+			}
+			operations.each { method, successStatus ->
+				def operation = pathItem.get(method) as Map
+				if (operation == null) {
+					throw new GradleException("OpenAPI specification is missing ${method.toUpperCase()} operation for ${path}")
+				}
+				def operationResponses = (operation.get('responses') as Map)?.collectEntries { status, response ->
+					[(status.toString()): response]
+				}
+				if (operationResponses == null || !operationResponses.containsKey(successStatus)) {
+					throw new GradleException("OpenAPI specification is missing ${successStatus} response for ${method.toUpperCase()} ${path}")
+				}
+			}
+		}
+
 		def libraryListResponses = ((paths.get('/api/v1/library') as Map).get('get') as Map)
 				.get('responses') as Map
 		def libraryBadRequest = libraryListResponses?.get('400') as Map
@@ -235,6 +262,20 @@ tasks.register('verifyOpenApi') {
 					if ((problemContent?.get('schema') as Map)?.get('\$ref') != '#/components/schemas/ProblemDetail') {
 						throw new GradleException("OpenAPI specification is missing ProblemDetail schema for ${method.toUpperCase()} ${path} ${responseCode} response")
 					}
+				}
+			}
+		}
+
+		[
+			'/api/v1/books/{bookId}/reviews'       : ['get': '400', 'post': '401'],
+			'/api/v1/reviews/{reviewId}'           : ['patch': '403'],
+			'/api/v1/reviews/{reviewId}/replies'   : ['get': '404'],
+			'/api/v1/reviews/{reviewId}/reactions' : ['post': '409']
+		].each { path, operations ->
+			operations.each { method, errorStatus ->
+				def response = ((paths.get(path) as Map).get(method) as Map).get('responses') as Map
+				if (!response.containsKey(errorStatus)) {
+					throw new GradleException("OpenAPI specification is missing ${errorStatus} ProblemDetail for ${method.toUpperCase()} ${path}")
 				}
 			}
 		}
