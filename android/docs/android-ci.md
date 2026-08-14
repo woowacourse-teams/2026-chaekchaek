@@ -34,7 +34,7 @@ Android 변경 PR마다 디버그 빌드, 단위 테스트, Android Lint를 실�
 ```
 
 - Android 파일이나 워크플로가 바뀐 PR에서 실행한다.
-- `an-develop`에 같은 변경이 push되면 다시 실행한다.
+- `main`이나 `an-develop`에 같은 변경이 push되면 다시 실행한다.
 - JDK 21과 프로젝트의 Gradle Wrapper를 사용한다.
 - [`gradle/actions/setup-gradle`](https://github.com/gradle/actions/blob/main/docs/setup-gradle.md)의
   기본 캐시를 사용한다.
@@ -49,13 +49,17 @@ Android 변경 PR마다 디버그 빌드, 단위 테스트, Android Lint를 실�
 | 실행 시간 | 37초 |
 | Gradle 태스크 | 53개 중 50개 실행, 3개 캐시 사용 |
 | 빌드·테스트·Lint | 모두 통과 |
-| GitHub Actions 실행 | PR 생성 후 확인 예정 |
+| GitHub Actions 첫 실행 | [PR #29](https://github.com/woowacourse-teams/2026-chaekchaek/actions/runs/31771357098)에서 성공 |
+| 원격 실행 시간 | 전체 작업 3분 26초, Gradle 3분 15초 |
+| 원격 Gradle 태스크 | 53개 중 52개 실행, 1개 캐시 사용 |
+| 원격 Gradle 캐시 | PR은 읽기 전용이며 첫 실행이라 0개 복원, 0개 저장 |
 
 ### 학습과 다음 행동
 
 - 기존 Gradle 태스크만 조합해 새 분석 도구 없이 첫 CI를 구성할 수 있었다.
-- 첫 원격 실행에서 시간과 실패 로그의 가독성을 확인한다.
+- 첫 원격 실행에서 성공 여부, 실패 태스크명, 실행 시간을 GitHub에서 확인할 수 있었다.
 - 첫 성공 후 `Android CI / Build, test, lint`를 머지 필수 검사로 지정한다.
+- 기본 브랜치인 `main`의 첫 실행에서 캐시가 저장된 뒤 후속 PR 실행 시간을 다시 비교한다.
 - `shared` 모듈이 통합 브랜치에 들어오면 `:shared:testAndroidHostTest`를 검증 대상에 추가한다.
 - 계측 테스트는 중요한 UI 회귀를 JVM 테스트로 잡을 수 없을 때 추가한다.
 

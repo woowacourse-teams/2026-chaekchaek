@@ -7,6 +7,7 @@ on:
       - ".github/workflows/android-ci.yml"
   push:
     branches:
+      - main
       - an-develop
     paths:
       - "android/**"
