@@ -268,31 +268,31 @@ tasks.register('verifyOpenApi') {
 
 		def reviewProblemDetails = [
 			'/api/v1/books/{bookId}/reviews': [
-				get : ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED']],
+				get : ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '404': ['BOOK_NOT_FOUND']],
 				post: ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '404': ['BOOK_NOT_FOUND'],
 						'409': ['TOTAL_PAGES_CONFLICT'], '422': ['INVALID_READING_STATE']]
 			],
 			'/api/v1/reviews/{reviewId}': [
-				patch : ['400': ['INVALID_REQUEST'], '403': ['FORBIDDEN'], '404': ['REVIEW_NOT_FOUND'],
+				patch : ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REVIEW_NOT_FOUND'],
 						'409': ['TOTAL_PAGES_CONFLICT', 'DELETED_RESOURCE'], '422': ['INVALID_READING_STATE']],
-				delete: ['403': ['FORBIDDEN'], '404': ['REVIEW_NOT_FOUND'], '409': ['DELETED_RESOURCE']]
+				delete: ['401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REVIEW_NOT_FOUND'], '409': ['DELETED_RESOURCE']]
 			],
 			'/api/v1/reviews/{reviewId}/replies': [
-				get : ['404': ['REVIEW_NOT_FOUND']],
-				post: ['400': ['INVALID_REQUEST'], '404': ['REVIEW_NOT_FOUND'], '409': ['DELETED_RESOURCE']]
+				get : ['400': ['INVALID_REQUEST'], '404': ['REVIEW_NOT_FOUND']],
+				post: ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '404': ['REVIEW_NOT_FOUND'], '409': ['DELETED_RESOURCE']]
 			],
 			'/api/v1/replies/{replyId}': [
-				patch : ['400': ['INVALID_REQUEST'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND'],
+				patch : ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND'],
 						'409': ['DELETED_RESOURCE']],
-				delete: ['403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND'], '409': ['DELETED_RESOURCE']]
+				delete: ['401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND'], '409': ['DELETED_RESOURCE']]
 			],
 			'/api/v1/reviews/{reviewId}/reactions': [
-				post  : ['404': ['REVIEW_NOT_FOUND'], '409': ['REACTION_ALREADY_EXISTS', 'DELETED_RESOURCE']],
-				delete: ['404': ['REVIEW_NOT_FOUND']]
+				post  : ['401': ['UNAUTHORIZED'], '404': ['REVIEW_NOT_FOUND'], '409': ['REACTION_ALREADY_EXISTS', 'DELETED_RESOURCE']],
+				delete: ['401': ['UNAUTHORIZED'], '404': ['REVIEW_NOT_FOUND']]
 			],
 			'/api/v1/replies/{replyId}/reactions': [
-				post  : ['404': ['REPLY_NOT_FOUND'], '409': ['REACTION_ALREADY_EXISTS', 'DELETED_RESOURCE']],
-				delete: ['404': ['REPLY_NOT_FOUND']]
+				post  : ['401': ['UNAUTHORIZED'], '404': ['REPLY_NOT_FOUND'], '409': ['REACTION_ALREADY_EXISTS', 'DELETED_RESOURCE']],
+				delete: ['401': ['UNAUTHORIZED'], '404': ['REPLY_NOT_FOUND']]
 			]
 		]
 		reviewProblemDetails.each { path, operations ->

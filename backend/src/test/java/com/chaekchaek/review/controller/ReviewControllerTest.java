@@ -652,6 +652,76 @@ class ReviewControllerTest {
                 "답글의 좋아요를 취소한다", "replyId", "답글 ID");
     }
 
+    @Test
+    @DisplayName("목록 대상과 페이지 오류를 문서화한다")
+    void should_DocumentListErrors_When_TargetOrPageIsInvalid() throws Exception {
+        // given
+        when(reviewService.findReviews(404L, 1, Feed.ALL, ReviewSort.PAGE))
+                .thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
+
+        // when & then
+        documentProblemDetail(mockMvc.perform(get("/api/v1/books/{bookId}/reviews", 404L)
+                        .param("page", "1")), HttpStatus.NOT_FOUND, "BOOK_NOT_FOUND", "/api/v1/books/404/reviews",
+                "review-list-book-not-found", "감상 목록 조회", "도서의 감상을 페이지와 피드·정렬 조건으로 조회한다",
+                "bookId", "도서 ID");
+        documentProblemDetail(mockMvc.perform(get("/api/v1/reviews/{reviewId}/replies", 101L)
+                        .param("page", "0")), HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "/api/v1/reviews/101/replies",
+                "reply-list-invalid-request", "답글 목록 조회", "감상의 답글을 작성일 오름차순으로 조회한다",
+                "reviewId", "감상 ID");
+    }
+
+    @Test
+    @DisplayName("인증 필수 감상과 답글 작업의 401 응답을 문서화한다")
+    void should_DocumentUnauthorizedForAuthenticatedOperations_When_NotAuthenticated() throws Exception {
+        // given
+        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(101L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService).deleteReview(101L);
+        when(reviewService.createReply(org.mockito.ArgumentMatchers.eq(101L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(201L), org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService).deleteReply(201L);
+        when(reviewService.createReviewReaction(101L)).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService)
+                .deleteReviewReaction(101L);
+        when(reviewService.createReplyReaction(201L)).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService)
+                .deleteReplyReaction(201L);
+
+        // when & then
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 101L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/reviews/101", "review-update-unauthorized", "감상 수정",
+                "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 101L)),
+                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/reviews/101", "review-delete-unauthorized", "감상 삭제",
+                "작성자가 감상을 soft delete한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 101L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")),
+                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/reviews/101/replies", "reply-create-unauthorized", "답글 작성",
+                "감상에 답글을 작성한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 201L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")),
+                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/replies/201", "reply-update-unauthorized", "답글 수정",
+                "작성자가 답글 내용을 수정한다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}", 201L)),
+                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/replies/201", "reply-delete-unauthorized", "답글 삭제",
+                "작성자가 답글을 soft delete한다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 101L)),
+                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/reviews/101/reactions",
+                "review-reaction-create-unauthorized", "감상 좋아요", "감상에 좋아요를 남긴다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}/reactions", 101L)),
+                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/reviews/101/reactions",
+                "review-reaction-delete-unauthorized", "감상 좋아요 취소", "감상의 좋아요를 취소한다", "reviewId", "감상 ID");
+        documentProblemDetail(mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 201L)),
+                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/replies/201/reactions",
+                "reply-reaction-create-unauthorized", "답글 좋아요", "답글에 좋아요를 남긴다", "replyId", "답글 ID");
+        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}/reactions", 201L)),
+                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/replies/201/reactions",
+                "reply-reaction-delete-unauthorized", "답글 좋아요 취소", "답글의 좋아요를 취소한다", "replyId", "답글 ID");
+    }
+
     private RestDocumentationResultHandler reactionDocument(
             String identifier,
             String summary,
