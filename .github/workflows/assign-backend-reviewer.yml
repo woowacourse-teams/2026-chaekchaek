@@ -1,0 +1,38 @@
+name: Assign Random Backend Reviewer
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+    branches: [be]
+    paths:
+      - 'backend/**'
+
+permissions:
+  pull-requests: write
+
+jobs:
+  assign-reviewer:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pick and request a random backend reviewer
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const candidates = ['HyoYoonNam', 'snowshower', 'kcnsmoothie'];
+            const author = context.payload.pull_request.user.login;
+
+            const pool = candidates.filter((login) => login !== author);
+            if (pool.length === 0) {
+              core.info('배정할 리뷰어 후보가 없습니다. (작성자가 유일한 후보)');
+              return;
+            }
+
+            const reviewer = pool[Math.floor(Math.random() * pool.length)];
+            await github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              reviewers: [reviewer],
+            });
+            core.info(`리뷰어로 @${reviewer} 를 요청했습니다.`);
