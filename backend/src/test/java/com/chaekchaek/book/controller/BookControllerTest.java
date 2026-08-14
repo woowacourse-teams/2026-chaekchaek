@@ -10,17 +10,22 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.snippet.Attributes.key;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.book.client.AladinClientException;
 import com.chaekchaek.book.dto.BookItem;
+import com.chaekchaek.book.dto.BookDetailResponse;
+import com.chaekchaek.book.dto.BookMyRecordResponse;
 import com.chaekchaek.book.dto.BookSearchResponse;
+import com.chaekchaek.book.exception.BookNotFoundException;
 import com.chaekchaek.book.service.BookSearchService;
 import com.chaekchaek.book.service.BookService;
 import com.chaekchaek.common.exception.BusinessException;
@@ -52,6 +57,8 @@ class BookControllerTest {
 
     private static final String BOOK_SEARCH_SUMMARY = "도서 검색";
     private static final String BOOK_SEARCH_DESCRIPTION = "도서명과 페이지 번호로 도서를 검색한다";
+    private static final String BOOK_RESOLVE_SUMMARY = "ISBN13으로 도서 등록 또는 조회";
+    private static final String BOOK_DETAIL_SUMMARY = "도서 상세 조회";
 
     private static final FieldDescriptor[] BOOK_SEARCH_RESPONSE_FIELDS = {
             fieldWithPath("totalCount").type(JsonFieldType.NUMBER)
@@ -94,6 +101,26 @@ class BookControllerTest {
             fieldWithPath("detail").type(JsonFieldType.STRING).description("오류 상세 메시지"),
             fieldWithPath("instance").type(JsonFieldType.STRING).description("오류가 발생한 요청 경로"),
             fieldWithPath("code").type(JsonFieldType.STRING).description("애플리케이션 오류 코드")
+    };
+
+    private static final FieldDescriptor[] BOOK_DETAIL_RESPONSE_FIELDS = {
+            fieldWithPath("bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
+            fieldWithPath("isbn13").type(JsonFieldType.STRING).description("ISBN13"),
+            fieldWithPath("title").type(JsonFieldType.STRING).description("도서 제목"),
+            fieldWithPath("coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
+            fieldWithPath("authors").type(JsonFieldType.ARRAY).description("저자 목록"),
+            fieldWithPath("translators").type(JsonFieldType.ARRAY).description("옮긴이 목록"),
+            fieldWithPath("publisher").type(JsonFieldType.STRING).description("출판사"),
+            fieldWithPath("category").type(JsonFieldType.STRING).description("카테고리"),
+            fieldWithPath("publishedDate").type(JsonFieldType.STRING).description("출간일").optional(),
+            fieldWithPath("totalPages").type(JsonFieldType.NUMBER).description("전체 페이지 수").optional(),
+            fieldWithPath("commentCount").type(JsonFieldType.NUMBER).description("감상과 답글 수"),
+            fieldWithPath("averageRating").type(JsonFieldType.NUMBER).description("평균 별점").optional(),
+            fieldWithPath("ratingCount").type(JsonFieldType.NUMBER).description("별점 수"),
+            fieldWithPath("myRecord").type(JsonFieldType.OBJECT).description("내 서재 기록").optional(),
+            fieldWithPath("myRecord.status").type(JsonFieldType.STRING).description("읽기 상태").optional(),
+            fieldWithPath("myRecord.currentPage").type(JsonFieldType.NUMBER).description("현재 페이지").optional(),
+            fieldWithPath("myRecord.myRating").type(JsonFieldType.NUMBER).description("내 별점").optional()
     };
 
     @Autowired
@@ -168,6 +195,99 @@ class BookControllerTest {
                 ));
 
         verify(bookSearchService).search("마션", 1);
+    }
+
+    @Test
+    @DisplayName("유효한 ISBN13이면 도서를 등록하거나 조회한다")
+    void should_ReturnBookDetailResponse_When_ResolvingValidIsbn13() throws Exception {
+        // given
+        BookDetailResponse response = bookDetailResponse();
+        when(bookService.resolve("9788925568683")).thenReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/api/v1/books/resolve")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"isbn13\":\"9788925568683\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bookId").value(42))
+                .andExpect(jsonPath("$.averageRating").value(4.3))
+                .andDo(document(
+                        "book-resolve",
+                        requestFields(fieldWithPath("isbn13").type(JsonFieldType.STRING)
+                                .description("체크섬이 유효한 13자리 ISBN")),
+                        responseFields(BOOK_DETAIL_RESPONSE_FIELDS),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary(BOOK_RESOLVE_SUMMARY)
+                                .description("등록된 도서는 바로 조회하고, 미등록 도서는 알라딘에서 조회해 등록한다")
+                                .tag("도서")
+                                .requestFields(fieldWithPath("isbn13").type(JsonFieldType.STRING)
+                                        .description("체크섬이 유효한 13자리 ISBN"))
+                                .responseFields(BOOK_DETAIL_RESPONSE_FIELDS)
+                                .build())
+                ));
+
+        verify(bookService).resolve("9788925568683");
+    }
+
+    @Test
+    @DisplayName("등록된 도서 ID면 상세 정보를 반환한다")
+    void should_ReturnBookDetailResponse_When_BookExists() throws Exception {
+        // given
+        when(bookService.getDetail(42L)).thenReturn(bookDetailResponse());
+
+        // when & then
+        mockMvc.perform(get("/api/v1/books/{bookId}", 42L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bookId").value(42))
+                .andDo(document(
+                        "book-detail",
+                        responseFields(BOOK_DETAIL_RESPONSE_FIELDS),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary(BOOK_DETAIL_SUMMARY)
+                                .description("도서의 메타데이터, 댓글 수, 별점과 로그인 사용자의 서재 기록을 조회한다")
+                                .tag("도서")
+                                .pathParameters(ResourceDocumentation.parameterWithName("bookId")
+                                        .type(SimpleType.INTEGER).description("도서 ID"))
+                                .responseFields(BOOK_DETAIL_RESPONSE_FIELDS)
+                                .build())
+                ));
+
+        verify(bookService).getDetail(42L);
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 ISBN13이면 400 응답을 반환한다")
+    void should_ReturnBadRequest_When_Isbn13IsInvalid() throws Exception {
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(post("/api/v1/books/resolve")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"isbn13\":\"9788925568684\"}")),
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "요청값이 올바르지 않습니다.",
+                "/api/v1/books/resolve"
+        ).andDo(problemDetailDocument("book-resolve-invalid-request", BOOK_RESOLVE_SUMMARY,
+                "ISBN13 요청값이 올바르지 않다"));
+
+        verifyNoInteractions(bookService);
+    }
+
+    @Test
+    @DisplayName("없는 도서 ID면 404 응답을 반환한다")
+    void should_ReturnNotFound_When_BookDoesNotExist() throws Exception {
+        // given
+        when(bookService.getDetail(42L)).thenThrow(new BookNotFoundException());
+
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/books/{bookId}", 42L)),
+                HttpStatus.NOT_FOUND,
+                "BOOK_NOT_FOUND",
+                "책을 찾을 수 없습니다.",
+                "/api/v1/books/42"
+        ).andDo(problemDetailDocument("book-detail-not-found", BOOK_DETAIL_SUMMARY,
+                "요청한 도서가 존재하지 않는다"));
     }
 
     @Test
@@ -310,13 +430,40 @@ class BookControllerTest {
         );
     }
 
+    private BookDetailResponse bookDetailResponse() {
+        return new BookDetailResponse(
+                42L,
+                "9788925568683",
+                "마션",
+                "https://image.aladin.co.kr/martian.jpg",
+                List.of("앤디 위어"),
+                List.of("박아람"),
+                "알에이치코리아(RHK)",
+                "SF",
+                "2026-01-01",
+                308,
+                46,
+                new java.math.BigDecimal("4.3"),
+                21,
+                new BookMyRecordResponse("READING", 120, new java.math.BigDecimal("4.2"))
+        );
+    }
+
     private RestDocumentationResultHandler problemDetailDocument(String identifier) {
+        return problemDetailDocument(identifier, BOOK_SEARCH_SUMMARY, BOOK_SEARCH_DESCRIPTION);
+    }
+
+    private RestDocumentationResultHandler problemDetailDocument(
+            String identifier,
+            String summary,
+            String description
+    ) {
         return document(
                 identifier,
                 responseFields(PROBLEM_DETAIL_FIELDS),
                 resource(ResourceSnippetParameters.builder()
-                        .summary(BOOK_SEARCH_SUMMARY)
-                        .description(BOOK_SEARCH_DESCRIPTION)
+                        .summary(summary)
+                        .description(description)
                         .tag("도서")
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_DETAIL_FIELDS)
@@ -330,6 +477,16 @@ class BookControllerTest {
             String code,
             String detail
     ) throws Exception {
+        return expectProblemDetail(result, status, code, detail, "/api/v1/books");
+    }
+
+    private ResultActions expectProblemDetail(
+            ResultActions result,
+            HttpStatus status,
+            String code,
+            String detail,
+            String instance
+    ) throws Exception {
         return result
                 .andExpect(status().is(status.value()))
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
@@ -337,7 +494,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.title").value(status.getReasonPhrase()))
                 .andExpect(jsonPath("$.status").value(status.value()))
                 .andExpect(jsonPath("$.detail").value(detail))
-                .andExpect(jsonPath("$.instance").value("/api/v1/books"))
+                .andExpect(jsonPath("$.instance").value(instance))
                 .andExpect(jsonPath("$.code").value(code));
     }
 }
