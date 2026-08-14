@@ -29,3 +29,14 @@ jobs:
 
       - name: Build
         run: npm run build -w @chaekchaek/web
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          ssh-keyscan -H "${{ vars.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        run: |
+          scp -i ~/.ssh/ec2_key -r apps/chaekchaek/dist/. "${{ vars.EC2_USER }}@${{ vars.EC2_HOST }}:/var/www/chaekchaek-frontend/"
