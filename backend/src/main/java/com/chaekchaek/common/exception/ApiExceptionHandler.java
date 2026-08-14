@@ -64,10 +64,10 @@ public class ApiExceptionHandler {
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case BOOK_NOT_FOUND, REVIEW_NOT_FOUND, REPLY_NOT_FOUND, LIBRARY_ITEM_NOT_FOUND ->
                     HttpStatus.NOT_FOUND;
-            case LIBRARY_ITEM_ALREADY_EXISTS, REACTION_ALREADY_EXISTS, TOTAL_PAGES_CONFLICT ->
-                    HttpStatus.CONFLICT;
-            case INVALID_REQUEST, DELETED_RESOURCE -> HttpStatus.BAD_REQUEST;
+            case LIBRARY_ITEM_ALREADY_EXISTS, REACTION_ALREADY_EXISTS, TOTAL_PAGES_CONFLICT,
+                    DELETED_RESOURCE -> HttpStatus.CONFLICT;
             case INVALID_READING_STATE -> HttpStatus.UNPROCESSABLE_CONTENT;
+            case INVALID_REQUEST -> HttpStatus.BAD_REQUEST;
             case EXTERNAL_API_ERROR -> HttpStatus.BAD_GATEWAY;
             case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
