@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -28,8 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(AccessTokenCookieAuthenticationIntegrationTest.ProtectedTestController.class)
-class AccessTokenCookieAuthenticationIntegrationTest {
+@Import(AccessTokenAuthenticationIntegrationTest.ProtectedTestController.class)
+class AccessTokenAuthenticationIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -83,6 +84,44 @@ class AccessTokenCookieAuthenticationIntegrationTest {
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
                 .andExpect(jsonPath("$.detail")
                         .value("인증 정보가 유효하지 않습니다."));
+    }
+
+    @Test
+    @DisplayName("유효한 Bearer Access Token으로 보호 API에 접근한다")
+    void should_AccessProtectedApi_When_BearerTokenIsValid()
+            throws Exception {
+        // given
+        String accessToken = issueAccessToken("1");
+
+        // when & then
+        mockMvc.perform(get("/test/protected")
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                "Bearer " + accessToken
+                        ))
+                .andExpect(status().isOk())
+                .andExpect(content().string("1"));
+    }
+
+    @Test
+    @DisplayName("변조된 Bearer Access Token으로 보호 API에 접근하면 거부한다")
+    void should_RejectProtectedApi_When_BearerTokenIsTampered()
+            throws Exception {
+        String tamperedToken =
+                issueAccessToken("1") + "tampered";
+
+        mockMvc.perform(get("/test/protected")
+                        .header(
+                                HttpHeaders.AUTHORIZATION,
+                                "Bearer " + tamperedToken
+                        ))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_PROBLEM_JSON
+                ))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.code")
+                        .value("UNAUTHORIZED"));
     }
 
     private String issueAccessToken(String memberId) {
