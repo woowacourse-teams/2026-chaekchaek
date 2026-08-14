@@ -4,7 +4,7 @@ import com.chaekchaek.auth.oauth.google.GoogleOidcUserService;
 import com.chaekchaek.auth.handler.OAuth2AuthenticationFailureHandler;
 import com.chaekchaek.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.chaekchaek.auth.handler.RestAuthenticationEntryPoint;
-import com.chaekchaek.auth.token.access.CookieBearerTokenResolver;
+import com.chaekchaek.auth.token.access.HeaderOrCookieBearerTokenResolver;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +24,7 @@ public class SecurityConfig {
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final GoogleOidcUserService googleOidcUserService;
-    private final CookieBearerTokenResolver cookieBearerTokenResolver;
+    private final HeaderOrCookieBearerTokenResolver bearerTokenResolver;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final String frontendOrigin;
 
@@ -32,14 +32,14 @@ public class SecurityConfig {
             OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
             OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler,
             GoogleOidcUserService googleOidcUserService,
-            CookieBearerTokenResolver cookieBearerTokenResolver,
+            HeaderOrCookieBearerTokenResolver bearerTokenResolver,
             RestAuthenticationEntryPoint restAuthenticationEntryPoint,
             @Value("${app.frontend.base-url}") String frontendOrigin
     ) {
         this.oAuth2AuthenticationSuccessHandler = oAuth2AuthenticationSuccessHandler;
         this.oAuth2AuthenticationFailureHandler = oAuth2AuthenticationFailureHandler;
         this.googleOidcUserService = googleOidcUserService;
-        this.cookieBearerTokenResolver = cookieBearerTokenResolver;
+        this.bearerTokenResolver = bearerTokenResolver;
         this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
         this.frontendOrigin = frontendOrigin;
     }
@@ -68,7 +68,7 @@ public class SecurityConfig {
                         .failureHandler(oAuth2AuthenticationFailureHandler)
                 )
                 .oauth2ResourceServer(resourceServer -> resourceServer
-                        .bearerTokenResolver(cookieBearerTokenResolver)
+                        .bearerTokenResolver(bearerTokenResolver)
                         .authenticationEntryPoint(restAuthenticationEntryPoint)
                         .jwt(Customizer.withDefaults()))
                 .build();
