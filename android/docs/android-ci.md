@@ -58,7 +58,9 @@ Android 변경 PR마다 디버그 빌드, 단위 테스트, Android Lint를 실�
 
 - 기존 Gradle 태스크만 조합해 새 분석 도구 없이 첫 CI를 구성할 수 있었다.
 - 첫 원격 실행에서 성공 여부, 실패 태스크명, 실행 시간을 GitHub에서 확인할 수 있었다.
-- 첫 성공 후 `Android CI / Build, test, lint`를 머지 필수 검사로 지정한다.
+- `an-develop`의 Android PR에는 실제 체크 이름인 `Build, test, lint`를 머지 필수 검사로
+  지정한다. FE/BE PR에서는 Android CI를 실행하지 않으므로 `main`의 전역 필수 검사로는
+  지정하지 않는다.
 - 기본 브랜치인 `main`의 첫 실행에서 캐시가 저장된 뒤 후속 PR 실행 시간을 다시 비교한다.
 - `shared` 모듈이 통합 브랜치에 들어오면 `:shared:testAndroidHostTest`를 검증 대상에 추가한다.
 - 계측 테스트는 중요한 UI 회귀를 JVM 테스트로 잡을 수 없을 때 추가한다.
