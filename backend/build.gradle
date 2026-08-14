@@ -407,8 +407,8 @@ tasks.register('verifyOpenApi') {
 			['/api/v1/reviews/{reviewId}/replies', 'post']
 		].each { path, method ->
 			def response = (((paths.get(path) as Map).get(method) as Map).get('responses') as Map)?.get('201') as Map
-			def locationHeader = (response?.get('headers') as Map)?.get('Location') as Map
-			if ((locationHeader?.get('schema') as Map)?.get('type') != 'string') {
+			def reviewLocationHeader = (response?.get('headers') as Map)?.get('Location') as Map
+			if ((reviewLocationHeader?.get('schema') as Map)?.get('type') != 'string') {
 				throw new GradleException("OpenAPI specification is missing Location header for ${method.toUpperCase()} ${path}")
 			}
 		}
