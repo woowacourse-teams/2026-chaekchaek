@@ -83,6 +83,31 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 	inputs.dir snippetsDir
 	outputs.file openApiSpecFile
 	doNotTrackState('ePages exposes non-serializable Swagger model inputs on Gradle 9')
+	doLast {
+		def sourceFile = openApiSpecFile.get().asFile
+		def specification = new Yaml().load(sourceFile.getText('UTF-8')) as Map
+		def comparisonOperation = ((specification.get('paths') as Map)
+				?.get('/api/v1/members/me/ratings/comparison') as Map)?.get('get') as Map
+		def responseSchema = (((comparisonOperation?.get('responses') as Map)?.get('200') as Map)
+				?.get('content') as Map)?.get('application/json') as Map
+		def schemaReference = (responseSchema?.get('schema') as Map)?.get('\$ref') as String
+		if (schemaReference == null) {
+			throw new GradleException('OpenAPI specification is missing rating comparison response schema')
+		}
+		def schemaName = schemaReference.substring(schemaReference.lastIndexOf('/') + 1)
+		def comparisonSchema = (((specification.get('components') as Map)?.get('schemas') as Map)
+				?.get(schemaName) as Map)
+		['lower', 'higher'].each { propertyName ->
+			def property = comparisonSchema?.get('properties') as Map
+			def nullableProperty = property?.get(propertyName) as Map
+			if (nullableProperty == null) {
+				throw new GradleException("OpenAPI specification is missing rating comparison ${propertyName} property")
+			}
+			// ePages 0.20.1 does not emit nullable for optional object fields with nested descriptors.
+			nullableProperty.put('nullable', true)
+		}
+		sourceFile.withWriter('UTF-8') { writer -> new Yaml().dump(specification, writer) }
+	}
 }
 
 def stageOpenApiSpec = tasks.register('stageOpenApiSpec') {
@@ -159,12 +184,12 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def requiredLibraryOperations = [
-			'/api/v1/library'                         : ['get': ['200', '400'], 'post': ['201']],
-			'/api/v1/library/bulk-delete'             : ['post': ['204']],
-			'/api/v1/library/bulk-status'             : ['patch': ['204']],
-			'/api/v1/library/{bookId}'                : ['patch': ['200'], 'delete': ['204']],
-			'/api/v1/library/{bookId}/rating'         : ['put': ['200'], 'delete': ['204']],
-			'/api/v1/members/me/ratings/comparison'   : ['get': ['200']]
+			'/api/v1/library'                         : ['get': ['200', '400'], 'post': ['201', '401', '404', '409', '422']],
+			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '404']],
+			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '404', '422']],
+			'/api/v1/library/{bookId}'                : ['patch': ['200', '400', '404', '409', '422'], 'delete': ['204', '404']],
+			'/api/v1/library/{bookId}/rating'         : ['put': ['200', '400', '404'], 'delete': ['204', '404']],
+			'/api/v1/members/me/ratings/comparison'   : ['get': ['200', '400', '404']]
 		]
 		requiredLibraryOperations.each { path, expectedOperations ->
 			def pathItem = paths?.get(path) as Map
@@ -191,6 +216,84 @@ tasks.register('verifyOpenApi') {
 		def libraryProblemContent = (libraryBadRequest?.get('content') as Map)?.get('application/problem+json') as Map
 		if ((libraryProblemContent?.get('schema') as Map)?.get('\$ref') != '#/components/schemas/ProblemDetail') {
 			throw new GradleException('OpenAPI specification is missing ProblemDetail schema for GET /api/v1/library 400 response')
+		}
+
+		def problemResponseCodes = [
+			'/api/v1/library'                         : ['get': ['400'], 'post': ['401', '404', '409', '422']],
+			'/api/v1/library/bulk-delete'             : ['post': ['400', '404']],
+			'/api/v1/library/bulk-status'             : ['patch': ['400', '404', '422']],
+			'/api/v1/library/{bookId}'                : ['patch': ['400', '404', '409', '422'], 'delete': ['404']],
+			'/api/v1/library/{bookId}/rating'         : ['put': ['400', '404'], 'delete': ['404']],
+			'/api/v1/members/me/ratings/comparison'   : ['get': ['400', '404']]
+		]
+		problemResponseCodes.each { path, operations ->
+			operations.each { method, responseCodes ->
+				def operationResponses = (((paths.get(path) as Map).get(method) as Map).get('responses') as Map)
+				responseCodes.each { responseCode ->
+					def problemContent = ((operationResponses.get(responseCode) as Map)?.get('content') as Map)
+							?.get('application/problem+json') as Map
+					if ((problemContent?.get('schema') as Map)?.get('\$ref') != '#/components/schemas/ProblemDetail') {
+						throw new GradleException("OpenAPI specification is missing ProblemDetail schema for ${method.toUpperCase()} ${path} ${responseCode} response")
+					}
+				}
+			}
+		}
+
+		def libraryPostOperation = (paths.get('/api/v1/library') as Map).get('post') as Map
+		def locationHeader = ((((libraryPostOperation.get('responses') as Map).get('201') as Map)
+				?.get('headers') as Map)?.get('Location') as Map)
+		if ((locationHeader?.get('schema') as Map)?.get('type') != 'string') {
+			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/library 201 response')
+		}
+
+		def libraryQueryParameters = (((paths.get('/api/v1/library') as Map).get('get') as Map)
+				?.get('parameters') as List)?.collectEntries { parameter -> [(parameter.get('name')): parameter] }
+		if ((libraryQueryParameters?.get('page') as Map)?.get('schema')?.get('type') != 'integer'
+				|| (libraryQueryParameters?.get('status') as Map)?.get('schema')?.get('type') != 'string'
+				|| (libraryQueryParameters?.get('sort') as Map)?.get('schema')?.get('type') != 'string') {
+			throw new GradleException('OpenAPI specification has invalid query parameter types for GET /api/v1/library')
+		}
+		def comparisonQueryParameters = (((paths.get('/api/v1/members/me/ratings/comparison') as Map).get('get') as Map)
+				?.get('parameters') as List)?.collectEntries { parameter -> [(parameter.get('name')): parameter] }
+		if ((comparisonQueryParameters?.get('isbn13') as Map)?.get('schema')?.get('type') != 'string'
+				|| (comparisonQueryParameters?.get('criterion') as Map)?.get('schema')?.get('type') != 'number') {
+			throw new GradleException('OpenAPI specification has invalid query parameter types for GET /api/v1/members/me/ratings/comparison')
+		}
+
+		def addRequestSchemaReference = (((libraryPostOperation.get('requestBody') as Map)?.get('content') as Map)
+				?.values()?.first() as Map)?.get('schema')?.get('\$ref') as String
+		def addRequestSchemaName = addRequestSchemaReference?.substring(addRequestSchemaReference.lastIndexOf('/') + 1)
+		def addRequestSchema = (((specification.get('components') as Map)?.get('schemas') as Map)
+				?.get(addRequestSchemaName) as Map)
+		def addRequiredFields = addRequestSchema?.get('required') as List
+		if (addRequiredFields == null || !addRequiredFields.containsAll(['isbn13', 'status'])
+				|| addRequiredFields.contains('totalPages')) {
+			throw new GradleException('OpenAPI specification has invalid required fields for POST /api/v1/library request')
+		}
+
+		def dereferenceSchema = { schema ->
+			def reference = (schema as Map)?.get('\$ref') as String
+			def schemaName = reference?.substring(reference.lastIndexOf('/') + 1)
+			return (((specification.get('components') as Map)?.get('schemas') as Map)?.get(schemaName) as Map)
+		}
+		def comparisonSchema = dereferenceSchema((((paths.get('/api/v1/members/me/ratings/comparison') as Map)
+				.get('get') as Map).get('responses') as Map).get('200').get('content').get('application/json').get('schema'))
+		def comparisonProperties = comparisonSchema?.get('properties') as Map
+		if ((comparisonProperties?.get('lower') as Map)?.get('nullable') != true
+				|| (comparisonProperties?.get('higher') as Map)?.get('nullable') != true
+				|| ((comparisonProperties?.get('current') as Map)?.get('properties') as Map)
+				?.get('bookId')?.get('nullable') != true) {
+			throw new GradleException('OpenAPI specification has invalid nullable fields for rating comparison')
+		}
+
+		def libraryItemSchema = dereferenceSchema(((((libraryPostOperation.get('responses') as Map).get('201') as Map)
+				.get('content') as Map).get('application/json') as Map).get('schema'))
+		def libraryItemProperties = libraryItemSchema?.get('properties') as Map
+		def comparisonAuthors = ((comparisonProperties?.get('current') as Map)?.get('properties') as Map)?.get('authors') as Map
+		if ((libraryItemProperties?.get('authors') as Map)?.get('items')?.get('type') != 'string'
+				|| (libraryItemProperties?.get('translators') as Map)?.get('items')?.get('type') != 'string'
+				|| comparisonAuthors?.get('items')?.get('type') != 'string') {
+			throw new GradleException('OpenAPI specification has invalid string array item types for Library responses')
 		}
 
 		def components = specification?.get('components') as Map
