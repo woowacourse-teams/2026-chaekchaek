@@ -372,9 +372,6 @@ public class ReviewService implements BookCommentCountReader {
     private void validateRequestPage(Integer currentPage, Integer totalPages) {
         if (currentPage != null && currentPage < 0) throw new BusinessException(ErrorCode.INVALID_REQUEST);
         if (totalPages != null && totalPages <= 0) throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        if (currentPage != null && totalPages != null && currentPage > totalPages) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
     }
 
     private ReviewMemberProfile memberProfileOf(long memberId) {

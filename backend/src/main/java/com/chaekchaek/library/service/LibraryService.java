@@ -144,9 +144,10 @@ public class LibraryService {
     @Transactional
     public void bulkChangeStatus(long memberId, Collection<Long> bookIds, ReadingStatus status) {
         validateBulkBookIds(bookIds);
-        List<LibraryItem> items = requireAllLibraryItemsForUpdate(memberId, bookIds);
         if (status == ReadingStatus.FINISHED) {
-            Map<Long, Book> books = booksByIdForUpdate(items);
+            validateAllLibraryItemsExist(memberId, bookIds);
+            Map<Long, Book> books = booksByIdForUpdate(bookIds);
+            List<LibraryItem> items = requireAllLibraryItemsForUpdate(memberId, bookIds);
             if (books.values().stream().anyMatch(book -> book.getTotalPages() == null)) {
                 throw new BusinessException(ErrorCode.INVALID_READING_STATE);
             }
@@ -154,6 +155,7 @@ public class LibraryService {
                     books.get(item.getBookId()).getTotalPages(), now()));
             return;
         }
+        List<LibraryItem> items = requireAllLibraryItemsForUpdate(memberId, bookIds);
         Instant now = now();
         items.forEach(item -> item.changeStatus(status, null, now));
     }
@@ -239,9 +241,15 @@ public class LibraryService {
                 .collect(java.util.stream.Collectors.toMap(Book::getId, Function.identity()));
     }
 
-    private Map<Long, Book> booksByIdForUpdate(Collection<LibraryItem> items) {
-        return items.stream().map(LibraryItem::getBookId)
+    private Map<Long, Book> booksByIdForUpdate(Collection<Long> bookIds) {
+        return bookIds.stream().sorted()
                 .collect(java.util.stream.Collectors.toMap(Function.identity(), this::getBookForUpdate));
+    }
+
+    private void validateAllLibraryItemsExist(long memberId, Collection<Long> bookIds) {
+        if (libraryItemRepository.findAllByMemberIdAndBookIdIn(memberId, bookIds).size() != bookIds.size()) {
+            throw new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND);
+        }
     }
 
     private List<LibraryItem> pageOf(List<LibraryItem> items, int page) {

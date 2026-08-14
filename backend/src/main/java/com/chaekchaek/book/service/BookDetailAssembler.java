@@ -10,6 +10,7 @@ import com.chaekchaek.library.service.BookCommentCountReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
+import java.util.OptionalLong;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -49,13 +50,13 @@ class BookDetailAssembler {
     }
 
     private BookMyRecordResponse myRecord(long bookId) {
-        return currentMemberIdProvider.findCurrentMemberId()
-                .stream()
-                .mapToObj(memberId -> libraryItemRepository.findByMemberIdAndBookId(memberId, bookId)
-                        .map(item -> new BookMyRecordResponse(
-                                item.getStatus().name(), item.getCurrentPage(), item.getRating()))
-                        .orElse(null))
-                .findFirst()
+        OptionalLong memberId = currentMemberIdProvider.findCurrentMemberId();
+        if (memberId.isEmpty()) {
+            return null;
+        }
+        return libraryItemRepository.findByMemberIdAndBookId(memberId.getAsLong(), bookId)
+                .map(item -> new BookMyRecordResponse(
+                        item.getStatus().name(), item.getCurrentPage(), item.getRating()))
                 .orElse(null);
     }
 }

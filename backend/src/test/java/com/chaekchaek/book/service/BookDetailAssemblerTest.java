@@ -55,6 +55,28 @@ class BookDetailAssemblerTest {
                 .containsExactly("READING", 120, new java.math.BigDecimal("4.2"));
     }
 
+    @Test
+    @DisplayName("로그인했지만 서재 기록이 없으면 책 상세의 내 기록은 null이다")
+    void should_ReturnNullMyRecord_When_AuthenticatedMemberHasNoLibraryItem() {
+        // given
+        Book book = book();
+        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                commentCountReader, currentMemberIdProvider, libraryItemRepository);
+        when(commentCountReader.getCommentCounts(List.of(1L))).thenReturn(Map.of(1L, 0L));
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
+        when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.empty());
+
+        // when
+        var response = assembler.assemble(book);
+
+        // then
+        assertThat(response.myRecord()).isNull();
+    }
+
     private Book book() {
         Book book = mock(Book.class);
         when(book.getId()).thenReturn(1L);
