@@ -46,3 +46,7 @@ app:
       secure: ${AUTH_COOKIE_SECURE:false}
       same-site: Lax
 
+    google-id-token:
+      issuer: https://accounts.google.com
+      jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+      audience: ${GOOGLE_CLIENT_ID}
