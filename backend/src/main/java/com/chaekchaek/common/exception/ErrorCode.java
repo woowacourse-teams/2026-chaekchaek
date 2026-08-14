@@ -32,6 +32,11 @@ public enum ErrorCode {
             "Refresh Token이 만료되었거나 폐기되었습니다."
     ),
 
+    INVALID_GOOGLE_ID_TOKEN(
+            "INVALID_GOOGLE_ID_TOKEN",
+            "Google 인증 정보가 유효하지 않습니다."
+    ),
+
     UNAUTHORIZED(
             "UNAUTHORIZED",
             "인증 정보가 유효하지 않습니다."
