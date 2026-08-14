@@ -158,6 +158,41 @@ tasks.register('verifyOpenApi') {
 			}
 		}
 
+		def requiredLibraryOperations = [
+			'/api/v1/library'                         : ['get': ['200', '400'], 'post': ['201']],
+			'/api/v1/library/bulk-delete'             : ['post': ['204']],
+			'/api/v1/library/bulk-status'             : ['patch': ['204']],
+			'/api/v1/library/{bookId}'                : ['patch': ['200'], 'delete': ['204']],
+			'/api/v1/library/{bookId}/rating'         : ['put': ['200'], 'delete': ['204']],
+			'/api/v1/members/me/ratings/comparison'   : ['get': ['200']]
+		]
+		requiredLibraryOperations.each { path, expectedOperations ->
+			def pathItem = paths?.get(path) as Map
+			if (pathItem == null) {
+				throw new GradleException("OpenAPI specification is missing path ${path}")
+			}
+			expectedOperations.each { method, expectedResponseCodes ->
+				def operation = pathItem.get(method) as Map
+				if (operation == null) {
+					throw new GradleException("OpenAPI specification is missing ${method.toUpperCase()} operation for ${path}")
+				}
+				def operationResponses = (operation.get('responses') as Map)?.collectEntries { status, response ->
+					[(status.toString()): response]
+				}
+				if (operationResponses == null || !operationResponses.keySet().containsAll(expectedResponseCodes)) {
+					throw new GradleException("OpenAPI specification has incomplete responses for ${method.toUpperCase()} ${path}")
+				}
+			}
+		}
+
+		def libraryListResponses = ((paths.get('/api/v1/library') as Map).get('get') as Map)
+				.get('responses') as Map
+		def libraryBadRequest = libraryListResponses?.get('400') as Map
+		def libraryProblemContent = (libraryBadRequest?.get('content') as Map)?.get('application/problem+json') as Map
+		if ((libraryProblemContent?.get('schema') as Map)?.get('\$ref') != '#/components/schemas/ProblemDetail') {
+			throw new GradleException('OpenAPI specification is missing ProblemDetail schema for GET /api/v1/library 400 response')
+		}
+
 		def components = specification?.get('components') as Map
 		def schemas = components?.get('schemas') as Map
 		def problemDetail = schemas?.get('ProblemDetail') as Map
