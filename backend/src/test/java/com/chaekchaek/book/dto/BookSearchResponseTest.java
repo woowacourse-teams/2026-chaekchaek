@@ -19,6 +19,7 @@ class BookSearchResponseTest {
     void should_UseContractPropertyNames_When_SerializingToJson() throws JacksonException {
         // given
         BookItem book = new BookItem(
+                null,
                 "마션",
                 "https://image.aladin.co.kr/martian.jpg",
                 List.of("앤디 위어"),
@@ -26,7 +27,8 @@ class BookSearchResponseTest {
                 "2026-07-01",
                 "9788925568683",
                 "국내도서>소설>과학소설",
-                "알에이치코리아(RHK)"
+                "알에이치코리아(RHK)",
+                null
         );
         BookSearchResponse response = new BookSearchResponse(6, 2, List.of(book));
 
@@ -38,8 +40,8 @@ class BookSearchResponseTest {
                 "totalCount", "nextPage", "items"
         );
         assertThat(json.at("/items/0").propertyNames()).containsExactlyInAnyOrder(
-                "title", "coverImageUrl", "authors", "translators", "publishedDate",
-                "isbn13", "category", "publisher"
+                "bookId", "title", "coverImageUrl", "authors", "translators", "publishedDate",
+                "isbn13", "category", "publisher", "commentCount"
         );
     }
 

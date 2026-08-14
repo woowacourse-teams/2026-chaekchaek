@@ -1,6 +1,7 @@
 package com.chaekchaek.book.client;
 
 import com.chaekchaek.book.client.dto.AladinSearchResponse;
+import com.chaekchaek.book.exception.BookNotFoundException;
 import java.net.URI;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -51,6 +52,32 @@ public class AladinBookClient {
         }
 
         return response;
+    }
+
+    public com.chaekchaek.book.client.dto.AladinBookItem findBookByIsbn13(String isbn13) {
+        URI uri = new DefaultUriBuilderFactory().builder()
+                .path("/ttb/api/ItemLookUp.aspx")
+                .queryParam("ttbkey", ttbKey)
+                .queryParam("ItemIdType", "ISBN13")
+                .queryParam("ItemId", isbn13)
+                .queryParam("Cover", "Big")
+                .queryParam("Output", "JS")
+                .queryParam("Version", "20131101")
+                .build();
+
+        AladinSearchResponse response;
+        try {
+            response = requestBooks(uri);
+        } catch (RestClientException | IllegalStateException exception) {
+            throw new AladinClientException(exception);
+        }
+        if (response.hasError()) {
+            throw new AladinClientException(response.errorCode(), response.errorMessage());
+        }
+        return response.items().stream()
+                .filter(item -> isbn13.equals(item.isbn13()))
+                .findFirst()
+                .orElseThrow(BookNotFoundException::new);
     }
 
     private AladinSearchResponse requestBooks(URI uri) {

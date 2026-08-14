@@ -7,8 +7,10 @@ import static org.mockito.Mockito.when;
 import com.chaekchaek.book.client.AladinBookClient;
 import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.client.dto.AladinSearchResponse;
+import com.chaekchaek.book.client.dto.AladinBookSubInfo;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
+import com.chaekchaek.book.repository.BookRepository;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,11 +35,14 @@ class BookSearchServiceTest {
     ) {
         // given
         AladinBookClient bookClient = mock(AladinBookClient.class);
-        BookSearchService service = new BookSearchService(bookClient);
+        BookRepository bookRepository = mock(BookRepository.class);
+        BookSearchService service = new BookSearchService(bookClient, bookRepository);
         AladinSearchResponse aladinResponse = new AladinSearchResponse(
                 null, null, totalResults, responseStartIndex, itemsPerPage, List.of()
         );
         when(bookClient.searchBooks("마션", requestPage)).thenReturn(aladinResponse);
+        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenReturn(List.of());
 
         // when
         BookSearchResponse response = service.search("마션", requestPage);
@@ -51,11 +56,14 @@ class BookSearchServiceTest {
     void should_ReflectTotalCount_When_ConvertingAladinResponse() {
         // given
         AladinBookClient bookClient = mock(AladinBookClient.class);
-        BookSearchService service = new BookSearchService(bookClient);
+        BookRepository bookRepository = mock(BookRepository.class);
+        BookSearchService service = new BookSearchService(bookClient, bookRepository);
         AladinSearchResponse aladinResponse = new AladinSearchResponse(
                 null, null, 21, 1, 10, List.of()
         );
         when(bookClient.searchBooks("마션", 1)).thenReturn(aladinResponse);
+        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenReturn(List.of());
 
         // when
         BookSearchResponse response = service.search("마션", 1);
@@ -69,7 +77,8 @@ class BookSearchServiceTest {
     void should_MapAllBookFields_When_ConvertingAladinBookItem() {
         // given
         AladinBookClient bookClient = mock(AladinBookClient.class);
-        BookSearchService service = new BookSearchService(bookClient);
+        BookRepository bookRepository = mock(BookRepository.class);
+        BookSearchService service = new BookSearchService(bookClient, bookRepository);
         AladinBookItem aladinBookItem = new AladinBookItem(
                 "클린 코드",
                 "https://image.aladin.co.kr/cover.jpg",
@@ -77,7 +86,8 @@ class BookSearchServiceTest {
                 "2008-08-01",
                 "9788966260959",
                 "국내도서>컴퓨터/모바일>프로그래밍",
-                "인사이트"
+                "인사이트",
+                new AladinBookSubInfo(464)
         );
         AladinSearchResponse aladinResponse = new AladinSearchResponse(
                 null,
@@ -88,6 +98,8 @@ class BookSearchServiceTest {
                 List.of(aladinBookItem)
         );
         when(bookClient.searchBooks("클린 코드", 1)).thenReturn(aladinResponse);
+        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenReturn(List.of());
 
         // when
         BookSearchResponse response = service.search("클린 코드", 1);
