@@ -1,0 +1,58 @@
+name: Backend CD (Deploy to EC2)
+
+on:
+  push:
+    branches: [ be ]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+concurrency:
+  group: backend-cd
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  deploy:
+    runs-on: [ self-hosted ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'liberica'
+          java-version: '21'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build bootJar (테스트는 CI에서 이미 수행)
+        run: ./gradlew clean bootJar -x test
+
+      - name: Build Docker image
+        run: docker build -t chaekchaek-backend .
+
+      - name: Restart container
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          ALADIN_TTB_KEY: ${{ secrets.ALADIN_TTB_KEY }}
+        run: |
+          docker stop chaekchaek-backend 2>/dev/null || true
+          docker rm chaekchaek-backend 2>/dev/null || true
+          docker run -d \
+            --name chaekchaek-backend \
+            --restart unless-stopped \
+            -p 8080:8080 \
+            -e DB_URL="$DB_URL" \
+            -e DB_USERNAME="$DB_USERNAME" \
+            -e DB_PASSWORD="$DB_PASSWORD" \
+            -e ALADIN_TTB_KEY="$ALADIN_TTB_KEY" \
+            chaekchaek-backend
+          docker image prune -f
