@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { AppProviders } from './providers/AppProvider';
 import { enableMocking } from './mocks/msw/browser';
 
 import { App } from './App';
@@ -16,6 +17,8 @@ if (__DEV__) {
 const root = createRoot(container);
 root.render(
   <StrictMode>
-    <App />
+    <AppProviders>
+      <App />
+    </AppProviders>
   </StrictMode>,
 );
