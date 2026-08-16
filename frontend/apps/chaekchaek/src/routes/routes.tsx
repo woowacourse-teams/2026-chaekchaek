@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { ROUTES } from '@/constants/routes';
+
 interface Route {
   path: string;
   element: ReactNode;
@@ -11,7 +13,7 @@ const DummyPage = () => {
 
 const routes: Route[] = [
   {
-    path: '/',
+    path: ROUTES.HOME,
     element: <DummyPage />,
   },
 ];
