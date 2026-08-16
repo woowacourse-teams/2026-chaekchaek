@@ -18,7 +18,8 @@ class ArchiveRepository(context: Context) {
   val items: StateFlow<List<ArchivedBook>> = _items.asStateFlow()
 
   fun add(book: ArchivedBook) {
-    val updated = _items.value + book
+    val updated = _items.value.plusIfAbsent(book)
+    if (updated === _items.value) return
     _items.value = updated
     prefs.edit().putString(KEY_ITEMS, serializeArchivedBooks(updated)).apply()
   }

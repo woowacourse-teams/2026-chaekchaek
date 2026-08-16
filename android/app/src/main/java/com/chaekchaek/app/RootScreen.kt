@@ -60,6 +60,7 @@ fun RootScreen(modifier: Modifier = Modifier) {
       )
       RootTab.Discover ->
         SearchScreen(
+          archiveRepository = archiveRepository,
           modifier = contentModifier,
           onBack = { selectedTab = RootTab.Home },
         )
