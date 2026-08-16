@@ -10,6 +10,7 @@ data class BookSearchResult(
   val year: String,
   val coverUrl: String,
   val description: String,
+  val isbn13: String = "",
 )
 
 data class ArchivedBook(
@@ -38,9 +39,24 @@ internal fun parseBookSearchResults(json: String): List<BookSearchResult> {
       year = obj.optString("pubDate").take(4),
       coverUrl = obj.optString("cover"),
       description = obj.optString("description"),
+      isbn13 = obj.optString("isbn13"),
     )
   }
 }
+
+internal fun BookSearchResult.toArchivedBook(): ArchivedBook =
+  ArchivedBook(
+    id = isbn13.ifBlank { listOf(title, creator, publisher, year).joinToString("|") },
+    title = title,
+    creator = creator,
+    publisher = publisher,
+    year = year,
+    coverUrl = coverUrl,
+    note = "",
+  )
+
+internal fun List<ArchivedBook>.plusIfAbsent(book: ArchivedBook): List<ArchivedBook> =
+  if (any { it.id == book.id }) this else this + book
 
 internal fun ArchivedBook.toJson(): JSONObject =
   JSONObject()
