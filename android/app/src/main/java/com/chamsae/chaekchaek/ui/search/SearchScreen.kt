@@ -50,18 +50,26 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.chamsae.chaekchaek.R
+import com.chamsae.chaekchaek.data.ArchiveRepository
+import com.chamsae.chaekchaek.data.ArchivedBook
 import com.chamsae.chaekchaek.data.BookSearchResult
+import com.chamsae.chaekchaek.data.toArchivedBook
 import com.chamsae.chaekchaek.theme.ChaekAccent
 import com.chamsae.chaekchaek.theme.ChaekAccentInk
 import com.chamsae.chaekchaek.theme.ChaekBand
+import com.chamsae.chaekchaek.theme.ChaekBorder
+import com.chamsae.chaekchaek.theme.ChaekBorderSoft
+import com.chamsae.chaekchaek.theme.ChaekInkTertiary
 
 @Composable
 fun SearchScreen(
+  archiveRepository: ArchiveRepository,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
   viewModel: SearchViewModel = viewModel(),
 ) {
   val state by viewModel.uiState.collectAsState()
+  val archivedBooks by archiveRepository.items.collectAsState()
   var query by remember { mutableStateOf("") }
   val leaveSearch = {
     viewModel.clear()
@@ -104,7 +112,13 @@ fun SearchScreen(
           body = "잠시 후 다시 검색해 주세요.",
           modifier = Modifier.weight(1f),
         )
-      is SearchUiState.Success -> SearchResults(current.results, Modifier.weight(1f))
+      is SearchUiState.Success ->
+        SearchResults(
+          results = current.results,
+          registeredBookIds = archivedBooks.mapTo(mutableSetOf(), ArchivedBook::id),
+          onRegister = { archiveRepository.add(it.toArchivedBook()) },
+          modifier = Modifier.weight(1f),
+        )
     }
   }
 }
@@ -202,13 +216,19 @@ private fun SearchField(
 @Composable
 private fun SearchResults(
   results: List<BookSearchResult>,
+  registeredBookIds: Set<String>,
+  onRegister: (BookSearchResult) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   Column(modifier = modifier.fillMaxWidth()) {
     SearchResultHeader(results.size)
     LazyColumn(modifier = Modifier.weight(1f)) {
       items(results) { book ->
-        SearchResultRow(book)
+        SearchResultRow(
+          book = book,
+          isReading = book.toArchivedBook().id in registeredBookIds,
+          onRegister = { onRegister(book) },
+        )
         HorizontalDivider(color = ChaekBand)
       }
     }
@@ -233,7 +253,11 @@ private fun SearchResultHeader(count: Int) {
 }
 
 @Composable
-private fun SearchResultRow(book: BookSearchResult) {
+private fun SearchResultRow(
+  book: BookSearchResult,
+  isReading: Boolean,
+  onRegister: () -> Unit,
+) {
   Row(
     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
     verticalAlignment = Alignment.Top,
@@ -279,6 +303,29 @@ private fun SearchResultRow(book: BookSearchResult) {
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
       )
+      Surface(
+        modifier =
+          Modifier
+            .align(Alignment.End)
+            .height(32.dp)
+            .clickable(enabled = !isReading, role = Role.Button, onClick = onRegister),
+        shape = RoundedCornerShape(6.dp),
+        color = if (isReading) ChaekBorderSoft else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, if (isReading) ChaekBorder else MaterialTheme.colorScheme.onSurface),
+      ) {
+        Row(
+          modifier = Modifier.padding(horizontal = 10.dp),
+          horizontalArrangement = Arrangement.spacedBy(4.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          if (!isReading) Text("+", style = MaterialTheme.typography.labelMedium)
+          Text(
+            if (isReading) "읽는 중" else "읽는 중 시작",
+            style = MaterialTheme.typography.labelMedium,
+            color = if (isReading) ChaekInkTertiary else MaterialTheme.colorScheme.onSurface,
+          )
+        }
+      }
     }
   }
 }
