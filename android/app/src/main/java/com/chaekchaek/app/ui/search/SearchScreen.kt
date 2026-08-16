@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.search
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -62,6 +63,12 @@ fun SearchScreen(
 ) {
   val state by viewModel.uiState.collectAsState()
   var query by remember { mutableStateOf("") }
+  val leaveSearch = {
+    viewModel.clear()
+    onBack()
+  }
+
+  BackHandler(onBack = leaveSearch)
 
   Column(modifier = modifier.fillMaxSize()) {
     SearchTopBar(
@@ -71,7 +78,7 @@ fun SearchScreen(
         if (it.isEmpty()) viewModel.clear()
       },
       onSearch = { viewModel.search(query) },
-      onBack = onBack,
+      onBack = leaveSearch,
     )
 
     when (val current = state) {
