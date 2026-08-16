@@ -5,12 +5,25 @@ import webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+dotenv.config();
+
 export default (_, argv) => {
   const isDevelopment = argv.mode === 'development';
+
+  const env = Object.entries(process.env)
+    .filter(([key]) => key.startsWith('APP_'))
+    .reduce(
+      (acc, [key, value]) => ({
+        ...acc,
+        [`process.env.${key}`]: JSON.stringify(value),
+      }),
+      {},
+    );
 
   return {
     mode: 'development',
@@ -108,6 +121,7 @@ export default (_, argv) => {
       }),
       new webpack.DefinePlugin({
         __DEV__: JSON.stringify(isDevelopment),
+        ...env,
       }),
     ].filter(Boolean),
     devServer: {

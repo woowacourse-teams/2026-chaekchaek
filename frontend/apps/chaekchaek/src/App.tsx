@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+import { AppRoutes } from '@/routes';
+
 export function App() {
   const [health, setHealth] = useState('');
 
@@ -13,10 +15,10 @@ export function App() {
 
     loadData();
   }, []);
+
   return (
     <>
-      책첵
-      <span>{health}</span>
+      <AppRoutes />
     </>
   );
 }

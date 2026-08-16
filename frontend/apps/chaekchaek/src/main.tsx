@@ -1,9 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { enableMocking } from './mocks/msw/browser';
+import { AppProviders } from '@/providers/AppProvider';
+import { enableMocking } from '@/mocks/msw/browser';
 
-import { App } from './App';
+import { App } from '@/App';
 
 const container = document.getElementById('root');
 
@@ -16,6 +17,8 @@ if (__DEV__) {
 const root = createRoot(container);
 root.render(
   <StrictMode>
-    <App />
+    <AppProviders>
+      <App />
+    </AppProviders>
   </StrictMode>,
 );
