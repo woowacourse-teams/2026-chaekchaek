@@ -46,7 +46,8 @@ public class ApiExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpectedException(Exception exception) {
         log.error("Unexpected server error", exception);
-        return createProblemDetail(ErrorCode.INTERNAL_SERVER_ERROR,
+        return createProblemDetail(
+                ErrorCode.INTERNAL_SERVER_ERROR,
                 HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
@@ -60,12 +61,13 @@ public class ApiExceptionHandler {
 
     private HttpStatus statusOf(ErrorCode errorCode) {
         return switch (errorCode) {
-            case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
+            case UNAUTHORIZED, REFRESH_TOKEN_REQUIRED, INVALID_REFRESH_TOKEN, UNUSABLE_REFRESH_TOKEN,
+                 INVALID_GOOGLE_ID_TOKEN -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
-            case BOOK_NOT_FOUND, REVIEW_NOT_FOUND, REPLY_NOT_FOUND, LIBRARY_ITEM_NOT_FOUND ->
+            case BOOK_NOT_FOUND, REVIEW_NOT_FOUND, REPLY_NOT_FOUND, LIBRARY_ITEM_NOT_FOUND, MEMBER_NOT_FOUND ->
                     HttpStatus.NOT_FOUND;
-            case LIBRARY_ITEM_ALREADY_EXISTS, REACTION_ALREADY_EXISTS, TOTAL_PAGES_CONFLICT,
-                    DELETED_RESOURCE -> HttpStatus.CONFLICT;
+            case LIBRARY_ITEM_ALREADY_EXISTS, REACTION_ALREADY_EXISTS, TOTAL_PAGES_CONFLICT, DELETED_RESOURCE ->
+                    HttpStatus.CONFLICT;
             case INVALID_READING_STATE -> HttpStatus.UNPROCESSABLE_CONTENT;
             case INVALID_REQUEST -> HttpStatus.BAD_REQUEST;
             case EXTERNAL_API_ERROR -> HttpStatus.BAD_GATEWAY;
