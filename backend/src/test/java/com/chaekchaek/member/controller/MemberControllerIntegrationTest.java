@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.chaekchaek.auth.token.access.AccessTokenProvider;
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.repository.MemberRepository;
 import jakarta.servlet.http.Cookie;
 import java.time.LocalDateTime;
@@ -45,7 +44,7 @@ public class MemberControllerIntegrationTest {
         // given
         Member member = memberRepository.save(
                 Member.create(
-                        MemberType.MEMBER,
+
                         "약간 우아한 참새",
                         "exUrl",
                         "참새-controller",
@@ -65,7 +64,6 @@ public class MemberControllerIntegrationTest {
                         .cookie(cookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.memberId").value(member.getId()))
-                .andExpect(jsonPath("$.memberType").value("MEMBER"))
                 .andExpect(jsonPath("$.nickname").value("약간 우아한 참새"))
                 .andExpect(jsonPath("$.profileImageUrl")
                         .value("exUrl"))
@@ -81,7 +79,7 @@ public class MemberControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("변조된 Access Token으로 내 정보를 조회를 요청하면 거부gks다")
+    @DisplayName("변조된 Access Token으로 내 정보를 조회를 요청하면 거부한다")
     void should_RejectGetMyInfo_WithTamperedAccessToken() throws Exception {
         Cookie cookie = new Cookie(
                 AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME,

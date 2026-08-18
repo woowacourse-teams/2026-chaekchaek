@@ -3,7 +3,6 @@ package com.chaekchaek.review.member;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,7 +30,7 @@ class PersistentReviewMemberReaderTest {
     void should_ReturnReviewMemberProfile_When_MemberExists() {
         // given
         Member member = memberRepository.save(Member.create(
-                MemberType.MEMBER,
+                
                 "책책 회원",
                 "https://example.com/profile.jpg",
                 "참새-a1b2c3d4",

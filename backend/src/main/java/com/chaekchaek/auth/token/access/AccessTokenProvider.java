@@ -39,7 +39,6 @@ public class AccessTokenProvider {
                 .subject(member.getId().toString())
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
-                .claim("memberType", member.getType().name())
                 .build();
 
         JwsHeader header = JwsHeader

@@ -8,11 +8,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-
-aladin:
-  base-url: https://www.aladin.co.kr
-  ttb-key: ${ALADIN_TTB_KEY}
-
   security:
     oauth2:
       client:
@@ -26,6 +21,10 @@ aladin:
               - openid
               - profile
               - email
+
+aladin:
+  base-url: https://www.aladin.co.kr
+  ttb-key: ${ALADIN_TTB_KEY}
 
 app:
   frontend:

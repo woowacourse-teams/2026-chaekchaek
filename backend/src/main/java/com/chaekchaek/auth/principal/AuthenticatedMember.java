@@ -1,7 +1,6 @@
 package com.chaekchaek.auth.principal;
 
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.member.domain.MemberType;
 import java.util.Collection;
 import java.util.Map;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,12 +14,10 @@ public class AuthenticatedMember implements OidcUser {
             "[ERROR] 인증 주체가 될 회원은 저장된 상태여야 합니다";
 
     private final Long memberId;
-    private final MemberType memberType;
     private final OidcUser delegate;
 
-    public AuthenticatedMember(Long memberId, MemberType memberType, OidcUser delegate) {
+    public AuthenticatedMember(Long memberId, OidcUser delegate) {
         this.memberId = memberId;
-        this.memberType = memberType;
         this.delegate = delegate;
     }
 
@@ -31,17 +28,12 @@ public class AuthenticatedMember implements OidcUser {
 
         return new AuthenticatedMember(
                 member.getId(),
-                member.getType(),
                 oidcUser
         );
     }
 
     public Long getMemberId() {
         return memberId;
-    }
-
-    public MemberType getMemberType() {
-        return memberType;
     }
 
     @Override

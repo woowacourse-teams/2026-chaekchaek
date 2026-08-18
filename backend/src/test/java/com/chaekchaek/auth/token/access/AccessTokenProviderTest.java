@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.member.domain.MemberType;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.time.Clock;
 import java.time.Duration;
@@ -100,7 +99,6 @@ class AccessTokenProviderTest {
         Member member = org.mockito.Mockito.mock(Member.class);
 
         when(member.getId()).thenReturn(1L);
-        when(member.getType()).thenReturn(MemberType.MEMBER);
 
         // when
         String token = accessTokenProvider.issue(member);
@@ -111,7 +109,6 @@ class AccessTokenProviderTest {
         assertThat(jwt.getSubject()).isEqualTo("1");
         assertThat(jwt.getIssuedAt()).isEqualTo(FIXED_TIME);
         assertThat(jwt.getExpiresAt()).isEqualTo(FIXED_TIME.plus(Duration.ofMinutes(30)));
-        assertThat(jwt.getClaimAsString("memberType")).isEqualTo("MEMBER");
     }
 
     @Test
@@ -134,7 +131,6 @@ class AccessTokenProviderTest {
         Member member = org.mockito.Mockito.mock(Member.class);
 
         when(member.getId()).thenReturn(1L);
-        when(member.getType()).thenReturn(MemberType.MEMBER);
 
         String token = accessTokenProvider.issue(member);
 
@@ -190,7 +186,6 @@ class AccessTokenProviderTest {
         Member member = org.mockito.Mockito.mock(Member.class);
 
         when(member.getId()).thenReturn(1L);
-        when(member.getType()).thenReturn(MemberType.MEMBER);
 
         String expiredToken = expiredTokenProvider.issue(member);
 
