@@ -7,8 +7,6 @@ import org.springframework.stereotype.Component;
 public class AnonymousHandleGenerator {
 
     public String generate() {
-        return "참새-" + UUID.randomUUID()
-                .toString()
-                .substring(0, 8);
+        return "참새-" + UUID.randomUUID();
     }
 }
