@@ -81,7 +81,7 @@ public class MemberControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("변조된 Access Token으로 내 정보를 조회를 요청하면 거부gks다")
+    @DisplayName("변조된 Access Token으로 내 정보를 조회를 요청하면 거부한다")
     void should_RejectGetMyInfo_WithTamperedAccessToken() throws Exception {
         Cookie cookie = new Cookie(
                 AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME,
