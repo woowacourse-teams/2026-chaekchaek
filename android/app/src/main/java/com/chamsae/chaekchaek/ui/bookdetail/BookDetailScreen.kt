@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -31,11 +32,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -368,6 +374,27 @@ private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, onR
 @Composable
 private fun ReviewsSection() {
   // ponytail: Pencil 샘플 데이터 - 상세/감상 API가 연결되면 저장소 결과로 교체한다.
+  var replyingTo by rememberSaveable { mutableStateOf<String?>(null) }
+  var replyText by rememberSaveable { mutableStateOf("") }
+  // ponytail: 화면 수명 동안만 유지한다. #65 저장소 경계가 병합되면 영속 상태로 교체한다.
+  val submittedReplies = remember { mutableStateMapOf<String, List<Pair<String, String>>>() }
+
+  fun openReply(reviewId: String) {
+    if (replyingTo != reviewId) replyText = ""
+    replyingTo = reviewId
+  }
+
+  fun closeReply() {
+    replyingTo = null
+    replyText = ""
+  }
+
+  fun submitReply(reviewId: String) {
+    if (!ReplyInputRules.canSubmit(replyText)) return
+    submittedReplies[reviewId] = submittedReplies[reviewId].orEmpty() + ("익명 참새" to replyText.trim())
+    closeReply()
+  }
+
   Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
     Row(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
@@ -404,7 +431,13 @@ private fun ReviewsSection() {
       replies = listOf(
         "다정한 참새" to "끝까지 유머를 잃지 않는 점도 좋았어요.",
         "느긋한 참새" to "저도 같은 문장에서 오래 멈췄습니다.",
-      ),
+      ) + submittedReplies["review-1"].orEmpty(),
+      isReplying = replyingTo == "review-1",
+      replyText = replyText,
+      onReplyTextChange = { replyText = it },
+      onReplyClick = { openReply("review-1") },
+      onReplyCancel = ::closeReply,
+      onReplySubmit = { submitReply("review-1") },
     )
     Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand))
     ReviewCard(
@@ -414,7 +447,13 @@ private fun ReviewsSection() {
       body = "실패를 기록하고 다음 실험으로 넘어가는 과정이 이 책의 가장 큰 매력이었다.",
       quote = "문제를 해결하려면 먼저 정확히 측정해야 한다.",
       avatar = R.drawable.avatar_yoon,
-      replies = listOf("성실한 참새" to "읽는 내내 응원하게 되는 인물이었어요."),
+      replies = listOf("성실한 참새" to "읽는 내내 응원하게 되는 인물이었어요.") + submittedReplies["review-2"].orEmpty(),
+      isReplying = replyingTo == "review-2",
+      replyText = replyText,
+      onReplyTextChange = { replyText = it },
+      onReplyClick = { openReply("review-2") },
+      onReplyCancel = ::closeReply,
+      onReplySubmit = { submitReply("review-2") },
     )
   }
 }
@@ -428,6 +467,12 @@ private fun ReviewCard(
   quote: String,
   avatar: Int,
   replies: List<Pair<String, String>>,
+  isReplying: Boolean,
+  replyText: String,
+  onReplyTextChange: (String) -> Unit,
+  onReplyClick: () -> Unit,
+  onReplyCancel: () -> Unit,
+  onReplySubmit: () -> Unit,
 ) {
   Column(
     modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(20.dp),
@@ -461,10 +506,22 @@ private fun ReviewCard(
     }
     Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
       Text("♡ 좋아요 12", style = MaterialTheme.typography.labelSmall)
-      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Icon(painterResource(R.drawable.ic_comment), contentDescription = null, modifier = Modifier.size(14.dp))
+      Row(
+        modifier = Modifier.clickable(role = Role.Button, onClick = onReplyClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+      ) {
+        Icon(painterResource(R.drawable.ic_comment), contentDescription = "${name} 감상에 답글 작성", modifier = Modifier.size(14.dp))
         Text("답글 ${replies.size}", style = MaterialTheme.typography.labelSmall)
       }
+    }
+    if (isReplying) {
+      ReplyComposer(
+        value = replyText,
+        onValueChange = onReplyTextChange,
+        onCancel = onReplyCancel,
+        onSubmit = onReplySubmit,
+      )
     }
     replies.forEach { (replyName, reply) ->
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
@@ -476,6 +533,79 @@ private fun ReviewCard(
           Text(reply, style = MaterialTheme.typography.bodySmall)
         }
         Text("♡ 2", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+      }
+    }
+  }
+}
+
+@Composable
+private fun ReplyComposer(
+  value: String,
+  onValueChange: (String) -> Unit,
+  onCancel: () -> Unit,
+  onSubmit: () -> Unit,
+) {
+  val canSubmit = ReplyInputRules.canSubmit(value)
+  Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+      Image(
+        painter = painterResource(R.drawable.avatar_kim),
+        contentDescription = null,
+        modifier = Modifier.size(22.dp).clip(CircleShape),
+      )
+      Column(modifier = Modifier.weight(1f)) {
+        BasicTextField(
+          value = value,
+          onValueChange = onValueChange,
+          modifier = Modifier.fillMaxWidth().heightIn(min = 34.dp).padding(vertical = 6.dp),
+          textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+          maxLines = 4,
+          decorationBox = { innerTextField ->
+            Box {
+              if (value.isEmpty()) {
+                Text(
+                  "답글을 입력하세요",
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  style = MaterialTheme.typography.bodyMedium,
+                )
+              }
+              innerTextField()
+            }
+          },
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface)
+      }
+    }
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(start = 30.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text(
+        "${value.length} / ${ReplyInputRules.MAX_LENGTH}",
+        color = if (value.length > ReplyInputRules.MAX_LENGTH) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelSmall,
+      )
+      Spacer(Modifier.weight(1f))
+      Surface(onClick = onCancel, color = Color.Transparent) {
+        Text(
+          "취소",
+          modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          style = MaterialTheme.typography.labelSmall,
+        )
+      }
+      Surface(
+        onClick = onSubmit,
+        enabled = canSubmit,
+        shape = RoundedCornerShape(4.dp),
+        color = if (canSubmit) ChaekInk else MaterialTheme.colorScheme.surfaceVariant,
+      ) {
+        Text(
+          "답글",
+          modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+          color = if (canSubmit) ChaekSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+          style = MaterialTheme.typography.labelSmall,
+        )
       }
     }
   }
