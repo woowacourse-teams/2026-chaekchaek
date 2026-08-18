@@ -43,6 +43,9 @@ jobs:
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           ALADIN_TTB_KEY: ${{ secrets.ALADIN_TTB_KEY }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
           docker stop chaekchaek-backend 2>/dev/null || true
           docker rm chaekchaek-backend 2>/dev/null || true
@@ -54,5 +57,8 @@ jobs:
             -e DB_USERNAME="$DB_USERNAME" \
             -e DB_PASSWORD="$DB_PASSWORD" \
             -e ALADIN_TTB_KEY="$ALADIN_TTB_KEY" \
+            -e JWT_SECRET="$JWT_SECRET" \
+            -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+            -e GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
             chaekchaek-backend
           docker image prune -f
