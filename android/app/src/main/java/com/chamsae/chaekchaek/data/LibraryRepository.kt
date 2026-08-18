@@ -16,6 +16,8 @@ interface LibraryRepository {
 
   fun changeStatus(bookIds: Set<String>, status: ReadingStatus)
 
+  fun changeProgress(bookId: String, currentPage: Int)
+
   fun setAnonymousReviews(anonymous: Boolean, nickname: String = "")
 }
 
@@ -48,6 +50,13 @@ class PreferencesLibraryRepository(context: Context) : LibraryRepository {
   override fun changeStatus(bookIds: Set<String>, status: ReadingStatus) {
     val recordedAt = System.currentTimeMillis()
     save(_items.value.map { if (it.id in bookIds) it.changedTo(status, recordedAt) else it })
+  }
+
+  override fun changeProgress(bookId: String, currentPage: Int) {
+    val book = _items.value.firstOrNull { it.id == bookId } ?: return
+    if (currentPage !in 0..book.totalPages) return
+    val recordedAt = System.currentTimeMillis()
+    save(_items.value.map { if (it.id == bookId) it.copy(currentPage = currentPage, lastRecordedAt = recordedAt) else it })
   }
 
   override fun setAnonymousReviews(anonymous: Boolean, nickname: String) {

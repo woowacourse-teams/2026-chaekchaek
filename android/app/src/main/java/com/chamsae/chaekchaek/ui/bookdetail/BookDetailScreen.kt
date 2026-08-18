@@ -48,6 +48,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -142,6 +143,7 @@ fun BookDetailRoute(
         ),
       )
     },
+    onUpdateProgress = { libraryRepository.changeProgress(book.id, it) },
     modifier = modifier,
   )
 }
@@ -159,6 +161,7 @@ fun BookDetailScreen(
   onSubmitReflection: (ReflectionDraft) -> Unit = {},
   onSubmitReply: (reflectionId: String, body: String) -> Unit = { _, _ -> },
   onRate: () -> Unit = {},
+  onUpdateProgress: (Int) -> Unit = {},
 ) {
   BackHandler(onBack = onBack)
   val listState = rememberLazyListState()
@@ -171,6 +174,9 @@ fun BookDetailScreen(
     }
   }
   var showReflectionSheet by rememberSaveable { mutableStateOf(false) }
+  var pendingReviewPage by rememberSaveable(book.id) { mutableStateOf<Int?>(null) }
+  var previewedThroughPage by rememberSaveable(book.id) { mutableIntStateOf(-1) }
+  val currentPage = maxOf(archivedBook?.currentPage ?: 0, previewedThroughPage)
 
   Box(
     modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding(),
@@ -184,7 +190,16 @@ fun BookDetailScreen(
       item { BookSummary(book) }
       item { ReadingRecord(book, archivedBook, onRate) }
       item { Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand)) }
-      item { ReviewsSection(book.id, reflections, replies, onSubmitReply) }
+      item {
+        ReviewsSection(
+          bookId = book.id,
+          reflections = reflections,
+          replies = replies,
+          currentPage = currentPage,
+          onOpenLockedReview = { pendingReviewPage = it },
+          onSubmitReply = onSubmitReply,
+        )
+      }
     }
 
     ComposeBar(
@@ -196,6 +211,24 @@ fun BookDetailScreen(
       ScrollTopButton(
         onClick = { scope.launch { listState.animateScrollToItem(0) } },
         modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
+      )
+    }
+
+    pendingReviewPage?.let { spoilerPage ->
+      SpoilerGuardDialog(
+        currentPage = archivedBook?.currentPage ?: 0,
+        spoilerPage = spoilerPage,
+        totalPages = book.totalPages,
+        onDismiss = { pendingReviewPage = null },
+        onUpdateAndRead = { page ->
+          onUpdateProgress(page)
+          previewedThroughPage = maxOf(previewedThroughPage, page)
+          pendingReviewPage = null
+        },
+        onReadAnyway = {
+          previewedThroughPage = maxOf(previewedThroughPage, spoilerPage)
+          pendingReviewPage = null
+        },
       )
     }
   }
@@ -449,6 +482,8 @@ private fun ReviewsSection(
   bookId: String,
   reflections: List<BookReflection>,
   replies: List<ReflectionReply>,
+  currentPage: Int,
+  onOpenLockedReview: (Int) -> Unit,
   onSubmitReply: (reflectionId: String, body: String) -> Unit,
 ) {
   // ponytail: Pencil 샘플 데이터 - 상세/감상 API가 연결되면 저장소 결과로 교체한다.
@@ -504,62 +539,108 @@ private fun ReviewsSection(
     }
     Spacer(Modifier.height(12.dp))
     reflections.forEach { reflection ->
-      ReviewCard(
-        name = if (reflection.anonymous) "익명의 참새" else reflection.authorName.ifBlank { "참새" },
-        date = "방금 전",
-        position =
-          listOfNotNull(
-            reflection.page?.let { "p.${it}까지" },
-            reflection.chapter.takeIf(String::isNotBlank),
-          ).joinToString(" · ").ifBlank { "독서 위치 미입력" },
-        body = reflection.body,
-        quote = reflection.quote,
-        avatar = R.drawable.avatar_kim,
-        replies = storedReplies(reflection.id),
-        isReplying = replyingTo == reflection.id,
-        replyText = replyText,
-        onReplyTextChange = { replyText = it },
-        onReplyClick = { openReply(reflection.id) },
-        onReplyCancel = ::closeReply,
-        onReplySubmit = { submitReply(reflection.id) },
-        spoiler = reflection.spoiler,
-      )
+      val page = reflection.page
+      if (page != null && currentPage < page) {
+        LockedReview(page = page, onOpen = { onOpenLockedReview(page) })
+      } else {
+        ReviewCard(
+          name = if (reflection.anonymous) "익명의 참새" else reflection.authorName.ifBlank { "참새" },
+          date = "방금 전",
+          position =
+            listOfNotNull(
+              page?.let { "p.${it}까지" },
+              reflection.chapter.takeIf(String::isNotBlank),
+            ).joinToString(" · ").ifBlank { "독서 위치 미입력" },
+          body = reflection.body,
+          quote = reflection.quote,
+          avatar = R.drawable.avatar_kim,
+          replies = storedReplies(reflection.id),
+          isReplying = replyingTo == reflection.id,
+          replyText = replyText,
+          onReplyTextChange = { replyText = it },
+          onReplyClick = { openReply(reflection.id) },
+          onReplyCancel = ::closeReply,
+          onReplySubmit = { submitReply(reflection.id) },
+          spoiler = reflection.spoiler,
+        )
+      }
       Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand))
     }
-    ReviewCard(
-      name = "참새 1204 (익명)",
-      date = "2026.08.05",
-      position = "p.80까지",
-      body = "혼자 남겨진 사람이 절망 대신 문제를 하나씩 풀어가는 태도가 인상 깊었다.",
-      quote = "나는 이 행성에서 과학으로 살아남을 것이다.",
-      avatar = R.drawable.avatar_kim,
-      replies = listOf(
-        "다정한 참새" to "끝까지 유머를 잃지 않는 점도 좋았어요.",
-        "느긋한 참새" to "저도 같은 문장에서 오래 멈췄습니다.",
-      ) + storedReplies(firstSampleId),
-      isReplying = replyingTo == firstSampleId,
-      replyText = replyText,
-      onReplyTextChange = { replyText = it },
-      onReplyClick = { openReply(firstSampleId) },
-      onReplyCancel = ::closeReply,
-      onReplySubmit = { submitReply(firstSampleId) },
-    )
+    if (currentPage >= 80) {
+      ReviewCard(
+        name = "참새 1204 (익명)",
+        date = "2026.08.05",
+        position = "p.80까지",
+        body = "혼자 남겨진 사람이 절망 대신 문제를 하나씩 풀어가는 태도가 인상 깊었다.",
+        quote = "나는 이 행성에서 과학으로 살아남을 것이다.",
+        avatar = R.drawable.avatar_kim,
+        replies = listOf(
+          "다정한 참새" to "끝까지 유머를 잃지 않는 점도 좋았어요.",
+          "느긋한 참새" to "저도 같은 문장에서 오래 멈췄습니다.",
+        ) + storedReplies(firstSampleId),
+        isReplying = replyingTo == firstSampleId,
+        replyText = replyText,
+        onReplyTextChange = { replyText = it },
+        onReplyClick = { openReply(firstSampleId) },
+        onReplyCancel = ::closeReply,
+        onReplySubmit = { submitReply(firstSampleId) },
+      )
+    } else {
+      LockedReview(page = 80, onOpen = { onOpenLockedReview(80) })
+    }
     Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand))
-    ReviewCard(
-      name = "짹짹짹",
-      date = "2026.08.03",
-      position = "p.160까지",
-      body = "실패를 기록하고 다음 실험으로 넘어가는 과정이 이 책의 가장 큰 매력이었다.",
-      quote = "문제를 해결하려면 먼저 정확히 측정해야 한다.",
-      avatar = R.drawable.avatar_yoon,
-      replies = listOf("성실한 참새" to "읽는 내내 응원하게 되는 인물이었어요.") + storedReplies(secondSampleId),
-      isReplying = replyingTo == secondSampleId,
-      replyText = replyText,
-      onReplyTextChange = { replyText = it },
-      onReplyClick = { openReply(secondSampleId) },
-      onReplyCancel = ::closeReply,
-      onReplySubmit = { submitReply(secondSampleId) },
+    if (currentPage >= 160) {
+      ReviewCard(
+        name = "짹짹짹",
+        date = "2026.08.03",
+        position = "p.160까지",
+        body = "실패를 기록하고 다음 실험으로 넘어가는 과정이 이 책의 가장 큰 매력이었다.",
+        quote = "문제를 해결하려면 먼저 정확히 측정해야 한다.",
+        avatar = R.drawable.avatar_yoon,
+        replies = listOf("성실한 참새" to "읽는 내내 응원하게 되는 인물이었어요.") + storedReplies(secondSampleId),
+        isReplying = replyingTo == secondSampleId,
+        replyText = replyText,
+        onReplyTextChange = { replyText = it },
+        onReplyClick = { openReply(secondSampleId) },
+        onReplyCancel = ::closeReply,
+        onReplySubmit = { submitReply(secondSampleId) },
+      )
+    } else {
+      LockedReview(page = 160, onOpen = { onOpenLockedReview(160) })
+    }
+  }
+}
+
+@Composable
+private fun LockedReview(page: Int, onOpen: () -> Unit) {
+  Row(
+    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(20.dp),
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Icon(
+      painter = painterResource(R.drawable.ic_lock),
+      contentDescription = "잠긴 감상",
+      modifier = Modifier.size(18.dp),
+      tint = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+    Text(
+      "p.${page}까지 읽고 기록하면 열 수 있어요",
+      modifier = Modifier.weight(1f),
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = MaterialTheme.typography.bodyMedium,
+    )
+    Surface(
+      onClick = onOpen,
+      modifier = Modifier.width(112.dp).height(44.dp),
+      shape = RoundedCornerShape(4.dp),
+      color = MaterialTheme.colorScheme.onSurface,
+      contentColor = MaterialTheme.colorScheme.surface,
+    ) {
+      Box(contentAlignment = Alignment.Center) {
+        Text("열어보기", style = MaterialTheme.typography.labelLarge)
+      }
+    }
   }
 }
 

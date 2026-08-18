@@ -1,0 +1,16 @@
+package com.chamsae.chaekchaek.ui.bookdetail
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+class SpoilerGuardDialogTest {
+  @Test
+  fun `progress page accepts only values inside the book`() {
+    assertEquals(0, validProgressPage("0", 425))
+    assertEquals(425, validProgressPage("425", 425))
+    assertNull(validProgressPage("426", 425))
+    assertNull(validProgressPage("-1", 425))
+    assertNull(validProgressPage("쪽", 425))
+  }
+}

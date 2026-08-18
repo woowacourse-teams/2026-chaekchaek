@@ -82,5 +82,7 @@ private class FakeLibraryRepository : LibraryRepository {
 
   override fun changeStatus(bookIds: Set<String>, status: ReadingStatus) = Unit
 
+  override fun changeProgress(bookId: String, currentPage: Int) = Unit
+
   override fun setAnonymousReviews(anonymous: Boolean, nickname: String) = Unit
 }
