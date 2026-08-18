@@ -75,11 +75,12 @@ export const create = () => {
       if (error instanceof RequestAjaxError && error.status === 401) {
         try {
           await requestAjax(`/auth/reissue`);
-          return await requestAjax(url, config);
         } catch (error) {
           window.location.href = `/login`;
           throw error;
         }
+
+        return await requestAjax(url, config);
       }
       throw error;
     }
