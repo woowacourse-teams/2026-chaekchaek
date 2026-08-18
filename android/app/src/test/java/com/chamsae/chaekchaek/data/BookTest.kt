@@ -66,6 +66,43 @@ class BookTest {
   }
 
   @Test
+  fun `reflections round-trip through json`() {
+    val original =
+      listOf(
+        BookReflection(
+          id = "reflection-1",
+          bookId = "book-1",
+          body = "문제를 하나씩 푸는 태도가 인상 깊었다.",
+          quote = "과학으로 살아남을 것이다.",
+          page = 80,
+          chapter = "Chapter 1",
+          spoiler = true,
+          anonymous = true,
+          createdAt = 123L,
+        )
+      )
+
+    assertEquals(original, parseBookReflections(serializeBookReflections(original)))
+  }
+
+  @Test
+  fun `replies round-trip through json`() {
+    val original =
+      listOf(
+        ReflectionReply(
+          id = "reply-1",
+          reflectionId = "reflection-1",
+          body = "저도 같은 문장에서 오래 멈췄습니다.",
+          anonymous = false,
+          authorName = "다정한 참새",
+          createdAt = 123L,
+        )
+      )
+
+    assertEquals(original, parseReflectionReplies(serializeReflectionReplies(original)))
+  }
+
+  @Test
   fun `search result converts to one unique archived book`() {
     val archived =
       BookSearchResult(

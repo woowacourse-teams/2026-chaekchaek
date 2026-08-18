@@ -10,33 +10,44 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -49,6 +60,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
@@ -61,7 +74,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.chamsae.chaekchaek.R
 import com.chamsae.chaekchaek.data.ArchivedBook
+import com.chamsae.chaekchaek.data.BookReflection
 import com.chamsae.chaekchaek.data.LibraryRepository
+import com.chamsae.chaekchaek.data.ReflectionRepository
+import com.chamsae.chaekchaek.data.ReflectionReply
 import com.chamsae.chaekchaek.data.ReadingStatus
 import com.chamsae.chaekchaek.theme.ChaekAccent
 import com.chamsae.chaekchaek.theme.ChaekAccentInk
@@ -72,22 +88,60 @@ import com.chamsae.chaekchaek.theme.ChaekInkSecondary
 import com.chamsae.chaekchaek.theme.ChaekSurface
 import com.chamsae.chaekchaek.ui.home.coverResource
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 @Composable
 fun BookDetailRoute(
   book: BookDetailArgs,
   libraryRepository: LibraryRepository,
+  reflectionRepository: ReflectionRepository,
   onBack: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
+  val reflections by reflectionRepository.reflections.collectAsStateWithLifecycle()
+  val replies by reflectionRepository.replies.collectAsStateWithLifecycle()
+  val anonymous by libraryRepository.anonymousReviews.collectAsStateWithLifecycle()
+  val nickname by libraryRepository.nickname.collectAsStateWithLifecycle()
   val archivedBook = archivedBooks.firstOrNull { it.id == book.id }
   val displayBook = archivedBook?.toBookDetailArgs() ?: book
 
   BookDetailScreen(
     book = displayBook,
     archivedBook = archivedBook,
+    reflections = reflections.filter { it.bookId == book.id },
+    replies = replies,
+    anonymous = anonymous,
+    authorName = nickname,
     onBack = onBack,
+    onSubmitReflection = { draft ->
+      reflectionRepository.add(
+        BookReflection(
+          id = UUID.randomUUID().toString(),
+          bookId = book.id,
+          body = draft.body.trim(),
+          quote = draft.quote.trim(),
+          page = draft.page.toIntOrNull(),
+          chapter = draft.chapter.trim(),
+          spoiler = draft.spoiler,
+          anonymous = anonymous,
+          authorName = if (anonymous) "" else nickname,
+          createdAt = System.currentTimeMillis(),
+        ),
+      )
+    },
+    onSubmitReply = { reflectionId, body ->
+      reflectionRepository.addReply(
+        ReflectionReply(
+          id = UUID.randomUUID().toString(),
+          reflectionId = reflectionId,
+          body = body.trim(),
+          anonymous = anonymous,
+          authorName = if (anonymous) "" else nickname,
+          createdAt = System.currentTimeMillis(),
+        ),
+      )
+    },
     modifier = modifier,
   )
 }
@@ -96,9 +150,14 @@ fun BookDetailRoute(
 fun BookDetailScreen(
   book: BookDetailArgs,
   archivedBook: ArchivedBook?,
+  reflections: List<BookReflection> = emptyList(),
+  replies: List<ReflectionReply> = emptyList(),
+  anonymous: Boolean = true,
+  authorName: String = "",
   onBack: () -> Unit,
   modifier: Modifier = Modifier,
-  onWriteNote: () -> Unit = {},
+  onSubmitReflection: (ReflectionDraft) -> Unit = {},
+  onSubmitReply: (reflectionId: String, body: String) -> Unit = { _, _ -> },
   onRate: () -> Unit = {},
 ) {
   BackHandler(onBack = onBack)
@@ -111,6 +170,7 @@ fun BookDetailScreen(
       listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset >= threshold
     }
   }
+  var showReflectionSheet by rememberSaveable { mutableStateOf(false) }
 
   Box(
     modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding(),
@@ -124,11 +184,11 @@ fun BookDetailScreen(
       item { BookSummary(book) }
       item { ReadingRecord(book, archivedBook, onRate) }
       item { Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand)) }
-      item { ReviewsSection() }
+      item { ReviewsSection(book.id, reflections, replies, onSubmitReply) }
     }
 
     ComposeBar(
-      onClick = onWriteNote,
+      onClick = { showReflectionSheet = true },
       modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 10.dp),
     )
 
@@ -138,6 +198,19 @@ fun BookDetailScreen(
         modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
       )
     }
+  }
+
+  if (showReflectionSheet) {
+    ReflectionSheet(
+      initialPage = archivedBook?.currentPage?.takeIf { it > 0 }?.toString().orEmpty(),
+      anonymous = anonymous,
+      authorName = authorName,
+      onDismiss = { showReflectionSheet = false },
+      onSubmit = {
+        onSubmitReflection(it)
+        showReflectionSheet = false
+      },
+    )
   }
 }
 
@@ -372,16 +445,25 @@ private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, onR
 }
 
 @Composable
-private fun ReviewsSection() {
+private fun ReviewsSection(
+  bookId: String,
+  reflections: List<BookReflection>,
+  replies: List<ReflectionReply>,
+  onSubmitReply: (reflectionId: String, body: String) -> Unit,
+) {
   // ponytail: Pencil 샘플 데이터 - 상세/감상 API가 연결되면 저장소 결과로 교체한다.
   var replyingTo by rememberSaveable { mutableStateOf<String?>(null) }
   var replyText by rememberSaveable { mutableStateOf("") }
-  // ponytail: 화면 수명 동안만 유지한다. #65 저장소 경계가 병합되면 영속 상태로 교체한다.
-  val submittedReplies = remember { mutableStateMapOf<String, List<Pair<String, String>>>() }
+  val repliesByReflection = replies.groupBy(ReflectionReply::reflectionId)
+  val firstSampleId = sampleReflectionId(bookId, 1)
+  val secondSampleId = sampleReflectionId(bookId, 2)
 
-  fun openReply(reviewId: String) {
-    if (replyingTo != reviewId) replyText = ""
-    replyingTo = reviewId
+  fun storedReplies(reflectionId: String): List<Pair<String, String>> =
+    repliesByReflection[reflectionId].orEmpty().map { it.displayAuthorName() to it.body }
+
+  fun openReply(reflectionId: String) {
+    if (replyingTo != reflectionId) replyText = ""
+    replyingTo = reflectionId
   }
 
   fun closeReply() {
@@ -389,9 +471,9 @@ private fun ReviewsSection() {
     replyText = ""
   }
 
-  fun submitReply(reviewId: String) {
+  fun submitReply(reflectionId: String) {
     if (!ReplyInputRules.canSubmit(replyText)) return
-    submittedReplies[reviewId] = submittedReplies[reviewId].orEmpty() + ("익명 참새" to replyText.trim())
+    onSubmitReply(reflectionId, replyText)
     closeReply()
   }
 
@@ -400,7 +482,7 @@ private fun ReviewsSection() {
       modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      Text("감상 30", style = MaterialTheme.typography.titleMedium)
+      Text("감상 ${30 + reflections.size}", style = MaterialTheme.typography.titleMedium)
       Spacer(Modifier.weight(1f))
       Surface(
         modifier = Modifier.height(28.dp),
@@ -421,6 +503,29 @@ private fun ReviewsSection() {
       }
     }
     Spacer(Modifier.height(12.dp))
+    reflections.forEach { reflection ->
+      ReviewCard(
+        name = if (reflection.anonymous) "익명의 참새" else reflection.authorName.ifBlank { "참새" },
+        date = "방금 전",
+        position =
+          listOfNotNull(
+            reflection.page?.let { "p.${it}까지" },
+            reflection.chapter.takeIf(String::isNotBlank),
+          ).joinToString(" · ").ifBlank { "독서 위치 미입력" },
+        body = reflection.body,
+        quote = reflection.quote,
+        avatar = R.drawable.avatar_kim,
+        replies = storedReplies(reflection.id),
+        isReplying = replyingTo == reflection.id,
+        replyText = replyText,
+        onReplyTextChange = { replyText = it },
+        onReplyClick = { openReply(reflection.id) },
+        onReplyCancel = ::closeReply,
+        onReplySubmit = { submitReply(reflection.id) },
+        spoiler = reflection.spoiler,
+      )
+      Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand))
+    }
     ReviewCard(
       name = "참새 1204 (익명)",
       date = "2026.08.05",
@@ -431,13 +536,13 @@ private fun ReviewsSection() {
       replies = listOf(
         "다정한 참새" to "끝까지 유머를 잃지 않는 점도 좋았어요.",
         "느긋한 참새" to "저도 같은 문장에서 오래 멈췄습니다.",
-      ) + submittedReplies["review-1"].orEmpty(),
-      isReplying = replyingTo == "review-1",
+      ) + storedReplies(firstSampleId),
+      isReplying = replyingTo == firstSampleId,
       replyText = replyText,
       onReplyTextChange = { replyText = it },
-      onReplyClick = { openReply("review-1") },
+      onReplyClick = { openReply(firstSampleId) },
       onReplyCancel = ::closeReply,
-      onReplySubmit = { submitReply("review-1") },
+      onReplySubmit = { submitReply(firstSampleId) },
     )
     Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand))
     ReviewCard(
@@ -447,16 +552,21 @@ private fun ReviewsSection() {
       body = "실패를 기록하고 다음 실험으로 넘어가는 과정이 이 책의 가장 큰 매력이었다.",
       quote = "문제를 해결하려면 먼저 정확히 측정해야 한다.",
       avatar = R.drawable.avatar_yoon,
-      replies = listOf("성실한 참새" to "읽는 내내 응원하게 되는 인물이었어요.") + submittedReplies["review-2"].orEmpty(),
-      isReplying = replyingTo == "review-2",
+      replies = listOf("성실한 참새" to "읽는 내내 응원하게 되는 인물이었어요.") + storedReplies(secondSampleId),
+      isReplying = replyingTo == secondSampleId,
       replyText = replyText,
       onReplyTextChange = { replyText = it },
-      onReplyClick = { openReply("review-2") },
+      onReplyClick = { openReply(secondSampleId) },
       onReplyCancel = ::closeReply,
-      onReplySubmit = { submitReply("review-2") },
+      onReplySubmit = { submitReply(secondSampleId) },
     )
   }
 }
+
+private fun sampleReflectionId(bookId: String, index: Int): String = "$bookId:sample-review-$index"
+
+private fun ReflectionReply.displayAuthorName(): String =
+  if (anonymous) "익명 참새" else authorName.ifBlank { "참새" }
 
 @Composable
 private fun ReviewCard(
@@ -473,6 +583,7 @@ private fun ReviewCard(
   onReplyClick: () -> Unit,
   onReplyCancel: () -> Unit,
   onReplySubmit: () -> Unit,
+  spoiler: Boolean = false,
 ) {
   Column(
     modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(20.dp),
@@ -490,6 +601,11 @@ private fun ReviewCard(
           Surface(shape = RoundedCornerShape(4.dp), color = ChaekAccentSoft) {
             Text("✓ 완독", modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp), color = ChaekAccentInk, style = MaterialTheme.typography.labelSmall)
           }
+          if (spoiler) {
+            Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.errorContainer) {
+              Text("스포일러", modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp), color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.labelSmall)
+            }
+          }
         }
         Text("$date · $position", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
       }
@@ -497,12 +613,14 @@ private fun ReviewCard(
       Text("⋯", fontSize = 20.sp)
     }
     Text(body, style = MaterialTheme.typography.bodyMedium)
-    Column(
-      modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(10.dp),
-      verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-      Text("인용 위치 · $position", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
-      Text("“$quote”", style = MaterialTheme.typography.bodySmall)
+    if (quote.isNotBlank()) {
+      Column(
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+      ) {
+        Text("인용 위치 · $position", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+        Text("“$quote”", style = MaterialTheme.typography.bodySmall)
+      }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
       Text("♡ 좋아요 12", style = MaterialTheme.typography.labelSmall)
@@ -536,6 +654,179 @@ private fun ReviewCard(
       }
     }
   }
+}
+
+data class ReflectionDraft(
+  val body: String,
+  val quote: String,
+  val page: String,
+  val chapter: String,
+  val spoiler: Boolean,
+)
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+private fun ReflectionSheet(
+  initialPage: String,
+  anonymous: Boolean,
+  authorName: String,
+  onDismiss: () -> Unit,
+  onSubmit: (ReflectionDraft) -> Unit,
+) {
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+  var body by rememberSaveable { mutableStateOf("") }
+  var quote by rememberSaveable { mutableStateOf("") }
+  var page by rememberSaveable { mutableStateOf(initialPage) }
+  var chapter by rememberSaveable { mutableStateOf("") }
+  var spoiler by rememberSaveable { mutableStateOf(false) }
+  val canSubmit = body.isNotBlank()
+  val scrollState = rememberScrollState()
+  val imeVisible = WindowInsets.isImeVisible
+
+  ModalBottomSheet(
+    onDismissRequest = onDismiss,
+    modifier = Modifier.wrapContentHeight(),
+    sheetState = sheetState,
+    shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+    containerColor = MaterialTheme.colorScheme.surface,
+    dragHandle = {
+      Box(
+        Modifier
+          .padding(top = 8.dp, bottom = 4.dp)
+          .size(width = 24.dp, height = 3.dp)
+          .background(MaterialTheme.colorScheme.outlineVariant, CircleShape),
+      )
+    },
+  ) {
+    Column(
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .then(if (imeVisible) Modifier.verticalScroll(scrollState).imePadding() else Modifier)
+          .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+      Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text("감상 남기기", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+        Surface(onClick = onDismiss, color = Color.Transparent, shape = CircleShape) {
+          Text("×", modifier = Modifier.padding(8.dp), fontSize = 20.sp)
+        }
+      }
+      ReflectionFieldLabel("느낀점", required = true)
+      ReflectionTextField(
+        value = body,
+        onValueChange = { body = it },
+        placeholder = "이 구간을 읽으며 든 생각을 남겨보세요",
+        modifier = Modifier.fillMaxWidth().height(108.dp),
+      )
+      Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(4.dp),
+      ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Checkbox(checked = spoiler, onCheckedChange = { spoiler = it })
+          Text("스포일러", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
+        }
+      }
+      ReflectionFieldLabel("인상 깊은 문구")
+      ReflectionTextField(
+        value = quote,
+        onValueChange = { quote = it },
+        placeholder = "기억하고 싶은 문장을 옮겨 적어보세요",
+        modifier = Modifier.fillMaxWidth().height(76.dp),
+      )
+      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+          ReflectionFieldLabel("쪽수")
+          ReflectionTextField(
+            value = page,
+            onValueChange = { input -> page = input.filter(Char::isDigit) },
+            placeholder = "80 쪽",
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+          )
+        }
+        Column(modifier = Modifier.weight(2f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+          ReflectionFieldLabel("목차 / 챕터")
+          ReflectionTextField(
+            value = chapter,
+            onValueChange = { chapter = it },
+            placeholder = "Chapter 1",
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+          )
+        }
+      }
+      Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(4.dp),
+      ) {
+        Text(
+          if (anonymous) "⌁  익명 · 프로필은 공개되지 않아요" else "⌁  ${authorName.ifBlank { "닉네임" }}으로 공개됩니다",
+          modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+          style = MaterialTheme.typography.bodySmall,
+        )
+      }
+      Surface(
+        onClick = {
+          onSubmit(ReflectionDraft(body, quote, page, chapter, spoiler))
+        },
+        enabled = canSubmit,
+        modifier = Modifier.fillMaxWidth().height(48.dp),
+        shape = RoundedCornerShape(4.dp),
+        color = if (canSubmit) ChaekInk else MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = if (canSubmit) ChaekSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+      ) {
+        Box(contentAlignment = Alignment.Center) {
+          Text("감상 남기기", style = MaterialTheme.typography.labelLarge)
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun ReflectionFieldLabel(label: String, required: Boolean = false) {
+  Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+    Text(label, style = MaterialTheme.typography.labelMedium)
+    if (required) {
+      Surface(shape = CircleShape, color = ChaekInk) {
+        Text("필수", modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp), color = ChaekSurface, fontSize = 8.sp)
+      }
+    }
+  }
+}
+
+@Composable
+private fun ReflectionTextField(
+  value: String,
+  onValueChange: (String) -> Unit,
+  placeholder: String,
+  modifier: Modifier,
+  keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+  singleLine: Boolean = false,
+) {
+  OutlinedTextField(
+    value = value,
+    onValueChange = onValueChange,
+    modifier = modifier,
+    placeholder = { Text(placeholder, style = MaterialTheme.typography.bodySmall) },
+    textStyle = MaterialTheme.typography.bodyMedium,
+    keyboardOptions = keyboardOptions,
+    singleLine = singleLine,
+    shape = RoundedCornerShape(4.dp),
+    colors =
+      TextFieldDefaults.colors(
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        disabledContainerColor = Color.Transparent,
+        focusedIndicatorColor = ChaekInk,
+        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+      ),
+  )
 }
 
 @Composable
