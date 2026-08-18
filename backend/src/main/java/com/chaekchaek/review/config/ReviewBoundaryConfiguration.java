@@ -1,23 +1,14 @@
 package com.chaekchaek.review.config;
 
-import com.chaekchaek.common.auth.CurrentMemberIdProvider;
-import com.chaekchaek.common.exception.BusinessException;
-import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** Temporary application-boundary defaults until Auth and Member provide their implementations. */
+/** Temporary application-boundary default until Member provides its implementation. */
 @Configuration
 public class ReviewBoundaryConfiguration {
-
-    @Bean
-    @ConditionalOnMissingBean(CurrentMemberIdProvider.class)
-    CurrentMemberIdProvider currentMemberIdProvider() {
-        return () -> { throw new BusinessException(ErrorCode.UNAUTHORIZED); };
-    }
 
     @Bean
     @ConditionalOnMissingBean(ReviewMemberReader.class)
