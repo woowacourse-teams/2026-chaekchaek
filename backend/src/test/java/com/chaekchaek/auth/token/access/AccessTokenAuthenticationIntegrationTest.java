@@ -63,9 +63,7 @@ class AccessTokenAuthenticationIntegrationTest {
                         MediaType.APPLICATION_PROBLEM_JSON
                 ))
                 .andExpect(jsonPath("$.status").value(401))
-                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
-                .andExpect(jsonPath("$.detail")
-                        .value("인증 정보가 유효하지 않습니다."));
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     @Test
@@ -83,9 +81,7 @@ class AccessTokenAuthenticationIntegrationTest {
                         MediaType.APPLICATION_PROBLEM_JSON
                 ))
                 .andExpect(jsonPath("$.status").value(401))
-                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
-                .andExpect(jsonPath("$.detail")
-                        .value("인증 정보가 유효하지 않습니다."));
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     @Test

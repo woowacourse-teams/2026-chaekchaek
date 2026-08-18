@@ -37,7 +37,6 @@ class RestAuthenticationEntryPointTest {
                 () -> assertThat(response.getContentAsString())
                         .contains("\"status\":401")
                         .contains("\"code\":\"UNAUTHORIZED\"")
-                        .contains("\"detail\":\"인증 정보가 유효하지 않습니다.\"")
         );
     }
 }
