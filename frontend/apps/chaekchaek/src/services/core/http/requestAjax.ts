@@ -69,6 +69,19 @@ export const requestAjax = async (url: string, config?: Configs): Promise<Reques
 
 export const create = () => {
   return async (url: string, config?: Configs) => {
-    return await requestAjax(url, config);
+    try {
+      return await requestAjax(url, config);
+    } catch (error) {
+      if (error instanceof RequestAjaxError && error.status === 401) {
+        try {
+          await requestAjax(`/auth/reissue`);
+          return await requestAjax(url, config);
+        } catch (error) {
+          window.location.href = `/login`;
+          return Promise.reject(error);
+        }
+      }
+      throw error;
+    }
   };
 };
