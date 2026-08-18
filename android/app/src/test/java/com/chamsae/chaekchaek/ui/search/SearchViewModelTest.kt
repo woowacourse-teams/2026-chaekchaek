@@ -1,6 +1,6 @@
-package com.chaekchaek.app.ui.search
+package com.chamsae.chaekchaek.ui.search
 
-import com.chaekchaek.app.data.BookSearchResult
+import com.chamsae.chaekchaek.data.BookSearchResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher

@@ -1,4 +1,4 @@
-package com.chaekchaek.app.ui.home
+package com.chamsae.chaekchaek.ui.home
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
