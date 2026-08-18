@@ -72,6 +72,8 @@ import coil3.compose.AsyncImage
 import com.chamsae.chaekchaek.data.ArchivedBook
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
+import com.chamsae.chaekchaek.ui.bookdetail.BookDetailArgs
+import com.chamsae.chaekchaek.ui.bookdetail.toBookDetailArgs
 import kotlinx.coroutines.launch
 
 @Composable
@@ -79,6 +81,7 @@ fun ArchiveRoute(
   libraryRepository: LibraryRepository,
   editing: Boolean,
   onEditingChange: (Boolean) -> Unit,
+  onBookClick: (BookDetailArgs) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val factory =
@@ -97,6 +100,7 @@ fun ArchiveRoute(
     onRemove = viewModel::remove,
     onChangeStatus = viewModel::changeStatus,
     onAnonymousReviewsChange = viewModel::setAnonymousReviews,
+    onBookClick = onBookClick,
     modifier = modifier,
   )
 }
@@ -109,6 +113,7 @@ fun ArchiveScreen(
   onRemove: (Set<String>) -> Unit,
   onChangeStatus: (Set<String>, ReadingStatus) -> Unit,
   onAnonymousReviewsChange: (Boolean, String) -> Unit,
+  onBookClick: (BookDetailArgs) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val items = uiState.items
@@ -190,6 +195,7 @@ fun ArchiveScreen(
             onDelete = {
               pendingDeletionIds = setOf(book.id)
             },
+            onOpen = { onBookClick(book.toBookDetailArgs()) },
           )
           HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
         }
@@ -368,7 +374,13 @@ private fun SortRow(
   ) {
     Text(countLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
     Spacer(Modifier.weight(1f))
-    Text("최근 기록순⌄", style = MaterialTheme.typography.labelMedium)
+    Row(
+      horizontalArrangement = Arrangement.spacedBy(4.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text("최근 기록순", style = MaterialTheme.typography.labelMedium)
+      Text("⌄", style = MaterialTheme.typography.labelMedium)
+    }
   }
 }
 
@@ -379,13 +391,14 @@ private fun LibraryBookRow(
   selected: Boolean,
   onSelect: () -> Unit,
   onDelete: () -> Unit,
+  onOpen: () -> Unit,
 ) {
   Row(
     modifier =
       Modifier
         .fillMaxWidth()
         .background(if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else Color.Transparent)
-        .then(if (editing) Modifier.clickable(onClick = onSelect) else Modifier)
+        .clickable(role = Role.Button, onClick = if (editing) onSelect else onOpen)
         .padding(horizontal = 16.dp, vertical = 14.dp),
     horizontalArrangement = Arrangement.spacedBy(12.dp),
     verticalAlignment = Alignment.CenterVertically,

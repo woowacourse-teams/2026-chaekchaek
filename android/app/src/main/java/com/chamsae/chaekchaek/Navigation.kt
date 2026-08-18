@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.chamsae.chaekchaek.ui.bookdetail.BookDetailRoute
 
 @Composable
 fun MainNavigation() {
@@ -26,6 +27,17 @@ fun MainNavigation() {
       entry<Main> {
         RootScreen(
           appContainer = appContainer,
+          onBookClick = { backStack.add(BookDetailKey(it)) },
+          modifier = Modifier.windowInsetsPadding(
+            WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+          ),
+        )
+      }
+      entry<BookDetailKey> { key ->
+        BookDetailRoute(
+          book = key.book,
+          libraryRepository = appContainer.libraryRepository,
+          onBack = { backStack.removeLastOrNull() },
           modifier = Modifier.windowInsetsPadding(
             WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
           ),

@@ -65,6 +65,8 @@ import com.chamsae.chaekchaek.theme.ChaekBand
 import com.chamsae.chaekchaek.theme.ChaekBorder
 import com.chamsae.chaekchaek.theme.ChaekBorderSoft
 import com.chamsae.chaekchaek.theme.ChaekInkTertiary
+import com.chamsae.chaekchaek.ui.bookdetail.BookDetailArgs
+import com.chamsae.chaekchaek.ui.bookdetail.toBookDetailArgs
 
 @Composable
 fun SearchRoute(
@@ -72,6 +74,7 @@ fun SearchRoute(
   libraryRepository: LibraryRepository,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
+  onBookClick: (BookDetailArgs) -> Unit = {},
 ) {
   val factory =
     remember(bookSearchRepository, libraryRepository) {
@@ -93,6 +96,7 @@ fun SearchRoute(
     onRegister = viewModel::register,
     onSortSelected = viewModel::selectSort,
     onBack = onBack,
+    onBookClick = onBookClick,
     modifier = modifier,
   )
 }
@@ -108,6 +112,7 @@ fun SearchScreen(
   onSortSelected: (SearchSort) -> Unit,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
+  onBookClick: (BookDetailArgs) -> Unit = {},
 ) {
   var query by remember { mutableStateOf("") }
   val leaveSearch = {
@@ -162,6 +167,7 @@ fun SearchScreen(
           onRegister = onRegister,
           selectedSort = selectedSort,
           onSortSelected = onSortSelected,
+          onBookClick = onBookClick,
           modifier = Modifier.weight(1f),
         )
     }
@@ -265,6 +271,7 @@ private fun SearchResults(
   onRegister: (BookSearchResult) -> Unit,
   selectedSort: SearchSort,
   onSortSelected: (SearchSort) -> Unit,
+  onBookClick: (BookDetailArgs) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   Column(modifier = modifier.fillMaxWidth()) {
@@ -279,6 +286,7 @@ private fun SearchResults(
           book = book,
           isReading = book.toArchivedBook().id in registeredBookIds,
           onRegister = { onRegister(book) },
+          onClick = { onBookClick(book.toBookDetailArgs()) },
         )
         HorizontalDivider(color = ChaekBand)
       }
@@ -322,10 +330,13 @@ private fun SearchSortMenu(
       modifier = Modifier.height(48.dp).clickable(role = Role.Button) { expanded = true }.padding(horizontal = 8.dp),
       contentAlignment = Alignment.Center,
     ) {
-      Text(
-        "${selectedSort.label}⌄",
-        style = MaterialTheme.typography.bodySmall,
-      )
+      Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(selectedSort.label, style = MaterialTheme.typography.bodySmall)
+        Text("⌄", style = MaterialTheme.typography.bodySmall)
+      }
     }
     DropdownMenu(
       expanded = expanded,
@@ -362,9 +373,10 @@ private fun SearchResultRow(
   book: BookSearchResult,
   isReading: Boolean,
   onRegister: () -> Unit,
+  onClick: () -> Unit,
 ) {
   Row(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+    modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
     verticalAlignment = Alignment.Top,
   ) {
     Surface(
@@ -413,7 +425,9 @@ private fun SearchResultRow(
           Modifier
             .align(Alignment.End)
             .height(32.dp)
-            .clickable(enabled = !isReading, role = Role.Button, onClick = onRegister),
+            .clickable(role = Role.Button) {
+              if (!isReading) onRegister()
+            },
         shape = RoundedCornerShape(6.dp),
         color = if (isReading) ChaekBorderSoft else MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, if (isReading) ChaekBorder else MaterialTheme.colorScheme.onSurface),
