@@ -10,19 +10,22 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -572,7 +575,7 @@ data class ReflectionDraft(
 )
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 private fun ReflectionSheet(
   initialPage: String,
   anonymous: Boolean,
@@ -587,10 +590,12 @@ private fun ReflectionSheet(
   var chapter by rememberSaveable { mutableStateOf("") }
   var spoiler by rememberSaveable { mutableStateOf(false) }
   val canSubmit = body.isNotBlank()
+  val scrollState = rememberScrollState()
+  val imeVisible = WindowInsets.isImeVisible
 
   ModalBottomSheet(
     onDismissRequest = onDismiss,
-    modifier = Modifier.fillMaxHeight(0.94f),
+    modifier = Modifier.wrapContentHeight(),
     sheetState = sheetState,
     shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
     containerColor = MaterialTheme.colorScheme.surface,
@@ -607,8 +612,7 @@ private fun ReflectionSheet(
       modifier =
         Modifier
           .fillMaxWidth()
-          .verticalScroll(rememberScrollState())
-          .imePadding()
+          .then(if (imeVisible) Modifier.verticalScroll(scrollState).imePadding() else Modifier)
           .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
       verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
