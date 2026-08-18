@@ -12,7 +12,6 @@ import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import java.time.Clock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
@@ -23,7 +22,6 @@ class LibraryReadingRecordCoordinator implements ReadingRecordCoordinator {
     private final Clock clock;
 
     @Override
-    @Transactional
     public void recordReview(long memberId, long bookId, Integer currentPage, Integer totalPages) {
         Book book = lockedBook(bookId);
         rememberTotalPages(book, totalPages);
@@ -39,7 +37,6 @@ class LibraryReadingRecordCoordinator implements ReadingRecordCoordinator {
     }
 
     @Override
-    @Transactional
     public void validateReviewPage(long bookId, Integer currentPage, Integer totalPages) {
         if (currentPage == null) {
             return;

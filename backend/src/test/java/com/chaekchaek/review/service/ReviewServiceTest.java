@@ -39,7 +39,10 @@ class ReviewServiceTest {
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
         ReviewBookReader bookReader = mock(ReviewBookReader.class);
         ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
-        ReviewMemberReader memberReader = memberReader(true);
+        ReviewMemberReader memberReader = mock(ReviewMemberReader.class);
+        when(memberReader.findByMemberIds(List.of(1L))).thenReturn(Map.of(
+                1L, new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", true, false)
+        ));
         ReviewService reviewService = reviewService(reviewRepository, bookReader, readingRecordCoordinator, memberReader);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review review = invocation.getArgument(0);
@@ -54,6 +57,7 @@ class ReviewServiceTest {
         // then
         verify(bookReader).validateBookExists(5L);
         verify(readingRecordCoordinator).recordReview(1L, 5L, 10, 100);
+        verify(memberReader).findByMemberIds(List.of(1L));
         assertThat(actual.author().anonymous()).isTrue();
         assertThat(actual.author().displayName()).isEqualTo("참새-a1b2c3d4");
     }
