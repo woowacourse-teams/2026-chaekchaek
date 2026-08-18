@@ -66,3 +66,9 @@ export const requestAjax = async (url: string, config?: Configs): Promise<Reques
     throw new RequestAjaxError(response);
   }
 };
+
+export const create = () => {
+  return async (url: string, config?: Configs) => {
+    return await requestAjax(url, config);
+  };
+};
