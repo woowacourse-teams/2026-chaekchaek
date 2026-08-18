@@ -54,10 +54,22 @@ class HomeControllerTest {
                         responseFields(popularBookResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("인기 책 목록 조회")
-                                .description("유효 감상과 답글 수의 합이 많은 책을 최대 10권 조회한다")
+                                .description("유효 감상과 답글 수의 합이 많은 책을 최대 10권 조회한다. 조회할 책이 없으면 빈 배열을 반환한다")
                                 .tag("홈")
                                 .responseFields(popularBookResponseFields())
                                 .build())));
+    }
+
+    @Test
+    @DisplayName("인기 책이 없으면 빈 목록을 반환한다")
+    void should_ReturnEmptyPopularBooks_When_NoBookIsPopular() throws Exception {
+        // given
+        when(homeService.getPopularBooks()).thenReturn(new PopularBookListResponse(List.of()));
+
+        // when & then
+        mockMvc.perform(get("/api/v1/home/popular-books"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.books").isEmpty());
     }
 
     private static FieldDescriptor[] popularBookResponseFields() {
