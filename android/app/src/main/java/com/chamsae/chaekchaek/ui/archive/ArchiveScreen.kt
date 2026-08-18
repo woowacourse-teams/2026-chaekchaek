@@ -154,15 +154,13 @@ fun ArchiveScreen(
             },
           )
         } else {
-          LibraryTopBar()
+          LibraryTopBar(onEdit = { onEditingChange(true) })
         }
       }
       item {
         StatusFilters(selected = filter, onSelected = { filter = it })
         SortRow(
           countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}권",
-          editing = editing,
-          onEdit = { onEditingChange(true) },
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
       }
@@ -238,13 +236,16 @@ fun ArchiveScreen(
 }
 
 @Composable
-private fun LibraryTopBar() {
+private fun LibraryTopBar(onEdit: () -> Unit) {
   Row(
     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Text("내 서재", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp))
     Spacer(Modifier.weight(1f))
+    TextButton(onClick = onEdit) {
+      Text("편집", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
+    }
     ProfileAvatar()
   }
 }
@@ -338,21 +339,14 @@ private fun StatusFilterChip(label: String, selected: Boolean, onClick: () -> Un
 @Composable
 private fun SortRow(
   countLabel: String,
-  editing: Boolean,
-  onEdit: () -> Unit,
 ) {
   Row(
-    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 0.dp, end = 10.dp, bottom = 10.dp),
+    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 10.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Text(countLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
     Spacer(Modifier.weight(1f))
     Text("최근 기록순⌄", style = MaterialTheme.typography.labelMedium)
-    if (!editing) {
-      TextButton(onClick = onEdit, contentPadding = PaddingValues(horizontal = 6.dp)) {
-        Text("편집", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall)
-      }
-    }
   }
 }
 
