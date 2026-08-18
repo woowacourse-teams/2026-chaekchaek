@@ -24,6 +24,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -79,14 +81,17 @@ fun SearchRoute(
     }
   val viewModel: SearchViewModel = viewModel(factory = factory)
   val state by viewModel.uiState.collectAsStateWithLifecycle()
+  val sort by viewModel.sort.collectAsStateWithLifecycle()
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
 
   SearchScreen(
     state = state,
+    selectedSort = sort,
     registeredBookIds = archivedBooks.mapTo(mutableSetOf(), ArchivedBook::id),
     onSearch = viewModel::search,
     onClear = viewModel::clear,
     onRegister = viewModel::register,
+    onSortSelected = viewModel::selectSort,
     onBack = onBack,
     modifier = modifier,
   )
@@ -95,10 +100,12 @@ fun SearchRoute(
 @Composable
 fun SearchScreen(
   state: SearchUiState,
+  selectedSort: SearchSort,
   registeredBookIds: Set<String>,
   onSearch: (String) -> Unit,
   onClear: () -> Unit,
   onRegister: (BookSearchResult) -> Unit,
+  onSortSelected: (SearchSort) -> Unit,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
 ) {
@@ -131,7 +138,11 @@ fun SearchScreen(
       SearchUiState.Loading -> SearchLoading(Modifier.weight(1f))
       SearchUiState.Empty ->
         Column(modifier = Modifier.weight(1f)) {
-          SearchResultHeader(count = 0)
+          SearchResultHeader(
+            count = 0,
+            selectedSort = selectedSort,
+            onSortSelected = onSortSelected,
+          )
           SearchMessage(
             title = "검색 결과가 없어요",
             body = "다른 검색어로 다시 찾아보세요.",
@@ -149,6 +160,8 @@ fun SearchScreen(
           results = current.results,
           registeredBookIds = registeredBookIds,
           onRegister = onRegister,
+          selectedSort = selectedSort,
+          onSortSelected = onSortSelected,
           modifier = Modifier.weight(1f),
         )
     }
@@ -250,10 +263,16 @@ private fun SearchResults(
   results: List<BookSearchResult>,
   registeredBookIds: Set<String>,
   onRegister: (BookSearchResult) -> Unit,
+  selectedSort: SearchSort,
+  onSortSelected: (SearchSort) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   Column(modifier = modifier.fillMaxWidth()) {
-    SearchResultHeader(results.size)
+    SearchResultHeader(
+      count = results.size,
+      selectedSort = selectedSort,
+      onSortSelected = onSortSelected,
+    )
     LazyColumn(modifier = Modifier.weight(1f)) {
       items(results) { book ->
         SearchResultRow(
@@ -268,9 +287,13 @@ private fun SearchResults(
 }
 
 @Composable
-private fun SearchResultHeader(count: Int) {
+private fun SearchResultHeader(
+  count: Int,
+  selectedSort: SearchSort,
+  onSortSelected: (SearchSort) -> Unit,
+) {
   Row(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+    modifier = Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 16.dp),
     horizontalArrangement = Arrangement.SpaceBetween,
     verticalAlignment = Alignment.CenterVertically,
   ) {
@@ -279,9 +302,59 @@ private fun SearchResultHeader(count: Int) {
       style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
       color = ChaekAccentInk,
     )
-    Text("최신순", style = MaterialTheme.typography.bodySmall)
+    SearchSortMenu(
+      selectedSort = selectedSort,
+      onSortSelected = onSortSelected,
+    )
   }
   HorizontalDivider(color = ChaekBand)
+}
+
+@Composable
+private fun SearchSortMenu(
+  selectedSort: SearchSort,
+  onSortSelected: (SearchSort) -> Unit,
+) {
+  var expanded by remember { mutableStateOf(false) }
+
+  Box {
+    Box(
+      modifier = Modifier.height(48.dp).clickable(role = Role.Button) { expanded = true }.padding(horizontal = 8.dp),
+      contentAlignment = Alignment.Center,
+    ) {
+      Text(
+        "${selectedSort.label}⌄",
+        style = MaterialTheme.typography.bodySmall,
+      )
+    }
+    DropdownMenu(
+      expanded = expanded,
+      onDismissRequest = { expanded = false },
+      modifier = Modifier.width(112.dp),
+      shape = RoundedCornerShape(6.dp),
+      containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+      SearchSort.entries.forEach { sort ->
+        val selected = sort == selectedSort
+        DropdownMenuItem(
+          text = {
+            Text(
+              if (selected) "✓ ${sort.label}" else sort.label,
+              style = MaterialTheme.typography.bodyMedium,
+            )
+          },
+          onClick = {
+            onSortSelected(sort)
+            expanded = false
+          },
+          modifier =
+            Modifier.background(
+              if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface
+            ),
+        )
+      }
+    }
+  }
 }
 
 @Composable
