@@ -56,7 +56,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/oauth2/**",
                                 "/login/oauth2/**",
-                                "/api/v1/auth/**"
+                                "/api/v1/auth/**",
+                                "/docs/**",
+                                "/webjars/swagger-ui/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
