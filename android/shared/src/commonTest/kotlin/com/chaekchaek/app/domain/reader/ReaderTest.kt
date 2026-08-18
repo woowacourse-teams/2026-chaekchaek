@@ -1,0 +1,98 @@
+package com.chaekchaek.app.domain.reader
+
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.shouldBe
+import kotlin.test.Test
+
+private fun profile(
+    nickname: Nickname? = Nickname("골똘한참새"),
+    publishesAnonymously: Boolean = true,
+) = ReaderProfile(ReaderId("rd_77"), nickname, publishesAnonymously)
+
+class ReaderProfileTest {
+    @Test
+    fun `닉네임 없이 실명을 공개하는 프로필은 만들 수 없다`() {
+        // given & when & then : Figma 의 `해제하면 닉네임을 설정해야 합니다` 가 규칙이다
+        shouldThrow<IllegalArgumentException> {
+            profile(nickname = null, publishesAnonymously = false)
+        }
+    }
+
+    @Test
+    fun `닉네임 없이 익명으로 공개할 수는 있다`() {
+        // given & when : 아직 닉네임을 정하지 않은 사람이 익명으로 쓴다
+        val anonymous = profile(nickname = null, publishesAnonymously = true)
+
+        // then : 유효하고, 바로 실명으로 바꿀 수는 없다
+        anonymous.canRevealName() shouldBe false
+    }
+
+    @Test
+    fun `익명으로 전환해도 닉네임은 남는다`() {
+        // given : 실명으로 공개하던 사람이 주어진다
+        val named = profile(publishesAnonymously = false)
+
+        // when : 익명으로 돌렸다가 다시 실명으로 바꾸면
+        val hidden = named.hideName()
+        val revealed = hidden.revealName()
+
+        // then : 닉네임을 다시 입력하지 않아도 된다
+        hidden.nickname shouldBe Nickname("골똘한참새")
+        revealed.nickname shouldBe Nickname("골똘한참새")
+    }
+
+    @Test
+    fun `닉네임을 정하면 실명으로 바꿀 수 있게 된다`() {
+        // given : 닉네임이 없는 사람이 주어진다
+        val anonymous = profile(nickname = null)
+
+        // when : 닉네임을 정하면
+        val named = anonymous.changeNickname(Nickname("느긋한참새"))
+
+        // then : 실명 공개가 가능해진다
+        named.canRevealName() shouldBe true
+    }
+}
+
+class GuestQuotaTest {
+    @Test
+    fun `열람할 때마다 남은 횟수가 줄어든다`() {
+        // given : 3번 중 아직 한 번도 안 본 게스트가 주어진다
+        val quota = GuestQuota(viewed = 0)
+
+        // when : 두 번 열람하면
+        val consumed = quota.consumed().consumed()
+
+        // then : 한 번 남는다 (Figma 의 `지금 2 / 3`)
+        consumed.viewed shouldBe 2
+        consumed.remaining() shouldBe 1
+    }
+
+    @Test
+    fun `한도에 도달하면 소진된다`() {
+        // given : 3번을 모두 본 게스트가 주어진다
+        val quota = GuestQuota(viewed = 3)
+
+        // when & then : 더 볼 수 없다
+        quota.isExhausted() shouldBe true
+        quota.remaining() shouldBe 0
+    }
+
+    @Test
+    fun `한도를 넘겨 소비해도 열람 수가 한도를 넘지 않는다`() {
+        // given : 이미 소진된 게스트가 주어진다
+        val quota = GuestQuota(viewed = 3)
+
+        // when : 한 번 더 소비하면
+        val consumed = quota.consumed()
+
+        // then : 3에서 멈춘다
+        consumed.viewed shouldBe 3
+    }
+
+    @Test
+    fun `음수 열람 횟수는 만들 수 없다`() {
+        // given & when & then : 저장된 값이 깨졌을 때 조용히 넘어가지 않는다
+        shouldThrow<IllegalArgumentException> { GuestQuota(viewed = -1) }
+    }
+}

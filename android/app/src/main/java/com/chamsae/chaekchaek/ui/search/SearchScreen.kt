@@ -1,6 +1,9 @@
 package com.chamsae.chaekchaek.ui.search
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,15 +18,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,120 +37,336 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.chamsae.chaekchaek.R
 import com.chamsae.chaekchaek.data.ArchiveRepository
 import com.chamsae.chaekchaek.data.ArchivedBook
 import com.chamsae.chaekchaek.data.BookSearchResult
-import java.util.UUID
+import com.chamsae.chaekchaek.data.toArchivedBook
+import com.chamsae.chaekchaek.theme.ChaekAccent
+import com.chamsae.chaekchaek.theme.ChaekAccentInk
+import com.chamsae.chaekchaek.theme.ChaekBand
+import com.chamsae.chaekchaek.theme.ChaekBorder
+import com.chamsae.chaekchaek.theme.ChaekBorderSoft
+import com.chamsae.chaekchaek.theme.ChaekInkTertiary
 
 @Composable
 fun SearchScreen(
   archiveRepository: ArchiveRepository,
   modifier: Modifier = Modifier,
+  onBack: () -> Unit = {},
   viewModel: SearchViewModel = viewModel(),
 ) {
   val state by viewModel.uiState.collectAsState()
+  val archivedBooks by archiveRepository.items.collectAsState()
   var query by remember { mutableStateOf("") }
-  var selectedBook by remember { mutableStateOf<BookSearchResult?>(null) }
-  val search = { viewModel.search(query) }
-
-  Column(modifier = modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-    Spacer(Modifier.height(22.dp))
-    Text("MY READING DESK", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-    Text("새 책을 찾아볼까요?", style = MaterialTheme.typography.headlineLarge)
-    Text("제목이나 저자를 검색해 내 서재에 기록하세요.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Spacer(Modifier.height(20.dp))
-
-    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
-      Row(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
-          value = query,
-          onValueChange = { query = it },
-          modifier = Modifier.weight(1f),
-          placeholder = { Text("책 제목, 저자로 검색") },
-          singleLine = true,
-          keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-          keyboardActions = KeyboardActions(onSearch = { search() }),
-          shape = RoundedCornerShape(14.dp),
-          colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.surface,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-          ),
-        )
-        Spacer(Modifier.width(8.dp))
-        Button(
-          onClick = search,
-          shape = RoundedCornerShape(12.dp),
-          contentPadding = ButtonDefaults.ContentPadding,
-        ) { Text("검색", style = MaterialTheme.typography.labelSmall) }
-      }
-    }
-    Spacer(Modifier.height(20.dp))
-
-    when (val s = state) {
-      SearchUiState.Idle -> SearchMessage("첫 번째 책을\n서재에 올려 보세요.")
-      SearchUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-      is SearchUiState.Error -> SearchMessage("검색 결과를 가져오지 못했어요.\n잠시 후 다시 시도해 주세요.")
-      is SearchUiState.Success ->
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-          item { Text("SEARCH RESULTS · ${s.results.size}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-          items(s.results) { book ->
-            Surface(
-              modifier = Modifier.fillMaxWidth().clickable { selectedBook = book },
-              shape = RoundedCornerShape(18.dp),
-              color = MaterialTheme.colorScheme.surface,
-              border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            ) {
-              Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(modifier = Modifier.size(width = 48.dp, height = 64.dp), shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
-                  Box(contentAlignment = Alignment.Center) {
-                    Text("책", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    AsyncImage(
-                      model = book.coverUrl,
-                      contentDescription = book.title,
-                      modifier = Modifier.fillMaxSize(),
-                      contentScale = ContentScale.Crop,
-                    )
-                  }
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                  Text(book.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                  Spacer(Modifier.height(4.dp))
-                  Text("${book.creator} · ${book.publisher}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                  Text(book.year, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                }
-              }
-            }
-          }
-        }
-    }
+  val leaveSearch = {
+    viewModel.clear()
+    onBack()
   }
 
-  selectedBook?.let { book ->
-    BookRegisterDialog(
-      book = book,
-      onDismiss = { selectedBook = null },
-      onRegister = { title, creator, publisher, year, note ->
-        archiveRepository.add(ArchivedBook(UUID.randomUUID().toString(), title, creator, publisher, year, book.coverUrl, note))
-        selectedBook = null
+  BackHandler(onBack = leaveSearch)
+
+  Column(modifier = modifier.fillMaxSize()) {
+    SearchTopBar(
+      query = query,
+      onQueryChange = {
+        query = it
+        if (it.isEmpty()) viewModel.clear()
       },
+      onSearch = { viewModel.search(query) },
+      onBack = leaveSearch,
     )
+
+    when (val current = state) {
+      SearchUiState.Idle ->
+        SearchMessage(
+          title = "찾고 싶은 책을 검색해 보세요",
+          body = "책 제목이나 저자를 입력해 주세요.",
+          modifier = Modifier.weight(1f),
+        )
+      SearchUiState.Loading -> SearchLoading(Modifier.weight(1f))
+      SearchUiState.Empty ->
+        Column(modifier = Modifier.weight(1f)) {
+          SearchResultHeader(count = 0)
+          SearchMessage(
+            title = "검색 결과가 없어요",
+            body = "다른 검색어로 다시 찾아보세요.",
+            modifier = Modifier.weight(1f),
+          )
+        }
+      is SearchUiState.Error ->
+        SearchMessage(
+          title = "검색 결과를 불러오지 못했어요",
+          body = "잠시 후 다시 검색해 주세요.",
+          modifier = Modifier.weight(1f),
+        )
+      is SearchUiState.Success ->
+        SearchResults(
+          results = current.results,
+          registeredBookIds = archivedBooks.mapTo(mutableSetOf(), ArchivedBook::id),
+          onRegister = { archiveRepository.add(it.toArchivedBook()) },
+          modifier = Modifier.weight(1f),
+        )
+    }
   }
 }
 
 @Composable
-private fun SearchMessage(message: String) {
-  Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-      Text(message, modifier = Modifier.padding(28.dp), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun SearchTopBar(
+  query: String,
+  onQueryChange: (String) -> Unit,
+  onSearch: () -> Unit,
+  onBack: () -> Unit,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 4.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Box(
+      modifier = Modifier.size(48.dp).clickable(role = Role.Button, onClick = onBack),
+      contentAlignment = Alignment.Center,
+    ) {
+      Icon(
+        painter = painterResource(R.drawable.ic_back),
+        contentDescription = "뒤로 가기",
+        modifier = Modifier.size(22.dp),
+      )
+    }
+    SearchField(
+      query = query,
+      onQueryChange = onQueryChange,
+      onSearch = onSearch,
+      modifier = Modifier.weight(1f),
+    )
+  }
+  HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+}
+
+@Composable
+private fun SearchField(
+  query: String,
+  onQueryChange: (String) -> Unit,
+  onSearch: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  val shape = RoundedCornerShape(6.dp)
+  BasicTextField(
+    value = query,
+    onValueChange = onQueryChange,
+    modifier =
+      modifier
+        .height(44.dp)
+        .background(MaterialTheme.colorScheme.surface, shape)
+        .border(1.dp, MaterialTheme.colorScheme.outline, shape)
+        .padding(start = 12.dp),
+    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+    singleLine = true,
+    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+    keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+    decorationBox = { field ->
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+          painter = painterResource(R.drawable.ic_search),
+          contentDescription = null,
+          modifier = Modifier.size(16.dp),
+          tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(8.dp))
+        Box(modifier = Modifier.weight(1f)) {
+          if (query.isEmpty()) {
+            Text(
+              "책 제목, 저자로 검색",
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+          field()
+        }
+        if (query.isNotEmpty()) {
+          Box(
+            modifier = Modifier.size(44.dp).clickable(role = Role.Button) { onQueryChange("") },
+            contentAlignment = Alignment.Center,
+          ) {
+            Icon(
+              painter = painterResource(R.drawable.ic_close),
+              contentDescription = "검색어 지우기",
+              modifier = Modifier.size(18.dp),
+              tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        }
+      }
+    },
+  )
+}
+
+@Composable
+private fun SearchResults(
+  results: List<BookSearchResult>,
+  registeredBookIds: Set<String>,
+  onRegister: (BookSearchResult) -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Column(modifier = modifier.fillMaxWidth()) {
+    SearchResultHeader(results.size)
+    LazyColumn(modifier = Modifier.weight(1f)) {
+      items(results) { book ->
+        SearchResultRow(
+          book = book,
+          isReading = book.toArchivedBook().id in registeredBookIds,
+          onRegister = { onRegister(book) },
+        )
+        HorizontalDivider(color = ChaekBand)
+      }
+    }
+  }
+}
+
+@Composable
+private fun SearchResultHeader(count: Int) {
+  Row(
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+    horizontalArrangement = Arrangement.SpaceBetween,
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Text(
+      "ARCHIVE SEARCH · 검색 결과 ${count}건",
+      style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+      color = ChaekAccentInk,
+    )
+    Text("최신순", style = MaterialTheme.typography.bodySmall)
+  }
+  HorizontalDivider(color = ChaekBand)
+}
+
+@Composable
+private fun SearchResultRow(
+  book: BookSearchResult,
+  isReading: Boolean,
+  onRegister: () -> Unit,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+    verticalAlignment = Alignment.Top,
+  ) {
+    Surface(
+      modifier = Modifier.size(width = 56.dp, height = 80.dp).shadow(4.dp, RectangleShape),
+      shape = RectangleShape,
+      color = MaterialTheme.colorScheme.surfaceVariant,
+      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+      Box(contentAlignment = Alignment.Center) {
+        Text("책", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        AsyncImage(
+          model = book.coverUrl,
+          contentDescription = book.title,
+          modifier = Modifier.fillMaxSize(),
+          contentScale = ContentScale.Crop,
+        )
+      }
+    }
+    Spacer(Modifier.width(14.dp))
+    Column(
+      modifier = Modifier.weight(1f),
+      verticalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+      Text(
+        book.title,
+        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+      )
+      Text(
+        book.creator,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+      )
+      Text(
+        listOf(book.publisher, book.year).filter(String::isNotBlank).joinToString(" · "),
+        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+      )
+      Surface(
+        modifier =
+          Modifier
+            .align(Alignment.End)
+            .height(32.dp)
+            .clickable(enabled = !isReading, role = Role.Button, onClick = onRegister),
+        shape = RoundedCornerShape(6.dp),
+        color = if (isReading) ChaekBorderSoft else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, if (isReading) ChaekBorder else MaterialTheme.colorScheme.onSurface),
+      ) {
+        Row(
+          modifier = Modifier.padding(horizontal = 10.dp),
+          horizontalArrangement = Arrangement.spacedBy(4.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          if (!isReading) Text("+", style = MaterialTheme.typography.labelMedium)
+          Text(
+            if (isReading) "읽는 중" else "읽는 중 시작",
+            style = MaterialTheme.typography.labelMedium,
+            color = if (isReading) ChaekInkTertiary else MaterialTheme.colorScheme.onSurface,
+          )
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun SearchLoading(modifier: Modifier = Modifier) {
+  Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+      Surface(
+        modifier = Modifier.size(42.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+      ) {
+        Box(contentAlignment = Alignment.Center) {
+          CircularProgressIndicator(
+            modifier = Modifier.size(22.dp),
+            color = ChaekAccent,
+            strokeWidth = 2.dp,
+          )
+        }
+      }
+      Text(
+        "검색 결과를 불러오고 있어요.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+  }
+}
+
+@Composable
+private fun SearchMessage(
+  title: String,
+  body: String,
+  modifier: Modifier = Modifier,
+) {
+  Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+      Text(title, style = MaterialTheme.typography.titleMedium)
+      Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
   }
 }

@@ -38,7 +38,7 @@ android {
         applicationId = "com.chamsae.chaekchaek"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0"
 
         buildConfigField(
@@ -104,6 +104,8 @@ dependencies {
   val composeBom = platform(libs.androidx.compose.bom)
   implementation(composeBom)
   androidTestImplementation(composeBom)
+
+  implementation(project(":shared"))
 
   // Core Android dependencies
   implementation(libs.androidx.core.ktx)
