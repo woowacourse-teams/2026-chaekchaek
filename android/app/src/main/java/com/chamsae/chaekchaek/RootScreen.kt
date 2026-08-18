@@ -19,20 +19,17 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import com.chamsae.chaekchaek.data.ArchiveRepository
-import com.chamsae.chaekchaek.ui.archive.ArchiveScreen
 import com.chamsae.chaekchaek.ui.home.HomeScreen
-import com.chamsae.chaekchaek.ui.search.SearchScreen
+import com.chamsae.chaekchaek.ui.archive.ArchiveRoute
+import com.chamsae.chaekchaek.ui.search.SearchRoute
 
 private enum class RootTab(val label: String, @DrawableRes val icon: Int) {
   Home("홈", R.drawable.ic_tab_home),
@@ -41,13 +38,15 @@ private enum class RootTab(val label: String, @DrawableRes val icon: Int) {
 }
 
 @Composable
-fun RootScreen(modifier: Modifier = Modifier) {
-  val context = LocalContext.current
-  val archiveRepository = remember { ArchiveRepository(context) }
+fun RootScreen(
+  appContainer: AppContainer,
+  modifier: Modifier = Modifier,
+) {
   var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
+  var archiveEditing by rememberSaveable { mutableStateOf(false) }
 
   Box(modifier = modifier.fillMaxSize()) {
-    val showBottomBar = selectedTab != RootTab.Discover
+    val showBottomBar = selectedTab != RootTab.Discover && !(selectedTab == RootTab.Shelf && archiveEditing)
     val contentModifier =
       Modifier
         .fillMaxSize()
@@ -59,17 +58,27 @@ fun RootScreen(modifier: Modifier = Modifier) {
         onSearchBook = { selectedTab = RootTab.Discover },
       )
       RootTab.Discover ->
-        SearchScreen(
-          archiveRepository = archiveRepository,
+        SearchRoute(
+          bookSearchRepository = appContainer.bookSearchRepository,
+          libraryRepository = appContainer.libraryRepository,
           modifier = contentModifier,
           onBack = { selectedTab = RootTab.Home },
         )
-      RootTab.Shelf -> ArchiveScreen(archiveRepository, contentModifier)
+      RootTab.Shelf ->
+        ArchiveRoute(
+          libraryRepository = appContainer.libraryRepository,
+          editing = archiveEditing,
+          onEditingChange = { archiveEditing = it },
+          modifier = contentModifier,
+        )
     }
     if (showBottomBar) {
       ChaekBottomBar(
         selectedTab = selectedTab,
-        onTabSelected = { selectedTab = it },
+        onTabSelected = {
+          archiveEditing = false
+          selectedTab = it
+        },
         modifier = Modifier.align(Alignment.BottomCenter),
       )
     }
