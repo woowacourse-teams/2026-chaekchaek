@@ -5,44 +5,60 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+interface LibraryRepository {
+  val items: StateFlow<List<ArchivedBook>>
+  val anonymousReviews: StateFlow<Boolean>
+  val nickname: StateFlow<String>
+
+  fun add(book: ArchivedBook)
+
+  fun remove(bookIds: Set<String>)
+
+  fun changeStatus(bookIds: Set<String>, status: ReadingStatus)
+
+  fun setAnonymousReviews(anonymous: Boolean, nickname: String = "")
+}
+
 /**
  * 등록된 책을 기기 로컬에만 저장한다(로그인 없음, 샘플앱 범위).
  *
  * ponytail: SharedPreferences에 JSON 배열 통째로 저장 - 등록마다 전체 목록을 다시 쓴다(O(n)).
  * 아카이브가 수백 건 이상으로 커지거나 오프라인 쿼리가 필요해지면 Room으로 전환.
  */
-class ArchiveRepository(context: Context) {
+class PreferencesLibraryRepository(context: Context) : LibraryRepository {
   private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
   private val _items = MutableStateFlow(loadAll())
-  val items: StateFlow<List<ArchivedBook>> = _items.asStateFlow()
+  override val items: StateFlow<List<ArchivedBook>> = _items.asStateFlow()
   private val _anonymousReviews = MutableStateFlow(prefs.getBoolean(KEY_ANONYMOUS, true))
-  val anonymousReviews: StateFlow<Boolean> = _anonymousReviews.asStateFlow()
+  override val anonymousReviews: StateFlow<Boolean> = _anonymousReviews.asStateFlow()
+  private val _nickname = MutableStateFlow(prefs.getString(KEY_NICKNAME, "").orEmpty())
+  override val nickname: StateFlow<String> = _nickname.asStateFlow()
 
-  fun add(book: ArchivedBook) {
+  override fun add(book: ArchivedBook) {
     val updated = _items.value.plusIfAbsent(book.copy(lastRecordedAt = System.currentTimeMillis()))
     if (updated === _items.value) return
     save(updated)
   }
 
-  fun remove(bookIds: Set<String>) {
+  override fun remove(bookIds: Set<String>) {
     save(_items.value.filterNot { it.id in bookIds })
   }
 
-  fun changeStatus(bookIds: Set<String>, status: ReadingStatus) {
+  override fun changeStatus(bookIds: Set<String>, status: ReadingStatus) {
     val recordedAt = System.currentTimeMillis()
     save(_items.value.map { if (it.id in bookIds) it.changedTo(status, recordedAt) else it })
   }
 
-  fun setAnonymousReviews(anonymous: Boolean, nickname: String = "") {
+  override fun setAnonymousReviews(anonymous: Boolean, nickname: String) {
+    val trimmedNickname = nickname.trim()
     _anonymousReviews.value = anonymous
+    _nickname.value = trimmedNickname
     prefs.edit()
       .putBoolean(KEY_ANONYMOUS, anonymous)
-      .putString(KEY_NICKNAME, nickname.trim())
+      .putString(KEY_NICKNAME, trimmedNickname)
       .apply()
   }
-
-  fun nickname(): String = prefs.getString(KEY_NICKNAME, "").orEmpty()
 
   private fun save(items: List<ArchivedBook>) {
     _items.value = items

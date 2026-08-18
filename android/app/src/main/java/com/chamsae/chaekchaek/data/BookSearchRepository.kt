@@ -8,14 +8,16 @@ import java.net.URLEncoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+fun interface BookSearchRepository {
+  suspend fun search(query: String): List<BookSearchResult>
+}
+
 /**
  * 알라딘(Aladin) Open API 도서 검색. GET, TTBKey는 [BuildConfig.ALADIN_TTB_KEY]로 주입된다
  * (키 자체는 로컬 전용 `local.properties`에만 존재, 커밋되지 않음).
  */
-object BookSearchApi {
-  private const val ENDPOINT = "https://www.aladin.co.kr/ttb/api/ItemSearch.aspx"
-
-  suspend fun search(query: String): List<BookSearchResult> =
+class AladinBookSearchRepository : BookSearchRepository {
+  override suspend fun search(query: String): List<BookSearchResult> =
     withContext(Dispatchers.IO) {
       val url =
         buildString {
@@ -52,5 +54,9 @@ object BookSearchApi {
     } finally {
       connection.disconnect()
     }
+  }
+
+  private companion object {
+    const val ENDPOINT = "https://www.aladin.co.kr/ttb/api/ItemSearch.aspx"
   }
 }

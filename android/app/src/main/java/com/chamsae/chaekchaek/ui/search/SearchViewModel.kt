@@ -2,8 +2,10 @@ package com.chamsae.chaekchaek.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chamsae.chaekchaek.data.BookSearchApi
+import com.chamsae.chaekchaek.data.BookSearchRepository
 import com.chamsae.chaekchaek.data.BookSearchResult
+import com.chamsae.chaekchaek.data.LibraryRepository
+import com.chamsae.chaekchaek.data.toArchivedBook
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +26,8 @@ sealed interface SearchUiState {
 }
 
 class SearchViewModel(
-  private val searchBooks: suspend (String) -> List<BookSearchResult> = BookSearchApi::search,
+  private val bookSearchRepository: BookSearchRepository,
+  private val libraryRepository: LibraryRepository,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
   val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -43,7 +46,7 @@ class SearchViewModel(
     searchJob = viewModelScope.launch {
       _uiState.value =
         try {
-          val results = searchBooks(trimmed).sortedByDescending { it.year.toIntOrNull() ?: Int.MIN_VALUE }
+          val results = bookSearchRepository.search(trimmed).sortedByDescending { it.year.toIntOrNull() ?: Int.MIN_VALUE }
           if (results.isEmpty()) SearchUiState.Empty else SearchUiState.Success(results)
         } catch (e: CancellationException) {
           throw e
@@ -51,5 +54,9 @@ class SearchViewModel(
           SearchUiState.Error(e.message ?: "검색 중 오류가 발생했습니다")
         }
     }
+  }
+
+  fun register(book: BookSearchResult) {
+    libraryRepository.add(book.toArchivedBook())
   }
 }

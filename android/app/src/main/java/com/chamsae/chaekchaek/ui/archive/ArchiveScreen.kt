@@ -35,7 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,26 +50,60 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import coil3.compose.AsyncImage
-import com.chamsae.chaekchaek.data.ArchiveRepository
 import com.chamsae.chaekchaek.data.ArchivedBook
+import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
 import kotlinx.coroutines.launch
 
 @Composable
-fun ArchiveScreen(
-  archiveRepository: ArchiveRepository,
+fun ArchiveRoute(
+  libraryRepository: LibraryRepository,
   editing: Boolean,
   onEditingChange: (Boolean) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val items by archiveRepository.items.collectAsState()
-  val anonymousReviews by archiveRepository.anonymousReviews.collectAsState()
+  val factory =
+    remember(libraryRepository) {
+      viewModelFactory {
+        initializer { ArchiveViewModel(libraryRepository) }
+      }
+    }
+  val viewModel: ArchiveViewModel = viewModel(factory = factory)
+  val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+  ArchiveScreen(
+    uiState = uiState,
+    editing = editing,
+    onEditingChange = onEditingChange,
+    onRemove = viewModel::remove,
+    onChangeStatus = viewModel::changeStatus,
+    onAnonymousReviewsChange = viewModel::setAnonymousReviews,
+    modifier = modifier,
+  )
+}
+
+@Composable
+fun ArchiveScreen(
+  uiState: ArchiveUiState,
+  editing: Boolean,
+  onEditingChange: (Boolean) -> Unit,
+  onRemove: (Set<String>) -> Unit,
+  onChangeStatus: (Set<String>, ReadingStatus) -> Unit,
+  onAnonymousReviewsChange: (Boolean, String) -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  val items = uiState.items
+  val anonymousReviews = uiState.anonymousReviews
   var filter by rememberSaveable { mutableStateOf<ReadingStatus?>(null) }
   var selectedIds by remember { mutableStateOf(emptySet<String>()) }
   var showStatusDialog by remember { mutableStateOf(false) }
   var showNicknameDialog by remember { mutableStateOf(false) }
-  var nickname by rememberSaveable { mutableStateOf(archiveRepository.nickname()) }
+  var nickname by rememberSaveable(uiState.nickname) { mutableStateOf(uiState.nickname) }
   val listState = rememberLazyListState()
   val scope = rememberCoroutineScope()
   val visibleItems = remember(items, filter) {
@@ -107,7 +140,7 @@ fun ArchiveScreen(
             checked = anonymousReviews,
             onClick = {
               if (anonymousReviews) showNicknameDialog = true
-              else archiveRepository.setAnonymousReviews(true)
+              else onAnonymousReviewsChange(true, "")
             },
           )
         } else {
@@ -138,7 +171,7 @@ fun ArchiveScreen(
             },
             onDelete = {
               selectedIds -= book.id
-              archiveRepository.remove(setOf(book.id))
+              onRemove(setOf(book.id))
             },
           )
           HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
@@ -161,7 +194,7 @@ fun ArchiveScreen(
         enabled = selectedIds.isNotEmpty(),
         onStatusChange = { showStatusDialog = true },
         onDelete = {
-          archiveRepository.remove(selectedIds)
+          onRemove(selectedIds)
           selectedIds = emptySet()
         },
         modifier = Modifier.align(Alignment.BottomCenter),
@@ -174,7 +207,7 @@ fun ArchiveScreen(
       selectedCount = selectedIds.size,
       onDismiss = { showStatusDialog = false },
       onChange = { status ->
-        archiveRepository.changeStatus(selectedIds, status)
+        onChangeStatus(selectedIds, status)
         selectedIds = emptySet()
         showStatusDialog = false
       },
@@ -187,7 +220,7 @@ fun ArchiveScreen(
       onNicknameChange = { nickname = it.take(10) },
       onDismiss = { showNicknameDialog = false },
       onConfirm = {
-        archiveRepository.setAnonymousReviews(false, nickname)
+        onAnonymousReviewsChange(false, nickname)
         showNicknameDialog = false
       },
     )

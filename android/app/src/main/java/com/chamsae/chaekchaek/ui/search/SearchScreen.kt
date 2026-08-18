@@ -30,7 +30,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,12 +46,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import coil3.compose.AsyncImage
 import com.chamsae.chaekchaek.R
-import com.chamsae.chaekchaek.data.ArchiveRepository
 import com.chamsae.chaekchaek.data.ArchivedBook
+import com.chamsae.chaekchaek.data.BookSearchRepository
 import com.chamsae.chaekchaek.data.BookSearchResult
+import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.toArchivedBook
 import com.chamsae.chaekchaek.theme.ChaekAccent
 import com.chamsae.chaekchaek.theme.ChaekAccentInk
@@ -62,17 +65,46 @@ import com.chamsae.chaekchaek.theme.ChaekBorderSoft
 import com.chamsae.chaekchaek.theme.ChaekInkTertiary
 
 @Composable
-fun SearchScreen(
-  archiveRepository: ArchiveRepository,
+fun SearchRoute(
+  bookSearchRepository: BookSearchRepository,
+  libraryRepository: LibraryRepository,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
-  viewModel: SearchViewModel = viewModel(),
 ) {
-  val state by viewModel.uiState.collectAsState()
-  val archivedBooks by archiveRepository.items.collectAsState()
+  val factory =
+    remember(bookSearchRepository, libraryRepository) {
+      viewModelFactory {
+        initializer { SearchViewModel(bookSearchRepository, libraryRepository) }
+      }
+    }
+  val viewModel: SearchViewModel = viewModel(factory = factory)
+  val state by viewModel.uiState.collectAsStateWithLifecycle()
+  val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
+
+  SearchScreen(
+    state = state,
+    registeredBookIds = archivedBooks.mapTo(mutableSetOf(), ArchivedBook::id),
+    onSearch = viewModel::search,
+    onClear = viewModel::clear,
+    onRegister = viewModel::register,
+    onBack = onBack,
+    modifier = modifier,
+  )
+}
+
+@Composable
+fun SearchScreen(
+  state: SearchUiState,
+  registeredBookIds: Set<String>,
+  onSearch: (String) -> Unit,
+  onClear: () -> Unit,
+  onRegister: (BookSearchResult) -> Unit,
+  modifier: Modifier = Modifier,
+  onBack: () -> Unit = {},
+) {
   var query by remember { mutableStateOf("") }
   val leaveSearch = {
-    viewModel.clear()
+    onClear()
     onBack()
   }
 
@@ -83,9 +115,9 @@ fun SearchScreen(
       query = query,
       onQueryChange = {
         query = it
-        if (it.isEmpty()) viewModel.clear()
+        if (it.isEmpty()) onClear()
       },
-      onSearch = { viewModel.search(query) },
+      onSearch = { onSearch(query) },
       onBack = leaveSearch,
     )
 
@@ -115,8 +147,8 @@ fun SearchScreen(
       is SearchUiState.Success ->
         SearchResults(
           results = current.results,
-          registeredBookIds = archivedBooks.mapTo(mutableSetOf(), ArchivedBook::id),
-          onRegister = { archiveRepository.add(it.toArchivedBook()) },
+          registeredBookIds = registeredBookIds,
+          onRegister = onRegister,
           modifier = Modifier.weight(1f),
         )
     }
