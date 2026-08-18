@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
@@ -38,7 +37,7 @@ class RefreshTokenRepositoryTest {
 
         Member member = memberRepository.save(
                 Member.create(
-                        MemberType.MEMBER,
+                        
                         "책책-refresh-1",
                         null,
                         "참새-refresh-1",
@@ -83,7 +82,7 @@ class RefreshTokenRepositoryTest {
 
         Member member = memberRepository.save(
                 Member.create(
-                        MemberType.MEMBER,
+                        
                         "책책-refresh-2",
                         null,
                         "참새-refresh-2",
@@ -124,7 +123,7 @@ class RefreshTokenRepositoryTest {
 
         Member member = memberRepository.save(
                 Member.create(
-                        MemberType.MEMBER,
+                        
                         "책책-refresh-3",
                         null,
                         "참새-refresh-3",

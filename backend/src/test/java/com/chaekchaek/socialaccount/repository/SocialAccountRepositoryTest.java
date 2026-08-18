@@ -5,7 +5,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.chaekchaek.socialaccount.domain.Provider;
 import com.chaekchaek.socialaccount.domain.SocialAccount;
@@ -38,7 +37,7 @@ public class SocialAccountRepositoryTest {
         LocalDateTime now = LocalDateTime.of(2026, 8, 11, 12, 0);
 
         Member member = Member.create(
-                MemberType.MEMBER,
+                
                 "우아한 참새",
                 "exUrl",
                 "참새-social-1",
@@ -83,7 +82,7 @@ public class SocialAccountRepositoryTest {
 
         Member firstMember = memberRepository.save(
                 Member.create(
-                        MemberType.MEMBER,
+                        
                         "참새1",
                         null,
                         "참새-social-2",
@@ -93,7 +92,7 @@ public class SocialAccountRepositoryTest {
 
         Member secondMember = memberRepository.save(
                 Member.create(
-                        MemberType.MEMBER,
+                        
                         "참새2",
                         null,
                         "참새-social-3",
@@ -129,7 +128,7 @@ public class SocialAccountRepositoryTest {
 
         Member member = memberRepository.save(
                 Member.create(
-                        MemberType.MEMBER,
+                        
                         "우아한 참새",
                         null,
                         "참새-social-4",

@@ -8,7 +8,6 @@ import static org.mockito.BDDMockito.given;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.common.exception.MemberNotFoundException;
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.dto.MemberResponse;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.LocalDateTime;
@@ -34,7 +33,6 @@ class MemberServiceTest {
     void should_GetMyInfo_When_MemberExists() {
         // given
         Member member = Member.create(
-                MemberType.MEMBER,
                 "덜 우아한 참새",
                 "exUrl",
                 "참새-service",
@@ -49,7 +47,6 @@ class MemberServiceTest {
 
         // then
         assertAll(
-                () -> assertThat(response.memberType()).isEqualTo("MEMBER"),
                 () -> assertThat(response.nickname()).isEqualTo("덜 우아한 참새"),
                 () -> assertThat(response.profileImageUrl()).isEqualTo("exUrl"),
                 () -> assertThat(response.displayAnonymous()).isFalse(),

@@ -14,7 +14,6 @@ public class MemberTest {
     @DisplayName("신규 회원을 기본 상태로 생성한다")
     void should_CreateActiveMember_When_NewMemberIsCreated() {
         // given
-        MemberType type = MemberType.MEMBER;
         String nickname = "우아한 참새";
         String profileImageUrl = "exUrl";
         String anonymousHandle = "참새-a1b2c3d4";
@@ -22,7 +21,6 @@ public class MemberTest {
 
         // when
         Member member = Member.create(
-                type,
                 nickname,
                 profileImageUrl,
                 anonymousHandle,
@@ -32,7 +30,6 @@ public class MemberTest {
         // then
         assertAll(
                 () -> assertThat(member.getId()).isNull(),
-                () -> assertThat(member.getType()).isEqualTo(MemberType.MEMBER),
                 () -> assertThat(member.getNickname()).isEqualTo(nickname),
                 () -> assertThat(member.getProfileImageUrl()).isEqualTo(profileImageUrl),
                 () -> assertThat(member.getAnonymousHandle()).isEqualTo(anonymousHandle),
@@ -47,7 +44,7 @@ public class MemberTest {
     @DisplayName("닉네임이 없으면 회원을 생성할 수 없다")
     void should_ThrowException_When_NicknameIsNull() {
         assertThatThrownBy(() -> Member.create(
-                MemberType.MEMBER,
+
                 null,
                 null,
                 "참새-a1b2c3d4",
@@ -59,7 +56,6 @@ public class MemberTest {
     @DisplayName("닉네임이 공백이면 회원을 생성할 수 없다")
     void should_ThrowException_When_NicknameIsBlank() {
         assertThatThrownBy(() -> Member.create(
-                MemberType.MEMBER,
                 " ",
                 null,
                 "참새-a1b2c3d4",
@@ -71,7 +67,6 @@ public class MemberTest {
     @DisplayName("익명 핸들이 없으면 회원을 생성할 수 없다")
     void should_ThrowException_When_AnonymousHandleIsBlank() {
         assertThatThrownBy(() -> Member.create(
-                MemberType.MEMBER,
                 "우아한 참새",
                 null,
                 " ",

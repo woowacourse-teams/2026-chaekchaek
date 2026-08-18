@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.member.domain.MemberType;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +30,6 @@ public class MemberRepositoryTest {
     void should_FindMember_When_MemberIsSaved() {
         // given
         Member member = Member.create(
-                MemberType.MEMBER,
                 "우아한 참새",
                 "exUrl",
                 "참새-a1b2c3d4",
@@ -50,7 +48,6 @@ public class MemberRepositoryTest {
         // then
         assertAll(
                 () -> assertThat(foundMember.getId()).isEqualTo(savedMember.getId()),
-                () -> assertThat(foundMember.getType()).isEqualTo(MemberType.MEMBER),
                 () -> assertThat(foundMember.getNickname()).isEqualTo("우아한 참새"),
                 () -> assertThat(foundMember.getAnonymousHandle()).isEqualTo("참새-a1b2c3d4"),
                 () -> assertThat(foundMember.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE)
@@ -62,14 +59,12 @@ public class MemberRepositoryTest {
     void should_RejectMember_When_AnonymousHandleIsDuplicated() {
         // given
         Member firstMember = Member.create(
-                MemberType.MEMBER,
                 "첫 번째 회원",
                 null,
                 "참새-duplicate",
                 LocalDateTime.of(2026, 8, 11, 12, 0)
         );
         Member secondMember = Member.create(
-                MemberType.MEMBER,
                 "두 번째 회원",
                 null,
                 "참새-duplicate",

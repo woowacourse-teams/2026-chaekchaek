@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.auth.oauth.google.GoogleProfile;
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.chaekchaek.member.service.AnonymousHandleGenerator;
 import com.chaekchaek.member.service.NicknameGenerator;
@@ -55,7 +54,6 @@ public class SocialLoginServiceTest {
         );
 
         Member existingMember = Member.create(
-                MemberType.MEMBER,
                 "책책-1234",
                 googleProfile.profileImageUrl(),
                 "참새-existing",

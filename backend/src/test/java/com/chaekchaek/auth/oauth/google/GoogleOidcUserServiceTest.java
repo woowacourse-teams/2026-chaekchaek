@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 import com.chaekchaek.auth.principal.AuthenticatedMember;
 import com.chaekchaek.auth.service.SocialLoginService;
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.member.domain.MemberType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +62,6 @@ public class GoogleOidcUserServiceTest {
 
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(1L);
-        when(member.getType()).thenReturn(MemberType.MEMBER);
         when(oidcUser.getName()).thenReturn("google-user-123");
 
         when(socialLoginService.loginOrSignUp(expectedProfile))
@@ -78,7 +76,6 @@ public class GoogleOidcUserServiceTest {
         AuthenticatedMember principal = (AuthenticatedMember) result;
 
         assertThat(principal.getMemberId()).isEqualTo(1L);
-        assertThat(principal.getMemberType()).isEqualTo(MemberType.MEMBER);
         assertThat(principal.getName()).isEqualTo("google-user-123");
 
         verify(socialLoginService).loginOrSignUp(expectedProfile);

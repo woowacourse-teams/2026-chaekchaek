@@ -33,10 +33,6 @@ public class Member {
     @Column(name = "member_id")
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "member_type", nullable = false, length = 20)
-    private MemberType type;
-
     @Column(name = "nickname", nullable = false, unique = true, length = 100)
     private String nickname;
 
@@ -60,7 +56,6 @@ public class Member {
     private LocalDateTime withdrawnAt;
 
     private Member(
-            MemberType type,
             String nickname,
             String profileImageUrl,
             String anonymousHandle,
@@ -69,7 +64,6 @@ public class Member {
             LocalDateTime createdAt,
             LocalDateTime withdrawnAt
     ) {
-        this.type = type;
         this.nickname = nickname;
         this.profileImageUrl = normalizeProfileImageUrl(profileImageUrl);
         this.anonymousHandle = anonymousHandle;
@@ -80,7 +74,6 @@ public class Member {
     }
 
     public static Member create(
-            MemberType memberType,
             String nickname,
             String profileImageUrl,
             String anonymousHandle,
@@ -90,7 +83,6 @@ public class Member {
         validateAnonymousHandle(anonymousHandle);
 
         return new Member(
-                memberType,
                 nickname,
                 profileImageUrl,
                 anonymousHandle,
