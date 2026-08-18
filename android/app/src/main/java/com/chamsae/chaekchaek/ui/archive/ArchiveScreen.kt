@@ -4,9 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,13 +27,11 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,7 +49,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,7 +60,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
-import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -528,6 +529,41 @@ private fun StatusChangeDialog(
   onChange: (ReadingStatus) -> Unit,
 ) {
   var selected by rememberSaveable { mutableStateOf(ReadingStatus.Reading) }
+  ArchiveDialog(onDismiss = onDismiss) {
+    Text(
+      "독서 상태 변경",
+      style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+    )
+    Text(
+      "선택한 ${selectedCount}권의 상태를 변경합니다.",
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
+    )
+    Column(
+      modifier = Modifier.selectableGroup(),
+      verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+      ReadingStatus.entries.forEach { status ->
+        StatusOptionRow(
+          status = status,
+          selected = selected == status,
+          onClick = { selected = status },
+        )
+      }
+    }
+    DialogActions(
+      confirmLabel = "변경",
+      onDismiss = onDismiss,
+      onConfirm = { onChange(selected) },
+    )
+  }
+}
+
+@Composable
+private fun ArchiveDialog(
+  onDismiss: () -> Unit,
+  content: @Composable ColumnScope.() -> Unit,
+) {
   Dialog(
     onDismissRequest = onDismiss,
     properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -547,52 +583,46 @@ private fun StatusChangeDialog(
         Column(
           modifier = Modifier.padding(20.dp),
           verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-          Text(
-            "독서 상태 변경",
-            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
-          )
-          Text(
-            "선택한 ${selectedCount}권의 상태를 변경합니다.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
-          )
-          Column(
-            modifier = Modifier.selectableGroup(),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-          ) {
-            ReadingStatus.entries.forEach { status ->
-              StatusOptionRow(
-                status = status,
-                selected = selected == status,
-                onClick = { selected = status },
-              )
-            }
-          }
-          Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(
-              onClick = onDismiss,
-              modifier = Modifier.weight(1f).height(48.dp),
-              shape = RoundedCornerShape(6.dp),
-              border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            ) {
-              Text("취소", style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp))
-            }
-            Button(
-              onClick = { onChange(selected) },
-              modifier = Modifier.weight(1f).height(48.dp),
-              shape = RoundedCornerShape(6.dp),
-              colors =
-                ButtonDefaults.buttonColors(
-                  containerColor = MaterialTheme.colorScheme.onBackground,
-                  contentColor = MaterialTheme.colorScheme.surface,
-                ),
-            ) {
-              Text("변경", style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp))
-            }
-          }
-        }
+          content = content,
+        )
       }
+    }
+  }
+}
+
+@Composable
+private fun DialogActions(
+  confirmLabel: String,
+  onDismiss: () -> Unit,
+  onConfirm: () -> Unit,
+  confirmEnabled: Boolean = true,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(10.dp),
+  ) {
+    OutlinedButton(
+      onClick = onDismiss,
+      modifier = Modifier.weight(1f).height(48.dp),
+      shape = RoundedCornerShape(6.dp),
+      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+      Text("취소", style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp))
+    }
+    Button(
+      onClick = onConfirm,
+      modifier = Modifier.weight(1f).height(48.dp),
+      enabled = confirmEnabled,
+      shape = RoundedCornerShape(6.dp),
+      colors =
+        ButtonDefaults.buttonColors(
+          containerColor = MaterialTheme.colorScheme.onBackground,
+          contentColor = MaterialTheme.colorScheme.surface,
+          disabledContainerColor = MaterialTheme.colorScheme.outline,
+          disabledContentColor = MaterialTheme.colorScheme.surface,
+        ),
+    ) {
+      Text(confirmLabel, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp))
     }
   }
 }
@@ -659,23 +689,73 @@ private fun NicknameDialog(
   onDismiss: () -> Unit,
   onConfirm: () -> Unit,
 ) {
-  AlertDialog(
-    onDismissRequest = onDismiss,
-    title = { Text("닉네임 설정") },
-    text = {
-      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("기록과 감상에 표시할 닉네임이 필요해요.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedTextField(
-          value = nickname,
-          onValueChange = onNicknameChange,
-          modifier = Modifier.fillMaxWidth(),
-          placeholder = { Text("닉네임을 입력하세요") },
-          supportingText = { Text("${nickname.length}/10") },
-          singleLine = true,
-        )
-      }
-    },
-    confirmButton = { TextButton(onClick = onConfirm, enabled = nickname.isNotBlank()) { Text("확인") } },
-    dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } },
-  )
+  ArchiveDialog(onDismiss = onDismiss) {
+    Text(
+      "닉네임 설정",
+      style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+    )
+    Text(
+      "기록과 감상에 표시할 닉네임이 필요해요.",
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
+    )
+    NicknameInput(
+      nickname = nickname,
+      onNicknameChange = onNicknameChange,
+    )
+    DialogActions(
+      confirmLabel = "확인",
+      confirmEnabled = nickname.isNotBlank(),
+      onDismiss = onDismiss,
+      onConfirm = onConfirm,
+    )
+  }
+}
+
+@Composable
+private fun NicknameInput(
+  nickname: String,
+  onNicknameChange: (String) -> Unit,
+) {
+  Row(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .height(44.dp)
+        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
+        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
+        .padding(horizontal = 12.dp),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    BasicTextField(
+      value = nickname,
+      onValueChange = onNicknameChange,
+      modifier = Modifier.weight(1f),
+      singleLine = true,
+      textStyle =
+        MaterialTheme.typography.bodyMedium.copy(
+          color = MaterialTheme.colorScheme.onSurface,
+          fontSize = 12.5.sp,
+        ),
+      cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+      decorationBox = { innerTextField ->
+        Box {
+          if (nickname.isEmpty()) {
+            Text(
+              "닉네임을 입력하세요",
+              color = MaterialTheme.colorScheme.outline,
+              style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
+            )
+          }
+          innerTextField()
+        }
+      },
+    )
+    Text(
+      "${nickname.length}/10",
+      color = MaterialTheme.colorScheme.outline,
+      style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+    )
+  }
 }
