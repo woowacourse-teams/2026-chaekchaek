@@ -112,11 +112,11 @@ public class ReviewService implements BookCommentCountReader {
         validateReviewCreate(request);
         validateRequestPage(request.currentPage(), request.totalPages());
         readingRecordCoordinator.recordReview(memberId, bookId, request.currentPage(), request.totalPages());
-        boolean anonymous = memberProfileOf(memberId).anonymousEnabled();
+        ReviewMemberProfile memberProfile = memberProfileOf(memberId);
         Review review = reviewRepository.save(Review.create(bookId, memberId, request.content(), request.quote(),
-                request.chapter(), request.currentPage(), request.spoiler(), anonymous));
+                request.chapter(), request.currentPage(), request.spoiler(), memberProfile.anonymousEnabled()));
         return toReviewResponse(review, memberId, Map.of(), Map.of(), Map.of(), Map.of(), Set.of(), Set.of(),
-                Map.of(memberId, memberProfileOf(memberId)));
+                Map.of(memberId, memberProfile));
     }
 
     @Transactional
@@ -163,9 +163,11 @@ public class ReviewService implements BookCommentCountReader {
         if (review.isDeleted()) {
             throw new BusinessException(ErrorCode.DELETED_RESOURCE);
         }
-        boolean anonymous = memberProfileOf(memberId).anonymousEnabled();
-        Reply reply = replyRepository.save(Reply.create(reviewId, memberId, request.content(), anonymous));
-        return toReplyResponse(reply, memberId, 0, false);
+        ReviewMemberProfile memberProfile = memberProfileOf(memberId);
+        Reply reply = replyRepository.save(Reply.create(
+                reviewId, memberId, request.content(), memberProfile.anonymousEnabled()
+        ));
+        return toReplyResponse(reply, memberId, 0, false, Map.of(memberId, memberProfile));
     }
 
     @Transactional
@@ -372,9 +374,6 @@ public class ReviewService implements BookCommentCountReader {
     private void validateRequestPage(Integer currentPage, Integer totalPages) {
         if (currentPage != null && currentPage < 0) throw new BusinessException(ErrorCode.INVALID_REQUEST);
         if (totalPages != null && totalPages <= 0) throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        if (currentPage != null && totalPages != null && currentPage > totalPages) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
     }
 
     private ReviewMemberProfile memberProfileOf(long memberId) {

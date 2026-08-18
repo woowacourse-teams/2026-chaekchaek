@@ -9,6 +9,7 @@ import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.repository.BookRepository;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,13 +21,23 @@ class BookServiceTest {
         // given
         BookResolver bookResolver = mock(BookResolver.class);
         BookRepository repository = mock(BookRepository.class);
-        BookService service = new BookService(bookResolver, repository);
-        Book book = Book.create(
+        BookDetailAssembler detailAssembler = mock(BookDetailAssembler.class);
+        BookService service = new BookService(bookResolver, repository, detailAssembler);
+        Book resolvedBook = mock(Book.class);
+        when(resolvedBook.getId()).thenReturn(1L);
+        Book detailBook = Book.create(
                 "9788925568683", "마션", "https://image.example/martian.jpg",
                 List.of("앤디 위어"), List.of("박아람"), "알에이치코리아", "SF",
                 LocalDate.of(2026, 1, 1), 308
         );
-        when(bookResolver.resolve("9788925568683")).thenReturn(book);
+        BookDetailResponse detailResponse = new BookDetailResponse(
+                1L, detailBook.getIsbn13(), detailBook.getTitle(), detailBook.getCoverImageUrl(),
+                detailBook.getAuthors(), detailBook.getTranslators(), detailBook.getPublisher(),
+                detailBook.getCategory(), "2026-01-01", 308,
+                0, null, 0, null);
+        when(bookResolver.resolve("9788925568683")).thenReturn(resolvedBook);
+        when(repository.findDetailById(1L)).thenReturn(Optional.of(detailBook));
+        when(detailAssembler.assemble(detailBook)).thenReturn(detailResponse);
 
         // when
         BookDetailResponse response = service.resolve("9788925568683");

@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
+import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import org.junit.jupiter.api.DisplayName;
@@ -16,10 +17,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -145,9 +144,15 @@ class AccessTokenAuthenticationIntegrationTest {
     @RestController
     static class ProtectedTestController {
 
+        private final CurrentMemberIdProvider currentMemberIdProvider;
+
+        ProtectedTestController(CurrentMemberIdProvider currentMemberIdProvider) {
+            this.currentMemberIdProvider = currentMemberIdProvider;
+        }
+
         @GetMapping("/test/protected")
-        String protectedApi(@AuthenticationPrincipal Jwt jwt) {
-            return jwt.getSubject();
+        String protectedApi() {
+            return Long.toString(currentMemberIdProvider.getCurrentMemberId());
         }
     }
 }

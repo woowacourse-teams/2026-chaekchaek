@@ -14,34 +14,19 @@ public class BookService {
 
     private final BookResolver bookResolver;
     private final BookRepository bookRepository;
+    private final BookDetailAssembler bookDetailAssembler;
 
     public BookDetailResponse resolve(String isbn13) {
-        return toDetailResponse(bookResolver.resolve(isbn13));
+        Book resolvedBook = bookResolver.resolve(isbn13);
+        return bookDetailAssembler.assemble(getDetailBook(resolvedBook.getId()));
     }
 
     @Transactional(readOnly = true)
     public BookDetailResponse getDetail(long bookId) {
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(BookNotFoundException::new);
-        return toDetailResponse(book);
+        return bookDetailAssembler.assemble(getDetailBook(bookId));
     }
 
-    private BookDetailResponse toDetailResponse(Book book) {
-        return new BookDetailResponse(
-                book.getId(),
-                book.getIsbn13(),
-                book.getTitle(),
-                book.getCoverImageUrl(),
-                book.getAuthors(),
-                book.getTranslators(),
-                book.getPublisher(),
-                book.getCategory(),
-                book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
-                book.getTotalPages(),
-                0,
-                null,
-                0,
-                null
-        );
+    private Book getDetailBook(long bookId) {
+        return bookRepository.findDetailById(bookId).orElseThrow(BookNotFoundException::new);
     }
 }

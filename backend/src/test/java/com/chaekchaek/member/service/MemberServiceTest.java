@@ -37,6 +37,7 @@ class MemberServiceTest {
                 MemberType.MEMBER,
                 "덜 우아한 참새",
                 "exUrl",
+                "참새-service",
                 LocalDateTime.of(2026, 8, 13, 12, 0)
         );
 

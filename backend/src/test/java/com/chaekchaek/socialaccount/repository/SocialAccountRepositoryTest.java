@@ -41,6 +41,7 @@ public class SocialAccountRepositoryTest {
                 MemberType.MEMBER,
                 "우아한 참새",
                 "exUrl",
+                "참새-social-1",
                 now
         );
         Member savedMember = memberRepository.save(member);
@@ -85,6 +86,7 @@ public class SocialAccountRepositoryTest {
                         MemberType.MEMBER,
                         "참새1",
                         null,
+                        "참새-social-2",
                         now
                 )
         );
@@ -94,6 +96,7 @@ public class SocialAccountRepositoryTest {
                         MemberType.MEMBER,
                         "참새2",
                         null,
+                        "참새-social-3",
                         now
                 )
         );
@@ -129,6 +132,7 @@ public class SocialAccountRepositoryTest {
                         MemberType.MEMBER,
                         "우아한 참새",
                         null,
+                        "참새-social-4",
                         now
                 )
         );

@@ -48,6 +48,7 @@ public class MemberControllerIntegrationTest {
                         MemberType.MEMBER,
                         "약간 우아한 참새",
                         "exUrl",
+                        "참새-controller",
                         LocalDateTime.of(2026, 8, 13, 12, 0)
                 )
         );

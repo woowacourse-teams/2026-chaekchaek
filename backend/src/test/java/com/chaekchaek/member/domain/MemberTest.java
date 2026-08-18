@@ -17,6 +17,7 @@ public class MemberTest {
         MemberType type = MemberType.MEMBER;
         String nickname = "우아한 참새";
         String profileImageUrl = "exUrl";
+        String anonymousHandle = "참새-a1b2c3d4";
         LocalDateTime createdAt = LocalDateTime.of(2026, 8, 11, 12, 0);
 
         // when
@@ -24,6 +25,7 @@ public class MemberTest {
                 type,
                 nickname,
                 profileImageUrl,
+                anonymousHandle,
                 createdAt
         );
 
@@ -33,6 +35,7 @@ public class MemberTest {
                 () -> assertThat(member.getType()).isEqualTo(MemberType.MEMBER),
                 () -> assertThat(member.getNickname()).isEqualTo(nickname),
                 () -> assertThat(member.getProfileImageUrl()).isEqualTo(profileImageUrl),
+                () -> assertThat(member.getAnonymousHandle()).isEqualTo(anonymousHandle),
                 () -> assertThat(member.isDisplayAnonymous()).isFalse(),
                 () -> assertThat(member.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE),
                 () -> assertThat(member.getCreatedAt()).isEqualTo(createdAt),
@@ -47,6 +50,7 @@ public class MemberTest {
                 MemberType.MEMBER,
                 null,
                 null,
+                "참새-a1b2c3d4",
                 LocalDateTime.now()
         )).isInstanceOf(IllegalArgumentException.class);
     }
@@ -58,6 +62,19 @@ public class MemberTest {
                 MemberType.MEMBER,
                 " ",
                 null,
+                "참새-a1b2c3d4",
+                LocalDateTime.now()
+        )).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("익명 핸들이 없으면 회원을 생성할 수 없다")
+    void should_ThrowException_When_AnonymousHandleIsBlank() {
+        assertThatThrownBy(() -> Member.create(
+                MemberType.MEMBER,
+                "우아한 참새",
+                null,
+                " ",
                 LocalDateTime.now()
         )).isInstanceOf(IllegalArgumentException.class);
     }
