@@ -1,6 +1,7 @@
 package com.chaekchaek.home.controller;
 
 import com.chaekchaek.home.dto.PopularBookListResponse;
+import com.chaekchaek.home.dto.LatestReviewListResponse;
 import com.chaekchaek.home.service.HomeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,5 +19,10 @@ public class HomeController {
     @GetMapping("/popular-books")
     public ResponseEntity<PopularBookListResponse> getPopularBooks() {
         return ResponseEntity.ok(homeService.getPopularBooks());
+    }
+
+    @GetMapping("/latest-reviews")
+    public ResponseEntity<LatestReviewListResponse> getLatestReviews() {
+        return ResponseEntity.ok(homeService.getLatestReviews());
     }
 }

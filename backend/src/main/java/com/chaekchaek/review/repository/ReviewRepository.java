@@ -18,6 +18,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     List<Review> findByBookIdAndMemberId(long bookId, long memberId);
 
+    List<Review> findTop10ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
+
     @Query("select r.bookId as bookId, count(r) as count from Review r where r.bookId in :bookIds group by r.bookId")
     List<BookCommentCount> countByBookIdInGroupByBookId(Collection<Long> bookIds);
 
