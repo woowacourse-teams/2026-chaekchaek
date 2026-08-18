@@ -33,7 +33,7 @@ public class BookResolver {
         newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
-    public Book resolve(String isbn13) {
+    public Book findOrCreate(String isbn13) {
         validateIsbn13(isbn13);
         return bookRepository.findByIsbn13(isbn13)
                 .orElseGet(() -> registerBookFetchedOutsideTransaction(isbn13));

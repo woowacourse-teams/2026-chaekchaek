@@ -94,9 +94,9 @@ public class LibraryService {
 
     public LibraryItemResponse addByIsbn13(long memberId, String isbn13, ReadingStatus status,
                                            Integer totalPages) {
-        Book resolvedBook = bookResolver.resolve(isbn13);
+        Book book = bookResolver.findOrCreate(isbn13);
         return transactionTemplate.execute(statusTemplate ->
-                add(memberId, resolvedBook.getId(), status, totalPages));
+                add(memberId, book.getId(), status, totalPages));
     }
 
     @Transactional(readOnly = true)

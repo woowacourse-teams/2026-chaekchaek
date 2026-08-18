@@ -37,7 +37,7 @@ class BookResolveConcurrencyTest {
 
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    @DisplayName("동시에 같은 ISBN13을 resolve하면 하나의 책만 등록한다")
+    @DisplayName("동시에 같은 ISBN13으로 책을 조회하거나 생성하면 하나의 책만 등록한다")
     void should_ReturnSameBookIdAndPersistOneBook_When_ResolveIsConcurrent() throws Exception {
         // given
         AladinBookClient client = mock(AladinBookClient.class);
@@ -55,10 +55,10 @@ class BookResolveConcurrencyTest {
         try {
             // when
             CompletableFuture<Book> first = CompletableFuture.supplyAsync(
-                    () -> resolver.resolve(ISBN13), executor
+                    () -> resolver.findOrCreate(ISBN13), executor
             );
             CompletableFuture<Book> second = CompletableFuture.supplyAsync(
-                    () -> resolver.resolve(ISBN13), executor
+                    () -> resolver.findOrCreate(ISBN13), executor
             );
 
             Book firstResponse = first.get(10, TimeUnit.SECONDS);
