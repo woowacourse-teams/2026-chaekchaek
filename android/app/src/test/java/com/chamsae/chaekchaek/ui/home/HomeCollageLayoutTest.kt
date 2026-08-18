@@ -33,6 +33,17 @@ class HomeCollageLayoutTest {
     }
 
     @Test
+    fun freePlacement_staysInsideCollageBounds() {
+        val topLeft = constrainedCollagePosition(-20f, -10f, 118f, 177f, 390f, 190f)
+        val bottomRight = constrainedCollagePosition(400f, 200f, 118f, 177f, 390f, 190f)
+
+        assertEquals(0f, topLeft.x)
+        assertEquals(0f, topLeft.y)
+        assertEquals(272f, bottomRight.x)
+        assertEquals(13f, bottomRight.y)
+    }
+
+    @Test
     fun readingProgress_isClampedAndHandlesMissingTotal() {
         assertEquals(0.4125f, readingProgress(currentPage = 132, totalPages = 320))
         assertEquals(0f, readingProgress(currentPage = 10, totalPages = 0))
