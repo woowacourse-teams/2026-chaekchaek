@@ -438,7 +438,7 @@ private fun TrendingSection(
                 rank = index + 1,
                 selected = selectedIndex == index,
                 dragging = dragging,
-                onSelect = { selectedIndex = index },
+                onClick = { onBookClick(book.toBookDetailArgs()) },
                 onDragStart = { draggingBookId = bookId },
                 onDrag = { dragAmount ->
                     val deltaX = with(density) { dragAmount.x.toDp().value }
@@ -503,7 +503,7 @@ private fun HeroCover(
     rank: Int,
     selected: Boolean,
     dragging: Boolean,
-    onSelect: () -> Unit,
+    onClick: () -> Unit,
     onDragStart: () -> Unit,
     onDrag: (Offset) -> Unit,
     onDragEnd: () -> Unit,
@@ -553,7 +553,7 @@ private fun HeroCover(
                 this.selected = selected
                 stateDescription = if (dragging) "배치 중" else "길게 눌러 배치"
             }
-            .clickable(role = Role.Button, onClick = onSelect),
+            .clickable(role = Role.Button, onClick = onClick),
     )
 }
 
