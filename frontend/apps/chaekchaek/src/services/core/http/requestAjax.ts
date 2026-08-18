@@ -78,7 +78,7 @@ export const create = () => {
           return await requestAjax(url, config);
         } catch (error) {
           window.location.href = `/login`;
-          return Promise.reject(error);
+          throw error;
         }
       }
       throw error;
