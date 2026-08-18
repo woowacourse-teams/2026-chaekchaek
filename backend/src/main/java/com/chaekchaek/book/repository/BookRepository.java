@@ -24,4 +24,8 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     Optional<Book> findByIdForUpdate(@Param("bookId") long bookId);
 
     List<Book> findAllByIsbn13In(Collection<String> isbn13s);
+
+    @EntityGraph(attributePaths = "authors")
+    @Query("select book from Book book where book.id in :bookIds")
+    List<Book> findAllWithAuthorsByIdIn(@Param("bookIds") Collection<Long> bookIds);
 }
