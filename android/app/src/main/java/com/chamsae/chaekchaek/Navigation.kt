@@ -37,6 +37,7 @@ fun MainNavigation() {
         BookDetailRoute(
           book = key.book,
           libraryRepository = appContainer.libraryRepository,
+          reflectionRepository = appContainer.reflectionRepository,
           onBack = { backStack.removeLastOrNull() },
           modifier = Modifier.windowInsetsPadding(
             WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),

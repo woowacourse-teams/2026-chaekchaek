@@ -5,8 +5,11 @@ import com.chamsae.chaekchaek.data.AladinBookSearchRepository
 import com.chamsae.chaekchaek.data.BookSearchRepository
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.PreferencesLibraryRepository
+import com.chamsae.chaekchaek.data.PreferencesReflectionRepository
+import com.chamsae.chaekchaek.data.ReflectionRepository
 
 class AppContainer(context: Context) {
   val bookSearchRepository: BookSearchRepository = AladinBookSearchRepository()
   val libraryRepository: LibraryRepository = PreferencesLibraryRepository(context.applicationContext)
+  val reflectionRepository: ReflectionRepository = PreferencesReflectionRepository(context.applicationContext)
 }
