@@ -23,6 +23,10 @@ public class Member {
             "[ERROR] 닉네임이 존재해야 합니다";
     private static final String NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE =
             "[ERROR] 닉네임은 100자 이하여야 합니다";
+    private static final String ANONYMOUS_HANDLE_MUST_EXIST_ERROR_MESSAGE =
+            "[ERROR] 익명 핸들이 존재해야 합니다";
+    private static final String ANONYMOUS_HANDLE_LENGTH_MUST_BE_VALID_ERROR_MESSAGE =
+            "[ERROR] 익명 핸들은 100자 이하여야 합니다";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +42,9 @@ public class Member {
 
     @Column(name = "profile_image_url", columnDefinition = "TEXT")
     private String profileImageUrl;
+
+    @Column(name = "anonymous_handle", nullable = false, unique = true, length = 100)
+    private String anonymousHandle;
 
     @Column(name = "display_anonymous", nullable = false)
     private boolean displayAnonymous;
@@ -56,6 +63,7 @@ public class Member {
             MemberType type,
             String nickname,
             String profileImageUrl,
+            String anonymousHandle,
             boolean displayAnonymous,
             AccountStatus accountStatus,
             LocalDateTime createdAt,
@@ -64,6 +72,7 @@ public class Member {
         this.type = type;
         this.nickname = nickname;
         this.profileImageUrl = normalizeProfileImageUrl(profileImageUrl);
+        this.anonymousHandle = anonymousHandle;
         this.displayAnonymous = displayAnonymous;
         this.accountStatus = accountStatus;
         this.createdAt = createdAt;
@@ -74,19 +83,31 @@ public class Member {
             MemberType memberType,
             String nickname,
             String profileImageUrl,
+            String anonymousHandle,
             LocalDateTime createdAt
     ) {
         validateNickname(nickname);
+        validateAnonymousHandle(anonymousHandle);
 
         return new Member(
                 memberType,
                 nickname,
                 profileImageUrl,
+                anonymousHandle,
                 false,
                 AccountStatus.ACTIVE,
                 createdAt,
                 null
         );
+    }
+
+    private static void validateAnonymousHandle(String anonymousHandle) {
+        if (anonymousHandle == null || anonymousHandle.isBlank()) {
+            throw new IllegalArgumentException(ANONYMOUS_HANDLE_MUST_EXIST_ERROR_MESSAGE);
+        }
+        if (anonymousHandle.length() > 100) {
+            throw new IllegalArgumentException(ANONYMOUS_HANDLE_LENGTH_MUST_BE_VALID_ERROR_MESSAGE);
+        }
     }
 
     private static void validateNickname(String nickname) {

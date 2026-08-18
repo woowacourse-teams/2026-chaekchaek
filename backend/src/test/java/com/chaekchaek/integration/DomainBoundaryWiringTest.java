@@ -6,6 +6,7 @@ import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.service.BookCommentCountReader;
 import com.chaekchaek.review.book.ReviewBookReader;
 import com.chaekchaek.review.library.ReadingRecordCoordinator;
+import com.chaekchaek.review.member.ReviewMemberReader;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,12 +28,14 @@ class DomainBoundaryWiringTest {
         var commentCountReaders = applicationContext.getBeansOfType(BookCommentCountReader.class);
         var currentMemberIdProviders = applicationContext.getBeansOfType(CurrentMemberIdProvider.class);
         var reviewBookReaders = applicationContext.getBeansOfType(ReviewBookReader.class);
+        var reviewMemberReaders = applicationContext.getBeansOfType(ReviewMemberReader.class);
         var readingRecordCoordinators = applicationContext.getBeansOfType(ReadingRecordCoordinator.class);
 
         // then
         assertThat(commentCountReaders).containsOnlyKeys("reviewService");
         assertThat(currentMemberIdProviders).containsOnlyKeys("securityContextCurrentMemberIdProvider");
         assertThat(reviewBookReaders).containsOnlyKeys("persistentReviewBookReader");
+        assertThat(reviewMemberReaders).containsOnlyKeys("persistentReviewMemberReader");
         assertThat(readingRecordCoordinators).containsOnlyKeys("libraryReadingRecordCoordinator");
     }
 }

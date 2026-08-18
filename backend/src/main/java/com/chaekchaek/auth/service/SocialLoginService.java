@@ -4,6 +4,7 @@ import com.chaekchaek.auth.oauth.google.GoogleProfile;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.domain.MemberType;
 import com.chaekchaek.member.repository.MemberRepository;
+import com.chaekchaek.member.service.AnonymousHandleGenerator;
 import com.chaekchaek.member.service.NicknameGenerator;
 import com.chaekchaek.socialaccount.domain.Provider;
 import com.chaekchaek.socialaccount.domain.SocialAccount;
@@ -18,15 +19,18 @@ public class SocialLoginService {
     private final MemberRepository memberRepository;
     private final SocialAccountRepository socialAccountRepository;
     private final NicknameGenerator nicknameGenerator;
+    private final AnonymousHandleGenerator anonymousHandleGenerator;
 
     public SocialLoginService(
             MemberRepository memberRepository,
             SocialAccountRepository socialAccountRepository,
-            NicknameGenerator nicknameGenerator
+            NicknameGenerator nicknameGenerator,
+            AnonymousHandleGenerator anonymousHandleGenerator
     ) {
         this.memberRepository = memberRepository;
         this.socialAccountRepository = socialAccountRepository;
         this.nicknameGenerator = nicknameGenerator;
+        this.anonymousHandleGenerator = anonymousHandleGenerator;
     }
 
     @Transactional
@@ -43,11 +47,13 @@ public class SocialLoginService {
     private Member signUp(GoogleProfile memberInfo) {
         LocalDateTime now = LocalDateTime.now();
         String nickname = nicknameGenerator.generate();
+        String anonymousHandle = anonymousHandleGenerator.generate();
 
         Member member = Member.create(
                 MemberType.MEMBER,
                 nickname,
                 memberInfo.profileImageUrl(),
+                anonymousHandle,
                 now
         );
         memberRepository.save(member);
