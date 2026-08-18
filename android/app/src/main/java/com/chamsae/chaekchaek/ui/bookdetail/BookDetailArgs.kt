@@ -18,6 +18,7 @@ data class BookDetailArgs(
   val year: String = "",
   val category: String = "",
   val totalPages: Int = 0,
+  val currentPage: Int = 0,
   val coverUrl: String = "",
   val coverId: String = "",
 )
@@ -43,6 +44,7 @@ internal fun ArchivedBook.toBookDetailArgs(): BookDetailArgs =
     year = year,
     category = category,
     totalPages = totalPages,
+    currentPage = currentPage,
     coverUrl = coverUrl,
   )
 
@@ -56,6 +58,7 @@ internal fun TrendingBookUiModel.toBookDetailArgs(): BookDetailArgs =
       year = "2026",
       category = "SF",
       totalPages = 308,
+      currentPage = 80,
       coverId = coverId,
     )
   } else {
@@ -72,6 +75,7 @@ internal fun ReadingBookUiModel.toBookDetailArgs(): BookDetailArgs =
   BookDetailArgs(
     id = coverId,
     title = title,
+    currentPage = currentPage,
     totalPages = totalPages,
     coverId = coverId,
   )

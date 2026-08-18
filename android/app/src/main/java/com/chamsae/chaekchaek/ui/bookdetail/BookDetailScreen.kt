@@ -176,7 +176,8 @@ fun BookDetailScreen(
   var showReflectionSheet by rememberSaveable { mutableStateOf(false) }
   var pendingReviewPage by rememberSaveable(book.id) { mutableStateOf<Int?>(null) }
   var previewedThroughPage by rememberSaveable(book.id) { mutableIntStateOf(-1) }
-  val currentPage = maxOf(archivedBook?.currentPage ?: 0, previewedThroughPage)
+  val recordedCurrentPage = archivedBook?.currentPage ?: book.currentPage
+  val currentPage = maxOf(recordedCurrentPage, previewedThroughPage)
 
   Box(
     modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding(),
@@ -188,7 +189,7 @@ fun BookDetailScreen(
     ) {
       item { ArchiveStage(book, onBack) }
       item { BookSummary(book) }
-      item { ReadingRecord(book, archivedBook, onRate) }
+      item { ReadingRecord(book, archivedBook, recordedCurrentPage, onRate) }
       item { Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand)) }
       item {
         ReviewsSection(
@@ -216,7 +217,7 @@ fun BookDetailScreen(
 
     pendingReviewPage?.let { spoilerPage ->
       SpoilerGuardDialog(
-        currentPage = archivedBook?.currentPage ?: 0,
+        currentPage = recordedCurrentPage,
         spoilerPage = spoilerPage,
         totalPages = book.totalPages,
         onDismiss = { pendingReviewPage = null },
@@ -404,7 +405,12 @@ private fun MetaChip(label: String) {
 }
 
 @Composable
-private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, onRate: () -> Unit) {
+private fun ReadingRecord(
+  book: BookDetailArgs,
+  archivedBook: ArchivedBook?,
+  currentPage: Int,
+  onRate: () -> Unit,
+) {
   Column(
     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -445,7 +451,7 @@ private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, onR
           horizontalArrangement = Arrangement.SpaceBetween,
         ) {
           Text("⌑", color = MaterialTheme.colorScheme.onSurfaceVariant)
-          Text("${archivedBook?.currentPage ?: 0}", style = MaterialTheme.typography.bodyMedium)
+          Text("$currentPage", style = MaterialTheme.typography.bodyMedium)
         }
       }
       Text(
@@ -469,7 +475,9 @@ private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, onR
     Box(Modifier.fillMaxWidth().height(3.dp).background(MaterialTheme.colorScheme.surfaceVariant)) {
       Box(
         Modifier
-          .fillMaxWidth(archivedBook?.progressRatio?.coerceIn(0f, 1f) ?: 0f)
+          .fillMaxWidth(
+            if (book.totalPages == 0) 0f else (currentPage.toFloat() / book.totalPages).coerceIn(0f, 1f),
+          )
           .height(3.dp)
           .background(ChaekAccent),
       )

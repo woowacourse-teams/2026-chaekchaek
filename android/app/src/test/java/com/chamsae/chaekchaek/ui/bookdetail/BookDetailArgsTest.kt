@@ -41,10 +41,14 @@ class BookDetailArgsTest {
         year = "2026",
         coverUrl = "",
         note = "",
+        currentPage = 80,
         totalPages = 308,
       )
 
-    assertEquals("saved-book", archivedBook.toBookDetailArgs().id)
+    val args = archivedBook.toBookDetailArgs()
+
+    assertEquals("saved-book", args.id)
+    assertEquals(80, args.currentPage)
   }
 
   @Test
@@ -53,6 +57,7 @@ class BookDetailArgsTest {
 
     assertEquals("앤디 위어", args.creator)
     assertEquals("SF", args.category)
+    assertEquals(80, args.currentPage)
     assertEquals(308, args.totalPages)
   }
 }
