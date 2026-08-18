@@ -236,7 +236,7 @@ fun BookDetailScreen(
 
   if (showReflectionSheet) {
     ReflectionSheet(
-      initialPage = archivedBook?.currentPage?.takeIf { it > 0 }?.toString().orEmpty(),
+      initialPage = recordedCurrentPage.takeIf { it > 0 }?.toString().orEmpty(),
       anonymous = anonymous,
       authorName = authorName,
       onDismiss = { showReflectionSheet = false },
@@ -548,7 +548,7 @@ private fun ReviewsSection(
     Spacer(Modifier.height(12.dp))
     reflections.forEach { reflection ->
       val page = reflection.page
-      if (page != null && currentPage < page) {
+      if (page != null && shouldLockReflection(currentPage, page)) {
         LockedReview(page = page, onOpen = { onOpenLockedReview(page) })
       } else {
         ReviewCard(
@@ -574,7 +574,7 @@ private fun ReviewsSection(
       }
       Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand))
     }
-    if (currentPage >= 80) {
+    if (!shouldLockReflection(currentPage, 80)) {
       ReviewCard(
         name = "참새 1204 (익명)",
         date = "2026.08.05",
@@ -597,7 +597,7 @@ private fun ReviewsSection(
       LockedReview(page = 80, onOpen = { onOpenLockedReview(80) })
     }
     Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand))
-    if (currentPage >= 160) {
+    if (!shouldLockReflection(currentPage, 160)) {
       ReviewCard(
         name = "짹짹짹",
         date = "2026.08.03",
@@ -618,6 +618,9 @@ private fun ReviewsSection(
     }
   }
 }
+
+internal fun shouldLockReflection(currentPage: Int, reflectionPage: Int?): Boolean =
+  reflectionPage != null && currentPage < reflectionPage
 
 @Composable
 private fun LockedReview(page: Int, onOpen: () -> Unit) {
