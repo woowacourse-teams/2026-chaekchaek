@@ -4,6 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,8 +53,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -111,6 +115,7 @@ fun ArchiveScreen(
   val anonymousReviews = uiState.anonymousReviews
   var filter by rememberSaveable { mutableStateOf<ReadingStatus?>(null) }
   var selectedIds by remember { mutableStateOf(emptySet<String>()) }
+  var pendingDeletionIds by remember { mutableStateOf(emptySet<String>()) }
   var showStatusDialog by remember { mutableStateOf(false) }
   var showNicknameDialog by remember { mutableStateOf(false) }
   var nickname by rememberSaveable(uiState.nickname) { mutableStateOf(uiState.nickname) }
@@ -119,8 +124,13 @@ fun ArchiveScreen(
   val visibleItems = remember(items, filter) {
     items.filter { filter == null || it.status == filter }.sortedByDescending { it.lastRecordedAt }
   }
-  val showScrollTop by remember {
-    derivedStateOf { listState.firstVisibleItemIndex > 1 || listState.firstVisibleItemScrollOffset >= 240 }
+  val density = LocalDensity.current
+  val scrollTopThresholdPx = remember(density) { with(density) { 240.dp.roundToPx() } }
+  val showScrollTop by remember(scrollTopThresholdPx) {
+    derivedStateOf {
+      listState.firstVisibleItemIndex > 0 ||
+        (listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset >= scrollTopThresholdPx)
+    }
   }
 
   LaunchedEffect(items) {
@@ -178,8 +188,7 @@ fun ArchiveScreen(
                 else selectedIds + book.id
             },
             onDelete = {
-              selectedIds -= book.id
-              onRemove(setOf(book.id))
+              pendingDeletionIds = setOf(book.id)
             },
           )
           HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
@@ -201,10 +210,7 @@ fun ArchiveScreen(
       EditActionBar(
         enabled = selectedIds.isNotEmpty(),
         onStatusChange = { showStatusDialog = true },
-        onDelete = {
-          onRemove(selectedIds)
-          selectedIds = emptySet()
-        },
+        onDelete = { pendingDeletionIds = selectedIds },
         modifier = Modifier.align(Alignment.BottomCenter),
       )
     }
@@ -218,6 +224,18 @@ fun ArchiveScreen(
         onChangeStatus(selectedIds, status)
         selectedIds = emptySet()
         showStatusDialog = false
+      },
+    )
+  }
+
+  if (pendingDeletionIds.isNotEmpty()) {
+    DeleteConfirmationDialog(
+      selectedCount = pendingDeletionIds.size,
+      onDismiss = { pendingDeletionIds = emptySet() },
+      onConfirm = {
+        onRemove(pendingDeletionIds)
+        selectedIds -= pendingDeletionIds
+        pendingDeletionIds = emptySet()
       },
     )
   }
@@ -309,7 +327,11 @@ private fun AnonymousSetting(checked: Boolean, onClick: () -> Unit) {
 @Composable
 private fun StatusFilters(selected: ReadingStatus?, onSelected: (ReadingStatus?) -> Unit) {
   Row(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .horizontalScroll(rememberScrollState())
+        .padding(horizontal = 16.dp, vertical = 6.dp),
     horizontalArrangement = Arrangement.spacedBy(6.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
@@ -411,13 +433,30 @@ private fun LibraryBookRow(
     }
     if (editing) {
       Box(
-        modifier = Modifier.size(48.dp).clickable(onClick = onDelete),
+        modifier =
+          Modifier
+            .size(48.dp)
+            .clickable(
+              onClickLabel = "서재에서 삭제",
+              role = Role.Button,
+              onClick = onDelete,
+            ),
         contentAlignment = Alignment.Center,
       ) {
-        Text("⌫", color = MaterialTheme.colorScheme.error, fontSize = 20.sp)
+        Text(
+          "⌫",
+          modifier = Modifier.clearAndSetSemantics {},
+          color = MaterialTheme.colorScheme.error,
+          fontSize = 20.sp,
+        )
       }
     } else {
-      Text("›", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 24.sp)
+      Text(
+        "›",
+        modifier = Modifier.clearAndSetSemantics {},
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = 24.sp,
+      )
     }
   }
 }
@@ -554,6 +593,30 @@ private fun StatusChangeDialog(
 }
 
 @Composable
+private fun DeleteConfirmationDialog(
+  selectedCount: Int,
+  onDismiss: () -> Unit,
+  onConfirm: () -> Unit,
+) {
+  ArchiveDialog(onDismiss = onDismiss) {
+    Text(
+      "책 삭제",
+      style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+    )
+    Text(
+      "선택한 ${selectedCount}권을 서재에서 삭제할까요?",
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
+    )
+    DialogActions(
+      confirmLabel = "삭제",
+      onDismiss = onDismiss,
+      onConfirm = onConfirm,
+    )
+  }
+}
+
+@Composable
 private fun ArchiveDialog(
   onDismiss: () -> Unit,
   content: @Composable ColumnScope.() -> Unit,
@@ -562,8 +625,8 @@ private fun ArchiveDialog(
     onDismissRequest = onDismiss,
     properties = DialogProperties(usePlatformDefaultWidth = false),
   ) {
-    val window = (LocalView.current.parent as DialogWindowProvider).window
-    SideEffect { window.setDimAmount(0.2f) }
+    val window = (LocalView.current.parent as? DialogWindowProvider)?.window
+    SideEffect { window?.setDimAmount(0.2f) }
     Box(
       modifier = Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 80.dp),
       contentAlignment = Alignment.Center,
