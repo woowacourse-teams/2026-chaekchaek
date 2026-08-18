@@ -1,0 +1,128 @@
+.ui-Overview {
+  height: 473px;
+  background: #090A0C;
+  text-align: center;
+  width: 100%;
+}
+
+.wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 40px;
+  width: 1440px;
+  text-align: left;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.ui-Overview-Content {
+  display: flex;
+  min-width: 0;
+  padding-left: 70px;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ui-Overview-Content > p {
+  margin: 0;
+}
+
+.leading {
+  position: relative;
+  padding-left: 44px;
+  color: #FF9800;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 15px;
+}
+
+.leading:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 32px;
+  height: 1px;
+  background: #FF9800;
+  transform: translateY(-50%);
+}
+
+.title {
+  padding-top: 16px;
+  color: #ffffff;  
+  font-family: 'Funnel Sans', sans-serif;
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 46px;
+  overflow-wrap: anywhere;
+
+}
+
+.content {
+  padding-top: 18px;
+  color: #BDBDBD;  
+  font-family: 'Funnel Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  padding-top: 17px;
+  font-size: 16px;
+  color: #E0E0E0;
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 15px;
+  overflow-wrap: anywhere;
+}
+
+.leading + .title {
+  padding-top: 8px;
+}
+
+.title + .content {
+  padding-top: 12px;
+}
+
+.content + .description {
+  padding-top: 5px;
+}
+
+.ui-Overview-Media {
+  margin-top: 28px;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  background-color: #111216;
+  width: 650px;
+  height: 408px;
+}
+
+.ui-Overview-Media > * {
+  max-width: 100%;
+}
+
+.ui-Overview-Media .box {
+  position: relative;
+  max-width: 100%;
+  border: 20px solid #FCFAF7;
+  box-shadow: 14px 14px 0 0 rgba(255, 152, 0, 0.33);
+}
+.ui-Overview-Media .box:before {
+  content: '';
+  position: absolute;
+  position: absolute;
+}
+
+.ui-Overview-Media :where(img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}

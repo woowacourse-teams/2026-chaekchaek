@@ -1,0 +1,79 @@
+.ui-Field {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+}
+
+.ui-Field-Label,
+.ui-Field-Description {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  font-family: 'Funnel Sans', sans-serif;
+}
+
+.ui-Field-Label {
+  gap: 4px;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 15px;
+}
+
+.ui-Field-Content {
+  display: flex;
+  width: 100%;
+  justify-content: stretch;
+  gap: 8px;
+}
+
+.ui-Field-Content > * {
+  width: 100%;
+  flex: 1;
+}
+
+.ui-Field-Description {
+  gap: 4px;
+  margin-top: 6px;
+  color: #888;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 15px;
+}
+
+.leading,
+.trailing {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.leading > :where(img, svg),
+.trailing > :where(img, svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ui-Field-Label .leading,
+.ui-Field-Label .trailing {
+  width: 12px;
+  height: 12px;
+}
+
+.ui-Field-Description .leading,
+.ui-Field-Description .trailing {
+  width: 10px;
+  height: 10px;
+}
+
+.trailing {
+  margin-left: auto;
+}
+
+.ui-Field + .ui-Field {
+  margin-top: 22px;
+}

@@ -1,0 +1,36 @@
+.root {
+  display: flex;
+  align-items: center;
+}
+
+.orientation-vertical {
+  flex-direction: column;
+}
+.title {
+  flex: 1;
+  color: #1A1A1A;
+}
+
+.root .trailing {
+  text-align: right;
+}
+
+.level-page .title {
+  font-size: 38px;
+  font-weight: 600;
+}
+
+.level-main .title {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.level-caption .title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #777777;
+}
+
+.orientation-vertical { 
+  align-items: stretch;
+}

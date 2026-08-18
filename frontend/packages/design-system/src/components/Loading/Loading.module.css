@@ -1,0 +1,22 @@
+.root {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 21px;
+  background: url('./imgs/img-loading.svg') center center no-repeat;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    animation-duration: 1600ms;
+  }
+}
