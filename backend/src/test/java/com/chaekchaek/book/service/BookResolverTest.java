@@ -24,7 +24,26 @@ class BookResolverTest {
     private static final String ISBN13 = "9788925568683";
 
     @Test
-    @DisplayName("잘못된 ISBN13을 resolve하면 입력 오류를 던진다")
+    @DisplayName("등록된 ISBN13으로 책을 조회하거나 생성하면 기존 책을 반환한다")
+    void should_ReturnStoredBookWithoutCallingAladin_When_BookIsRegistered() {
+        // given
+        AladinBookClient client = mock(AladinBookClient.class);
+        BookRepository repository = mock(BookRepository.class);
+        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+        Book storedBook = mock(Book.class);
+        when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.of(storedBook));
+
+        // when
+        Book book = resolver.findOrCreate(ISBN13);
+
+        // then
+        assertThat(book).isSameAs(storedBook);
+        verify(repository).findByIsbn13(ISBN13);
+        verifyNoInteractions(client);
+    }
+
+    @Test
+    @DisplayName("잘못된 ISBN13으로 책을 조회하거나 생성하면 입력 오류를 던진다")
     void should_ThrowInvalidRequestException_When_ResolvingMalformedIsbn13() {
         // given
         AladinBookClient client = mock(AladinBookClient.class);
@@ -32,7 +51,7 @@ class BookResolverTest {
         BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
 
         // when & then
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> resolver.resolve("9788925568682"))
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> resolver.findOrCreate("9788925568682"))
                 .isInstanceOf(BusinessException.class)
                 .extracting(exception -> ((BusinessException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.INVALID_REQUEST);
