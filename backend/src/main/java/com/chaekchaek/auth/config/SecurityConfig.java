@@ -55,6 +55,9 @@ public class SecurityConfig {
                         .ignoringRequestMatchers("/api/v1/auth/**"))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                HttpMethod.GET, "/health"
+                        ).permitAll()
+                        .requestMatchers(
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/api/v1/auth/**"
