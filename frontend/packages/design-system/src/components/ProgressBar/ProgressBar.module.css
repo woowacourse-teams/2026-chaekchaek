@@ -1,0 +1,64 @@
+.ui-ProgressBar {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.box {
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background-color: #eee;
+}
+
+.bar {
+  width: 2px;
+  height: 100%;
+  border-radius: inherit;
+  background-color: #1a1a1a;
+}
+
+.header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.header:has(.title) {
+  order: -1;
+  justify-content: space-between;
+}
+
+.ui-ProgressBar:has(.title) {
+  gap: 8px;
+}
+
+.ui-ProgressBar:has(.title) .box {
+  height: 6px;
+  background-color: #e8e2d9;
+}
+
+.title {
+  padding-bottom: 2px;
+  color: #1a1a1a;
+  font-family: 'Funnel Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.label {
+  display: block;
+  padding-bottom: 1px;
+  color: #666;
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+  word-break: break-word;
+  text-align: right;
+}

@@ -1,0 +1,53 @@
+.root {
+  box-sizing: border-box;
+}
+
+.ui-Shell {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ui-Shell-Leading {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding-right: 9px;
+}
+
+.ui-Shell-Content {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  height: 44px;
+  gap: 3px;
+}
+
+.title {
+  padding-bottom: 2px;
+  color: #000;
+  font-family: 'Funnel Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.content {
+  color: #666;
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.ui-Shell-Trailing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: right;
+}
