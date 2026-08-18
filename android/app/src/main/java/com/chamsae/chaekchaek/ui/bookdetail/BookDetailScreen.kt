@@ -61,8 +61,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.chamsae.chaekchaek.R
 import com.chamsae.chaekchaek.data.ArchivedBook
+import com.chamsae.chaekchaek.data.BookRatingStore
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
+import com.chamsae.chaekchaek.data.RatedBook
 import com.chamsae.chaekchaek.theme.ChaekAccent
 import com.chamsae.chaekchaek.theme.ChaekAccentInk
 import com.chamsae.chaekchaek.theme.ChaekAccentSoft
@@ -71,23 +73,29 @@ import com.chamsae.chaekchaek.theme.ChaekInk
 import com.chamsae.chaekchaek.theme.ChaekInkSecondary
 import com.chamsae.chaekchaek.theme.ChaekSurface
 import com.chamsae.chaekchaek.ui.home.coverResource
+import com.chaekchaek.app.domain.rating.Rating
 import kotlinx.coroutines.launch
 
 @Composable
 fun BookDetailRoute(
   book: BookDetailArgs,
+  bookRatingStore: BookRatingStore,
   libraryRepository: LibraryRepository,
   onBack: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
+  val ratings by bookRatingStore.ratings.collectAsStateWithLifecycle()
   val archivedBook = archivedBooks.firstOrNull { it.id == book.id }
   val displayBook = archivedBook?.toBookDetailArgs() ?: book
 
   BookDetailScreen(
     book = displayBook,
     archivedBook = archivedBook,
+    rating = ratings.firstOrNull { it.bookId == book.id }?.rating,
+    recentRatings = ratings.sortedBy(RatedBook::ratedAt).takeLast(3),
     onBack = onBack,
+    onSaveRating = { bookRatingStore.rate(book.id, book.title, it) },
     modifier = modifier,
   )
 }
@@ -96,10 +104,12 @@ fun BookDetailRoute(
 fun BookDetailScreen(
   book: BookDetailArgs,
   archivedBook: ArchivedBook?,
+  rating: Rating? = null,
+  recentRatings: List<RatedBook> = emptyList(),
   onBack: () -> Unit,
   modifier: Modifier = Modifier,
   onWriteNote: () -> Unit = {},
-  onRate: () -> Unit = {},
+  onSaveRating: (Rating) -> Unit = {},
 ) {
   BackHandler(onBack = onBack)
   val listState = rememberLazyListState()
@@ -111,6 +121,7 @@ fun BookDetailScreen(
       listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset >= threshold
     }
   }
+  var showRatingDialog by rememberSaveable { mutableStateOf(false) }
 
   Box(
     modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding(),
@@ -122,7 +133,7 @@ fun BookDetailScreen(
     ) {
       item { ArchiveStage(book, onBack) }
       item { BookSummary(book) }
-      item { ReadingRecord(book, archivedBook, onRate) }
+      item { ReadingRecord(book, archivedBook, rating) { showRatingDialog = true } }
       item { Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand)) }
       item { ReviewsSection() }
     }
@@ -138,6 +149,19 @@ fun BookDetailScreen(
         modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
       )
     }
+  }
+
+  if (showRatingDialog) {
+    BookRatingDialog(
+      currentBookId = book.id,
+      initialRating = rating,
+      recentRatings = recentRatings,
+      onDismiss = { showRatingDialog = false },
+      onSave = {
+        onSaveRating(it)
+        showRatingDialog = false
+      },
+    )
   }
 }
 
@@ -298,7 +322,7 @@ private fun MetaChip(label: String) {
 }
 
 @Composable
-private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, onRate: () -> Unit) {
+private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, rating: Rating?, onRate: () -> Unit) {
   Column(
     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -307,7 +331,12 @@ private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, onR
       Text("내 독서 기록", style = MaterialTheme.typography.titleMedium)
       Spacer(Modifier.weight(1f))
       Surface(onClick = onRate, color = Color.Transparent) {
-        Text("☆ 별점 주기", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.labelMedium)
+        Text(
+          rating?.let { "★ ${String.format(java.util.Locale.KOREA, "%.1f", it.score)}" } ?: "☆ 별점 주기",
+          modifier = Modifier.padding(8.dp),
+          color = if (rating == null) MaterialTheme.colorScheme.onSurface else ChaekAccent,
+          style = MaterialTheme.typography.labelMedium,
+        )
       }
     }
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {

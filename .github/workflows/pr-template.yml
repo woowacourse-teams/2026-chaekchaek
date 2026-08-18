@@ -1,0 +1,40 @@
+name: PR template
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  validate:
+    name: Validate PR template
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate required sections
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import sys
+
+          body = os.environ.get("PR_BODY", "")
+          sections = ("요약", "구현 내용", "디자인", "미구현·제외", "검증")
+          invalid = []
+
+          for section in sections:
+              match = re.search(
+                  rf"(?ms)^## {re.escape(section)}[ \t]*$\n(.*?)(?=^## |\Z)", body
+              )
+              content = re.sub(r"<!--.*?-->", "", match.group(1)) if match else ""
+              if not re.search(r"\S", content):
+                  invalid.append(section)
+
+          if invalid:
+              print("작성 또는 누락된 PR 템플릿 섹션: " + ", ".join(invalid))
+              print("화면 변경이 없는 PR의 디자인 섹션에는 '화면 변경 없음'을 작성하세요.")
+              sys.exit(1)
+          PY
