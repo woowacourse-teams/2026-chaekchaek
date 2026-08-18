@@ -74,6 +74,8 @@ class ReplyRepositoryTest {
 
         // when
         List<ReviewRepository.PopularBookCount> popularBookCounts = reviewRepository.findTop10PopularBookCounts();
+        List<ReplyRepository.ReviewCount> replyCounts =
+                replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(activeReview.getId(), deletedReview.getId()));
 
         // then
         assertThat(popularBookCounts).singleElement().satisfies(count -> {
@@ -81,5 +83,31 @@ class ReplyRepositoryTest {
             assertThat(count.getReviewCount()).isEqualTo(1L);
             assertThat(count.getReplyCount()).isEqualTo(1L);
         });
+        assertThat(replyCounts).singleElement().satisfies(count -> {
+            assertThat(count.getReviewId()).isEqualTo(activeReview.getId());
+            assertThat(count.getCount()).isEqualTo(1L);
+        });
+    }
+
+    @Test
+    @DisplayName("삭제된 감상을 제외한 최신 감상 열 개를 반환한다")
+    void should_ReturnTopTenActiveReviewsInLatestOrder_When_FindingLatestReviews() {
+        // given
+        List<Review> activeReviews = new java.util.ArrayList<>();
+        for (int index = 0; index < 11; index++) {
+            activeReviews.add(reviewRepository.save(
+                    Review.create(1L, 1L, "감상 " + index, null, null, null, false, false)
+            ));
+        }
+        Review deletedReview = reviewRepository.save(Review.create(1L, 1L, "삭제 감상", null, null, null, false, false));
+        deletedReview.deleteBy(1L);
+        reviewRepository.flush();
+
+        // when
+        List<Review> actual = reviewRepository.findTop10ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
+
+        // then
+        assertThat(actual).extracting(Review::getId)
+                .containsExactlyElementsOf(activeReviews.subList(1, 11).reversed().stream().map(Review::getId).toList());
     }
 }
