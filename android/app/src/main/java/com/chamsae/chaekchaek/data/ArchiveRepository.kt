@@ -16,12 +16,37 @@ class ArchiveRepository(context: Context) {
 
   private val _items = MutableStateFlow(loadAll())
   val items: StateFlow<List<ArchivedBook>> = _items.asStateFlow()
+  private val _anonymousReviews = MutableStateFlow(prefs.getBoolean(KEY_ANONYMOUS, true))
+  val anonymousReviews: StateFlow<Boolean> = _anonymousReviews.asStateFlow()
 
   fun add(book: ArchivedBook) {
-    val updated = _items.value.plusIfAbsent(book)
+    val updated = _items.value.plusIfAbsent(book.copy(lastRecordedAt = System.currentTimeMillis()))
     if (updated === _items.value) return
-    _items.value = updated
-    prefs.edit().putString(KEY_ITEMS, serializeArchivedBooks(updated)).apply()
+    save(updated)
+  }
+
+  fun remove(bookIds: Set<String>) {
+    save(_items.value.filterNot { it.id in bookIds })
+  }
+
+  fun changeStatus(bookIds: Set<String>, status: ReadingStatus) {
+    val recordedAt = System.currentTimeMillis()
+    save(_items.value.map { if (it.id in bookIds) it.changedTo(status, recordedAt) else it })
+  }
+
+  fun setAnonymousReviews(anonymous: Boolean, nickname: String = "") {
+    _anonymousReviews.value = anonymous
+    prefs.edit()
+      .putBoolean(KEY_ANONYMOUS, anonymous)
+      .putString(KEY_NICKNAME, nickname.trim())
+      .apply()
+  }
+
+  fun nickname(): String = prefs.getString(KEY_NICKNAME, "").orEmpty()
+
+  private fun save(items: List<ArchivedBook>) {
+    _items.value = items
+    prefs.edit().putString(KEY_ITEMS, serializeArchivedBooks(items)).apply()
   }
 
   private fun loadAll(): List<ArchivedBook> {
@@ -32,5 +57,7 @@ class ArchiveRepository(context: Context) {
   private companion object {
     const val PREFS_NAME = "archive"
     const val KEY_ITEMS = "items"
+    const val KEY_ANONYMOUS = "anonymous_reviews"
+    const val KEY_NICKNAME = "nickname"
   }
 }

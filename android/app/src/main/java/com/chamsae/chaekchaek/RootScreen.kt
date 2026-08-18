@@ -19,15 +19,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import com.chamsae.chaekchaek.data.ArchiveRepository
 import com.chamsae.chaekchaek.ui.archive.ArchiveScreen
@@ -45,9 +45,10 @@ fun RootScreen(modifier: Modifier = Modifier) {
   val context = LocalContext.current
   val archiveRepository = remember { ArchiveRepository(context) }
   var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
+  var archiveEditing by rememberSaveable { mutableStateOf(false) }
 
   Box(modifier = modifier.fillMaxSize()) {
-    val showBottomBar = selectedTab != RootTab.Discover
+    val showBottomBar = selectedTab != RootTab.Discover && !(selectedTab == RootTab.Shelf && archiveEditing)
     val contentModifier =
       Modifier
         .fillMaxSize()
@@ -64,12 +65,21 @@ fun RootScreen(modifier: Modifier = Modifier) {
           modifier = contentModifier,
           onBack = { selectedTab = RootTab.Home },
         )
-      RootTab.Shelf -> ArchiveScreen(archiveRepository, contentModifier)
+      RootTab.Shelf ->
+        ArchiveScreen(
+          archiveRepository = archiveRepository,
+          editing = archiveEditing,
+          onEditingChange = { archiveEditing = it },
+          modifier = contentModifier,
+        )
     }
     if (showBottomBar) {
       ChaekBottomBar(
         selectedTab = selectedTab,
-        onTabSelected = { selectedTab = it },
+        onTabSelected = {
+          archiveEditing = false
+          selectedTab = it
+        },
         modifier = Modifier.align(Alignment.BottomCenter),
       )
     }
