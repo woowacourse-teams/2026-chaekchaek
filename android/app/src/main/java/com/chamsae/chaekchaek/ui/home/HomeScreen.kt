@@ -81,6 +81,8 @@ import com.chamsae.chaekchaek.LocalSharedComponent
 import com.chamsae.chaekchaek.R
 import com.chamsae.chaekchaek.theme.ChaekBand
 import com.chamsae.chaekchaek.theme.ChaekchaekTheme
+import com.chamsae.chaekchaek.ui.bookdetail.BookDetailArgs
+import com.chamsae.chaekchaek.ui.bookdetail.toBookDetailArgs
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -88,6 +90,7 @@ import kotlin.random.Random
 fun HomeScreen(
     modifier: Modifier = Modifier,
     onSearchBook: () -> Unit = {},
+    onBookClick: (BookDetailArgs) -> Unit = {},
 ) {
     val component = LocalSharedComponent.current
     val homeViewModel: HomeViewModel = viewModel { component.homeViewModel }
@@ -97,7 +100,7 @@ fun HomeScreen(
         HomeUiState.Loading -> LoadingContent(modifier)
         HomeUiState.Empty -> EmptyContent(modifier)
         is HomeUiState.Failure -> ErrorContent(state.error, homeViewModel::retry, modifier)
-        is HomeUiState.Content -> HomeContent(state, onSearchBook, modifier)
+        is HomeUiState.Content -> HomeContent(state, onSearchBook, onBookClick, modifier)
     }
 }
 
@@ -135,6 +138,7 @@ private fun ErrorContent(error: AppError, retry: () -> Unit, modifier: Modifier)
 private fun HomeContent(
     state: HomeUiState.Content,
     onSearchBook: () -> Unit,
+    onBookClick: (BookDetailArgs) -> Unit,
     modifier: Modifier,
 ) {
     LazyColumn(
@@ -145,18 +149,20 @@ private fun HomeContent(
         item { HomeHeader() }
         items(state.sections) { section ->
             when (section) {
-                is FeedSectionUiModel.TrendingBooks -> TrendingSection(section)
+                is FeedSectionUiModel.TrendingBooks -> TrendingSection(section, onBookClick)
                 is FeedSectionUiModel.RecentQuotes -> RecentReflectionsSection(
                     title = section.title,
                     quotes = section.cards,
+                    onBookClick = onBookClick,
                 )
                 is FeedSectionUiModel.OverlappedBooks -> RecentReflectionsSection(
                     title = section.title,
                     overlapped = section.cards,
+                    onBookClick = onBookClick,
                 )
             }
         }
-        item { ReadingStatusSection(state.readingBook, onSearchBook) }
+        item { ReadingStatusSection(state.readingBook, onSearchBook, onBookClick) }
     }
 }
 
@@ -164,16 +170,17 @@ private fun HomeContent(
 private fun ReadingStatusSection(
     readingBook: ReadingBookUiModel?,
     onSearchBook: () -> Unit,
+    onBookClick: (BookDetailArgs) -> Unit,
 ) {
     if (readingBook == null) {
         EmptyReadingSection(onSearchBook)
     } else {
-        CurrentReadingSection(readingBook)
+        CurrentReadingSection(readingBook, onBookClick)
     }
 }
 
 @Composable
-private fun CurrentReadingSection(book: ReadingBookUiModel) {
+private fun CurrentReadingSection(book: ReadingBookUiModel, onBookClick: (BookDetailArgs) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -188,6 +195,7 @@ private fun CurrentReadingSection(book: ReadingBookUiModel) {
         )
         Spacer(Modifier.height(12.dp))
         Surface(
+            onClick = { onBookClick(book.toBookDetailArgs()) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -343,7 +351,10 @@ private fun HomeHeader() {
 }
 
 @Composable
-private fun TrendingSection(section: FeedSectionUiModel.TrendingBooks) {
+private fun TrendingSection(
+    section: FeedSectionUiModel.TrendingBooks,
+    onBookClick: (BookDetailArgs) -> Unit,
+) {
     val books = section.books.take(6)
     val rankingKey = books.map { it.bookId.value }
     val placements = remember(rankingKey) { collagePlacements(rankingKey) }
@@ -421,6 +432,7 @@ private fun TrendingSection(section: FeedSectionUiModel.TrendingBooks) {
 
         selectedBook?.let { book ->
             Surface(
+                onClick = { onBookClick(book.toBookDetailArgs()) },
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .offset(y = 190.dp)
@@ -545,6 +557,7 @@ private fun RecentReflectionsSection(
     title: String,
     quotes: List<QuoteCardUiModel> = emptyList(),
     overlapped: List<OverlappedCardUiModel> = emptyList(),
+    onBookClick: (BookDetailArgs) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -574,6 +587,7 @@ private fun RecentReflectionsSection(
                     excerpt = card.quoteText,
                     replyLabel = card.replyLabel,
                     avatar = R.drawable.avatar_kim,
+                    onClick = { onBookClick(card.toBookDetailArgs()) },
                 )
             }
             items(overlapped, key = { it.bookId.value }) { card ->
@@ -584,6 +598,7 @@ private fun RecentReflectionsSection(
                     excerpt = card.excerpt,
                     replyLabel = card.replyLabel,
                     avatar = R.drawable.avatar_yoon,
+                    onClick = { onBookClick(card.toBookDetailArgs()) },
                 )
             }
         }
@@ -599,8 +614,10 @@ private fun ReflectionCard(
     replyLabel: String,
     @DrawableRes
     avatar: Int,
+    onClick: () -> Unit,
 ) {
     Surface(
+        onClick = onClick,
         modifier = Modifier.size(width = 318.dp, height = 184.dp),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -769,7 +786,7 @@ private fun AppError.message(): String =
     }
 
 @DrawableRes
-private fun coverResource(coverId: String): Int =
+internal fun coverResource(coverId: String): Int =
     when (coverId) {
         "cover-01" -> R.drawable.cover_01
         "cover-02" -> R.drawable.cover_02
@@ -862,6 +879,6 @@ private fun HomePreview(readingBook: ReadingBookUiModel?) {
     )
 
     ChaekchaekTheme(darkTheme = false) {
-        HomeContent(state, onSearchBook = {}, modifier = Modifier.fillMaxSize())
+        HomeContent(state, onSearchBook = {}, onBookClick = {}, modifier = Modifier.fillMaxSize())
     }
 }
