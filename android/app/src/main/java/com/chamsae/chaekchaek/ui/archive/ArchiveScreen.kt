@@ -17,9 +17,12 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -29,12 +32,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,9 +50,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -519,27 +528,128 @@ private fun StatusChangeDialog(
   onChange: (ReadingStatus) -> Unit,
 ) {
   var selected by rememberSaveable { mutableStateOf(ReadingStatus.Reading) }
-  AlertDialog(
+  Dialog(
     onDismissRequest = onDismiss,
-    title = { Text("독서 상태 변경") },
-    text = {
-      Column {
-        Text("선택한 ${selectedCount}권의 상태를 변경합니다.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(10.dp))
-        ReadingStatus.entries.forEach { status ->
-          Row(
-            modifier = Modifier.fillMaxWidth().clickable { selected = status }.padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
+    properties = DialogProperties(usePlatformDefaultWidth = false),
+  ) {
+    val window = (LocalView.current.parent as DialogWindowProvider).window
+    SideEffect { window.setDimAmount(0.2f) }
+    Box(
+      modifier = Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 80.dp),
+      contentAlignment = Alignment.Center,
+    ) {
+      Surface(
+        modifier = Modifier.widthIn(max = 320.dp).fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 12.dp,
+      ) {
+        Column(
+          modifier = Modifier.padding(20.dp),
+          verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+          Text(
+            "독서 상태 변경",
+            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
+          )
+          Text(
+            "선택한 ${selectedCount}권의 상태를 변경합니다.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
+          )
+          Column(
+            modifier = Modifier.selectableGroup(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
           ) {
-            RadioButton(selected = selected == status, onClick = { selected = status })
-            Text(status.label)
+            ReadingStatus.entries.forEach { status ->
+              StatusOptionRow(
+                status = status,
+                selected = selected == status,
+                onClick = { selected = status },
+              )
+            }
+          }
+          Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedButton(
+              onClick = onDismiss,
+              modifier = Modifier.weight(1f).height(48.dp),
+              shape = RoundedCornerShape(6.dp),
+              border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+              Text("취소", style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp))
+            }
+            Button(
+              onClick = { onChange(selected) },
+              modifier = Modifier.weight(1f).height(48.dp),
+              shape = RoundedCornerShape(6.dp),
+              colors =
+                ButtonDefaults.buttonColors(
+                  containerColor = MaterialTheme.colorScheme.onBackground,
+                  contentColor = MaterialTheme.colorScheme.surface,
+                ),
+            ) {
+              Text("변경", style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp))
+            }
           }
         }
       }
-    },
-    confirmButton = { TextButton(onClick = { onChange(selected) }) { Text("변경") } },
-    dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } },
-  )
+    }
+  }
+}
+
+@Composable
+private fun StatusOptionRow(
+  status: ReadingStatus,
+  selected: Boolean,
+  onClick: () -> Unit,
+) {
+  Row(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .height(48.dp)
+        .background(
+          color = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+          shape = RoundedCornerShape(8.dp),
+        )
+        .selectable(
+          selected = selected,
+          onClick = onClick,
+          role = Role.RadioButton,
+        )
+        .padding(horizontal = 12.dp),
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Box(
+      modifier =
+        Modifier
+          .size(20.dp)
+          .background(MaterialTheme.colorScheme.surface, CircleShape)
+          .border(
+            width = 1.dp,
+            color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+            shape = CircleShape,
+          ),
+      contentAlignment = Alignment.Center,
+    ) {
+      if (selected) {
+        Box(
+          modifier =
+            Modifier
+              .size(10.dp)
+              .background(MaterialTheme.colorScheme.onSurface, CircleShape)
+        )
+      }
+    }
+    Text(
+      status.label,
+      style =
+        MaterialTheme.typography.bodyMedium.copy(
+          fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+        ),
+    )
+  }
 }
 
 @Composable
