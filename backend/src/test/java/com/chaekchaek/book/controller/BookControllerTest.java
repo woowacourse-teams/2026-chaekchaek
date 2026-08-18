@@ -10,12 +10,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.snippet.Attributes.key;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -61,7 +59,6 @@ class BookControllerTest {
 
     private static final String BOOK_SEARCH_SUMMARY = "도서 검색";
     private static final String BOOK_SEARCH_DESCRIPTION = "도서명과 페이지 번호로 도서를 검색한다";
-    private static final String BOOK_RESOLVE_SUMMARY = "ISBN13으로 도서 등록 또는 조회";
     private static final String BOOK_DETAIL_SUMMARY = "도서 상세 조회";
 
     private static final FieldDescriptor[] BOOK_SEARCH_RESPONSE_FIELDS = {
@@ -202,38 +199,6 @@ class BookControllerTest {
     }
 
     @Test
-    @DisplayName("유효한 ISBN13이면 도서를 등록하거나 조회한다")
-    void should_ReturnBookDetailResponse_When_ResolvingValidIsbn13() throws Exception {
-        // given
-        BookDetailResponse response = bookDetailResponse();
-        when(bookService.resolve("9788925568683")).thenReturn(response);
-
-        // when & then
-        mockMvc.perform(post("/api/v1/books/resolve")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"isbn13\":\"9788925568683\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.bookId").value(42))
-                .andExpect(jsonPath("$.averageRating").value(4.3))
-                .andDo(document(
-                        "book-resolve",
-                        requestFields(fieldWithPath("isbn13").type(JsonFieldType.STRING)
-                                .description("체크섬이 유효한 13자리 ISBN")),
-                        responseFields(BOOK_DETAIL_RESPONSE_FIELDS),
-                        resource(ResourceSnippetParameters.builder()
-                                .summary(BOOK_RESOLVE_SUMMARY)
-                                .description("등록된 도서는 바로 조회하고, 미등록 도서는 알라딘에서 조회해 등록한다")
-                                .tag("도서")
-                                .requestFields(fieldWithPath("isbn13").type(JsonFieldType.STRING)
-                                        .description("체크섬이 유효한 13자리 ISBN"))
-                                .responseFields(BOOK_DETAIL_RESPONSE_FIELDS)
-                                .build())
-                ));
-
-        verify(bookService).resolve("9788925568683");
-    }
-
-    @Test
     @DisplayName("등록된 도서 ID면 상세 정보를 반환한다")
     void should_ReturnBookDetailResponse_When_BookExists() throws Exception {
         // given
@@ -257,24 +222,6 @@ class BookControllerTest {
                 ));
 
         verify(bookService).getDetail(42L);
-    }
-
-    @Test
-    @DisplayName("유효하지 않은 ISBN13이면 400 응답을 반환한다")
-    void should_ReturnBadRequest_When_Isbn13IsInvalid() throws Exception {
-        // when & then
-        expectProblemDetail(
-                mockMvc.perform(post("/api/v1/books/resolve")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"isbn13\":\"9788925568684\"}")),
-                HttpStatus.BAD_REQUEST,
-                "INVALID_REQUEST",
-                "요청값이 올바르지 않습니다.",
-                "/api/v1/books/resolve"
-        ).andDo(problemDetailDocument("book-resolve-invalid-request", BOOK_RESOLVE_SUMMARY,
-                "ISBN13 요청값이 올바르지 않다"));
-
-        verifyNoInteractions(bookService);
     }
 
     @Test

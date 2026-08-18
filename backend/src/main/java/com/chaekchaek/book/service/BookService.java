@@ -12,14 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class BookService {
 
-    private final BookResolver bookResolver;
     private final BookRepository bookRepository;
     private final BookDetailAssembler bookDetailAssembler;
-
-    public BookDetailResponse resolve(String isbn13) {
-        Book resolvedBook = bookResolver.resolve(isbn13);
-        return bookDetailAssembler.assemble(getDetailBook(resolvedBook.getId()));
-    }
 
     @Transactional(readOnly = true)
     public BookDetailResponse getDetail(long bookId) {
