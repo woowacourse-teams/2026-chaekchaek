@@ -5,7 +5,6 @@ import com.chaekchaek.auth.token.cookie.AuthCookieProperties;
 import com.chaekchaek.auth.token.refresh.RefreshTokenProperties;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.security.SecureRandom;
-import java.time.Clock;
 import java.util.Base64;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -62,11 +61,6 @@ public class TokenConfig {
         decoder.setJwtValidator(validator);
 
         return decoder;
-    }
-
-    @Bean
-    Clock clock() {
-        return Clock.systemUTC();
     }
 
     @Bean
