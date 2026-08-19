@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import type { ChangeEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import type { ChangeEvent, MouseEvent } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import { Layout } from '@chaekchaek/design-system';
 import { Header } from '@chaekchaek/design-system';
@@ -17,12 +17,14 @@ import { Input } from '@chaekchaek/design-system';
 import { Pagination } from '@chaekchaek/design-system';
 
 import { getBooks } from '@/services/apis/books/repository';
+import { postLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
+import { useExecute } from '@/services/core/useExecute';
 
 export const BooksPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const keywordQuery = searchParams.get('query');
-  const defaultPage = searchParams.get('page') ?? 1;
+  const keywordQuery = searchParams.get('query') ?? '';
+  const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
 
   const [query, setQuery] = useState(() => keywordQuery ?? '');
   const [page, setPage] = useState(() => Number(defaultPage) ?? 1);
@@ -49,7 +51,8 @@ export const BooksPage = () => {
   };
 
   const getBooksLoadData = useCallback(async () => {
-    return await getBooks({ page: 1, query });
+    if (!keywordQuery.length) return null;
+    return await getBooks({ page: defaultPage, query: keywordQuery });
   }, [keywordQuery, defaultPage]);
 
   const {
@@ -57,6 +60,18 @@ export const BooksPage = () => {
   } = useLoadData({
     queryFn: getBooksLoadData,
   });
+
+  const navigation = useNavigate();
+  const handleMove = (isbn: string) => {
+    navigation(`/books/${isbn}`);
+  };
+
+  const { mutate } = useExecute({
+    executeFn: postLibrary,
+  });
+  const handleRegisterLibrary = async (isbn: string) => {
+    await mutate({ isbn13: isbn, status: 'READING' });
+  };
 
   return (
     <Layout>
@@ -86,7 +101,7 @@ export const BooksPage = () => {
           </Split.Side>
           <Split.Content>
             <Title level="main" trailing={<></>}>
-              '마션' 검색 결과
+              '{keywordQuery}' 검색 결과
             </Title>
             <List>
               {!!data?.items.length &&
@@ -94,7 +109,16 @@ export const BooksPage = () => {
                   return (
                     <List.Item>
                       <List.Item.Leading>
-                        <ImgBox img={item.coverImageUrl} />
+                        <a
+                          href="#"
+                          onClick={(e: MouseEvent<HTMLAnchorElement>) => {
+                            e.preventDefault();
+
+                            handleMove(item.isbn13);
+                          }}
+                        >
+                          <ImgBox img={item.coverImageUrl} />
+                        </a>
                       </List.Item.Leading>
                       <List.Item.Content
                         title={item.title}
@@ -107,7 +131,14 @@ export const BooksPage = () => {
                             댓글 {item.commentCount}
                           </Button>
                         )}
-                        <Button variant="primary">읽는 중 시작</Button>
+                        <Button
+                          variant="primary"
+                          onClick={() => {
+                            handleRegisterLibrary(item?.isbn13);
+                          }}
+                        >
+                          읽는 중 시작
+                        </Button>
                       </List.Item.Trailing>
                     </List.Item>
                   );

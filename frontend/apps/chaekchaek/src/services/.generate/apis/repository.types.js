@@ -8,15 +8,17 @@ export const component = (name, endPoint) =>
       const key = name;
       const upperKey = name.charAt(0).toUpperCase() + name.slice(1);
 
-      const obj = endPointValue.parameters.reduce((acc, parameter) => {
+      const obj = endPointValue.parameters?.reduce((acc, parameter) => {
         const type = getType(parameter.schema.type);
         acc[parameter.name] = type;
         return acc;
       }, {});
 
-      const requestData = endPointValue.requestBody?.content['application/json'].schema.properties;
+      const requestData =
+        endPointValue.requestBody?.content['application/json']?.schema.properties ||
+        endPointValue.requestBody?.content['application/json;charset=UTF-8']?.schema.properties;
 
-      const responseData = endPointValue.responses[200].content['application/json'].schema;
+      const responseData = endPointValue.responses[200]?.content?.['application/json'].schema;
 
       const suffixs = {
         get: 'params',
@@ -29,7 +31,7 @@ export const component = (name, endPoint) =>
       const upperSuffix = suffix.charAt(0).toUpperCase() + suffix.slice(1);
 
       return `export interface ${upperMethod}${upperKey}${upperSuffix} {
-  ${Object.entries(obj)
+  ${Object.entries(obj || {})
     .filter(([key, value]) => value)
     .map(([key, value]) => `${key}: ${value}`)
     .join(';')}
@@ -42,6 +44,6 @@ export const component = (name, endPoint) =>
   }
 }
 
-export type ${upperMethod}${upperKey} = (${suffix}: ${upperMethod}${upperKey}${upperSuffix}) => Promise<${getResponseData(responseData)}>;`;
+export type ${upperMethod}${upperKey} = (${suffix}: ${upperMethod}${upperKey}${upperSuffix}) => Promise<${getResponseData(responseData || {})}>;`;
     })
     .join('')}`;

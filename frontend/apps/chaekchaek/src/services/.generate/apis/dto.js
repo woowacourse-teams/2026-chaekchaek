@@ -12,7 +12,7 @@ ${Object.entries(endPoint)
     const key = name;
     const upperKey = name.charAt(0).toUpperCase() + name.slice(1);
 
-    const requestParameter = endPointValue.parameters.reduce(
+    const requestParameter = endPointValue.parameters?.reduce(
       (acc, parameter) => {
         const type = getType(parameter.schema.type);
 
@@ -27,12 +27,14 @@ ${Object.entries(endPoint)
       { pathParams: {}, query: {} },
     );
 
-    const requestData = endPointValue.requestBody?.content['application/json'].schema.properties;
+    const requestData =
+      endPointValue.requestBody?.content['application/json']?.schema.properties ||
+      endPointValue.requestBody?.content['application/json;charset=UTF-8']?.schema.properties;
 
-    const responseData = endPointValue.responses[200].content['application/json'].schema;
+    const responseData = endPointValue.responses[200]?.content['application/json']?.schema;
 
     return `export interface ${upperMethod}${upperKey}RequestDto {
-${Object.entries(requestParameter)
+${Object.entries(requestParameter || {})
   .map(([parameterIn, parameterValue]) => {
     if (parameterIn === 'pathParams' && Object.keys(parameterValue).length !== 0)
       return `
@@ -58,7 +60,7 @@ ${Object.entries(requestParameter)
 }
 
 export type ${upperMethod}${upperKey}ResponseDto = ResponseDto<
-  ${getResponseData(responseData)}
+  ${getResponseData(responseData || {})}
 >;
 `;
   })
