@@ -2,6 +2,7 @@ package com.chamsae.chaekchaek
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,10 +34,14 @@ import com.chamsae.chaekchaek.ui.archive.ArchiveRoute
 import com.chamsae.chaekchaek.ui.bookdetail.BookDetailArgs
 import com.chamsae.chaekchaek.ui.search.SearchRoute
 
-private enum class RootTab(val label: String, @DrawableRes val icon: Int) {
-  Home("홈", R.drawable.ic_tab_home),
-  Discover("발견", R.drawable.ic_tab_discover),
-  Shelf("내 서재", R.drawable.ic_tab_shelf),
+private enum class RootTab(
+  val label: String,
+  @param:DrawableRes val selectedIcon: Int,
+  @param:DrawableRes val unselectedIcon: Int,
+) {
+  Home("홈", R.drawable.ic_tab_home_filled, R.drawable.ic_tab_home_outline),
+  Discover("발견", R.drawable.ic_tab_discover_filled, R.drawable.ic_tab_discover_outline),
+  Shelf("내 서재", R.drawable.ic_tab_shelf_filled, R.drawable.ic_tab_shelf_outline),
 }
 
 @Composable
@@ -110,6 +116,7 @@ private fun ChaekBottomBar(
     ) {
       RootTab.entries.forEach { tab ->
         val selected = selectedTab == tab
+        val interactionSource = remember(tab) { MutableInteractionSource() }
         Box(
           modifier = Modifier
             .width(64.dp)
@@ -118,11 +125,13 @@ private fun ChaekBottomBar(
               selected = selected,
               onClick = { onTabSelected(tab) },
               role = Role.Tab,
+              interactionSource = interactionSource,
+              indication = null,
             ),
           contentAlignment = Alignment.Center,
         ) {
           Icon(
-            painter = androidx.compose.ui.res.painterResource(tab.icon),
+            painter = androidx.compose.ui.res.painterResource(if (selected) tab.selectedIcon else tab.unselectedIcon),
             contentDescription = tab.label,
             modifier = Modifier.size(24.dp),
             tint = if (selected) {
