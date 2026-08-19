@@ -46,6 +46,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          FRONTEND_BASE_URL: ${{ secrets.FRONTEND_BASE_URL }}
         run: |
           docker stop chaekchaek-backend 2>/dev/null || true
           docker rm chaekchaek-backend 2>/dev/null || true
@@ -60,5 +61,6 @@ jobs:
             -e JWT_SECRET="$JWT_SECRET" \
             -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
             -e GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+            -e FRONTEND_BASE_URL="$FRONTEND_BASE_URL" \
             chaekchaek-backend
           docker image prune -f
