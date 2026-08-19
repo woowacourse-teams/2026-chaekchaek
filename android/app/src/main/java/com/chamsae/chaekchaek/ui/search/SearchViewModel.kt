@@ -25,26 +25,16 @@ sealed interface SearchUiState {
   data class Error(val message: String) : SearchUiState
 }
 
-enum class SearchSort(val label: String) {
-  Latest("최신순"),
-  Commented("댓글순"),
-}
-
 class SearchViewModel(
   private val bookSearchRepository: BookSearchRepository,
   private val libraryRepository: LibraryRepository,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
   val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
-  private val _sort = MutableStateFlow(SearchSort.Latest)
-  val sort: StateFlow<SearchSort> = _sort.asStateFlow()
   private var searchJob: Job? = null
-  private var originalResults = emptyList<BookSearchResult>()
 
   fun clear() {
     searchJob?.cancel()
-    originalResults = emptyList()
-    _sort.value = SearchSort.Latest
     _uiState.value = SearchUiState.Idle
   }
 
@@ -56,11 +46,11 @@ class SearchViewModel(
     searchJob = viewModelScope.launch {
       _uiState.value =
         try {
-          originalResults = bookSearchRepository.search(trimmed)
-          if (originalResults.isEmpty()) {
+          val results = bookSearchRepository.search(trimmed).sortedByDescending { it.year.toIntOrNull() ?: Int.MIN_VALUE }
+          if (results.isEmpty()) {
             SearchUiState.Empty
           } else {
-            SearchUiState.Success(sortSearchResults(originalResults, _sort.value))
+            SearchUiState.Success(results)
           }
         } catch (e: CancellationException) {
           throw e
@@ -70,23 +60,7 @@ class SearchViewModel(
     }
   }
 
-  fun selectSort(sort: SearchSort) {
-    _sort.value = sort
-    if (_uiState.value is SearchUiState.Success) {
-      _uiState.value = SearchUiState.Success(sortSearchResults(originalResults, sort))
-    }
-  }
-
   fun register(book: BookSearchResult) {
     libraryRepository.add(book.toArchivedBook())
   }
 }
-
-internal fun sortSearchResults(
-  results: List<BookSearchResult>,
-  sort: SearchSort,
-): List<BookSearchResult> =
-  when (sort) {
-    SearchSort.Latest -> results.sortedByDescending { it.year.toIntOrNull() ?: Int.MIN_VALUE }
-    SearchSort.Commented -> results.sortedByDescending(BookSearchResult::noteCount)
-  }

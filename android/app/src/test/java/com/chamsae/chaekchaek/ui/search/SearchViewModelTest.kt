@@ -43,33 +43,6 @@ class SearchViewModelTest {
     }
 
   @Test
-  fun `sort selection orders results by comment count descending`() =
-    runTest {
-      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-      try {
-        val books = listOf(
-          book("중간 책", "2023").copy(noteCount = 3),
-          book("새 책", "2026").copy(noteCount = 8),
-          book("오래된 책", "2021").copy(noteCount = 1),
-        )
-        val viewModel = SearchViewModel(
-          bookSearchRepository = BookSearchRepository { books },
-          libraryRepository = FakeLibraryRepository(),
-        )
-
-        viewModel.search("책")
-        advanceUntilIdle()
-        assertEquals(listOf("새 책", "중간 책", "오래된 책"), (viewModel.uiState.value as SearchUiState.Success).results.map { it.title })
-
-        viewModel.selectSort(SearchSort.Commented)
-        assertEquals(listOf("새 책", "중간 책", "오래된 책"), (viewModel.uiState.value as SearchUiState.Success).results.map { it.title })
-        assertEquals(SearchSort.Commented, viewModel.sort.value)
-      } finally {
-        Dispatchers.resetMain()
-      }
-    }
-
-  @Test
   fun `register delegates the search result to the library repository`() {
     val libraryRepository = FakeLibraryRepository()
     val viewModel = SearchViewModel(BookSearchRepository { emptyList() }, libraryRepository)
