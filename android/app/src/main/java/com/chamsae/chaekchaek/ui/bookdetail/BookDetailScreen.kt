@@ -224,19 +224,23 @@ fun BookDetailScreen(
   var showPageSheet by rememberSaveable { mutableStateOf(false) }
   var showReviewSheet by rememberSaveable { mutableStateOf(false) }
   val snackbarHostState = remember { SnackbarHostState() }
-  var pendingAction by remember { mutableStateOf<(suspend () -> Unit)?>(null) }
-  fun execute(action: suspend () -> Unit) {
+  var pendingAction by remember { mutableStateOf<Pair<String, suspend () -> Unit>?>(null) }
+  fun execute(operation: String, action: suspend () -> Unit) {
     scope.launch {
-      runCatching { action() }.onFailure { snackbarHostState.showSnackbar("요청을 처리하지 못했어요. 다시 시도해 주세요.") }
+      runCatching { action() }.onFailure { error ->
+        val httpStatus = Regex("\\b[1-5]\\d{2}\\b").find(error.message.orEmpty())?.value
+        Log.w("ChaekchaekApi", "Book detail $operation failed: ${error::class.simpleName}, HTTP ${httpStatus ?: "N/A"}")
+        snackbarHostState.showSnackbar("요청을 처리하지 못했어요. 다시 시도해 주세요.")
+      }
     }
   }
-  fun runAuthenticated(action: suspend () -> Unit) {
+  fun runAuthenticated(operation: String, action: suspend () -> Unit) {
     if (!signedIn) {
-      pendingAction = action
+      pendingAction = operation to action
       showLoginSheet = true
       return
     }
-    execute(action)
+    execute(operation, action)
   }
 
   Box(
@@ -247,14 +251,14 @@ fun BookDetailScreen(
       state = listState,
       contentPadding = PaddingValues(bottom = 82.dp),
     ) {
-      item { ArchiveStage(book, onBack) { runAuthenticated(onAddToLibrary) } }
+      item { ArchiveStage(book, onBack) { runAuthenticated("보관") { onAddToLibrary() } } }
       item { BookSummary(book, averageRating) }
       item {
         ReadingRecord(
           book = book,
           record = myRecord,
           onRate = { if (signedIn) showRatingDialog = true else showLoginSheet = true },
-          onStatusChange = { status -> runAuthenticated { onStatusChange(status) } },
+          onStatusChange = { status -> runAuthenticated("독서 상태 변경") { onStatusChange(status) } },
           onPageInput = { if (signedIn) showPageSheet = true else showLoginSheet = true },
         )
       }
@@ -275,8 +279,8 @@ fun BookDetailScreen(
             }
           },
           onSortChange = onReviewSortChange,
-          onLike = { reviewId -> runAuthenticated { onReviewLike(reviewId) } },
-          onReply = { reviewId, content -> runAuthenticated { onReplyCreate(reviewId, content) } },
+          onLike = { reviewId -> runAuthenticated("감상 반응") { onReviewLike(reviewId) } },
+          onReply = { reviewId, content -> runAuthenticated("답글 작성") { onReplyCreate(reviewId, content) } },
         )
       }
     }
@@ -311,7 +315,7 @@ fun BookDetailScreen(
             .onSuccess {
               if (openMineAfterLogin) onReviewScopeChange(ReviewScope.MINE)
               openMineAfterLogin = false
-              pendingAction?.let(::execute)
+              pendingAction?.let { execute(it.first, it.second) }
               pendingAction = null
               showLoginSheet = false
             }
@@ -333,7 +337,7 @@ fun BookDetailScreen(
       recentRatings = emptyList(),
       onDismiss = { showRatingDialog = false },
       onSave = { rating ->
-        runAuthenticated { onRatingSave(rating) }
+        runAuthenticated("별점 저장") { onRatingSave(rating) }
         showRatingDialog = false
       },
     )
@@ -344,7 +348,7 @@ fun BookDetailScreen(
       totalPages = book.totalPages,
       onDismiss = { showPageSheet = false },
       onSave = { page ->
-        runAuthenticated { onPageSave(page) }
+        runAuthenticated("쪽수 저장") { onPageSave(page) }
         showPageSheet = false
       },
     )
@@ -353,7 +357,7 @@ fun BookDetailScreen(
     ReviewInputSheet(
       onDismiss = { showReviewSheet = false },
       onSave = { content ->
-        runAuthenticated { onReviewCreate(content) }
+        runAuthenticated("감상 작성") { onReviewCreate(content) }
         showReviewSheet = false
       },
     )
