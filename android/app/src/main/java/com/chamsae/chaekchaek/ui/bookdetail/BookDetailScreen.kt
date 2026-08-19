@@ -85,6 +85,10 @@ import com.chamsae.chaekchaek.theme.ChaekInkSecondary
 import com.chamsae.chaekchaek.theme.ChaekSurface
 import com.chamsae.chaekchaek.ui.home.coverResource
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import java.util.UUID
 
 @Composable
@@ -457,7 +461,7 @@ private fun ReviewsSection(reflections: List<BookReflection>) {
     reflections.forEach { reflection ->
       ReviewCard(
         name = if (reflection.anonymous) "익명의 참새" else reflection.authorName.ifBlank { "참새" },
-        date = "방금 전",
+        date = formatReflectionDate(reflection.createdAt),
         position =
           listOfNotNull(
             reflection.page?.let { "p.${it}까지" },
@@ -495,6 +499,12 @@ private fun ReviewsSection(reflections: List<BookReflection>) {
     )
   }
 }
+
+internal fun formatReflectionDate(createdAt: Long): String =
+  DateTimeFormatter
+    .ofPattern("yyyy.MM.dd", Locale.KOREA)
+    .withZone(ZoneId.systemDefault())
+    .format(Instant.ofEpochMilli(createdAt))
 
 @Composable
 private fun ReviewCard(

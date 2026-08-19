@@ -816,6 +816,7 @@ internal fun coverResource(coverId: String): Int =
 private fun HomeWithReadingBookPreview() {
     HomePreview(
         ReadingBookUiModel(
+            bookId = BookId("bk_017"),
             title = "역병",
             coverId = "cover-17",
             currentPage = 132,
