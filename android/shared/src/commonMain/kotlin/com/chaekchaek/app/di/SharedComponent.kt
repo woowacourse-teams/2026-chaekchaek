@@ -1,8 +1,6 @@
 package com.chaekchaek.app.di
 
-import com.chaekchaek.app.data.datasource.FeedDataSource
-import com.chaekchaek.app.data.fake.FeedFakeDataSource
-import com.chaekchaek.app.data.repository.FeedRepositoryImpl
+import com.chaekchaek.app.data.remote.PopularBooksRemoteRepository
 import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import me.tatarka.inject.annotations.Component
@@ -22,8 +20,5 @@ abstract class SharedComponent {
     fun clock(): Clock = Clock.System
 
     @Provides
-    fun feedDataSource(impl: FeedFakeDataSource): FeedDataSource = impl
-
-    @Provides
-    fun feedRepository(impl: FeedRepositoryImpl): FeedRepository = impl
+    fun feedRepository(): FeedRepository = PopularBooksRemoteRepository()
 }
