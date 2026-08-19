@@ -16,9 +16,25 @@ jobs:
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          for section in '구현 내용' '디자인' '미구현·제외' '검증'; do
-            if ! printf '%s\n' "$PR_BODY" | grep -Fxq "## $section"; then
-              echo "누락된 PR 템플릿 섹션: ## $section"
-              exit 1
-            fi
-          done
+          python3 - <<'PY'
+          import os
+          import re
+          import sys
+
+          body = os.environ.get("PR_BODY", "")
+          sections = ("구현 내용", "디자인", "미구현·제외", "검증")
+          invalid = []
+
+          for section in sections:
+              match = re.search(
+                  rf"(?ms)^## {re.escape(section)}[ \t]*$\n(.*?)(?=^## |\Z)", body
+              )
+              content = re.sub(r"<!--.*?-->", "", match.group(1)) if match else ""
+              if not re.search(r"\S", content):
+                  invalid.append(section)
+
+          if invalid:
+              print("작성 또는 누락된 PR 템플릿 섹션: " + ", ".join(invalid))
+              print("화면 변경이 없는 PR의 디자인 섹션에는 '화면 변경 없음'을 작성하세요.")
+              sys.exit(1)
+          PY
