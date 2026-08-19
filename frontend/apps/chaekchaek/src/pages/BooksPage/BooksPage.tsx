@@ -21,8 +21,8 @@ import { useLoadData } from '@/services/core/useLoadData';
 
 export const BooksPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const keywordQuery = searchParams.get('query');
-  const defaultPage = searchParams.get('page') ?? 1;
+  const keywordQuery = searchParams.get('query') ?? '';
+  const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
 
   const [query, setQuery] = useState(() => keywordQuery ?? '');
   const [page, setPage] = useState(() => Number(defaultPage) ?? 1);
@@ -49,7 +49,8 @@ export const BooksPage = () => {
   };
 
   const getBooksLoadData = useCallback(async () => {
-    return await getBooks({ page: 1, query });
+    if (!keywordQuery.length) return null;
+    return await getBooks({ page: defaultPage, query: keywordQuery });
   }, [keywordQuery, defaultPage]);
 
   const {
