@@ -22,4 +22,10 @@ class SpoilerGuardDialogTest {
     assertTrue(shouldLockReflection(currentPage = 80, reflectionPage = 160))
     assertFalse(shouldLockReflection(currentPage = 80, reflectionPage = null))
   }
+
+  @Test
+  fun `previewed reflection is unlocked without unlocking another reflection on the same page`() {
+    assertFalse(shouldLockReflection(currentPage = 80, reflectionPage = 160, previewed = true))
+    assertTrue(shouldLockReflection(currentPage = 80, reflectionPage = 160, previewed = false))
+  }
 }

@@ -174,8 +174,10 @@ fun BookDetailScreen(
     }
   }
   var showReflectionSheet by rememberSaveable { mutableStateOf(false) }
+  var pendingReviewId by rememberSaveable(book.id) { mutableStateOf<String?>(null) }
   var pendingReviewPage by rememberSaveable(book.id) { mutableStateOf<Int?>(null) }
   var previewedThroughPage by rememberSaveable(book.id) { mutableIntStateOf(-1) }
+  var previewedReflectionIds by rememberSaveable(book.id) { mutableStateOf(emptySet<String>()) }
   val recordedCurrentPage = archivedBook?.currentPage ?: book.currentPage
   val currentPage = maxOf(recordedCurrentPage, previewedThroughPage)
 
@@ -197,7 +199,11 @@ fun BookDetailScreen(
           reflections = reflections,
           replies = replies,
           currentPage = currentPage,
-          onOpenLockedReview = { pendingReviewPage = it },
+          previewedReflectionIds = previewedReflectionIds,
+          onOpenLockedReview = { id, page ->
+            pendingReviewId = id
+            pendingReviewPage = page
+          },
           onSubmitReply = onSubmitReply,
         )
       }
@@ -220,14 +226,19 @@ fun BookDetailScreen(
         currentPage = recordedCurrentPage,
         spoilerPage = spoilerPage,
         totalPages = book.totalPages,
-        onDismiss = { pendingReviewPage = null },
+        onDismiss = {
+          pendingReviewId = null
+          pendingReviewPage = null
+        },
         onUpdateAndRead = { page ->
           onUpdateProgress(page)
           previewedThroughPage = maxOf(previewedThroughPage, page)
+          pendingReviewId = null
           pendingReviewPage = null
         },
         onReadAnyway = {
-          previewedThroughPage = maxOf(previewedThroughPage, spoilerPage)
+          pendingReviewId?.let { previewedReflectionIds += it }
+          pendingReviewId = null
           pendingReviewPage = null
         },
       )
@@ -491,7 +502,8 @@ private fun ReviewsSection(
   reflections: List<BookReflection>,
   replies: List<ReflectionReply>,
   currentPage: Int,
-  onOpenLockedReview: (Int) -> Unit,
+  previewedReflectionIds: Set<String>,
+  onOpenLockedReview: (String, Int) -> Unit,
   onSubmitReply: (reflectionId: String, body: String) -> Unit,
 ) {
   // ponytail: Pencil 샘플 데이터 - 상세/감상 API가 연결되면 저장소 결과로 교체한다.
@@ -548,8 +560,8 @@ private fun ReviewsSection(
     Spacer(Modifier.height(12.dp))
     reflections.forEach { reflection ->
       val page = reflection.page
-      if (page != null && shouldLockReflection(currentPage, page)) {
-        LockedReview(page = page, onOpen = { onOpenLockedReview(page) })
+      if (page != null && shouldLockReflection(currentPage, page, reflection.id in previewedReflectionIds)) {
+        LockedReview(page = page, onOpen = { onOpenLockedReview(reflection.id, page) })
       } else {
         ReviewCard(
           name = if (reflection.anonymous) "익명의 참새" else reflection.authorName.ifBlank { "참새" },
@@ -574,7 +586,7 @@ private fun ReviewsSection(
       }
       Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand))
     }
-    if (!shouldLockReflection(currentPage, 80)) {
+    if (!shouldLockReflection(currentPage, 80, firstSampleId in previewedReflectionIds)) {
       ReviewCard(
         name = "참새 1204 (익명)",
         date = "2026.08.05",
@@ -594,10 +606,10 @@ private fun ReviewsSection(
         onReplySubmit = { submitReply(firstSampleId) },
       )
     } else {
-      LockedReview(page = 80, onOpen = { onOpenLockedReview(80) })
+      LockedReview(page = 80, onOpen = { onOpenLockedReview(firstSampleId, 80) })
     }
     Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand))
-    if (!shouldLockReflection(currentPage, 160)) {
+    if (!shouldLockReflection(currentPage, 160, secondSampleId in previewedReflectionIds)) {
       ReviewCard(
         name = "짹짹짹",
         date = "2026.08.03",
@@ -614,13 +626,16 @@ private fun ReviewsSection(
         onReplySubmit = { submitReply(secondSampleId) },
       )
     } else {
-      LockedReview(page = 160, onOpen = { onOpenLockedReview(160) })
+      LockedReview(page = 160, onOpen = { onOpenLockedReview(secondSampleId, 160) })
     }
   }
 }
 
-internal fun shouldLockReflection(currentPage: Int, reflectionPage: Int?): Boolean =
-  reflectionPage != null && currentPage < reflectionPage
+internal fun shouldLockReflection(
+  currentPage: Int,
+  reflectionPage: Int?,
+  previewed: Boolean = false,
+): Boolean = !previewed && reflectionPage != null && currentPage < reflectionPage
 
 @Composable
 private fun LockedReview(page: Int, onOpen: () -> Unit) {
