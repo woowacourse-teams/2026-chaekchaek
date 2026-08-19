@@ -1,3 +1,7 @@
+import { useState } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
 import { Layout } from '@chaekchaek/design-system';
 import { Header } from '@chaekchaek/design-system';
 import { Main } from '@chaekchaek/design-system';
@@ -19,6 +23,24 @@ const getBooksLoadData = async () => {
 };
 
 export const BooksPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [query, setQuery] = useState(() => searchParams.get('query') ?? '');
+
+  const handleChangeQuery = (e: ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+  };
+
+  const handleKeyDownQuery = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('query', query);
+        return next;
+      });
+    }
+  };
+
   const {
     status: { data },
   } = useLoadData({
@@ -36,7 +58,12 @@ export const BooksPage = () => {
               orientation="vertical"
               trailing={
                 <>
-                  <Input block />
+                  <Input
+                    block
+                    value={query}
+                    onChange={handleChangeQuery}
+                    onKeyDown={handleKeyDownQuery}
+                  />
                 </>
               }
             >
