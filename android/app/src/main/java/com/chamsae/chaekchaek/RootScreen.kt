@@ -2,6 +2,7 @@ package com.chamsae.chaekchaek
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -109,6 +111,7 @@ private fun ChaekBottomBar(
     ) {
       RootTab.entries.forEach { tab ->
         val selected = selectedTab == tab
+        val interactionSource = remember(tab) { MutableInteractionSource() }
         Box(
           modifier = Modifier
             .width(64.dp)
@@ -117,6 +120,8 @@ private fun ChaekBottomBar(
               selected = selected,
               onClick = { onTabSelected(tab) },
               role = Role.Tab,
+              interactionSource = interactionSource,
+              indication = null,
             ),
           contentAlignment = Alignment.Center,
         ) {
