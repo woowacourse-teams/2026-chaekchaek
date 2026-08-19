@@ -11,7 +11,20 @@ import { ImgBox } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 
+import { getBooks } from '@/services/apis/books/repository';
+import { useLoadData } from '@/services/core/useLoadData';
+
+const getBooksLoadData = async () => {
+  return await getBooks({ page: 1, query: '마션' });
+};
+
 export const BooksPage = () => {
+  const {
+    status: { data },
+  } = useLoadData({
+    queryFn: getBooksLoadData,
+  });
+
   return (
     <Layout>
       <Header />
@@ -43,23 +56,29 @@ export const BooksPage = () => {
               '마션' 검색 결과
             </Title>
             <List>
-              {Array.from({ length: 5 }).map(() => {
-                return (
-                  <List.Item>
-                    <List.Item.Leading>
-                      <ImgBox img={''} />
-                    </List.Item.Leading>
-                    <List.Item.Content
-                      title="마션"
-                      content="앤디 위어 · 박아람 옮김"
-                      description="알에이치코리아 · SF · 2026 · 308쪽"
-                    />
-                    <List.Item.Trailing>
-                      <Button>Button</Button>
-                    </List.Item.Trailing>
-                  </List.Item>
-                );
-              })}
+              {!!data?.items.length &&
+                data?.items.map((item) => {
+                  return (
+                    <List.Item>
+                      <List.Item.Leading>
+                        <ImgBox img={item.coverImageUrl} />
+                      </List.Item.Leading>
+                      <List.Item.Content
+                        title={item.title}
+                        content={item.authors.join(' · ')}
+                        description={`${item.publisher} · ${item.publishedDate}`}
+                      />
+                      <List.Item.Trailing>
+                        {item.commentCount && (
+                          <Button variant="ghost" size="small">
+                            댓글 {item.commentCount}
+                          </Button>
+                        )}
+                        <Button variant="primary">읽는 중 시작</Button>
+                      </List.Item.Trailing>
+                    </List.Item>
+                  );
+                })}
             </List>
           </Split.Content>
         </Split>
