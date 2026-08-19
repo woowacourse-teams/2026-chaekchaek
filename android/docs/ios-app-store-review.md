@@ -3,23 +3,14 @@
 ## 현재 구현 범위
 
 - iOS 17 이상, iPhone 전용 SwiftUI 앱
-- 로그인 없이 알라딘 Open API 도서 검색
+- 로그인 없이 첵췍 도서 검색 API 사용
 - 독서 상태를 선택해 로컬 서재에 추가, 변경, 삭제
 - `UserDefaults`에 서재 기록 저장
 - 앱 안에서 개인정보처리방침과 문의 링크 제공
 - 번들 ID `com.chamsae.chaekchaek`, 버전 `1.0`, 빌드 `1`
 
-검색과 서재의 KMP 이전은 하지 않았다. 현재 공유 모듈에는 이 기능이 없고 Android 앱에만
-구현되어 있어, 첫 심사 빌드에서는 SwiftUI와 Foundation만 사용한다. 제품 기능을 iOS와 Android가
-공동으로 확장할 때 공유 모듈 이전을 별도 작업으로 진행한다.
-
-## 로컬 설정
-
-1. `iosApp/Configuration/Secrets.xcconfig.example`을 `Secrets.xcconfig`로 복사한다.
-2. `ALADIN_TTB_KEY`에 실제 키를 넣는다.
-3. 실제 키가 든 `Secrets.xcconfig`는 커밋하지 않는다.
-
-키가 없으면 앱은 실행되지만 검색 시 설정 안내 오류를 표시한다.
+검색은 앱에 비밀값을 포함하지 않고 첵췍 API를 호출한다. 서재 기록은 SwiftUI 앱에서 로컬로
+관리한다.
 
 ## 개발자 계정 등록 후 할 일
 

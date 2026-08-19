@@ -14,7 +14,7 @@ final class AppModel {
 
     private static let storageKey = "library.books"
     private let defaults: UserDefaults
-    private let searchClient: AladinBookSearchClient
+    private let searchClient: BookSearchClient
 
     var selectedTab = 0
     var query = ""
@@ -23,7 +23,7 @@ final class AppModel {
 
     init(
         defaults: UserDefaults = .standard,
-        searchClient: AladinBookSearchClient = AladinBookSearchClient()
+        searchClient: BookSearchClient = BookSearchClient()
     ) {
         self.defaults = defaults
         self.searchClient = searchClient
@@ -64,6 +64,7 @@ final class AppModel {
         guard let index = library.firstIndex(where: { $0.id == libraryBook.id }) else { return }
         library[index].status = status
         library[index].recordedAt = Date()
+        library.insert(library.remove(at: index), at: 0)
         persist()
     }
 

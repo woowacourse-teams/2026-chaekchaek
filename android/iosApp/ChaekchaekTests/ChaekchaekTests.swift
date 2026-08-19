@@ -2,14 +2,14 @@ import XCTest
 @testable import Chaekchaek
 
 final class ChaekchaekTests: XCTestCase {
-    func testAladinResponseMapsFlexiblePageAndCategory() throws {
-        let data = Data(#"{"item":[{"title":"테스트 책","author":"참새","publisher":"첵췍","isbn13":"123","categoryName":"국내도서>소설","itemPage":"321"}]}"#.utf8)
+    func testServerSearchResponseMapsBook() throws {
+        let data = Data(#"{"items":[{"title":"테스트 책","coverImageUrl":"https://example.com/cover.jpg","authors":["참새"],"translators":[],"publishedDate":"2026-08-19","isbn13":"123","category":"국내도서>소설","publisher":"첵췍"}]}"#.utf8)
 
-        let book = try XCTUnwrap(AladinBookSearchClient.decode(data).first)
+        let book = try XCTUnwrap(BookSearchClient.decode(data).first)
 
         XCTAssertEqual(book.id, "123")
         XCTAssertEqual(book.category, "소설")
-        XCTAssertEqual(book.totalPages, 321)
+        XCTAssertEqual(book.author, "참새")
     }
 
     @MainActor
@@ -36,5 +36,21 @@ final class ChaekchaekTests: XCTestCase {
         let reloaded = AppModel(defaults: defaults)
 
         XCTAssertEqual(reloaded.library.first?.status, .reading)
+    }
+
+    @MainActor
+    func testStatusChangeMovesBookToMostRecentPosition() throws {
+        let suiteName = "ChaekchaekTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let first = Book(isbn13: "1", isbn: "", title: "첫 책", author: "참새", publisher: "첵췍", coverURL: nil, category: "소설", publishedAt: "", totalPages: 0, description: "")
+        let second = Book(isbn13: "2", isbn: "", title: "둘째 책", author: "참새", publisher: "첵췍", coverURL: nil, category: "소설", publishedAt: "", totalPages: 0, description: "")
+        let model = AppModel(defaults: defaults)
+        model.save(first, as: .wantToRead)
+        model.save(second, as: .wantToRead)
+
+        model.changeStatus(of: try XCTUnwrap(model.library.last), to: .reading)
+
+        XCTAssertEqual(model.library.first?.id, first.id)
     }
 }
