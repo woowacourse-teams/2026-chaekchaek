@@ -6,6 +6,7 @@ Android 빌드 환경, 릴리스 서명, Google Play 배포 절차는
 ## 개발 문서
 
 - [Android CI 운영 및 학습 기록](docs/android-ci.md) - 자동 검증 범위, 실행 방법, 실패 대응
+- [iOS App Store 심사 준비](docs/ios-app-store-review.md) - 빌드, 서명, 키, 제출 메타데이터
 
 ## 설계·구현 문서
 

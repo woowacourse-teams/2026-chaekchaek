@@ -1,0 +1,494 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3212D5F9818079E21FCAD3C5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D55D6C97221F513AE0BCFAAB /* ContentView.swift */; };
+		330D090DED702E088CCD60C3 /* Book.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D023D25B0D6A79DDD90C5F5 /* Book.swift */; };
+		49C3DD90B496FD45A372EBA0 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F311F1CCAB821332E8980A9 /* Theme.swift */; };
+		4A15FAACE600294DBF52F532 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 19D0BD55F8A3754D36BA743B /* Foundation.framework */; };
+		6AD10E5BA60949CD51D966B4 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 19D0BD55F8A3754D36BA743B /* Foundation.framework */; };
+		6ED143CCB7658FFD45C4B742 /* ChaekchaekApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */; };
+		74D496A28AE8876E8F7BF668 /* ChaekchaekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E4ABD4BA4F5B4E8CA2294BE /* ChaekchaekTests.swift */; };
+		C1D48550D30C0BB273B37351 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */; };
+		EE59C3DAF190F5C9F0E3CC70 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECD69D0CD1F72B8E13904E3 /* AppModel.swift */; };
+		FF331168D03AF9252AA103AA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6E70D11AEAFF647C18D3139 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		68059C471D98CC5150BE8B25 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9A74E89CB29BBA050B1FADB3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8DF42E7328D695A26D759DA7;
+			remoteInfo = Chaekchaek;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		088EB291EEE334B891EA3CA5 /* Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		19D0BD55F8A3754D36BA743B /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		1F311F1CCAB821332E8980A9 /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		5E4ABD4BA4F5B4E8CA2294BE /* ChaekchaekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChaekchaekTests.swift; sourceTree = "<group>"; };
+		67105785D20FB89EB92254CE /* Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		6D023D25B0D6A79DDD90C5F5 /* Book.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Book.swift; sourceTree = "<group>"; };
+		91AA8D77ED3D6DB15210D4BE /* ChaekchaekTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChaekchaekTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chaekchaek.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AECD69D0CD1F72B8E13904E3 /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		D55D6C97221F513AE0BCFAAB /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChaekchaekApp.swift; sourceTree = "<group>"; };
+		F6E70D11AEAFF647C18D3139 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A40A9483AB0C520AF04867C0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A15FAACE600294DBF52F532 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FB1D8635B72AE66B4450069B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6AD10E5BA60949CD51D966B4 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0F60B1BEE392B181F0C49216 /* ChaekchaekTests */ = {
+			isa = PBXGroup;
+			children = (
+				5E4ABD4BA4F5B4E8CA2294BE /* ChaekchaekTests.swift */,
+			);
+			name = ChaekchaekTests;
+			path = ChaekchaekTests;
+			sourceTree = "<group>";
+		};
+		467A3487449985D2D21CE9C8 = {
+			isa = PBXGroup;
+			children = (
+				815571CF2752CE9DE2F6D3B2 /* Products */,
+				5BAC0109D39E54A4486989E6 /* Frameworks */,
+				6902F3A5EFF5404ED83D5423 /* Configuration */,
+				576EECC31BAE32B83DFF5322 /* Chaekchaek */,
+				0F60B1BEE392B181F0C49216 /* ChaekchaekTests */,
+			);
+			sourceTree = "<group>";
+		};
+		576EECC31BAE32B83DFF5322 /* Chaekchaek */ = {
+			isa = PBXGroup;
+			children = (
+				D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */,
+				6D023D25B0D6A79DDD90C5F5 /* Book.swift */,
+				AECD69D0CD1F72B8E13904E3 /* AppModel.swift */,
+				1F311F1CCAB821332E8980A9 /* Theme.swift */,
+				D55D6C97221F513AE0BCFAAB /* ContentView.swift */,
+				F6E70D11AEAFF647C18D3139 /* Assets.xcassets */,
+				16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */,
+			);
+			name = Chaekchaek;
+			path = Chaekchaek;
+			sourceTree = "<group>";
+		};
+		5BAC0109D39E54A4486989E6 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7883D8FF76B43743A8266DC3 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6902F3A5EFF5404ED83D5423 /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				088EB291EEE334B891EA3CA5 /* Debug.xcconfig */,
+				67105785D20FB89EB92254CE /* Release.xcconfig */,
+			);
+			name = Configuration;
+			path = Configuration;
+			sourceTree = "<group>";
+		};
+		7883D8FF76B43743A8266DC3 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				19D0BD55F8A3754D36BA743B /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		815571CF2752CE9DE2F6D3B2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */,
+				91AA8D77ED3D6DB15210D4BE /* ChaekchaekTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8DF42E7328D695A26D759DA7 /* Chaekchaek */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DA00C03C2B99BEFE204BD8AF /* Build configuration list for PBXNativeTarget "Chaekchaek" */;
+			buildPhases = (
+				49B1547F1F85FFF9C4E6196B /* Sources */,
+				FB1D8635B72AE66B4450069B /* Frameworks */,
+				938A8F17E7D9425C7608DAF6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Chaekchaek;
+			productName = Chaekchaek;
+			productReference = AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E467D74FC3CE4235D70EF8C4 /* ChaekchaekTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DB1A8D5DC64EA63F21BFBEB6 /* Build configuration list for PBXNativeTarget "ChaekchaekTests" */;
+			buildPhases = (
+				E52D446097827E5F9990B821 /* Sources */,
+				A40A9483AB0C520AF04867C0 /* Frameworks */,
+				0B99CCD145B75C8464EAEC54 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				91E51FB8D2C01F70DAE39C64 /* PBXTargetDependency */,
+			);
+			name = ChaekchaekTests;
+			productName = ChaekchaekTests;
+			productReference = 91AA8D77ED3D6DB15210D4BE /* ChaekchaekTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9A74E89CB29BBA050B1FADB3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2620;
+			};
+			buildConfigurationList = 46811D8437878002732A83F9 /* Build configuration list for PBXProject "iosApp" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = ko;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 467A3487449985D2D21CE9C8;
+			productRefGroup = 815571CF2752CE9DE2F6D3B2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8DF42E7328D695A26D759DA7 /* Chaekchaek */,
+				E467D74FC3CE4235D70EF8C4 /* ChaekchaekTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0B99CCD145B75C8464EAEC54 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		938A8F17E7D9425C7608DAF6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF331168D03AF9252AA103AA /* Assets.xcassets in Resources */,
+				C1D48550D30C0BB273B37351 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		49B1547F1F85FFF9C4E6196B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6ED143CCB7658FFD45C4B742 /* ChaekchaekApp.swift in Sources */,
+				330D090DED702E088CCD60C3 /* Book.swift in Sources */,
+				EE59C3DAF190F5C9F0E3CC70 /* AppModel.swift in Sources */,
+				49C3DD90B496FD45A372EBA0 /* Theme.swift in Sources */,
+				3212D5F9818079E21FCAD3C5 /* ContentView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E52D446097827E5F9990B821 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				74D496A28AE8876E8F7BF668 /* ChaekchaekTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		91E51FB8D2C01F70DAE39C64 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Chaekchaek;
+			target = 8DF42E7328D695A26D759DA7 /* Chaekchaek */;
+			targetProxy = 68059C471D98CC5150BE8B25 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2A32A8AFBD2CE4E1241B897A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 67105785D20FB89EB92254CE /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ALADIN_TTB_KEY = "$(ALADIN_TTB_KEY)";
+				INFOPLIST_KEY_CFBundleDisplayName = "첵췍";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		90BDD8B3BF210CC7D0DCA611 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Chaekchaek.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Chaekchaek";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		9680B3B7975576A80228A2BD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A3BAFAF86F7E8DBFBBC6171B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 088EB291EEE334B891EA3CA5 /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ALADIN_TTB_KEY = "$(ALADIN_TTB_KEY)";
+				INFOPLIST_KEY_CFBundleDisplayName = "첵췍";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C796AF80A55F6F2F2BE51406 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E29D294E7481CE14C1947C14 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Chaekchaek.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Chaekchaek";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		46811D8437878002732A83F9 /* Build configuration list for PBXProject "iosApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9680B3B7975576A80228A2BD /* Debug */,
+				C796AF80A55F6F2F2BE51406 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DA00C03C2B99BEFE204BD8AF /* Build configuration list for PBXNativeTarget "Chaekchaek" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2A32A8AFBD2CE4E1241B897A /* Release */,
+				A3BAFAF86F7E8DBFBBC6171B /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DB1A8D5DC64EA63F21BFBEB6 /* Build configuration list for PBXNativeTarget "ChaekchaekTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				90BDD8B3BF210CC7D0DCA611 /* Release */,
+				E29D294E7481CE14C1947C14 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9A74E89CB29BBA050B1FADB3 /* Project object */;
+}
