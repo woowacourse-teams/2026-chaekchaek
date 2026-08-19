@@ -22,7 +22,7 @@ jobs:
           import sys
 
           body = os.environ.get("PR_BODY", "")
-          sections = ("구현 내용", "디자인", "미구현·제외", "검증")
+          sections = ("요약", "구현 내용", "디자인", "미구현·제외", "검증")
           invalid = []
 
           for section in sections:
