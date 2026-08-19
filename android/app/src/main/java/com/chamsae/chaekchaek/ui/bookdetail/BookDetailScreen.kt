@@ -475,7 +475,7 @@ private fun BookSummary(book: BookDetailArgs, averageRating: Double?) {
   ) {
     Text(
       book.title,
-      style = MaterialTheme.typography.headlineLarge.copy(fontFamily = FontFamily.Serif),
+      style = MaterialTheme.typography.headlineLarge.copy(fontFamily = FontFamily.Serif, fontSize = 32.sp, fontWeight = FontWeight.SemiBold),
       maxLines = 2,
       overflow = TextOverflow.Ellipsis,
       textAlign = TextAlign.Center,
@@ -483,7 +483,9 @@ private fun BookSummary(book: BookDetailArgs, averageRating: Double?) {
     Text(
       book.creator.ifBlank { "책 정보 준비 중" },
       color = ChaekInkSecondary,
-      style = MaterialTheme.typography.bodySmall,
+      fontFamily = FontFamily.SansSerif,
+      fontSize = 14.sp,
+      fontWeight = FontWeight.Medium,
       textAlign = TextAlign.Center,
     )
     Row(
@@ -590,7 +592,11 @@ private fun ReadingRecord(
         }
       }
     }
-    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
       Surface(
         onClick = onPageInput,
         modifier = Modifier.weight(1f),
@@ -607,7 +613,7 @@ private fun ReadingRecord(
           Text("지금 읽는 쪽", color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 10.5.sp)
           Text("${record?.currentPage ?: 0}", color = ChaekInk, fontSize = 14.sp, fontWeight = FontWeight.Bold)
           Text(
-            if (book.totalPages > 0) " / ${book.totalPages}쪽" else " / 쪽수 미정",
+            if (book.totalPages > 0) "/ ${book.totalPages}쪽" else "/ 쪽수 미정",
             color = ChaekInkSecondary,
             fontFamily = FontFamily.Monospace,
             fontSize = 10.5.sp,
@@ -671,24 +677,40 @@ private fun ReviewsSection(
         color = ChaekBand,
         border = BorderStroke(1.dp, ChaekInk),
       ) {
-        Box(modifier = Modifier.padding(horizontal = 9.dp), contentAlignment = Alignment.Center) {
-          Text(if (sort == ReviewSort.LATEST) "최신순⌄" else "페이지순⌄", style = MaterialTheme.typography.labelSmall)
+        Row(
+          modifier = Modifier.padding(horizontal = 10.dp),
+          horizontalArrangement = Arrangement.spacedBy(4.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Text(
+            if (sort == ReviewSort.LATEST) "최신순" else "페이지순",
+            color = ChaekInk,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+          )
+          Icon(
+            painterResource(R.drawable.ic_chevron_down),
+            contentDescription = null,
+            modifier = Modifier.size(11.dp),
+            tint = ChaekInk,
+          )
         }
       }
       Surface(shape = RoundedCornerShape(999.dp), color = Color.Transparent, border = BorderStroke(1.dp, ChaekBorder)) {
         Row(modifier = Modifier.padding(2.dp)) {
-          Text(
-            "전체 피드",
-            modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(if (scope == ReviewScope.ALL) ChaekInk else Color.Transparent).clickable { onScopeChange(ReviewScope.ALL) }.padding(horizontal = 8.dp, vertical = 5.dp),
-            color = if (scope == ReviewScope.ALL) ChaekSurface else ChaekInkSecondary,
-            style = MaterialTheme.typography.labelSmall,
-          )
-          Text(
-            "내 피드",
-            modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(if (scope == ReviewScope.MINE) ChaekInk else Color.Transparent).clickable { onScopeChange(ReviewScope.MINE) }.padding(horizontal = 8.dp, vertical = 5.dp),
-            color = if (scope == ReviewScope.MINE) ChaekSurface else ChaekInkSecondary,
-            style = MaterialTheme.typography.labelSmall,
-          )
+          Box(
+            modifier = Modifier.height(24.dp).clip(RoundedCornerShape(999.dp)).background(if (scope == ReviewScope.ALL) ChaekInk else Color.Transparent).clickable { onScopeChange(ReviewScope.ALL) }.padding(horizontal = 8.dp),
+            contentAlignment = Alignment.Center,
+          ) {
+            Text("전체 피드", color = if (scope == ReviewScope.ALL) ChaekSurface else ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 9.sp, fontWeight = if (scope == ReviewScope.ALL) FontWeight.SemiBold else FontWeight.Normal)
+          }
+          Box(
+            modifier = Modifier.height(24.dp).clip(RoundedCornerShape(999.dp)).background(if (scope == ReviewScope.MINE) ChaekInk else Color.Transparent).clickable { onScopeChange(ReviewScope.MINE) }.padding(horizontal = 8.dp),
+            contentAlignment = Alignment.Center,
+          ) {
+            Text("내 피드", color = if (scope == ReviewScope.MINE) ChaekSurface else ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 9.sp, fontWeight = if (scope == ReviewScope.MINE) FontWeight.SemiBold else FontWeight.Normal)
+          }
         }
       }
     }
