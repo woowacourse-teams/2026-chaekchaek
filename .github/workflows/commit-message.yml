@@ -22,18 +22,21 @@ jobs:
         shell: bash
         run: |
           pattern='^\[(BE|FE|AN|ALL)\] (feat|fix|docs|refactor|test|chore|ci|build|perf|revert|style)(\([^)]+\))?!?: .+$'
+          
+          merge_pattern='^Merge (branch|remote-tracking branch|pull request) .+$'
 
           git log \
             --format='%s' \
             "origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}" |
           while IFS= read -r subject; do
-            if ! printf '%s\n' "$subject" | grep -Eq "$pattern"; then
+            if ! printf '%s\n' "$subject" | grep -Eq "$pattern|$merge_pattern"; then
               echo "잘못된 커밋 메시지: $subject"
               echo
               echo "형식: [영역] type(scope): 설명"
               echo "예시: [BE] build: 프로젝트 초기 세팅"
               echo "예시: [FE] feat(auth): 로그인 화면 구현"
               echo "예시: [AN] build: 라이브러리 추가"
+              echo "Merge commit은 Git 기본 메시지를 허용합니다."
               exit 1
             fi
           done
