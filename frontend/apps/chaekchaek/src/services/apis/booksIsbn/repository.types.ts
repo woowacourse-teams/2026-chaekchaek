@@ -1,5 +1,5 @@
 export interface GetBooksIsbnParams {
-  bookId: number;
+  isbn: string;
 }
 
 export type GetBooksIsbn = (params: GetBooksIsbnParams) => Promise<{

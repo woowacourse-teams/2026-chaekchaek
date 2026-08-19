@@ -1,7 +1,7 @@
 import type { ResponseDto } from '@/services/apis/api.types';
 
 export interface GetBooksIsbnRequestDto {
-  pathParams: [{ name: 'bookId'; value: number }];
+  pathParams: [{ name: 'isbn'; value: string }];
 }
 
 export type GetBooksIsbnResponseDto = ResponseDto<{

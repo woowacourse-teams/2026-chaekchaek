@@ -4,10 +4,10 @@ import { mapGetBooksIsbnModelToRequestDTO, mapGetBooksIsbnResponseDTOToModel } f
 import type { GetBooksIsbn } from './repository.types';
 
 export const getBooksIsbn: GetBooksIsbn = async (model) => {
-  const { bookId } = mapGetBooksIsbnModelToRequestDTO(model);
+  const { isbn } = mapGetBooksIsbnModelToRequestDTO(model);
 
   const responseDTO = await fetcher.getBooksIsbn({
-    pathParams: [{ name: 'bookId', value: bookId }],
+    pathParams: [{ name: 'isbn', value: isbn }],
   });
 
   return mapGetBooksIsbnResponseDTOToModel(responseDTO);

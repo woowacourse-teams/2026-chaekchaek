@@ -29,7 +29,7 @@ export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
 
   const getBooksIsbnLoadData = useCallback(async () => {
-    return await getBooksIsbn({ bookId: 1 });
+    return await getBooksIsbn({ isbn });
   }, [isbn]);
 
   const {
