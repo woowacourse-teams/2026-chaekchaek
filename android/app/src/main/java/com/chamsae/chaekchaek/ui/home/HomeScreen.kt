@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +40,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -48,14 +51,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -358,10 +364,13 @@ private fun TrendingSection(
     val books = section.books.take(6)
     val rankingKey = books.map { it.bookId.value }
     val placements = remember(rankingKey) { collagePlacements(rankingKey) }
+    val customOffsets = remember(rankingKey) { mutableStateMapOf<String, Offset>() }
     var selectedIndex by rememberSaveable(rankingKey) { mutableIntStateOf(0) }
+    var draggingBookId by remember(rankingKey) { mutableStateOf<String?>(null) }
     val currentSelectedIndex by rememberUpdatedState(selectedIndex)
     val selectedBook = books.getOrNull(selectedIndex)
         ?: books.firstOrNull()
+    val density = LocalDensity.current
 
     BoxWithConstraints(
         modifier = Modifier
@@ -400,11 +409,17 @@ private fun TrendingSection(
         val heroWidth = maxWidth
         books.forEachIndexed { index, book ->
             val placement = placements[collageSlotIndex(index, selectedIndex, books.size)]
-            val x by animateFloatAsState(
-                heroWidth.value * (placement.x / 390f),
+            val bookId = book.bookId.value
+            val baseX = heroWidth.value * (placement.x / 390f)
+            val baseY = placement.y.toFloat()
+            val customOffset = customOffsets[bookId] ?: Offset.Zero
+            val targetX = baseX + customOffset.x
+            val targetY = baseY + customOffset.y
+            val animatedX by animateFloatAsState(
+                targetX,
                 label = "${book.bookId.value} x",
             )
-            val y by animateFloatAsState(placement.y.toFloat(), label = "${book.bookId.value} y")
+            val animatedY by animateFloatAsState(targetY, label = "${book.bookId.value} y")
             val scaleX by animateFloatAsState(
                 placement.width / HERO_COVER_WIDTH,
                 label = "${book.bookId.value} 너비",
@@ -417,13 +432,31 @@ private fun TrendingSection(
                 placement.rotation,
                 label = "${book.bookId.value} 회전",
             )
+            val dragging = draggingBookId == bookId
             HeroCover(
                 book = book,
                 rank = index + 1,
                 selected = selectedIndex == index,
-                onSelect = { selectedIndex = index },
-                x = x,
-                y = y,
+                dragging = dragging,
+                onClick = { onBookClick(book.toBookDetailArgs()) },
+                onDragStart = { draggingBookId = bookId },
+                onDrag = { dragAmount ->
+                    val deltaX = with(density) { dragAmount.x.toDp().value }
+                    val deltaY = with(density) { dragAmount.y.toDp().value }
+                    val currentOffset = customOffsets[bookId] ?: Offset.Zero
+                    val position = constrainedCollagePosition(
+                        x = baseX + currentOffset.x + deltaX,
+                        y = baseY + currentOffset.y + deltaY,
+                        width = placement.width.toFloat(),
+                        height = placement.height.toFloat(),
+                        maxWidth = heroWidth.value,
+                        maxHeight = COLLAGE_COVER_AREA_HEIGHT,
+                    )
+                    customOffsets[bookId] = Offset(position.x - baseX, position.y - baseY)
+                },
+                onDragEnd = { draggingBookId = null },
+                x = if (dragging) targetX else animatedX,
+                y = if (dragging) targetY else animatedY,
                 scaleX = scaleX,
                 scaleY = scaleY,
                 rotation = rotation,
@@ -469,7 +502,11 @@ private fun HeroCover(
     book: TrendingBookUiModel?,
     rank: Int,
     selected: Boolean,
-    onSelect: () -> Unit,
+    dragging: Boolean,
+    onClick: () -> Unit,
+    onDragStart: () -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
     x: Float,
     y: Float,
     scaleX: Float,
@@ -477,32 +514,67 @@ private fun HeroCover(
     rotation: Float,
 ) {
     if (book == null) return
+    val currentOnDragStart by rememberUpdatedState(onDragStart)
+    val currentOnDrag by rememberUpdatedState(onDrag)
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
     Cover(
         coverId = book.coverId,
         title = "${rank}위, ${book.title}",
         modifier = Modifier
-            .zIndex(if (selected) 1f else 0f)
+            .zIndex(if (dragging) 3f else if (selected) 1f else 0f)
             .size(HERO_COVER_WIDTH.dp, HERO_COVER_HEIGHT.dp)
             .graphicsLayer {
                 translationX = x.dp.toPx()
                 translationY = y.dp.toPx()
-                this.scaleX = scaleX
-                this.scaleY = scaleY
+                this.scaleX = scaleX * if (dragging) 1.04f else 1f
+                this.scaleY = scaleY * if (dragging) 1.04f else 1f
                 rotationZ = rotation
                 transformOrigin = TransformOrigin(0f, 0f)
-                shadowElevation = if (selected) 12.dp.toPx() else 0f
+                shadowElevation = when {
+                    dragging -> 20.dp.toPx()
+                    selected -> 12.dp.toPx()
+                    else -> 0f
+                }
                 shape = RoundedCornerShape(2.dp)
                 clip = false
             }
+            .pointerInput(book.bookId.value) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = { currentOnDragStart() },
+                    onDragEnd = { currentOnDragEnd() },
+                    onDragCancel = { currentOnDragEnd() },
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        currentOnDrag(dragAmount)
+                    },
+                )
+            }
             .semantics {
                 this.selected = selected
+                stateDescription = if (dragging) "배치 중" else "길게 눌러 배치"
             }
-            .clickable(role = Role.Button, onClick = onSelect),
+            .clickable(role = Role.Button, onClick = onClick),
     )
 }
 
 private const val HERO_COVER_WIDTH = 118f
 private const val HERO_COVER_HEIGHT = 177f
+private const val COLLAGE_COVER_AREA_HEIGHT = 190f
+
+internal fun constrainedCollagePosition(
+    x: Float,
+    y: Float,
+    width: Float,
+    height: Float,
+    maxWidth: Float,
+    maxHeight: Float,
+): Offset {
+    // ponytail: 회전한 모서리는 일부 잘릴 수 있다. 정밀 배치가 필요하면 회전 경계 상자로 교체한다.
+    return Offset(
+        x = x.coerceIn(0f, (maxWidth - width).coerceAtLeast(0f)),
+        y = y.coerceIn(0f, (maxHeight - height).coerceAtLeast(0f)),
+    )
+}
 
 internal data class CollagePlacement(
     val x: Int,
