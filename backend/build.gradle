@@ -250,8 +250,8 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		def searchItem = arrayItemSchema(searchResponse, 'items')
 		markRequiredNullable(searchItem, 'bookId')
 		markRequiredNullable(searchItem, 'commentCount')
-		def detailResponse = responseSchemaForPath('/api/v1/books/{bookId}', 'get', '200')
-		['myRecord', 'averageRating', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
+		def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
+		['bookId', 'commentCount', 'averageRating', 'ratingCount', 'myRecord', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
 		def libraryResponse = responseSchemaForPath('/api/v1/library', 'get', '200')
 		markRequiredNullable(libraryResponse, 'nextPage')
 		def libraryItem = arrayItemSchema(libraryResponse, 'items')
@@ -284,7 +284,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 				 authors: ['앤디 위어'], translators: [], publishedDate: '2015-07-10', isbn13: '9788925568683',
 				 category: '국내도서>소설', publisher: '알에이치코리아', commentCount: null]]
 		])
-		addJsonExample('/api/v1/books/{bookId}', 'get', '200', 'book-detail-without-library-record', '서재에 등록하지 않은 도서', [
+		addJsonExample('/api/v1/books/by-isbn/{isbn13}', 'get', '200', 'book-detail-without-library-record', '서재에 등록하지 않은 도서', [
 			 bookId: 10, isbn13: '9788936433598', title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
 			 authors: ['한강'], translators: [], publisher: '창비', category: '국내도서>소설', publishedDate: '2007-10-30',
 			 totalPages: 368, commentCount: 2, averageRating: 4.3, ratingCount: 21, myRecord: null
@@ -332,7 +332,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			}
 			return path.startsWith('/api/v1/home/')
 					|| path == '/api/v1/books'
-					|| path == '/api/v1/books/{bookId}'
+					|| path == '/api/v1/books/by-isbn/{isbn13}'
 					|| path == '/api/v1/books/{bookId}/reviews'
 					|| path == '/api/v1/reviews/{reviewId}/replies'
 		}
@@ -541,7 +541,7 @@ tasks.register('verifyOpenApi') {
 			}
 			return path.toString().startsWith('/api/v1/home/')
 					|| path.toString() == '/api/v1/books'
-					|| path.toString() == '/api/v1/books/{bookId}'
+					|| path.toString() == '/api/v1/books/by-isbn/{isbn13}'
 					|| path.toString() == '/api/v1/books/{bookId}/reviews'
 					|| path.toString() == '/api/v1/reviews/{reviewId}/replies'
 		}
@@ -795,9 +795,10 @@ tasks.register('verifyOpenApi') {
 				|| !requiredNullable(searchItem, 'commentCount')) {
 			throw new GradleException('OpenAPI specification must distinguish nullable book search fields from omitted fields')
 		}
-		def detailResponse = responseSchema('/api/v1/books/{bookId}', 'get', '200')
-		if (!requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'averageRating')
-				|| !requiredNullable(detailResponse, 'totalPages')) {
+		def detailResponse = responseSchema('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
+		if (!requiredNullable(detailResponse, 'bookId') || !requiredNullable(detailResponse, 'commentCount')
+				|| !requiredNullable(detailResponse, 'averageRating') || !requiredNullable(detailResponse, 'ratingCount')
+				|| !requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'totalPages')) {
 			throw new GradleException('OpenAPI specification must describe nullable book detail state fields')
 		}
 		def libraryResponse = responseSchema('/api/v1/library', 'get', '200')
@@ -906,7 +907,7 @@ tasks.register('verifyOpenApi') {
 		}
 		[
 			[path: '/api/v1/books', method: 'get', status: '200', names: ['search-registered-book', 'search-unregistered-book']],
-			[path: '/api/v1/books/{bookId}', method: 'get', status: '200', names: ['book-detail-without-library-record']],
+			[path: '/api/v1/books/by-isbn/{isbn13}', method: 'get', status: '200', names: ['book-detail-without-library-record']],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'get', status: '200', names: ['review-normal', 'review-spoiler', 'review-deleted']]
 		].each { requirement ->
 			def operation = ((paths.get(requirement.path) as Map)?.get(requirement.method)) as Map

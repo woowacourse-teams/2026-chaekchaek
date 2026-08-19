@@ -43,13 +43,15 @@ class HomeControllerTest {
     void should_ReturnPopularBooks_When_FindingPopularBooks() throws Exception {
         // given
         when(homeService.getPopularBooks()).thenReturn(new PopularBookListResponse(List.of(
-                new PopularBookResponse(42L, "마션", "https://example.com/martian.jpg", List.of("앤디 위어"), 12, 30)
+                new PopularBookResponse(42L, "9788925568683", "마션", "https://example.com/martian.jpg",
+                        List.of("앤디 위어"), 12, 30)
         )));
 
         // when & then
         mockMvc.perform(get("/api/v1/home/popular-books"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.books[0].bookId").value(42))
+                .andExpect(jsonPath("$.books[0].isbn13").value("9788925568683"))
                 .andExpect(jsonPath("$.books[0].reviewCount").value(12))
                 .andExpect(jsonPath("$.books[0].replyCount").value(30))
                 .andDo(document("home-popular-books",
@@ -81,7 +83,7 @@ class HomeControllerTest {
         when(homeService.getLatestReviews()).thenReturn(new LatestReviewListResponse(List.of(
                 new LatestReviewResponse("도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.",
                         java.time.Instant.parse("2026-08-18T14:00:00Z"), 12L,
-                        42L, "보이지 않는 도시", "https://example.com/invisible-cities.jpg")
+                        42L, "9788936433598", "보이지 않는 도시", "https://example.com/invisible-cities.jpg")
         )));
 
         // when & then
@@ -91,6 +93,7 @@ class HomeControllerTest {
                 .andExpect(jsonPath("$.reviews[0].createdAt").value("2026-08-18T14:00:00Z"))
                 .andExpect(jsonPath("$.reviews[0].replyCount").value(12))
                 .andExpect(jsonPath("$.reviews[0].bookId").value(42))
+                .andExpect(jsonPath("$.reviews[0].isbn13").value("9788936433598"))
                 .andDo(document("home-latest-reviews",
                         responseFields(latestReviewResponseFields()),
                         resource(ResourceSnippetParameters.builder()
@@ -117,6 +120,7 @@ class HomeControllerTest {
         return new FieldDescriptor[]{
                 fieldWithPath("books").type(JsonFieldType.ARRAY).description("인기 책 목록"),
                 fieldWithPath("books[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
+                fieldWithPath("books[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
                 fieldWithPath("books[].title").type(JsonFieldType.STRING).description("도서 제목"),
                 fieldWithPath("books[].coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
                 fieldWithPath("books[].authors").type(JsonFieldType.ARRAY).description("저자 목록")
@@ -133,6 +137,7 @@ class HomeControllerTest {
                 fieldWithPath("reviews[].createdAt").type(JsonFieldType.STRING).description("감상 작성 시각(UTC)"),
                 fieldWithPath("reviews[].replyCount").type(JsonFieldType.NUMBER).description("삭제되지 않은 답글 수"),
                 fieldWithPath("reviews[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
+                fieldWithPath("reviews[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
                 fieldWithPath("reviews[].bookTitle").type(JsonFieldType.STRING).description("도서 제목"),
                 fieldWithPath("reviews[].bookCoverImageUrl").type(JsonFieldType.STRING).description("도서 표지 이미지 URL")
         };

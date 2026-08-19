@@ -3,6 +3,7 @@ package com.chaekchaek.book.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
@@ -77,6 +78,29 @@ class BookDetailAssemblerTest {
         assertThat(response.myRecord()).isNull();
     }
 
+    @Test
+    @DisplayName("등록되지 않은 책이면 메타데이터만 상세 응답으로 조합한다")
+    void should_ReturnMetadataOnly_When_BookIsNotRegistered() {
+        // given
+        Book book = bookWithoutId();
+        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                commentCountReader, currentMemberIdProvider, libraryItemRepository);
+
+        // when
+        var response = assembler.assemble(book);
+
+        // then
+        assertThat(response.bookId()).isNull();
+        assertThat(response.commentCount()).isNull();
+        assertThat(response.averageRating()).isNull();
+        assertThat(response.ratingCount()).isNull();
+        assertThat(response.myRecord()).isNull();
+        verifyNoInteractions(commentCountReader, currentMemberIdProvider, libraryItemRepository);
+    }
+
     private Book book() {
         Book book = mock(Book.class);
         when(book.getId()).thenReturn(1L);
@@ -89,6 +113,12 @@ class BookDetailAssemblerTest {
         when(book.getCategory()).thenReturn("SF");
         when(book.getPublishedDate()).thenReturn(LocalDate.of(2026, 1, 1));
         when(book.getTotalPages()).thenReturn(308);
+        return book;
+    }
+
+    private Book bookWithoutId() {
+        Book book = book();
+        when(book.getId()).thenReturn(null);
         return book;
     }
 }
