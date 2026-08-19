@@ -1,9 +1,9 @@
 package com.chamsae.chaekchaek.ui.bookdetail
 
 import com.chaekchaek.app.domain.book.BookId
+import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import com.chamsae.chaekchaek.data.ArchivedBook
-import com.chamsae.chaekchaek.data.BookSearchResult
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

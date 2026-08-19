@@ -224,8 +224,7 @@ sealed interface ShelfActionUiModel {
 - 결과 0건 화면 (`Empty`)
 - 로딩·오류 표시
 
-**미결정**: 검색을 서버 경유로 바꿀지, 현재처럼 알라딘 API를 앱이 직접 호출할지.
-[API 계약 5절](../../docs/api-contract.md#5-책)에 남겼다.
+검색은 `BookSearchRepository.search(query)`를 통해 Chaekchaek API `GET /api/v1/books`를 호출한다.
 
 ---
 

@@ -19,7 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.chamsae.chaekchaek.data.BookSearchResult
+import com.chaekchaek.app.domain.book.BookSearchResult
 
 @Composable
 fun BookRegisterDialog(
