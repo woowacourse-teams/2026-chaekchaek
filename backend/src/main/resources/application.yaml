@@ -46,8 +46,8 @@ app:
       expiration: 14d
 
     cookie:
-      secure: ${AUTH_COOKIE_SECURE:false}
-      same-site: Lax
+      secure: true
+      same-site: None
 
     google-id-token:
       issuer: https://accounts.google.com
