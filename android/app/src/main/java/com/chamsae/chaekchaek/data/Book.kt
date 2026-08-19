@@ -10,6 +10,7 @@ data class BookSearchResult(
   val year: String,
   val coverUrl: String,
   val description: String,
+  val noteCount: Int = 0,
   val isbn13: String = "",
   val category: String = "",
   val totalPages: Int = 0,
@@ -73,6 +74,7 @@ internal fun parseBookSearchResults(json: String): List<BookSearchResult> {
       year = obj.optString("pubDate").take(4),
       coverUrl = obj.optString("cover"),
       description = obj.optString("description"),
+      noteCount = obj.optInt("noteCount").coerceAtLeast(0),
       isbn13 = obj.optString("isbn13"),
       category = obj.optString("categoryName").substringAfterLast('>'),
       totalPages = obj.optInt("itemPage").takeIf { it > 0 }

@@ -88,6 +88,5 @@ internal fun sortSearchResults(
 ): List<BookSearchResult> =
   when (sort) {
     SearchSort.Latest -> results.sortedByDescending { it.year.toIntOrNull() ?: Int.MIN_VALUE }
-    // ponytail: 댓글 수가 검색 계약에 추가되면 원본 순서 대신 댓글 수 내림차순으로 교체한다.
-    SearchSort.Commented -> results
+    SearchSort.Commented -> results.sortedByDescending(BookSearchResult::noteCount)
   }
