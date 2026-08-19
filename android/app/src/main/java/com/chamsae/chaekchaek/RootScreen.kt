@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.chamsae.chaekchaek.ui.home.HomeScreen
 import com.chamsae.chaekchaek.ui.archive.ArchiveRoute
+import com.chamsae.chaekchaek.ui.bookdetail.BookDetailArgs
 import com.chamsae.chaekchaek.ui.search.SearchRoute
 
 private enum class RootTab(val label: String, @DrawableRes val icon: Int) {
@@ -40,6 +41,7 @@ private enum class RootTab(val label: String, @DrawableRes val icon: Int) {
 @Composable
 fun RootScreen(
   appContainer: AppContainer,
+  onBookClick: (BookDetailArgs) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
@@ -56,6 +58,7 @@ fun RootScreen(
       RootTab.Home -> HomeScreen(
         modifier = contentModifier,
         onSearchBook = { selectedTab = RootTab.Discover },
+        onBookClick = onBookClick,
       )
       RootTab.Discover ->
         SearchRoute(
@@ -63,12 +66,14 @@ fun RootScreen(
           libraryRepository = appContainer.libraryRepository,
           modifier = contentModifier,
           onBack = { selectedTab = RootTab.Home },
+          onBookClick = onBookClick,
         )
       RootTab.Shelf ->
         ArchiveRoute(
           libraryRepository = appContainer.libraryRepository,
           editing = archiveEditing,
           onEditingChange = { archiveEditing = it },
+          onBookClick = onBookClick,
           modifier = contentModifier,
         )
     }

@@ -63,6 +63,8 @@ import com.chamsae.chaekchaek.theme.ChaekBand
 import com.chamsae.chaekchaek.theme.ChaekBorder
 import com.chamsae.chaekchaek.theme.ChaekBorderSoft
 import com.chamsae.chaekchaek.theme.ChaekInkTertiary
+import com.chamsae.chaekchaek.ui.bookdetail.BookDetailArgs
+import com.chamsae.chaekchaek.ui.bookdetail.toBookDetailArgs
 
 @Composable
 fun SearchRoute(
@@ -70,6 +72,7 @@ fun SearchRoute(
   libraryRepository: LibraryRepository,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
+  onBookClick: (BookDetailArgs) -> Unit = {},
 ) {
   val factory =
     remember(bookSearchRepository, libraryRepository) {
@@ -88,6 +91,7 @@ fun SearchRoute(
     onClear = viewModel::clear,
     onRegister = viewModel::register,
     onBack = onBack,
+    onBookClick = onBookClick,
     modifier = modifier,
   )
 }
@@ -101,6 +105,7 @@ fun SearchScreen(
   onRegister: (BookSearchResult) -> Unit,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
+  onBookClick: (BookDetailArgs) -> Unit = {},
 ) {
   var query by remember { mutableStateOf("") }
   val leaveSearch = {
@@ -149,6 +154,7 @@ fun SearchScreen(
           results = current.results,
           registeredBookIds = registeredBookIds,
           onRegister = onRegister,
+          onBookClick = onBookClick,
           modifier = Modifier.weight(1f),
         )
     }
@@ -250,6 +256,7 @@ private fun SearchResults(
   results: List<BookSearchResult>,
   registeredBookIds: Set<String>,
   onRegister: (BookSearchResult) -> Unit,
+  onBookClick: (BookDetailArgs) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   Column(modifier = modifier.fillMaxWidth()) {
@@ -260,6 +267,7 @@ private fun SearchResults(
           book = book,
           isReading = book.toArchivedBook().id in registeredBookIds,
           onRegister = { onRegister(book) },
+          onClick = { onBookClick(book.toBookDetailArgs()) },
         )
         HorizontalDivider(color = ChaekBand)
       }
@@ -289,9 +297,10 @@ private fun SearchResultRow(
   book: BookSearchResult,
   isReading: Boolean,
   onRegister: () -> Unit,
+  onClick: () -> Unit,
 ) {
   Row(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+    modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
     verticalAlignment = Alignment.Top,
   ) {
     Surface(
