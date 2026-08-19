@@ -31,7 +31,7 @@ export const map${upperMethod}${upperKey}ModelToRequestDTO = (
 export const map${upperMethod}${upperKey}ResponseDTOToModel = (
   response: ${upperMethod}${upperKey}ResponseDto,
 ) => {
-  return response.data;
+  return response;
 };
 `;
     })

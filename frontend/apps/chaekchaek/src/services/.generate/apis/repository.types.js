@@ -36,11 +36,11 @@ export const component = (name, endPoint) =>
     .map(([key, value]) => `${key}: ${value}`)
     .join(';')}
   ${
-    requestData &&
-    Object.entries(requestData).length &&
-    `;${Object.entries(requestData)
-      .map(([key, value]) => `${key}: ${value.type}`)
-      .join(';')}`
+    requestData && Object.entries(requestData).length
+      ? `;${Object.entries(data)
+          .map(([key, value]) => `${key}: ${value.type}`)
+          .join(';')}`
+      : ''
   }
 }
 
