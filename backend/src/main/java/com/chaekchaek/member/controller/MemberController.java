@@ -19,13 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/members")
+@RequestMapping("/api/v1/members/me")
 public class MemberController {
 
     private final MemberService memberService;
     private final AuthCookieProvider authCookieProvider;
 
-    @GetMapping("/me")
+    @GetMapping()
     public ResponseEntity<MemberResponse> getMyInfo(
             @AuthenticationPrincipal Jwt jwt
     ) {
@@ -34,7 +34,7 @@ public class MemberController {
         return ResponseEntity.ok(memberService.getMyInfo(memberId));
     }
 
-    @PatchMapping("/me/nickname")
+    @PatchMapping("/nickname")
     public ResponseEntity<MemberResponse> updateNickname(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UpdateNicknameRequest request
@@ -45,7 +45,7 @@ public class MemberController {
         ));
     }
 
-    @PatchMapping("/me/anonymity")
+    @PatchMapping("/anonymity")
     public ResponseEntity<MemberResponse> updateAnonymity(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UpdateAnonymityRequest request
@@ -56,7 +56,7 @@ public class MemberController {
         ));
     }
 
-    @DeleteMapping("/me")
+    @DeleteMapping()
     public ResponseEntity<Void> withdraw(
             @AuthenticationPrincipal Jwt jwt
     ) {

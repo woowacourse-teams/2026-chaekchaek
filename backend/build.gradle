@@ -236,6 +236,8 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		constrainString('/api/v1/reviews/{reviewId}', 'patch', 'chapter', 255)
 		constrainString('/api/v1/reviews/{reviewId}/replies', 'post', 'content', 200)
 		constrainString('/api/v1/replies/{replyId}', 'patch', 'content', 200)
+		requestProperty('/api/v1/members/me/nickname', 'patch', 'nickname')
+				?.putAll([minLength: 1, maxLength: 100])
 		requestProperty('/api/v1/books/{bookId}/reviews', 'post', 'isSpoiler')?.putAll([nullable: false, default: false])
 		requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'content')?.remove('nullable')
 		requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'isSpoiler')?.remove('nullable')
@@ -262,7 +264,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		def reviewItem = arrayItemSchema(reviewPageResponse, 'items')
 		['quote', 'chapter', 'currentPage'].each { propertyName -> markRequiredNullable(reviewItem, propertyName) }
 		def memberResponse = responseSchemaForPath('/api/v1/members/me', 'get', '200')
-		markRequiredNullable(memberResponse, 'profileImageUrl')
+		['nickname', 'profileImageUrl'].each { propertyName -> markRequiredNullable(memberResponse, propertyName) }
 		(schemas.get('ProblemDetail') as Map)?.get('required')?.remove('instance')
 
 		appendOperationDescription('/api/v1/library/{bookId}', 'patch',
@@ -500,7 +502,9 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/auth/mobile/logout'  : [post: ['204', '400']],
 			'/api/v1/auth/reissue'        : [post: ['204']],
 			'/api/v1/auth/logout'         : [post: ['204']],
-			'/api/v1/members/me'          : [get : ['200', '401']]
+			'/api/v1/members/me'          : [get: ['200', '401'], delete: ['204', '401']],
+			'/api/v1/members/me/nickname' : [patch: ['200', '400', '401', '409']],
+			'/api/v1/members/me/anonymity': [patch: ['200', '400', '401', '422']]
 		]
 		authOperations.each { path, operations ->
 			def pathItem = paths?.get(path) as Map
