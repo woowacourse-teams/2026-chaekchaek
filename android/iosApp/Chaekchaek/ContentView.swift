@@ -6,17 +6,90 @@ struct ContentView: View {
     var body: some View {
         @Bindable var model = model
         TabView(selection: $model.selectedTab) {
-            NavigationStack { SearchView() }
-                .tabItem { Label("검색", systemImage: "magnifyingglass") }
+            NavigationStack { HomeView() }
+                .tabItem { Label("홈", systemImage: "house") }
                 .tag(0)
-            NavigationStack { LibraryView() }
-                .tabItem { Label("서재", systemImage: "books.vertical") }
+            NavigationStack { SearchView() }
+                .tabItem { Label("발견", systemImage: "magnifyingglass") }
                 .tag(1)
-            NavigationStack { InformationView() }
-                .tabItem { Label("정보", systemImage: "info.circle") }
+            NavigationStack { LibraryView() }
+                .tabItem { Label("내 서재", systemImage: "books.vertical") }
                 .tag(2)
         }
         .tint(AppTheme.accent)
+    }
+}
+
+private struct HomeView: View {
+    @Environment(AppModel.self) private var model
+
+    private var readingBook: LibraryBook? {
+        model.library.first(where: { $0.status == .reading })
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            pageHeader("첵첵")
+            if let readingBook {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("이어서 읽기")
+                        .font(.headline)
+                        .foregroundStyle(AppTheme.ink)
+                    HStack(spacing: 12) {
+                        BookCover(book: readingBook.book)
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(readingBook.book.title)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(AppTheme.ink)
+                                .lineLimit(2)
+                            Text(readingBook.book.author)
+                                .font(.caption)
+                                .foregroundStyle(AppTheme.secondary)
+                            Text("내 서재에서 독서 기록을 남겨보세요")
+                                .font(.caption)
+                                .foregroundStyle(AppTheme.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppTheme.secondary)
+                    }
+                }
+                .padding(16)
+                .background(AppTheme.surface)
+                .overlay { RoundedRectangle(cornerRadius: 4).stroke(AppTheme.border, lineWidth: 1) }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("지금 읽고 있는 책이 있으세요?")
+                        .font(.headline)
+                        .foregroundStyle(AppTheme.ink)
+                    Text("책을 등록하면 내 서재에서 독서 상태를 기록할 수 있어요.")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.secondary)
+                    Button {
+                        model.selectedTab = 1
+                    } label: {
+                        Label("책 제목으로 찾기", systemImage: "magnifyingglass")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppTheme.ink)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .padding(.horizontal, 12)
+                            .overlay { RoundedRectangle(cornerRadius: 4).stroke(AppTheme.ink, lineWidth: 1) }
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(16)
+                .background(AppTheme.surface)
+                .overlay { RoundedRectangle(cornerRadius: 4).stroke(AppTheme.border, lineWidth: 1) }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+            }
+            Spacer()
+        }
+        .background(AppTheme.background)
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 
@@ -278,7 +351,7 @@ private struct LibraryView: View {
             Text("검색에서 책을 찾아 서재에 담아 보세요.")
                 .font(.subheadline)
                 .foregroundStyle(AppTheme.secondary)
-            Button("책 검색하기") { model.selectedTab = 0 }
+            Button("책 검색하기") { model.selectedTab = 1 }
                 .buttonStyle(.bordered)
                 .tint(AppTheme.ink)
             Spacer()
@@ -322,40 +395,6 @@ private struct LibraryView: View {
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
             .overlay { Capsule().stroke(AppTheme.border, lineWidth: 1) }
-    }
-}
-
-private struct InformationView: View {
-    private let privacyURL = URL(string: "https://app.notion.com/p/3b185850b3e18085b919d108ce7cd4ef?source=copy_link")!
-    private let supportURL = URL(string: "https://github.com/woowacourse-teams/2026-chaekchaek/issues")!
-
-    var body: some View {
-        List {
-            Section("앱 정보") {
-                LabeledContent("버전", value: version)
-                Text("검색어는 도서 검색을 위해 알라딘 Open API로 전송됩니다. 서재 기록은 이 기기에만 저장됩니다.")
-                    .font(.subheadline)
-                    .foregroundStyle(AppTheme.secondary)
-            }
-            Section("정책 및 지원") {
-                Link(destination: privacyURL) {
-                    Label("개인정보처리방침", systemImage: "hand.raised")
-                }
-                Link(destination: supportURL) {
-                    Label("문의 및 지원", systemImage: "questionmark.circle")
-                }
-            }
-        }
-        .scrollContentBackground(.hidden)
-        .background(AppTheme.background)
-        .tint(AppTheme.accent)
-        .navigationTitle("정보")
-    }
-
-    private var version: String {
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
-        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
-        return "\(version) (\(build))"
     }
 }
 
