@@ -17,7 +17,9 @@ import { Input } from '@chaekchaek/design-system';
 import { Pagination } from '@chaekchaek/design-system';
 
 import { getBooks } from '@/services/apis/books/repository';
+import { postLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
+import { useExecute } from '@/services/core/useExecute';
 
 export const BooksPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -62,6 +64,13 @@ export const BooksPage = () => {
   const navigation = useNavigate();
   const handleMove = (isbn: string) => {
     navigation(`/books/${isbn}`);
+  };
+
+  const { mutate } = useExecute({
+    executeFn: postLibrary,
+  });
+  const handleRegisterLibrary = async (isbn: string) => {
+    await mutate({ isbn13: isbn, status: 'READING' });
   };
 
   return (
@@ -122,7 +131,14 @@ export const BooksPage = () => {
                             댓글 {item.commentCount}
                           </Button>
                         )}
-                        <Button variant="primary">읽는 중 시작</Button>
+                        <Button
+                          variant="primary"
+                          onClick={() => {
+                            handleRegisterLibrary(item?.isbn13);
+                          }}
+                        >
+                          읽는 중 시작
+                        </Button>
                       </List.Item.Trailing>
                     </List.Item>
                   );
