@@ -1,3 +1,5 @@
+import { useParams } from 'react-router-dom';
+
 import { Layout } from '@chaekchaek/design-system';
 import { Header } from '@chaekchaek/design-system';
 import { Main } from '@chaekchaek/design-system';
@@ -19,29 +21,45 @@ import { Note } from '@chaekchaek/design-system';
 import { Surface } from '@chaekchaek/design-system';
 import { DataInfo } from '@chaekchaek/design-system';
 
+import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
+import { useLoadData } from '@/services/core/useLoadData';
+import { useCallback } from 'react';
+
 export const BookDetailPage = () => {
+  const { isbn = '' } = useParams<{ isbn: string }>();
+
+  const getBooksIsbnLoadData = useCallback(async () => {
+    return await getBooksIsbn({ bookId: 1 });
+  }, [isbn]);
+
+  const {
+    status: { data },
+  } = useLoadData({
+    queryFn: getBooksIsbnLoadData,
+  });
+
   return (
     <Layout>
       <Header />
       <Main>
         <Overview>
           <Overview.Content
-            leading="leading"
-            title="Title"
-            content="content"
-            description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
+            leading={`ARCHIVE / ${data?.category} / ${data?.publishedDate}`}
+            title={data?.title}
+            content={`${data?.authors} · ${data?.publisher}`}
+            description={`Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
           nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
-          accusantium magni quis voluptates, velit nisi dolorum id."
+          accusantium magni quis voluptates, velit nisi dolorum id. 
+
+          별점: ${data?.ratingCount} 감상: ${data?.commentCount}`}
           />
           <Overview.Media>
-            <ImgBox img={''} />
+            {data?.coverImageUrl && <ImgBox img={data?.coverImageUrl} />}
           </Overview.Media>
         </Overview>
         <Split>
           <Split.Side>
-            <Title level="main" trailing={<Button size="small">별점 주기</Button>}>
-              내 독서 기록
-            </Title>
+            <Title level="main">내 독서 기록</Title>
             <Banner>
               <Banner.Content title="내 별점" content="아직 평가하지 않았어요" />
               <Banner.Trailing>
@@ -52,37 +70,46 @@ export const BookDetailPage = () => {
             </Banner>
             <SegmentedControl
               shape="normal"
-              value="wanttoread"
+              value={data?.myRecord?.status}
               options={[
                 {
-                  value: 'wanttoread',
+                  value: 'WANT_TO_READ',
                   text: '읽고 싶어요',
                 },
                 {
-                  value: 'reading',
+                  value: 'READING',
                   text: '읽는 중',
                 },
                 {
-                  value: 'red',
+                  value: 'FINISHED',
                   text: '다 읽음',
                 },
               ]}
             />
 
-            <ProgressBar value={10} max={100} title="현재 읽은 범위" label="184 / 369쪽" />
+            <ProgressBar
+              value={data?.myRecord?.currentPage || 0}
+              max={data?.totalPages || 0}
+              title="현재 읽은 범위"
+              label={`${data?.myRecord?.currentPage || 0} / ${data?.totalPages || 0}쪽`}
+            />
 
             <Button variant="primary" block={true}>
               현재 읽은 쪽수 입력
             </Button>
             <DataInfo heading="책 정보">
-              <DataInfo.Item title="장르" content="SF · 생존" />
-              <DataInfo.Item title="출간" content="2026 초판" />
-              <DataInfo.Item title="분량" content="369쪽" />
-              <DataInfo.Item title="ISBN" content="978-89-0000-013" />
-              <DataInfo.Item title="옮김" content="박아람" />
+              {data?.category && <DataInfo.Item title="장르" content={data?.category} />}
+              {data?.publishedDate && <DataInfo.Item title="출간" content={data?.publishedDate} />}
+              {data?.isbn13 && <DataInfo.Item title="ISBN" content={data?.isbn13} />}
+              {!!data?.authors.length && (
+                <DataInfo.Item title="지은이" content={data?.authors.join(' · ')} />
+              )}
+              {!!data?.translators.length && (
+                <DataInfo.Item title="옮김" content={data?.translators.join(' · ')} />
+              )}
             </DataInfo>
 
-            <Note>
+            <Note title="BOOK NOTE">
               Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
               nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
               accusantium magni quis voluptates, velit nisi dolorum id.
