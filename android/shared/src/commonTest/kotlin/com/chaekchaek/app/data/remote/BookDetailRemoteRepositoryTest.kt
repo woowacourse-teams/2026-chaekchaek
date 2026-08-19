@@ -16,6 +16,7 @@ class BookDetailRemoteRepositoryTest {
       category = "국내도서>소설>과학소설",
       coverImageUrl = "https://example.com/martian.jpg",
       totalPages = 308,
+      myRecord = LibraryRecordDto(status = "READING", currentPage = 120, rating = 4.5),
     ).toBookDetail()
     val reviews = ReviewPageDto(
       totalCount = 1,
@@ -33,6 +34,7 @@ class BookDetailRemoteRepositoryTest {
 
     assertEquals("과학소설", detail.category)
     assertEquals(42, detail.bookId)
+    assertEquals(120, detail.myRecord?.currentPage)
     assertEquals("참새 1204", reviews.items.single().authorName)
   }
 }

@@ -4,14 +4,22 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.request.patch
+import io.ktor.client.request.post
+import io.ktor.client.request.put
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 
 class BookDetailRemoteRepository {
   private val client = createHttpClient()
 
-  suspend fun detail(isbn13: String): BookDetail =
-    client.get("$BASE_URL/api/v1/books/by-isbn/$isbn13").body<BookDetailDto>().toBookDetail()
+  suspend fun detail(isbn13: String, accessToken: String? = null): BookDetail =
+    client.get("$BASE_URL/api/v1/books/by-isbn/$isbn13") {
+      accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+    }.body<BookDetailDto>().toBookDetail()
 
   suspend fun reviews(bookId: Long, scope: ReviewScope, sort: ReviewSort, accessToken: String? = null): ReviewPage =
     client.get("$BASE_URL/api/v1/books/$bookId/reviews") {
@@ -20,6 +28,49 @@ class BookDetailRemoteRepository {
       parameter("sort", sort.name)
       accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
     }.body<ReviewPageDto>().toReviewPage()
+
+  suspend fun addToLibrary(isbn13: String, totalPages: Int?, accessToken: String): LibraryRecord =
+    client.post("$BASE_URL/api/v1/library") {
+      authenticatedJson(accessToken, LibraryAddRequest(isbn13, "READING", totalPages))
+    }.body<LibraryRecordDto>().toLibraryRecord()
+
+  suspend fun updateReadingStatus(bookId: Long, status: String, accessToken: String): LibraryRecord =
+    client.patch("$BASE_URL/api/v1/library/$bookId") {
+      authenticatedJson(accessToken, LibraryUpdateRequest(status = status))
+    }.body<LibraryRecordDto>().toLibraryRecord()
+
+  suspend fun updateCurrentPage(bookId: Long, currentPage: Int, totalPages: Int?, accessToken: String): LibraryRecord =
+    client.patch("$BASE_URL/api/v1/library/$bookId") {
+      authenticatedJson(accessToken, LibraryUpdateRequest(currentPage = currentPage, totalPages = totalPages))
+    }.body<LibraryRecordDto>().toLibraryRecord()
+
+  suspend fun rate(bookId: Long, rating: Double, accessToken: String): LibraryRecord =
+    client.put("$BASE_URL/api/v1/library/$bookId/rating") {
+      authenticatedJson(accessToken, RatingRequest(rating))
+    }.body<LibraryRecordDto>().toLibraryRecord()
+
+  suspend fun createReview(bookId: Long, content: String, accessToken: String): BookReview =
+    client.post("$BASE_URL/api/v1/books/$bookId/reviews") {
+      authenticatedJson(accessToken, ReviewCreateRequest(content = content, isSpoiler = false))
+    }.body<ReviewDto>().toBookReview()
+
+  suspend fun likeReview(reviewId: Long, accessToken: String) {
+    client.post("$BASE_URL/api/v1/reviews/$reviewId/reactions") {
+      header(HttpHeaders.Authorization, "Bearer $accessToken")
+    }
+  }
+
+  suspend fun createReply(reviewId: Long, content: String, accessToken: String) {
+    client.post("$BASE_URL/api/v1/reviews/$reviewId/replies") {
+      authenticatedJson(accessToken, ReplyCreateRequest(content))
+    }
+  }
+
+  private fun io.ktor.client.request.HttpRequestBuilder.authenticatedJson(accessToken: String, body: Any) {
+    header(HttpHeaders.Authorization, "Bearer $accessToken")
+    contentType(ContentType.Application.Json)
+    setBody(body)
+  }
 
   private companion object {
     const val BASE_URL = "https://api.chaekchaek.com"
@@ -45,7 +96,10 @@ data class BookDetail(
   val commentCount: Int?,
   val averageRating: Double?,
   val ratingCount: Int?,
+  val myRecord: LibraryRecord?,
 )
+
+data class LibraryRecord(val status: String, val currentPage: Int, val rating: Double?)
 
 data class ReviewPage(val totalCount: Int, val items: List<BookReview>)
 
@@ -77,7 +131,34 @@ internal data class BookDetailDto(
   val commentCount: Int? = null,
   val averageRating: Double? = null,
   val ratingCount: Int? = null,
+  val myRecord: LibraryRecordDto? = null,
 )
+
+@Serializable
+internal data class LibraryRecordDto(
+  val status: String,
+  val currentPage: Int,
+  val rating: Double? = null,
+)
+
+@Serializable
+private data class LibraryAddRequest(val isbn13: String, val status: String, val totalPages: Int? = null)
+
+@Serializable
+private data class LibraryUpdateRequest(
+  val status: String? = null,
+  val currentPage: Int? = null,
+  val totalPages: Int? = null,
+)
+
+@Serializable
+private data class RatingRequest(val rating: Double)
+
+@Serializable
+private data class ReviewCreateRequest(val content: String, val isSpoiler: Boolean)
+
+@Serializable
+private data class ReplyCreateRequest(val content: String)
 
 @Serializable
 internal data class ReviewPageDto(
@@ -116,23 +197,27 @@ internal fun BookDetailDto.toBookDetail() =
     commentCount = commentCount,
     averageRating = averageRating,
     ratingCount = ratingCount,
+    myRecord = myRecord?.toLibraryRecord(),
   )
+
+internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage, rating)
 
 internal fun ReviewPageDto.toReviewPage() =
   ReviewPage(
     totalCount = totalCount,
-    items = items.map {
-      BookReview(
-        reviewId = it.reviewId,
-        content = it.content,
-        quote = it.quote,
-        chapter = it.chapter,
-        currentPage = it.currentPage,
-        createdAt = it.createdAt,
-        authorName = it.author.displayName,
-        anonymous = it.author.anonymous,
-        replyCount = it.replyCount,
-        likeCount = it.likeCount,
-      )
-    },
+    items = items.map(ReviewDto::toBookReview),
+  )
+
+internal fun ReviewDto.toBookReview() =
+  BookReview(
+    reviewId = reviewId,
+    content = content,
+    quote = quote,
+    chapter = chapter,
+    currentPage = currentPage,
+    createdAt = createdAt,
+    authorName = author.displayName,
+    anonymous = author.anonymous,
+    replyCount = replyCount,
+    likeCount = likeCount,
   )
