@@ -713,7 +713,10 @@ private fun LoginRequiredSheet(
   onDismiss: () -> Unit,
   onGoogleSignIn: () -> Unit,
 ) {
-  ModalBottomSheet(onDismissRequest = onDismiss) {
+  ModalBottomSheet(
+    onDismissRequest = onDismiss,
+    containerColor = Color.White,
+  ) {
     Column(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
       verticalArrangement = Arrangement.spacedBy(10.dp),
