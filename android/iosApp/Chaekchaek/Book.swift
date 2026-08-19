@@ -11,7 +11,7 @@ enum ReadingStatus: String, Codable, CaseIterable, Identifiable, Sendable {
         switch self {
         case .wantToRead: "읽고 싶어요"
         case .reading: "읽는 중"
-        case .finished: "다 읽었어요"
+        case .finished: "다 읽음"
         }
     }
 }

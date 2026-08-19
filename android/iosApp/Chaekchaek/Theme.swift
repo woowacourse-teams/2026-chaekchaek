@@ -25,7 +25,7 @@ struct BookCover: View {
                     .foregroundStyle(AppTheme.secondary)
             }
         }
-        .frame(width: 64, height: 92)
+        .frame(width: 56, height: 80)
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .accessibilityHidden(true)
     }

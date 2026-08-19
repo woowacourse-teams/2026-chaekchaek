@@ -28,30 +28,21 @@ private struct SearchView: View {
     var body: some View {
         @Bindable var model = model
         VStack(spacing: 0) {
+            pageHeader("검색")
             searchBar(query: $model.query)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
             searchContent
         }
         .background(AppTheme.background)
-        .navigationTitle("책 검색")
-        .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog(
-            "서재에 어떤 상태로 담을까요?",
-            isPresented: Binding(
-                get: { selectedBook != nil },
-                set: { if !$0 { selectedBook = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            ForEach(ReadingStatus.allCases) { status in
-                Button(status.title) {
-                    guard let book = selectedBook else { return }
-                    model.save(book, as: status)
-                    selectedBook = nil
-                }
+        .toolbar(.hidden, for: .navigationBar)
+        .sheet(item: $selectedBook) { book in
+            StatusChangeSheet(initialStatus: model.status(for: book) ?? .wantToRead) { status in
+                model.save(book, as: status)
+                selectedBook = nil
+            } onCancel: {
+                selectedBook = nil
             }
-            Button("취소", role: .cancel) { selectedBook = nil }
         }
     }
 
@@ -74,20 +65,23 @@ private struct SearchView: View {
                 }
                 .accessibilityLabel("검색어 지우기")
             }
-            Button("검색") {
+            Button {
                 searchFocused = false
                 Task { await model.search() }
+            } label: {
+                Image(systemName: "arrow.right")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.ink)
+                    .frame(width: 28, height: 28)
             }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(AppTheme.accent)
             .disabled(query.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
-        .padding(.horizontal, 14)
-        .frame(minHeight: 48)
+        .padding(.horizontal, 12)
+        .frame(height: 44)
         .background(AppTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 4))
         .overlay {
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 4)
                 .stroke(AppTheme.border, lineWidth: 1)
         }
     }
@@ -96,24 +90,36 @@ private struct SearchView: View {
     private var searchContent: some View {
         switch model.searchState {
         case .idle:
-            emptyMessage(icon: "book.closed", title: "어떤 책을 찾고 있나요?", description: "제목이나 저자를 검색해 서재에 담아 보세요.")
+            emptyMessage(title: "제목이나 저자로 책을 찾아보세요.", description: "검색한 책은 원하는 독서 상태로 서재에 담을 수 있어요.")
         case .loading:
             Spacer()
             ProgressView("책을 찾고 있어요")
             Spacer()
         case let .results(books):
-            List(books) { book in
-                searchResultRow(book)
-                    .listRowBackground(AppTheme.background)
-                    .listRowSeparatorTint(AppTheme.band)
+            VStack(spacing: 0) {
+                HStack {
+                    Text("\(books.count)개의 도서 검색 결과")
+                    Spacer()
+                    Text("정확도순")
+                }
+                .font(.caption)
+                .foregroundStyle(AppTheme.secondary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+
+                List(books) { book in
+                    searchResultRow(book)
+                        .listRowBackground(AppTheme.background)
+                        .listRowSeparatorTint(AppTheme.band)
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
         case .empty:
-            emptyMessage(icon: "text.magnifyingglass", title: "검색 결과가 없어요", description: "다른 제목이나 저자로 다시 검색해 보세요.")
+            emptyMessage(title: "검색 결과가 없어요", description: "다른 제목이나 저자로 다시 검색해 보세요.")
         case let .failure(message):
             VStack(spacing: 14) {
-                emptyMessage(icon: "wifi.exclamationmark", title: "검색하지 못했어요", description: message)
+                emptyMessage(title: "검색하지 못했어요", description: message)
                 Button("다시 시도") { Task { await model.search() } }
                     .buttonStyle(.borderedProminent)
                     .tint(AppTheme.accent)
@@ -122,37 +128,35 @@ private struct SearchView: View {
     }
 
     private func searchResultRow(_ book: Book) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 12) {
             BookCover(book: book)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(book.title)
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppTheme.ink)
                     .lineLimit(2)
                 Text([book.author, book.publisher].filter { !$0.isEmpty }.joined(separator: " · "))
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(AppTheme.secondary)
                     .lineLimit(2)
-                if let status = model.status(for: book) {
-                    Text(status.title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppTheme.accent)
-                }
             }
             Spacer(minLength: 4)
             Button {
                 selectedBook = book
             } label: {
-                Image(systemName: model.status(for: book) == nil ? "plus" : "checkmark")
-                    .font(.headline)
-                    .frame(width: 40, height: 40)
-                    .foregroundStyle(model.status(for: book) == nil ? .white : AppTheme.accent)
-                    .background(model.status(for: book) == nil ? AppTheme.accent : AppTheme.accentSoft)
-                    .clipShape(Circle())
+                Text(model.status(for: book) == nil ? "+ 책을 읽기 시작" : "상태 변경")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppTheme.ink)
+                    .padding(.horizontal, 9)
+                    .frame(height: 28)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(AppTheme.ink, lineWidth: 1)
+                    }
             }
             .accessibilityLabel(model.status(for: book) == nil ? "\(book.title) 서재에 담기" : "\(book.title) 독서 상태 변경")
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
     }
 }
 
@@ -160,6 +164,7 @@ private struct LibraryView: View {
     @Environment(AppModel.self) private var model
     @State private var filter: ReadingStatus?
     @State private var pendingDeletion: LibraryBook?
+    @State private var selectedLibraryBook: LibraryBook?
 
     private var filteredBooks: [LibraryBook] {
         guard let filter else { return model.library }
@@ -168,28 +173,51 @@ private struct LibraryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            HStack {
+                Text("내 서재")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(AppTheme.ink)
+                Spacer()
+                Text("\(model.library.count)권")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppTheme.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
             filters
-                .padding(.vertical, 12)
+                .padding(.bottom, 8)
             if filteredBooks.isEmpty {
                 emptyLibrary
             } else {
-                List(filteredBooks) { libraryBook in
-                    libraryRow(libraryBook)
-                        .listRowBackground(AppTheme.background)
-                        .listRowSeparatorTint(AppTheme.band)
-                        .swipeActions {
-                            Button("삭제", role: .destructive) {
-                                pendingDeletion = libraryBook
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("나의 기록")
+                        Spacer()
+                        Text("최근 기록순")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(AppTheme.secondary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+
+                    List(filteredBooks) { libraryBook in
+                        libraryRow(libraryBook)
+                            .listRowBackground(AppTheme.background)
+                            .listRowSeparatorTint(AppTheme.band)
+                            .swipeActions {
+                                Button("삭제", role: .destructive) {
+                                    pendingDeletion = libraryBook
+                                }
                             }
-                        }
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
             }
         }
         .background(AppTheme.background)
-        .navigationTitle("내 서재")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .confirmationDialog(
             "서재에서 삭제할까요?",
             isPresented: Binding(
@@ -204,6 +232,14 @@ private struct LibraryView: View {
                 pendingDeletion = nil
             }
             Button("취소", role: .cancel) { pendingDeletion = nil }
+        }
+        .sheet(item: $selectedLibraryBook) { libraryBook in
+            StatusChangeSheet(initialStatus: libraryBook.status) { status in
+                model.changeStatus(of: libraryBook, to: status)
+                selectedLibraryBook = nil
+            } onCancel: {
+                selectedLibraryBook = nil
+            }
         }
     }
 
@@ -222,66 +258,70 @@ private struct LibraryView: View {
     private func filterButton(title: String, status: ReadingStatus?) -> some View {
         let selected = filter == status
         return Button(title) { filter = status }
-            .font(.subheadline.weight(.semibold))
+            .font(.caption.weight(.semibold))
             .foregroundStyle(selected ? .white : AppTheme.secondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(selected ? AppTheme.accent : AppTheme.muted)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(selected ? AppTheme.ink : AppTheme.surface)
             .clipShape(Capsule())
+            .overlay {
+                Capsule().stroke(selected ? AppTheme.ink : AppTheme.border, lineWidth: 1)
+            }
             .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private var emptyLibrary: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             Spacer()
-            Image(systemName: "books.vertical")
-                .font(.system(size: 36))
-                .foregroundStyle(AppTheme.accent)
             Text(filter == nil ? "아직 담은 책이 없어요" : "이 상태의 책이 없어요")
                 .font(.headline)
             Text("검색에서 책을 찾아 서재에 담아 보세요.")
                 .font(.subheadline)
                 .foregroundStyle(AppTheme.secondary)
             Button("책 검색하기") { model.selectedTab = 0 }
-                .buttonStyle(.borderedProminent)
-                .tint(AppTheme.accent)
+                .buttonStyle(.bordered)
+                .tint(AppTheme.ink)
             Spacer()
         }
         .frame(maxWidth: .infinity)
     }
 
     private func libraryRow(_ libraryBook: LibraryBook) -> some View {
-        HStack(alignment: .top, spacing: 14) {
+        Button {
+            selectedLibraryBook = libraryBook
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
             BookCover(book: libraryBook.book)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 5) {
+                statusTag(libraryBook.status)
                 Text(libraryBook.book.title)
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppTheme.ink)
                     .lineLimit(2)
-                Text(libraryBook.book.author)
-                    .font(.subheadline)
+                Text([libraryBook.book.author, libraryBook.book.publisher].filter { !$0.isEmpty }.joined(separator: " · "))
+                    .font(.caption)
                     .foregroundStyle(AppTheme.secondary)
                     .lineLimit(1)
-                Menu {
-                    ForEach(ReadingStatus.allCases) { status in
-                        Button(status.title) {
-                            model.changeStatus(of: libraryBook, to: status)
-                        }
-                    }
-                } label: {
-                    Label(libraryBook.status.title, systemImage: "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppTheme.accent)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(AppTheme.accentSoft)
-                        .clipShape(Capsule())
-                }
-                .accessibilityLabel("\(libraryBook.book.title) 독서 상태, 현재 \(libraryBook.status.title)")
             }
             Spacer()
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppTheme.secondary)
+                .padding(.top, 18)
+            }
         }
-        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(libraryBook.book.title) 독서 상태 변경, 현재 \(libraryBook.status.title)")
+        .padding(.vertical, 6)
+    }
+
+    private func statusTag(_ status: ReadingStatus) -> some View {
+        Text(status.title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(AppTheme.secondary)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .overlay { Capsule().stroke(AppTheme.border, lineWidth: 1) }
     }
 }
 
@@ -310,7 +350,6 @@ private struct InformationView: View {
         .background(AppTheme.background)
         .tint(AppTheme.accent)
         .navigationTitle("정보")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var version: String {
@@ -320,12 +359,21 @@ private struct InformationView: View {
     }
 }
 
-private func emptyMessage(icon: String, title: String, description: String) -> some View {
+private func pageHeader(_ title: String) -> some View {
+    HStack {
+        Text(title)
+            .font(.title3.weight(.bold))
+            .foregroundStyle(AppTheme.ink)
+        Spacer()
+    }
+    .padding(.horizontal, 16)
+    .padding(.top, 16)
+    .padding(.bottom, 8)
+}
+
+private func emptyMessage(title: String, description: String) -> some View {
     VStack(spacing: 12) {
         Spacer()
-        Image(systemName: icon)
-            .font(.system(size: 36))
-            .foregroundStyle(AppTheme.accent)
         Text(title)
             .font(.headline)
             .foregroundStyle(AppTheme.ink)
@@ -337,4 +385,73 @@ private func emptyMessage(icon: String, title: String, description: String) -> s
         Spacer()
     }
     .frame(maxWidth: .infinity)
+}
+
+private struct StatusChangeSheet: View {
+    @State private var status: ReadingStatus
+    let onConfirm: (ReadingStatus) -> Void
+    let onCancel: () -> Void
+
+    init(initialStatus: ReadingStatus, onConfirm: @escaping (ReadingStatus) -> Void, onCancel: @escaping () -> Void) {
+        _status = State(initialValue: initialStatus)
+        self.onConfirm = onConfirm
+        self.onCancel = onCancel
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("독서 상태 변경")
+                .font(.headline)
+                .foregroundStyle(AppTheme.ink)
+            Text("선택한 책의 독서 상태를 변경합니다.")
+                .font(.caption)
+                .foregroundStyle(AppTheme.secondary)
+            VStack(spacing: 6) {
+                ForEach(ReadingStatus.allCases) { option in
+                    Button { status = option } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: status == option ? "largecircle.fill.circle" : "circle")
+                                .foregroundStyle(status == option ? AppTheme.accent : AppTheme.secondary)
+                            Text(option.title)
+                            Spacer()
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.ink)
+                        .padding(.horizontal, 12)
+                        .frame(height: 40)
+                        .background(status == option ? AppTheme.accentSoft : .clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            HStack(spacing: 8) {
+                Button("취소", action: onCancel)
+                    .buttonStyle(StatusSheetButtonStyle(fill: AppTheme.surface, foreground: AppTheme.ink))
+                Button("변경") { onConfirm(status) }
+                    .buttonStyle(StatusSheetButtonStyle(fill: AppTheme.ink, foreground: .white))
+            }
+        }
+        .padding(20)
+        .presentationDetents([.height(330)])
+        .presentationDragIndicator(.hidden)
+        .presentationCornerRadius(20)
+        .presentationBackground(AppTheme.background)
+    }
+}
+
+private struct StatusSheetButtonStyle: ButtonStyle {
+    let fill: Color
+    let foreground: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(foreground)
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .background(fill.opacity(configuration.isPressed ? 0.75 : 1))
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .overlay { RoundedRectangle(cornerRadius: 4).stroke(AppTheme.ink, lineWidth: 1) }
+    }
 }
