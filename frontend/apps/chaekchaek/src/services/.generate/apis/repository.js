@@ -44,8 +44,9 @@ export const ${method}${upperKey}: ${upperMethod}${upperKey} = async (model) => 
           })
           .join(',')}`;
     })
+    .filter(Boolean)
     .join(',')} 
-    ${requestData && Object.keys(requestData).length && `, ${Object.keys(data).join(',')}`}
+    ${requestData && Object.keys(requestData).length ? `, ${Object.keys(data).join(',')}` : ''}
     } = map${upperMethod}${upperKey}ModelToRequestDTO(model);
 
   const responseDTO = await fetcher.${method}${upperKey}({
@@ -61,7 +62,7 @@ export const ${method}${upperKey}: ${upperMethod}${upperKey} = async (model) => 
           .join(',')}],`;
     })
     .join('')}
-    ${requestData && Object.keys(requestData).length && `data: {${Object.keys(data).join(',')}}`}
+    ${requestData && Object.keys(requestData).length ? `data: {${Object.keys(data).join(',')}}` : ''}
   });
 
   return map${upperMethod}${upperKey}ResponseDTOToModel(responseDTO);

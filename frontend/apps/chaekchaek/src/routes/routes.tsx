@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ROUTES } from '@/constants/routes';
 
 import { BooksPage } from '@/pages/BooksPage';
+import { BookDetailPage } from '@/pages/BookDetailPage';
 
 interface Route {
   path: string;
@@ -21,6 +22,10 @@ const routes: Route[] = [
   {
     path: ROUTES.BOOK_SEARCH,
     element: <BooksPage />,
+  },
+  {
+    path: ROUTES.BOOK_DETAIL + '/:isbn',
+    element: <BookDetailPage />,
   },
 ];
 
