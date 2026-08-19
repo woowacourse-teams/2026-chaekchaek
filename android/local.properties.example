@@ -1,4 +1,1 @@
 sdk.dir=/path/to/Android/sdk
-
-# 알라딘 Open API TTBKey. 팀 공유 보관소(예: 비밀번호 관리자)에서 받아 채울 것.
-aladin.ttbkey=YOUR_TTB_KEY

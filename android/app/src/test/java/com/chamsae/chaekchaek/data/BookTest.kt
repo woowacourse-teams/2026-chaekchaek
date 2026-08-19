@@ -1,44 +1,10 @@
 package com.chamsae.chaekchaek.data
 
+import com.chaekchaek.app.domain.book.BookSearchResult
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class BookTest {
-
-  @Test
-  fun `parseBookSearchResults maps aladin item fields`() {
-    val json =
-      """
-      {"version":"20131101","item":[
-        {"title":"해리 포터와 마법사의 돌","author":"조앤 K. 롤링 (지은이)","pubDate":"2019-11-01","isbn13":"9788983927620",
-         "description":"설명","cover":"https://image.aladin.co.kr/cover.jpg","publisher":"문학수첩",
-         "categoryName":"국내도서>소설","subInfo":{"itemPage":308}}
-      ]}
-      """.trimIndent()
-
-    val results = parseBookSearchResults(json)
-
-    assertEquals(1, results.size)
-    assertEquals(
-      BookSearchResult(
-        title = "해리 포터와 마법사의 돌",
-        creator = "조앤 K. 롤링 (지은이)",
-        publisher = "문학수첩",
-        year = "2019",
-        coverUrl = "https://image.aladin.co.kr/cover.jpg",
-        description = "설명",
-        isbn13 = "9788983927620",
-        category = "소설",
-        totalPages = 308,
-      ),
-      results.first(),
-    )
-  }
-
-  @Test
-  fun `parseBookSearchResults returns empty list when item is missing`() {
-    assertEquals(emptyList<BookSearchResult>(), parseBookSearchResults("""{"version":"20131101"}"""))
-  }
 
   @Test
   fun `archived books round-trip through json`() {

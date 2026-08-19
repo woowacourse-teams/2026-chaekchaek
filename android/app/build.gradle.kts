@@ -6,12 +6,6 @@ plugins {
   alias(libs.plugins.kotlin.serialization)
 }
 
-val localProperties =
-  Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
-  }
-
 val releaseSigningPropertiesFile = rootProject.file("keystore.properties")
 val releaseSigningProperties =
   Properties().apply {
@@ -41,11 +35,6 @@ android {
         versionCode = 2
         versionName = "1.0"
 
-        buildConfigField(
-          "String",
-          "ALADIN_TTB_KEY",
-          "\"${localProperties.getProperty("aladin.ttbkey", "")}\"",
-        )
     }
 
     signingConfigs {
