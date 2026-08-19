@@ -16,7 +16,7 @@ class BookDetailRemoteRepositoryTest {
       category = "국내도서>소설>과학소설",
       coverImageUrl = "https://example.com/martian.jpg",
       totalPages = 308,
-      myRecord = LibraryRecordDto(status = "READING", currentPage = 120, rating = 4.5),
+      myRecord = BookDetailRecordDto(status = "READING", currentPage = 120, myRating = 4.5),
     ).toBookDetail()
     val reviews = ReviewPageDto(
       totalCount = 1,
@@ -35,6 +35,16 @@ class BookDetailRemoteRepositoryTest {
     assertEquals("과학소설", detail.category)
     assertEquals(42, detail.bookId)
     assertEquals(120, detail.myRecord?.currentPage)
+    assertEquals(4.5, detail.myRecord?.rating)
     assertEquals("참새 1204", reviews.items.single().authorName)
+  }
+
+  @Test
+  fun `상세 서재 기록의 비어 있는 현재 페이지는 0으로 변환한다`() {
+    val record = BookDetailRecordDto(status = "WANT_TO_READ", currentPage = null, myRating = null)
+      .toLibraryRecord()
+
+    assertEquals("WANT_TO_READ", record?.status)
+    assertEquals(0, record?.currentPage)
   }
 }

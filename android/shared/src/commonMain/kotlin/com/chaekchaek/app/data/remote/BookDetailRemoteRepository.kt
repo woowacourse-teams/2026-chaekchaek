@@ -131,7 +131,7 @@ internal data class BookDetailDto(
   val commentCount: Int? = null,
   val averageRating: Double? = null,
   val ratingCount: Int? = null,
-  val myRecord: LibraryRecordDto? = null,
+  val myRecord: BookDetailRecordDto? = null,
 )
 
 @Serializable
@@ -139,6 +139,13 @@ internal data class LibraryRecordDto(
   val status: String,
   val currentPage: Int,
   val rating: Double? = null,
+)
+
+@Serializable
+internal data class BookDetailRecordDto(
+  val status: String? = null,
+  val currentPage: Int? = null,
+  val myRating: Double? = null,
 )
 
 @Serializable
@@ -201,6 +208,9 @@ internal fun BookDetailDto.toBookDetail() =
   )
 
 internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage, rating)
+
+internal fun BookDetailRecordDto.toLibraryRecord() =
+  status?.let { LibraryRecord(it, currentPage ?: 0, myRating) }
 
 internal fun ReviewPageDto.toReviewPage() =
   ReviewPage(
