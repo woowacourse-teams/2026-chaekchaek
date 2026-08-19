@@ -1,0 +1,6 @@
+interface:
+  display_name: "첵췍 디자인 시스템"
+  short_description: "UI 구현 전에 디자인 시안과 시스템 준수를 강제"
+  default_prompt: "Use $chaekchaek-design-system to create or verify a designs.pen draft before implementing this UI change."
+policy:
+  allow_implicit_invocation: true
