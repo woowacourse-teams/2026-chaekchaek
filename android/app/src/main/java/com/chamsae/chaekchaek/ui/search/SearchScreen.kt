@@ -79,7 +79,7 @@ fun SearchRoute(
       viewModelFactory {
         initializer { SearchViewModel(bookSearchRepository, libraryRepository) }
       }
-    }
+  }
   val viewModel: SearchViewModel = viewModel(factory = factory)
   val state by viewModel.uiState.collectAsStateWithLifecycle()
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
@@ -260,7 +260,7 @@ private fun SearchResults(
   modifier: Modifier = Modifier,
 ) {
   Column(modifier = modifier.fillMaxWidth()) {
-    SearchResultHeader(results.size)
+    SearchResultHeader(count = results.size)
     LazyColumn(modifier = Modifier.weight(1f)) {
       items(results) { book ->
         SearchResultRow(
@@ -276,10 +276,11 @@ private fun SearchResults(
 }
 
 @Composable
-private fun SearchResultHeader(count: Int) {
+private fun SearchResultHeader(
+  count: Int,
+) {
   Row(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-    horizontalArrangement = Arrangement.SpaceBetween,
+    modifier = Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 16.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Text(
@@ -287,7 +288,6 @@ private fun SearchResultHeader(count: Int) {
       style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
       color = ChaekAccentInk,
     )
-    Text("최신순", style = MaterialTheme.typography.bodySmall)
   }
   HorizontalDivider(color = ChaekBand)
 }
@@ -349,7 +349,9 @@ private fun SearchResultRow(
           Modifier
             .align(Alignment.End)
             .height(32.dp)
-            .clickable(enabled = !isReading, role = Role.Button, onClick = onRegister),
+            .clickable(role = Role.Button) {
+              if (!isReading) onRegister()
+            },
         shape = RoundedCornerShape(6.dp),
         color = if (isReading) ChaekBorderSoft else MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, if (isReading) ChaekBorder else MaterialTheme.colorScheme.onSurface),

@@ -47,7 +47,11 @@ class SearchViewModel(
       _uiState.value =
         try {
           val results = bookSearchRepository.search(trimmed).sortedByDescending { it.year.toIntOrNull() ?: Int.MIN_VALUE }
-          if (results.isEmpty()) SearchUiState.Empty else SearchUiState.Success(results)
+          if (results.isEmpty()) {
+            SearchUiState.Empty
+          } else {
+            SearchUiState.Success(results)
+          }
         } catch (e: CancellationException) {
           throw e
         } catch (e: Exception) {

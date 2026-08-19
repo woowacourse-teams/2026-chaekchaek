@@ -374,7 +374,13 @@ private fun SortRow(
   ) {
     Text(countLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
     Spacer(Modifier.weight(1f))
-    Text("최근 기록순⌄", style = MaterialTheme.typography.labelMedium)
+    Row(
+      horizontalArrangement = Arrangement.spacedBy(4.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text("최근 기록순", style = MaterialTheme.typography.labelMedium)
+      Text("⌄", style = MaterialTheme.typography.labelMedium)
+    }
   }
 }
 
