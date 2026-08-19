@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -60,6 +61,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.chamsae.chaekchaek.R
+import com.chamsae.chaekchaek.auth.AuthSession
+import com.chamsae.chaekchaek.auth.requestGoogleIdToken
 import com.chamsae.chaekchaek.data.ArchivedBook
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
@@ -74,6 +77,7 @@ import com.chamsae.chaekchaek.ui.home.coverResource
 import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.BookReview
+import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
 import kotlinx.coroutines.launch
@@ -82,10 +86,13 @@ import kotlinx.coroutines.launch
 fun BookDetailRoute(
   book: BookDetailArgs,
   bookDetailRepository: BookDetailRemoteRepository,
+  mobileAuthRepository: MobileAuthRemoteRepository,
+  authSession: AuthSession,
   libraryRepository: LibraryRepository,
   onBack: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val tokens by authSession.tokens.collectAsStateWithLifecycle()
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
   var detail by remember(book.isbn13) { mutableStateOf<BookDetail?>(null) }
   var reviews by remember(book.isbn13) { mutableStateOf(emptyList<BookReview>()) }
@@ -98,10 +105,10 @@ fun BookDetailRoute(
   LaunchedEffect(book.isbn13) {
     detail = book.isbn13.takeIf(String::isNotBlank)?.let { runCatching { bookDetailRepository.detail(it) }.getOrNull() }
   }
-  LaunchedEffect(detail?.bookId, reviewScope, reviewSort) {
+  LaunchedEffect(detail?.bookId, reviewScope, reviewSort, tokens?.accessToken) {
     val bookId = detail?.bookId ?: return@LaunchedEffect
     reviewsLoading = true
-    runCatching { bookDetailRepository.reviews(bookId, reviewScope, reviewSort) }
+    runCatching { bookDetailRepository.reviews(bookId, reviewScope, reviewSort, tokens?.accessToken) }
       .onSuccess {
         reviewCount = it.totalCount
         reviews = it.items
@@ -126,6 +133,8 @@ fun BookDetailRoute(
     onBack = onBack,
     onReviewScopeChange = { reviewScope = it },
     onReviewSortChange = { reviewSort = it },
+    signedIn = tokens != null,
+    onGoogleSignIn = { idToken -> authSession.signIn(mobileAuthRepository.loginWithGoogle(idToken)) },
     modifier = modifier,
   )
 }
@@ -145,6 +154,8 @@ fun BookDetailScreen(
   modifier: Modifier = Modifier,
   onReviewScopeChange: (ReviewScope) -> Unit = {},
   onReviewSortChange: (ReviewSort) -> Unit = {},
+  signedIn: Boolean = false,
+  onGoogleSignIn: suspend (String) -> Unit = {},
 ) {
   BackHandler(onBack = onBack)
   val listState = rememberLazyListState()
@@ -157,6 +168,13 @@ fun BookDetailScreen(
     }
   }
   var showLoginSheet by rememberSaveable { mutableStateOf(false) }
+  var openMineAfterLogin by remember { mutableStateOf(false) }
+  val context = LocalContext.current
+  var signingIn by rememberSaveable { mutableStateOf(false) }
+  var loginError by rememberSaveable { mutableStateOf<String?>(null) }
+  val requireAuthentication = {
+    if (!signedIn) showLoginSheet = true
+  }
 
   Box(
     modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding(),
@@ -166,9 +184,9 @@ fun BookDetailScreen(
       state = listState,
       contentPadding = PaddingValues(bottom = 82.dp),
     ) {
-      item { ArchiveStage(book, onBack) { showLoginSheet = true } }
+      item { ArchiveStage(book, onBack, requireAuthentication) }
       item { BookSummary(book, averageRating, ratingCount) }
-      item { ReadingRecord(book, archivedBook) { showLoginSheet = true } }
+      item { ReadingRecord(book, archivedBook, requireAuthentication) }
       item { Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand)) }
       item {
         ReviewsSection(
@@ -178,16 +196,21 @@ fun BookDetailScreen(
           scope = reviewScope,
           sort = reviewSort,
           onScopeChange = { requested ->
-            if (requested == ReviewScope.MINE) showLoginSheet = true else onReviewScopeChange(requested)
+            if (requested == ReviewScope.MINE && !signedIn) {
+              openMineAfterLogin = true
+              showLoginSheet = true
+            } else {
+              onReviewScopeChange(requested)
+            }
           },
           onSortChange = onReviewSortChange,
-          onAuthenticationRequired = { showLoginSheet = true },
+          onAuthenticationRequired = requireAuthentication,
         )
       }
     }
 
     ComposeBar(
-      onClick = { showLoginSheet = true },
+      onClick = requireAuthentication,
       modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 10.dp),
     )
 
@@ -199,7 +222,29 @@ fun BookDetailScreen(
     }
   }
 
-  if (showLoginSheet) LoginRequiredSheet { showLoginSheet = false }
+  if (showLoginSheet) {
+    LoginRequiredSheet(
+      signingIn = signingIn,
+      error = loginError,
+      onDismiss = { if (!signingIn) showLoginSheet = false },
+      onGoogleSignIn = {
+        if (signingIn) return@LoginRequiredSheet
+        scope.launch {
+          signingIn = true
+          loginError = null
+          runCatching { requestGoogleIdToken(context) }
+            .mapCatching { idToken -> onGoogleSignIn(idToken) }
+            .onSuccess {
+              if (openMineAfterLogin) onReviewScopeChange(ReviewScope.MINE)
+              openMineAfterLogin = false
+              showLoginSheet = false
+            }
+            .onFailure { loginError = "로그인하지 못했어요. 다시 시도해 주세요." }
+          signingIn = false
+        }
+      },
+    )
+  }
 }
 
 @Composable
@@ -533,7 +578,12 @@ private fun ReviewCard(review: BookReview, onAuthenticationRequired: () -> Unit)
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun LoginRequiredSheet(onDismiss: () -> Unit) {
+private fun LoginRequiredSheet(
+  signingIn: Boolean,
+  error: String?,
+  onDismiss: () -> Unit,
+  onGoogleSignIn: () -> Unit,
+) {
   ModalBottomSheet(onDismissRequest = onDismiss) {
     Column(
       modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
@@ -541,14 +591,15 @@ private fun LoginRequiredSheet(onDismiss: () -> Unit) {
     ) {
       Text("로그인이 필요해요", style = MaterialTheme.typography.titleLarge)
       Text("내 독서 기록을 남기고 감상에 참여하려면 로그인해 주세요.", style = MaterialTheme.typography.bodyMedium)
+      error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
       Surface(
-        onClick = onDismiss,
+        onClick = onGoogleSignIn,
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         shape = RoundedCornerShape(8.dp),
         color = ChaekInk,
       ) {
         Text(
-          "확인",
+          if (signingIn) "로그인 중..." else "Google로 계속하기",
           modifier = Modifier.padding(vertical = 14.dp),
           color = ChaekSurface,
           textAlign = TextAlign.Center,

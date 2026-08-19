@@ -2,7 +2,9 @@ package com.chaekchaek.app.data.remote
 
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.http.HttpHeaders
 import kotlinx.serialization.Serializable
 
 class BookDetailRemoteRepository {
@@ -11,11 +13,12 @@ class BookDetailRemoteRepository {
   suspend fun detail(isbn13: String): BookDetail =
     client.get("$BASE_URL/api/v1/books/by-isbn/$isbn13").body<BookDetailDto>().toBookDetail()
 
-  suspend fun reviews(bookId: Long, scope: ReviewScope, sort: ReviewSort): ReviewPage =
+  suspend fun reviews(bookId: Long, scope: ReviewScope, sort: ReviewSort, accessToken: String? = null): ReviewPage =
     client.get("$BASE_URL/api/v1/books/$bookId/reviews") {
       parameter("page", FIRST_PAGE)
-      parameter("scope", scope.name)
+      parameter("feed", scope.name)
       parameter("sort", sort.name)
+      accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
     }.body<ReviewPageDto>().toReviewPage()
 
   private companion object {
@@ -26,7 +29,7 @@ class BookDetailRemoteRepository {
 
 enum class ReviewScope { ALL, MINE }
 
-enum class ReviewSort { LATEST, PAGE }
+enum class ReviewSort { PAGE, LATEST, OLDEST, POPULAR }
 
 data class BookDetail(
   val bookId: Long?,

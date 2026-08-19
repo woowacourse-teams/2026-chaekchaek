@@ -37,6 +37,8 @@ fun MainNavigation() {
         BookDetailRoute(
           book = key.book,
           bookDetailRepository = appContainer.bookDetailRepository,
+          mobileAuthRepository = appContainer.mobileAuthRepository,
+          authSession = appContainer.authSession,
           libraryRepository = appContainer.libraryRepository,
           onBack = { backStack.removeLastOrNull() },
           modifier = Modifier.windowInsetsPadding(
