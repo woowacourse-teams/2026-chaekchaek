@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 import com.chaekchaek.app.domain.book.BookId
 import com.chaekchaek.app.domain.note.NoteId
 import com.chaekchaek.app.presentation.common.AppError
@@ -767,15 +768,27 @@ private fun AuthorLine(
 
 @Composable
 private fun Cover(coverId: String, title: String, modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(coverResource(coverId)),
-        contentDescription = "$title 표지",
-        modifier = modifier
-            .border(.5.dp, Color.Black.copy(alpha = .2f), RoundedCornerShape(2.dp))
-            .clip(RoundedCornerShape(2.dp)),
-        contentScale = ContentScale.Crop,
-    )
+    val coverModifier = modifier
+        .border(.5.dp, Color.Black.copy(alpha = .2f), RoundedCornerShape(2.dp))
+        .clip(RoundedCornerShape(2.dp))
+    if (coverId.isRemoteCoverUrl()) {
+        AsyncImage(
+            model = coverId,
+            contentDescription = "$title 표지",
+            modifier = coverModifier,
+            contentScale = ContentScale.Crop,
+        )
+    } else {
+        Image(
+            painter = painterResource(coverResource(coverId)),
+            contentDescription = "$title 표지",
+            modifier = coverModifier,
+            contentScale = ContentScale.Crop,
+        )
+    }
 }
+
+internal fun String.isRemoteCoverUrl(): Boolean = startsWith("https://")
 
 private fun AppError.message(): String =
     when (this) {
