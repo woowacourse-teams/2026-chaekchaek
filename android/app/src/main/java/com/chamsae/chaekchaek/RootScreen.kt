@@ -31,10 +31,14 @@ import com.chamsae.chaekchaek.ui.home.HomeScreen
 import com.chamsae.chaekchaek.ui.archive.ArchiveRoute
 import com.chamsae.chaekchaek.ui.search.SearchRoute
 
-private enum class RootTab(val label: String, @DrawableRes val icon: Int) {
-  Home("홈", R.drawable.ic_tab_home),
-  Discover("발견", R.drawable.ic_tab_discover),
-  Shelf("내 서재", R.drawable.ic_tab_shelf),
+private enum class RootTab(
+  val label: String,
+  @param:DrawableRes val selectedIcon: Int,
+  @param:DrawableRes val unselectedIcon: Int,
+) {
+  Home("홈", R.drawable.ic_tab_home_filled, R.drawable.ic_tab_home_outline),
+  Discover("발견", R.drawable.ic_tab_discover_filled, R.drawable.ic_tab_discover_outline),
+  Shelf("내 서재", R.drawable.ic_tab_shelf_filled, R.drawable.ic_tab_shelf_outline),
 }
 
 @Composable
@@ -117,7 +121,7 @@ private fun ChaekBottomBar(
           contentAlignment = Alignment.Center,
         ) {
           Icon(
-            painter = androidx.compose.ui.res.painterResource(tab.icon),
+            painter = androidx.compose.ui.res.painterResource(if (selected) tab.selectedIcon else tab.unselectedIcon),
             contentDescription = tab.label,
             modifier = Modifier.size(24.dp),
             tint = if (selected) {
