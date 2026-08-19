@@ -1,6 +1,7 @@
 package com.chamsae.chaekchaek.ui.bookdetail
 
 import com.chaekchaek.app.domain.book.BookId
+import com.chaekchaek.app.presentation.home.ReadingBookUiModel
 import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import com.chamsae.chaekchaek.data.ArchivedBook
 import com.chamsae.chaekchaek.data.BookSearchResult
@@ -54,5 +55,24 @@ class BookDetailArgsTest {
     assertEquals("앤디 위어", args.creator)
     assertEquals("SF", args.category)
     assertEquals(308, args.totalPages)
+  }
+
+  @Test
+  fun `reading book keeps the canonical book id instead of cover id`() {
+    val args =
+      ReadingBookUiModel(
+        bookId = BookId("9788925588650"),
+        title = "마션",
+        coverId = "cover-13",
+        currentPage = 80,
+        totalPages = 308,
+      ).toBookDetailArgs()
+
+    assertEquals("9788925588650", args.id)
+  }
+
+  @Test
+  fun `reflection date is derived from its creation time`() {
+    assertEquals("2026.08.05", formatReflectionDate(1785924000000L))
   }
 }

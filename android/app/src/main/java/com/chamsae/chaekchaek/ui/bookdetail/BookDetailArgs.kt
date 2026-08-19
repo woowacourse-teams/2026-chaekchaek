@@ -70,7 +70,7 @@ internal fun OverlappedCardUiModel.toBookDetailArgs(): BookDetailArgs =
 
 internal fun ReadingBookUiModel.toBookDetailArgs(): BookDetailArgs =
   BookDetailArgs(
-    id = coverId,
+    id = bookId.value,
     title = title,
     totalPages = totalPages,
     coverId = coverId,

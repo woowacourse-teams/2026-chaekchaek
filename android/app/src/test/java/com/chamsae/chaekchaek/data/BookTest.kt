@@ -66,6 +66,26 @@ class BookTest {
   }
 
   @Test
+  fun `reflections round-trip through json`() {
+    val original =
+      listOf(
+        BookReflection(
+          id = "reflection-1",
+          bookId = "book-1",
+          body = "문제를 하나씩 푸는 태도가 인상 깊었다.",
+          quote = "과학으로 살아남을 것이다.",
+          page = 80,
+          chapter = "Chapter 1",
+          spoiler = true,
+          anonymous = true,
+          createdAt = 123L,
+        )
+      )
+
+    assertEquals(original, parseBookReflections(serializeBookReflections(original)))
+  }
+
+  @Test
   fun `search result converts to one unique archived book`() {
     val archived =
       BookSearchResult(

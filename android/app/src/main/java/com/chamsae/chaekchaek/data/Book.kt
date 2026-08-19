@@ -57,6 +57,24 @@ data class ArchivedBook(
     )
 }
 
+data class BookReflection(
+  val id: String,
+  val bookId: String,
+  val body: String,
+  val quote: String = "",
+  val page: Int? = null,
+  val chapter: String = "",
+  val spoiler: Boolean = false,
+  val anonymous: Boolean = true,
+  val authorName: String = "",
+  val createdAt: Long,
+) {
+  init {
+    require(body.isNotBlank()) { "감상은 비어 있을 수 없습니다." }
+    require(page == null || page >= 0) { "쪽수는 0보다 작을 수 없습니다." }
+  }
+}
+
 /**
  * 알라딘 ItemSearch API(`output=js`) 응답을 파싱한다. 최상위 `item` 배열 아래 각 도서 객체의
  * `author`/`pubDate`/`cover` 필드명을 우리 모델 이름에 맞춰 옮긴다. 필드가 없으면 빈 문자열로
@@ -145,6 +163,44 @@ internal fun parseArchivedBooks(json: String): List<ArchivedBook> {
 }
 
 internal fun serializeArchivedBooks(items: List<ArchivedBook>): String {
+  val array = JSONArray()
+  items.forEach { array.put(it.toJson()) }
+  return array.toString()
+}
+
+internal fun BookReflection.toJson(): JSONObject =
+  JSONObject()
+    .put("id", id)
+    .put("bookId", bookId)
+    .put("body", body)
+    .put("quote", quote)
+    .put("page", page)
+    .put("chapter", chapter)
+    .put("spoiler", spoiler)
+    .put("anonymous", anonymous)
+    .put("authorName", authorName)
+    .put("createdAt", createdAt)
+
+internal fun JSONObject.toBookReflection(): BookReflection =
+  BookReflection(
+    id = getString("id"),
+    bookId = getString("bookId"),
+    body = getString("body"),
+    quote = optString("quote"),
+    page = if (isNull("page")) null else optInt("page").coerceAtLeast(0),
+    chapter = optString("chapter"),
+    spoiler = optBoolean("spoiler"),
+    anonymous = optBoolean("anonymous", true),
+    authorName = optString("authorName"),
+    createdAt = optLong("createdAt"),
+  )
+
+internal fun parseBookReflections(json: String): List<BookReflection> {
+  val array = JSONArray(json)
+  return List(array.length()) { i -> array.getJSONObject(i).toBookReflection() }
+}
+
+internal fun serializeBookReflections(items: List<BookReflection>): String {
   val array = JSONArray()
   items.forEach { array.put(it.toJson()) }
   return array.toString()
