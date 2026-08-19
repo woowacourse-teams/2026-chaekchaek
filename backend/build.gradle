@@ -29,6 +29,9 @@ def openApiSpecFile = layout.buildDirectory.file('api-spec/openapi3.yaml')
 def swaggerRuntimeDir = layout.buildDirectory.dir('generated-resources/swagger')
 def swaggerStaticDocsDir = swaggerRuntimeDir.map { it.dir('static/docs') }
 def stagedOpenApiSpecFile = swaggerStaticDocsDir.map { it.file('openapi3.yaml') }
+def apiDocsVersion = providers.gradleProperty('apiDocsVersion')
+		.orElse(providers.environmentVariable('API_DOCS_VERSION'))
+		.orElse('local')
 
 dependencies {
 	// Application
@@ -67,8 +70,30 @@ dependencies {
 openapi3 {
 	server = '..'
 	title = 'ChaekChaek API'
-	description = 'ChaekChaek REST API'
-	version = project.version.toString()
+	description = '''ChaekChaek 웹·모바일 클라이언트를 위한 REST API입니다.
+
+## Swagger 이용 안내
+- 운영 Swagger는 API 계약 확인을 위한 읽기 전용 문서입니다.
+- Try it out은 GET 요청만 지원합니다.
+- Swagger UI에서는 쿠키와 Authorization 헤더를 전송하지 않습니다.
+- 인증이 필요한 API의 실행은 개발·QA 환경 또는 별도 API 클라이언트를 사용합니다.
+
+## 웹 인증
+- OAuth 로그인 성공 후 `access_token`, `refresh_token` 쿠키를 사용합니다.
+- 보호된 API는 `access_token` 쿠키 또는 `Authorization: Bearer {accessToken}` 헤더로 인증할 수 있습니다.
+- 웹 토큰 재발급과 로그아웃은 `refresh_token` 쿠키를 사용합니다.
+
+## 모바일 인증
+- Google SDK에서 받은 ID Token을 모바일 로그인 API에 전달합니다.
+- 응답의 Access Token은 `Authorization: Bearer {accessToken}` 헤더로 전달합니다.
+- `accessTokenExpiresIn`, `refreshTokenExpiresIn`의 단위는 초입니다.
+- 모바일 토큰 재발급 시 기존 Refresh Token은 폐기되고 새 토큰이 발급됩니다.
+
+## 오류 처리
+- 클라이언트의 오류 분기에는 ProblemDetail의 `code`를 사용합니다.
+- `detail`은 사용자 표시 또는 디버깅 참고용이며 분기 기준으로 사용하지 않습니다.
+- `type`은 현재 `about:blank`으로 고정됩니다.'''
+	version = apiDocsVersion.get()
 	format = 'yaml'
 	snippetsDirectory = snippetsDir.path
 	outputDirectory = layout.buildDirectory.dir('api-spec').get().asFile.path
@@ -110,6 +135,220 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			// ePages 0.20.1 does not emit nullable for optional object fields with nested descriptors.
 			nullableProperty.put('nullable', true)
 		}
+
+		def components = (specification.get('components') as Map) ?: [:]
+		specification.put('components', components)
+		def schemas = (components.get('schemas') as Map) ?: [:]
+		components.put('schemas', schemas)
+		def dereferenceSchema = { schema ->
+			def reference = (schema as Map)?.get('\$ref') as String
+			if (reference == null) {
+				return schema as Map
+			}
+			return schemas.get(reference.substring(reference.lastIndexOf('/') + 1)) as Map
+		}
+		def operationParameter = { path, method, name ->
+			def parameters = (((specification.get('paths') as Map)?.get(path) as Map)?.get(method) as Map)
+				?.get('parameters') as List
+			return parameters?.find { parameter -> (parameter as Map)?.get('name') == name } as Map
+		}
+		def requestSchema = { path, method ->
+			def operation = ((specification.get('paths') as Map)?.get(path) as Map)?.get(method) as Map
+			def content = ((operation?.get('requestBody') as Map)?.get('content') as Map)?.values()?.first() as Map
+			return dereferenceSchema(content?.get('schema'))
+		}
+		def responseSchemaForPath = { path, method, status ->
+			def operation = ((specification.get('paths') as Map)?.get(path) as Map)?.get(method) as Map
+			def response = ((operation?.get('responses') as Map)?.get(status) as Map)
+			def content = ((response?.get('content') as Map)?.values()?.find { value ->
+				(value as Map)?.get('schema') != null
+			}) as Map
+			return dereferenceSchema(content?.get('schema'))
+		}
+		def setEnum = { path, method, name, values, defaultValue = null ->
+			def schema = (operationParameter(path, method, name)?.get('schema')) as Map
+			schema?.put('enum', values)
+			if (defaultValue != null) {
+				schema?.put('default', defaultValue)
+			}
+		}
+		def requestProperty = { path, method, name ->
+			def schema = requestSchema(path, method)
+			return (schema?.get('properties') as Map)?.get(name) as Map
+		}
+		def constrainString = { path, method, name, maxLength ->
+			requestProperty(path, method, name)?.put('maxLength', maxLength)
+		}
+		def constrainReadingStatus = { property ->
+			property?.put('enum', ['WANT_TO_READ', 'READING', 'FINISHED'])
+		}
+		def markRequiredNullable = { schema, propertyName ->
+			def resolvedSchema = dereferenceSchema(schema)
+			def required = (resolvedSchema?.get('required') as List) ?: []
+			if (!required.contains(propertyName)) {
+				required.add(propertyName)
+			}
+			resolvedSchema?.put('required', required)
+			((resolvedSchema?.get('properties') as Map)?.get(propertyName) as Map)?.put('nullable', true)
+		}
+		def arrayItemSchema = { schema, propertyName ->
+			def property = ((dereferenceSchema(schema)?.get('properties') as Map)?.get(propertyName)) as Map
+			return dereferenceSchema(property?.get('items'))
+		}
+		def appendOperationDescription = { path, method, addition ->
+			def operation = ((specification.get('paths') as Map)?.get(path) as Map)?.get(method) as Map
+			def description = operation?.get('description')?.toString() ?: ''
+			operation?.put('description', description ? ("${description}\n\n${addition}").toString() : addition.toString())
+		}
+		def addJsonExample = { path, method, status, name, summary, value ->
+			def operation = ((specification.get('paths') as Map)?.get(path) as Map)?.get(method) as Map
+			def response = ((operation?.get('responses') as Map)?.get(status) as Map)
+			def content = ((response?.get('content') as Map)?.get('application/json')) as Map
+			def examples = (content?.get('examples') as Map) ?: [:]
+			content?.put('examples', examples)
+			examples.put(name, [summary: summary, value: value])
+		}
+
+		['/api/v1/books', '/api/v1/library', '/api/v1/books/{bookId}/reviews',
+		 '/api/v1/reviews/{reviewId}/replies'].each { path ->
+			(operationParameter(path, 'get', 'page')?.get('schema') as Map)?.put('minimum', 1)
+		}
+		setEnum('/api/v1/library', 'get', 'status', ['WANT_TO_READ', 'READING', 'FINISHED'])
+		setEnum('/api/v1/library', 'get', 'sort', ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], 'RECENT')
+		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'feed', ['ALL', 'MINE'], 'ALL')
+		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'sort', ['PAGE', 'LATEST', 'OLDEST', 'POPULAR'], 'PAGE')
+
+		def ratingProperty = (requestSchema('/api/v1/library/{bookId}/rating', 'put')?.get('properties') as Map)
+			?.get('rating') as Map
+		ratingProperty?.putAll([minimum: 0.1, maximum: 5.0, multipleOf: 0.1])
+		constrainReadingStatus(requestProperty('/api/v1/library', 'post', 'status'))
+		constrainReadingStatus(requestProperty('/api/v1/library/{bookId}', 'patch', 'status'))
+		constrainReadingStatus(requestProperty('/api/v1/library/bulk-status', 'patch', 'status'))
+		requestProperty('/api/v1/library/{bookId}', 'patch', 'currentPage')?.put('minimum', 0)
+		requestProperty('/api/v1/library/{bookId}', 'patch', 'totalPages')?.put('minimum', 1)
+		requestProperty('/api/v1/library', 'post', 'totalPages')?.put('minimum', 1)
+		constrainString('/api/v1/books/{bookId}/reviews', 'post', 'content', 1000)
+		constrainString('/api/v1/books/{bookId}/reviews', 'post', 'quote', 500)
+		constrainString('/api/v1/books/{bookId}/reviews', 'post', 'chapter', 255)
+		constrainString('/api/v1/reviews/{reviewId}', 'patch', 'content', 1000)
+		constrainString('/api/v1/reviews/{reviewId}', 'patch', 'quote', 500)
+		constrainString('/api/v1/reviews/{reviewId}', 'patch', 'chapter', 255)
+		constrainString('/api/v1/reviews/{reviewId}/replies', 'post', 'content', 200)
+		constrainString('/api/v1/replies/{replyId}', 'patch', 'content', 200)
+		requestProperty('/api/v1/books/{bookId}/reviews', 'post', 'isSpoiler')?.putAll([nullable: false, default: false])
+		requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'content')?.remove('nullable')
+		requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'isSpoiler')?.remove('nullable')
+		['/api/v1/library/bulk-delete', '/api/v1/library/bulk-status'].each { path ->
+			def method = path.endsWith('bulk-delete') ? 'post' : 'patch'
+			def bookIds = (requestSchema(path, method)?.get('properties') as Map)?.get('bookIds') as Map
+			bookIds?.putAll([minItems: 1, maxItems: 10, uniqueItems: true])
+			bookIds?.put('items', [type: 'integer', format: 'int64'])
+		}
+
+		def searchResponse = responseSchemaForPath('/api/v1/books', 'get', '200')
+		markRequiredNullable(searchResponse, 'nextPage')
+		def searchItem = arrayItemSchema(searchResponse, 'items')
+		markRequiredNullable(searchItem, 'bookId')
+		markRequiredNullable(searchItem, 'commentCount')
+		def detailResponse = responseSchemaForPath('/api/v1/books/{bookId}', 'get', '200')
+		['myRecord', 'averageRating', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
+		def libraryResponse = responseSchemaForPath('/api/v1/library', 'get', '200')
+		markRequiredNullable(libraryResponse, 'nextPage')
+		def libraryItem = arrayItemSchema(libraryResponse, 'items')
+		['totalPages', 'rating'].each { propertyName -> markRequiredNullable(libraryItem, propertyName) }
+		def reviewPageResponse = responseSchemaForPath('/api/v1/books/{bookId}/reviews', 'get', '200')
+		markRequiredNullable(reviewPageResponse, 'nextPage')
+		def reviewItem = arrayItemSchema(reviewPageResponse, 'items')
+		['quote', 'chapter', 'currentPage'].each { propertyName -> markRequiredNullable(reviewItem, propertyName) }
+		def memberResponse = responseSchemaForPath('/api/v1/members/me', 'get', '200')
+		markRequiredNullable(memberResponse, 'profileImageUrl')
+		(schemas.get('ProblemDetail') as Map)?.get('required')?.remove('instance')
+
+		appendOperationDescription('/api/v1/library/{bookId}', 'patch',
+				'`status`와 `currentPage` 중 정확히 하나를 보내야 합니다. `totalPages`는 페이지 검증에만 사용되는 보조 값입니다. `WANT_TO_READ`는 `currentPage`를 0으로 만들고, `FINISHED`는 전체 페이지를 알아야 하며 마지막 페이지로 설정합니다. `currentPage`가 전체 페이지와 같으면 `FINISHED`, 작으면 `READING`이며 초과하면 `INVALID_READING_STATE`입니다.')
+		appendOperationDescription('/api/v1/reviews/{reviewId}', 'patch',
+				'필드를 생략하면 기존 값을 유지합니다. `quote`, `chapter`, `currentPage`는 `null`을 보내면 삭제하고, `content`와 `isSpoiler`는 `null`을 보낼 수 없습니다. 빈 객체는 허용되지 않습니다.')
+		appendOperationDescription('/api/v1/library', 'get',
+				'`page`는 1부터 시작하고 한 페이지에 최대 10개입니다. 마지막 페이지의 `nextPage`는 `null`이며, 범위를 벗어난 페이지도 200과 빈 `items`로 응답합니다. 같은 정렬 값의 항목은 일관된 순서로 반환됩니다.')
+		appendOperationDescription('/api/v1/books/{bookId}/reviews', 'get',
+				'`page`는 1부터 시작하고 한 페이지에 최대 10개입니다. `POPULAR`는 좋아요 수와 답글 수를 합산한 인기순이며, 같은 정렬 값의 항목은 일관된 순서로 반환됩니다. 마지막 페이지의 `nextPage`는 `null`이고 범위를 벗어난 페이지는 200과 빈 `items`입니다.')
+		addJsonExample('/api/v1/books', 'get', '200', 'search-registered-book', '서재에 등록된 도서', [
+			 totalCount: 1, nextPage: null,
+			 items: [[bookId: 10, title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
+				 authors: ['한강'], translators: [], publishedDate: '2007-10-30', isbn13: '9788936433598',
+				 category: '국내도서>소설', publisher: '창비', commentCount: 2]]
+		])
+		addJsonExample('/api/v1/books', 'get', '200', 'search-unregistered-book', '서재에 등록하지 않은 도서', [
+			 totalCount: 1, nextPage: null,
+			 items: [[bookId: null, title: '마션', coverImageUrl: 'https://example.com/book.jpg',
+				 authors: ['앤디 위어'], translators: [], publishedDate: '2015-07-10', isbn13: '9788925568683',
+				 category: '국내도서>소설', publisher: '알에이치코리아', commentCount: null]]
+		])
+		addJsonExample('/api/v1/books/{bookId}', 'get', '200', 'book-detail-without-library-record', '서재에 등록하지 않은 도서', [
+			 bookId: 10, isbn13: '9788936433598', title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
+			 authors: ['한강'], translators: [], publisher: '창비', category: '국내도서>소설', publishedDate: '2007-10-30',
+			 totalPages: 368, commentCount: 2, averageRating: 4.3, ratingCount: 21, myRecord: null
+		])
+		addJsonExample('/api/v1/books/{bookId}/reviews', 'get', '200', 'review-normal', '일반 감상', [
+			 totalCount: 1, nextPage: null,
+			 items: [[reviewId: 101, content: '인상 깊었다.', quote: null, chapter: null, currentPage: null,
+				 isSpoiler: false, deleted: false, createdAt: '2026-08-13T15:00:00Z',
+				 author: [displayName: '닉네임', profileImageUrl: null, anonymous: false, mine: false], likeCount: 0,
+				 likedByMe: false, replyCount: 0, recentReplies: []]]
+		])
+		addJsonExample('/api/v1/books/{bookId}/reviews', 'get', '200', 'review-spoiler', '스포일러 감상', [
+			 totalCount: 1, nextPage: null,
+			 items: [[reviewId: 101, content: '결말에 대한 감상', quote: null, chapter: null, currentPage: null,
+				 isSpoiler: true, deleted: false, createdAt: '2026-08-13T15:00:00Z',
+				 author: [displayName: '닉네임', profileImageUrl: null, anonymous: false, mine: false], likeCount: 0,
+				 likedByMe: false, replyCount: 0, recentReplies: []]]
+		])
+		addJsonExample('/api/v1/books/{bookId}/reviews', 'get', '200', 'review-deleted', '삭제된 감상', [
+			 totalCount: 1, nextPage: null,
+			 items: [[reviewId: 101, content: '삭제된 감상입니다.', quote: null, chapter: null, currentPage: null,
+				 isSpoiler: false, deleted: true, createdAt: '2026-08-13T15:00:00Z',
+				 author: [displayName: '닉네임', profileImageUrl: null, anonymous: false, mine: false], likeCount: 0,
+				 likedByMe: false, replyCount: 0, recentReplies: []]]
+		])
+		components.put('securitySchemes', [
+			bearerAuth: [
+				type: 'http',
+				scheme: 'bearer',
+				bearerFormat: 'JWT'
+			],
+			accessTokenCookie: [
+				type: 'apiKey',
+				in: 'cookie',
+				name: 'access_token'
+			]
+		])
+
+		def isPublicOperation = { path, method ->
+			if (path.startsWith('/api/v1/auth/')) {
+				return true
+			}
+			if (method != 'get') {
+				return false
+			}
+			return path.startsWith('/api/v1/home/')
+					|| path == '/api/v1/books'
+					|| path == '/api/v1/books/{bookId}'
+					|| path == '/api/v1/books/{bookId}/reviews'
+					|| path == '/api/v1/reviews/{reviewId}/replies'
+		}
+		def securityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
+		def httpMethods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as Set
+		(specification.get('paths') as Map).each { path, pathItem ->
+			(pathItem as Map).each { method, operation ->
+				if (httpMethods.contains(method.toString())) {
+					if (isPublicOperation(path.toString(), method.toString())) {
+						(operation as Map).remove('security')
+					} else {
+						(operation as Map).put('security', securityRequirement)
+					}
+				}
+			}
+		}
 		sourceFile.withWriter('UTF-8') { writer -> new Yaml().dump(specification, writer) }
 	}
 }
@@ -144,6 +383,19 @@ tasks.register('verifyOpenApi') {
 
 		def specificationText = sourceFile.getText('UTF-8')
 		def specification = new Yaml().load(specificationText) as Map
+		def info = specification?.get('info') as Map
+		def infoDescription = info?.get('description')?.toString() ?: ''
+		['Swagger 이용 안내', '웹 인증', '모바일 인증', 'ProblemDetail'].each { requiredSection ->
+			if (!infoDescription.contains(requiredSection)) {
+				throw new GradleException("OpenAPI info description is missing ${requiredSection} guidance")
+			}
+		}
+		if (!infoDescription.contains('`code`')) {
+			throw new GradleException('OpenAPI info description is missing ProblemDetail code guidance')
+		}
+		if (info?.get('version')?.toString()?.contains('SNAPSHOT')) {
+			throw new GradleException('OpenAPI specification must not expose a SNAPSHOT version')
+		}
 		def paths = specification?.get('paths') as Map
 		def booksPath = paths?.get('/api/v1/books') as Map
 		if (booksPath == null) {
@@ -237,6 +489,75 @@ tasks.register('verifyOpenApi') {
 				}
 				if (operationResponses == null || !operationResponses.containsKey(successStatus)) {
 					throw new GradleException("OpenAPI specification is missing ${successStatus} response for ${method.toUpperCase()} ${path}")
+				}
+			}
+		}
+
+		def authOperations = [
+			'/api/v1/auth/mobile/google'   : [post: ['200', '400']],
+			'/api/v1/auth/mobile/reissue' : [post: ['200', '400']],
+			'/api/v1/auth/mobile/logout'  : [post: ['204', '400']],
+			'/api/v1/auth/reissue'        : [post: ['204']],
+			'/api/v1/auth/logout'         : [post: ['204']],
+			'/api/v1/members/me'          : [get : ['200', '401']]
+		]
+		authOperations.each { path, operations ->
+			def pathItem = paths?.get(path) as Map
+			if (pathItem == null) {
+				throw new GradleException("OpenAPI specification is missing path ${path}")
+			}
+			operations.each { method, expectedResponseCodes ->
+				def operation = pathItem.get(method) as Map
+				if (operation == null) {
+					throw new GradleException("OpenAPI specification is missing ${method.toUpperCase()} operation for ${path}")
+				}
+				def operationResponses = (operation.get('responses') as Map)?.collectEntries { status, response ->
+					[(status.toString()): response]
+				}
+				if (operationResponses == null || !operationResponses.keySet().containsAll(expectedResponseCodes)) {
+					throw new GradleException("OpenAPI specification has incomplete responses for ${method.toUpperCase()} ${path}")
+				}
+			}
+		}
+
+		def securitySchemes = ((specification?.get('components') as Map)?.get('securitySchemes') as Map)
+		def bearerAuth = securitySchemes?.get('bearerAuth') as Map
+		if (bearerAuth?.get('type') != 'http' || bearerAuth?.get('scheme') != 'bearer') {
+			throw new GradleException('OpenAPI specification is missing bearerAuth security scheme')
+		}
+		def accessTokenCookie = securitySchemes?.get('accessTokenCookie') as Map
+		if (accessTokenCookie?.get('type') != 'apiKey'
+				|| accessTokenCookie?.get('in') != 'cookie'
+				|| accessTokenCookie?.get('name') != 'access_token') {
+			throw new GradleException('OpenAPI specification is missing accessTokenCookie security scheme')
+		}
+		def expectedSecurityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
+		def publicOperation = { path, method ->
+			if (path.toString().startsWith('/api/v1/auth/')) {
+				return true
+			}
+			if (method.toString() != 'get') {
+				return false
+			}
+			return path.toString().startsWith('/api/v1/home/')
+					|| path.toString() == '/api/v1/books'
+					|| path.toString() == '/api/v1/books/{bookId}'
+					|| path.toString() == '/api/v1/books/{bookId}/reviews'
+					|| path.toString() == '/api/v1/reviews/{reviewId}/replies'
+		}
+		def openApiHttpMethods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as Set
+		paths.each { path, pathItem ->
+			(pathItem as Map).each { method, operation ->
+				if (!openApiHttpMethods.contains(method.toString())) {
+					return
+				}
+				def security = (operation as Map).get('security')
+				if (publicOperation(path, method)) {
+					if (security != null) {
+						throw new GradleException("OpenAPI specification adds authentication to public ${method.toString().toUpperCase()} ${path}")
+					}
+				} else if (security != expectedSecurityRequirement) {
+					throw new GradleException("OpenAPI specification is missing alternative authentication for ${method.toString().toUpperCase()} ${path}")
 				}
 			}
 		}
@@ -362,6 +683,140 @@ tasks.register('verifyOpenApi') {
 			def schemaName = reference?.substring(reference.lastIndexOf('/') + 1)
 			return (((specification.get('components') as Map)?.get('schemas') as Map)?.get(schemaName) as Map)
 		}
+		def queryParameter = { path, method, name ->
+			def parameters = (((paths.get(path) as Map)?.get(method) as Map)?.get('parameters') as List)
+			return parameters?.find { parameter -> (parameter as Map)?.get('name') == name } as Map
+		}
+		def requestSchema = { path, method ->
+			def operation = (paths.get(path) as Map).get(method) as Map
+			def content = ((operation?.get('requestBody') as Map)?.get('content') as Map)?.values()?.first() as Map
+			return dereferenceSchema(content?.get('schema'))
+		}
+		def requestProperty = { path, method, name ->
+			def schema = requestSchema(path, method)
+			return (schema?.get('properties') as Map)?.get(name) as Map
+		}
+		def responseSchema = { path, method, status ->
+			def operation = (paths.get(path) as Map).get(method) as Map
+			def response = ((operation?.get('responses') as Map)?.get(status) as Map)
+			def content = (response?.get('content') as Map)?.values()?.find { value ->
+				(value as Map)?.get('schema') != null
+			} as Map
+			return dereferenceSchema(content?.get('schema'))
+		}
+		def requiredNullable = { schema, propertyName ->
+			def required = (schema?.get('required') as List) ?: []
+			def property = (schema?.get('properties') as Map)?.get(propertyName) as Map
+			return required.contains(propertyName) && property?.get('nullable') == true
+		}
+
+		[
+			[path: '/api/v1/books', method: 'get', name: 'page'],
+			[path: '/api/v1/library', method: 'get', name: 'page'],
+			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'page'],
+			[path: '/api/v1/reviews/{reviewId}/replies', method: 'get', name: 'page']
+		].each { requirement ->
+			def schema = queryParameter(requirement.path, requirement.method, requirement.name)?.get('schema') as Map
+			if (schema?.get('type') != 'integer' || schema?.get('minimum') != 1) {
+				throw new GradleException("OpenAPI specification must constrain ${requirement.method.toUpperCase()} ${requirement.path} ${requirement.name} to a minimum of 1")
+			}
+		}
+
+		[
+			[path: '/api/v1/library', method: 'get', name: 'status', values: ['WANT_TO_READ', 'READING', 'FINISHED']],
+			[path: '/api/v1/library', method: 'get', name: 'sort', values: ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], defaultValue: 'RECENT'],
+			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'feed', values: ['ALL', 'MINE'], defaultValue: 'ALL'],
+			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'sort', values: ['PAGE', 'LATEST', 'OLDEST', 'POPULAR'], defaultValue: 'PAGE']
+		].each { requirement ->
+			def parameter = queryParameter(requirement.path, requirement.method, requirement.name)
+			def schema = parameter?.get('schema') as Map
+			if (schema?.get('enum') != requirement.values) {
+				throw new GradleException("OpenAPI specification is missing enum values for ${requirement.method.toUpperCase()} ${requirement.path} ${requirement.name}")
+			}
+			if (requirement.defaultValue != null && schema?.get('default') != requirement.defaultValue) {
+				throw new GradleException("OpenAPI specification is missing default value for ${requirement.method.toUpperCase()} ${requirement.path} ${requirement.name}")
+			}
+		}
+
+		def ratingRequest = requestSchema('/api/v1/library/{bookId}/rating', 'put')
+		def ratingProperty = (ratingRequest?.get('properties') as Map)?.get('rating') as Map
+		if (ratingProperty?.get('type') != 'number' || ratingProperty?.get('minimum') != 0.1
+				|| ratingProperty?.get('maximum') != 5.0 || ratingProperty?.get('multipleOf') != 0.1) {
+			throw new GradleException('OpenAPI specification must constrain rating to 0.1 through 5.0 in 0.1 increments')
+		}
+		[
+			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'content', maxLength: 1000],
+			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'quote', maxLength: 500],
+			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'chapter', maxLength: 255],
+			[path: '/api/v1/reviews/{reviewId}', method: 'patch', name: 'content', maxLength: 1000],
+			[path: '/api/v1/reviews/{reviewId}', method: 'patch', name: 'quote', maxLength: 500],
+			[path: '/api/v1/reviews/{reviewId}', method: 'patch', name: 'chapter', maxLength: 255],
+			[path: '/api/v1/reviews/{reviewId}/replies', method: 'post', name: 'content', maxLength: 200],
+			[path: '/api/v1/replies/{replyId}', method: 'patch', name: 'content', maxLength: 200]
+		].each { requirement ->
+			if ((requestProperty(requirement.path, requirement.method, requirement.name)?.get('maxLength')) != requirement.maxLength) {
+				throw new GradleException("OpenAPI specification is missing maxLength for ${requirement.method.toUpperCase()} ${requirement.path} ${requirement.name}")
+			}
+		}
+		[
+			[path: '/api/v1/library', method: 'post', name: 'status'],
+			[path: '/api/v1/library/{bookId}', method: 'patch', name: 'status'],
+			[path: '/api/v1/library/bulk-status', method: 'patch', name: 'status']
+		].each { requirement ->
+			def property = requestProperty(requirement.path, requirement.method, requirement.name)
+			if (property?.get('enum') != ['WANT_TO_READ', 'READING', 'FINISHED']) {
+				throw new GradleException("OpenAPI specification is missing reading status enum for ${requirement.method.toUpperCase()} ${requirement.path}")
+			}
+		}
+		if (requestProperty('/api/v1/books/{bookId}/reviews', 'post', 'isSpoiler')?.get('default') != false
+				|| requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'content')?.get('nullable') == true
+				|| requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'isSpoiler')?.get('nullable') == true) {
+			throw new GradleException('OpenAPI specification has invalid nullability for review create/update fields')
+		}
+
+		[
+			'/api/v1/library/bulk-delete',
+			'/api/v1/library/bulk-status'
+		].each { path ->
+			def method = path.endsWith('bulk-delete') ? 'post' : 'patch'
+			def schema = requestSchema(path, method)
+			def bookIds = (schema?.get('properties') as Map)?.get('bookIds') as Map
+			def items = bookIds?.get('items') as Map
+			if (bookIds?.get('type') != 'array' || bookIds?.get('minItems') != 1
+					|| bookIds?.get('maxItems') != 10 || bookIds?.get('uniqueItems') != true
+					|| items?.get('type') != 'integer' || items?.get('format') != 'int64') {
+				throw new GradleException("OpenAPI specification must constrain bookIds for ${method.toUpperCase()} ${path}")
+			}
+		}
+
+		def searchResponse = responseSchema('/api/v1/books', 'get', '200')
+		def searchItem = ((searchResponse?.get('properties') as Map)?.get('items') as Map)?.get('items') as Map
+		if (!requiredNullable(searchResponse, 'nextPage') || !requiredNullable(searchItem, 'bookId')
+				|| !requiredNullable(searchItem, 'commentCount')) {
+			throw new GradleException('OpenAPI specification must distinguish nullable book search fields from omitted fields')
+		}
+		def detailResponse = responseSchema('/api/v1/books/{bookId}', 'get', '200')
+		if (!requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'averageRating')
+				|| !requiredNullable(detailResponse, 'totalPages')) {
+			throw new GradleException('OpenAPI specification must describe nullable book detail state fields')
+		}
+		def libraryResponse = responseSchema('/api/v1/library', 'get', '200')
+		def libraryItem = ((libraryResponse?.get('properties') as Map)?.get('items') as Map)?.get('items') as Map
+		if (!requiredNullable(libraryResponse, 'nextPage') || !requiredNullable(libraryItem, 'totalPages')
+				|| !requiredNullable(libraryItem, 'rating')) {
+			throw new GradleException('OpenAPI specification must describe nullable library fields')
+		}
+		def reviewPageResponse = responseSchema('/api/v1/books/{bookId}/reviews', 'get', '200')
+		def reviewItem = ((reviewPageResponse?.get('properties') as Map)?.get('items') as Map)?.get('items') as Map
+		if (!requiredNullable(reviewPageResponse, 'nextPage') || !requiredNullable(reviewItem, 'quote')
+				|| !requiredNullable(reviewItem, 'chapter') || !requiredNullable(reviewItem, 'currentPage')) {
+			throw new GradleException('OpenAPI specification must describe nullable review fields')
+		}
+		def problemDetailRequired = ((specification.get('components') as Map)?.get('schemas') as Map)
+				?.get('ProblemDetail')?.get('required') as List
+		if (problemDetailRequired?.contains('instance')) {
+			throw new GradleException('OpenAPI ProblemDetail instance must be optional because authentication errors may omit it')
+		}
 		def comparisonSchema = dereferenceSchema((((paths.get('/api/v1/members/me/ratings/comparison') as Map)
 				.get('get') as Map).get('responses') as Map).get('200').get('content').get('application/json').get('schema'))
 		def comparisonProperties = comparisonSchema?.get('properties') as Map
@@ -434,6 +889,33 @@ tasks.register('verifyOpenApi') {
 		def feed = reviewFeedParameters?.find { parameter -> (parameter as Map)?.get('name') == 'feed' } as Map
 		if (!feed?.get('description')?.toString()?.contains('MINE은 인증 필요')) {
 			throw new GradleException('OpenAPI specification must describe authentication required for MINE review feed')
+		}
+		def operationDescription = { path, method ->
+			return (((paths.get(path) as Map)?.get(method) as Map)?.get('description'))?.toString() ?: ''
+		}
+		[
+			[path: '/api/v1/library/{bookId}', method: 'patch', phrases: ['status`와 `currentPage` 중 정확히 하나', 'WANT_TO_READ', 'FINISHED', 'INVALID_READING_STATE']],
+			[path: '/api/v1/reviews/{reviewId}', method: 'patch', phrases: ['생략하면 기존 값을 유지', '`null`을 보내면 삭제', '`null`을 보낼 수 없습니다', '빈 객체는 허용되지 않습니다']],
+			[path: '/api/v1/library', method: 'get', phrases: ['page`는 1부터 시작', '최대 10개', 'nextPage`는 `null', '빈 `items`']],
+			[path: '/api/v1/books/{bookId}/reviews', method: 'get', phrases: ['POPULAR', '좋아요 수와 답글 수를 합산', 'page`는 1부터 시작', '빈 `items`']]
+		].each { requirement ->
+			def description = operationDescription(requirement.path, requirement.method)
+			if (!requirement.phrases.every { phrase -> description.contains(phrase) }) {
+				throw new GradleException("OpenAPI specification is missing client guidance for ${requirement.method.toUpperCase()} ${requirement.path}")
+			}
+		}
+		[
+			[path: '/api/v1/books', method: 'get', status: '200', names: ['search-registered-book', 'search-unregistered-book']],
+			[path: '/api/v1/books/{bookId}', method: 'get', status: '200', names: ['book-detail-without-library-record']],
+			[path: '/api/v1/books/{bookId}/reviews', method: 'get', status: '200', names: ['review-normal', 'review-spoiler', 'review-deleted']]
+		].each { requirement ->
+			def operation = ((paths.get(requirement.path) as Map)?.get(requirement.method)) as Map
+			def response = ((operation?.get('responses') as Map)?.get(requirement.status)) as Map
+			def content = ((response?.get('content') as Map)?.get('application/json')) as Map
+			def examples = content?.get('examples') as Map
+			if (examples == null || !examples.keySet().containsAll(requirement.names)) {
+				throw new GradleException("OpenAPI specification is missing selected client examples for ${requirement.method.toUpperCase()} ${requirement.path}")
+			}
 		}
 
 		def components = specification?.get('components') as Map
