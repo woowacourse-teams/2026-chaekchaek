@@ -2,11 +2,15 @@ package com.chaekchaek.member.controller;
 
 import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.document;
 import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -214,6 +218,33 @@ public class MemberControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nickname").value("책책이"))
                 .andExpect(jsonPath("$.displayAnonymous").value(false));
+    }
+
+    @Test
+    @DisplayName("회원을 탈퇴 처리하고 인증 쿠키를 삭제한다")
+    void should_WithdrawMember() throws Exception {
+        Member member = Member.create("우아한 달빛 참새", "profile", LocalDateTime.now());
+        member.updateNickname("책책이");
+        memberRepository.save(member);
+
+        var result = mockMvc.perform(delete("/api/v1/members/me")
+                        .with(csrf())
+                        .cookie(accessTokenCookie(member)))
+                .andExpect(status().isNoContent())
+                .andExpect(header().exists("Set-Cookie"))
+                .andReturn();
+
+        assertThat(result.getResponse().getHeaders("Set-Cookie"))
+                .anyMatch(value -> value.contains("access_token=;") && value.contains("Max-Age=0"))
+                .anyMatch(value -> value.contains("refresh_token=;") && value.contains("Max-Age=0"));
+
+        Member withdrawnMember = memberRepository.findById(member.getId()).orElseThrow();
+        assertAll(
+                () -> assertThat(withdrawnMember.getAccountStatus().name()).isEqualTo("WITHDRAWN"),
+                () -> assertThat(withdrawnMember.getWithdrawnAt()).isNotNull(),
+                () -> assertThat(withdrawnMember.getNickname()).isNull(),
+                () -> assertThat(withdrawnMember.getProfileImageUrl()).isNull()
+        );
     }
 
     private Cookie accessTokenCookie(Member member) {

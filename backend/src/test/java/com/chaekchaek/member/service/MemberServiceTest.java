@@ -4,8 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 
+import com.chaekchaek.auth.token.refresh.RefreshToken;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
 import com.chaekchaek.common.exception.MemberNotFoundException;
 import com.chaekchaek.common.exception.NicknameAlreadyExistsException;
 import com.chaekchaek.common.exception.NicknameRequiredException;
@@ -26,6 +30,12 @@ class MemberServiceTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
+    private RefreshToken refreshToken;
 
     @InjectMocks
     private MemberService memberService;
@@ -119,5 +129,25 @@ class MemberServiceTest {
         MemberResponse response = memberService.updateAnonymity(1L, false);
 
         assertThat(response.displayAnonymous()).isFalse();
+    }
+
+    @Test
+    @DisplayName("회원을 탈퇴 처리한다")
+    void should_WithdrawMember() {
+        Member member = Member.create("우아한 달빛 참새", "profile", LocalDateTime.now());
+        member.updateNickname("책책이");
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+        given(refreshTokenRepository.findAllByMemberIdAndRevokedAtIsNull(1L))
+                .willReturn(java.util.List.of(refreshToken));
+
+        memberService.withdraw(1L);
+
+        assertAll(
+                () -> assertThat(member.getAccountStatus().name()).isEqualTo("WITHDRAWN"),
+                () -> assertThat(member.getWithdrawnAt()).isNotNull(),
+                () -> assertThat(member.getNickname()).isNull(),
+                () -> assertThat(member.getProfileImageUrl()).isNull()
+        );
+        verify(refreshToken).revoke(any(LocalDateTime.class));
     }
 }

@@ -69,4 +69,24 @@ class MemberTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("[ERROR] 닉네임을 설정해야 익명 상태를 해제할 수 있습니다");
     }
+
+    @Test
+    @DisplayName("회원 탈퇴 시 개인정보를 제거하고 익명 닉네임은 유지한다")
+    void should_AnonymizeMember_When_Withdrawn() {
+        Member member = Member.create("우아한 달빛 참새", "profile", LocalDateTime.now());
+        member.updateNickname("책책이");
+        member.disableAnonymousDisplay();
+        LocalDateTime withdrawnAt = LocalDateTime.of(2026, 8, 19, 15, 0);
+
+        member.withdraw(withdrawnAt);
+
+        assertAll(
+                () -> assertThat(member.getNickname()).isNull(),
+                () -> assertThat(member.getProfileImageUrl()).isNull(),
+                () -> assertThat(member.getAnonymousNickname()).isEqualTo("우아한 달빛 참새"),
+                () -> assertThat(member.isDisplayAnonymous()).isTrue(),
+                () -> assertThat(member.getAccountStatus()).isEqualTo(AccountStatus.WITHDRAWN),
+                () -> assertThat(member.getWithdrawnAt()).isEqualTo(withdrawnAt)
+        );
+    }
 }

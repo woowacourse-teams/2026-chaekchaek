@@ -1,5 +1,6 @@
 package com.chaekchaek.member.controller;
 
+import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.member.dto.MemberResponse;
 import com.chaekchaek.member.dto.UpdateAnonymityRequest;
 import com.chaekchaek.member.dto.UpdateNicknameRequest;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberController {
 
     private final MemberService memberService;
+    private final AuthCookieProvider authCookieProvider;
 
     @GetMapping("/me")
     public ResponseEntity<MemberResponse> getMyInfo(
@@ -51,5 +54,18 @@ public class MemberController {
                 Long.valueOf(jwt.getSubject()),
                 request.displayAnonymous()
         ));
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdraw(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        Long memberId = Long.valueOf(jwt.getSubject());
+        memberService.withdraw(memberId);
+
+        return ResponseEntity.noContent()
+                .header("Set-Cookie", authCookieProvider.deleteAccessTokenCookie().toString())
+                .header("Set-Cookie", authCookieProvider.deleteRefreshTokenCookie().toString())
+                .build();
     }
 }

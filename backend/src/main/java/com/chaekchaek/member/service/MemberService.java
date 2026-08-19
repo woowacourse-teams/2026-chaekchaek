@@ -1,11 +1,13 @@
 package com.chaekchaek.member.service;
 
+import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
 import com.chaekchaek.common.exception.MemberNotFoundException;
 import com.chaekchaek.common.exception.NicknameAlreadyExistsException;
 import com.chaekchaek.common.exception.NicknameRequiredException;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.dto.MemberResponse;
 import com.chaekchaek.member.repository.MemberRepository;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     public MemberResponse getMyInfo(Long memberId) {
         Member member = getMember(memberId);
@@ -43,6 +46,16 @@ public class MemberService {
 
         member.changeAnonymousDisplay(displayAnonymous);
         return MemberResponse.from(member);
+    }
+
+    @Transactional
+    public void withdraw(Long memberId) {
+        Member member = getMember(memberId);
+        LocalDateTime withdrawnAt = LocalDateTime.now();
+
+        member.withdraw(withdrawnAt);
+        refreshTokenRepository.findAllByMemberIdAndRevokedAtIsNull(memberId)
+                .forEach(refreshToken -> refreshToken.revoke(withdrawnAt));
     }
 
     private Member getMember(Long memberId) {

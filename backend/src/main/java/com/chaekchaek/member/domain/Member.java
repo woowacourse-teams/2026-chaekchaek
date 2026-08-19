@@ -111,6 +111,18 @@ public class Member {
         return displayAnonymous ? anonymousNickname : nickname;
     }
 
+    public void withdraw(LocalDateTime withdrawnAt) {
+        if (accountStatus == AccountStatus.WITHDRAWN) {
+            return;
+        }
+
+        this.nickname = null;
+        this.profileImageUrl = null;
+        this.displayAnonymous = true;
+        this.accountStatus = AccountStatus.WITHDRAWN;
+        this.withdrawnAt = withdrawnAt;
+    }
+
     private static void validateAnonymousNickname(String anonymousNickname) {
         if (anonymousNickname == null || anonymousNickname.isBlank()) {
             throw new IllegalArgumentException(ANONYMOUS_NICKNAME_MUST_EXIST_ERROR_MESSAGE);
@@ -138,5 +150,5 @@ public class Member {
         return profileImageUrl;
     }
 
-    //TODO: updateProfile(), withdraw(), changeAnonymousDisplay()
+    //TODO: updateProfile()
 }
