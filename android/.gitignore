@@ -17,3 +17,5 @@ local.properties
 keystore.properties
 *.jks
 *.keystore
+iosApp/DerivedData/
+iosApp/*.xcodeproj/xcuserdata/
