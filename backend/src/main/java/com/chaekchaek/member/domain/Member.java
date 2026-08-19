@@ -19,28 +19,28 @@ import lombok.NoArgsConstructor;
 @Table(name = "member")
 public class Member {
 
-    private static final String NICKNAME_MUST_EXIST_ERROR_MESSAGE =
-            "[ERROR] 닉네임이 존재해야 합니다";
     private static final String NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE =
             "[ERROR] 닉네임은 100자 이하여야 합니다";
-    private static final String ANONYMOUS_HANDLE_MUST_EXIST_ERROR_MESSAGE =
-            "[ERROR] 익명 핸들이 존재해야 합니다";
-    private static final String ANONYMOUS_HANDLE_LENGTH_MUST_BE_VALID_ERROR_MESSAGE =
-            "[ERROR] 익명 핸들은 100자 이하여야 합니다";
+    private static final String ANONYMOUS_NICKNAME_MUST_EXIST_ERROR_MESSAGE =
+            "[ERROR] 익명 닉네임이 존재해야 합니다";
+    private static final String ANONYMOUS_NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE =
+            "[ERROR] 익명 닉네임은 100자 이하여야 합니다";
+    private static final String NICKNAME_REQUIRED_TO_DISABLE_ANONYMOUS_ERROR_MESSAGE =
+            "[ERROR] 닉네임을 설정해야 익명 상태를 해제할 수 있습니다";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id")
     private Long id;
 
-    @Column(name = "nickname", nullable = false, unique = true, length = 100)
+    @Column(name = "nickname", unique = true, length = 100)
     private String nickname;
 
     @Column(name = "profile_image_url", columnDefinition = "TEXT")
     private String profileImageUrl;
 
-    @Column(name = "anonymous_handle", nullable = false, unique = true, length = 100)
-    private String anonymousHandle;
+    @Column(name = "anonymous_nickname", nullable = false, length = 100)
+    private String anonymousNickname;
 
     @Column(name = "display_anonymous", nullable = false)
     private boolean displayAnonymous;
@@ -58,7 +58,7 @@ public class Member {
     private Member(
             String nickname,
             String profileImageUrl,
-            String anonymousHandle,
+            String anonymousNickname,
             boolean displayAnonymous,
             AccountStatus accountStatus,
             LocalDateTime createdAt,
@@ -66,7 +66,7 @@ public class Member {
     ) {
         this.nickname = nickname;
         this.profileImageUrl = normalizeProfileImageUrl(profileImageUrl);
-        this.anonymousHandle = anonymousHandle;
+        this.anonymousNickname = anonymousNickname;
         this.displayAnonymous = displayAnonymous;
         this.accountStatus = accountStatus;
         this.createdAt = createdAt;
@@ -74,37 +74,67 @@ public class Member {
     }
 
     public static Member create(
-            String nickname,
+            String anonymousNickname,
             String profileImageUrl,
-            String anonymousHandle,
             LocalDateTime createdAt
     ) {
-        validateNickname(nickname);
-        validateAnonymousHandle(anonymousHandle);
+        validateAnonymousNickname(anonymousNickname);
 
         return new Member(
-                nickname,
+                null,
                 profileImageUrl,
-                anonymousHandle,
-                false,
+                anonymousNickname,
+                true,
                 AccountStatus.ACTIVE,
                 createdAt,
                 null
         );
     }
 
-    private static void validateAnonymousHandle(String anonymousHandle) {
-        if (anonymousHandle == null || anonymousHandle.isBlank()) {
-            throw new IllegalArgumentException(ANONYMOUS_HANDLE_MUST_EXIST_ERROR_MESSAGE);
+    public void updateNickname(String nickname) {
+        validateNickname(nickname);
+        this.nickname = nickname;
+    }
+
+    public void changeAnonymousDisplay(boolean displayAnonymous) {
+        if (!displayAnonymous && nickname == null) {
+            throw new IllegalStateException(NICKNAME_REQUIRED_TO_DISABLE_ANONYMOUS_ERROR_MESSAGE);
         }
-        if (anonymousHandle.length() > 100) {
-            throw new IllegalArgumentException(ANONYMOUS_HANDLE_LENGTH_MUST_BE_VALID_ERROR_MESSAGE);
+        this.displayAnonymous = displayAnonymous;
+    }
+
+    public void disableAnonymousDisplay() {
+        changeAnonymousDisplay(false);
+    }
+
+    public String getDisplayName() {
+        return displayAnonymous ? anonymousNickname : nickname;
+    }
+
+    public void withdraw(LocalDateTime withdrawnAt) {
+        if (accountStatus == AccountStatus.WITHDRAWN) {
+            return;
+        }
+
+        this.nickname = null;
+        this.profileImageUrl = null;
+        this.displayAnonymous = true;
+        this.accountStatus = AccountStatus.WITHDRAWN;
+        this.withdrawnAt = withdrawnAt;
+    }
+
+    private static void validateAnonymousNickname(String anonymousNickname) {
+        if (anonymousNickname == null || anonymousNickname.isBlank()) {
+            throw new IllegalArgumentException(ANONYMOUS_NICKNAME_MUST_EXIST_ERROR_MESSAGE);
+        }
+        if (anonymousNickname.length() > 100) {
+            throw new IllegalArgumentException(ANONYMOUS_NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE);
         }
     }
 
     private static void validateNickname(String nickname) {
         if (nickname == null || nickname.isBlank()) {
-            throw new IllegalArgumentException(NICKNAME_MUST_EXIST_ERROR_MESSAGE);
+            throw new IllegalArgumentException("[ERROR] 닉네임이 존재해야 합니다");
         }
 
         if (nickname.length() > 100) {
@@ -120,5 +150,5 @@ public class Member {
         return profileImageUrl;
     }
 
-    //TODO: updateProfile(), withdraw(), changeAnonymousDisplay()
+    //TODO: updateProfile()
 }
