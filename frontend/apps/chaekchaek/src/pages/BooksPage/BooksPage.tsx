@@ -14,6 +14,7 @@ import { ImgBox } from '@chaekchaek/design-system';
 // import DummyImgImgBox from '../../ImgBox/imgs/dummy.png';
 import { Button } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
+import { Pagination } from '@chaekchaek/design-system';
 
 import { getBooks } from '@/services/apis/books/repository';
 import { useLoadData } from '@/services/core/useLoadData';
@@ -21,11 +22,14 @@ import { useLoadData } from '@/services/core/useLoadData';
 export const BooksPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const keywordQuery = searchParams.get('query');
+  const defaultPage = searchParams.get('page') ?? 1;
 
   const [query, setQuery] = useState(() => keywordQuery ?? '');
+  const [page, setPage] = useState(() => Number(defaultPage) ?? 1);
 
   const handleChangeQuery = (e: ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
+    setPage(1);
 
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -34,9 +38,19 @@ export const BooksPage = () => {
     });
   };
 
+  const handleChangeDefaultPage = (defaultPage: number) => {
+    setPage(defaultPage);
+
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('page', String(defaultPage));
+      return next;
+    });
+  };
+
   const getBooksLoadData = useCallback(async () => {
     return await getBooks({ page: 1, query });
-  }, [keywordQuery]);
+  }, [keywordQuery, defaultPage]);
 
   const {
     status: { data },
@@ -99,6 +113,13 @@ export const BooksPage = () => {
                   );
                 })}
             </List>
+            {data && (
+              <Pagination
+                defaultPage={page}
+                totalPages={data?.totalCount}
+                onChange={handleChangeDefaultPage}
+              />
+            )}
           </Split.Content>
         </Split>
       </Main>
