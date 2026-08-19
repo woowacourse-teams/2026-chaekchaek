@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { ChangeEvent, KeyboardEvent } from 'react';
+import type { ChangeEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { Layout } from '@chaekchaek/design-system';
@@ -26,16 +26,12 @@ export const BooksPage = () => {
 
   const handleChangeQuery = (e: ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
-  };
 
-  const handleKeyDownQuery = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        next.set('query', query);
-        return next;
-      });
-    }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('query', query);
+      return next;
+    });
   };
 
   const getBooksLoadData = useCallback(async () => {
@@ -59,12 +55,7 @@ export const BooksPage = () => {
               orientation="vertical"
               trailing={
                 <>
-                  <Input
-                    block
-                    value={query}
-                    onChange={handleChangeQuery}
-                    onKeyDown={handleKeyDownQuery}
-                  />
+                  <Input block value={query} onChange={handleChangeQuery} />
                 </>
               }
             >
