@@ -53,10 +53,10 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import coil3.compose.AsyncImage
 import com.chamsae.chaekchaek.R
 import com.chamsae.chaekchaek.data.ArchivedBook
-import com.chamsae.chaekchaek.data.BookSearchRepository
-import com.chamsae.chaekchaek.data.BookSearchResult
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.toArchivedBook
+import com.chaekchaek.app.domain.book.BookSearchRepository
+import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chamsae.chaekchaek.theme.ChaekAccent
 import com.chamsae.chaekchaek.theme.ChaekAccentInk
 import com.chamsae.chaekchaek.theme.ChaekBand

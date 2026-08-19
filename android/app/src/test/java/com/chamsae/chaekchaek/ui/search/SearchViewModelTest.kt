@@ -1,10 +1,10 @@
 package com.chamsae.chaekchaek.ui.search
 
 import com.chamsae.chaekchaek.data.ArchivedBook
-import com.chamsae.chaekchaek.data.BookSearchRepository
-import com.chamsae.chaekchaek.data.BookSearchResult
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
+import com.chaekchaek.app.domain.book.BookSearchRepository
+import com.chaekchaek.app.domain.book.BookSearchResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -214,20 +214,11 @@ Android는 `viewModelScope`가 `ViewModel.onCleared()`에서 자동으로 취소
 
 플랫폼마다 구현이 다른 것들이다. 최소한으로 유지한다.
 
-### 4.1 API 키
+### 4.1 네트워크 엔진
 
-현재 `BookSearchApi`가 `BuildConfig.ALADIN_TTB_KEY`를 직접 읽는다. `BuildConfig`는 Android
-전용이라 `commonMain`에서 쓸 수 없다.
-
-두 갈래가 있다.
-
-1. **생성자 주입** (권장): 키를 DI 그래프에 넣고 각 플랫폼의 진입점에서 값을 넘긴다.
-   `expect/actual`이 필요 없다
-2. **expect/actual**: `expect object BuildConfig`를 만들고 Android는 `BuildConfig`,
-   iOS는 `Info.plist`에서 읽는다
-
-키가 앱 바이너리에 남는 한계는 그대로다(`android/AGENTS.md`에 기록됨). 검색을 서버로 옮기면
-해소되며, [API 계약](../../docs/api-contract.md#5-책)에 검토 항목으로 남겼다.
+도서 검색은 `BookSearchRemoteRepository`가 공개 Chaekchaek API를 호출한다. 공통 코드는
+`commonMain`에 두고 Ktor 엔진만 `androidMain`의 OkHttp와 `iosMain`의 Darwin으로 나눈다.
+외부 도서 API 키는 앱에 주입하지 않는다.
 
 ### 4.2 로컬 저장
 
