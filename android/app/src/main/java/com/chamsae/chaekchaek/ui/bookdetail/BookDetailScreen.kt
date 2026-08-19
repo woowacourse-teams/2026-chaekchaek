@@ -549,30 +549,43 @@ private fun ReadingRecord(
     verticalArrangement = Arrangement.spacedBy(10.dp),
   ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-      Text("내 독서 기록", style = MaterialTheme.typography.titleMedium)
+      Text("내 독서 기록", color = ChaekInk, fontSize = 14.sp, fontWeight = FontWeight.Bold)
       Spacer(Modifier.weight(1f))
-      Surface(onClick = onRate, color = Color.Transparent) {
-        Text(
-          record?.rating?.let { "★ %.1f".format(it) } ?: "☆ 별점 주기",
-          modifier = Modifier.padding(8.dp),
-          color = MaterialTheme.colorScheme.onSurface,
-          style = MaterialTheme.typography.labelMedium,
-        )
+      Surface(
+        onClick = onRate,
+        shape = RoundedCornerShape(4.dp),
+        color = ChaekSurface,
+        border = BorderStroke(1.dp, ChaekInk),
+      ) {
+        Row(
+          modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+          horizontalArrangement = Arrangement.spacedBy(4.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Icon(painterResource(R.drawable.ic_star), contentDescription = null, modifier = Modifier.size(12.dp), tint = ChaekInk)
+          Text("별점 주기", color = ChaekInk, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+        }
       }
     }
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
       ReadingStatus.entries.forEach { status ->
         val selected = record?.status == status.toApiStatus()
         Surface(
           onClick = { onStatusChange(status) },
           modifier = Modifier.weight(1f).height(32.dp),
-          shape = RoundedCornerShape(4.dp),
+          shape = RoundedCornerShape(999.dp),
           color = if (selected) ChaekBand else ChaekSurface,
           contentColor = ChaekInk,
           border = BorderStroke(1.dp, if (selected) ChaekInk else ChaekBorder),
         ) {
           Box(contentAlignment = Alignment.Center) {
-            Text(status.label, style = MaterialTheme.typography.labelSmall)
+            Text(
+              status.label,
+              color = if (selected) ChaekInk else ChaekInkSecondary,
+              fontFamily = FontFamily.Monospace,
+              fontSize = 11.sp,
+              fontWeight = FontWeight.SemiBold,
+            )
           }
         }
       }
@@ -580,25 +593,24 @@ private fun ReadingRecord(
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
       Surface(
         onClick = onPageInput,
-        modifier = Modifier.weight(1f).height(40.dp),
+        modifier = Modifier.weight(1f),
         shape = RoundedCornerShape(12.dp),
         color = ChaekSurface,
         border = BorderStroke(1.dp, ChaekBorder),
       ) {
         Row(
-          modifier = Modifier.padding(horizontal = 10.dp),
+          modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+          horizontalArrangement = Arrangement.spacedBy(7.dp),
           verticalAlignment = Alignment.CenterVertically,
         ) {
-          Text("⌑", color = ChaekInkSecondary)
-          Text("지금 읽는 쪽", modifier = Modifier.padding(start = 7.dp), color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 10.sp)
-          Spacer(Modifier.weight(1f))
+          Icon(painterResource(R.drawable.ic_bookmark), contentDescription = null, modifier = Modifier.size(13.dp), tint = ChaekInkSecondary)
+          Text("지금 읽는 쪽", color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 10.5.sp)
           Text("${record?.currentPage ?: 0}", color = ChaekInk, fontSize = 14.sp, fontWeight = FontWeight.Bold)
           Text(
             if (book.totalPages > 0) " / ${book.totalPages}쪽" else " / 쪽수 미정",
-            modifier = Modifier.padding(start = 4.dp),
             color = ChaekInkSecondary,
             fontFamily = FontFamily.Monospace,
-            fontSize = 10.sp,
+            fontSize = 10.5.sp,
           )
         }
       }
@@ -607,13 +619,19 @@ private fun ReadingRecord(
         modifier = Modifier.height(40.dp),
         shape = RoundedCornerShape(6.dp),
         color = ChaekInk,
+        border = BorderStroke(1.dp, ChaekSurface),
       ) {
-        Box(modifier = Modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
-          Text("✎  쪽수 입력", color = ChaekSurface, style = MaterialTheme.typography.labelMedium)
+        Row(
+          modifier = Modifier.padding(horizontal = 14.dp),
+          horizontalArrangement = Arrangement.spacedBy(6.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Icon(painterResource(R.drawable.ic_pencil), contentDescription = null, modifier = Modifier.size(14.dp), tint = ChaekSurface)
+          Text("쪽수 입력", color = ChaekSurface, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
         }
       }
     }
-    Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(ChaekBand)) {
+    Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(Color(0xFFEDE6DC))) {
       Box(
         Modifier
           .fillMaxWidth(if (book.totalPages > 0) (record?.currentPage ?: 0).toFloat().div(book.totalPages).coerceIn(0f, 1f) else 0f)
