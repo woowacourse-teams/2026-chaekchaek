@@ -47,6 +47,7 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           FRONTEND_BASE_URL: ${{ secrets.FRONTEND_BASE_URL }}
+          FRONTEND_ALLOWED_ORIGINS: ${{ secrets.FRONTEND_ALLOWED_ORIGINS }}
         run: |
           docker stop chaekchaek-backend 2>/dev/null || true
           docker rm chaekchaek-backend 2>/dev/null || true
@@ -62,5 +63,6 @@ jobs:
             -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
             -e GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
             -e FRONTEND_BASE_URL="$FRONTEND_BASE_URL" \
+            -e FRONTEND_ALLOWED_ORIGINS="$FRONTEND_ALLOWED_ORIGINS" \
             chaekchaek-backend
           docker image prune -f
