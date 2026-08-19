@@ -2,11 +2,8 @@ package com.chaekchaek.member.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertAll;
 
-import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
-import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,62 +14,32 @@ import org.springframework.test.context.ActiveProfiles;
 
 @DataJpaTest
 @ActiveProfiles("test")
-public class MemberRepositoryTest {
+class MemberRepositoryTest {
 
     @Autowired
     private MemberRepository memberRepository;
 
-    @Autowired
-    private EntityManager entityManager;
-
     @Test
-    @DisplayName("회원을 저장하고 ID로 조회한다")
-    void should_FindMember_When_MemberIsSaved() {
-        // given
-        Member member = Member.create(
-                "우아한 참새",
-                "exUrl",
-                "참새-a1b2c3d4",
-                LocalDateTime.of(2026, 8, 11, 12, 0)
-        );
+    @DisplayName("익명 닉네임의 중복을 허용한다")
+    void should_AllowDuplicatedAnonymousNickname() {
+        Member firstMember = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
+        Member secondMember = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
 
-        // when
-        Member savedMember = memberRepository.save(member);
+        memberRepository.saveAndFlush(firstMember);
+        memberRepository.saveAndFlush(secondMember);
 
-        entityManager.flush();
-        entityManager.clear();
-
-        Member foundMember = memberRepository.findById(savedMember.getId())
-                .orElseThrow();
-
-        // then
-        assertAll(
-                () -> assertThat(foundMember.getId()).isEqualTo(savedMember.getId()),
-                () -> assertThat(foundMember.getNickname()).isEqualTo("우아한 참새"),
-                () -> assertThat(foundMember.getAnonymousHandle()).isEqualTo("참새-a1b2c3d4"),
-                () -> assertThat(foundMember.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE)
-        );
+        assertThat(memberRepository.count()).isEqualTo(2);
     }
 
     @Test
-    @DisplayName("익명 핸들은 회원마다 유일해야 한다")
-    void should_RejectMember_When_AnonymousHandleIsDuplicated() {
-        // given
-        Member firstMember = Member.create(
-                "첫 번째 회원",
-                null,
-                "참새-duplicate",
-                LocalDateTime.of(2026, 8, 11, 12, 0)
-        );
-        Member secondMember = Member.create(
-                "두 번째 회원",
-                null,
-                "참새-duplicate",
-                LocalDateTime.of(2026, 8, 11, 12, 0)
-        );
+    @DisplayName("사용자가 설정한 공개 닉네임은 회원마다 유일해야 한다")
+    void should_RejectDuplicatedNickname() {
+        Member firstMember = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
+        firstMember.updateNickname("책책이");
+        Member secondMember = Member.create("다정한 별빛 참새", null, LocalDateTime.now());
+        secondMember.updateNickname("책책이");
         memberRepository.saveAndFlush(firstMember);
 
-        // when & then
         assertThatThrownBy(() -> memberRepository.saveAndFlush(secondMember))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }

@@ -8,69 +8,65 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class MemberTest {
+class MemberTest {
 
     @Test
-    @DisplayName("신규 회원을 기본 상태로 생성한다")
-    void should_CreateActiveMember_When_NewMemberIsCreated() {
-        // given
-        String nickname = "우아한 참새";
-        String profileImageUrl = "exUrl";
-        String anonymousHandle = "참새-a1b2c3d4";
-        LocalDateTime createdAt = LocalDateTime.of(2026, 8, 11, 12, 0);
+    @DisplayName("신규 회원은 랜덤 닉네임을 사용하는 익명 상태로 생성된다")
+    void should_CreateAnonymousMember_When_NewMemberIsCreated() {
+        String anonymousNickname = "우아한 달빛 참새";
+        Member member = Member.create(anonymousNickname, "exUrl", LocalDateTime.now());
 
-        // when
-        Member member = Member.create(
-                nickname,
-                profileImageUrl,
-                anonymousHandle,
-                createdAt
-        );
-
-        // then
         assertAll(
-                () -> assertThat(member.getId()).isNull(),
-                () -> assertThat(member.getNickname()).isEqualTo(nickname),
-                () -> assertThat(member.getProfileImageUrl()).isEqualTo(profileImageUrl),
-                () -> assertThat(member.getAnonymousHandle()).isEqualTo(anonymousHandle),
-                () -> assertThat(member.isDisplayAnonymous()).isFalse(),
-                () -> assertThat(member.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE),
-                () -> assertThat(member.getCreatedAt()).isEqualTo(createdAt),
-                () -> assertThat(member.getWithdrawnAt()).isNull()
+                () -> assertThat(member.getNickname()).isNull(),
+                () -> assertThat(member.getAnonymousNickname()).isEqualTo(anonymousNickname),
+                () -> assertThat(member.getDisplayName()).isEqualTo(anonymousNickname),
+                () -> assertThat(member.isDisplayAnonymous()).isTrue(),
+                () -> assertThat(member.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE)
         );
     }
 
     @Test
-    @DisplayName("닉네임이 없으면 회원을 생성할 수 없다")
-    void should_ThrowException_When_NicknameIsNull() {
-        assertThatThrownBy(() -> Member.create(
-
-                null,
-                null,
-                "참새-a1b2c3d4",
-                LocalDateTime.now()
-        )).isInstanceOf(IllegalArgumentException.class);
+    @DisplayName("익명 닉네임이 없으면 회원을 생성할 수 없다")
+    void should_ThrowException_When_AnonymousNicknameIsBlank() {
+        assertThatThrownBy(() -> Member.create(" ", null, LocalDateTime.now()))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("닉네임이 공백이면 회원을 생성할 수 없다")
-    void should_ThrowException_When_NicknameIsBlank() {
-        assertThatThrownBy(() -> Member.create(
-                " ",
-                null,
-                "참새-a1b2c3d4",
-                LocalDateTime.now()
-        )).isInstanceOf(IllegalArgumentException.class);
+    @DisplayName("공개 닉네임을 설정해도 익명 상태는 유지된다")
+    void should_RemainAnonymous_When_NicknameIsUpdated() {
+        Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
+
+        member.updateNickname("책책이");
+
+        assertAll(
+                () -> assertThat(member.getNickname()).isEqualTo("책책이"),
+                () -> assertThat(member.isDisplayAnonymous()).isTrue(),
+                () -> assertThat(member.getDisplayName()).isEqualTo("우아한 달빛 참새")
+        );
     }
 
     @Test
-    @DisplayName("익명 핸들이 없으면 회원을 생성할 수 없다")
-    void should_ThrowException_When_AnonymousHandleIsBlank() {
-        assertThatThrownBy(() -> Member.create(
-                "우아한 참새",
-                null,
-                " ",
-                LocalDateTime.now()
-        )).isInstanceOf(IllegalArgumentException.class);
+    @DisplayName("공개 닉네임을 설정한 회원은 익명 상태를 해제할 수 있다")
+    void should_DisplayNickname_When_AnonymousDisplayIsDisabled() {
+        Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
+        member.updateNickname("책책이");
+
+        member.disableAnonymousDisplay();
+
+        assertAll(
+                () -> assertThat(member.isDisplayAnonymous()).isFalse(),
+                () -> assertThat(member.getDisplayName()).isEqualTo("책책이")
+        );
+    }
+
+    @Test
+    @DisplayName("공개 닉네임을 설정하지 않으면 익명 상태를 해제할 수 없다")
+    void should_RejectDisableAnonymous_When_NicknameIsNotSet() {
+        Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
+
+        assertThatThrownBy(member::disableAnonymousDisplay)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("[ERROR] 닉네임을 설정해야 익명 상태를 해제할 수 있습니다");
     }
 }

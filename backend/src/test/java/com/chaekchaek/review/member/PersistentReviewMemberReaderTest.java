@@ -30,10 +30,9 @@ class PersistentReviewMemberReaderTest {
     void should_ReturnReviewMemberProfile_When_MemberExists() {
         // given
         Member member = memberRepository.save(Member.create(
-                
+
                 "책책 회원",
-                "https://example.com/profile.jpg",
-                "참새-a1b2c3d4",
+                "exUrl",
                 LocalDateTime.of(2026, 8, 18, 12, 0)
         ));
 
@@ -43,10 +42,10 @@ class PersistentReviewMemberReaderTest {
 
         // then
         assertThat(profiles).containsEntry(member.getId(), new ReviewMemberProfile(
+                null,
+                "exUrl",
                 "책책 회원",
-                "https://example.com/profile.jpg",
-                "참새-a1b2c3d4",
-                false,
+                true,
                 false
         ));
     }

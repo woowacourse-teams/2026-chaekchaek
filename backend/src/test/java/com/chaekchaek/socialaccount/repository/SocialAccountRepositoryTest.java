@@ -37,10 +37,8 @@ public class SocialAccountRepositoryTest {
         LocalDateTime now = LocalDateTime.of(2026, 8, 11, 12, 0);
 
         Member member = Member.create(
-                
                 "우아한 참새",
                 "exUrl",
-                "참새-social-1",
                 now
         );
         Member savedMember = memberRepository.save(member);
@@ -82,20 +80,16 @@ public class SocialAccountRepositoryTest {
 
         Member firstMember = memberRepository.save(
                 Member.create(
-                        
                         "참새1",
                         null,
-                        "참새-social-2",
                         now
                 )
         );
 
         Member secondMember = memberRepository.save(
                 Member.create(
-                        
                         "참새2",
                         null,
-                        "참새-social-3",
                         now
                 )
         );
@@ -128,10 +122,8 @@ public class SocialAccountRepositoryTest {
 
         Member member = memberRepository.save(
                 Member.create(
-                        
                         "우아한 참새",
                         null,
-                        "참새-social-4",
                         now
                 )
         );

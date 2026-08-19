@@ -14,6 +14,14 @@ public enum ErrorCode {
             "MEMBER_NOT_FOUND",
             "회원을 찾을 수 없습니다."
     ),
+    NICKNAME_ALREADY_EXISTS(
+            "NICKNAME_ALREADY_EXISTS",
+            "이미 사용 중인 닉네임입니다."
+    ),
+    NICKNAME_REQUIRED(
+            "NICKNAME_REQUIRED",
+            "닉네임을 설정해야 익명 상태를 해제할 수 있습니다."
+    ),
     REFRESH_TOKEN_REQUIRED(
             "REFRESH_TOKEN_REQUIRED",
             "Refresh Token이 필요합니다."

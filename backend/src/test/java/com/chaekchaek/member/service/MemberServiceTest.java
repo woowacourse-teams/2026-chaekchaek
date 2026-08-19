@@ -7,6 +7,8 @@ import static org.mockito.BDDMockito.given;
 
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.common.exception.MemberNotFoundException;
+import com.chaekchaek.common.exception.NicknameAlreadyExistsException;
+import com.chaekchaek.common.exception.NicknameRequiredException;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.dto.MemberResponse;
 import com.chaekchaek.member.repository.MemberRepository;
@@ -35,7 +37,6 @@ class MemberServiceTest {
         Member member = Member.create(
                 "덜 우아한 참새",
                 "exUrl",
-                "참새-service",
                 LocalDateTime.of(2026, 8, 13, 12, 0)
         );
 
@@ -47,9 +48,10 @@ class MemberServiceTest {
 
         // then
         assertAll(
-                () -> assertThat(response.nickname()).isEqualTo("덜 우아한 참새"),
+                () -> assertThat(response.nickname()).isNull(),
                 () -> assertThat(response.profileImageUrl()).isEqualTo("exUrl"),
-                () -> assertThat(response.displayAnonymous()).isFalse(),
+                () -> assertThat(response.anonymousNickname()).isEqualTo("덜 우아한 참새"),
+                () -> assertThat(response.displayAnonymous()).isTrue(),
                 () -> assertThat(response.accountStatus()).isEqualTo("ACTIVE")
         );
 
@@ -69,5 +71,53 @@ class MemberServiceTest {
                         exception -> assertThat(exception.getErrorCode())
                                 .isEqualTo(ErrorCode.MEMBER_NOT_FOUND)
                 );
+    }
+
+    @Test
+    @DisplayName("공개 닉네임을 설정한다")
+    void should_UpdateNickname() {
+        Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+        given(memberRepository.existsByNicknameAndIdNot("책책이", 1L)).willReturn(false);
+
+        MemberResponse response = memberService.updateNickname(1L, "책책이");
+
+        assertAll(
+                () -> assertThat(response.nickname()).isEqualTo("책책이"),
+                () -> assertThat(response.displayAnonymous()).isTrue()
+        );
+    }
+
+    @Test
+    @DisplayName("이미 사용 중인 공개 닉네임은 설정할 수 없다")
+    void should_RejectDuplicatedNickname() {
+        Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+        given(memberRepository.existsByNicknameAndIdNot("책책이", 1L)).willReturn(true);
+
+        assertThatThrownBy(() -> memberService.updateNickname(1L, "책책이"))
+                .isInstanceOf(NicknameAlreadyExistsException.class);
+    }
+
+    @Test
+    @DisplayName("공개 닉네임 없이 익명 상태를 해제할 수 없다")
+    void should_RejectDisableAnonymityWithoutNickname() {
+        Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+
+        assertThatThrownBy(() -> memberService.updateAnonymity(1L, false))
+                .isInstanceOf(NicknameRequiredException.class);
+    }
+
+    @Test
+    @DisplayName("공개 닉네임 설정 후 익명 상태를 해제한다")
+    void should_DisableAnonymityAfterNicknameIsSet() {
+        Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
+        member.updateNickname("책책이");
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+
+        MemberResponse response = memberService.updateAnonymity(1L, false);
+
+        assertThat(response.displayAnonymous()).isFalse();
     }
 }
