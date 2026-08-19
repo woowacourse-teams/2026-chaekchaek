@@ -92,7 +92,7 @@ export const BooksPage = () => {
           </Split.Side>
           <Split.Content>
             <Title level="main" trailing={<></>}>
-              '마션' 검색 결과
+              '{keywordQuery}' 검색 결과
             </Title>
             <List>
               {!!data?.items.length &&
