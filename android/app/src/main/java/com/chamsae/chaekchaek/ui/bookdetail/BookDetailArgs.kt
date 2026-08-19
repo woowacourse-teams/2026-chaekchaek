@@ -4,8 +4,8 @@ import com.chaekchaek.app.presentation.home.OverlappedCardUiModel
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
 import com.chaekchaek.app.presentation.home.ReadingBookUiModel
 import com.chaekchaek.app.presentation.home.TrendingBookUiModel
+import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chamsae.chaekchaek.data.ArchivedBook
-import com.chamsae.chaekchaek.data.BookSearchResult
 import com.chamsae.chaekchaek.data.toArchivedBook
 import kotlinx.serialization.Serializable
 
