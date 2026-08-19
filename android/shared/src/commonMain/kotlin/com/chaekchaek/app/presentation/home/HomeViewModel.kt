@@ -67,6 +67,7 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
         books = books.map { book ->
             TrendingBookUiModel(
                 bookId = book.bookId,
+                isbn13 = book.isbn13,
                 title = book.title,
                 coverId = book.coverId,
                 statsLabel = HomeLabels.trendingStats(book.noteCount, book.replyCount),

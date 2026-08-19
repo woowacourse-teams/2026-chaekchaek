@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -30,13 +29,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -61,10 +61,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.chamsae.chaekchaek.R
 import com.chamsae.chaekchaek.data.ArchivedBook
-import com.chamsae.chaekchaek.data.BookRatingStore
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
-import com.chamsae.chaekchaek.data.RatedBook
 import com.chamsae.chaekchaek.theme.ChaekAccent
 import com.chamsae.chaekchaek.theme.ChaekAccentInk
 import com.chamsae.chaekchaek.theme.ChaekAccentSoft
@@ -73,29 +71,61 @@ import com.chamsae.chaekchaek.theme.ChaekInk
 import com.chamsae.chaekchaek.theme.ChaekInkSecondary
 import com.chamsae.chaekchaek.theme.ChaekSurface
 import com.chamsae.chaekchaek.ui.home.coverResource
-import com.chaekchaek.app.domain.rating.Rating
+import com.chaekchaek.app.data.remote.BookDetail
+import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
+import com.chaekchaek.app.data.remote.BookReview
+import com.chaekchaek.app.data.remote.ReviewScope
+import com.chaekchaek.app.data.remote.ReviewSort
 import kotlinx.coroutines.launch
 
 @Composable
 fun BookDetailRoute(
   book: BookDetailArgs,
-  bookRatingStore: BookRatingStore,
+  bookDetailRepository: BookDetailRemoteRepository,
   libraryRepository: LibraryRepository,
   onBack: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
-  val ratings by bookRatingStore.ratings.collectAsStateWithLifecycle()
+  var detail by remember(book.isbn13) { mutableStateOf<BookDetail?>(null) }
+  var reviews by remember(book.isbn13) { mutableStateOf(emptyList<BookReview>()) }
+  var reviewCount by remember(book.isbn13) { mutableStateOf(0) }
+  var reviewsLoading by remember(book.isbn13) { mutableStateOf(false) }
+  var reviewScope by rememberSaveable(book.isbn13) { mutableStateOf(ReviewScope.ALL) }
+  var reviewSort by rememberSaveable(book.isbn13) { mutableStateOf(ReviewSort.LATEST) }
   val archivedBook = archivedBooks.firstOrNull { it.id == book.id }
-  val displayBook = archivedBook?.toBookDetailArgs() ?: book
+
+  LaunchedEffect(book.isbn13) {
+    detail = book.isbn13.takeIf(String::isNotBlank)?.let { runCatching { bookDetailRepository.detail(it) }.getOrNull() }
+  }
+  LaunchedEffect(detail?.bookId, reviewScope, reviewSort) {
+    val bookId = detail?.bookId ?: return@LaunchedEffect
+    reviewsLoading = true
+    runCatching { bookDetailRepository.reviews(bookId, reviewScope, reviewSort) }
+      .onSuccess {
+        reviewCount = it.totalCount
+        reviews = it.items
+      }.onFailure {
+        reviewCount = 0
+        reviews = emptyList()
+      }
+    reviewsLoading = false
+  }
+  val displayBook = detail?.toBookDetailArgs(book) ?: archivedBook?.toBookDetailArgs() ?: book
 
   BookDetailScreen(
     book = displayBook,
     archivedBook = archivedBook,
-    rating = ratings.firstOrNull { it.bookId == book.id }?.rating,
-    recentRatings = ratings.sortedBy(RatedBook::ratedAt).takeLast(3),
+    averageRating = detail?.averageRating,
+    ratingCount = detail?.ratingCount,
+    reviews = reviews,
+    reviewCount = reviewCount,
+    reviewsLoading = reviewsLoading,
+    reviewScope = reviewScope,
+    reviewSort = reviewSort,
     onBack = onBack,
-    onSaveRating = { bookRatingStore.rate(book.id, book.title, it) },
+    onReviewScopeChange = { reviewScope = it },
+    onReviewSortChange = { reviewSort = it },
     modifier = modifier,
   )
 }
@@ -104,12 +134,17 @@ fun BookDetailRoute(
 fun BookDetailScreen(
   book: BookDetailArgs,
   archivedBook: ArchivedBook?,
-  rating: Rating? = null,
-  recentRatings: List<RatedBook> = emptyList(),
+  averageRating: Double? = null,
+  ratingCount: Int? = null,
+  reviews: List<BookReview> = emptyList(),
+  reviewCount: Int = 0,
+  reviewsLoading: Boolean = false,
+  reviewScope: ReviewScope = ReviewScope.ALL,
+  reviewSort: ReviewSort = ReviewSort.LATEST,
   onBack: () -> Unit,
   modifier: Modifier = Modifier,
-  onWriteNote: () -> Unit = {},
-  onSaveRating: (Rating) -> Unit = {},
+  onReviewScopeChange: (ReviewScope) -> Unit = {},
+  onReviewSortChange: (ReviewSort) -> Unit = {},
 ) {
   BackHandler(onBack = onBack)
   val listState = rememberLazyListState()
@@ -121,7 +156,7 @@ fun BookDetailScreen(
       listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset >= threshold
     }
   }
-  var showRatingDialog by rememberSaveable { mutableStateOf(false) }
+  var showLoginSheet by rememberSaveable { mutableStateOf(false) }
 
   Box(
     modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).navigationBarsPadding(),
@@ -131,15 +166,28 @@ fun BookDetailScreen(
       state = listState,
       contentPadding = PaddingValues(bottom = 82.dp),
     ) {
-      item { ArchiveStage(book, onBack) }
-      item { BookSummary(book) }
-      item { ReadingRecord(book, archivedBook, rating) { showRatingDialog = true } }
+      item { ArchiveStage(book, onBack) { showLoginSheet = true } }
+      item { BookSummary(book, averageRating, ratingCount) }
+      item { ReadingRecord(book, archivedBook) { showLoginSheet = true } }
       item { Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand)) }
-      item { ReviewsSection() }
+      item {
+        ReviewsSection(
+          reviews = reviews,
+          reviewCount = reviewCount,
+          loading = reviewsLoading,
+          scope = reviewScope,
+          sort = reviewSort,
+          onScopeChange = { requested ->
+            if (requested == ReviewScope.MINE) showLoginSheet = true else onReviewScopeChange(requested)
+          },
+          onSortChange = onReviewSortChange,
+          onAuthenticationRequired = { showLoginSheet = true },
+        )
+      }
     }
 
     ComposeBar(
-      onClick = onWriteNote,
+      onClick = { showLoginSheet = true },
       modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 10.dp),
     )
 
@@ -151,22 +199,11 @@ fun BookDetailScreen(
     }
   }
 
-  if (showRatingDialog) {
-    BookRatingDialog(
-      currentBookId = book.id,
-      initialRating = rating,
-      recentRatings = recentRatings,
-      onDismiss = { showRatingDialog = false },
-      onSave = {
-        onSaveRating(it)
-        showRatingDialog = false
-      },
-    )
-  }
+  if (showLoginSheet) LoginRequiredSheet { showLoginSheet = false }
 }
 
 @Composable
-private fun ArchiveStage(book: BookDetailArgs, onBack: () -> Unit) {
+private fun ArchiveStage(book: BookDetailArgs, onBack: () -> Unit, onLibraryClick: () -> Unit) {
   Box(
     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(298.dp).background(ChaekInk),
   ) {
@@ -188,6 +225,7 @@ private fun ArchiveStage(book: BookDetailArgs, onBack: () -> Unit) {
     }
 
     Surface(
+      onClick = onLibraryClick,
       modifier = Modifier.align(Alignment.TopEnd).offset((-16).dp, 8.dp).size(38.dp),
       shape = RoundedCornerShape(4.dp),
       color = ChaekAccent,
@@ -271,7 +309,7 @@ private fun BookCover(book: BookDetailArgs, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun BookSummary(book: BookDetailArgs) {
+private fun BookSummary(book: BookDetailArgs, averageRating: Double?, ratingCount: Int?) {
   Column(
     modifier = Modifier.fillMaxWidth().padding(start = 20.dp, top = 18.dp, end = 20.dp, bottom = 10.dp),
     horizontalAlignment = Alignment.CenterHorizontally,
@@ -302,7 +340,8 @@ private fun BookSummary(book: BookDetailArgs) {
     }
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
       Text("★★★★☆", color = ChaekAccent, fontSize = 14.sp, letterSpacing = 1.sp)
-      Text("4.2", style = MaterialTheme.typography.labelMedium)
+      Text(averageRating?.let { "%.1f".format(it) } ?: "평점 없음", style = MaterialTheme.typography.labelMedium)
+      ratingCount?.let { Text("${it}명", style = MaterialTheme.typography.labelSmall) }
     }
   }
 }
@@ -322,7 +361,7 @@ private fun MetaChip(label: String) {
 }
 
 @Composable
-private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, rating: Rating?, onRate: () -> Unit) {
+private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, onAuthenticationRequired: () -> Unit) {
   Column(
     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -330,11 +369,11 @@ private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, rat
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
       Text("내 독서 기록", style = MaterialTheme.typography.titleMedium)
       Spacer(Modifier.weight(1f))
-      Surface(onClick = onRate, color = Color.Transparent) {
+      Surface(onClick = onAuthenticationRequired, color = Color.Transparent) {
         Text(
-          rating?.let { "★ ${String.format(java.util.Locale.KOREA, "%.1f", it.score)}" } ?: "☆ 별점 주기",
+          "☆ 별점 주기",
           modifier = Modifier.padding(8.dp),
-          color = if (rating == null) MaterialTheme.colorScheme.onSurface else ChaekAccent,
+          color = MaterialTheme.colorScheme.onSurface,
           style = MaterialTheme.typography.labelMedium,
         )
       }
@@ -343,6 +382,7 @@ private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, rat
       ReadingStatus.entries.forEach { status ->
         val selected = archivedBook?.status == status
         Surface(
+          onClick = onAuthenticationRequired,
           modifier = Modifier.weight(1f).height(32.dp),
           shape = RoundedCornerShape(4.dp),
           color = if (selected) ChaekInk else MaterialTheme.colorScheme.surface,
@@ -357,6 +397,7 @@ private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, rat
     }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
       Surface(
+        onClick = onAuthenticationRequired,
         modifier = Modifier.width(90.dp).height(38.dp),
         shape = RoundedCornerShape(4.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -379,6 +420,7 @@ private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, rat
       )
       Spacer(Modifier.weight(1f))
       Surface(
+        onClick = onAuthenticationRequired,
         modifier = Modifier.height(38.dp),
         shape = RoundedCornerShape(4.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -401,244 +443,134 @@ private fun ReadingRecord(book: BookDetailArgs, archivedBook: ArchivedBook?, rat
 }
 
 @Composable
-private fun ReviewsSection() {
-  // ponytail: Pencil 샘플 데이터 - 상세/감상 API가 연결되면 저장소 결과로 교체한다.
-  var replyingTo by rememberSaveable { mutableStateOf<String?>(null) }
-  var replyText by rememberSaveable { mutableStateOf("") }
-  // ponytail: 화면 수명 동안만 유지한다. #65 저장소 경계가 병합되면 영속 상태로 교체한다.
-  val submittedReplies = remember { mutableStateMapOf<String, List<Pair<String, String>>>() }
-
-  fun openReply(reviewId: String) {
-    if (replyingTo != reviewId) replyText = ""
-    replyingTo = reviewId
-  }
-
-  fun closeReply() {
-    replyingTo = null
-    replyText = ""
-  }
-
-  fun submitReply(reviewId: String) {
-    if (!ReplyInputRules.canSubmit(replyText)) return
-    submittedReplies[reviewId] = submittedReplies[reviewId].orEmpty() + ("익명 참새" to replyText.trim())
-    closeReply()
-  }
-
+private fun ReviewsSection(
+  reviews: List<BookReview>,
+  reviewCount: Int,
+  loading: Boolean,
+  scope: ReviewScope,
+  sort: ReviewSort,
+  onScopeChange: (ReviewScope) -> Unit,
+  onSortChange: (ReviewSort) -> Unit,
+  onAuthenticationRequired: () -> Unit,
+) {
   Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
-    Row(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      Text("감상 30", style = MaterialTheme.typography.titleMedium)
+    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+      Text("감상 $reviewCount", style = MaterialTheme.typography.titleMedium)
       Spacer(Modifier.weight(1f))
       Surface(
+        onClick = { onSortChange(if (sort == ReviewSort.LATEST) ReviewSort.PAGE else ReviewSort.LATEST) },
         modifier = Modifier.height(28.dp),
         shape = RoundedCornerShape(4.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
       ) {
         Box(modifier = Modifier.padding(horizontal = 9.dp), contentAlignment = Alignment.Center) {
-          Text("최신순⌄", style = MaterialTheme.typography.labelSmall)
+          Text(if (sort == ReviewSort.LATEST) "최신순⌄" else "페이지순⌄", style = MaterialTheme.typography.labelSmall)
         }
       }
       Spacer(Modifier.width(6.dp))
       Surface(shape = RoundedCornerShape(4.dp), color = ChaekInk) {
         Row {
-          Text("전체 피드", modifier = Modifier.padding(horizontal = 9.dp, vertical = 7.dp), color = ChaekSurface, style = MaterialTheme.typography.labelSmall)
-          Text("내 피드", modifier = Modifier.padding(horizontal = 9.dp, vertical = 7.dp), color = ChaekInkSecondary, style = MaterialTheme.typography.labelSmall)
+          Text(
+            "전체 피드",
+            modifier = Modifier.clickable { onScopeChange(ReviewScope.ALL) }.padding(horizontal = 9.dp, vertical = 7.dp),
+            color = if (scope == ReviewScope.ALL) ChaekSurface else ChaekInkSecondary,
+            style = MaterialTheme.typography.labelSmall,
+          )
+          Text(
+            "내 피드",
+            modifier = Modifier.clickable { onScopeChange(ReviewScope.MINE) }.padding(horizontal = 9.dp, vertical = 7.dp),
+            color = if (scope == ReviewScope.MINE) ChaekSurface else ChaekInkSecondary,
+            style = MaterialTheme.typography.labelSmall,
+          )
         }
       }
     }
     Spacer(Modifier.height(12.dp))
-    ReviewCard(
-      name = "참새 1204 (익명)",
-      date = "2026.08.05",
-      position = "p.80까지",
-      body = "혼자 남겨진 사람이 절망 대신 문제를 하나씩 풀어가는 태도가 인상 깊었다.",
-      quote = "나는 이 행성에서 과학으로 살아남을 것이다.",
-      avatar = R.drawable.avatar_kim,
-      replies = listOf(
-        "다정한 참새" to "끝까지 유머를 잃지 않는 점도 좋았어요.",
-        "느긋한 참새" to "저도 같은 문장에서 오래 멈췄습니다.",
-      ) + submittedReplies["review-1"].orEmpty(),
-      isReplying = replyingTo == "review-1",
-      replyText = replyText,
-      onReplyTextChange = { replyText = it },
-      onReplyClick = { openReply("review-1") },
-      onReplyCancel = ::closeReply,
-      onReplySubmit = { submitReply("review-1") },
-    )
-    Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand))
-    ReviewCard(
-      name = "짹짹짹",
-      date = "2026.08.03",
-      position = "p.160까지",
-      body = "실패를 기록하고 다음 실험으로 넘어가는 과정이 이 책의 가장 큰 매력이었다.",
-      quote = "문제를 해결하려면 먼저 정확히 측정해야 한다.",
-      avatar = R.drawable.avatar_yoon,
-      replies = listOf("성실한 참새" to "읽는 내내 응원하게 되는 인물이었어요.") + submittedReplies["review-2"].orEmpty(),
-      isReplying = replyingTo == "review-2",
-      replyText = replyText,
-      onReplyTextChange = { replyText = it },
-      onReplyClick = { openReply("review-2") },
-      onReplyCancel = ::closeReply,
-      onReplySubmit = { submitReply("review-2") },
-    )
+    when {
+      loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(20.dp), style = MaterialTheme.typography.bodyMedium)
+      reviews.isEmpty() -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(20.dp), style = MaterialTheme.typography.bodyMedium)
+      else -> reviews.forEach { ReviewCard(it, onAuthenticationRequired) }
+    }
   }
 }
 
 @Composable
-private fun ReviewCard(
-  name: String,
-  date: String,
-  position: String,
-  body: String,
-  quote: String,
-  avatar: Int,
-  replies: List<Pair<String, String>>,
-  isReplying: Boolean,
-  replyText: String,
-  onReplyTextChange: (String) -> Unit,
-  onReplyClick: () -> Unit,
-  onReplyCancel: () -> Unit,
-  onReplySubmit: () -> Unit,
-) {
+private fun ReviewCard(review: BookReview, onAuthenticationRequired: () -> Unit) {
   Column(
     modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(20.dp),
     verticalArrangement = Arrangement.spacedBy(10.dp),
   ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-      Image(
-        painter = painterResource(avatar),
-        contentDescription = null,
-        modifier = Modifier.size(30.dp).clip(CircleShape),
-      )
-      Column(modifier = Modifier.padding(start = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-          Text(name, style = MaterialTheme.typography.titleSmall)
-          Surface(shape = RoundedCornerShape(4.dp), color = ChaekAccentSoft) {
-            Text("✓ 완독", modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp), color = ChaekAccentInk, style = MaterialTheme.typography.labelSmall)
-          }
-        }
-        Text("$date · $position", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+      Surface(modifier = Modifier.size(30.dp), shape = CircleShape, color = ChaekAccentSoft) {
+        Box(contentAlignment = Alignment.Center) { Text(review.authorName.take(1)) }
       }
-      Spacer(Modifier.weight(1f))
-      Text("⋯", fontSize = 20.sp)
+      Column(modifier = Modifier.padding(start = 8.dp)) {
+        Text(if (review.anonymous) "${review.authorName} (익명)" else review.authorName, style = MaterialTheme.typography.titleSmall)
+        Text(
+          "${review.createdAt.take(10).replace('-', '.')} · ${review.currentPage?.let { "p.${it}까지" }.orEmpty()}",
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          style = MaterialTheme.typography.bodySmall,
+        )
+      }
     }
-    Text(body, style = MaterialTheme.typography.bodyMedium)
-    Column(
-      modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(10.dp),
-      verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-      Text("인용 위치 · $position", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
-      Text("“$quote”", style = MaterialTheme.typography.bodySmall)
+    Text(review.content, style = MaterialTheme.typography.bodyMedium)
+    review.quote?.let { quote ->
+      Column(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(10.dp)) {
+        Text("인용 위치 · ${review.currentPage?.let { "p.$it" }.orEmpty()}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+        Text("“$quote”", style = MaterialTheme.typography.bodySmall)
+      }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-      Text("♡ 좋아요 12", style = MaterialTheme.typography.labelSmall)
-      Row(
-        modifier = Modifier.clickable(role = Role.Button, onClick = onReplyClick),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-      ) {
-        Icon(painterResource(R.drawable.ic_comment), contentDescription = "${name} 감상에 답글 작성", modifier = Modifier.size(14.dp))
-        Text("답글 ${replies.size}", style = MaterialTheme.typography.labelSmall)
-      }
-    }
-    if (isReplying) {
-      ReplyComposer(
-        value = replyText,
-        onValueChange = onReplyTextChange,
-        onCancel = onReplyCancel,
-        onSubmit = onReplySubmit,
-      )
-    }
-    replies.forEach { (replyName, reply) ->
-      Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-        Surface(modifier = Modifier.size(22.dp), shape = CircleShape, color = ChaekAccentSoft) {}
-        Column(
-          modifier = Modifier.weight(1f).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)).padding(9.dp),
-        ) {
-          Text(replyName, style = MaterialTheme.typography.labelSmall)
-          Text(reply, style = MaterialTheme.typography.bodySmall)
-        }
-        Text("♡ 2", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+      Text("♡ 좋아요 ${review.likeCount}", modifier = Modifier.clickable(onClick = onAuthenticationRequired), style = MaterialTheme.typography.labelSmall)
+      Row(modifier = Modifier.clickable(role = Role.Button, onClick = onAuthenticationRequired), verticalAlignment = Alignment.CenterVertically) {
+        Icon(painterResource(R.drawable.ic_comment), contentDescription = "감상에 답글 작성", modifier = Modifier.size(14.dp))
+        Text("답글 ${review.replyCount}", modifier = Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelSmall)
       }
     }
   }
 }
 
 @Composable
-private fun ReplyComposer(
-  value: String,
-  onValueChange: (String) -> Unit,
-  onCancel: () -> Unit,
-  onSubmit: () -> Unit,
-) {
-  val canSubmit = ReplyInputRules.canSubmit(value)
-  Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-      Image(
-        painter = painterResource(R.drawable.avatar_kim),
-        contentDescription = null,
-        modifier = Modifier.size(22.dp).clip(CircleShape),
-      )
-      Column(modifier = Modifier.weight(1f)) {
-        BasicTextField(
-          value = value,
-          onValueChange = onValueChange,
-          modifier = Modifier.fillMaxWidth().heightIn(min = 34.dp).padding(vertical = 6.dp),
-          textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-          maxLines = 4,
-          decorationBox = { innerTextField ->
-            Box {
-              if (value.isEmpty()) {
-                Text(
-                  "답글을 입력하세요",
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                  style = MaterialTheme.typography.bodyMedium,
-                )
-              }
-              innerTextField()
-            }
-          },
-        )
-        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface)
-      }
-    }
-    Row(
-      modifier = Modifier.fillMaxWidth().padding(start = 30.dp),
-      verticalAlignment = Alignment.CenterVertically,
+@OptIn(ExperimentalMaterial3Api::class)
+private fun LoginRequiredSheet(onDismiss: () -> Unit) {
+  ModalBottomSheet(onDismissRequest = onDismiss) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-      Text(
-        "${value.length} / ${ReplyInputRules.MAX_LENGTH}",
-        color = if (value.length > ReplyInputRules.MAX_LENGTH) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-        style = MaterialTheme.typography.labelSmall,
-      )
-      Spacer(Modifier.weight(1f))
-      Surface(onClick = onCancel, color = Color.Transparent) {
-        Text(
-          "취소",
-          modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          style = MaterialTheme.typography.labelSmall,
-        )
-      }
+      Text("로그인이 필요해요", style = MaterialTheme.typography.titleLarge)
+      Text("내 독서 기록을 남기고 감상에 참여하려면 로그인해 주세요.", style = MaterialTheme.typography.bodyMedium)
       Surface(
-        onClick = onSubmit,
-        enabled = canSubmit,
-        shape = RoundedCornerShape(4.dp),
-        color = if (canSubmit) ChaekInk else MaterialTheme.colorScheme.surfaceVariant,
+        onClick = onDismiss,
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = ChaekInk,
       ) {
         Text(
-          "답글",
-          modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
-          color = if (canSubmit) ChaekSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-          style = MaterialTheme.typography.labelSmall,
+          "확인",
+          modifier = Modifier.padding(vertical = 14.dp),
+          color = ChaekSurface,
+          textAlign = TextAlign.Center,
+          style = MaterialTheme.typography.labelLarge,
         )
       }
     }
   }
 }
+
+private fun BookDetail.toBookDetailArgs(fallback: BookDetailArgs) =
+  fallback.copy(
+    isbn13 = isbn13,
+    bookId = bookId,
+    title = title,
+    creator = (authors + translators.map { "$it 옮김" }).joinToString(" · "),
+    publisher = publisher,
+    year = publishedDate?.take(4).orEmpty(),
+    category = category,
+    totalPages = totalPages ?: 0,
+    coverUrl = coverImageUrl,
+  )
 
 @Composable
 private fun ComposeBar(onClick: () -> Unit, modifier: Modifier = Modifier) {

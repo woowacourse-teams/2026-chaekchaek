@@ -57,6 +57,7 @@ class TrendingBook(
     val coverId: String,
     val noteCount: Int,
     val replyCount: Int,
+    val isbn13: String = "",
 )
 
 /**

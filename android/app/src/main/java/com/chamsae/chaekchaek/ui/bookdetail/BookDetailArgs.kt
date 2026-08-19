@@ -12,6 +12,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BookDetailArgs(
   val id: String,
+  val isbn13: String = "",
+  val bookId: Long? = null,
   val title: String,
   val creator: String = "",
   val publisher: String = "",
@@ -25,6 +27,7 @@ data class BookDetailArgs(
 internal fun BookSearchResult.toBookDetailArgs(): BookDetailArgs =
   BookDetailArgs(
     id = toArchivedBook().id,
+    isbn13 = isbn13,
     title = title,
     creator = creator,
     publisher = publisher,
@@ -37,6 +40,7 @@ internal fun BookSearchResult.toBookDetailArgs(): BookDetailArgs =
 internal fun ArchivedBook.toBookDetailArgs(): BookDetailArgs =
   BookDetailArgs(
     id = id,
+    isbn13 = id,
     title = title,
     creator = creator,
     publisher = publisher,
@@ -47,20 +51,13 @@ internal fun ArchivedBook.toBookDetailArgs(): BookDetailArgs =
   )
 
 internal fun TrendingBookUiModel.toBookDetailArgs(): BookDetailArgs =
-  if (title == "마션") {
-    BookDetailArgs(
-      id = bookId.value,
-      title = title,
-      creator = "앤디 위어",
-      publisher = "알에이치코리아",
-      year = "2026",
-      category = "SF",
-      totalPages = 308,
-      coverId = coverId,
-    )
-  } else {
-    BookDetailArgs(id = bookId.value, title = title, coverId = coverId)
-  }
+  BookDetailArgs(
+    id = bookId.value,
+    isbn13 = isbn13,
+    bookId = bookId.value.toLongOrNull(),
+    title = title,
+    coverId = coverId,
+  )
 
 internal fun QuoteCardUiModel.toBookDetailArgs(): BookDetailArgs =
   BookDetailArgs(id = bookId.value, title = bookTitle, coverId = coverId)

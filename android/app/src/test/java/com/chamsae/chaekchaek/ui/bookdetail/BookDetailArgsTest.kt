@@ -48,11 +48,17 @@ class BookDetailArgsTest {
   }
 
   @Test
-  fun `martian home sample keeps Pencil detail metadata`() {
-    val args = TrendingBookUiModel(BookId("bk_003"), "마션", "cover-13", "").toBookDetailArgs()
+  fun `home book keeps server identifiers for detail loading`() {
+    val args =
+      TrendingBookUiModel(
+        bookId = BookId("42"),
+        title = "마션",
+        coverId = "cover-13",
+        statsLabel = "",
+        isbn13 = "9788925568683",
+      ).toBookDetailArgs()
 
-    assertEquals("앤디 위어", args.creator)
-    assertEquals("SF", args.category)
-    assertEquals(308, args.totalPages)
+    assertEquals("9788925568683", args.isbn13)
+    assertEquals(42L, args.bookId)
   }
 }

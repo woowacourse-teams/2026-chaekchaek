@@ -27,6 +27,7 @@ internal data class PopularBooksResponseDto(
 @Serializable
 internal data class PopularBookDto(
     val bookId: Long,
+    val isbn13: String = "",
     val title: String,
     val coverImageUrl: String,
     val reviewCount: Int,
@@ -39,6 +40,7 @@ internal fun PopularBooksResponseDto.toHomeFeed(): HomeFeed = HomeFeed(
             books = books.map { book ->
                 TrendingBook(
                     bookId = BookId(book.bookId.toString()),
+                    isbn13 = book.isbn13,
                     title = book.title,
                     coverId = book.coverImageUrl,
                     noteCount = book.reviewCount,
