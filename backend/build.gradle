@@ -215,6 +215,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		}
 		setEnum('/api/v1/library', 'get', 'status', ['WANT_TO_READ', 'READING', 'FINISHED'])
 		setEnum('/api/v1/library', 'get', 'sort', ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], 'RECENT')
+		setEnum('/api/v1/books', 'get', 'sort', ['LATEST', 'COMMENT'], 'LATEST')
 		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'feed', ['ALL', 'MINE'], 'ALL')
 		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'sort', ['PAGE', 'LATEST', 'OLDEST', 'POPULAR'], 'PAGE')
 
@@ -409,7 +410,7 @@ tasks.register('verifyOpenApi') {
 		if (getOperation.get('summary') != '도서 검색') {
 			throw new GradleException('OpenAPI specification has invalid summary for GET /api/v1/books')
 		}
-		if (getOperation.get('description') != '도서명과 페이지 번호로 도서를 검색한다') {
+		if (getOperation.get('description') != '도서명과 페이지 번호 및 정렬 기준으로 도서를 검색한다') {
 			throw new GradleException('OpenAPI specification has invalid description for GET /api/v1/books')
 		}
 
@@ -725,6 +726,7 @@ tasks.register('verifyOpenApi') {
 		[
 			[path: '/api/v1/library', method: 'get', name: 'status', values: ['WANT_TO_READ', 'READING', 'FINISHED']],
 			[path: '/api/v1/library', method: 'get', name: 'sort', values: ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], defaultValue: 'RECENT'],
+			[path: '/api/v1/books', method: 'get', name: 'sort', values: ['LATEST', 'COMMENT'], defaultValue: 'LATEST'],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'feed', values: ['ALL', 'MINE'], defaultValue: 'ALL'],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'sort', values: ['PAGE', 'LATEST', 'OLDEST', 'POPULAR'], defaultValue: 'PAGE']
 		].each { requirement ->
