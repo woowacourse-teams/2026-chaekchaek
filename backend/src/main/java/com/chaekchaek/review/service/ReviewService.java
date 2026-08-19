@@ -289,7 +289,7 @@ public class ReviewService implements BookCommentCountReader {
                                     Map<Long, ReviewMemberProfile> memberProfiles) {
         ReviewMemberProfile profile = memberProfiles.get(authorId);
         if (anonymous) {
-            return new AuthorResponse(profile.anonymousHandle(), null, true,
+            return new AuthorResponse(profile.anonymousNickname(), null, true,
                     currentMemberId != null && authorId == currentMemberId);
         }
         String displayName = profile.withdrawn() ? "탈퇴한 사용자" : profile.displayName();

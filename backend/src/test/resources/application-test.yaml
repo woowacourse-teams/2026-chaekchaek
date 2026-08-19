@@ -23,6 +23,7 @@ aladin:
 app:
   frontend:
     base-url: http://localhost:3000
+    allowed-origins: https://chaekchaek.com, http://localhost:3000
     oauth-success-path: /oauth/callback
     oauth-failure-path: /login
 

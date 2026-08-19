@@ -1,3 +1,6 @@
+server:
+  forward-headers-strategy: framework
+
 spring:
   application:
     name: chaekchaek
@@ -29,6 +32,7 @@ aladin:
 app:
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+    allowed-origins: ${FRONTEND_ALLOWED_ORIGINS:http://localhost:3000}
     oauth-success-path: /oauth/callback
     oauth-failure-path: /login
 

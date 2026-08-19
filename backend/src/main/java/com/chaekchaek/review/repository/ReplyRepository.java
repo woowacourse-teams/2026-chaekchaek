@@ -30,6 +30,14 @@ public interface ReplyRepository extends JpaRepository<Reply, Long> {
     List<ReplyCount> countByReviewIdInGroupByReviewId(Collection<Long> reviewIds);
 
     @Query("""
+            select r.reviewId as reviewId, count(r) as count
+            from Reply r join Review review on review.id = r.reviewId
+            where r.reviewId in :reviewIds and r.deletedAt is null and review.deletedAt is null
+            group by r.reviewId
+            """)
+    List<ReviewCount> countActiveByReviewIdInGroupByReviewId(Collection<Long> reviewIds);
+
+    @Query("""
             select review.bookId as bookId, count(reply) as count
             from Reply reply join Review review on review.id = reply.reviewId
             where review.bookId in :bookIds
@@ -38,6 +46,11 @@ public interface ReplyRepository extends JpaRepository<Reply, Long> {
     List<BookCommentCount> countByReviewBookIdInGroupByBookId(Collection<Long> bookIds);
 
     interface ReplyCount {
+        long getReviewId();
+        long getCount();
+    }
+
+    interface ReviewCount {
         long getReviewId();
         long getCount();
     }

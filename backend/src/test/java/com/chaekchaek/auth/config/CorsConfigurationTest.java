@@ -22,8 +22,8 @@ public class CorsConfigurationTest {
     private MockMvc mockMvc;
 
     @Test
-    @DisplayName("허용된 프론트 Origin의 Preflight 요청은 허용된다")
-    void should_Allow_PreflightRequest_When_AllowedFrontendOrigin() throws Exception {
+    @DisplayName("로컬 프론트 Origin의 Preflight 요청은 허용된다")
+    void should_Allow_PreflightRequest_When_LocalhostFrontendOriginIsAllowed() throws Exception {
         mockMvc.perform(options("/api/v1/members/me")
                         .header(HttpHeaders.ORIGIN, "http://localhost:3000")
                         .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"
@@ -44,6 +44,22 @@ public class CorsConfigurationTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string(
                         HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:3000"
+                ))
+                .andExpect(header().string(
+                        HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"
+                ));
+    }
+
+    @Test
+    @DisplayName("프로덕션 프론트 Origin의 Preflight 요청은 허용된다")
+    void should_Allow_PreflightRequest_When_ProductionFrontendOriginIsAllowed() throws Exception {
+        mockMvc.perform(options("/api/v1/members/me")
+                        .header(HttpHeaders.ORIGIN, "https://chaekchaek.com")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "Content-Type, Authorization"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(
+                        HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "https://chaekchaek.com"
                 ))
                 .andExpect(header().string(
                         HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"

@@ -1,10 +1,8 @@
 package com.chaekchaek.book.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.chaekchaek.book.client.AladinBookClient;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
@@ -28,7 +26,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @DataJpaTest
-@Import({BookResolver.class, BookDetailAssembler.class, BookService.class})
+@Import({BookDetailAssembler.class, BookService.class})
 class BookServicePersistenceTest {
 
     @Autowired
@@ -41,18 +39,18 @@ class BookServicePersistenceTest {
     private LibraryItemRepository libraryItemRepository;
 
     @MockitoBean
-    private AladinBookClient bookClient;
-
-    @MockitoBean
     private BookCommentCountReader commentCountReader;
 
     @MockitoBean
     private CurrentMemberIdProvider currentMemberIdProvider;
 
+    @MockitoBean
+    private BookResolver bookResolver;
+
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    @DisplayName("등록된 ISBN13을 resolve하면 지연 로딩 컬렉션을 포함한 상세 정보를 반환한다")
-    void should_ReturnDetailWithContributors_When_ResolvingStoredBookOutsideTransaction() {
+    @DisplayName("등록된 도서 상세를 조회하면 지연 로딩 컬렉션을 포함해 반환한다")
+    void should_ReturnDetailWithContributors_When_GettingStoredBookOutsideTransaction() {
         // given
         Book savedBook = bookRepository.saveAndFlush(Book.create(
                 "9788925568683", "마션", "https://image.example/martian.jpg",
@@ -65,16 +63,16 @@ class BookServicePersistenceTest {
         when(commentCountReader.getCommentCounts(List.of(savedBook.getId())))
                 .thenReturn(Map.of(savedBook.getId(), 0L));
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
+        when(bookResolver.lookup(savedBook.getIsbn13())).thenReturn(savedBook);
 
         // when
-        var response = bookService.resolve(savedBook.getIsbn13());
+        var response = bookService.getDetail(savedBook.getIsbn13());
 
         // then
         assertThat(response.authors()).containsExactly("앤디 위어", "공동 저자");
         assertThat(response.translators()).containsExactly("박아람", "공동 번역가");
         assertThat(response.averageRating()).isEqualByComparingTo("4.3");
         assertThat(response.ratingCount()).isEqualTo(2);
-        verifyNoInteractions(bookClient);
     }
 
     private LibraryItem ratedItem(long memberId, long bookId, String rating) {

@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 import com.chaekchaek.auth.oauth.google.GoogleProfile;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
-import com.chaekchaek.member.service.AnonymousHandleGenerator;
 import com.chaekchaek.member.service.NicknameGenerator;
 import com.chaekchaek.socialaccount.domain.Provider;
 import com.chaekchaek.socialaccount.domain.SocialAccount;
@@ -37,9 +36,6 @@ public class SocialLoginServiceTest {
     @Mock
     private NicknameGenerator nicknameGenerator;
 
-    @Mock
-    private AnonymousHandleGenerator anonymousHandleGenerator;
-
     @InjectMocks
     private SocialLoginService socialLoginService;
 
@@ -56,7 +52,6 @@ public class SocialLoginServiceTest {
         Member existingMember = Member.create(
                 "책책-1234",
                 googleProfile.profileImageUrl(),
-                "참새-existing",
                 LocalDateTime.of(2026, 8, 12, 12, 0)
         );
 
@@ -81,7 +76,6 @@ public class SocialLoginServiceTest {
         verify(memberRepository, never()).save(any(Member.class));
         verify(socialAccountRepository, never()).save(any(SocialAccount.class));
         verify(nicknameGenerator, never()).generate();
-        verify(anonymousHandleGenerator, never()).generate();
     }
 
     @Test
@@ -100,9 +94,7 @@ public class SocialLoginServiceTest {
         )).thenReturn(Optional.empty());
 
         when(nicknameGenerator.generate())
-                .thenReturn("책책-a1b2c3d4");
-        when(anonymousHandleGenerator.generate())
-                .thenReturn("참새-a1b2c3d4");
+                .thenReturn("우아한 달빛 참새");
 
         // when
         Member result = socialLoginService.loginOrSignUp(googleProfile);
@@ -120,9 +112,10 @@ public class SocialLoginServiceTest {
 
         assertAll(
                 () -> assertThat(result).isSameAs(savedMember),
-                () -> assertThat(savedMember.getNickname()).isEqualTo("책책-a1b2c3d4"),
+                () -> assertThat(savedMember.getNickname()).isNull(),
                 () -> assertThat(savedMember.getProfileImageUrl()).isEqualTo(googleProfile.profileImageUrl()),
-                () -> assertThat(savedMember.getAnonymousHandle()).isEqualTo("참새-a1b2c3d4"),
+                () -> assertThat(savedMember.getAnonymousNickname()).isEqualTo("우아한 달빛 참새"),
+                () -> assertThat(savedMember.isDisplayAnonymous()).isTrue(),
 
                 () -> assertThat(savedAccount.getMember()).isSameAs(savedMember),
                 () -> assertThat(savedAccount.getProvider()).isEqualTo(Provider.GOOGLE),

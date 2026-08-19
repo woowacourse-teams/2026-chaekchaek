@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
@@ -59,9 +60,13 @@ class SwaggerDocsMvcTest {
     @Test
     @DisplayName("Swagger UI가 읽을 OpenAPI 명세 링크를 제공한다")
     void should_ServeOpenApiSpecification() throws Exception {
-        mockMvc.perform(get("/docs/openapi3.yaml"))
+        MvcResult result = mockMvc.perform(get("/docs/openapi3.yaml"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("openapi: 3.0.1")));
+                .andReturn();
+        String specification = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(specification)
+                .contains("openapi: 3.0.1", "Swagger 이용 안내", "ProblemDetail의 `code`");
     }
 
     @Test

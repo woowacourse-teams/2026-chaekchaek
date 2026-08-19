@@ -37,10 +37,8 @@ class RefreshTokenRepositoryTest {
 
         Member member = memberRepository.save(
                 Member.create(
-                        
                         "책책-refresh-1",
                         null,
-                        "참새-refresh-1",
                         issuedAt
                 )
         );
@@ -82,10 +80,8 @@ class RefreshTokenRepositoryTest {
 
         Member member = memberRepository.save(
                 Member.create(
-                        
                         "책책-refresh-2",
                         null,
-                        "참새-refresh-2",
                         issuedAt
                 )
         );
@@ -123,10 +119,8 @@ class RefreshTokenRepositoryTest {
 
         Member member = memberRepository.save(
                 Member.create(
-                        
                         "책책-refresh-3",
                         null,
-                        "참새-refresh-3",
                         issuedAt
                 )
         );

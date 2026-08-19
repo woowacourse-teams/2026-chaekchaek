@@ -4,7 +4,7 @@ package com.chaekchaek.review.member;
 public record ReviewMemberProfile(
         String displayName,
         String profileImageUrl,
-        String anonymousHandle,
+        String anonymousNickname,
         boolean anonymousEnabled,
         boolean withdrawn
 ) {

@@ -23,18 +23,27 @@ class BookDetailAssembler {
     private final LibraryItemRepository libraryItemRepository;
 
     BookDetailResponse assemble(Book book) {
-        Map<Long, Long> commentCounts = commentCountReader.getCommentCounts(java.util.List.of(book.getId()));
+        Long bookId = book.getId();
+        if (bookId == null) {
+            return new BookDetailResponse(
+                    null, book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(),
+                    book.getAuthors(), book.getTranslators(), book.getPublisher(), book.getCategory(),
+                    book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
+                    book.getTotalPages(), null, null, null, null
+            );
+        }
+        Map<Long, Long> commentCounts = commentCountReader.getCommentCounts(java.util.List.of(bookId));
         LibraryItemRepository.RatingStatistics ratings = libraryItemRepository
-                .findRatingStatisticsByBookIdIn(java.util.List.of(book.getId()))
+                .findRatingStatisticsByBookIdIn(java.util.List.of(bookId))
                 .stream()
                 .findFirst()
                 .orElse(null);
         return new BookDetailResponse(
-                book.getId(), book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(),
+                bookId, book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(),
                 book.getAuthors(), book.getTranslators(), book.getPublisher(), book.getCategory(),
                 book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
-                book.getTotalPages(), commentCounts.getOrDefault(book.getId(), 0L).intValue(),
-                averageRating(ratings), ratingCount(ratings), myRecord(book.getId())
+                book.getTotalPages(), commentCounts.getOrDefault(bookId, 0L).intValue(),
+                averageRating(ratings), ratingCount(ratings), myRecord(bookId)
         );
     }
 
@@ -45,7 +54,7 @@ class BookDetailAssembler {
         return BigDecimal.valueOf(ratings.getAverageRating()).setScale(1, RoundingMode.HALF_UP);
     }
 
-    private int ratingCount(LibraryItemRepository.RatingStatistics ratings) {
+    private Integer ratingCount(LibraryItemRepository.RatingStatistics ratings) {
         return ratings == null ? 0 : Math.toIntExact(ratings.getRatingCount());
     }
 

@@ -10,17 +10,16 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.snippet.Attributes.key;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.book.client.AladinClientException;
+import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.dto.BookMyRecordResponse;
@@ -60,8 +59,7 @@ import org.springframework.test.web.servlet.ResultActions;
 class BookControllerTest {
 
     private static final String BOOK_SEARCH_SUMMARY = "도서 검색";
-    private static final String BOOK_SEARCH_DESCRIPTION = "도서명과 페이지 번호로 도서를 검색한다";
-    private static final String BOOK_RESOLVE_SUMMARY = "ISBN13으로 도서 등록 또는 조회";
+    private static final String BOOK_SEARCH_DESCRIPTION = "도서명과 페이지 번호 및 정렬 기준으로 도서를 검색한다";
     private static final String BOOK_DETAIL_SUMMARY = "도서 상세 조회";
 
     private static final FieldDescriptor[] BOOK_SEARCH_RESPONSE_FIELDS = {
@@ -153,7 +151,7 @@ class BookControllerTest {
                 null
         );
         BookSearchResponse response = new BookSearchResponse(1, null, List.of(item));
-        when(bookSearchService.search("마션", 1)).thenReturn(response);
+        when(bookSearchService.search("마션", 1, BookSearchSort.LATEST)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/v1/books")
@@ -179,7 +177,10 @@ class BookControllerTest {
                         "book-search",
                         queryParameters(
                                 parameterWithName("query").description("검색할 도서명"),
-                                parameterWithName("page").description("1부터 시작하는 페이지 번호")
+                                parameterWithName("page").description("1부터 시작하는 페이지 번호"),
+                                parameterWithName("sort")
+                                        .description("정렬 기준. LATEST는 최신순, COMMENT는 댓글순이며 생략하면 LATEST를 사용한다")
+                                        .optional()
                         ),
                         responseFields(BOOK_SEARCH_RESPONSE_FIELDS),
                         resource(ResourceSnippetParameters.builder()
@@ -192,55 +193,44 @@ class BookControllerTest {
                                                 .description("검색할 도서명"),
                                         ResourceDocumentation.parameterWithName("page")
                                                 .type(SimpleType.INTEGER)
-                                                .description("1부터 시작하는 페이지 번호")
+                                                .description("1부터 시작하는 페이지 번호"),
+                                        ResourceDocumentation.parameterWithName("sort")
+                                                .type(SimpleType.STRING)
+                                                .description("정렬 기준. LATEST는 최신순, COMMENT는 댓글순이며 생략하면 LATEST를 사용한다")
+                                                .optional()
                                 )
                                 .responseFields(BOOK_SEARCH_RESPONSE_FIELDS)
                                 .build())
                 ));
 
-        verify(bookSearchService).search("마션", 1);
+        verify(bookSearchService).search("마션", 1, BookSearchSort.LATEST);
     }
 
     @Test
-    @DisplayName("유효한 ISBN13이면 도서를 등록하거나 조회한다")
-    void should_ReturnBookDetailResponse_When_ResolvingValidIsbn13() throws Exception {
+    @DisplayName("정렬 기준을 지정하면 해당 기준으로 도서 검색을 요청한다")
+    void should_RequestBookSearchWithSort_When_SortIsProvided() throws Exception {
         // given
-        BookDetailResponse response = bookDetailResponse();
-        when(bookService.resolve("9788925568683")).thenReturn(response);
+        when(bookSearchService.search("마션", 1, BookSearchSort.COMMENT))
+                .thenReturn(new BookSearchResponse(0, null, List.of()));
 
         // when & then
-        mockMvc.perform(post("/api/v1/books/resolve")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"isbn13\":\"9788925568683\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.bookId").value(42))
-                .andExpect(jsonPath("$.averageRating").value(4.3))
-                .andDo(document(
-                        "book-resolve",
-                        requestFields(fieldWithPath("isbn13").type(JsonFieldType.STRING)
-                                .description("체크섬이 유효한 13자리 ISBN")),
-                        responseFields(BOOK_DETAIL_RESPONSE_FIELDS),
-                        resource(ResourceSnippetParameters.builder()
-                                .summary(BOOK_RESOLVE_SUMMARY)
-                                .description("등록된 도서는 바로 조회하고, 미등록 도서는 알라딘에서 조회해 등록한다")
-                                .tag("도서")
-                                .requestFields(fieldWithPath("isbn13").type(JsonFieldType.STRING)
-                                        .description("체크섬이 유효한 13자리 ISBN"))
-                                .responseFields(BOOK_DETAIL_RESPONSE_FIELDS)
-                                .build())
-                ));
+        mockMvc.perform(get("/api/v1/books")
+                        .param("query", "마션")
+                        .param("page", "1")
+                        .param("sort", "COMMENT"))
+                .andExpect(status().isOk());
 
-        verify(bookService).resolve("9788925568683");
+        verify(bookSearchService).search("마션", 1, BookSearchSort.COMMENT);
     }
 
     @Test
-    @DisplayName("등록된 도서 ID면 상세 정보를 반환한다")
+    @DisplayName("ISBN13으로 상세 정보를 조회하면 상세 정보를 반환한다")
     void should_ReturnBookDetailResponse_When_BookExists() throws Exception {
         // given
-        when(bookService.getDetail(42L)).thenReturn(bookDetailResponse());
+        when(bookService.getDetail("9788925568683")).thenReturn(bookDetailResponse());
 
         // when & then
-        mockMvc.perform(get("/api/v1/books/{bookId}", 42L))
+        mockMvc.perform(get("/api/v1/books/by-isbn/{isbn13}", "9788925568683"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.bookId").value(42))
                 .andDo(document(
@@ -250,46 +240,28 @@ class BookControllerTest {
                                 .summary(BOOK_DETAIL_SUMMARY)
                                 .description("도서의 메타데이터, 댓글 수, 별점과 로그인 사용자의 서재 기록을 조회한다")
                                 .tag("도서")
-                                .pathParameters(ResourceDocumentation.parameterWithName("bookId")
-                                        .type(SimpleType.INTEGER).description("도서 ID"))
+                                .pathParameters(ResourceDocumentation.parameterWithName("isbn13")
+                                        .type(SimpleType.STRING).description("ISBN-13"))
                                 .responseFields(BOOK_DETAIL_RESPONSE_FIELDS)
                                 .build())
                 ));
 
-        verify(bookService).getDetail(42L);
+        verify(bookService).getDetail("9788925568683");
     }
 
     @Test
-    @DisplayName("유효하지 않은 ISBN13이면 400 응답을 반환한다")
-    void should_ReturnBadRequest_When_Isbn13IsInvalid() throws Exception {
-        // when & then
-        expectProblemDetail(
-                mockMvc.perform(post("/api/v1/books/resolve")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"isbn13\":\"9788925568684\"}")),
-                HttpStatus.BAD_REQUEST,
-                "INVALID_REQUEST",
-                "요청값이 올바르지 않습니다.",
-                "/api/v1/books/resolve"
-        ).andDo(problemDetailDocument("book-resolve-invalid-request", BOOK_RESOLVE_SUMMARY,
-                "ISBN13 요청값이 올바르지 않다"));
-
-        verifyNoInteractions(bookService);
-    }
-
-    @Test
-    @DisplayName("없는 도서 ID면 404 응답을 반환한다")
+    @DisplayName("상세 조회 중 책을 찾지 못하면 404 응답을 반환한다")
     void should_ReturnNotFound_When_BookDoesNotExist() throws Exception {
         // given
-        when(bookService.getDetail(42L)).thenThrow(new BookNotFoundException());
+        when(bookService.getDetail("9788925568683")).thenThrow(new BookNotFoundException());
 
         // when & then
         expectProblemDetail(
-                mockMvc.perform(get("/api/v1/books/{bookId}", 42L)),
+                mockMvc.perform(get("/api/v1/books/by-isbn/{isbn13}", "9788925568683")),
                 HttpStatus.NOT_FOUND,
                 "BOOK_NOT_FOUND",
                 "책을 찾을 수 없습니다.",
-                "/api/v1/books/42"
+                "/api/v1/books/by-isbn/9788925568683"
         ).andDo(problemDetailDocument("book-detail-not-found", BOOK_DETAIL_SUMMARY,
                 "요청한 도서가 존재하지 않는다"));
     }
@@ -342,6 +314,23 @@ class BookControllerTest {
         verifyNoInteractions(bookSearchService);
     }
 
+    @Test
+    @DisplayName("정렬 기준이 유효하지 않다면 400 응답을 반환한다")
+    void should_ReturnBadRequest_When_SortIsInvalid() throws Exception {
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/books")
+                        .param("query", "마션")
+                        .param("page", "1")
+                        .param("sort", "POPULAR")),
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "요청값이 올바르지 않습니다."
+        );
+
+        verifyNoInteractions(bookSearchService);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"", " "})
     @DisplayName("검색어가 비어 있다면 400 응답을 반환한다")
@@ -379,7 +368,7 @@ class BookControllerTest {
     @Test
     @DisplayName("예상하지 못한 오류가 발생하면 내부 정보를 숨긴 500 응답을 반환한다")
     void should_ReturnInternalServerError_When_UnexpectedExceptionOccurs() throws Exception {
-        when(bookSearchService.search("마션", 1))
+        when(bookSearchService.search("마션", 1, BookSearchSort.LATEST))
                 .thenThrow(new RuntimeException("database password leaked"));
 
         expectProblemDetail(
@@ -399,7 +388,7 @@ class BookControllerTest {
     @DisplayName("알라딘 API 오류가 발생하면 진단 정보를 숨긴 502 응답을 반환한다")
     void should_ReturnBadGateway_When_AladinClientExceptionOccurs() throws Exception {
         // given
-        when(bookSearchService.search("마션", 1))
+        when(bookSearchService.search("마션", 1, BookSearchSort.LATEST))
                 .thenThrow(new AladinClientException(1, "invalid secret key"));
 
         // when & then
@@ -420,7 +409,7 @@ class BookControllerTest {
     @DisplayName("읽기 상태가 유효하지 않으면 422 응답을 반환한다")
     void should_ReturnUnprocessableEntity_When_ReadingStateIsInvalid() throws Exception {
         // given
-        when(bookSearchService.search("마션", 1))
+        when(bookSearchService.search("마션", 1, BookSearchSort.LATEST))
                 .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
 
         // when & then

@@ -25,7 +25,7 @@ class PersistentReviewMemberReader implements ReviewMemberReader {
         return new ReviewMemberProfile(
                 member.getNickname(),
                 member.getProfileImageUrl(),
-                member.getAnonymousHandle(),
+                member.getAnonymousNickname(),
                 member.isDisplayAnonymous(),
                 member.getAccountStatus() == AccountStatus.WITHDRAWN
         );

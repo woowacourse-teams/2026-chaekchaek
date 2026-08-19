@@ -6,8 +6,10 @@ import com.chaekchaek.book.client.dto.AladinSearchResponse;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.library.service.BookCommentCountReader;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -23,6 +25,10 @@ public class BookSearchService {
     private final BookCommentCountReader commentCountReader;
 
     public BookSearchResponse search(String query, int page) {
+        return search(query, page, BookSearchSort.LATEST);
+    }
+
+    public BookSearchResponse search(String query, int page, BookSearchSort sort) {
         AladinSearchResponse source = bookClient.searchBooks(query, page);
 
         Map<String, Book> registeredBooks = bookRepository.findAllByIsbn13In(
@@ -34,6 +40,7 @@ public class BookSearchService {
         List<BookItem> items = source.items()
                 .stream()
                 .map(item -> toBookItem(item, registeredBooks.get(item.isbn13()), commentCounts))
+                .sorted(comparator(sort))
                 .toList();
         Integer nextPage = source.hasNextPage()
                 ? source.startIndex() + 1
@@ -43,6 +50,20 @@ public class BookSearchService {
                 source.totalResults(),
                 nextPage,
                 items
+        );
+    }
+
+    private Comparator<BookItem> comparator(BookSearchSort sort) {
+        BookSearchSort effectiveSort = sort == null ? BookSearchSort.LATEST : sort;
+        if (effectiveSort == BookSearchSort.COMMENT) {
+            return Comparator.comparing(
+                    BookItem::commentCount,
+                    Comparator.nullsLast(Comparator.reverseOrder())
+            );
+        }
+        return Comparator.comparing(
+                BookItem::publishedDate,
+                Comparator.nullsLast(Comparator.reverseOrder())
         );
     }
 
