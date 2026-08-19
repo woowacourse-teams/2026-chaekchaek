@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { ChangeEvent, KeyboardEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -18,14 +18,11 @@ import { Input } from '@chaekchaek/design-system';
 import { getBooks } from '@/services/apis/books/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
-const getBooksLoadData = async () => {
-  return await getBooks({ page: 1, query: '마션' });
-};
-
 export const BooksPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const keywordQuery = searchParams.get('query');
 
-  const [query, setQuery] = useState(() => searchParams.get('query') ?? '');
+  const [query, setQuery] = useState(() => keywordQuery ?? '');
 
   const handleChangeQuery = (e: ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
@@ -40,6 +37,10 @@ export const BooksPage = () => {
       });
     }
   };
+
+  const getBooksLoadData = useCallback(async () => {
+    return await getBooks({ page: 1, query });
+  }, [keywordQuery]);
 
   const {
     status: { data },
