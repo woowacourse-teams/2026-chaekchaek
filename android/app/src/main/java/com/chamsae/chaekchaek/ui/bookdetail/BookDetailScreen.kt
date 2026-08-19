@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +29,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +59,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -82,6 +86,7 @@ import com.chamsae.chaekchaek.theme.ChaekInk
 import com.chamsae.chaekchaek.theme.ChaekInkSecondary
 import com.chamsae.chaekchaek.theme.ChaekSurface
 import com.chamsae.chaekchaek.theme.ChaekSurfaceMuted
+import com.chamsae.chaekchaek.ui.common.withDelayedApiLoading
 import com.chamsae.chaekchaek.ui.home.coverResource
 import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
@@ -160,6 +165,7 @@ fun BookDetailRoute(
     onStatusChange = { status ->
       val accessToken = requireNotNull(tokens).accessToken
       bookDetailRepository.updateReadingStatus(bookIdForWrite(accessToken), status.toApiStatus(), accessToken)
+      libraryRepository.changeStatus(setOf(book.id), status)
       reloadNonce++
     },
     onPageSave = { page ->
@@ -229,17 +235,27 @@ fun BookDetailScreen(
   val context = LocalContext.current
   var signingIn by rememberSaveable { mutableStateOf(false) }
   var loginError by rememberSaveable { mutableStateOf<String?>(null) }
+  var requestInFlight by remember { mutableStateOf(false) }
+  var showRequestLoading by remember { mutableStateOf(false) }
   var showRatingDialog by rememberSaveable { mutableStateOf(false) }
   var showPageSheet by rememberSaveable { mutableStateOf(false) }
   var showReviewSheet by rememberSaveable { mutableStateOf(false) }
   val snackbarHostState = remember { SnackbarHostState() }
   var pendingAction by remember { mutableStateOf<Pair<String, suspend () -> Unit>?>(null) }
   fun execute(operation: String, action: suspend () -> Unit) {
+    if (requestInFlight) return
+    requestInFlight = true
     scope.launch {
-      runCatching { action() }.onFailure { error ->
-        val httpStatus = Regex("\\b[1-5]\\d{2}\\b").find(error.message.orEmpty())?.value
-        Log.w("ChaekchaekApi", "Book detail $operation failed: ${error::class.simpleName}, HTTP ${httpStatus ?: "N/A"}")
-        snackbarHostState.showSnackbar("요청을 처리하지 못했어요. 다시 시도해 주세요.")
+      try {
+        runCatching { withDelayedApiLoading({ showRequestLoading = it }, action) }
+          .onFailure { error ->
+            val httpStatus = Regex("\\b[1-5]\\d{2}\\b").find(error.message.orEmpty())?.value
+            Log.w("ChaekchaekApi", "Book detail $operation failed: ${error::class.simpleName}, HTTP ${httpStatus ?: "N/A"}")
+            snackbarHostState.showSnackbar("요청을 처리하지 못했어요. 다시 시도해 주세요.")
+          }
+      } finally {
+        showRequestLoading = false
+        requestInFlight = false
       }
     }
   }
@@ -304,6 +320,10 @@ fun BookDetailScreen(
         onClick = { scope.launch { listState.animateScrollToItem(0) } },
         modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
       )
+    }
+
+    if (showRequestLoading) {
+      RequestLoadingOverlay(Modifier.fillMaxSize())
     }
   }
 
@@ -370,6 +390,34 @@ fun BookDetailScreen(
         showReviewSheet = false
       },
     )
+  }
+}
+
+@Composable
+private fun RequestLoadingOverlay(modifier: Modifier = Modifier) {
+  val interactionSource = remember { MutableInteractionSource() }
+  Box(
+    modifier =
+      modifier
+        .background(ChaekInk.copy(alpha = 0.15f))
+        .clickable(interactionSource = interactionSource, indication = null, onClick = {})
+        .clearAndSetSemantics { contentDescription = "처리 중" },
+    contentAlignment = Alignment.Center,
+  ) {
+    Surface(
+      modifier = Modifier.size(42.dp),
+      shape = CircleShape,
+      color = ChaekAccentSoft,
+      border = BorderStroke(1.dp, ChaekBorder),
+    ) {
+      Box(contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(
+          modifier = Modifier.size(22.dp),
+          color = ChaekAccent,
+          strokeWidth = 2.dp,
+        )
+      }
+    }
   }
 }
 
