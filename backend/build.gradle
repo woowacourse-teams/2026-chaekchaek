@@ -110,6 +110,48 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			// ePages 0.20.1 does not emit nullable for optional object fields with nested descriptors.
 			nullableProperty.put('nullable', true)
 		}
+
+		def components = (specification.get('components') as Map) ?: [:]
+		specification.put('components', components)
+		components.put('securitySchemes', [
+			bearerAuth: [
+				type: 'http',
+				scheme: 'bearer',
+				bearerFormat: 'JWT'
+			],
+			accessTokenCookie: [
+				type: 'apiKey',
+				in: 'cookie',
+				name: 'access_token'
+			]
+		])
+
+		def isPublicOperation = { path, method ->
+			if (path.startsWith('/api/v1/auth/')) {
+				return true
+			}
+			if (method != 'get') {
+				return false
+			}
+			return path.startsWith('/api/v1/home/')
+					|| path == '/api/v1/books'
+					|| path == '/api/v1/books/{bookId}'
+					|| path == '/api/v1/books/{bookId}/reviews'
+					|| path == '/api/v1/reviews/{reviewId}/replies'
+		}
+		def securityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
+		def httpMethods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as Set
+		(specification.get('paths') as Map).each { path, pathItem ->
+			(pathItem as Map).each { method, operation ->
+				if (httpMethods.contains(method.toString())) {
+					if (isPublicOperation(path.toString(), method.toString())) {
+						(operation as Map).remove('security')
+					} else {
+						(operation as Map).put('security', securityRequirement)
+					}
+				}
+			}
+		}
 		sourceFile.withWriter('UTF-8') { writer -> new Yaml().dump(specification, writer) }
 	}
 }
@@ -237,6 +279,75 @@ tasks.register('verifyOpenApi') {
 				}
 				if (operationResponses == null || !operationResponses.containsKey(successStatus)) {
 					throw new GradleException("OpenAPI specification is missing ${successStatus} response for ${method.toUpperCase()} ${path}")
+				}
+			}
+		}
+
+		def authOperations = [
+			'/api/v1/auth/mobile/google'   : [post: ['200', '400']],
+			'/api/v1/auth/mobile/reissue' : [post: ['200', '400']],
+			'/api/v1/auth/mobile/logout'  : [post: ['204', '400']],
+			'/api/v1/auth/reissue'        : [post: ['204']],
+			'/api/v1/auth/logout'         : [post: ['204']],
+			'/api/v1/members/me'          : [get : ['200', '401']]
+		]
+		authOperations.each { path, operations ->
+			def pathItem = paths?.get(path) as Map
+			if (pathItem == null) {
+				throw new GradleException("OpenAPI specification is missing path ${path}")
+			}
+			operations.each { method, expectedResponseCodes ->
+				def operation = pathItem.get(method) as Map
+				if (operation == null) {
+					throw new GradleException("OpenAPI specification is missing ${method.toUpperCase()} operation for ${path}")
+				}
+				def operationResponses = (operation.get('responses') as Map)?.collectEntries { status, response ->
+					[(status.toString()): response]
+				}
+				if (operationResponses == null || !operationResponses.keySet().containsAll(expectedResponseCodes)) {
+					throw new GradleException("OpenAPI specification has incomplete responses for ${method.toUpperCase()} ${path}")
+				}
+			}
+		}
+
+		def securitySchemes = ((specification?.get('components') as Map)?.get('securitySchemes') as Map)
+		def bearerAuth = securitySchemes?.get('bearerAuth') as Map
+		if (bearerAuth?.get('type') != 'http' || bearerAuth?.get('scheme') != 'bearer') {
+			throw new GradleException('OpenAPI specification is missing bearerAuth security scheme')
+		}
+		def accessTokenCookie = securitySchemes?.get('accessTokenCookie') as Map
+		if (accessTokenCookie?.get('type') != 'apiKey'
+				|| accessTokenCookie?.get('in') != 'cookie'
+				|| accessTokenCookie?.get('name') != 'access_token') {
+			throw new GradleException('OpenAPI specification is missing accessTokenCookie security scheme')
+		}
+		def expectedSecurityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
+		def publicOperation = { path, method ->
+			if (path.toString().startsWith('/api/v1/auth/')) {
+				return true
+			}
+			if (method.toString() != 'get') {
+				return false
+			}
+			return path.toString().startsWith('/api/v1/home/')
+					|| path.toString() == '/api/v1/books'
+					|| path.toString() == '/api/v1/books/{bookId}'
+					|| path.toString() == '/api/v1/books/{bookId}/reviews'
+					|| path.toString() == '/api/v1/reviews/{reviewId}/replies'
+		}
+		def openApiHttpMethods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as Set
+		paths.each { path, pathItem ->
+			(pathItem as Map).each { method, operation ->
+				if (!openApiHttpMethods.contains(method.toString())) {
+					return
+				}
+				def security = (operation as Map).get('security')
+				if (publicOperation(path, method)) {
+					if (security != null) {
+						throw new GradleException("OpenAPI specification adds authentication to public ${method.toString().toUpperCase()} ${path}")
+					}
+				} else if (security != expectedSecurityRequirement) {
+					throw new GradleException("OpenAPI specification is missing alternative authentication for ${method.toString().toUpperCase()} ${path}")
 				}
 			}
 		}

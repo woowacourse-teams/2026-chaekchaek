@@ -1,6 +1,10 @@
 package com.chaekchaek.member.controller;
 
+import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.document;
+import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -8,21 +12,50 @@ import com.chaekchaek.auth.token.access.AccessTokenProvider;
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
+import com.epages.restdocs.apispec.ResourceSnippetParameters;
+import com.epages.restdocs.apispec.Schema;
 import jakarta.servlet.http.Cookie;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.restdocs.payload.FieldDescriptor;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@AutoConfigureRestDocs
 @ActiveProfiles("test")
 public class MemberControllerIntegrationTest {
+
+    private static final String MEMBER_TAG = "회원";
+    private static final FieldDescriptor[] MEMBER_RESPONSE_FIELDS = {
+            fieldWithPath("memberId").type(JsonFieldType.NUMBER).description("회원 ID"),
+            fieldWithPath("nickname").type(JsonFieldType.STRING).description("닉네임"),
+            fieldWithPath("profileImageUrl").type(JsonFieldType.STRING).description("프로필 이미지 URL"),
+            fieldWithPath("displayAnonymous").type(JsonFieldType.BOOLEAN)
+                    .description("감상 작성 시 익명 표시를 기본으로 사용하는지 여부"),
+            fieldWithPath("accountStatus").type(JsonFieldType.STRING).description("계정 상태")
+    };
+    private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
+            fieldWithPath("type").type(JsonFieldType.STRING)
+                    .description("현재 about:blank로 고정되는 문제 유형 URI"),
+            fieldWithPath("title").type(JsonFieldType.STRING).description("HTTP 상태 설명"),
+            fieldWithPath("status").type(JsonFieldType.NUMBER).description("HTTP 상태 코드"),
+            fieldWithPath("detail").type(JsonFieldType.STRING)
+                    .description("오류 상세 메시지. 클라이언트 분기에는 사용하지 않는다"),
+            fieldWithPath("instance").type(JsonFieldType.STRING)
+                    .description("오류가 발생한 요청 경로. 인증 진입점 응답에서는 생략될 수 있다")
+                    .optional(),
+            fieldWithPath("code").type(JsonFieldType.STRING)
+                    .description("클라이언트 오류 분기에 사용하는 애플리케이션 오류 코드")
+    };
 
     @Autowired
     private MockMvc mockMvc;
@@ -68,14 +101,34 @@ public class MemberControllerIntegrationTest {
                 .andExpect(jsonPath("$.profileImageUrl")
                         .value("exUrl"))
                 .andExpect(jsonPath("$.displayAnonymous").value(false))
-                .andExpect(jsonPath("$.accountStatus").value("ACTIVE"));
+                .andExpect(jsonPath("$.accountStatus").value("ACTIVE"))
+                .andDo(document(
+                        "member-me",
+                        responseFields(MEMBER_RESPONSE_FIELDS),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary("내 정보 조회")
+                                .description("웹에서는 access_token 쿠키로, 모바일에서는 Authorization Bearer 헤더로 인증한 사용자의 정보를 조회한다")
+                                .tag(MEMBER_TAG)
+                                .responseFields(MEMBER_RESPONSE_FIELDS)
+                                .build())));
     }
 
     @Test
     @DisplayName("AccessToken 쿠키가 없으면 내 정보 조회를 거부한다")
     void should_RejectGetMyInfo_WithoutAccessToken() throws Exception {
         mockMvc.perform(get("/api/v1/members/me"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
+                .andDo(document(
+                        "member-me-unauthorized",
+                        responseFields(PROBLEM_DETAIL_FIELDS),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary("내 정보 조회")
+                                .description("Access Token이 없거나 유효하지 않으면 인증 오류를 반환한다. 클라이언트는 code를 기준으로 로그인 또는 토큰 재발급 흐름을 선택한다")
+                                .tag(MEMBER_TAG)
+                                .responseSchema(Schema.schema("ProblemDetail"))
+                                .responseFields(PROBLEM_DETAIL_FIELDS)
+                                .build())));
     }
 
     @Test
