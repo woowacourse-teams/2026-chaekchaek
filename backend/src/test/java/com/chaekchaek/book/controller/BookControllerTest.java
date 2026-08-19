@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.book.client.AladinClientException;
+import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.dto.BookMyRecordResponse;
@@ -58,7 +59,7 @@ import org.springframework.test.web.servlet.ResultActions;
 class BookControllerTest {
 
     private static final String BOOK_SEARCH_SUMMARY = "도서 검색";
-    private static final String BOOK_SEARCH_DESCRIPTION = "도서명과 페이지 번호로 도서를 검색한다";
+    private static final String BOOK_SEARCH_DESCRIPTION = "도서명과 페이지 번호 및 정렬 기준으로 도서를 검색한다";
     private static final String BOOK_DETAIL_SUMMARY = "도서 상세 조회";
 
     private static final FieldDescriptor[] BOOK_SEARCH_RESPONSE_FIELDS = {
@@ -150,7 +151,7 @@ class BookControllerTest {
                 null
         );
         BookSearchResponse response = new BookSearchResponse(1, null, List.of(item));
-        when(bookSearchService.search("마션", 1)).thenReturn(response);
+        when(bookSearchService.search("마션", 1, BookSearchSort.LATEST)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/v1/books")
@@ -176,7 +177,10 @@ class BookControllerTest {
                         "book-search",
                         queryParameters(
                                 parameterWithName("query").description("검색할 도서명"),
-                                parameterWithName("page").description("1부터 시작하는 페이지 번호")
+                                parameterWithName("page").description("1부터 시작하는 페이지 번호"),
+                                parameterWithName("sort")
+                                        .description("정렬 기준. LATEST는 최신순, COMMENT는 댓글순이며 생략하면 LATEST를 사용한다")
+                                        .optional()
                         ),
                         responseFields(BOOK_SEARCH_RESPONSE_FIELDS),
                         resource(ResourceSnippetParameters.builder()
@@ -189,13 +193,34 @@ class BookControllerTest {
                                                 .description("검색할 도서명"),
                                         ResourceDocumentation.parameterWithName("page")
                                                 .type(SimpleType.INTEGER)
-                                                .description("1부터 시작하는 페이지 번호")
+                                                .description("1부터 시작하는 페이지 번호"),
+                                        ResourceDocumentation.parameterWithName("sort")
+                                                .type(SimpleType.STRING)
+                                                .description("정렬 기준. LATEST는 최신순, COMMENT는 댓글순이며 생략하면 LATEST를 사용한다")
+                                                .optional()
                                 )
                                 .responseFields(BOOK_SEARCH_RESPONSE_FIELDS)
                                 .build())
                 ));
 
-        verify(bookSearchService).search("마션", 1);
+        verify(bookSearchService).search("마션", 1, BookSearchSort.LATEST);
+    }
+
+    @Test
+    @DisplayName("정렬 기준을 지정하면 해당 기준으로 도서 검색을 요청한다")
+    void should_RequestBookSearchWithSort_When_SortIsProvided() throws Exception {
+        // given
+        when(bookSearchService.search("마션", 1, BookSearchSort.COMMENT))
+                .thenReturn(new BookSearchResponse(0, null, List.of()));
+
+        // when & then
+        mockMvc.perform(get("/api/v1/books")
+                        .param("query", "마션")
+                        .param("page", "1")
+                        .param("sort", "COMMENT"))
+                .andExpect(status().isOk());
+
+        verify(bookSearchService).search("마션", 1, BookSearchSort.COMMENT);
     }
 
     @Test
@@ -289,6 +314,23 @@ class BookControllerTest {
         verifyNoInteractions(bookSearchService);
     }
 
+    @Test
+    @DisplayName("정렬 기준이 유효하지 않다면 400 응답을 반환한다")
+    void should_ReturnBadRequest_When_SortIsInvalid() throws Exception {
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/books")
+                        .param("query", "마션")
+                        .param("page", "1")
+                        .param("sort", "POPULAR")),
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "요청값이 올바르지 않습니다."
+        );
+
+        verifyNoInteractions(bookSearchService);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"", " "})
     @DisplayName("검색어가 비어 있다면 400 응답을 반환한다")
@@ -326,7 +368,7 @@ class BookControllerTest {
     @Test
     @DisplayName("예상하지 못한 오류가 발생하면 내부 정보를 숨긴 500 응답을 반환한다")
     void should_ReturnInternalServerError_When_UnexpectedExceptionOccurs() throws Exception {
-        when(bookSearchService.search("마션", 1))
+        when(bookSearchService.search("마션", 1, BookSearchSort.LATEST))
                 .thenThrow(new RuntimeException("database password leaked"));
 
         expectProblemDetail(
@@ -346,7 +388,7 @@ class BookControllerTest {
     @DisplayName("알라딘 API 오류가 발생하면 진단 정보를 숨긴 502 응답을 반환한다")
     void should_ReturnBadGateway_When_AladinClientExceptionOccurs() throws Exception {
         // given
-        when(bookSearchService.search("마션", 1))
+        when(bookSearchService.search("마션", 1, BookSearchSort.LATEST))
                 .thenThrow(new AladinClientException(1, "invalid secret key"));
 
         // when & then
@@ -367,7 +409,7 @@ class BookControllerTest {
     @DisplayName("읽기 상태가 유효하지 않으면 422 응답을 반환한다")
     void should_ReturnUnprocessableEntity_When_ReadingStateIsInvalid() throws Exception {
         // given
-        when(bookSearchService.search("마션", 1))
+        when(bookSearchService.search("마션", 1, BookSearchSort.LATEST))
                 .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
 
         // when & then

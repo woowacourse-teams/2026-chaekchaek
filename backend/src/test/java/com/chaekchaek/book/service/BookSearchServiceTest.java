@@ -9,6 +9,7 @@ import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.client.dto.AladinSearchResponse;
 import com.chaekchaek.book.client.dto.AladinBookSubInfo;
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
@@ -156,5 +157,86 @@ class BookSearchServiceTest {
         // then
         assertThat(item.bookId()).isEqualTo(42L);
         assertThat(item.commentCount()).isEqualTo(7);
+    }
+
+    @Test
+    @DisplayName("최신순으로 검색하면 출판일이 최신인 도서부터 반환한다")
+    void should_SortByPublishedDateDescending_When_SortIsLatest() {
+        // given
+        BookSearchService service = serviceWith(
+                new AladinSearchResponse(
+                        null,
+                        null,
+                        3,
+                        1,
+                        10,
+                        List.of(
+                                aladinBook("오래된 책", "2021-01-01", "9780000000001"),
+                                aladinBook("최신 책", "2026-01-01", "9780000000002"),
+                                aladinBook("중간 책", "2024-01-01", "9780000000003")
+                        )
+                ),
+                Map.of()
+        );
+
+        // when
+        BookSearchResponse response = service.search("책", 1, BookSearchSort.LATEST);
+
+        // then
+        assertThat(response.items()).extracting(BookItem::title)
+                .containsExactly("최신 책", "중간 책", "오래된 책");
+    }
+
+    @Test
+    @DisplayName("댓글순으로 검색하면 댓글 수가 많은 도서부터 반환한다")
+    void should_SortByCommentCountDescending_When_SortIsComment() {
+        // given
+        AladinBookItem oldestBook = aladinBook("댓글 적은 책", "2021-01-01", "9780000000001");
+        AladinBookItem mostCommentedBook = aladinBook("댓글 많은 책", "2024-01-01", "9780000000002");
+        AladinBookItem middleBook = aladinBook("댓글 중간 책", "2026-01-01", "9780000000003");
+        AladinBookItem unregisteredBook = aladinBook("미등록 책", "2025-01-01", "9780000000004");
+        BookSearchService service = serviceWith(
+                new AladinSearchResponse(null, null, 4, 1, 10,
+                        List.of(oldestBook, mostCommentedBook, middleBook, unregisteredBook)),
+                Map.of(1L, 1L, 2L, 10L, 3L, 5L),
+                registeredBook(1L, oldestBook.isbn13()),
+                registeredBook(2L, mostCommentedBook.isbn13()),
+                registeredBook(3L, middleBook.isbn13())
+        );
+
+        // when
+        BookSearchResponse response = service.search("책", 1, BookSearchSort.COMMENT);
+
+        // then
+        assertThat(response.items()).extracting(BookItem::title)
+                .containsExactly("댓글 많은 책", "댓글 중간 책", "댓글 적은 책", "미등록 책");
+    }
+
+    private BookSearchService serviceWith(
+            AladinSearchResponse response,
+            Map<Long, Long> commentCounts,
+            Book... registeredBooks
+    ) {
+        AladinBookClient bookClient = mock(AladinBookClient.class);
+        BookRepository bookRepository = mock(BookRepository.class);
+        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
+        when(bookClient.searchBooks("책", 1)).thenReturn(response);
+        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenReturn(List.of(registeredBooks));
+        when(commentCountReader.getCommentCounts(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenReturn(commentCounts);
+        return new BookSearchService(bookClient, bookRepository, commentCountReader);
+    }
+
+    private AladinBookItem aladinBook(String title, String publishedDate, String isbn13) {
+        return new AladinBookItem(title, "https://image.example/cover.jpg", "작가", publishedDate,
+                isbn13, "소설", "출판사", new AladinBookSubInfo(200));
+    }
+
+    private Book registeredBook(Long id, String isbn13) {
+        Book book = mock(Book.class);
+        when(book.getId()).thenReturn(id);
+        when(book.getIsbn13()).thenReturn(isbn13);
+        return book;
     }
 }
