@@ -263,8 +263,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_ALADIN_TTB_KEY = "$(ALADIN_TTB_KEY)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Chaekchaek/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "첵췍";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -370,8 +370,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_ALADIN_TTB_KEY = "$(ALADIN_TTB_KEY)";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Chaekchaek/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "첵췍";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
