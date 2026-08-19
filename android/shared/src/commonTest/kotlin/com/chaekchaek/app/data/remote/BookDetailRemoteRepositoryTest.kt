@@ -47,4 +47,12 @@ class BookDetailRemoteRepositoryTest {
     assertEquals("WANT_TO_READ", record?.status)
     assertEquals(0, record?.currentPage)
   }
+
+  @Test
+  fun `서재 변경 응답의 도서 ID를 유지한다`() {
+    val record = LibraryRecordDto(bookId = 10, status = "READING", currentPage = 0)
+      .toLibraryRecord()
+
+    assertEquals(10, record.bookId)
+  }
 }

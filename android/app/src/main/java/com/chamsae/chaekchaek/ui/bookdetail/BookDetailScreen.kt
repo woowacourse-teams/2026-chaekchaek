@@ -115,6 +115,11 @@ fun BookDetailRoute(
   var reloadNonce by remember { mutableStateOf(0) }
   val archivedBook = archivedBooks.firstOrNull { it.id == book.id }
 
+  suspend fun bookIdForWrite(accessToken: String): Long =
+    detail?.bookId ?: requireNotNull(
+      bookDetailRepository.addToLibrary(book.isbn13, detail?.totalPages, accessToken).bookId,
+    )
+
   LaunchedEffect(book.isbn13, tokens?.accessToken, reloadNonce) {
     detail = book.isbn13.takeIf(String::isNotBlank)?.let { runCatching { bookDetailRepository.detail(it, tokens?.accessToken) }.getOrNull() }
   }
@@ -153,19 +158,23 @@ fun BookDetailRoute(
       reloadNonce++
     },
     onStatusChange = { status ->
-      bookDetailRepository.updateReadingStatus(requireNotNull(detail?.bookId), status.toApiStatus(), requireNotNull(tokens).accessToken)
+      val accessToken = requireNotNull(tokens).accessToken
+      bookDetailRepository.updateReadingStatus(bookIdForWrite(accessToken), status.toApiStatus(), accessToken)
       reloadNonce++
     },
     onPageSave = { page ->
-      bookDetailRepository.updateCurrentPage(requireNotNull(detail?.bookId), page, detail?.totalPages, requireNotNull(tokens).accessToken)
+      val accessToken = requireNotNull(tokens).accessToken
+      bookDetailRepository.updateCurrentPage(bookIdForWrite(accessToken), page, detail?.totalPages, accessToken)
       reloadNonce++
     },
     onRatingSave = { rating ->
-      bookDetailRepository.rate(requireNotNull(detail?.bookId), rating.score.toDouble(), requireNotNull(tokens).accessToken)
+      val accessToken = requireNotNull(tokens).accessToken
+      bookDetailRepository.rate(bookIdForWrite(accessToken), rating.score.toDouble(), accessToken)
       reloadNonce++
     },
     onReviewCreate = { content ->
-      bookDetailRepository.createReview(requireNotNull(detail?.bookId), content, requireNotNull(tokens).accessToken)
+      val accessToken = requireNotNull(tokens).accessToken
+      bookDetailRepository.createReview(bookIdForWrite(accessToken), content, accessToken)
       reloadNonce++
     },
     onReviewLike = { reviewId ->

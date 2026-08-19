@@ -99,7 +99,12 @@ data class BookDetail(
   val myRecord: LibraryRecord?,
 )
 
-data class LibraryRecord(val status: String, val currentPage: Int, val rating: Double?)
+data class LibraryRecord(
+  val status: String,
+  val currentPage: Int,
+  val rating: Double?,
+  val bookId: Long? = null,
+)
 
 data class ReviewPage(val totalCount: Int, val items: List<BookReview>)
 
@@ -136,6 +141,7 @@ internal data class BookDetailDto(
 
 @Serializable
 internal data class LibraryRecordDto(
+  val bookId: Long,
   val status: String,
   val currentPage: Int,
   val rating: Double? = null,
@@ -207,7 +213,7 @@ internal fun BookDetailDto.toBookDetail() =
     myRecord = myRecord?.toLibraryRecord(),
   )
 
-internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage, rating)
+internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage, rating, bookId)
 
 internal fun BookDetailRecordDto.toLibraryRecord() =
   status?.let { LibraryRecord(it, currentPage ?: 0, myRating) }
