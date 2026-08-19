@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import type { ChangeEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import type { ChangeEvent, MouseEvent } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import { Layout } from '@chaekchaek/design-system';
 import { Header } from '@chaekchaek/design-system';
@@ -59,6 +59,11 @@ export const BooksPage = () => {
     queryFn: getBooksLoadData,
   });
 
+  const navigation = useNavigate();
+  const handleMove = (isbn: string) => {
+    navigation(`/books/${isbn}`);
+  };
+
   return (
     <Layout>
       <Header />
@@ -95,7 +100,16 @@ export const BooksPage = () => {
                   return (
                     <List.Item>
                       <List.Item.Leading>
-                        <ImgBox img={item.coverImageUrl} />
+                        <a
+                          href="#"
+                          onClick={(e: MouseEvent<HTMLAnchorElement>) => {
+                            e.preventDefault();
+
+                            handleMove(item.isbn13);
+                          }}
+                        >
+                          <ImgBox img={item.coverImageUrl} />
+                        </a>
                       </List.Item.Leading>
                       <List.Item.Content
                         title={item.title}
