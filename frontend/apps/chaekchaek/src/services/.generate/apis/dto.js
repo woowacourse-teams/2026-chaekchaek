@@ -58,7 +58,6 @@ ${Object.entries(requestParameter)
 }
 
 export type ${upperMethod}${upperKey}ResponseDto = ResponseDto<
-  200,
   ${getResponseData(responseData)}
 >;
 `;

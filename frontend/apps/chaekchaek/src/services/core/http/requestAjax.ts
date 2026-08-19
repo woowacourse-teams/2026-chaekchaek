@@ -66,3 +66,23 @@ export const requestAjax = async (url: string, config?: Configs): Promise<Reques
     throw new RequestAjaxError(response);
   }
 };
+
+export const create = () => {
+  return async (url: string, config?: Configs) => {
+    try {
+      return await requestAjax(url, config);
+    } catch (error) {
+      if (error instanceof RequestAjaxError && error.status === 401) {
+        try {
+          await requestAjax(`/auth/reissue`);
+        } catch (error) {
+          window.location.href = `/login`;
+          throw error;
+        }
+
+        return await requestAjax(url, config);
+      }
+      throw error;
+    }
+  };
+};

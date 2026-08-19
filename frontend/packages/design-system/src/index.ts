@@ -1,3 +1,5 @@
+import './styles/index.css';
+
 export { Header } from './frames/Header';
 export type { Props as HeaderProps } from './frames/Header';
 
