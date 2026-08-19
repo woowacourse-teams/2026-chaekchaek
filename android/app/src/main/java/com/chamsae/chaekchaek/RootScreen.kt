@@ -46,7 +46,7 @@ fun RootScreen(
   var archiveEditing by rememberSaveable { mutableStateOf(false) }
 
   Box(modifier = modifier.fillMaxSize()) {
-    val showBottomBar = selectedTab != RootTab.Discover && !(selectedTab == RootTab.Shelf && archiveEditing)
+    val showBottomBar = !(selectedTab == RootTab.Shelf && archiveEditing)
     val contentModifier =
       Modifier
         .fillMaxSize()
