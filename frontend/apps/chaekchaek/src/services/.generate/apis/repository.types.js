@@ -30,14 +30,15 @@ export const component = (name, endPoint) =>
 
       return `export interface ${upperMethod}${upperKey}${upperSuffix} {
   ${Object.entries(obj)
+    .filter(([key, value]) => value)
     .map(([key, value]) => `${key}: ${value}`)
     .join(';')}
   ${
-    requestData &&
-    Object.entries(requestData).length &&
-    `;${Object.entries(data)
-      .map(([key, value]) => `${key}: ${value.type}`)
-      .join(';')}`
+    requestData && Object.entries(requestData).length
+      ? `;${Object.entries(data)
+          .map(([key, value]) => `${key}: ${value.type}`)
+          .join(';')}`
+      : ''
   }
 }
 

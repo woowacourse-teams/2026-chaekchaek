@@ -48,12 +48,12 @@ ${Object.entries(requestParameter)
   })
   .join('')}
   ${
-    requestData &&
-    Object.keys(requestData).length &&
-    `data: {${Object.entries(requestData).map(([key, value]) => {
-      return `${key}: ${value.type}`;
-    })}
+    requestData && Object.keys(requestData).length
+      ? `data: {${Object.entries(requestData).map(([key, value]) => {
+          return `${key}: ${value.type}`;
+        })}
     }`
+      : ''
   }
 }
 
