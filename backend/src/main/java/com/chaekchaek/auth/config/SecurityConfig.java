@@ -5,6 +5,7 @@ import com.chaekchaek.auth.handler.OAuth2AuthenticationFailureHandler;
 import com.chaekchaek.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.chaekchaek.auth.handler.RestAuthenticationEntryPoint;
 import com.chaekchaek.auth.token.access.HeaderOrCookieBearerTokenResolver;
+import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +28,7 @@ public class SecurityConfig {
     private final GoogleOidcUserService googleOidcUserService;
     private final HeaderOrCookieBearerTokenResolver bearerTokenResolver;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
-    private final String frontendOrigin;
+    private final List<String> frontendAllowedOrigins;
 
     public SecurityConfig(
             OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
@@ -35,14 +36,17 @@ public class SecurityConfig {
             GoogleOidcUserService googleOidcUserService,
             HeaderOrCookieBearerTokenResolver bearerTokenResolver,
             RestAuthenticationEntryPoint restAuthenticationEntryPoint,
-            @Value("${app.frontend.base-url}") String frontendOrigin
+            @Value("${app.frontend.allowed-origins}") String frontendAllowedOrigins
     ) {
         this.oAuth2AuthenticationSuccessHandler = oAuth2AuthenticationSuccessHandler;
         this.oAuth2AuthenticationFailureHandler = oAuth2AuthenticationFailureHandler;
         this.googleOidcUserService = googleOidcUserService;
         this.bearerTokenResolver = bearerTokenResolver;
         this.restAuthenticationEntryPoint = restAuthenticationEntryPoint;
-        this.frontendOrigin = frontendOrigin;
+        this.frontendAllowedOrigins = Arrays.stream(frontendAllowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toList();
     }
 
     @Bean
@@ -91,7 +95,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of(frontendOrigin));
+        configuration.setAllowedOrigins(frontendAllowedOrigins);
         configuration.setAllowedMethods(
                 List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         );
