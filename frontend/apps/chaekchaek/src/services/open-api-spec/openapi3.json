@@ -133,7 +133,7 @@
                 },
                 "examples": {
                   "book-search": {
-                    "value": "{\"totalCount\":1,\"nextPage\":null,\"items\":[{\"bookId\":null,\"title\":\"마션\",\"coverImageUrl\":\"https://image.aladin.co.kr/martian.jpg\",\"authors\":[\"앤디 위어\"],\"translators\":[\"박아람\"],\"publishedDate\":\"2026-07-01\",\"isbn13\":\"9788925568683\",\"category\":\"국내도서>소설>과학소설\",\"publisher\":\"알에이치코리아(RHK)\",\"commentCount\":null}]}"
+                    "value": "{\"totalCount\":1,\"nextPage\":null,\"items\":[{\"bookId\":null,\"title\":\"마션\",\"coverImageUrl\":\"https://image.aladin.co.kr/product/39679/84/cover200/8925568683_1.jpg\",\"authors\":[\"앤디 위어\"],\"translators\":[\"박아람\"],\"publishedDate\":\"2026-07-01\",\"isbn13\":\"9788925568683\",\"category\":\"국내도서>소설>과학소설\",\"publisher\":\"알에이치코리아(RHK)\",\"commentCount\":null}]}"
                   }
                 }
               }

@@ -10,5 +10,5 @@ export const getBooks = async ({
     query: { query, page },
   });
 
-  return response.data;
+  return response;
 };

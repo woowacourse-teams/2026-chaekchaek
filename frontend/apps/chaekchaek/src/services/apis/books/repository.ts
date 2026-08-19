@@ -4,11 +4,10 @@ import { mapGetBooksModelToRequestDTO, mapGetBooksResponseDTOToModel } from './m
 import type { GetBooks } from './repository.types';
 
 export const getBooks: GetBooks = async (model) => {
-  const { query, page, undefined } = mapGetBooksModelToRequestDTO(model);
+  const { query, page } = mapGetBooksModelToRequestDTO(model);
 
   const responseDTO = await fetcher.getBooks({
     query: { query, page },
-    undefined,
   });
 
   return mapGetBooksResponseDTOToModel(responseDTO);

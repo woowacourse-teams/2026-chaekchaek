@@ -1,7 +1,6 @@
 export interface GetBooksParams {
   query: string;
   page: number;
-  undefined;
 }
 
 export type GetBooks = (params: GetBooksParams) => Promise<{

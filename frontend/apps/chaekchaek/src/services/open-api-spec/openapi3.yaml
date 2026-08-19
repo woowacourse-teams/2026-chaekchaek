@@ -36,7 +36,7 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/api-v1-books996406116'}
               examples:
-                book-search: {value: '{"totalCount":1,"nextPage":null,"items":[{"bookId":null,"title":"마션","coverImageUrl":"https://image.aladin.co.kr/martian.jpg","authors":["앤디
+                book-search: {value: '{"totalCount":1,"nextPage":null,"items":[{"bookId":null,"title":"마션","coverImageUrl":"https://image.aladin.co.kr/product/39679/84/cover200/8925568683_1.jpg","authors":["앤디
                     위어"],"translators":["박아람"],"publishedDate":"2026-07-01","isbn13":"9788925568683","category":"국내도서>소설>과학소설","publisher":"알에이치코리아(RHK)","commentCount":null}]}'}
         '502':
           description: '502'
@@ -158,7 +158,7 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/api-v1-library-bookId-rating-1519410846'}
               examples:
-                library-add: {value: '{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"translators":[],"publisher":"창비","category":"국내도서>소설","publishedDate":"2007-10-30","totalPages":368,"commentCount":2,"status":"READING","currentPage":100,"rating":4.5,"addedAt":"2026-08-14T03:00:00Z","readingUpdatedAt":"2026-08-14T03:30:00Z"}'}
+                library-add: {value: '{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/product/39679/84/cover200/8925568683_1.jpg","authors":["한강"],"translators":[],"publisher":"창비","category":"국내도서>소설","publishedDate":"2007-10-30","totalPages":368,"commentCount":2,"status":"READING","currentPage":100,"rating":4.5,"addedAt":"2026-08-14T03:00:00Z","readingUpdatedAt":"2026-08-14T03:30:00Z"}'}
         '422':
           description: '422'
           content:

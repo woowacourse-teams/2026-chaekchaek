@@ -1,4 +1,1 @@
-export type ResponseDto<StatusCode extends number, Data> = {
-  statusCode: StatusCode;
-  data: Data;
-};
+export type ResponseDto<Data> = Data;
