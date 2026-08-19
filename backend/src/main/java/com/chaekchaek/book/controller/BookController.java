@@ -28,8 +28,8 @@ public class BookController {
         return ResponseEntity.ok(bookSearchService.search(query, page));
     }
 
-    @GetMapping("/api/v1/books/{bookId}")
-    public ResponseEntity<BookDetailResponse> getDetail(@PathVariable long bookId) {
-        return ResponseEntity.ok(bookService.getDetail(bookId));
+    @GetMapping("/api/v1/books/by-isbn/{isbn13}")
+    public ResponseEntity<BookDetailResponse> getDetail(@PathVariable String isbn13) {
+        return ResponseEntity.ok(bookService.getDetail(isbn13));
     }
 }

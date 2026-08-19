@@ -44,6 +44,9 @@ class BookServicePersistenceTest {
     @MockitoBean
     private CurrentMemberIdProvider currentMemberIdProvider;
 
+    @MockitoBean
+    private BookResolver bookResolver;
+
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @DisplayName("등록된 도서 상세를 조회하면 지연 로딩 컬렉션을 포함해 반환한다")
@@ -60,9 +63,10 @@ class BookServicePersistenceTest {
         when(commentCountReader.getCommentCounts(List.of(savedBook.getId())))
                 .thenReturn(Map.of(savedBook.getId(), 0L));
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
+        when(bookResolver.lookup(savedBook.getIsbn13())).thenReturn(savedBook);
 
         // when
-        var response = bookService.getDetail(savedBook.getId());
+        var response = bookService.getDetail(savedBook.getIsbn13());
 
         // then
         assertThat(response.authors()).containsExactly("앤디 위어", "공동 저자");

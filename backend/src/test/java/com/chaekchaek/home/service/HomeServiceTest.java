@@ -40,6 +40,8 @@ class HomeServiceTest {
 
         // then
         assertThat(result).extracting(PopularBookResponse::bookId).containsExactly(3L, 2L, 1L);
+        assertThat(result).extracting(PopularBookResponse::isbn13)
+                .containsExactly("9780000000003", "9780000000002", "9780000000001");
         assertThat(result).extracting(PopularBookResponse::reviewCount).containsExactly(2L, 5L, 8L);
         assertThat(result).extracting(PopularBookResponse::replyCount).containsExactly(8L, 5L, 1L);
     }
@@ -85,6 +87,7 @@ class HomeServiceTest {
     private static Book book(long id, String title) {
         Book book = mock(Book.class);
         when(book.getId()).thenReturn(id);
+        when(book.getIsbn13()).thenReturn("978000000000" + id);
         when(book.getTitle()).thenReturn(title);
         when(book.getCoverImageUrl()).thenReturn("https://example.com/" + id + ".jpg");
         when(book.getAuthors()).thenReturn(List.of("저자 " + id));

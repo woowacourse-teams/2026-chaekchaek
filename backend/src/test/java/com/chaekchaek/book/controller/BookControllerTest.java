@@ -199,13 +199,13 @@ class BookControllerTest {
     }
 
     @Test
-    @DisplayName("등록된 도서 ID면 상세 정보를 반환한다")
+    @DisplayName("ISBN13으로 상세 정보를 조회하면 상세 정보를 반환한다")
     void should_ReturnBookDetailResponse_When_BookExists() throws Exception {
         // given
-        when(bookService.getDetail(42L)).thenReturn(bookDetailResponse());
+        when(bookService.getDetail("9788925568683")).thenReturn(bookDetailResponse());
 
         // when & then
-        mockMvc.perform(get("/api/v1/books/{bookId}", 42L))
+        mockMvc.perform(get("/api/v1/books/by-isbn/{isbn13}", "9788925568683"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.bookId").value(42))
                 .andDo(document(
@@ -215,28 +215,28 @@ class BookControllerTest {
                                 .summary(BOOK_DETAIL_SUMMARY)
                                 .description("도서의 메타데이터, 댓글 수, 별점과 로그인 사용자의 서재 기록을 조회한다")
                                 .tag("도서")
-                                .pathParameters(ResourceDocumentation.parameterWithName("bookId")
-                                        .type(SimpleType.INTEGER).description("도서 ID"))
+                                .pathParameters(ResourceDocumentation.parameterWithName("isbn13")
+                                        .type(SimpleType.STRING).description("ISBN-13"))
                                 .responseFields(BOOK_DETAIL_RESPONSE_FIELDS)
                                 .build())
                 ));
 
-        verify(bookService).getDetail(42L);
+        verify(bookService).getDetail("9788925568683");
     }
 
     @Test
-    @DisplayName("없는 도서 ID면 404 응답을 반환한다")
+    @DisplayName("상세 조회 중 책을 찾지 못하면 404 응답을 반환한다")
     void should_ReturnNotFound_When_BookDoesNotExist() throws Exception {
         // given
-        when(bookService.getDetail(42L)).thenThrow(new BookNotFoundException());
+        when(bookService.getDetail("9788925568683")).thenThrow(new BookNotFoundException());
 
         // when & then
         expectProblemDetail(
-                mockMvc.perform(get("/api/v1/books/{bookId}", 42L)),
+                mockMvc.perform(get("/api/v1/books/by-isbn/{isbn13}", "9788925568683")),
                 HttpStatus.NOT_FOUND,
                 "BOOK_NOT_FOUND",
                 "책을 찾을 수 없습니다.",
-                "/api/v1/books/42"
+                "/api/v1/books/by-isbn/9788925568683"
         ).andDo(problemDetailDocument("book-detail-not-found", BOOK_DETAIL_SUMMARY,
                 "요청한 도서가 존재하지 않는다"));
     }
