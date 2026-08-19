@@ -1,5 +1,6 @@
 package com.chamsae.chaekchaek.ui.bookdetail
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -84,6 +85,7 @@ import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
+import com.chaekchaek.app.data.remote.MobileLoginException
 import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.domain.rating.Rating
@@ -312,7 +314,11 @@ fun BookDetailScreen(
               pendingAction = null
               showLoginSheet = false
             }
-            .onFailure { loginError = "로그인하지 못했어요. 다시 시도해 주세요." }
+            .onFailure {
+              val code = (it as? MobileLoginException)?.code ?: it::class.simpleName.orEmpty()
+              Log.w("ChaekchaekAuth", "Google login failed: $code")
+              loginError = "로그인하지 못했어요. 다시 시도해 주세요."
+            }
           signingIn = false
         }
       },

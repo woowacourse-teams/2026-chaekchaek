@@ -12,4 +12,11 @@ class MobileAuthRemoteRepositoryTest {
     assertEquals("access", tokens.accessToken)
     assertEquals(1_209_600, tokens.refreshTokenExpiresIn)
   }
+
+  @Test
+  fun `모바일 로그인 오류 코드를 역직렬화한다`() {
+    val problem = Json.decodeFromString<MobileLoginProblem>("""{"code":"INVALID_GOOGLE_ID_TOKEN"}""")
+
+    assertEquals("INVALID_GOOGLE_ID_TOKEN", problem.code)
+  }
 }
