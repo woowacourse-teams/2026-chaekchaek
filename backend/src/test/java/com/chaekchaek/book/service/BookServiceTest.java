@@ -31,7 +31,7 @@ class BookServiceTest {
                 detailBook.getDescription(),
                 detailBook.getAuthors(), detailBook.getTranslators(), detailBook.getPublisher(),
                 detailBook.getCategory(), "2026-01-01", 308,
-                0, 0, null, 0, null);
+                0, 0, null, 0, 0, null);
         when(bookResolver.lookup("9788925568683")).thenReturn(detailBook);
         when(detailAssembler.assemble(detailBook)).thenReturn(detailResponse);
 

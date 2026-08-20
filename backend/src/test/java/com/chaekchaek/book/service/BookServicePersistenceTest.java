@@ -64,7 +64,7 @@ class BookServicePersistenceTest {
         libraryItemRepository.saveAndFlush(ratedItem(2L, savedBook.getId(), "4.4"));
         when(activityCountReader.getActivityCounts(List.of(savedBook.getId())))
                 .thenReturn(Map.of(savedBook.getId(), new ActivityCounts(0L, 0L)));
-        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
         when(bookResolver.lookup(savedBook.getIsbn13())).thenReturn(savedBook);
 
         // when
@@ -76,6 +76,7 @@ class BookServicePersistenceTest {
         assertThat(response.description()).isEqualTo("책 설명");
         assertThat(response.averageRating()).isEqualByComparingTo("4.3");
         assertThat(response.ratingCount()).isEqualTo(2);
+        assertThat(response.myRatingCount()).isEqualTo(1);
     }
 
     private LibraryItem ratedItem(long memberId, long bookId, String rating) {

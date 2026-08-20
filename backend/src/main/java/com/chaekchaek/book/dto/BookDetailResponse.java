@@ -19,6 +19,7 @@ public record BookDetailResponse(
         Integer replyCount,
         BigDecimal averageRating,
         Integer ratingCount,
+        Integer myRatingCount,
         BookMyRecordResponse myRecord
 ) {
 }

@@ -124,6 +124,7 @@ class BookControllerTest {
             fieldWithPath("replyCount").type(JsonFieldType.NUMBER).description("답글 수"),
             fieldWithPath("averageRating").type(JsonFieldType.NUMBER).description("평균 별점").optional(),
             fieldWithPath("ratingCount").type(JsonFieldType.NUMBER).description("별점 수"),
+            fieldWithPath("myRatingCount").type(JsonFieldType.NUMBER).description("내가 별점을 등록한 도서 수").optional(),
             fieldWithPath("myRecord").type(JsonFieldType.OBJECT).description("내 서재 기록").optional(),
             fieldWithPath("myRecord.status").type(JsonFieldType.STRING).description("읽기 상태").optional(),
             fieldWithPath("myRecord.currentPage").type(JsonFieldType.NUMBER).description("현재 페이지").optional(),
@@ -451,6 +452,7 @@ class BookControllerTest {
                 24,
                 new java.math.BigDecimal("4.3"),
                 21,
+                12,
                 new BookMyRecordResponse("READING", 120, new java.math.BigDecimal("4.2"))
         );
     }
