@@ -5,7 +5,7 @@ import type { DeleteLibraryBookIdRequestDto, DeleteLibraryBookIdResponseDto } fr
 export const deleteLibraryBookId = async ({
   pathParams: [{ value: bookId }],
 }: DeleteLibraryBookIdRequestDto): Promise<DeleteLibraryBookIdResponseDto> => {
-  const response = await requestAjax('/api/v1/libraryBookId', {
+  const response = await requestAjax('/api/v1/library', {
     method: 'delete',
     pathParams: [{ name: 'bookId', value: bookId }],
   });
@@ -19,7 +19,7 @@ export const patchLibraryBookId = async ({
   pathParams: [{ value: bookId }],
   data: { status, currentPage },
 }: PatchLibraryBookIdRequestDto): Promise<PatchLibraryBookIdResponseDto> => {
-  const response = await requestAjax('/api/v1/libraryBookId', {
+  const response = await requestAjax('/api/v1/library', {
     method: 'patch',
     pathParams: [{ name: 'bookId', value: bookId }],
     data: { status, currentPage },
