@@ -107,6 +107,25 @@ class BookDetailAssemblerTest {
         verifyNoInteractions(activityCountReader, currentMemberIdProvider, libraryItemRepository);
     }
 
+    @Test
+    @DisplayName("설명이 없는 기존 도서면 상세 응답의 설명을 null로 반환한다")
+    void should_ReturnNullDescription_When_StoredBookHasNoDescription() {
+        // given
+        Book book = bookWithoutId();
+        when(book.getDescription()).thenReturn(null);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                activityCountReader, currentMemberIdProvider, libraryItemRepository);
+
+        // when
+        var response = assembler.assemble(book);
+
+        // then
+        assertThat(response.description()).isNull();
+    }
+
     private Book book() {
         Book book = mock(Book.class);
         when(book.getId()).thenReturn(1L);
