@@ -7,6 +7,7 @@ import com.chaekchaek.app.domain.feed.FeedSection
 import com.chaekchaek.app.domain.reader.GuestQuota
 import com.chaekchaek.app.presentation.common.TimeLabels
 import com.chaekchaek.app.presentation.common.toAppError
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +23,7 @@ class HomeViewModel(
     private val clock: Clock,
 ) : ViewModel() {
     private var accessToken: String? = null
+    private var loadJob: Job? = null
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -33,15 +35,16 @@ class HomeViewModel(
         load()
     }
 
-    fun authenticate(accessToken: String) {
+    fun authenticate(accessToken: String?) {
         if (this.accessToken == accessToken) return
         this.accessToken = accessToken
         load()
     }
 
     private fun load() {
+        loadJob?.cancel()
         _uiState.value = HomeUiState.Loading
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             _uiState.value = try {
                 val feed = feedRepository.homeFeed(accessToken)
                 val sections = feed.visibleSections()
@@ -98,6 +101,7 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
             QuoteCardUiModel(
                 noteId = card.noteId,
                 bookId = card.bookId,
+                isbn13 = card.isbn13,
                 bookTitle = card.bookTitle,
                 coverId = card.coverId,
                 authorLabel = HomeLabels.author(

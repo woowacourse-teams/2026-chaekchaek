@@ -118,6 +118,7 @@ internal fun PopularBooksResponseDto.toHomeFeed(
                 QuoteCard(
                     noteId = NoteId("${review.bookId}-${review.createdAt}"),
                     bookId = BookId(review.bookId.toString()),
+                    isbn13 = review.isbn13,
                     bookTitle = review.bookTitle,
                     coverId = review.bookCoverImageUrl,
                     authorLabel = review.author.displayName,

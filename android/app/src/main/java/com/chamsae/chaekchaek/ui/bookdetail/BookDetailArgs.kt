@@ -60,14 +60,22 @@ internal fun TrendingBookUiModel.toBookDetailArgs(): BookDetailArgs =
   )
 
 internal fun QuoteCardUiModel.toBookDetailArgs(): BookDetailArgs =
-  BookDetailArgs(id = bookId.value, title = bookTitle, coverId = coverId)
+  BookDetailArgs(
+    id = bookId.value,
+    isbn13 = isbn13,
+    bookId = bookId.value.toLongOrNull(),
+    title = bookTitle,
+    coverId = coverId,
+  )
 
 internal fun OverlappedCardUiModel.toBookDetailArgs(): BookDetailArgs =
   BookDetailArgs(id = bookId.value, title = title, coverId = coverId)
 
 internal fun ReadingBookUiModel.toBookDetailArgs(): BookDetailArgs =
   BookDetailArgs(
-    id = coverId,
+    id = bookId.value,
+    isbn13 = isbn13,
+    bookId = bookId.value.toLongOrNull(),
     title = title,
     totalPages = totalPages,
     coverId = coverId,
