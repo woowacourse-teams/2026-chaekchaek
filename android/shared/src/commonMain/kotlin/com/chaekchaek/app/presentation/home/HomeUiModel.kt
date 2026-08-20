@@ -54,6 +54,8 @@ data class GuestBannerUiModel(
 )
 
 data class ReadingBookUiModel(
+    val bookId: BookId = BookId(""),
+    val isbn13: String = "",
     val title: String,
     val coverId: String,
     val currentPage: Int,

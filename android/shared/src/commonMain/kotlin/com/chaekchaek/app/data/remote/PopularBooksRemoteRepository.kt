@@ -4,19 +4,42 @@ import com.chaekchaek.app.domain.book.BookId
 import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.domain.feed.FeedSection
 import com.chaekchaek.app.domain.feed.HomeFeed
+import com.chaekchaek.app.domain.feed.QuoteCard
+import com.chaekchaek.app.domain.feed.ReadingBook
 import com.chaekchaek.app.domain.feed.TrendingBook
+import com.chaekchaek.app.domain.note.NoteId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 class PopularBooksRemoteRepository(
     private val client: HttpClient = createHttpClient(),
 ) : FeedRepository {
-    override suspend fun homeFeed(): HomeFeed =
-        client.get("https://api.chaekchaek.com/api/v1/home/popular-books")
+    override suspend fun homeFeed(accessToken: String?): HomeFeed {
+        val popularBooks = client.get("$BASE_URL/api/v1/home/popular-books")
             .body<PopularBooksResponseDto>()
-            .toHomeFeed()
+        val latestReviews = client.get("$BASE_URL/api/v1/home/latest-reviews")
+            .body<LatestReviewsResponseDto>()
+        val readingBook = accessToken?.let { token ->
+            client.get("$BASE_URL/api/v1/library") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                url {
+                    parameters.append("page", "1")
+                    parameters.append("status", "READING")
+                    parameters.append("sort", "RECENT")
+                }
+            }.body<LibraryResponseDto>().items.firstOrNull()
+        }
+        return popularBooks.toHomeFeed(latestReviews, readingBook)
+    }
+
+    private companion object {
+        const val BASE_URL = "https://api.chaekchaek.com"
+    }
 }
 
 @Serializable
@@ -34,7 +57,41 @@ internal data class PopularBookDto(
     val replyCount: Int,
 )
 
-internal fun PopularBooksResponseDto.toHomeFeed(): HomeFeed = HomeFeed(
+@Serializable
+internal data class LatestReviewsResponseDto(
+    val reviews: List<LatestReviewDto>,
+)
+
+@Serializable
+internal data class LatestReviewDto(
+    val content: String,
+    val createdAt: String,
+    val replyCount: Int,
+    val bookId: Long,
+    val isbn13: String = "",
+    val bookTitle: String,
+    val bookCoverImageUrl: String,
+)
+
+@Serializable
+internal data class LibraryResponseDto(
+    val items: List<ReadingBookDto>,
+)
+
+@Serializable
+internal data class ReadingBookDto(
+    val bookId: Long,
+    val isbn13: String,
+    val title: String,
+    val coverImageUrl: String,
+    val totalPages: Int? = null,
+    val currentPage: Int,
+)
+
+internal fun PopularBooksResponseDto.toHomeFeed(
+    latestReviews: LatestReviewsResponseDto = LatestReviewsResponseDto(emptyList()),
+    readingBook: ReadingBookDto? = null,
+): HomeFeed = HomeFeed(
     sections = listOf(
         FeedSection.TrendingBooks(
             books = books.map { book ->
@@ -49,5 +106,29 @@ internal fun PopularBooksResponseDto.toHomeFeed(): HomeFeed = HomeFeed(
             },
             totalCount = books.size,
         ),
+        FeedSection.RecentQuotes(
+            cards = latestReviews.reviews.map { review ->
+                QuoteCard(
+                    noteId = NoteId("${review.bookId}-${review.createdAt}"),
+                    bookId = BookId(review.bookId.toString()),
+                    bookTitle = review.bookTitle,
+                    coverId = review.bookCoverImageUrl,
+                    authorLabel = "",
+                    createdAt = Instant.parse(review.createdAt),
+                    quoteText = review.content,
+                    replyCount = review.replyCount,
+                )
+            },
+        ),
     ),
+    readingBook = readingBook?.let { book ->
+        ReadingBook(
+            bookId = BookId(book.bookId.toString()),
+            isbn13 = book.isbn13,
+            title = book.title,
+            coverId = book.coverImageUrl,
+            currentPage = book.currentPage,
+            totalPages = book.totalPages ?: 0,
+        )
+    },
 )

@@ -4,6 +4,7 @@ import com.chaekchaek.app.domain.book.BookId
 import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.domain.feed.FeedSection
 import com.chaekchaek.app.domain.feed.HomeFeed
+import com.chaekchaek.app.domain.feed.ReadingBook
 import com.chaekchaek.app.domain.feed.TrendingBook
 import com.chaekchaek.app.presentation.common.AppError
 import io.kotest.matchers.shouldBe
@@ -48,8 +49,11 @@ private class TestFeedRepository(
 ) : FeedRepository {
     var callCount: Int = 0
 
-    override suspend fun homeFeed(): HomeFeed {
+    var accessToken: String? = null
+
+    override suspend fun homeFeed(accessToken: String?): HomeFeed {
         callCount += 1
+        this.accessToken = accessToken
         failure?.let { throw it }
         return feed
     }
@@ -132,5 +136,38 @@ class HomeViewModelTest {
         advanceUntilIdle()
         viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
         repository.callCount shouldBe 2
+    }
+
+    @Test
+    fun `인증되면 읽는 중인 책을 다시 불러온다`() = runViewModelTest {
+        val repository = TestFeedRepository(
+            feed = HomeFeed(
+                sections = emptyList(),
+                readingBook = ReadingBook(
+                    bookId = BookId("42"),
+                    isbn13 = "9780000000042",
+                    title = "역병",
+                    coverId = "cover-42",
+                    currentPage = 132,
+                    totalPages = 320,
+                ),
+            ),
+        )
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+
+        viewModel.authenticate("access-token")
+        advanceUntilIdle()
+
+        repository.accessToken shouldBe "access-token"
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>().readingBook shouldBe
+            ReadingBookUiModel(
+                bookId = BookId("42"),
+                isbn13 = "9780000000042",
+                title = "역병",
+                coverId = "cover-42",
+                currentPage = 132,
+                totalPages = 320,
+            )
     }
 }

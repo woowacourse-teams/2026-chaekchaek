@@ -21,6 +21,7 @@ class HomeViewModel(
     private val feedRepository: FeedRepository,
     private val clock: Clock,
 ) : ViewModel() {
+    private var accessToken: String? = null
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -32,12 +33,19 @@ class HomeViewModel(
         load()
     }
 
+    fun authenticate(accessToken: String) {
+        if (this.accessToken == accessToken) return
+        this.accessToken = accessToken
+        load()
+    }
+
     private fun load() {
         _uiState.value = HomeUiState.Loading
         viewModelScope.launch {
             _uiState.value = try {
-                val sections = feedRepository.homeFeed().visibleSections()
-                if (sections.isEmpty()) {
+                val feed = feedRepository.homeFeed(accessToken)
+                val sections = feed.visibleSections()
+                if (feed.isEmpty()) {
                     HomeUiState.Empty
                 } else {
                     val now = clock.now()
@@ -49,8 +57,16 @@ class HomeViewModel(
                             progressLabel = HomeLabels.guestProgress(quota.viewed, quota.limit),
                             exhausted = quota.isExhausted(),
                         ),
-                        // ponytail: 읽는 책 API가 생기면 가장 최근 항목을 여기에 매핑한다.
-                        readingBook = null,
+                        readingBook = feed.readingBook?.let { book ->
+                            ReadingBookUiModel(
+                                bookId = book.bookId,
+                                isbn13 = book.isbn13,
+                                title = book.title,
+                                coverId = book.coverId,
+                                currentPage = book.currentPage,
+                                totalPages = book.totalPages,
+                            )
+                        },
                     )
                 }
             } catch (error: CancellationException) {
