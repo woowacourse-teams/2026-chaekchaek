@@ -1,7 +1,10 @@
 package com.chaekchaek.book.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -42,6 +45,7 @@ class BookDetailAssemblerTest {
         when(ratingStatistics.getAverageRating()).thenReturn(4.24);
         when(ratingStatistics.getRatingCount()).thenReturn(3L);
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
+        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(12L);
         when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(libraryItem));
         when(libraryItem.getStatus()).thenReturn(ReadingStatus.READING);
         when(libraryItem.getCurrentPage()).thenReturn(120);
@@ -56,6 +60,7 @@ class BookDetailAssemblerTest {
         assertThat(response.description()).isEqualTo("책 설명");
         assertThat(response.averageRating()).isEqualByComparingTo("4.2");
         assertThat(response.ratingCount()).isEqualTo(3);
+        assertThat(response.myRatingCount()).isEqualTo(12);
         assertThat(response.myRecord()).extracting("status", "currentPage", "myRating")
                 .containsExactly("READING", 120, new java.math.BigDecimal("4.2"));
     }
@@ -84,6 +89,29 @@ class BookDetailAssemblerTest {
     }
 
     @Test
+    @DisplayName("비로그인 사용자의 상세 응답에는 내 별점 등록 수를 포함하지 않는다")
+    void should_ReturnNullMyRatingCount_When_Unauthenticated() {
+        // given
+        Book book = book();
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                activityCountReader, currentMemberIdProvider, libraryItemRepository);
+        when(activityCountReader.getActivityCounts(List.of(1L)))
+                .thenReturn(Map.of(1L, new ActivityCounts(0L, 0L)));
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
+
+        // when
+        var response = assembler.assemble(book);
+
+        // then
+        assertThat(response.myRatingCount()).isNull();
+        verify(libraryItemRepository, never()).countByMemberIdAndRatingIsNotNull(anyLong());
+    }
+
+    @Test
     @DisplayName("등록되지 않은 책이면 메타데이터만 상세 응답으로 조합한다")
     void should_ReturnMetadataOnly_When_BookIsNotRegistered() {
         // given
@@ -103,6 +131,7 @@ class BookDetailAssemblerTest {
         assertThat(response.replyCount()).isNull();
         assertThat(response.averageRating()).isNull();
         assertThat(response.ratingCount()).isNull();
+        assertThat(response.myRatingCount()).isNull();
         assertThat(response.myRecord()).isNull();
         verifyNoInteractions(activityCountReader, currentMemberIdProvider, libraryItemRepository);
     }

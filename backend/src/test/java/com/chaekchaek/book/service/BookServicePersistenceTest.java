@@ -62,9 +62,15 @@ class BookServicePersistenceTest {
         ));
         libraryItemRepository.saveAndFlush(ratedItem(1L, savedBook.getId(), "4.2"));
         libraryItemRepository.saveAndFlush(ratedItem(2L, savedBook.getId(), "4.4"));
+        Book anotherBook = bookRepository.saveAndFlush(Book.create(
+                "9781234567897", "별점 없는 책", "https://image.example/unrated.jpg",
+                "책 설명", List.of("작가"), List.of(), "출판사", "소설",
+                LocalDate.of(2026, 1, 2), 100
+        ));
+        libraryItemRepository.saveAndFlush(unratedItem(1L, anotherBook.getId()));
         when(activityCountReader.getActivityCounts(List.of(savedBook.getId())))
                 .thenReturn(Map.of(savedBook.getId(), new ActivityCounts(0L, 0L)));
-        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
         when(bookResolver.lookup(savedBook.getIsbn13())).thenReturn(savedBook);
 
         // when
@@ -76,6 +82,7 @@ class BookServicePersistenceTest {
         assertThat(response.description()).isEqualTo("책 설명");
         assertThat(response.averageRating()).isEqualByComparingTo("4.3");
         assertThat(response.ratingCount()).isEqualTo(2);
+        assertThat(response.myRatingCount()).isEqualTo(1);
     }
 
     private LibraryItem ratedItem(long memberId, long bookId, String rating) {
@@ -83,5 +90,10 @@ class BookServicePersistenceTest {
                 memberId, bookId, ReadingStatus.WANT_TO_READ, null, Instant.parse("2026-08-14T00:00:00Z"));
         item.rate(new BigDecimal(rating), Instant.parse("2026-08-14T00:00:00Z"));
         return item;
+    }
+
+    private LibraryItem unratedItem(long memberId, long bookId) {
+        return LibraryItem.create(
+                memberId, bookId, ReadingStatus.WANT_TO_READ, null, Instant.parse("2026-08-14T00:00:00Z"));
     }
 }

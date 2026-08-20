@@ -30,9 +30,10 @@ class BookDetailAssembler {
                     null, book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(), book.getDescription(),
                     book.getAuthors(), book.getTranslators(), book.getPublisher(), book.getCategory(),
                     book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
-                    book.getTotalPages(), null, null, null, null, null
+                    book.getTotalPages(), null, null, null, null, null, null
             );
         }
+        OptionalLong memberId = currentMemberIdProvider.findCurrentMemberId();
         Map<Long, ActivityCounts> activityCounts = activityCountReader.getActivityCounts(java.util.List.of(bookId));
         ActivityCounts counts = activityCounts.getOrDefault(bookId, new ActivityCounts(0L, 0L));
         LibraryItemRepository.RatingStatistics ratings = libraryItemRepository
@@ -45,7 +46,7 @@ class BookDetailAssembler {
                 book.getAuthors(), book.getTranslators(), book.getPublisher(), book.getCategory(),
                 book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
                 book.getTotalPages(), Math.toIntExact(counts.reviewCount()), Math.toIntExact(counts.replyCount()),
-                averageRating(ratings), ratingCount(ratings), myRecord(bookId)
+                averageRating(ratings), ratingCount(ratings), myRatingCount(memberId), myRecord(bookId, memberId)
         );
     }
 
@@ -60,8 +61,14 @@ class BookDetailAssembler {
         return ratings == null ? 0 : Math.toIntExact(ratings.getRatingCount());
     }
 
-    private BookMyRecordResponse myRecord(long bookId) {
-        OptionalLong memberId = currentMemberIdProvider.findCurrentMemberId();
+    private Integer myRatingCount(OptionalLong memberId) {
+        if (memberId.isEmpty()) {
+            return null;
+        }
+        return Math.toIntExact(libraryItemRepository.countByMemberIdAndRatingIsNotNull(memberId.getAsLong()));
+    }
+
+    private BookMyRecordResponse myRecord(long bookId, OptionalLong memberId) {
         if (memberId.isEmpty()) {
             return null;
         }
