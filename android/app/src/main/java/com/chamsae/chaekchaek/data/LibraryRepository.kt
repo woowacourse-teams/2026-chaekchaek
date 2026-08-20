@@ -1,9 +1,14 @@
 package com.chamsae.chaekchaek.data
 
 import android.content.Context
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 interface LibraryRepository {
   val items: StateFlow<List<ArchivedBook>>
@@ -25,8 +30,14 @@ interface LibraryRepository {
  * ponytail: SharedPreferences에 JSON 배열 통째로 저장 - 등록마다 전체 목록을 다시 쓴다(O(n)).
  * 아카이브가 수백 건 이상으로 커지거나 오프라인 쿼리가 필요해지면 Room으로 전환.
  */
-class PreferencesLibraryRepository(context: Context) : LibraryRepository {
+class PreferencesLibraryRepository(
+  context: Context,
+  private val accessToken: () -> String?,
+  private val addToRemoteLibrary: suspend (String, Int?, String) -> Unit,
+  private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+) : LibraryRepository {
   private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+  private val pendingBookIds = mutableSetOf<String>()
 
   private val _items = MutableStateFlow(loadAll())
   override val items: StateFlow<List<ArchivedBook>> = _items.asStateFlow()
@@ -36,9 +47,25 @@ class PreferencesLibraryRepository(context: Context) : LibraryRepository {
   override val nickname: StateFlow<String> = _nickname.asStateFlow()
 
   override fun add(book: ArchivedBook) {
-    val updated = _items.value.plusIfAbsent(book.copy(lastRecordedAt = System.currentTimeMillis()))
-    if (updated === _items.value) return
-    save(updated)
+    if (_items.value.any { it.id == book.id } || !pendingBookIds.add(book.id)) return
+    val token = accessToken()
+    if (token == null) {
+      pendingBookIds -= book.id
+      return
+    }
+    scope.launch {
+      try {
+        if (registerRemotely(book, token, addToRemoteLibrary)) {
+          save(_items.value.plus(book.copy(lastRecordedAt = System.currentTimeMillis())))
+        }
+      } catch (e: CancellationException) {
+        throw e
+      } catch (_: Exception) {
+        // 원격 등록이 실패하면 로컬 상태도 등록하지 않는다.
+      } finally {
+        pendingBookIds -= book.id
+      }
+    }
   }
 
   override fun remove(bookIds: Set<String>) {
@@ -77,3 +104,15 @@ class PreferencesLibraryRepository(context: Context) : LibraryRepository {
     const val KEY_NICKNAME = "nickname"
   }
 }
+
+internal suspend fun registerRemotely(
+  book: ArchivedBook,
+  accessToken: String,
+  addToRemoteLibrary: suspend (String, Int?, String) -> Unit,
+): Boolean {
+  if (book.id.length != ISBN13_LENGTH || !book.id.all(Char::isDigit)) return false
+  addToRemoteLibrary(book.id, book.totalPages.takeIf { it > 0 }, accessToken)
+  return true
+}
+
+private const val ISBN13_LENGTH = 13

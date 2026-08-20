@@ -16,5 +16,12 @@ class AppContainer(context: Context) {
   val mobileAuthRepository = MobileAuthRemoteRepository()
   val authSession = AuthSession()
   val bookRatingStore = BookRatingStore(context.applicationContext)
-  val libraryRepository: LibraryRepository = PreferencesLibraryRepository(context.applicationContext)
+  val libraryRepository: LibraryRepository =
+    PreferencesLibraryRepository(
+      context = context.applicationContext,
+      accessToken = { authSession.tokens.value?.accessToken },
+      addToRemoteLibrary = { isbn13, totalPages, accessToken ->
+        bookDetailRepository.addToLibrary(isbn13, totalPages, accessToken)
+      },
+    )
 }
