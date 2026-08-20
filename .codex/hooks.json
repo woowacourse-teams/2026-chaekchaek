@@ -27,7 +27,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "^mcp__pencil__(?:get_screenshot|execute)$",
+        "matcher": "^mcp__pencil__get_screenshot$",
         "hooks": [
           {
             "type": "command",
