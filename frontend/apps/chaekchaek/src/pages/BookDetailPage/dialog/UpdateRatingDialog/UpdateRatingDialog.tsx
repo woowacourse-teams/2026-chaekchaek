@@ -87,7 +87,7 @@ export const UpdateRatingDialog = ({
                 <CellList.Item
                   headline={comparison.myRating}
                   title={comparison.title}
-                  content={comparison.authors.join(' · ')}
+                  content={comparison?.ratingUpdatedAt}
                 />
               );
             })}
