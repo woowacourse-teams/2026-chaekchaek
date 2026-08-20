@@ -131,6 +131,7 @@ class BookDetailAssemblerTest {
         assertThat(response.replyCount()).isNull();
         assertThat(response.averageRating()).isNull();
         assertThat(response.ratingCount()).isNull();
+        assertThat(response.myRatingCount()).isNull();
         assertThat(response.myRecord()).isNull();
         verifyNoInteractions(activityCountReader, currentMemberIdProvider, libraryItemRepository);
     }

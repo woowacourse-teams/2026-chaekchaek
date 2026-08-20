@@ -287,7 +287,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 				 authors: ['앤디 위어'], translators: [], publishedDate: '2015-07-10', isbn13: '9788925568683',
 				 category: '국내도서>소설', publisher: '알에이치코리아', reviewCount: null, replyCount: null]]
 		])
-		addJsonExample('/api/v1/books/by-isbn/{isbn13}', 'get', '200', 'book-detail-without-library-record', '서재에 등록하지 않은 도서', [
+		addJsonExample('/api/v1/books/by-isbn/{isbn13}', 'get', '200', 'book-detail-without-library-record', '비로그인 사용자의 도서 상세', [
 			 bookId: 10, isbn13: '9788936433598', title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
 			 authors: ['한강'], translators: [], publisher: '창비', category: '국내도서>소설', publishedDate: '2007-10-30',
 				 totalPages: 368, reviewCount: 1, replyCount: 1, averageRating: 4.3, ratingCount: 21, myRatingCount: null, myRecord: null
