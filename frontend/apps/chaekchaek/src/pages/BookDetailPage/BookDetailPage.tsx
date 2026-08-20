@@ -50,11 +50,6 @@ export const BookDetailPage = () => {
     await mutate({ isbn13: isbn, status });
   };
 
-  // const [open, setOpen] = useState(false);
-  // const handleOpenUpdateCurrentPageDialog = () => {
-  //   setOpen(true);
-  // };
-
   const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null>(
     null,
   );
@@ -307,7 +302,6 @@ export const BookDetailPage = () => {
         </Split>
 
         {dialogElement}
-        {/* <UpdateRating /> */}
       </Main>
     </Layout>
   );
