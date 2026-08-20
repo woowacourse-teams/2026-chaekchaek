@@ -124,8 +124,6 @@ dependencies {
   // Local tests: jUnit, coroutines, Android runner
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
-  // 로컬 유닛테스트(JVM)는 org.json이 스텁이라 실제 구현체를 별도로 얹어야 동작한다
-  testImplementation("org.json:json:20240303")
 
   // Instrumented tests: jUnit rules and runners
   androidTestImplementation(libs.androidx.test.core)
