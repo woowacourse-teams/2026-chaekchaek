@@ -25,7 +25,13 @@ const RatingMessages = {
   5.0: '최고였어요',
 };
 
-export const UpdateRatingDialog = ({ isbn13, bookId, title, rating: defaultRating }: Props) => {
+export const UpdateRatingDialog = ({
+  isbn13,
+  bookId,
+  title,
+  rating: defaultRating,
+  myRatingCount,
+}: Props) => {
   const [rating, setRating] = useState(defaultRating);
 
   const handleChangeRating = (rating: number) => {
@@ -72,7 +78,7 @@ export const UpdateRatingDialog = ({ isbn13, bookId, title, rating: defaultRatin
             title={
               <>
                 <span>내 평점 기록</span>
-                <span>5회</span>
+                <span>{myRatingCount}회</span>
               </>
             }
           >

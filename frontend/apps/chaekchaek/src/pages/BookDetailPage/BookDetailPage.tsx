@@ -81,6 +81,7 @@ export const BookDetailPage = () => {
               bookId={data?.bookId}
               title={data.title}
               rating={data.myRecord?.myRating}
+              myRatingCount={data?.myRatingCount}
             />
           )
         );
@@ -100,11 +101,12 @@ export const BookDetailPage = () => {
             leading={`ARCHIVE / ${data?.category} / ${data?.publishedDate}`}
             title={data?.title}
             content={`${data?.authors} · ${data?.publisher}`}
-            description={`Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
-          nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
-          accusantium magni quis voluptates, velit nisi dolorum id. 
+            description={`${data?.description}
 
-          별점: ${data?.ratingCount} 감상: ${data?.commentCount}`}
+          ${!!data?.myRecord?.myRating ? `별점: ${data?.myRecord?.myRating}` : ''}
+          ${`감상: ${data?.reviewCount}`}
+          ${`답글: ${data?.replyCount}`}
+          `}
           />
           <Overview.Media>
             {data?.coverImageUrl && <ImgBox img={data?.coverImageUrl} />}

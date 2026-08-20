@@ -11,7 +11,6 @@ export type GetBooksIsbn = (params: GetBooksIsbnParams) => Promise<{
   coverImageUrl: string;
   ratingCount: number;
   title: string;
-  commentCount: number;
   bookId: number;
   translators: undefined[];
   averageRating: number;
@@ -21,4 +20,8 @@ export type GetBooksIsbn = (params: GetBooksIsbnParams) => Promise<{
   publishedDate: string;
   category: string;
   authors: undefined[];
+  description: string;
+  reviewCount: number;
+  replyCount: number;
+  myRatingCount: number;
 }>;
