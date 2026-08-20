@@ -39,6 +39,7 @@ class PopularBooksRemoteRepositoryTest {
                         createdAt = "2026-08-20T01:29:34Z",
                         replyCount = 2,
                         bookId = 7,
+                        isbn13 = "9780000000007",
                         bookTitle = "역병",
                         bookCoverImageUrl = "cover-7",
                     ),
@@ -56,6 +57,7 @@ class PopularBooksRemoteRepositoryTest {
 
         val review = assertIs<FeedSection.RecentQuotes>(feed.visibleSections().single()).cards.single()
         assertEquals("7-2026-08-20T01:29:34Z", review.noteId.value)
+        assertEquals("9780000000007", review.isbn13)
         assertEquals("익명의 독자", review.authorLabel)
         assertEquals(Instant.parse("2026-08-20T01:29:34Z"), review.createdAt)
         assertEquals("오래 멈춰 읽었다.", review.quoteText)

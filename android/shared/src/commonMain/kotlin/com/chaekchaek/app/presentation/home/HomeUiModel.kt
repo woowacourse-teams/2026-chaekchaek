@@ -31,6 +31,7 @@ data class TrendingBookUiModel(
 data class QuoteCardUiModel(
     val noteId: NoteId,
     val bookId: BookId,
+    val isbn13: String = "",
     val bookTitle: String,
     val coverId: String,
     val authorLabel: String,

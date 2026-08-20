@@ -37,6 +37,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -89,6 +90,7 @@ import kotlin.random.Random
 
 @Composable
 fun HomeScreen(
+    accessToken: String? = null,
     modifier: Modifier = Modifier,
     onSearchBook: () -> Unit = {},
     onBookClick: (BookDetailArgs) -> Unit = {},
@@ -96,6 +98,10 @@ fun HomeScreen(
     val component = LocalSharedComponent.current
     val homeViewModel: HomeViewModel = viewModel { component.homeViewModel }
     val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(accessToken) {
+        homeViewModel.authenticate(accessToken)
+    }
 
     when (val state = uiState) {
         HomeUiState.Loading -> LoadingContent(modifier)
