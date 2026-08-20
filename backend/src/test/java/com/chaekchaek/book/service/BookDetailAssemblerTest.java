@@ -53,6 +53,7 @@ class BookDetailAssemblerTest {
         // then
         assertThat(response.reviewCount()).isEqualTo(2);
         assertThat(response.replyCount()).isEqualTo(2);
+        assertThat(response.description()).isEqualTo("책 설명");
         assertThat(response.averageRating()).isEqualByComparingTo("4.2");
         assertThat(response.ratingCount()).isEqualTo(3);
         assertThat(response.myRecord()).extracting("status", "currentPage", "myRating")
@@ -112,6 +113,7 @@ class BookDetailAssemblerTest {
         when(book.getIsbn13()).thenReturn("9788925568683");
         when(book.getTitle()).thenReturn("마션");
         when(book.getCoverImageUrl()).thenReturn("https://image.example/martian.jpg");
+        when(book.getDescription()).thenReturn("책 설명");
         when(book.getAuthors()).thenReturn(List.of("앤디 위어"));
         when(book.getTranslators()).thenReturn(List.of("박아람"));
         when(book.getPublisher()).thenReturn("알에이치코리아");

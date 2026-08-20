@@ -46,6 +46,7 @@ class BookResolveConcurrencyTest {
             fetchedByBothRequests.await(5, TimeUnit.SECONDS);
             return new AladinBookItem(
                     "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)",
+                    null,
                     "2026-01-01", ISBN13, "SF", "알에이치코리아", new AladinBookSubInfo(308)
             );
         });

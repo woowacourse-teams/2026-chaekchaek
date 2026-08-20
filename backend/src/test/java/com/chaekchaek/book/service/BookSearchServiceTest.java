@@ -95,6 +95,7 @@ class BookSearchServiceTest {
                 "클린 코드",
                 "https://image.aladin.co.kr/cover.jpg",
                 "로버트 C. 마틴 (지은이), 박산호 (옮긴이)",
+                null,
                 "2008-08-01",
                 "9788966260959",
                 "국내도서>컴퓨터/모바일>프로그래밍",
@@ -140,6 +141,7 @@ class BookSearchServiceTest {
         BookSearchService service = new BookSearchService(bookClient, bookRepository, activityCountReader);
         AladinBookItem aladinBookItem = new AladinBookItem(
                 "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)",
+                null,
                 "2026-01-01", "9788925568683", "SF", "알에이치코리아",
                 new AladinBookSubInfo(308)
         );
@@ -234,7 +236,7 @@ class BookSearchServiceTest {
     }
 
     private AladinBookItem aladinBook(String title, String publishedDate, String isbn13) {
-        return new AladinBookItem(title, "https://image.example/cover.jpg", "작가", publishedDate,
+        return new AladinBookItem(title, "https://image.example/cover.jpg", "작가", null, publishedDate,
                 isbn13, "소설", "출판사", new AladinBookSubInfo(200));
     }
 

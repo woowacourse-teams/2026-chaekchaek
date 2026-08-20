@@ -73,6 +73,8 @@ class AladinBookClientTest {
                             .isEqualTo("9788925568683");
                     softly.assertThat(book.categoryName())
                             .isEqualTo("국내도서>소설>과학소설");
+                    softly.assertThat(book.description())
+                            .isEqualTo("책 설명");
                 }));
     }
 

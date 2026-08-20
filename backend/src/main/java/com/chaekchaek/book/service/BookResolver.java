@@ -72,6 +72,7 @@ public class BookResolver {
                 source.isbn13(),
                 source.title(),
                 source.cover(),
+                source.description(),
                 contributors.authors(),
                 contributors.translators(),
                 source.publisher(),

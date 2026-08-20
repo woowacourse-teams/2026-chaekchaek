@@ -55,6 +55,7 @@ class BookServicePersistenceTest {
         // given
         Book savedBook = bookRepository.saveAndFlush(Book.create(
                 "9788925568683", "마션", "https://image.example/martian.jpg",
+                "책 설명",
                 List.of("앤디 위어", "공동 저자"), List.of("박아람", "공동 번역가"),
                 "알에이치코리아", "SF",
                 LocalDate.of(2026, 1, 1), 308
@@ -72,6 +73,7 @@ class BookServicePersistenceTest {
         // then
         assertThat(response.authors()).containsExactly("앤디 위어", "공동 저자");
         assertThat(response.translators()).containsExactly("박아람", "공동 번역가");
+        assertThat(response.description()).isEqualTo("책 설명");
         assertThat(response.averageRating()).isEqualByComparingTo("4.3");
         assertThat(response.ratingCount()).isEqualTo(2);
     }

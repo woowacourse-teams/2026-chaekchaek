@@ -130,7 +130,7 @@ class LibraryServiceTest {
     }
 
     private Book book(Integer totalPages) {
-        return Book.create("9788925568683", "마션", "https://example.com/cover.jpg", List.of("앤디 위어"),
+        return Book.create("9788925568683", "마션", "https://example.com/cover.jpg", null, List.of("앤디 위어"),
                 List.of(), "알에이치코리아", "SF", null, totalPages);
     }
 }
