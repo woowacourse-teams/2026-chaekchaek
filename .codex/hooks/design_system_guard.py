@@ -49,12 +49,23 @@ def gate_path(payload: dict) -> Path:
     return STATE_DIR / hashlib.sha256(identity.encode()).hexdigest()
 
 
-def record_target_screenshot(payload: dict) -> None:
+def screenshot_node_ids(payload: dict) -> list[str]:
     tool_input = payload.get("tool_input") or {}
     node_id = str(tool_input.get("nodeId", ""))
+    if node_id:
+        return [node_id]
+    snippets = [str(tool_input.get("input", ""))]
+    snippets.extend(str(edit.get("replace", "")) for edit in tool_input.get("edits", []))
+    calls = re.findall(r"TakeScreenshot\s*\(\s*\[([^]]*)]", "\n".join(snippets))
+    return [node_id for call in calls for node_id in re.findall(r"['\"]([^'\"]+)['\"]", call)]
+
+
+def record_target_screenshot(payload: dict) -> None:
+    tool_input = payload.get("tool_input") or {}
     if Path(str(tool_input.get("filePath", ""))).name != "designs.pen":
         return
-    if not node_id or node_id in {"document", "SxMn5"}:
+    node_id = next((value for value in screenshot_node_ids(payload) if value not in {"document", "SxMn5"}), "")
+    if not node_id:
         return
     response = payload.get("tool_response") or {}
     if isinstance(response, dict) and response.get("isError"):
@@ -85,6 +96,7 @@ def self_test() -> None:
     assert classify_patch("*** Update File: android/app/src/main/java/x/ui/HomeScreen.kt\n+Text(\"홈\")") == (False, True)
     assert classify_patch("*** Update File: backend/README.md\n+설명") == (False, False)
     assert classify_patch("*** Update File: designs.pen\n+raw") == (True, False)
+    assert screenshot_node_ids({"tool_input": {"input": "TakeScreenshot(['target'])"}}) == ["target"]
     print("design_system_guard: ok")
 
 
@@ -96,9 +108,10 @@ def main() -> None:
     payload = json.load(sys.stdin)
     event = payload.get("hook_event_name")
     tool_name = payload.get("tool_name")
-    if event == "PostToolUse" and tool_name == "mcp__pencil__get_screenshot":
+    if event == "PostToolUse" and tool_name in {"mcp__pencil__get_screenshot", "mcp__pencil__execute"}:
         record_target_screenshot(payload)
-        return
+        if tool_name == "mcp__pencil__get_screenshot":
+            return
 
     tool_input = payload.get("tool_input") or {}
     if tool_name == "apply_patch":
