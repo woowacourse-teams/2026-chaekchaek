@@ -192,12 +192,6 @@ export const BookDetailPage = () => {
                 <DataInfo.Item title="옮김" content={data?.translators.join(' · ')} />
               )}
             </DataInfo>
-
-            <Note title="BOOK NOTE">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
-              nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
-              accusantium magni quis voluptates, velit nisi dolorum id.
-            </Note>
           </Split.Side>
           <Split.Content>
             <Title
