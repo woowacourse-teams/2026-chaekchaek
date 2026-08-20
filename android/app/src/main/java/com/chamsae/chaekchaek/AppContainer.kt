@@ -2,6 +2,7 @@ package com.chamsae.chaekchaek
 
 import android.content.Context
 import com.chamsae.chaekchaek.auth.AuthSession
+import com.chamsae.chaekchaek.auth.RefreshTokenStore
 import com.chamsae.chaekchaek.data.BookRatingStore
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.PreferencesLibraryRepository
@@ -14,7 +15,7 @@ class AppContainer(context: Context) {
   val bookSearchRepository: BookSearchRepository = BookSearchRemoteRepository()
   val bookDetailRepository = BookDetailRemoteRepository()
   val mobileAuthRepository = MobileAuthRemoteRepository()
-  val authSession = AuthSession()
+  val authSession = AuthSession(RefreshTokenStore(context), mobileAuthRepository)
   val bookRatingStore = BookRatingStore(context.applicationContext)
   val libraryRepository: LibraryRepository = PreferencesLibraryRepository(context.applicationContext)
 }

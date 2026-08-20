@@ -19,4 +19,11 @@ class MobileAuthRemoteRepositoryTest {
 
     assertEquals("INVALID_GOOGLE_ID_TOKEN", problem.code)
   }
+
+  @Test
+  fun `재발급과 로그아웃 요청에 Refresh Token을 직렬화한다`() {
+    val request = Json.encodeToString(RefreshTokenRequest("refresh"))
+
+    assertEquals("{\"refreshToken\":\"refresh\"}", request)
+  }
 }
