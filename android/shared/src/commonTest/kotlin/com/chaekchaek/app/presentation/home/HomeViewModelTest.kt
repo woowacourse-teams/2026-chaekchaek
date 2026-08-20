@@ -4,7 +4,10 @@ import com.chaekchaek.app.domain.book.BookId
 import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.domain.feed.FeedSection
 import com.chaekchaek.app.domain.feed.HomeFeed
+import com.chaekchaek.app.domain.feed.QuoteCard
+import com.chaekchaek.app.domain.feed.ReadingBook
 import com.chaekchaek.app.domain.feed.TrendingBook
+import com.chaekchaek.app.domain.note.NoteId
 import com.chaekchaek.app.presentation.common.AppError
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -48,8 +51,13 @@ private class TestFeedRepository(
 ) : FeedRepository {
     var callCount: Int = 0
 
-    override suspend fun homeFeed(): HomeFeed {
+    var accessToken: String? = null
+    val accessTokens = mutableListOf<String?>()
+
+    override suspend fun homeFeed(accessToken: String?): HomeFeed {
         callCount += 1
+        this.accessToken = accessToken
+        accessTokens += accessToken
         failure?.let { throw it }
         return feed
     }
@@ -104,6 +112,38 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `최신 감상의 ISBN을 화면 모델에 보존한다`() = runViewModelTest {
+        val repository = TestFeedRepository(
+            feed = HomeFeed(
+                listOf(
+                    FeedSection.RecentQuotes(
+                        listOf(
+                            QuoteCard(
+                                noteId = NoteId("review-1"),
+                                bookId = BookId("7"),
+                                isbn13 = "9780000000007",
+                                bookTitle = "역병",
+                                coverId = "cover-7",
+                                authorLabel = "독자",
+                                createdAt = FIXED_NOW,
+                                quoteText = "오래 멈춰 읽었다.",
+                                replyCount = 2,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+
+        advanceUntilIdle()
+
+        val section = viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
+            .sections.single().shouldBeInstanceOf<FeedSectionUiModel.RecentQuotes>()
+        section.cards.single().isbn13 shouldBe "9780000000007"
+    }
+
+    @Test
     fun `로드가 실패하면 오류 상태가 된다`() = runViewModelTest {
         // given : 로드에 실패하는 저장소가 있다
         val repository = TestFeedRepository(failure = IllegalStateException("failed"))
@@ -132,5 +172,52 @@ class HomeViewModelTest {
         advanceUntilIdle()
         viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
         repository.callCount shouldBe 2
+    }
+
+    @Test
+    fun `인증되면 읽는 중인 책을 다시 불러온다`() = runViewModelTest {
+        val repository = TestFeedRepository(
+            feed = HomeFeed(
+                sections = emptyList(),
+                readingBook = ReadingBook(
+                    bookId = BookId("42"),
+                    isbn13 = "9780000000042",
+                    title = "역병",
+                    coverId = "cover-42",
+                    currentPage = 132,
+                    totalPages = 320,
+                ),
+            ),
+        )
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+
+        viewModel.authenticate("access-token")
+        advanceUntilIdle()
+
+        repository.accessToken shouldBe "access-token"
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>().readingBook shouldBe
+            ReadingBookUiModel(
+                bookId = BookId("42"),
+                isbn13 = "9780000000042",
+                title = "역병",
+                coverId = "cover-42",
+                currentPage = 132,
+                totalPages = 320,
+            )
+    }
+
+    @Test
+    fun `로그아웃되면 인증 토큰을 제거하고 다시 불러온다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+
+        viewModel.authenticate("access-token")
+        advanceUntilIdle()
+        viewModel.authenticate(null)
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null, "access-token", null)
     }
 }

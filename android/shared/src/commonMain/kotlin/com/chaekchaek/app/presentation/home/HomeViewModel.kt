@@ -7,6 +7,7 @@ import com.chaekchaek.app.domain.feed.FeedSection
 import com.chaekchaek.app.domain.reader.GuestQuota
 import com.chaekchaek.app.presentation.common.TimeLabels
 import com.chaekchaek.app.presentation.common.toAppError
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,8 @@ class HomeViewModel(
     private val feedRepository: FeedRepository,
     private val clock: Clock,
 ) : ViewModel() {
+    private var accessToken: String? = null
+    private var loadJob: Job? = null
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -32,12 +35,20 @@ class HomeViewModel(
         load()
     }
 
+    fun authenticate(accessToken: String?) {
+        if (this.accessToken == accessToken) return
+        this.accessToken = accessToken
+        load()
+    }
+
     private fun load() {
+        loadJob?.cancel()
         _uiState.value = HomeUiState.Loading
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             _uiState.value = try {
-                val sections = feedRepository.homeFeed().visibleSections()
-                if (sections.isEmpty()) {
+                val feed = feedRepository.homeFeed(accessToken)
+                val sections = feed.visibleSections()
+                if (feed.isEmpty()) {
                     HomeUiState.Empty
                 } else {
                     val now = clock.now()
@@ -49,8 +60,16 @@ class HomeViewModel(
                             progressLabel = HomeLabels.guestProgress(quota.viewed, quota.limit),
                             exhausted = quota.isExhausted(),
                         ),
-                        // ponytail: 읽는 책 API가 생기면 가장 최근 항목을 여기에 매핑한다.
-                        readingBook = null,
+                        readingBook = feed.readingBook?.let { book ->
+                            ReadingBookUiModel(
+                                bookId = book.bookId,
+                                isbn13 = book.isbn13,
+                                title = book.title,
+                                coverId = book.coverId,
+                                currentPage = book.currentPage,
+                                totalPages = book.totalPages,
+                            )
+                        },
                     )
                 }
             } catch (error: CancellationException) {
@@ -82,12 +101,14 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
             QuoteCardUiModel(
                 noteId = card.noteId,
                 bookId = card.bookId,
+                isbn13 = card.isbn13,
                 bookTitle = card.bookTitle,
                 coverId = card.coverId,
                 authorLabel = HomeLabels.author(
                     card.authorLabel,
                     TimeLabels.relative(card.createdAt, now),
                 ),
+                authorProfileImageUrl = card.authorProfileImageUrl,
                 quoteText = card.quoteText,
                 replyLabel = HomeLabels.quoteReply(card.replyCount),
             )

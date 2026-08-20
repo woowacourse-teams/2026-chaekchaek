@@ -2,6 +2,9 @@ package com.chamsae.chaekchaek.ui.bookdetail
 
 import com.chaekchaek.app.domain.book.BookId
 import com.chaekchaek.app.domain.book.BookSearchResult
+import com.chaekchaek.app.domain.note.NoteId
+import com.chaekchaek.app.presentation.home.QuoteCardUiModel
+import com.chaekchaek.app.presentation.home.ReadingBookUiModel
 import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import com.chamsae.chaekchaek.data.ArchivedBook
 import org.junit.Assert.assertEquals
@@ -60,5 +63,41 @@ class BookDetailArgsTest {
 
     assertEquals("9788925568683", args.isbn13)
     assertEquals(42L, args.bookId)
+  }
+
+  @Test
+  fun `latest review keeps server identifiers for detail loading`() {
+    val args =
+      QuoteCardUiModel(
+        noteId = NoteId("review-1"),
+        bookId = BookId("7"),
+        isbn13 = "9780000000007",
+        bookTitle = "역병",
+        coverId = "cover-7",
+        authorLabel = "독자",
+        quoteText = "오래 멈춰 읽었다.",
+        replyLabel = "답글 2",
+      ).toBookDetailArgs()
+
+    assertEquals("7", args.id)
+    assertEquals("9780000000007", args.isbn13)
+    assertEquals(7L, args.bookId)
+  }
+
+  @Test
+  fun `reading book uses book id and isbn for detail loading`() {
+    val args =
+      ReadingBookUiModel(
+        bookId = BookId("7"),
+        isbn13 = "9780000000007",
+        title = "역병",
+        coverId = "cover-7",
+        currentPage = 132,
+        totalPages = 320,
+      ).toBookDetailArgs()
+
+    assertEquals("7", args.id)
+    assertEquals("9780000000007", args.isbn13)
+    assertEquals(7L, args.bookId)
   }
 }

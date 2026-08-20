@@ -12,12 +12,22 @@ import kotlin.time.Instant
  */
 class HomeFeed(
     private val sections: List<FeedSection>,
+    val readingBook: ReadingBook? = null,
 ) {
     /** 내용이 없는 섹션은 그리지 않는다. */
     fun visibleSections(): List<FeedSection> = sections.filterNot { it.isEmpty() }
 
-    fun isEmpty(): Boolean = visibleSections().isEmpty()
+    fun isEmpty(): Boolean = visibleSections().isEmpty() && readingBook == null
 }
+
+class ReadingBook(
+    val bookId: BookId,
+    val isbn13: String,
+    val title: String,
+    val coverId: String,
+    val currentPage: Int,
+    val totalPages: Int,
+)
 
 /**
  * 홈의 섹션 한 덩어리.
@@ -69,9 +79,11 @@ class TrendingBook(
 class QuoteCard(
     val noteId: NoteId,
     val bookId: BookId,
+    val isbn13: String = "",
     val bookTitle: String,
     val coverId: String,
     val authorLabel: String,
+    val authorProfileImageUrl: String? = null,
     val createdAt: Instant,
     val quoteText: String,
     val replyCount: Int,
