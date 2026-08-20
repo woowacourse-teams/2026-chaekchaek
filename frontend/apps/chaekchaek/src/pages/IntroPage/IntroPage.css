@@ -1,15 +1,17 @@
-body > .scene {
+.scene {
   position: relative;
-  width: 1671.645px;
-  height: 1100px;
+  width: 100%;
+  min-height: 1100px;
+  background: #090a0c;
 }
 
 [data-pencil-name="다크 흩어진 책 웹 홈"] {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 50%;
+  left: 50%;
   width: 1440px;
   height: 1100px;
+  transform: translate(-50%, -50%);
   overflow: hidden;
   background: #090a0c;
 }
@@ -59,3 +61,5 @@ body > .scene {
   outline: 3px solid #fff !important;
   outline-offset: 4px !important;
 }
+
+/* [data-pencil-name="다크 흩어진 책 웹 홈"] > div img { width: 100%; } */
