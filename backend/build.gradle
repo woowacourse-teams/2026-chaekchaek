@@ -252,9 +252,9 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		markRequiredNullable(searchResponse, 'nextPage')
 		def searchItem = arrayItemSchema(searchResponse, 'items')
 		markRequiredNullable(searchItem, 'bookId')
-		markRequiredNullable(searchItem, 'commentCount')
-		def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
-		['bookId', 'commentCount', 'averageRating', 'ratingCount', 'myRecord', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
+	['reviewCount', 'replyCount'].each { propertyName -> markRequiredNullable(searchItem, propertyName) }
+	def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
+	['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRecord', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
 		def libraryResponse = responseSchemaForPath('/api/v1/library', 'get', '200')
 		markRequiredNullable(libraryResponse, 'nextPage')
 		def libraryItem = arrayItemSchema(libraryResponse, 'items')
@@ -279,18 +279,18 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			 totalCount: 1, nextPage: null,
 			 items: [[bookId: 10, title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
 				 authors: ['한강'], translators: [], publishedDate: '2007-10-30', isbn13: '9788936433598',
-				 category: '국내도서>소설', publisher: '창비', commentCount: 2]]
+				 category: '국내도서>소설', publisher: '창비', reviewCount: 1, replyCount: 1]]
 		])
 		addJsonExample('/api/v1/books', 'get', '200', 'search-unregistered-book', '서재에 등록하지 않은 도서', [
 			 totalCount: 1, nextPage: null,
 			 items: [[bookId: null, title: '마션', coverImageUrl: 'https://example.com/book.jpg',
 				 authors: ['앤디 위어'], translators: [], publishedDate: '2015-07-10', isbn13: '9788925568683',
-				 category: '국내도서>소설', publisher: '알에이치코리아', commentCount: null]]
+				 category: '국내도서>소설', publisher: '알에이치코리아', reviewCount: null, replyCount: null]]
 		])
 		addJsonExample('/api/v1/books/by-isbn/{isbn13}', 'get', '200', 'book-detail-without-library-record', '서재에 등록하지 않은 도서', [
 			 bookId: 10, isbn13: '9788936433598', title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
 			 authors: ['한강'], translators: [], publisher: '창비', category: '국내도서>소설', publishedDate: '2007-10-30',
-			 totalPages: 368, commentCount: 2, averageRating: 4.3, ratingCount: 21, myRecord: null
+				 totalPages: 368, reviewCount: 1, replyCount: 1, averageRating: 4.3, ratingCount: 21, myRecord: null
 		])
 		addJsonExample('/api/v1/books/{bookId}/reviews', 'get', '200', 'review-normal', '일반 감상', [
 			 totalCount: 1, nextPage: null,
@@ -798,11 +798,12 @@ tasks.register('verifyOpenApi') {
 		def searchResponse = responseSchema('/api/v1/books', 'get', '200')
 		def searchItem = ((searchResponse?.get('properties') as Map)?.get('items') as Map)?.get('items') as Map
 		if (!requiredNullable(searchResponse, 'nextPage') || !requiredNullable(searchItem, 'bookId')
-				|| !requiredNullable(searchItem, 'commentCount')) {
+				|| !requiredNullable(searchItem, 'reviewCount') || !requiredNullable(searchItem, 'replyCount')) {
 			throw new GradleException('OpenAPI specification must distinguish nullable book search fields from omitted fields')
 		}
 		def detailResponse = responseSchema('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
-		if (!requiredNullable(detailResponse, 'bookId') || !requiredNullable(detailResponse, 'commentCount')
+		if (!requiredNullable(detailResponse, 'bookId') || !requiredNullable(detailResponse, 'reviewCount')
+				|| !requiredNullable(detailResponse, 'replyCount')
 				|| !requiredNullable(detailResponse, 'averageRating') || !requiredNullable(detailResponse, 'ratingCount')
 				|| !requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'totalPages')) {
 			throw new GradleException('OpenAPI specification must describe nullable book detail state fields')

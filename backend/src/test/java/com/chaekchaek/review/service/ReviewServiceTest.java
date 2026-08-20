@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import com.chaekchaek.review.book.ReviewBookReader;
 import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
@@ -131,6 +132,36 @@ class ReviewServiceTest {
 
         // then
         assertThat(counts).containsEntry(5L, 5L).containsEntry(6L, 0L);
+    }
+
+    @Test
+    @DisplayName("도서별 감상과 답글 수를 분리해서 반환한다")
+    void should_ReturnSeparatedReviewAndReplyCounts_When_ReadingBookActivityCounts() {
+        // given
+        ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        ReplyRepository replyRepository = mock(ReplyRepository.class);
+        ReviewRepository.BookCommentCount reviewCount = mock(ReviewRepository.BookCommentCount.class);
+        ReplyRepository.BookCommentCount replyCount = mock(ReplyRepository.BookCommentCount.class);
+        when(reviewCount.getBookId()).thenReturn(5L);
+        when(reviewCount.getCount()).thenReturn(2L);
+        when(replyCount.getBookId()).thenReturn(5L);
+        when(replyCount.getCount()).thenReturn(3L);
+        when(reviewRepository.countByBookIdInGroupByBookId(List.of(5L, 6L)))
+                .thenReturn(List.of(reviewCount));
+        when(replyRepository.countByReviewBookIdInGroupByBookId(List.of(5L, 6L)))
+                .thenReturn(List.of(replyCount));
+        CurrentMemberIdProvider currentMemberIdProvider = () -> 1L;
+        ReviewService reviewService = new ReviewService(
+                reviewRepository, replyRepository, mock(ReviewReactionRepository.class),
+                mock(ReplyReactionRepository.class), currentMemberIdProvider,
+                mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false));
+
+        // when
+        Map<Long, ActivityCounts> actual = reviewService.getActivityCounts(List.of(5L, 6L));
+
+        // then
+        assertThat(actual).containsEntry(5L, new ActivityCounts(2L, 3L))
+                .containsEntry(6L, new ActivityCounts(0L, 0L));
     }
 
     private ReviewService reviewService(ReviewRepository reviewRepository, ReviewBookReader bookReader,

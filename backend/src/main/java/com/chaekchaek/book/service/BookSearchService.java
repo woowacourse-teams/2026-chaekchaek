@@ -8,7 +8,8 @@ import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.repository.BookRepository;
-import com.chaekchaek.library.service.BookCommentCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,7 @@ public class BookSearchService {
 
     private final AladinBookClient bookClient;
     private final BookRepository bookRepository;
-    private final BookCommentCountReader commentCountReader;
+    private final BookActivityCountReader activityCountReader;
 
     public BookSearchResponse search(String query, int page) {
         return search(query, page, BookSearchSort.LATEST);
@@ -35,11 +36,11 @@ public class BookSearchService {
                         source.items().stream().map(AladinBookItem::isbn13).toList())
                 .stream()
                 .collect(java.util.stream.Collectors.toMap(Book::getIsbn13, Function.identity()));
-        Map<Long, Long> commentCounts = commentCountReader.getCommentCounts(
+        Map<Long, ActivityCounts> activityCounts = activityCountReader.getActivityCounts(
                 registeredBooks.values().stream().map(Book::getId).toList());
         List<BookItem> items = source.items()
                 .stream()
-                .map(item -> toBookItem(item, registeredBooks.get(item.isbn13()), commentCounts))
+                .map(item -> toBookItem(item, registeredBooks.get(item.isbn13()), activityCounts))
                 .sorted(comparator(sort))
                 .toList();
         Integer nextPage = source.hasNextPage()
@@ -57,7 +58,7 @@ public class BookSearchService {
         BookSearchSort effectiveSort = sort == null ? BookSearchSort.LATEST : sort;
         if (effectiveSort == BookSearchSort.COMMENT) {
             return Comparator.comparing(
-                    BookItem::commentCount,
+                    this::totalCount,
                     Comparator.nullsLast(Comparator.reverseOrder())
             );
         }
@@ -70,7 +71,7 @@ public class BookSearchService {
     private BookItem toBookItem(
             AladinBookItem source,
             Book registeredBook,
-            Map<Long, Long> commentCounts
+            Map<Long, ActivityCounts> activityCounts
     ) {
         AladinContributorParser.Contributors contributors =
                 AladinContributorParser.parse(source.author());
@@ -86,7 +87,18 @@ public class BookSearchService {
                 source.categoryName(),
                 source.publisher(),
                 registeredBook == null ? null : Math.toIntExact(
-                        commentCounts.getOrDefault(registeredBook.getId(), 0L))
+                        activityCounts.getOrDefault(registeredBook.getId(), new ActivityCounts(0L, 0L))
+                                .reviewCount()),
+                registeredBook == null ? null : Math.toIntExact(
+                        activityCounts.getOrDefault(registeredBook.getId(), new ActivityCounts(0L, 0L))
+                                .replyCount())
         );
+    }
+
+    private Long totalCount(BookItem item) {
+        if (item.reviewCount() == null || item.replyCount() == null) {
+            return null;
+        }
+        return (long) item.reviewCount() + item.replyCount();
     }
 }
