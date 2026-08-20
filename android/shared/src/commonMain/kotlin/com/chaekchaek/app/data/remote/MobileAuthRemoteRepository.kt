@@ -12,16 +12,37 @@ class MobileAuthRemoteRepository {
   private val client = createHttpClient()
 
   suspend fun loginWithGoogle(idToken: String): MobileAuthTokens =
+    requestTokens("google", GoogleLoginRequest(idToken))
+
+  suspend fun reissue(refreshToken: String): MobileAuthTokens =
+    requestTokens("reissue", RefreshTokenRequest(refreshToken))
+
+  suspend fun logout(refreshToken: String) {
     try {
-      client.post("$BASE_URL/api/v1/auth/mobile/google") {
+      client.post("$BASE_URL/api/v1/auth/mobile/logout") {
         contentType(ContentType.Application.Json)
-        setBody(GoogleLoginRequest(idToken))
+        setBody(RefreshTokenRequest(refreshToken))
+      }
+    } catch (error: ResponseException) {
+      throw error.toMobileLoginException()
+    }
+  }
+
+  private suspend fun requestTokens(path: String, body: Any): MobileAuthTokens =
+    try {
+      client.post("$BASE_URL/api/v1/auth/mobile/$path") {
+        contentType(ContentType.Application.Json)
+        setBody(body)
       }.body<MobileAuthTokens>()
     } catch (error: ResponseException) {
-      val code = runCatching { error.response.body<MobileLoginProblem>().code }
-        .getOrDefault("HTTP_${error.response.status.value}")
-      throw MobileLoginException(code)
+      throw error.toMobileLoginException()
     }
+
+  private suspend fun ResponseException.toMobileLoginException(): MobileLoginException {
+    val code = runCatching { response.body<MobileLoginProblem>().code }
+      .getOrDefault("HTTP_${response.status.value}")
+    return MobileLoginException(code, response.status.value)
+  }
 
   private companion object {
     const val BASE_URL = "https://api.chaekchaek.com"
@@ -32,9 +53,12 @@ class MobileAuthRemoteRepository {
 private data class GoogleLoginRequest(val idToken: String)
 
 @Serializable
+internal data class RefreshTokenRequest(val refreshToken: String)
+
+@Serializable
 internal data class MobileLoginProblem(val code: String)
 
-class MobileLoginException(val code: String) : RuntimeException(code)
+class MobileLoginException(val code: String, val statusCode: Int) : RuntimeException(code)
 
 @Serializable
 data class MobileAuthTokens(
