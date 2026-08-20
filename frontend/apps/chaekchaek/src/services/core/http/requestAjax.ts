@@ -33,7 +33,7 @@ export const requestAjax = async (url: string, config?: Configs): Promise<Reques
           ...(customHeaders as Record<string, string>),
         },
       }),
-      // credentials: 'include',
+      credentials: 'include',
       ...(data && {
         body: data instanceof FormData ? data : JSON.stringify(data),
       }),
