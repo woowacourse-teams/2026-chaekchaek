@@ -83,6 +83,7 @@ class QuoteCard(
     val bookTitle: String,
     val coverId: String,
     val authorLabel: String,
+    val authorProfileImageUrl: String? = null,
     val createdAt: Instant,
     val quoteText: String,
     val replyCount: Int,

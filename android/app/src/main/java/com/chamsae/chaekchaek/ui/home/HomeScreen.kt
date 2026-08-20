@@ -594,6 +594,7 @@ private fun RecentReflectionsSection(
                     excerpt = card.quoteText,
                     replyLabel = card.replyLabel,
                     avatar = R.drawable.avatar_kim,
+                    profileImageUrl = card.authorProfileImageUrl,
                     onClick = { onBookClick(card.toBookDetailArgs()) },
                 )
             }
@@ -621,6 +622,7 @@ private fun ReflectionCard(
     replyLabel: String,
     @DrawableRes
     avatar: Int,
+    profileImageUrl: String? = null,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -668,7 +670,7 @@ private fun ReflectionCard(
                         lineHeight = 20.sp,
                     )
                 }
-                AuthorLine(authorLabel, avatar, imageSize = 20.dp)
+                AuthorLine(authorLabel, avatar, profileImageUrl, imageSize = 20.dp)
                 Text(
                     "“$excerpt”",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 17.sp),
@@ -748,18 +750,23 @@ private fun AuthorLine(
     label: String,
     @DrawableRes
     avatar: Int,
+    profileImageUrl: String?,
     imageSize: Dp,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Image(
-            painter = painterResource(avatar),
+        val fallbackAvatar = painterResource(avatar)
+        AsyncImage(
+            model = profileImageUrl,
             contentDescription = null,
             modifier = Modifier
                 .size(imageSize)
                 .clip(CircleShape),
+            placeholder = fallbackAvatar,
+            error = fallbackAvatar,
+            fallback = fallbackAvatar,
             contentScale = ContentScale.Crop,
         )
         Text(
@@ -873,6 +880,7 @@ private fun HomePreview(readingBook: ReadingBookUiModel?) {
                         bookTitle = "보이지 않는 도시",
                         coverId = "cover-18",
                         authorLabel = "다정한 참새 · 4분 전",
+                        authorProfileImageUrl = null,
                         quoteText = "도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.",
                         replyLabel = "답글 12",
                     ),

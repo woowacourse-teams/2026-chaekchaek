@@ -35,6 +35,7 @@ data class QuoteCardUiModel(
     val bookTitle: String,
     val coverId: String,
     val authorLabel: String,
+    val authorProfileImageUrl: String? = null,
     val quoteText: String,
     val replyLabel: String,
 )
