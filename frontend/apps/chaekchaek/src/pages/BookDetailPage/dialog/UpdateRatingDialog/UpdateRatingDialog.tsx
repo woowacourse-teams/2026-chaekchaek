@@ -1,14 +1,24 @@
+import { useState } from 'react';
+
 import { Dialog } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { Rating } from '@chaekchaek/design-system';
 import { CellList } from '@chaekchaek/design-system';
 
-export const UpdateRatingDialog = () => {
+import type { Props } from './UpdateRatingDialog.types';
+
+export const UpdateRatingDialog = ({ bookId, title, rating: defaultRating }: Props) => {
+  const [rating, setRating] = useState(defaultRating);
+
+  const handleChangeRating = (rating: number) => {
+    setRating(rating);
+  };
+
   return (
     <Dialog>
       <Dialog.Container>
         <Dialog.Header
-          subTitle={`${'마션'}을 읽은 느낌을 별점으로 남겨보세요. 별점은 언제든 수정할 수 있어요.`}
+          subTitle={`${title}을 읽은 느낌을 별점으로 남겨보세요. 별점은 언제든 수정할 수 있어요.`}
         >
           이 책에 별점 매기기
         </Dialog.Header>
@@ -27,7 +37,12 @@ export const UpdateRatingDialog = () => {
             <CellList.Item headline="4.2" title="아몬드" content="2026.07.18" />
             <CellList.Item headline="4.0" title="마션" content="2026.08.05" />
           </CellList>
-          <Rating value={4} title={'내 별점'} description={'4점 · 좋았어요'} />
+          <Rating
+            value={rating || 0}
+            onChange={handleChangeRating}
+            title={'내 별점'}
+            description={`${rating || 0} · 좋았어요`}
+          />
         </Dialog.Body>
         <Dialog.Footer>
           <Button variant="ghost" block>

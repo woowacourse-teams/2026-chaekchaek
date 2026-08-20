@@ -74,7 +74,15 @@ export const BookDetailPage = () => {
           )
         );
       case 'UpdateRatingDialog':
-        return <UpdateRatingDialog />;
+        return (
+          data?.bookId && (
+            <UpdateRatingDialog
+              bookId={data?.bookId}
+              title={data.title}
+              rating={data.myRecord?.myRating}
+            />
+          )
+        );
       default:
         return null;
     }
