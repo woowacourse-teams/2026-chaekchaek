@@ -22,7 +22,7 @@ interface LibraryRepository {
   val anonymousReviews: StateFlow<Boolean>
   val nickname: StateFlow<String>
 
-  fun add(book: ArchivedBook)
+  suspend fun add(book: ArchivedBook): Long?
 
   fun remove(bookIds: Set<String>)
 
@@ -56,9 +56,16 @@ class ServerLibraryRepository(
     }
   }
 
-  override fun add(book: ArchivedBook) {
-    mutate { accessToken ->
+  override suspend fun add(book: ArchivedBook): Long? {
+    val accessToken = authSession.tokens.value?.accessToken ?: return null
+    return mutationMutex.withLock {
       remoteRepository.add(book.id, book.totalPages.takeIf { it > 0 }, accessToken)
+      load(accessToken)
+      if (authSession.tokens.value?.accessToken == accessToken) {
+        _items.value.firstOrNull { it.id == book.id }?.bookId
+      } else {
+        null
+      }
     }
   }
 

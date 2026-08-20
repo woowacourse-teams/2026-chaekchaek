@@ -20,6 +20,7 @@ class BookDetailRemoteRepositoryTest {
     ).toBookDetail()
     val reviews = ReviewPageDto(
       totalCount = 1,
+      nextPage = 2,
       items = listOf(
         ReviewDto(
           reviewId = 7,
@@ -37,6 +38,7 @@ class BookDetailRemoteRepositoryTest {
     assertEquals(120, detail.myRecord?.currentPage)
     assertEquals(4.5, detail.myRecord?.rating)
     assertEquals("참새 1204", reviews.items.single().authorName)
+    assertEquals(2, reviews.nextPage)
   }
 
   @Test

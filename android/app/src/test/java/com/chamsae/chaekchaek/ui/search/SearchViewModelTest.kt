@@ -43,19 +43,26 @@ class SearchViewModelTest {
     }
 
   @Test
-  fun `register delegates the search result to the library repository`() {
-    val libraryRepository = FakeLibraryRepository()
-    val viewModel = SearchViewModel(BookSearchRepository { emptyList() }, libraryRepository)
-    val searchResult = book("검색 제목", "2026").copy(isbn13 = "9780000000001", category = "소설", totalPages = 320)
+  fun `register delegates the search result to the library repository`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      try {
+        val libraryRepository = FakeLibraryRepository()
+        val viewModel = SearchViewModel(BookSearchRepository { emptyList() }, libraryRepository)
+        val searchResult = book("검색 제목", "2026").copy(isbn13 = "9780000000001", category = "소설", totalPages = 320)
 
-    viewModel.register(searchResult)
+        viewModel.register(searchResult)
+        advanceUntilIdle()
 
-    val saved = libraryRepository.items.value.single()
-    assertEquals("9780000000001", saved.id)
-    assertEquals("검색 제목", saved.title)
-    assertEquals("소설", saved.category)
-    assertEquals(320, saved.totalPages)
-  }
+        val saved = libraryRepository.items.value.single()
+        assertEquals("9780000000001", saved.id)
+        assertEquals("검색 제목", saved.title)
+        assertEquals("소설", saved.category)
+        assertEquals(320, saved.totalPages)
+      } finally {
+        Dispatchers.resetMain()
+      }
+    }
 
   private fun book(title: String, year: String) =
     BookSearchResult(
@@ -74,8 +81,9 @@ private class FakeLibraryRepository : LibraryRepository {
   override val anonymousReviews = MutableStateFlow(true)
   override val nickname = MutableStateFlow("")
 
-  override fun add(book: ArchivedBook) {
+  override suspend fun add(book: ArchivedBook): Long? {
     mutableItems.value += book
+    return book.bookId
   }
 
   override fun remove(bookIds: Set<String>) = Unit

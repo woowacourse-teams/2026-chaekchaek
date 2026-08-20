@@ -125,34 +125,35 @@ fun BookDetailRoute(
   var reviews by remember(book.isbn13) { mutableStateOf(emptyList<BookReview>()) }
   var reviewCount by remember(book.isbn13) { mutableStateOf(0) }
   var reviewsLoading by remember(book.isbn13) { mutableStateOf(false) }
+  var nextReviewsLoading by remember(book.isbn13) { mutableStateOf(false) }
+  var nextReviewPage by remember(book.isbn13) { mutableStateOf<Int?>(null) }
   var reviewScope by rememberSaveable(book.isbn13) { mutableStateOf(ReviewScope.ALL) }
   var reviewSort by rememberSaveable(book.isbn13) { mutableStateOf(ReviewSort.LATEST) }
   var reloadNonce by remember { mutableStateOf(0) }
-  val archivedBook = archivedBooks.firstOrNull { it.id == book.id }
+  val archivedBook = archivedBooks.firstOrNull { it.id == book.isbn13.ifBlank { book.id } }
+  val displayBook = detail?.toBookDetailArgs(book) ?: archivedBook?.toBookDetailArgs() ?: book
 
-  suspend fun bookIdForWrite(accessToken: String): Long =
-    detail?.bookId ?: requireNotNull(
-      bookDetailRepository.addToLibrary(book.isbn13, detail?.totalPages, accessToken).bookId,
-    )
+  suspend fun bookIdForWrite(): Long =
+    detail?.bookId ?: requireNotNull(libraryRepository.add(displayBook.toArchivedBook()))
 
-  LaunchedEffect(book.isbn13, tokens?.accessToken, reloadNonce) {
+  LaunchedEffect(book.isbn13, archivedBook?.bookId, tokens?.accessToken, reloadNonce) {
     detail = book.isbn13.takeIf(String::isNotBlank)?.let { runCatching { bookDetailRepository.detail(it, tokens?.accessToken) }.getOrNull() }
   }
-  LaunchedEffect(detail?.bookId, reviewScope, reviewSort, tokens?.accessToken) {
+  LaunchedEffect(detail?.bookId, reviewScope, reviewSort, tokens?.accessToken, reloadNonce) {
     val bookId = detail?.bookId ?: return@LaunchedEffect
     reviewsLoading = true
+    nextReviewPage = null
     runCatching { bookDetailRepository.reviews(bookId, reviewScope, reviewSort, tokens?.accessToken) }
       .onSuccess {
         reviewCount = it.totalCount
         reviews = it.items
+        nextReviewPage = it.nextPage
       }.onFailure {
         reviewCount = 0
         reviews = emptyList()
       }
     reviewsLoading = false
   }
-  val displayBook = detail?.toBookDetailArgs(book) ?: archivedBook?.toBookDetailArgs() ?: book
-
   BookDetailScreen(
     book = displayBook,
     archivedBook = archivedBook,
@@ -166,31 +167,49 @@ fun BookDetailRoute(
     onBack = onBack,
     onReviewScopeChange = { reviewScope = it },
     onReviewSortChange = { reviewSort = it },
+    nextReviewPage = nextReviewPage,
+    onLoadMoreReviews = loadMore@{
+      val bookId = detail?.bookId ?: return@loadMore
+      val page = nextReviewPage ?: return@loadMore
+      if (nextReviewsLoading) return@loadMore
+      val requestedScope = reviewScope
+      val requestedSort = reviewSort
+      nextReviewsLoading = true
+      try {
+        runCatching {
+          bookDetailRepository.reviews(bookId, requestedScope, requestedSort, tokens?.accessToken, page)
+        }.onSuccess {
+          if (nextReviewPage != page || reviewScope != requestedScope || reviewSort != requestedSort) return@onSuccess
+          reviewCount = it.totalCount
+          reviews = (reviews + it.items).distinctBy(BookReview::reviewId)
+          nextReviewPage = it.nextPage
+        }
+      } finally {
+        nextReviewsLoading = false
+      }
+    },
     signedIn = tokens != null,
     onGoogleSignIn = { idToken -> authSession.signIn(mobileAuthRepository.loginWithGoogle(idToken)) },
-    onAddToLibrary = {
-      bookDetailRepository.addToLibrary(book.isbn13, detail?.totalPages, requireNotNull(tokens).accessToken)
-      reloadNonce++
-    },
+    onAddToLibrary = { libraryRepository.add(displayBook.toArchivedBook()) },
     onStatusChange = { status ->
       val accessToken = requireNotNull(tokens).accessToken
-      bookDetailRepository.updateReadingStatus(bookIdForWrite(accessToken), status.toApiStatus(), accessToken)
-      libraryRepository.changeStatus(setOf(book.id), status)
+      bookDetailRepository.updateReadingStatus(bookIdForWrite(), status.toApiStatus(), accessToken)
+      libraryRepository.changeStatus(setOf(displayBook.isbn13.ifBlank { displayBook.id }), status)
       reloadNonce++
     },
     onPageSave = { page ->
       val accessToken = requireNotNull(tokens).accessToken
-      bookDetailRepository.updateCurrentPage(bookIdForWrite(accessToken), page, detail?.totalPages, accessToken)
+      bookDetailRepository.updateCurrentPage(bookIdForWrite(), page, detail?.totalPages, accessToken)
       reloadNonce++
     },
     onRatingSave = { rating ->
       val accessToken = requireNotNull(tokens).accessToken
-      bookDetailRepository.rate(bookIdForWrite(accessToken), rating.score.toDouble(), accessToken)
+      bookDetailRepository.rate(bookIdForWrite(), rating.score.toDouble(), accessToken)
       reloadNonce++
     },
     onReviewCreate = { request ->
       val accessToken = requireNotNull(tokens).accessToken
-      bookDetailRepository.createReview(bookIdForWrite(accessToken), request, accessToken)
+      bookDetailRepository.createReview(bookIdForWrite(), request, accessToken)
       reloadNonce++
     },
     onReviewLike = { reviewId ->
@@ -220,6 +239,8 @@ fun BookDetailScreen(
   modifier: Modifier = Modifier,
   onReviewScopeChange: (ReviewScope) -> Unit = {},
   onReviewSortChange: (ReviewSort) -> Unit = {},
+  nextReviewPage: Int? = null,
+  onLoadMoreReviews: suspend () -> Unit = {},
   signedIn: Boolean = false,
   onGoogleSignIn: suspend (String) -> Unit = {},
   onAddToLibrary: suspend () -> Unit = {},
@@ -240,8 +261,8 @@ fun BookDetailScreen(
       listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset >= threshold
     }
   }
+  val reachedBottom by remember { derivedStateOf { !listState.canScrollForward } }
   var showLoginSheet by rememberSaveable { mutableStateOf(false) }
-  var openMineAfterLogin by remember { mutableStateOf(false) }
   val context = LocalContext.current
   var signingIn by rememberSaveable { mutableStateOf(false) }
   var loginError by rememberSaveable { mutableStateOf<String?>(null) }
@@ -251,7 +272,7 @@ fun BookDetailScreen(
   var showPageDialog by rememberSaveable { mutableStateOf(false) }
   var showReviewSheet by rememberSaveable { mutableStateOf(false) }
   val snackbarHostState = remember { SnackbarHostState() }
-  var pendingAction by remember { mutableStateOf<Pair<String, suspend () -> Unit>?>(null) }
+  var pendingAfterLogin by remember { mutableStateOf<(() -> Unit)?>(null) }
   fun execute(operation: String, action: suspend () -> Unit) {
     if (requestInFlight) return
     requestInFlight = true
@@ -269,13 +290,19 @@ fun BookDetailScreen(
       }
     }
   }
+  fun requireLogin(afterLogin: () -> Unit) {
+    pendingAfterLogin = afterLogin
+    showLoginSheet = true
+  }
   fun runAuthenticated(operation: String, action: suspend () -> Unit) {
     if (!signedIn) {
-      pendingAction = operation to action
-      showLoginSheet = true
+      requireLogin { execute(operation, action) }
       return
     }
     execute(operation, action)
+  }
+  LaunchedEffect(reachedBottom, nextReviewPage, reviewScope, reviewSort) {
+    if (reachedBottom && nextReviewPage != null) onLoadMoreReviews()
   }
 
   Box(
@@ -292,9 +319,9 @@ fun BookDetailScreen(
         ReadingRecord(
           book = book,
           record = myRecord,
-          onRate = { if (signedIn) showRatingDialog = true else showLoginSheet = true },
+          onRate = { if (signedIn) showRatingDialog = true else requireLogin { showRatingDialog = true } },
           onStatusChange = { status -> runAuthenticated("독서 상태 변경") { onStatusChange(status) } },
-          onPageInput = { if (signedIn) showPageDialog = true else showLoginSheet = true },
+          onPageInput = { if (signedIn) showPageDialog = true else requireLogin { showPageDialog = true } },
         )
       }
       item { Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand)) }
@@ -307,8 +334,7 @@ fun BookDetailScreen(
           sort = reviewSort,
           onScopeChange = { requested ->
             if (requested == ReviewScope.MINE && !signedIn) {
-              openMineAfterLogin = true
-              showLoginSheet = true
+              requireLogin { onReviewScopeChange(ReviewScope.MINE) }
             } else {
               onReviewScopeChange(requested)
             }
@@ -321,7 +347,7 @@ fun BookDetailScreen(
     }
 
     ComposeBar(
-      onClick = { if (signedIn) showReviewSheet = true else showLoginSheet = true },
+      onClick = { if (signedIn) showReviewSheet = true else requireLogin { showReviewSheet = true } },
       modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 10.dp),
     )
 
@@ -343,7 +369,12 @@ fun BookDetailScreen(
     LoginRequiredSheet(
       signingIn = signingIn,
       error = loginError,
-      onDismiss = { if (!signingIn) showLoginSheet = false },
+      onDismiss = {
+        if (!signingIn) {
+          showLoginSheet = false
+          pendingAfterLogin = null
+        }
+      },
       onGoogleSignIn = {
         if (signingIn) return@LoginRequiredSheet
         scope.launch {
@@ -352,11 +383,10 @@ fun BookDetailScreen(
           runCatching { requestGoogleIdToken(context) }
             .mapCatching { idToken -> onGoogleSignIn(idToken) }
             .onSuccess {
-              if (openMineAfterLogin) onReviewScopeChange(ReviewScope.MINE)
-              openMineAfterLogin = false
-              pendingAction?.let { execute(it.first, it.second) }
-              pendingAction = null
+              val afterLogin = pendingAfterLogin
+              pendingAfterLogin = null
               showLoginSheet = false
+              afterLogin?.invoke()
             }
             .onFailure {
               val code = (it as? MobileLoginException)?.code ?: it::class.simpleName.orEmpty()
@@ -1184,6 +1214,20 @@ private fun BookDetail.toBookDetailArgs(fallback: BookDetailArgs) =
     category = category,
     totalPages = totalPages ?: 0,
     coverUrl = coverImageUrl,
+  )
+
+private fun BookDetailArgs.toArchivedBook() =
+  ArchivedBook(
+    id = isbn13.ifBlank { id },
+    bookId = bookId,
+    title = title,
+    creator = creator,
+    publisher = publisher,
+    year = year,
+    coverUrl = coverUrl,
+    note = "",
+    category = category,
+    totalPages = totalPages,
   )
 
 @Composable
