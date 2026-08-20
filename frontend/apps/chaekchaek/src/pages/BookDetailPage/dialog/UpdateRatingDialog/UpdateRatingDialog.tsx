@@ -5,6 +5,9 @@ import { Button } from '@chaekchaek/design-system';
 import { Rating } from '@chaekchaek/design-system';
 import { CellList } from '@chaekchaek/design-system';
 
+import { useExecute } from '@/services/core/useExecute';
+import { putLibraryBookIdRating } from '@/services/apis/libraryBookIdRating/repository';
+
 import type { Props } from './UpdateRatingDialog.types';
 
 const RatingMessages = {
@@ -28,6 +31,14 @@ export const UpdateRatingDialog = ({ bookId, title, rating: defaultRating }: Pro
   };
 
   const ratingMessage = RatingMessages[rating as keyof typeof RatingMessages] || '-';
+
+  const { mutate } = useExecute({
+    executeFn: putLibraryBookIdRating,
+  });
+
+  const handleSubmit = async () => {
+    await mutate({ bookId, rating });
+  };
 
   return (
     <Dialog>
@@ -63,7 +74,7 @@ export const UpdateRatingDialog = ({ bookId, title, rating: defaultRating }: Pro
           <Button variant="ghost" block>
             취소
           </Button>
-          <Button variant="primary" block>
+          <Button variant="primary" block onClick={handleSubmit}>
             별점 저장
           </Button>
         </Dialog.Footer>
