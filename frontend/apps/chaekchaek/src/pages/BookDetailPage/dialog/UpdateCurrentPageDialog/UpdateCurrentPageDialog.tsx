@@ -23,7 +23,7 @@ export const UpdateCurrentPageDialog = ({ bookId, currentPage }: Props) => {
   });
 
   const handleSubmit = async () => {
-    await mutate({ bookId, currentPage });
+    await mutate({ bookId, currentPage: Number(formValues.currentPage) });
   };
 
   return (
