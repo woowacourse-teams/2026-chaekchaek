@@ -39,6 +39,7 @@ export const BookDetailPage = () => {
   }, [isbn]);
 
   const {
+    refetch: refetchGetBooksIsbnLoadData,
     status: { data },
   } = useLoadData({
     queryFn: getBooksIsbnLoadData,
@@ -46,9 +47,11 @@ export const BookDetailPage = () => {
 
   const { mutate: mutatePatchLibraryBookId } = useExecute({
     executeFn: patchLibraryBookId,
+    onSuccess: refetchGetBooksIsbnLoadData,
   });
   const { mutate: mutatePostLibrary } = useExecute({
     executeFn: postLibrary,
+    onSuccess: refetchGetBooksIsbnLoadData,
   });
   const handleRegisterLibrary = async (status: string) => {
     if (!data?.myRecord) return await mutatePostLibrary({ isbn13: isbn, status });
