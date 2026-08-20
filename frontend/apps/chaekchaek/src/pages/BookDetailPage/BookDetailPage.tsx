@@ -28,7 +28,7 @@ import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
-import { UpdateRating } from './dialog/UpdateRating';
+import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
 
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
@@ -55,12 +55,14 @@ export const BookDetailPage = () => {
   //   setOpen(true);
   // };
 
-  const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRating' | null>(null);
-  const handleOpenDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRating') => {
+  const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null>(
+    null,
+  );
+  const handleOpenDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog') => {
     setDialog(dialog);
   };
 
-  const renderDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRating' | null) => {
+  const renderDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null) => {
     switch (dialog) {
       case 'UpdateCurrentPageDialog':
         return (
@@ -71,8 +73,8 @@ export const BookDetailPage = () => {
             />
           )
         );
-      case 'UpdateRating':
-        return <UpdateRating />;
+      case 'UpdateRatingDialog':
+        return <UpdateRatingDialog />;
       default:
         return null;
     }
@@ -109,7 +111,7 @@ export const BookDetailPage = () => {
                   size="small"
                   variant="primary"
                   onClick={() => {
-                    handleOpenDialog('UpdateRating');
+                    handleOpenDialog('UpdateRatingDialog');
                   }}
                 >
                   별점 주기

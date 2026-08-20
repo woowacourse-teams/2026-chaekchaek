@@ -3,7 +3,7 @@ import { Button } from '@chaekchaek/design-system';
 import { Rating } from '@chaekchaek/design-system';
 import { CellList } from '@chaekchaek/design-system';
 
-export const UpdateRating = () => {
+export const UpdateRatingDialog = () => {
   return (
     <Dialog>
       <Dialog.Container>
