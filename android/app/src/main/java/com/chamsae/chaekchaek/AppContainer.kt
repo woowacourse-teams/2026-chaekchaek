@@ -10,12 +10,21 @@ import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.BookSearchRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.domain.book.BookSearchRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 
 class AppContainer(context: Context) {
+  private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
   val bookSearchRepository: BookSearchRepository = BookSearchRemoteRepository()
   val bookDetailRepository = BookDetailRemoteRepository()
   val mobileAuthRepository = MobileAuthRemoteRepository()
-  val authSession = AuthSession(RefreshTokenStore(context), mobileAuthRepository)
+  val authSession = AuthSession(RefreshTokenStore(context), mobileAuthRepository, scope)
   val bookRatingStore = BookRatingStore(context.applicationContext)
   val libraryRepository: LibraryRepository = PreferencesLibraryRepository(context.applicationContext)
+
+  fun close() {
+    scope.cancel()
+  }
 }
