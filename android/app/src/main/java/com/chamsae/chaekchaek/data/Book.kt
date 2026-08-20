@@ -1,8 +1,6 @@
 package com.chamsae.chaekchaek.data
 
 import com.chaekchaek.app.domain.book.BookSearchResult
-import org.json.JSONArray
-import org.json.JSONObject
 
 enum class ReadingStatus(val label: String) {
   WantToRead("읽고 싶어요"),
@@ -10,8 +8,17 @@ enum class ReadingStatus(val label: String) {
   Finished("다 읽음"),
 }
 
+internal val ReadingStatus.apiValue: String
+  get() =
+    when (this) {
+      ReadingStatus.WantToRead -> "WANT_TO_READ"
+      ReadingStatus.Reading -> "READING"
+      ReadingStatus.Finished -> "FINISHED"
+    }
+
 data class ArchivedBook(
   val id: String,
+  val bookId: Long? = null,
   val title: String,
   val creator: String,
   val publisher: String,
@@ -61,55 +68,3 @@ internal fun BookSearchResult.toArchivedBook(): ArchivedBook =
 
 internal fun List<ArchivedBook>.plusIfAbsent(book: ArchivedBook): List<ArchivedBook> =
   if (any { it.id == book.id }) this else this + book
-
-internal fun ArchivedBook.toJson(): JSONObject =
-  JSONObject()
-    .put("id", id)
-    .put("title", title)
-    .put("creator", creator)
-    .put("publisher", publisher)
-    .put("year", year)
-    .put("coverUrl", coverUrl)
-    .put("note", note)
-    .put("category", category)
-    .put("status", status.name)
-    .put("currentPage", currentPage)
-    .put("totalPages", totalPages)
-    .put("lastRecordedAt", lastRecordedAt)
-
-internal fun JSONObject.toArchivedBook(): ArchivedBook {
-  val totalPages = optInt("totalPages").coerceAtLeast(0)
-  val status = ReadingStatus.entries.firstOrNull { it.name == optString("status") } ?: ReadingStatus.Reading
-  val storedPage = optInt("currentPage").coerceAtLeast(0)
-  val currentPage =
-    when (status) {
-      ReadingStatus.WantToRead -> 0
-      ReadingStatus.Reading -> if (totalPages == 0) storedPage else storedPage.coerceAtMost(totalPages)
-      ReadingStatus.Finished -> totalPages.takeIf { it > 0 } ?: storedPage
-    }
-  return ArchivedBook(
-    id = getString("id"),
-    title = optString("title"),
-    creator = optString("creator"),
-    publisher = optString("publisher"),
-    year = optString("year"),
-    coverUrl = optString("coverUrl"),
-    note = optString("note"),
-    category = optString("category"),
-    status = status,
-    currentPage = currentPage,
-    totalPages = totalPages,
-    lastRecordedAt = optLong("lastRecordedAt"),
-  )
-}
-
-internal fun parseArchivedBooks(json: String): List<ArchivedBook> {
-  val array = JSONArray(json)
-  return List(array.length()) { i -> array.getJSONObject(i).toArchivedBook() }
-}
-
-internal fun serializeArchivedBooks(items: List<ArchivedBook>): String {
-  val array = JSONArray()
-  items.forEach { array.put(it.toJson()) }
-  return array.toString()
-}

@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chamsae.chaekchaek.ui.home.HomeScreen
 import com.chamsae.chaekchaek.ui.archive.ArchiveRoute
 import com.chamsae.chaekchaek.ui.bookdetail.BookDetailArgs
@@ -52,6 +53,7 @@ fun RootScreen(
 ) {
   var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
   var archiveEditing by rememberSaveable { mutableStateOf(false) }
+  val tokens by appContainer.authSession.tokens.collectAsStateWithLifecycle()
 
   Box(modifier = modifier.fillMaxSize()) {
     val showBottomBar = !(selectedTab == RootTab.Shelf && archiveEditing)
@@ -62,6 +64,7 @@ fun RootScreen(
         .then(if (showBottomBar) Modifier.padding(bottom = 56.dp) else Modifier)
     when (selectedTab) {
       RootTab.Home -> HomeScreen(
+        accessToken = tokens?.accessToken,
         modifier = contentModifier,
         onSearchBook = { selectedTab = RootTab.Discover },
         onBookClick = onBookClick,

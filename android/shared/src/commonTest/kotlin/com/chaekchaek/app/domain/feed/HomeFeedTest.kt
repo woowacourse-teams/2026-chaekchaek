@@ -21,6 +21,7 @@ private fun quoteCard(id: String = "nt_1001") = QuoteCard(
     bookTitle = "보이지 않는 도시",
     coverId = "cover-01",
     authorLabel = "김여름의 서재",
+    authorProfileImageUrl = null,
     createdAt = FIXED_INSTANT,
     quoteText = "도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.",
     replyCount = 12,

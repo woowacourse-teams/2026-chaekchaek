@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +20,9 @@ fun MainNavigation() {
   val backStack = rememberNavBackStack(Main)
   val applicationContext = LocalContext.current.applicationContext
   val appContainer = remember(applicationContext) { AppContainer(applicationContext) }
+  DisposableEffect(appContainer) {
+    onDispose { appContainer.close() }
+  }
 
   NavDisplay(
     backStack = backStack,
@@ -36,7 +40,9 @@ fun MainNavigation() {
       entry<BookDetailKey> { key ->
         BookDetailRoute(
           book = key.book,
-          bookRatingStore = appContainer.bookRatingStore,
+          bookDetailRepository = appContainer.bookDetailRepository,
+          mobileAuthRepository = appContainer.mobileAuthRepository,
+          authSession = appContainer.authSession,
           libraryRepository = appContainer.libraryRepository,
           onBack = { backStack.removeLastOrNull() },
           modifier = Modifier.windowInsetsPadding(
