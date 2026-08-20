@@ -57,6 +57,13 @@ class SearchViewModel(
   }
 
   fun register(book: BookSearchResult) {
-    libraryRepository.add(book.toArchivedBook())
+    viewModelScope.launch {
+      try {
+        libraryRepository.add(book.toArchivedBook())
+      } catch (error: CancellationException) {
+        throw error
+      } catch (_: Exception) {
+      }
+    }
   }
 }
