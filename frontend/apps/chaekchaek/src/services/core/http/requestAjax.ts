@@ -27,7 +27,7 @@ export const requestAjax = async (url: string, config?: Configs): Promise<Reques
   let res;
   try {
     res = await fetch(finalUrl, {
-      method,
+      method: method.toUpperCase(),
       ...(!!Object.values(customHeaders).filter(Boolean).length && {
         headers: {
           ...(customHeaders as Record<string, string>),
