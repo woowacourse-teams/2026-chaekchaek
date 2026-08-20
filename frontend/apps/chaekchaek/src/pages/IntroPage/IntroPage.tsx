@@ -1,4 +1,6 @@
 import { useCallback, useEffect } from 'react';
+import type { MouseEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Layout } from '@chaekchaek/design-system';
 import { Header } from '@chaekchaek/design-system';
@@ -26,6 +28,12 @@ export const IntroPage = () => {
     queryFn: getHomePopularBooksLoadData,
   });
 
+  const navigation = useNavigate();
+
+  const handleClickMoveDetail = (isbn: string) => {
+    navigation(`/books/${isbn}`);
+  };
+
   return (
     <Layout>
       <Header />
@@ -39,7 +47,15 @@ export const IntroPage = () => {
 
                 return (
                   <div data-pencil-name={`다크 홈 전체 책 ${bookIndex}`} className="book">
-                    <img src={book.coverImageUrl} alt="" />
+                    <a
+                      href="#"
+                      onClick={(e: MouseEvent<HTMLAnchorElement>) => {
+                        e.preventDefault();
+                        handleClickMoveDetail(book.isbn13);
+                      }}
+                    >
+                      <img src={book.coverImageUrl} alt="" />
+                    </a>
                   </div>
                 );
               })}
