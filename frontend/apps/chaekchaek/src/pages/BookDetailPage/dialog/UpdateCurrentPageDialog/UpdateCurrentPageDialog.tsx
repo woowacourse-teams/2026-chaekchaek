@@ -6,13 +6,24 @@ import { Field } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 
+import { useExecute } from '@/services/core/useExecute';
+import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
+
 import type { Props } from './UpdateCurrentPageDialog.type';
 
-export const UpdateCurrentPageDialog = ({ currentPage }: Props) => {
+export const UpdateCurrentPageDialog = ({ bookId, currentPage }: Props) => {
   const [formValues, setFormValues] = useState({ currentPage });
 
   const handleChange = ({ name, value }: { name: string; value: unknown }) => {
     setFormValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const { mutate } = useExecute({
+    executeFn: patchLibraryBookId,
+  });
+
+  const handleSubmit = async () => {
+    await mutate({ bookId, currentPage });
   };
 
   return (
@@ -42,7 +53,7 @@ export const UpdateCurrentPageDialog = ({ currentPage }: Props) => {
           {/* <Field.Description></Field.Description> */}
         </Dialog.Body>
         <Dialog.Footer>
-          <Button variant="primary" block>
+          <Button variant="primary" block onClick={handleSubmit}>
             입력한 쪽수까지 보기
           </Button>
           <Button variant="danger" block>

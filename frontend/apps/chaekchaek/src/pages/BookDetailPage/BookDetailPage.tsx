@@ -259,7 +259,12 @@ export const BookDetailPage = () => {
           </Split.Content>
         </Split>
 
-        {open && <UpdateCurrentPageDialog currentPage={data?.myRecord?.currentPage || 0} />}
+        {open && data?.bookId && (
+          <UpdateCurrentPageDialog
+            bookId={data?.bookId}
+            currentPage={data?.myRecord?.currentPage || 0}
+          />
+        )}
         {/* <UpdateRating /> */}
       </Main>
     </Layout>
