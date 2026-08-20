@@ -24,6 +24,7 @@ import { DataInfo } from '@chaekchaek/design-system';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { postLibrary } from '@/services/apis/library/repository';
+import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
@@ -43,11 +44,15 @@ export const BookDetailPage = () => {
     queryFn: getBooksIsbnLoadData,
   });
 
-  const { mutate } = useExecute({
+  const { mutate: mutatePatchLibraryBookId } = useExecute({
+    executeFn: patchLibraryBookId,
+  });
+  const { mutate: mutatePostLibrary } = useExecute({
     executeFn: postLibrary,
   });
   const handleRegisterLibrary = async (status: string) => {
-    await mutate({ isbn13: isbn, status });
+    if (!data?.myRecord) return await mutatePostLibrary({ isbn13: isbn, status });
+    await mutatePatchLibraryBookId({ bookId: data?.bookId, status });
   };
 
   const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null>(
