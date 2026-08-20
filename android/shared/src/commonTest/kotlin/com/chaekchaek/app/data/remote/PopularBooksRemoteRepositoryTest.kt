@@ -56,6 +56,7 @@ class PopularBooksRemoteRepositoryTest {
 
         val review = assertIs<FeedSection.RecentQuotes>(feed.visibleSections().single()).cards.single()
         assertEquals("7-2026-08-20T01:29:34Z", review.noteId.value)
+        assertEquals("익명의 독자", review.authorLabel)
         assertEquals(Instant.parse("2026-08-20T01:29:34Z"), review.createdAt)
         assertEquals("오래 멈춰 읽었다.", review.quoteText)
         assertEquals("7", feed.readingBook?.bookId?.value)

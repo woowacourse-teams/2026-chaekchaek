@@ -113,7 +113,7 @@ internal fun PopularBooksResponseDto.toHomeFeed(
                     bookId = BookId(review.bookId.toString()),
                     bookTitle = review.bookTitle,
                     coverId = review.bookCoverImageUrl,
-                    authorLabel = "",
+                    authorLabel = "익명의 독자",
                     createdAt = Instant.parse(review.createdAt),
                     quoteText = review.content,
                     replyCount = review.replyCount,
