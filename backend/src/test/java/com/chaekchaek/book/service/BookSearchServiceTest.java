@@ -13,7 +13,8 @@ import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
-import com.chaekchaek.library.service.BookCommentCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -40,15 +41,15 @@ class BookSearchServiceTest {
         // given
         AladinBookClient bookClient = mock(AladinBookClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
-        BookSearchService service = new BookSearchService(bookClient, bookRepository, commentCountReader);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        BookSearchService service = new BookSearchService(bookClient, bookRepository, activityCountReader);
         AladinSearchResponse aladinResponse = new AladinSearchResponse(
                 null, null, totalResults, responseStartIndex, itemsPerPage, List.of()
         );
         when(bookClient.searchBooks("마션", requestPage)).thenReturn(aladinResponse);
         when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(commentCountReader.getCommentCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -64,15 +65,15 @@ class BookSearchServiceTest {
         // given
         AladinBookClient bookClient = mock(AladinBookClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
-        BookSearchService service = new BookSearchService(bookClient, bookRepository, commentCountReader);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        BookSearchService service = new BookSearchService(bookClient, bookRepository, activityCountReader);
         AladinSearchResponse aladinResponse = new AladinSearchResponse(
                 null, null, 21, 1, 10, List.of()
         );
         when(bookClient.searchBooks("마션", 1)).thenReturn(aladinResponse);
         when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(commentCountReader.getCommentCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -88,8 +89,8 @@ class BookSearchServiceTest {
         // given
         AladinBookClient bookClient = mock(AladinBookClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
-        BookSearchService service = new BookSearchService(bookClient, bookRepository, commentCountReader);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        BookSearchService service = new BookSearchService(bookClient, bookRepository, activityCountReader);
         AladinBookItem aladinBookItem = new AladinBookItem(
                 "클린 코드",
                 "https://image.aladin.co.kr/cover.jpg",
@@ -111,7 +112,7 @@ class BookSearchServiceTest {
         when(bookClient.searchBooks("클린 코드", 1)).thenReturn(aladinResponse);
         when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(commentCountReader.getCommentCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -135,8 +136,8 @@ class BookSearchServiceTest {
         // given
         AladinBookClient bookClient = mock(AladinBookClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
-        BookSearchService service = new BookSearchService(bookClient, bookRepository, commentCountReader);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        BookSearchService service = new BookSearchService(bookClient, bookRepository, activityCountReader);
         AladinBookItem aladinBookItem = new AladinBookItem(
                 "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)",
                 "2026-01-01", "9788925568683", "SF", "알에이치코리아",
@@ -149,14 +150,16 @@ class BookSearchServiceTest {
                 null, null, 1, 1, 10, List.of(aladinBookItem)));
         when(bookRepository.findAllByIsbn13In(List.of("9788925568683")))
                 .thenReturn(List.of(registeredBook));
-        when(commentCountReader.getCommentCounts(List.of(42L))).thenReturn(Map.of(42L, 7L));
+        when(activityCountReader.getActivityCounts(List.of(42L)))
+                .thenReturn(Map.of(42L, new ActivityCounts(2L, 5L)));
 
         // when
         BookItem item = service.search("마션", 1).items().getFirst();
 
         // then
         assertThat(item.bookId()).isEqualTo(42L);
-        assertThat(item.commentCount()).isEqualTo(7);
+        assertThat(item.reviewCount()).isEqualTo(2);
+        assertThat(item.replyCount()).isEqualTo(5);
     }
 
     @Test
@@ -198,7 +201,9 @@ class BookSearchServiceTest {
         BookSearchService service = serviceWith(
                 new AladinSearchResponse(null, null, 4, 1, 10,
                         List.of(oldestBook, mostCommentedBook, middleBook, unregisteredBook)),
-                Map.of(1L, 1L, 2L, 10L, 3L, 5L),
+                Map.of(1L, new ActivityCounts(1L, 0L),
+                        2L, new ActivityCounts(6L, 4L),
+                        3L, new ActivityCounts(2L, 3L)),
                 registeredBook(1L, oldestBook.isbn13()),
                 registeredBook(2L, mostCommentedBook.isbn13()),
                 registeredBook(3L, middleBook.isbn13())
@@ -214,18 +219,18 @@ class BookSearchServiceTest {
 
     private BookSearchService serviceWith(
             AladinSearchResponse response,
-            Map<Long, Long> commentCounts,
+            Map<Long, ActivityCounts> activityCounts,
             Book... registeredBooks
     ) {
         AladinBookClient bookClient = mock(AladinBookClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         when(bookClient.searchBooks("책", 1)).thenReturn(response);
         when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of(registeredBooks));
-        when(commentCountReader.getCommentCounts(org.mockito.ArgumentMatchers.anyCollection()))
-                .thenReturn(commentCounts);
-        return new BookSearchService(bookClient, bookRepository, commentCountReader);
+        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenReturn(activityCounts);
+        return new BookSearchService(bookClient, bookRepository, activityCountReader);
     }
 
     private AladinBookItem aladinBook(String title, String publishedDate, String isbn13) {

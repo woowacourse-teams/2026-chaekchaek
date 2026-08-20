@@ -10,7 +10,8 @@ import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
-import com.chaekchaek.library.service.BookCommentCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -22,19 +23,20 @@ import org.junit.jupiter.api.Test;
 class BookDetailAssemblerTest {
 
     @Test
-    @DisplayName("책 상세에 댓글 수와 반올림한 평균 별점 및 내 기록을 결합한다")
+    @DisplayName("책 상세에 감상·답글 수와 반올림한 평균 별점 및 내 기록을 결합한다")
     void should_CombineBookStatisticsAndMyRecord_When_AssemblingDetail() {
         // given
         Book book = book();
-        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         LibraryItemRepository.RatingStatistics ratingStatistics = mock(
                 LibraryItemRepository.RatingStatistics.class);
         LibraryItem libraryItem = mock(LibraryItem.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
-                commentCountReader, currentMemberIdProvider, libraryItemRepository);
-        when(commentCountReader.getCommentCounts(List.of(1L))).thenReturn(Map.of(1L, 4L));
+                activityCountReader, currentMemberIdProvider, libraryItemRepository);
+        when(activityCountReader.getActivityCounts(List.of(1L)))
+                .thenReturn(Map.of(1L, new ActivityCounts(2L, 2L)));
         when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L)))
                 .thenReturn(List.of(ratingStatistics));
         when(ratingStatistics.getAverageRating()).thenReturn(4.24);
@@ -49,7 +51,8 @@ class BookDetailAssemblerTest {
         var response = assembler.assemble(book);
 
         // then
-        assertThat(response.commentCount()).isEqualTo(4);
+        assertThat(response.reviewCount()).isEqualTo(2);
+        assertThat(response.replyCount()).isEqualTo(2);
         assertThat(response.averageRating()).isEqualByComparingTo("4.2");
         assertThat(response.ratingCount()).isEqualTo(3);
         assertThat(response.myRecord()).extracting("status", "currentPage", "myRating")
@@ -61,12 +64,13 @@ class BookDetailAssemblerTest {
     void should_ReturnNullMyRecord_When_AuthenticatedMemberHasNoLibraryItem() {
         // given
         Book book = book();
-        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
-                commentCountReader, currentMemberIdProvider, libraryItemRepository);
-        when(commentCountReader.getCommentCounts(List.of(1L))).thenReturn(Map.of(1L, 0L));
+                activityCountReader, currentMemberIdProvider, libraryItemRepository);
+        when(activityCountReader.getActivityCounts(List.of(1L)))
+                .thenReturn(Map.of(1L, new ActivityCounts(0L, 0L)));
         when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
         when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.empty());
@@ -83,22 +87,23 @@ class BookDetailAssemblerTest {
     void should_ReturnMetadataOnly_When_BookIsNotRegistered() {
         // given
         Book book = bookWithoutId();
-        BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
-                commentCountReader, currentMemberIdProvider, libraryItemRepository);
+                activityCountReader, currentMemberIdProvider, libraryItemRepository);
 
         // when
         var response = assembler.assemble(book);
 
         // then
         assertThat(response.bookId()).isNull();
-        assertThat(response.commentCount()).isNull();
+        assertThat(response.reviewCount()).isNull();
+        assertThat(response.replyCount()).isNull();
         assertThat(response.averageRating()).isNull();
         assertThat(response.ratingCount()).isNull();
         assertThat(response.myRecord()).isNull();
-        verifyNoInteractions(commentCountReader, currentMemberIdProvider, libraryItemRepository);
+        verifyNoInteractions(activityCountReader, currentMemberIdProvider, libraryItemRepository);
     }
 
     private Book book() {

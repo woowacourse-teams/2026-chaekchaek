@@ -14,7 +14,8 @@ public record BookDetailResponse(
         String category,
         String publishedDate,
         Integer totalPages,
-        Integer commentCount,
+        Integer reviewCount,
+        Integer replyCount,
         BigDecimal averageRating,
         Integer ratingCount,
         BookMyRecordResponse myRecord

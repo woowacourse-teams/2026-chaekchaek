@@ -9,7 +9,8 @@ import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
-import com.chaekchaek.library.service.BookCommentCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -39,7 +40,7 @@ class BookServicePersistenceTest {
     private LibraryItemRepository libraryItemRepository;
 
     @MockitoBean
-    private BookCommentCountReader commentCountReader;
+    private BookActivityCountReader activityCountReader;
 
     @MockitoBean
     private CurrentMemberIdProvider currentMemberIdProvider;
@@ -60,8 +61,8 @@ class BookServicePersistenceTest {
         ));
         libraryItemRepository.saveAndFlush(ratedItem(1L, savedBook.getId(), "4.2"));
         libraryItemRepository.saveAndFlush(ratedItem(2L, savedBook.getId(), "4.4"));
-        when(commentCountReader.getCommentCounts(List.of(savedBook.getId())))
-                .thenReturn(Map.of(savedBook.getId(), 0L));
+        when(activityCountReader.getActivityCounts(List.of(savedBook.getId())))
+                .thenReturn(Map.of(savedBook.getId(), new ActivityCounts(0L, 0L)));
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
         when(bookResolver.lookup(savedBook.getIsbn13())).thenReturn(savedBook);
 
