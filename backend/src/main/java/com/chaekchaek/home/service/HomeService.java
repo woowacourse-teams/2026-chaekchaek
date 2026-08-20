@@ -2,16 +2,21 @@ package com.chaekchaek.home.service;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.repository.BookRepository;
+import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.home.dto.LatestReviewListResponse;
 import com.chaekchaek.home.dto.LatestReviewResponse;
 import com.chaekchaek.home.dto.PopularBookListResponse;
 import com.chaekchaek.home.dto.PopularBookResponse;
 import com.chaekchaek.review.domain.Review;
+import com.chaekchaek.review.dto.AuthorResponse;
+import com.chaekchaek.review.member.ReviewMemberProfile;
+import com.chaekchaek.review.member.ReviewMemberReader;
 import com.chaekchaek.review.repository.ReviewRepository;
 import com.chaekchaek.review.repository.ReplyRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalLong;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +28,8 @@ public class HomeService {
     private final ReviewRepository reviewRepository;
     private final ReplyRepository replyRepository;
     private final BookRepository bookRepository;
+    private final CurrentMemberIdProvider currentMemberIdProvider;
+    private final ReviewMemberReader reviewMemberReader;
 
     @Transactional(readOnly = true)
     public PopularBookListResponse getPopularBooks() {
@@ -41,8 +48,10 @@ public class HomeService {
         List<Review> reviews = reviewRepository.findTop10ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
         Map<Long, Long> replyCounts = replyCountsByReviewId(reviews);
         Map<Long, Book> books = booksById(reviews.stream().map(Review::getBookId).distinct().toList());
+        Long currentMemberId = currentMemberIdOrNull();
+        Map<Long, ReviewMemberProfile> memberProfiles = memberProfilesByReview(reviews);
         List<LatestReviewResponse> responses = reviews.stream()
-                .map(review -> toLatestReviewResponse(review, replyCounts, books))
+                .map(review -> toLatestReviewResponse(review, replyCounts, books, currentMemberId, memberProfiles))
                 .filter(Objects::nonNull)
                 .toList();
         return new LatestReviewListResponse(responses);
@@ -84,13 +93,40 @@ public class HomeService {
     }
 
     private LatestReviewResponse toLatestReviewResponse(Review review, Map<Long, Long> replyCounts,
-                                                        Map<Long, Book> books) {
+                                                        Map<Long, Book> books, Long currentMemberId,
+                                                        Map<Long, ReviewMemberProfile> memberProfiles) {
         Book book = books.get(review.getBookId());
         if (book == null) {
             return null;
         }
         return new LatestReviewResponse(review.getContent(), review.getCreatedAt(),
-                replyCounts.getOrDefault(review.getId(), 0L), book.getId(), book.getIsbn13(), book.getTitle(),
-                book.getCoverImageUrl());
+                authorOf(review, currentMemberId, memberProfiles), replyCounts.getOrDefault(review.getId(), 0L),
+                book.getId(), book.getIsbn13(), book.getTitle(), book.getCoverImageUrl());
+    }
+
+    private AuthorResponse authorOf(Review review, Long currentMemberId,
+                                    Map<Long, ReviewMemberProfile> memberProfiles) {
+        long authorId = review.getMemberId();
+        ReviewMemberProfile profile = memberProfiles.get(authorId);
+        boolean mine = currentMemberId != null && authorId == currentMemberId;
+        if (review.isAnonymous()) {
+            return new AuthorResponse(profile.anonymousNickname(), null, true, mine);
+        }
+        String displayName = profile.withdrawn() ? "탈퇴한 사용자" : profile.displayName();
+        String profileImageUrl = profile.withdrawn() ? null : profile.profileImageUrl();
+        return new AuthorResponse(displayName, profileImageUrl, false, mine);
+    }
+
+    private Long currentMemberIdOrNull() {
+        OptionalLong currentMemberId = currentMemberIdProvider.findCurrentMemberId();
+        return currentMemberId.isPresent() ? currentMemberId.getAsLong() : null;
+    }
+
+    private Map<Long, ReviewMemberProfile> memberProfilesByReview(List<Review> reviews) {
+        List<Long> memberIds = reviews.stream().map(Review::getMemberId).distinct().toList();
+        if (memberIds.isEmpty()) {
+            return Map.of();
+        }
+        return reviewMemberReader.findByMemberIds(memberIds);
     }
 }
