@@ -21,9 +21,15 @@ class BookDetailRemoteRepository {
       accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
     }.body<BookDetailDto>().toBookDetail()
 
-  suspend fun reviews(bookId: Long, scope: ReviewScope, sort: ReviewSort, accessToken: String? = null): ReviewPage =
+  suspend fun reviews(
+    bookId: Long,
+    scope: ReviewScope,
+    sort: ReviewSort,
+    accessToken: String? = null,
+    page: Int = FIRST_PAGE,
+  ): ReviewPage =
     client.get("$BASE_URL/api/v1/books/$bookId/reviews") {
-      parameter("page", FIRST_PAGE)
+      parameter("page", page)
       parameter("feed", scope.name)
       parameter("sort", sort.name)
       accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
@@ -49,9 +55,9 @@ class BookDetailRemoteRepository {
       authenticatedJson(accessToken, RatingRequest(rating))
     }.body<LibraryRecordDto>().toLibraryRecord()
 
-  suspend fun createReview(bookId: Long, content: String, accessToken: String): BookReview =
+  suspend fun createReview(bookId: Long, request: ReviewCreateRequest, accessToken: String): BookReview =
     client.post("$BASE_URL/api/v1/books/$bookId/reviews") {
-      authenticatedJson(accessToken, ReviewCreateRequest(content = content, isSpoiler = false))
+      authenticatedJson(accessToken, request)
     }.body<ReviewDto>().toBookReview()
 
   suspend fun likeReview(reviewId: Long, accessToken: String) {
@@ -106,7 +112,7 @@ data class LibraryRecord(
   val bookId: Long? = null,
 )
 
-data class ReviewPage(val totalCount: Int, val items: List<BookReview>)
+data class ReviewPage(val totalCount: Int, val nextPage: Int?, val items: List<BookReview>)
 
 data class BookReview(
   val reviewId: Long,
@@ -168,7 +174,14 @@ private data class LibraryUpdateRequest(
 private data class RatingRequest(val rating: Double)
 
 @Serializable
-private data class ReviewCreateRequest(val content: String, val isSpoiler: Boolean)
+data class ReviewCreateRequest(
+  val content: String,
+  val quote: String? = null,
+  val chapter: String? = null,
+  val currentPage: Int? = null,
+  val totalPages: Int? = null,
+  val isSpoiler: Boolean = false,
+)
 
 @Serializable
 private data class ReplyCreateRequest(val content: String)
@@ -176,6 +189,7 @@ private data class ReplyCreateRequest(val content: String)
 @Serializable
 internal data class ReviewPageDto(
   val totalCount: Int,
+  val nextPage: Int? = null,
   val items: List<ReviewDto>,
 )
 
@@ -221,6 +235,7 @@ internal fun BookDetailRecordDto.toLibraryRecord() =
 internal fun ReviewPageDto.toReviewPage() =
   ReviewPage(
     totalCount = totalCount,
+    nextPage = nextPage,
     items = items.map(ReviewDto::toBookReview),
   )
 
