@@ -37,6 +37,9 @@ public class Book {
     @Column(nullable = false, length = 1_000)
     private String coverImageUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @ElementCollection
     @CollectionTable(name = "book_authors", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "name", nullable = false)
@@ -66,6 +69,7 @@ public class Book {
             String isbn13,
             String title,
             String coverImageUrl,
+            String description,
             List<String> authors,
             List<String> translators,
             String publisher,
@@ -76,6 +80,7 @@ public class Book {
         this.isbn13 = isbn13;
         this.title = title;
         this.coverImageUrl = coverImageUrl;
+        this.description = description;
         this.authors = new ArrayList<>(authors);
         this.translators = new ArrayList<>(translators);
         this.publisher = publisher;
@@ -88,6 +93,7 @@ public class Book {
             String isbn13,
             String title,
             String coverImageUrl,
+            String description,
             List<String> authors,
             List<String> translators,
             String publisher,
@@ -99,7 +105,7 @@ public class Book {
             throw new IllegalArgumentException("ISBN13 must have a valid checksum");
         }
         validateTotalPages(totalPages);
-        return new Book(isbn13, title, coverImageUrl, authors, translators, publisher, category,
+        return new Book(isbn13, title, coverImageUrl, description, authors, translators, publisher, category,
                 publishedDate, totalPages);
     }
 
@@ -137,6 +143,10 @@ public class Book {
 
     public String getCoverImageUrl() {
         return coverImageUrl;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public List<String> getAuthors() {

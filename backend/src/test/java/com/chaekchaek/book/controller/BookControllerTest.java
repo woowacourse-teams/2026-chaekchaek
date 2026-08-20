@@ -113,6 +113,7 @@ class BookControllerTest {
             fieldWithPath("isbn13").type(JsonFieldType.STRING).description("ISBN13"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("도서 제목"),
             fieldWithPath("coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
+            fieldWithPath("description").type(JsonFieldType.STRING).description("도서 상세 설명").optional(),
             fieldWithPath("authors").type(JsonFieldType.ARRAY).description("저자 목록"),
             fieldWithPath("translators").type(JsonFieldType.ARRAY).description("옮긴이 목록"),
             fieldWithPath("publisher").type(JsonFieldType.STRING).description("출판사"),
@@ -240,6 +241,7 @@ class BookControllerTest {
         mockMvc.perform(get("/api/v1/books/by-isbn/{isbn13}", "9788925568683"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.bookId").value(42))
+                .andExpect(jsonPath("$.description").value("책 설명"))
                 .andExpect(jsonPath("$.reviewCount").value(22))
                 .andExpect(jsonPath("$.replyCount").value(24))
                 .andDo(document(
@@ -438,6 +440,7 @@ class BookControllerTest {
                 "9788925568683",
                 "마션",
                 "https://image.aladin.co.kr/martian.jpg",
+                "책 설명",
                 List.of("앤디 위어"),
                 List.of("박아람"),
                 "알에이치코리아(RHK)",

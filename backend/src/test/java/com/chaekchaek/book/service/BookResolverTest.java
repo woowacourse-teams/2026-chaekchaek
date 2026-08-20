@@ -74,6 +74,7 @@ class BookResolverTest {
         // then
         assertThat(book.getId()).isNull();
         assertThat(book.getTitle()).isEqualTo("마션");
+        assertThat(book.getDescription()).isEqualTo("책 설명");
         verify(client).findBookByIsbn13(ISBN13);
         verify(repository).findByIsbn13(ISBN13);
         verify(repository, never()).save(org.mockito.ArgumentMatchers.any(Book.class));
@@ -83,6 +84,7 @@ class BookResolverTest {
     private AladinBookItem aladinBook() {
         return new AladinBookItem(
                 "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)",
+                "책 설명",
                 "2026-01-01", ISBN13, "SF", "알에이치코리아", new AladinBookSubInfo(308)
         );
     }

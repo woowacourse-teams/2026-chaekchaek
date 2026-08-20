@@ -53,6 +53,7 @@ class BookTest {
     private Book bookWithoutTotalPages() {
         return Book.create(
                 "9788925568683", "마션", "https://image.example/martian.jpg",
+                null,
                 List.of("앤디 위어"), List.of("박아람"), "알에이치코리아", "SF",
                 LocalDate.of(2026, 1, 1), null
         );

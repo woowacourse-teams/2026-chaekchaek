@@ -8,6 +8,7 @@ public record BookDetailResponse(
         String isbn13,
         String title,
         String coverImageUrl,
+        String description,
         List<String> authors,
         List<String> translators,
         String publisher,
