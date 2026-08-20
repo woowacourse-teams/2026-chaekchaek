@@ -64,6 +64,9 @@ export const BookDetailPage = () => {
   const handleOpenDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog') => {
     setDialog(dialog);
   };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
 
   const renderDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null) => {
     switch (dialog) {
@@ -73,6 +76,10 @@ export const BookDetailPage = () => {
             <UpdateCurrentPageDialog
               bookId={data?.bookId}
               currentPage={data?.myRecord?.currentPage || 0}
+              onCurrentPageUpdated={async () => {
+                await refetchGetBooksIsbnLoadData();
+              }}
+              onClose={handleCloseDialog}
             />
           )
         );
@@ -85,6 +92,10 @@ export const BookDetailPage = () => {
               title={data.title}
               rating={data.myRecord?.myRating}
               myRatingCount={data?.myRatingCount}
+              onRatingUpdated={async () => {
+                await refetchGetBooksIsbnLoadData();
+              }}
+              onClose={handleCloseDialog}
             />
           )
         );

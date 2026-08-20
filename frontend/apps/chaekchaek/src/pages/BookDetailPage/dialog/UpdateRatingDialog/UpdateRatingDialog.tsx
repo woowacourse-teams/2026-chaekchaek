@@ -31,6 +31,8 @@ export const UpdateRatingDialog = ({
   title,
   rating: defaultRating,
   myRatingCount,
+  onRatingUpdated,
+  onClose,
 }: Props) => {
   const [rating, setRating] = useState(defaultRating);
 
@@ -57,6 +59,8 @@ export const UpdateRatingDialog = ({
 
   const handleSubmit = async () => {
     await mutate({ bookId, rating });
+    onRatingUpdated();
+    onClose();
   };
 
   const ratingsComparisonData =

@@ -4,4 +4,6 @@ export type Props = {
   title: string;
   rating: number;
   myRatingCount: number;
+  onRatingUpdated: () => void | Promise<void>;
+  onClose: () => void;
 };
