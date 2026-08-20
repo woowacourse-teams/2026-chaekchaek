@@ -38,6 +38,14 @@ public enum ErrorCode {
             "INVALID_GOOGLE_ID_TOKEN",
             "Google 인증 정보가 유효하지 않습니다."
     ),
+    INVALID_APPLE_AUTHORIZATION(
+            "INVALID_APPLE_AUTHORIZATION",
+            "Apple 인증 정보가 유효하지 않습니다."
+    ),
+    APPLE_AUTH_SERVER_ERROR(
+            "APPLE_AUTH_SERVER_ERROR",
+            "Apple 인증 서버와 통신하지 못했습니다."
+    ),
     UNAUTHORIZED(
             "UNAUTHORIZED",
             "인증이 필요합니다."),

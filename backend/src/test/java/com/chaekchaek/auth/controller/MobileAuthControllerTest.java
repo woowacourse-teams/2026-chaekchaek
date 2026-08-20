@@ -4,6 +4,7 @@ import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.docume
 import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -14,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.chaekchaek.auth.dto.MobileTokenResponse;
 import com.chaekchaek.auth.service.MobileAuthTokenService;
+import com.chaekchaek.auth.service.MobileAppleLoginService;
 import com.chaekchaek.auth.service.MobileGoogleLoginService;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.epages.restdocs.apispec.Schema;
@@ -41,6 +43,14 @@ class MobileAuthControllerTest {
     private static final FieldDescriptor[] GOOGLE_LOGIN_REQUEST_FIELDS = {
             fieldWithPath("idToken").type(JsonFieldType.STRING)
                     .description("Google SDK에서 발급받은 ID Token")
+    };
+    private static final FieldDescriptor[] APPLE_LOGIN_REQUEST_FIELDS = {
+            fieldWithPath("identityToken").type(JsonFieldType.STRING)
+                    .description("Apple에서 발급받은 Identity Token"),
+            fieldWithPath("authorizationCode").type(JsonFieldType.STRING)
+                    .description("Apple에서 발급받은 일회용 Authorization Code"),
+            fieldWithPath("nonce").type(JsonFieldType.STRING)
+                    .description("Apple 로그인 요청에 사용한 해시 전 원본 nonce")
     };
     private static final FieldDescriptor[] REFRESH_TOKEN_REQUEST_FIELDS = {
             fieldWithPath("refreshToken").type(JsonFieldType.STRING)
@@ -80,7 +90,63 @@ class MobileAuthControllerTest {
     private MobileGoogleLoginService mobileGoogleLoginService;
 
     @MockitoBean
+    private MobileAppleLoginService mobileAppleLoginService;
+
+    @MockitoBean
     private MobileAuthTokenService mobileAuthTokenService;
+
+    @Test
+    @DisplayName("유효한 Apple 인증 정보로 모바일 로그인한다")
+    void should_ReturnTokens_When_AppleLoginSucceeds() throws Exception {
+        MobileTokenResponse response = new MobileTokenResponse(
+                "access-token", "refresh-token", "Bearer", 1_800, 1_209_600
+        );
+        when(mobileAppleLoginService.login(any())).thenReturn(response);
+
+        mockMvc.perform(post("/api/v1/auth/mobile/apple")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "identityToken": "apple-identity-token",
+                                  "authorizationCode": "apple-authorization-code",
+                                  "nonce": "raw-nonce"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("access-token"))
+                .andExpect(jsonPath("$.refreshToken").value("refresh-token"))
+                .andDo(document(
+                        "mobile-apple-login",
+                        requestFields(APPLE_LOGIN_REQUEST_FIELDS),
+                        responseFields(TOKEN_RESPONSE_FIELDS),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary("모바일 Apple 로그인")
+                                .description("Apple 인증 정보로 자체 Access Token과 Refresh Token을 발급한다")
+                                .tag(AUTH_TAG)
+                                .requestFields(APPLE_LOGIN_REQUEST_FIELDS)
+                                .responseFields(TOKEN_RESPONSE_FIELDS)
+                                .build())));
+    }
+
+    @Test
+    @DisplayName("Apple 인증 정보가 비어 있으면 요청을 거부한다")
+    void should_ReturnBadRequest_When_AppleAuthorizationIsBlank() throws Exception {
+        expectProblemDetail(mockMvc.perform(post("/api/v1/auth/mobile/apple")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "identityToken": "",
+                                  "authorizationCode": "",
+                                  "nonce": ""
+                                }
+                                """)),
+                "INVALID_REQUEST", "/api/v1/auth/mobile/apple")
+                .andDo(problemDetailDocument(
+                        "mobile-apple-login-invalid-request",
+                        "모바일 Apple 로그인",
+                        "Apple 인증 필수값이 없거나 비어 있으면 요청을 거부한다",
+                        APPLE_LOGIN_REQUEST_FIELDS));
+    }
 
     @Test
     @DisplayName("유효한 Google ID Token으로 모바일 로그인한다")

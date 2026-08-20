@@ -49,6 +49,9 @@ public class SocialAccount {
     @Column(name = "connected_at", nullable = false)
     private LocalDateTime connectedAt;
 
+    @Column(name = "provider_refresh_token", length = 2048)
+    private String providerRefreshToken;
+
     private SocialAccount(
             Member member,
             Provider provider,
@@ -73,5 +76,9 @@ public class SocialAccount {
                 providerUserId,
                 connectedAt
         );
+    }
+
+    public void updateProviderRefreshToken(String providerRefreshToken) {
+        this.providerRefreshToken = providerRefreshToken;
     }
 }

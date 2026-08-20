@@ -53,3 +53,13 @@ app:
       issuer: https://accounts.google.com
       jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
       audience: ${GOOGLE_CLIENT_ID}
+
+    apple:
+      issuer: https://appleid.apple.com
+      jwk-set-uri: https://appleid.apple.com/auth/keys
+      client-id: ${APPLE_CLIENT_ID}
+      team-id: ${APPLE_TEAM_ID}
+      key-id: ${APPLE_KEY_ID}
+      private-key: ${APPLE_PRIVATE_KEY}
+      token-uri: https://appleid.apple.com/auth/token
+      revoke-uri: https://appleid.apple.com/auth/revoke
