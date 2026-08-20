@@ -37,7 +37,7 @@ export const component = (name, endPoint) =>
     .join(';')}
   ${
     requestData && Object.entries(requestData).length
-      ? `;${Object.entries(data)
+      ? `;${Object.entries(requestData)
           .map(([key, value]) => `${key}: ${value.type}`)
           .join(';')}`
       : ''

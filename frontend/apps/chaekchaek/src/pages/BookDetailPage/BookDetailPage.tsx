@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { Layout } from '@chaekchaek/design-system';
@@ -22,8 +23,12 @@ import { Surface } from '@chaekchaek/design-system';
 import { DataInfo } from '@chaekchaek/design-system';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
+import { postLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
-import { useCallback } from 'react';
+import { useExecute } from '@/services/core/useExecute';
+
+import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
+import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
 
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
@@ -37,6 +42,49 @@ export const BookDetailPage = () => {
   } = useLoadData({
     queryFn: getBooksIsbnLoadData,
   });
+
+  const { mutate } = useExecute({
+    executeFn: postLibrary,
+  });
+  const handleRegisterLibrary = async (status: string) => {
+    await mutate({ isbn13: isbn, status });
+  };
+
+  const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null>(
+    null,
+  );
+  const handleOpenDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog') => {
+    setDialog(dialog);
+  };
+
+  const renderDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null) => {
+    switch (dialog) {
+      case 'UpdateCurrentPageDialog':
+        return (
+          data?.bookId && (
+            <UpdateCurrentPageDialog
+              bookId={data?.bookId}
+              currentPage={data?.myRecord?.currentPage || 0}
+            />
+          )
+        );
+      case 'UpdateRatingDialog':
+        return (
+          data?.bookId && (
+            <UpdateRatingDialog
+              isbn13={data.isbn13}
+              bookId={data?.bookId}
+              title={data.title}
+              rating={data.myRecord?.myRating}
+            />
+          )
+        );
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
 
   return (
     <Layout>
@@ -63,7 +111,13 @@ export const BookDetailPage = () => {
             <Banner>
               <Banner.Content title="내 별점" content="아직 평가하지 않았어요" />
               <Banner.Trailing>
-                <Button size="small" variant="primary">
+                <Button
+                  size="small"
+                  variant="primary"
+                  onClick={() => {
+                    handleOpenDialog('UpdateRatingDialog');
+                  }}
+                >
                   별점 주기
                 </Button>
               </Banner.Trailing>
@@ -85,6 +139,9 @@ export const BookDetailPage = () => {
                   text: '다 읽음',
                 },
               ]}
+              onChange={(value: string) => {
+                handleRegisterLibrary(value);
+              }}
             />
 
             <ProgressBar
@@ -94,7 +151,13 @@ export const BookDetailPage = () => {
               label={`${data?.myRecord?.currentPage || 0} / ${data?.totalPages || 0}쪽`}
             />
 
-            <Button variant="primary" block={true}>
+            <Button
+              variant="primary"
+              block={true}
+              onClick={() => {
+                handleOpenDialog('UpdateCurrentPageDialog');
+              }}
+            >
               현재 읽은 쪽수 입력
             </Button>
             <DataInfo heading="책 정보">
@@ -238,6 +301,8 @@ export const BookDetailPage = () => {
             </Entry>
           </Split.Content>
         </Split>
+
+        {dialogElement}
       </Main>
     </Layout>
   );
