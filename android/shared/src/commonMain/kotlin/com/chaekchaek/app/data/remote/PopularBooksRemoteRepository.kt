@@ -66,11 +66,18 @@ internal data class LatestReviewsResponseDto(
 internal data class LatestReviewDto(
     val content: String,
     val createdAt: String,
+    val author: LatestReviewAuthorDto,
     val replyCount: Int,
     val bookId: Long,
     val isbn13: String = "",
     val bookTitle: String,
     val bookCoverImageUrl: String,
+)
+
+@Serializable
+internal data class LatestReviewAuthorDto(
+    val displayName: String,
+    val profileImageUrl: String? = null,
 )
 
 @Serializable
@@ -113,7 +120,8 @@ internal fun PopularBooksResponseDto.toHomeFeed(
                     bookId = BookId(review.bookId.toString()),
                     bookTitle = review.bookTitle,
                     coverId = review.bookCoverImageUrl,
-                    authorLabel = "익명의 독자",
+                    authorLabel = review.author.displayName,
+                    authorProfileImageUrl = review.author.profileImageUrl,
                     createdAt = Instant.parse(review.createdAt),
                     quoteText = review.content,
                     replyCount = review.replyCount,

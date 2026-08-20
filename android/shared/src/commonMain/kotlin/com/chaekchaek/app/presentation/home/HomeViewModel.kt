@@ -104,6 +104,7 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
                     card.authorLabel,
                     TimeLabels.relative(card.createdAt, now),
                 ),
+                authorProfileImageUrl = card.authorProfileImageUrl,
                 quoteText = card.quoteText,
                 replyLabel = HomeLabels.quoteReply(card.replyCount),
             )
