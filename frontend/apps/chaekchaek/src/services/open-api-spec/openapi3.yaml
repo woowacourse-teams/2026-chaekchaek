@@ -56,22 +56,14 @@ paths:
           enum: [LATEST, COMMENT]
           default: LATEST
       responses:
-        '500':
-          description: '500'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                book-search-internal-server-error: {value: '{"detail":"서버 내부 오류가 발생했습니다.","instance":"/api/v1/books","status":500,"title":"Internal
-                    Server Error","type":"about:blank","code":"INTERNAL_SERVER_ERROR"}'}
         '200':
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-books996406116'}
+              schema: {$ref: '#/components/schemas/api-v1-books-20378274'}
               examples:
                 book-search: {value: '{"totalCount":1,"nextPage":null,"items":[{"bookId":null,"title":"마션","coverImageUrl":"https://image.aladin.co.kr/martian.jpg","authors":["앤디
-                    위어"],"translators":["박아람"],"publishedDate":"2026-07-01","isbn13":"9788925568683","category":"국내도서>소설>과학소설","publisher":"알에이치코리아(RHK)","commentCount":null}]}'}
+                    위어"],"translators":["박아람"],"publishedDate":"2026-07-01","isbn13":"9788925568683","category":"국내도서>소설>과학소설","publisher":"알에이치코리아(RHK)","reviewCount":null,"replyCount":null}]}'}
                 search-registered-book:
                   summary: 서재에 등록된 도서
                   value:
@@ -87,7 +79,8 @@ paths:
                       isbn13: '9788936433598'
                       category: 국내도서>소설
                       publisher: 창비
-                      commentCount: 2
+                      reviewCount: 1
+                      replyCount: 1
                 search-unregistered-book:
                   summary: 서재에 등록하지 않은 도서
                   value:
@@ -103,7 +96,8 @@ paths:
                       isbn13: '9788925568683'
                       category: 국내도서>소설
                       publisher: 알에이치코리아
-                      commentCount: null
+                      reviewCount: null
+                      replyCount: null
         '400':
           description: '400'
           content:
@@ -112,6 +106,14 @@ paths:
               examples:
                 book-search-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/books","status":400,"title":"Bad
                     Request","type":"about:blank","code":"INVALID_REQUEST"}'}
+        '500':
+          description: '500'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                book-search-internal-server-error: {value: '{"detail":"서버 내부 오류가 발생했습니다.","instance":"/api/v1/books","status":500,"title":"Internal
+                    Server Error","type":"about:blank","code":"INTERNAL_SERVER_ERROR"}'}
         '502':
           description: '502'
           content:
@@ -151,6 +153,13 @@ paths:
           enum: [RECENT, OLDEST, COMMENT, RATING, TITLE]
           default: RECENT
       responses:
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-library2055718325'}
+              examples:
+                library-list: {value: '{"totalCount":3,"filteredCount":2,"nextPage":2,"items":[{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"translators":[],"publisher":"창비","category":"국내도서>소설","publishedDate":"2007-10-30","totalPages":368,"commentCount":2,"status":"READING","currentPage":100,"rating":4.5,"addedAt":"2026-08-14T03:00:00Z","readingUpdatedAt":"2026-08-14T03:30:00Z"}]}'}
         '400':
           description: '400'
           content:
@@ -166,13 +175,6 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 library-list-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
-        '200':
-          description: '200'
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/api-v1-library2055718325'}
-              examples:
-                library-list: {value: '{"totalCount":3,"filteredCount":2,"nextPage":2,"items":[{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"translators":[],"publisher":"창비","category":"국내도서>소설","publishedDate":"2007-10-30","totalPages":368,"commentCount":2,"status":"READING","currentPage":100,"rating":4.5,"addedAt":"2026-08-14T03:00:00Z","readingUpdatedAt":"2026-08-14T03:30:00Z"}]}'}
       security: &id001
       - bearerAuth: []
       - accessTokenCookie: []
@@ -186,7 +188,19 @@ paths:
           application/json;charset=UTF-8:
             schema: {$ref: '#/components/schemas/api-v1-library923669369'}
             examples:
+              library-add-book-not-found:
+                value: |
+                  {"isbn13":"9788936433598","status":"READING","totalPages":368}
+              library-add-invalid-reading-state:
+                value: |
+                  {"isbn13":"9788936433598","status":"READING","totalPages":368}
               library-add-unauthorized:
+                value: |
+                  {"isbn13":"9788936433598","status":"READING","totalPages":368}
+              library-add-already-exists:
+                value: |
+                  {"isbn13":"9788936433598","status":"READING","totalPages":368}
+              library-add-total-pages-conflict:
                 value: |
                   {"isbn13":"9788936433598","status":"READING","totalPages":368}
               library-add-invalid-request:
@@ -195,19 +209,24 @@ paths:
               library-add:
                 value: |
                   {"isbn13":"9788936433598","status":"READING","totalPages":368}
-              library-add-total-pages-conflict:
-                value: |
-                  {"isbn13":"9788936433598","status":"READING","totalPages":368}
-              library-add-invalid-reading-state:
-                value: |
-                  {"isbn13":"9788936433598","status":"READING","totalPages":368}
-              library-add-already-exists:
-                value: |
-                  {"isbn13":"9788936433598","status":"READING","totalPages":368}
-              library-add-book-not-found:
-                value: |
-                  {"isbn13":"9788936433598","status":"READING","totalPages":368}
       responses:
+        '404':
+          description: '404'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-add-book-not-found: {value: '{"detail":"책을 찾을 수 없습니다.","instance":"/api/v1/library","status":404,"title":"Not
+                    Found","type":"about:blank","code":"BOOK_NOT_FOUND"}'}
+        '422':
+          description: '422'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-add-invalid-reading-state: {value: '{"detail":"현재 읽기 상태에서는
+                    요청을 처리할 수 없습니다.","instance":"/api/v1/library","status":422,"title":"Unprocessable
+                    Content","type":"about:blank","code":"INVALID_READING_STATE"}'}
         '401':
           description: '401'
           content:
@@ -215,6 +234,15 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 library-add-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+        '409':
+          description: '409'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-add-already-exists: {value: '{"detail":"이미 서재에 등록된 책입니다.","instance":"/api/v1/library","status":409,"title":"Conflict","type":"about:blank","code":"LIBRARY_ITEM_ALREADY_EXISTS"}'}
+                library-add-total-pages-conflict: {value: '{"detail":"전체 페이지 수가 기존
+                    정보와 다릅니다.","instance":"/api/v1/library","status":409,"title":"Conflict","type":"about:blank","code":"TOTAL_PAGES_CONFLICT"}'}
         '400':
           description: '400'
           content:
@@ -234,32 +262,6 @@ paths:
               schema: {$ref: '#/components/schemas/api-v1-library-bookId-rating-1519410846'}
               examples:
                 library-add: {value: '{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"translators":[],"publisher":"창비","category":"국내도서>소설","publishedDate":"2007-10-30","totalPages":368,"commentCount":2,"status":"READING","currentPage":100,"rating":4.5,"addedAt":"2026-08-14T03:00:00Z","readingUpdatedAt":"2026-08-14T03:30:00Z"}'}
-        '409':
-          description: '409'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-add-total-pages-conflict: {value: '{"detail":"전체 페이지 수가 기존
-                    정보와 다릅니다.","instance":"/api/v1/library","status":409,"title":"Conflict","type":"about:blank","code":"TOTAL_PAGES_CONFLICT"}'}
-                library-add-already-exists: {value: '{"detail":"이미 서재에 등록된 책입니다.","instance":"/api/v1/library","status":409,"title":"Conflict","type":"about:blank","code":"LIBRARY_ITEM_ALREADY_EXISTS"}'}
-        '422':
-          description: '422'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-add-invalid-reading-state: {value: '{"detail":"현재 읽기 상태에서는
-                    요청을 처리할 수 없습니다.","instance":"/api/v1/library","status":422,"title":"Unprocessable
-                    Content","type":"about:blank","code":"INVALID_READING_STATE"}'}
-        '404':
-          description: '404'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-add-book-not-found: {value: '{"detail":"책을 찾을 수 없습니다.","instance":"/api/v1/library","status":404,"title":"Not
-                    Found","type":"about:blank","code":"BOOK_NOT_FOUND"}'}
       security: *id001
   /api/v1/auth/logout:
     post:
@@ -298,10 +300,11 @@ paths:
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-home-latest-reviews813325567'}
+              schema: {$ref: '#/components/schemas/api-v1-home-latest-reviews619322835'}
               examples:
                 home-latest-reviews: {value: '{"reviews":[{"content":"도시는 기억으로 만들어진다는
-                    문장에서 오래 멈췄다.","createdAt":"2026-08-18T14:00:00Z","replyCount":12,"bookId":42,"isbn13":"9788936433598","bookTitle":"보이지
+                    문장에서 오래 멈췄다.","createdAt":"2026-08-18T14:00:00Z","author":{"displayName":"다정한
+                    참새","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":false},"replyCount":12,"bookId":42,"isbn13":"9788936433598","bookTitle":"보이지
                     않는 도시","bookCoverImageUrl":"https://example.com/invisible-cities.jpg"}]}'}
   /api/v1/home/popular-books:
     get:
@@ -329,19 +332,34 @@ paths:
           application/json;charset=UTF-8:
             schema: {$ref: '#/components/schemas/api-v1-library-bulk-delete-348264081'}
             examples:
-              library-bulk-delete-invalid-request:
-                value: |
-                  {"bookIds":[10,20]}
               library-bulk-delete-unauthorized:
-                value: |
-                  {"bookIds":[10,20]}
-              library-bulk-delete:
                 value: |
                   {"bookIds":[10,20]}
               library-bulk-delete-not-found:
                 value: |
                   {"bookIds":[10,20]}
+              library-bulk-delete-invalid-request:
+                value: |
+                  {"bookIds":[10,20]}
+              library-bulk-delete:
+                value: |
+                  {"bookIds":[10,20]}
       responses:
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-bulk-delete-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/bulk-delete","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+        '404':
+          description: '404'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-bulk-delete-not-found: {value: '{"detail":"서재 항목을 찾을 수 없습니다.","instance":"/api/v1/library/bulk-delete","status":404,"title":"Not
+                    Found","type":"about:blank","code":"LIBRARY_ITEM_NOT_FOUND"}'}
         '400':
           description: '400'
           content:
@@ -351,22 +369,7 @@ paths:
                 library-bulk-delete-invalid-request: {value: '{"detail":"요청값이 올바르지
                     않습니다.","instance":"/api/v1/library/bulk-delete","status":400,"title":"Bad
                     Request","type":"about:blank","code":"INVALID_REQUEST"}'}
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-bulk-delete-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/bulk-delete","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '204': {description: '204'}
-        '404':
-          description: '404'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-bulk-delete-not-found: {value: '{"detail":"서재 항목을 찾을 수 없습니다.","instance":"/api/v1/library/bulk-delete","status":404,"title":"Not
-                    Found","type":"about:blank","code":"LIBRARY_ITEM_NOT_FOUND"}'}
       security: *id001
   /api/v1/library/bulk-status:
     patch:
@@ -379,22 +382,38 @@ paths:
           application/json;charset=UTF-8:
             schema: {$ref: '#/components/schemas/api-v1-library-bulk-status1159375813'}
             examples:
-              library-bulk-status-invalid-reading-state:
+              library-bulk-status-not-found:
                 value: |
                   {"bookIds":[10,20],"status":"WANT_TO_READ"}
               library-bulk-status:
                 value: |
                   {"bookIds":[10,20],"status":"WANT_TO_READ"}
-              library-bulk-status-not-found:
+              library-bulk-status-unauthorized:
                 value: |
                   {"bookIds":[10,20],"status":"WANT_TO_READ"}
-              library-bulk-status-unauthorized:
+              library-bulk-status-invalid-reading-state:
                 value: |
                   {"bookIds":[10,20],"status":"WANT_TO_READ"}
               library-bulk-status-invalid-request:
                 value: |
                   {"bookIds":[10,20],"status":"WANT_TO_READ"}
       responses:
+        '404':
+          description: '404'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-bulk-status-not-found: {value: '{"detail":"서재 항목을 찾을 수 없습니다.","instance":"/api/v1/library/bulk-status","status":404,"title":"Not
+                    Found","type":"about:blank","code":"LIBRARY_ITEM_NOT_FOUND"}'}
+        '204': {description: '204'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-bulk-status-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/bulk-status","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '422':
           description: '422'
           content:
@@ -404,22 +423,6 @@ paths:
                 library-bulk-status-invalid-reading-state: {value: '{"detail":"현재
                     읽기 상태에서는 요청을 처리할 수 없습니다.","instance":"/api/v1/library/bulk-status","status":422,"title":"Unprocessable
                     Content","type":"about:blank","code":"INVALID_READING_STATE"}'}
-        '204': {description: '204'}
-        '404':
-          description: '404'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-bulk-status-not-found: {value: '{"detail":"서재 항목을 찾을 수 없습니다.","instance":"/api/v1/library/bulk-status","status":404,"title":"Not
-                    Found","type":"about:blank","code":"LIBRARY_ITEM_NOT_FOUND"}'}
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-bulk-status-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/bulk-status","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '400':
           description: '400'
           content:
@@ -444,6 +447,13 @@ paths:
         schema: {type: integer, format: int32}
       responses:
         '204': {description: '204'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-delete-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/10","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '404':
           description: '404'
           content:
@@ -452,13 +462,6 @@ paths:
               examples:
                 library-delete-book-not-found: {value: '{"detail":"책을 찾을 수 없습니다.","instance":"/api/v1/library/10","status":404,"title":"Not
                     Found","type":"about:blank","code":"BOOK_NOT_FOUND"}'}
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-delete-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/10","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
       security: *id001
     patch:
       tags: [내 서재]
@@ -479,47 +482,25 @@ paths:
           application/json;charset=UTF-8:
             schema: {$ref: '#/components/schemas/api-v1-library-bookId-559088573'}
             examples:
-              library-update-unauthorized:
+              library-update-invalid-reading-state:
                 value: |
                   {"currentPage":150,"totalPages":368}
               library-update-total-pages-conflict:
                 value: |
                   {"currentPage":150,"totalPages":368}
-              library-update:
+              library-update-invalid-request:
                 value: |
                   {"currentPage":150,"totalPages":368}
-              library-update-invalid-reading-state:
+              library-update:
                 value: |
                   {"currentPage":150,"totalPages":368}
               library-update-not-found:
                 value: |
                   {"currentPage":150,"totalPages":368}
-              library-update-invalid-request:
+              library-update-unauthorized:
                 value: |
                   {"currentPage":150,"totalPages":368}
       responses:
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-update-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/10","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
-        '409':
-          description: '409'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-update-total-pages-conflict: {value: '{"detail":"전체 페이지 수가
-                    기존 정보와 다릅니다.","instance":"/api/v1/library/10","status":409,"title":"Conflict","type":"about:blank","code":"TOTAL_PAGES_CONFLICT"}'}
-        '200':
-          description: '200'
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/api-v1-library-bookId-rating-1519410846'}
-              examples:
-                library-update: {value: '{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"translators":[],"publisher":"창비","category":"국내도서>소설","publishedDate":"2007-10-30","totalPages":368,"commentCount":2,"status":"READING","currentPage":100,"rating":4.5,"addedAt":"2026-08-14T03:00:00Z","readingUpdatedAt":"2026-08-14T03:30:00Z"}'}
         '422':
           description: '422'
           content:
@@ -529,14 +510,14 @@ paths:
                 library-update-invalid-reading-state: {value: '{"detail":"현재 읽기 상태에서는
                     요청을 처리할 수 없습니다.","instance":"/api/v1/library/10","status":422,"title":"Unprocessable
                     Content","type":"about:blank","code":"INVALID_READING_STATE"}'}
-        '404':
-          description: '404'
+        '409':
+          description: '409'
           content:
             application/problem+json:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
-                library-update-not-found: {value: '{"detail":"서재 항목을 찾을 수 없습니다.","instance":"/api/v1/library/10","status":404,"title":"Not
-                    Found","type":"about:blank","code":"LIBRARY_ITEM_NOT_FOUND"}'}
+                library-update-total-pages-conflict: {value: '{"detail":"전체 페이지 수가
+                    기존 정보와 다릅니다.","instance":"/api/v1/library/10","status":409,"title":"Conflict","type":"about:blank","code":"TOTAL_PAGES_CONFLICT"}'}
         '400':
           description: '400'
           content:
@@ -545,6 +526,28 @@ paths:
               examples:
                 library-update-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/library/10","status":400,"title":"Bad
                     Request","type":"about:blank","code":"INVALID_REQUEST"}'}
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-library-bookId-rating-1519410846'}
+              examples:
+                library-update: {value: '{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"translators":[],"publisher":"창비","category":"국내도서>소설","publishedDate":"2007-10-30","totalPages":368,"commentCount":2,"status":"READING","currentPage":100,"rating":4.5,"addedAt":"2026-08-14T03:00:00Z","readingUpdatedAt":"2026-08-14T03:30:00Z"}'}
+        '404':
+          description: '404'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-update-not-found: {value: '{"detail":"서재 항목을 찾을 수 없습니다.","instance":"/api/v1/library/10","status":404,"title":"Not
+                    Found","type":"about:blank","code":"LIBRARY_ITEM_NOT_FOUND"}'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-update-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/10","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
       security: *id001
   /api/v1/members/me:
     get:
@@ -558,9 +561,9 @@ paths:
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-members-me829926954'}
+              schema: {$ref: '#/components/schemas/MemberResponse'}
               examples:
-                member-me: {value: '{"memberId":7,"nickname":null,"anonymousNickname":"우아한
+                member-me: {value: '{"memberId":9,"nickname":"책책이","anonymousNickname":"우아한
                     달빛 참새","profileImageUrl":"exUrl","displayAnonymous":true,"accountStatus":"ACTIVE"}'}
         '401':
           description: '401'
@@ -569,6 +572,26 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 member-me-unauthorized: {value: '{"detail":"인증이 필요합니다.","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+      security: *id001
+    delete:
+      tags: [회원]
+      summary: 회원 탈퇴
+      description: 유효한 Access Token이 없으면 인증 오류를 반환한다
+      operationId: member-withdraw
+      responses:
+        '401':
+          description: '401'
+          content:
+            application/problem+json;charset=UTF-8:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                member-withdraw-unauthorized: {value: '{"detail":"인증이 필요합니다.","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+        '204':
+          description: '204'
+          headers:
+            Set-Cookie:
+              description: 만료된 인증 쿠키
+              schema: {type: string}
       security: *id001
   /api/v1/replies/{replyId}:
     delete:
@@ -583,13 +606,7 @@ paths:
         required: true
         schema: {type: integer, format: int32}
       responses:
-        '403':
-          description: '403'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                reply-delete-forbidden: {value: '{"detail":"요청한 작업을 수행할 권한이 없습니다.","instance":"/api/v1/replies/403","status":403,"title":"Forbidden","type":"about:blank","code":"FORBIDDEN"}'}
+        '204': {description: '204'}
         '404':
           description: '404'
           content:
@@ -598,7 +615,6 @@ paths:
               examples:
                 reply-delete-not-found: {value: '{"detail":"답글을 찾을 수 없습니다.","instance":"/api/v1/replies/404","status":404,"title":"Not
                     Found","type":"about:blank","code":"REPLY_NOT_FOUND"}'}
-        '204': {description: '204'}
         '401':
           description: '401'
           content:
@@ -606,6 +622,13 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 reply-delete-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/replies/201","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+        '403':
+          description: '403'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                reply-delete-forbidden: {value: '{"detail":"요청한 작업을 수행할 권한이 없습니다.","instance":"/api/v1/replies/403","status":403,"title":"Forbidden","type":"about:blank","code":"FORBIDDEN"}'}
         '409':
           description: '409'
           content:
@@ -630,27 +653,13 @@ paths:
           application/json;charset=UTF-8:
             schema: {$ref: '#/components/schemas/api-v1-replies-replyId89780935'}
             examples:
-              reply-update-unauthorized: {value: '{"content":"답글"}'}
-              reply-update: {value: '{"content":"수정한 답글"}'}
               reply-update-deleted-resource: {value: '{"content":"답글"}'}
-              reply-update-not-found: {value: '{"content":"답글"}'}
-              reply-update-invalid-request: {value: '{}'}
               reply-update-forbidden: {value: '{"content":"답글"}'}
+              reply-update: {value: '{"content":"수정한 답글"}'}
+              reply-update-unauthorized: {value: '{"content":"답글"}'}
+              reply-update-invalid-request: {value: '{}'}
+              reply-update-not-found: {value: '{"content":"답글"}'}
       responses:
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                reply-update-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/replies/201","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
-        '200':
-          description: '200'
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/api-v1-replies-replyId1110178474'}
-              examples:
-                reply-update: {value: '{"replyId":201,"content":"저도 그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}'}
         '409':
           description: '409'
           content:
@@ -658,14 +667,27 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 reply-update-deleted-resource: {value: '{"detail":"삭제된 리소스입니다.","instance":"/api/v1/replies/409","status":409,"title":"Conflict","type":"about:blank","code":"DELETED_RESOURCE"}'}
-        '404':
-          description: '404'
+        '403':
+          description: '403'
           content:
             application/problem+json:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
-                reply-update-not-found: {value: '{"detail":"답글을 찾을 수 없습니다.","instance":"/api/v1/replies/404","status":404,"title":"Not
-                    Found","type":"about:blank","code":"REPLY_NOT_FOUND"}'}
+                reply-update-forbidden: {value: '{"detail":"요청한 작업을 수행할 권한이 없습니다.","instance":"/api/v1/replies/403","status":403,"title":"Forbidden","type":"about:blank","code":"FORBIDDEN"}'}
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-replies-replyId1110178474'}
+              examples:
+                reply-update: {value: '{"replyId":201,"content":"저도 그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                reply-update-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/replies/201","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '400':
           description: '400'
           content:
@@ -674,13 +696,14 @@ paths:
               examples:
                 reply-update-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/replies/400","status":400,"title":"Bad
                     Request","type":"about:blank","code":"INVALID_REQUEST"}'}
-        '403':
-          description: '403'
+        '404':
+          description: '404'
           content:
             application/problem+json:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
-                reply-update-forbidden: {value: '{"detail":"요청한 작업을 수행할 권한이 없습니다.","instance":"/api/v1/replies/403","status":403,"title":"Forbidden","type":"about:blank","code":"FORBIDDEN"}'}
+                reply-update-not-found: {value: '{"detail":"답글을 찾을 수 없습니다.","instance":"/api/v1/replies/404","status":404,"title":"Not
+                    Found","type":"about:blank","code":"REPLY_NOT_FOUND"}'}
       security: *id001
   /api/v1/reviews/{reviewId}:
     delete:
@@ -703,7 +726,6 @@ paths:
               examples:
                 review-delete-not-found: {value: '{"detail":"감상을 찾을 수 없습니다.","instance":"/api/v1/reviews/404","status":404,"title":"Not
                     Found","type":"about:blank","code":"REVIEW_NOT_FOUND"}'}
-        '204': {description: '204'}
         '401':
           description: '401'
           content:
@@ -725,6 +747,7 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 review-delete-deleted-resource: {value: '{"detail":"삭제된 리소스입니다.","instance":"/api/v1/reviews/409","status":409,"title":"Conflict","type":"about:blank","code":"DELETED_RESOURCE"}'}
+        '204': {description: '204'}
       security: *id001
     patch:
       tags: [감상]
@@ -745,23 +768,15 @@ paths:
           application/json;charset=UTF-8:
             schema: {$ref: '#/components/schemas/api-v1-reviews-reviewId-1466917339'}
             examples:
-              review-update-invalid-request: {value: '{}'}
               review-update-invalid-reading-state: {value: '{"currentPage":100}'}
-              review-update-forbidden: {value: '{"content":"수정"}'}
+              review-update-unauthorized: {value: '{"content":"감상"}'}
+              review-update-invalid-request: {value: '{}'}
               review-update-deleted-resource: {value: '{"content":"감상"}'}
               review-update-total-pages-conflict: {value: '{"currentPage":100}'}
-              review-update-unauthorized: {value: '{"content":"감상"}'}
-              review-update-not-found: {value: '{"content":"감상"}'}
+              review-update-forbidden: {value: '{"content":"수정"}'}
               review-update: {value: '{"content":"수정한 감상","isSpoiler":true}'}
+              review-update-not-found: {value: '{"content":"감상"}'}
       responses:
-        '400':
-          description: '400'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                review-update-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/reviews/400","status":400,"title":"Bad
-                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
         '422':
           description: '422'
           content:
@@ -771,13 +786,21 @@ paths:
                 review-update-invalid-reading-state: {value: '{"detail":"현재 읽기 상태에서는
                     요청을 처리할 수 없습니다.","instance":"/api/v1/reviews/422","status":422,"title":"Unprocessable
                     Content","type":"about:blank","code":"INVALID_READING_STATE"}'}
-        '403':
-          description: '403'
+        '401':
+          description: '401'
           content:
             application/problem+json:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
-                review-update-forbidden: {value: '{"detail":"요청한 작업을 수행할 권한이 없습니다.","instance":"/api/v1/reviews/101","status":403,"title":"Forbidden","type":"about:blank","code":"FORBIDDEN"}'}
+                review-update-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/reviews/101","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+        '400':
+          description: '400'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-update-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/reviews/400","status":400,"title":"Bad
+                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
         '409':
           description: '409'
           content:
@@ -787,21 +810,13 @@ paths:
                 review-update-deleted-resource: {value: '{"detail":"삭제된 리소스입니다.","instance":"/api/v1/reviews/410","status":409,"title":"Conflict","type":"about:blank","code":"DELETED_RESOURCE"}'}
                 review-update-total-pages-conflict: {value: '{"detail":"전체 페이지 수가
                     기존 정보와 다릅니다.","instance":"/api/v1/reviews/409","status":409,"title":"Conflict","type":"about:blank","code":"TOTAL_PAGES_CONFLICT"}'}
-        '401':
-          description: '401'
+        '403':
+          description: '403'
           content:
             application/problem+json:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
-                review-update-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/reviews/101","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
-        '404':
-          description: '404'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                review-update-not-found: {value: '{"detail":"감상을 찾을 수 없습니다.","instance":"/api/v1/reviews/404","status":404,"title":"Not
-                    Found","type":"about:blank","code":"REVIEW_NOT_FOUND"}'}
+                review-update-forbidden: {value: '{"detail":"요청한 작업을 수행할 권한이 없습니다.","instance":"/api/v1/reviews/101","status":403,"title":"Forbidden","type":"about:blank","code":"FORBIDDEN"}'}
         '200':
           description: '200'
           content:
@@ -811,6 +826,14 @@ paths:
                 review-update: {value: '{"reviewId":101,"content":"인상 깊었다.","quote":"화성에서
                     살아남아야 한다.","chapter":"3장","currentPage":120,"isSpoiler":false,"deleted":false,"createdAt":"2026-08-13T15:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":12,"likedByMe":false,"replyCount":1,"recentReplies":[{"replyId":201,"content":"저도
                     그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}]}'}
+        '404':
+          description: '404'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-update-not-found: {value: '{"detail":"감상을 찾을 수 없습니다.","instance":"/api/v1/reviews/404","status":404,"title":"Not
+                    Found","type":"about:blank","code":"REVIEW_NOT_FOUND"}'}
       security: *id001
   /api/v1/auth/mobile/google:
     post:
@@ -860,7 +883,7 @@ paths:
       requestBody:
         content:
           application/json;charset=UTF-8:
-            schema: {$ref: '#/components/schemas/api-v1-auth-mobile-logout-248242179'}
+            schema: {$ref: '#/components/schemas/api-v1-auth-mobile-reissue-248242179'}
             examples:
               mobile-logout-invalid-request:
                 value: |
@@ -886,32 +909,24 @@ paths:
     post:
       tags: [인증]
       summary: 모바일 토큰 재발급
-      description: Refresh Token으로 새 Access Token과 Refresh Token을 발급한다. 기존 Refresh
-        Token은 재발급 후 폐기되며 만료 값의 단위는 초다
+      description: Refresh Token이 없거나 비어 있으면 요청을 거부한다
       operationId: mobile-token-reissue
       requestBody:
         content:
           application/json;charset=UTF-8:
-            schema: {$ref: '#/components/schemas/api-v1-auth-mobile-logout-248242179'}
+            schema: {$ref: '#/components/schemas/api-v1-auth-mobile-reissue-248242179'}
             examples:
-              mobile-token-reissue:
-                value: |
-                  {
-                    "refreshToken": "old-refresh-token"
-                  }
               mobile-token-reissue-invalid-request:
                 value: |
                   {
                     "refreshToken": ""
                   }
+              mobile-token-reissue:
+                value: |
+                  {
+                    "refreshToken": "old-refresh-token"
+                  }
       responses:
-        '200':
-          description: '200'
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/api-v1-auth-mobile-google1675364789'}
-              examples:
-                mobile-token-reissue: {value: '{"accessToken":"new-access-token","refreshToken":"new-refresh-token","tokenType":"Bearer","accessTokenExpiresIn":1800,"refreshTokenExpiresIn":1209600}'}
         '400':
           description: '400'
           content:
@@ -921,27 +936,42 @@ paths:
                 mobile-token-reissue-invalid-request: {value: '{"detail":"요청값이 올바르지
                     않습니다.","instance":"/api/v1/auth/mobile/reissue","status":400,"title":"Bad
                     Request","type":"about:blank","code":"INVALID_REQUEST"}'}
-  /api/v1/books/by-isbn/{isbn13}:
-    get:
-      tags: [도서]
-      summary: 도서 상세 조회
-      description: 도서의 메타데이터, 댓글 수, 별점과 로그인 사용자의 서재 기록을 조회한다
-      operationId: book-detail
-      parameters:
-      - name: isbn13
-        in: path
-        description: ISBN-13
-        required: true
-        schema: {type: string}
-      responses:
         '200':
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-books-by-isbn-isbn13535445958'}
+              schema: {$ref: '#/components/schemas/api-v1-auth-mobile-google1675364789'}
               examples:
-                book-detail: {value: '{"bookId":42,"isbn13":"9788925568683","title":"마션","coverImageUrl":"https://image.aladin.co.kr/martian.jpg","authors":["앤디
-                    위어"],"translators":["박아람"],"publisher":"알에이치코리아(RHK)","category":"SF","publishedDate":"2026-01-01","totalPages":308,"commentCount":46,"averageRating":4.3,"ratingCount":21,"myRecord":{"status":"READING","currentPage":120,"myRating":4.2}}'}
+                mobile-token-reissue: {value: '{"accessToken":"new-access-token","refreshToken":"new-refresh-token","tokenType":"Bearer","accessTokenExpiresIn":1800,"refreshTokenExpiresIn":1209600}'}
+  /api/v1/books/by-isbn/{isbn13}:
+    get:
+      tags: [도서]
+      summary: 도서 상세 조회
+      description: 요청한 도서가 존재하지 않는다
+      operationId: book-detail
+      parameters:
+      - name: isbn13
+        in: path
+        description: ''
+        required: true
+        schema: {type: string}
+      responses:
+        '404':
+          description: '404'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                book-detail-not-found: {value: '{"detail":"책을 찾을 수 없습니다.","instance":"/api/v1/books/by-isbn/9788925568683","status":404,"title":"Not
+                    Found","type":"about:blank","code":"BOOK_NOT_FOUND"}'}
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-books-by-isbn-isbn131030482157'}
+              examples:
+                book-detail: {value: '{"bookId":42,"isbn13":"9788925568683","title":"마션","coverImageUrl":"https://image.aladin.co.kr/martian.jpg","description":"책
+                    설명","authors":["앤디 위어"],"translators":["박아람"],"publisher":"알에이치코리아(RHK)","category":"SF","publishedDate":"2026-01-01","totalPages":308,"reviewCount":22,"replyCount":24,"averageRating":4.3,"ratingCount":21,"myRecord":{"status":"READING","currentPage":120,"myRating":4.2}}'}
                 book-detail-without-library-record:
                   summary: 서재에 등록하지 않은 도서
                   value:
@@ -955,18 +985,11 @@ paths:
                     category: 국내도서>소설
                     publishedDate: '2007-10-30'
                     totalPages: 368
-                    commentCount: 2
+                    reviewCount: 1
+                    replyCount: 1
                     averageRating: 4.3
                     ratingCount: 21
                     myRecord: null
-        '404':
-          description: '404'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                book-detail-not-found: {value: '{"detail":"책을 찾을 수 없습니다.","instance":"/api/v1/books/by-isbn/9788925568683","status":404,"title":"Not
-                    Found","type":"about:blank","code":"BOOK_NOT_FOUND"}'}
   /api/v1/books/{bookId}/reviews:
     get:
       tags: [감상]
@@ -1004,13 +1027,6 @@ paths:
           enum: [PAGE, LATEST, OLDEST, POPULAR]
           default: PAGE
       responses:
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                review-list-mine-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/books/42/reviews","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '200':
           description: '200'
           content:
@@ -1088,6 +1104,13 @@ paths:
               examples:
                 review-list-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/books/42/reviews","status":400,"title":"Bad
                     Request","type":"about:blank","code":"INVALID_REQUEST"}'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-list-mine-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/books/42/reviews","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '404':
           description: '404'
           content:
@@ -1112,39 +1135,16 @@ paths:
           application/json;charset=UTF-8:
             schema: {$ref: '#/components/schemas/api-v1-books-bookId-reviews453186613'}
             examples:
-              review-create-invalid-request: {value: '{}'}
-              review-create-book-not-found: {value: '{"content":"감상"}'}
-              review-create-unauthorized: {value: '{"content":"감상"}'}
               review-create-invalid-reading-state: {value: '{"content":"감상"}'}
+              review-create-book-not-found: {value: '{"content":"감상"}'}
               review-create-total-pages-conflict: {value: '{"content":"감상"}'}
               review-create:
                 value: |
                   {"content":"인상 깊었다.","quote":"화성에서 살아남아야 한다.","chapter":"3장",
                   "currentPage":120,"totalPages":308,"isSpoiler":false}
+              review-create-unauthorized: {value: '{"content":"감상"}'}
+              review-create-invalid-request: {value: '{}'}
       responses:
-        '400':
-          description: '400'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                review-create-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/books/42/reviews","status":400,"title":"Bad
-                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
-        '404':
-          description: '404'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                review-create-book-not-found: {value: '{"detail":"책을 찾을 수 없습니다.","instance":"/api/v1/books/404/reviews","status":404,"title":"Not
-                    Found","type":"about:blank","code":"BOOK_NOT_FOUND"}'}
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                review-create-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/books/42/reviews","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '422':
           description: '422'
           content:
@@ -1154,6 +1154,14 @@ paths:
                 review-create-invalid-reading-state: {value: '{"detail":"현재 읽기 상태에서는
                     요청을 처리할 수 없습니다.","instance":"/api/v1/books/422/reviews","status":422,"title":"Unprocessable
                     Content","type":"about:blank","code":"INVALID_READING_STATE"}'}
+        '404':
+          description: '404'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-create-book-not-found: {value: '{"detail":"책을 찾을 수 없습니다.","instance":"/api/v1/books/404/reviews","status":404,"title":"Not
+                    Found","type":"about:blank","code":"BOOK_NOT_FOUND"}'}
         '409':
           description: '409'
           content:
@@ -1175,6 +1183,21 @@ paths:
                 review-create: {value: '{"reviewId":101,"content":"인상 깊었다.","quote":"화성에서
                     살아남아야 한다.","chapter":"3장","currentPage":120,"isSpoiler":false,"deleted":false,"createdAt":"2026-08-13T15:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":12,"likedByMe":false,"replyCount":1,"recentReplies":[{"replyId":201,"content":"저도
                     그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}]}'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-create-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/books/42/reviews","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+        '400':
+          description: '400'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-create-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/books/42/reviews","status":400,"title":"Bad
+                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
       security: *id001
   /api/v1/library/{bookId}/rating:
     put:
@@ -1199,10 +1222,10 @@ paths:
               library-rate:
                 value: |
                   {"rating":4.5}
-              library-rate-unauthorized:
+              library-rate-invalid-request:
                 value: |
                   {"rating":4.5}
-              library-rate-invalid-request:
+              library-rate-unauthorized:
                 value: |
                   {"rating":4.5}
       responses:
@@ -1221,13 +1244,6 @@ paths:
               schema: {$ref: '#/components/schemas/api-v1-library-bookId-rating-1519410846'}
               examples:
                 library-rate: {value: '{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"translators":[],"publisher":"창비","category":"국내도서>소설","publishedDate":"2007-10-30","totalPages":368,"commentCount":2,"status":"READING","currentPage":100,"rating":4.5,"addedAt":"2026-08-14T03:00:00Z","readingUpdatedAt":"2026-08-14T03:30:00Z"}'}
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-rate-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/10/rating","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '400':
           description: '400'
           content:
@@ -1236,6 +1252,13 @@ paths:
               examples:
                 library-rate-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/library/10/rating","status":400,"title":"Bad
                     Request","type":"about:blank","code":"INVALID_REQUEST"}'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-rate-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/10/rating","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
       security: *id001
     delete:
       tags: [내 서재]
@@ -1249,14 +1272,6 @@ paths:
         required: true
         schema: {type: integer, format: int32}
       responses:
-        '204': {description: '204'}
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-remove-rating-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/10/rating","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '404':
           description: '404'
           content:
@@ -1266,6 +1281,110 @@ paths:
                 library-remove-rating-book-not-found: {value: '{"detail":"책을 찾을 수
                     없습니다.","instance":"/api/v1/library/10/rating","status":404,"title":"Not
                     Found","type":"about:blank","code":"BOOK_NOT_FOUND"}'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-remove-rating-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library/10/rating","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+        '204': {description: '204'}
+      security: *id001
+  /api/v1/members/me/anonymity:
+    patch:
+      tags: [회원]
+      summary: 익명 여부 수정
+      description: 공개 닉네임을 설정하지 않고 익명을 해제하면 처리 불가 오류를 반환한다
+      operationId: member-anonymity-update
+      requestBody:
+        content:
+          application/json;charset=UTF-8:
+            schema: {$ref: '#/components/schemas/api-v1-members-me-anonymity481569895'}
+            examples:
+              member-anonymity-update-nickname-required: {value: '{"displayAnonymous":false}'}
+              member-anonymity-update-unauthorized: {value: '{"displayAnonymous":true}'}
+              member-anonymity-update-invalid: {value: '{}'}
+              member-anonymity-update: {value: '{"displayAnonymous":false}'}
+      responses:
+        '422':
+          description: '422'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                member-anonymity-update-nickname-required: {value: '{"detail":"닉네임을
+                    설정해야 익명 상태를 해제할 수 있습니다.","instance":"/api/v1/members/me/anonymity","status":422,"title":"Unprocessable
+                    Content","type":"about:blank","code":"NICKNAME_REQUIRED"}'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json;charset=UTF-8:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                member-anonymity-update-unauthorized: {value: '{"detail":"인증이 필요합니다.","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+        '400':
+          description: '400'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                member-anonymity-update-invalid: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/members/me/anonymity","status":400,"title":"Bad
+                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MemberResponse'}
+              examples:
+                member-anonymity-update: {value: '{"memberId":8,"nickname":"책책이","anonymousNickname":"우아한
+                    달빛 참새","profileImageUrl":"exUrl","displayAnonymous":false,"accountStatus":"ACTIVE"}'}
+      security: *id001
+  /api/v1/members/me/nickname:
+    patch:
+      tags: [회원]
+      summary: 닉네임 설정
+      description: 유효한 Access Token이 없으면 인증 오류를 반환한다
+      operationId: member-nickname-update
+      requestBody:
+        content:
+          application/json;charset=UTF-8:
+            schema: {$ref: '#/components/schemas/api-v1-members-me-nickname403050407'}
+            examples:
+              member-nickname-update-unauthorized: {value: '{"nickname":"책책이"}'}
+              member-nickname-update-conflict: {value: '{"nickname":"책책이"}'}
+              member-nickname-update: {value: '{"nickname":"책책이"}'}
+              member-nickname-update-invalid: {value: '{"nickname":" "}'}
+      responses:
+        '401':
+          description: '401'
+          content:
+            application/problem+json;charset=UTF-8:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                member-nickname-update-unauthorized: {value: '{"detail":"인증이 필요합니다.","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+        '409':
+          description: '409'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                member-nickname-update-conflict: {value: '{"detail":"이미 사용 중인 닉네임입니다.","instance":"/api/v1/members/me/nickname","status":409,"title":"Conflict","type":"about:blank","code":"NICKNAME_ALREADY_EXISTS"}'}
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MemberResponse'}
+              examples:
+                member-nickname-update: {value: '{"memberId":4,"nickname":"책책이","anonymousNickname":"우아한
+                    달빛 참새","profileImageUrl":"exUrl","displayAnonymous":true,"accountStatus":"ACTIVE"}'}
+        '400':
+          description: '400'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                member-nickname-update-invalid: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/members/me/nickname","status":400,"title":"Bad
+                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
       security: *id001
   /api/v1/replies/{replyId}/reactions:
     post:
@@ -1280,6 +1399,22 @@ paths:
         required: true
         schema: {type: integer, format: int32}
       responses:
+        '404':
+          description: '404'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                reply-reaction-create-not-found: {value: '{"detail":"답글을 찾을 수 없습니다.","instance":"/api/v1/replies/404/reactions","status":404,"title":"Not
+                    Found","type":"about:blank","code":"REPLY_NOT_FOUND"}'}
+        '409':
+          description: '409'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                reply-reaction-create-deleted-resource: {value: '{"detail":"삭제된 리소스입니다.","instance":"/api/v1/replies/409/reactions","status":409,"title":"Conflict","type":"about:blank","code":"DELETED_RESOURCE"}'}
+                reply-reaction-create-conflict: {value: '{"detail":"이미 좋아요를 남겼습니다.","instance":"/api/v1/replies/410/reactions","status":409,"title":"Conflict","type":"about:blank","code":"REACTION_ALREADY_EXISTS"}'}
         '201':
           description: '201'
           content:
@@ -1294,22 +1429,6 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 reply-reaction-create-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/replies/201/reactions","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
-        '409':
-          description: '409'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                reply-reaction-create-deleted-resource: {value: '{"detail":"삭제된 리소스입니다.","instance":"/api/v1/replies/409/reactions","status":409,"title":"Conflict","type":"about:blank","code":"DELETED_RESOURCE"}'}
-                reply-reaction-create-conflict: {value: '{"detail":"이미 좋아요를 남겼습니다.","instance":"/api/v1/replies/410/reactions","status":409,"title":"Conflict","type":"about:blank","code":"REACTION_ALREADY_EXISTS"}'}
-        '404':
-          description: '404'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                reply-reaction-create-not-found: {value: '{"detail":"답글을 찾을 수 없습니다.","instance":"/api/v1/replies/404/reactions","status":404,"title":"Not
-                    Found","type":"about:blank","code":"REPLY_NOT_FOUND"}'}
       security: *id001
     delete:
       tags: [감상]
@@ -1353,6 +1472,13 @@ paths:
         required: true
         schema: {type: integer, format: int32}
       responses:
+        '201':
+          description: '201'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-replies-replyId-reactions1578631323'}
+              examples:
+                review-reaction-create: {value: '{"likeCount":13,"likedByMe":true}'}
         '401':
           description: '401'
           content:
@@ -1366,8 +1492,8 @@ paths:
             application/problem+json:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
-                review-reaction-create-deleted-resource: {value: '{"detail":"삭제된 리소스입니다.","instance":"/api/v1/reviews/409/reactions","status":409,"title":"Conflict","type":"about:blank","code":"DELETED_RESOURCE"}'}
                 review-reaction-create-conflict: {value: '{"detail":"이미 좋아요를 남겼습니다.","instance":"/api/v1/reviews/101/reactions","status":409,"title":"Conflict","type":"about:blank","code":"REACTION_ALREADY_EXISTS"}'}
+                review-reaction-create-deleted-resource: {value: '{"detail":"삭제된 리소스입니다.","instance":"/api/v1/reviews/409/reactions","status":409,"title":"Conflict","type":"about:blank","code":"DELETED_RESOURCE"}'}
         '404':
           description: '404'
           content:
@@ -1376,13 +1502,6 @@ paths:
               examples:
                 review-reaction-create-not-found: {value: '{"detail":"감상을 찾을 수 없습니다.","instance":"/api/v1/reviews/404/reactions","status":404,"title":"Not
                     Found","type":"about:blank","code":"REVIEW_NOT_FOUND"}'}
-        '201':
-          description: '201'
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/api-v1-replies-replyId-reactions1578631323'}
-              examples:
-                review-reaction-create: {value: '{"likeCount":13,"likedByMe":true}'}
       security: *id001
     delete:
       tags: [감상]
@@ -1396,6 +1515,13 @@ paths:
         required: true
         schema: {type: integer, format: int32}
       responses:
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-reaction-delete-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/reviews/101/reactions","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '404':
           description: '404'
           content:
@@ -1404,13 +1530,6 @@ paths:
               examples:
                 review-reaction-delete-not-found: {value: '{"detail":"감상을 찾을 수 없습니다.","instance":"/api/v1/reviews/404/reactions","status":404,"title":"Not
                     Found","type":"about:blank","code":"REVIEW_NOT_FOUND"}'}
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                review-reaction-delete-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/reviews/101/reactions","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '204': {description: '204'}
       security: *id001
   /api/v1/reviews/{reviewId}/replies:
@@ -1431,6 +1550,14 @@ paths:
         required: true
         schema: {type: integer, format: int32, minimum: 1}
       responses:
+        '400':
+          description: '400'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                reply-list-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/reviews/101/replies","status":400,"title":"Bad
+                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
         '404':
           description: '404'
           content:
@@ -1447,14 +1574,6 @@ paths:
               examples:
                 reply-list: {value: '{"totalCount":1,"nextPage":null,"items":[{"replyId":201,"content":"저도
                     그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}]}'}
-        '400':
-          description: '400'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                reply-list-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/reviews/101/replies","status":400,"title":"Bad
-                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
     post:
       tags: [감상]
       summary: 답글 작성
@@ -1471,23 +1590,12 @@ paths:
           application/json;charset=UTF-8:
             schema: {$ref: '#/components/schemas/api-v1-replies-replyId89780935'}
             examples:
-              reply-create: {value: '{"content":"저도 그 부분이 좋았어요."}'}
               reply-create-review-not-found: {value: '{"content":"답글"}'}
               reply-create-invalid-request: {value: '{}'}
-              reply-create-unauthorized: {value: '{"content":"답글"}'}
               reply-create-deleted-resource: {value: '{"content":"답글"}'}
+              reply-create: {value: '{"content":"저도 그 부분이 좋았어요."}'}
+              reply-create-unauthorized: {value: '{"content":"답글"}'}
       responses:
-        '201':
-          description: '201'
-          headers:
-            Location:
-              description: 생성된 리소스의 상대 경로
-              schema: {type: string}
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/api-v1-replies-replyId1110178474'}
-              examples:
-                reply-create: {value: '{"replyId":201,"content":"저도 그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}'}
         '404':
           description: '404'
           content:
@@ -1504,13 +1612,6 @@ paths:
               examples:
                 reply-create-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/reviews/101/replies","status":400,"title":"Bad
                     Request","type":"about:blank","code":"INVALID_REQUEST"}'}
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                reply-create-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/reviews/101/replies","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '409':
           description: '409'
           content:
@@ -1518,6 +1619,24 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 reply-create-deleted-resource: {value: '{"detail":"삭제된 리소스입니다.","instance":"/api/v1/reviews/409/replies","status":409,"title":"Conflict","type":"about:blank","code":"DELETED_RESOURCE"}'}
+        '201':
+          description: '201'
+          headers:
+            Location:
+              description: 생성된 리소스의 상대 경로
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-replies-replyId1110178474'}
+              examples:
+                reply-create: {value: '{"replyId":201,"content":"저도 그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                reply-create-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/reviews/101/replies","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
       security: *id001
   /api/v1/members/me/ratings/comparison:
     get:
@@ -1537,22 +1656,6 @@ paths:
         required: true
         schema: {type: number}
       responses:
-        '401':
-          description: '401'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-rating-comparison-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/members/me/ratings/comparison","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
-        '400':
-          description: '400'
-          content:
-            application/problem+json:
-              schema: {$ref: '#/components/schemas/ProblemDetail'}
-              examples:
-                library-rating-comparison-invalid-request: {value: '{"detail":"요청값이
-                    올바르지 않습니다.","instance":"/api/v1/members/me/ratings/comparison","status":400,"title":"Bad
-                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
         '200':
           description: '200'
           content:
@@ -1561,6 +1664,13 @@ paths:
               examples:
                 library-rating-comparison: {value: '{"lower":{"bookId":9,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"myRating":4.0},"current":{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"myRating":4.5},"higher":{"bookId":11,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"myRating":4.8}}'}
                 library-rating-comparison-null-boundary: {value: '{"lower":null,"current":{"bookId":null,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"myRating":4.5},"higher":null}'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-rating-comparison-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/members/me/ratings/comparison","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
         '404':
           description: '404'
           content:
@@ -1570,6 +1680,15 @@ paths:
                 library-rating-comparison-book-not-found: {value: '{"detail":"책을 찾을
                     수 없습니다.","instance":"/api/v1/members/me/ratings/comparison","status":404,"title":"Not
                     Found","type":"about:blank","code":"BOOK_NOT_FOUND"}'}
+        '400':
+          description: '400'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                library-rating-comparison-invalid-request: {value: '{"detail":"요청값이
+                    올바르지 않습니다.","instance":"/api/v1/members/me/ratings/comparison","status":400,"title":"Bad
+                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
       security: *id001
 components:
   schemas:
@@ -1758,57 +1877,51 @@ components:
       properties:
         likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
         likeCount: {type: number, description: 좋아요 수}
-    api-v1-home-latest-reviews813325567:
-      required: [reviews]
+    api-v1-books-by-isbn-isbn131030482157:
+      required: [authors, bookId, category, coverImageUrl, isbn13, publisher, ratingCount,
+        replyCount, reviewCount, title, translators, averageRating, myRecord, totalPages]
       type: object
       properties:
-        reviews:
+        myRecord:
+          type: object
+          properties:
+            myRating: {type: number, description: 내 별점, nullable: true}
+            currentPage: {type: number, description: 현재 페이지, nullable: true}
+            status: {type: string, description: 읽기 상태, nullable: true}
+          description: 내 서재 기록
+          nullable: true
+        coverImageUrl: {type: string, description: 표지 이미지 URL}
+        description: {type: string, description: 도서 상세 설명, nullable: true}
+        ratingCount: {type: number, description: 별점 수, nullable: true}
+        title: {type: string, description: 도서 제목}
+        bookId: {type: number, description: 도서 ID, nullable: true}
+        replyCount: {type: number, description: 답글 수, nullable: true}
+        translators:
           type: array
-          description: 최신 감상 목록
+          description: 옮긴이 목록
           items:
-            required: [bookCoverImageUrl, bookId, bookTitle, content, createdAt, isbn13,
-              replyCount]
-            type: object
-            properties:
-              createdAt: {type: string, description: 감상 작성 시각(UTC)}
-              replyCount: {type: number, description: 삭제되지 않은 답글 수}
-              isbn13: {type: string, description: ISBN-13}
-              bookCoverImageUrl: {type: string, description: 도서 표지 이미지 URL}
-              content: {type: string, description: 감상 내용}
-              bookTitle: {type: string, description: 도서 제목}
-              bookId: {type: number, description: 도서 ID}
-    api-v1-books996406116:
-      required: [items, totalCount, nextPage]
-      type: object
-      properties:
-        nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지라면 null, nullable: true}
-        totalCount: {type: number, description: 검색 결과의 전체 도서 수}
-        items:
+            oneOf:
+            - {type: object}
+            - {type: boolean}
+            - {type: string}
+            - {type: number}
+        reviewCount: {type: number, description: 감상 수, nullable: true}
+        averageRating: {type: number, description: 평균 별점, nullable: true}
+        isbn13: {type: string, description: ISBN13}
+        totalPages: {type: number, description: 전체 페이지 수, nullable: true}
+        publisher: {type: string, description: 출판사}
+        publishedDate: {type: string, description: 출간일, nullable: true}
+        category: {type: string, description: 카테고리}
+        authors:
           type: array
-          description: 검색된 도서 목록. 한 페이지당 최대 10개
+          description: 저자 목록
           items:
-            required: [authors, category, coverImageUrl, isbn13, publishedDate, publisher,
-              title, translators, bookId, commentCount]
-            type: object
-            properties:
-              translators:
-                type: array
-                description: 옮긴이 이름 목록
-                items: {type: string}
-              coverImageUrl: {type: string, description: 표지 이미지 URL. 알라딘 Big 규격(너비
-                  200px)을 따름}
-              isbn13: {type: string, description: ISBN-13}
-              publisher: {type: string, description: 출판사}
-              publishedDate: {type: string, description: 출판일}
-              category: {type: string, description: 도서 카테고리}
-              title: {type: string, description: 도서 제목}
-              commentCount: {type: number, description: 감상과 답글 수. 미등록 도서라면 null, nullable: true}
-              authors:
-                type: array
-                description: 저자 이름 목록
-                items: {type: string}
-              bookId: {type: number, description: 등록된 도서 ID. 미등록 도서라면 null, nullable: true}
-    api-v1-auth-mobile-logout-248242179:
+            oneOf:
+            - {type: object}
+            - {type: boolean}
+            - {type: string}
+            - {type: number}
+    api-v1-auth-mobile-reissue-248242179:
       required: [refreshToken]
       type: object
       properties:
@@ -1852,21 +1965,49 @@ components:
           minItems: 1
           maxItems: 10
           uniqueItems: true
+    api-v1-members-me-anonymity481569895:
+      required: [displayAnonymous]
+      type: object
+      properties:
+        displayAnonymous: {type: boolean, description: 변경할 익명 여부. false는 공개 닉네임 설정
+            후에만 가능}
     api-v1-auth-mobile-google1868037826:
       required: [idToken]
       type: object
       properties:
         idToken: {type: string, description: Google SDK에서 발급받은 ID Token}
-    api-v1-members-me829926954:
-      required: [accountStatus, anonymousNickname, displayAnonymous, memberId, profileImageUrl]
+    api-v1-books-20378274:
+      required: [items, totalCount, nextPage]
       type: object
       properties:
-        accountStatus: {type: string, description: 계정 상태}
-        nickname: {type: string, description: 사용자가 설정한 공개 닉네임, nullable: true}
-        profileImageUrl: {type: string, description: 프로필 이미지 URL, nullable: true}
-        displayAnonymous: {type: boolean, description: 감상 작성 시 익명 표시를 기본으로 사용하는지 여부}
-        anonymousNickname: {type: string, description: 가입 시 생성된 익명 닉네임}
-        memberId: {type: number, description: 회원 ID}
+        nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지라면 null, nullable: true}
+        totalCount: {type: number, description: 검색 결과의 전체 도서 수}
+        items:
+          type: array
+          description: 검색된 도서 목록. 한 페이지당 최대 10개
+          items:
+            required: [authors, category, coverImageUrl, isbn13, publishedDate, publisher,
+              title, translators, bookId, reviewCount, replyCount]
+            type: object
+            properties:
+              replyCount: {type: number, description: 답글 수. 미등록 도서라면 null, nullable: true}
+              translators:
+                type: array
+                description: 옮긴이 이름 목록
+                items: {type: string}
+              reviewCount: {type: number, description: 감상 수. 미등록 도서라면 null, nullable: true}
+              coverImageUrl: {type: string, description: 표지 이미지 URL. 알라딘 Big 규격(너비
+                  200px)을 따름}
+              isbn13: {type: string, description: ISBN-13}
+              publisher: {type: string, description: 출판사}
+              publishedDate: {type: string, description: 출판일}
+              category: {type: string, description: 도서 카테고리}
+              title: {type: string, description: 도서 제목}
+              authors:
+                type: array
+                description: 저자 이름 목록
+                items: {type: string}
+              bookId: {type: number, description: 등록된 도서 ID. 미등록 도서라면 null, nullable: true}
     api-v1-replies-replyId89780935:
       required: [content]
       type: object
@@ -1909,6 +2050,12 @@ components:
                 description: 저자 목록
                 items: {type: string}
               bookId: {type: number, description: 도서 ID}
+    api-v1-members-me-nickname403050407:
+      required: [nickname]
+      type: object
+      properties:
+        nickname: {type: string, description: 설정할 공개 닉네임. 공백일 수 없으며 최대 100자, minLength: 1,
+          maxLength: 100}
     api-v1-auth-mobile-google1675364789:
       required: [accessToken, accessTokenExpiresIn, refreshToken, refreshTokenExpiresIn,
         tokenType]
@@ -1919,48 +2066,6 @@ components:
         tokenType: {type: string, description: Access Token 인증 타입. Bearer}
         accessToken: {type: string, description: API 호출에 사용할 Access Token}
         refreshToken: {type: string, description: Access Token 재발급에 사용할 Refresh Token}
-    api-v1-books-by-isbn-isbn13535445958:
-      required: [authors, bookId, category, commentCount, coverImageUrl, isbn13, publisher,
-        ratingCount, title, translators, averageRating, myRecord, totalPages]
-      type: object
-      properties:
-        myRecord:
-          type: object
-          properties:
-            myRating: {type: number, description: 내 별점, nullable: true}
-            currentPage: {type: number, description: 현재 페이지, nullable: true}
-            status: {type: string, description: 읽기 상태, nullable: true}
-          description: 내 서재 기록
-          nullable: true
-        coverImageUrl: {type: string, description: 표지 이미지 URL}
-        ratingCount: {type: number, description: 별점 수, nullable: true}
-        title: {type: string, description: 도서 제목}
-        commentCount: {type: number, description: 감상과 답글 수, nullable: true}
-        bookId: {type: number, description: 도서 ID, nullable: true}
-        translators:
-          type: array
-          description: 옮긴이 목록
-          items:
-            oneOf:
-            - {type: object}
-            - {type: boolean}
-            - {type: string}
-            - {type: number}
-        averageRating: {type: number, description: 평균 별점, nullable: true}
-        isbn13: {type: string, description: ISBN13}
-        totalPages: {type: number, description: 전체 페이지 수, nullable: true}
-        publisher: {type: string, description: 출판사}
-        publishedDate: {type: string, description: 출간일, nullable: true}
-        category: {type: string, description: 카테고리}
-        authors:
-          type: array
-          description: 저자 목록
-          items:
-            oneOf:
-            - {type: object}
-            - {type: boolean}
-            - {type: string}
-            - {type: number}
     api-v1-library-bookId-559088573:
       type: object
       properties:
@@ -2081,6 +2186,46 @@ components:
           type: string
           description: 초기 읽기 상태
           enum: [WANT_TO_READ, READING, FINISHED]
+    api-v1-home-latest-reviews619322835:
+      required: [reviews]
+      type: object
+      properties:
+        reviews:
+          type: array
+          description: 최신 감상 목록
+          items:
+            required: [author, bookCoverImageUrl, bookId, bookTitle, content, createdAt,
+              isbn13, replyCount]
+            type: object
+            properties:
+              createdAt: {type: string, description: 감상 작성 시각(UTC)}
+              replyCount: {type: number, description: 삭제되지 않은 답글 수}
+              author:
+                required: [anonymous, displayName, mine]
+                type: object
+                properties:
+                  mine: {type: boolean, description: 내가 작성한 감상인지 여부}
+                  displayName: {type: string, description: 작성자 표시 이름}
+                  anonymous: {type: boolean, description: 익명 작성 여부}
+                  profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
+                description: 작성자 정보
+              isbn13: {type: string, description: ISBN-13}
+              bookCoverImageUrl: {type: string, description: 도서 표지 이미지 URL}
+              content: {type: string, description: 감상 내용}
+              bookTitle: {type: string, description: 도서 제목}
+              bookId: {type: number, description: 도서 ID}
+    MemberResponse:
+      title: MemberResponse
+      required: [accountStatus, anonymousNickname, displayAnonymous, memberId, nickname,
+        profileImageUrl]
+      type: object
+      properties:
+        accountStatus: {type: string, description: 계정 상태}
+        nickname: {type: string, description: 사용자가 설정한 공개 닉네임, nullable: true}
+        profileImageUrl: {type: string, description: 프로필 이미지 URL, nullable: true}
+        displayAnonymous: {type: boolean, description: 감상 작성 시 익명 표시를 기본으로 사용하는지 여부}
+        anonymousNickname: {type: string, description: 가입 시 생성된 익명 닉네임}
+        memberId: {type: number, description: 회원 ID}
   securitySchemes:
     bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
     accessTokenCookie: {type: apiKey, in: cookie, name: access_token}
