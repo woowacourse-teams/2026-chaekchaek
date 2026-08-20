@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { Dialog } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { Rating } from '@chaekchaek/design-system';
 import { CellList } from '@chaekchaek/design-system';
 
+import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
+import { getMembersMeRatingsComparison } from '@/services/apis/membersMeRatingsComparison/repository';
 import { putLibraryBookIdRating } from '@/services/apis/libraryBookIdRating/repository';
 
 import type { Props } from './UpdateRatingDialog.types';
@@ -23,12 +25,23 @@ const RatingMessages = {
   5.0: '최고였어요',
 };
 
-export const UpdateRatingDialog = ({ bookId, title, rating: defaultRating }: Props) => {
+export const UpdateRatingDialog = ({ isbn13, bookId, title, rating: defaultRating }: Props) => {
   const [rating, setRating] = useState(defaultRating);
 
   const handleChangeRating = (rating: number) => {
     setRating(rating);
   };
+
+  const getMembersMeRatingsComparisonLoadData = useCallback(async () => {
+    return getMembersMeRatingsComparison({
+      isbn13,
+      criterion: rating,
+    });
+  }, [rating]);
+
+  const {
+    status: { data: ratingsComparison },
+  } = useLoadData({ queryFn: getMembersMeRatingsComparisonLoadData });
 
   const ratingMessage = RatingMessages[rating as keyof typeof RatingMessages] || '-';
 
@@ -39,6 +52,12 @@ export const UpdateRatingDialog = ({ bookId, title, rating: defaultRating }: Pro
   const handleSubmit = async () => {
     await mutate({ bookId, rating });
   };
+
+  const ratingsComparisonData =
+    ratingsComparison &&
+    [ratingsComparison?.lower, ratingsComparison.current, ratingsComparison?.higher].filter(
+      Boolean,
+    );
 
   return (
     <Dialog>
@@ -57,11 +76,15 @@ export const UpdateRatingDialog = ({ bookId, title, rating: defaultRating }: Pro
               </>
             }
           >
-            <CellList.Item headline="3.1" title="불고기는 존재하지…" content="2026.04.03" />
-            <CellList.Item headline="3.5" title="보이지 않는 도시" content="2026.05.12" />
-            <CellList.Item headline="4.0" title="역병" content="2026.06.21" />
-            <CellList.Item headline="4.2" title="아몬드" content="2026.07.18" />
-            <CellList.Item headline="4.0" title="마션" content="2026.08.05" />
+            {ratingsComparisonData?.map((comparison) => {
+              return (
+                <CellList.Item
+                  headline={comparison.myRating}
+                  title={comparison.title}
+                  content={comparison.authors.join(' · ')}
+                />
+              );
+            })}
           </CellList>
           <Rating
             value={rating || 0}

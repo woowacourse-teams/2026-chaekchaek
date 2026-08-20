@@ -72,6 +72,7 @@ export const BookDetailPage = () => {
         return (
           data?.bookId && (
             <UpdateRatingDialog
+              isbn13={data.isbn13}
               bookId={data?.bookId}
               title={data.title}
               rating={data.myRecord?.myRating}
