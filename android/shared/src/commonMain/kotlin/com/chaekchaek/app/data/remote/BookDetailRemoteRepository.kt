@@ -49,9 +49,9 @@ class BookDetailRemoteRepository {
       authenticatedJson(accessToken, RatingRequest(rating))
     }.body<LibraryRecordDto>().toLibraryRecord()
 
-  suspend fun createReview(bookId: Long, content: String, accessToken: String): BookReview =
+  suspend fun createReview(bookId: Long, request: ReviewCreateRequest, accessToken: String): BookReview =
     client.post("$BASE_URL/api/v1/books/$bookId/reviews") {
-      authenticatedJson(accessToken, ReviewCreateRequest(content = content, isSpoiler = false))
+      authenticatedJson(accessToken, request)
     }.body<ReviewDto>().toBookReview()
 
   suspend fun likeReview(reviewId: Long, accessToken: String) {
@@ -168,7 +168,14 @@ private data class LibraryUpdateRequest(
 private data class RatingRequest(val rating: Double)
 
 @Serializable
-private data class ReviewCreateRequest(val content: String, val isSpoiler: Boolean)
+data class ReviewCreateRequest(
+  val content: String,
+  val quote: String? = null,
+  val chapter: String? = null,
+  val currentPage: Int? = null,
+  val totalPages: Int? = null,
+  val isSpoiler: Boolean = false,
+)
 
 @Serializable
 private data class ReplyCreateRequest(val content: String)
