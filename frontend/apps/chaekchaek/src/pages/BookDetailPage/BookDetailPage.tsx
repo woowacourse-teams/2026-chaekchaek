@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { Layout } from '@chaekchaek/design-system';
@@ -22,8 +23,9 @@ import { Surface } from '@chaekchaek/design-system';
 import { DataInfo } from '@chaekchaek/design-system';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
+import { postLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
-import { useCallback } from 'react';
+import { useExecute } from '@/services/core/useExecute';
 
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
@@ -37,6 +39,13 @@ export const BookDetailPage = () => {
   } = useLoadData({
     queryFn: getBooksIsbnLoadData,
   });
+
+  const { mutate } = useExecute({
+    executeFn: postLibrary,
+  });
+  const handleRegisterLibrary = async (status: string) => {
+    await mutate({ isbn13: isbn, status });
+  };
 
   return (
     <Layout>
@@ -85,6 +94,9 @@ export const BookDetailPage = () => {
                   text: '다 읽음',
                 },
               ]}
+              onChange={(value: string) => {
+                handleRegisterLibrary(value);
+              }}
             />
 
             <ProgressBar
