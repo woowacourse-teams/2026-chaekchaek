@@ -1,0 +1,43 @@
+import { Dialog } from '@chaekchaek/design-system';
+import { Button } from '@chaekchaek/design-system';
+import { Rating } from '@chaekchaek/design-system';
+import { CellList } from '@chaekchaek/design-system';
+
+export const UpdateRating = () => {
+  return (
+    <Dialog>
+      <Dialog.Container>
+        <Dialog.Header
+          subTitle={`${'마션'}을 읽은 느낌을 별점으로 남겨보세요. 별점은 언제든 수정할 수 있어요.`}
+        >
+          이 책에 별점 매기기
+        </Dialog.Header>
+        <Dialog.Body>
+          <CellList
+            title={
+              <>
+                <span>내 평점 기록</span>
+                <span>5회</span>
+              </>
+            }
+          >
+            <CellList.Item headline="3.1" title="불고기는 존재하지…" content="2026.04.03" />
+            <CellList.Item headline="3.5" title="보이지 않는 도시" content="2026.05.12" />
+            <CellList.Item headline="4.0" title="역병" content="2026.06.21" />
+            <CellList.Item headline="4.2" title="아몬드" content="2026.07.18" />
+            <CellList.Item headline="4.0" title="마션" content="2026.08.05" />
+          </CellList>
+          <Rating value={4} title={'내 별점'} description={'4점 · 좋았어요'} />
+        </Dialog.Body>
+        <Dialog.Footer>
+          <Button variant="ghost" block>
+            취소
+          </Button>
+          <Button variant="primary" block>
+            별점 저장
+          </Button>
+        </Dialog.Footer>
+      </Dialog.Container>
+    </Dialog>
+  );
+};

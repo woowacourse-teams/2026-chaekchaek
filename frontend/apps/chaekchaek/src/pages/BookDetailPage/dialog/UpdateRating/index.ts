@@ -1,0 +1,1 @@
+export { UpdateRating } from './UpdateRating';

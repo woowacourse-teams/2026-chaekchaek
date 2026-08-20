@@ -27,6 +27,9 @@ import { postLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
+import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
+import { UpdateRating } from './dialog/UpdateRating';
+
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
 
@@ -250,6 +253,9 @@ export const BookDetailPage = () => {
             </Entry>
           </Split.Content>
         </Split>
+
+        {/* <UpdateCurrentPageDialog /> */}
+        {/* <UpdateRating /> */}
       </Main>
     </Layout>
   );
