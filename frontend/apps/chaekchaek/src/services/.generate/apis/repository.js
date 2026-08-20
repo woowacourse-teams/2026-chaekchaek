@@ -7,7 +7,7 @@ ${Object.entries(endPoint)
     const key = name;
     const upperKey = name.charAt(0).toUpperCase() + name.slice(1);
 
-    const requestParameter = endPointValue.parameters.reduce(
+    const requestParameter = endPointValue.parameters?.reduce(
       (acc, parameter) => {
         if (parameter.in === 'query') {
           acc.query[parameter.name] = parameter.schema.type;
@@ -21,8 +21,9 @@ ${Object.entries(endPoint)
       },
       { query: {}, pathParams: [] },
     );
-
-    const requestData = endPointValue.requestBody?.content['application/json'].schema.properties;
+    const requestData =
+      endPointValue.requestBody?.content['application/json']?.schema.properties ||
+      endPointValue.requestBody?.content['application/json;charset=UTF-8']?.schema.properties;
 
     return `import {
   map${upperMethod}${upperKey}ModelToRequestDTO,
@@ -34,7 +35,7 @@ import type {
 } from "./repository.types";
 
 export const ${method}${upperKey}: ${upperMethod}${upperKey} = async (model) => {
-  const { ${Object.entries(requestParameter)
+  const { ${Object.entries(requestParameter || {})
     .map(([parameterIn, parameterValue]) => {
       if (parameterIn === 'query') return `${Object.keys(parameterValue).join(',')}`;
       if (parameterIn === 'pathParams')
@@ -44,12 +45,17 @@ export const ${method}${upperKey}: ${upperMethod}${upperKey} = async (model) => 
           })
           .join(',')}`;
     })
+    .filter(Boolean)
     .join(',')} 
-    ${requestData && Object.keys(requestData).length && `, ${Object.keys(data).join(',')}`}
+<<<<<<< HEAD
+    ${requestData && Object.keys(requestData).length && `, ${Object.keys(requestData).join(',')}`}
+=======
+    ${requestData && Object.keys(requestData).length ? `, ${Object.keys(data).join(',')}` : ''}
+>>>>>>> 738e886efd7888be32b957d1c3db90e09f587343
     } = map${upperMethod}${upperKey}ModelToRequestDTO(model);
 
   const responseDTO = await fetcher.${method}${upperKey}({
-  ${Object.entries(requestParameter)
+  ${Object.entries(requestParameter || {})
     .map(([parameterIn, parameterValue]) => {
       if (parameterIn === 'query' && Object.keys(parameterValue).length !== 0)
         return `${parameterIn}: {${Object.keys(parameterValue).join(',')}},`;
@@ -61,7 +67,7 @@ export const ${method}${upperKey}: ${upperMethod}${upperKey} = async (model) => 
           .join(',')}],`;
     })
     .join('')}
-    ${requestData && Object.keys(requestData).length && `data: {${Object.keys(data).join(',')}}`}
+    ${requestData && Object.keys(requestData).length ? `data: {${Object.keys(data).join(',')}}` : ''}
   });
 
   return map${upperMethod}${upperKey}ResponseDTOToModel(responseDTO);

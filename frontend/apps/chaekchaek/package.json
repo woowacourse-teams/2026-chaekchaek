@@ -42,7 +42,8 @@
     "vitest": "^4.1.10",
     "webpack": "^5.109.2",
     "webpack-cli": "^7.2.2",
-    "webpack-dev-server": "^5.2.6"
+    "webpack-dev-server": "^5.2.6",
+    "yaml": "^2.9.0"
   },
   "dependencies": {
     "@chaekchaek/design-system": "^1.0.0",

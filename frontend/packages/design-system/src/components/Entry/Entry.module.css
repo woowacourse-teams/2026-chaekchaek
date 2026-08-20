@@ -1,0 +1,42 @@
+.root {
+  gap: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ui-Entry + .ui-Entry {
+  /* border-bottom: 8px solid #F1E9DE; */
+  margin-top: 16px;
+}
+
+.ui-Entry-Main {
+  padding: 20px;
+  border: 1px solid #DDD7CE;
+  background: #FFFFFF;
+}
+
+.ui-Entry-Content {
+  font-size: 12.5px;
+  line-height: 21px;
+  color: #ffffff;
+}
+
+.ui-Entry-Footer {
+  display: block;
+  text-align: right;
+}
+
+.ui-Entry-Extension {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  /* background: #F7F2EC; */
+}
+
+.ui-Entry-Extension > * {
+  width: calc(50% - 6px);
+}
+
+.variant-subtle .ui-Entry-Main {
+  background: #F7F2EC  ;
+}
