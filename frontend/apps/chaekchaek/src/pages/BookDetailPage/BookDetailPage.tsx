@@ -50,6 +50,11 @@ export const BookDetailPage = () => {
     await mutate({ isbn13: isbn, status });
   };
 
+  const [open, setOpen] = useState(false);
+  const handleOpenUpdateCurrentPageDialog = () => {
+    setOpen(true);
+  };
+
   return (
     <Layout>
       <Header />
@@ -109,7 +114,7 @@ export const BookDetailPage = () => {
               label={`${data?.myRecord?.currentPage || 0} / ${data?.totalPages || 0}쪽`}
             />
 
-            <Button variant="primary" block={true}>
+            <Button variant="primary" block={true} onClick={handleOpenUpdateCurrentPageDialog}>
               현재 읽은 쪽수 입력
             </Button>
             <DataInfo heading="책 정보">
@@ -254,7 +259,7 @@ export const BookDetailPage = () => {
           </Split.Content>
         </Split>
 
-        {/* <UpdateCurrentPageDialog /> */}
+        {open && <UpdateCurrentPageDialog />}
         {/* <UpdateRating /> */}
       </Main>
     </Layout>
