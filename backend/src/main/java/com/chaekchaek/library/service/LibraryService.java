@@ -201,7 +201,7 @@ public class LibraryService {
 
     private RatingComparisonBookResponse currentResponse(Book book, BigDecimal criterion) {
         return new RatingComparisonBookResponse(book.getId(), book.getIsbn13(), book.getTitle(),
-                book.getCoverImageUrl(), book.getAuthors(), criterion);
+                book.getCoverImageUrl(), book.getAuthors(), criterion, null);
     }
 
     private LibraryItemResponse saveNewItem(long memberId, Book book, ReadingStatus status) {

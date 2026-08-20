@@ -378,7 +378,9 @@ class LibraryControllerTest {
     void should_ReturnRatingComparison_When_RequestIsValid() throws Exception {
         // given
         RatingComparisonResponse response = new RatingComparisonResponse(
-                comparisonBook(9L, "4.0"), comparisonBook(BOOK_ID, "4.5"), comparisonBook(11L, "4.8"));
+                comparisonBook(9L, "4.0", Instant.parse("2026-08-01T00:00:00Z")),
+                comparisonBook(BOOK_ID, "4.5", null),
+                comparisonBook(11L, "4.8", Instant.parse("2026-08-05T00:00:00Z")));
         when(libraryService.compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5")))
                 .thenReturn(response);
 
@@ -388,6 +390,9 @@ class LibraryControllerTest {
                         .param("criterion", "4.5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.current.bookId").value(BOOK_ID))
+                .andExpect(jsonPath("$.lower.ratingUpdatedAt").value("2026-08-01T00:00:00Z"))
+                .andExpect(jsonPath("$.current.ratingUpdatedAt").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.higher.ratingUpdatedAt").value("2026-08-05T00:00:00Z"))
                 .andDo(document(
                         "library-rating-comparison",
                         queryParameters(ratingComparisonQueryParameters()),
@@ -409,7 +414,7 @@ class LibraryControllerTest {
     void should_ReturnNullableRatingComparison_When_ComparisonBookIsNotPersisted() throws Exception {
         // given
         RatingComparisonResponse response = new RatingComparisonResponse(
-                null, comparisonBook(null, "4.5"), null);
+                null, comparisonBook(null, "4.5", null), null);
         when(libraryService.compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5")))
                 .thenReturn(response);
 
@@ -844,6 +849,7 @@ class LibraryControllerTest {
                 fieldWithPath("lower.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
                 fieldWithPath("lower.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
+                fieldWithPath("lower.ratingUpdatedAt").type(JsonFieldType.STRING).description("별점을 남긴 시각"),
                 fieldWithPath("current").type(JsonFieldType.OBJECT).description("비교 기준 도서"),
                 fieldWithPath("current.bookId").type(JsonFieldType.NUMBER).description("도서 ID").optional(),
                 fieldWithPath("current.isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
@@ -852,6 +858,9 @@ class LibraryControllerTest {
                 fieldWithPath("current.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
                 fieldWithPath("current.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
+                fieldWithPath("current.ratingUpdatedAt").type(JsonFieldType.STRING)
+                        .description("별점을 남긴 시각. 저장되지 않은 비교 기준값이면 null")
+                        .optional().attributes(key("nullable").value(true)),
                 fieldWithPath("higher").type(JsonFieldType.OBJECT).description("기준보다 높은 별점 중 가장 가까운 도서")
                         .optional().attributes(key("nullable").value(true)),
                 fieldWithPath("higher.bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
@@ -860,7 +869,8 @@ class LibraryControllerTest {
                 fieldWithPath("higher.coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
                 fieldWithPath("higher.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
-                fieldWithPath("higher.myRating").type(JsonFieldType.NUMBER).description("내 별점")
+                fieldWithPath("higher.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
+                fieldWithPath("higher.ratingUpdatedAt").type(JsonFieldType.STRING).description("별점을 남긴 시각")
         };
     }
 
@@ -877,6 +887,9 @@ class LibraryControllerTest {
                 fieldWithPath("current.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
                 fieldWithPath("current.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
+                fieldWithPath("current.ratingUpdatedAt").type(JsonFieldType.STRING)
+                        .description("별점을 남긴 시각. 저장되지 않은 비교 기준값이면 null")
+                        .optional().attributes(key("nullable").value(true)),
                 fieldWithPath("higher").type(JsonFieldType.OBJECT)
                         .description("기준보다 높은 별점 중 가장 가까운 도서. 없으면 null").optional()
         };
@@ -918,9 +931,11 @@ class LibraryControllerTest {
         );
     }
 
-    private RatingComparisonBookResponse comparisonBook(Long bookId, String rating) {
+    private RatingComparisonBookResponse comparisonBook(Long bookId, String rating,
+                                                         Instant ratingUpdatedAt) {
         return new RatingComparisonBookResponse(bookId, ISBN13, "채식주의자",
-                "https://image.aladin.co.kr/cover.jpg", List.of("한강"), new BigDecimal(rating));
+                "https://image.aladin.co.kr/cover.jpg", List.of("한강"), new BigDecimal(rating),
+                ratingUpdatedAt);
     }
 
 }
