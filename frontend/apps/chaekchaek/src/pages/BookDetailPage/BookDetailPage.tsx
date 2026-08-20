@@ -50,10 +50,35 @@ export const BookDetailPage = () => {
     await mutate({ isbn13: isbn, status });
   };
 
-  const [open, setOpen] = useState(false);
-  const handleOpenUpdateCurrentPageDialog = () => {
-    setOpen(true);
+  // const [open, setOpen] = useState(false);
+  // const handleOpenUpdateCurrentPageDialog = () => {
+  //   setOpen(true);
+  // };
+
+  const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRating' | null>(null);
+  const handleOpenDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRating') => {
+    setDialog(dialog);
   };
+
+  const renderDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRating' | null) => {
+    switch (dialog) {
+      case 'UpdateCurrentPageDialog':
+        return (
+          data?.bookId && (
+            <UpdateCurrentPageDialog
+              bookId={data?.bookId}
+              currentPage={data?.myRecord?.currentPage || 0}
+            />
+          )
+        );
+      case 'UpdateRating':
+        return <UpdateRating />;
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
 
   return (
     <Layout>
@@ -80,7 +105,13 @@ export const BookDetailPage = () => {
             <Banner>
               <Banner.Content title="내 별점" content="아직 평가하지 않았어요" />
               <Banner.Trailing>
-                <Button size="small" variant="primary">
+                <Button
+                  size="small"
+                  variant="primary"
+                  onClick={() => {
+                    handleOpenDialog('UpdateRating');
+                  }}
+                >
                   별점 주기
                 </Button>
               </Banner.Trailing>
@@ -114,7 +145,13 @@ export const BookDetailPage = () => {
               label={`${data?.myRecord?.currentPage || 0} / ${data?.totalPages || 0}쪽`}
             />
 
-            <Button variant="primary" block={true} onClick={handleOpenUpdateCurrentPageDialog}>
+            <Button
+              variant="primary"
+              block={true}
+              onClick={() => {
+                handleOpenDialog('UpdateCurrentPageDialog');
+              }}
+            >
               현재 읽은 쪽수 입력
             </Button>
             <DataInfo heading="책 정보">
@@ -259,12 +296,7 @@ export const BookDetailPage = () => {
           </Split.Content>
         </Split>
 
-        {open && data?.bookId && (
-          <UpdateCurrentPageDialog
-            bookId={data?.bookId}
-            currentPage={data?.myRecord?.currentPage || 0}
-          />
-        )}
+        {dialogElement}
         {/* <UpdateRating /> */}
       </Main>
     </Layout>
