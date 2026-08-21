@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { AppProviders } from '@/providers/AppProvider';
 import { enableMocking } from '@/mocks/msw/browser';
 
-import { initializeGA } from '@/analystics/ga';
+import { initializeGA } from '@/analytics/ga';
 
 import { App } from '@/App';
 
