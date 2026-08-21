@@ -109,7 +109,7 @@ export const BooksPage = () => {
                             handleMove(item.isbn13);
                           }}
                         >
-                          <ImgBox img={item.coverImageUrl} />
+                          <ImgBox img={item.coverImageUrl} size="small" />
                         </a>
                       </List.Item.Leading>
                       <List.Item.Content
