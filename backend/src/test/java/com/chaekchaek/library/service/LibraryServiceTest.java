@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
@@ -17,6 +18,7 @@ import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -35,6 +37,7 @@ class LibraryServiceTest {
 
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-08-14T00:00:00Z"),
             ZoneOffset.UTC);
+    private static final String ISBN13 = "9788925568683";
 
     @Mock
     private LibraryItemRepository libraryItemRepository;
@@ -95,6 +98,69 @@ class LibraryServiceTest {
         lockOrder.verify(bookRepository).findByIdForUpdate(2L);
         lockOrder.verify(libraryItemRepository).findAllByMemberIdAndBookIdInForUpdate(1L, List.of(2L));
         assertThat(item.getStatus()).isEqualTo(ReadingStatus.FINISHED);
+    }
+
+    @Test
+    @DisplayName("같은 별점을 준 책이 없다면 current를 null로 반환한다")
+    void should_ReturnNullCurrent_When_NoBookHasCriterionRating() {
+        // given
+        Book targetBook = mock(Book.class);
+        when(targetBook.getId()).thenReturn(10L);
+        when(bookRepository.findByIsbn13(ISBN13)).thenReturn(java.util.Optional.of(targetBook));
+        when(libraryItemRepository
+                .findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
+                        1L, 10L, new BigDecimal("4.5")))
+                .thenReturn(java.util.Optional.empty());
+        when(libraryItemRepository
+                .findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
+                        1L, 10L, new BigDecimal("4.5")))
+                .thenReturn(java.util.Optional.empty());
+        LibraryService service = service();
+
+        // when
+        var response = service.compareRatingsByIsbn13(1L, ISBN13, new BigDecimal("4.5"));
+
+        // then
+        assertThat(response.current()).isNull();
+    }
+
+    @Test
+    @DisplayName("같은 별점을 준 책 중 최근 별점 도서를 current로 반환한다")
+    void should_ReturnMostRecentlyRatedBookAsCurrent_When_BooksHaveCriterionRating() {
+        // given
+        Book targetBook = mock(Book.class);
+        when(targetBook.getId()).thenReturn(10L);
+        LibraryItem sameRatedItem = LibraryItem.create(1L, 9L, ReadingStatus.READING, null,
+                CLOCK.instant());
+        sameRatedItem.rate(new BigDecimal("4.5"), CLOCK.instant().plusSeconds(10));
+        Book sameRatedBook = mock(Book.class);
+        when(sameRatedBook.getIsbn13()).thenReturn("9788925568683");
+        when(sameRatedBook.getTitle()).thenReturn("같은 별점 도서");
+        when(sameRatedBook.getCoverImageUrl()).thenReturn("https://example.com/cover.jpg");
+        when(sameRatedBook.getAuthors()).thenReturn(List.of("작가"));
+        when(bookRepository.findByIsbn13(ISBN13)).thenReturn(java.util.Optional.of(targetBook));
+        when(libraryItemRepository
+                .findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
+                        1L, 10L, new BigDecimal("4.5")))
+                .thenReturn(java.util.Optional.of(sameRatedItem));
+        when(bookRepository.findById(9L)).thenReturn(java.util.Optional.of(sameRatedBook));
+        LibraryService service = service();
+
+        // when
+        var response = service.compareRatingsByIsbn13(1L, ISBN13, new BigDecimal("4.5"));
+
+        // then
+        assertThat(response.current()).extracting("bookId", "myRating", "ratingUpdatedAt")
+                .containsExactly(9L, new BigDecimal("4.5"), CLOCK.instant().plusSeconds(10));
+        verify(libraryItemRepository)
+                .findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
+                        1L, 10L, new BigDecimal("4.5"));
+        verify(libraryItemRepository)
+                .findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
+                        1L, 10L, new BigDecimal("4.5"));
+        verify(libraryItemRepository)
+                .findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
+                        1L, 10L, new BigDecimal("4.5"));
     }
 
     @Test
