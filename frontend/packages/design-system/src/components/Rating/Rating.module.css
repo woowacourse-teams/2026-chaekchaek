@@ -6,6 +6,10 @@
   gap: 10px;
 }
 
+.is-block {
+  width: 100%;
+}
+
 .title {
   padding-bottom: 2px;
   color: #1a1a1a;

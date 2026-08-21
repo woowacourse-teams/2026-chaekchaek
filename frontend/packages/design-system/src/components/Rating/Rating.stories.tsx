@@ -48,6 +48,15 @@ export const WithTitleAndDescription: Story = {
   },
 };
 
+export const WithTitleAndDescriptionBlock: Story = {
+  args: {
+    value: 4,
+    title: '내 별점',
+    description: '4점 · 좋았어요',
+    block: true,
+  },
+};
+
 export const Controlled: Story = {
   args: {
     value: 4,

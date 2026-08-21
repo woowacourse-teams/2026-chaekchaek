@@ -20,11 +20,13 @@ export const Rating = <T extends ElementType>(props: Props<T>) => {
     size = 'medium',
     title,
     description,
+    block,
     ...restProps
   } = props;
 
   const modifiers = {
     size: styles[`size-${size}`],
+    block: block && styles[`is-block`],
   };
 
   const classname = createClassName({
