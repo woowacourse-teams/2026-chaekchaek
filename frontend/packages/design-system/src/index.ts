@@ -93,3 +93,6 @@ export type { Props as PaginationProps } from './components/Pagination';
 
 export { Chip } from './components/Chip';
 export type { Props as ChipProps } from './components/Chip';
+
+export { Tag } from './components/Tag';
+export type { Props as TagProps } from './components/Tag';

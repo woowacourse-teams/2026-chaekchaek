@@ -1,0 +1,50 @@
+.root {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 10px;
+  border: 1px solid var(--tag-border-color);
+  border-radius: 999px;
+  background: var(--tag-background);
+  color: var(--tag-color);
+  font-family: 'Geist Mono', monospace;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.variant-default {
+  /* 기본 variant에는 별도의 시각 스타일을 지정하지 않는다. */
+}
+
+.variant-primary {
+  --tag-background: #1a1a1a;
+  --tag-border-color: #1a1a1a;
+  --tag-color: #fff;
+}
+
+.variant-ghost {
+  --tag-background: transparent;
+  --tag-border-color: transparent;
+  --tag-color: #666;
+}
+
+.size-small {
+  height: 18px;
+  font-size: 9px;
+}
+
+.size-medium {
+  height: 20px;
+  font-size: 10px;
+}
+
+.size-large {
+  height: 24px;
+  font-size: 11px;
+}
+
+.label {
+  padding-bottom: 1px;
+}
