@@ -1,11 +1,10 @@
 import type { ElementType } from 'react';
 
-import { View } from '#internal/components/View';
-import { createClassName } from '#internal/utils/classname';
+import { View } from '@chaekchaek/design-system';
+import { Input } from '@chaekchaek/design-system';
+import { createClassName } from '@chaekchaek/design-system';
 
 import styles from './Header.module.css';
-
-import { Input } from '#internal/components/Input';
 
 import type { SearchBarProps } from './Header.types';
 

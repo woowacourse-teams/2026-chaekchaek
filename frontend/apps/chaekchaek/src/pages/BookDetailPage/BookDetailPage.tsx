@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { Layout } from '@chaekchaek/design-system';
-import { Header } from '@chaekchaek/design-system';
-import { Main } from '@chaekchaek/design-system';
+import { Layout } from '@/frames';
+import { Header } from '@/frames';
+import { Main } from '@/frames';
 
 import { Overview } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
