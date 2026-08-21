@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import { useArgs } from 'storybook/preview-api';
 
 import { Select } from './';
 
@@ -41,5 +42,22 @@ export const SizeSmall: Story = {
     ],
     value: 'a',
     size: 'small',
+  },
+};
+
+export const Controlled: Story = {
+  args: {
+    title: 'Title',
+    shape: 'default',
+    options: [
+      { value: 'a', text: 'A' },
+      { value: 'b', text: 'B' },
+    ],
+    value: 'a',
+  },
+  render: function Render(args) {
+    const [{ value }, updateArgs] = useArgs();
+
+    return <Select {...args} value={value} onChange={(value) => updateArgs({ value })} />;
   },
 };

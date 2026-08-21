@@ -34,6 +34,10 @@ export const Rating = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const handleChange = (rating: number) => {
+    onChange?.(rating);
+  };
+
   return (
     <View as={as} className={classname} {...restProps}>
       {title && <div className={styles.title}>{title}</div>}
@@ -46,6 +50,9 @@ export const Rating = <T extends ElementType>(props: Props<T>) => {
                 styles.star,
                 index < value ? styles['star-active'] : styles['star-inactive'],
               )}
+              onClick={() => {
+                handleChange(index + 1);
+              }}
             ></div>
           );
         })}

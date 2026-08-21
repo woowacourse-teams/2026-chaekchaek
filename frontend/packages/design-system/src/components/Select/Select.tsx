@@ -26,6 +26,10 @@ export const Select = <T extends ElementType>(props: Props<T>) => {
 
   const selectedOption = options.find((option) => option.value === value);
 
+  const handleChange = (value: any) => {
+    onChange?.(value);
+  };
+
   return (
     <View as={as} className={classname} {...restProps}>
       <div className={styles.box}>{selectedOption?.text}</div>
@@ -33,12 +37,7 @@ export const Select = <T extends ElementType>(props: Props<T>) => {
         <ul>
           {options.map((option) => {
             return (
-              <Option
-                isActive={option.value === value}
-                onClick={() => {
-                  onChange?.(option.value);
-                }}
-              >
+              <Option isActive={option.value === value} onClick={handleChange}>
                 {option.text}
               </Option>
             );

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import { useArgs } from 'storybook/preview-api';
 
 import { OptionList } from './';
 
@@ -21,5 +22,22 @@ export const Example: Story = {
       { value: 'b', text: 'B', meta: 1 },
     ],
     value: 'a',
+  },
+};
+
+export const Controlled: Story = {
+  args: {
+    title: 'Title',
+    shape: 'default',
+    options: [
+      { value: 'a', text: 'A', meta: 0 },
+      { value: 'b', text: 'B', meta: 1 },
+    ],
+    value: 'a',
+  },
+  render: function Render(args) {
+    const [{ value }, updateArgs] = useArgs();
+
+    return <OptionList {...args} value={value} onChange={(value) => updateArgs({ value })} />;
   },
 };
