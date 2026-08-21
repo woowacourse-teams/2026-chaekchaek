@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 import org.yaml.snakeyaml.Yaml
 
 plugins {
@@ -855,6 +856,15 @@ tasks.register('verifyOpenApi') {
 		if (comparisonExamples == null || !comparisonExamples.keySet().containsAll(
 				['library-rating-comparison', 'library-rating-comparison-null-boundary'])) {
 			throw new GradleException('OpenAPI specification is missing normal and null-boundary rating comparison examples')
+		}
+		def comparisonExample = comparisonExamples.get('library-rating-comparison') as Map
+		def comparisonExampleValue = comparisonExample?.get('value') as String
+		def comparisonExampleResponse = new JsonSlurper().parseText(comparisonExampleValue) as Map
+		def comparisonExampleIsbn13s = ['lower', 'current', 'higher'].collect { propertyName ->
+			(comparisonExampleResponse.get(propertyName) as Map)?.get('isbn13')
+		} as Set
+		if (comparisonExampleIsbn13s.size() != 3 || comparisonExampleIsbn13s.contains(null)) {
+			throw new GradleException('OpenAPI rating comparison example must use different books for lower, current, and higher')
 		}
 
 		def libraryItemSchema = dereferenceSchema(((((libraryPostOperation.get('responses') as Map).get('201') as Map)

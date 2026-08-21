@@ -378,9 +378,9 @@ class LibraryControllerTest {
     void should_ReturnRatingComparison_When_RequestIsValid() throws Exception {
         // given
         RatingComparisonResponse response = new RatingComparisonResponse(
-                comparisonBook(9L, "4.0", Instant.parse("2026-08-01T00:00:00Z")),
-                comparisonBook(12L, "4.5", Instant.parse("2026-08-03T00:00:00Z")),
-                comparisonBook(11L, "4.8", Instant.parse("2026-08-05T00:00:00Z")));
+                comparisonBook(9L, "9788954699919", "파친코", "이민진", "4.0", Instant.parse("2026-08-01T00:00:00Z")),
+                comparisonBook(12L, "9788965746829", "아몬드", "손원평", "4.5", Instant.parse("2026-08-03T00:00:00Z")),
+                comparisonBook(11L, "9788956609959", "불편한 편의점", "김호연", "4.8", Instant.parse("2026-08-05T00:00:00Z")));
         when(libraryService.compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5")))
                 .thenReturn(response);
 
@@ -389,7 +389,10 @@ class LibraryControllerTest {
                         .param("isbn13", ISBN13)
                         .param("criterion", "4.5"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lower.isbn13").value("9788954699919"))
                 .andExpect(jsonPath("$.current.bookId").value(12L))
+                .andExpect(jsonPath("$.current.isbn13").value("9788965746829"))
+                .andExpect(jsonPath("$.higher.isbn13").value("9788956609959"))
                 .andExpect(jsonPath("$.lower.ratingUpdatedAt").value("2026-08-01T00:00:00Z"))
                 .andExpect(jsonPath("$.current.ratingUpdatedAt").value("2026-08-03T00:00:00Z"))
                 .andExpect(jsonPath("$.higher.ratingUpdatedAt").value("2026-08-05T00:00:00Z"))
@@ -923,10 +926,10 @@ class LibraryControllerTest {
         );
     }
 
-    private RatingComparisonBookResponse comparisonBook(Long bookId, String rating,
-                                                         Instant ratingUpdatedAt) {
-        return new RatingComparisonBookResponse(bookId, ISBN13, "채식주의자",
-                "https://image.aladin.co.kr/cover.jpg", List.of("한강"), new BigDecimal(rating),
+    private RatingComparisonBookResponse comparisonBook(Long bookId, String isbn13, String title, String author,
+                                                         String rating, Instant ratingUpdatedAt) {
+        return new RatingComparisonBookResponse(bookId, isbn13, title,
+                "https://image.aladin.co.kr/cover/" + bookId + ".jpg", List.of(author), new BigDecimal(rating),
                 ratingUpdatedAt);
     }
 
