@@ -18,7 +18,7 @@
   white-space: nowrap;
 }
 
-.variant-default {
+.variant-ghost {
   --chip-background: #fff;
   --chip-border-color: #c9c9c9;
   --chip-color: #666;

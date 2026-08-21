@@ -13,7 +13,7 @@ export const Chip = <T extends ElementType>(props: Props<T>) => {
   const {
     as = 'div',
     size = 'medium',
-    variant = 'default',
+    variant = 'ghost',
     children,
     className,
     ...restProps
