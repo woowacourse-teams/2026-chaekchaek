@@ -9,7 +9,7 @@ const meta = {
   args: {
     children: 'Chip',
     size: 'medium',
-    variant: 'ghost',
+    variant: 'default',
   },
   argTypes: {
     size: {
@@ -18,7 +18,7 @@ const meta = {
     },
     variant: {
       control: 'inline-radio',
-      options: ['ghost', 'primary'],
+      options: ['default', 'primary', 'ghost'],
     },
   },
 } satisfies Meta<typeof Chip>;
@@ -29,10 +29,10 @@ type Story = StoryObj<typeof meta>;
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
 export const Default: Story = {};
 
-export const GhostVariant: Story = {
+export const DefaultVariant: Story = {
   args: {
-    children: 'ghost',
-    variant: 'ghost',
+    children: 'default',
+    variant: 'default',
   },
 };
 
@@ -40,6 +40,13 @@ export const PrimaryVariant: Story = {
   args: {
     children: 'primary',
     variant: 'primary',
+  },
+};
+
+export const GhostVariant: Story = {
+  args: {
+    children: 'ghost',
+    variant: 'ghost',
   },
 };
 

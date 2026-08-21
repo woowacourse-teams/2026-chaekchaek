@@ -1,8 +1,4 @@
 .root {
-  --chip-background: #fff;
-  --chip-border-color: #c9c9c9;
-  --chip-color: #666;
-
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -16,6 +12,10 @@
   font-weight: 600;
   line-height: normal;
   white-space: nowrap;
+}
+
+.variant-default {
+  /* 기본 variant에는 별도의 시각 스타일을 지정하지 않는다. */
 }
 
 .variant-ghost {

@@ -6,7 +6,7 @@ export type AS = 'div';
 
 export type OwnProps = {
   size?: 'small' | 'medium' | 'large';
-  variant?: 'ghost' | 'primary';
+  variant?: 'default' | 'primary' | 'ghost';
   selected?: boolean;
 };
 
