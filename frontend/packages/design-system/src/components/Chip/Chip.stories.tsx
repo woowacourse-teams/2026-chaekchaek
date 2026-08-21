@@ -43,6 +43,13 @@ export const PrimaryVariant: Story = {
   },
 };
 
+export const Selected: Story = {
+  args: {
+    children: 'selected',
+    selected: true,
+  },
+};
+
 export const SmallSize: Story = {
   args: {
     children: 'small',

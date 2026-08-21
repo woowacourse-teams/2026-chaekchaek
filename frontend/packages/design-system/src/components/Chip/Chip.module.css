@@ -30,6 +30,12 @@
   --chip-color: #fff;
 }
 
+.is-selected {
+  --chip-background: #f1e9de;
+  --chip-border-color: #1a1a1a;
+  --chip-color: #1a1a1a;
+}
+
 .size-small {
   height: 24px;
   font-size: 9px;

@@ -14,6 +14,7 @@ export const Chip = <T extends ElementType>(props: Props<T>) => {
     as = 'div',
     size = 'medium',
     variant = 'ghost',
+    selected,
     children,
     className,
     ...restProps
@@ -22,6 +23,7 @@ export const Chip = <T extends ElementType>(props: Props<T>) => {
   const modifiers = {
     size: styles[`size-${size}`],
     variant: styles[`variant-${variant}`],
+    selected: selected && styles['is-selected'],
   };
 
   const classname = createClassName({
