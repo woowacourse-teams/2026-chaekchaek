@@ -36,6 +36,8 @@ export const SearchBar = <T extends ElementType>(props: SearchBarProps<T>) => {
       <Input
         shape="default"
         size="medium"
+        reverse
+        placeholder="책, 작가, 감상 검색"
         style={{ width: '250px' }}
         onClick={handleClickMoveBooks}
       />
