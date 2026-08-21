@@ -1,0 +1,23 @@
+.root {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  gap: 10px;
+}
+
+.direction-horizontal {
+  flex-direction: row;
+}
+
+.direction-horizontal > * {
+  min-width: 0;
+  flex: 1 0 0;
+}
+
+.direction-vertical {
+  flex-direction: column;
+}
+
+.direction-vertical > * {
+  width: 100%;
+}
