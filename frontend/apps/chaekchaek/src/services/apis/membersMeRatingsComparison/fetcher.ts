@@ -1,4 +1,4 @@
-import { requestAjax } from '@/services/core/http';
+import { instance } from '@/services/core/http';
 
 import type {
   GetMembersMeRatingsComparisonRequestDto,
@@ -8,7 +8,7 @@ import type {
 export const getMembersMeRatingsComparison = async ({
   query: { isbn13, criterion },
 }: GetMembersMeRatingsComparisonRequestDto): Promise<GetMembersMeRatingsComparisonResponseDto> => {
-  const response = await requestAjax('/api/v1/members/me/ratings/comparison', {
+  const response = await instance('/api/v1/members/me/ratings/comparison', {
     method: 'get',
     query: { isbn13, criterion },
   });
