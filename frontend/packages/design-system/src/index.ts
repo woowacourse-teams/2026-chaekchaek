@@ -1,11 +1,4 @@
-export { Header } from './frames/Header';
-export type { Props as HeaderProps } from './frames/Header';
-
-export { Layout } from './frames/Layout';
-export type { Props as LayoutProps } from './frames/Layout';
-
-export { Main } from './frames/Main';
-export type { Props as MainProps } from './frames/Main';
+import './styles/index.css';
 
 export { Avatar } from './components/Avatar';
 export type { Props as AvatarProps } from './components/Avatar';
@@ -94,6 +87,7 @@ export type { Props as DialogProps } from './components/Dialog';
 export { Pagination } from './components/Pagination';
 export type { Props as PaginationProps } from './components/Pagination';
 
+
 export { Chip } from './components/Chip';
 export type { Props as ChipProps } from './components/Chip';
 
@@ -102,3 +96,8 @@ export type { Props as TagProps } from './components/Tag';
 
 export { Badge } from './components/Badge';
 export type { Props as BadgeProps } from './components/Badge';
+
+export { View } from './components/View';
+export type { Props as ViewProps } from './components/View';
+
+export { createClassName } from './utils/classname';
