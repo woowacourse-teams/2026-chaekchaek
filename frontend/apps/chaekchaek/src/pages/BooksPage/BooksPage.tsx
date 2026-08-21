@@ -117,6 +117,9 @@ export const BooksPage = () => {
                         title={item.title}
                         content={item.authors.join(' · ')}
                         description={`${item.publisher} · ${item.publishedDate}`}
+                        onClick={() => {
+                          handleMove(item.isbn13);
+                        }}
                       />
                       <List.Item.Trailing>
                         {(item.reviewCount || item.replyCount) && (
