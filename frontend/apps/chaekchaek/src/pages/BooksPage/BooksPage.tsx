@@ -15,6 +15,7 @@ import { ImgBox } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 import { Pagination } from '@chaekchaek/design-system';
+import { Badge } from '@chaekchaek/design-system';
 
 import { getBooks } from '@/services/apis/books/repository';
 import { postLibrary } from '@/services/apis/library/repository';
@@ -118,10 +119,10 @@ export const BooksPage = () => {
                         description={`${item.publisher} · ${item.publishedDate}`}
                       />
                       <List.Item.Trailing>
-                        {item.commentCount && (
-                          <Button variant="ghost" size="small">
-                            댓글 {item.commentCount}
-                          </Button>
+                        {(item.reviewCount || item.replyCount) && (
+                          <Badge variant="subtle" size="small">
+                            감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
+                          </Badge>
                         )}
                         <Button
                           variant="primary"
