@@ -5,11 +5,11 @@ import { createClassName } from '#internal/utils/classname';
 
 import styles from './List.module.css';
 
-import type { Props } from './';
+import type { LeadingProps } from './';
 
 const classnameDefault = 'ui-List-Item-Leading';
 
-export const Leading = <T extends ElementType>(props: Props<T>) => {
+export const Leading = <T extends ElementType>(props: LeadingProps<T>) => {
   const { as = 'div', className, ...restProps } = props;
 
   const modifiers = {};

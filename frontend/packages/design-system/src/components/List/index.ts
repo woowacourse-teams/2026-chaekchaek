@@ -1,2 +1,2 @@
 export { List } from './List';
-export type { Props } from './List.types';
+export type { ContentProps, ItemProps, LeadingProps, Props, TrailingProps } from './List.types';

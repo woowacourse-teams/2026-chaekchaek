@@ -5,11 +5,11 @@ import { createClassName } from '#internal/utils/classname';
 
 import styles from './List.module.css';
 
-import type { Props } from './';
+import type { ContentProps } from './';
 
 const classnameDefault = 'ui-List-Item-Content';
 
-export const Content = <T extends ElementType>(props: Props<T>) => {
+export const Content = <T extends ElementType>(props: ContentProps<T>) => {
   const { as = 'div', className, title, content, description, ...restProps } = props;
 
   const modifiers = {};

@@ -12,9 +12,11 @@ import type { Props } from './';
 const classnameDefault = 'ui-List';
 
 export const List = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'ul', className, ...restProps } = props;
+  const { as = 'ul', className, columns, ...restProps } = props;
 
-  const modifiers = {};
+  const modifiers = {
+    columns: styles[`column-${columns}`],
+  };
 
   const classname = createClassName({
     styles,

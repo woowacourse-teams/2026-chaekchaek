@@ -5,11 +5,11 @@ import { createClassName } from '#internal/utils/classname';
 
 import styles from './List.module.css';
 
-import type { Props } from './';
+import type { TrailingProps } from './';
 
 const classnameDefault = 'ui-List-Item-Trailing';
 
-export const Trailing = <T extends ElementType>(props: Props<T>) => {
+export const Trailing = <T extends ElementType>(props: TrailingProps<T>) => {
   const { as = 'div', className, ...restProps } = props;
 
   const modifiers = {};
