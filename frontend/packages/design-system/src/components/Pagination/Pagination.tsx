@@ -10,10 +10,47 @@ import { Item } from './Item';
 import type { Props } from './';
 
 const classnameDefault = 'ui-Pagination';
+const MAX_VISIBLE_PAGES = 7;
+
+type PageItem = number | 'ellipsis-left' | 'ellipsis-right';
+
+const getPageItems = (currentPage: number, totalPages: number): PageItem[] => {
+  if (totalPages <= MAX_VISIBLE_PAGES) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, 'ellipsis-right', totalPages];
+  }
+
+  if (currentPage >= totalPages - 3) {
+    return [
+      1,
+      'ellipsis-left',
+      totalPages - 4,
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
+  }
+
+  return [
+    1,
+    'ellipsis-left',
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    'ellipsis-right',
+    totalPages,
+  ];
+};
 
 export const Pagination = <T extends ElementType>(props: Props<T>) => {
   const { as = 'div', className, defaultPage, totalPages, onChange, ...restProps } = props;
   const lastPage = Math.max(1, totalPages);
+  const currentPage = Math.min(Math.max(1, defaultPage), lastPage);
+  const pageItems = getPageItems(currentPage, lastPage);
 
   const modifiers = {};
 
@@ -33,30 +70,40 @@ export const Pagination = <T extends ElementType>(props: Props<T>) => {
       <Item
         aria-label="Previous page"
         as="button"
-        disabled={defaultPage === 1}
-        onClick={() => handleChangePage(defaultPage - 1)}
+        disabled={currentPage === 1}
+        onClick={() => handleChangePage(currentPage - 1)}
         type="button"
       >
         ‹
       </Item>
-      {Array.from({ length: lastPage }, (_, index) => index + 1).map((page) => (
-        <Item
-          aria-current={page === defaultPage ? 'page' : undefined}
-          aria-label={`Page ${page}`}
-          as="button"
-          isActive={page === defaultPage}
-          key={page}
-          onClick={() => handleChangePage(page)}
-          type="button"
-        >
-          {page}
-        </Item>
-      ))}
+      {pageItems.map((item) => {
+        if (typeof item !== 'number') {
+          return (
+            <span aria-hidden="true" className={styles?.['ui-Pagination-Ellipsis']} key={item}>
+              …
+            </span>
+          );
+        }
+
+        return (
+          <Item
+            aria-current={item === currentPage ? 'page' : undefined}
+            aria-label={`Page ${item}`}
+            as="button"
+            isActive={item === currentPage}
+            key={item}
+            onClick={() => handleChangePage(item)}
+            type="button"
+          >
+            {item}
+          </Item>
+        );
+      })}
       <Item
         aria-label="Next page"
         as="button"
-        disabled={defaultPage === lastPage}
-        onClick={() => handleChangePage(defaultPage + 1)}
+        disabled={currentPage === lastPage}
+        onClick={() => handleChangePage(currentPage + 1)}
         type="button"
       >
         ›
