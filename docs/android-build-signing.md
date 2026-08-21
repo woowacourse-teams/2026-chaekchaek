@@ -168,6 +168,9 @@ Play Console에서 업로드 키 재설정을 요청할 수 있다. Play App Sig
 
 ## 릴리스 AAB 만들기
 
+빌드 전에 [Android 버전 및 릴리스 관리](android-release-management.md)에 따라 버전과 변경 내역을
+먼저 기록한다.
+
 ```sh
 cd android
 ./gradlew :app:assembleDebug
@@ -208,3 +211,4 @@ App Signing 등록이 필수이며, 업데이트는 이전 업로드보다 큰 `
 - [ ] `minSdk = 26`, `targetSdk = 36`의 근거와 지원하지 않는 범위를 확인했다.
 - [ ] Play App Signing을 등록하고 업로드 키 인증서 지문을 확인했다.
 - [ ] 이전 Play 업로드보다 큰 `versionCode`와 internal testing 핵심 기능 결과를 확인했다.
+- [ ] 버전, 소스 커밋, AAB 해시, 변경 내역과 Play 상태를 릴리스 관리 문서에 기록했다.
