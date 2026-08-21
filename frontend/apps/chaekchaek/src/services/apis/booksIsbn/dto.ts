@@ -13,7 +13,6 @@ export type GetBooksIsbnResponseDto = ResponseDto<{
   coverImageUrl: string;
   ratingCount: number;
   title: string;
-  commentCount: number;
   bookId: number;
   translators: undefined[];
   averageRating: number;
@@ -23,4 +22,8 @@ export type GetBooksIsbnResponseDto = ResponseDto<{
   publishedDate: string;
   category: string;
   authors: undefined[];
+  description: string;
+  reviewCount: number;
+  replyCount: number;
+  myRatingCount: number;
 }>;

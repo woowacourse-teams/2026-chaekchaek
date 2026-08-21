@@ -12,6 +12,7 @@ export type GetMembersMeRatingsComparisonResponseDto = ResponseDto<{
     title: string;
     authors: string[];
     bookId: number;
+    ratingUpdatedAt: number | null;
   };
   lower: {
     myRating: number;
@@ -20,6 +21,7 @@ export type GetMembersMeRatingsComparisonResponseDto = ResponseDto<{
     title: string;
     authors: string[];
     bookId: number;
+    ratingUpdatedAt: number | null;
   };
   higher: {
     myRating: number;
@@ -28,5 +30,6 @@ export type GetMembersMeRatingsComparisonResponseDto = ResponseDto<{
     title: string;
     authors: string[];
     bookId: number;
+    ratingUpdatedAt: number | null;
   };
 }>;

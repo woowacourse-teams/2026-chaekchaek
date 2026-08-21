@@ -3,4 +3,7 @@ export type Props = {
   bookId: number;
   title: string;
   rating: number;
+  myRatingCount: number;
+  onRatingUpdated: () => void | Promise<void>;
+  onClose: () => void;
 };

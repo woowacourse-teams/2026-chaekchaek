@@ -25,7 +25,15 @@ const RatingMessages = {
   5.0: '최고였어요',
 };
 
-export const UpdateRatingDialog = ({ isbn13, bookId, title, rating: defaultRating }: Props) => {
+export const UpdateRatingDialog = ({
+  isbn13,
+  bookId,
+  title,
+  rating: defaultRating,
+  myRatingCount,
+  onRatingUpdated,
+  onClose,
+}: Props) => {
   const [rating, setRating] = useState(defaultRating);
 
   const handleChangeRating = (rating: number) => {
@@ -51,6 +59,8 @@ export const UpdateRatingDialog = ({ isbn13, bookId, title, rating: defaultRatin
 
   const handleSubmit = async () => {
     await mutate({ bookId, rating });
+    onRatingUpdated();
+    onClose();
   };
 
   const ratingsComparisonData =
@@ -72,7 +82,7 @@ export const UpdateRatingDialog = ({ isbn13, bookId, title, rating: defaultRatin
             title={
               <>
                 <span>내 평점 기록</span>
-                <span>5회</span>
+                <span>{myRatingCount}회</span>
               </>
             }
           >
@@ -81,7 +91,7 @@ export const UpdateRatingDialog = ({ isbn13, bookId, title, rating: defaultRatin
                 <CellList.Item
                   headline={comparison.myRating}
                   title={comparison.title}
-                  content={comparison.authors.join(' · ')}
+                  content={comparison?.ratingUpdatedAt}
                 />
               );
             })}
