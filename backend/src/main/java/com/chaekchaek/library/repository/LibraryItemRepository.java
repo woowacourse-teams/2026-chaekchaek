@@ -59,6 +59,9 @@ public interface LibraryItemRepository extends JpaRepository<LibraryItem, Long> 
     Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
             long memberId, long bookId, BigDecimal rating);
 
+    Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
+            long memberId, long bookId, BigDecimal rating);
+
     Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
             long memberId, long bookId, BigDecimal rating);
 

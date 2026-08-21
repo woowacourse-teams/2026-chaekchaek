@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 import org.yaml.snakeyaml.Yaml
 
 plugins {
@@ -126,7 +127,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		def schemaName = schemaReference.substring(schemaReference.lastIndexOf('/') + 1)
 		def comparisonSchema = (((specification.get('components') as Map)?.get('schemas') as Map)
 				?.get(schemaName) as Map)
-		['lower', 'higher'].each { propertyName ->
+		['lower', 'current', 'higher'].each { propertyName ->
 			def property = comparisonSchema?.get('properties') as Map
 			def nullableProperty = property?.get(propertyName) as Map
 			if (nullableProperty == null) {
@@ -831,11 +832,10 @@ tasks.register('verifyOpenApi') {
 		def comparisonProperties = comparisonSchema?.get('properties') as Map
 		if ((comparisonProperties?.get('lower') as Map)?.get('nullable') != true
 				|| (comparisonProperties?.get('higher') as Map)?.get('nullable') != true
-				|| ((comparisonProperties?.get('current') as Map)?.get('properties') as Map)
-				?.get('bookId')?.get('nullable') != true) {
+				|| (comparisonProperties?.get('current') as Map)?.get('nullable') != true) {
 			throw new GradleException('OpenAPI specification has invalid nullable fields for rating comparison')
 		}
-		def requiredComparisonBookFields = ['bookId', 'isbn13', 'title', 'coverImageUrl', 'authors', 'myRating'] as Set
+		def requiredComparisonBookFields = ['bookId', 'isbn13', 'title', 'coverImageUrl', 'authors', 'myRating', 'ratingUpdatedAt'] as Set
 		['lower', 'higher'].each { propertyName ->
 			def comparisonBook = comparisonProperties?.get(propertyName) as Map
 			def requiredFields = comparisonBook?.get('required') as List
@@ -847,9 +847,7 @@ tasks.register('verifyOpenApi') {
 		}
 		def currentComparisonBook = comparisonProperties?.get('current') as Map
 		def currentRequiredFields = currentComparisonBook?.get('required') as Set
-		if (currentRequiredFields == null || !currentRequiredFields.containsAll(
-				['isbn13', 'title', 'coverImageUrl', 'authors', 'myRating'])
-				|| currentRequiredFields.contains('bookId')) {
+		if (currentRequiredFields == null || !currentRequiredFields.containsAll(requiredComparisonBookFields)) {
 			throw new GradleException('OpenAPI specification has invalid required fields for rating comparison current')
 		}
 		def comparisonExamples = (((((paths.get('/api/v1/members/me/ratings/comparison') as Map).get('get') as Map)
@@ -858,6 +856,15 @@ tasks.register('verifyOpenApi') {
 		if (comparisonExamples == null || !comparisonExamples.keySet().containsAll(
 				['library-rating-comparison', 'library-rating-comparison-null-boundary'])) {
 			throw new GradleException('OpenAPI specification is missing normal and null-boundary rating comparison examples')
+		}
+		def comparisonExample = comparisonExamples.get('library-rating-comparison') as Map
+		def comparisonExampleValue = comparisonExample?.get('value') as String
+		def comparisonExampleResponse = new JsonSlurper().parseText(comparisonExampleValue) as Map
+		def comparisonExampleIsbn13s = ['lower', 'current', 'higher'].collect { propertyName ->
+			(comparisonExampleResponse.get(propertyName) as Map)?.get('isbn13')
+		} as Set
+		if (comparisonExampleIsbn13s.size() != 3 || comparisonExampleIsbn13s.contains(null)) {
+			throw new GradleException('OpenAPI rating comparison example must use different books for lower, current, and higher')
 		}
 
 		def libraryItemSchema = dereferenceSchema(((((libraryPostOperation.get('responses') as Map).get('201') as Map)
