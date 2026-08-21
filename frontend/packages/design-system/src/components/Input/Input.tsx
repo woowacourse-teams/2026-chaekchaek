@@ -10,11 +10,12 @@ import type { Props } from './';
 const classnameDefault = 'ui-Input';
 
 export const Input = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'input', className, size, block, ...restProps } = props;
+  const { as = 'input', className, size, block, reverse, ...restProps } = props;
 
   const modifiers = {
     size: size && styles?.[`size-${size}`],
     block: block && styles?.[`is-block`],
+    reverse: reverse && styles?.[`is-reverse`],
   };
 
   const classname = createClassName({
