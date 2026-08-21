@@ -1,13 +1,14 @@
 import type { ElementType } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import { View } from '#internal/components/View';
-import { createClassName } from '#internal/utils/classname';
+import { View } from '@chaekchaek/design-system';
+import { Input } from '@chaekchaek/design-system';
+import { createClassName } from '@chaekchaek/design-system';
 
 import styles from './Header.module.css';
 
-import { Input } from '#internal/components/Input';
-
 import type { SearchBarProps } from './Header.types';
+import { ROUTES } from '@/constants/routes';
 
 const classnameDefault = 'frame-Header-SearchBar';
 
@@ -23,9 +24,21 @@ export const SearchBar = <T extends ElementType>(props: SearchBarProps<T>) => {
     className,
   });
 
+  const navigation = useNavigate();
+
+  const handleClickMoveBooks = () => {
+    console.log('handleClickMoveBooks');
+    navigation(ROUTES.BOOK_SEARCH);
+  };
+
   return (
     <View as={as} className={classname} {...restProps}>
-      <Input shape="default" size="medium" style={{ width: '250px' }} />
+      <Input
+        shape="default"
+        size="medium"
+        style={{ width: '250px' }}
+        onClick={handleClickMoveBooks}
+      />
     </View>
   );
 };

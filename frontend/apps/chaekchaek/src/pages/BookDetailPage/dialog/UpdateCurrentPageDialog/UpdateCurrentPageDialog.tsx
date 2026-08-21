@@ -11,7 +11,12 @@ import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
 
 import type { Props } from './UpdateCurrentPageDialog.type';
 
-export const UpdateCurrentPageDialog = ({ bookId, currentPage }: Props) => {
+export const UpdateCurrentPageDialog = ({
+  bookId,
+  currentPage,
+  onCurrentPageUpdated,
+  onClose,
+}: Props) => {
   const [formValues, setFormValues] = useState({ currentPage });
 
   const handleChange = ({ name, value }: { name: string; value: unknown }) => {
@@ -23,7 +28,9 @@ export const UpdateCurrentPageDialog = ({ bookId, currentPage }: Props) => {
   });
 
   const handleSubmit = async () => {
-    await mutate({ bookId, currentPage });
+    await mutate({ bookId, currentPage: Number(formValues.currentPage) });
+    onCurrentPageUpdated();
+    onClose();
   };
 
   return (
