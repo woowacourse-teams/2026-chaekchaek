@@ -30,6 +30,12 @@
   --tag-color: #666;
 }
 
+.variant-subtle {
+  --tag-background: #eee;
+  --tag-border-color: transparent;
+  --tag-color: #666;
+}
+
 .size-small {
   height: 18px;
   font-size: 9px;

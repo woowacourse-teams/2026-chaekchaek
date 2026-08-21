@@ -18,7 +18,7 @@ const meta = {
     },
     variant: {
       control: 'inline-radio',
-      options: ['default', 'primary', 'ghost'],
+      options: ['default', 'primary', 'ghost', 'subtle'],
     },
   },
 } satisfies Meta<typeof Tag>;
@@ -59,6 +59,14 @@ export const Primary: Story = {
 export const Ghost: Story = {
   args: {
     variant: 'ghost',
+  },
+};
+
+export const Subtle: Story = {
+  args: {
+    children: '완독',
+    size: 'small',
+    variant: 'subtle',
   },
 };
 
