@@ -90,3 +90,6 @@ export type { Props as DialogProps } from './components/Dialog';
 
 export { Pagination } from './components/Pagination';
 export type { Props as PaginationProps } from './components/Pagination';
+
+export { Chip } from './components/Chip';
+export type { Props as ChipProps } from './components/Chip';
