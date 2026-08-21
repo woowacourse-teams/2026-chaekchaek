@@ -16,7 +16,9 @@ if (__DEV__) {
   await enableMocking();
 }
 
-initializeGA();
+if (!__DEV__) {
+  initializeGA();
+}
 
 const root = createRoot(container);
 root.render(
