@@ -2,11 +2,11 @@ import type { ElementType } from 'react';
 
 import type { PolymorphicProps } from '#internal/components/View';
 
-export type AS = 'input';
+export type AS = 'div';
 
 export type OwnProps = {
-  size?: 'small' | 'medium' | 'large';
-  block?: boolean;
+  size?: 'small' | 'medium';
+  variant?: 'default' | 'ghost' | 'subtle';
   reverse?: boolean;
 };
 

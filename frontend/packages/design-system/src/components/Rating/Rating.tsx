@@ -20,11 +20,13 @@ export const Rating = <T extends ElementType>(props: Props<T>) => {
     size = 'medium',
     title,
     description,
+    block,
     ...restProps
   } = props;
 
   const modifiers = {
     size: styles[`size-${size}`],
+    block: block && styles[`is-block`],
   };
 
   const classname = createClassName({
@@ -33,6 +35,10 @@ export const Rating = <T extends ElementType>(props: Props<T>) => {
     modifiers,
     className,
   });
+
+  const handleChange = (rating: number) => {
+    onChange?.(rating);
+  };
 
   return (
     <View as={as} className={classname} {...restProps}>
@@ -46,6 +52,9 @@ export const Rating = <T extends ElementType>(props: Props<T>) => {
                 styles.star,
                 index < value ? styles['star-active'] : styles['star-inactive'],
               )}
+              onClick={() => {
+                handleChange(index + 1);
+              }}
             ></div>
           );
         })}

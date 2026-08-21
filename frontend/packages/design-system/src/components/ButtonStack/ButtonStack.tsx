@@ -3,19 +3,17 @@ import type { ElementType } from 'react';
 import { View } from '#internal/components/View';
 import { createClassName } from '#internal/utils/classname';
 
-import { Item } from './Item';
-
-import styles from './List.module.css';
+import styles from './ButtonStack.module.css';
 
 import type { Props } from './';
 
-const classnameDefault = 'ui-List';
+const classnameDefault = 'ui-ButtonStack';
 
-export const List = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'ul', className, columns, ...restProps } = props;
+export const ButtonStack = <T extends ElementType>(props: Props<T>) => {
+  const { as = 'div', direction = 'horizontal', className, ...restProps } = props;
 
   const modifiers = {
-    columns: styles[`column-${columns}`],
+    direction: styles[`direction-${direction}`],
   };
 
   const classname = createClassName({
@@ -27,5 +25,3 @@ export const List = <T extends ElementType>(props: Props<T>) => {
 
   return <View as={as} className={classname} {...restProps} />;
 };
-
-List.Item = Item;

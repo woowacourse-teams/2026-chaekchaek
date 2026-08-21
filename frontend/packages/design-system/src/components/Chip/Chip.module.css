@@ -1,0 +1,56 @@
+.root {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 10px;
+  border: 1px solid var(--chip-border-color);
+  border-radius: 999px;
+  background: var(--chip-background);
+  color: var(--chip-color);
+  font-family: 'Geist Mono', monospace;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.variant-default {
+  /* 기본 variant에는 별도의 시각 스타일을 지정하지 않는다. */
+}
+
+.variant-ghost {
+  --chip-background: #fff;
+  --chip-border-color: #c9c9c9;
+  --chip-color: #666;
+}
+
+.variant-primary {
+  --chip-background: #1a1a1a;
+  --chip-border-color: #1a1a1a;
+  --chip-color: #fff;
+}
+
+.is-selected {
+  --chip-background: #f1e9de;
+  --chip-border-color: #1a1a1a;
+  --chip-color: #1a1a1a;
+}
+
+.size-small {
+  height: 24px;
+  font-size: 9px;
+}
+
+.size-medium {
+  height: 28px;
+  font-size: 10px;
+}
+
+.size-large {
+  height: 32px;
+  font-size: 11px;
+}
+
+.label {
+  padding-bottom: 1px;
+}

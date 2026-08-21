@@ -34,12 +34,23 @@ export const OptionList = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const handleChange = (value: any) => {
+    onChange?.(value);
+  };
+
   return (
     <View as={as} className={classname} {...restProps}>
       {title && <div className={styles.title}>{title}</div>}
       {options.map((option) => {
         return (
-          <Item value={option.value} isActive={option.value === value} meta={option.meta}>
+          <Item
+            value={option.value}
+            isActive={option.value === value}
+            meta={option.meta}
+            onClick={() => {
+              handleChange(option.value);
+            }}
+          >
             {option.text}
           </Item>
         );

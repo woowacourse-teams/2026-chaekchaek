@@ -26,7 +26,9 @@ export const CellList = <T extends ElementType>(props: Props<T>) => {
   return (
     <View as={as} className={classname} {...restProps}>
       {title && <p className={styles[`cell-list-title`]}>{title}</p>}
-      {children}
+      <div as={as} className={styles.content} {...restProps}>
+        {children}
+      </div>
     </View>
   );
 };

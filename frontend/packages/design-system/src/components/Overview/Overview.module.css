@@ -82,6 +82,17 @@
   overflow-wrap: anywhere;
 }
 
+.meta {
+  padding-top: 17px;
+  font-size: 16px;
+  color: #E0E0E0;
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 15px;
+  overflow-wrap: anywhere;
+}
+
 .leading + .title {
   padding-top: 8px;
 }
@@ -92,6 +103,10 @@
 
 .content + .description {
   padding-top: 5px;
+}
+
+.description + .meta {
+  padding-top: 20px;
 }
 
 .ui-Overview-Media {

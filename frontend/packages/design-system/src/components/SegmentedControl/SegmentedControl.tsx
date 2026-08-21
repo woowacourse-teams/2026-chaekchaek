@@ -32,11 +32,21 @@ export const SegmentedControl = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const handleChange = (value: any) => {
+    onChange?.(value);
+  };
+
   return (
     <View as={as} className={classname} {...restProps}>
       {options.map((option) => {
         return (
-          <Item value={option.value} isActive={option.value === value}>
+          <Item
+            value={option.value}
+            isActive={option.value === value}
+            onClick={() => {
+              handleChange(option.value);
+            }}
+          >
             {option.text}
           </Item>
         );

@@ -10,6 +10,7 @@ export type OwnProps = {
   size?: 'small' | 'medium';
   title?: React.ReactNode;
   description?: React.ReactNode;
+  block?: boolean;
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;

@@ -4,6 +4,39 @@
   margin: 0;
 }
 
+.column-1,
+.column-2,
+.column-3,
+.column-4,
+.column-5,
+.column-6 {
+  display: grid;
+}
+
+.column-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.column-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.column-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.column-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.column-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.column-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
 .ui-List-Item {
   list-style: none;
   padding: 0;

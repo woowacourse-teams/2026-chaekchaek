@@ -51,6 +51,9 @@ export type { Props as TitleProps } from './components/Title';
 export { Button } from './components/Button';
 export type { Props as ButtonProps } from './components/Button';
 
+export { ButtonStack } from './components/ButtonStack';
+export type { Props as ButtonStackProps } from './components/ButtonStack';
+
 export { Banner } from './components/Banner';
 export type { Props as BannerProps } from './components/Banner';
 
@@ -83,6 +86,16 @@ export type { Props as DialogProps } from './components/Dialog';
 
 export { Pagination } from './components/Pagination';
 export type { Props as PaginationProps } from './components/Pagination';
+
+
+export { Chip } from './components/Chip';
+export type { Props as ChipProps } from './components/Chip';
+
+export { Tag } from './components/Tag';
+export type { Props as TagProps } from './components/Tag';
+
+export { Badge } from './components/Badge';
+export type { Props as BadgeProps } from './components/Badge';
 
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';

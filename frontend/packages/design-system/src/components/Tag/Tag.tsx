@@ -3,17 +3,25 @@ import type { ElementType } from 'react';
 import { View } from '#internal/components/View';
 import { createClassName } from '#internal/utils/classname';
 
-import styles from './ImgBox.module.css';
+import styles from './Tag.module.css';
 
 import type { Props } from './';
 
-const classnameDefault = 'ui-ImgBox';
+const classnameDefault = 'ui-Tag';
 
-export const ImgBox = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, img, size, ...restProps } = props;
+export const Tag = <T extends ElementType>(props: Props<T>) => {
+  const {
+    as = 'div',
+    size = 'medium',
+    variant = 'default',
+    children,
+    className,
+    ...restProps
+  } = props;
 
   const modifiers = {
     size: styles[`size-${size}`],
+    variant: styles[`variant-${variant}`],
   };
 
   const classname = createClassName({
@@ -25,7 +33,7 @@ export const ImgBox = <T extends ElementType>(props: Props<T>) => {
 
   return (
     <View as={as} className={classname} {...restProps}>
-      <img src={img} />
+      <span className={styles.label}>{children}</span>
     </View>
   );
 };

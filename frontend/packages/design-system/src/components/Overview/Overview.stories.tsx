@@ -26,6 +26,7 @@ export const Example: Story = {
           description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
           nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
           accusantium magni quis voluptates, velit nisi dolorum id."
+          meta="meta"
         />
         <Overview.Media>
           <ImgBox img={DummyLargeImgImgBox} />

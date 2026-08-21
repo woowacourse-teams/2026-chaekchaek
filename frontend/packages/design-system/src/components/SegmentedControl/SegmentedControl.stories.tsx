@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import { useArgs } from 'storybook/preview-api';
 
 import { SegmentedControl } from './';
 
@@ -31,5 +32,21 @@ export const ShapeNormal: Story = {
       { value: 'b', text: 'B' },
     ],
     value: 'a',
+  },
+};
+
+export const Controlled: Story = {
+  args: {
+    options: [
+      { value: 'a', text: 'A' },
+      { value: 'b', text: 'B' },
+    ],
+    value: 'a',
+  },
+
+  render: function Render(args) {
+    const [{ value }, updateArgs] = useArgs();
+
+    return <SegmentedControl {...args} value={value} onChange={(value) => updateArgs({ value })} />;
   },
 };

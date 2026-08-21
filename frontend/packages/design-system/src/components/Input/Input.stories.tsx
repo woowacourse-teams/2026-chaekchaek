@@ -18,6 +18,20 @@ export const Example: Story = {
   },
 };
 
+export const Reverse: Story = {
+  args: {
+    reverse: true,
+    placeholder: '책, 작가, 감상 검색',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ width: '280px', padding: '16px', backgroundColor: '#16181c' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 export const SizeSmall: Story = {
   args: {
     size: 'small',

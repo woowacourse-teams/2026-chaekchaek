@@ -9,11 +9,11 @@ import { Leading } from './Leading';
 import { Content } from './Content';
 import { Trailing } from './Trailing';
 
-import type { Props } from './';
+import type { ItemProps } from './';
 
 const classnameDefault = 'ui-List-Item';
 
-export const Item = <T extends ElementType>(props: Props<T>) => {
+export const Item = <T extends ElementType>(props: ItemProps<T>) => {
   const { as = 'li', className, ...restProps } = props;
 
   const modifiers = {};

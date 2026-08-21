@@ -17,5 +17,6 @@ type Story = StoryObj<typeof meta>;
 export const Example: Story = {
   args: {
     img: DummyImg,
+    size: 'medium',
   },
 };
