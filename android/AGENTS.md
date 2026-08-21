@@ -53,3 +53,41 @@
 - API 요청이 500ms 이내에 끝나면 로딩 인디케이터를 표시하지 않는다.
 - 500ms가 지나도 요청 중이면 로딩 인디케이터를 표시한다.
 - 표시 후에는 최소 노출 시간을 두지 않고 API 응답 즉시 닫는다.
+
+## Android 앱 버전 및 릴리스 커밋 (2026-08-21)
+
+- 앱 버전의 단일 출처는 `app/build.gradle.kts`의 `defaultConfig`에 있는 `versionCode`와
+  `versionName`이다. 다른 파일에 같은 값을 중복 선언하지 않는다.
+- Play에 빌드를 올릴 때마다 `versionCode`를 Play Console에서 사용한 최댓값보다 크게 올린다.
+  기본 증가 폭은 1이다.
+- `versionName`은 SemVer(`MAJOR.MINOR.PATCH`)를 따른다. 변경 성격에 따라 모델이 증가 단위를
+  판단한다. 호환되지 않는 변경은 major, 호환되는 기능 추가는 minor, 호환되는 버그 수정은
+  patch다. 기존 심사 버전 `1.0`은 유지하고 다음 버전부터 세 자리 형식을 적용한다.
+- 버전과 배포 상태, 변경 내역, 복구 기준은
+  [`../docs/android-release-management.md`](../docs/android-release-management.md)에 함께 기록한다.
+
+릴리스 절차는 `android` 디렉터리에서 아래 순서로 진행한다. 각 Android 명령을 실행하기 전에
+명령의 목적을 한 줄로 먼저 설명한다.
+
+1. `app/build.gradle.kts`의 두 버전과 릴리스 관리 문서를 갱신한다.
+2. `./gradlew :app:assembleDebug`로 기본 컴파일과 패키징을 확인한다.
+3. `./gradlew :app:verifyReleaseSigning`으로 릴리스 서명 설정을 확인한다.
+4. `./gradlew :app:bundleRelease`로 서명된 AAB를 만든다.
+5. `jarsigner -verify app/build/outputs/bundle/release/app-release.aab`로 서명을 검증한다.
+6. AAB의 SHA-256을 릴리스 관리 문서에 기록하고 Play Console의 대상 트랙에 업로드한다.
+7. 배포 후 release 커밋을 남긴다. 포맷과 변경 목록 추출은 `release-commit` 스킬을 따른다.
+
+release 커밋 제목은 항상 `chore(release): vX.Y.Z 배포`로 쓴다. 본문 첫 줄에는 아래 형식으로
+배포 대상, `versionName` 증감과 SemVer 증가 단위, `versionCode` 증감을 적는다.
+
+```text
+대상: Google Play <트랙> / A.B.C -> X.Y.Z (major|minor|patch), versionCode M -> N
+```
+
+본문 변경 목록은 직전 release 커밋 이후의 `git log`에서 추출하고 임의로 누락하지 않는다. 본문
+맨 끝에는 실제 배포 트랙과 AAB 해시를 아래 형식으로 남긴다.
+
+```text
+Play track: <internal|closed|open|production>
+AAB SHA-256: <hash>
+```
