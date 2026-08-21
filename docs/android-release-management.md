@@ -108,35 +108,77 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 
 ## Release 커밋
 
-release 커밋은 `release-commit` 스킬을 사용해 작성한다. 제목은 항상 아래 형식을 사용한다.
+에이전트가 release 커밋을 만들 때는 `release-commit` 스킬을 사용한다. 스킬을 사용할 수 없는
+팀원도 아래 절차와 형식을 그대로 따른다. 제목은 항상 아래 형식을 사용한다.
 
 ```text
 chore(release): vX.Y.Z 배포
 ```
 
-본문 첫 줄에는 배포 대상, `versionName` 증감과 SemVer 증가 단위, `versionCode` 증감을 적는다.
+다른 제목 변형을 만들지 않는다. 본문 첫 줄에는 배포 대상, `versionName` 증감과 SemVer 증가 단위,
+`versionCode` 증감을 적는다.
 
 ```text
 대상: Google Play <트랙> / A.B.C -> X.Y.Z (major|minor|patch), versionCode M -> N
 ```
 
-변경 목록은 release 커밋을 만들기 전에 직전 release 커밋 이후의 Git 기록에서 추출한다.
+### 변경 목록 추출
+
+release 커밋을 만들기 전에 직전 release 커밋을 찾는다.
 
 ```sh
 git log --grep='chore(release)' --format=%H -n 1
-git log <직전-release-커밋>..HEAD --oneline
 ```
 
-첫 release라 직전 release 커밋이 없으면 마지막 버전 변경 커밋을 기준으로 삼고, 그것도 없으면 최근
-태그를 사용한다. 각 커밋을 `- type(scope): 요약` 형식으로 옮기며 release 커밋과 단순 버전 변경
-커밋만 제외한다. 임의로 변경을 누락하지 않는다.
+첫 release라 결과가 없으면 마지막 버전 변경 커밋을 확인하고, 그것도 없으면 최근 태그를 기준으로
+삼는다.
 
-본문 맨 끝에는 실제 배포 트랙과 AAB 해시를 남긴다.
+```sh
+git log -G 'version(Code|Name) =' --format='%H %s' -- app/build.gradle.kts
+git describe --tags --abbrev=0
+```
+
+기준점 이후의 커밋을 수집한다. 버전 변경 커밋이 현재 `HEAD`라면 `HEAD` 대신 `HEAD^`까지 조회해
+단순 버전 변경 커밋을 목록에서 제외한다.
+
+```sh
+git log <기준-커밋>..HEAD --oneline
+git log <기준-커밋>..HEAD^ --oneline
+```
+
+각 커밋을 `- type(scope): 요약` 한 줄로 옮긴다. 원문 의미를 유지하면서 읽기 좋게 다듬을 수 있지만
+임의로 누락하지 않는다. release 커밋과 단순 버전 변경 커밋만 목록에서 제외한다. 항목을 성격별로
+묶더라도 개별 커밋이 사라지면 안 된다.
+
+### 완성 형식
 
 ```text
-Play track: <internal|closed|open|production>
+chore(release): v1.1.0 배포
+
+대상: Google Play internal / 1.0 -> 1.1.0 (minor), versionCode 2 -> 3
+
+- feat(search): 검색 정렬 기능을 추가
+- fix(library): 서재 등록 실패 처리를 수정
+
+Play track: internal
 AAB SHA-256: <hash>
 ```
+
+본문은 한국어로 쓰고 서명 트레일러를 넣지 않는다. 실제 배포한 트랙만 적으며 Play Console에
+올리지 않은 대상을 포함하지 않는다.
+
+### 기존 release 커밋 보강
+
+본문이 부족한 release 커밋이 아직 push되지 않았다면 아래 명령으로 원격 포함 여부를 먼저
+확인하고, 결과가 없을 때만 `git commit --amend`로 메시지를 보강한다.
+
+```sh
+git branch -r --contains <release-커밋-해시>
+```
+
+amend할 때는 무관한 파일을 stage하지 않는다. 이미 push된 커밋은 이력을 다시 쓰지 않으며, 변경이
+꼭 필요하면 force push 전에 사용자에게 승인을 요청한다.
+
 
 ## 문제 발생 시 복구
 
