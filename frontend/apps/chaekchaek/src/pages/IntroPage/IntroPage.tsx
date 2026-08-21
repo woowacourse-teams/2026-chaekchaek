@@ -2,9 +2,9 @@ import { useCallback, useEffect } from 'react';
 import type { MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Layout } from '@chaekchaek/design-system';
-import { Header } from '@chaekchaek/design-system';
-import { Main } from '@chaekchaek/design-system';
+import { Layout } from '@/frames';
+import { Header } from '@/frames';
+import { Main } from '@/frames';
 
 import { useLoadData } from '@/services/core/useLoadData';
 import { getHomePopularBooks } from '@/services/apis/homePopularBooks/repository';
