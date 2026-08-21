@@ -90,14 +90,6 @@ export const BooksPage = () => {
             >
               책 찾기
             </Title>
-            <OptionList
-              title="필터"
-              value="all"
-              options={[
-                { value: 'all', text: '전체' },
-                { value: 'novel', text: '소설' },
-              ]}
-            />
           </Split.Side>
           <Split.Content>
             <Title level="main" trailing={<></>}>
