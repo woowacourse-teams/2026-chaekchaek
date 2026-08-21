@@ -1,0 +1,117 @@
+.ui-CellList {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ui-CellList > .content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20%, 1fr));
+  width: 100%;
+  max-width: none;
+  overflow: visible;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: normal;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.cell-list-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 2px 6px;
+  padding-bottom: 2px;
+  color: #1a1a1a;
+  font-family: 'Funnel Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: normal;
+}
+
+.cell-list-title > :last-child:not(:first-child) {
+  padding-bottom: 1px;
+  color: #777777;
+  font-family: 'Geist Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.ui-CellList-Item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  height: 82px;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 7px 8px 7px 7px;
+  border-top: 1px solid #c9c3ba;
+  border-right: 1px solid #d8d2c9;
+  border-bottom: 1px solid #c9c3ba;
+}
+
+.ui-CellList-Item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: -1px;
+  width: 1px;
+  height: 14px;
+  background-color: #d8d2c9;
+}
+
+.ui-CellList-Item:last-child {
+  padding-right: 7px;
+  border-right: 0;
+  background-color: #fff4df;
+}
+
+.headline,
+.title,
+.content {
+  display: block;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.headline {
+  color: #a05a27;
+  font-family: 'Newsreader', serif;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.ui-CellList-Item:last-child .headline {
+  color: #ff9800;
+}
+
+.title {
+  display: -webkit-box;
+  width: 100%;
+  overflow: hidden;
+  color: #1a1a1a;
+  font-family: 'Funnel Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 12px;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.content {
+  overflow: hidden;
+  color: #888888;
+  font-family: 'Geist Mono', monospace;
+  font-size: 7px;
+  font-weight: 400;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

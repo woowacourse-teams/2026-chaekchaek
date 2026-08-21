@@ -1,0 +1,30 @@
+.root {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-height: 68px;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px 14px 12px 16px;
+  border-left: 2px solid #1a1a1a;
+  background-color: #fff4df;
+  color: #000;
+  font-family: 'Funnel Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 19px;
+  overflow-wrap: anywhere;
+}
+
+.root .title {
+  margin: 0;
+  font-size: 9px;
+  font-weight: 700;
+  color: #A05A27;
+  padding-bottom: 4px;
+}
+
+.variant-subtle {
+  border-left-color: #1A1A1A;
+  background-color: #F0ECE5;
+}

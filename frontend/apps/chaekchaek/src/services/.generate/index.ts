@@ -1,8 +1,10 @@
+import openApiSpec from '@/services/open-api-spec/openapi3.json';
+
 import generateApi from './generateApi';
 
-import { endPoint } from './endPoint';
+const endPoint = openApiSpec?.paths;
 
-const name = 'books';
-const endpoint = endPoint['/api/v1/books'] || {};
+const name = 'homePopularBooks';
+const endpoint = endPoint['/api/v1/home/popular-books'] || {};
 
 generateApi(name, endpoint);

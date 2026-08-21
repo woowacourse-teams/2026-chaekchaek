@@ -1,0 +1,57 @@
+.root {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  height: 42px;
+  align-items: center;
+  border: 1px solid #c9c3ba;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #1A1A1A;
+  font-family: 'Funnel Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.root > * {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.root > input::placeholder {
+  color: #999999;
+  font-weight: 300;
+}
+
+.root > input {
+  padding-inline: 12px;
+  font-weight: 700;
+}
+
+.is-reverse {
+  border-color: rgb(255 255 255 / 15%);
+  background-color: transparent;
+  color: #fff;
+}
+
+.size-small {
+  box-sizing: border-box;
+  font-size: 11px;
+}
+
+.size-medium {
+  box-sizing: border-box;
+  font-size: 12.5px;
+}
+
+.size-large {
+  box-sizing: border-box;
+  font-size: 14px;
+}

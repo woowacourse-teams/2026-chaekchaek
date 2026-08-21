@@ -1,0 +1,33 @@
+.ui-Callout {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-height: 39px;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 0 12px;
+  border-radius: 4px;
+  background-color: #f6f2ec;
+  color: #1a1a1a;
+  font-family: 'Funnel Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: normal;
+  overflow-wrap: anywhere;
+}
+
+.leading {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.leading > :where(img, svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

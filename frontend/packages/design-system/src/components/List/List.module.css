@@ -1,0 +1,94 @@
+.root {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.column-1,
+.column-2,
+.column-3,
+.column-4,
+.column-5,
+.column-6 {
+  display: grid;
+}
+
+.column-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.column-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.column-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.column-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.column-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.column-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.ui-List-Item {
+  list-style: none;
+  padding: 0;
+  padding-top: 28px;
+  padding-bottom: 28px;
+  margin: 0;
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid #E7E2DA;
+}
+
+.ui-List-Item-Leading {
+  padding-left: 8px;
+}
+
+.ui-List-Item-Content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ui-List-Item-Leading + .ui-List-Item-Content {
+  padding-left: 18px;
+}
+
+.ui-List-Item-Trailing {
+  display: flex;
+  text-align: right;
+  align-items: center;
+  gap: 18px;
+}
+
+.ui-List-Item-Content .title {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.ui-List-Item-Content .content {
+  font-size: 13px;
+  color: #555555;
+}
+
+.ui-List-Item-Content .description {
+  font-size: 10px;
+  color: #888888;
+}
+
+.ui-List-Item-Content .title + .content {
+  padding-top: 7px;
+}
+
+.ui-List-Item-Content .content + .description {
+  padding-top: 5px;
+}

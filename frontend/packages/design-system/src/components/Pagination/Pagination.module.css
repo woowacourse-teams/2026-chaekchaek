@@ -1,0 +1,57 @@
+.ui-Pagination {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ui-Pagination-Item {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #c9c3ba;
+  border-radius: 4px;
+  background-color: #fcfaf7;
+  color: #666;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.ui-Pagination-Item.is-active {
+  border-color: #1a1a1a;
+  background-color: #1a1a1a;
+  color: #fff;
+}
+
+.ui-Pagination-Item:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 2px;
+}
+
+.ui-Pagination-Item:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.ui-Pagination-Ellipsis {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+}

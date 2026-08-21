@@ -1,0 +1,1 @@
+export { UpdateCurrentPageDialog } from './UpdateCurrentPageDialog';

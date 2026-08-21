@@ -77,7 +77,11 @@ export default (_, argv) => {
             {
               loader: 'css-loader',
               options: {
-                modules: true,
+                modules: {
+                  namedExport: false,
+                  exportLocalsConvention: 'as-is',
+                  localIdentName: '[name]__[local]--[hash:base64:5]',
+                },
               },
             },
           ],
