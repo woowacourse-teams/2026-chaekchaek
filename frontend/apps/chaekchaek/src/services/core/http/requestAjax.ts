@@ -74,7 +74,7 @@ export const create = () => {
     } catch (error) {
       if (error instanceof RequestAjaxError && error.status === 401) {
         try {
-          await requestAjax(`/auth/reissue`, { method: 'post' });
+          await requestAjax(`/api/v1/auth/reissue`, { method: 'post' });
         } catch (error) {
           window.location.href = `/login`;
           throw error;
