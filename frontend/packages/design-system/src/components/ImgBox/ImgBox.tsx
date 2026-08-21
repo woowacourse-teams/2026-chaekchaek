@@ -10,9 +10,11 @@ import type { Props } from './';
 const classnameDefault = 'ui-ImgBox';
 
 export const ImgBox = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, img, ...restProps } = props;
+  const { as = 'div', className, img, size, ...restProps } = props;
 
-  const modifiers = {};
+  const modifiers = {
+    size: styles[`size-${size}`],
+  };
 
   const classname = createClassName({
     styles,

@@ -1,0 +1,17 @@
+.ui-ImgBox {
+  flex-shrink: 0;
+}
+
+.ui-ImgBox > img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.size-small {
+  width: 58px;
+}
+
+.size-medium {
+  width: 200px;
+}
