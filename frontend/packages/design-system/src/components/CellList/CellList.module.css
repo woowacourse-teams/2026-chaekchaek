@@ -1,13 +1,25 @@
 .ui-CellList {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
   width: 100%;
   box-sizing: border-box;
 }
 
+.ui-CellList > .content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20%, 1fr));
+  width: 100%;
+  max-width: none;
+  overflow: visible;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: normal;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .cell-list-title {
   display: flex;
-  grid-column: 1 / -1;
   align-items: center;
   justify-content: space-between;
   margin: 0 2px 6px;
