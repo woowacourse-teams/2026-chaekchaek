@@ -96,3 +96,6 @@ export type { Props as ChipProps } from './components/Chip';
 
 export { Tag } from './components/Tag';
 export type { Props as TagProps } from './components/Tag';
+
+export { Badge } from './components/Badge';
+export type { Props as BadgeProps } from './components/Badge';

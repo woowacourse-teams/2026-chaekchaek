@@ -1,0 +1,45 @@
+.root {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  font-family: 'Geist Mono', monospace;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.variant-default {
+  /* 기본 variant에는 별도의 시각 스타일을 지정하지 않는다. */
+}
+
+.variant-ghost {
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #c9c9c9;
+  color: #666;
+}
+
+.variant-ghost.is-reverse {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 15%);
+  color: #fff;
+}
+
+.variant-subtle {
+  background: #f0ece5;
+  color: #1a1a1a;
+}
+
+.size-small {
+  height: 28px;
+  padding-inline: 10px;
+  font-size: 10px;
+}
+
+.size-medium {
+  height: 32px;
+  padding-inline: 11px;
+  font-size: 11px;
+}
