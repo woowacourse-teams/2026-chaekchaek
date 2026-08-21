@@ -38,15 +38,18 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 
 현재 심사 빌드 `1.0 (2)`는 그대로 보존한다. 다음 릴리스부터 아래 규칙을 적용한다.
 
-1. `versionCode`는 Play 업로드마다 직전에 사용한 값보다 1 올린다. 다음 값은 `3`이다.
-2. `versionName`은 `주.부.수정` 세 자리 형식을 사용한다.
+1. 앱 버전의 단일 출처는 `android/app/build.gradle.kts`의 `defaultConfig`에 있는
+   `versionCode`와 `versionName`이다. 다른 파일에 같은 값을 중복 선언하지 않는다.
+2. `versionCode`는 Play 업로드마다 직전에 사용한 값보다 1 올린다. 다음 값은 `3`이다.
+3. `versionName`은 `주.부.수정` 세 자리 형식을 사용한다. 변경 성격에 따라 릴리스 작업을 수행하는
+   모델이 증가 단위를 판단한다.
    - `수정`: 버그 수정만 포함하면 올린다. 예: `1.0.1`
    - `부`: 기존 사용 흐름을 유지하는 기능을 추가하면 올리고 수정 번호를 0으로 만든다. 예: `1.1.0`
    - `주`: 호환되지 않는 큰 제품 변경이 있으면 올리고 나머지를 0으로 만든다. 예: `2.0.0`
-3. QA와 릴리스 대화에서는 항상 `versionName (versionCode)` 형식으로 쓴다. 예: `1.1.0 (3)`.
-4. 릴리스 소스에는 `android-v<versionName>-code<versionCode>` 형식의 Git 태그를 붙인다.
+4. QA와 릴리스 대화에서는 항상 `versionName (versionCode)` 형식으로 쓴다. 예: `1.1.0 (3)`.
+5. 릴리스 소스에는 `android-v<versionName>-code<versionCode>` 형식의 Git 태그를 붙인다.
    예: `android-v1.1.0-code3`.
-5. Play Console에 올리기 직전에 Console의 가장 큰 `versionCode`를 다시 확인한다. 저장소 기록보다
+6. Play Console에 올리기 직전에 Console의 가장 큰 `versionCode`를 다시 확인한다. 저장소 기록보다
    큰 값이 있으면 그 값 다음 번호를 사용한다.
 
 ## 릴리스 기록
@@ -82,15 +85,58 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 1. 이전 정상 태그 이후의 변경을 확인하고 사용자에게 보이는 변경만 릴리스 기록에 정리한다.
 2. `android/app/build.gradle.kts`의 두 버전을 규칙에 맞게 바꾸고 릴리스 상태를 `준비 중`으로
    기록한다.
-3. 변경을 커밋한 뒤 그 커밋에서 서명 AAB를 만들고 검증한다. 빌드와 서명 절차는
+3. 변경을 커밋한 뒤 그 커밋에서 아래 명령으로 서명 AAB를 만들고 검증한다. 각 Android 명령을
+   실행하기 전에 명령의 목적을 한 줄로 먼저 설명한다. 서명 설정은
    [Android 빌드 및 서명 운영 가이드](android-build-signing.md)를 따른다.
-4. `shasum -a 256 android/app/build/outputs/bundle/release/app-release.aab` 결과와 소스 커밋을
-   릴리스 기록에 적는다.
+
+   ```sh
+   cd android
+   ./gradlew :app:assembleDebug
+   ./gradlew :app:verifyReleaseSigning
+   ./gradlew :app:bundleRelease
+   jarsigner -verify app/build/outputs/bundle/release/app-release.aab
+   shasum -a 256 app/build/outputs/bundle/release/app-release.aab
+   ```
+
+4. AAB의 SHA-256과 소스 커밋을 릴리스 기록에 적는다.
 5. QA는 `versionName (versionCode)`, 변경 내역, 핵심 기능 결과를 대조한다.
-6. Play 업로드 후 상태를 `심사 중`으로 바꾼다. 통과하면 정확히 AAB를 만든 소스 커밋에 Git 태그를
-   붙인다.
+6. Play Console의 대상 트랙에 AAB를 올리고 상태를 `심사 중`으로 바꾼다. 통과하면 정확히 AAB를
+   만든 소스 커밋에 Git 태그를 붙인다.
 7. 실제 프로덕션 배포가 끝난 뒤에만 현재 상태 표를 `프로덕션 배포`로 갱신한다. 심사 통과와
    배포 완료를 같은 상태로 취급하지 않는다.
+8. 배포 후 아래 규칙에 따라 release 커밋을 남긴다.
+
+## Release 커밋
+
+release 커밋은 `release-commit` 스킬을 사용해 작성한다. 제목은 항상 아래 형식을 사용한다.
+
+```text
+chore(release): vX.Y.Z 배포
+```
+
+본문 첫 줄에는 배포 대상, `versionName` 증감과 SemVer 증가 단위, `versionCode` 증감을 적는다.
+
+```text
+대상: Google Play <트랙> / A.B.C -> X.Y.Z (major|minor|patch), versionCode M -> N
+```
+
+변경 목록은 release 커밋을 만들기 전에 직전 release 커밋 이후의 Git 기록에서 추출한다.
+
+```sh
+git log --grep='chore(release)' --format=%H -n 1
+git log <직전-release-커밋>..HEAD --oneline
+```
+
+첫 release라 직전 release 커밋이 없으면 마지막 버전 변경 커밋을 기준으로 삼고, 그것도 없으면 최근
+태그를 사용한다. 각 커밋을 `- type(scope): 요약` 형식으로 옮기며 release 커밋과 단순 버전 변경
+커밋만 제외한다. 임의로 변경을 누락하지 않는다.
+
+본문 맨 끝에는 실제 배포 트랙과 AAB 해시를 남긴다.
+
+```text
+Play track: <internal|closed|open|production>
+AAB SHA-256: <hash>
+```
 
 ## 문제 발생 시 복구
 
