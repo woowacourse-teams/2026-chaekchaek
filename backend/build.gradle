@@ -831,9 +831,7 @@ tasks.register('verifyOpenApi') {
 		def comparisonProperties = comparisonSchema?.get('properties') as Map
 		if ((comparisonProperties?.get('lower') as Map)?.get('nullable') != true
 				|| (comparisonProperties?.get('higher') as Map)?.get('nullable') != true
-				|| (comparisonProperties?.get('current') as Map)?.get('nullable') != true
-				|| ((comparisonProperties?.get('current') as Map)?.get('properties') as Map)
-				?.get('bookId')?.get('nullable') != true) {
+				|| (comparisonProperties?.get('current') as Map)?.get('nullable') != true) {
 			throw new GradleException('OpenAPI specification has invalid nullable fields for rating comparison')
 		}
 		def requiredComparisonBookFields = ['bookId', 'isbn13', 'title', 'coverImageUrl', 'authors', 'myRating', 'ratingUpdatedAt'] as Set
