@@ -15,7 +15,8 @@ export type GetBooksResponseDto = ResponseDto<{
     publishedDate: string;
     category: string;
     title: string;
-    commentCount: number;
+    reviewCount: number | null;
+    replyCount: number | null;
     authors: string[];
     bookId: number;
   }[];

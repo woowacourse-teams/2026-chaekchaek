@@ -15,6 +15,7 @@ import { ImgBox } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 import { Pagination } from '@chaekchaek/design-system';
+import { Badge } from '@chaekchaek/design-system';
 
 import { getBooks } from '@/services/apis/books/repository';
 import { postLibrary } from '@/services/apis/library/repository';
@@ -90,14 +91,6 @@ export const BooksPage = () => {
             >
               책 찾기
             </Title>
-            <OptionList
-              title="필터"
-              value="all"
-              options={[
-                { value: 'all', text: '전체' },
-                { value: 'novel', text: '소설' },
-              ]}
-            />
           </Split.Side>
           <Split.Content>
             <Title level="main" trailing={<></>}>
@@ -117,19 +110,22 @@ export const BooksPage = () => {
                             handleMove(item.isbn13);
                           }}
                         >
-                          <ImgBox img={item.coverImageUrl} />
+                          <ImgBox img={item.coverImageUrl} size="small" />
                         </a>
                       </List.Item.Leading>
                       <List.Item.Content
                         title={item.title}
                         content={item.authors.join(' · ')}
                         description={`${item.publisher} · ${item.publishedDate}`}
+                        onClick={() => {
+                          handleMove(item.isbn13);
+                        }}
                       />
                       <List.Item.Trailing>
-                        {item.commentCount && (
-                          <Button variant="ghost" size="small">
-                            댓글 {item.commentCount}
-                          </Button>
+                        {(item.reviewCount || item.replyCount) && (
+                          <Badge variant="subtle" size="small">
+                            감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
+                          </Badge>
                         )}
                         <Button
                           variant="primary"
