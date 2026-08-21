@@ -2,9 +2,9 @@ import { useCallback, useState } from 'react';
 import type { ChangeEvent, MouseEvent } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
-import { Layout } from '@chaekchaek/design-system';
-import { Header } from '@chaekchaek/design-system';
-import { Main } from '@chaekchaek/design-system';
+import { Layout } from '@/frames';
+import { Header } from '@/frames';
+import { Main } from '@/frames';
 
 import { Split } from '@chaekchaek/design-system';
 import { OptionList } from '@chaekchaek/design-system';

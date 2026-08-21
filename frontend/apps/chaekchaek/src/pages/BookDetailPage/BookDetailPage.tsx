@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { Layout } from '@chaekchaek/design-system';
-import { Header } from '@chaekchaek/design-system';
-import { Main } from '@chaekchaek/design-system';
+import { Layout } from '@/frames';
+import { Header } from '@/frames';
+import { Main } from '@/frames';
 
 import { Overview } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
@@ -24,6 +24,7 @@ import { DataInfo } from '@chaekchaek/design-system';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { postLibrary } from '@/services/apis/library/repository';
+import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
@@ -38,16 +39,23 @@ export const BookDetailPage = () => {
   }, [isbn]);
 
   const {
+    refetch: refetchGetBooksIsbnLoadData,
     status: { data },
   } = useLoadData({
     queryFn: getBooksIsbnLoadData,
   });
 
-  const { mutate } = useExecute({
+  const { mutate: mutatePatchLibraryBookId } = useExecute({
+    executeFn: patchLibraryBookId,
+    onSuccess: refetchGetBooksIsbnLoadData,
+  });
+  const { mutate: mutatePostLibrary } = useExecute({
     executeFn: postLibrary,
+    onSuccess: refetchGetBooksIsbnLoadData,
   });
   const handleRegisterLibrary = async (status: string) => {
-    await mutate({ isbn13: isbn, status });
+    if (!data?.myRecord) return await mutatePostLibrary({ isbn13: isbn, status });
+    await mutatePatchLibraryBookId({ bookId: data?.bookId, status });
   };
 
   const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null>(
@@ -55,6 +63,9 @@ export const BookDetailPage = () => {
   );
   const handleOpenDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog') => {
     setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
   };
 
   const renderDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null) => {
@@ -65,6 +76,10 @@ export const BookDetailPage = () => {
             <UpdateCurrentPageDialog
               bookId={data?.bookId}
               currentPage={data?.myRecord?.currentPage || 0}
+              onCurrentPageUpdated={async () => {
+                await refetchGetBooksIsbnLoadData();
+              }}
+              onClose={handleCloseDialog}
             />
           )
         );
@@ -76,6 +91,11 @@ export const BookDetailPage = () => {
               bookId={data?.bookId}
               title={data.title}
               rating={data.myRecord?.myRating}
+              myRatingCount={data?.myRatingCount}
+              onRatingUpdated={async () => {
+                await refetchGetBooksIsbnLoadData();
+              }}
+              onClose={handleCloseDialog}
             />
           )
         );
@@ -95,11 +115,12 @@ export const BookDetailPage = () => {
             leading={`ARCHIVE / ${data?.category} / ${data?.publishedDate}`}
             title={data?.title}
             content={`${data?.authors} · ${data?.publisher}`}
-            description={`Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
-          nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
-          accusantium magni quis voluptates, velit nisi dolorum id. 
+            description={`${data?.description}
 
-          별점: ${data?.ratingCount} 감상: ${data?.commentCount}`}
+          ${!!data?.myRecord?.myRating ? `별점: ${data?.myRecord?.myRating}` : ''}
+          ${`감상: ${data?.reviewCount}`}
+          ${`답글: ${data?.replyCount}`}
+          `}
           />
           <Overview.Media>
             {data?.coverImageUrl && <ImgBox img={data?.coverImageUrl} />}
@@ -171,12 +192,6 @@ export const BookDetailPage = () => {
                 <DataInfo.Item title="옮김" content={data?.translators.join(' · ')} />
               )}
             </DataInfo>
-
-            <Note title="BOOK NOTE">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
-              nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
-              accusantium magni quis voluptates, velit nisi dolorum id.
-            </Note>
           </Split.Side>
           <Split.Content>
             <Title
