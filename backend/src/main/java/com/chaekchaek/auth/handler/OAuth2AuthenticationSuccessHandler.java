@@ -1,6 +1,7 @@
 package com.chaekchaek.auth.handler;
 
 import com.chaekchaek.auth.principal.AuthenticatedMember;
+import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
 import com.chaekchaek.auth.service.AuthTokenService;
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.auth.token.dto.IssuedTokens;
@@ -8,7 +9,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
@@ -23,17 +23,16 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
     private final AuthTokenService authTokenService;
     private final AuthCookieProvider authCookieProvider;
-    private final String successRedirectUrl;
+    private final OAuthFrontendRedirectResolver redirectResolver;
 
     public OAuth2AuthenticationSuccessHandler(
             AuthTokenService authTokenService,
             AuthCookieProvider authCookieProvider,
-            @Value("${app.frontend.base-url}") String frontendBaseUrl,
-            @Value("${app.frontend.oauth-success-path}") String successPath
+            OAuthFrontendRedirectResolver redirectResolver
     ) {
         this.authTokenService = authTokenService;
         this.authCookieProvider = authCookieProvider;
-        this.successRedirectUrl = frontendBaseUrl + successPath;
+        this.redirectResolver = redirectResolver;
     }
 
     @Override
@@ -57,7 +56,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 refreshCookie.toString()
         );
 
-        response.sendRedirect(successRedirectUrl);
+        response.sendRedirect(redirectResolver.resolveSuccessUrl(request));
     }
 
     private AuthenticatedMember requireAuthenticatedMember(Authentication authentication) {
