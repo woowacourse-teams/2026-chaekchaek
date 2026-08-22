@@ -37,3 +37,13 @@ app:
       issuer: https://accounts.google.com
       jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
       audience: test-client-id
+
+    apple:
+      issuer: https://appleid.apple.com
+      jwk-set-uri: https://appleid.apple.com/auth/keys
+      client-id: com.chaekchaek.test
+      team-id: TESTTEAMID
+      key-id: TESTKEYID
+      private-key: test-private-key
+      token-uri: https://appleid.apple.com/auth/token
+      revoke-uri: https://appleid.apple.com/auth/revoke

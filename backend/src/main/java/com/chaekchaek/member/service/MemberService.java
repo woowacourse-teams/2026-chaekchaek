@@ -1,6 +1,7 @@
 package com.chaekchaek.member.service;
 
 import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
+import com.chaekchaek.auth.service.AppleAccountService;
 import com.chaekchaek.common.exception.MemberNotFoundException;
 import com.chaekchaek.common.exception.NicknameAlreadyExistsException;
 import com.chaekchaek.common.exception.NicknameRequiredException;
@@ -19,6 +20,7 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AppleAccountService appleAccountService;
 
     public MemberResponse getMyInfo(Long memberId) {
         Member member = getMember(memberId);
@@ -51,6 +53,7 @@ public class MemberService {
     @Transactional
     public void withdraw(Long memberId) {
         Member member = getMember(memberId);
+        appleAccountService.revokeIfConnected(memberId);
         LocalDateTime withdrawnAt = LocalDateTime.now();
 
         member.withdraw(withdrawnAt);

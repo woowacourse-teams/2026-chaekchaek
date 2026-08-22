@@ -1,10 +1,12 @@
 package com.chaekchaek.auth.controller;
 
 import com.chaekchaek.auth.dto.MobileGoogleLoginRequest;
+import com.chaekchaek.auth.dto.MobileAppleLoginRequest;
 import com.chaekchaek.auth.dto.MobileRefreshTokenRequest;
 import com.chaekchaek.auth.dto.MobileTokenResponse;
 import com.chaekchaek.auth.service.MobileAuthTokenService;
 import com.chaekchaek.auth.service.MobileGoogleLoginService;
+import com.chaekchaek.auth.service.MobileAppleLoginService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,14 +19,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class MobileAuthController {
 
     private final MobileGoogleLoginService mobileGoogleLoginService;
+    private final MobileAppleLoginService mobileAppleLoginService;
     private final MobileAuthTokenService mobileAuthTokenService;
 
     public MobileAuthController(
             MobileGoogleLoginService mobileGoogleLoginService,
+            MobileAppleLoginService mobileAppleLoginService,
             MobileAuthTokenService mobileAuthTokenService
     ) {
         this.mobileGoogleLoginService = mobileGoogleLoginService;
+        this.mobileAppleLoginService = mobileAppleLoginService;
         this.mobileAuthTokenService = mobileAuthTokenService;
+    }
+
+    @PostMapping("/apple")
+    public ResponseEntity<MobileTokenResponse> appleLogin(
+            @Valid @RequestBody MobileAppleLoginRequest request
+    ) {
+        return ResponseEntity.ok(mobileAppleLoginService.login(request));
     }
 
     @PostMapping("/google")

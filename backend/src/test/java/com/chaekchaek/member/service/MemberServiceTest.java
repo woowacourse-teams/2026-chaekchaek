@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import com.chaekchaek.auth.token.refresh.RefreshToken;
+import com.chaekchaek.auth.service.AppleAccountService;
 import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.common.exception.MemberNotFoundException;
@@ -33,6 +34,9 @@ class MemberServiceTest {
 
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
+    private AppleAccountService appleAccountService;
 
     @Mock
     private RefreshToken refreshToken;
@@ -149,5 +153,6 @@ class MemberServiceTest {
                 () -> assertThat(member.getProfileImageUrl()).isNull()
         );
         verify(refreshToken).revoke(any(LocalDateTime.class));
+        verify(appleAccountService).revokeIfConnected(1L);
     }
 }
