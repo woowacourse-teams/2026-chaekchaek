@@ -4,9 +4,11 @@ import type { PolymorphicProps } from '#internal/components/View';
 
 export type AS = 'div';
 
+type OnClose = () => void;
+
 export type OwnProps = {
   size?: 'medium' | 'large';
-  onClose: () => void;
+  onClose: OnClose;
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;
@@ -15,14 +17,19 @@ export type DimOwnProps = {};
 
 export type DimProps<T extends ElementType = AS> = PolymorphicProps<T, DimOwnProps>;
 
-export type ContainerOwnProps = {
-  onClose: () => void;
+export type ContainerOwnProps = {};
+
+export type ContainerInjectedProps = {
+  onClose: OnClose;
 };
 
-export type ContainerProps<T extends ElementType = AS> = PolymorphicProps<T, ContainerOwnProps>;
+export type ContainerProps<T extends ElementType = AS> = PolymorphicProps<
+  T,
+  ContainerOwnProps & Partial<ContainerInjectedProps>
+>;
 
 export type CloseOwnProps = {
-  onClose: () => void;
+  onClose: OnClose;
 };
 
 export type CloseProps<T extends ElementType = AS> = PolymorphicProps<T, CloseOwnProps>;
