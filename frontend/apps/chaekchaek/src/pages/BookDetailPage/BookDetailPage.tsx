@@ -57,15 +57,37 @@ export const BookDetailPage = () => {
     await mutatePatchLibraryBookId({ bookId: data?.bookId, status });
   };
 
+  const [reviewsRequestParams, setReviewsRequestParams] = useState<{
+    page: number;
+    feed: 'ALL';
+    sort: 'LATEST';
+  }>({
+    page: 1,
+    feed: 'ALL',
+    sort: 'LATEST',
+  });
+  const handleChangeReviewRequestParams = ({
+    name,
+    value,
+  }: {
+    name: 'page' | 'feed' | 'sort';
+    value: any;
+  }) => {
+    setReviewsRequestParams((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const getBooksBookIdReviewsLoadData = useCallback(async () => {
     if (!data?.bookId) return;
     return await getBooksBookIdReviews({
-      page: 1,
-      feed: 'ALL',
-      sort: 'LATEST',
+      page: reviewsRequestParams.page,
+      feed: reviewsRequestParams.feed,
+      sort: reviewsRequestParams.sort,
       bookId: data?.bookId,
     });
-  }, [data?.bookId]);
+  }, [data?.bookId, reviewsRequestParams]);
 
   const {
     status: { data: reviewsData },
@@ -163,26 +185,32 @@ export const BookDetailPage = () => {
               trailing={
                 <>
                   <Select
-                    value="LATEST"
+                    value={reviewsRequestParams.sort}
                     options={[
-                      { value: 'PAGE', text: '페이지순' },
                       { value: 'LATEST', text: '최신순' },
                       { value: 'OLDEST', text: '오래된순' },
                       { value: 'POPULAR', text: '인기순' },
+                      { value: 'PAGE', text: '페이지순' },
                     ]}
+                    onChange={(value) => {
+                      handleChangeReviewRequestParams({ name: 'sort', value });
+                    }}
                   />
                   <SegmentedControl
-                    value="all"
+                    value={reviewsRequestParams.feed}
                     options={[
                       {
-                        value: 'all',
+                        value: 'ALL',
                         text: '전체 피드',
                       },
                       {
-                        value: 'mine',
+                        value: 'MINE',
                         text: '내 피드',
                       },
                     ]}
+                    onChange={(value) => {
+                      handleChangeReviewRequestParams({ name: 'feed', value });
+                    }}
                   />
                 </>
               }
