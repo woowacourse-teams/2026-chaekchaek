@@ -31,6 +31,7 @@ export type BookReview = {
 };
 
 export type BookReviewsProps = {
+  bookId: number;
   feed: FeedType;
   sort: SortType;
   count: number | undefined;

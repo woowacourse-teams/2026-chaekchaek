@@ -171,18 +171,21 @@ export const BookDetailPage = () => {
             />
           </Split.Side>
           <Split.Content>
-            <BookReviews
-              sort={reviewsRequestParams.sort}
-              feed={reviewsRequestParams.feed}
-              count={reviewsData?.totalCount}
-              reviews={reviewsData?.items}
-              onSortChange={(sort) => {
-                handleChangeReviewRequestParams({ name: 'sort', value: sort });
-              }}
-              onFeedChange={(feed) => {
-                handleChangeReviewRequestParams({ name: 'feed', value: feed });
-              }}
-            />
+            {data?.bookId && (
+              <BookReviews
+                bookId={data.bookId}
+                sort={reviewsRequestParams.sort}
+                feed={reviewsRequestParams.feed}
+                count={reviewsData?.totalCount}
+                reviews={reviewsData?.items}
+                onSortChange={(sort) => {
+                  handleChangeReviewRequestParams({ name: 'sort', value: sort });
+                }}
+                onFeedChange={(feed) => {
+                  handleChangeReviewRequestParams({ name: 'feed', value: feed });
+                }}
+              />
+            )}
           </Split.Content>
         </Split>
 

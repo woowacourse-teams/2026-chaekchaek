@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, SubmitEvent } from 'react';
 
 import { Button, Callout, Checkbox, Dialog, Field, Input } from '@chaekchaek/design-system';
+
+import { useExecute } from '@/services/core/useExecute';
+import { postBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
 
 import type { WriteReviewDialogProps } from './WriteReviewDialog.types';
 
@@ -13,7 +16,7 @@ type ReviewFormValues = {
   chapter: string;
 };
 
-export const WriteReviewDialog = ({ onClose }: WriteReviewDialogProps) => {
+export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) => {
   const [formValues, setFormValues] = useState<ReviewFormValues>({
     content: '',
     isSpoiler: false,
@@ -32,6 +35,25 @@ export const WriteReviewDialog = ({ onClose }: WriteReviewDialogProps) => {
     setFormValues((prev) => {
       return { ...prev, [name]: value };
     });
+  };
+
+  const { mutate } = useExecute({ executeFn: postBooksBookIdReviews });
+
+  const handleSubmit = async (e: SubmitEvent) => {
+    e.preventDefault();
+
+    const requestData = {
+      content: formValues.content,
+      isSpoiler: formValues.isSpoiler,
+      quote: formValues.quote,
+      currentPage: Number(formValues.currentPage),
+      chapter: formValues.chapter,
+    };
+    await mutate({
+      bookId,
+      ...requestData,
+    });
+    onClose();
   };
 
   return (
@@ -110,7 +132,7 @@ export const WriteReviewDialog = ({ onClose }: WriteReviewDialogProps) => {
           </Dialog.Body>
 
           <Dialog.Footer>
-            <Button variant="primary" size="large" block>
+            <Button type="button" variant="primary" size="large" block onClick={handleSubmit}>
               감상 남기기
             </Button>
           </Dialog.Footer>

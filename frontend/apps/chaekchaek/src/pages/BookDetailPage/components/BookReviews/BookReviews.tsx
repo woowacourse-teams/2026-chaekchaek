@@ -29,6 +29,7 @@ import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
 import type { BookReviewsProps } from './BookReviews.types';
 
 export const BookReviews = ({
+  bookId,
   sort,
   feed,
   count,
@@ -83,7 +84,7 @@ export const BookReviews = ({
   const renderDialog = (dialog: 'WriteReviewDialog' | null) => {
     switch (dialog) {
       case 'WriteReviewDialog':
-        return <WriteReviewDialog onClose={handleCloseDialog} />;
+        return bookId && <WriteReviewDialog bookId={bookId} onClose={handleCloseDialog} />;
 
       default:
         return null;
