@@ -1,0 +1,57 @@
+import type { ResponseDto } from '@/services/apis/api.types';
+
+export interface GetBooksBookIdReviewsRequestDto {
+  pathParams: [{ name: 'bookId'; value: number }];
+  query: { page: number; feed: string; sort: string };
+}
+
+export type GetBooksBookIdReviewsResponseDto = ResponseDto<{
+  nextPage: number;
+  totalCount: number;
+  items: {
+    chapter: string;
+    author: {
+      mine: boolean;
+      displayName: string;
+      anonymous: boolean;
+      profileImageUrl: string;
+    };
+    likeCount: number;
+    content: string;
+    createdAt: string;
+    recentReplies: {
+      createdAt: string;
+      likedByMe: boolean;
+      deleted: boolean;
+      author: {
+        mine: boolean;
+        displayName: string;
+        anonymous: boolean;
+        profileImageUrl: string;
+      };
+      replyId: number;
+      likeCount: number;
+      content: string;
+    }[];
+    replyCount: number;
+    isSpoiler: boolean;
+    likedByMe: boolean;
+    deleted: boolean;
+    quote?: string;
+    currentPage: number;
+    reviewId: number;
+  }[];
+}>;
+export interface PostBooksBookIdReviewsRequestDto {
+  pathParams: [{ name: 'bookId'; value: number }];
+  data: {
+    chapter: string;
+    isSpoiler: boolean;
+    quote: string;
+    totalPages: number;
+    currentPage: number;
+    content: string;
+  };
+}
+
+export type PostBooksBookIdReviewsResponseDto = ResponseDto<undefined>;

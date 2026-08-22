@@ -5,30 +5,19 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 
-import { Overview } from '@chaekchaek/design-system';
-import { ImgBox } from '@chaekchaek/design-system';
 // import DummyLargeImgBox from '../../components/ImgBox/imgs/dummy-large.png';
 import { Split } from '@chaekchaek/design-system';
-import { Title } from '@chaekchaek/design-system';
-import { Banner } from '@chaekchaek/design-system';
-import { Button } from '@chaekchaek/design-system';
-import { ProgressBar } from '@chaekchaek/design-system';
-import { SegmentedControl } from '@chaekchaek/design-system';
-import { Entry } from '@chaekchaek/design-system';
-import { Avatar } from '@chaekchaek/design-system';
-// import DummyImgAvatar from '../../components/Avatar/imgs/dummy-avatar.png';
-import { Shell } from '@chaekchaek/design-system';
-import { Note } from '@chaekchaek/design-system';
-import { Surface } from '@chaekchaek/design-system';
-import { DataInfo } from '@chaekchaek/design-system';
-import { Badge } from '@chaekchaek/design-system';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { postLibrary } from '@/services/apis/library/repository';
 import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
+import { getBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
+import { BookOverview } from './components/BookOverview';
+import { BookInfo } from './components/BookInfo';
+import { BookReviews } from './components/BookReviews';
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
 import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
 
@@ -58,6 +47,44 @@ export const BookDetailPage = () => {
     if (!data?.myRecord) return await mutatePostLibrary({ isbn13: isbn, status });
     await mutatePatchLibraryBookId({ bookId: data?.bookId, status });
   };
+
+  const [reviewsRequestParams, setReviewsRequestParams] = useState<{
+    page: number;
+    feed: 'ALL' | 'MINE';
+    sort: 'LATEST' | 'OLDEST' | 'POPULAR' | 'PAGE';
+  }>({
+    page: 1,
+    feed: 'ALL',
+    sort: 'LATEST',
+  });
+  const handleChangeReviewRequestParams = ({
+    name,
+    value,
+  }: {
+    name: 'page' | 'feed' | 'sort';
+    value: any;
+  }) => {
+    setReviewsRequestParams((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const getBooksBookIdReviewsLoadData = useCallback(async () => {
+    if (!data?.bookId) return;
+    return await getBooksBookIdReviews({
+      page: reviewsRequestParams.page,
+      feed: reviewsRequestParams.feed,
+      sort: reviewsRequestParams.sort,
+      bookId: data?.bookId,
+    });
+  }, [data?.bookId, reviewsRequestParams]);
+
+  const {
+    status: { data: reviewsData },
+  } = useLoadData({
+    queryFn: getBooksBookIdReviewsLoadData,
+  });
 
   const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null>(
     null,
@@ -111,215 +138,51 @@ export const BookDetailPage = () => {
     <Layout>
       <Header />
       <Main>
-        <Overview>
-          <Overview.Content
-            leading={`ARCHIVE / ${data?.category} / ${data?.publishedDate}`}
-            title={data?.title}
-            content={`${data?.authors} · ${data?.publisher}`}
-            description={data?.description}
-            meta={
-              <>
-                <Badge variant="ghost" reverse>
-                  ★ {data?.averageRating || 0}
-                </Badge>
-                <Badge variant="ghost" reverse>
-                  감상 {data?.reviewCount || 0} · 답글: {data?.replyCount}
-                </Badge>
-              </>
-            }
-          />
-          <Overview.Media>
-            {data?.coverImageUrl && <ImgBox img={data?.coverImageUrl} />}
-          </Overview.Media>
-        </Overview>
+        <BookOverview
+          category={data?.category}
+          publishedDate={data?.publishedDate}
+          title={data?.title}
+          authors={data?.authors}
+          publisher={data?.publisher}
+          description={data?.description}
+          averageRating={data?.averageRating}
+          reviewCount={data?.reviewCount}
+          replyCount={data?.replyCount}
+          coverImageUrl={data?.coverImageUrl}
+        />
         <Split>
           <Split.Side>
-            <Title level="main">내 독서 기록</Title>
-            <Banner>
-              <Banner.Content title="내 별점" content="아직 평가하지 않았어요" />
-              <Banner.Trailing>
-                <Button
-                  size="small"
-                  variant="primary"
-                  onClick={() => {
-                    handleOpenDialog('UpdateRatingDialog');
-                  }}
-                >
-                  별점 주기
-                </Button>
-              </Banner.Trailing>
-            </Banner>
-            <SegmentedControl
-              shape="normal"
-              value={data?.myRecord?.status}
-              options={[
-                {
-                  value: 'WANT_TO_READ',
-                  text: '읽고 싶어요',
-                },
-                {
-                  value: 'READING',
-                  text: '읽는 중',
-                },
-                {
-                  value: 'FINISHED',
-                  text: '다 읽음',
-                },
-              ]}
-              onChange={(value: string) => {
-                handleRegisterLibrary(value);
+            <BookInfo
+              readingStatus={data?.myRecord?.status}
+              currentPage={data?.myRecord?.currentPage}
+              totalPages={data?.totalPages}
+              category={data?.category}
+              publishedDate={data?.publishedDate}
+              isbn13={data?.isbn13}
+              authors={data?.authors}
+              translators={data?.translators}
+              onRatingCreate={() => {
+                handleOpenDialog('UpdateRatingDialog');
               }}
-            />
-
-            <ProgressBar
-              value={data?.myRecord?.currentPage || 0}
-              max={data?.totalPages || 0}
-              title="현재 읽은 범위"
-              label={`${data?.myRecord?.currentPage || 0} / ${data?.totalPages || 0}쪽`}
-            />
-
-            <Button
-              variant="primary"
-              block={true}
-              onClick={() => {
+              onReadingStatusChange={handleRegisterLibrary}
+              onCurrentPageUpdate={() => {
                 handleOpenDialog('UpdateCurrentPageDialog');
               }}
-            >
-              현재 읽은 쪽수 입력
-            </Button>
-            <DataInfo heading="책 정보">
-              {data?.category && <DataInfo.Item title="장르" content={data?.category} />}
-              {data?.publishedDate && <DataInfo.Item title="출간" content={data?.publishedDate} />}
-              {data?.isbn13 && <DataInfo.Item title="ISBN" content={data?.isbn13} />}
-              {!!data?.authors.length && (
-                <DataInfo.Item title="지은이" content={data?.authors.join(' · ')} />
-              )}
-              {!!data?.translators.length && (
-                <DataInfo.Item title="옮김" content={data?.translators.join(' · ')} />
-              )}
-            </DataInfo>
+            />
           </Split.Side>
           <Split.Content>
-            <Title
-              level="main"
-              trailing={
-                <>
-                  <SegmentedControl
-                    value="all"
-                    options={[
-                      {
-                        value: 'all',
-                        text: '전체 피드',
-                      },
-                      {
-                        value: 'mine',
-                        text: '내 피드',
-                      },
-                    ]}
-                  />
-                </>
-              }
-            >
-              이 책에 남긴 감상 30
-            </Title>
-            <Entry>
-              <Entry.Main>
-                <Entry.Header>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                    <Shell.Trailing>Trailing</Shell.Trailing>
-                  </Shell>
-                </Entry.Header>
-                <Entry.Body>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum
-                  possimus nobis quas error consequatur cumque nam recusandae dicta ab commodi,
-                  reiciendis accusantium magni quis voluptates, velit nisi dolorum id.
-                  <Note>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum
-                    possimus nobis quas error consequatur cumque nam recusandae dicta ab commodi,
-                    reiciendis accusantium magni quis voluptates, velit nisi dolorum id.
-                  </Note>
-                </Entry.Body>
-                <Entry.Footer>
-                  <Button size="small" leading={'♡'}>
-                    좋아요 2
-                  </Button>
-                  <Button size="small" leading={'💬'}>
-                    답글 2
-                  </Button>
-                </Entry.Footer>
-              </Entry.Main>
-              <Entry.Extension>
-                <Surface>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} size="small" />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                  </Shell>
-                </Surface>
-                <Surface>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} size="small" />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                  </Shell>
-                </Surface>
-              </Entry.Extension>
-            </Entry>
-            <Entry variant="subtle">
-              <Entry.Main>
-                <Entry.Header>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                    <Shell.Trailing>Trailing</Shell.Trailing>
-                  </Shell>
-                </Entry.Header>
-                <Entry.Body>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum
-                  possimus nobis quas error consequatur cumque nam recusandae dicta ab commodi,
-                  reiciendis accusantium magni quis voluptates, velit nisi dolorum id.
-                  <Note>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum
-                    possimus nobis quas error consequatur cumque nam recusandae dicta ab commodi,
-                    reiciendis accusantium magni quis voluptates, velit nisi dolorum id.
-                  </Note>
-                </Entry.Body>
-                <Entry.Footer>
-                  <Button size="small" leading={'♡'}>
-                    좋아요 2
-                  </Button>
-                  <Button size="small" leading={'💬'}>
-                    답글 2
-                  </Button>
-                </Entry.Footer>
-              </Entry.Main>
-              <Entry.Extension>
-                <Surface>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} size="small" />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                  </Shell>
-                </Surface>
-                <Surface>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} size="small" />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                  </Shell>
-                </Surface>
-              </Entry.Extension>
-            </Entry>
+            <BookReviews
+              sort={reviewsRequestParams.sort}
+              feed={reviewsRequestParams.feed}
+              count={reviewsData?.totalCount}
+              reviews={reviewsData?.items}
+              onSortChange={(sort) => {
+                handleChangeReviewRequestParams({ name: 'sort', value: sort });
+              }}
+              onFeedChange={(feed) => {
+                handleChangeReviewRequestParams({ name: 'feed', value: feed });
+              }}
+            />
           </Split.Content>
         </Split>
 
