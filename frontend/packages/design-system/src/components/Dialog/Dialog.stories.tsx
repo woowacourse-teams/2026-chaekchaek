@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import { fn } from 'storybook/test';
 
 import { Dialog } from './';
 
@@ -19,6 +20,7 @@ type Story = StoryObj<typeof meta>;
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
 export const Example: Story = {
   args: {
+    onClose: fn(),
     children: (
       <Dialog.Container>
         <Dialog.Header subTitle="lorem ipsum dolor sit amet consectetur adipisicing elit.">
@@ -37,6 +39,7 @@ export const Example: Story = {
 
 export const WithField: Story = {
   args: {
+    onClose: fn(),
     children: (
       <>
         <Dialog.Container>
@@ -74,6 +77,7 @@ export const WithField: Story = {
 
 export const SizeMedium: Story = {
   args: {
+    onClose: fn(),
     size: 'medium',
     children: (
       <>
@@ -93,6 +97,7 @@ export const SizeMedium: Story = {
 
 export const SizeLarge: Story = {
   args: {
+    onClose: fn(),
     size: 'large',
     children: (
       <>
@@ -112,6 +117,7 @@ export const SizeLarge: Story = {
 
 export const Controlled: Story = {
   args: {
+    onClose: fn(),
     size: 'large',
     children: (
       <Dialog.Container>
