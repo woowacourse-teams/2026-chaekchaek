@@ -968,12 +968,12 @@ paths:
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-books-by-isbn-isbn131030482157'}
+              schema: {$ref: '#/components/schemas/api-v1-books-by-isbn-isbn13-554332680'}
               examples:
                 book-detail: {value: '{"bookId":42,"isbn13":"9788925568683","title":"마션","coverImageUrl":"https://image.aladin.co.kr/martian.jpg","description":"책
-                    설명","authors":["앤디 위어"],"translators":["박아람"],"publisher":"알에이치코리아(RHK)","category":"SF","publishedDate":"2026-01-01","totalPages":308,"reviewCount":22,"replyCount":24,"averageRating":4.3,"ratingCount":21,"myRecord":{"status":"READING","currentPage":120,"myRating":4.2}}'}
+                    설명","authors":["앤디 위어"],"translators":["박아람"],"publisher":"알에이치코리아(RHK)","category":"SF","publishedDate":"2026-01-01","totalPages":308,"reviewCount":22,"replyCount":24,"averageRating":4.3,"ratingCount":21,"myRatingCount":12,"myRecord":{"status":"READING","currentPage":120,"myRating":4.2}}'}
                 book-detail-without-library-record:
-                  summary: 서재에 등록하지 않은 도서
+                  summary: 비로그인 사용자의 도서 상세
                   value:
                     bookId: 10
                     isbn13: '9788936433598'
@@ -989,6 +989,7 @@ paths:
                     replyCount: 1
                     averageRating: 4.3
                     ratingCount: 21
+                    myRatingCount: null
                     myRecord: null
   /api/v1/books/{bookId}/reviews:
     get:
@@ -1642,12 +1643,13 @@ paths:
     get:
       tags: [내 서재]
       summary: 별점 비교 도서 조회
-      description: 인증된 사용자가 기준 별점보다 낮고 높은 내 별점 도서를 각각 한 권씩 조회한다
+      description: 인증된 사용자가 지금 별점을 주려는 도서를 제외하고 기준 별점과 같거나 낮거나 높은 내 별점 도서를 각각 한 권씩
+        조회한다
       operationId: library-rating-comparison
       parameters:
       - name: isbn13
         in: query
-        description: 비교 기준 도서의 ISBN-13
+        description: 지금 별점을 주려는 도서의 ISBN-13
         required: true
         schema: {type: string}
       - name: criterion
@@ -1660,10 +1662,11 @@ paths:
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-members-me-ratings-comparison269393295'}
+              schema: {$ref: '#/components/schemas/api-v1-members-me-ratings-comparison-1689179728'}
               examples:
-                library-rating-comparison: {value: '{"lower":{"bookId":9,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"myRating":4.0},"current":{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"myRating":4.5},"higher":{"bookId":11,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"myRating":4.8}}'}
-                library-rating-comparison-null-boundary: {value: '{"lower":null,"current":{"bookId":null,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"myRating":4.5},"higher":null}'}
+                library-rating-comparison: {value: '{"lower":{"bookId":9,"isbn13":"9788954699919","title":"파친코","coverImageUrl":"https://image.aladin.co.kr/cover/9.jpg","authors":["이민진"],"myRating":4.0,"ratingUpdatedAt":"2026-08-01T00:00:00Z"},"current":{"bookId":12,"isbn13":"9788965746829","title":"아몬드","coverImageUrl":"https://image.aladin.co.kr/cover/12.jpg","authors":["손원평"],"myRating":4.5,"ratingUpdatedAt":"2026-08-03T00:00:00Z"},"higher":{"bookId":11,"isbn13":"9788956609959","title":"불편한
+                    편의점","coverImageUrl":"https://image.aladin.co.kr/cover/11.jpg","authors":["김호연"],"myRating":4.8,"ratingUpdatedAt":"2026-08-05T00:00:00Z"}}'}
+                library-rating-comparison-null-boundary: {value: '{"lower":null,"current":null,"higher":null}'}
         '401':
           description: '401'
           content:
@@ -1717,54 +1720,6 @@ components:
         replyId: {type: number, description: 답글 ID}
         likeCount: {type: number, description: 좋아요 수}
         content: {type: string, description: 답글 내용}
-    api-v1-members-me-ratings-comparison269393295:
-      required: [current]
-      type: object
-      properties:
-        current:
-          required: [authors, coverImageUrl, isbn13, myRating, title]
-          type: object
-          properties:
-            myRating: {type: number, description: 내 별점}
-            coverImageUrl: {type: string, description: 표지 이미지 URL}
-            isbn13: {type: string, description: ISBN-13}
-            title: {type: string, description: 도서 제목}
-            authors:
-              type: array
-              description: 저자 이름 목록
-              items: {type: string}
-            bookId: {type: number, description: 도서 ID. 미등록 도서라면 null, nullable: true}
-          description: 비교 기준 도서
-        lower:
-          required: [authors, bookId, coverImageUrl, isbn13, myRating, title]
-          type: object
-          properties:
-            myRating: {type: number, description: 내 별점}
-            coverImageUrl: {type: string, description: 표지 이미지 URL}
-            isbn13: {type: string, description: ISBN-13}
-            title: {type: string, description: 도서 제목}
-            authors:
-              type: array
-              description: 저자 이름 목록
-              items: {type: string}
-            bookId: {type: number, description: 도서 ID}
-          description: 기준보다 낮은 별점 중 가장 가까운 도서. 없으면 null
-          nullable: true
-        higher:
-          required: [authors, bookId, coverImageUrl, isbn13, myRating, title]
-          type: object
-          properties:
-            myRating: {type: number, description: 내 별점}
-            coverImageUrl: {type: string, description: 표지 이미지 URL}
-            isbn13: {type: string, description: ISBN-13}
-            title: {type: string, description: 도서 제목}
-            authors:
-              type: array
-              description: 저자 이름 목록
-              items: {type: string}
-            bookId: {type: number, description: 도서 ID}
-          description: 기준보다 높은 별점 중 가장 가까운 도서. 없으면 null
-          nullable: true
     api-v1-books-bookId-reviews210617359:
       required: [author, content, createdAt, deleted, isSpoiler, likeCount, likedByMe,
         recentReplies, replyCount, reviewId]
@@ -1877,50 +1832,6 @@ components:
       properties:
         likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
         likeCount: {type: number, description: 좋아요 수}
-    api-v1-books-by-isbn-isbn131030482157:
-      required: [authors, bookId, category, coverImageUrl, isbn13, publisher, ratingCount,
-        replyCount, reviewCount, title, translators, averageRating, myRecord, totalPages]
-      type: object
-      properties:
-        myRecord:
-          type: object
-          properties:
-            myRating: {type: number, description: 내 별점, nullable: true}
-            currentPage: {type: number, description: 현재 페이지, nullable: true}
-            status: {type: string, description: 읽기 상태, nullable: true}
-          description: 내 서재 기록
-          nullable: true
-        coverImageUrl: {type: string, description: 표지 이미지 URL}
-        description: {type: string, description: 도서 상세 설명, nullable: true}
-        ratingCount: {type: number, description: 별점 수, nullable: true}
-        title: {type: string, description: 도서 제목}
-        bookId: {type: number, description: 도서 ID, nullable: true}
-        replyCount: {type: number, description: 답글 수, nullable: true}
-        translators:
-          type: array
-          description: 옮긴이 목록
-          items:
-            oneOf:
-            - {type: object}
-            - {type: boolean}
-            - {type: string}
-            - {type: number}
-        reviewCount: {type: number, description: 감상 수, nullable: true}
-        averageRating: {type: number, description: 평균 별점, nullable: true}
-        isbn13: {type: string, description: ISBN13}
-        totalPages: {type: number, description: 전체 페이지 수, nullable: true}
-        publisher: {type: string, description: 출판사}
-        publishedDate: {type: string, description: 출간일, nullable: true}
-        category: {type: string, description: 카테고리}
-        authors:
-          type: array
-          description: 저자 목록
-          items:
-            oneOf:
-            - {type: object}
-            - {type: boolean}
-            - {type: string}
-            - {type: number}
     api-v1-auth-mobile-reissue-248242179:
       required: [refreshToken]
       type: object
@@ -1954,6 +1865,52 @@ components:
           type: array
           description: 저자 이름 목록
           items: {type: string}
+    api-v1-books-by-isbn-isbn13-554332680:
+      required: [authors, bookId, category, coverImageUrl, isbn13, publisher, ratingCount,
+        replyCount, reviewCount, title, translators, averageRating, myRatingCount,
+        myRecord, totalPages]
+      type: object
+      properties:
+        myRecord:
+          type: object
+          properties:
+            myRating: {type: number, description: 내 별점, nullable: true}
+            currentPage: {type: number, description: 현재 페이지, nullable: true}
+            status: {type: string, description: 읽기 상태, nullable: true}
+          description: 내 서재 기록
+          nullable: true
+        coverImageUrl: {type: string, description: 표지 이미지 URL}
+        description: {type: string, description: 도서 상세 설명, nullable: true}
+        ratingCount: {type: number, description: 별점 수, nullable: true}
+        title: {type: string, description: 도서 제목}
+        myRatingCount: {type: number, description: 내가 별점을 등록한 도서 수, nullable: true}
+        bookId: {type: number, description: 도서 ID, nullable: true}
+        replyCount: {type: number, description: 답글 수, nullable: true}
+        translators:
+          type: array
+          description: 옮긴이 목록
+          items:
+            oneOf:
+            - {type: object}
+            - {type: boolean}
+            - {type: string}
+            - {type: number}
+        reviewCount: {type: number, description: 감상 수, nullable: true}
+        averageRating: {type: number, description: 평균 별점, nullable: true}
+        isbn13: {type: string, description: ISBN13}
+        totalPages: {type: number, description: 전체 페이지 수, nullable: true}
+        publisher: {type: string, description: 출판사}
+        publishedDate: {type: string, description: 출간일, nullable: true}
+        category: {type: string, description: 카테고리}
+        authors:
+          type: array
+          description: 저자 목록
+          items:
+            oneOf:
+            - {type: object}
+            - {type: boolean}
+            - {type: string}
+            - {type: number}
     api-v1-library-bulk-delete-348264081:
       required: [bookIds]
       type: object
@@ -2056,6 +2013,60 @@ components:
       properties:
         nickname: {type: string, description: 설정할 공개 닉네임. 공백일 수 없으며 최대 100자, minLength: 1,
           maxLength: 100}
+    api-v1-members-me-ratings-comparison-1689179728:
+      type: object
+      properties:
+        current:
+          required: [authors, bookId, coverImageUrl, isbn13, myRating, ratingUpdatedAt,
+            title]
+          type: object
+          properties:
+            myRating: {type: number, description: 내 별점}
+            coverImageUrl: {type: string, description: 표지 이미지 URL}
+            isbn13: {type: string, description: ISBN-13}
+            title: {type: string, description: 도서 제목}
+            ratingUpdatedAt: {type: string, description: 별점을 남긴 시각}
+            authors:
+              type: array
+              description: 저자 이름 목록
+              items: {type: string}
+            bookId: {type: number, description: 도서 ID}
+          description: 기준 별점과 같은 별점 중 가장 최근에 별점을 준 도서. 없으면 null
+          nullable: true
+        lower:
+          required: [authors, bookId, coverImageUrl, isbn13, myRating, ratingUpdatedAt,
+            title]
+          type: object
+          properties:
+            myRating: {type: number, description: 내 별점}
+            coverImageUrl: {type: string, description: 표지 이미지 URL}
+            isbn13: {type: string, description: ISBN-13}
+            title: {type: string, description: 도서 제목}
+            ratingUpdatedAt: {type: string, description: 별점을 남긴 시각}
+            authors:
+              type: array
+              description: 저자 이름 목록
+              items: {type: string}
+            bookId: {type: number, description: 도서 ID}
+          description: 기준보다 낮은 별점 중 가장 가까운 도서. 없으면 null
+          nullable: true
+        higher:
+          required: [authors, bookId, coverImageUrl, isbn13, myRating, ratingUpdatedAt,
+            title]
+          type: object
+          properties:
+            myRating: {type: number, description: 내 별점}
+            coverImageUrl: {type: string, description: 표지 이미지 URL}
+            isbn13: {type: string, description: ISBN-13}
+            title: {type: string, description: 도서 제목}
+            ratingUpdatedAt: {type: string, description: 별점을 남긴 시각}
+            authors:
+              type: array
+              description: 저자 이름 목록
+              items: {type: string}
+            bookId: {type: number, description: 도서 ID}
+          description: 기준보다 높은 별점 중 가장 가까운 도서. 없으면 null
+          nullable: true
     api-v1-auth-mobile-google1675364789:
       required: [accessToken, accessTokenExpiresIn, refreshToken, refreshTokenExpiresIn,
         tokenType]
