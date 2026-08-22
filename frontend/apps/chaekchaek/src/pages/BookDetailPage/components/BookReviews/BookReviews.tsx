@@ -10,6 +10,12 @@ import {
   Title,
 } from '@chaekchaek/design-system';
 
+import { useExecute } from '@/services/core/useExecute';
+import {
+  postReviewsReviewIdReactions,
+  deleteReviewsReviewIdReactions,
+} from '@/services/apis/reviewsReviewIdReactions/repository';
+
 import type { BookReviewsProps } from './BookReviews.types';
 
 export const BookReviews = ({
@@ -20,6 +26,22 @@ export const BookReviews = ({
   onSortChange,
   onFeedChange,
 }: BookReviewsProps) => {
+  const { mutate: postReactionMutate } = useExecute({ executeFn: postReviewsReviewIdReactions });
+  const { mutate: deleteReactionMutate } = useExecute({
+    executeFn: deleteReviewsReviewIdReactions,
+  });
+
+  const handleClickReaction = async ({
+    reviewId,
+    likedByMe,
+  }: {
+    reviewId: number;
+    likedByMe: boolean;
+  }) => {
+    if (!likedByMe) return await postReactionMutate({ reviewId });
+    await deleteReactionMutate({ reviewId });
+  };
+
   return (
     <>
       <Title
@@ -70,7 +92,13 @@ export const BookReviews = ({
                 {review.quote && <Note>{review.quote}</Note>}
               </Entry.Body>
               <Entry.Footer>
-                <Button size="small" leading={review.likedByMe ? '♥' : '♡'}>
+                <Button
+                  size="small"
+                  leading={review.likedByMe ? '♥' : '♡'}
+                  onClick={() => {
+                    handleClickReaction({ reviewId: review.reviewId, likedByMe: review.likedByMe });
+                  }}
+                >
                   좋아요 {review.likeCount}
                 </Button>
                 <Button size="small" leading={'💬'}>
