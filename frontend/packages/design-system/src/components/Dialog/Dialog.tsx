@@ -1,3 +1,4 @@
+import { cloneElement } from 'react';
 import type { ElementType } from 'react';
 
 import { View } from '#internal/components/View';
@@ -16,7 +17,7 @@ import type { Props } from './';
 const classnameDefault = 'ui-Dialog';
 
 export const Dialog = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, children, size = 'medium', ...restProps } = props;
+  const { as = 'div', className, children, size = 'medium', onClose, ...restProps } = props;
 
   const modifiers = {
     size: size && styles[`size-${size}`],
@@ -32,7 +33,10 @@ export const Dialog = <T extends ElementType>(props: Props<T>) => {
   return (
     <View as={as} className={classname} {...restProps}>
       <Dim />
-      {children}
+      {children &&
+        cloneElement(children, {
+          onClose,
+        })}
     </View>
   );
 };

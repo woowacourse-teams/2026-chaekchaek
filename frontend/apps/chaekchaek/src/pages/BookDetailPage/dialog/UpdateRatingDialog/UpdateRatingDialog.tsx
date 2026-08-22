@@ -70,7 +70,7 @@ export const UpdateRatingDialog = ({
     );
 
   return (
-    <Dialog>
+    <Dialog onClose={onClose}>
       <Dialog.Container>
         <Dialog.Header
           subTitle={`${title}을 읽은 느낌을 별점으로 남겨보세요. 별점은 언제든 수정할 수 있어요.`}

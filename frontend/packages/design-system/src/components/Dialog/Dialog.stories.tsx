@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
+import { fn } from 'storybook/test';
 
 import { Dialog } from './';
 
 import { Field } from '../Field';
 import { Input } from '../Input';
 import { Button } from '../Button';
+import { useArgs } from 'storybook/internal/preview-api';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
@@ -18,26 +20,26 @@ type Story = StoryObj<typeof meta>;
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
 export const Example: Story = {
   args: {
+    onClose: fn(),
     children: (
-      <>
-        <Dialog.Container>
-          <Dialog.Header subTitle="lorem ipsum dolor sit amet consectetur adipisicing elit.">
-            Header
-          </Dialog.Header>
-          <Dialog.Body>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
-            nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
-            accusantium magni quis voluptates, velit nisi dolorum id.{' '}
-          </Dialog.Body>
-          <Dialog.Footer>Footer</Dialog.Footer>
-        </Dialog.Container>
-      </>
+      <Dialog.Container>
+        <Dialog.Header subTitle="lorem ipsum dolor sit amet consectetur adipisicing elit.">
+          Header
+        </Dialog.Header>
+        <Dialog.Body>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
+          nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
+          accusantium magni quis voluptates, velit nisi dolorum id.{' '}
+        </Dialog.Body>
+        <Dialog.Footer>Footer</Dialog.Footer>
+      </Dialog.Container>
     ),
   },
 };
 
 export const WithField: Story = {
   args: {
+    onClose: fn(),
     children: (
       <>
         <Dialog.Container>
@@ -75,6 +77,7 @@ export const WithField: Story = {
 
 export const SizeMedium: Story = {
   args: {
+    onClose: fn(),
     size: 'medium',
     children: (
       <>
@@ -94,6 +97,7 @@ export const SizeMedium: Story = {
 
 export const SizeLarge: Story = {
   args: {
+    onClose: fn(),
     size: 'large',
     children: (
       <>
@@ -108,5 +112,39 @@ export const SizeLarge: Story = {
         </Dialog.Container>
       </>
     ),
+  },
+};
+
+export const Controlled: Story = {
+  args: {
+    onClose: fn(),
+    size: 'large',
+    children: (
+      <Dialog.Container>
+        <Dialog.Header>Header</Dialog.Header>
+        <Dialog.Body>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
+          nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
+          accusantium magni quis voluptates, velit nisi dolorum id.{' '}
+        </Dialog.Body>
+        <Dialog.Footer>Footer</Dialog.Footer>
+      </Dialog.Container>
+    ),
+  },
+  render: function Render(args) {
+    const [{ open = null }, updateArgs] = useArgs();
+    const handleOpen = () => {
+      updateArgs({ open: 'controlled' });
+    };
+    const handleClose = () => {
+      updateArgs({ open: null });
+    };
+
+    return (
+      <>
+        <button onClick={handleOpen}>open</button>
+        {open && <Dialog {...args} onClose={handleClose} />}
+      </>
+    );
   },
 };
