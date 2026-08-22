@@ -45,9 +45,9 @@ export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) =
     const requestData = {
       content: formValues.content,
       isSpoiler: formValues.isSpoiler,
-      quote: formValues.quote,
-      currentPage: formValues.currentPage ? Number(formValues.currentPage) : undefined,
-      chapter: formValues.chapter,
+      ...(formValues.quote && { quote: formValues.quote }),
+      ...(formValues.currentPage && { currentPage: Number(formValues.currentPage) }),
+      ...(formValues.chapter && { chapter: formValues.chapter }),
     };
     await mutate({
       bookId,
