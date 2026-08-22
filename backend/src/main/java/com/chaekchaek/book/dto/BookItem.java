@@ -12,6 +12,7 @@ public record BookItem(
         String isbn13,
         String category,
         String publisher,
-        Integer commentCount
+        Integer reviewCount,
+        Integer replyCount
 ) {
 }

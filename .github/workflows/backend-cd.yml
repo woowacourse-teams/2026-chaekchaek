@@ -16,8 +16,8 @@ defaults:
     working-directory: backend
 
 jobs:
-  deploy:
-    runs-on: [ self-hosted ]
+  build:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,11 +28,34 @@ jobs:
           distribution: 'liberica'
           java-version: '21'
 
+      - name: Setup Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build bootJar
-        run: ./gradlew clean bootJar --no-daemon
+      - name: Build bootJar (테스트 포함 — RestDocs 스니펫 필요)
+        run: ./gradlew clean bootJar
+
+      - name: Upload jar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/build/libs/*.jar
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: [ self-hosted, backend ]
+    steps:
+      - name: Checkout (Dockerfile 확보용)
+        uses: actions/checkout@v4
+
+      - name: Download jar artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/build/libs
 
       - name: Build Docker image
         run: docker build -t chaekchaek-backend .
@@ -48,6 +71,8 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           FRONTEND_BASE_URL: ${{ secrets.FRONTEND_BASE_URL }}
           FRONTEND_ALLOWED_ORIGINS: ${{ secrets.FRONTEND_ALLOWED_ORIGINS }}
+          AUTH_COOKIE_SECURE: 'true'
+          AUTH_COOKIE_SAME_SITE: 'None'
         run: |
           docker stop chaekchaek-backend 2>/dev/null || true
           docker rm chaekchaek-backend 2>/dev/null || true
@@ -64,5 +89,7 @@ jobs:
             -e GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
             -e FRONTEND_BASE_URL="$FRONTEND_BASE_URL" \
             -e FRONTEND_ALLOWED_ORIGINS="$FRONTEND_ALLOWED_ORIGINS" \
+            -e AUTH_COOKIE_SECURE="$AUTH_COOKIE_SECURE" \
+            -e AUTH_COOKIE_SAME_SITE="$AUTH_COOKIE_SAME_SITE" \
             chaekchaek-backend
           docker image prune -f

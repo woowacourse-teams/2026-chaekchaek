@@ -46,6 +46,7 @@ class BookResolveConcurrencyTest {
             fetchedByBothRequests.await(5, TimeUnit.SECONDS);
             return new AladinBookItem(
                     "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)",
+                    "책 설명",
                     "2026-01-01", ISBN13, "SF", "알에이치코리아", new AladinBookSubInfo(308)
             );
         });
@@ -66,6 +67,8 @@ class BookResolveConcurrencyTest {
 
             // then
             assertThat(firstResponse.getId()).isEqualTo(secondResponse.getId());
+            assertThat(firstResponse.getDescription()).isEqualTo("책 설명");
+            assertThat(secondResponse.getDescription()).isEqualTo("책 설명");
             assertThat(bookRepository.count()).isEqualTo(1);
         } finally {
             executor.shutdownNow();

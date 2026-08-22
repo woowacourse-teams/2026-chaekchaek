@@ -8,15 +8,18 @@ public record BookDetailResponse(
         String isbn13,
         String title,
         String coverImageUrl,
+        String description,
         List<String> authors,
         List<String> translators,
         String publisher,
         String category,
         String publishedDate,
         Integer totalPages,
-        Integer commentCount,
+        Integer reviewCount,
+        Integer replyCount,
         BigDecimal averageRating,
         Integer ratingCount,
+        Integer myRatingCount,
         BookMyRecordResponse myRecord
 ) {
 }

@@ -4,6 +4,8 @@ import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.service.BookCommentCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import com.chaekchaek.review.book.ReviewBookReader;
 import com.chaekchaek.review.domain.Reply;
 import com.chaekchaek.review.domain.ReplyReaction;
@@ -42,7 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class ReviewService implements BookCommentCountReader {
+public class ReviewService implements BookCommentCountReader, BookActivityCountReader {
 
     private static final int PAGE_SIZE = 10;
     private static final int RECENT_REPLY_LIMIT = 3;
@@ -390,13 +392,26 @@ public class ReviewService implements BookCommentCountReader {
     @Override
     @Transactional(readOnly = true)
     public Map<Long, Long> getCommentCounts(Collection<Long> bookIds) {
+        return getActivityCounts(bookIds).entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> entry.getValue().totalCount()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, ActivityCounts> getActivityCounts(Collection<Long> bookIds) {
         if (bookIds.isEmpty()) return Map.of();
-        Map<Long, Long> counts = bookIds.stream().collect(Collectors.toMap(bookId -> bookId, bookId -> 0L));
+        Map<Long, Long> reviewCounts = bookIds.stream()
+                .collect(Collectors.toMap(bookId -> bookId, bookId -> 0L));
+        Map<Long, Long> replyCounts = bookIds.stream()
+                .collect(Collectors.toMap(bookId -> bookId, bookId -> 0L));
         reviewRepository.countByBookIdInGroupByBookId(bookIds).forEach(count ->
-                counts.merge(count.getBookId(), count.getCount(), Long::sum));
+                reviewCounts.merge(count.getBookId(), count.getCount(), Long::sum));
         replyRepository.countByReviewBookIdInGroupByBookId(bookIds).forEach(count ->
-                counts.merge(count.getBookId(), count.getCount(), Long::sum));
-        return counts;
+                replyCounts.merge(count.getBookId(), count.getCount(), Long::sum));
+        return bookIds.stream().collect(Collectors.toMap(
+                bookId -> bookId,
+                bookId -> new ActivityCounts(reviewCounts.get(bookId), replyCounts.get(bookId))));
     }
 
     private ReviewReaction.ReviewReactionId reviewReactionId(long reviewId, long memberId) {

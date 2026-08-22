@@ -91,8 +91,11 @@ class BookControllerTest {
                     .description("도서 카테고리"),
             fieldWithPath("items[].publisher").type(JsonFieldType.STRING)
                     .description("출판사"),
-            fieldWithPath("items[].commentCount").type(JsonFieldType.NUMBER)
-                    .description("감상과 답글 수. 미등록 도서라면 null")
+            fieldWithPath("items[].reviewCount").type(JsonFieldType.NUMBER)
+                    .description("감상 수. 미등록 도서라면 null")
+                    .optional(),
+            fieldWithPath("items[].replyCount").type(JsonFieldType.NUMBER)
+                    .description("답글 수. 미등록 도서라면 null")
                     .optional()
     };
 
@@ -110,15 +113,18 @@ class BookControllerTest {
             fieldWithPath("isbn13").type(JsonFieldType.STRING).description("ISBN13"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("도서 제목"),
             fieldWithPath("coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
+            fieldWithPath("description").type(JsonFieldType.STRING).description("도서 상세 설명").optional(),
             fieldWithPath("authors").type(JsonFieldType.ARRAY).description("저자 목록"),
             fieldWithPath("translators").type(JsonFieldType.ARRAY).description("옮긴이 목록"),
             fieldWithPath("publisher").type(JsonFieldType.STRING).description("출판사"),
             fieldWithPath("category").type(JsonFieldType.STRING).description("카테고리"),
             fieldWithPath("publishedDate").type(JsonFieldType.STRING).description("출간일").optional(),
             fieldWithPath("totalPages").type(JsonFieldType.NUMBER).description("전체 페이지 수").optional(),
-            fieldWithPath("commentCount").type(JsonFieldType.NUMBER).description("감상과 답글 수"),
+            fieldWithPath("reviewCount").type(JsonFieldType.NUMBER).description("감상 수"),
+            fieldWithPath("replyCount").type(JsonFieldType.NUMBER).description("답글 수"),
             fieldWithPath("averageRating").type(JsonFieldType.NUMBER).description("평균 별점").optional(),
             fieldWithPath("ratingCount").type(JsonFieldType.NUMBER).description("별점 수"),
+            fieldWithPath("myRatingCount").type(JsonFieldType.NUMBER).description("내가 별점을 등록한 도서 수").optional(),
             fieldWithPath("myRecord").type(JsonFieldType.OBJECT).description("내 서재 기록").optional(),
             fieldWithPath("myRecord.status").type(JsonFieldType.STRING).description("읽기 상태").optional(),
             fieldWithPath("myRecord.currentPage").type(JsonFieldType.NUMBER).description("현재 페이지").optional(),
@@ -148,6 +154,7 @@ class BookControllerTest {
                 "9788925568683",
                 "국내도서>소설>과학소설",
                 "알에이치코리아(RHK)",
+                null,
                 null
         );
         BookSearchResponse response = new BookSearchResponse(1, null, List.of(item));
@@ -173,6 +180,8 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.items[0].isbn13").value("9788925568683"))
                 .andExpect(jsonPath("$.items[0].category").value("국내도서>소설>과학소설"))
                 .andExpect(jsonPath("$.items[0].publisher").value("알에이치코리아(RHK)"))
+                .andExpect(jsonPath("$.items[0].reviewCount").value(nullValue()))
+                .andExpect(jsonPath("$.items[0].replyCount").value(nullValue()))
                 .andDo(document(
                         "book-search",
                         queryParameters(
@@ -233,6 +242,9 @@ class BookControllerTest {
         mockMvc.perform(get("/api/v1/books/by-isbn/{isbn13}", "9788925568683"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.bookId").value(42))
+                .andExpect(jsonPath("$.description").value("책 설명"))
+                .andExpect(jsonPath("$.reviewCount").value(22))
+                .andExpect(jsonPath("$.replyCount").value(24))
                 .andDo(document(
                         "book-detail",
                         responseFields(BOOK_DETAIL_RESPONSE_FIELDS),
@@ -429,15 +441,18 @@ class BookControllerTest {
                 "9788925568683",
                 "마션",
                 "https://image.aladin.co.kr/martian.jpg",
+                "책 설명",
                 List.of("앤디 위어"),
                 List.of("박아람"),
                 "알에이치코리아(RHK)",
                 "SF",
                 "2026-01-01",
                 308,
-                46,
+                22,
+                24,
                 new java.math.BigDecimal("4.3"),
                 21,
+                12,
                 new BookMyRecordResponse("READING", 120, new java.math.BigDecimal("4.2"))
         );
     }

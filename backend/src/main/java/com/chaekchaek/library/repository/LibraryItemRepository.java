@@ -52,9 +52,14 @@ public interface LibraryItemRepository extends JpaRepository<LibraryItem, Long> 
 
     long countByMemberId(long memberId);
 
+    long countByMemberIdAndRatingIsNotNull(long memberId);
+
     long countByMemberIdAndStatus(long memberId, ReadingStatus status);
 
     Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
+            long memberId, long bookId, BigDecimal rating);
+
+    Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
             long memberId, long bookId, BigDecimal rating);
 
     Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(

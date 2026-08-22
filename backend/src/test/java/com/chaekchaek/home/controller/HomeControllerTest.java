@@ -14,6 +14,7 @@ import com.chaekchaek.home.dto.LatestReviewListResponse;
 import com.chaekchaek.home.dto.LatestReviewResponse;
 import com.chaekchaek.home.dto.PopularBookListResponse;
 import com.chaekchaek.home.dto.PopularBookResponse;
+import com.chaekchaek.review.dto.AuthorResponse;
 import com.chaekchaek.home.service.HomeService;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import java.util.List;
@@ -82,7 +83,8 @@ class HomeControllerTest {
         // given
         when(homeService.getLatestReviews()).thenReturn(new LatestReviewListResponse(List.of(
                 new LatestReviewResponse("도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.",
-                        java.time.Instant.parse("2026-08-18T14:00:00Z"), 12L,
+                        java.time.Instant.parse("2026-08-18T14:00:00Z"),
+                        new AuthorResponse("다정한 참새", "https://example.com/profile.jpg", false, false), 12L,
                         42L, "9788936433598", "보이지 않는 도시", "https://example.com/invisible-cities.jpg")
         )));
 
@@ -92,6 +94,9 @@ class HomeControllerTest {
                 .andExpect(jsonPath("$.reviews[0].content").value("도시는 기억으로 만들어진다는 문장에서 오래 멈췄다."))
                 .andExpect(jsonPath("$.reviews[0].createdAt").value("2026-08-18T14:00:00Z"))
                 .andExpect(jsonPath("$.reviews[0].replyCount").value(12))
+                .andExpect(jsonPath("$.reviews[0].author.displayName").value("다정한 참새"))
+                .andExpect(jsonPath("$.reviews[0].author.profileImageUrl").value("https://example.com/profile.jpg"))
+                .andExpect(jsonPath("$.reviews[0].author.anonymous").value(false))
                 .andExpect(jsonPath("$.reviews[0].bookId").value(42))
                 .andExpect(jsonPath("$.reviews[0].isbn13").value("9788936433598"))
                 .andDo(document("home-latest-reviews",
@@ -135,6 +140,12 @@ class HomeControllerTest {
                 fieldWithPath("reviews").type(JsonFieldType.ARRAY).description("최신 감상 목록"),
                 fieldWithPath("reviews[].content").type(JsonFieldType.STRING).description("감상 내용"),
                 fieldWithPath("reviews[].createdAt").type(JsonFieldType.STRING).description("감상 작성 시각(UTC)"),
+                fieldWithPath("reviews[].author").type(JsonFieldType.OBJECT).description("작성자 정보"),
+                fieldWithPath("reviews[].author.displayName").type(JsonFieldType.STRING).description("작성자 표시 이름"),
+                fieldWithPath("reviews[].author.profileImageUrl").type(JsonFieldType.STRING)
+                        .description("작성자 프로필 이미지 URL").optional(),
+                fieldWithPath("reviews[].author.anonymous").type(JsonFieldType.BOOLEAN).description("익명 작성 여부"),
+                fieldWithPath("reviews[].author.mine").type(JsonFieldType.BOOLEAN).description("내가 작성한 감상인지 여부"),
                 fieldWithPath("reviews[].replyCount").type(JsonFieldType.NUMBER).description("삭제되지 않은 답글 수"),
                 fieldWithPath("reviews[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
                 fieldWithPath("reviews[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),

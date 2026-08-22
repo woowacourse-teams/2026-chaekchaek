@@ -6,7 +6,8 @@ import com.chaekchaek.book.dto.BookMyRecordResponse;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.repository.LibraryItemRepository;
-import com.chaekchaek.library.service.BookCommentCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader;
+import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 class BookDetailAssembler {
 
-    private final BookCommentCountReader commentCountReader;
+    private final BookActivityCountReader activityCountReader;
     private final CurrentMemberIdProvider currentMemberIdProvider;
     private final LibraryItemRepository libraryItemRepository;
 
@@ -26,24 +27,26 @@ class BookDetailAssembler {
         Long bookId = book.getId();
         if (bookId == null) {
             return new BookDetailResponse(
-                    null, book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(),
+                    null, book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(), book.getDescription(),
                     book.getAuthors(), book.getTranslators(), book.getPublisher(), book.getCategory(),
                     book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
-                    book.getTotalPages(), null, null, null, null
+                    book.getTotalPages(), null, null, null, null, null, null
             );
         }
-        Map<Long, Long> commentCounts = commentCountReader.getCommentCounts(java.util.List.of(bookId));
+        OptionalLong memberId = currentMemberIdProvider.findCurrentMemberId();
+        Map<Long, ActivityCounts> activityCounts = activityCountReader.getActivityCounts(java.util.List.of(bookId));
+        ActivityCounts counts = activityCounts.getOrDefault(bookId, new ActivityCounts(0L, 0L));
         LibraryItemRepository.RatingStatistics ratings = libraryItemRepository
                 .findRatingStatisticsByBookIdIn(java.util.List.of(bookId))
                 .stream()
                 .findFirst()
                 .orElse(null);
         return new BookDetailResponse(
-                bookId, book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(),
+                bookId, book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(), book.getDescription(),
                 book.getAuthors(), book.getTranslators(), book.getPublisher(), book.getCategory(),
                 book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
-                book.getTotalPages(), commentCounts.getOrDefault(bookId, 0L).intValue(),
-                averageRating(ratings), ratingCount(ratings), myRecord(bookId)
+                book.getTotalPages(), Math.toIntExact(counts.reviewCount()), Math.toIntExact(counts.replyCount()),
+                averageRating(ratings), ratingCount(ratings), myRatingCount(memberId), myRecord(bookId, memberId)
         );
     }
 
@@ -58,8 +61,14 @@ class BookDetailAssembler {
         return ratings == null ? 0 : Math.toIntExact(ratings.getRatingCount());
     }
 
-    private BookMyRecordResponse myRecord(long bookId) {
-        OptionalLong memberId = currentMemberIdProvider.findCurrentMemberId();
+    private Integer myRatingCount(OptionalLong memberId) {
+        if (memberId.isEmpty()) {
+            return null;
+        }
+        return Math.toIntExact(libraryItemRepository.countByMemberIdAndRatingIsNotNull(memberId.getAsLong()));
+    }
+
+    private BookMyRecordResponse myRecord(long bookId, OptionalLong memberId) {
         if (memberId.isEmpty()) {
             return null;
         }

@@ -88,7 +88,7 @@ class LibraryControllerTest {
     private static final String LIBRARY_REMOVE_RATING_SUMMARY = "도서 별점 삭제";
     private static final String LIBRARY_REMOVE_RATING_DESCRIPTION = "인증된 사용자가 내 서재 도서에 등록한 별점을 삭제한다";
     private static final String RATING_COMPARISON_SUMMARY = "별점 비교 도서 조회";
-    private static final String RATING_COMPARISON_DESCRIPTION = "인증된 사용자가 기준 별점보다 낮고 높은 내 별점 도서를 각각 한 권씩 조회한다";
+    private static final String RATING_COMPARISON_DESCRIPTION = "인증된 사용자가 지금 별점을 주려는 도서를 제외하고 기준 별점과 같거나 낮거나 높은 내 별점 도서를 각각 한 권씩 조회한다";
     private static final FieldDescriptor[] LIBRARY_ITEM_RESPONSE_FIELDS = {
             fieldWithPath("bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
             fieldWithPath("isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
@@ -378,7 +378,9 @@ class LibraryControllerTest {
     void should_ReturnRatingComparison_When_RequestIsValid() throws Exception {
         // given
         RatingComparisonResponse response = new RatingComparisonResponse(
-                comparisonBook(9L, "4.0"), comparisonBook(BOOK_ID, "4.5"), comparisonBook(11L, "4.8"));
+                comparisonBook(9L, "9788954699919", "파친코", "이민진", "4.0", Instant.parse("2026-08-01T00:00:00Z")),
+                comparisonBook(12L, "9788965746829", "아몬드", "손원평", "4.5", Instant.parse("2026-08-03T00:00:00Z")),
+                comparisonBook(11L, "9788956609959", "불편한 편의점", "김호연", "4.8", Instant.parse("2026-08-05T00:00:00Z")));
         when(libraryService.compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5")))
                 .thenReturn(response);
 
@@ -387,7 +389,13 @@ class LibraryControllerTest {
                         .param("isbn13", ISBN13)
                         .param("criterion", "4.5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.current.bookId").value(BOOK_ID))
+                .andExpect(jsonPath("$.lower.isbn13").value("9788954699919"))
+                .andExpect(jsonPath("$.current.bookId").value(12L))
+                .andExpect(jsonPath("$.current.isbn13").value("9788965746829"))
+                .andExpect(jsonPath("$.higher.isbn13").value("9788956609959"))
+                .andExpect(jsonPath("$.lower.ratingUpdatedAt").value("2026-08-01T00:00:00Z"))
+                .andExpect(jsonPath("$.current.ratingUpdatedAt").value("2026-08-03T00:00:00Z"))
+                .andExpect(jsonPath("$.higher.ratingUpdatedAt").value("2026-08-05T00:00:00Z"))
                 .andDo(document(
                         "library-rating-comparison",
                         queryParameters(ratingComparisonQueryParameters()),
@@ -405,11 +413,10 @@ class LibraryControllerTest {
     }
 
     @Test
-    @DisplayName("비교 대상이 등록되지 않았다면 null 경계 응답을 반환한다")
-    void should_ReturnNullableRatingComparison_When_ComparisonBookIsNotPersisted() throws Exception {
+    @DisplayName("같은 별점을 준 책이 없다면 current가 null인 응답을 반환한다")
+    void should_ReturnNullableRatingComparison_When_NoBookHasCriterionRating() throws Exception {
         // given
-        RatingComparisonResponse response = new RatingComparisonResponse(
-                null, comparisonBook(null, "4.5"), null);
+        RatingComparisonResponse response = new RatingComparisonResponse(null, null, null);
         when(libraryService.compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5")))
                 .thenReturn(response);
 
@@ -419,7 +426,7 @@ class LibraryControllerTest {
                         .param("criterion", "4.5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.lower").value(org.hamcrest.Matchers.nullValue()))
-                .andExpect(jsonPath("$.current.bookId").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.current").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.higher").value(org.hamcrest.Matchers.nullValue()))
                 .andDo(document(
                         "library-rating-comparison-null-boundary",
@@ -811,7 +818,7 @@ class LibraryControllerTest {
 
     private ParameterDescriptor[] ratingComparisonQueryParameters() {
         return new ParameterDescriptor[]{
-                parameterWithName("isbn13").description("비교 기준 도서의 ISBN-13"),
+                parameterWithName("isbn13").description("지금 별점을 주려는 도서의 ISBN-13"),
                 parameterWithName("criterion").description("0.1부터 5.0까지 0.1 단위의 비교 기준 별점")
         };
     }
@@ -819,7 +826,7 @@ class LibraryControllerTest {
     private ParameterDescriptorWithType[] ratingComparisonResourceQueryParameters() {
         return new ParameterDescriptorWithType[]{
                 ResourceDocumentation.parameterWithName("isbn13").type(SimpleType.STRING)
-                        .description("비교 기준 도서의 ISBN-13"),
+                        .description("지금 별점을 주려는 도서의 ISBN-13"),
                 ResourceDocumentation.parameterWithName("criterion").type(SimpleType.NUMBER)
                         .description("0.1부터 5.0까지 0.1 단위의 비교 기준 별점")
         };
@@ -844,14 +851,18 @@ class LibraryControllerTest {
                 fieldWithPath("lower.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
                 fieldWithPath("lower.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
-                fieldWithPath("current").type(JsonFieldType.OBJECT).description("비교 기준 도서"),
-                fieldWithPath("current.bookId").type(JsonFieldType.NUMBER).description("도서 ID").optional(),
+                fieldWithPath("lower.ratingUpdatedAt").type(JsonFieldType.STRING).description("별점을 남긴 시각"),
+                fieldWithPath("current").type(JsonFieldType.OBJECT)
+                        .description("기준 별점과 같은 별점 중 가장 최근에 별점을 준 도서. 없으면 null")
+                        .optional().attributes(key("nullable").value(true)),
+                fieldWithPath("current.bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
                 fieldWithPath("current.isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
                 fieldWithPath("current.title").type(JsonFieldType.STRING).description("도서 제목"),
                 fieldWithPath("current.coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
                 fieldWithPath("current.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
                 fieldWithPath("current.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
+                fieldWithPath("current.ratingUpdatedAt").type(JsonFieldType.STRING).description("별점을 남긴 시각"),
                 fieldWithPath("higher").type(JsonFieldType.OBJECT).description("기준보다 높은 별점 중 가장 가까운 도서")
                         .optional().attributes(key("nullable").value(true)),
                 fieldWithPath("higher.bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
@@ -860,25 +871,22 @@ class LibraryControllerTest {
                 fieldWithPath("higher.coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
                 fieldWithPath("higher.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
-                fieldWithPath("higher.myRating").type(JsonFieldType.NUMBER).description("내 별점")
+                fieldWithPath("higher.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
+                fieldWithPath("higher.ratingUpdatedAt").type(JsonFieldType.STRING).description("별점을 남긴 시각")
         };
     }
 
     private FieldDescriptor[] nullableRatingComparisonResponseFields() {
         return new FieldDescriptor[]{
                 fieldWithPath("lower").type(JsonFieldType.OBJECT)
-                        .description("기준보다 낮은 별점 중 가장 가까운 도서. 없으면 null").optional(),
-                fieldWithPath("current").type(JsonFieldType.OBJECT).description("비교 기준 도서"),
-                fieldWithPath("current.bookId").type(JsonFieldType.NUMBER)
-                        .description("도서 ID. 미등록 도서라면 null").optional(),
-                fieldWithPath("current.isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
-                fieldWithPath("current.title").type(JsonFieldType.STRING).description("도서 제목"),
-                fieldWithPath("current.coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
-                fieldWithPath("current.authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
-                        .attributes(key("itemsType").value(JsonFieldType.STRING)),
-                fieldWithPath("current.myRating").type(JsonFieldType.NUMBER).description("내 별점"),
+                        .description("기준보다 낮은 별점 중 가장 가까운 도서. 없으면 null")
+                        .optional().attributes(key("nullable").value(true)),
+                fieldWithPath("current").type(JsonFieldType.OBJECT)
+                        .description("기준 별점과 같은 별점 중 가장 최근에 별점을 준 도서. 없으면 null")
+                        .optional().attributes(key("nullable").value(true)),
                 fieldWithPath("higher").type(JsonFieldType.OBJECT)
-                        .description("기준보다 높은 별점 중 가장 가까운 도서. 없으면 null").optional()
+                        .description("기준보다 높은 별점 중 가장 가까운 도서. 없으면 null")
+                        .optional().attributes(key("nullable").value(true))
         };
     }
 
@@ -918,9 +926,11 @@ class LibraryControllerTest {
         );
     }
 
-    private RatingComparisonBookResponse comparisonBook(Long bookId, String rating) {
-        return new RatingComparisonBookResponse(bookId, ISBN13, "채식주의자",
-                "https://image.aladin.co.kr/cover.jpg", List.of("한강"), new BigDecimal(rating));
+    private RatingComparisonBookResponse comparisonBook(Long bookId, String isbn13, String title, String author,
+                                                         String rating, Instant ratingUpdatedAt) {
+        return new RatingComparisonBookResponse(bookId, isbn13, title,
+                "https://image.aladin.co.kr/cover/" + bookId + ".jpg", List.of(author), new BigDecimal(rating),
+                ratingUpdatedAt);
     }
 
 }

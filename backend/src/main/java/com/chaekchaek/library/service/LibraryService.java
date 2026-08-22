@@ -191,17 +191,17 @@ public class LibraryService {
                         memberId, excludedBookId, criterion)
                 .map(item -> RatingComparisonBookResponse.from(item, getBook(item.getBookId())))
                 .orElse(null);
+        RatingComparisonBookResponse current = libraryItemRepository
+                .findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
+                        memberId, excludedBookId, criterion)
+                .map(item -> RatingComparisonBookResponse.from(item, getBook(item.getBookId())))
+                .orElse(null);
         RatingComparisonBookResponse higher = libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
                         memberId, excludedBookId, criterion)
                 .map(item -> RatingComparisonBookResponse.from(item, getBook(item.getBookId())))
                 .orElse(null);
-        return new RatingComparisonResponse(lower, currentResponse(currentBook, criterion), higher);
-    }
-
-    private RatingComparisonBookResponse currentResponse(Book book, BigDecimal criterion) {
-        return new RatingComparisonBookResponse(book.getId(), book.getIsbn13(), book.getTitle(),
-                book.getCoverImageUrl(), book.getAuthors(), criterion);
+        return new RatingComparisonResponse(lower, current, higher);
     }
 
     private LibraryItemResponse saveNewItem(long memberId, Book book, ReadingStatus status) {

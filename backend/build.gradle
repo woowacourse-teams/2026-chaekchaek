@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 import org.yaml.snakeyaml.Yaml
 
 plugins {
@@ -127,7 +128,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		def schemaName = schemaReference.substring(schemaReference.lastIndexOf('/') + 1)
 		def comparisonSchema = (((specification.get('components') as Map)?.get('schemas') as Map)
 				?.get(schemaName) as Map)
-		['lower', 'higher'].each { propertyName ->
+		['lower', 'current', 'higher'].each { propertyName ->
 			def property = comparisonSchema?.get('properties') as Map
 			def nullableProperty = property?.get(propertyName) as Map
 			if (nullableProperty == null) {
@@ -253,9 +254,9 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		markRequiredNullable(searchResponse, 'nextPage')
 		def searchItem = arrayItemSchema(searchResponse, 'items')
 		markRequiredNullable(searchItem, 'bookId')
-		markRequiredNullable(searchItem, 'commentCount')
-		def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
-		['bookId', 'commentCount', 'averageRating', 'ratingCount', 'myRecord', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
+	['reviewCount', 'replyCount'].each { propertyName -> markRequiredNullable(searchItem, propertyName) }
+	def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
+	['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRatingCount', 'myRecord', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
 		def libraryResponse = responseSchemaForPath('/api/v1/library', 'get', '200')
 		markRequiredNullable(libraryResponse, 'nextPage')
 		def libraryItem = arrayItemSchema(libraryResponse, 'items')
@@ -280,18 +281,18 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			 totalCount: 1, nextPage: null,
 			 items: [[bookId: 10, title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
 				 authors: ['한강'], translators: [], publishedDate: '2007-10-30', isbn13: '9788936433598',
-				 category: '국내도서>소설', publisher: '창비', commentCount: 2]]
+				 category: '국내도서>소설', publisher: '창비', reviewCount: 1, replyCount: 1]]
 		])
 		addJsonExample('/api/v1/books', 'get', '200', 'search-unregistered-book', '서재에 등록하지 않은 도서', [
 			 totalCount: 1, nextPage: null,
 			 items: [[bookId: null, title: '마션', coverImageUrl: 'https://example.com/book.jpg',
 				 authors: ['앤디 위어'], translators: [], publishedDate: '2015-07-10', isbn13: '9788925568683',
-				 category: '국내도서>소설', publisher: '알에이치코리아', commentCount: null]]
+				 category: '국내도서>소설', publisher: '알에이치코리아', reviewCount: null, replyCount: null]]
 		])
-		addJsonExample('/api/v1/books/by-isbn/{isbn13}', 'get', '200', 'book-detail-without-library-record', '서재에 등록하지 않은 도서', [
+		addJsonExample('/api/v1/books/by-isbn/{isbn13}', 'get', '200', 'book-detail-without-library-record', '비로그인 사용자의 도서 상세', [
 			 bookId: 10, isbn13: '9788936433598', title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
 			 authors: ['한강'], translators: [], publisher: '창비', category: '국내도서>소설', publishedDate: '2007-10-30',
-			 totalPages: 368, commentCount: 2, averageRating: 4.3, ratingCount: 21, myRecord: null
+				 totalPages: 368, reviewCount: 1, replyCount: 1, averageRating: 4.3, ratingCount: 21, myRatingCount: null, myRecord: null
 		])
 		addJsonExample('/api/v1/books/{bookId}/reviews', 'get', '200', 'review-normal', '일반 감상', [
 			 totalCount: 1, nextPage: null,
@@ -799,12 +800,14 @@ tasks.register('verifyOpenApi') {
 		def searchResponse = responseSchema('/api/v1/books', 'get', '200')
 		def searchItem = ((searchResponse?.get('properties') as Map)?.get('items') as Map)?.get('items') as Map
 		if (!requiredNullable(searchResponse, 'nextPage') || !requiredNullable(searchItem, 'bookId')
-				|| !requiredNullable(searchItem, 'commentCount')) {
+				|| !requiredNullable(searchItem, 'reviewCount') || !requiredNullable(searchItem, 'replyCount')) {
 			throw new GradleException('OpenAPI specification must distinguish nullable book search fields from omitted fields')
 		}
 		def detailResponse = responseSchema('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
-		if (!requiredNullable(detailResponse, 'bookId') || !requiredNullable(detailResponse, 'commentCount')
+		if (!requiredNullable(detailResponse, 'bookId') || !requiredNullable(detailResponse, 'reviewCount')
+				|| !requiredNullable(detailResponse, 'replyCount')
 				|| !requiredNullable(detailResponse, 'averageRating') || !requiredNullable(detailResponse, 'ratingCount')
+				|| !requiredNullable(detailResponse, 'myRatingCount')
 				|| !requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'totalPages')) {
 			throw new GradleException('OpenAPI specification must describe nullable book detail state fields')
 		}
@@ -830,11 +833,10 @@ tasks.register('verifyOpenApi') {
 		def comparisonProperties = comparisonSchema?.get('properties') as Map
 		if ((comparisonProperties?.get('lower') as Map)?.get('nullable') != true
 				|| (comparisonProperties?.get('higher') as Map)?.get('nullable') != true
-				|| ((comparisonProperties?.get('current') as Map)?.get('properties') as Map)
-				?.get('bookId')?.get('nullable') != true) {
+				|| (comparisonProperties?.get('current') as Map)?.get('nullable') != true) {
 			throw new GradleException('OpenAPI specification has invalid nullable fields for rating comparison')
 		}
-		def requiredComparisonBookFields = ['bookId', 'isbn13', 'title', 'coverImageUrl', 'authors', 'myRating'] as Set
+		def requiredComparisonBookFields = ['bookId', 'isbn13', 'title', 'coverImageUrl', 'authors', 'myRating', 'ratingUpdatedAt'] as Set
 		['lower', 'higher'].each { propertyName ->
 			def comparisonBook = comparisonProperties?.get(propertyName) as Map
 			def requiredFields = comparisonBook?.get('required') as List
@@ -846,9 +848,7 @@ tasks.register('verifyOpenApi') {
 		}
 		def currentComparisonBook = comparisonProperties?.get('current') as Map
 		def currentRequiredFields = currentComparisonBook?.get('required') as Set
-		if (currentRequiredFields == null || !currentRequiredFields.containsAll(
-				['isbn13', 'title', 'coverImageUrl', 'authors', 'myRating'])
-				|| currentRequiredFields.contains('bookId')) {
+		if (currentRequiredFields == null || !currentRequiredFields.containsAll(requiredComparisonBookFields)) {
 			throw new GradleException('OpenAPI specification has invalid required fields for rating comparison current')
 		}
 		def comparisonExamples = (((((paths.get('/api/v1/members/me/ratings/comparison') as Map).get('get') as Map)
@@ -857,6 +857,15 @@ tasks.register('verifyOpenApi') {
 		if (comparisonExamples == null || !comparisonExamples.keySet().containsAll(
 				['library-rating-comparison', 'library-rating-comparison-null-boundary'])) {
 			throw new GradleException('OpenAPI specification is missing normal and null-boundary rating comparison examples')
+		}
+		def comparisonExample = comparisonExamples.get('library-rating-comparison') as Map
+		def comparisonExampleValue = comparisonExample?.get('value') as String
+		def comparisonExampleResponse = new JsonSlurper().parseText(comparisonExampleValue) as Map
+		def comparisonExampleIsbn13s = ['lower', 'current', 'higher'].collect { propertyName ->
+			(comparisonExampleResponse.get(propertyName) as Map)?.get('isbn13')
+		} as Set
+		if (comparisonExampleIsbn13s.size() != 3 || comparisonExampleIsbn13s.contains(null)) {
+			throw new GradleException('OpenAPI rating comparison example must use different books for lower, current, and higher')
 		}
 
 		def libraryItemSchema = dereferenceSchema(((((libraryPostOperation.get('responses') as Map).get('201') as Map)

@@ -40,14 +40,14 @@ app:
     access-token:
       issuer: chaekchaek
       secret: ${JWT_SECRET}
-      expiration: 30m
+      expiration: 5m
 
     refresh-token:
       expiration: 14d
 
     cookie:
       secure: ${AUTH_COOKIE_SECURE:false}
-      same-site: Lax
+      same-site: ${AUTH_COOKIE_SAME_SITE:Lax}
 
     google-id-token:
       issuer: https://accounts.google.com
