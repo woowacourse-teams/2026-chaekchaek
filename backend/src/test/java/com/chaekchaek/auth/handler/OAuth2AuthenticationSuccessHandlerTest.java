@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.auth.principal.AuthenticatedMember;
+import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.auth.service.AuthTokenService;
 import com.chaekchaek.auth.token.refresh.IssuedRefreshToken;
@@ -35,6 +36,9 @@ public class OAuth2AuthenticationSuccessHandlerTest {
     @Mock
     private Authentication authentication;
 
+    @Mock
+    private OAuthFrontendRedirectResolver redirectResolver;
+
     private OAuth2AuthenticationSuccessHandler handler;
 
     @BeforeEach
@@ -42,8 +46,7 @@ public class OAuth2AuthenticationSuccessHandlerTest {
         handler = new OAuth2AuthenticationSuccessHandler(
                 authTokenService,
                 authCookieProvider,
-                "http://localhost:3000",
-                "/oauth/callback"
+                redirectResolver
         );
     }
 
@@ -89,6 +92,8 @@ public class OAuth2AuthenticationSuccessHandlerTest {
                 new MockHttpServletRequest();
         MockHttpServletResponse response =
                 new MockHttpServletResponse();
+        when(redirectResolver.resolveSuccessUrl(request))
+                .thenReturn("http://localhost:3000/oauth/callback");
 
         // when
         handler.onAuthenticationSuccess(
