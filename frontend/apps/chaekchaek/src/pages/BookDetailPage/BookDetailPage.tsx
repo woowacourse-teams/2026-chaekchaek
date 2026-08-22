@@ -7,16 +7,6 @@ import { Main } from '@/frames';
 
 // import DummyLargeImgBox from '../../components/ImgBox/imgs/dummy-large.png';
 import { Split } from '@chaekchaek/design-system';
-import { Title } from '@chaekchaek/design-system';
-import { Button } from '@chaekchaek/design-system';
-import { SegmentedControl } from '@chaekchaek/design-system';
-import { Select } from '@chaekchaek/design-system';
-import { Entry } from '@chaekchaek/design-system';
-import { Avatar } from '@chaekchaek/design-system';
-// import DummyImgAvatar from '../../components/Avatar/imgs/dummy-avatar.png';
-import { Shell } from '@chaekchaek/design-system';
-import { Note } from '@chaekchaek/design-system';
-import { Surface } from '@chaekchaek/design-system';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { postLibrary } from '@/services/apis/library/repository';
@@ -27,6 +17,7 @@ import { useExecute } from '@/services/core/useExecute';
 
 import { BookOverview } from './components/BookOverview';
 import { BookInfo } from './components/BookInfo';
+import { BookReviews } from './components/BookReviews';
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
 import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
 
@@ -180,93 +171,18 @@ export const BookDetailPage = () => {
             />
           </Split.Side>
           <Split.Content>
-            <Title
-              level="main"
-              trailing={
-                <>
-                  <Select
-                    value={reviewsRequestParams.sort}
-                    options={[
-                      { value: 'LATEST', text: '최신순' },
-                      { value: 'OLDEST', text: '오래된순' },
-                      { value: 'POPULAR', text: '인기순' },
-                      { value: 'PAGE', text: '페이지순' },
-                    ]}
-                    onChange={(value) => {
-                      handleChangeReviewRequestParams({ name: 'sort', value });
-                    }}
-                  />
-                  <SegmentedControl
-                    value={reviewsRequestParams.feed}
-                    options={[
-                      {
-                        value: 'ALL',
-                        text: '전체 피드',
-                      },
-                      {
-                        value: 'MINE',
-                        text: '내 피드',
-                      },
-                    ]}
-                    onChange={(value) => {
-                      handleChangeReviewRequestParams({ name: 'feed', value });
-                    }}
-                  />
-                </>
-              }
-            >
-              이 책에 남긴 감상 {reviewsData?.totalCount}
-            </Title>
-            {reviewsData?.items.map((item) => {
-              return (
-                <Entry key={item.reviewId} variant={item.deleted ? 'subtle' : 'plain'}>
-                  <Entry.Main>
-                    <Entry.Header>
-                      <Shell>
-                        <Shell.Leading>
-                          <Avatar img={item.author.profileImageUrl} />
-                        </Shell.Leading>
-                        <Shell.Content
-                          title={item.author.displayName}
-                          content={new Date(item.createdAt).toLocaleDateString('ko-KR')}
-                        />
-                        <Shell.Trailing>Trailing</Shell.Trailing>
-                      </Shell>
-                    </Entry.Header>
-                    <Entry.Body>
-                      {item.content}
-                      {item.quote && <Note>{item.quote}</Note>}
-                    </Entry.Body>
-                    <Entry.Footer>
-                      <Button size="small" leading={item.likedByMe ? '♥' : '♡'}>
-                        좋아요 {item.likeCount}
-                      </Button>
-                      <Button size="small" leading={'💬'}>
-                        답글 {item.replyCount}
-                      </Button>
-                    </Entry.Footer>
-                  </Entry.Main>
-                  <Entry.Extension>
-                    <Surface>
-                      <Shell>
-                        <Shell.Leading>
-                          <Avatar img={''} size="small" />
-                        </Shell.Leading>
-                        <Shell.Content title="title" content="content" />
-                      </Shell>
-                    </Surface>
-                    <Surface>
-                      <Shell>
-                        <Shell.Leading>
-                          <Avatar img={''} size="small" />
-                        </Shell.Leading>
-                        <Shell.Content title="title" content="content" />
-                      </Shell>
-                    </Surface>
-                  </Entry.Extension>
-                </Entry>
-              );
-            })}
+            <BookReviews
+              reviewSort={reviewsRequestParams.sort}
+              reviewFeed={reviewsRequestParams.feed}
+              reviewCount={reviewsData?.totalCount}
+              reviews={reviewsData?.items}
+              onReviewSortChange={(reviewSort) => {
+                handleChangeReviewRequestParams({ name: 'sort', value: reviewSort });
+              }}
+              onReviewFeedChange={(reviewFeed) => {
+                handleChangeReviewRequestParams({ name: 'feed', value: reviewFeed });
+              }}
+            />
           </Split.Content>
         </Split>
 
