@@ -15,6 +15,10 @@ import {
   postReviewsReviewIdReactions,
   deleteReviewsReviewIdReactions,
 } from '@/services/apis/reviewsReviewIdReactions/repository';
+import {
+  postRepliesReplyIdReactions,
+  deleteRepliesReplyIdReactions,
+} from '@/services/apis/repliesReplyIdReactions/repository';
 
 import type { BookReviewsProps } from './BookReviews.types';
 
@@ -42,6 +46,24 @@ export const BookReviews = ({
   }) => {
     if (!likedByMe) return await postReviewReactionMutate({ reviewId });
     await deleteReviewReactionMutate({ reviewId });
+  };
+
+  const { mutate: postReplyReactionMutate } = useExecute({
+    executeFn: postRepliesReplyIdReactions,
+  });
+  const { mutate: deleteReplyReactionMutate } = useExecute({
+    executeFn: deleteRepliesReplyIdReactions,
+  });
+
+  const handleClickReplyReaction = async ({
+    replyId,
+    likedByMe,
+  }: {
+    replyId: number;
+    likedByMe: boolean;
+  }) => {
+    if (!likedByMe) return await postReplyReactionMutate({ replyId });
+    await deleteReplyReactionMutate({ replyId });
   };
 
   return (
@@ -125,8 +147,17 @@ export const BookReviews = ({
                           description={recentReply.content}
                         />
                         <Shell.Trailing>
-                          {recentReply.likedByMe ? '♥' : '♡'}
-                          {recentReply.likeCount}
+                          <span
+                            onClick={() => {
+                              handleClickReplyReaction({
+                                replyId: recentReply.replyId,
+                                likedByMe: recentReply.likedByMe,
+                              });
+                            }}
+                          >
+                            {recentReply.likedByMe ? '♥' : '♡'}
+                            {recentReply.likeCount}
+                          </span>
                         </Shell.Trailing>
                       </Shell>
                     </Surface>
