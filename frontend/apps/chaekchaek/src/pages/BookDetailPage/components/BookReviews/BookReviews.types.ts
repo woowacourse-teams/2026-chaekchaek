@@ -1,3 +1,6 @@
+export type FeedType = 'ALL' | 'MINE';
+export type SortType = 'LATEST' | 'OLDEST' | 'POPULAR' | 'PAGE';
+
 export type BookReview = {
   reviewId: number;
   author: {
@@ -14,10 +17,10 @@ export type BookReview = {
 };
 
 export type BookReviewsProps = {
-  sort: string;
-  feed: string;
+  feed: FeedType;
+  sort: SortType;
   count: number | undefined;
   reviews: BookReview[] | undefined;
-  onSortChange: (sort: string) => void;
-  onFeedChange: (feed: string) => void;
+  onFeedChange: (feed: FeedType) => void;
+  onSortChange: (sort: SortType) => void;
 };
