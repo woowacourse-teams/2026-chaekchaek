@@ -45,12 +45,12 @@ export type GetBooksBookIdReviewsResponseDto = ResponseDto<{
 export interface PostBooksBookIdReviewsRequestDto {
   pathParams: [{ name: 'bookId'; value: number }];
   data: {
-    chapter: string;
-    isSpoiler: boolean;
-    quote: string;
-    totalPages: number;
-    currentPage: number;
-    content: string;
+    content: string | undefined;
+    chapter?: string | undefined;
+    isSpoiler?: boolean | undefined;
+    quote?: string | undefined;
+    totalPages?: number | undefined;
+    currentPage?: number | undefined;
   };
 }
 
