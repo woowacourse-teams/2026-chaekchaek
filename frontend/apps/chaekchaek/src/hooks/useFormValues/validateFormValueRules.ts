@@ -40,6 +40,7 @@ export const validateFormValuesRules = <TFormValues extends Record<string, unkno
 ) => {
   return Object.entries(formValues).reduce((acc, [key, value]: [string, unknown]) => {
     const rules = formValuesRules[key];
+    if (!rules) return acc;
     const valid = validateFormValueRules(value, rules);
     return { ...acc, [key]: valid };
   }, {}) as {
