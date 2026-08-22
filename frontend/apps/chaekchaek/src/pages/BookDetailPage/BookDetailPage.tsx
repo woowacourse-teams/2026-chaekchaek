@@ -26,6 +26,7 @@ import { Badge } from '@chaekchaek/design-system';
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { postLibrary } from '@/services/apis/library/repository';
 import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
+import { getBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
@@ -58,6 +59,22 @@ export const BookDetailPage = () => {
     if (!data?.myRecord) return await mutatePostLibrary({ isbn13: isbn, status });
     await mutatePatchLibraryBookId({ bookId: data?.bookId, status });
   };
+
+  const getBooksBookIdReviewsLoadData = useCallback(async () => {
+    if (!data?.bookId) return;
+    return await getBooksBookIdReviews({
+      page: 1,
+      feed: 'ALL',
+      sort: 'LATEST',
+      bookId: data?.bookId,
+    });
+  }, [data?.bookId]);
+
+  const {
+    status: { data: reviewsData },
+  } = useLoadData({
+    queryFn: getBooksBookIdReviewsLoadData,
+  });
 
   const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null>(
     null,
@@ -220,106 +237,58 @@ export const BookDetailPage = () => {
                 </>
               }
             >
-              이 책에 남긴 감상 30
+              이 책에 남긴 감상 {reviewsData?.totalCount}
             </Title>
-            <Entry>
-              <Entry.Main>
-                <Entry.Header>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                    <Shell.Trailing>Trailing</Shell.Trailing>
-                  </Shell>
-                </Entry.Header>
-                <Entry.Body>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum
-                  possimus nobis quas error consequatur cumque nam recusandae dicta ab commodi,
-                  reiciendis accusantium magni quis voluptates, velit nisi dolorum id.
-                  <Note>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum
-                    possimus nobis quas error consequatur cumque nam recusandae dicta ab commodi,
-                    reiciendis accusantium magni quis voluptates, velit nisi dolorum id.
-                  </Note>
-                </Entry.Body>
-                <Entry.Footer>
-                  <Button size="small" leading={'♡'}>
-                    좋아요 2
-                  </Button>
-                  <Button size="small" leading={'💬'}>
-                    답글 2
-                  </Button>
-                </Entry.Footer>
-              </Entry.Main>
-              <Entry.Extension>
-                <Surface>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} size="small" />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                  </Shell>
-                </Surface>
-                <Surface>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} size="small" />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                  </Shell>
-                </Surface>
-              </Entry.Extension>
-            </Entry>
-            <Entry variant="subtle">
-              <Entry.Main>
-                <Entry.Header>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                    <Shell.Trailing>Trailing</Shell.Trailing>
-                  </Shell>
-                </Entry.Header>
-                <Entry.Body>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum
-                  possimus nobis quas error consequatur cumque nam recusandae dicta ab commodi,
-                  reiciendis accusantium magni quis voluptates, velit nisi dolorum id.
-                  <Note>
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum
-                    possimus nobis quas error consequatur cumque nam recusandae dicta ab commodi,
-                    reiciendis accusantium magni quis voluptates, velit nisi dolorum id.
-                  </Note>
-                </Entry.Body>
-                <Entry.Footer>
-                  <Button size="small" leading={'♡'}>
-                    좋아요 2
-                  </Button>
-                  <Button size="small" leading={'💬'}>
-                    답글 2
-                  </Button>
-                </Entry.Footer>
-              </Entry.Main>
-              <Entry.Extension>
-                <Surface>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} size="small" />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                  </Shell>
-                </Surface>
-                <Surface>
-                  <Shell>
-                    <Shell.Leading>
-                      <Avatar img={''} size="small" />
-                    </Shell.Leading>
-                    <Shell.Content title="title" content="content" />
-                  </Shell>
-                </Surface>
-              </Entry.Extension>
-            </Entry>
+            {reviewsData?.items.map((item) => {
+              return (
+                <Entry key={item.reviewId} variant={item.deleted ? 'subtle' : 'plain'}>
+                  <Entry.Main>
+                    <Entry.Header>
+                      <Shell>
+                        <Shell.Leading>
+                          <Avatar img={item.author.profileImageUrl} />
+                        </Shell.Leading>
+                        <Shell.Content
+                          title={item.author.displayName}
+                          content={new Date(item.createdAt).toLocaleDateString('ko-KR')}
+                        />
+                        <Shell.Trailing>Trailing</Shell.Trailing>
+                      </Shell>
+                    </Entry.Header>
+                    <Entry.Body>
+                      {item.content}
+                      {item.quote && <Note>{item.quote}</Note>}
+                    </Entry.Body>
+                    <Entry.Footer>
+                      <Button size="small" leading={item.likedByMe ? '♥' : '♡'}>
+                        좋아요 {item.likeCount}
+                      </Button>
+                      <Button size="small" leading={'💬'}>
+                        답글 {item.replyCount}
+                      </Button>
+                    </Entry.Footer>
+                  </Entry.Main>
+                  <Entry.Extension>
+                    <Surface>
+                      <Shell>
+                        <Shell.Leading>
+                          <Avatar img={''} size="small" />
+                        </Shell.Leading>
+                        <Shell.Content title="title" content="content" />
+                      </Shell>
+                    </Surface>
+                    <Surface>
+                      <Shell>
+                        <Shell.Leading>
+                          <Avatar img={''} size="small" />
+                        </Shell.Leading>
+                        <Shell.Content title="title" content="content" />
+                      </Shell>
+                    </Surface>
+                  </Entry.Extension>
+                </Entry>
+              );
+            })}
           </Split.Content>
         </Split>
 
