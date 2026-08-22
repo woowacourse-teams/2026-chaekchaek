@@ -25,7 +25,7 @@ export const Container = <T extends ElementType>(props: ContainerProps<T>) => {
 
   return (
     <View as={as} className={classname} {...restProps}>
-      <Close onClose={onClose} />
+      {onClose && <Close onClose={onClose} />}
       {children}
     </View>
   );
