@@ -5,8 +5,6 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 
-import { Overview } from '@chaekchaek/design-system';
-import { ImgBox } from '@chaekchaek/design-system';
 // import DummyLargeImgBox from '../../components/ImgBox/imgs/dummy-large.png';
 import { Split } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
@@ -21,7 +19,6 @@ import { Shell } from '@chaekchaek/design-system';
 import { Note } from '@chaekchaek/design-system';
 import { Surface } from '@chaekchaek/design-system';
 import { DataInfo } from '@chaekchaek/design-system';
-import { Badge } from '@chaekchaek/design-system';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { postLibrary } from '@/services/apis/library/repository';
@@ -30,6 +27,7 @@ import { getBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/reposi
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
+import { BookOverview } from './components/BookOverview';
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
 import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
 
@@ -128,27 +126,18 @@ export const BookDetailPage = () => {
     <Layout>
       <Header />
       <Main>
-        <Overview>
-          <Overview.Content
-            leading={`ARCHIVE / ${data?.category} / ${data?.publishedDate}`}
-            title={data?.title}
-            content={`${data?.authors} · ${data?.publisher}`}
-            description={data?.description}
-            meta={
-              <>
-                <Badge variant="ghost" reverse>
-                  ★ {data?.averageRating || 0}
-                </Badge>
-                <Badge variant="ghost" reverse>
-                  감상 {data?.reviewCount || 0} · 답글: {data?.replyCount}
-                </Badge>
-              </>
-            }
-          />
-          <Overview.Media>
-            {data?.coverImageUrl && <ImgBox img={data?.coverImageUrl} />}
-          </Overview.Media>
-        </Overview>
+        <BookOverview
+          category={data?.category}
+          publishedDate={data?.publishedDate}
+          title={data?.title}
+          authors={data?.authors}
+          publisher={data?.publisher}
+          description={data?.description}
+          averageRating={data?.averageRating}
+          reviewCount={data?.reviewCount}
+          replyCount={data?.replyCount}
+          coverImageUrl={data?.coverImageUrl}
+        />
         <Split>
           <Split.Side>
             <Title level="main">내 독서 기록</Title>
