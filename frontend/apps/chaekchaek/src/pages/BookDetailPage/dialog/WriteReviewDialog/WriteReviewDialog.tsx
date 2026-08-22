@@ -16,6 +16,21 @@ type ReviewFormValues = {
   chapter: string;
 };
 
+const compact = <T extends object>(obj: T) =>
+  Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined)) as Partial<T>;
+
+const buildReviewRequest = (formValues: ReviewFormValues) => {
+  return {
+    content: formValues.content,
+    isSpoiler: formValues.isSpoiler,
+    ...compact({
+      quote: formValues.quote || undefined,
+      chapter: formValues.chapter || undefined,
+      currentPage: formValues.currentPage ? Number(formValues.currentPage) : undefined,
+    }),
+  };
+};
+
 export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) => {
   const [formValues, setFormValues] = useState<ReviewFormValues>({
     content: '',
@@ -42,13 +57,8 @@ export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) =
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
-    const requestData = {
-      content: formValues.content,
-      isSpoiler: formValues.isSpoiler,
-      ...(formValues.quote && { quote: formValues.quote }),
-      ...(formValues.currentPage && { currentPage: Number(formValues.currentPage) }),
-      ...(formValues.chapter && { chapter: formValues.chapter }),
-    };
+    const requestData = buildReviewRequest(formValues);
+
     await mutate({
       bookId,
       ...requestData,
