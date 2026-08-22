@@ -6,6 +6,7 @@ export type AS = 'div';
 
 export type OwnProps = {
   size?: 'medium' | 'large';
+  onClose: () => void;
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;
@@ -14,11 +15,15 @@ export type DimOwnProps = {};
 
 export type DimProps<T extends ElementType = AS> = PolymorphicProps<T, DimOwnProps>;
 
-export type ContainerOwnProps = {};
+export type ContainerOwnProps = {
+  onClose: () => void;
+};
 
 export type ContainerProps<T extends ElementType = AS> = PolymorphicProps<T, ContainerOwnProps>;
 
-export type CloseOwnProps = {};
+export type CloseOwnProps = {
+  onClose: () => void;
+};
 
 export type CloseProps<T extends ElementType = AS> = PolymorphicProps<T, CloseOwnProps>;
 

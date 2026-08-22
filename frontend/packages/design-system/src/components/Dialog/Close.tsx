@@ -12,7 +12,7 @@ import type { CloseProps } from './Dialog.types';
 const classnameDefault = 'ui-Dialog-Close';
 
 export const Close = <T extends ElementType>(props: CloseProps<T>) => {
-  const { as = 'div', className, ...restProps } = props;
+  const { as = 'div', className, onClose, ...restProps } = props;
 
   const modifiers = {};
 
@@ -24,7 +24,7 @@ export const Close = <T extends ElementType>(props: CloseProps<T>) => {
   });
 
   return (
-    <View as={as} className={classname} {...restProps}>
+    <View as={as} className={classname} {...restProps} onClick={onClose}>
       <img src={DialogCloseIcon} alt="close" />
     </View>
   );

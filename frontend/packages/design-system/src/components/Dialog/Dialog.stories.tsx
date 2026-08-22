@@ -5,6 +5,7 @@ import { Dialog } from './';
 import { Field } from '../Field';
 import { Input } from '../Input';
 import { Button } from '../Button';
+import { useArgs } from 'storybook/internal/preview-api';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
@@ -19,19 +20,17 @@ type Story = StoryObj<typeof meta>;
 export const Example: Story = {
   args: {
     children: (
-      <>
-        <Dialog.Container>
-          <Dialog.Header subTitle="lorem ipsum dolor sit amet consectetur adipisicing elit.">
-            Header
-          </Dialog.Header>
-          <Dialog.Body>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
-            nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
-            accusantium magni quis voluptates, velit nisi dolorum id.{' '}
-          </Dialog.Body>
-          <Dialog.Footer>Footer</Dialog.Footer>
-        </Dialog.Container>
-      </>
+      <Dialog.Container>
+        <Dialog.Header subTitle="lorem ipsum dolor sit amet consectetur adipisicing elit.">
+          Header
+        </Dialog.Header>
+        <Dialog.Body>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
+          nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
+          accusantium magni quis voluptates, velit nisi dolorum id.{' '}
+        </Dialog.Body>
+        <Dialog.Footer>Footer</Dialog.Footer>
+      </Dialog.Container>
     ),
   },
 };
@@ -108,5 +107,38 @@ export const SizeLarge: Story = {
         </Dialog.Container>
       </>
     ),
+  },
+};
+
+export const Controlled: Story = {
+  args: {
+    size: 'large',
+    children: (
+      <Dialog.Container>
+        <Dialog.Header>Header</Dialog.Header>
+        <Dialog.Body>
+          Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
+          nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
+          accusantium magni quis voluptates, velit nisi dolorum id.{' '}
+        </Dialog.Body>
+        <Dialog.Footer>Footer</Dialog.Footer>
+      </Dialog.Container>
+    ),
+  },
+  render: function Render(args) {
+    const [{ open = null }, updateArgs] = useArgs();
+    const handleOpen = () => {
+      updateArgs({ open: 'controlled' });
+    };
+    const handleClose = () => {
+      updateArgs({ open: null });
+    };
+
+    return (
+      <>
+        <button onClick={handleOpen}>open</button>
+        {open && <Dialog {...args} onClose={handleClose} />}
+      </>
+    );
   },
 };
