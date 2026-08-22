@@ -1,16 +1,7 @@
 import { useState, useRef } from 'react';
 import type { ChangeEvent, FocusEvent } from 'react';
 
-import type { ResultValid } from './validateFormValueRules';
-
-interface Options<TFormValues> {
-  initialValues: TFormValues;
-  validate: (formValues: TFormValues) => { [formKey in keyof TFormValues]: ResultValid[] };
-}
-
-type FormTouched<TFormValues> = {
-  [formKey in keyof TFormValues]: boolean;
-};
+import type { Options, FormTouched } from './useFormValues.types';
 
 export const useFormValues = <TFormValues extends Record<string, unknown>>({
   initialValues,
