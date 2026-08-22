@@ -1,2 +1,2 @@
 export { BookReviews } from './BookReviews';
-export type { BookReview, BookReviewsProps } from './BookReviews.types';
+export type { BookReview, BookReviewsProps, RecentReply } from './BookReviews.types';

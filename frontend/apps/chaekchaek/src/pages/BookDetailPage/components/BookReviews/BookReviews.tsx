@@ -78,24 +78,29 @@ export const BookReviews = ({
                 </Button>
               </Entry.Footer>
             </Entry.Main>
-            <Entry.Extension>
-              <Surface>
-                <Shell>
-                  <Shell.Leading>
-                    <Avatar img={''} size="small" />
-                  </Shell.Leading>
-                  <Shell.Content title="title" content="content" />
-                </Shell>
-              </Surface>
-              <Surface>
-                <Shell>
-                  <Shell.Leading>
-                    <Avatar img={''} size="small" />
-                  </Shell.Leading>
-                  <Shell.Content title="title" content="content" />
-                </Shell>
-              </Surface>
-            </Entry.Extension>
+            {review.recentReplies.length > 0 && (
+              <Entry.Extension>
+                {review.recentReplies.map((recentReply) => {
+                  return (
+                    <Surface key={recentReply.replyId}>
+                      <Shell>
+                        <Shell.Leading>
+                          <Avatar img={recentReply.author.profileImageUrl} size="small" />
+                        </Shell.Leading>
+                        <Shell.Content
+                          title={recentReply.author.displayName}
+                          description={recentReply.content}
+                        />
+                        <Shell.Trailing>
+                          {recentReply.likedByMe ? '♥' : '♡'}
+                          {recentReply.likeCount}
+                        </Shell.Trailing>
+                      </Shell>
+                    </Surface>
+                  );
+                })}
+              </Entry.Extension>
+            )}
           </Entry>
         );
       })}
