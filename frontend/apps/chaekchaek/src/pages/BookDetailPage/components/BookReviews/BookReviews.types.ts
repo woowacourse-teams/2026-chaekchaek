@@ -14,10 +14,10 @@ export type BookReview = {
 };
 
 export type BookReviewsProps = {
-  reviewSort: string;
-  reviewFeed: string;
-  reviewCount: number | undefined;
+  sort: string;
+  feed: string;
+  count: number | undefined;
   reviews: BookReview[] | undefined;
-  onReviewSortChange: (reviewSort: string) => void;
-  onReviewFeedChange: (reviewFeed: string) => void;
+  onSortChange: (sort: string) => void;
+  onFeedChange: (feed: string) => void;
 };

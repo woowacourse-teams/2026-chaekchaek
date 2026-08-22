@@ -13,12 +13,12 @@ import {
 import type { BookReviewsProps } from './BookReviews.types';
 
 export const BookReviews = ({
-  reviewSort,
-  reviewFeed,
-  reviewCount,
+  sort,
+  feed,
+  count,
   reviews,
-  onReviewSortChange,
-  onReviewFeedChange,
+  onSortChange,
+  onFeedChange,
 }: BookReviewsProps) => {
   return (
     <>
@@ -27,27 +27,27 @@ export const BookReviews = ({
         trailing={
           <>
             <Select
-              value={reviewSort}
+              value={sort}
               options={[
                 { value: 'LATEST', text: '최신순' },
                 { value: 'OLDEST', text: '오래된순' },
                 { value: 'POPULAR', text: '인기순' },
                 { value: 'PAGE', text: '페이지순' },
               ]}
-              onChange={onReviewSortChange}
+              onChange={onSortChange}
             />
             <SegmentedControl
-              value={reviewFeed}
+              value={feed}
               options={[
                 { value: 'ALL', text: '전체 피드' },
                 { value: 'MINE', text: '내 피드' },
               ]}
-              onChange={onReviewFeedChange}
+              onChange={onFeedChange}
             />
           </>
         }
       >
-        이 책에 남긴 감상 {reviewCount}
+        이 책에 남긴 감상 {count}
       </Title>
       {reviews?.map((review) => {
         return (

@@ -172,15 +172,15 @@ export const BookDetailPage = () => {
           </Split.Side>
           <Split.Content>
             <BookReviews
-              reviewSort={reviewsRequestParams.sort}
-              reviewFeed={reviewsRequestParams.feed}
-              reviewCount={reviewsData?.totalCount}
+              sort={reviewsRequestParams.sort}
+              feed={reviewsRequestParams.feed}
+              count={reviewsData?.totalCount}
               reviews={reviewsData?.items}
-              onReviewSortChange={(reviewSort) => {
-                handleChangeReviewRequestParams({ name: 'sort', value: reviewSort });
+              onSortChange={(sort) => {
+                handleChangeReviewRequestParams({ name: 'sort', value: sort });
               }}
-              onReviewFeedChange={(reviewFeed) => {
-                handleChangeReviewRequestParams({ name: 'feed', value: reviewFeed });
+              onFeedChange={(feed) => {
+                handleChangeReviewRequestParams({ name: 'feed', value: feed });
               }}
             />
           </Split.Content>
