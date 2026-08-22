@@ -34,7 +34,7 @@ export const UpdateCurrentPageDialog = ({
   };
 
   return (
-    <Dialog>
+    <Dialog onClose={onClose}>
       <Dialog.Container>
         <Dialog.Header
           subTitle={
