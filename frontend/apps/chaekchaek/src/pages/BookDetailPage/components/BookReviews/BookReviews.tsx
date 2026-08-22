@@ -26,20 +26,22 @@ export const BookReviews = ({
   onSortChange,
   onFeedChange,
 }: BookReviewsProps) => {
-  const { mutate: postReactionMutate } = useExecute({ executeFn: postReviewsReviewIdReactions });
-  const { mutate: deleteReactionMutate } = useExecute({
+  const { mutate: postReviewReactionMutate } = useExecute({
+    executeFn: postReviewsReviewIdReactions,
+  });
+  const { mutate: deleteReviewReactionMutate } = useExecute({
     executeFn: deleteReviewsReviewIdReactions,
   });
 
-  const handleClickReaction = async ({
+  const handleClickReviewReaction = async ({
     reviewId,
     likedByMe,
   }: {
     reviewId: number;
     likedByMe: boolean;
   }) => {
-    if (!likedByMe) return await postReactionMutate({ reviewId });
-    await deleteReactionMutate({ reviewId });
+    if (!likedByMe) return await postReviewReactionMutate({ reviewId });
+    await deleteReviewReactionMutate({ reviewId });
   };
 
   return (
@@ -96,7 +98,10 @@ export const BookReviews = ({
                   size="small"
                   leading={review.likedByMe ? '♥' : '♡'}
                   onClick={() => {
-                    handleClickReaction({ reviewId: review.reviewId, likedByMe: review.likedByMe });
+                    handleClickReviewReaction({
+                      reviewId: review.reviewId,
+                      likedByMe: review.likedByMe,
+                    });
                   }}
                 >
                   좋아요 {review.likeCount}
