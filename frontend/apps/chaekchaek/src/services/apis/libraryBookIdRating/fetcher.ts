@@ -1,4 +1,4 @@
-import { requestAjax } from '@/services/core/http';
+import { instance } from '@/services/core/http';
 
 import type { PutLibraryBookIdRatingRequestDto, PutLibraryBookIdRatingResponseDto } from './dto';
 
@@ -6,7 +6,7 @@ export const putLibraryBookIdRating = async ({
   pathParams: [{ value: bookId }],
   data: { rating },
 }: PutLibraryBookIdRatingRequestDto): Promise<PutLibraryBookIdRatingResponseDto> => {
-  const response = await requestAjax(`/api/v1/library/${bookId}/rating`, {
+  const response = await instance(`/api/v1/library/${bookId}/rating`, {
     method: 'put',
     // pathParams: [{ name: 'bookId', value: bookId }],
     data: { rating },
@@ -23,7 +23,7 @@ import type {
 export const deleteLibraryBookIdRating = async ({
   pathParams: [{ value: bookId }],
 }: DeleteLibraryBookIdRatingRequestDto): Promise<DeleteLibraryBookIdRatingResponseDto> => {
-  const response = await requestAjax(`/api/v1/library/${bookId}/rating`, {
+  const response = await instance(`/api/v1/library/${bookId}/rating`, {
     method: 'delete',
     // pathParams: [{ name: 'bookId', value: bookId }],
   });

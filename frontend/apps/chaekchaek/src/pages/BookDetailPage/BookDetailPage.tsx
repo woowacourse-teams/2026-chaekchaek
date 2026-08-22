@@ -21,6 +21,7 @@ import { Shell } from '@chaekchaek/design-system';
 import { Note } from '@chaekchaek/design-system';
 import { Surface } from '@chaekchaek/design-system';
 import { DataInfo } from '@chaekchaek/design-system';
+import { Badge } from '@chaekchaek/design-system';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { postLibrary } from '@/services/apis/library/repository';
@@ -115,12 +116,17 @@ export const BookDetailPage = () => {
             leading={`ARCHIVE / ${data?.category} / ${data?.publishedDate}`}
             title={data?.title}
             content={`${data?.authors} · ${data?.publisher}`}
-            description={`${data?.description}
-
-          ${!!data?.myRecord?.myRating ? `별점: ${data?.myRecord?.myRating}` : ''}
-          ${`감상: ${data?.reviewCount}`}
-          ${`답글: ${data?.replyCount}`}
-          `}
+            description={data?.description}
+            meta={
+              <>
+                <Badge variant="ghost" reverse>
+                  ★ {data?.averageRating || 0}
+                </Badge>
+                <Badge variant="ghost" reverse>
+                  감상 {data?.reviewCount || 0} · 답글: {data?.replyCount}
+                </Badge>
+              </>
+            }
           />
           <Overview.Media>
             {data?.coverImageUrl && <ImgBox img={data?.coverImageUrl} />}

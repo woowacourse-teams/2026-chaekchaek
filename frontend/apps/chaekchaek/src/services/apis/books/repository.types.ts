@@ -14,7 +14,8 @@ export type GetBooks = (params: GetBooksParams) => Promise<{
     publishedDate: string;
     category: string;
     title: string;
-    commentCount: number;
+    reviewCount: number | null;
+    replyCount: number | null;
     authors: string[];
     bookId: number;
   }[];

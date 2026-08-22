@@ -101,6 +101,7 @@ export const UpdateRatingDialog = ({
             onChange={handleChangeRating}
             title={'내 별점'}
             description={`${rating || 0} · ${ratingMessage}`}
+            block
           />
         </Dialog.Body>
         <Dialog.Footer>
