@@ -10,6 +10,7 @@ import { Split } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { SegmentedControl } from '@chaekchaek/design-system';
+import { Select } from '@chaekchaek/design-system';
 import { Entry } from '@chaekchaek/design-system';
 import { Avatar } from '@chaekchaek/design-system';
 // import DummyImgAvatar from '../../components/Avatar/imgs/dummy-avatar.png';
@@ -161,6 +162,15 @@ export const BookDetailPage = () => {
               level="main"
               trailing={
                 <>
+                  <Select
+                    value="LATEST"
+                    options={[
+                      { value: 'PAGE', text: '페이지순' },
+                      { value: 'LATEST', text: '최신순' },
+                      { value: 'OLDEST', text: '오래된순' },
+                      { value: 'POPULAR', text: '인기순' },
+                    ]}
+                  />
                   <SegmentedControl
                     value="all"
                     options={[
