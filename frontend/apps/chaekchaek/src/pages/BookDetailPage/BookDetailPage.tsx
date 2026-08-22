@@ -8,9 +8,7 @@ import { Main } from '@/frames';
 // import DummyLargeImgBox from '../../components/ImgBox/imgs/dummy-large.png';
 import { Split } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
-import { Banner } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
-import { ProgressBar } from '@chaekchaek/design-system';
 import { SegmentedControl } from '@chaekchaek/design-system';
 import { Entry } from '@chaekchaek/design-system';
 import { Avatar } from '@chaekchaek/design-system';
@@ -18,7 +16,6 @@ import { Avatar } from '@chaekchaek/design-system';
 import { Shell } from '@chaekchaek/design-system';
 import { Note } from '@chaekchaek/design-system';
 import { Surface } from '@chaekchaek/design-system';
-import { DataInfo } from '@chaekchaek/design-system';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { postLibrary } from '@/services/apis/library/repository';
@@ -28,6 +25,7 @@ import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
 import { BookOverview } from './components/BookOverview';
+import { BookInfo } from './components/BookInfo';
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
 import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
 
@@ -140,70 +138,23 @@ export const BookDetailPage = () => {
         />
         <Split>
           <Split.Side>
-            <Title level="main">내 독서 기록</Title>
-            <Banner>
-              <Banner.Content title="내 별점" content="아직 평가하지 않았어요" />
-              <Banner.Trailing>
-                <Button
-                  size="small"
-                  variant="primary"
-                  onClick={() => {
-                    handleOpenDialog('UpdateRatingDialog');
-                  }}
-                >
-                  별점 주기
-                </Button>
-              </Banner.Trailing>
-            </Banner>
-            <SegmentedControl
-              shape="normal"
-              value={data?.myRecord?.status}
-              options={[
-                {
-                  value: 'WANT_TO_READ',
-                  text: '읽고 싶어요',
-                },
-                {
-                  value: 'READING',
-                  text: '읽는 중',
-                },
-                {
-                  value: 'FINISHED',
-                  text: '다 읽음',
-                },
-              ]}
-              onChange={(value: string) => {
-                handleRegisterLibrary(value);
+            <BookInfo
+              readingStatus={data?.myRecord?.status}
+              currentPage={data?.myRecord?.currentPage}
+              totalPages={data?.totalPages}
+              category={data?.category}
+              publishedDate={data?.publishedDate}
+              isbn13={data?.isbn13}
+              authors={data?.authors}
+              translators={data?.translators}
+              onRatingCreate={() => {
+                handleOpenDialog('UpdateRatingDialog');
               }}
-            />
-
-            <ProgressBar
-              value={data?.myRecord?.currentPage || 0}
-              max={data?.totalPages || 0}
-              title="현재 읽은 범위"
-              label={`${data?.myRecord?.currentPage || 0} / ${data?.totalPages || 0}쪽`}
-            />
-
-            <Button
-              variant="primary"
-              block={true}
-              onClick={() => {
+              onReadingStatusChange={handleRegisterLibrary}
+              onCurrentPageUpdate={() => {
                 handleOpenDialog('UpdateCurrentPageDialog');
               }}
-            >
-              현재 읽은 쪽수 입력
-            </Button>
-            <DataInfo heading="책 정보">
-              {data?.category && <DataInfo.Item title="장르" content={data?.category} />}
-              {data?.publishedDate && <DataInfo.Item title="출간" content={data?.publishedDate} />}
-              {data?.isbn13 && <DataInfo.Item title="ISBN" content={data?.isbn13} />}
-              {!!data?.authors.length && (
-                <DataInfo.Item title="지은이" content={data?.authors.join(' · ')} />
-              )}
-              {!!data?.translators.length && (
-                <DataInfo.Item title="옮김" content={data?.translators.join(' · ')} />
-              )}
-            </DataInfo>
+            />
           </Split.Side>
           <Split.Content>
             <Title
