@@ -1,7 +1,11 @@
+import { useState } from 'react';
+
 import {
   Avatar,
   Button,
   Entry,
+  Field,
+  Input,
   Note,
   SegmentedControl,
   Select,
@@ -19,6 +23,8 @@ import {
   postRepliesReplyIdReactions,
   deleteRepliesReplyIdReactions,
 } from '@/services/apis/repliesReplyIdReactions/repository';
+
+import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
 
 import type { BookReviewsProps } from './BookReviews.types';
 
@@ -65,6 +71,26 @@ export const BookReviews = ({
     if (!likedByMe) return await postReplyReactionMutate({ replyId });
     await deleteReplyReactionMutate({ replyId });
   };
+
+  const [dialog, setDialog] = useState<'WriteReviewDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'WriteReviewDialog') => {
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (dialog: 'WriteReviewDialog' | null) => {
+    switch (dialog) {
+      case 'WriteReviewDialog':
+        return <WriteReviewDialog onClose={handleCloseDialog} />;
+
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
 
   return (
     <>
@@ -168,6 +194,17 @@ export const BookReviews = ({
           </Entry>
         );
       })}
+      <Field>
+        <Field.Content
+          onClick={() => {
+            handleOpenDialog('WriteReviewDialog');
+          }}
+        >
+          <Input />
+          <Button variant="primary">남기기</Button>
+        </Field.Content>
+      </Field>
+      {dialogElement}
     </>
   );
 };
