@@ -79,7 +79,14 @@ export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) =
 
             <Field>
               <Field.Content>
-                <Checkbox>스포일러</Checkbox>
+                <Checkbox
+                  checked={formValues.isSpoiler}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    handleChangeFormValues({ name: 'isSpoiler', value: e.target.checked });
+                  }}
+                >
+                  스포일러
+                </Checkbox>
               </Field.Content>
             </Field>
 
