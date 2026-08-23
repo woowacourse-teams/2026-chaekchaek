@@ -3,6 +3,8 @@ import { Navigate } from 'react-router-dom';
 
 import { ROUTES } from '@/constants/routes';
 
+import { OauthPage } from '@/pages/OauthPage';
+
 import { IntroPage } from '@/pages/IntroPage';
 import { BooksPage } from '@/pages/BooksPage';
 import { BookDetailPage } from '@/pages/BookDetailPage';
@@ -17,6 +19,10 @@ const DummyPage = () => {
 };
 
 const routes: Route[] = [
+  {
+    path: ROUTES.OAUTH_CALLBACK,
+    element: <OauthPage />,
+  },
   {
     path: ROUTES.HOME,
     element: <Navigate to={ROUTES.INTRO} replace />,
