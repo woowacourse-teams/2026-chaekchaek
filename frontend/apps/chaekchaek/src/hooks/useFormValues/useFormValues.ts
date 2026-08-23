@@ -9,7 +9,9 @@ export const useFormValues = <TFormValues extends Record<string, unknown>>({
 }: Options<TFormValues>) => {
   const [formValues, setFormValues] = useState<TFormValues>(initialValues);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
     setFormValues((prev) => ({ ...prev, [e.target.id]: e.target.value }));
   };
 
@@ -19,7 +21,9 @@ export const useFormValues = <TFormValues extends Record<string, unknown>>({
     }, {} as FormTouched<TFormValues>),
   );
 
-  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
+  const handleBlur = (
+    e: FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
     setBlur((prev) => ({ ...prev, [e.target.id]: true }));
   };
 
