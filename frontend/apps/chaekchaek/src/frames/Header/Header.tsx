@@ -7,6 +7,7 @@ import styles from './Header.module.css';
 
 import { Logo } from './Logo';
 import { Nav } from './Nav';
+import { ProfileButton } from './ProfileButton';
 import { SearchBar } from './SearchBar';
 
 import type { Props } from './';
@@ -30,7 +31,10 @@ export const Header = <T extends ElementType>(props: Props<T>) => {
       <div className={styles.wrap}>
         <Logo />
         <Nav />
-        <SearchBar />
+        <div className={styles.actions}>
+          <SearchBar />
+          <ProfileButton />
+        </div>
       </div>
     </View>
   );

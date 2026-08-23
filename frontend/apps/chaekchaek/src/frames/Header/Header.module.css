@@ -53,3 +53,29 @@
 .frame-Header-Nav a.is-active {
   color: #ffffff;
 }
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.frame-Header-ProfileButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.frame-Header-ProfileButton img {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
