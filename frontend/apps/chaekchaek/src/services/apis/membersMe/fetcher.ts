@@ -1,10 +1,10 @@
-import { requestAjax } from '@/services/core/http';
+import { instance } from '@/services/core/http';
 
 import type { GetMembersMeRequestDto, GetMembersMeResponseDto } from './dto';
 
 export const getMembersMe =
   async ({}: GetMembersMeRequestDto): Promise<GetMembersMeResponseDto> => {
-    const response = await requestAjax('/api/v1/members/me', {
+    const response = await instance('/api/v1/members/me', {
       method: 'get',
     });
 
@@ -15,7 +15,7 @@ import type { DeleteMembersMeRequestDto, DeleteMembersMeResponseDto } from './dt
 
 export const deleteMembersMe =
   async ({}: DeleteMembersMeRequestDto): Promise<DeleteMembersMeResponseDto> => {
-    const response = await requestAjax('/api/v1/members/me', {
+    const response = await instance('/api/v1/members/me', {
       method: 'delete',
     });
 

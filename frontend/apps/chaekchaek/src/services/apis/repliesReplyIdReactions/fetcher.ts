@@ -1,4 +1,4 @@
-import { requestAjax } from '@/services/core/http';
+import { instance } from '@/services/core/http';
 
 import type {
   PostRepliesReplyIdReactionsRequestDto,
@@ -8,7 +8,7 @@ import type {
 export const postRepliesReplyIdReactions = async ({
   pathParams: [{ value: replyId }],
 }: PostRepliesReplyIdReactionsRequestDto): Promise<PostRepliesReplyIdReactionsResponseDto> => {
-  const response = await requestAjax(`/api/v1/replies/${replyId}/reactions`, {
+  const response = await instance(`/api/v1/replies/${replyId}/reactions`, {
     method: 'post',
     // pathParams: [{ name: 'replyId', value: replyId }],
   });
@@ -24,7 +24,7 @@ import type {
 export const deleteRepliesReplyIdReactions = async ({
   pathParams: [{ value: replyId }],
 }: DeleteRepliesReplyIdReactionsRequestDto): Promise<DeleteRepliesReplyIdReactionsResponseDto> => {
-  const response = await requestAjax(`/api/v1/replies/${replyId}/reactions`, {
+  const response = await instance(`/api/v1/replies/${replyId}/reactions`, {
     method: 'delete',
     // pathParams: [{ name: 'replyId', value: replyId }],
   });
