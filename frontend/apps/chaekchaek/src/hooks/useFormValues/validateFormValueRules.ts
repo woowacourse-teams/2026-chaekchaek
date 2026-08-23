@@ -30,6 +30,7 @@ const validateFormValueRules = <T>(value: T, rules: Rule[]) => {
   return rules.map((rule) => {
     if (rule.type === 'custom') return { ...rule, valid: rule.validate(value) };
     const validator = validators[rule.type as RuleType];
+    if (value === '' && rule.type !== 'isRequired') return { ...rule, valid: true };
     return { ...rule, valid: validator(value, rule.options || {}) };
   });
 };
