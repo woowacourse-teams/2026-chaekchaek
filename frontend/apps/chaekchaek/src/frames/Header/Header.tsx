@@ -3,6 +3,8 @@ import type { ElementType } from 'react';
 import { View } from '@chaekchaek/design-system';
 import { createClassName } from '@chaekchaek/design-system';
 
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
 import styles from './Header.module.css';
 
 import { Logo } from './Logo';
@@ -26,6 +28,8 @@ export const Header = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const { isAuthenticated } = useAuthContext();
+
   return (
     <View as={as} className={classname} {...restProps}>
       <div className={styles.wrap}>
@@ -33,7 +37,7 @@ export const Header = <T extends ElementType>(props: Props<T>) => {
         <Nav />
         <div className={styles.actions}>
           <SearchBar />
-          <ProfileButton />
+          {!isAuthenticated && <ProfileButton />}
         </div>
       </div>
     </View>
