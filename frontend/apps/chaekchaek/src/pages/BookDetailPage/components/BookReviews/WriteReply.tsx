@@ -10,7 +10,7 @@ import type { ReplyFormValues } from './validator';
 
 import type { WriteReplyProps } from './WriteReply.types';
 
-export const WriteReply = ({ reviewId }: WriteReplyProps) => {
+export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
   const { values, errors, onChange, isValid, valids } = useFormValues<ReplyFormValues>({
     initialValues: {
       content: '',
@@ -27,6 +27,8 @@ export const WriteReply = ({ reviewId }: WriteReplyProps) => {
       reviewId,
       content: values.content,
     });
+
+    await onReplyWritten();
   };
 
   return (

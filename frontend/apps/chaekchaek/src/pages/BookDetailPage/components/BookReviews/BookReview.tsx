@@ -23,6 +23,7 @@ export const BookReview = ({ review }: BookReviewProps) => {
   }, [review.reviewId]);
 
   const {
+    refetch: refetchGetReplies,
     status: { data: repliesData },
   } = useLoadData({
     queryFn: getReviewsReviewIdRepliesLoadData,
@@ -68,6 +69,10 @@ export const BookReview = ({ review }: BookReviewProps) => {
   const handleClickCloseWriteReply = () => {
     setOpenWriteReply(false);
   };
+  const handleReplyWritten = async () => {
+    await refetchGetReplies();
+    handleClickCloseWriteReply();
+  };
 
   return (
     <Entry variant={review.deleted ? 'subtle' : 'plain'}>
@@ -103,7 +108,9 @@ export const BookReview = ({ review }: BookReviewProps) => {
       </Entry.Main>
       {(!!repliesData?.items.length || openWriteReply) && (
         <Entry.Extension>
-          {openWriteReply && <WriteReply reviewId={review.reviewId} />}
+          {openWriteReply && (
+            <WriteReply reviewId={review.reviewId} onReplyWritten={handleReplyWritten} />
+          )}
           {repliesData?.items.map((reply) => {
             return (
               <Surface key={reply.replyId}>
