@@ -12,7 +12,15 @@ export const useFormValues = <TFormValues extends Record<string, unknown>>({
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
-    setFormValues((prev) => ({ ...prev, [e.target.id]: e.target.value }));
+    const value =
+      e.target instanceof HTMLInputElement && e.target.type === 'checkbox'
+        ? e.target.checked
+        : e.target.value;
+
+    setFormValues((prev) => ({
+      ...prev,
+      [e.target.id]: value,
+    }));
   };
 
   const [blur, setBlur] = useState(() =>
