@@ -75,7 +75,9 @@ export const BookReviews = ({
         이 책에 남긴 감상 {count}
       </Title>
       {reviews?.map((review) => {
-        return <BookReview key={review.reviewId} review={review} />;
+        return (
+          <BookReview key={review.reviewId} review={review} onReviewsRefresh={onReviewsRefresh} />
+        );
       })}
       <Field>
         <Field.Content

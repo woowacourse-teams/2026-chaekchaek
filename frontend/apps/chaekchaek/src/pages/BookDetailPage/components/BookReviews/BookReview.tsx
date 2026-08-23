@@ -17,7 +17,7 @@ import type { BookReviewProps } from './BookReview.types';
 import { WriteReply } from './WriteReply';
 import { useCallback, useState } from 'react';
 
-export const BookReview = ({ review }: BookReviewProps) => {
+export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
   const getReviewsReviewIdRepliesLoadData = useCallback(() => {
     return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
   }, [review.reviewId]);
@@ -38,10 +38,12 @@ export const BookReview = ({ review }: BookReviewProps) => {
 
   const handleClickReviewReaction = async () => {
     if (!review.likedByMe) {
-      return await postReviewReactionMutate({ reviewId: review.reviewId });
+      await postReviewReactionMutate({ reviewId: review.reviewId });
+    } else {
+      await deleteReviewReactionMutate({ reviewId: review.reviewId });
     }
 
-    await deleteReviewReactionMutate({ reviewId: review.reviewId });
+    await onReviewsRefresh();
   };
 
   const { mutate: postReplyReactionMutate } = useExecute({
