@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 
 import { OauthPage } from '@/pages/OauthPage';
+import { LoginPage } from '@/pages/LoginPage';
 
 import { IntroPage } from '@/pages/IntroPage';
 import { BooksPage } from '@/pages/BooksPage';
@@ -19,6 +20,10 @@ const DummyPage = () => {
 };
 
 const routes: Route[] = [
+  {
+    path: ROUTES.LOGIN,
+    element: <LoginPage />,
+  },
   {
     path: ROUTES.OAUTH_CALLBACK,
     element: <OauthPage />,
