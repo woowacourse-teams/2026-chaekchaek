@@ -1,5 +1,8 @@
 import { Avatar, Button, Entry, Note, Shell, Surface } from '@chaekchaek/design-system';
 
+import { getReviewsReviewIdReplies } from '@/services/apis/reviewsReviewIdReplies/repository';
+import { useLoadData } from '@/services/core/useLoadData';
+
 import {
   deleteRepliesReplyIdReactions,
   postRepliesReplyIdReactions,
@@ -12,9 +15,19 @@ import { useExecute } from '@/services/core/useExecute';
 
 import type { BookReviewProps } from './BookReview.types';
 import { WriteReply } from './WriteReply';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 export const BookReview = ({ review }: BookReviewProps) => {
+  const getReviewsReviewIdRepliesLoadData = useCallback(() => {
+    return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
+  }, [review.reviewId]);
+
+  const {
+    status: { data: repliesData },
+  } = useLoadData({
+    queryFn: getReviewsReviewIdRepliesLoadData,
+  });
+
   const { mutate: postReviewReactionMutate } = useExecute({
     executeFn: postReviewsReviewIdReactions,
   });
@@ -88,31 +101,28 @@ export const BookReview = ({ review }: BookReviewProps) => {
           </Button>
         </Entry.Footer>
       </Entry.Main>
-      {(review.recentReplies.length > 0 || openWriteReply) && (
+      {(!!repliesData?.items.length || openWriteReply) && (
         <Entry.Extension>
           {openWriteReply && <WriteReply reviewId={review.reviewId} />}
-          {review.recentReplies.map((recentReply) => {
+          {repliesData?.items.map((reply) => {
             return (
-              <Surface key={recentReply.replyId}>
+              <Surface key={reply.replyId}>
                 <Shell>
                   <Shell.Leading>
-                    <Avatar img={recentReply.author.profileImageUrl} size="small" />
+                    <Avatar img={reply.author.profileImageUrl} size="small" />
                   </Shell.Leading>
-                  <Shell.Content
-                    title={recentReply.author.displayName}
-                    description={recentReply.content}
-                  />
+                  <Shell.Content title={reply.author.displayName} description={reply.content} />
                   <Shell.Trailing>
                     <span
                       onClick={() => {
                         handleClickReplyReaction({
-                          replyId: recentReply.replyId,
-                          likedByMe: recentReply.likedByMe,
+                          replyId: reply.replyId,
+                          likedByMe: reply.likedByMe,
                         });
                       }}
                     >
-                      {recentReply.likedByMe ? '♥' : '♡'}
-                      {recentReply.likeCount}
+                      {reply.likedByMe ? '♥' : '♡'}
+                      {reply.likeCount}
                     </span>
                   </Shell.Trailing>
                 </Shell>
