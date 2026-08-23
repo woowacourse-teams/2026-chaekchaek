@@ -31,10 +31,12 @@ export type BookReview = {
 };
 
 export type BookReviewsProps = {
+  bookId: number;
   feed: FeedType;
   sort: SortType;
   count: number | undefined;
   reviews: BookReview[] | undefined;
   onFeedChange: (feed: FeedType) => void;
   onSortChange: (sort: SortType) => void;
+  onReviewsRefresh: () => void;
 };

@@ -44,12 +44,12 @@ export type GetBooksBookIdReviews = (params: GetBooksBookIdReviewsParams) => Pro
 }>;
 export interface PostBooksBookIdReviewsCommand {
   bookId: number;
-  chapter: string;
-  isSpoiler: boolean;
-  quote: string;
-  totalPages: number;
-  currentPage: number;
   content: string;
+  chapter?: string | undefined;
+  isSpoiler?: boolean | undefined;
+  quote?: string | undefined;
+  totalPages?: number | undefined;
+  currentPage?: number | undefined;
 }
 
 export type PostBooksBookIdReviews = (command: PostBooksBookIdReviewsCommand) => Promise<undefined>;

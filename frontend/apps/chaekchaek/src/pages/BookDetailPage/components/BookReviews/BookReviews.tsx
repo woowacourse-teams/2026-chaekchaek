@@ -1,70 +1,49 @@
-import {
-  Avatar,
-  Button,
-  Entry,
-  Note,
-  SegmentedControl,
-  Select,
-  Shell,
-  Surface,
-  Title,
-} from '@chaekchaek/design-system';
+import { useState } from 'react';
 
-import { useExecute } from '@/services/core/useExecute';
-import {
-  postReviewsReviewIdReactions,
-  deleteReviewsReviewIdReactions,
-} from '@/services/apis/reviewsReviewIdReactions/repository';
-import {
-  postRepliesReplyIdReactions,
-  deleteRepliesReplyIdReactions,
-} from '@/services/apis/repliesReplyIdReactions/repository';
+import { Button, Field, Input, SegmentedControl, Select, Title } from '@chaekchaek/design-system';
 
+import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
+
+import { BookReview } from './BookReview';
 import type { BookReviewsProps } from './BookReviews.types';
 
 export const BookReviews = ({
+  bookId,
   sort,
   feed,
   count,
   reviews,
+  onReviewsRefresh,
   onSortChange,
   onFeedChange,
 }: BookReviewsProps) => {
-  const { mutate: postReviewReactionMutate } = useExecute({
-    executeFn: postReviewsReviewIdReactions,
-  });
-  const { mutate: deleteReviewReactionMutate } = useExecute({
-    executeFn: deleteReviewsReviewIdReactions,
-  });
-
-  const handleClickReviewReaction = async ({
-    reviewId,
-    likedByMe,
-  }: {
-    reviewId: number;
-    likedByMe: boolean;
-  }) => {
-    if (!likedByMe) return await postReviewReactionMutate({ reviewId });
-    await deleteReviewReactionMutate({ reviewId });
+  const [dialog, setDialog] = useState<'WriteReviewDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'WriteReviewDialog') => {
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
   };
 
-  const { mutate: postReplyReactionMutate } = useExecute({
-    executeFn: postRepliesReplyIdReactions,
-  });
-  const { mutate: deleteReplyReactionMutate } = useExecute({
-    executeFn: deleteRepliesReplyIdReactions,
-  });
+  const renderDialog = (dialog: 'WriteReviewDialog' | null) => {
+    switch (dialog) {
+      case 'WriteReviewDialog':
+        return (
+          bookId && (
+            <WriteReviewDialog
+              bookId={bookId}
+              onReviewWritten={onReviewsRefresh}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
 
-  const handleClickReplyReaction = async ({
-    replyId,
-    likedByMe,
-  }: {
-    replyId: number;
-    likedByMe: boolean;
-  }) => {
-    if (!likedByMe) return await postReplyReactionMutate({ replyId });
-    await deleteReplyReactionMutate({ replyId });
+      default:
+        return null;
+    }
   };
+
+  const dialogElement = renderDialog(dialog);
 
   return (
     <>
@@ -97,77 +76,20 @@ export const BookReviews = ({
       </Title>
       {reviews?.map((review) => {
         return (
-          <Entry key={review.reviewId} variant={review.deleted ? 'subtle' : 'plain'}>
-            <Entry.Main>
-              <Entry.Header>
-                <Shell>
-                  <Shell.Leading>
-                    <Avatar img={review.author.profileImageUrl} />
-                  </Shell.Leading>
-                  <Shell.Content
-                    title={review.author.displayName}
-                    content={new Date(review.createdAt).toLocaleDateString('ko-KR')}
-                  />
-                  <Shell.Trailing>Trailing</Shell.Trailing>
-                </Shell>
-              </Entry.Header>
-              <Entry.Body>
-                {review.content}
-                {review.quote && <Note>{review.quote}</Note>}
-              </Entry.Body>
-              <Entry.Footer>
-                <Button
-                  size="small"
-                  leading={review.likedByMe ? '♥' : '♡'}
-                  onClick={() => {
-                    handleClickReviewReaction({
-                      reviewId: review.reviewId,
-                      likedByMe: review.likedByMe,
-                    });
-                  }}
-                >
-                  좋아요 {review.likeCount}
-                </Button>
-                <Button size="small" leading={'💬'}>
-                  답글 {review.replyCount}
-                </Button>
-              </Entry.Footer>
-            </Entry.Main>
-            {review.recentReplies.length > 0 && (
-              <Entry.Extension>
-                {review.recentReplies.map((recentReply) => {
-                  return (
-                    <Surface key={recentReply.replyId}>
-                      <Shell>
-                        <Shell.Leading>
-                          <Avatar img={recentReply.author.profileImageUrl} size="small" />
-                        </Shell.Leading>
-                        <Shell.Content
-                          title={recentReply.author.displayName}
-                          description={recentReply.content}
-                        />
-                        <Shell.Trailing>
-                          <span
-                            onClick={() => {
-                              handleClickReplyReaction({
-                                replyId: recentReply.replyId,
-                                likedByMe: recentReply.likedByMe,
-                              });
-                            }}
-                          >
-                            {recentReply.likedByMe ? '♥' : '♡'}
-                            {recentReply.likeCount}
-                          </span>
-                        </Shell.Trailing>
-                      </Shell>
-                    </Surface>
-                  );
-                })}
-              </Entry.Extension>
-            )}
-          </Entry>
+          <BookReview key={review.reviewId} review={review} onReviewsRefresh={onReviewsRefresh} />
         );
       })}
+      <Field>
+        <Field.Content
+          onClick={() => {
+            handleOpenDialog('WriteReviewDialog');
+          }}
+        >
+          <Input />
+          <Button variant="primary">남기기</Button>
+        </Field.Content>
+      </Field>
+      {dialogElement}
     </>
   );
 };
