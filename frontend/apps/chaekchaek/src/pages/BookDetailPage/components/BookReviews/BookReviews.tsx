@@ -10,7 +10,6 @@ import {
   SegmentedControl,
   Select,
   Shell,
-  Surface,
   Title,
 } from '@chaekchaek/design-system';
 
@@ -26,6 +25,7 @@ import {
 
 import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
 
+import { BookReview } from './BookReview';
 import type { BookReviewsProps } from './BookReviews.types';
 
 export const BookReviews = ({
@@ -173,30 +173,11 @@ export const BookReviews = ({
               <Entry.Extension>
                 {review.recentReplies.map((recentReply) => {
                   return (
-                    <Surface key={recentReply.replyId}>
-                      <Shell>
-                        <Shell.Leading>
-                          <Avatar img={recentReply.author.profileImageUrl} size="small" />
-                        </Shell.Leading>
-                        <Shell.Content
-                          title={recentReply.author.displayName}
-                          description={recentReply.content}
-                        />
-                        <Shell.Trailing>
-                          <span
-                            onClick={() => {
-                              handleClickReplyReaction({
-                                replyId: recentReply.replyId,
-                                likedByMe: recentReply.likedByMe,
-                              });
-                            }}
-                          >
-                            {recentReply.likedByMe ? '♥' : '♡'}
-                            {recentReply.likeCount}
-                          </span>
-                        </Shell.Trailing>
-                      </Shell>
-                    </Surface>
+                    <BookReview
+                      key={recentReply.replyId}
+                      recentReply={recentReply}
+                      onReplyReactionClick={handleClickReplyReaction}
+                    />
                   );
                 })}
               </Entry.Extension>
