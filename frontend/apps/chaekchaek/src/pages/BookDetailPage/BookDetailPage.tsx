@@ -184,6 +184,9 @@ export const BookDetailPage = () => {
                 onFeedChange={(feed) => {
                   handleChangeReviewRequestParams({ name: 'feed', value: feed });
                 }}
+                onReviewsRefresh={() => {
+                  refetchGetBooksIsbnLoadData();
+                }}
               />
             )}
           </Split.Content>

@@ -38,4 +38,5 @@ export type BookReviewsProps = {
   reviews: BookReview[] | undefined;
   onFeedChange: (feed: FeedType) => void;
   onSortChange: (sort: SortType) => void;
+  onReviewsRefresh: () => void;
 };

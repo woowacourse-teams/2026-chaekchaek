@@ -26,7 +26,7 @@ const buildReviewRequest = (formValues: ReviewFormValues) => {
   };
 };
 
-export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) => {
+export const WriteReviewDialog = ({ bookId, onReviewWritten, onClose }: WriteReviewDialogProps) => {
   const { values, errors, onChange, isValid, valids } = useFormValues<ReviewFormValues>({
     initialValues: {
       content: '',
@@ -49,6 +49,8 @@ export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) =
       bookId,
       ...requestData,
     });
+
+    onReviewWritten();
     onClose();
   };
 

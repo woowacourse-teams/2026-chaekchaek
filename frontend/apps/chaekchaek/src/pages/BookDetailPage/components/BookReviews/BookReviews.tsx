@@ -34,6 +34,7 @@ export const BookReviews = ({
   feed,
   count,
   reviews,
+  onReviewsRefresh,
   onSortChange,
   onFeedChange,
 }: BookReviewsProps) => {
@@ -84,7 +85,15 @@ export const BookReviews = ({
   const renderDialog = (dialog: 'WriteReviewDialog' | null) => {
     switch (dialog) {
       case 'WriteReviewDialog':
-        return bookId && <WriteReviewDialog bookId={bookId} onClose={handleCloseDialog} />;
+        return (
+          bookId && (
+            <WriteReviewDialog
+              bookId={bookId}
+              onReviewWritten={onReviewsRefresh}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
 
       default:
         return null;
