@@ -1,6 +1,5 @@
-import type { RecentReply } from './BookReviews.types';
+import type { BookReview } from './BookReviews.types';
 
 export type BookReviewProps = {
-  recentReply: RecentReply;
-  onReplyReactionClick: (reply: { replyId: number; likedByMe: boolean }) => void;
+  review: BookReview;
 };

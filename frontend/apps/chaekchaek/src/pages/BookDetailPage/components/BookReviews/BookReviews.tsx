@@ -1,27 +1,6 @@
 import { useState } from 'react';
 
-import {
-  Avatar,
-  Button,
-  Entry,
-  Field,
-  Input,
-  Note,
-  SegmentedControl,
-  Select,
-  Shell,
-  Title,
-} from '@chaekchaek/design-system';
-
-import { useExecute } from '@/services/core/useExecute';
-import {
-  postReviewsReviewIdReactions,
-  deleteReviewsReviewIdReactions,
-} from '@/services/apis/reviewsReviewIdReactions/repository';
-import {
-  postRepliesReplyIdReactions,
-  deleteRepliesReplyIdReactions,
-} from '@/services/apis/repliesReplyIdReactions/repository';
+import { Button, Field, Input, SegmentedControl, Select, Title } from '@chaekchaek/design-system';
 
 import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
 
@@ -38,42 +17,6 @@ export const BookReviews = ({
   onSortChange,
   onFeedChange,
 }: BookReviewsProps) => {
-  const { mutate: postReviewReactionMutate } = useExecute({
-    executeFn: postReviewsReviewIdReactions,
-  });
-  const { mutate: deleteReviewReactionMutate } = useExecute({
-    executeFn: deleteReviewsReviewIdReactions,
-  });
-
-  const handleClickReviewReaction = async ({
-    reviewId,
-    likedByMe,
-  }: {
-    reviewId: number;
-    likedByMe: boolean;
-  }) => {
-    if (!likedByMe) return await postReviewReactionMutate({ reviewId });
-    await deleteReviewReactionMutate({ reviewId });
-  };
-
-  const { mutate: postReplyReactionMutate } = useExecute({
-    executeFn: postRepliesReplyIdReactions,
-  });
-  const { mutate: deleteReplyReactionMutate } = useExecute({
-    executeFn: deleteRepliesReplyIdReactions,
-  });
-
-  const handleClickReplyReaction = async ({
-    replyId,
-    likedByMe,
-  }: {
-    replyId: number;
-    likedByMe: boolean;
-  }) => {
-    if (!likedByMe) return await postReplyReactionMutate({ replyId });
-    await deleteReplyReactionMutate({ replyId });
-  };
-
   const [dialog, setDialog] = useState<'WriteReviewDialog' | null>(null);
   const handleOpenDialog = (dialog: 'WriteReviewDialog') => {
     setDialog(dialog);
@@ -132,58 +75,7 @@ export const BookReviews = ({
         이 책에 남긴 감상 {count}
       </Title>
       {reviews?.map((review) => {
-        return (
-          <Entry key={review.reviewId} variant={review.deleted ? 'subtle' : 'plain'}>
-            <Entry.Main>
-              <Entry.Header>
-                <Shell>
-                  <Shell.Leading>
-                    <Avatar img={review.author.profileImageUrl} />
-                  </Shell.Leading>
-                  <Shell.Content
-                    title={review.author.displayName}
-                    content={new Date(review.createdAt).toLocaleDateString('ko-KR')}
-                  />
-                  <Shell.Trailing>Trailing</Shell.Trailing>
-                </Shell>
-              </Entry.Header>
-              <Entry.Body>
-                {review.content}
-                {review.quote && <Note>{review.quote}</Note>}
-              </Entry.Body>
-              <Entry.Footer>
-                <Button
-                  size="small"
-                  leading={review.likedByMe ? '♥' : '♡'}
-                  onClick={() => {
-                    handleClickReviewReaction({
-                      reviewId: review.reviewId,
-                      likedByMe: review.likedByMe,
-                    });
-                  }}
-                >
-                  좋아요 {review.likeCount}
-                </Button>
-                <Button size="small" leading={'💬'}>
-                  답글 {review.replyCount}
-                </Button>
-              </Entry.Footer>
-            </Entry.Main>
-            {review.recentReplies.length > 0 && (
-              <Entry.Extension>
-                {review.recentReplies.map((recentReply) => {
-                  return (
-                    <BookReview
-                      key={recentReply.replyId}
-                      recentReply={recentReply}
-                      onReplyReactionClick={handleClickReplyReaction}
-                    />
-                  );
-                })}
-              </Entry.Extension>
-            )}
-          </Entry>
-        );
+        return <BookReview key={review.reviewId} review={review} />;
       })}
       <Field>
         <Field.Content
