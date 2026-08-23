@@ -90,7 +90,7 @@ export const BookReview = ({ review }: BookReviewProps) => {
       </Entry.Main>
       {(review.recentReplies.length > 0 || openWriteReply) && (
         <Entry.Extension>
-          {openWriteReply && <WriteReply />}
+          {openWriteReply && <WriteReply reviewId={review.reviewId} />}
           {review.recentReplies.map((recentReply) => {
             return (
               <Surface key={recentReply.replyId}>
