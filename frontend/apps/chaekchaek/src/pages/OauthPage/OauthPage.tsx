@@ -1,29 +1,19 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
+
+import { ENV } from '@/configs/env';
+
+import { useLoadData } from '@/services/core/useLoadData';
+import { getMembersMe } from '@/services/apis/membersMe/repository';
 
 export const OauthPage = () => {
-  useEffect(() => {
-    const loadData = async () => {
-      // 내코드
-      const res = await fetch('https://api.chaekchaek.com/api/v1/members/me', {
-        credentials: 'include',
-      });
-      const data = await res.json();
-      console.log(data);
-
-      // 소낙눈 코드
-      // const response = await fetch('https://api.chaekchaek.com/api/v1/members/me', {
-      //   credentials: 'include',
-      // });
-      // const body = await response.json();
-      // console.log(body);
-      // console.log({
-      //   status: response.status,
-      //   contentType: response.headers.get('content-type'),
-      //   body: JSON.stringify(body),
-      // });
-    };
-
-    loadData();
+  const getMembersMeLoadData = useCallback(async () => {
+    return await getMembersMe({});
   }, []);
+  const {
+    status: { data: membersMeData },
+  } = useLoadData({
+    queryFn: getMembersMeLoadData,
+  });
+
   return null;
 };
