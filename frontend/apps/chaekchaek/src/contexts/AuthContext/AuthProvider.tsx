@@ -1,10 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { getMembersMe } from '@/services/apis/membersMe/repository';
 import { useLoadData } from '@/services/core/useLoadData';
-
-import { ROUTES } from '@/constants/routes';
 
 import { authContext } from './AuthContext';
 import type { Props, UserData } from './AuthContext.types';
@@ -27,11 +24,8 @@ export const AuthProvider = ({ children }: Props) => {
     queryFn: getMembersMeLoadData,
   });
 
-  const navigation = useNavigate();
   useEffect(() => {
     if (membersMeData) return login(membersMeData);
-
-    navigation(ROUTES.HOME);
   }, [membersMeData]);
 
   const value = useMemo(() => ({ isAuthenticated, user, login }), [isAuthenticated, login]);

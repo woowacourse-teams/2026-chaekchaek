@@ -76,7 +76,9 @@ export const create = () => {
         try {
           await requestAjax(`/api/v1/auth/reissue`, { method: 'post' });
         } catch (error) {
-          window.location.href = `/login`;
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
           throw error;
         }
 
