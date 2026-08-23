@@ -11,6 +11,8 @@ import {
 import { useExecute } from '@/services/core/useExecute';
 
 import type { BookReviewProps } from './BookReview.types';
+import { WriteReply } from './WriteReply';
+import { useState } from 'react';
 
 export const BookReview = ({ review }: BookReviewProps) => {
   const { mutate: postReviewReactionMutate } = useExecute({
@@ -46,6 +48,14 @@ export const BookReview = ({ review }: BookReviewProps) => {
     await deleteReplyReactionMutate({ replyId });
   };
 
+  const [openWriteReply, setOpenWriteReply] = useState(false);
+  const handleClickToggleWriteReply = () => {
+    setOpenWriteReply((prev) => !prev);
+  };
+  const handleClickCloseWriteReply = () => {
+    setOpenWriteReply(false);
+  };
+
   return (
     <Entry variant={review.deleted ? 'subtle' : 'plain'}>
       <Entry.Main>
@@ -73,13 +83,14 @@ export const BookReview = ({ review }: BookReviewProps) => {
           >
             좋아요 {review.likeCount}
           </Button>
-          <Button size="small" leading={'💬'}>
+          <Button size="small" leading={'💬'} onClick={handleClickToggleWriteReply}>
             답글 {review.replyCount}
           </Button>
         </Entry.Footer>
       </Entry.Main>
-      {review.recentReplies.length > 0 && (
+      {(review.recentReplies.length > 0 || openWriteReply) && (
         <Entry.Extension>
+          {openWriteReply && <WriteReply />}
           {review.recentReplies.map((recentReply) => {
             return (
               <Surface key={recentReply.replyId}>
