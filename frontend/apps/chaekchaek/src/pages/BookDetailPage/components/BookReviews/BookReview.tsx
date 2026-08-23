@@ -58,8 +58,13 @@ export const BookReview = ({ review }: BookReviewProps) => {
     replyId: number;
     likedByMe: boolean;
   }) => {
-    if (!likedByMe) return await postReplyReactionMutate({ replyId });
-    await deleteReplyReactionMutate({ replyId });
+    if (!likedByMe) {
+      await postReplyReactionMutate({ replyId });
+    } else {
+      await deleteReplyReactionMutate({ replyId });
+    }
+
+    await refetchGetReplies();
   };
 
   const [openWriteReply, setOpenWriteReply] = useState(false);
