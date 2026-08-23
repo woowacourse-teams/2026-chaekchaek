@@ -1,20 +1,15 @@
-import { useState } from 'react';
-import type { ChangeEvent, SubmitEvent } from 'react';
+import type { SubmitEvent } from 'react';
 
-import { Button, Callout, Checkbox, Dialog, Field, Input } from '@chaekchaek/design-system';
+import { Button, Callout, Checkbox, Dialog, Field, Input, Tag } from '@chaekchaek/design-system';
 
+import { useFormValues } from '@/hooks/useFormValues';
 import { useExecute } from '@/services/core/useExecute';
 import { postBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
 
-import type { WriteReviewDialogProps } from './WriteReviewDialog.types';
+import { validateReview } from './validator';
+import type { ReviewFormValues } from './validator';
 
-type ReviewFormValues = {
-  content: string;
-  isSpoiler: boolean;
-  quote: string;
-  currentPage: string;
-  chapter: string;
-};
+import type { WriteReviewDialogProps } from './WriteReviewDialog.types';
 
 const compact = <T extends object>(obj: T) =>
   Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined)) as Partial<T>;
@@ -32,32 +27,23 @@ const buildReviewRequest = (formValues: ReviewFormValues) => {
 };
 
 export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) => {
-  const [formValues, setFormValues] = useState<ReviewFormValues>({
-    content: '',
-    isSpoiler: false,
-    quote: '',
-    currentPage: '',
-    chapter: '',
+  const { values, errors, onChange, isValid, valids } = useFormValues<ReviewFormValues>({
+    initialValues: {
+      content: '',
+      isSpoiler: false,
+      quote: '',
+      currentPage: '',
+      chapter: '',
+    },
+    validate: validateReview,
   });
-
-  const handleChangeFormValues = ({
-    name,
-    value,
-  }: {
-    name: keyof ReviewFormValues;
-    value: ReviewFormValues[keyof ReviewFormValues];
-  }) => {
-    setFormValues((prev) => {
-      return { ...prev, [name]: value };
-    });
-  };
 
   const { mutate } = useExecute({ executeFn: postBooksBookIdReviews });
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
-    const requestData = buildReviewRequest(formValues);
+    const requestData = buildReviewRequest(values);
 
     await mutate({
       bookId,
@@ -74,27 +60,29 @@ export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) =
 
           <Dialog.Body>
             <Field>
-              <Field.Label>느낀 점</Field.Label>
+              <Field.Label>
+                느낀 점{' '}
+                <Tag variant="primary" size="small">
+                  필수
+                </Tag>
+              </Field.Label>
               <Field.Content>
                 <Input
                   as="textarea"
                   placeholder="이 책을 읽으며 든 생각을 남겨보세요."
-                  value={formValues.content}
-                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
-                    handleChangeFormValues({ name: 'content', value: e.target.value });
-                  }}
+                  id="content"
+                  value={values.content}
+                  onChange={onChange}
                 />
               </Field.Content>
+              {!valids.content && (
+                <Field.Description>{errors.content[0]?.message}</Field.Description>
+              )}
             </Field>
 
             <Field>
               <Field.Content>
-                <Checkbox
-                  checked={formValues.isSpoiler}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    handleChangeFormValues({ name: 'isSpoiler', value: e.target.checked });
-                  }}
-                >
+                <Checkbox id="isSpoiler" checked={values.isSpoiler} onChange={onChange}>
                   스포일러
                 </Checkbox>
               </Field.Content>
@@ -106,10 +94,9 @@ export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) =
                 <Input
                   as="textarea"
                   placeholder="기억하고 싶은 문장을 옮겨 적어보세요."
-                  value={formValues.quote}
-                  onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
-                    handleChangeFormValues({ name: 'quote', value: e.target.value });
-                  }}
+                  id="quote"
+                  value={values.quote}
+                  onChange={onChange}
                 />
               </Field.Content>
             </Field>
@@ -119,14 +106,17 @@ export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) =
               <Field.Content>
                 <Input
                   block
+                  type="tel"
                   inputMode="numeric"
                   placeholder="80쪽"
-                  value={formValues.currentPage}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    handleChangeFormValues({ name: 'currentPage', value: e.target.value });
-                  }}
+                  id="currentPage"
+                  value={values.currentPage}
+                  onChange={onChange}
                 />
               </Field.Content>
+              {!valids.currentPage && (
+                <Field.Description>{errors.currentPage[0]?.message}</Field.Description>
+              )}
             </Field>
 
             <Field>
@@ -135,9 +125,9 @@ export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) =
                 <Input
                   block
                   placeholder="Chapter 1"
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    handleChangeFormValues({ name: 'chapter', value: e.target.value });
-                  }}
+                  id="chapter"
+                  values={values.chapter}
+                  onChange={onChange}
                 />
               </Field.Content>
             </Field>
@@ -149,7 +139,14 @@ export const WriteReviewDialog = ({ bookId, onClose }: WriteReviewDialogProps) =
           </Dialog.Body>
 
           <Dialog.Footer>
-            <Button type="button" variant="primary" size="large" block onClick={handleSubmit}>
+            <Button
+              type="button"
+              variant="primary"
+              size="large"
+              block
+              disabled={!isValid}
+              onClick={handleSubmit}
+            >
               감상 남기기
             </Button>
           </Dialog.Footer>
