@@ -1,0 +1,22 @@
+.root {
+  text-align: center;
+}
+
+.title,
+.description {
+  margin: 0;
+}
+
+.title {
+  color: #fcfaf7;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+}
+
+.description {
+  margin-top: 12px;
+  color: #bdbdbd;
+  font-size: 16px;
+  line-height: 24px;
+}

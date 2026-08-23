@@ -1,0 +1,14 @@
+.root {
+  height: 56px;
+  gap: 4px;
+  padding-inline: 20px;
+  border-radius: 8px;
+  font-family: Roboto, Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22.5px;
+}
+.root.kakao { --button-background: #fee500; --button-border-color: #fee500; --button-color: #000; }
+.root.apple { --button-background: #fff; --button-border-color: #fff; --button-color: #000; }
+.root.google { --button-background: transparent; --button-border-color: rgb(255 255 255 / 20%); --button-color: #fff; }
+.icon { display: block; width: 18px; height: 20px; object-fit: contain; }

@@ -1,0 +1,8 @@
+.root { position: relative; width: 282px; height: 180px; margin-top: 40px; }
+.backBook, .frontBook { position: absolute; box-sizing: border-box; width: 120px; height: 160px; }
+.backBook { top: 10px; left: 21px; border: 1px solid rgb(255 255 255 / 10%); background: rgb(252 250 247 / 30%); box-shadow: 12px 12px 0 rgb(255 152 0 / 9%); }
+.frontBook { top: 16px; left: 123px; padding: 12px; border: 1px solid rgb(255 255 255 / 20%); background: #090a0c; opacity: .7; }
+.orangeLine, .grayLine { display: block; }
+.orangeLine { height: 8px; background: #ff9800; }
+.grayLine { width: 56px; height: 4px; margin-top: 4px; background: #555; }
+.label { position: absolute; right: 0; bottom: 1px; box-sizing: border-box; width: 139px; padding: 3px 12px 4px; border: 3px solid #ff9800; background: #090a0c; color: #ff9800; font-size: 10px; font-weight: 800; letter-spacing: 1px; line-height: 15px; white-space: nowrap; }
