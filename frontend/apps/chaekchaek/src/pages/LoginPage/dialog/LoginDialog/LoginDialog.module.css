@@ -1,0 +1,20 @@
+.container {
+  box-sizing: border-box;
+  width: min(calc(100% - 48px), 450px);
+  padding: 64px 32px;
+}
+
+.body {
+  font-family: Roboto, Arial, sans-serif;
+}
+
+.loginButtons {
+  width: 100%;
+  margin-top: 40px;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding-inline: 24px;
+  }
+}
