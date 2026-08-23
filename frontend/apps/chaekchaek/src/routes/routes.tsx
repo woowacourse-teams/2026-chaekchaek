@@ -3,6 +3,11 @@ import { Navigate } from 'react-router-dom';
 
 import { ROUTES } from '@/constants/routes';
 
+import { GuestRoute } from '@/auth/GuestRoute';
+
+import { OauthPage } from '@/pages/OauthPage';
+import { LoginPage } from '@/pages/LoginPage';
+
 import { IntroPage } from '@/pages/IntroPage';
 import { BooksPage } from '@/pages/BooksPage';
 import { BookDetailPage } from '@/pages/BookDetailPage';
@@ -17,6 +22,18 @@ const DummyPage = () => {
 };
 
 const routes: Route[] = [
+  {
+    path: ROUTES.LOGIN,
+    element: (
+      <GuestRoute>
+        <LoginPage />
+      </GuestRoute>
+    ),
+  },
+  {
+    path: ROUTES.OAUTH_CALLBACK,
+    element: <OauthPage />,
+  },
   {
     path: ROUTES.HOME,
     element: <Navigate to={ROUTES.INTRO} replace />,

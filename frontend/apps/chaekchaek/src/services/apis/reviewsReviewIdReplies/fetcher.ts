@@ -1,4 +1,4 @@
-import { requestAjax } from '@/services/core/http';
+import { instance } from '@/services/core/http';
 
 import type {
   GetReviewsReviewIdRepliesRequestDto,
@@ -9,7 +9,7 @@ export const getReviewsReviewIdReplies = async ({
   pathParams: [{ value: reviewId }],
   query: { page },
 }: GetReviewsReviewIdRepliesRequestDto): Promise<GetReviewsReviewIdRepliesResponseDto> => {
-  const response = await requestAjax(`/api/v1/reviews/${reviewId}/replies`, {
+  const response = await instance(`/api/v1/reviews/${reviewId}/replies`, {
     method: 'get',
     //  pathParams: [{ name: 'reviewId', value: reviewId }],
     query: { page },
@@ -27,7 +27,7 @@ export const postReviewsReviewIdReplies = async ({
   pathParams: [{ value: reviewId }],
   data: { content },
 }: PostReviewsReviewIdRepliesRequestDto): Promise<PostReviewsReviewIdRepliesResponseDto> => {
-  const response = await requestAjax(`/api/v1/reviews/${reviewId}/replies`, {
+  const response = await instance(`/api/v1/reviews/${reviewId}/replies`, {
     method: 'post',
     //  pathParams: [{ name: 'reviewId', value: reviewId }]
     data: { content },
