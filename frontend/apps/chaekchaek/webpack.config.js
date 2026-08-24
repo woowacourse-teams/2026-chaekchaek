@@ -31,6 +31,7 @@ export default (_, argv) => {
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: 'main.js',
+      publicPath: '/',
       assetModuleFilename: 'assets/[name].[contenthash][ext][query]',
       clean: true,
     },
