@@ -283,13 +283,22 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			 totalCount: 1, nextPage: null,
 			 items: [[bookId: 10, title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
 				 authors: ['한강'], translators: [], publishedDate: '2007-10-30', isbn13: '9788936433598',
-				 category: '국내도서>소설', publisher: '창비', reviewCount: 1, replyCount: 1]]
+				 category: '국내도서>소설', publisher: '창비', reviewCount: 1, replyCount: 1,
+				 isRegisteredInMyLibrary: true]]
 		])
 		addJsonExample('/api/v1/books', 'get', '200', 'search-unregistered-book', '서재에 등록하지 않은 도서', [
 			 totalCount: 1, nextPage: null,
 			 items: [[bookId: null, title: '마션', coverImageUrl: 'https://example.com/book.jpg',
 				 authors: ['앤디 위어'], translators: [], publishedDate: '2015-07-10', isbn13: '9788925568683',
-				 category: '국내도서>소설', publisher: '알에이치코리아', reviewCount: null, replyCount: null]]
+				 category: '국내도서>소설', publisher: '알에이치코리아', reviewCount: null, replyCount: null,
+				 isRegisteredInMyLibrary: false]]
+		])
+		addJsonExample('/api/v1/books', 'get', '200', 'search-guest-book', '비로그인 사용자의 도서 검색', [
+			 totalCount: 1, nextPage: null,
+			 items: [[bookId: null, title: '마션', coverImageUrl: 'https://example.com/book.jpg',
+				 authors: ['앤디 위어'], translators: [], publishedDate: '2015-07-10', isbn13: '9788925568683',
+				 category: '국내도서>소설', publisher: '알에이치코리아', reviewCount: null, replyCount: null,
+				 isRegisteredInMyLibrary: null]]
 		])
 		addJsonExample('/api/v1/books/by-isbn/{isbn13}', 'get', '200', 'book-detail-without-library-record', '비로그인 사용자의 도서 상세', [
 			 bookId: 10, isbn13: '9788936433598', title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
@@ -805,6 +814,23 @@ tasks.register('verifyOpenApi') {
 				|| !requiredNullable(searchItem, 'reviewCount') || !requiredNullable(searchItem, 'replyCount')
 				|| !requiredNullable(searchItem, 'isRegisteredInMyLibrary')) {
 			throw new GradleException('OpenAPI specification must distinguish nullable book search fields from omitted fields')
+		}
+		def searchExamples = (((((paths.get('/api/v1/books') as Map).get('get') as Map)
+				.get('responses') as Map).get('200') as Map).get('content') as Map)
+				?.get('application/json')?.get('examples') as Map
+		def searchExampleItem = { exampleName ->
+			def response = ((searchExamples?.get(exampleName) as Map)?.get('value')) as Map
+			def items = response?.get('items') as List
+			return items == null || items.isEmpty() ? null : items.first() as Map
+		}
+		def registeredBookExample = searchExampleItem('search-registered-book')
+		def unregisteredBookExample = searchExampleItem('search-unregistered-book')
+		def guestBookExample = searchExampleItem('search-guest-book')
+		if (registeredBookExample?.get('isRegisteredInMyLibrary') != true
+				|| unregisteredBookExample?.get('isRegisteredInMyLibrary') != false
+				|| !guestBookExample?.containsKey('isRegisteredInMyLibrary')
+				|| guestBookExample?.get('isRegisteredInMyLibrary') != null) {
+			throw new GradleException('OpenAPI specification must include book search library registration examples')
 		}
 		def detailResponse = responseSchema('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
 		if (!requiredNullable(detailResponse, 'bookId') || !requiredNullable(detailResponse, 'reviewCount')
