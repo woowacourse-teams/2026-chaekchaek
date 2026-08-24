@@ -2,9 +2,13 @@ import { ENV } from '@/configs/env';
 
 import { RequestAjaxError, RequestNetworkError } from './requestAjaxError';
 
-import type { Configs, RequestFetchResponse } from './requestAjax.types';
+import type { Configs, Policy, RequestFetchResponse } from './requestAjax.types';
 
-export const requestAjax = async (url: string, config?: Configs): Promise<RequestFetchResponse> => {
+export const requestAjax = async (
+  url: string,
+  config?: Configs,
+  policy: Policy = {},
+): Promise<RequestFetchResponse> => {
   const { method = 'get', url: configUrl, pathParams, query, data, headers } = config || {};
 
   let finalUrl = `${ENV.APP_API_URL || ''}${configUrl || url}`;
@@ -68,7 +72,7 @@ export const requestAjax = async (url: string, config?: Configs): Promise<Reques
 };
 
 export const create = () => {
-  return async (url: string, config?: Configs) => {
+  return async (url: string, config?: Configs, policy?: Policy) => {
     try {
       return await requestAjax(url, config);
     } catch (error) {
@@ -76,7 +80,8 @@ export const create = () => {
         try {
           await requestAjax(`/api/v1/auth/reissue`, { method: 'post' });
         } catch (error) {
-          if (window.location.pathname !== '/login') {
+          const { redirectOnReissueFailure = true } = policy || {};
+          if (window.location.pathname !== '/login' && redirectOnReissueFailure) {
             window.location.href = '/login';
           }
           throw error;

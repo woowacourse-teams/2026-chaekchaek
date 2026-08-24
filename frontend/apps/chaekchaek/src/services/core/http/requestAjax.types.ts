@@ -1,4 +1,4 @@
-type Method = "get" | "post" | "put" | "patch" | "delete";
+type Method = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
 export type PathParam = {
   name: string;
@@ -12,6 +12,10 @@ export type Configs = {
   query?: Record<string, unknown> | undefined;
   data?: Record<string, unknown> | undefined;
   headers?: Record<string, unknown> | undefined;
+};
+
+export type Policy = {
+  redirectOnReissueFailure?: boolean;
 };
 
 export type RequestFetchResponse = {
