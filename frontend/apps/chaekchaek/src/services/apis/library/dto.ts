@@ -1,7 +1,11 @@
 import type { ResponseDto } from '@/services/apis/api.types';
 
 export interface GetLibraryRequestDto {
-  query: { page: number; status: string; sort: string };
+  query: {
+    page: number;
+    status: '' | 'WANT_TO_READ' | 'READING' | 'FINISHED';
+    sort: string;
+  };
 }
 
 export type GetLibraryResponseDto = ResponseDto<{

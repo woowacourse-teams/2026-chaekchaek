@@ -2,8 +2,10 @@ import type { GetLibraryResponseDto } from './dto';
 import type { GetLibraryParams } from './repository.types';
 
 // GetLibrary
-export const mapGetLibraryModelToRequestDTO = (model: GetLibraryParams): GetLibraryParams => {
-  return model;
+export const mapGetLibraryModelToRequestDTO = (
+  model: GetLibraryParams,
+): { page: number; status: '' | 'WANT_TO_READ' | 'READING' | 'FINISHED'; sort: string } => {
+  return { ...model, status: model.status === 'ALL' ? '' : model.status };
 };
 
 export const mapGetLibraryResponseDTOToModel = (response: GetLibraryResponseDto) => {
