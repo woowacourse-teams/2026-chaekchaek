@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+
 import {
   Button,
   ImgBox,
@@ -15,7 +17,21 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 
+import { getLibrary } from '@/services/apis/library/repository';
+import { useLoadData } from '@/services/core/useLoadData';
+
 export const LibraryPage = () => {
+  const getLibraryLoadData = useCallback(async () => {
+    return await getLibrary({
+      page: 1,
+      sort: '',
+      status: '',
+    });
+  }, []);
+  const {
+    status: { data: libraryData },
+  } = useLoadData({ queryFn: getLibraryLoadData });
+
   return (
     <Layout>
       <Header />
@@ -88,33 +104,46 @@ export const LibraryPage = () => {
               독서 상태
             </Title>
             <List>
-              <List.Item>
-                <List.Item.Leading>
-                  <a href="#">
-                    <ImgBox img={''} size="small" />
-                  </a>
-                </List.Item.Leading>
-                <List.Item.Content
-                  title={
-                    <>
-                      <Tag variant="primary">읽는중</Tag>
-                      <br />
-                      Title
-                    </>
-                  }
-                  content={'content'}
-                  description={
-                    <>
-                      description
-                      <ProgressBar value={30} max={300} />
-                    </>
-                  }
-                />
-                <List.Item.Trailing>&gt;</List.Item.Trailing>
-              </List.Item>
+              {libraryData?.items.map((item) => {
+                return (
+                  <List.Item key={item.bookId}>
+                    <List.Item.Leading>
+                      <a href={`/books/${item.isbn13}`}>
+                        <ImgBox img={item.coverImageUrl} size="small" />
+                      </a>
+                    </List.Item.Leading>
+                    <List.Item.Content
+                      title={
+                        <>
+                          <Tag variant={item.status === 'READING' ? 'primary' : 'subtle'}>
+                            {item.status === 'WANT_TO_READ'
+                              ? '읽고 싶어요'
+                              : item.status === 'READING'
+                                ? '읽는 중'
+                                : item.status === 'FINISHED'
+                                  ? '다 읽음'
+                                  : ''}
+                          </Tag>
+                          <br />
+                          {item.title}
+                        </>
+                      }
+                      content={item.authors.join(' · ')}
+                      description={
+                        <>
+                          {item.totalPages > 0 && (
+                            <ProgressBar value={item.currentPage} max={item.totalPages} />
+                          )}
+                        </>
+                      }
+                    />
+                    <List.Item.Trailing>&gt;</List.Item.Trailing>
+                  </List.Item>
+                );
+              })}
             </List>
 
-            <Pagination defaultPage={1} totalPages={10} />
+            <Pagination defaultPage={1} totalPages={libraryData?.totalCount ?? 1} />
           </Split.Content>
         </Split>
       </Main>
