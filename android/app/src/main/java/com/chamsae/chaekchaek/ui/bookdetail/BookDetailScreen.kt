@@ -97,6 +97,7 @@ import com.chamsae.chaekchaek.theme.ChaekInk
 import com.chamsae.chaekchaek.theme.ChaekInkSecondary
 import com.chamsae.chaekchaek.theme.ChaekSurface
 import com.chamsae.chaekchaek.theme.ChaekSurfaceMuted
+import com.chamsae.chaekchaek.ui.common.LoginRequiredSheet
 import com.chamsae.chaekchaek.ui.common.withDelayedApiLoading
 import com.chamsae.chaekchaek.ui.home.coverResource
 import com.chaekchaek.app.data.remote.BookDetail
@@ -986,43 +987,6 @@ internal fun maskAsChirps(content: String): String =
   content.map { character -> if (character.isWhitespace() || character in VISIBLE_MASK_PUNCTUATION) character else '짹' }.joinToString("")
 
 private const val VISIBLE_MASK_PUNCTUATION = ".,!?…:;\"'“”‘’()[]{}-·"
-
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun LoginRequiredSheet(
-  signingIn: Boolean,
-  error: String?,
-  onDismiss: () -> Unit,
-  onGoogleSignIn: () -> Unit,
-) {
-  ModalBottomSheet(
-    onDismissRequest = onDismiss,
-    containerColor = Color.White,
-  ) {
-    Column(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
-      verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-      Text("로그인이 필요해요", style = MaterialTheme.typography.titleLarge)
-      Text("내 독서 기록을 남기고 감상에 참여하려면 로그인해 주세요.", style = MaterialTheme.typography.bodyMedium)
-      error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-      Surface(
-        onClick = onGoogleSignIn,
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        shape = RoundedCornerShape(8.dp),
-        color = ChaekInk,
-      ) {
-        Text(
-          if (signingIn) "로그인 중..." else "Google로 계속하기",
-          modifier = Modifier.padding(vertical = 14.dp),
-          color = ChaekSurface,
-          textAlign = TextAlign.Center,
-          style = MaterialTheme.typography.labelLarge,
-        )
-      }
-    }
-  }
-}
 
 @Composable
 private fun PageInputDialog(

@@ -73,6 +73,8 @@ fun RootScreen(
         SearchRoute(
           bookSearchRepository = appContainer.bookSearchRepository,
           libraryRepository = appContainer.libraryRepository,
+          mobileAuthRepository = appContainer.mobileAuthRepository,
+          authSession = appContainer.authSession,
           modifier = contentModifier,
           onBack = { selectedTab = RootTab.Home },
           onBookClick = onBookClick,
