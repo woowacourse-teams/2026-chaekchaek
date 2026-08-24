@@ -4,9 +4,15 @@ import type { GetMembersMeRequestDto, GetMembersMeResponseDto } from './dto';
 
 export const getMembersMe =
   async ({}: GetMembersMeRequestDto): Promise<GetMembersMeResponseDto> => {
-    const response = await instance('/api/v1/members/me', {
-      method: 'get',
-    });
+    const response = await instance(
+      '/api/v1/members/me',
+      {
+        method: 'get',
+      },
+      {
+        redirectOnReissueFailure: false,
+      },
+    );
 
     return response.data;
   };
