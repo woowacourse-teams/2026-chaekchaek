@@ -105,6 +105,7 @@ export const BookDetailPage = () => {
     null,
   );
   const handleOpenDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog') => {
+    if (!isAuthenticated) return handleOpenLoginDialog();
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
