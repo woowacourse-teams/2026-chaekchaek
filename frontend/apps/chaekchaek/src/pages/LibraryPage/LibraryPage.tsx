@@ -116,6 +116,9 @@ export const LibraryPage = () => {
     );
   };
 
+  const isAbleUpdateStatus = bookSelection.length;
+  const isAbleDeleteStatus = bookSelection.length;
+
   const [dialog, setDialog] = useState<'UpdateBookStatusDialog' | null>(null);
   const handleOpenDialog = (dialog: 'UpdateBookStatusDialog') => {
     setDialog(dialog);
@@ -147,8 +150,16 @@ export const LibraryPage = () => {
               <Button variant="ghost">감상 익명 공개</Button>
               {isEditing && (
                 <>
-                  <Button variant="ghost">상태 변경</Button>
-                  <Button variant="ghost">삭제</Button>
+                  <Button
+                    variant="ghost"
+                    disabled={!isAbleUpdateStatus}
+                    onClick={() => [handleOpenDialog('UpdateBookStatusDialog')]}
+                  >
+                    상태 변경
+                  </Button>
+                  <Button variant="ghost" disabled={!isAbleDeleteStatus}>
+                    삭제
+                  </Button>
                 </>
               )}
               <Button variant="primary" onClick={handleClickStartEdit}>
