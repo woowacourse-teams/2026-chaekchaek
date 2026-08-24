@@ -138,6 +138,11 @@ export const LibraryPage = () => {
     handleResetBookSelection();
   };
 
+  const handleClickDelete = (bookId: number) => {
+    handleChangeBookSelection(bookId);
+    handleOpenDialog('DeleteBooksDialog');
+  };
+
   const isAbleUpdateStatus = bookSelection.length;
   const isAbleDeleteStatus = bookSelection.length;
 
@@ -293,7 +298,15 @@ export const LibraryPage = () => {
                     />
                     <List.Item.Trailing>
                       {!isEditing && <>&gt;</>}
-                      {isEditing && <Button>삭제</Button>}
+                      {isEditing && (
+                        <Button
+                          onClick={() => {
+                            handleClickDelete(item.bookId);
+                          }}
+                        >
+                          삭제
+                        </Button>
+                      )}
                     </List.Item.Trailing>
                   </List.Item>
                 );
