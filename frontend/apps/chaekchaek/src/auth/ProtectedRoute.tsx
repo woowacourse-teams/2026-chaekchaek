@@ -16,12 +16,12 @@ const ProtectedRoute = ({ children }: Props) => {
   const { isAuthenticated } = useAuthContext();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate(ROUTES.LOGIN, {
-        replace: true,
-        state: { from: location },
-      });
-    }
+    // if (!isAuthenticated) {
+    //   navigate(ROUTES.LOGIN, {
+    //     replace: true,
+    //     state: { from: location },
+    //   });
+    // }
   }, [navigate, location, isAuthenticated]);
 
   if (!isAuthenticated) return null;
