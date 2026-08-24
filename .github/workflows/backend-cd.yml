@@ -11,10 +11,6 @@ concurrency:
   group: backend-cd
   cancel-in-progress: false
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/chaekchaek-backend
-
 defaults:
   run:
     working-directory: backend
@@ -22,9 +18,6 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,35 +37,28 @@ jobs:
       - name: Build bootJar (테스트 포함 — RestDocs 스니펫 필요)
         run: ./gradlew clean bootJar
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+      - name: Upload jar artifact
+        uses: actions/upload-artifact@v4
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: backend
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          name: backend-jar
+          path: backend/build/libs/*.jar
+          retention-days: 1
 
   deploy:
     needs: build
     runs-on: [ self-hosted, backend ]
     steps:
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout (Dockerfile 확보용)
+        uses: actions/checkout@v4
 
-      - name: Pull image
-        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+      - name: Download jar artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/build/libs
+
+      - name: Build Docker image
+        run: docker build -t chaekchaek-backend .
 
       - name: Restart container
         env:
@@ -105,5 +91,5 @@ jobs:
             -e FRONTEND_ALLOWED_ORIGINS="$FRONTEND_ALLOWED_ORIGINS" \
             -e AUTH_COOKIE_SECURE="$AUTH_COOKIE_SECURE" \
             -e AUTH_COOKIE_SAME_SITE="$AUTH_COOKIE_SAME_SITE" \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker image prune -af
+            chaekchaek-backend
+          docker image prune -f
