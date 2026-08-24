@@ -61753,6 +61753,9 @@
                               "height": 28,
                               "fill": "$cc-accent",
                               "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
@@ -61778,6 +61781,9 @@
                               "height": 28,
                               "fill": "$cc-accent",
                               "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
@@ -61803,6 +61809,9 @@
                               "height": 28,
                               "fill": "$cc-accent",
                               "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
@@ -61828,6 +61837,9 @@
                               "height": 28,
                               "fill": "$cc-accent",
                               "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
@@ -65205,6 +65217,9 @@
                               "height": 28,
                               "fill": "$cc-accent",
                               "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
@@ -65230,6 +65245,9 @@
                               "height": 28,
                               "fill": "$cc-accent",
                               "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
@@ -65255,6 +65273,9 @@
                               "height": 28,
                               "fill": "$cc-accent",
                               "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
@@ -65280,6 +65301,9 @@
                               "height": 28,
                               "fill": "$cc-accent",
                               "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
@@ -65305,6 +65329,9 @@
                               "height": 28,
                               "fill": "$cc-accent",
                               "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
