@@ -1,8 +1,19 @@
+import { useState } from 'react';
+import { type ChangeEvent } from 'react';
+
 import { Button, ButtonStack, Dialog, Field, Radio } from '@chaekchaek/design-system';
 
 import type { UpdateBookStatusDialogProps } from './UpdateBookStatusDialog.types';
 
+import { READING_STATUS, READING_STATUS_LABELS } from '../../LibraryPage';
+import type { ReadingStatus } from '../../LibraryPage';
+
 export const UpdateBookStatusDialog = ({ onClose }: UpdateBookStatusDialogProps) => {
+  const [status, setStatus] = useState<ReadingStatus>(READING_STATUS.READING);
+  const handleChangeStatus = (e: ChangeEvent<HTMLInputElement>) => {
+    setStatus(e.target.value as ReadingStatus);
+  };
+
   return (
     <Dialog size="medium" onClose={onClose}>
       <Dialog.Container>
@@ -12,9 +23,20 @@ export const UpdateBookStatusDialog = ({ onClose }: UpdateBookStatusDialogProps)
           <Dialog.Body>
             <Field>
               <Field.Content>
-                <Radio>읽고 싶어요</Radio>
-                <Radio>읽는 중</Radio>
-                <Radio>다 읽음</Radio>
+                {Object.entries(READING_STATUS_LABELS)
+                  .filter(([key]) => key !== READING_STATUS.ALL)
+                  .map(([key, value]) => {
+                    return (
+                      <Radio
+                        name="status"
+                        defaultChecked={status === key}
+                        value={key}
+                        onChange={handleChangeStatus}
+                      >
+                        {value}
+                      </Radio>
+                    );
+                  })}
               </Field.Content>
             </Field>
           </Dialog.Body>

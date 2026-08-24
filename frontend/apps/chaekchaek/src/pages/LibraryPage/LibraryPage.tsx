@@ -31,7 +31,7 @@ export const READING_STATUS = {
   FINISHED: 'FINISHED',
 } as const;
 
-type ReadingStatus = (typeof READING_STATUS)[keyof typeof READING_STATUS];
+export type ReadingStatus = (typeof READING_STATUS)[keyof typeof READING_STATUS];
 
 export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
   [READING_STATUS.ALL]: '전체',
