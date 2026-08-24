@@ -107,6 +107,13 @@ export const LibraryPage = () => {
     setEditing(false);
   };
 
+  const [editingBooks, setEditingBooks] = useState<number[]>([]);
+  const handleChangeEditingBooks = (bookId: number) => {
+    setEditingBooks((prev) =>
+      prev.includes(bookId) ? prev.filter((v) => v !== bookId) : [...prev, bookId],
+    );
+  };
+
   return (
     <Layout>
       <Header />
@@ -173,10 +180,19 @@ export const LibraryPage = () => {
             </Title>
             <List>
               {libraryData?.items.map((item) => {
+                const isIncluded = editingBooks.includes(item.bookId);
+
                 return (
                   <List.Item key={item.bookId}>
                     <List.Item.Leading>
-                      {editing && <Checkbox />}
+                      {editing && (
+                        <Checkbox
+                          checked={isIncluded}
+                          onChange={() => {
+                            handleChangeEditingBooks(item.bookId);
+                          }}
+                        />
+                      )}
                       <a href={`/books/${item.isbn13}`}>
                         <ImgBox img={item.coverImageUrl} size="small" />
                       </a>
