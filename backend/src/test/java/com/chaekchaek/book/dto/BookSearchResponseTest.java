@@ -29,7 +29,8 @@ class BookSearchResponseTest {
                 "국내도서>소설>과학소설",
                 "알에이치코리아(RHK)",
                 3,
-                5
+                5,
+                null
         );
         BookSearchResponse response = new BookSearchResponse(6, 2, List.of(book));
 
@@ -42,7 +43,7 @@ class BookSearchResponseTest {
         );
         assertThat(json.at("/items/0").propertyNames()).containsExactlyInAnyOrder(
                 "bookId", "title", "coverImageUrl", "authors", "translators", "publishedDate",
-                "isbn13", "category", "publisher", "reviewCount", "replyCount"
+                "isbn13", "category", "publisher", "reviewCount", "replyCount", "isRegisteredInMyLibrary"
         );
     }
 
