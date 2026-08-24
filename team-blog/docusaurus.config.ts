@@ -57,6 +57,8 @@ const config: Config = {
     ],
   ],
 
+  plugins: [require.resolve('./src/plugins/teamBlogHome')],
+
   themeConfig: {
     metadata: [
       {
