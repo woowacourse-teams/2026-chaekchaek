@@ -9,12 +9,8 @@ const pluginName = 'team-blog-home';
 
 function toHomeAuthors(authorsMap: AuthorsMap | undefined): HomeAuthor[] {
   return Object.values(authorsMap ?? {}).map((author) => ({
-    key: author.key,
+    ...author,
     name: author.name ?? author.key,
-    title: author.title,
-    url: author.url,
-    imageUrl: author.imageURL,
-    description: author.description,
   }));
 }
 

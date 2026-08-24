@@ -2,6 +2,7 @@ import type {ReactNode} from 'react';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {usePluginData} from '@docusaurus/useGlobalData';
+import AuthorSocials from '@theme/Blog/Components/Author/Socials';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import type {HomeAuthor, HomeData, HomePost} from '../types/home';
@@ -16,18 +17,19 @@ function AuthorCard({author}: {author: HomeAuthor}): ReactNode {
   const profile = (
     <div className="card__body">
       <div className="avatar">
-        {author.imageUrl && (
+        {author.imageURL && (
           <img
             className="avatar__photo"
-            src={author.imageUrl}
+            src={author.imageURL}
             alt={`${author.name} 프로필 사진`}
           />
         )}
         <div className="avatar__intro">
           <Heading as="h3" className="avatar__name">
-            {author.name}
+            {author.url ? <Link to={author.url}>{author.name}</Link> : author.name}
           </Heading>
           {author.title && <small className="avatar__subtitle">{author.title}</small>}
+          {author.socials && <AuthorSocials author={author} />}
         </div>
       </div>
       {author.description && <p>{author.description}</p>}
@@ -36,7 +38,7 @@ function AuthorCard({author}: {author: HomeAuthor}): ReactNode {
 
   return (
     <article className="col col--4 margin-bottom--lg">
-      <div className="card">{author.url ? <Link to={author.url}>{profile}</Link> : profile}</div>
+      <div className="card">{profile}</div>
     </article>
   );
 }

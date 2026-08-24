@@ -1,10 +1,7 @@
-export type HomeAuthor = {
-  key: string;
+import type {AuthorWithKey} from '@docusaurus/plugin-content-blog';
+
+export type HomeAuthor = AuthorWithKey & {
   name: string;
-  title?: string;
-  url?: string;
-  imageUrl?: string;
-  description?: string;
 };
 
 export type HomePost = {
