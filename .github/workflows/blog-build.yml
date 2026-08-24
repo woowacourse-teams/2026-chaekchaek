@@ -1,0 +1,90 @@
+name: Build team blog
+
+on:
+  pull_request:
+    branches: [blog]
+    paths:
+      - team-blog/**
+      - .github/workflows/blog-build.yml
+      - .github/workflows/blog-deploy.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate-post-filenames:
+    name: Validate blog post filenames
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate changed post filenames
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          invalid=0
+          while IFS= read -r path; do
+            case "$path" in
+              *.md|*.mdx) ;;
+              *) continue ;;
+            esac
+
+            filename="${path##*/}"
+            if [[ ! "$filename" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(-[a-z0-9]+)*\.(md|mdx)$ ]]; then
+              echo "::error file=$path::게시글 파일명은 YYYY-MM-DD-kebab-case.md(x) 형식이어야 합니다."
+              invalid=1
+              continue
+            fi
+
+            post_date="${filename:0:10}"
+            if date --version >/dev/null 2>&1; then
+              is_valid_date="$(date --date="$post_date" '+%F' 2>/dev/null || true)"
+            else
+              is_valid_date="$(date -j -f '%Y-%m-%d' "$post_date" '+%Y-%m-%d' 2>/dev/null || true)"
+            fi
+
+            if [[ "$is_valid_date" != "$post_date" ]]; then
+              echo "::error file=$path::유효한 날짜를 사용하세요."
+              invalid=1
+            fi
+          done < <(git diff --name-only --diff-filter=AMR "$BASE_SHA" "$HEAD_SHA" -- team-blog/blog)
+
+          if (( invalid )); then
+            exit 1
+          fi
+
+  build:
+    name: Build Docusaurus
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: team-blog
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: team-blog/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check the site
+        run: npm run typecheck
+
+      - name: Build the site
+        run: npm run build

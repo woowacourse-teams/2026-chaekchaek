@@ -1,0 +1,17 @@
+chaekchaek-team:
+  name: 책책 팀
+  title: 책책을 만드는 사람들
+  url: https://github.com/woowacourse-teams/2026-chaekchaek
+  page: true
+
+hyoyoonnam:
+  name: HyoYoonNam
+  title: Software Engineer
+  url: https://linkedin.com/in/hyoyoonnam
+  image_url: https://github.com/hyoyoonnam.png
+  page: false
+  description: "Java, Spring을 메인으로 하는 취준생입니다."
+  socials:
+    linkedin: hyoyoonnam
+    github: hyoyoonnam
+    email: dev.rudevico@gmail.com
