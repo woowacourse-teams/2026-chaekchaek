@@ -22,6 +22,8 @@ import { Main } from '@/frames';
 import { getLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
+import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
+
 export const READING_STATUS = {
   ALL: 'ALL',
   WANT_TO_READ: 'WANT_TO_READ',
@@ -113,6 +115,26 @@ export const LibraryPage = () => {
       prev.includes(bookId) ? prev.filter((v) => v !== bookId) : [...prev, bookId],
     );
   };
+
+  const [dialog, setDialog] = useState<'UpdateBookStatusDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'UpdateBookStatusDialog') => {
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (dialog: 'UpdateBookStatusDialog' | null) => {
+    switch (dialog) {
+      case 'UpdateBookStatusDialog':
+        return <UpdateBookStatusDialog onClose={handleCloseDialog} />;
+
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
 
   return (
     <Layout>
@@ -234,6 +256,7 @@ export const LibraryPage = () => {
             />
           </Split.Content>
         </Split>
+        {dialogElement}
       </Main>
     </Layout>
   );
