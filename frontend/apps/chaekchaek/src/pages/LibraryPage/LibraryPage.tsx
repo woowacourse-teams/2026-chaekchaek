@@ -130,7 +130,7 @@ export const LibraryPage = () => {
   const renderDialog = (dialog: 'UpdateBookStatusDialog' | null) => {
     switch (dialog) {
       case 'UpdateBookStatusDialog':
-        return <UpdateBookStatusDialog onClose={handleCloseDialog} />;
+        return <UpdateBookStatusDialog bookSelection={bookSelection} onClose={handleCloseDialog} />;
 
       default:
         return null;
