@@ -16,12 +16,26 @@ import { Input } from '@chaekchaek/design-system';
 import { Pagination } from '@chaekchaek/design-system';
 import { Badge } from '@chaekchaek/design-system';
 
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
 import { getBooks } from '@/services/apis/books/repository';
 import { postLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
+import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
+
 export const BooksPage = () => {
+  const { isAuthenticated } = useAuthContext();
+
+  const [openLoginDialog, setOpenLoginDialog] = useState(false);
+  const handleOpenLoginDialog = () => {
+    if (!isAuthenticated) setOpenLoginDialog(true);
+  };
+  const handleCloseLoginDialog = () => {
+    setOpenLoginDialog(false);
+  };
+
   const [searchParams, setSearchParams] = useSearchParams();
   const keywordQuery = searchParams.get('query') ?? '';
   const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
@@ -70,6 +84,7 @@ export const BooksPage = () => {
     executeFn: postLibrary,
   });
   const handleRegisterLibrary = async (isbn: string) => {
+    if (!isAuthenticated) return handleOpenLoginDialog();
     await mutate({ isbn13: isbn, status: 'READING' });
   };
 
@@ -148,6 +163,8 @@ export const BooksPage = () => {
             )}
           </Split.Content>
         </Split>
+
+        {openLoginDialog && <LoginDialog onClose={handleCloseLoginDialog} />}
       </Main>
     </Layout>
   );
