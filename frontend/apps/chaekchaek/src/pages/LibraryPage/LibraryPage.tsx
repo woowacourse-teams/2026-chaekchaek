@@ -107,9 +107,9 @@ export const LibraryPage = () => {
     setIsEditing(false);
   };
 
-  const [editingBooks, setEditingBooks] = useState<number[]>([]);
-  const handleChangeEditingBooks = (bookId: number) => {
-    setEditingBooks((prev) =>
+  const [bookSelection, setBookSelection] = useState<number[]>([]);
+  const handleChangeBookSelection = (bookId: number) => {
+    setBookSelection((prev) =>
       prev.includes(bookId) ? prev.filter((v) => v !== bookId) : [...prev, bookId],
     );
   };
@@ -180,7 +180,7 @@ export const LibraryPage = () => {
             </Title>
             <List>
               {libraryData?.items.map((item) => {
-                const isIncluded = editingBooks.includes(item.bookId);
+                const isIncluded = bookSelection.includes(item.bookId);
 
                 return (
                   <List.Item key={item.bookId}>
@@ -189,7 +189,7 @@ export const LibraryPage = () => {
                         <Checkbox
                           checked={isIncluded}
                           onChange={() => {
-                            handleChangeEditingBooks(item.bookId);
+                            handleChangeBookSelection(item.bookId);
                           }}
                         />
                       )}
