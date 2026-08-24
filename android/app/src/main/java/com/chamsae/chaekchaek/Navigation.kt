@@ -41,6 +41,7 @@ fun MainNavigation() {
         BookDetailRoute(
           book = key.book,
           bookDetailRepository = appContainer.bookDetailRepository,
+          bookRatingStore = appContainer.bookRatingStore,
           mobileAuthRepository = appContainer.mobileAuthRepository,
           authSession = appContainer.authSession,
           libraryRepository = appContainer.libraryRepository,
