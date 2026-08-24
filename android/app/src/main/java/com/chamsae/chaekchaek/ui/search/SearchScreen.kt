@@ -1,5 +1,6 @@
 package com.chamsae.chaekchaek.ui.search
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -33,6 +34,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +43,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +56,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import coil3.compose.AsyncImage
 import com.chamsae.chaekchaek.R
+import com.chamsae.chaekchaek.auth.AuthSession
+import com.chamsae.chaekchaek.auth.requestGoogleIdToken
 import com.chamsae.chaekchaek.data.ArchivedBook
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.toArchivedBook
@@ -65,24 +71,39 @@ import com.chamsae.chaekchaek.theme.ChaekBorderSoft
 import com.chamsae.chaekchaek.theme.ChaekInkTertiary
 import com.chamsae.chaekchaek.ui.bookdetail.BookDetailArgs
 import com.chamsae.chaekchaek.ui.bookdetail.toBookDetailArgs
+import com.chamsae.chaekchaek.ui.common.LoginRequiredSheet
+import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
+import com.chaekchaek.app.data.remote.MobileLoginException
+import kotlinx.coroutines.launch
 
 @Composable
 fun SearchRoute(
   bookSearchRepository: BookSearchRepository,
   libraryRepository: LibraryRepository,
+  mobileAuthRepository: MobileAuthRemoteRepository,
+  authSession: AuthSession,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
   onBookClick: (BookDetailArgs) -> Unit = {},
 ) {
   val factory =
-    remember(bookSearchRepository, libraryRepository) {
+    remember(bookSearchRepository, libraryRepository, authSession) {
       viewModelFactory {
-        initializer { SearchViewModel(bookSearchRepository, libraryRepository) }
+        initializer {
+          SearchViewModel(bookSearchRepository, libraryRepository) {
+            authSession.tokens.value != null
+          }
+        }
       }
     }
   val viewModel: SearchViewModel = viewModel(factory = factory)
   val state by viewModel.uiState.collectAsStateWithLifecycle()
+  val pendingRegistration by viewModel.pendingRegistration.collectAsStateWithLifecycle()
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
+  val context = LocalContext.current
+  val scope = rememberCoroutineScope()
+  var signingIn by rememberSaveable { mutableStateOf(false) }
+  var loginError by rememberSaveable { mutableStateOf<String?>(null) }
 
   SearchScreen(
     state = state,
@@ -94,6 +115,37 @@ fun SearchRoute(
     onBookClick = onBookClick,
     modifier = modifier,
   )
+
+  if (pendingRegistration != null) {
+    LoginRequiredSheet(
+      signingIn = signingIn,
+      error = loginError,
+      onDismiss = {
+        if (!signingIn) {
+          loginError = null
+          viewModel.cancelRegistration()
+        }
+      },
+      onGoogleSignIn = {
+        if (signingIn) return@LoginRequiredSheet
+        scope.launch {
+          signingIn = true
+          loginError = null
+          runCatching { requestGoogleIdToken(context) }
+            .mapCatching { idToken ->
+              authSession.signIn(mobileAuthRepository.loginWithGoogle(idToken))
+            }
+            .onSuccess { viewModel.resumeRegistration() }
+            .onFailure {
+              val code = (it as? MobileLoginException)?.code ?: it::class.simpleName.orEmpty()
+              Log.w("ChaekchaekAuth", "Google login failed: $code")
+              loginError = "로그인하지 못했어요. 다시 시도해 주세요."
+            }
+          signingIn = false
+        }
+      },
+    )
+  }
 }
 
 @Composable
