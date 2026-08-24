@@ -67417,7 +67417,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "책·평점 정보",
+                                          "content": "별점 다이얼로그 안내",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
                                           "fontSize": 12
@@ -67447,7 +67447,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "title · authors[] · averageRating · ratingCount",
+                                          "content": "book.title · averageRating · ratingCount",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
@@ -67478,7 +67478,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "책 상세 배경에 표시",
+                                          "content": "별점 매기기 다이얼로그 표시 시",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
                                           "fontSize": 12
@@ -72355,7 +72355,7 @@
                               "type": "frame",
                               "id": "ZklII",
                               "x": 10,
-                              "y": 80,
+                              "y": 145,
                               "name": "상세 상단 명세 시트 정보 마커 I1",
                               "width": 28,
                               "height": 28,
@@ -72463,7 +72463,7 @@
                             {
                               "type": "frame",
                               "id": "LXNQm",
-                              "x": 24,
+                              "x": 284,
                               "y": 380,
                               "name": "상세 상단 명세 시트 기능 마커 2",
                               "width": 28,
@@ -75939,7 +75939,7 @@
                               "type": "frame",
                               "id": "rBC5o",
                               "x": 350,
-                              "y": 375,
+                              "y": 430,
                               "name": "상세 상단 명세 시트 기능 마커 3",
                               "width": 28,
                               "height": 28,
@@ -98929,7 +98929,7 @@
                               "type": "frame",
                               "id": "ReP25",
                               "x": 350,
-                              "y": 482,
+                              "y": 86,
                               "name": "상세 상단 명세 시트 기능 마커 4",
                               "width": 28,
                               "height": 28,
@@ -104887,7 +104887,7 @@
                               "type": "frame",
                               "id": "oHH9g",
                               "x": 350,
-                              "y": 63,
+                              "y": 105,
                               "name": "상세 상단 명세 시트 기능 마커 2",
                               "width": 28,
                               "height": 28,
@@ -111339,7 +111339,7 @@
                               "type": "frame",
                               "id": "zgm0B",
                               "x": 10,
-                              "y": 436,
+                              "y": 405,
                               "name": "상세 상단 명세 시트 정보 마커 I3",
                               "width": 28,
                               "height": 28,
@@ -117099,1612 +117099,13 @@
     },
     {
       "type": "frame",
-      "id": "Mb15s",
-      "x": 23865,
-      "y": -230,
-      "name": "하단 네비게이션 탭 탐색",
-      "width": 1270,
-      "height": 560,
-      "fill": "$cc-bg",
-      "gap": 20,
-      "padding": 20,
-      "children": [
-        {
-          "type": "frame",
-          "id": "O5Hln",
-          "name": "시안 A · 클래식 캡슐",
-          "width": 396,
-          "height": "fill_container",
-          "fill": "$cc-surface",
-          "layout": "vertical",
-          "gap": 12,
-          "padding": 18,
-          "children": [
-            {
-              "type": "text",
-              "id": "k3ney",
-              "name": "시안 A 번호",
-              "fill": "$cc-accent-ink",
-              "content": "A / CLASSIC CAPSULE",
-              "fontFamily": "$cc-font-meta",
-              "fontSize": 9,
-              "fontWeight": "600"
-            },
-            {
-              "type": "text",
-              "id": "tMqwz",
-              "name": "시안 A 제목",
-              "fill": "$cc-ink",
-              "content": "익숙한 구조, 또렷한 현재 위치",
-              "fontFamily": "$cc-font-display",
-              "fontSize": 24,
-              "fontWeight": "600"
-            },
-            {
-              "type": "text",
-              "id": "Vkexy",
-              "name": "시안 A 설명",
-              "fill": "$cc-ink-2",
-              "textGrowth": "fixed-width",
-              "width": "fill_container",
-              "content": "홈 · 발견 · 내 서재의 기존 흐름을 유지하고, 선택된 탭만 안쪽 캡슐로 감싸 탐색 상태를 분명하게 보여줍니다.",
-              "lineHeight": 1.45,
-              "fontFamily": "$cc-font-body",
-              "fontSize": 12,
-              "fontWeight": "normal"
-            },
-            {
-              "type": "frame",
-              "id": "hogdL",
-              "name": "클래식 캡슐 화면 미리보기",
-              "width": "fill_container",
-              "height": 302,
-              "fill": "$cc-bg",
-              "cornerRadius": 16,
-              "stroke": "$cc-border-soft",
-              "strokeWidth": 1,
-              "layout": "vertical",
-              "gap": 12,
-              "padding": [
-                16,
-                14,
-                12,
-                14
-              ],
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "lTru2",
-                  "name": "미리보기 상단",
-                  "width": "fill_container",
-                  "height": 36,
-                  "justifyContent": "space_between",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "yQe4o",
-                      "name": "미리보기 제목",
-                      "fill": "$cc-ink",
-                      "content": "오늘의 독서",
-                      "fontFamily": "$cc-font-display",
-                      "fontSize": 20,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "icon",
-                      "id": "KffBW",
-                      "name": "프로필 아이콘",
-                      "width": 24,
-                      "height": 24,
-                      "icon": "circle-user-round",
-                      "library": "lucide",
-                      "fill": "$cc-ink-2"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "toQZZ",
-                  "name": "홈 독서 요약",
-                  "width": "fill_container",
-                  "height": 156,
-                  "fill": "$cc-surface",
-                  "cornerRadius": 10,
-                  "stroke": "$cc-border-soft",
-                  "strokeWidth": 1,
-                  "gap": 14,
-                  "padding": 16,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "F45NCX",
-                      "name": "책 표지 미리보기",
-                      "width": 82,
-                      "height": 124,
-                      "fill": "$cc-muted",
-                      "cornerRadius": 6,
-                      "layout": "vertical",
-                      "padding": 10,
-                      "justifyContent": "space_between",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "facfi",
-                          "name": "책 표지 장르",
-                          "fill": "$cc-accent-ink",
-                          "content": "ITALO CALVINO",
-                          "fontFamily": "$cc-font-meta",
-                          "fontSize": 7,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "text",
-                          "id": "K5XzPl",
-                          "name": "책 표지 제목",
-                          "fill": "$cc-ink",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "보이지 않는\n도시",
-                          "lineHeight": 1.15,
-                          "fontFamily": "$cc-font-display",
-                          "fontSize": 17,
-                          "fontWeight": "600"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "Fhzud",
-                      "name": "독서 정보",
-                      "width": "fill_container",
-                      "layout": "vertical",
-                      "gap": 8,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "Vlx90",
-                          "name": "독서 상태",
-                          "fill": "$cc-accent-ink",
-                          "content": "읽는 중 · 42%",
-                          "fontFamily": "$cc-font-meta",
-                          "fontSize": 9,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "text",
-                          "id": "NYeyu",
-                          "name": "책 제목",
-                          "fill": "$cc-ink",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "보이지 않는 도시",
-                          "fontFamily": "$cc-font-display",
-                          "fontSize": 18,
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "text",
-                          "id": "DMCtN",
-                          "name": "책 저자",
-                          "fill": "$cc-ink-2",
-                          "content": "이탈로 칼비노",
-                          "fontFamily": "$cc-font-body",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
-                        },
-                        {
-                          "type": "frame",
-                          "id": "TbYfz",
-                          "name": "독서 진행률 트랙",
-                          "width": "fill_container",
-                          "height": 4,
-                          "fill": "$cc-border-soft",
-                          "cornerRadius": "$cc-radius-pill",
-                          "children": [
-                            {
-                              "type": "rectangle",
-                              "cornerRadius": "$cc-radius-pill",
-                              "id": "b6Fk9Y",
-                              "name": "독서 진행률",
-                              "fill": "$cc-accent",
-                              "width": 74,
-                              "height": 4
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "WIYgs",
-                  "name": "클래식 캡슐 하단 탭",
-                  "width": "fill_container",
-                  "height": 58,
-                  "fill": "#F7F2ECCC",
-                  "cornerRadius": 29,
-                  "stroke": "$cc-border",
-                  "strokeWidth": 1,
-                  "effect": [
-                    {
-                      "type": "background_blur",
-                      "radius": 12
-                    },
-                    {
-                      "type": "shadow",
-                      "shadowType": "outer",
-                      "color": "$cc-shadow",
-                      "offset": {
-                        "x": 0,
-                        "y": 4
-                      },
-                      "blur": 12
-                    }
-                  ],
-                  "padding": 6,
-                  "justifyContent": "space_around",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "JOwZZ",
-                      "name": "홈 탭",
-                      "metadata": {
-                        "type": "navigation",
-                        "route": "home"
-                      },
-                      "width": 100,
-                      "height": 46,
-                      "fill": "$cc-accent",
-                      "cornerRadius": 23,
-                      "layout": "vertical",
-                      "gap": 2,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "LDSzL",
-                          "name": "홈 탭 아이콘",
-                          "width": 18,
-                          "height": 18,
-                          "icon": "house",
-                          "library": "lucide",
-                          "weight": 600,
-                          "fill": "$cc-ink"
-                        },
-                        {
-                          "type": "text",
-                          "id": "LAgsK",
-                          "name": "홈 탭 라벨",
-                          "fill": "$cc-ink",
-                          "content": "홈",
-                          "fontFamily": "$cc-font-body",
-                          "fontSize": 9,
-                          "fontWeight": "700"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "QMfna",
-                      "name": "발견 탭",
-                      "metadata": {
-                        "type": "navigation",
-                        "route": "discover"
-                      },
-                      "width": 100,
-                      "height": 46,
-                      "fill": "#00000000",
-                      "cornerRadius": 23,
-                      "layout": "vertical",
-                      "gap": 2,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "KhhiX",
-                          "name": "발견 탭 아이콘",
-                          "width": 18,
-                          "height": 18,
-                          "icon": "compass",
-                          "library": "lucide",
-                          "weight": 400,
-                          "fill": "$cc-ink-2"
-                        },
-                        {
-                          "type": "text",
-                          "id": "S7RpZ",
-                          "name": "발견 탭 라벨",
-                          "fill": "$cc-ink-2",
-                          "content": "발견",
-                          "fontFamily": "$cc-font-body",
-                          "fontSize": 9,
-                          "fontWeight": "500"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "ETTdN",
-                      "name": "내 서재 탭",
-                      "metadata": {
-                        "type": "navigation",
-                        "route": "library"
-                      },
-                      "width": 100,
-                      "height": 46,
-                      "fill": "#00000000",
-                      "cornerRadius": 23,
-                      "layout": "vertical",
-                      "gap": 2,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "pZACN",
-                          "name": "내 서재 탭 아이콘",
-                          "width": 18,
-                          "height": 18,
-                          "icon": "book-open",
-                          "library": "lucide",
-                          "weight": 400,
-                          "fill": "$cc-ink-2"
-                        },
-                        {
-                          "type": "text",
-                          "id": "Oz2Jb",
-                          "name": "내 서재 탭 라벨",
-                          "fill": "$cc-ink-2",
-                          "content": "내 서재",
-                          "fontFamily": "$cc-font-body",
-                          "fontSize": 9,
-                          "fontWeight": "500"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "E6kduO",
-          "name": "시안 B · 에디토리얼 레일",
-          "width": 396,
-          "height": "fill_container",
-          "fill": "$cc-surface",
-          "layout": "vertical",
-          "gap": 12,
-          "padding": 18,
-          "children": [
-            {
-              "type": "text",
-              "id": "QOfop",
-              "name": "시안 B 번호",
-              "fill": "$cc-accent-ink",
-              "content": "B / EDITORIAL RAIL",
-              "fontFamily": "$cc-font-meta",
-              "fontSize": "$cc-type-s",
-              "fontWeight": "600",
-              "letterSpacing": 1
-            },
-            {
-              "type": "text",
-              "id": "cWOwS",
-              "name": "시안 B 제목",
-              "fill": "$cc-ink",
-              "content": "목차처럼 이동하기",
-              "fontFamily": "$cc-font-display",
-              "fontSize": "$cc-title-m",
-              "fontWeight": "600"
-            },
-            {
-              "type": "text",
-              "id": "H59NVr",
-              "name": "시안 B 설명",
-              "fill": "$cc-ink-2",
-              "textGrowth": "fixed-width",
-              "width": "fill_container",
-              "content": "홈·발견·내 서재를 한 권의 목차처럼 배열해, 독서 앱의 편집 감각과 현재 위치를 선명하게 드러냅니다.",
-              "lineHeight": 1.4,
-              "fontFamily": "$cc-font-body",
-              "fontSize": "$cc-type-s",
-              "fontWeight": "normal"
-            },
-            {
-              "type": "frame",
-              "id": "qC7GO",
-              "name": "에디토리얼 홈 미리보기",
-              "clip": true,
-              "width": "fill_container",
-              "height": "fill_container",
-              "fill": "$cc-bg",
-              "stroke": "$cc-border-soft",
-              "strokeWidth": 1,
-              "layout": "vertical",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "la7En",
-                  "name": "오늘의 읽기 콘텐츠",
-                  "width": "fill_container",
-                  "height": "fill_container",
-                  "layout": "vertical",
-                  "gap": 10,
-                  "padding": [
-                    14,
-                    16,
-                    12,
-                    16
-                  ],
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "kx9cT",
-                      "name": "에디션 메타",
-                      "width": "fill_container",
-                      "justifyContent": "space_between",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "E8UUEL",
-                          "name": "에디션 번호",
-                          "fill": "$cc-accent-ink",
-                          "content": "ISSUE 04",
-                          "fontFamily": "$cc-font-meta",
-                          "fontSize": "$cc-type-s",
-                          "fontWeight": "600",
-                          "letterSpacing": 0.8
-                        },
-                        {
-                          "type": "text",
-                          "id": "AdpMa",
-                          "name": "에디션 날짜",
-                          "fill": "$cc-ink-3",
-                          "content": "오늘의 독서 편집",
-                          "fontFamily": "$cc-font-meta",
-                          "fontSize": "$cc-type-s",
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "id": "CuP0a",
-                      "name": "콘텐츠 제목",
-                      "fill": "$cc-ink",
-                      "content": "천천히 읽을수록\n선명해지는 문장",
-                      "lineHeight": 1.08,
-                      "fontFamily": "$cc-font-display",
-                      "fontSize": "$cc-title-m",
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "Qs2kK",
-                      "name": "추천 도서 편집 행",
-                      "width": "fill_container",
-                      "height": "fill_container",
-                      "gap": 12,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "DCqPV",
-                          "name": "추천 도서 표지",
-                          "width": 58,
-                          "height": 78,
-                          "fill": "$cc-muted",
-                          "stroke": "$cc-ink",
-                          "strokeWidth": 1,
-                          "layout": "vertical",
-                          "padding": 8,
-                          "justifyContent": "space_between",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "hfM2v",
-                              "name": "표지 장르",
-                              "fill": "$cc-accent-ink",
-                              "content": "ESSAY",
-                              "fontFamily": "$cc-font-meta",
-                              "fontSize": "$cc-type-s",
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "text",
-                              "id": "NtKCI",
-                              "name": "표지 제목",
-                              "fill": "$cc-ink",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "문장의\n온도",
-                              "lineHeight": 1.05,
-                              "fontFamily": "$cc-font-display",
-                              "fontSize": "$cc-control-m",
-                              "fontWeight": "600"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "RY3RA",
-                          "name": "추천 도서 소개",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 6,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "ZozY5",
-                              "name": "추천 도서 분류",
-                              "fill": "$cc-ink-3",
-                              "content": "EDITOR'S NOTE  01",
-                              "fontFamily": "$cc-font-meta",
-                              "fontSize": "$cc-type-s",
-                              "fontWeight": "600",
-                              "letterSpacing": 0.5
-                            },
-                            {
-                              "type": "text",
-                              "id": "W8zq6",
-                              "name": "추천 도서 문장",
-                              "fill": "$cc-ink",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "좋은 문장은 독자를 재촉하지 않는다.",
-                              "lineHeight": 1.2,
-                              "fontFamily": "$cc-font-display",
-                              "fontSize": "$cc-title-s",
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "text",
-                              "id": "DnOnn",
-                              "name": "추천 도서 정보",
-                              "fill": "$cc-ink-2",
-                              "content": "이기주 · 말글터",
-                              "fontFamily": "$cc-font-body",
-                              "fontSize": "$cc-type-s",
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "u6uy2",
-                  "name": "에디토리얼 하단 레일",
-                  "width": "fill_container",
-                  "height": 70,
-                  "fill": "$cc-surface",
-                  "stroke": "$cc-ink",
-                  "strokeWidth": {
-                    "top": 1
-                  },
-                  "padding": [
-                    0,
-                    10
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "bzUU0",
-                      "name": "탭 · 홈",
-                      "width": "fill_container",
-                      "height": "fill_container",
-                      "fill": "$cc-muted",
-                      "stroke": "$cc-border-soft",
-                      "strokeWidth": {
-                        "right": 1
-                      },
-                      "layout": "vertical",
-                      "gap": 4,
-                      "padding": [
-                        11,
-                        8,
-                        8,
-                        8
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "L4qFT",
-                          "name": "홈 탭 메타",
-                          "width": "fill_container",
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "oFx0y",
-                              "name": "홈 순번",
-                              "fill": "$cc-accent-ink",
-                              "content": "01",
-                              "fontFamily": "$cc-font-meta",
-                              "fontSize": "$cc-type-s",
-                              "fontWeight": "600"
-                            },
-                            {
-                              "type": "ellipse",
-                              "id": "FQ1rv",
-                              "name": "현재 탭 표시",
-                              "fill": "$cc-accent",
-                              "width": 5,
-                              "height": 5
-                            }
-                          ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "uj0Is",
-                          "name": "홈 라벨",
-                          "fill": "$cc-ink",
-                          "content": "홈",
-                          "fontFamily": "$cc-font-display",
-                          "fontSize": "$cc-title-s",
-                          "fontWeight": "600"
-                        },
-                        {
-                          "type": "rectangle",
-                          "id": "XuLZh",
-                          "name": "현재 탭 밑줄",
-                          "fill": "$cc-accent",
-                          "width": "fill_container",
-                          "height": 2
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "KbLid",
-                      "name": "탭 · 발견",
-                      "width": "fill_container",
-                      "height": "fill_container",
-                      "stroke": "$cc-border-soft",
-                      "strokeWidth": {
-                        "right": 1
-                      },
-                      "layout": "vertical",
-                      "gap": 4,
-                      "padding": [
-                        11,
-                        8,
-                        8,
-                        8
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "BAmDG",
-                          "name": "발견 탭 메타",
-                          "width": "fill_container",
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "YQ9hL",
-                              "name": "발견 순번",
-                              "fill": "$cc-ink-3",
-                              "content": "02",
-                              "fontFamily": "$cc-font-meta",
-                              "fontSize": "$cc-type-s",
-                              "fontWeight": "600"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "z4w6j",
-                          "name": "발견 라벨",
-                          "fill": "$cc-ink-2",
-                          "content": "발견",
-                          "fontFamily": "$cc-font-body",
-                          "fontSize": "$cc-type-m",
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "eEVKx",
-                      "name": "탭 · 내 서재",
-                      "width": "fill_container",
-                      "height": "fill_container",
-                      "layout": "vertical",
-                      "gap": 4,
-                      "padding": [
-                        11,
-                        8,
-                        8,
-                        8
-                      ],
-                      "justifyContent": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "u5PEm",
-                          "name": "내 서재 탭 메타",
-                          "width": "fill_container",
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "Bh4Nw",
-                              "name": "내 서재 순번",
-                              "fill": "$cc-ink-3",
-                              "content": "03",
-                              "fontFamily": "$cc-font-meta",
-                              "fontSize": "$cc-type-s",
-                              "fontWeight": "600"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "Ldy7S",
-                          "name": "내 서재 라벨",
-                          "fill": "$cc-ink-2",
-                          "content": "내 서재",
-                          "fontFamily": "$cc-font-body",
-                          "fontSize": "$cc-type-m",
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "SZeXj",
-          "name": "시안 C · 빠른 기록 강조",
-          "width": 396,
-          "height": "fill_container",
-          "fill": "$cc-surface",
-          "layout": "vertical",
-          "gap": 16,
-          "padding": 18,
-          "children": [
-            {
-              "type": "text",
-              "id": "ZmW04",
-              "name": "시안 C 번호",
-              "fill": "$cc-accent-ink",
-              "content": "C / QUICK CAPTURE",
-              "fontFamily": "$cc-font-meta",
-              "fontSize": 9,
-              "fontWeight": "600"
-            },
-            {
-              "type": "text",
-              "id": "D4DmWI",
-              "name": "시안 C 제목",
-              "fill": "$cc-ink",
-              "content": "읽다가 바로 기록",
-              "fontFamily": "$cc-font-display",
-              "fontSize": 24,
-              "fontWeight": "600"
-            },
-            {
-              "type": "text",
-              "id": "CgVGK",
-              "name": "시안 C 설명",
-              "fill": "$cc-ink-2",
-              "textGrowth": "fixed-width",
-              "width": "fill_container",
-              "content": "기존 3개 목적지는 유지하고, 가운데 기록 버튼만 손이 닿기 쉬운 독립 액션으로 강조합니다.",
-              "lineHeight": 1.45,
-              "fontFamily": "$cc-font-body",
-              "fontSize": 12,
-              "fontWeight": "normal"
-            },
-            {
-              "type": "frame",
-              "id": "zWeSQ",
-              "name": "빠른 기록 화면 미리보기",
-              "width": "fill_container",
-              "height": 302,
-              "fill": "$cc-bg",
-              "cornerRadius": 16,
-              "stroke": "$cc-border-soft",
-              "strokeWidth": 1,
-              "layout": "vertical",
-              "gap": 14,
-              "padding": [
-                18,
-                14,
-                12,
-                14
-              ],
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "pMyJb",
-                  "name": "미리보기 상단",
-                  "width": "fill_container",
-                  "justifyContent": "space_between",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "F6SH83",
-                      "name": "미리보기 제목",
-                      "fill": "$cc-ink",
-                      "content": "오늘의 독서",
-                      "fontFamily": "$cc-font-display",
-                      "fontSize": 20,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "icon",
-                      "id": "oIOeB",
-                      "name": "프로필 아이콘",
-                      "width": 24,
-                      "height": 24,
-                      "icon": "circle-user-round",
-                      "library": "lucide",
-                      "fill": "$cc-ink-2"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "xh7QV",
-                  "name": "읽는 책 요약",
-                  "width": "fill_container",
-                  "height": 132,
-                  "fill": "$cc-surface",
-                  "cornerRadius": 10,
-                  "stroke": "$cc-border-soft",
-                  "strokeWidth": 1,
-                  "layout": "vertical",
-                  "gap": 8,
-                  "padding": 14,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "T0ktOV",
-                      "name": "현재 읽는 책 라벨",
-                      "fill": "$cc-accent-ink",
-                      "content": "읽는 중 · 42%",
-                      "fontFamily": "$cc-font-meta",
-                      "fontSize": 9,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "text",
-                      "id": "Dcbt6",
-                      "name": "현재 읽는 책 제목",
-                      "fill": "$cc-ink",
-                      "content": "보이지 않는 도시",
-                      "fontFamily": "$cc-font-display",
-                      "fontSize": 18,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "text",
-                      "id": "xwpQK",
-                      "name": "현재 읽는 책 안내",
-                      "fill": "$cc-ink-2",
-                      "content": "마음에 남은 문장을 빠르게 남겨보세요.",
-                      "fontFamily": "$cc-font-body",
-                      "fontSize": 11,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "KrknY",
-                  "name": "빠른 기록 하단 영역",
-                  "width": "fill_container",
-                  "height": 72,
-                  "justifyContent": "center",
-                  "alignItems": "end",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "dYfew",
-                      "name": "빠른 기록 하단 탭",
-                      "width": "fill_container",
-                      "height": 58,
-                      "fill": "#F7F2ECCC",
-                      "cornerRadius": 29,
-                      "stroke": "$cc-border",
-                      "strokeWidth": 1,
-                      "effect": [
-                        {
-                          "type": "background_blur",
-                          "radius": 12
-                        },
-                        {
-                          "type": "shadow",
-                          "shadowType": "outer",
-                          "color": "$cc-shadow",
-                          "offset": {
-                            "x": 0,
-                            "y": 4
-                          },
-                          "blur": 12
-                        }
-                      ],
-                      "padding": 6,
-                      "justifyContent": "space_around",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "tc7X5",
-                          "name": "홈 탭",
-                          "width": 70,
-                          "height": 46,
-                          "fill": "#00000000",
-                          "cornerRadius": 23,
-                          "layout": "vertical",
-                          "gap": 2,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "p9mrh",
-                              "name": "홈 아이콘",
-                              "width": 18,
-                              "height": 18,
-                              "icon": "house",
-                              "library": "lucide",
-                              "fill": "$cc-ink-2"
-                            },
-                            {
-                              "type": "text",
-                              "id": "uH6Ed",
-                              "name": "홈 라벨",
-                              "fill": "$cc-ink-2",
-                              "content": "홈",
-                              "fontFamily": "$cc-font-body",
-                              "fontSize": 9,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "y7XpVK",
-                          "name": "발견 탭",
-                          "width": 70,
-                          "height": 46,
-                          "fill": "#00000000",
-                          "cornerRadius": 23,
-                          "layout": "vertical",
-                          "gap": 2,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "kopeO",
-                              "name": "발견 아이콘",
-                              "width": 18,
-                              "height": 18,
-                              "icon": "compass",
-                              "library": "lucide",
-                              "fill": "$cc-ink-2"
-                            },
-                            {
-                              "type": "text",
-                              "id": "V6JmW",
-                              "name": "발견 라벨",
-                              "fill": "$cc-ink-2",
-                              "content": "발견",
-                              "fontFamily": "$cc-font-body",
-                              "fontSize": 9,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "q8DWyf",
-                          "name": "기록 빠른 액션",
-                          "width": 50,
-                          "height": 46,
-                          "fill": "$cc-accent",
-                          "cornerRadius": 23,
-                          "layout": "vertical",
-                          "gap": 2,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "G2d6g1",
-                              "name": "기록 아이콘",
-                              "width": 19,
-                              "height": 19,
-                              "icon": "square-pen",
-                              "library": "lucide",
-                              "fill": "$cc-ink"
-                            },
-                            {
-                              "type": "text",
-                              "id": "Gar9z",
-                              "name": "기록 라벨",
-                              "fill": "$cc-ink",
-                              "content": "기록",
-                              "fontFamily": "$cc-font-body",
-                              "fontSize": 9,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "l42nFN",
-                          "name": "내 서재 탭",
-                          "width": 70,
-                          "height": 46,
-                          "fill": "#00000000",
-                          "cornerRadius": 23,
-                          "layout": "vertical",
-                          "gap": 2,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "k1nTo",
-                              "name": "내 서재 아이콘",
-                              "width": 18,
-                              "height": 18,
-                              "icon": "book-open",
-                              "library": "lucide",
-                              "fill": "$cc-ink-2"
-                            },
-                            {
-                              "type": "text",
-                              "id": "c1QNtE",
-                              "name": "내 서재 라벨",
-                              "fill": "$cc-ink-2",
-                              "content": "내 서재",
-                              "fontFamily": "$cc-font-body",
-                              "fontSize": 9,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "qJsUV",
-              "name": "시안 C 추천 포인트",
-              "width": "fill_container",
-              "fill": "$cc-accent-soft",
-              "cornerRadius": 8,
-              "gap": 8,
-              "padding": [
-                9,
-                12
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "XSCOk",
-                  "name": "추천 아이콘",
-                  "width": 14,
-                  "height": 14,
-                  "icon": "sparkles",
-                  "library": "lucide",
-                  "fill": "$cc-accent-ink"
-                },
-                {
-                  "type": "text",
-                  "id": "TYI9X",
-                  "name": "추천 문구",
-                  "fill": "$cc-accent-ink",
-                  "content": "감상 작성 빈도를 높이고 싶을 때 추천",
-                  "fontFamily": "$cc-font-body",
-                  "fontSize": 11,
-                  "fontWeight": "600"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "frame",
-      "id": "bJxz4",
-      "x": 25235,
-      "y": -230,
-      "name": "Android 하단 내비게이션 · 라벨 + Filled",
-      "clip": true,
-      "width": 390,
-      "height": 244,
-      "fill": "$cc-bg",
-      "layout": "vertical",
-      "gap": 18,
-      "padding": 20,
-      "children": [
-        {
-          "type": "text",
-          "id": "QRjEx",
-          "name": "컴포넌트 제목",
-          "fill": "$cc-ink",
-          "content": "Android 하단 내비게이션",
-          "fontFamily": "$cc-font-display",
-          "fontSize": 20,
-          "fontWeight": "600"
-        },
-        {
-          "type": "text",
-          "id": "v3qmDG",
-          "name": "컴포넌트 설명",
-          "fill": "$cc-ink-2",
-          "textGrowth": "fixed-width",
-          "width": "fill_container",
-          "content": "항상 작은 라벨을 표시하고, 선택된 목적지는 filled 아이콘과 진한 라벨로 전환합니다.",
-          "lineHeight": 1.4,
-          "fontFamily": "$cc-font-body",
-          "fontSize": 11,
-          "fontWeight": "normal"
-        },
-        {
-          "type": "frame",
-          "id": "P3bZ0X",
-          "name": "Android 하단 탭 바 · 라벨",
-          "context": "모든 탭은 작은 라벨을 항상 표시합니다. 선택된 route는 대응하는 Filled 아이콘과 cc-ink 라벨을 사용하고, 나머지는 Outline 아이콘과 cc-ink-2 라벨을 사용합니다.",
-          "reusable": true,
-          "width": "fill_container",
-          "height": 64,
-          "fill": "$cc-surface",
-          "stroke": "$cc-border-soft",
-          "strokeWidth": {
-            "top": 1
-          },
-          "padding": [
-            4,
-            24,
-            2,
-            24
-          ],
-          "justifyContent": "space_around",
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "frame",
-              "id": "aJRkB",
-              "name": "홈 탭 · 선택",
-              "metadata": {
-                "type": "navigation",
-                "route": "home",
-                "selected": true
-              },
-              "width": 72,
-              "height": 56,
-              "fill": "#00000000",
-              "layout": "vertical",
-              "gap": 2,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "ztjEz",
-                  "name": "홈 아이콘 · Filled",
-                  "width": 24,
-                  "height": 24,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "VFft3",
-                      "name": "홈 Filled 사용",
-                      "clip": true,
-                      "width": 24,
-                      "height": 24,
-                      "layout": "none",
-                      "children": [
-                        {
-                          "type": "path",
-                          "id": "BT4cP",
-                          "x": 5.0833,
-                          "y": 10.5583,
-                          "geometry": "M12.45 0l-11.06667 0c-0.7 0-1.38333 0.55-1.38333 1.35l0 8.46667c0.01667 0.66667 0.55 1.35 1.33333 1.35l11.08334 0c0.8 0 1.31667-0.6 1.35-1.26667l0.01666-8.55c0-0.7-0.6-1.35-1.33333-1.35z",
-                          "fill": "#151515",
-                          "width": 13.7833,
-                          "height": 11.1667
-                        },
-                        {
-                          "type": "path",
-                          "id": "U8ot2",
-                          "x": 1.5816,
-                          "y": 2.3349,
-                          "geometry": "M20.51838 8.39015l-9.51666-8.21667c-0.23334-0.21667-0.75-0.23333-1.13334-0.03333l-9.61666 8.25c-0.28333 0.23333-0.35 0.73333-0.08334 1.06666 0.26667 0.33333 0.81667 0.35 1.08334 0.13334 0.26667-0.2 9.16667-7.88333 9.16666-7.88334 0 0 8.63334 7.55 9.13334 7.88334 0.56667 0.53333 1.63333-0.53333 0.96666-1.2z",
-                          "fill": "#151515",
-                          "width": 20.7306,
-                          "height": 9.7346
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "C8KZlX",
-                  "name": "홈 라벨",
-                  "fill": "$cc-ink",
-                  "content": "홈",
-                  "fontFamily": "$cc-font-body",
-                  "fontSize": 9,
-                  "fontWeight": "700"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "CXh5E",
-              "name": "발견 탭 · 기본",
-              "metadata": {
-                "type": "navigation",
-                "route": "discover",
-                "selected": false
-              },
-              "width": 72,
-              "height": 56,
-              "fill": "#00000000",
-              "layout": "vertical",
-              "gap": 2,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "KoIE7",
-                  "name": "발견 아이콘 · Outline",
-                  "width": 24,
-                  "height": 24,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "eG99m",
-                      "name": "발견 Outline 사용",
-                      "opacity": 0.62,
-                      "clip": true,
-                      "width": 24,
-                      "height": 24,
-                      "layout": "none",
-                      "children": [
-                        {
-                          "type": "path",
-                          "id": "p6r5r",
-                          "x": 4.1226,
-                          "y": 3.5926,
-                          "geometry": "M8.39269 0c-4.03436 0-8.37791 3.28344-8.39264 8.33374-0.01472 4.21104 3.12147 8.46626 8.37792 8.48099 4.62331 0.01472 8.51043-3.47485 8.51042-8.39264 0-4.13742-3.4454-8.42209-8.4957-8.42209z m0.22086 16.32884l0-1.4135c0-0.33865-0.50061-0.38282-0.50062 0.04417l0 1.36933c-3.91656-0.02945-7.49448-3.29816-7.59754-7.64172l1.48712 0c0.3092 0 0.3681-0.48589 0.02944-0.53006l-1.51656 0c0.10307-3.76933 3.37178-7.5092 7.59754-7.627l0 1.4135c0 0.35337 0.50061 0.33865 0.50062 0.02945l0-1.44295c3.8135 0.02945 7.58282 3.18037 7.74479 7.627l-1.54602 0c-0.3092 0-0.39755 0.51534 0 0.53006l1.45767 0c-0.05889 3.48957-3.03313 7.52393-7.65644 7.64172z",
-                          "fill": "#000000",
-                          "width": 16.8884,
-                          "height": 16.8148
-                        },
-                        {
-                          "type": "path",
-                          "id": "QhBvL",
-                          "x": 7.6901,
-                          "y": 6.9726,
-                          "geometry": "M6.16509 5.05681l3.41595-4.62331c0.23558-0.20613-0.08834-0.60368-0.3681-0.35337l-4.41718 3.68098-4.32883-3.68098c-0.27976-0.20614-0.60368 0.13251-0.38283 0.35337l3.41596 4.63804-3.4454 4.54969c-0.19141 0.25031 0.16196 0.60368 0.41227 0.3681l4.32883-3.60736 4.41718 3.60736c0.23558 0.22086 0.60368-0.08834 0.3681-0.3681l-3.41595-4.56442z",
-                          "fill": "#000000",
-                          "width": 9.6623,
-                          "height": 10.0668
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "lCWj1",
-                  "name": "발견 라벨",
-                  "fill": "$cc-ink-2",
-                  "content": "발견",
-                  "fontFamily": "$cc-font-body",
-                  "fontSize": 9,
-                  "fontWeight": "500"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "hWuIr",
-              "name": "내 서재 탭 · 기본",
-              "metadata": {
-                "type": "navigation",
-                "route": "library",
-                "selected": false
-              },
-              "width": 72,
-              "height": 56,
-              "fill": "#00000000",
-              "layout": "vertical",
-              "gap": 2,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "COvKe",
-                  "name": "내 서재 아이콘 · Outline",
-                  "width": 24,
-                  "height": 24,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "adfVk",
-                      "name": "내 서재 Outline 사용",
-                      "opacity": 0.62,
-                      "clip": true,
-                      "width": 24,
-                      "height": 24,
-                      "layout": "none",
-                      "children": [
-                        {
-                          "type": "path",
-                          "id": "X969P",
-                          "x": 4.1379,
-                          "y": 3.2359,
-                          "geometry": "M13.4069 0.61241c-0.66207-0.28138-1.42345-0.61241-2.91311-0.61241-0.9931 0-2.30069 0.26483-3.62482 1.10897-0.74483-0.54621-1.80414-1.10897-3.75725-1.10897-1.12552 0.01655-2.11862 0.29793-2.88 0.66207-0.13241 0.06621-0.23172 0.14897-0.23172 0.31448l0 9.45104c0 0.24827 0.24828 0.39724 0.4469 0.26482 0.39724-0.19862 1.39034-0.61241 2.74758-0.61241 1.35724 0 2.59862 0.4469 3.45931 0.97655 0.08276 0.04966 0.23172 0.11586 0.4138 0 0.61241-0.36414 1.67173-0.97655 3.36-0.97655 1.14207 0 1.96966 0.24828 2.69793 0.57931 0.21517 0.13241 0.44689 0.13241 0.48-0.23172l0-9.43449c0-0.21517-0.08276-0.31448-0.19862-0.38069z m-6.85242 9.84828c-0.89379-0.4469-1.75448-0.84414-3.36-0.89379-0.79448 0.01655-1.70483 0.13241-2.68138 0.5462l0-9.07034c0.66207-0.26483 1.44-0.52966 2.54897-0.52966 1.17517 0 2.38345 0.26483 3.49241 1.09242l0 8.85517 0 0z m6.52138-0.38069c-0.52965-0.21517-1.10897-0.4469-2.64827-0.5131-0.89379 0.01655-1.98621 0.14897-3.36 0.89379l0-8.85517c0.69517-0.46345 1.78759-1.09241 3.4262-1.09242 0.9931 0 1.82069 0.16552 2.58207 0.54621l0 9.03724 0-0.01655z",
-                          "fill": "#060709",
-                          "width": 13.6055,
-                          "height": 11.1209
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "jsSa8",
-                  "name": "내 서재 라벨",
-                  "fill": "$cc-ink-2",
-                  "content": "내 서재",
-                  "fontFamily": "$cc-font-body",
-                  "fontSize": 9,
-                  "fontWeight": "500"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "text",
-          "id": "GBs1A",
-          "name": "상태 전환 규칙",
-          "fill": "$cc-ink-3",
-          "content": "SELECTED  FILLED + 700 LABEL   /   DEFAULT  OUTLINE + 500 LABEL",
-          "fontFamily": "$cc-font-meta",
-          "fontSize": 9,
-          "fontWeight": "600"
-        }
-      ]
-    },
-    {
-      "type": "frame",
-      "id": "a2VOgb",
-      "x": 25705,
-      "y": -230,
-      "name": "Android 하단 내비게이션 아이콘 상태 세트",
-      "width": 300,
-      "height": 130,
-      "fill": "$cc-bg",
-      "layout": "vertical",
-      "gap": 12,
-      "padding": 16,
-      "children": [
-        {
-          "type": "text",
-          "id": "nirlG",
-          "name": "아이콘 상태 세트 제목",
-          "fill": "$cc-ink-2",
-          "content": "NAV ICONS · OUTLINE / FILLED",
-          "fontFamily": "$cc-font-meta",
-          "fontSize": 9,
-          "fontWeight": "600"
-        },
-        {
-          "type": "frame",
-          "id": "wulxU",
-          "name": "아이콘 상태 행",
-          "width": "fill_container",
-          "gap": 18,
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "frame",
-              "id": "nkDf6",
-              "name": "홈 Outline",
-              "clip": true,
-              "width": 24,
-              "height": 24,
-              "layout": "none",
-              "children": [
-                {
-                  "type": "path",
-                  "id": "VsdHR",
-                  "x": 1.1904,
-                  "y": 2.106,
-                  "geometry": "M21.32162 8.622l-9.84001-8.424c-0.336-0.264-0.912-0.264-1.248 0l-9.96 8.424c-0.384 0.36-0.36 0.984 0.048 1.344 0.408 0.36 0.984 0.408 1.368 0.072l8.76-7.464c0.216-0.192 0.552-0.168 0.744 0l8.808 7.488c0.648 0.672 1.992-0.576 1.32001-1.44z m-3.21601 0.696l-6.744-5.736c-0.264-0.216-0.792-0.192-1.08 0.024l-6.744 5.712c-0.216 0.192-0.312 0.432-0.312 0.672l0 8.976c0 0.432 0.336 0.816 0.792 0.816l4.824 0 0-6.72c0-0.096 0.144-0.192 0.216-0.192l3.6 0c0.048 0 0.144 0.096 0.144 0.192l0 6.72 4.848 0c0.408 0.024 0.744-0.384 0.744-0.816l0-8.952c0-0.24-0.096-0.504-0.288-0.696z",
-                  "fill": "#000000",
-                  "width": 21.5049,
-                  "height": 19.783
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "UJVAR",
-              "name": "홈 Filled",
-              "clip": true,
-              "width": 24,
-              "height": 24,
-              "layout": "none",
-              "children": [
-                {
-                  "type": "path",
-                  "id": "loqQx",
-                  "x": 5.0833,
-                  "y": 10.5583,
-                  "geometry": "M12.45 0l-11.06667 0c-0.7 0-1.38333 0.55-1.38333 1.35l0 8.46667c0.01667 0.66667 0.55 1.35 1.33333 1.35l11.08334 0c0.8 0 1.31667-0.6 1.35-1.26667l0.01666-8.55c0-0.7-0.6-1.35-1.33333-1.35z",
-                  "fill": "#151515",
-                  "width": 13.7833,
-                  "height": 11.1667
-                },
-                {
-                  "type": "path",
-                  "id": "d57I6k",
-                  "x": 1.5816,
-                  "y": 2.3349,
-                  "geometry": "M20.51838 8.39015l-9.51666-8.21667c-0.23334-0.21667-0.75-0.23333-1.13334-0.03333l-9.61666 8.25c-0.28333 0.23333-0.35 0.73333-0.08334 1.06666 0.26667 0.33333 0.81667 0.35 1.08334 0.13334 0.26667-0.2 9.16667-7.88333 9.16666-7.88334 0 0 8.63334 7.55 9.13334 7.88334 0.56667 0.53333 1.63333-0.53333 0.96666-1.2z",
-                  "fill": "#151515",
-                  "width": 20.7306,
-                  "height": 9.7346
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "vUMPg",
-              "name": "발견 Outline",
-              "clip": true,
-              "width": 24,
-              "height": 24,
-              "layout": "none",
-              "children": [
-                {
-                  "type": "path",
-                  "id": "Hcx42",
-                  "x": 4.1226,
-                  "y": 3.5926,
-                  "geometry": "M8.39269 0c-4.03436 0-8.37791 3.28344-8.39264 8.33374-0.01472 4.21104 3.12147 8.46626 8.37792 8.48099 4.62331 0.01472 8.51043-3.47485 8.51042-8.39264 0-4.13742-3.4454-8.42209-8.4957-8.42209z m0.22086 16.32884l0-1.4135c0-0.33865-0.50061-0.38282-0.50062 0.04417l0 1.36933c-3.91656-0.02945-7.49448-3.29816-7.59754-7.64172l1.48712 0c0.3092 0 0.3681-0.48589 0.02944-0.53006l-1.51656 0c0.10307-3.76933 3.37178-7.5092 7.59754-7.627l0 1.4135c0 0.35337 0.50061 0.33865 0.50062 0.02945l0-1.44295c3.8135 0.02945 7.58282 3.18037 7.74479 7.627l-1.54602 0c-0.3092 0-0.39755 0.51534 0 0.53006l1.45767 0c-0.05889 3.48957-3.03313 7.52393-7.65644 7.64172z",
-                  "fill": "#000000",
-                  "width": 16.8884,
-                  "height": 16.8148
-                },
-                {
-                  "type": "path",
-                  "id": "CJQLV",
-                  "x": 7.6901,
-                  "y": 6.9726,
-                  "geometry": "M6.16509 5.05681l3.41595-4.62331c0.23558-0.20613-0.08834-0.60368-0.3681-0.35337l-4.41718 3.68098-4.32883-3.68098c-0.27976-0.20614-0.60368 0.13251-0.38283 0.35337l3.41596 4.63804-3.4454 4.54969c-0.19141 0.25031 0.16196 0.60368 0.41227 0.3681l4.32883-3.60736 4.41718 3.60736c0.23558 0.22086 0.60368-0.08834 0.3681-0.3681l-3.41595-4.56442z",
-                  "fill": "#000000",
-                  "width": 9.6623,
-                  "height": 10.0668
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "v72yOt",
-              "name": "발견 Filled",
-              "width": 24,
-              "height": 24,
-              "layout": "none",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "Lt6u4",
-                  "x": 0,
-                  "y": 0,
-                  "name": "발견 Filled 아이콘",
-                  "width": 24,
-                  "height": 24,
-                  "icon": "explore",
-                  "library": "Material Symbols Rounded",
-                  "weight": 700,
-                  "fill": "$cc-ink"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "G4k0d",
-              "name": "내 서재 Outline",
-              "clip": true,
-              "width": 24,
-              "height": 24,
-              "layout": "none",
-              "children": [
-                {
-                  "type": "path",
-                  "id": "YhnOs",
-                  "x": 4.1379,
-                  "y": 3.2359,
-                  "geometry": "M13.4069 0.61241c-0.66207-0.28138-1.42345-0.61241-2.91311-0.61241-0.9931 0-2.30069 0.26483-3.62482 1.10897-0.74483-0.54621-1.80414-1.10897-3.75725-1.10897-1.12552 0.01655-2.11862 0.29793-2.88 0.66207-0.13241 0.06621-0.23172 0.14897-0.23172 0.31448l0 9.45104c0 0.24827 0.24828 0.39724 0.4469 0.26482 0.39724-0.19862 1.39034-0.61241 2.74758-0.61241 1.35724 0 2.59862 0.4469 3.45931 0.97655 0.08276 0.04966 0.23172 0.11586 0.4138 0 0.61241-0.36414 1.67173-0.97655 3.36-0.97655 1.14207 0 1.96966 0.24828 2.69793 0.57931 0.21517 0.13241 0.44689 0.13241 0.48-0.23172l0-9.43449c0-0.21517-0.08276-0.31448-0.19862-0.38069z m-6.85242 9.84828c-0.89379-0.4469-1.75448-0.84414-3.36-0.89379-0.79448 0.01655-1.70483 0.13241-2.68138 0.5462l0-9.07034c0.66207-0.26483 1.44-0.52966 2.54897-0.52966 1.17517 0 2.38345 0.26483 3.49241 1.09242l0 8.85517 0 0z m6.52138-0.38069c-0.52965-0.21517-1.10897-0.4469-2.64827-0.5131-0.89379 0.01655-1.98621 0.14897-3.36 0.89379l0-8.85517c0.69517-0.46345 1.78759-1.09241 3.4262-1.09242 0.9931 0 1.82069 0.16552 2.58207 0.54621l0 9.03724 0-0.01655z",
-                  "fill": "#060709",
-                  "width": 13.6055,
-                  "height": 11.1209
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "I31Ynu",
-              "name": "내 서재 Filled",
-              "width": 24,
-              "height": 24,
-              "layout": "none",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "i9rTev",
-                  "x": 0,
-                  "y": 0,
-                  "name": "내 서재 Filled 아이콘",
-                  "width": 24,
-                  "height": 24,
-                  "icon": "menu_book",
-                  "library": "Material Symbols Rounded",
-                  "weight": 700,
-                  "fill": "$cc-ink"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "frame",
       "id": "Xx7dC",
       "x": 26105,
       "y": -230,
       "name": "빠른 기록 하단 탭 · 기본과 Filled",
       "clip": true,
       "width": 390,
-      "height": 246,
+      "height": 318,
       "fill": "$cc-bg",
       "layout": "vertical",
       "gap": 12,
@@ -118725,10 +117126,448 @@
           "id": "D8voU",
           "name": "기본 상태 라벨",
           "fill": "$cc-ink-2",
-          "content": "DEFAULT · OUTLINE",
+          "content": "DEFAULT · MUTED GRAY",
           "fontFamily": "$cc-font-meta",
           "fontSize": 9,
           "fontWeight": "600"
+        },
+        {
+          "type": "frame",
+          "id": "fn1dd",
+          "name": "빠른 기록 하단 탭 · Flat Default",
+          "context": "누르지 않은 탭은 cc-ink-3 회색 Outline 아이콘과 라벨을 사용합니다.",
+          "reusable": true,
+          "width": "fill_container",
+          "height": 88,
+          "fill": "$cc-surface",
+          "stroke": "$cc-border-soft",
+          "strokeWidth": {
+            "top": 1
+          },
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "YKPHI",
+              "name": "탭 아이템 행",
+              "width": "fill_container",
+              "height": 66,
+              "padding": [
+                5,
+                12,
+                0,
+                12
+              ],
+              "justifyContent": "space_around",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "LiAht",
+                  "name": "홈 탭 · 기본",
+                  "metadata": {
+                    "type": "navigation",
+                    "route": "home",
+                    "selected": false
+                  },
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "xGpP5",
+                      "name": "홈 Outline 아이콘",
+                      "width": 23,
+                      "height": 23,
+                      "icon": "house",
+                      "library": "lucide",
+                      "weight": 400,
+                      "fill": "$cc-ink-3"
+                    },
+                    {
+                      "type": "text",
+                      "id": "EizoO",
+                      "name": "홈 라벨",
+                      "fill": "$cc-ink-3",
+                      "content": "홈",
+                      "fontFamily": "$cc-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "t2nic",
+                  "name": "발견 탭 · 기본",
+                  "metadata": {
+                    "type": "navigation",
+                    "route": "discover",
+                    "selected": false
+                  },
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "mUXxy",
+                      "name": "발견 Outline 아이콘",
+                      "width": 23,
+                      "height": 23,
+                      "icon": "compass",
+                      "library": "lucide",
+                      "weight": 400,
+                      "fill": "$cc-ink-3"
+                    },
+                    {
+                      "type": "text",
+                      "id": "cBQRc",
+                      "name": "발견 라벨",
+                      "fill": "$cc-ink-3",
+                      "content": "발견",
+                      "fontFamily": "$cc-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "k0sPa",
+                  "name": "기록 탭 · 기본",
+                  "metadata": {
+                    "type": "navigation",
+                    "route": "record",
+                    "selected": false
+                  },
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "wkIGm",
+                      "name": "기록 Outline 아이콘",
+                      "width": 23,
+                      "height": 23,
+                      "icon": "square-pen",
+                      "library": "lucide",
+                      "weight": 400,
+                      "fill": "$cc-ink-3"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VmWUA",
+                      "name": "기록 라벨",
+                      "fill": "$cc-ink-3",
+                      "content": "기록",
+                      "fontFamily": "$cc-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "K7Fg9k",
+                  "name": "내 서재 탭 · 기본",
+                  "metadata": {
+                    "type": "navigation",
+                    "route": "library",
+                    "selected": false
+                  },
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "eMjLA",
+                      "name": "내 서재 Outline 아이콘",
+                      "width": 23,
+                      "height": 23,
+                      "icon": "book-open",
+                      "library": "lucide",
+                      "weight": 400,
+                      "fill": "$cc-ink-3"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VOz8B",
+                      "name": "내 서재 라벨",
+                      "fill": "$cc-ink-3",
+                      "content": "내 서재",
+                      "fontFamily": "$cc-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "o5idY",
+              "name": "하단 안전 영역",
+              "width": "fill_container",
+              "height": 22,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "koVHT",
+                  "name": "홈 인디케이터",
+                  "fill": "$cc-ink",
+                  "width": 112,
+                  "height": 4
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "IS9VB",
+          "name": "Filled 상태 라벨",
+          "fill": "$cc-accent-ink",
+          "content": "SELECTED · COLOR ONLY",
+          "fontFamily": "$cc-font-meta",
+          "fontSize": 9,
+          "fontWeight": "600"
+        },
+        {
+          "type": "frame",
+          "id": "dJo6h",
+          "name": "빠른 기록 하단 탭 · Flat Selected",
+          "context": "기록 탭 선택 시 아이콘 형태와 굵기는 유지하고 아이콘 및 라벨 색상만 cc-accent로 전환합니다.",
+          "reusable": true,
+          "width": "fill_container",
+          "height": 88,
+          "fill": "$cc-surface",
+          "stroke": "$cc-border-soft",
+          "strokeWidth": {
+            "top": 1
+          },
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "RxKxW",
+              "name": "탭 아이템 행",
+              "width": "fill_container",
+              "height": 66,
+              "padding": [
+                5,
+                12,
+                0,
+                12
+              ],
+              "justifyContent": "space_around",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "AF9Xn",
+                  "name": "홈 탭 · 기본",
+                  "metadata": {
+                    "type": "navigation",
+                    "route": "home",
+                    "selected": false
+                  },
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "wYRXa",
+                      "name": "홈 Outline 아이콘",
+                      "width": 23,
+                      "height": 23,
+                      "icon": "house",
+                      "library": "lucide",
+                      "weight": 400,
+                      "fill": "$cc-ink-3"
+                    },
+                    {
+                      "type": "text",
+                      "id": "WBdOS",
+                      "name": "홈 라벨",
+                      "fill": "$cc-ink-3",
+                      "content": "홈",
+                      "fontFamily": "$cc-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "rHGLb",
+                  "name": "발견 탭 · 기본",
+                  "metadata": {
+                    "type": "navigation",
+                    "route": "discover",
+                    "selected": false
+                  },
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "ULw3C",
+                      "name": "발견 Outline 아이콘",
+                      "width": 23,
+                      "height": 23,
+                      "icon": "compass",
+                      "library": "lucide",
+                      "weight": 400,
+                      "fill": "$cc-ink-3"
+                    },
+                    {
+                      "type": "text",
+                      "id": "D54jF",
+                      "name": "발견 라벨",
+                      "fill": "$cc-ink-3",
+                      "content": "발견",
+                      "fontFamily": "$cc-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Q4w4d9",
+                  "name": "기록 탭 · 선택",
+                  "metadata": {
+                    "type": "navigation",
+                    "route": "record",
+                    "selected": true
+                  },
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "qAwai",
+                      "name": "기록 Outline 아이콘 · 선택 색상",
+                      "width": 23,
+                      "height": 23,
+                      "icon": "square-pen",
+                      "library": "lucide",
+                      "weight": 400,
+                      "fill": "$cc-accent"
+                    },
+                    {
+                      "type": "text",
+                      "id": "M6Vl1x",
+                      "name": "기록 라벨",
+                      "fill": "$cc-accent",
+                      "content": "기록",
+                      "fontFamily": "$cc-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XqQ6I",
+                  "name": "내 서재 탭 · 기본",
+                  "metadata": {
+                    "type": "navigation",
+                    "route": "library",
+                    "selected": false
+                  },
+                  "width": "fill_container",
+                  "height": 58,
+                  "fill": "#00000000",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "qLw1w",
+                      "name": "내 서재 Outline 아이콘",
+                      "width": 23,
+                      "height": 23,
+                      "icon": "book-open",
+                      "library": "lucide",
+                      "weight": 400,
+                      "fill": "$cc-ink-3"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VVrJu",
+                      "name": "내 서재 라벨",
+                      "fill": "$cc-ink-3",
+                      "content": "내 서재",
+                      "fontFamily": "$cc-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "FOGcG",
+              "name": "하단 안전 영역",
+              "width": "fill_container",
+              "height": 22,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "h0Id8Z",
+                  "name": "홈 인디케이터",
+                  "fill": "$cc-ink",
+                  "width": 112,
+                  "height": 4
+                }
+              ]
+            }
+          ]
         }
       ]
     }
