@@ -21,19 +21,26 @@ import { Main } from '@/frames';
 import { getLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
-type ReadingStatus = 'ALL' | 'WANT_TO_READ' | 'READING' | 'FINISHED';
+export const READING_STATUS = {
+  ALL: 'ALL',
+  WANT_TO_READ: 'WANT_TO_READ',
+  READING: 'READING',
+  FINISHED: 'FINISHED',
+} as const;
 
-const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
-  ALL: '전체',
-  WANT_TO_READ: '읽고 싶어요',
-  READING: '읽는 중',
-  FINISHED: '다 읽음',
+type ReadingStatus = (typeof READING_STATUS)[keyof typeof READING_STATUS];
+
+export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
+  [READING_STATUS.ALL]: '전체',
+  [READING_STATUS.WANT_TO_READ]: '읽고 싶어요',
+  [READING_STATUS.READING]: '읽는 중',
+  [READING_STATUS.FINISHED]: '다 읽음',
 };
 
 export const LibraryPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
-  const status = (searchParams.get('status') ?? 'ALL') as ReadingStatus;
+  const status = (searchParams.get('status') ?? READING_STATUS.ALL) as ReadingStatus;
 
   const handleChangeDefaultPage = (defaultPage: number) => {
     setSearchParams((prev) => {
@@ -43,7 +50,7 @@ export const LibraryPage = () => {
     });
   };
 
-  const handleChangeStatus = (status: 'ALL' | 'WANT_TO_READ' | 'READING' | 'FINISHED') => {
+  const handleChangeStatus = (status: ReadingStatus) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('status', status);
@@ -131,7 +138,9 @@ export const LibraryPage = () => {
                     <List.Item.Content
                       title={
                         <>
-                          <Tag variant={item.status === 'READING' ? 'primary' : 'subtle'}>
+                          <Tag
+                            variant={item.status === READING_STATUS.READING ? 'primary' : 'subtle'}
+                          >
                             {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
                           </Tag>
                           <br />
