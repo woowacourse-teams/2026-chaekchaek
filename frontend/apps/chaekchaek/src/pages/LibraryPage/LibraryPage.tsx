@@ -21,10 +21,19 @@ import { Main } from '@/frames';
 import { getLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
+type ReadingStatus = 'ALL' | 'WANT_TO_READ' | 'READING' | 'FINISHED';
+
+const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
+  ALL: '전체',
+  WANT_TO_READ: '읽고 싶어요',
+  READING: '읽는 중',
+  FINISHED: '다 읽음',
+};
+
 export const LibraryPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
-  const status = searchParams.get('status') ?? '';
+  const status = (searchParams.get('status') ?? 'ALL') as ReadingStatus;
 
   const handleChangeDefaultPage = (defaultPage: number) => {
     setSearchParams((prev) => {
@@ -34,7 +43,7 @@ export const LibraryPage = () => {
     });
   };
 
-  const handleChangeStatus = (status: '' | 'WANT_TO_READ' | 'READING' | 'FINISHED') => {
+  const handleChangeStatus = (status: 'ALL' | 'WANT_TO_READ' | 'READING' | 'FINISHED') => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('status', status);
@@ -77,28 +86,12 @@ export const LibraryPage = () => {
               trailing={
                 <OptionList
                   value={status}
-                  options={[
-                    {
-                      value: '',
-                      text: '전체',
-                      meta: '0',
-                    },
-                    {
-                      value: 'WANT_TO_READ',
-                      text: '읽고 싶어요',
-                      meta: '0',
-                    },
-                    {
-                      value: 'READING',
-                      text: '읽는 중',
-                      meta: '0',
-                    },
-                    {
-                      value: 'FINISHED',
-                      text: '다 읽음',
-                      meta: '0',
-                    },
-                  ]}
+                  options={Object.entries(READING_STATUS_LABELS).map(([labelKey, labelValue]) => {
+                    return {
+                      value: labelKey,
+                      text: labelValue,
+                    };
+                  })}
                   onChange={handleChangeStatus}
                 />
               }
@@ -139,13 +132,7 @@ export const LibraryPage = () => {
                       title={
                         <>
                           <Tag variant={item.status === 'READING' ? 'primary' : 'subtle'}>
-                            {item.status === 'WANT_TO_READ'
-                              ? '읽고 싶어요'
-                              : item.status === 'READING'
-                                ? '읽는 중'
-                                : item.status === 'FINISHED'
-                                  ? '다 읽음'
-                                  : ''}
+                            {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
                           </Tag>
                           <br />
                           {item.title}
