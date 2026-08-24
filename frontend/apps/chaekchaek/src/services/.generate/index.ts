@@ -4,7 +4,7 @@ import generateApi from './generateApi';
 
 const endPoint = openApiSpec?.paths;
 
-const name = 'libraryBulkStatus';
-const endpoint = endPoint['/api/v1/library/bulk-status'] || {};
+const name = 'libraryBulkDelete';
+const endpoint = endPoint['/api/v1/library/bulk-delete'] || {};
 
 generateApi(name, endpoint);
