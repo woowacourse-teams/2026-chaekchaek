@@ -25,6 +25,11 @@ class BookRatingStoreTest {
   }
 
   @Test
+  fun emptyStoreHasNoSampleRatings() {
+    assertEquals(emptyList<RatedBook>(), BookRatingStore(context).ratings.value)
+  }
+
+  @Test
   fun savedRatingSurvivesStoreRecreation() {
     BookRatingStore(context).rate("book-test", "테스트 책", Rating.ofHalfStars(7))
 
