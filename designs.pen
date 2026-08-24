@@ -60343,7 +60343,7 @@
                               "id": "EcbjM",
                               "x": 350,
                               "y": 4,
-                              "name": "감상 영역 명세 시트 기능 마커 5",
+                              "name": "감상 영역 명세 시트 기능 마커 6 · 피드 범위",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-accent",
@@ -60359,7 +60359,7 @@
                                   "id": "fH8cx",
                                   "name": "감상 영역 명세 시트 기능 마커 5 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "5",
+                                  "content": "6",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -60371,7 +60371,7 @@
                               "id": "D4CpLd",
                               "x": 350,
                               "y": 115,
-                              "name": "감상 영역 명세 시트 기능 마커 6",
+                              "name": "감상 영역 명세 시트 기능 마커 8 · 세로 스와이프",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-accent",
@@ -60387,7 +60387,7 @@
                                   "id": "qjF5S",
                                   "name": "감상 영역 명세 시트 기능 마커 8 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "6",
+                                  "content": "8",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -60399,7 +60399,7 @@
                               "id": "z58g7",
                               "x": 350,
                               "y": 245,
-                              "name": "감상 영역 명세 시트 기능 마커 7",
+                              "name": "감상 영역 명세 시트 기능 마커 10 · 답글 작성",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-accent",
@@ -60415,7 +60415,7 @@
                                   "id": "N14S4j",
                                   "name": "감상 영역 명세 시트 기능 마커 6 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "7",
+                                  "content": "10",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -60427,7 +60427,7 @@
                               "id": "OfbLj",
                               "x": 350,
                               "y": 300,
-                              "name": "감상 영역 명세 시트 기능 마커 8",
+                              "name": "감상 영역 명세 시트 기능 마커 11 · 댓글 좋아요",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-accent",
@@ -60443,7 +60443,7 @@
                                   "id": "NR2TE",
                                   "name": "감상 영역 명세 시트 기능 마커 9 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "8",
+                                  "content": "11",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -60455,7 +60455,7 @@
                               "id": "Wjr3U",
                               "x": 350,
                               "y": 774,
-                              "name": "감상 영역 명세 시트 기능 마커 9",
+                              "name": "감상 영역 명세 시트 기능 마커 12 · 감상 작성",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-accent",
@@ -60470,6 +60470,90 @@
                                   "type": "text",
                                   "id": "DjOUH",
                                   "name": "감상 영역 명세 시트 기능 마커 7 라벨",
+                                  "fill": "#FFFFFF",
+                                  "content": "12",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "P04o5",
+                              "x": 65,
+                              "y": 4,
+                              "name": "감상 영역 명세 시트 기능 마커 5 · 정렬 필터",
+                              "width": 28,
+                              "height": 28,
+                              "fill": "$cc-accent",
+                              "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "uZLmw",
+                                  "name": "감상 영역 명세 시트 기능 마커 5 라벨",
+                                  "fill": "#FFFFFF",
+                                  "content": "5",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "LUEQe",
+                              "x": 350,
+                              "y": 60,
+                              "name": "감상 영역 명세 시트 기능 마커 7 · 감상 더보기",
+                              "width": 28,
+                              "height": 28,
+                              "fill": "$cc-accent",
+                              "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "q3QluH",
+                                  "name": "감상 영역 명세 시트 기능 마커 5 라벨",
+                                  "fill": "#FFFFFF",
+                                  "content": "7",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "yc8EZ",
+                              "x": 275,
+                              "y": 245,
+                              "name": "감상 영역 명세 시트 기능 마커 9 · 감상 좋아요",
+                              "width": 28,
+                              "height": 28,
+                              "fill": "$cc-accent",
+                              "cornerRadius": 14,
+                              "stroke": "$cc-surface",
+                              "strokeWidth": 2,
+                              "strokeAlignment": "outer",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "oUOve",
+                                  "name": "감상 영역 명세 시트 기능 마커 6 라벨",
                                   "fill": "#FFFFFF",
                                   "content": "9",
                                   "fontFamily": "Inter",
@@ -61323,7 +61407,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "정렬·피드 전환",
+                                          "content": "정렬 필터",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
                                           "fontSize": 12,
@@ -61386,7 +61470,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "reviewSort·reviewScope 변경 후 목록 다시 조회",
+                                          "content": "reviewSort를 LATEST·PAGE로 전환 후 목록 다시 조회",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
                                           "fontSize": 12,
@@ -61417,6 +61501,172 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
+                                          "content": "항상 실행",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "IuXdI",
+                                  "name": "감상 영역 기능 명세 표 6 행",
+                                  "width": "fill_container",
+                                  "height": 76,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "PY7pW",
+                                      "name": "감상 영역 기능 명세 표 5 No 셀",
+                                      "width": 52,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "HVEHm",
+                                          "name": "감상 영역 기능 명세 표 5 No 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "6",
+                                          "lineHeight": 1.35,
+                                          "textAlign": "center",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "yvQe9",
+                                      "name": "감상 영역 기능 명세 표 5 기능 셀",
+                                      "width": 200,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "NdMjT",
+                                          "name": "감상 영역 기능 명세 표 5 기능 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "피드 범위 전환",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "Ap5bu",
+                                      "name": "감상 영역 기능 명세 표 5 Type 셀",
+                                      "width": 82,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "AfMJM",
+                                          "name": "감상 영역 기능 명세 표 5 Type 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "Tap",
+                                          "lineHeight": 1.35,
+                                          "textAlign": "center",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "iTbLR",
+                                      "name": "감상 영역 기능 명세 표 5 처리 결과 셀",
+                                      "width": 330,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "kKso0",
+                                          "name": "감상 영역 기능 명세 표 5 처리 결과 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "reviewScope를 ALL·MINE으로 변경 후 목록 다시 조회",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "OTWNg",
+                                      "name": "감상 영역 기능 명세 표 5 실행 조건 셀",
+                                      "width": "fill_container",
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "f00eK",
+                                          "name": "감상 영역 기능 명세 표 5 실행 조건 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
                                           "content": "내 피드는 로그인 필요",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
@@ -61429,8 +61679,174 @@
                                 },
                                 {
                                   "type": "frame",
+                                  "id": "ELt0P",
+                                  "name": "감상 영역 기능 명세 표 7 행",
+                                  "width": "fill_container",
+                                  "height": 76,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "n0Z1Vl",
+                                      "name": "감상 영역 기능 명세 표 5 No 셀",
+                                      "width": 52,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "SUX5X",
+                                          "name": "감상 영역 기능 명세 표 5 No 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "7",
+                                          "lineHeight": 1.35,
+                                          "textAlign": "center",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "LBP55",
+                                      "name": "감상 영역 기능 명세 표 5 기능 셀",
+                                      "width": 200,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "JIQhK",
+                                          "name": "감상 영역 기능 명세 표 5 기능 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "감상 더보기",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "NQ9tV",
+                                      "name": "감상 영역 기능 명세 표 5 Type 셀",
+                                      "width": 82,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "agbKk",
+                                          "name": "감상 영역 기능 명세 표 5 Type 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "Tap",
+                                          "lineHeight": 1.35,
+                                          "textAlign": "center",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "F1zhM",
+                                      "name": "감상 영역 기능 명세 표 5 처리 결과 셀",
+                                      "width": 330,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "v3uSR4",
+                                          "name": "감상 영역 기능 명세 표 5 처리 결과 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "선택한 감상의 더보기 메뉴 열기",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "y519d6",
+                                      "name": "감상 영역 기능 명세 표 5 실행 조건 셀",
+                                      "width": "fill_container",
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "kapge",
+                                          "name": "감상 영역 기능 명세 표 5 실행 조건 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "메뉴 항목·권한 분기 구현 확인 필요",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
                                   "id": "snTeK",
-                                  "name": "감상 영역 기능 명세 표 6 행",
+                                  "name": "감상 영역 기능 명세 표 8 행",
                                   "width": "fill_container",
                                   "height": 76,
                                   "children": [
@@ -61457,7 +61873,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "6",
+                                          "content": "8",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
@@ -61596,7 +62012,7 @@
                                 {
                                   "type": "frame",
                                   "id": "LAEIa",
-                                  "name": "감상 영역 기능 명세 표 7 행",
+                                  "name": "감상 영역 기능 명세 표 9 행",
                                   "width": "fill_container",
                                   "height": 76,
                                   "children": [
@@ -61623,7 +62039,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "7",
+                                          "content": "9",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
@@ -61655,7 +62071,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "감상 좋아요·답글",
+                                          "content": "감상 좋아요",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
                                           "fontSize": 12,
@@ -61718,7 +62134,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "likeCount 갱신 또는 답글 입력 화면 열기",
+                                          "content": "likedByMe와 likeCount 갱신",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
                                           "fontSize": 12,
@@ -61761,8 +62177,174 @@
                                 },
                                 {
                                   "type": "frame",
+                                  "id": "Dvpgm",
+                                  "name": "감상 영역 기능 명세 표 10 행",
+                                  "width": "fill_container",
+                                  "height": 76,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "E81DZx",
+                                      "name": "감상 영역 기능 명세 표 6 No 셀",
+                                      "width": 52,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "GOljo",
+                                          "name": "감상 영역 기능 명세 표 6 No 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "10",
+                                          "lineHeight": 1.35,
+                                          "textAlign": "center",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "i54tBH",
+                                      "name": "감상 영역 기능 명세 표 6 기능 셀",
+                                      "width": 200,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "M5HqD",
+                                          "name": "감상 영역 기능 명세 표 6 기능 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "답글 작성 열기",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "MOKj4",
+                                      "name": "감상 영역 기능 명세 표 6 Type 셀",
+                                      "width": 82,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "Ly9ZV",
+                                          "name": "감상 영역 기능 명세 표 6 Type 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "Tap",
+                                          "lineHeight": 1.35,
+                                          "textAlign": "center",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "Adux4",
+                                      "name": "감상 영역 기능 명세 표 6 처리 결과 셀",
+                                      "width": 330,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "X8dST",
+                                          "name": "감상 영역 기능 명세 표 6 처리 결과 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "선택한 감상의 답글 입력 화면 열기",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "DH2YJ",
+                                      "name": "감상 영역 기능 명세 표 6 실행 조건 셀",
+                                      "width": "fill_container",
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "tykKx",
+                                          "name": "감상 영역 기능 명세 표 6 실행 조건 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "로그인 필요",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
                                   "id": "KHyzP",
-                                  "name": "감상 영역 기능 명세 표 8 행",
+                                  "name": "감상 영역 기능 명세 표 11 행",
                                   "width": "fill_container",
                                   "height": 76,
                                   "children": [
@@ -61789,7 +62371,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "8",
+                                          "content": "11",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
@@ -61928,7 +62510,7 @@
                                 {
                                   "type": "frame",
                                   "id": "K4wRmc",
-                                  "name": "감상 영역 기능 명세 표 9 행",
+                                  "name": "감상 영역 기능 명세 표 12 행",
                                   "width": "fill_container",
                                   "height": 76,
                                   "children": [
@@ -61955,7 +62537,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "9",
+                                          "content": "12",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
