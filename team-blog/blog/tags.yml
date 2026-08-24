@@ -1,0 +1,29 @@
+backend:
+  label: Backend
+  permalink: /backend
+  description: 서버와 데이터 설계에 관한 기록
+
+frontend:
+  label: Frontend
+  permalink: /frontend
+  description: 사용자 경험과 웹 구현에 관한 기록
+
+android:
+  label: Android
+  permalink: /android
+  description: 안드로이드 앱 개발에 관한 기록
+
+infra:
+  label: Infra
+  permalink: /infra
+  description: 배포와 운영에 관한 기록
+
+team:
+  label: Team
+  permalink: /team
+  description: 함께 일하는 방식에 관한 기록
+
+writing:
+  label: Writing
+  permalink: /writing
+  description: 기록을 더 잘 남기기 위한 안내

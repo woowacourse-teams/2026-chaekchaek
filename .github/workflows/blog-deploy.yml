@@ -1,0 +1,67 @@
+name: Deploy team blog
+
+on:
+  push:
+    branches: [blog]
+    paths:
+      - team-blog/**
+      - .github/workflows/blog-deploy.yml
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Docusaurus
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: team-blog
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: team-blog/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check the site
+        run: npm run typecheck
+
+      - name: Build the site
+        run: npm run build
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: team-blog/build
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy GitHub Pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v4
