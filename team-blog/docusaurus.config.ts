@@ -29,7 +29,11 @@ const config: Config = {
     [
       'classic',
       {
-        docs: false,
+        docs: {
+          sidebarPath: './sidebars.ts',
+          editUrl:
+            'https://github.com/woowacourse-teams/2026-chaekchaek/edit/blog/team-blog/',
+        },
         blog: {
           showReadingTime: true,
           blogTitle: '책책 기술 블로그',
@@ -71,6 +75,12 @@ const config: Config = {
         src: 'img/logo.svg',
       },
       items: [
+        {
+          type: 'docSidebar',
+          sidebarId: 'docsSidebar',
+          position: 'left',
+          label: '문서',
+        },
         {to: '/blog', label: '글 모아보기', position: 'left'},
         {to: '/blog/tags', label: '태그', position: 'left'},
         {to: '/blog/archive', label: '아카이브', position: 'left'},
@@ -87,6 +97,7 @@ const config: Config = {
         {
           title: '책책',
           items: [
+            {label: '문서', to: '/docs/intro'},
             {label: '기술 블로그', to: '/blog'},
             {
               label: '프로젝트 저장소',
