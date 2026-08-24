@@ -3,8 +3,8 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
-  title: '책책 기술 블로그',
-  tagline: '함께 읽고, 만들고, 기록하는 책책의 기술 이야기',
+  title: '책췍 기술 블로그',
+  tagline: '함께 읽고, 만들고, 기록하는 책췍의 기술 이야기',
   favicon: 'img/favicon.svg',
 
   future: {
@@ -36,8 +36,8 @@ const config: Config = {
         },
         blog: {
           showReadingTime: true,
-          blogTitle: '책책 기술 블로그',
-          blogDescription: '책책 팀이 제품을 만들며 쌓은 기술적 고민과 배움을 기록합니다.',
+          blogTitle: '책췍 기술 블로그',
+          blogDescription: '책췍 팀이 제품을 만들며 쌓은 기술적 고민과 배움을 기록합니다.',
           blogSidebarTitle: '최근 글',
           blogSidebarCount: 'ALL',
           editUrl:
@@ -61,7 +61,7 @@ const config: Config = {
     metadata: [
       {
         name: 'keywords',
-        content: '책책, ChaekChaek, 우아한테크코스, 기술 블로그',
+        content: '책췍, ChaekChaek, 우아한테크코스, 기술 블로그',
       },
     ],
     colorMode: {
@@ -69,9 +69,9 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: '책책',
+      title: '책췍',
       logo: {
-        alt: '책책 로고',
+        alt: '책췍 로고',
         src: 'img/logo.svg',
       },
       items: [
@@ -95,7 +95,7 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: '책책',
+          title: '책췍',
           items: [
             {label: '문서', to: '/docs/intro'},
             {label: '기술 블로그', to: '/blog'},
@@ -106,7 +106,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} 책책. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} 책췍. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

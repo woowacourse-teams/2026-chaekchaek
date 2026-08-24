@@ -1,6 +1,6 @@
-# 책책 기술 블로그
+# 책췍 기술 블로그
 
-Docusaurus 기반의 책책 팀 기술 블로그입니다. 소스는 모노레포의 `blog` 브랜치에서 관리하며, GitHub Actions가 GitHub Pages로 배포합니다.
+Docusaurus 기반의 책췍 팀 기술 블로그입니다. 소스는 모노레포의 `blog` 브랜치에서 관리하며, GitHub Actions가 GitHub Pages로 배포합니다.
 
 ## 시작하기
 
