@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import {
   Button,
@@ -21,13 +22,24 @@ import { getLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
 export const LibraryPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
+
+  const handleChangeDefaultPage = (defaultPage: number) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('page', String(defaultPage));
+      return next;
+    });
+  };
+
   const getLibraryLoadData = useCallback(async () => {
     return await getLibrary({
-      page: 1,
+      page: defaultPage,
       sort: '',
       status: '',
     });
-  }, []);
+  }, [defaultPage]);
   const {
     status: { data: libraryData },
   } = useLoadData({ queryFn: getLibraryLoadData });
@@ -143,7 +155,11 @@ export const LibraryPage = () => {
               })}
             </List>
 
-            <Pagination defaultPage={1} totalPages={libraryData?.totalCount ?? 1} />
+            <Pagination
+              defaultPage={1}
+              totalPages={libraryData?.totalCount ?? 1}
+              onChange={handleChangeDefaultPage}
+            />
           </Split.Content>
         </Split>
       </Main>
