@@ -54828,7 +54828,7 @@
                       "id": "O4ZTo8",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "책 상세 · 기본 정보와 독서 기록",
+                      "content": "책 상세 · 기본 정보와 독서 기록 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -58439,7 +58439,7 @@
                       "id": "ksED3",
                       "name": "감상 영역 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "책 상세 · 감상과 답글",
+                      "content": "책 상세 · 감상과 답글 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -62761,7 +62761,7 @@
                       "id": "v78In6",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "책 상세 · 감상 열람 범위",
+                      "content": "책 상세 · 감상 열람 범위 [팝업]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -65949,7 +65949,7 @@
                       "id": "PzfW7",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "책 상세 · 별점 매기기",
+                      "content": "책 상세 · 별점 매기기 [팝업]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -69402,7 +69402,7 @@
                       "id": "R0F7gj",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "책 상세 · 감상 작성",
+                      "content": "책 상세 · 감상 작성 [모달]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -71700,7 +71700,7 @@
                       "id": "kHWbN",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "책 상세 · 감상 답글 작성",
+                      "content": "책 상세 · 감상 답글 작성 [모달]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -74797,7 +74797,7 @@
                       "id": "RX2vn",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "홈 · 읽는 중인 책 있음",
+                      "content": "홈 · 읽는 중인 책 있음 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -78175,7 +78175,7 @@
                       "id": "e3IuJ",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "홈 · 읽는 중인 책 없음",
+                      "content": "홈 · 읽는 중인 책 없음 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -81433,7 +81433,7 @@
                       "id": "LwdPP",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "검색 · 검색 전",
+                      "content": "검색 · 검색 전 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -83545,7 +83545,7 @@
                       "id": "O9O4fW",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "검색 · 로딩",
+                      "content": "검색 · 로딩 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -85710,7 +85710,7 @@
                       "id": "w3hqB",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "검색 · 결과 목록",
+                      "content": "검색 · 결과 목록 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -88732,7 +88732,7 @@
                       "id": "Oai5y",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "검색 · 정렬 선택",
+                      "content": "검색 · 정렬 선택 [팝업]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -91504,7 +91504,7 @@
                       "id": "ihAKJ",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "검색 · 읽는 중 등록 완료",
+                      "content": "검색 · 읽는 중 등록 완료 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -94538,7 +94538,7 @@
                       "id": "luMj1",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "검색 · 구현 기준 결과",
+                      "content": "검색 · 구현 기준 결과 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -97224,7 +97224,7 @@
                       "id": "BxYIz",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "검색 · 빈 결과",
+                      "content": "검색 · 빈 결과 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -99329,7 +99329,7 @@
                       "id": "CRKY6",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "검색 · 오류",
+                      "content": "검색 · 오류 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -101404,7 +101404,7 @@
                       "id": "O5FFj6",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "내 서재 · 기본",
+                      "content": "내 서재 · 기본 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -104320,7 +104320,7 @@
                       "id": "pUzkt",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "내 서재 · 편집",
+                      "content": "내 서재 · 편집 [화면]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -107395,7 +107395,7 @@
                       "id": "E9dwy",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "내 서재 · 독서 상태 변경",
+                      "content": "내 서재 · 독서 상태 변경 [팝업]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -110721,7 +110721,7 @@
                       "id": "voyt3",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "내 서재 · 닉네임 설정",
+                      "content": "내 서재 · 닉네임 설정 [팝업]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -113932,7 +113932,7 @@
                       "id": "DRVNs",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "로그인 · Android",
+                      "content": "로그인 · Android [모달]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
@@ -116055,7 +116055,7 @@
                       "id": "d47rw",
                       "name": "상세 상단 명세 시트 제목",
                       "fill": "$cc-ink",
-                      "content": "로그인 · iOS",
+                      "content": "로그인 · iOS [모달]",
                       "fontFamily": "Inter",
                       "fontSize": 26,
                       "fontWeight": "500"
