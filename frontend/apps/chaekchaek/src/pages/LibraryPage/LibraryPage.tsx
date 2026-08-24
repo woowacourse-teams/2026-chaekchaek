@@ -130,6 +130,14 @@ export const LibraryPage = () => {
     handleCloseDialog();
   };
 
+  const handleBooksDeleted = () => {
+    refetchGetLibrary();
+
+    handleCloseDialog();
+    handleClickEndEdit();
+    handleResetBookSelection();
+  };
+
   const isAbleUpdateStatus = bookSelection.length;
   const isAbleDeleteStatus = bookSelection.length;
 
@@ -152,7 +160,13 @@ export const LibraryPage = () => {
           />
         );
       case 'DeleteBooksDialog':
-        return <DeleteBooksDialog onClose={handleCloseDialog} />;
+        return (
+          <DeleteBooksDialog
+            bookIds={bookSelection}
+            onBooksDeleted={handleBooksDeleted}
+            onClose={handleCloseDialog}
+          />
+        );
 
       default:
         return null;

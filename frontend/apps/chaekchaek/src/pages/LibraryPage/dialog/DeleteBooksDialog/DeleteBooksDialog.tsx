@@ -5,13 +5,15 @@ import { useExecute } from '@/services/core/useExecute';
 
 import type { DeleteBooksDialogProps } from './DeleteBooksDialog.types';
 
-export const DeleteBooksDialog = ({ bookIds, onClose }: DeleteBooksDialogProps) => {
+export const DeleteBooksDialog = ({ bookIds, onBooksDeleted, onClose }: DeleteBooksDialogProps) => {
   const { mutate: deleteBooks } = useExecute({
     executeFn: postLibraryBulkDelete,
   });
 
   const handleDeleteBooks = async () => {
     await deleteBooks({ bookIds });
+
+    onBooksDeleted();
   };
 
   return (
