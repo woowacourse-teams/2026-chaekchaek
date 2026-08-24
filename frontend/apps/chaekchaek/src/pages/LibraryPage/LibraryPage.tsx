@@ -99,12 +99,12 @@ export const LibraryPage = () => {
     status: { data: libraryData },
   } = useLoadData({ queryFn: getLibraryLoadData });
 
-  const [editing, setEditing] = useState(false);
-  const handleClickEditingStart = () => {
-    setEditing(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const handleClickStartEdit = () => {
+    setIsEditing(true);
   };
-  const handleClickEditingEnd = () => {
-    setEditing(false);
+  const handleClickEndEdit = () => {
+    setIsEditing(false);
   };
 
   const [editingBooks, setEditingBooks] = useState<number[]>([]);
@@ -123,13 +123,13 @@ export const LibraryPage = () => {
           trailing={
             <>
               <Button variant="ghost">감상 익명 공개</Button>
-              {editing && (
+              {isEditing && (
                 <>
                   <Button variant="ghost">상태 변경</Button>
                   <Button variant="ghost">삭제</Button>
                 </>
               )}
-              <Button variant="primary" onClick={handleClickEditingStart}>
+              <Button variant="primary" onClick={handleClickStartEdit}>
                 서재 편집
               </Button>
             </>
@@ -185,7 +185,7 @@ export const LibraryPage = () => {
                 return (
                   <List.Item key={item.bookId}>
                     <List.Item.Leading>
-                      {editing && (
+                      {isEditing && (
                         <Checkbox
                           checked={isIncluded}
                           onChange={() => {
@@ -219,8 +219,8 @@ export const LibraryPage = () => {
                       }
                     />
                     <List.Item.Trailing>
-                      {!editing && <>&gt;</>}
-                      {editing && <Button>삭제</Button>}
+                      {!isEditing && <>&gt;</>}
+                      {isEditing && <Button>삭제</Button>}
                     </List.Item.Trailing>
                   </List.Item>
                 );
