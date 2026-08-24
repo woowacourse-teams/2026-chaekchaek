@@ -45,6 +45,7 @@ class BookSearchResponseTest {
                 "bookId", "title", "coverImageUrl", "authors", "translators", "publishedDate",
                 "isbn13", "category", "publisher", "reviewCount", "replyCount", "isRegisteredInMyLibrary"
         );
+        assertThat(json.at("/items/0/isRegisteredInMyLibrary").isNull()).isTrue();
     }
 
     @Test

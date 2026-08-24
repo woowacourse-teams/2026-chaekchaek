@@ -254,7 +254,9 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		markRequiredNullable(searchResponse, 'nextPage')
 		def searchItem = arrayItemSchema(searchResponse, 'items')
 		markRequiredNullable(searchItem, 'bookId')
-	['reviewCount', 'replyCount'].each { propertyName -> markRequiredNullable(searchItem, propertyName) }
+	['reviewCount', 'replyCount', 'isRegisteredInMyLibrary'].each { propertyName ->
+		markRequiredNullable(searchItem, propertyName)
+	}
 	def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
 	['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRatingCount', 'myRecord', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
 		def libraryResponse = responseSchemaForPath('/api/v1/library', 'get', '200')
@@ -800,7 +802,8 @@ tasks.register('verifyOpenApi') {
 		def searchResponse = responseSchema('/api/v1/books', 'get', '200')
 		def searchItem = ((searchResponse?.get('properties') as Map)?.get('items') as Map)?.get('items') as Map
 		if (!requiredNullable(searchResponse, 'nextPage') || !requiredNullable(searchItem, 'bookId')
-				|| !requiredNullable(searchItem, 'reviewCount') || !requiredNullable(searchItem, 'replyCount')) {
+				|| !requiredNullable(searchItem, 'reviewCount') || !requiredNullable(searchItem, 'replyCount')
+				|| !requiredNullable(searchItem, 'isRegisteredInMyLibrary')) {
 			throw new GradleException('OpenAPI specification must distinguish nullable book search fields from omitted fields')
 		}
 		def detailResponse = responseSchema('/api/v1/books/by-isbn/{isbn13}', 'get', '200')

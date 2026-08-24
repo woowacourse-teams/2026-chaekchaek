@@ -75,7 +75,7 @@ class BookControllerTest {
                     .optional(),
             fieldWithPath("items[].isRegisteredInMyLibrary").type(JsonFieldType.BOOLEAN)
                     .description("로그인 회원의 내 서재 등록 여부. 등록되어 있으면 true, 미등록이면 false, 비로그인 요청이면 null")
-                    .optional(),
+                    .optional().attributes(key("nullable").value(true)),
             fieldWithPath("items[].title").type(JsonFieldType.STRING)
                     .description("도서 제목"),
             fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING)
