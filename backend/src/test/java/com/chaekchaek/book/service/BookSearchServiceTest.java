@@ -13,10 +13,14 @@ import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
+import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.library.domain.LibraryItem;
+import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,7 +46,7 @@ class BookSearchServiceTest {
         AladinBookClient bookClient = mock(AladinBookClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        BookSearchService service = new BookSearchService(bookClient, bookRepository, activityCountReader);
+        BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
         AladinSearchResponse aladinResponse = new AladinSearchResponse(
                 null, null, totalResults, responseStartIndex, itemsPerPage, List.of()
         );
@@ -66,7 +70,7 @@ class BookSearchServiceTest {
         AladinBookClient bookClient = mock(AladinBookClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        BookSearchService service = new BookSearchService(bookClient, bookRepository, activityCountReader);
+        BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
         AladinSearchResponse aladinResponse = new AladinSearchResponse(
                 null, null, 21, 1, 10, List.of()
         );
@@ -90,7 +94,7 @@ class BookSearchServiceTest {
         AladinBookClient bookClient = mock(AladinBookClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        BookSearchService service = new BookSearchService(bookClient, bookRepository, activityCountReader);
+        BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
         AladinBookItem aladinBookItem = new AladinBookItem(
                 "클린 코드",
                 "https://image.aladin.co.kr/cover.jpg",
@@ -138,7 +142,7 @@ class BookSearchServiceTest {
         AladinBookClient bookClient = mock(AladinBookClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        BookSearchService service = new BookSearchService(bookClient, bookRepository, activityCountReader);
+        BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
         AladinBookItem aladinBookItem = new AladinBookItem(
                 "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)",
                 null,
@@ -162,6 +166,56 @@ class BookSearchServiceTest {
         assertThat(item.bookId()).isEqualTo(42L);
         assertThat(item.reviewCount()).isEqualTo(2);
         assertThat(item.replyCount()).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("로그인한 회원의 서재에 있는 도서를 검색하면 내 서재 등록 여부로 true를 반환한다")
+    void should_ReturnTrue_When_SearchResultIsInAuthenticatedMembersLibrary() {
+        // given
+        AladinBookClient bookClient = mock(AladinBookClient.class);
+        BookRepository bookRepository = mock(BookRepository.class);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookSearchService service = new BookSearchService(
+                bookClient, bookRepository, activityCountReader, currentMemberIdProvider, libraryItemRepository);
+        AladinBookItem aladinBookItem = aladinBook("마션", "2026-01-01", "9788925568683");
+        Book registeredBook = registeredBook(42L, aladinBookItem.isbn13());
+        LibraryItem libraryItem = mock(LibraryItem.class);
+        when(libraryItem.getBookId()).thenReturn(42L);
+        when(bookClient.searchBooks("마션", 1)).thenReturn(new AladinSearchResponse(
+                null, null, 1, 1, 10, List.of(aladinBookItem)));
+        when(bookRepository.findAllByIsbn13In(List.of("9788925568683"))).thenReturn(List.of(registeredBook));
+        when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
+        when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(42L)))
+                .thenReturn(List.of(libraryItem));
+
+        // when
+        BookItem item = service.search("마션", 1).items().getFirst();
+
+        // then
+        assertThat(item.isRegisteredInMyLibrary()).isTrue();
+    }
+
+    @Test
+    @DisplayName("로그인한 회원의 서재에 없는 도서를 검색하면 내 서재 등록 여부로 false를 반환한다")
+    void should_ReturnFalse_When_SearchResultIsNotInAuthenticatedMembersLibrary() {
+        // given
+        BookItem item = searchRegisteredBook(OptionalLong.of(1L), List.of());
+
+        // when & then
+        assertThat(item.isRegisteredInMyLibrary()).isFalse();
+    }
+
+    @Test
+    @DisplayName("비로그인으로 도서를 검색하면 내 서재 등록 여부로 null을 반환한다")
+    void should_ReturnNull_When_SearchingWithoutAuthentication() {
+        // given
+        BookItem item = searchRegisteredBook(OptionalLong.empty(), List.of());
+
+        // when & then
+        assertThat(item.isRegisteredInMyLibrary()).isNull();
     }
 
     @Test
@@ -232,7 +286,46 @@ class BookSearchServiceTest {
                 .thenReturn(List.of(registeredBooks));
         when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(activityCounts);
-        return new BookSearchService(bookClient, bookRepository, activityCountReader);
+        return guestService(bookClient, bookRepository, activityCountReader);
+    }
+
+    private BookSearchService guestService(
+            AladinBookClient bookClient,
+            BookRepository bookRepository,
+            BookActivityCountReader activityCountReader
+    ) {
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
+        return new BookSearchService(
+                bookClient,
+                bookRepository,
+                activityCountReader,
+                currentMemberIdProvider,
+                mock(LibraryItemRepository.class)
+        );
+    }
+
+    private BookItem searchRegisteredBook(OptionalLong memberId, List<LibraryItem> libraryItems) {
+        AladinBookClient bookClient = mock(AladinBookClient.class);
+        BookRepository bookRepository = mock(BookRepository.class);
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookSearchService service = new BookSearchService(
+                bookClient, bookRepository, activityCountReader, currentMemberIdProvider, libraryItemRepository);
+        AladinBookItem aladinBookItem = aladinBook("마션", "2026-01-01", "9788925568683");
+        Book registeredBook = registeredBook(42L, aladinBookItem.isbn13());
+        when(bookClient.searchBooks("마션", 1)).thenReturn(new AladinSearchResponse(
+                null, null, 1, 1, 10, List.of(aladinBookItem)));
+        when(bookRepository.findAllByIsbn13In(List.of("9788925568683"))).thenReturn(List.of(registeredBook));
+        when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(memberId);
+        if (memberId.isPresent()) {
+            when(libraryItemRepository.findAllByMemberIdAndBookIdIn(memberId.getAsLong(), List.of(42L)))
+                    .thenReturn(libraryItems);
+        }
+
+        return service.search("마션", 1).items().getFirst();
     }
 
     private AladinBookItem aladinBook(String title, String publishedDate, String isbn13) {

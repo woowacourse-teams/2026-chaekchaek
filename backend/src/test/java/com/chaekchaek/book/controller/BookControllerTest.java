@@ -73,6 +73,9 @@ class BookControllerTest {
             fieldWithPath("items[].bookId").type(JsonFieldType.NUMBER)
                     .description("등록된 도서 ID. 미등록 도서라면 null")
                     .optional(),
+            fieldWithPath("items[].isRegisteredInMyLibrary").type(JsonFieldType.BOOLEAN)
+                    .description("로그인 회원의 내 서재 등록 여부. 등록되어 있으면 true, 미등록이면 false, 비로그인 요청이면 null")
+                    .optional().attributes(key("nullable").value(true)),
             fieldWithPath("items[].title").type(JsonFieldType.STRING)
                     .description("도서 제목"),
             fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING)
@@ -155,6 +158,7 @@ class BookControllerTest {
                 "국내도서>소설>과학소설",
                 "알에이치코리아(RHK)",
                 null,
+                null,
                 null
         );
         BookSearchResponse response = new BookSearchResponse(1, null, List.of(item));
@@ -182,6 +186,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.items[0].publisher").value("알에이치코리아(RHK)"))
                 .andExpect(jsonPath("$.items[0].reviewCount").value(nullValue()))
                 .andExpect(jsonPath("$.items[0].replyCount").value(nullValue()))
+                .andExpect(jsonPath("$.items[0].isRegisteredInMyLibrary").value(nullValue()))
                 .andDo(document(
                         "book-search",
                         queryParameters(

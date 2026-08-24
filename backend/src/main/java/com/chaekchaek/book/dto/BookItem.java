@@ -13,6 +13,7 @@ public record BookItem(
         String category,
         String publisher,
         Integer reviewCount,
-        Integer replyCount
+        Integer replyCount,
+        Boolean isRegisteredInMyLibrary
 ) {
 }
