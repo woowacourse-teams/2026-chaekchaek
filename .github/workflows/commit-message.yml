@@ -21,7 +21,7 @@ jobs:
       - name: Validate messages
         shell: bash
         run: |
-          pattern='^\[(BE|FE|AN|ALL)\] (feat|fix|docs|refactor|test|chore|ci|build|perf|revert|style)(\([^)]+\))?!?: .+$'
+          pattern='^\[(BE|FE|AN|BLOG|ALL)\] (feat|fix|docs|refactor|test|chore|ci|build|perf|revert|style)(\([^)]+\))?!?: .+$'
           
           merge_pattern='^Merge (branch|remote-tracking branch|pull request) .+$'
 
@@ -36,8 +36,8 @@ jobs:
               echo "예시: [BE] build: 프로젝트 초기 세팅"
               echo "예시: [FE] feat(auth): 로그인 화면 구현"
               echo "예시: [AN] build: 라이브러리 추가"
+              echo "예시: [BLOG] docs: 알라딘 API 연동 기록 추가"
               echo "Merge commit은 Git 기본 메시지를 허용합니다."
               exit 1
             fi
           done
-
