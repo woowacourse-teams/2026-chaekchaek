@@ -5,7 +5,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: '책췍 기술 블로그',
   tagline: '함께 읽고, 만들고, 기록하는 책췍의 기술 이야기',
-  favicon: 'img/favicon.svg',
+  favicon: 'img/chaekchweck-icon.png',
 
   future: {
     v4: true,
@@ -48,7 +48,7 @@ const config: Config = {
           },
           onInlineTags: 'throw',
           onInlineAuthors: 'throw',
-          onUntruncatedBlogPosts: 'ignore',
+          onUntruncatedBlogPosts: 'throw',
         },
         theme: {
           customCss: './src/css/custom.css',
@@ -72,7 +72,7 @@ const config: Config = {
       title: '책췍',
       logo: {
         alt: '책췍 로고',
-        src: 'img/logo.svg',
+        src: 'img/chaekchweck-icon.png',
       },
       items: [
         {

@@ -15,6 +15,8 @@ date: 2026-08-24
 
 :::
 
+{/* truncate */}
+
 ## 1. DTO를 분리하면 외부 API로부터 독립적일까?
 
 Chaekchaek은 도서 검색을 위해 알라딘 Search API를 사용한다.
