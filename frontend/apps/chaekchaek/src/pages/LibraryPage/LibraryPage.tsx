@@ -157,7 +157,7 @@ export const LibraryPage = () => {
 
             <Pagination
               defaultPage={1}
-              totalPages={libraryData?.totalCount ?? 1}
+              totalPages={libraryData?.filteredCount ?? 1}
               onChange={handleChangeDefaultPage}
             />
           </Split.Content>
