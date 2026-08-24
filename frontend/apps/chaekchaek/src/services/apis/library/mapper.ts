@@ -7,7 +7,7 @@ export const mapGetLibraryModelToRequestDTO = (model: GetLibraryParams): GetLibr
 };
 
 export const mapGetLibraryResponseDTOToModel = (response: GetLibraryResponseDto) => {
-  return response.data;
+  return response;
 };
 import type { PostLibraryResponseDto } from './dto';
 import type { PostLibraryCommand } from './repository.types';
@@ -18,5 +18,5 @@ export const mapPostLibraryModelToRequestDTO = (model: PostLibraryCommand): Post
 };
 
 export const mapPostLibraryResponseDTOToModel = (response: PostLibraryResponseDto) => {
-  return response.data;
+  return response;
 };
