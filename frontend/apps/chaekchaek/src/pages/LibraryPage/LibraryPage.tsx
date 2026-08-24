@@ -37,10 +37,29 @@ export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
   [READING_STATUS.FINISHED]: '다 읽음',
 };
 
+const READING_SORT = {
+  RECENT: 'RECENT',
+  OLDEST: 'OLDEST',
+  COMMENT: 'COMMENT',
+  RATING: 'RATING',
+  TITLE: 'TITLE',
+} as const;
+
+type ReadingSort = (typeof READING_SORT)[keyof typeof READING_SORT];
+
+const READING_SORT_LABELS = {
+  RECENT: '최근순',
+  OLDEST: '오래된순',
+  COMMENT: '감상순',
+  RATING: '별점순',
+  TITLE: '제목순',
+} as const;
+
 export const LibraryPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
   const status = (searchParams.get('status') ?? READING_STATUS.ALL) as ReadingStatus;
+  const sort = (searchParams.get('sort') ?? READING_SORT.RECENT) as ReadingSort;
 
   const handleChangeDefaultPage = (defaultPage: number) => {
     setSearchParams((prev) => {
@@ -59,13 +78,22 @@ export const LibraryPage = () => {
     });
   };
 
+  const handleChangeSort = (sort: ReadingSort) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('sort', sort);
+      next.set('page', '1');
+      return next;
+    });
+  };
+
   const getLibraryLoadData = useCallback(async () => {
     return await getLibrary({
       page: defaultPage,
-      sort: '',
+      sort,
       status,
     });
-  }, [defaultPage, status]);
+  }, [defaultPage, status, sort]);
   const {
     status: { data: libraryData },
   } = useLoadData({ queryFn: getLibraryLoadData });
@@ -112,14 +140,14 @@ export const LibraryPage = () => {
               trailing={
                 <>
                   <Select
-                    value="RECENT"
-                    options={[
-                      { value: 'RECENT', text: '최근순' },
-                      { value: 'OLDEST', text: '오래된순' },
-                      { value: 'COMMENT', text: '감상순' },
-                      { value: 'RATING', text: '별점순' },
-                      { value: 'TITLE', text: '제목순' },
-                    ]}
+                    value={sort}
+                    options={Object.entries(READING_SORT_LABELS).map(([labelKey, labelValue]) => {
+                      return {
+                        value: labelKey,
+                        text: labelValue,
+                      };
+                    })}
+                    onChange={handleChangeSort}
                   />
                 </>
               }
