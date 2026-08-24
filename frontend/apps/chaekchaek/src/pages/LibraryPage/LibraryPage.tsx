@@ -24,6 +24,7 @@ import { useLoadData } from '@/services/core/useLoadData';
 export const LibraryPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
+  const status = searchParams.get('status') ?? '';
 
   const handleChangeDefaultPage = (defaultPage: number) => {
     setSearchParams((prev) => {
@@ -33,13 +34,22 @@ export const LibraryPage = () => {
     });
   };
 
+  const handleChangeStatus = (status: '' | 'WANT_TO_READ' | 'READING' | 'FINISHED') => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('status', status);
+      next.set('page', '1');
+      return next;
+    });
+  };
+
   const getLibraryLoadData = useCallback(async () => {
     return await getLibrary({
       page: defaultPage,
       sort: '',
-      status: '',
+      status,
     });
-  }, [defaultPage]);
+  }, [defaultPage, status]);
   const {
     status: { data: libraryData },
   } = useLoadData({ queryFn: getLibraryLoadData });
@@ -66,7 +76,7 @@ export const LibraryPage = () => {
               orientation="vertical"
               trailing={
                 <OptionList
-                  value=""
+                  value={status}
                   options={[
                     {
                       value: '',
@@ -89,6 +99,7 @@ export const LibraryPage = () => {
                       meta: '0',
                     },
                   ]}
+                  onChange={handleChangeStatus}
                 />
               }
             >
