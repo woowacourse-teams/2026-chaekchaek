@@ -60371,7 +60371,7 @@
                               "id": "D4CpLd",
                               "x": 350,
                               "y": 115,
-                              "name": "감상 영역 명세 시트 기능 마커 8",
+                              "name": "감상 영역 명세 시트 기능 마커 6",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-accent",
@@ -60387,7 +60387,7 @@
                                   "id": "qjF5S",
                                   "name": "감상 영역 명세 시트 기능 마커 8 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "8",
+                                  "content": "6",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -60399,7 +60399,7 @@
                               "id": "z58g7",
                               "x": 350,
                               "y": 245,
-                              "name": "감상 영역 명세 시트 기능 마커 6",
+                              "name": "감상 영역 명세 시트 기능 마커 7",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-accent",
@@ -60415,7 +60415,7 @@
                                   "id": "N14S4j",
                                   "name": "감상 영역 명세 시트 기능 마커 6 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "6",
+                                  "content": "7",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -60427,7 +60427,7 @@
                               "id": "OfbLj",
                               "x": 350,
                               "y": 300,
-                              "name": "감상 영역 명세 시트 기능 마커 9",
+                              "name": "감상 영역 명세 시트 기능 마커 8",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-accent",
@@ -60443,7 +60443,7 @@
                                   "id": "NR2TE",
                                   "name": "감상 영역 명세 시트 기능 마커 9 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "9",
+                                  "content": "8",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -60455,7 +60455,7 @@
                               "id": "Wjr3U",
                               "x": 350,
                               "y": 774,
-                              "name": "감상 영역 명세 시트 기능 마커 7",
+                              "name": "감상 영역 명세 시트 기능 마커 9",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-accent",
@@ -60471,7 +60471,7 @@
                                   "id": "DjOUH",
                                   "name": "감상 영역 명세 시트 기능 마커 7 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "7",
+                                  "content": "9",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -61430,7 +61430,7 @@
                                 {
                                   "type": "frame",
                                   "id": "snTeK",
-                                  "name": "감상 영역 기능 명세 표 8 행",
+                                  "name": "감상 영역 기능 명세 표 6 행",
                                   "width": "fill_container",
                                   "height": 76,
                                   "children": [
@@ -61457,7 +61457,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "8",
+                                          "content": "6",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
@@ -61596,7 +61596,7 @@
                                 {
                                   "type": "frame",
                                   "id": "LAEIa",
-                                  "name": "감상 영역 기능 명세 표 6 행",
+                                  "name": "감상 영역 기능 명세 표 7 행",
                                   "width": "fill_container",
                                   "height": 76,
                                   "children": [
@@ -61623,7 +61623,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "6",
+                                          "content": "7",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
@@ -61762,7 +61762,7 @@
                                 {
                                   "type": "frame",
                                   "id": "KHyzP",
-                                  "name": "감상 영역 기능 명세 표 9 행",
+                                  "name": "감상 영역 기능 명세 표 8 행",
                                   "width": "fill_container",
                                   "height": 76,
                                   "children": [
@@ -61789,7 +61789,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "9",
+                                          "content": "8",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
@@ -61928,7 +61928,7 @@
                                 {
                                   "type": "frame",
                                   "id": "K4wRmc",
-                                  "name": "감상 영역 기능 명세 표 7 행",
+                                  "name": "감상 영역 기능 명세 표 9 행",
                                   "width": "fill_container",
                                   "height": 76,
                                   "children": [
@@ -61955,7 +61955,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "7",
+                                          "content": "9",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
@@ -65238,7 +65238,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "현재 감상을 즉시 공개",
+                                          "content": "모달을 닫고 현재 감상을 즉시 공개",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
                                           "fontSize": 12,
@@ -68193,7 +68193,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "변경 없이 책 상세로 복귀",
+                                          "content": "모달 닫기모달/",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
                                           "fontSize": 12,
@@ -72555,7 +72555,7 @@
                               "id": "YfrT2",
                               "x": 10,
                               "y": 454,
-                              "name": "상세 상단 명세 시트 정보 마커 I2",
+                              "name": "상세 상단 명세 시트 정보 마커 I3",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-ink",
@@ -72570,7 +72570,7 @@
                                   "id": "QTma6",
                                   "name": "상세 상단 명세 시트 정보 마커 I2 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "I2",
+                                  "content": "I3",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -72582,7 +72582,7 @@
                               "id": "u2r2J",
                               "x": 10,
                               "y": 348,
-                              "name": "상세 상단 명세 시트 정보 마커 I3",
+                              "name": "상세 상단 명세 시트 정보 마커 I2",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-ink",
@@ -72597,7 +72597,7 @@
                                   "id": "Z8BwA",
                                   "name": "상세 상단 명세 시트 정보 마커 I3 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "I3",
+                                  "content": "I2",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -73030,143 +73030,8 @@
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "r1eRKq",
-                                  "name": "상세 상단 정보 명세 표 I2 행",
-                                  "width": "fill_container",
-                                  "height": 70,
-                                  "children": [
-                                    {
-                                      "type": "frame",
-                                      "id": "QAv3Q",
-                                      "name": "상세 상단 정보 명세 표 I2 No 셀",
-                                      "width": 58,
-                                      "height": "fill_container",
-                                      "fill": "$cc-surface",
-                                      "stroke": "$cc-border",
-                                      "strokeWidth": 1,
-                                      "padding": [
-                                        8,
-                                        10
-                                      ],
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "MnWFU",
-                                          "name": "상세 상단 정보 명세 표 I2 No 셀 텍스트",
-                                          "fill": "$cc-ink",
-                                          "textGrowth": "fixed-width",
-                                          "width": "fill_container",
-                                          "content": "I2",
-                                          "lineHeight": 1.35,
-                                          "textAlign": "center",
-                                          "fontFamily": "Inter",
-                                          "fontSize": 12,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "frame",
-                                      "id": "cH012",
-                                      "name": "상세 상단 정보 명세 표 I2 표시 정보 셀",
-                                      "width": 220,
-                                      "height": "fill_container",
-                                      "fill": "$cc-surface",
-                                      "stroke": "$cc-border",
-                                      "strokeWidth": 1,
-                                      "padding": [
-                                        8,
-                                        10
-                                      ],
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "U8r55",
-                                          "name": "상세 상단 정보 명세 표 I2 표시 정보 셀 텍스트",
-                                          "fill": "$cc-ink",
-                                          "textGrowth": "fixed-width",
-                                          "width": "fill_container",
-                                          "content": "답글 목록",
-                                          "lineHeight": 1.35,
-                                          "fontFamily": "Inter",
-                                          "fontSize": 12,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "frame",
-                                      "id": "VKzrJ",
-                                      "name": "상세 상단 정보 명세 표 I2 데이터 셀",
-                                      "width": 360,
-                                      "height": "fill_container",
-                                      "fill": "$cc-surface",
-                                      "stroke": "$cc-border",
-                                      "strokeWidth": 1,
-                                      "padding": [
-                                        8,
-                                        10
-                                      ],
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "BP0ui",
-                                          "name": "상세 상단 정보 명세 표 I2 데이터 셀 텍스트",
-                                          "fill": "$cc-ink",
-                                          "textGrowth": "fixed-width",
-                                          "width": "fill_container",
-                                          "content": "recentReplies[].author.displayName · content · likeCount · likedByMe",
-                                          "lineHeight": 1.35,
-                                          "textAlign": "center",
-                                          "fontFamily": "Inter",
-                                          "fontSize": 12,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "frame",
-                                      "id": "AtiAF",
-                                      "name": "상세 상단 정보 명세 표 I2 표시 조건 셀",
-                                      "width": "fill_container",
-                                      "height": "fill_container",
-                                      "fill": "$cc-surface",
-                                      "stroke": "$cc-border",
-                                      "strokeWidth": 1,
-                                      "padding": [
-                                        8,
-                                        10
-                                      ],
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "YHEul",
-                                          "name": "상세 상단 정보 명세 표 I2 표시 조건 셀 텍스트",
-                                          "fill": "$cc-ink",
-                                          "textGrowth": "fixed-width",
-                                          "width": "fill_container",
-                                          "content": "등록 순서대로 표시",
-                                          "lineHeight": 1.35,
-                                          "fontFamily": "Inter",
-                                          "fontSize": 12,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "frame",
                                   "id": "UpkJd",
-                                  "name": "상세 상단 정보 명세 표 I3 행",
+                                  "name": "상세 상단 정보 명세 표 I2 행",
                                   "width": "fill_container",
                                   "height": 70,
                                   "children": [
@@ -73193,7 +73058,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "I3",
+                                          "content": "I2",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
@@ -73289,6 +73154,141 @@
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
                                           "content": "입력 중 글자 수 표시",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "r1eRKq",
+                                  "name": "상세 상단 정보 명세 표 I3 행",
+                                  "width": "fill_container",
+                                  "height": 70,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "QAv3Q",
+                                      "name": "상세 상단 정보 명세 표 I2 No 셀",
+                                      "width": 58,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "MnWFU",
+                                          "name": "상세 상단 정보 명세 표 I2 No 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "I3",
+                                          "lineHeight": 1.35,
+                                          "textAlign": "center",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "cH012",
+                                      "name": "상세 상단 정보 명세 표 I2 표시 정보 셀",
+                                      "width": 220,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "U8r55",
+                                          "name": "상세 상단 정보 명세 표 I2 표시 정보 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "답글 목록",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "VKzrJ",
+                                      "name": "상세 상단 정보 명세 표 I2 데이터 셀",
+                                      "width": 360,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "BP0ui",
+                                          "name": "상세 상단 정보 명세 표 I2 데이터 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "recentReplies[].author.displayName · content · likeCount · likedByMe",
+                                          "lineHeight": 1.35,
+                                          "textAlign": "center",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "AtiAF",
+                                      "name": "상세 상단 정보 명세 표 I2 표시 조건 셀",
+                                      "width": "fill_container",
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "YHEul",
+                                          "name": "상세 상단 정보 명세 표 I2 표시 조건 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "등록 순서대로 표시",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
                                           "fontSize": 12,
@@ -81302,7 +81302,7 @@
                               "type": "frame",
                               "id": "dS0FY",
                               "x": 16,
-                              "y": 65,
+                              "y": 54,
                               "name": "상세 상단 명세 시트 기능 마커 1",
                               "width": 28,
                               "height": 28,
@@ -83467,7 +83467,7 @@
                               "type": "frame",
                               "id": "UHJC7",
                               "x": 16,
-                              "y": 65,
+                              "y": 54,
                               "name": "상세 상단 명세 시트 기능 마커 1",
                               "width": 28,
                               "height": 28,
@@ -92242,7 +92242,7 @@
                               "id": "ykKqc",
                               "x": 350,
                               "y": 276,
-                              "name": "상세 상단 명세 시트 정보 마커 I2",
+                              "name": "상세 상단 명세 시트 정보 마커 I3",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-ink",
@@ -92257,7 +92257,7 @@
                                   "id": "MLxEu",
                                   "name": "상세 상단 명세 시트 정보 마커 I2 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "I2",
+                                  "content": "I3",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -92269,7 +92269,7 @@
                               "id": "MXqKr",
                               "x": 10,
                               "y": 210,
-                              "name": "상세 상단 명세 시트 정보 마커 I3",
+                              "name": "상세 상단 명세 시트 정보 마커 I2",
                               "width": 28,
                               "height": 28,
                               "fill": "$cc-ink",
@@ -92284,7 +92284,7 @@
                                   "id": "WyqTc",
                                   "name": "상세 상단 명세 시트 정보 마커 I3 라벨",
                                   "fill": "#FFFFFF",
-                                  "content": "I3",
+                                  "content": "I2",
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -92735,143 +92735,8 @@
                                 },
                                 {
                                   "type": "frame",
-                                  "id": "Q2HWg8",
-                                  "name": "상세 상단 정보 명세 표 I2 행",
-                                  "width": "fill_container",
-                                  "height": 70,
-                                  "children": [
-                                    {
-                                      "type": "frame",
-                                      "id": "osrCr",
-                                      "name": "상세 상단 정보 명세 표 I2 No 셀",
-                                      "width": 58,
-                                      "height": "fill_container",
-                                      "fill": "$cc-surface",
-                                      "stroke": "$cc-border",
-                                      "strokeWidth": 1,
-                                      "padding": [
-                                        8,
-                                        10
-                                      ],
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "Lr7tJ",
-                                          "name": "상세 상단 정보 명세 표 I2 No 셀 텍스트",
-                                          "fill": "$cc-ink",
-                                          "textGrowth": "fixed-width",
-                                          "width": "fill_container",
-                                          "content": "I2",
-                                          "lineHeight": 1.35,
-                                          "textAlign": "center",
-                                          "fontFamily": "Inter",
-                                          "fontSize": 12,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "frame",
-                                      "id": "qax7X",
-                                      "name": "상세 상단 정보 명세 표 I2 표시 정보 셀",
-                                      "width": 220,
-                                      "height": "fill_container",
-                                      "fill": "$cc-surface",
-                                      "stroke": "$cc-border",
-                                      "strokeWidth": 1,
-                                      "padding": [
-                                        8,
-                                        10
-                                      ],
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "tLa4H",
-                                          "name": "상세 상단 정보 명세 표 I2 표시 정보 셀 텍스트",
-                                          "fill": "$cc-ink",
-                                          "textGrowth": "fixed-width",
-                                          "width": "fill_container",
-                                          "content": "등록 상태",
-                                          "lineHeight": 1.35,
-                                          "fontFamily": "Inter",
-                                          "fontSize": 12,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "frame",
-                                      "id": "E4VZ6F",
-                                      "name": "상세 상단 정보 명세 표 I2 데이터 셀",
-                                      "width": 360,
-                                      "height": "fill_container",
-                                      "fill": "$cc-surface",
-                                      "stroke": "$cc-border",
-                                      "strokeWidth": 1,
-                                      "padding": [
-                                        8,
-                                        10
-                                      ],
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "rO6EZ",
-                                          "name": "상세 상단 정보 명세 표 I2 데이터 셀 텍스트",
-                                          "fill": "$cc-ink",
-                                          "textGrowth": "fixed-width",
-                                          "width": "fill_container",
-                                          "content": "요청: isbn13 · status=READING · 코드상 완료 상태 미보유",
-                                          "lineHeight": 1.35,
-                                          "textAlign": "center",
-                                          "fontFamily": "Inter",
-                                          "fontSize": 12,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "frame",
-                                      "id": "llMdR",
-                                      "name": "상세 상단 정보 명세 표 I2 표시 조건 셀",
-                                      "width": "fill_container",
-                                      "height": "fill_container",
-                                      "fill": "$cc-surface",
-                                      "stroke": "$cc-border",
-                                      "strokeWidth": 1,
-                                      "padding": [
-                                        8,
-                                        10
-                                      ],
-                                      "justifyContent": "center",
-                                      "alignItems": "center",
-                                      "children": [
-                                        {
-                                          "type": "text",
-                                          "id": "pMso7",
-                                          "name": "상세 상단 정보 명세 표 I2 표시 조건 셀 텍스트",
-                                          "fill": "$cc-ink",
-                                          "textGrowth": "fixed-width",
-                                          "width": "fill_container",
-                                          "content": "등록된 책은 완료 상태 버튼 표시",
-                                          "lineHeight": 1.35,
-                                          "fontFamily": "Inter",
-                                          "fontSize": 12,
-                                          "fontWeight": "normal"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "frame",
                                   "id": "tEWex",
-                                  "name": "상세 상단 정보 명세 표 I3 행",
+                                  "name": "상세 상단 정보 명세 표 I2 행",
                                   "width": "fill_container",
                                   "height": 70,
                                   "children": [
@@ -92898,7 +92763,7 @@
                                           "fill": "$cc-ink",
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
-                                          "content": "I3",
+                                          "content": "I2",
                                           "lineHeight": 1.35,
                                           "textAlign": "center",
                                           "fontFamily": "Inter",
@@ -92994,6 +92859,141 @@
                                           "textGrowth": "fixed-width",
                                           "width": "fill_container",
                                           "content": "각 결과 행에 표시",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Q2HWg8",
+                                  "name": "상세 상단 정보 명세 표 I3 행",
+                                  "width": "fill_container",
+                                  "height": 70,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "osrCr",
+                                      "name": "상세 상단 정보 명세 표 I2 No 셀",
+                                      "width": 58,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "Lr7tJ",
+                                          "name": "상세 상단 정보 명세 표 I2 No 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "I3",
+                                          "lineHeight": 1.35,
+                                          "textAlign": "center",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "qax7X",
+                                      "name": "상세 상단 정보 명세 표 I2 표시 정보 셀",
+                                      "width": 220,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "tLa4H",
+                                          "name": "상세 상단 정보 명세 표 I2 표시 정보 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "등록 상태",
+                                          "lineHeight": 1.35,
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "E4VZ6F",
+                                      "name": "상세 상단 정보 명세 표 I2 데이터 셀",
+                                      "width": 360,
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "rO6EZ",
+                                          "name": "상세 상단 정보 명세 표 I2 데이터 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "요청: isbn13 · status=READING · 코드상 완료 상태 미보유",
+                                          "lineHeight": 1.35,
+                                          "textAlign": "center",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "llMdR",
+                                      "name": "상세 상단 정보 명세 표 I2 표시 조건 셀",
+                                      "width": "fill_container",
+                                      "height": "fill_container",
+                                      "fill": "$cc-surface",
+                                      "stroke": "$cc-border",
+                                      "strokeWidth": 1,
+                                      "padding": [
+                                        8,
+                                        10
+                                      ],
+                                      "justifyContent": "center",
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "pMso7",
+                                          "name": "상세 상단 정보 명세 표 I2 표시 조건 셀 텍스트",
+                                          "fill": "$cc-ink",
+                                          "textGrowth": "fixed-width",
+                                          "width": "fill_container",
+                                          "content": "등록된 책은 완료 상태 버튼 표시",
                                           "lineHeight": 1.35,
                                           "fontFamily": "Inter",
                                           "fontSize": 12,
@@ -97086,7 +97086,7 @@
                               "type": "frame",
                               "id": "u08fd",
                               "x": 16,
-                              "y": 65,
+                              "y": 54,
                               "name": "상세 상단 명세 시트 기능 마커 1",
                               "width": 28,
                               "height": 28,
@@ -99197,7 +99197,7 @@
                               "type": "frame",
                               "id": "Cv71r",
                               "x": 16,
-                              "y": 65,
+                              "y": 54,
                               "name": "상세 상단 명세 시트 기능 마커 1",
                               "width": 28,
                               "height": 28,
