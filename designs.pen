@@ -54727,9 +54727,8 @@
                 {
                   "type": "frame",
                   "id": "cpINp",
-                  "name": "브랜드와 알림",
+                  "name": "프로필",
                   "width": "fill_container",
-                  "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
                     {
@@ -54739,33 +54738,6 @@
                       "name": "사용자 프로필 이미지",
                       "width": 44,
                       "height": 44
-                    },
-                    {
-                      "type": "frame",
-                      "id": "pAaso",
-                      "name": "알림 터치 대상",
-                      "metadata": {
-                        "type": "navigation",
-                        "route": "notifications"
-                      },
-                      "width": 44,
-                      "height": 44,
-                      "cornerRadius": 4,
-                      "stroke": "$cc-ink",
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "m0rabm",
-                          "name": "알림 아이콘",
-                          "width": 20,
-                          "height": 20,
-                          "icon": "bell",
-                          "library": "lucide",
-                          "fill": "$cc-ink"
-                        }
-                      ]
                     }
                   ]
                 }
@@ -57284,9 +57256,8 @@
                 {
                   "type": "frame",
                   "id": "VEa0l",
-                  "name": "브랜드와 알림",
+                  "name": "프로필",
                   "width": "fill_container",
-                  "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
                     {
@@ -57296,33 +57267,6 @@
                       "name": "사용자 프로필 이미지",
                       "width": 44,
                       "height": 44
-                    },
-                    {
-                      "type": "frame",
-                      "id": "ZZoLn",
-                      "name": "알림 터치 대상",
-                      "metadata": {
-                        "type": "navigation",
-                        "route": "notifications"
-                      },
-                      "width": 44,
-                      "height": 44,
-                      "cornerRadius": 4,
-                      "stroke": "$cc-ink",
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "k3o3pM",
-                          "name": "알림 아이콘",
-                          "width": 20,
-                          "height": 20,
-                          "icon": "bell",
-                          "library": "lucide",
-                          "fill": "$cc-ink"
-                        }
-                      ]
                     }
                   ]
                 }
@@ -59643,7 +59587,8 @@
                   "fill": "#666666",
                   "content": "책 제목이나 저자를 입력해 주세요.",
                   "fontFamily": "Funnel Sans",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -59841,7 +59786,8 @@
                   "fill": "#666666",
                   "content": "검색 결과를 불러오고 있어요.",
                   "fontFamily": "Funnel Sans",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -60018,7 +59964,8 @@
                   "fill": "#666666",
                   "content": "다른 검색어로 다시 찾아보세요.",
                   "fontFamily": "Funnel Sans",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -60201,7 +60148,8 @@
                   "fill": "#666666",
                   "content": "잠시 후 다시 검색해 주세요.",
                   "fontFamily": "Funnel Sans",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -61042,7 +60990,8 @@
                       "fill": "#1A1A1A",
                       "content": "댓글순",
                       "fontFamily": "Funnel Sans",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
