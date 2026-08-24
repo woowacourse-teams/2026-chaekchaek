@@ -11,7 +11,11 @@ import type { UpdateBookStatusDialogProps } from './UpdateBookStatusDialog.types
 import { READING_STATUS, READING_STATUS_LABELS } from '../../LibraryPage';
 import type { ReadingStatus } from '../../LibraryPage';
 
-export const UpdateBookStatusDialog = ({ bookSelection, onClose }: UpdateBookStatusDialogProps) => {
+export const UpdateBookStatusDialog = ({
+  bookSelection,
+  onBookStatusUpdated,
+  onClose,
+}: UpdateBookStatusDialogProps) => {
   const [status, setStatus] = useState<ReadingStatus>(READING_STATUS.READING);
   const handleChangeStatus = (e: ChangeEvent<HTMLInputElement>) => {
     setStatus(e.target.value as ReadingStatus);
@@ -25,6 +29,7 @@ export const UpdateBookStatusDialog = ({ bookSelection, onClose }: UpdateBookSta
     await patchBookStatus({ bookIds: bookSelection, status });
 
     onClose();
+    onBookStatusUpdated();
   };
 
   return (

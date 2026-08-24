@@ -98,6 +98,7 @@ export const LibraryPage = () => {
     });
   }, [defaultPage, status, sort]);
   const {
+    refetch: refetchGetLibrary,
     status: { data: libraryData },
   } = useLoadData({ queryFn: getLibraryLoadData });
 
@@ -115,6 +116,18 @@ export const LibraryPage = () => {
       prev.includes(bookId) ? prev.filter((v) => v !== bookId) : [...prev, bookId],
     );
   };
+  const handleResetBookSelection = () => {
+    setBookSelection([]);
+  };
+
+  const handleBookStatusUpdated = () => {
+    refetchGetLibrary();
+
+    handleCloseDialog();
+    handleClickEndEdit();
+    handleResetBookSelection();
+    handleCloseDialog();
+  };
 
   const isAbleUpdateStatus = bookSelection.length;
   const isAbleDeleteStatus = bookSelection.length;
@@ -130,7 +143,13 @@ export const LibraryPage = () => {
   const renderDialog = (dialog: 'UpdateBookStatusDialog' | null) => {
     switch (dialog) {
       case 'UpdateBookStatusDialog':
-        return <UpdateBookStatusDialog bookSelection={bookSelection} onClose={handleCloseDialog} />;
+        return (
+          <UpdateBookStatusDialog
+            bookSelection={bookSelection}
+            onBookStatusUpdated={handleBookStatusUpdated}
+            onClose={handleCloseDialog}
+          />
+        );
 
       default:
         return null;
@@ -153,7 +172,7 @@ export const LibraryPage = () => {
                   <Button
                     variant="ghost"
                     disabled={!isAbleUpdateStatus}
-                    onClick={() => [handleOpenDialog('UpdateBookStatusDialog')]}
+                    onClick={() => handleOpenDialog('UpdateBookStatusDialog')}
                   >
                     상태 변경
                   </Button>
