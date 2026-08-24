@@ -17,7 +17,8 @@ npm run start
 1. `blog`에서 `blog-post/<글-주제>` 브랜치를 만듭니다.
 2. `blog/YYYY-MM-DD-글-제목.md` 파일을 추가합니다.
 3. `blog/authors.yml`과 `blog/tags.yml`의 식별자를 front matter에서 사용합니다.
-4. 아래 검증을 통과시킨 뒤 `blog`을 대상으로 PR을 만듭니다.
+4. 목록에 보여 줄 내용 뒤에 `{/* truncate */}`를 넣습니다. 이 구분선 아래 본문은 `자세히 보기`를 눌러야 보입니다.
+5. 아래 검증을 통과시킨 뒤 `blog`을 대상으로 PR을 만듭니다.
 
 ```bash
 npm run build
