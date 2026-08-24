@@ -23,6 +23,7 @@ import { getLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
 import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
+import { DeleteBooksDialog } from './dialog/DeleteBooksDialog';
 
 export const READING_STATUS = {
   ALL: 'ALL',
@@ -132,15 +133,15 @@ export const LibraryPage = () => {
   const isAbleUpdateStatus = bookSelection.length;
   const isAbleDeleteStatus = bookSelection.length;
 
-  const [dialog, setDialog] = useState<'UpdateBookStatusDialog' | null>(null);
-  const handleOpenDialog = (dialog: 'UpdateBookStatusDialog') => {
+  const [dialog, setDialog] = useState<'UpdateBookStatusDialog' | 'DeleteBooksDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog') => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'UpdateBookStatusDialog' | null) => {
+  const renderDialog = (dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | null) => {
     switch (dialog) {
       case 'UpdateBookStatusDialog':
         return (
@@ -150,6 +151,8 @@ export const LibraryPage = () => {
             onClose={handleCloseDialog}
           />
         );
+      case 'DeleteBooksDialog':
+        return <DeleteBooksDialog onClose={handleCloseDialog} />;
 
       default:
         return null;
@@ -176,7 +179,11 @@ export const LibraryPage = () => {
                   >
                     상태 변경
                   </Button>
-                  <Button variant="ghost" disabled={!isAbleDeleteStatus}>
+                  <Button
+                    variant="ghost"
+                    disabled={!isAbleDeleteStatus}
+                    onClick={() => handleOpenDialog('DeleteBooksDialog')}
+                  >
                     삭제
                   </Button>
                 </>
