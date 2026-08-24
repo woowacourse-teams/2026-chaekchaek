@@ -8,6 +8,10 @@ import kakaoIcon from './assets/kakao.svg';
 import type { SocialLoginButtonProps } from './SocialLoginButton.types';
 import styles from './SocialLoginButton.module.css';
 
+// local: 프론트 로컬 개발 환경
+// dev: 프론트 개발 서버
+const clientEnv = `client=${__DEV__ ? 'local' : 'dev'}`;
+
 const providerDetails = {
   kakao: { label: '카카오로 시작하기', icon: kakaoIcon, link: `#` },
   apple: {
@@ -18,7 +22,7 @@ const providerDetails = {
   google: {
     label: 'Google로 시작하기',
     icon: googleIcon,
-    link: `${ENV.APP_API_URL}/oauth2/authorization/google`,
+    link: `${ENV.APP_API_URL}/oauth2/authorization/google?${clientEnv}`,
   },
 } as const;
 
