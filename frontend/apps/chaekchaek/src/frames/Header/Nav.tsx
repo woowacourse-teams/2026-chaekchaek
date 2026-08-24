@@ -3,14 +3,16 @@ import type { ElementType } from 'react';
 import { View } from '@chaekchaek/design-system';
 import { createClassName } from '@chaekchaek/design-system';
 
+import { ROUTES } from '@/constants/routes';
+
 import styles from './Header.module.css';
 
 import type { NavProps } from './Header.types';
 
 const navs = [
-  { link: '/', text: '발견' },
-  { link: '', text: '내 서재' },
-  { link: '/', text: '기록' },
+  { link: ROUTES.HOME, text: '발견' },
+  { link: ROUTES.LIBRARY, text: '내 서재' },
+  { link: ROUTES.HOME, text: '기록' },
 ];
 
 const classnameDefault = 'frame-Header-Nav';

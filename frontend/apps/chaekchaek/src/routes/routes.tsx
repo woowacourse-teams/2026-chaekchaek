@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes';
 
 import { GuestRoute } from '@/auth/GuestRoute';
+import { ProtectedRoute } from '@/auth/ProtectedRoute';
 
 import { OauthPage } from '@/pages/OauthPage';
 import { LoginPage } from '@/pages/LoginPage';
@@ -53,7 +54,11 @@ const routes: Route[] = [
   },
   {
     path: ROUTES.LIBRARY,
-    element: <LibraryPage />,
+    element: (
+      <ProtectedRoute>
+        <LibraryPage />
+      </ProtectedRoute>
+    ),
   },
 ];
 

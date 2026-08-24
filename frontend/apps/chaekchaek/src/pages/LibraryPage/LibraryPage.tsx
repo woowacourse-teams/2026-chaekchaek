@@ -1,8 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import {
   Button,
+  Checkbox,
   ImgBox,
   List,
   OptionList,
@@ -21,6 +22,9 @@ import { Main } from '@/frames';
 import { getLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
+import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
+import { DeleteBooksDialog } from './dialog/DeleteBooksDialog';
+
 export const READING_STATUS = {
   ALL: 'ALL',
   WANT_TO_READ: 'WANT_TO_READ',
@@ -28,7 +32,7 @@ export const READING_STATUS = {
   FINISHED: 'FINISHED',
 } as const;
 
-type ReadingStatus = (typeof READING_STATUS)[keyof typeof READING_STATUS];
+export type ReadingStatus = (typeof READING_STATUS)[keyof typeof READING_STATUS];
 
 export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
   [READING_STATUS.ALL]: '전체',
@@ -95,8 +99,86 @@ export const LibraryPage = () => {
     });
   }, [defaultPage, status, sort]);
   const {
+    refetch: refetchGetLibrary,
     status: { data: libraryData },
   } = useLoadData({ queryFn: getLibraryLoadData });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const handleClickStartEdit = () => {
+    setIsEditing(true);
+  };
+  const handleClickEndEdit = () => {
+    setIsEditing(false);
+  };
+
+  const [bookSelection, setBookSelection] = useState<number[]>([]);
+  const handleChangeBookSelection = (bookId: number) => {
+    setBookSelection((prev) =>
+      prev.includes(bookId) ? prev.filter((v) => v !== bookId) : [...prev, bookId],
+    );
+  };
+  const handleResetBookSelection = () => {
+    setBookSelection([]);
+  };
+
+  const handleBookStatusUpdated = () => {
+    refetchGetLibrary();
+
+    handleCloseDialog();
+    handleClickEndEdit();
+    handleResetBookSelection();
+    handleCloseDialog();
+  };
+
+  const handleBooksDeleted = () => {
+    refetchGetLibrary();
+
+    handleCloseDialog();
+    handleClickEndEdit();
+    handleResetBookSelection();
+  };
+
+  const handleClickDelete = (bookId: number) => {
+    handleChangeBookSelection(bookId);
+    handleOpenDialog('DeleteBooksDialog');
+  };
+
+  const isAbleUpdateStatus = bookSelection.length;
+  const isAbleDeleteStatus = bookSelection.length;
+
+  const [dialog, setDialog] = useState<'UpdateBookStatusDialog' | 'DeleteBooksDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog') => {
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | null) => {
+    switch (dialog) {
+      case 'UpdateBookStatusDialog':
+        return (
+          <UpdateBookStatusDialog
+            bookSelection={bookSelection}
+            onBookStatusUpdated={handleBookStatusUpdated}
+            onClose={handleCloseDialog}
+          />
+        );
+      case 'DeleteBooksDialog':
+        return (
+          <DeleteBooksDialog
+            bookIds={bookSelection}
+            onBooksDeleted={handleBooksDeleted}
+            onClose={handleCloseDialog}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
 
   return (
     <Layout>
@@ -107,7 +189,27 @@ export const LibraryPage = () => {
           trailing={
             <>
               <Button variant="ghost">감상 익명 공개</Button>
-              <Button variant="primary">서재 편집</Button>
+              {isEditing && (
+                <>
+                  <Button
+                    variant="ghost"
+                    disabled={!isAbleUpdateStatus}
+                    onClick={() => handleOpenDialog('UpdateBookStatusDialog')}
+                  >
+                    상태 변경
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={!isAbleDeleteStatus}
+                    onClick={() => handleOpenDialog('DeleteBooksDialog')}
+                  >
+                    삭제
+                  </Button>
+                </>
+              )}
+              <Button variant="primary" onClick={handleClickStartEdit}>
+                서재 편집
+              </Button>
             </>
           }
         >
@@ -156,9 +258,19 @@ export const LibraryPage = () => {
             </Title>
             <List>
               {libraryData?.items.map((item) => {
+                const isIncluded = bookSelection.includes(item.bookId);
+
                 return (
                   <List.Item key={item.bookId}>
                     <List.Item.Leading>
+                      {isEditing && (
+                        <Checkbox
+                          checked={isIncluded}
+                          onChange={() => {
+                            handleChangeBookSelection(item.bookId);
+                          }}
+                        />
+                      )}
                       <a href={`/books/${item.isbn13}`}>
                         <ImgBox img={item.coverImageUrl} size="small" />
                       </a>
@@ -184,7 +296,18 @@ export const LibraryPage = () => {
                         </>
                       }
                     />
-                    <List.Item.Trailing>&gt;</List.Item.Trailing>
+                    <List.Item.Trailing>
+                      {!isEditing && <>&gt;</>}
+                      {isEditing && (
+                        <Button
+                          onClick={() => {
+                            handleClickDelete(item.bookId);
+                          }}
+                        >
+                          삭제
+                        </Button>
+                      )}
+                    </List.Item.Trailing>
                   </List.Item>
                 );
               })}
@@ -197,6 +320,7 @@ export const LibraryPage = () => {
             />
           </Split.Content>
         </Split>
+        {dialogElement}
       </Main>
     </Layout>
   );

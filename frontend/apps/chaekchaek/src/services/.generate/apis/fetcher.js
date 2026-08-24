@@ -1,6 +1,6 @@
 import { getType } from '../generateUtils';
 
-export const component = (name, endPoint) => `import { requestAjax } from '@/services/core/http';
+export const component = (name, endPoint) => `import { instance } from '@/services/core/http';
 ${Object.entries(endPoint)
   .map(([method, endPointValue]) => {
     const upperMethod = method.charAt(0).toUpperCase() + method.slice(1);
@@ -63,7 +63,7 @@ export const ${method}${upperKey} = async ({
       : ''
   }
 }: ${upperMethod}${upperKey}RequestDto): Promise<${upperMethod}${upperKey}ResponseDto> => {
-  const response = await requestAjax('/api/v1/${name}', {
+  const response = await instance('/api/v1/${name}', {
     method: '${method}',
    ${
      requestParameter &&
