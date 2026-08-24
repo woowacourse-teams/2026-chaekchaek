@@ -5,4 +5,5 @@ export const ROUTES = {
   INTRO: '/intro',
   BOOK_SEARCH: '/books',
   BOOK_DETAIL: '/books',
+  LIBRARY: '/library',
 };

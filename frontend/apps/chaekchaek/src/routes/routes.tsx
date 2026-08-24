@@ -11,6 +11,7 @@ import { LoginPage } from '@/pages/LoginPage';
 import { IntroPage } from '@/pages/IntroPage';
 import { BooksPage } from '@/pages/BooksPage';
 import { BookDetailPage } from '@/pages/BookDetailPage';
+import { LibraryPage } from '@/pages/LibraryPage';
 
 interface Route {
   path: string;
@@ -49,6 +50,10 @@ const routes: Route[] = [
   {
     path: ROUTES.BOOK_DETAIL + '/:isbn',
     element: <BookDetailPage />,
+  },
+  {
+    path: ROUTES.LIBRARY,
+    element: <LibraryPage />,
   },
 ];
 
