@@ -7,7 +7,6 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 
 import { Split } from '@chaekchaek/design-system';
-import { OptionList } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
 import { List } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
