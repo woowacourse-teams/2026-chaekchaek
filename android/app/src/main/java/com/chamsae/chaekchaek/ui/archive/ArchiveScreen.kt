@@ -32,6 +32,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -168,6 +170,7 @@ fun ArchiveScreen(
   val items = uiState.items
   val anonymousReviews = uiState.anonymousReviews
   var filter by rememberSaveable { mutableStateOf<ReadingStatus?>(null) }
+  var sort by rememberSaveable { mutableStateOf(ArchiveSort.Recent) }
   var selectedIds by remember { mutableStateOf(emptySet<String>()) }
   var pendingDeletionIds by remember { mutableStateOf(emptySet<String>()) }
   var showStatusDialog by remember { mutableStateOf(false) }
@@ -175,8 +178,8 @@ fun ArchiveScreen(
   var nickname by rememberSaveable(uiState.nickname) { mutableStateOf(uiState.nickname) }
   val listState = rememberLazyListState()
   val scope = rememberCoroutineScope()
-  val visibleItems = remember(items, filter) {
-    items.filter { filter == null || it.status == filter }.sortedByDescending { it.lastRecordedAt }
+  val visibleItems = remember(items, filter, sort) {
+    sortArchivedBooks(items.filter { filter == null || it.status == filter }, sort)
   }
   val density = LocalDensity.current
   val scrollTopThresholdPx = remember(density) { with(density) { 240.dp.roundToPx() } }
@@ -225,6 +228,8 @@ fun ArchiveScreen(
         StatusFilters(selected = filter, onSelected = { filter = it })
         SortRow(
           countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}권",
+          sort = sort,
+          onSortChange = { sort = it },
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
       }
@@ -423,16 +428,46 @@ private fun StatusFilterChip(label: String, selected: Boolean, onClick: () -> Un
 @Composable
 private fun SortRow(
   countLabel: String,
+  sort: ArchiveSort,
+  onSortChange: (ArchiveSort) -> Unit,
 ) {
+  var expanded by remember { mutableStateOf(false) }
+
   Row(
     modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 10.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Text(countLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
     Spacer(Modifier.weight(1f))
-    Text("최근 기록순⌄", style = MaterialTheme.typography.labelMedium)
+    Box {
+      Surface(onClick = { expanded = true }, color = Color.Transparent) {
+        Text("${sort.label}⌄", modifier = Modifier.padding(4.dp), style = MaterialTheme.typography.labelMedium)
+      }
+      DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ArchiveSort.entries.forEach { option ->
+          DropdownMenuItem(
+            text = { Text(option.label) },
+            onClick = {
+              onSortChange(option)
+              expanded = false
+            },
+          )
+        }
+      }
+    }
   }
 }
+
+internal enum class ArchiveSort(val label: String) {
+  Recent("최근 기록순"),
+  Oldest("오래된 기록순"),
+}
+
+internal fun sortArchivedBooks(items: List<ArchivedBook>, sort: ArchiveSort): List<ArchivedBook> =
+  when (sort) {
+    ArchiveSort.Recent -> items.sortedByDescending { it.lastRecordedAt }
+    ArchiveSort.Oldest -> items.sortedBy { it.lastRecordedAt }
+  }
 
 @Composable
 private fun LibraryBookRow(
