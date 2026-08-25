@@ -1,0 +1,58 @@
+import type { CSSProperties, ElementType } from 'react';
+
+import { View } from '#internal/components/View';
+import { createClassName } from '#internal/utils/classname';
+
+import styles from './Slider.module.css';
+
+import type { Props } from './';
+
+const classnameDefault = 'ui-Slider';
+
+type SliderStyle = CSSProperties & {
+  '--slider-progress': string;
+};
+
+export const Slider = <T extends ElementType>(props: Props<T>) => {
+  const {
+    as = 'input',
+    className,
+    value,
+    defaultValue,
+    min = 0,
+    max = 100,
+    style,
+    ...restProps
+  } = props;
+
+  const classname = createClassName({
+    styles,
+    baseName: classnameDefault,
+    className,
+  });
+
+  const numericMin = Number(min);
+  const numericMax = Number(max);
+  const numericValue = Number(value ?? defaultValue ?? (numericMin + numericMax) / 2);
+  const range = numericMax - numericMin;
+  const progress = range > 0 ? ((numericValue - numericMin) / range) * 100 : 0;
+  const clampedProgress = Math.min(100, Math.max(0, progress));
+  const sliderStyle: SliderStyle = {
+    ...style,
+    '--slider-progress': `${clampedProgress}%`,
+  };
+
+  return (
+    <View
+      {...restProps}
+      as={as}
+      className={classname}
+      defaultValue={defaultValue}
+      max={max}
+      min={min}
+      style={sliderStyle}
+      type="range"
+      value={value}
+    />
+  );
+};

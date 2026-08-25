@@ -37,7 +37,12 @@ export const Select = <T extends ElementType>(props: Props<T>) => {
         <ul>
           {options.map((option) => {
             return (
-              <Option isActive={option.value === value} onClick={handleChange}>
+              <Option
+                isActive={option.value === value}
+                onClick={() => {
+                  handleChange(option.value);
+                }}
+              >
                 {option.text}
               </Option>
             );
