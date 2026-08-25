@@ -85,7 +85,7 @@ export const BooksPage = () => {
   });
   const handleRegisterLibrary = async (isbn: string) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
-    await mutate({ isbn13: isbn, status: 'READING' });
+    await mutate({ isbn13: isbn, status: 'WANT_TO_READ' });
   };
 
   return (
@@ -148,7 +148,7 @@ export const BooksPage = () => {
                               handleRegisterLibrary(item?.isbn13);
                             }}
                           >
-                            읽는 중 시작
+                            내 서재 담기
                           </Button>
                         )}
                       </List.Item.Trailing>
