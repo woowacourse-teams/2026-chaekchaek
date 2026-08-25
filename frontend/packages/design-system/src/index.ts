@@ -33,6 +33,9 @@ export type { Props as OverviewProps } from './components/Overview';
 export { ProgressBar } from './components/ProgressBar';
 export type { Props as ProgressBarProps } from './components/ProgressBar';
 
+export { Slider } from './components/Slider';
+export type { Props as SliderProps } from './components/Slider';
+
 export { Rating } from './components/Rating';
 export type { Props as RatingProps } from './components/Rating';
 
