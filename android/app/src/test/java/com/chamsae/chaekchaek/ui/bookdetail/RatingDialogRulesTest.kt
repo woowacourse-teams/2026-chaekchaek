@@ -1,5 +1,6 @@
 package com.chamsae.chaekchaek.ui.bookdetail
 
+import com.chaekchaek.app.domain.rating.Rating
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -15,5 +16,13 @@ class RatingDialogRulesTest {
     assertEquals("0.5 · 아쉬워요", RatingDialogRules.label(RatingDialogRules.ratingAtSlot(0)))
     assertEquals("3.5 · 괜찮아요", RatingDialogRules.label(RatingDialogRules.ratingAtSlot(6)))
     assertEquals("5.0 · 최고예요", RatingDialogRules.label(RatingDialogRules.ratingAtSlot(9)))
+  }
+
+  @Test
+  fun `0점5점은 첫 별만 절반 채운다`() {
+    val selected = Rating.ofHalfStars(1)
+
+    assertEquals(0.5f, ratingStarFillFraction(selected, 0))
+    assertEquals(0f, ratingStarFillFraction(selected, 1))
   }
 }
