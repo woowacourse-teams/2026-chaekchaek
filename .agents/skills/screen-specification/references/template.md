@@ -2,7 +2,7 @@
 
 ## 기준 노드
 
-- 파일: `designs.pen`
+- 파일: `/Users/ujeonghyeon/Downloads/designs.pen`
 - 원본 템플릿: `MvCYw` (`책 상세 화면 상세 기획서 · 표 형식`)
 - 시트 예시: `VprFZ`, `YYbQc`
 - 원본은 보존하고 새 기획서는 복제본에서 작성한다.
@@ -56,7 +56,7 @@
 - 헤더 높이: 38px
 - 행 높이: 내용에 따라 70px 이상
 - 셀 안쪽 여백: 세로 8px, 가로 10px
-- `데이터`는 현재 화면 코드의 DTO, 도메인 모델, UI 상태 또는 저장소 루트의 `openapi3.yaml`을 확인한 뒤 실제 필드명을 적는다.
+- `데이터`는 현재 화면 코드의 DTO, 도메인 모델, UI 상태 또는 로컬 `/Users/ujeonghyeon/Desktop/dev/myDev/2026-chaekchaek/android/openapi3.yaml`을 확인한 뒤 실제 필드명을 적는다.
 - API 응답 필드는 `books[].coverImageUrl`, `myRecord.currentPage`처럼 소유 경로까지 적는다.
 - 서버 응답이 아닌 검색어, 선택 상태, 고정 문구는 `로컬 UI:` 접두어로 구분한다.
 - 코드와 OpenAPI의 이름이 다르면 화면이 현재 소비하는 코드 필드를 먼저 적고 괄호 안에 OpenAPI 필드를 병기한다.
