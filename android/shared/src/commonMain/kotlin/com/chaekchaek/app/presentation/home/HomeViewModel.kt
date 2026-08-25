@@ -24,6 +24,7 @@ class HomeViewModel(
     private val clock: Clock,
 ) : ViewModel() {
     private var accessToken: String? = null
+    private var hasObservedAuthentication = false
     private var loadJob: Job? = null
     private val _uiState = MutableStateFlow<HomeUiState>(
         HomeUiState.Content(emptyList(), guestBanner = null),
@@ -39,6 +40,10 @@ class HomeViewModel(
     }
 
     fun authenticate(accessToken: String?) {
+        if (!hasObservedAuthentication) {
+            hasObservedAuthentication = true
+            if (this.accessToken == accessToken) return
+        }
         this.accessToken = accessToken
         load()
     }

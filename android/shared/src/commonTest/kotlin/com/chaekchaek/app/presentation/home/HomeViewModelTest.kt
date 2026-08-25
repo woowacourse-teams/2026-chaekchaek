@@ -252,4 +252,15 @@ class HomeViewModelTest {
         repository.accessTokens shouldBe listOf(null, "access-token", "access-token")
         viewModel.uiState.value shouldBe HomeUiState.Empty
     }
+
+    @Test
+    fun `최초 게스트 인증은 초기 피드를 중복 호출하지 않는다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+
+        viewModel.authenticate(null)
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null)
+    }
 }
