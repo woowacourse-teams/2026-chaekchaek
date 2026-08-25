@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }: Props) => {
     if (membersMeData) return login(membersMeData);
   }, [membersMeData]);
 
-  const value = useMemo(() => ({ isAuthenticated, user, login }), [isAuthenticated, login]);
+  const value = useMemo(() => ({ isAuthenticated, user, login }), [isAuthenticated, user, login]);
 
   return <authContext.Provider value={value}>{children}</authContext.Provider>;
 };

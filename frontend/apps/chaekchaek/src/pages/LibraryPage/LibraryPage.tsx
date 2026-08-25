@@ -20,10 +20,14 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 
 import { getLibrary } from '@/services/apis/library/repository';
+import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
+import { useExecute } from '@/services/core/useExecute';
 import { useLoadData } from '@/services/core/useLoadData';
 
 import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
 import { DeleteBooksDialog } from './dialog/DeleteBooksDialog';
+import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 export const READING_STATUS = {
   ALL: 'ALL',
@@ -146,15 +150,40 @@ export const LibraryPage = () => {
   const isAbleUpdateStatus = bookSelection.length;
   const isAbleDeleteStatus = bookSelection.length;
 
-  const [dialog, setDialog] = useState<'UpdateBookStatusDialog' | 'DeleteBooksDialog' | null>(null);
-  const handleOpenDialog = (dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog') => {
+  const { user, login } = useAuthContext();
+  const { status: anonymityStatus, mutate: updateAnonymity } = useExecute({
+    executeFn: patchMembersMeAnonymity,
+  });
+
+  const handleToggleAnonymous = async () => {
+    if (!user) return;
+
+    if (user.displayAnonymous) {
+      handleOpenDialog('UpdateNicknameDialog');
+      return;
+    }
+
+    const updatedUser = await updateAnonymity({ displayAnonymous: true });
+    if (!updatedUser) return;
+
+    login(updatedUser);
+  };
+
+  const [dialog, setDialog] = useState<
+    'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null
+  >(null);
+  const handleOpenDialog = (
+    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog',
+  ) => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | null) => {
+  const renderDialog = (
+    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null,
+  ) => {
     switch (dialog) {
       case 'UpdateBookStatusDialog':
         return (
@@ -172,6 +201,8 @@ export const LibraryPage = () => {
             onClose={handleCloseDialog}
           />
         );
+      case 'UpdateNicknameDialog':
+        return <UpdateNicknameDialog onClose={handleCloseDialog} />;
 
       default:
         return null;
@@ -188,7 +219,15 @@ export const LibraryPage = () => {
           level="page"
           trailing={
             <>
-              <Button variant="ghost">감상 익명 공개</Button>
+              {user !== null && (
+                <Button
+                  variant="ghost"
+                  disabled={anonymityStatus.status === 'loading'}
+                  onClick={handleToggleAnonymous}
+                >
+                  {user?.displayAnonymous ? '익명 감상 비공개' : '감상 익명 공개'}
+                </Button>
+              )}
               {isEditing && (
                 <>
                   <Button
