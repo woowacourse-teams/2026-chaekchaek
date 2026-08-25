@@ -20,15 +20,12 @@ import { useExecute } from '@/services/core/useExecute';
 import type { BookReviewProps } from './BookReview.types';
 import { WriteReply } from './WriteReply';
 
+import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
+
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
 
-export const BookReview = ({
-  review,
-  isSpoilerVisible,
-  onUpdateReview,
-  onReviewsRefresh,
-}: BookReviewProps) => {
+export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookReviewProps) => {
   const getReviewsReviewIdRepliesLoadData = useCallback(() => {
     return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
   }, [review.reviewId]);
@@ -102,6 +99,32 @@ export const BookReview = ({
     handleClickCloseWriteReply();
   };
 
+  const [dialog, setDialog] = useState<'UpdateReviewDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'UpdateReviewDialog') => {
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (dialog: 'UpdateReviewDialog' | null) => {
+    switch (dialog) {
+      case 'UpdateReviewDialog':
+        return (
+          <UpdateReviewDialog
+            review={review}
+            onReviewUpdated={onReviewsRefresh}
+            onClose={handleCloseDialog}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
+
   const showSpoilerVisible = isSpoilerVisible || review.isSpoiler;
 
   return (
@@ -118,7 +141,12 @@ export const BookReview = ({
             />
             {review.author.mine && (
               <Shell.Trailing>
-                <Button size="small" onClick={onUpdateReview}>
+                <Button
+                  size="small"
+                  onClick={() => {
+                    handleOpenDialog('UpdateReviewDialog');
+                  }}
+                >
                   수정
                 </Button>
                 <Button size="small" onClick={() => handleClickDeleteReview(review.reviewId)}>
@@ -182,6 +210,7 @@ export const BookReview = ({
           })}
         </Entry.Extension>
       )}
+      {dialogElement}
     </Entry>
   );
 };

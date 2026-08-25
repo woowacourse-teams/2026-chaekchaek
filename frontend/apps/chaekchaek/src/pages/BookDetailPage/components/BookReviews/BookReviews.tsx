@@ -6,7 +6,6 @@ import { BookReview } from './BookReview';
 import type { BookReviewsProps } from './BookReviews.types';
 
 import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
-import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
 
 export const BookReviews = ({
   bookId,
@@ -19,15 +18,15 @@ export const BookReviews = ({
   onSortChange,
   onFeedChange,
 }: BookReviewsProps) => {
-  const [dialog, setDialog] = useState<'WriteReviewDialog' | 'UpdateReviewDialog' | null>(null);
-  const handleOpenDialog = (dialog: 'WriteReviewDialog' | 'UpdateReviewDialog') => {
+  const [dialog, setDialog] = useState<'WriteReviewDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'WriteReviewDialog') => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'WriteReviewDialog' | 'UpdateReviewDialog' | null) => {
+  const renderDialog = (dialog: 'WriteReviewDialog' | null) => {
     switch (dialog) {
       case 'WriteReviewDialog':
         return (
@@ -38,15 +37,6 @@ export const BookReviews = ({
               onClose={handleCloseDialog}
             />
           )
-        );
-
-      case 'UpdateReviewDialog':
-        return (
-          <UpdateReviewDialog
-            review={{}}
-            onReviewUpdated={onReviewsRefresh}
-            onClose={handleCloseDialog}
-          />
         );
 
       default:
@@ -93,9 +83,6 @@ export const BookReviews = ({
               key={review.reviewId}
               review={review}
               isSpoilerVisible={isSpoilerVisible}
-              onUpdateReview={() => {
-                handleOpenDialog('UpdateReviewDialog');
-              }}
               onReviewsRefresh={onReviewsRefresh}
             />
           );
