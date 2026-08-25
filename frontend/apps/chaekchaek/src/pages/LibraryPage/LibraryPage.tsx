@@ -24,6 +24,7 @@ import { useLoadData } from '@/services/core/useLoadData';
 
 import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
 import { DeleteBooksDialog } from './dialog/DeleteBooksDialog';
+import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
 
 export const READING_STATUS = {
   ALL: 'ALL',
@@ -146,15 +147,21 @@ export const LibraryPage = () => {
   const isAbleUpdateStatus = bookSelection.length;
   const isAbleDeleteStatus = bookSelection.length;
 
-  const [dialog, setDialog] = useState<'UpdateBookStatusDialog' | 'DeleteBooksDialog' | null>(null);
-  const handleOpenDialog = (dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog') => {
+  const [dialog, setDialog] = useState<
+    'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null
+  >(null);
+  const handleOpenDialog = (
+    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog',
+  ) => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | null) => {
+  const renderDialog = (
+    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null,
+  ) => {
     switch (dialog) {
       case 'UpdateBookStatusDialog':
         return (
@@ -172,6 +179,8 @@ export const LibraryPage = () => {
             onClose={handleCloseDialog}
           />
         );
+      case 'UpdateNicknameDialog':
+        return <UpdateNicknameDialog onClose={handleCloseDialog} />;
 
       default:
         return null;
@@ -188,7 +197,9 @@ export const LibraryPage = () => {
           level="page"
           trailing={
             <>
-              <Button variant="ghost">감상 익명 공개</Button>
+              <Button variant="ghost" onClick={() => handleOpenDialog('UpdateNicknameDialog')}>
+                감상 익명 공개
+              </Button>
               {isEditing && (
                 <>
                   <Button
