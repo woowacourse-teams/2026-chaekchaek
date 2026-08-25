@@ -2,10 +2,11 @@ import { useState } from 'react';
 
 import { Button, Field, Input, SegmentedControl, Select, Title } from '@chaekchaek/design-system';
 
-import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
-
 import { BookReview } from './BookReview';
 import type { BookReviewsProps } from './BookReviews.types';
+
+import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
+import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
 
 export const BookReviews = ({
   bookId,
@@ -18,20 +19,31 @@ export const BookReviews = ({
   onSortChange,
   onFeedChange,
 }: BookReviewsProps) => {
-  const [dialog, setDialog] = useState<'WriteReviewDialog' | null>(null);
-  const handleOpenDialog = (dialog: 'WriteReviewDialog') => {
+  const [dialog, setDialog] = useState<'WriteReviewDialog' | 'UpdateReviewDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'WriteReviewDialog' | 'UpdateReviewDialog') => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'WriteReviewDialog' | null) => {
+  const renderDialog = (dialog: 'WriteReviewDialog' | 'UpdateReviewDialog' | null) => {
     switch (dialog) {
       case 'WriteReviewDialog':
         return (
           bookId && (
             <WriteReviewDialog
+              bookId={bookId}
+              onReviewWritten={onReviewsRefresh}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
+
+      case 'UpdateReviewDialog':
+        return (
+          bookId && (
+            <UpdateReviewDialog
               bookId={bookId}
               onReviewWritten={onReviewsRefresh}
               onClose={handleCloseDialog}
@@ -83,6 +95,9 @@ export const BookReviews = ({
               key={review.reviewId}
               review={review}
               isSpoilerVisible={isSpoilerVisible}
+              onUpdateReview={() => {
+                handleOpenDialog('UpdateReviewDialog');
+              }}
               onReviewsRefresh={onReviewsRefresh}
             />
           );

@@ -23,7 +23,12 @@ import { WriteReply } from './WriteReply';
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
 
-export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookReviewProps) => {
+export const BookReview = ({
+  review,
+  isSpoilerVisible,
+  onUpdateReview,
+  onReviewsRefresh,
+}: BookReviewProps) => {
   const getReviewsReviewIdRepliesLoadData = useCallback(() => {
     return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
   }, [review.reviewId]);
@@ -113,7 +118,9 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
             />
             {review.author.mine && (
               <Shell.Trailing>
-                <Button size="small">수정</Button>
+                <Button size="small" onClick={onUpdateReview}>
+                  수정
+                </Button>
                 <Button size="small" onClick={() => handleClickDeleteReview(review.reviewId)}>
                   삭제
                 </Button>
