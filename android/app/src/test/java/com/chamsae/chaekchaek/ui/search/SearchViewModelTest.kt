@@ -11,15 +11,48 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModelTest {
+  @Test
+  fun `검색 로딩은 500ms가 지난 뒤 표시하고 응답 즉시 닫는다`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      val viewModel = SearchViewModel(
+        bookSearchRepository = BookSearchRepository { _, _ ->
+          kotlinx.coroutines.delay(501)
+          listOf(book("검색 결과", "2026"))
+        },
+        libraryRepository = FakeLibraryRepository(),
+      )
+      try {
+
+        viewModel.search("책")
+        runCurrent()
+        advanceTimeBy(499)
+        runCurrent()
+        assertNotEquals(SearchUiState.Loading, viewModel.uiState.value)
+        advanceTimeBy(1)
+        runCurrent()
+        assertEquals(SearchUiState.Loading, viewModel.uiState.value)
+        advanceUntilIdle()
+        assertEquals("검색 결과", (viewModel.uiState.value as SearchUiState.Success).results.single().title)
+      } finally {
+        viewModel.clear()
+        advanceUntilIdle()
+        Dispatchers.resetMain()
+      }
+    }
+
   @Test
   fun `정렬 선택 시 현재 검색어와 정렬값으로 다시 검색한다`() =
     runTest {

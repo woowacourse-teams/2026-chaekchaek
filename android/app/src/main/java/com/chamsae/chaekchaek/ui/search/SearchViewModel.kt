@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.toArchivedBook
+import com.chamsae.chaekchaek.ui.common.withDelayedApiLoading
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
@@ -48,11 +49,15 @@ class SearchViewModel(
     if (trimmed.isEmpty()) return
     currentQuery = trimmed
     searchJob?.cancel()
-    _uiState.value = SearchUiState.Loading
     searchJob = viewModelScope.launch {
       _uiState.value =
         try {
-          val results = bookSearchRepository.search(trimmed, _sort.value)
+          val results =
+            withDelayedApiLoading(
+              onLoadingChanged = { loading -> if (loading) _uiState.value = SearchUiState.Loading },
+            ) {
+              bookSearchRepository.search(trimmed, _sort.value)
+            }
           if (results.isEmpty()) SearchUiState.Empty else SearchUiState.Success(results)
         } catch (e: CancellationException) {
           throw e
