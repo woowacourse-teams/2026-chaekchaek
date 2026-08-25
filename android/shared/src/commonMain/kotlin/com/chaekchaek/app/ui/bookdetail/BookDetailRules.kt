@@ -1,6 +1,8 @@
 package com.chaekchaek.app.ui.bookdetail
 
 import com.chaekchaek.app.domain.rating.Rating
+import com.chaekchaek.app.data.remote.ReplyPage
+import com.chaekchaek.app.data.remote.ReviewReply
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -19,6 +21,17 @@ internal object BookDetailInputRules {
     fun canSubmitReview(content: String, pageValue: String, totalPages: Int): Boolean =
         content.isNotBlank() && content.length <= MAX_CONTENT_LENGTH &&
             (pageValue.isBlank() || validPage(pageValue, totalPages) != null)
+
+    fun hasReviewDraft(
+        content: String,
+        quote: String,
+        chapter: String,
+        pageValue: String,
+        initialPage: Int,
+        isSpoiler: Boolean,
+    ): Boolean =
+        content.isNotEmpty() || quote.isNotEmpty() || chapter.isNotEmpty() || isSpoiler ||
+            pageValue != initialPage.takeIf { it > 0 }?.toString().orEmpty()
 }
 
 internal object ReplyInputRules {
@@ -45,9 +58,20 @@ internal object RatingDialogRules {
 internal fun shouldLockReview(
     currentPage: Int,
     reviewPage: Int?,
-    isSpoiler: Boolean,
     spoilersRevealed: Boolean,
-): Boolean = !spoilersRevealed && (isSpoiler || reviewPage?.let { it > currentPage } == true)
+): Boolean = !spoilersRevealed && reviewPage?.let { it > currentPage } == true
+
+internal suspend fun loadAllReplies(loadPage: suspend (Int) -> ReplyPage): List<ReviewReply> {
+    val replies = mutableListOf<ReviewReply>()
+    val loadedPages = mutableSetOf<Int>()
+    var page: Int? = 1
+    while (page != null && loadedPages.add(page)) {
+        val response = loadPage(page)
+        replies += response.items
+        page = response.nextPage
+    }
+    return replies.distinctBy(ReviewReply::replyId)
+}
 
 internal fun maskAsChirps(content: String): String =
     content.map { character ->

@@ -16,6 +16,7 @@ APPROVED_FONTS = {"Funnel Sans", "Geist Mono", "Newsreader"}
 HEX_COLOR = re.compile(r"#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{2})?)?\b")
 FONT_FAMILY = re.compile(r"fontFamily\s*:\s*['\"]([^'\"]+)['\"]")
 PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$", re.MULTILINE)
+TAKE_SCREENSHOT = re.compile(r"TakeScreenshot\s*\(\s*\[\s*['\"]([^'\"]+)['\"]")
 COMPOSE_UI = re.compile(
     r"@Composable|\bModifier\.|\bMaterialTheme\b|\b(?:Text|Button|Checkbox|Row|Column|Box|Scaffold|Surface|Card|Image)\s*\("
 )
@@ -52,6 +53,9 @@ def gate_path(payload: dict) -> Path:
 def record_target_screenshot(payload: dict) -> None:
     tool_input = payload.get("tool_input") or {}
     node_id = str(tool_input.get("nodeId", ""))
+    if not node_id:
+        match = TAKE_SCREENSHOT.search(str(tool_input.get("input", "")))
+        node_id = match.group(1) if match else ""
     if Path(str(tool_input.get("filePath", ""))).name != "designs.pen":
         return
     if not node_id or node_id in {"document", "SxMn5"}:
@@ -85,6 +89,7 @@ def self_test() -> None:
     assert classify_patch("*** Update File: android/app/src/main/java/x/ui/HomeScreen.kt\n+Text(\"홈\")") == (False, True)
     assert classify_patch("*** Update File: backend/README.md\n+설명") == (False, False)
     assert classify_patch("*** Update File: designs.pen\n+raw") == (True, False)
+    assert TAKE_SCREENSHOT.search('TakeScreenshot(["target"])').group(1) == "target"
     print("design_system_guard: ok")
 
 
@@ -96,7 +101,7 @@ def main() -> None:
     payload = json.load(sys.stdin)
     event = payload.get("hook_event_name")
     tool_name = payload.get("tool_name")
-    if event == "PostToolUse" and tool_name == "mcp__pencil__get_screenshot":
+    if event == "PostToolUse" and tool_name in {"mcp__pencil__get_screenshot", "mcp__pencil__execute"}:
         record_target_screenshot(payload)
         return
 

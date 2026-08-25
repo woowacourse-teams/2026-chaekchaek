@@ -13,10 +13,13 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
@@ -48,6 +51,7 @@ private fun contentFeed(): HomeFeed = HomeFeed(
 private class TestFeedRepository(
     var feed: HomeFeed = contentFeed(),
     var failure: Throwable? = null,
+    var responseDelayMillis: Long = 0,
 ) : FeedRepository {
     var callCount: Int = 0
 
@@ -58,6 +62,7 @@ private class TestFeedRepository(
         callCount += 1
         this.accessToken = accessToken
         accessTokens += accessToken
+        delay(responseDelayMillis)
         failure?.let { throw it }
         return feed
     }
@@ -76,13 +81,24 @@ private fun runViewModelTest(block: suspend TestScope.() -> Unit) = runTest {
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
     @Test
-    fun `처음에는 로딩 상태다`() = runViewModelTest {
-        // given & when : ViewModel 을 생성하면
-        val viewModel = HomeViewModel(TestFeedRepository(), FIXED_CLOCK)
+    fun `500ms가 지난 요청만 로딩을 표시하고 응답 즉시 종료한다`() = runViewModelTest {
+        val viewModel = HomeViewModel(
+            TestFeedRepository(responseDelayMillis = 501),
+            FIXED_CLOCK,
+        )
+        runCurrent()
 
-        // then : 저장소 응답 전에는 로딩 상태다
+        advanceTimeBy(499)
+        runCurrent()
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
+
+        advanceTimeBy(1)
+        runCurrent()
         viewModel.uiState.value shouldBe HomeUiState.Loading
-        advanceUntilIdle()
+
+        advanceTimeBy(1)
+        runCurrent()
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>().sections.size shouldBe 1
     }
 
     @Test
@@ -167,8 +183,8 @@ class HomeViewModelTest {
         // when : 재시도하면
         viewModel.retry()
 
-        // then : 로딩을 거쳐 성공하고 저장소를 두 번 호출한다
-        viewModel.uiState.value shouldBe HomeUiState.Loading
+        // then : 기존 오류 화면을 유지한 채 성공하고 저장소를 두 번 호출한다
+        viewModel.uiState.value shouldBe HomeUiState.Failure(AppError.Unknown)
         advanceUntilIdle()
         viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
         repository.callCount shouldBe 2
@@ -219,5 +235,32 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         repository.accessTokens shouldBe listOf(null, "access-token", null)
+    }
+
+    @Test
+    fun `같은 인증 토큰으로 홈에 다시 진입하면 최신 피드를 불러온다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        viewModel.authenticate("access-token")
+        advanceUntilIdle()
+
+        repository.feed = HomeFeed(emptyList())
+        viewModel.authenticate("access-token")
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null, "access-token", "access-token")
+        viewModel.uiState.value shouldBe HomeUiState.Empty
+    }
+
+    @Test
+    fun `최초 게스트 인증은 초기 피드를 중복 호출하지 않는다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+
+        viewModel.authenticate(null)
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null)
     }
 }

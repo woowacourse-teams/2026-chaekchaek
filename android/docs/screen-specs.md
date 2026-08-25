@@ -1,12 +1,31 @@
 # 첵췍 화면 명세
 
+최종 갱신: 2026-08-25
+
+현재 디자인 단일 원본은 `/Users/ujeonghyeon/Downloads/designs.pen`이다. 아래 Figma 노드와 초기
+UiState 설계는 제품 의도와 이력 확인용이며, 실제 Android 동작은 Pencil과 현재 코드가 우선한다.
+
+## 2026-08-25 Android 구현 기준
+
+| 화면 또는 규칙 | Pencil 노드 | 현재 동작 |
+| --- | --- | --- |
+| 디자인 시스템 | `SxMn5` | 기존 색상, 서체, 간격 토큰만 사용 |
+| 검색 정렬 | `jI61d` | `LATEST`와 `COMMENT`를 서버에 전달하고 선택 즉시 재조회 |
+| 책 상세 | `QgUZE` | 서재 추가와 해제를 현재 등록 상태에 따라 전환 |
+| 감상 잠금 | `DEquR`, `d6grPa` | 스포일러 또는 읽은 범위 초과 시 감상, 발췌, 답글을 원문 길이만큼 `짹`으로 표시 |
+| 감상 작성 | `ZozGQ`, `rU9vK` | 1000자 수, 작성 취소 확인, 실제 익명 설정과 공개 닉네임 표시 |
+| 답글 입력 | `NS3v7` | 1자부터 200자까지 제출, 글자 수 표시 |
+| 로그인 시트 | `mGHMD` | Google 로그인과 개인정보처리방침 링크 표시, 이용약관 링크 없음 |
+
+홈, 검색, 상세 API 로딩은 요청이 500ms 안에 끝나면 표시하지 않는다. 500ms가 지나도 진행 중일
+때만 표시하고 응답 즉시 닫는다.
+
 Figma [node 36:3](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr/%EC%B1%85%EC%B7%8D?node-id=36-3)의
 12개 화면별 상태·액션·이동을 정리한다. 도메인 규칙은 [도메인 모델](domain-model.md), 상태 클래스
 작성 규칙은 [아키텍처](app-architecture.md#7-presentation-레이어)에 있다.
 
-**여기 적힌 UiState·UiModel은 `shared/commonMain/presentation`에 있고 Android와 iOS가 공유한다.**
-Compose와 SwiftUI는 같은 상태를 받아 각자 그린다. 그래서 이 문서의 상태 정의는 두 플랫폼 공통
-계약이며, 화면 그림(ASCII)은 Android 기준이다.
+아래 UiState·UiModel은 초기 공유 계약이다. 현재 홈 상태는 `shared/commonMain/presentation`, 검색과
+상세 화면 상태는 Android `app`에 있다. 화면 그림은 Android 기준이다.
 
 각 화면의 「신규 UI」 항목은 **Figma에 시안이 없어 새로 만들어야 하는 부분**이다. 구현 전에 시안
 확정이 필요하다.
@@ -20,7 +39,7 @@ Compose와 SwiftUI는 같은 상태를 받아 각자 그린다. 그래서 이 �
 | --- | --- | --- | --- |
 | 1 | 탭 컨테이너 | 36:246 | - |
 | 2 | 홈 피드 | 36:1206 | 있음 |
-| 3 | 검색 (발견) | 36:427 | **추가 필요** |
+| 3 | 검색 (발견) | 36:427 | 있음 |
 | 4 | 내 서재 | 36:574 | 있음 |
 | 5 | 서재 편집 | 36:1060 | 없음 |
 | 6 | 닉네임 설정 | 36:900 | 다이얼로그 |
@@ -49,7 +68,7 @@ enum class RootTab(val label: String) {
 - 상세 화면이 `push`되면 탭바는 보이지 않는다 (`RootKey`가 최상단일 때만 그린다)
 - 탭 전환은 백스택에 쌓지 않는다. 뒤로가기는 앱 종료로 간다
 
-**신규 UI**: 현재 탭 아이콘이 텍스트 기호(`⌕`, `▤`)다. Figma의 아이콘으로 교체해야 한다.
+하단 탭은 홈, 발견, 내 서재 명칭과 리소스 아이콘을 사용한다.
 
 ---
 
@@ -212,19 +231,15 @@ sealed interface ShelfActionUiModel {
 
 | 액션 | 처리 |
 | --- | --- |
-| 검색어 입력 후 실행 | `BookRepository.search(query)` |
+| 검색어 입력 후 실행 | `BookSearchRepository.search(query, sort)` |
 | 결과 항목 탭 | 책 상세로 이동 |
 | 「읽는 중 시작」 탭 | 서재에 `READING`으로 추가, 버튼이 상태 표시로 바뀜 |
-| 정렬 변경 | 결과만 다시 로드 |
+| 정렬 변경 | `LATEST` 또는 `COMMENT`로 현재 검색어를 다시 로드 |
 
-**신규 UI**
+검색 전 빈 화면, 결과 0건, 오류, 500ms 지연 로딩과 하단 탭을 구현했다.
 
-- **하단 탭바 추가** (Figma에 없음). 기존 우하단 원형 버튼과 겹치지 않게 위치 조정
-- 검색 전 빈 화면 (`Idle`)
-- 결과 0건 화면 (`Empty`)
-- 로딩·오류 표시
-
-검색은 `BookSearchRepository.search(query)`를 통해 Chaekchaek API `GET /api/v1/books`를 호출한다.
+검색은 `BookSearchRepository.search(query, sort)`를 통해 Chaekchaek API `GET /api/v1/books`를 호출한다.
+`sort` 값은 `LATEST`, `COMMENT`만 사용한다.
 
 ---
 
@@ -342,36 +357,27 @@ data class AnonymousToggleUiModel(
 │ 닉네임 설정                  │
 │ 지금부터 감상과 답글에 이     │
 │ 닉네임이 표시됩니다.          │
-│ [ 닉네임을 입력하세요  0/15 ]│
-│ 2~15자, 한글·영문·숫자, -, _ │
+│ [ 닉네임을 입력하세요  0/10 ]│
+│ 최대 10자                    │
 │      [취소]      [확인]      │
 └─────────────────────────────┘
 ```
 
-**Figma와 다름**: 시안은 `0/10`, `2~10자`로 그려져 있으나 **최대 15자**로 정했고 사용 가능한
-문자도 제한된다. 카운터와 안내 문구를 위와 같이 고쳐야 한다.
+Android 구현은 공백이 아닌 최대 10자를 받는다.
 
 ### 상태
 
 ```kotlin
 data class NicknameDialogUiModel(
     val input: String,
-    val counterLabel: String,       // "0/15"
-    val helperLabel: String,        // "2~15자, 한글·영문·숫자, -, _"
+    val counterLabel: String,       // "0/10"
+    val helperLabel: String,        // "최대 10자"
     val confirmEnabled: Boolean,    // Nickname.isValid(input)
     val errorLabel: String?,
 )
 ```
 
-입력 중에는 `String`으로 들고 있다가 「확인」에서 `Nickname`으로 만든다. 버튼 활성화 판단은
-예외를 던지지 않는 `Nickname.isValid(input)`을 쓴다.
-
-오류 문구는 원인에 따라 나눈다.
-
-| 상황 | 문구 |
-| --- | --- |
-| 2자 미만 | 2자 이상 입력해 주세요 |
-| 허용하지 않는 문자 | 한글, 영문, 숫자와 -, _ 만 쓸 수 있어요 |
+입력 중에는 `String`으로 들고 최대 10자로 자른다. 공백이 아니면 확인할 수 있다.
 
 **미결정**: 닉네임 중복 검사 여부. 서버 결정 사항.
 
@@ -447,12 +453,12 @@ sealed interface BookDetailDialog {
 | 정렬·범위 변경 | `notes`만 다시 로드 |
 | 「감상 남기기」 탭 | 감상 작성 바텀시트 |
 | 뒤로 | `popBackStack` |
-| 북마크 아이콘 | 미정 |
+| 서재 아이콘 | 현재 등록 상태에 따라 서재 추가 또는 해제 |
 
 **주의**: 상태를 「다 읽음」으로 바꾸면 쪽수 입력값도 총 쪽수로 바뀌어야 한다. 두 UI가 같은
 데이터를 보고 있다.
 
-**신규 UI**: 로딩·오류 표시, 북마크 동작, 표지 위의 「READ TODAY」 배지 조건.
+**남은 UI**: 상세 오류 표시와 표지 위의 「READ TODAY」 배지 조건.
 
 ---
 
@@ -475,8 +481,8 @@ sealed interface BookDetailDialog {
 
 ### 상태
 
-[아키텍처 7.2](app-architecture.md#72-uimodel)의 `NoteUiModel`을 쓴다. 가려진 감상은
-`NoteUiModel.Hidden`이고 **본문 문자열을 담지 않는다.**
+Android 구현은 서버 원문을 유지하고 표시 단계에서만 잠근다. 잠긴 감상, 발췌, 답글은 공백과
+문장부호를 유지하고 나머지 문자를 원문 길이만큼 `짹`으로 치환한다.
 
 ```kotlin
 sealed interface NoteListUiState {
@@ -497,16 +503,13 @@ sealed interface NoteListUiState {
 | 액션 | 처리 |
 | --- | --- |
 | 가려진 카드 탭 | 스포일러 다이얼로그 |
-| 좋아요 탭 | `NoteRepository.like()`. 낙관적 갱신 후 실패 시 되돌림 |
+| 좋아요 탭 | `likedByMe`에 따라 감상 반응 등록 또는 취소 후 다시 로드 |
 | 「답글」 탭 | 답글 입력창 열기 |
+| 「답글 N개 모두 보기」 탭 | 마지막 페이지까지 조회해 중복 없이 펼침 |
+| 답글 좋아요 탭 | `likedByMe`에 따라 답글 반응 등록 또는 취소 |
 | ⋯ 탭 | 미정 (신고? 삭제?) |
 
-**신규 UI**
-
-- **가려진 감상 카드의 모양** (Figma에 잠금 카드 시안이 없음). 작성자·날짜는 보이고 본문 자리에
-  「N쪽 이후 내용을 포함해요」와 자물쇠를 두는 안을 제안한다
-- 감상 0건 화면
-- 페이징 (30개를 한 번에 받는지 나눠 받는지)
+감상 0건 화면과 감상 페이지 추가 로딩은 구현되어 있다.
 
 ---
 
@@ -545,7 +548,8 @@ data class SpoilerDialogUiModel(
 
 입력값이 총 쪽수와 같으면 상태가 `FINISHED`가 된다는 점에 주의한다.
 
-**감수한 손실**: 감상을 보려고 대충 넣은 숫자가 독서 기록을 덮어쓴다.
+읽은 쪽수를 저장하지 않고 「스포일러 감수하고 보기」를 선택하면 현재 상세 화면에서만 잠금을
+해제한다.
 
 ---
 
@@ -579,8 +583,7 @@ data class RatingDialogUiModel(
 )
 ```
 
-**문구 수정 필요**: Figma의 「마션에 남겼던 별점을 확인하고」는 데이터(다른 책 3권)와 어긋난다.
-「최근 남긴 별점을 확인하고」로 고친다.
+다이얼로그는 최근 별점 3개를 표시하고 저장 직후 이력을 갱신한다.
 
 ### 액션
 
@@ -590,8 +593,7 @@ data class RatingDialogUiModel(
 | 「별점 저장」 | `RatingRepository.rate(bookId, rating)` |
 | 「취소」 | 닫기 |
 
-**미결정**: 0.5 단위를 어떻게 입력하는지 (별 반쪽 탭? 드래그?). 라벨 문구 매핑
-(`4.0 → 좋았어요`)도 전체 표가 없다.
+별점은 0.5 단위로 선택한다.
 
 ---
 
@@ -619,9 +621,9 @@ data class NoteComposeUiModel(
     val impression: String,
     val quoteText: String,
     val readingPageInput: String,       // 어디까지 읽었나 (스포일러 기준)
-    val quotePageInput: String,         // 인용 출처 쪽 (신규)
     val chapter: String,
-    val identityLabel: String,          // "익명 · '골똘한 참새'로 표시돼요"
+    val identityLabel: String,          // 실제 익명 설정 또는 LibraryRepository.nickname
+    val counterLabel: String,           // "0 / 1000"
     val submitEnabled: Boolean,         // 느낀점이 비어있지 않을 때
 )
 ```
@@ -633,30 +635,8 @@ data class NoteComposeUiModel(
 | 「감상 남기기」 | `NoteRepository.write()`. 성공 시 닫고 목록 갱신 |
 | ✕ | 작성 중이면 확인 후 닫기 |
 
-**신규 UI (중요)**
-
-Figma 폼에는 쪽수 입력칸이 **하나뿐**이다. 「읽은 지점」과 「인용 출처 쪽」을 분리하기로 했으므로
-**입력칸을 하나 더 놓아야 한다.** 두 숫자가 비슷해 혼동되기 쉬우니 배치와 라벨을 신중히 정해야
-한다. 구현 전에 시안을 확정한다.
-
-제안하는 방향은 두 가지다.
-
-```
-안 A) 세로 배치
-  어디까지 읽었나요   [ 200 ] 쪽 / 412쪽
-  인용한 문장의 쪽수  [  50 ] 쪽        (인용문을 적었을 때만 표시)
-
-안 B) 인용 블록에 붙이기
-  인상 깊은 문구
-  [ 기억하고 싶은 문장을...        ]
-  └ 이 문장은 [ 50 ] 쪽에 있어요
-  ─────────────────────────────
-  여기까지 읽었어요 [ 200 ] 쪽 / 412쪽
-```
-
-안 B는 인용 쪽수를 인용문 바로 아래 두어 두 숫자의 역할이 구분된다. 다만 시안 구조에서 더 멀다.
-
-**미결정**: 느낀점 최대 길이, 인용문 최대 길이, 임시 저장 여부.
+느낀점은 최대 1000자, 인용문은 최대 500자, 챕터는 최대 255자다. 작성값이 하나라도 있으면 닫기
+전에 폐기 확인 대화상자를 표시한다. 임시 저장은 하지 않는다.
 
 ---
 
@@ -687,7 +667,7 @@ data class ReplyComposeUiModel(
 
 | 액션 | 처리 |
 | --- | --- |
-| 「답글」 탭 | `NoteRepository.reply()`. 성공 시 입력창 닫고 목록에 추가 |
+| 「답글」 탭 | 1자부터 200자까지 서버에 등록하고 성공 시 목록을 다시 로드 |
 | 「취소」 | 입력 버리고 닫기 |
 
 한 번에 하나의 감상에만 답글 입력창이 열린다.
@@ -700,10 +680,10 @@ data class ReplyComposeUiModel(
 
 | 우선순위 | 항목 | 관련 화면 |
 | --- | --- | --- |
-| 높음 | 가려진 감상 카드의 모양 | 감상 목록 |
-| 높음 | 감상 작성 폼의 쪽수 입력칸 2개 배치 | 감상 작성 |
-| 높음 | 검색 화면 하단 탭바 | 검색 |
-| 높음 | 로딩·오류 표시 (전 화면 공통) | 전체 |
+| 완료 | 가려진 감상 표시와 해제 흐름 | 감상 목록 |
+| 완료 | 감상 작성 글자 수와 폐기 확인 | 감상 작성 |
+| 완료 | 검색 화면 하단 탭바 | 검색 |
+| 완료 | 500ms 지연 로딩 | 홈·검색·상세 |
 | 중간 | 「상태 변경」의 상태 선택 수단 | 서재 편집 |
 | 중간 | 빈 상태 화면 (서재 0권, 검색 0건, 감상 0건) | 서재·검색·감상 |
 | 중간 | 게스트 쿼터 소진 상태 | 홈 |

@@ -23,12 +23,15 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -133,11 +136,15 @@ internal fun ReviewInputSheet(
     var chapter by rememberSaveable { mutableStateOf("") }
     var pageValue by rememberSaveable { mutableStateOf(initialPage.takeIf { it > 0 }?.toString().orEmpty()) }
     var isSpoiler by rememberSaveable { mutableStateOf(false) }
+    var showDiscardConfirmation by rememberSaveable { mutableStateOf(false) }
     val page = BookDetailInputRules.validPage(pageValue, totalPages)
     val canSubmit = BookDetailInputRules.canSubmitReview(content, pageValue, totalPages)
+    val hasDraft = BookDetailInputRules.hasReviewDraft(content, quote, chapter, pageValue, initialPage, isSpoiler)
+    val requestDismiss = { if (hasDraft) showDiscardConfirmation = true else onDismiss() }
 
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = requestDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = ChaekSurface,
         shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
         dragHandle = {
@@ -152,7 +159,7 @@ internal fun ReviewInputSheet(
                 .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            SheetHeader(title = "감상 남기기", titleSize = 20, onDismiss = onDismiss)
+            SheetHeader(title = "감상 남기기", titleSize = 20, onDismiss = requestDismiss)
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 FormLabel("느낀점", required = true)
                 ChaekTextInput(
@@ -251,6 +258,15 @@ internal fun ReviewInputSheet(
                 )
             }
         }
+    }
+    if (showDiscardConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDiscardConfirmation = false },
+            title = { Text("감상 작성을 그만둘까요?") },
+            text = { Text("작성한 내용은 저장되지 않아요.") },
+            confirmButton = { TextButton(onClick = onDismiss) { Text("작성 취소") } },
+            dismissButton = { TextButton(onClick = { showDiscardConfirmation = false }) { Text("계속 작성") } },
+        )
     }
 }
 

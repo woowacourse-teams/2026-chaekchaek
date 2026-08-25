@@ -25,12 +25,15 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +66,7 @@ import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.toArchivedBook
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
+import com.chaekchaek.app.domain.book.BookSearchSort
 import com.chamsae.chaekchaek.theme.ChaekAccent
 import com.chamsae.chaekchaek.theme.ChaekAccentInk
 import com.chamsae.chaekchaek.theme.ChaekBand
@@ -98,19 +102,23 @@ fun SearchRoute(
     }
   val viewModel: SearchViewModel = viewModel(factory = factory)
   val state by viewModel.uiState.collectAsStateWithLifecycle()
+  val sort by viewModel.sort.collectAsStateWithLifecycle()
   val pendingRegistration by viewModel.pendingRegistration.collectAsStateWithLifecycle()
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
-  var signingIn by rememberSaveable { mutableStateOf(false) }
+  var signingIn by remember { mutableStateOf(false) }
   var loginError by rememberSaveable { mutableStateOf<String?>(null) }
 
   SearchScreen(
     state = state,
+    sort = sort,
     registeredBookIds = archivedBooks.mapTo(mutableSetOf(), ArchivedBook::id),
     onSearch = viewModel::search,
     onClear = viewModel::clear,
     onRegister = viewModel::register,
+    onLoadMore = viewModel::loadMore,
+    onSortSelect = viewModel::selectSort,
     onBack = onBack,
     onBookClick = onBookClick,
     modifier = modifier,
@@ -131,15 +139,22 @@ fun SearchRoute(
         scope.launch {
           signingIn = true
           loginError = null
-          runCatching { requestGoogleIdToken(context) }
-            .mapCatching { idToken ->
+          runCatching {
+            if (authSession.tokens.value == null) {
+              val idToken = requestGoogleIdToken(context)
               authSession.signIn(mobileAuthRepository.loginWithGoogle(idToken))
             }
-            .onSuccess { viewModel.resumeRegistration() }
+            viewModel.resumeRegistration()
+          }
             .onFailure {
               val code = (it as? MobileLoginException)?.code ?: it::class.simpleName.orEmpty()
-              Log.w("ChaekchaekAuth", "Google login failed: $code")
-              loginError = "로그인하지 못했어요. 다시 시도해 주세요."
+              Log.w("ChaekchaekAuth", "Login or registration failed: $code")
+              loginError =
+                if (authSession.tokens.value == null) {
+                  "로그인하지 못했어요. 다시 시도해 주세요."
+                } else {
+                  "책을 등록하지 못했어요. 다시 시도해 주세요."
+                }
             }
           signingIn = false
         }
@@ -151,10 +166,13 @@ fun SearchRoute(
 @Composable
 fun SearchScreen(
   state: SearchUiState,
+  sort: BookSearchSort,
   registeredBookIds: Set<String>,
   onSearch: (String) -> Unit,
   onClear: () -> Unit,
   onRegister: (BookSearchResult) -> Unit,
+  onLoadMore: () -> Unit,
+  onSortSelect: (BookSearchSort) -> Unit,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
   onBookClick: (BookDetailArgs) -> Unit = {},
@@ -188,7 +206,7 @@ fun SearchScreen(
       SearchUiState.Loading -> SearchLoading(Modifier.weight(1f))
       SearchUiState.Empty ->
         Column(modifier = Modifier.weight(1f)) {
-          SearchResultHeader(count = 0)
+          SearchResultHeader(count = 0, sort = sort, onSortSelect = onSortSelect)
           SearchMessage(
             title = "검색 결과가 없어요",
             body = "다른 검색어로 다시 찾아보세요.",
@@ -204,8 +222,13 @@ fun SearchScreen(
       is SearchUiState.Success ->
         SearchResults(
           results = current.results,
+          totalCount = current.totalCount,
+          nextPage = current.nextPage,
+          sort = sort,
           registeredBookIds = registeredBookIds,
           onRegister = onRegister,
+          onLoadMore = onLoadMore,
+          onSortSelect = onSortSelect,
           onBookClick = onBookClick,
           modifier = Modifier.weight(1f),
         )
@@ -306,13 +329,18 @@ private fun SearchField(
 @Composable
 private fun SearchResults(
   results: List<BookSearchResult>,
+  totalCount: Int,
+  nextPage: Int?,
+  sort: BookSearchSort,
   registeredBookIds: Set<String>,
   onRegister: (BookSearchResult) -> Unit,
+  onLoadMore: () -> Unit,
+  onSortSelect: (BookSearchSort) -> Unit,
   onBookClick: (BookDetailArgs) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   Column(modifier = modifier.fillMaxWidth()) {
-    SearchResultHeader(results.size)
+    SearchResultHeader(totalCount, sort, onSortSelect)
     LazyColumn(modifier = Modifier.weight(1f)) {
       items(results) { book ->
         SearchResultRow(
@@ -323,12 +351,22 @@ private fun SearchResults(
         )
         HorizontalDivider(color = ChaekBand)
       }
+      if (nextPage != null) {
+        item(key = "next-page-$nextPage") {
+          LaunchedEffect(nextPage) { onLoadMore() }
+        }
+      }
     }
   }
 }
 
 @Composable
-private fun SearchResultHeader(count: Int) {
+private fun SearchResultHeader(
+  count: Int,
+  sort: BookSearchSort,
+  onSortSelect: (BookSearchSort) -> Unit,
+) {
+  var expanded by remember { mutableStateOf(false) }
   Row(
     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
     horizontalArrangement = Arrangement.SpaceBetween,
@@ -339,10 +377,39 @@ private fun SearchResultHeader(count: Int) {
       style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
       color = ChaekAccentInk,
     )
-    Text("최신순", style = MaterialTheme.typography.bodySmall)
+    Box {
+      Row(
+        modifier = Modifier.clickable(enabled = count > 0, role = Role.Button) { expanded = true },
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(sort.label, style = MaterialTheme.typography.bodySmall)
+        Icon(
+          painter = painterResource(R.drawable.ic_chevron_down),
+          contentDescription = "검색 결과 정렬",
+          modifier = Modifier.size(20.dp),
+        )
+      }
+      DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        BookSearchSort.entries.forEach { option ->
+          DropdownMenuItem(
+            text = { Text(option.label) },
+            onClick = {
+              expanded = false
+              onSortSelect(option)
+            },
+          )
+        }
+      }
+    }
   }
   HorizontalDivider(color = ChaekBand)
 }
+
+private val BookSearchSort.label: String
+  get() = when (this) {
+    BookSearchSort.LATEST -> "최신순"
+    BookSearchSort.COMMENT -> "감상 많은순"
+  }
 
 @Composable
 private fun SearchResultRow(

@@ -43,8 +43,9 @@ sealed interface BookDetailAuthenticatedAction {
     data object OpenMineFeed : BookDetailAuthenticatedAction
     data class ChangeStatus(val status: ReadingStatus) : BookDetailAuthenticatedAction
     data class SavePage(val page: Int) : BookDetailAuthenticatedAction
-    data class LikeReview(val reviewId: Long) : BookDetailAuthenticatedAction
+    data class LikeReview(val reviewId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction
     data class CreateReply(val reviewId: Long, val content: String) : BookDetailAuthenticatedAction
+    data class LikeReply(val replyId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction
 }
 
 data class BookDetailUiState(

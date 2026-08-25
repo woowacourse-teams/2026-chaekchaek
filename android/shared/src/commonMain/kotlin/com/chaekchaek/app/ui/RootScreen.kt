@@ -80,6 +80,7 @@ internal fun RootScreen(
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
     var archiveEditing by rememberSaveable { mutableStateOf(false) }
+    var showArchiveLoginSheet by rememberSaveable { mutableStateOf(false) }
     val tokens by authViewModel.tokens.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
     val pendingRegistration by searchViewModel.pendingRegistration.collectAsState()
@@ -119,7 +120,10 @@ internal fun RootScreen(
                 viewModel = archiveViewModel,
                 accessToken = accessToken,
                 editing = archiveEditing,
-                onEditingChange = { archiveEditing = it },
+                onEditingChange = { editing ->
+                    if (!editing || accessToken != null) archiveEditing = editing
+                    else showArchiveLoginSheet = true
+                },
                 onBookClick = { onBookClick(it.toBookDetailArgs()) },
                 modifier = contentModifier,
                 bookCover = { book ->
@@ -164,6 +168,27 @@ internal fun RootScreen(
                 authViewModel.requireAuthentication { token ->
                     registrationViewModel.authenticate(token)
                     searchViewModel.resumeRegistration()
+                }
+            },
+        )
+    }
+
+    if (showArchiveLoginSheet) {
+        LoginRequiredSheet(
+            signingIn = authState.signingIn,
+            error = authState.errorMessage,
+            onDismiss = {
+                if (!authState.signingIn) {
+                    authViewModel.clearError()
+                    authViewModel.cancelPendingAuthentication()
+                    showArchiveLoginSheet = false
+                }
+            },
+            onGoogleSignIn = {
+                authViewModel.clearError()
+                authViewModel.requireAuthentication {
+                    showArchiveLoginSheet = false
+                    archiveEditing = true
                 }
             },
         )

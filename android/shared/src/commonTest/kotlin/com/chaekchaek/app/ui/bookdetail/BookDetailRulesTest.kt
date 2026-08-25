@@ -1,6 +1,8 @@
 package com.chaekchaek.app.ui.bookdetail
 
 import com.chaekchaek.app.domain.rating.Rating
+import com.chaekchaek.app.data.remote.ReplyPage
+import com.chaekchaek.app.data.remote.ReviewReply
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,9 +20,25 @@ class BookDetailRulesTest {
         assertFalse(BookDetailInputRules.canSubmitReview("  ", "80", 308))
         assertFalse(BookDetailInputRules.canSubmitReview("좋았다", "309", 308))
         assertNull(BookDetailInputRules.validPage("-1", 308))
-        assertTrue(shouldLockReview(80, 160, isSpoiler = false, spoilersRevealed = false))
-        assertFalse(shouldLockReview(80, 160, isSpoiler = true, spoilersRevealed = true))
+        assertFalse(BookDetailInputRules.hasReviewDraft("", "", "", "80", 80, false))
+        assertTrue(BookDetailInputRules.hasReviewDraft("초안", "", "", "80", 80, false))
+        assertTrue(shouldLockReview(80, 160, spoilersRevealed = false))
+        assertFalse(shouldLockReview(80, 160, spoilersRevealed = true))
         assertEquals("짹짹 짹짹짹!\n짹짹?", maskAsChirps("감상 42쪽!\n좋다?"))
+    }
+
+    @Test
+    fun repliesLoadEveryPageOnceAndRemoveDuplicates() = runTest {
+        val loadedPages = mutableListOf<Int>()
+        val reply = ReviewReply(1, "답글", "참새", false, 0)
+
+        val result = loadAllReplies { page ->
+            loadedPages += page
+            if (page == 1) ReplyPage(2, 2, listOf(reply)) else ReplyPage(2, null, listOf(reply))
+        }
+
+        assertEquals(listOf(1, 2), loadedPages)
+        assertEquals(listOf(reply), result)
     }
 
     @Test

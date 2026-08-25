@@ -1,5 +1,6 @@
 package com.chamsae.chaekchaek.ui.archive
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,6 +32,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -53,6 +56,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
@@ -69,16 +73,23 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import coil3.compose.AsyncImage
+import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
+import com.chaekchaek.app.data.remote.MobileLoginException
+import com.chamsae.chaekchaek.auth.AuthSession
+import com.chamsae.chaekchaek.auth.requestGoogleIdToken
 import com.chamsae.chaekchaek.data.ArchivedBook
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
 import com.chamsae.chaekchaek.ui.bookdetail.BookDetailArgs
 import com.chamsae.chaekchaek.ui.bookdetail.toBookDetailArgs
+import com.chamsae.chaekchaek.ui.common.LoginRequiredSheet
 import kotlinx.coroutines.launch
 
 @Composable
 fun ArchiveRoute(
   libraryRepository: LibraryRepository,
+  mobileAuthRepository: MobileAuthRemoteRepository,
+  authSession: AuthSession,
   editing: Boolean,
   onEditingChange: (Boolean) -> Unit,
   onBookClick: (BookDetailArgs) -> Unit,
@@ -92,17 +103,57 @@ fun ArchiveRoute(
     }
   val viewModel: ArchiveViewModel = viewModel(factory = factory)
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+  val tokens by authSession.tokens.collectAsStateWithLifecycle()
+  val context = LocalContext.current
+  val scope = rememberCoroutineScope()
+  var showLoginSheet by rememberSaveable { mutableStateOf(false) }
+  var signingIn by remember { mutableStateOf(false) }
+  var loginError by rememberSaveable { mutableStateOf<String?>(null) }
 
   ArchiveScreen(
     uiState = uiState,
     editing = editing,
-    onEditingChange = onEditingChange,
+    onEditingChange = { value ->
+      if (!value || tokens != null) onEditingChange(value) else showLoginSheet = true
+    },
     onRemove = viewModel::remove,
     onChangeStatus = viewModel::changeStatus,
     onAnonymousReviewsChange = viewModel::setAnonymousReviews,
     onBookClick = onBookClick,
     modifier = modifier,
   )
+
+  if (showLoginSheet) {
+    LoginRequiredSheet(
+      signingIn = signingIn,
+      error = loginError,
+      onDismiss = {
+        if (!signingIn) {
+          showLoginSheet = false
+          loginError = null
+        }
+      },
+      onGoogleSignIn = {
+        if (signingIn) return@LoginRequiredSheet
+        scope.launch {
+          signingIn = true
+          loginError = null
+          runCatching {
+            val idToken = requestGoogleIdToken(context)
+            authSession.signIn(mobileAuthRepository.loginWithGoogle(idToken))
+          }.onSuccess {
+            showLoginSheet = false
+            onEditingChange(true)
+          }.onFailure {
+            val code = (it as? MobileLoginException)?.code ?: it::class.simpleName.orEmpty()
+            Log.w("ChaekchaekAuth", "Archive login failed: $code")
+            loginError = "로그인하지 못했어요. 다시 시도해 주세요."
+          }
+          signingIn = false
+        }
+      },
+    )
+  }
 }
 
 @Composable
@@ -110,15 +161,16 @@ fun ArchiveScreen(
   uiState: ArchiveUiState,
   editing: Boolean,
   onEditingChange: (Boolean) -> Unit,
-  onRemove: (Set<String>) -> Unit,
+  onRemove: suspend (Set<String>) -> Unit,
   onChangeStatus: (Set<String>, ReadingStatus) -> Unit,
-  onAnonymousReviewsChange: (Boolean, String) -> Unit,
+  onAnonymousReviewsChange: suspend (Boolean, String) -> Unit,
   onBookClick: (BookDetailArgs) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val items = uiState.items
   val anonymousReviews = uiState.anonymousReviews
   var filter by rememberSaveable { mutableStateOf<ReadingStatus?>(null) }
+  var sort by rememberSaveable { mutableStateOf(ArchiveSort.Recent) }
   var selectedIds by remember { mutableStateOf(emptySet<String>()) }
   var pendingDeletionIds by remember { mutableStateOf(emptySet<String>()) }
   var showStatusDialog by remember { mutableStateOf(false) }
@@ -126,8 +178,8 @@ fun ArchiveScreen(
   var nickname by rememberSaveable(uiState.nickname) { mutableStateOf(uiState.nickname) }
   val listState = rememberLazyListState()
   val scope = rememberCoroutineScope()
-  val visibleItems = remember(items, filter) {
-    items.filter { filter == null || it.status == filter }.sortedByDescending { it.lastRecordedAt }
+  val visibleItems = remember(items, filter, sort) {
+    sortArchivedBooks(items.filter { filter == null || it.status == filter }, sort)
   }
   val density = LocalDensity.current
   val scrollTopThresholdPx = remember(density) { with(density) { 240.dp.roundToPx() } }
@@ -165,7 +217,7 @@ fun ArchiveScreen(
             checked = anonymousReviews,
             onClick = {
               if (anonymousReviews) showNicknameDialog = true
-              else onAnonymousReviewsChange(true, "")
+              else scope.launch { runCatching { onAnonymousReviewsChange(true, "") } }
             },
           )
         } else {
@@ -176,6 +228,8 @@ fun ArchiveScreen(
         StatusFilters(selected = filter, onSelected = { filter = it })
         SortRow(
           countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}권",
+          sort = sort,
+          onSortChange = { sort = it },
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
       }
@@ -239,9 +293,14 @@ fun ArchiveScreen(
       selectedCount = pendingDeletionIds.size,
       onDismiss = { pendingDeletionIds = emptySet() },
       onConfirm = {
-        onRemove(pendingDeletionIds)
-        selectedIds -= pendingDeletionIds
-        pendingDeletionIds = emptySet()
+        val deletingIds = pendingDeletionIds
+        scope.launch {
+          runCatching { onRemove(deletingIds) }
+            .onSuccess {
+              selectedIds -= deletingIds
+              pendingDeletionIds = emptySet()
+            }
+        }
       },
     )
   }
@@ -252,8 +311,10 @@ fun ArchiveScreen(
       onNicknameChange = { nickname = it.take(10) },
       onDismiss = { showNicknameDialog = false },
       onConfirm = {
-        onAnonymousReviewsChange(false, nickname)
-        showNicknameDialog = false
+        scope.launch {
+          runCatching { onAnonymousReviewsChange(false, nickname) }
+            .onSuccess { showNicknameDialog = false }
+        }
       },
     )
   }
@@ -367,16 +428,46 @@ private fun StatusFilterChip(label: String, selected: Boolean, onClick: () -> Un
 @Composable
 private fun SortRow(
   countLabel: String,
+  sort: ArchiveSort,
+  onSortChange: (ArchiveSort) -> Unit,
 ) {
+  var expanded by remember { mutableStateOf(false) }
+
   Row(
     modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 10.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Text(countLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
     Spacer(Modifier.weight(1f))
-    Text("최근 기록순⌄", style = MaterialTheme.typography.labelMedium)
+    Box {
+      Surface(onClick = { expanded = true }, color = Color.Transparent) {
+        Text("${sort.label}⌄", modifier = Modifier.padding(4.dp), style = MaterialTheme.typography.labelMedium)
+      }
+      DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        ArchiveSort.entries.forEach { option ->
+          DropdownMenuItem(
+            text = { Text(option.label) },
+            onClick = {
+              onSortChange(option)
+              expanded = false
+            },
+          )
+        }
+      }
+    }
   }
 }
+
+internal enum class ArchiveSort(val label: String) {
+  Recent("최근 기록순"),
+  Oldest("오래된 기록순"),
+}
+
+internal fun sortArchivedBooks(items: List<ArchivedBook>, sort: ArchiveSort): List<ArchivedBook> =
+  when (sort) {
+    ArchiveSort.Recent -> items.sortedByDescending { it.lastRecordedAt }
+    ArchiveSort.Oldest -> items.sortedBy { it.lastRecordedAt }
+  }
 
 @Composable
 private fun LibraryBookRow(

@@ -7,6 +7,7 @@ import com.chaekchaek.app.domain.feed.FeedSection
 import com.chaekchaek.app.domain.reader.GuestQuota
 import com.chaekchaek.app.presentation.common.TimeLabels
 import com.chaekchaek.app.presentation.common.toAppError
+import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,8 +24,11 @@ class HomeViewModel(
     private val clock: Clock,
 ) : ViewModel() {
     private var accessToken: String? = null
+    private var hasObservedAuthentication = false
     private var loadJob: Job? = null
-    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
+    private val _uiState = MutableStateFlow<HomeUiState>(
+        HomeUiState.Content(emptyList(), guestBanner = null),
+    )
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
@@ -36,46 +40,59 @@ class HomeViewModel(
     }
 
     fun authenticate(accessToken: String?) {
-        if (this.accessToken == accessToken) return
+        if (!hasObservedAuthentication) {
+            hasObservedAuthentication = true
+            if (this.accessToken == accessToken) return
+        }
         this.accessToken = accessToken
         load()
     }
 
     private fun load() {
         loadJob?.cancel()
-        _uiState.value = HomeUiState.Loading
         loadJob = viewModelScope.launch {
-            _uiState.value = try {
-                val feed = feedRepository.homeFeed(accessToken)
-                val sections = feed.visibleSections()
-                if (feed.isEmpty()) {
-                    HomeUiState.Empty
-                } else {
-                    val now = clock.now()
-                    // ponytail: 홈 피드가 더미인 동안 2/3 고정. 인증 연결 시 Viewer에서 매핑한다.
-                    val quota = GuestQuota(viewed = 2)
-                    HomeUiState.Content(
-                        sections = sections.map { it.toUiModel(now) },
-                        guestBanner = GuestBannerUiModel(
-                            progressLabel = HomeLabels.guestProgress(quota.viewed, quota.limit),
-                            exhausted = quota.isExhausted(),
-                        ),
-                        readingBook = feed.readingBook?.let { book ->
-                            ReadingBookUiModel(
-                                bookId = book.bookId,
-                                isbn13 = book.isbn13,
-                                title = book.title,
-                                coverId = book.coverId,
-                                currentPage = book.currentPage,
-                                totalPages = book.totalPages,
-                            )
-                        },
-                    )
+            val previousState = _uiState.value
+            withDelayedApiLoading(
+                onLoadingChanged = { loading ->
+                    if (loading) {
+                        _uiState.value = HomeUiState.Loading
+                    } else if (_uiState.value == HomeUiState.Loading) {
+                        _uiState.value = previousState
+                    }
+                },
+            ) {
+                _uiState.value = try {
+                    val feed = feedRepository.homeFeed(accessToken)
+                    val sections = feed.visibleSections()
+                    if (feed.isEmpty()) {
+                        HomeUiState.Empty
+                    } else {
+                        val now = clock.now()
+                        // ponytail: 홈 피드가 더미인 동안 2/3 고정. 인증 연결 시 Viewer에서 매핑한다.
+                        val quota = GuestQuota(viewed = 2)
+                        HomeUiState.Content(
+                            sections = sections.map { it.toUiModel(now) },
+                            guestBanner = GuestBannerUiModel(
+                                progressLabel = HomeLabels.guestProgress(quota.viewed, quota.limit),
+                                exhausted = quota.isExhausted(),
+                            ),
+                            readingBook = feed.readingBook?.let { book ->
+                                ReadingBookUiModel(
+                                    bookId = book.bookId,
+                                    isbn13 = book.isbn13,
+                                    title = book.title,
+                                    coverId = book.coverId,
+                                    currentPage = book.currentPage,
+                                    totalPages = book.totalPages,
+                                )
+                            },
+                        )
+                    }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Throwable) {
+                    HomeUiState.Failure(error.toAppError())
                 }
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                HomeUiState.Failure(error.toAppError())
             }
         }
     }

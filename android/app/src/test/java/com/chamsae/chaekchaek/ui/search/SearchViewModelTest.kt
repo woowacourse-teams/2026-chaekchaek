@@ -4,29 +4,69 @@ import com.chamsae.chaekchaek.data.ArchivedBook
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
 import com.chaekchaek.app.domain.book.BookSearchRepository
+import com.chaekchaek.app.domain.book.BookSearchPage
 import com.chaekchaek.app.domain.book.BookSearchResult
+import com.chaekchaek.app.domain.book.BookSearchSort
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModelTest {
   @Test
-  fun `search exposes empty state and sorts results by newest year`() =
+  fun `검색 로딩은 500ms가 지난 뒤 표시하고 응답 즉시 닫는다`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      val viewModel = SearchViewModel(
+        bookSearchRepository = BookSearchRepository { _, _, _ ->
+          kotlinx.coroutines.delay(501)
+          BookSearchPage(1, null, listOf(book("검색 결과", "2026")))
+        },
+        libraryRepository = FakeLibraryRepository(),
+        isSignedIn = { true },
+      )
+      try {
+
+        viewModel.search("책")
+        runCurrent()
+        advanceTimeBy(499)
+        runCurrent()
+        assertNotEquals(SearchUiState.Loading, viewModel.uiState.value)
+        advanceTimeBy(1)
+        runCurrent()
+        assertEquals(SearchUiState.Loading, viewModel.uiState.value)
+        advanceUntilIdle()
+        assertEquals("검색 결과", (viewModel.uiState.value as SearchUiState.Success).results.single().title)
+      } finally {
+        viewModel.clear()
+        advanceUntilIdle()
+        Dispatchers.resetMain()
+      }
+    }
+
+  @Test
+  fun `정렬 선택 시 현재 검색어와 정렬값으로 다시 검색한다`() =
     runTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
       try {
-        val books = listOf(book("오래된 책", "2021"), book("연도 없음", ""), book("새 책", "2026"))
+        val requests = mutableListOf<Pair<String, BookSearchSort>>()
+        val books = listOf(book("첫 책", "2021"), book("두 번째 책", "2026"))
         val viewModel = SearchViewModel(
-          bookSearchRepository = BookSearchRepository { query -> if (query == "없음") emptyList() else books },
+          bookSearchRepository = BookSearchRepository { query, sort, _ ->
+            requests += query to sort
+            BookSearchPage(books.size, null, if (query == "없음") emptyList() else books)
+          },
           libraryRepository = FakeLibraryRepository(),
           isSignedIn = { true },
         )
@@ -37,7 +77,12 @@ class SearchViewModelTest {
 
         viewModel.search("책")
         advanceUntilIdle()
-        assertEquals(listOf("새 책", "오래된 책", "연도 없음"), (viewModel.uiState.value as SearchUiState.Success).results.map { it.title })
+        assertEquals(books, (viewModel.uiState.value as SearchUiState.Success).results)
+
+        viewModel.selectSort(BookSearchSort.COMMENT)
+        advanceUntilIdle()
+        assertEquals(BookSearchSort.COMMENT, viewModel.sort.value)
+        assertEquals("책" to BookSearchSort.COMMENT, requests.last())
       } finally {
         Dispatchers.resetMain()
       }
@@ -49,7 +94,7 @@ class SearchViewModelTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
       try {
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { emptyList() }, libraryRepository) { true }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) }, libraryRepository) { true }
         val searchResult = book("검색 제목", "2026").copy(isbn13 = "9780000000001", category = "소설", totalPages = 320)
 
         viewModel.register(searchResult)
@@ -72,7 +117,7 @@ class SearchViewModelTest {
       try {
         var signedIn = false
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { emptyList() }, libraryRepository) { signedIn }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) }, libraryRepository) { signedIn }
         val searchResult = book("보류할 책", "2026").copy(isbn13 = "9780000000002")
 
         viewModel.register(searchResult)
@@ -94,13 +139,40 @@ class SearchViewModelTest {
     }
 
   @Test
+  fun `로그인 후 등록 실패는 보류를 유지해 재시도한다`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      try {
+        var signedIn = false
+        val libraryRepository = FakeLibraryRepository()
+        val viewModel = SearchViewModel(BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) }, libraryRepository) { signedIn }
+        val searchResult = book("재시도할 책", "2026").copy(isbn13 = "9780000000004")
+
+        viewModel.register(searchResult)
+        signedIn = true
+        libraryRepository.addFailure = IllegalStateException("등록 실패")
+
+        assertEquals("등록 실패", runCatching { viewModel.resumeRegistration() }.exceptionOrNull()?.message)
+        assertEquals(searchResult, viewModel.pendingRegistration.value)
+
+        libraryRepository.addFailure = null
+        viewModel.resumeRegistration()
+
+        assertEquals(null, viewModel.pendingRegistration.value)
+        assertEquals(listOf("9780000000004"), libraryRepository.items.value.map(ArchivedBook::id))
+      } finally {
+        Dispatchers.resetMain()
+      }
+    }
+
+  @Test
   fun `로그인 취소는 보류만 지우고 검색 결과를 유지한다`() =
     runTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
       try {
         val searchResult = book("검색 결과", "2026").copy(isbn13 = "9780000000003")
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { listOf(searchResult) }, libraryRepository) { false }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _, _ -> BookSearchPage(1, null, listOf(searchResult)) }, libraryRepository) { false }
 
         viewModel.search("검색")
         advanceUntilIdle()
@@ -112,6 +184,41 @@ class SearchViewModelTest {
         assertEquals(null, viewModel.pendingRegistration.value)
         assertEquals(emptyList<ArchivedBook>(), libraryRepository.items.value)
         assertEquals(searchState, viewModel.uiState.value)
+      } finally {
+        Dispatchers.resetMain()
+      }
+    }
+
+  @Test
+  fun `검색 결과 끝에 도달하면 다음 페이지를 이어 붙인다`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      try {
+        val requestedPages = mutableListOf<Int>()
+        val viewModel =
+          SearchViewModel(
+            bookSearchRepository = BookSearchRepository { _, _, page ->
+              requestedPages += page
+              if (page == 1) {
+                BookSearchPage(2, 2, listOf(book("첫 책", "2025").copy(isbn13 = "1")))
+              } else {
+                BookSearchPage(2, null, listOf(book("두 번째 책", "2026").copy(isbn13 = "2")))
+              }
+            },
+            libraryRepository = FakeLibraryRepository(),
+            isSignedIn = { true },
+          )
+
+        viewModel.search("책")
+        advanceUntilIdle()
+        viewModel.loadMore()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as SearchUiState.Success
+        assertEquals(listOf(1, 2), requestedPages)
+        assertEquals(listOf("첫 책", "두 번째 책"), state.results.map(BookSearchResult::title))
+        assertEquals(2, state.totalCount)
+        assertEquals(null, state.nextPage)
       } finally {
         Dispatchers.resetMain()
       }
@@ -130,18 +237,21 @@ class SearchViewModelTest {
 
 private class FakeLibraryRepository : LibraryRepository {
   private val mutableItems = MutableStateFlow(emptyList<ArchivedBook>())
+  var addFailure: Exception? = null
   override val items: StateFlow<List<ArchivedBook>> = mutableItems
+  override val memberId = MutableStateFlow<Long?>(1L)
   override val anonymousReviews = MutableStateFlow(true)
   override val nickname = MutableStateFlow("")
 
   override suspend fun add(book: ArchivedBook): Long? {
+    addFailure?.let { throw it }
     mutableItems.value += book
     return book.bookId
   }
 
-  override fun remove(bookIds: Set<String>) = Unit
+  override suspend fun remove(bookIds: Set<String>) = Unit
 
   override fun changeStatus(bookIds: Set<String>, status: ReadingStatus) = Unit
 
-  override fun setAnonymousReviews(anonymous: Boolean, nickname: String) = Unit
+  override suspend fun setAnonymousReviews(anonymous: Boolean, nickname: String) = Unit
 }

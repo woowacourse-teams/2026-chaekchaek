@@ -29,7 +29,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -213,27 +214,22 @@ private fun RatingSelector(selected: Rating, onSelect: (Rating) -> Unit) {
     horizontalArrangement = Arrangement.Center,
   ) {
     repeat(5) { starIndex ->
-      val filledHalfStars = (selected.halfStars - starIndex * 2).coerceIn(0, 2)
+      val fillFraction = ratingStarFillFraction(selected, starIndex)
       Box(modifier = Modifier.width(40.dp).height(48.dp), contentAlignment = Alignment.Center) {
         Text("★", modifier = Modifier.width(40.dp), color = ChaekBorderSoft, fontSize = 34.sp, textAlign = TextAlign.Center)
-        if (filledHalfStars > 0) {
-          Box(
+        if (fillFraction > 0f) {
+          Text(
+            "★",
             modifier =
               Modifier
-                .align(Alignment.CenterStart)
-                .fillMaxHeight()
-                .fillMaxWidth(filledHalfStars / 2f)
-                .clipToBounds(),
-            contentAlignment = Alignment.CenterStart,
-          ) {
-            Text(
-              "★",
-              modifier = Modifier.width(40.dp),
-              color = ChaekAccent,
-              fontSize = 34.sp,
-              textAlign = TextAlign.Center,
-            )
-          }
+                .width(40.dp)
+                .drawWithContent {
+                  clipRect(right = size.width * fillFraction) { this@drawWithContent.drawContent() }
+                },
+            color = ChaekAccent,
+            fontSize = 34.sp,
+            textAlign = TextAlign.Center,
+          )
         }
         Row(Modifier.fillMaxSize()) {
           repeat(2) { halfIndex ->
@@ -260,6 +256,9 @@ private fun RatingSelector(selected: Rating, onSelect: (Rating) -> Unit) {
     }
   }
 }
+
+internal fun ratingStarFillFraction(selected: Rating, starIndex: Int): Float =
+  (selected.halfStars - starIndex * 2).coerceIn(0, 2) / 2f
 
 private val dateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd", Locale.KOREA)
 

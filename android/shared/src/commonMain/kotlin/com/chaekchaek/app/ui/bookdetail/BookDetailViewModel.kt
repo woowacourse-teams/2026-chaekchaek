@@ -24,6 +24,7 @@ class BookDetailViewModel(
     private var accessToken: String? = null
     private var loadJob: Job? = null
     private var loadMoreJob: Job? = null
+    private var repliesJob: Job? = null
     private var mutationJob: Job? = null
 
     fun open(book: BookDetailArgs, accessToken: String?) {
@@ -128,12 +129,33 @@ class BookDetailViewModel(
         repository.createReview(bookIdForWrite(), request, requireToken())
     }
 
-    fun likeReview(reviewId: Long) = mutate {
-        repository.likeReview(reviewId, requireToken())
+    fun likeReview(reviewId: Long, likedByMe: Boolean) = mutate {
+        if (likedByMe) repository.unlikeReview(reviewId, requireToken())
+        else repository.likeReview(reviewId, requireToken())
     }
 
     fun createReply(reviewId: Long, content: String) = mutate {
         repository.createReply(reviewId, content, requireToken())
+    }
+
+    fun loadReplies(reviewId: Long) {
+        repliesJob?.cancel()
+        repliesJob = viewModelScope.launch {
+            runCatching {
+                loadAllReplies { page -> repository.replies(reviewId, accessToken, page) }
+            }.onSuccess { replies ->
+                _uiState.value = _uiState.value.copy(
+                    reviews = _uiState.value.reviews.map { review ->
+                        if (review.reviewId == reviewId) review.copy(recentReplies = replies) else review
+                    },
+                )
+            }.onFailure(::handleFailure)
+        }
+    }
+
+    fun likeReply(replyId: Long, likedByMe: Boolean) = mutate {
+        if (likedByMe) repository.unlikeReply(replyId, requireToken())
+        else repository.likeReply(replyId, requireToken())
     }
 
     private fun reload() {

@@ -10,10 +10,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -63,6 +65,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chaekchaek.shared.generated.resources.Res
+import chaekchaek.shared.generated.resources.avatar_kim
+import chaekchaek.shared.generated.resources.avatar_yoon
 import chaekchaek.shared.generated.resources.cover_01
 import chaekchaek.shared.generated.resources.cover_02
 import chaekchaek.shared.generated.resources.cover_03
@@ -87,6 +91,8 @@ import chaekchaek.shared.generated.resources.ic_back
 import chaekchaek.shared.generated.resources.ic_bookmark
 import chaekchaek.shared.generated.resources.ic_chevron_down
 import chaekchaek.shared.generated.resources.ic_comment
+import chaekchaek.shared.generated.resources.ic_heart_filled
+import chaekchaek.shared.generated.resources.ic_heart_outline
 import chaekchaek.shared.generated.resources.ic_pencil
 import chaekchaek.shared.generated.resources.ic_star
 import com.chaekchaek.app.data.remote.BookReview
@@ -105,6 +111,7 @@ import com.chaekchaek.app.ui.theme.ChaekInk
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import com.chaekchaek.app.ui.theme.ChaekSurface
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
+import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -126,8 +133,10 @@ fun BookDetailScreen(
     onPageSave: (Int) -> Unit = {},
     onRatingSave: (Rating) -> Unit = {},
     onReviewCreate: (ReviewCreateRequest) -> Unit = {},
-    onReviewLike: (Long) -> Unit = {},
+    onReviewLike: (Long, Boolean) -> Unit = { _, _ -> },
+    onLoadReplies: (Long) -> Unit = {},
     onReplyCreate: (Long, String) -> Unit = { _, _ -> },
+    onReplyLike: (Long, Boolean) -> Unit = { _, _ -> },
     onReviewScopeChange: (ReviewScope) -> Unit = {},
     onReviewSortChange: (ReviewSort) -> Unit = {},
     onLoadMoreReviews: () -> Unit = {},
@@ -172,8 +181,9 @@ fun BookDetailScreen(
             BookDetailAuthenticatedAction.OpenMineFeed -> onReviewScopeChange(ReviewScope.MINE)
             is BookDetailAuthenticatedAction.ChangeStatus -> onStatusChange(action.status)
             is BookDetailAuthenticatedAction.SavePage -> onPageSave(action.page)
-            is BookDetailAuthenticatedAction.LikeReview -> onReviewLike(action.reviewId)
+            is BookDetailAuthenticatedAction.LikeReview -> onReviewLike(action.reviewId, action.likedByMe)
             is BookDetailAuthenticatedAction.CreateReply -> onReplyCreate(action.reviewId, action.content)
+            is BookDetailAuthenticatedAction.LikeReply -> onReplyLike(action.replyId, action.likedByMe)
         }
         onAuthenticatedActionHandled()
     }
@@ -232,12 +242,20 @@ fun BookDetailScreen(
                     onSortChange = onReviewSortChange,
                     onOpenLockedReview = { pendingSpoilerPage = it },
                     onRevealSpoilers = { spoilersRevealed = true },
-                    onLike = { reviewId ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.LikeReview(reviewId)) { onReviewLike(reviewId) }
+                    onLike = { reviewId, likedByMe ->
+                        authorizeOrRun(BookDetailAuthenticatedAction.LikeReview(reviewId, likedByMe)) {
+                            onReviewLike(reviewId, likedByMe)
+                        }
                     },
+                    onLoadReplies = onLoadReplies,
                     onReply = { reviewId, content ->
                         authorizeOrRun(BookDetailAuthenticatedAction.CreateReply(reviewId, content)) {
                             onReplyCreate(reviewId, content)
+                        }
+                    },
+                    onReplyLike = { replyId, likedByMe ->
+                        authorizeOrRun(BookDetailAuthenticatedAction.LikeReply(replyId, likedByMe)) {
+                            onReplyLike(replyId, likedByMe)
                         }
                     },
                 )
@@ -636,8 +654,10 @@ private fun ReviewsSection(
     onSortChange: (ReviewSort) -> Unit,
     onOpenLockedReview: (Int) -> Unit,
     onRevealSpoilers: () -> Unit,
-    onLike: (Long) -> Unit,
+    onLike: (Long, Boolean) -> Unit,
+    onLoadReplies: (Long) -> Unit,
     onReply: (Long, String) -> Unit,
+    onReplyLike: (Long, Boolean) -> Unit,
 ) {
     var replyTarget by remember { mutableStateOf<BookReview?>(null) }
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -685,7 +705,7 @@ private fun ReviewsSection(
             loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
             reviews.isEmpty() -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
             else -> reviews.forEach { review ->
-                val locked = shouldLockReview(currentPage, review.currentPage, review.isSpoiler, spoilersRevealed)
+                val locked = shouldLockReview(currentPage, review.currentPage, spoilersRevealed)
                 ReviewCard(
                     review = review,
                     locked = locked,
@@ -693,7 +713,11 @@ private fun ReviewsSection(
                         review.currentPage?.takeIf { it > currentPage }?.let(onOpenLockedReview) ?: onRevealSpoilers()
                     },
                     onLike = onLike,
-                    onReply = { replyTarget = review },
+                    onLoadReplies = { onLoadReplies(review.reviewId) },
+                    onReply = {
+                        if (locked) review.currentPage?.let(onOpenLockedReview) else replyTarget = review
+                    },
+                    onReplyLike = onReplyLike,
                 )
             }
         }
@@ -742,8 +766,10 @@ private fun ReviewCard(
     review: BookReview,
     locked: Boolean,
     onOpenLockedReview: () -> Unit,
-    onLike: (Long) -> Unit,
+    onLike: (Long, Boolean) -> Unit,
+    onLoadReplies: () -> Unit,
     onReply: () -> Unit,
+    onReplyLike: (Long, Boolean) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -751,11 +777,9 @@ private fun ReviewCard(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(modifier = Modifier.size(34.dp), shape = CircleShape, color = ChaekAccentSoft) {
-                    Box(contentAlignment = Alignment.Center) { Text(review.authorName.take(1)) }
-                }
+                AuthorAvatar(review.authorName, review.authorProfileImageUrl, 34)
                 Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
-                    Text(if (review.anonymous) "${review.authorName} (익명)" else review.authorName, style = MaterialTheme.typography.titleSmall)
+                    Text(review.authorName, style = MaterialTheme.typography.titleSmall)
                     Text(
                         "${review.createdAt.take(10).replace('-', '.')} · ${review.currentPage?.let { "p.${it}까지" }.orEmpty()}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -775,36 +799,51 @@ private fun ReviewCard(
                 lineHeight = 21.sp,
             )
             review.quote?.let { quote ->
-                Text(
-                    "“${if (locked) maskAsChirps(quote) else quote}”",
-                    modifier = Modifier.fillMaxWidth().background(ChaekAccentSoft).padding(horizontal = 14.dp, vertical = 12.dp),
-                    fontSize = 12.sp,
-                    lineHeight = 19.sp,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min).background(ChaekAccentSoft)
+                        .then(if (locked) Modifier.clickable(role = Role.Button, onClick = onOpenLockedReview) else Modifier),
+                ) {
+                    Box(Modifier.width(2.dp).fillMaxHeight().background(ChaekInk))
+                    Text(
+                        "“${if (locked) maskAsChirps(quote) else quote}”",
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        fontSize = 12.sp,
+                        lineHeight = 19.sp,
+                    )
+                }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    "♡ 좋아요 ${review.likeCount}",
-                    modifier = Modifier.clickable(role = Role.Button) { onLike(review.reviewId) }
-                        .semantics { contentDescription = "감상 좋아요 ${review.likeCount}개" },
-                    style = MaterialTheme.typography.labelSmall,
-                )
+                Spacer(Modifier.weight(1f))
+                ReviewAction(
+                    icon = if (review.likedByMe) Res.drawable.ic_heart_filled else Res.drawable.ic_heart_outline,
+                    label = "좋아요 ${review.likeCount}",
+                    description = if (review.likedByMe) "감상 좋아요 취소" else "감상 좋아요",
+                ) { onLike(review.reviewId, review.likedByMe) }
                 Row(modifier = Modifier.clickable(role = Role.Button, onClick = onReply), verticalAlignment = Alignment.CenterVertically) {
                     Icon(painterResource(Res.drawable.ic_comment), contentDescription = "감상에 답글 작성", modifier = Modifier.size(14.dp))
                     Text("답글 ${review.replyCount}", modifier = Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
-        if (review.recentReplies.isNotEmpty()) Replies(review.recentReplies, locked)
+        if (review.replyCount > 0) {
+            Replies(review.recentReplies, review.replyCount, locked, onOpenLockedReview, onLoadReplies, onReplyLike)
+        }
     }
 }
 
 @Composable
-private fun Replies(replies: List<ReviewReply>, locked: Boolean) {
+private fun Replies(
+    replies: List<ReviewReply>,
+    totalCount: Int,
+    locked: Boolean,
+    onOpenLockedReview: () -> Unit,
+    onLoadAll: () -> Unit,
+    onLike: (Long, Boolean) -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxWidth().background(ChaekSurfaceMuted)
             .padding(start = 48.dp, top = 12.dp, end = 16.dp, bottom = 14.dp),
@@ -812,12 +851,10 @@ private fun Replies(replies: List<ReviewReply>, locked: Boolean) {
     ) {
         replies.forEach { reply ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                Surface(modifier = Modifier.size(24.dp), shape = CircleShape, color = ChaekAccentSoft) {
-                    Box(contentAlignment = Alignment.Center) { Text(reply.authorName.take(1), fontSize = 10.sp) }
-                }
+                AuthorAvatar(reply.authorName, reply.authorProfileImageUrl, 24)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        if (reply.anonymous) "${reply.authorName} (익명)" else reply.authorName,
+                        reply.authorName,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -829,11 +866,54 @@ private fun Replies(replies: List<ReviewReply>, locked: Boolean) {
                     )
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("♡", color = ChaekInkSecondary, fontSize = 13.sp)
+                    Icon(
+                        painterResource(if (reply.likedByMe) Res.drawable.ic_heart_filled else Res.drawable.ic_heart_outline),
+                        contentDescription = if (reply.likedByMe) "답글 좋아요 취소" else "답글 좋아요",
+                        modifier = Modifier.size(13.dp).clickable(role = Role.Button) {
+                            onLike(reply.replyId, reply.likedByMe)
+                        },
+                        tint = ChaekInkSecondary,
+                    )
                     Text("${reply.likeCount}", color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 9.5.sp)
                 }
             }
         }
+        if (replies.size < totalCount) {
+            Text(
+                "답글 ${totalCount}개 모두 보기",
+                modifier = Modifier.clickable(role = Role.Button, onClick = if (locked) onOpenLockedReview else onLoadAll)
+                    .padding(vertical = 4.dp),
+                color = ChaekInk,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AuthorAvatar(name: String, profileImageUrl: String?, size: Int) {
+    val modifier = Modifier.size(size.dp).clip(CircleShape)
+    if (profileImageUrl.isNullOrBlank()) {
+        Image(painterResource(authorAvatarResource(name)), contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
+    } else {
+        LocalRemoteBookCover.current(profileImageUrl, "", modifier)
+    }
+}
+
+private fun authorAvatarResource(displayName: String): DrawableResource =
+    if ((displayName.hashCode() and Int.MAX_VALUE) % 2 == 0) Res.drawable.avatar_kim else Res.drawable.avatar_yoon
+
+@Composable
+private fun ReviewAction(icon: DrawableResource, label: String, description: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.clickable(role = Role.Button, onClick = onClick)
+            .clearAndSetSemantics { contentDescription = description }.padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(14.dp), tint = ChaekInk)
+        Text(label, color = ChaekInk, fontFamily = FontFamily.Monospace, fontSize = 11.sp)
     }
 }
 

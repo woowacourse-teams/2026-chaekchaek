@@ -330,7 +330,6 @@ private fun HomeHeader() {
             .fillMaxWidth()
             .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Image(
             painter = painterResource(R.drawable.avatar_yoon),
@@ -340,20 +339,6 @@ private fun HomeHeader() {
                 .clip(RoundedCornerShape(11.dp)),
             contentScale = ContentScale.Crop,
         )
-        Surface(
-            modifier = Modifier.size(44.dp),
-            shape = RoundedCornerShape(4.dp),
-            color = Color.Transparent,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_bell),
-                    contentDescription = "알림",
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-        }
     }
 }
 
