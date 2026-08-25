@@ -49,6 +49,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -1305,8 +1306,10 @@ private fun ReviewInputSheet(
   val canSubmit = BookDetailInputRules.canSubmitReview(content, pageValue, totalPages)
   val hasDraft = BookDetailInputRules.hasReviewDraft(content, quote, chapter, pageValue, initialPage, isSpoiler)
   val requestDismiss = { if (hasDraft) showDiscardConfirmation = true else onDismiss() }
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   ModalBottomSheet(
     onDismissRequest = requestDismiss,
+    sheetState = sheetState,
     containerColor = ChaekSurface,
     shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
     dragHandle = {
@@ -1345,10 +1348,21 @@ private fun ReviewInputSheet(
         ) {
           Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-              modifier = Modifier.size(18.dp).background(ChaekSurface, RoundedCornerShape(4.dp)).border(1.dp, ChaekBorder, RoundedCornerShape(4.dp)),
+              modifier =
+                Modifier
+                  .size(18.dp)
+                  .background(if (isSpoiler) ChaekInk else ChaekSurface, RoundedCornerShape(4.dp))
+                  .border(1.dp, if (isSpoiler) ChaekInk else ChaekBorder, RoundedCornerShape(4.dp)),
               contentAlignment = Alignment.Center,
             ) {
-              if (isSpoiler) Text("✓", color = ChaekInk, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+              if (isSpoiler) {
+                Icon(
+                  painter = painterResource(R.drawable.ic_check),
+                  contentDescription = null,
+                  modifier = Modifier.size(12.dp),
+                  tint = ChaekSurface,
+                )
+              }
             }
             Text("스포일러", modifier = Modifier.padding(start = 8.dp), color = Color(0xFFC92A24), fontSize = 12.5.sp, fontWeight = FontWeight.Medium)
           }
