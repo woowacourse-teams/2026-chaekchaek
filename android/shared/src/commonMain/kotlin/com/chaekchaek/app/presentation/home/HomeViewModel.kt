@@ -39,7 +39,6 @@ class HomeViewModel(
     }
 
     fun authenticate(accessToken: String?) {
-        if (this.accessToken == accessToken) return
         this.accessToken = accessToken
         load()
     }
