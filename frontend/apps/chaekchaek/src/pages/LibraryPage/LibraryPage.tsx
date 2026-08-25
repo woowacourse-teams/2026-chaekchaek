@@ -25,6 +25,7 @@ import { useLoadData } from '@/services/core/useLoadData';
 import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
 import { DeleteBooksDialog } from './dialog/DeleteBooksDialog';
 import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 export const READING_STATUS = {
   ALL: 'ALL',
@@ -147,6 +148,16 @@ export const LibraryPage = () => {
   const isAbleUpdateStatus = bookSelection.length;
   const isAbleDeleteStatus = bookSelection.length;
 
+  const { user } = useAuthContext();
+
+  const handleToggleAnonymous = () => {
+    if (user?.displayAnonymous) {
+      return;
+    }
+
+    handleOpenDialog('UpdateNicknameDialog');
+  };
+
   const [dialog, setDialog] = useState<
     'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null
   >(null);
@@ -197,9 +208,11 @@ export const LibraryPage = () => {
           level="page"
           trailing={
             <>
-              <Button variant="ghost" onClick={() => handleOpenDialog('UpdateNicknameDialog')}>
-                감상 익명 공개
-              </Button>
+              {user !== null && (
+                <Button variant="ghost" onClick={() => handleToggleAnonymous()}>
+                  {user?.displayAnonymous ? '익명 감상 비공개' : '감상 익명 공개'}
+                </Button>
+              )}
               {isEditing && (
                 <>
                   <Button
