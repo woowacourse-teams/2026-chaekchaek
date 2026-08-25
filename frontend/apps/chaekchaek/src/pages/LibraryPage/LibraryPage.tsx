@@ -20,6 +20,8 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 
 import { getLibrary } from '@/services/apis/library/repository';
+import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
+import { useExecute } from '@/services/core/useExecute';
 import { useLoadData } from '@/services/core/useLoadData';
 
 import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
@@ -148,14 +150,23 @@ export const LibraryPage = () => {
   const isAbleUpdateStatus = bookSelection.length;
   const isAbleDeleteStatus = bookSelection.length;
 
-  const { user } = useAuthContext();
+  const { user, login } = useAuthContext();
+  const { status: anonymityStatus, mutate: updateAnonymity } = useExecute({
+    executeFn: patchMembersMeAnonymity,
+  });
 
-  const handleToggleAnonymous = () => {
-    if (!user?.displayAnonymous) {
+  const handleToggleAnonymous = async () => {
+    if (!user) return;
+
+    if (user.displayAnonymous) {
+      handleOpenDialog('UpdateNicknameDialog');
       return;
     }
 
-    handleOpenDialog('UpdateNicknameDialog');
+    const updatedUser = await updateAnonymity({ displayAnonymous: true });
+    if (!updatedUser) return;
+
+    login(updatedUser);
   };
 
   const [dialog, setDialog] = useState<
@@ -209,7 +220,11 @@ export const LibraryPage = () => {
           trailing={
             <>
               {user !== null && (
-                <Button variant="ghost" onClick={() => handleToggleAnonymous()}>
+                <Button
+                  variant="ghost"
+                  disabled={anonymityStatus.status === 'loading'}
+                  onClick={handleToggleAnonymous}
+                >
                   {user?.displayAnonymous ? '익명 감상 비공개' : '감상 익명 공개'}
                 </Button>
               )}
