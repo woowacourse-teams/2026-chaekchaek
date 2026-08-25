@@ -74,10 +74,10 @@ class SearchViewModel(
     }
   }
 
-  fun resumeRegistration() {
+  suspend fun resumeRegistration() {
     val book = _pendingRegistration.value ?: return
+    libraryRepository.add(book.toArchivedBook())
     _pendingRegistration.value = null
-    register(book)
   }
 
   fun cancelRegistration() {

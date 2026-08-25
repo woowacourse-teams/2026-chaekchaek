@@ -102,7 +102,7 @@ fun SearchRoute(
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
-  var signingIn by rememberSaveable { mutableStateOf(false) }
+  var signingIn by remember { mutableStateOf(false) }
   var loginError by rememberSaveable { mutableStateOf<String?>(null) }
 
   SearchScreen(
@@ -131,15 +131,22 @@ fun SearchRoute(
         scope.launch {
           signingIn = true
           loginError = null
-          runCatching { requestGoogleIdToken(context) }
-            .mapCatching { idToken ->
+          runCatching {
+            if (authSession.tokens.value == null) {
+              val idToken = requestGoogleIdToken(context)
               authSession.signIn(mobileAuthRepository.loginWithGoogle(idToken))
             }
-            .onSuccess { viewModel.resumeRegistration() }
+            viewModel.resumeRegistration()
+          }
             .onFailure {
               val code = (it as? MobileLoginException)?.code ?: it::class.simpleName.orEmpty()
-              Log.w("ChaekchaekAuth", "Google login failed: $code")
-              loginError = "로그인하지 못했어요. 다시 시도해 주세요."
+              Log.w("ChaekchaekAuth", "Login or registration failed: $code")
+              loginError =
+                if (authSession.tokens.value == null) {
+                  "로그인하지 못했어요. 다시 시도해 주세요."
+                } else {
+                  "책을 등록하지 못했어요. 다시 시도해 주세요."
+                }
             }
           signingIn = false
         }

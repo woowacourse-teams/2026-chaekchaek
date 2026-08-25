@@ -94,6 +94,33 @@ class SearchViewModelTest {
     }
 
   @Test
+  fun `로그인 후 등록 실패는 보류를 유지해 재시도한다`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      try {
+        var signedIn = false
+        val libraryRepository = FakeLibraryRepository()
+        val viewModel = SearchViewModel(BookSearchRepository { emptyList() }, libraryRepository) { signedIn }
+        val searchResult = book("재시도할 책", "2026").copy(isbn13 = "9780000000004")
+
+        viewModel.register(searchResult)
+        signedIn = true
+        libraryRepository.addFailure = IllegalStateException("등록 실패")
+
+        assertEquals("등록 실패", runCatching { viewModel.resumeRegistration() }.exceptionOrNull()?.message)
+        assertEquals(searchResult, viewModel.pendingRegistration.value)
+
+        libraryRepository.addFailure = null
+        viewModel.resumeRegistration()
+
+        assertEquals(null, viewModel.pendingRegistration.value)
+        assertEquals(listOf("9780000000004"), libraryRepository.items.value.map(ArchivedBook::id))
+      } finally {
+        Dispatchers.resetMain()
+      }
+    }
+
+  @Test
   fun `로그인 취소는 보류만 지우고 검색 결과를 유지한다`() =
     runTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
@@ -130,11 +157,13 @@ class SearchViewModelTest {
 
 private class FakeLibraryRepository : LibraryRepository {
   private val mutableItems = MutableStateFlow(emptyList<ArchivedBook>())
+  var addFailure: Exception? = null
   override val items: StateFlow<List<ArchivedBook>> = mutableItems
   override val anonymousReviews = MutableStateFlow(true)
   override val nickname = MutableStateFlow("")
 
   override suspend fun add(book: ArchivedBook): Long? {
+    addFailure?.let { throw it }
     mutableItems.value += book
     return book.bookId
   }
