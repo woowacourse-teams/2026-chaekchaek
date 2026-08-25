@@ -16,6 +16,7 @@ export type RecentReply = {
 
 export type BookReview = {
   reviewId: number;
+  chapter?: string;
   author: {
     displayName: string;
     profileImageUrl: string;
@@ -24,6 +25,7 @@ export type BookReview = {
   createdAt: string;
   content: string;
   quote?: string;
+  currentPage?: number;
   likedByMe: boolean;
   likeCount: number;
   replyCount: number;
