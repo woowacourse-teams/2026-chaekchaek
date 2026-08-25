@@ -86,6 +86,8 @@ export const BooksPage = () => {
   const handleRegisterLibrary = async (isbn: string) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
     await mutate({ isbn13: isbn, status: 'WANT_TO_READ' });
+
+    handleMove(isbn);
   };
 
   return (
