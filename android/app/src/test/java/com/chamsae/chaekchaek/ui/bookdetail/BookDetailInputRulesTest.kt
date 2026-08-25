@@ -15,6 +15,14 @@ class BookDetailInputRulesTest {
   }
 
   @Test
+  fun `기본 쪽수 외에 작성값이 생기면 임시 감상으로 판단한다`() {
+    assertFalse(BookDetailInputRules.hasReviewDraft("", "", "", "80", 80, false))
+    assertTrue(BookDetailInputRules.hasReviewDraft("한 글자", "", "", "80", 80, false))
+    assertTrue(BookDetailInputRules.hasReviewDraft("", "", "", "81", 80, false))
+    assertTrue(BookDetailInputRules.hasReviewDraft("", "", "", "80", 80, true))
+  }
+
+  @Test
   fun `감상 쪽수가 읽은 범위를 넘고 전체 공개하지 않았을 때만 잠근다`() {
     assertFalse(shouldLockReview(currentPage = 80, reviewPage = 80, isSpoiler = false, spoilersRevealed = false))
     assertTrue(shouldLockReview(currentPage = 80, reviewPage = 160, isSpoiler = false, spoilersRevealed = false))
