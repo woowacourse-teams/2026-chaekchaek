@@ -1,9 +1,9 @@
 package com.chamsae.chaekchaek.data
 
-import android.content.Context
 import com.chamsae.chaekchaek.auth.AuthSession
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.RemoteLibraryBook
+import com.chaekchaek.app.data.remote.RemoteMemberProfile
 import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -19,39 +19,43 @@ import kotlinx.coroutines.sync.withLock
 
 interface LibraryRepository {
   val items: StateFlow<List<ArchivedBook>>
+  val memberId: StateFlow<Long?>
   val anonymousReviews: StateFlow<Boolean>
   val nickname: StateFlow<String>
 
   suspend fun add(book: ArchivedBook): Long?
 
-  fun remove(bookIds: Set<String>)
+  suspend fun remove(bookIds: Set<String>)
 
   fun changeStatus(bookIds: Set<String>, status: ReadingStatus)
 
-  fun setAnonymousReviews(anonymous: Boolean, nickname: String = "")
+  suspend fun setAnonymousReviews(anonymous: Boolean, nickname: String = "")
 }
 
 class ServerLibraryRepository(
-  context: Context,
   private val authSession: AuthSession,
   private val remoteRepository: LibraryRemoteRepository = LibraryRemoteRepository(),
 ) : LibraryRepository {
-  private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
   private val mutationMutex = Mutex()
 
   private val _items = MutableStateFlow(emptyList<ArchivedBook>())
   override val items: StateFlow<List<ArchivedBook>> = _items.asStateFlow()
-  private val _anonymousReviews = MutableStateFlow(prefs.getBoolean(KEY_ANONYMOUS, true))
+  private val _memberId = MutableStateFlow<Long?>(null)
+  override val memberId: StateFlow<Long?> = _memberId.asStateFlow()
+  private val _anonymousReviews = MutableStateFlow(true)
   override val anonymousReviews: StateFlow<Boolean> = _anonymousReviews.asStateFlow()
-  private val _nickname = MutableStateFlow(prefs.getString(KEY_NICKNAME, "").orEmpty())
+  private val _nickname = MutableStateFlow("")
   override val nickname: StateFlow<String> = _nickname.asStateFlow()
 
   init {
     scope.launch {
       authSession.tokens.collectLatest { tokens ->
-        if (tokens == null) _items.value = emptyList()
-        else loadIgnoringFailure(tokens.accessToken)
+        _items.value = emptyList()
+        _memberId.value = null
+        _anonymousReviews.value = true
+        _nickname.value = ""
+        if (tokens != null) loadAccountIgnoringFailure(tokens.accessToken)
       }
     }
   }
@@ -69,10 +73,14 @@ class ServerLibraryRepository(
     }
   }
 
-  override fun remove(bookIds: Set<String>) {
+  override suspend fun remove(bookIds: Set<String>) {
     val serverBookIds = _items.value.filter { it.id in bookIds }.mapNotNull(ArchivedBook::bookId)
     if (serverBookIds.isEmpty()) return
-    mutate { accessToken -> remoteRepository.bulkDelete(serverBookIds, accessToken) }
+    val accessToken = requireNotNull(authSession.tokens.value).accessToken
+    mutationMutex.withLock {
+      remoteRepository.bulkDelete(serverBookIds, accessToken)
+      load(accessToken)
+    }
   }
 
   override fun changeStatus(bookIds: Set<String>, status: ReadingStatus) {
@@ -81,14 +89,18 @@ class ServerLibraryRepository(
     mutate { accessToken -> remoteRepository.bulkChangeStatus(serverBookIds, status.apiValue, accessToken) }
   }
 
-  override fun setAnonymousReviews(anonymous: Boolean, nickname: String) {
-    val trimmedNickname = nickname.trim()
-    _anonymousReviews.value = anonymous
-    _nickname.value = trimmedNickname
-    prefs.edit()
-      .putBoolean(KEY_ANONYMOUS, anonymous)
-      .putString(KEY_NICKNAME, trimmedNickname)
-      .apply()
+  override suspend fun setAnonymousReviews(anonymous: Boolean, nickname: String) {
+    val accessToken = requireNotNull(authSession.tokens.value).accessToken
+    mutationMutex.withLock {
+      val profile =
+        if (anonymous) {
+          remoteRepository.updateAnonymity(true, accessToken)
+        } else {
+          remoteRepository.updateNickname(nickname.trim(), accessToken)
+          remoteRepository.updateAnonymity(false, accessToken)
+        }
+      if (authSession.tokens.value?.accessToken == accessToken) applyProfile(profile)
+    }
   }
 
   private fun mutate(action: suspend (String) -> Unit) {
@@ -106,9 +118,14 @@ class ServerLibraryRepository(
     }
   }
 
-  private suspend fun loadIgnoringFailure(accessToken: String) {
+  private suspend fun loadAccountIgnoringFailure(accessToken: String) {
     try {
-      load(accessToken)
+      val profile = remoteRepository.getMember(accessToken)
+      val loadedItems = remoteRepository.getAll(accessToken).map(RemoteLibraryBook::toArchivedBook)
+      if (authSession.tokens.value?.accessToken == accessToken) {
+        applyProfile(profile)
+        _items.value = loadedItems
+      }
     } catch (error: CancellationException) {
       throw error
     } catch (_: Exception) {
@@ -120,10 +137,10 @@ class ServerLibraryRepository(
     if (authSession.tokens.value?.accessToken == accessToken) _items.value = loaded
   }
 
-  private companion object {
-    const val PREFS_NAME = "archive"
-    const val KEY_ANONYMOUS = "anonymous_reviews"
-    const val KEY_NICKNAME = "nickname"
+  private fun applyProfile(profile: RemoteMemberProfile) {
+    _memberId.value = profile.memberId
+    _anonymousReviews.value = profile.displayAnonymous
+    _nickname.value = profile.nickname
   }
 }
 

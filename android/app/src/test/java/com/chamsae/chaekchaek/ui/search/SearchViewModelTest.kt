@@ -121,6 +121,7 @@ class SearchViewModelTest {
 private class FakeLibraryRepository : LibraryRepository {
   private val mutableItems = MutableStateFlow(emptyList<ArchivedBook>())
   override val items: StateFlow<List<ArchivedBook>> = mutableItems
+  override val memberId = MutableStateFlow<Long?>(1L)
   override val anonymousReviews = MutableStateFlow(true)
   override val nickname = MutableStateFlow("")
 
@@ -129,9 +130,9 @@ private class FakeLibraryRepository : LibraryRepository {
     return book.bookId
   }
 
-  override fun remove(bookIds: Set<String>) = Unit
+  override suspend fun remove(bookIds: Set<String>) = Unit
 
   override fun changeStatus(bookIds: Set<String>, status: ReadingStatus) = Unit
 
-  override fun setAnonymousReviews(anonymous: Boolean, nickname: String) = Unit
+  override suspend fun setAnonymousReviews(anonymous: Boolean, nickname: String) = Unit
 }
