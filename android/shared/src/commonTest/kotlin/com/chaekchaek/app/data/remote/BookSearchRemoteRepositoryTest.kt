@@ -1,5 +1,15 @@
 package com.chaekchaek.app.data.remote
 
+import com.chaekchaek.app.domain.book.BookSearchSort
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpHeaders
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -21,5 +31,25 @@ class BookSearchRemoteRepositoryTest {
         assertEquals("2015", result.year)
         assertEquals("과학소설", result.category)
         assertEquals(0, result.totalPages)
+    }
+
+    @Test
+    fun `requested page and next page are preserved`() = runTest {
+        var requestedPage: String? = null
+        val client = HttpClient(MockEngine { request ->
+            requestedPage = request.url.parameters["page"]
+            respond(
+                content = """{"totalCount":12,"nextPage":3,"items":[]}""",
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        }
+
+        val page = BookSearchRemoteRepository(client).search("책", BookSearchSort.LATEST, page = 2)
+
+        assertEquals("2", requestedPage)
+        assertEquals(12, page.totalCount)
+        assertEquals(3, page.nextPage)
     }
 }

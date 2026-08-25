@@ -1,6 +1,7 @@
 package com.chaekchaek.app.data.remote
 
 import com.chaekchaek.app.domain.book.BookSearchRepository
+import com.chaekchaek.app.domain.book.BookSearchPage
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
 import io.ktor.client.HttpClient
@@ -12,20 +13,18 @@ import kotlinx.serialization.Serializable
 class BookSearchRemoteRepository(
     private val client: HttpClient = createHttpClient(),
 ) : BookSearchRepository {
-    override suspend fun search(query: String, sort: BookSearchSort): List<BookSearchResult> =
+    override suspend fun search(query: String, sort: BookSearchSort, page: Int): BookSearchPage =
         client.get("https://api.chaekchaek.com/api/v1/books") {
             parameter("query", query)
             parameter("sort", sort.name)
-            parameter("page", FIRST_PAGE)
-        }.body<BookSearchResponseDto>().items.map { it.toSearchResult() }
-
-    private companion object {
-        const val FIRST_PAGE = 1
-    }
+            parameter("page", page)
+        }.body<BookSearchResponseDto>().toSearchPage()
 }
 
 @Serializable
 internal data class BookSearchResponseDto(
+    val totalCount: Int,
+    val nextPage: Int? = null,
     val items: List<BookSearchItemDto>,
 )
 
@@ -50,4 +49,11 @@ internal fun BookSearchItemDto.toSearchResult(): BookSearchResult =
         coverUrl = coverImageUrl,
         isbn13 = isbn13,
         category = category.substringAfterLast('>'),
+    )
+
+private fun BookSearchResponseDto.toSearchPage(): BookSearchPage =
+    BookSearchPage(
+        totalCount = totalCount,
+        nextPage = nextPage,
+        items = items.map(BookSearchItemDto::toSearchResult),
     )
