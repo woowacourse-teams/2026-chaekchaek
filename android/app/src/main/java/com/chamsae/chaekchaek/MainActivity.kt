@@ -8,19 +8,15 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.mandatorySystemGestures
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.core.view.WindowCompat
 import com.chaekchaek.app.di.SharedComponent
 import com.chaekchaek.app.di.create
-import com.chamsae.chaekchaek.theme.ChaekchaekTheme
+import com.chaekchaek.app.ui.App
 
 class MainActivity : ComponentActivity() {
     private val sharedComponent by lazy { SharedComponent::class.create() }
@@ -44,11 +40,7 @@ class MainActivity : ComponentActivity() {
                     usesThreeButtonNavigation
             }
             CompositionLocalProvider(LocalSharedComponent provides sharedComponent) {
-                ChaekchaekTheme {
-                    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                        MainNavigation()
-                    }
-                }
+                App()
             }
         }
     }

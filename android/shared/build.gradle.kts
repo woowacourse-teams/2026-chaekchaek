@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
 }
@@ -13,6 +15,7 @@ kotlin {
         namespace = "com.chaekchaek.app.shared"
         compileSdk = 36
         minSdk = 26
+        androidResources.enable = true
 
         // 켜지 않으면 JVM 유닛 테스트 태스크가 생성되지 않아 iOS 시뮬레이터에서만 테스트가 돈다.
         withHostTestBuilder {}
@@ -34,6 +37,12 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.ui)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.resources)
+            implementation(libs.jetbrains.navigation3.ui)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.kotlin.inject.runtime)
             implementation(libs.ktor.client.core)

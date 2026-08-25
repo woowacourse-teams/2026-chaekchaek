@@ -1,20 +1,19 @@
+import Shared
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(AppModel.self) private var model
-
     var body: some View {
-        @Bindable var model = model
-        TabView(selection: $model.selectedTab) {
-            NavigationStack { SearchView() }
-                .tabItem { Label("발견", systemImage: "magnifyingglass") }
-                .tag(0)
-            NavigationStack { LibraryView() }
-                .tabItem { Label("내 서재", systemImage: "books.vertical") }
-                .tag(1)
-        }
-        .tint(AppTheme.accent)
+        ComposeViewController()
+            .ignoresSafeArea()
     }
+}
+
+private struct ComposeViewController: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        MainViewControllerKt.MainViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
 
 private struct SearchView: View {

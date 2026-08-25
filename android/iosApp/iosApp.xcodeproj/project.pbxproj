@@ -142,6 +142,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = DA00C03C2B99BEFE204BD8AF /* Build configuration list for PBXNativeTarget "Chaekchaek" */;
 			buildPhases = (
+				A10000000000000000000006 /* Build Shared framework */,
 				49B1547F1F85FFF9C4E6196B /* Sources */,
 				FB1D8635B72AE66B4450069B /* Frameworks */,
 				938A8F17E7D9425C7608DAF6 /* Resources */,
@@ -220,6 +221,24 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		A10000000000000000000006 /* Build Shared framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Build Shared framework";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build because the IDE already built Shared\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		49B1547F1F85FFF9C4E6196B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -263,6 +282,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Chaekchaek/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "첵췍";
@@ -370,6 +390,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Chaekchaek/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "첵췍";
