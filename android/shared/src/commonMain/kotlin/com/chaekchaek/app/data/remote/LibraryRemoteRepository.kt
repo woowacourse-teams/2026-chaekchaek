@@ -1,6 +1,7 @@
 package com.chaekchaek.app.data.remote
 
 import io.ktor.client.call.body
+import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
@@ -12,8 +13,11 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 
-class LibraryRemoteRepository {
-  private val client = createHttpClient()
+class LibraryRemoteRepository(private val client: HttpClient = createHttpClient()) {
+  suspend fun getMemberId(accessToken: String): Long =
+    client.get("$BASE_URL/api/v1/members/me") {
+      header(HttpHeaders.Authorization, "Bearer $accessToken")
+    }.body<MemberResponseDto>().memberId
 
   suspend fun getAll(accessToken: String): List<RemoteLibraryBook> {
     val items = mutableListOf<RemoteLibraryBook>()
@@ -127,3 +131,6 @@ private data class BulkDeleteRequest(val bookIds: List<Long>)
 
 @Serializable
 private data class BulkStatusRequest(val bookIds: List<Long>, val status: String)
+
+@Serializable
+private data class MemberResponseDto(val memberId: Long)

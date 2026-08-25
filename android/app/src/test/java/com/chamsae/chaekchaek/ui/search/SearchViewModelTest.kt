@@ -78,6 +78,7 @@ class SearchViewModelTest {
 private class FakeLibraryRepository : LibraryRepository {
   private val mutableItems = MutableStateFlow(emptyList<ArchivedBook>())
   override val items: StateFlow<List<ArchivedBook>> = mutableItems
+  override val memberId = MutableStateFlow<Long?>(1L)
   override val anonymousReviews = MutableStateFlow(true)
   override val nickname = MutableStateFlow("")
 

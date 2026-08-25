@@ -124,6 +124,7 @@ fun BookDetailRoute(
 ) {
   val tokens by authSession.tokens.collectAsStateWithLifecycle()
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
+  val memberId by libraryRepository.memberId.collectAsStateWithLifecycle()
   val ratings by bookRatingStore.ratings.collectAsStateWithLifecycle()
   var detail by remember(book.isbn13) { mutableStateOf<BookDetail?>(null) }
   var reviews by remember(book.isbn13) { mutableStateOf(emptyList<BookReview>()) }
@@ -136,12 +137,16 @@ fun BookDetailRoute(
   var reloadNonce by remember { mutableStateOf(0) }
   val archivedBook = archivedBooks.firstOrNull { it.id == book.isbn13.ifBlank { book.id } }
   val displayBook = detail?.toBookDetailArgs(book) ?: archivedBook?.toBookDetailArgs() ?: book
+  val ratingBookId = displayBook.isbn13.ifBlank { displayBook.id }
 
   suspend fun bookIdForWrite(): Long =
     detail?.bookId ?: requireNotNull(libraryRepository.add(displayBook.toArchivedBook()))
 
   LaunchedEffect(book.isbn13, archivedBook?.bookId, tokens?.accessToken, reloadNonce) {
     detail = book.isbn13.takeIf(String::isNotBlank)?.let { runCatching { bookDetailRepository.detail(it, tokens?.accessToken) }.getOrNull() }
+  }
+  LaunchedEffect(memberId) {
+    bookRatingStore.selectAccount(memberId)
   }
   LaunchedEffect(detail?.bookId, reviewScope, reviewSort, tokens?.accessToken, reloadNonce) {
     val bookId = detail?.bookId ?: return@LaunchedEffect
@@ -210,7 +215,7 @@ fun BookDetailRoute(
     onRatingSave = { rating ->
       val accessToken = requireNotNull(tokens).accessToken
       bookDetailRepository.rate(bookIdForWrite(), rating.score.toDouble(), accessToken)
-      bookRatingStore.rate(displayBook.id, displayBook.title, rating)
+      memberId?.let { bookRatingStore.rate(it, ratingBookId, displayBook.title, rating) }
       reloadNonce++
     },
     onReviewCreate = { request ->

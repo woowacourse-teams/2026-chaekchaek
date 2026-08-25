@@ -19,6 +19,7 @@ import kotlinx.coroutines.sync.withLock
 
 interface LibraryRepository {
   val items: StateFlow<List<ArchivedBook>>
+  val memberId: StateFlow<Long?>
   val anonymousReviews: StateFlow<Boolean>
   val nickname: StateFlow<String>
 
@@ -42,6 +43,8 @@ class ServerLibraryRepository(
 
   private val _items = MutableStateFlow(emptyList<ArchivedBook>())
   override val items: StateFlow<List<ArchivedBook>> = _items.asStateFlow()
+  private val _memberId = MutableStateFlow<Long?>(null)
+  override val memberId: StateFlow<Long?> = _memberId.asStateFlow()
   private val _anonymousReviews = MutableStateFlow(prefs.getBoolean(KEY_ANONYMOUS, true))
   override val anonymousReviews: StateFlow<Boolean> = _anonymousReviews.asStateFlow()
   private val _nickname = MutableStateFlow(prefs.getString(KEY_NICKNAME, "").orEmpty())
@@ -50,8 +53,9 @@ class ServerLibraryRepository(
   init {
     scope.launch {
       authSession.tokens.collectLatest { tokens ->
-        if (tokens == null) _items.value = emptyList()
-        else loadIgnoringFailure(tokens.accessToken)
+        _items.value = emptyList()
+        _memberId.value = null
+        if (tokens != null) loadAccountIgnoringFailure(tokens.accessToken)
       }
     }
   }
@@ -109,6 +113,20 @@ class ServerLibraryRepository(
   private suspend fun loadIgnoringFailure(accessToken: String) {
     try {
       load(accessToken)
+    } catch (error: CancellationException) {
+      throw error
+    } catch (_: Exception) {
+    }
+  }
+
+  private suspend fun loadAccountIgnoringFailure(accessToken: String) {
+    try {
+      val loadedMemberId = remoteRepository.getMemberId(accessToken)
+      val loadedItems = remoteRepository.getAll(accessToken).map(RemoteLibraryBook::toArchivedBook)
+      if (authSession.tokens.value?.accessToken == accessToken) {
+        _memberId.value = loadedMemberId
+        _items.value = loadedItems
+      }
     } catch (error: CancellationException) {
       throw error
     } catch (_: Exception) {
