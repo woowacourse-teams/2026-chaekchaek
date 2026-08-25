@@ -4,6 +4,7 @@ import com.chamsae.chaekchaek.data.ArchivedBook
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
 import com.chaekchaek.app.domain.book.BookSearchRepository
+import com.chaekchaek.app.domain.book.BookSearchPage
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
 import kotlinx.coroutines.Dispatchers
@@ -28,9 +29,9 @@ class SearchViewModelTest {
     runTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
       val viewModel = SearchViewModel(
-        bookSearchRepository = BookSearchRepository { _, _ ->
+        bookSearchRepository = BookSearchRepository { _, _, _ ->
           kotlinx.coroutines.delay(501)
-          listOf(book("검색 결과", "2026"))
+          BookSearchPage(1, null, listOf(book("검색 결과", "2026")))
         },
         libraryRepository = FakeLibraryRepository(),
         isSignedIn = { true },
@@ -62,9 +63,9 @@ class SearchViewModelTest {
         val requests = mutableListOf<Pair<String, BookSearchSort>>()
         val books = listOf(book("첫 책", "2021"), book("두 번째 책", "2026"))
         val viewModel = SearchViewModel(
-          bookSearchRepository = BookSearchRepository { query, sort ->
+          bookSearchRepository = BookSearchRepository { query, sort, _ ->
             requests += query to sort
-            if (query == "없음") emptyList() else books
+            BookSearchPage(books.size, null, if (query == "없음") emptyList() else books)
           },
           libraryRepository = FakeLibraryRepository(),
           isSignedIn = { true },
@@ -93,7 +94,7 @@ class SearchViewModelTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
       try {
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository) { true }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) }, libraryRepository) { true }
         val searchResult = book("검색 제목", "2026").copy(isbn13 = "9780000000001", category = "소설", totalPages = 320)
 
         viewModel.register(searchResult)
@@ -116,7 +117,7 @@ class SearchViewModelTest {
       try {
         var signedIn = false
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository) { signedIn }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) }, libraryRepository) { signedIn }
         val searchResult = book("보류할 책", "2026").copy(isbn13 = "9780000000002")
 
         viewModel.register(searchResult)
@@ -144,7 +145,7 @@ class SearchViewModelTest {
       try {
         var signedIn = false
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository) { signedIn }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) }, libraryRepository) { signedIn }
         val searchResult = book("재시도할 책", "2026").copy(isbn13 = "9780000000004")
 
         viewModel.register(searchResult)
@@ -171,7 +172,7 @@ class SearchViewModelTest {
       try {
         val searchResult = book("검색 결과", "2026").copy(isbn13 = "9780000000003")
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> listOf(searchResult) }, libraryRepository) { false }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _, _ -> BookSearchPage(1, null, listOf(searchResult)) }, libraryRepository) { false }
 
         viewModel.search("검색")
         advanceUntilIdle()
@@ -183,6 +184,41 @@ class SearchViewModelTest {
         assertEquals(null, viewModel.pendingRegistration.value)
         assertEquals(emptyList<ArchivedBook>(), libraryRepository.items.value)
         assertEquals(searchState, viewModel.uiState.value)
+      } finally {
+        Dispatchers.resetMain()
+      }
+    }
+
+  @Test
+  fun `검색 결과 끝에 도달하면 다음 페이지를 이어 붙인다`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      try {
+        val requestedPages = mutableListOf<Int>()
+        val viewModel =
+          SearchViewModel(
+            bookSearchRepository = BookSearchRepository { _, _, page ->
+              requestedPages += page
+              if (page == 1) {
+                BookSearchPage(2, 2, listOf(book("첫 책", "2025").copy(isbn13 = "1")))
+              } else {
+                BookSearchPage(2, null, listOf(book("두 번째 책", "2026").copy(isbn13 = "2")))
+              }
+            },
+            libraryRepository = FakeLibraryRepository(),
+            isSignedIn = { true },
+          )
+
+        viewModel.search("책")
+        advanceUntilIdle()
+        viewModel.loadMore()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as SearchUiState.Success
+        assertEquals(listOf(1, 2), requestedPages)
+        assertEquals(listOf("첫 책", "두 번째 책"), state.results.map(BookSearchResult::title))
+        assertEquals(2, state.totalCount)
+        assertEquals(null, state.nextPage)
       } finally {
         Dispatchers.resetMain()
       }

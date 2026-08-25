@@ -236,4 +236,31 @@ class HomeViewModelTest {
 
         repository.accessTokens shouldBe listOf(null, "access-token", null)
     }
+
+    @Test
+    fun `같은 인증 토큰으로 홈에 다시 진입하면 최신 피드를 불러온다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        viewModel.authenticate("access-token")
+        advanceUntilIdle()
+
+        repository.feed = HomeFeed(emptyList())
+        viewModel.authenticate("access-token")
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null, "access-token", "access-token")
+        viewModel.uiState.value shouldBe HomeUiState.Empty
+    }
+
+    @Test
+    fun `최초 게스트 인증은 초기 피드를 중복 호출하지 않는다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+
+        viewModel.authenticate(null)
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null)
+    }
 }
