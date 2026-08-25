@@ -7,6 +7,7 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 import { useFormValues } from '@/hooks/useFormValues';
 
 import { patchMembersMeNickname } from '@/services/apis/membersMeNickname/repository';
+import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
 import { useExecute } from '@/services/core/useExecute';
 
 import { validateNickname } from './validator';
@@ -24,15 +25,22 @@ export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => 
     validate: validateNickname,
   });
 
-  const { mutate } = useExecute({ executeFn: patchMembersMeNickname });
+  const { mutate: updateNickname } = useExecute({ executeFn: patchMembersMeNickname });
+  const { mutate: updateAnonymity } = useExecute({ executeFn: patchMembersMeAnonymity });
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const updatedUser = await mutate({ nickname: values.nickname });
-    if (!updatedUser) return;
+    const userWithUpdatedNickname = await updateNickname({ nickname: values.nickname });
+    if (!userWithUpdatedNickname) return;
 
-    login(updatedUser);
+    login(userWithUpdatedNickname);
+
+    const userWithAnonymityDisabled = await updateAnonymity({ displayAnonymous: false });
+    if (!userWithAnonymityDisabled) return;
+
+    login(userWithAnonymityDisabled);
+
     onClose();
   };
 
