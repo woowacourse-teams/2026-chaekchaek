@@ -22,7 +22,12 @@ sealed interface SearchUiState {
 
   data object Empty : SearchUiState
 
-  data class Success(val results: List<BookSearchResult>) : SearchUiState
+  data class Success(
+    val results: List<BookSearchResult>,
+    val totalCount: Int,
+    val nextPage: Int?,
+    val loadingMore: Boolean = false,
+  ) : SearchUiState
 
   data class Error(val message: String) : SearchUiState
 }
@@ -55,18 +60,46 @@ class SearchViewModel(
     searchJob = viewModelScope.launch {
       _uiState.value =
         try {
-          val results =
+          val page =
             withDelayedApiLoading(
               onLoadingChanged = { loading -> if (loading) _uiState.value = SearchUiState.Loading },
             ) {
-              bookSearchRepository.search(trimmed, _sort.value)
+              bookSearchRepository.search(trimmed, _sort.value, FIRST_PAGE)
             }
-          if (results.isEmpty()) SearchUiState.Empty else SearchUiState.Success(results)
+          if (page.items.isEmpty()) SearchUiState.Empty else SearchUiState.Success(page.items, page.totalCount, page.nextPage)
         } catch (e: CancellationException) {
           throw e
         } catch (e: Exception) {
           SearchUiState.Error(e.message ?: "검색 중 오류가 발생했습니다")
         }
+    }
+  }
+
+  fun loadMore() {
+    val current = _uiState.value as? SearchUiState.Success ?: return
+    val page = current.nextPage ?: return
+    if (current.loadingMore) return
+    val query = currentQuery
+    val sort = _sort.value
+    _uiState.value = current.copy(loadingMore = true)
+    searchJob = viewModelScope.launch {
+      try {
+        val next = bookSearchRepository.search(query, sort, page)
+        val latest = _uiState.value as? SearchUiState.Success ?: return@launch
+        if (currentQuery != query || _sort.value != sort || latest.nextPage != page) return@launch
+        _uiState.value =
+          latest.copy(
+            results = (latest.results + next.items).distinctBy(BookSearchResult::isbn13),
+            totalCount = next.totalCount,
+            nextPage = next.nextPage,
+            loadingMore = false,
+          )
+      } catch (error: CancellationException) {
+        throw error
+      } catch (_: Exception) {
+        val latest = _uiState.value as? SearchUiState.Success ?: return@launch
+        if (latest.nextPage == page) _uiState.value = latest.copy(loadingMore = false)
+      }
     }
   }
 
@@ -99,5 +132,9 @@ class SearchViewModel(
 
   fun cancelRegistration() {
     _pendingRegistration.value = null
+  }
+
+  private companion object {
+    const val FIRST_PAGE = 1
   }
 }

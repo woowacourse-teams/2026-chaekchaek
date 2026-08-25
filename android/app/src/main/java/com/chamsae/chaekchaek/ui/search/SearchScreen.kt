@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -116,6 +117,7 @@ fun SearchRoute(
     onSearch = viewModel::search,
     onClear = viewModel::clear,
     onRegister = viewModel::register,
+    onLoadMore = viewModel::loadMore,
     onSortSelect = viewModel::selectSort,
     onBack = onBack,
     onBookClick = onBookClick,
@@ -169,6 +171,7 @@ fun SearchScreen(
   onSearch: (String) -> Unit,
   onClear: () -> Unit,
   onRegister: (BookSearchResult) -> Unit,
+  onLoadMore: () -> Unit,
   onSortSelect: (BookSearchSort) -> Unit,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
@@ -219,9 +222,12 @@ fun SearchScreen(
       is SearchUiState.Success ->
         SearchResults(
           results = current.results,
+          totalCount = current.totalCount,
+          nextPage = current.nextPage,
           sort = sort,
           registeredBookIds = registeredBookIds,
           onRegister = onRegister,
+          onLoadMore = onLoadMore,
           onSortSelect = onSortSelect,
           onBookClick = onBookClick,
           modifier = Modifier.weight(1f),
@@ -323,15 +329,18 @@ private fun SearchField(
 @Composable
 private fun SearchResults(
   results: List<BookSearchResult>,
+  totalCount: Int,
+  nextPage: Int?,
   sort: BookSearchSort,
   registeredBookIds: Set<String>,
   onRegister: (BookSearchResult) -> Unit,
+  onLoadMore: () -> Unit,
   onSortSelect: (BookSearchSort) -> Unit,
   onBookClick: (BookDetailArgs) -> Unit,
   modifier: Modifier = Modifier,
 ) {
   Column(modifier = modifier.fillMaxWidth()) {
-    SearchResultHeader(results.size, sort, onSortSelect)
+    SearchResultHeader(totalCount, sort, onSortSelect)
     LazyColumn(modifier = Modifier.weight(1f)) {
       items(results) { book ->
         SearchResultRow(
@@ -341,6 +350,11 @@ private fun SearchResults(
           onClick = { onBookClick(book.toBookDetailArgs()) },
         )
         HorizontalDivider(color = ChaekBand)
+      }
+      if (nextPage != null) {
+        item(key = "next-page-$nextPage") {
+          LaunchedEffect(nextPage) { onLoadMore() }
+        }
       }
     }
   }
