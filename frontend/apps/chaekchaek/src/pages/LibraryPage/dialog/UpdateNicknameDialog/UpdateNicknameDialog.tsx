@@ -1,5 +1,7 @@
 import { Button, ButtonStack, Dialog, Field, Input } from '@chaekchaek/design-system';
 
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
 import { useFormValues } from '@/hooks/useFormValues';
 
 import { validateNickname } from './validator';
@@ -8,9 +10,11 @@ import type { NicknameFormValues } from './validator';
 import type { UpdateNicknameDialogProps } from './UpdateNicknameDialog.types';
 
 export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => {
+  const { user } = useAuthContext();
+
   const { values, errors, onChange, isValid, valids } = useFormValues<NicknameFormValues>({
     initialValues: {
-      nickname: '',
+      nickname: user?.nickname ?? '',
     },
     validate: validateNickname,
   });
