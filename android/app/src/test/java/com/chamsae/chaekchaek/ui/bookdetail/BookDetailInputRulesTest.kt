@@ -1,5 +1,8 @@
 package com.chamsae.chaekchaek.ui.bookdetail
 
+import com.chaekchaek.app.data.remote.ReplyPage
+import com.chaekchaek.app.data.remote.ReviewReply
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -20,6 +23,22 @@ class BookDetailInputRulesTest {
     assertTrue(BookDetailInputRules.hasReviewDraft("한 글자", "", "", "80", 80, false))
     assertTrue(BookDetailInputRules.hasReviewDraft("", "", "", "81", 80, false))
     assertTrue(BookDetailInputRules.hasReviewDraft("", "", "", "80", 80, true))
+  }
+
+  @Test
+  fun `전체 답글은 마지막 페이지까지 읽고 중복을 제거한다`() = runTest {
+    val requestedPages = mutableListOf<Int>()
+    val first = ReviewReply(1, "첫 답글", "참새", false, 0)
+    val second = ReviewReply(2, "둘째 답글", "참새", false, 0)
+
+    val replies = loadAllReplies { page ->
+      requestedPages += page
+      if (page == 1) ReplyPage(2, 2, listOf(first))
+      else ReplyPage(2, null, listOf(first, second))
+    }
+
+    assertEquals(listOf(1, 2), requestedPages)
+    assertEquals(listOf(first, second), replies)
   }
 
   @Test

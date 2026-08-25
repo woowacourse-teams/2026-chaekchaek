@@ -112,6 +112,7 @@ import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.ReviewReply
+import com.chaekchaek.app.data.remote.ReplyPage
 import com.chaekchaek.app.domain.rating.Rating
 import kotlinx.coroutines.launch
 
@@ -235,12 +236,28 @@ fun BookDetailRoute(
       bookDetailRepository.createReview(bookIdForWrite(), request, accessToken)
       reloadNonce++
     },
-    onReviewLike = { reviewId ->
-      bookDetailRepository.likeReview(reviewId, requireNotNull(tokens).accessToken)
+    onReviewLike = { reviewId, likedByMe ->
+      val accessToken = requireNotNull(tokens).accessToken
+      if (likedByMe) bookDetailRepository.unlikeReview(reviewId, accessToken)
+      else bookDetailRepository.likeReview(reviewId, accessToken)
       reloadNonce++
+    },
+    onLoadReplies = { reviewId ->
+      val allReplies = loadAllReplies { page ->
+        bookDetailRepository.replies(reviewId, tokens?.accessToken, page)
+      }
+      reviews = reviews.map { review ->
+        if (review.reviewId == reviewId) review.copy(recentReplies = allReplies) else review
+      }
     },
     onReplyCreate = { reviewId, content ->
       bookDetailRepository.createReply(reviewId, content, requireNotNull(tokens).accessToken)
+      reloadNonce++
+    },
+    onReplyLike = { replyId, likedByMe ->
+      val accessToken = requireNotNull(tokens).accessToken
+      if (likedByMe) bookDetailRepository.unlikeReply(replyId, accessToken)
+      else bookDetailRepository.likeReply(replyId, accessToken)
       reloadNonce++
     },
     modifier = modifier,
@@ -274,8 +291,10 @@ fun BookDetailScreen(
   onPageSave: suspend (Int) -> Unit = {},
   onRatingSave: suspend (Rating) -> Unit = {},
   onReviewCreate: suspend (ReviewCreateRequest) -> Unit = {},
-  onReviewLike: suspend (Long) -> Unit = {},
+  onReviewLike: suspend (Long, Boolean) -> Unit = { _, _ -> },
+  onLoadReplies: suspend (Long) -> Unit = {},
   onReplyCreate: suspend (Long, String) -> Unit = { _, _ -> },
+  onReplyLike: suspend (Long, Boolean) -> Unit = { _, _ -> },
 ) {
   BackHandler(onBack = onBack)
   val listState = rememberLazyListState()
@@ -378,8 +397,10 @@ fun BookDetailScreen(
           onSortChange = onReviewSortChange,
           onOpenLockedReview = { pendingSpoilerPage = it },
           onRevealSpoilers = { spoilersRevealed = true },
-          onLike = { reviewId -> runAuthenticated("감상 반응") { onReviewLike(reviewId) } },
+          onLike = { reviewId, likedByMe -> runAuthenticated("감상 반응") { onReviewLike(reviewId, likedByMe) } },
+          onLoadReplies = { reviewId -> execute("답글 조회") { onLoadReplies(reviewId) } },
           onReply = { reviewId, content -> runAuthenticated("답글 작성") { onReplyCreate(reviewId, content) } },
+          onReplyLike = { replyId, likedByMe -> runAuthenticated("답글 반응") { onReplyLike(replyId, likedByMe) } },
         )
       }
     }
@@ -825,8 +846,10 @@ private fun ReviewsSection(
   onSortChange: (ReviewSort) -> Unit,
   onOpenLockedReview: (Int) -> Unit,
   onRevealSpoilers: () -> Unit,
-  onLike: (Long) -> Unit,
+  onLike: (Long, Boolean) -> Unit,
+  onLoadReplies: (Long) -> Unit,
   onReply: (Long, String) -> Unit,
+  onReplyLike: (Long, Boolean) -> Unit,
 ) {
   var replyTarget by remember { mutableStateOf<BookReview?>(null) }
   Column(modifier = Modifier.fillMaxWidth()) {
@@ -894,7 +917,9 @@ private fun ReviewsSection(
             review.currentPage?.takeIf { it > currentPage }?.let(onOpenLockedReview) ?: onRevealSpoilers()
           },
           onLike = onLike,
+          onLoadReplies = { onLoadReplies(review.reviewId) },
           onReply = { replyTarget = review },
+          onReplyLike = onReplyLike,
         )
       }
     }
@@ -915,8 +940,10 @@ private fun ReviewCard(
   review: BookReview,
   locked: Boolean,
   onOpenLockedReview: () -> Unit,
-  onLike: (Long) -> Unit,
+  onLike: (Long, Boolean) -> Unit,
+  onLoadReplies: () -> Unit,
   onReply: () -> Unit,
+  onReplyLike: (Long, Boolean) -> Unit,
 ) {
   Column(modifier = Modifier.fillMaxWidth()) {
     Column(
@@ -957,21 +984,40 @@ private fun ReviewCard(
         )
       }
       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("♡ 좋아요 ${review.likeCount}", modifier = Modifier.clickable { onLike(review.reviewId) }, style = MaterialTheme.typography.labelSmall)
+        Text(
+          "${if (review.likedByMe) "♥" else "♡"} 좋아요 ${review.likeCount}",
+          modifier =
+            Modifier
+              .clickable(role = Role.Button) { onLike(review.reviewId, review.likedByMe) }
+              .clearAndSetSemantics { contentDescription = if (review.likedByMe) "감상 좋아요 취소" else "감상 좋아요" },
+          style = MaterialTheme.typography.labelSmall,
+        )
         Row(modifier = Modifier.clickable(role = Role.Button, onClick = onReply), verticalAlignment = Alignment.CenterVertically) {
           Icon(painterResource(R.drawable.ic_comment), contentDescription = "감상에 답글 작성", modifier = Modifier.size(14.dp))
           Text("답글 ${review.replyCount}", modifier = Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelSmall)
         }
       }
     }
-    if (review.recentReplies.isNotEmpty()) {
-      Replies(replies = review.recentReplies, locked = locked)
+    if (review.replyCount > 0) {
+      Replies(
+        replies = review.recentReplies,
+        totalCount = review.replyCount,
+        locked = locked,
+        onLoadAll = onLoadReplies,
+        onLike = onReplyLike,
+      )
     }
   }
 }
 
 @Composable
-private fun Replies(replies: List<ReviewReply>, locked: Boolean) {
+private fun Replies(
+  replies: List<ReviewReply>,
+  totalCount: Int,
+  locked: Boolean,
+  onLoadAll: () -> Unit,
+  onLike: (Long, Boolean) -> Unit,
+) {
   Column(
     modifier = Modifier.fillMaxWidth().background(ChaekSurfaceMuted).padding(start = 48.dp, top = 12.dp, end = 16.dp, bottom = 14.dp),
     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -990,13 +1036,40 @@ private fun Replies(replies: List<ReviewReply>, locked: Boolean) {
             lineHeight = 18.sp,
           )
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text("♡", color = ChaekInkSecondary, fontSize = 13.sp)
+        Column(
+          modifier =
+            Modifier
+              .clickable(role = Role.Button) { onLike(reply.replyId, reply.likedByMe) }
+              .clearAndSetSemantics { contentDescription = if (reply.likedByMe) "답글 좋아요 취소" else "답글 좋아요" },
+          horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+          Text(if (reply.likedByMe) "♥" else "♡", color = ChaekInkSecondary, fontSize = 13.sp)
           Text("${reply.likeCount}", color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 9.5.sp)
         }
       }
     }
+    if (replies.size < totalCount) {
+      Text(
+        "답글 ${totalCount}개 모두 보기",
+        modifier = Modifier.clickable(role = Role.Button, onClick = onLoadAll).padding(vertical = 4.dp),
+        color = ChaekInk,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.SemiBold,
+      )
+    }
   }
+}
+
+internal suspend fun loadAllReplies(loadPage: suspend (Int) -> ReplyPage): List<ReviewReply> {
+  val replies = mutableListOf<ReviewReply>()
+  val loadedPages = mutableSetOf<Int>()
+  var page: Int? = 1
+  while (page != null && loadedPages.add(page)) {
+    val response = loadPage(page)
+    replies += response.items
+    page = response.nextPage
+  }
+  return replies.distinctBy(ReviewReply::replyId)
 }
 
 internal fun shouldLockReview(
