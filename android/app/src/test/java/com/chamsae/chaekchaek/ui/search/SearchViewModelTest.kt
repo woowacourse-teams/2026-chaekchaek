@@ -33,6 +33,7 @@ class SearchViewModelTest {
           listOf(book("검색 결과", "2026"))
         },
         libraryRepository = FakeLibraryRepository(),
+        isSignedIn = { true },
       )
       try {
 
@@ -66,6 +67,7 @@ class SearchViewModelTest {
             if (query == "없음") emptyList() else books
           },
           libraryRepository = FakeLibraryRepository(),
+          isSignedIn = { true },
         )
 
         viewModel.search("없음")
@@ -91,7 +93,7 @@ class SearchViewModelTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
       try {
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository)
+        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository) { true }
         val searchResult = book("검색 제목", "2026").copy(isbn13 = "9780000000001", category = "소설", totalPages = 320)
 
         viewModel.register(searchResult)
@@ -102,6 +104,85 @@ class SearchViewModelTest {
         assertEquals("검색 제목", saved.title)
         assertEquals("소설", saved.category)
         assertEquals(320, saved.totalPages)
+      } finally {
+        Dispatchers.resetMain()
+      }
+    }
+
+  @Test
+  fun `로그아웃 등록은 책을 보류하고 로그인 후 한 번만 재개한다`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      try {
+        var signedIn = false
+        val libraryRepository = FakeLibraryRepository()
+        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository) { signedIn }
+        val searchResult = book("보류할 책", "2026").copy(isbn13 = "9780000000002")
+
+        viewModel.register(searchResult)
+        advanceUntilIdle()
+
+        assertEquals(searchResult, viewModel.pendingRegistration.value)
+        assertEquals(emptyList<ArchivedBook>(), libraryRepository.items.value)
+
+        signedIn = true
+        viewModel.resumeRegistration()
+        viewModel.resumeRegistration()
+        advanceUntilIdle()
+
+        assertEquals(null, viewModel.pendingRegistration.value)
+        assertEquals(listOf("9780000000002"), libraryRepository.items.value.map(ArchivedBook::id))
+      } finally {
+        Dispatchers.resetMain()
+      }
+    }
+
+  @Test
+  fun `로그인 후 등록 실패는 보류를 유지해 재시도한다`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      try {
+        var signedIn = false
+        val libraryRepository = FakeLibraryRepository()
+        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository) { signedIn }
+        val searchResult = book("재시도할 책", "2026").copy(isbn13 = "9780000000004")
+
+        viewModel.register(searchResult)
+        signedIn = true
+        libraryRepository.addFailure = IllegalStateException("등록 실패")
+
+        assertEquals("등록 실패", runCatching { viewModel.resumeRegistration() }.exceptionOrNull()?.message)
+        assertEquals(searchResult, viewModel.pendingRegistration.value)
+
+        libraryRepository.addFailure = null
+        viewModel.resumeRegistration()
+
+        assertEquals(null, viewModel.pendingRegistration.value)
+        assertEquals(listOf("9780000000004"), libraryRepository.items.value.map(ArchivedBook::id))
+      } finally {
+        Dispatchers.resetMain()
+      }
+    }
+
+  @Test
+  fun `로그인 취소는 보류만 지우고 검색 결과를 유지한다`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      try {
+        val searchResult = book("검색 결과", "2026").copy(isbn13 = "9780000000003")
+        val libraryRepository = FakeLibraryRepository()
+        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> listOf(searchResult) }, libraryRepository) { false }
+
+        viewModel.search("검색")
+        advanceUntilIdle()
+        val searchState = viewModel.uiState.value
+        viewModel.register(searchResult)
+        viewModel.cancelRegistration()
+        advanceUntilIdle()
+
+        assertEquals(null, viewModel.pendingRegistration.value)
+        assertEquals(emptyList<ArchivedBook>(), libraryRepository.items.value)
+        assertEquals(searchState, viewModel.uiState.value)
       } finally {
         Dispatchers.resetMain()
       }
@@ -120,12 +201,14 @@ class SearchViewModelTest {
 
 private class FakeLibraryRepository : LibraryRepository {
   private val mutableItems = MutableStateFlow(emptyList<ArchivedBook>())
+  var addFailure: Exception? = null
   override val items: StateFlow<List<ArchivedBook>> = mutableItems
   override val memberId = MutableStateFlow<Long?>(1L)
   override val anonymousReviews = MutableStateFlow(true)
   override val nickname = MutableStateFlow("")
 
   override suspend fun add(book: ArchivedBook): Long? {
+    addFailure?.let { throw it }
     mutableItems.value += book
     return book.bookId
   }

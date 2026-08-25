@@ -30,11 +30,14 @@ sealed interface SearchUiState {
 class SearchViewModel(
   private val bookSearchRepository: BookSearchRepository,
   private val libraryRepository: LibraryRepository,
+  private val isSignedIn: () -> Boolean,
 ) : ViewModel() {
   private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
   val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
   private val _sort = MutableStateFlow(BookSearchSort.LATEST)
   val sort: StateFlow<BookSearchSort> = _sort.asStateFlow()
+  private val _pendingRegistration = MutableStateFlow<BookSearchResult?>(null)
+  val pendingRegistration: StateFlow<BookSearchResult?> = _pendingRegistration.asStateFlow()
   private var searchJob: Job? = null
   private var currentQuery = ""
 
@@ -74,6 +77,10 @@ class SearchViewModel(
   }
 
   fun register(book: BookSearchResult) {
+    if (!isSignedIn()) {
+      _pendingRegistration.value = book
+      return
+    }
     viewModelScope.launch {
       try {
         libraryRepository.add(book.toArchivedBook())
@@ -82,5 +89,15 @@ class SearchViewModel(
       } catch (_: Exception) {
       }
     }
+  }
+
+  suspend fun resumeRegistration() {
+    val book = _pendingRegistration.value ?: return
+    libraryRepository.add(book.toArchivedBook())
+    _pendingRegistration.value = null
+  }
+
+  fun cancelRegistration() {
+    _pendingRegistration.value = null
   }
 }
