@@ -8,7 +8,29 @@
   font-weight: 700;
   line-height: 22.5px;
 }
-.root.kakao { --button-background: #fee500; --button-border-color: #fee500; --button-color: #000; }
-.root.apple { --button-background: #fff; --button-border-color: #fff; --button-color: #000; }
-.root.google { --button-background: transparent; --button-border-color: rgb(255 255 255 / 20%); --button-color: #fff; }
-.icon { display: block; width: 18px; height: 20px; object-fit: contain; }
+.root.kakao {
+  --button-background: #fee500;
+  --button-border-color: #fee500;
+  --button-color: #000;
+}
+.root.apple {
+  --button-background: #fff;
+  --button-border-color: #fff;
+  --button-color: #000;
+}
+.root.google {
+  --button-background: transparent;
+  --button-border-color: rgb(255 255 255 / 20%);
+  --button-color: #fff;
+}
+.root.google.reverse {
+  --button-background: transparent;
+  --button-border-color: rgb(0 0 0 / 20%);
+  --button-color: #000;
+}
+.icon {
+  display: block;
+  width: 18px;
+  height: 20px;
+  object-fit: contain;
+}

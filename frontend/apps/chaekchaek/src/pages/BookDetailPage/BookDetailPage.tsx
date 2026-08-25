@@ -8,12 +8,16 @@ import { Main } from '@/frames';
 // import DummyLargeImgBox from '../../components/ImgBox/imgs/dummy-large.png';
 import { Split } from '@chaekchaek/design-system';
 
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { postLibrary } from '@/services/apis/library/repository';
 import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
 import { getBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
+
+import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
 
 import { BookOverview } from './components/BookOverview';
 import { BookInfo } from './components/BookInfo';
@@ -35,6 +39,16 @@ export const BookDetailPage = () => {
     queryFn: getBooksIsbnLoadData,
   });
 
+  const { isAuthenticated } = useAuthContext();
+
+  const [openLoginDialog, setOpenLoginDialog] = useState(false);
+  const handleOpenLoginDialog = () => {
+    if (!isAuthenticated) setOpenLoginDialog(true);
+  };
+  const handleCloseLoginDialog = () => {
+    setOpenLoginDialog(false);
+  };
+
   const { mutate: mutatePatchLibraryBookId } = useExecute({
     executeFn: patchLibraryBookId,
     onSuccess: refetchGetBooksIsbnLoadData,
@@ -44,6 +58,7 @@ export const BookDetailPage = () => {
     onSuccess: refetchGetBooksIsbnLoadData,
   });
   const handleRegisterLibrary = async (status: string) => {
+    if (!isAuthenticated) return handleOpenLoginDialog();
     if (!data?.myRecord) return await mutatePostLibrary({ isbn13: isbn, status });
     await mutatePatchLibraryBookId({ bookId: data?.bookId, status });
   };
@@ -90,6 +105,7 @@ export const BookDetailPage = () => {
     null,
   );
   const handleOpenDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog') => {
+    if (!isAuthenticated) return handleOpenLoginDialog();
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
@@ -193,6 +209,7 @@ export const BookDetailPage = () => {
         </Split>
 
         {dialogElement}
+        {openLoginDialog && <LoginDialog onClose={handleCloseLoginDialog} />}
       </Main>
     </Layout>
   );

@@ -26,7 +26,7 @@ const providerDetails = {
   },
 } as const;
 
-export const SocialLoginButton = ({ provider }: SocialLoginButtonProps) => {
+export const SocialLoginButton = ({ provider, reverse }: SocialLoginButtonProps) => {
   const { label, icon, link } = providerDetails[provider];
 
   return (
@@ -35,7 +35,7 @@ export const SocialLoginButton = ({ provider }: SocialLoginButtonProps) => {
       href={link}
       block
       size="large"
-      className={`${styles.root} ${styles[provider]}`}
+      className={`${styles.root} ${styles[provider]} ${reverse ? styles.reverse : ''}`}
       leading={<img className={styles.icon} src={icon} alt="" />}
     >
       {label}

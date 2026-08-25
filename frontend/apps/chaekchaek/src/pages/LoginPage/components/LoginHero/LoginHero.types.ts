@@ -1,1 +1,3 @@
-export type LoginHeroProps = Record<string, never>;
+export type LoginHeroProps = {
+  reverse?: boolean;
+};
