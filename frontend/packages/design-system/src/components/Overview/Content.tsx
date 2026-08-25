@@ -23,11 +23,11 @@ export const Content = <T extends ElementType>(props: ContentProps<T>) => {
 
   return (
     <View as={as} className={classname} {...restProps}>
-      {leading && <p className={styles.leading}>{leading}</p>}
-      {title && <p className={styles.title}>{title}</p>}
-      {content && <p className={styles.content}>{content}</p>}
-      {description && <p className={styles.description}>{description}</p>}
-      {meta && <p className={styles.meta}>{meta}</p>}
+      {leading && <div className={styles.leading}>{leading}</div>}
+      {title && <div className={styles.title}>{title}</div>}
+      {content && <div className={styles.content}>{content}</div>}
+      {description && <div className={styles.description}>{description}</div>}
+      {meta && <div className={styles.meta}>{meta}</div>}
     </View>
   );
 };
