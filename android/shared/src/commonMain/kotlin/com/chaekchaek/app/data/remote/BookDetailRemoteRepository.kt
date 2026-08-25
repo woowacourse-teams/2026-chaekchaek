@@ -160,6 +160,7 @@ data class BookReview(
   val likedByMe: Boolean = false,
   val isSpoiler: Boolean = false,
   val recentReplies: List<ReviewReply> = emptyList(),
+  val authorProfileImageUrl: String? = null,
 )
 
 data class ReviewReply(
@@ -169,6 +170,7 @@ data class ReviewReply(
   val anonymous: Boolean,
   val likeCount: Int,
   val likedByMe: Boolean = false,
+  val authorProfileImageUrl: String? = null,
 )
 
 @Serializable
@@ -261,7 +263,11 @@ internal data class ReviewDto(
 )
 
 @Serializable
-internal data class ReviewAuthorDto(val displayName: String, val anonymous: Boolean)
+internal data class ReviewAuthorDto(
+  val displayName: String,
+  val anonymous: Boolean,
+  val profileImageUrl: String? = null,
+)
 
 @Serializable
 internal data class ReviewReplyDto(
@@ -321,6 +327,7 @@ internal fun ReviewDto.toBookReview() =
     currentPage = currentPage,
     createdAt = createdAt,
     authorName = author.displayName,
+    authorProfileImageUrl = author.profileImageUrl,
     anonymous = author.anonymous,
     replyCount = replyCount,
     likeCount = likeCount,
@@ -334,6 +341,7 @@ internal fun ReviewReplyDto.toReviewReply() =
     replyId = replyId,
     content = content,
     authorName = author.displayName,
+    authorProfileImageUrl = author.profileImageUrl,
     anonymous = author.anonymous,
     likeCount = likeCount,
     likedByMe = likedByMe,

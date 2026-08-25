@@ -1,5 +1,6 @@
 package com.chamsae.chaekchaek.ui.bookdetail
 
+import com.chamsae.chaekchaek.R
 import com.chaekchaek.app.data.remote.ReplyPage
 import com.chaekchaek.app.data.remote.ReviewReply
 import kotlinx.coroutines.test.runTest
@@ -57,5 +58,21 @@ class BookDetailInputRulesTest {
 
     assertEquals(content.length, masked.length)
     assertEquals("짹짹 짹짹짹!\n짹짹?", masked)
+  }
+
+  @Test
+  fun `같은 표시 이름은 항상 같은 참새 프로필을 사용한다`() {
+    val first = authorAvatarResource("참새 1204")
+    val second = authorAvatarResource("참새 1204")
+
+    assertEquals(first, second)
+    assertTrue(
+      first in setOf(
+        R.drawable.avatar_reading,
+        R.drawable.avatar_kim,
+        R.drawable.avatar_yoon,
+        R.drawable.avatar_tea,
+      ),
+    )
   }
 }
