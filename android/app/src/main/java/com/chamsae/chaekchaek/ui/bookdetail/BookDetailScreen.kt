@@ -56,7 +56,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -107,6 +106,7 @@ import com.chaekchaek.app.data.remote.MobileLoginException
 import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
+import com.chaekchaek.app.data.remote.ReviewReply
 import com.chaekchaek.app.domain.rating.Rating
 import kotlinx.coroutines.launch
 
@@ -352,6 +352,7 @@ fun BookDetailScreen(
           },
           onSortChange = onReviewSortChange,
           onOpenLockedReview = { pendingSpoilerPage = it },
+          onRevealSpoilers = { spoilersRevealed = true },
           onLike = { reviewId -> runAuthenticated("감상 반응") { onReviewLike(reviewId) } },
           onReply = { reviewId, content -> runAuthenticated("답글 작성") { onReplyCreate(reviewId, content) } },
         )
@@ -792,6 +793,7 @@ private fun ReviewsSection(
   onScopeChange: (ReviewScope) -> Unit,
   onSortChange: (ReviewSort) -> Unit,
   onOpenLockedReview: (Int) -> Unit,
+  onRevealSpoilers: () -> Unit,
   onLike: (Long) -> Unit,
   onReply: (Long, String) -> Unit,
 ) {
@@ -853,11 +855,13 @@ private fun ReviewsSection(
       loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
       reviews.isEmpty() -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
       else -> reviews.forEach { review ->
-        val lockedPage = review.currentPage?.takeIf { shouldLockReview(currentPage, it, spoilersRevealed) }
+        val locked = shouldLockReview(currentPage, review.currentPage, review.isSpoiler, spoilersRevealed)
         ReviewCard(
           review = review,
-          lockedPage = lockedPage,
-          onOpenLockedReview = { lockedPage?.let(onOpenLockedReview) },
+          locked = locked,
+          onOpenLockedReview = {
+            review.currentPage?.takeIf { it > currentPage }?.let(onOpenLockedReview) ?: onRevealSpoilers()
+          },
           onLike = onLike,
           onReply = { replyTarget = review },
         )
@@ -878,72 +882,50 @@ private fun ReviewsSection(
 @Composable
 private fun ReviewCard(
   review: BookReview,
-  lockedPage: Int?,
+  locked: Boolean,
   onOpenLockedReview: () -> Unit,
   onLike: (Long) -> Unit,
   onReply: () -> Unit,
 ) {
-  Column(
-    modifier = Modifier.fillMaxWidth().background(ChaekBackground).padding(horizontal = 16.dp, vertical = 14.dp),
-    verticalArrangement = Arrangement.spacedBy(10.dp),
-  ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-      Surface(modifier = Modifier.size(34.dp), shape = CircleShape, color = ChaekAccentSoft) {
-        Box(contentAlignment = Alignment.Center) { Text(review.authorName.take(1)) }
+  Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+      modifier = Modifier.fillMaxWidth().background(ChaekBackground).padding(horizontal = 16.dp, vertical = 14.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        Surface(modifier = Modifier.size(34.dp), shape = CircleShape, color = ChaekAccentSoft) {
+          Box(contentAlignment = Alignment.Center) { Text(review.authorName.take(1)) }
+        }
+        Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
+          Text(if (review.anonymous) "${review.authorName} (익명)" else review.authorName, style = MaterialTheme.typography.titleSmall)
+          Text(
+            "${review.createdAt.take(10).replace('-', '.')} · ${review.currentPage?.let { "p.${it}까지" }.orEmpty()}",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+          )
+        }
       }
-      Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
-        Text(if (review.anonymous) "${review.authorName} (익명)" else review.authorName, style = MaterialTheme.typography.titleSmall)
-        Text(
-          "${review.createdAt.take(10).replace('-', '.')} · ${review.currentPage?.let { "p.${it}까지" }.orEmpty()}",
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          style = MaterialTheme.typography.bodySmall,
-        )
-      }
-    }
-    if (lockedPage != null) {
       Text(
-        "읽은 범위를 넘은 감상입니다. 스포일러 보호를 위해 내용을 가렸어요.",
-        modifier = Modifier.blur(4.dp).clearAndSetSemantics { contentDescription = "감상 내용 잠김" },
+        if (locked) maskAsChirps(review.content) else review.content,
+        modifier =
+          if (locked) {
+            Modifier.clickable(role = Role.Button, onClick = onOpenLockedReview)
+              .clearAndSetSemantics { contentDescription = "감상 내용 잠김" }
+          } else {
+            Modifier
+          },
         fontSize = 12.5.sp,
         lineHeight = 21.sp,
       )
-      Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        color = ChaekSurfaceMuted,
-      ) {
-        Row(
-          modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-          horizontalArrangement = Arrangement.spacedBy(8.dp),
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
-          Icon(painterResource(R.drawable.ic_lock), contentDescription = null, modifier = Modifier.size(14.dp), tint = ChaekInkSecondary)
-          Text(
-            "p.${lockedPage}까지 읽고 기록하면 열려요",
-            modifier = Modifier.weight(1f),
-            color = ChaekInkSecondary,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 11.sp,
-          )
-          Surface(
-            onClick = onOpenLockedReview,
-            modifier = Modifier.height(32.dp),
-            shape = RoundedCornerShape(6.dp),
-            color = ChaekInk,
-          ) {
-            Box(modifier = Modifier.padding(horizontal = 14.dp), contentAlignment = Alignment.Center) {
-              Text("열어보기", color = ChaekSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
-          }
-        }
-      }
-    } else {
-      Text(review.content, fontSize = 12.5.sp, lineHeight = 21.sp)
       review.quote?.let { quote ->
-        Text("“$quote”", modifier = Modifier.fillMaxWidth().background(ChaekAccentSoft).padding(horizontal = 14.dp, vertical = 12.dp), fontSize = 12.sp, lineHeight = 19.sp)
+        Text(
+          "“${if (locked) maskAsChirps(quote) else quote}”",
+          modifier = Modifier.fillMaxWidth().background(ChaekAccentSoft).padding(horizontal = 14.dp, vertical = 12.dp),
+          fontSize = 12.sp,
+          lineHeight = 19.sp,
+        )
       }
       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Spacer(Modifier.weight(1f))
         Text("♡ 좋아요 ${review.likeCount}", modifier = Modifier.clickable { onLike(review.reviewId) }, style = MaterialTheme.typography.labelSmall)
         Row(modifier = Modifier.clickable(role = Role.Button, onClick = onReply), verticalAlignment = Alignment.CenterVertically) {
           Icon(painterResource(R.drawable.ic_comment), contentDescription = "감상에 답글 작성", modifier = Modifier.size(14.dp))
@@ -951,11 +933,52 @@ private fun ReviewCard(
         }
       }
     }
+    if (review.recentReplies.isNotEmpty()) {
+      Replies(replies = review.recentReplies, locked = locked)
+    }
   }
 }
 
-internal fun shouldLockReview(currentPage: Int, reviewPage: Int, spoilersRevealed: Boolean): Boolean =
-  !spoilersRevealed && reviewPage > currentPage
+@Composable
+private fun Replies(replies: List<ReviewReply>, locked: Boolean) {
+  Column(
+    modifier = Modifier.fillMaxWidth().background(ChaekSurfaceMuted).padding(start = 48.dp, top = 12.dp, end = 16.dp, bottom = 14.dp),
+    verticalArrangement = Arrangement.spacedBy(12.dp),
+  ) {
+    replies.forEach { reply ->
+      Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+        Surface(modifier = Modifier.size(24.dp), shape = CircleShape, color = ChaekAccentSoft) {
+          Box(contentAlignment = Alignment.Center) { Text(reply.authorName.take(1), fontSize = 10.sp) }
+        }
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+          Text(if (reply.anonymous) "${reply.authorName} (익명)" else reply.authorName, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+          Text(
+            if (locked) maskAsChirps(reply.content) else reply.content,
+            color = ChaekInkSecondary,
+            fontSize = 11.5.sp,
+            lineHeight = 18.sp,
+          )
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+          Text("♡", color = ChaekInkSecondary, fontSize = 13.sp)
+          Text("${reply.likeCount}", color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 9.5.sp)
+        }
+      }
+    }
+  }
+}
+
+internal fun shouldLockReview(
+  currentPage: Int,
+  reviewPage: Int?,
+  isSpoiler: Boolean,
+  spoilersRevealed: Boolean,
+): Boolean = !spoilersRevealed && (isSpoiler || reviewPage?.let { it > currentPage } == true)
+
+internal fun maskAsChirps(content: String): String =
+  content.map { character -> if (character.isWhitespace() || character in VISIBLE_MASK_PUNCTUATION) character else '짹' }.joinToString("")
+
+private const val VISIBLE_MASK_PUNCTUATION = ".,!?…:;\"'“”‘’()[]{}-·"
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)

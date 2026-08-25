@@ -125,6 +125,16 @@ data class BookReview(
   val anonymous: Boolean,
   val replyCount: Int,
   val likeCount: Int,
+  val isSpoiler: Boolean = false,
+  val recentReplies: List<ReviewReply> = emptyList(),
+)
+
+data class ReviewReply(
+  val replyId: Long,
+  val content: String,
+  val authorName: String,
+  val anonymous: Boolean,
+  val likeCount: Int,
 )
 
 @Serializable
@@ -204,10 +214,20 @@ internal data class ReviewDto(
   val author: ReviewAuthorDto,
   val replyCount: Int,
   val likeCount: Int,
+  val isSpoiler: Boolean = false,
+  val recentReplies: List<ReviewReplyDto> = emptyList(),
 )
 
 @Serializable
 internal data class ReviewAuthorDto(val displayName: String, val anonymous: Boolean)
+
+@Serializable
+internal data class ReviewReplyDto(
+  val replyId: Long,
+  val content: String,
+  val author: ReviewAuthorDto,
+  val likeCount: Int,
+)
 
 internal fun BookDetailDto.toBookDetail() =
   BookDetail(
@@ -250,5 +270,16 @@ internal fun ReviewDto.toBookReview() =
     authorName = author.displayName,
     anonymous = author.anonymous,
     replyCount = replyCount,
+    likeCount = likeCount,
+    isSpoiler = isSpoiler,
+    recentReplies = recentReplies.map(ReviewReplyDto::toReviewReply),
+  )
+
+private fun ReviewReplyDto.toReviewReply() =
+  ReviewReply(
+    replyId = replyId,
+    content = content,
+    authorName = author.displayName,
+    anonymous = author.anonymous,
     likeCount = likeCount,
   )

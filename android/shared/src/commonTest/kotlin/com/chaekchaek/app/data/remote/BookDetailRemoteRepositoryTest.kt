@@ -29,6 +29,15 @@ class BookDetailRemoteRepositoryTest {
           author = ReviewAuthorDto("참새 1204", true),
           replyCount = 2,
           likeCount = 3,
+          isSpoiler = true,
+          recentReplies = listOf(
+            ReviewReplyDto(
+              replyId = 8,
+              content = "맞아요",
+              author = ReviewAuthorDto("참새 0821", false),
+              likeCount = 1,
+            ),
+          ),
         ),
       ),
     ).toReviewPage()
@@ -38,6 +47,9 @@ class BookDetailRemoteRepositoryTest {
     assertEquals(120, detail.myRecord?.currentPage)
     assertEquals(4.5, detail.myRecord?.rating)
     assertEquals("참새 1204", reviews.items.single().authorName)
+    assertEquals(true, reviews.items.single().isSpoiler)
+    assertEquals("맞아요", reviews.items.single().recentReplies.single().content)
+    assertEquals("참새 0821", reviews.items.single().recentReplies.single().authorName)
     assertEquals(2, reviews.nextPage)
   }
 
