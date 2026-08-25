@@ -12,11 +12,18 @@ import androidx.compose.foundation.layout.mandatorySystemGestures
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.core.view.WindowCompat
+import com.chamsae.chaekchaek.auth.RefreshTokenStore
+import com.chamsae.chaekchaek.auth.requestGoogleIdToken
+import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.di.SharedComponent
 import com.chaekchaek.app.di.create
 import com.chaekchaek.app.ui.App
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val sharedComponent by lazy { SharedComponent::class.create() }
@@ -40,7 +47,24 @@ class MainActivity : ComponentActivity() {
                     usesThreeButtonNavigation
             }
             CompositionLocalProvider(LocalSharedComponent provides sharedComponent) {
-                App()
+                val context = LocalContext.current
+                val scope = rememberCoroutineScope()
+                val tokenStore = remember(context) { RefreshTokenStore(context) }
+                val authPlatform = remember(context, scope, tokenStore) {
+                    AuthPlatformCallbacks(
+                        requestGoogleIdToken = { onResult ->
+                            scope.launch {
+                                runCatching { requestGoogleIdToken(context) }
+                                    .onSuccess { onResult(it, null) }
+                                    .onFailure { onResult(null, "Google 로그인을 완료하지 못했어요.") }
+                            }
+                        },
+                        readRefreshToken = tokenStore::read,
+                        writeRefreshToken = tokenStore::write,
+                        clearRefreshToken = tokenStore::clear,
+                    )
+                }
+                App(authPlatform)
             }
         }
     }

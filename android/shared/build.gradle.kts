@@ -42,6 +42,7 @@ kotlin {
             implementation(libs.compose.ui)
             implementation(libs.compose.material3)
             implementation(libs.compose.resources)
+            implementation(libs.coil.compose)
             implementation(libs.jetbrains.navigation3.ui)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.kotlin.inject.runtime)
@@ -53,6 +54,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
         }
         iosMain.dependencies {
+            implementation(libs.coil.network.ktor3)
             implementation(libs.ktor.client.darwin)
         }
         commonTest.dependencies {

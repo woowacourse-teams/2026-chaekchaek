@@ -1,13 +1,12 @@
 import SwiftUI
+import GoogleSignIn
 
 @main
 struct ChaekchaekApp: App {
-    @State private var model = AppModel()
-
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environment(model)
+                .onOpenURL { GIDSignIn.sharedInstance.handle($0) }
         }
     }
 }

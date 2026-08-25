@@ -118,6 +118,8 @@ fun BookDetailScreen(
     recentRatings: List<RatedBookUiModel> = emptyList(),
     localCurrentPage: Int = 0,
     coverContent: (@Composable (BookDetailArgs, Modifier) -> Unit)? = null,
+    resumedAuthenticatedAction: BookDetailAuthenticatedAction? = null,
+    onAuthenticatedActionHandled: () -> Unit = {},
     onLoginRequired: (BookDetailAuthenticatedAction) -> Unit = {},
     onAddToLibrary: () -> Unit = {},
     onStatusChange: (ReadingStatus) -> Unit = {},
@@ -160,6 +162,20 @@ fun BookDetailScreen(
             snackbarHostState.showSnackbar(it)
             onRequestErrorShown()
         }
+    }
+    LaunchedEffect(resumedAuthenticatedAction) {
+        when (val action = resumedAuthenticatedAction ?: return@LaunchedEffect) {
+            BookDetailAuthenticatedAction.AddToLibrary -> onAddToLibrary()
+            BookDetailAuthenticatedAction.OpenPageInput -> showPageDialog = true
+            BookDetailAuthenticatedAction.OpenRating -> showRatingDialog = true
+            BookDetailAuthenticatedAction.OpenReview -> showReviewSheet = true
+            BookDetailAuthenticatedAction.OpenMineFeed -> onReviewScopeChange(ReviewScope.MINE)
+            is BookDetailAuthenticatedAction.ChangeStatus -> onStatusChange(action.status)
+            is BookDetailAuthenticatedAction.SavePage -> onPageSave(action.page)
+            is BookDetailAuthenticatedAction.LikeReview -> onReviewLike(action.reviewId)
+            is BookDetailAuthenticatedAction.CreateReply -> onReplyCreate(action.reviewId, action.content)
+        }
+        onAuthenticatedActionHandled()
     }
 
     Box(modifier = modifier.fillMaxSize().background(ChaekBackground).navigationBarsPadding()) {
