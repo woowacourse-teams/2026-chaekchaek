@@ -12,10 +12,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -37,6 +38,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -62,6 +65,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -388,6 +392,7 @@ fun BookDetailScreen(
       item { Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand)) }
       item {
         ReviewsSection(
+          modifier = Modifier.fillParentMaxHeight(),
           reviews = reviews,
           reviewCount = reviewCount,
           loading = reviewsLoading,
@@ -395,6 +400,7 @@ fun BookDetailScreen(
           spoilersRevealed = spoilersRevealed,
           scope = reviewScope,
           sort = reviewSort,
+          signedIn = signedIn,
           onScopeChange = { requested ->
             if (requested == ReviewScope.MINE && !signedIn) {
               requireLogin { onReviewScopeChange(ReviewScope.MINE) }
@@ -403,6 +409,7 @@ fun BookDetailScreen(
             }
           },
           onSortChange = onReviewSortChange,
+          onLoginRequired = { afterLogin -> requireLogin(afterLogin) },
           onOpenLockedReview = { pendingSpoilerPage = it },
           onLike = { reviewId, likedByMe -> runAuthenticated("감상 반응") { onReviewLike(reviewId, likedByMe) } },
           onLoadReplies = { reviewId -> execute("답글 조회") { onLoadReplies(reviewId) } },
@@ -658,6 +665,7 @@ private fun BookCover(book: BookDetailArgs, modifier: Modifier = Modifier) {
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun BookSummary(book: BookDetailArgs, averageRating: Double?) {
   Column(
     modifier = Modifier.fillMaxWidth().padding(start = 20.dp, top = 18.dp, end = 20.dp, bottom = 10.dp),
@@ -679,9 +687,10 @@ private fun BookSummary(book: BookDetailArgs, averageRating: Double?) {
       fontWeight = FontWeight.Medium,
       textAlign = TextAlign.Center,
     )
-    Row(
-      modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-      horizontalArrangement = Arrangement.Center,
+    FlowRow(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
       listOf(
         book.category,
@@ -696,7 +705,7 @@ private fun BookSummary(book: BookDetailArgs, averageRating: Double?) {
 @Composable
 private fun MetaChip(label: String) {
   Surface(
-    modifier = Modifier.padding(horizontal = 4.dp).height(28.dp),
+    modifier = Modifier.height(28.dp),
     shape = RoundedCornerShape(999.dp),
     color = ChaekBand,
   ) {
@@ -718,7 +727,7 @@ private fun AverageRatingChip(averageRating: Double?) {
       horizontalArrangement = Arrangement.spacedBy(6.dp),
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      Text("★★★★☆", color = ChaekAccent, fontSize = 15.sp)
+      AverageRatingStars(averageRating)
       Text(
         averageRating?.let { "%.1f".format(it) } ?: "평점 없음",
         color = ChaekInk,
@@ -728,6 +737,28 @@ private fun AverageRatingChip(averageRating: Double?) {
     }
   }
 }
+
+@Composable
+private fun AverageRatingStars(averageRating: Double?) {
+  Row {
+    averageRatingStarFillFractions(averageRating).forEach { fillFraction ->
+      Box(modifier = Modifier.size(width = 15.dp, height = 20.dp), contentAlignment = Alignment.Center) {
+        Text("★", color = ChaekBorder, fontSize = 15.sp)
+        if (fillFraction > 0f) {
+          Box(
+            modifier = Modifier.align(Alignment.CenterStart).fillMaxHeight().fillMaxWidth(fillFraction).clipToBounds(),
+            contentAlignment = Alignment.CenterStart,
+          ) {
+            Text("★", modifier = Modifier.width(15.dp), color = ChaekAccent, fontSize = 15.sp)
+          }
+        }
+      }
+    }
+  }
+}
+
+internal fun averageRatingStarFillFractions(averageRating: Double?): List<Float> =
+  List(5) { starIndex -> ((averageRating ?: 0.0) - starIndex).coerceIn(0.0, 1.0).toFloat() }
 
 @Composable
 private fun ReadingRecord(
@@ -842,6 +873,7 @@ private fun ReadingRecord(
 
 @Composable
 private fun ReviewsSection(
+  modifier: Modifier = Modifier,
   reviews: List<BookReview>,
   reviewCount: Int,
   loading: Boolean,
@@ -849,8 +881,10 @@ private fun ReviewsSection(
   spoilersRevealed: Boolean,
   scope: ReviewScope,
   sort: ReviewSort,
+  signedIn: Boolean,
   onScopeChange: (ReviewScope) -> Unit,
   onSortChange: (ReviewSort) -> Unit,
+  onLoginRequired: (() -> Unit) -> Unit,
   onOpenLockedReview: (Int) -> Unit,
   onLike: (Long, Boolean) -> Unit,
   onLoadReplies: (Long) -> Unit,
@@ -858,7 +892,8 @@ private fun ReviewsSection(
   onReplyLike: (Long, Boolean) -> Unit,
 ) {
   var replyTarget by remember { mutableStateOf<BookReview?>(null) }
-  Column(modifier = Modifier.fillMaxWidth()) {
+  var sortExpanded by remember { mutableStateOf(false) }
+  Column(modifier = modifier.fillMaxWidth()) {
     Row(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
       Text("감상 $reviewCount", style = MaterialTheme.typography.titleLarge.copy(fontFamily = FontFamily.Serif))
     }
@@ -867,31 +902,44 @@ private fun ReviewsSection(
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      Surface(
-        onClick = { onSortChange(if (sort == ReviewSort.LATEST) ReviewSort.PAGE else ReviewSort.LATEST) },
-        modifier = Modifier.height(28.dp),
-        shape = RoundedCornerShape(999.dp),
-        color = ChaekBand,
-        border = BorderStroke(1.dp, ChaekInk),
-      ) {
-        Row(
-          modifier = Modifier.padding(horizontal = 10.dp),
-          horizontalArrangement = Arrangement.spacedBy(4.dp),
-          verticalAlignment = Alignment.CenterVertically,
+      Box {
+        Surface(
+          onClick = { sortExpanded = true },
+          modifier = Modifier.height(28.dp),
+          shape = RoundedCornerShape(999.dp),
+          color = ChaekBand,
+          border = BorderStroke(1.dp, ChaekInk),
         ) {
-          Text(
-            if (sort == ReviewSort.LATEST) "최신순" else "페이지순",
-            color = ChaekInk,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-          )
-          Icon(
-            painterResource(R.drawable.ic_chevron_down),
-            contentDescription = null,
-            modifier = Modifier.size(11.dp),
-            tint = ChaekInk,
-          )
+          Row(
+            modifier = Modifier.padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            Text(
+              sort.label,
+              color = ChaekInk,
+              fontFamily = FontFamily.Monospace,
+              fontSize = 10.sp,
+              fontWeight = FontWeight.SemiBold,
+            )
+            Icon(
+              painterResource(R.drawable.ic_chevron_down),
+              contentDescription = "감상 정렬 선택",
+              modifier = Modifier.size(11.dp),
+              tint = ChaekInk,
+            )
+          }
+        }
+        DropdownMenu(expanded = sortExpanded, onDismissRequest = { sortExpanded = false }) {
+          listOf(ReviewSort.LATEST, ReviewSort.PAGE).forEach { option ->
+            DropdownMenuItem(
+              text = { Text(option.label) },
+              onClick = {
+                sortExpanded = false
+                onSortChange(option)
+              },
+            )
+          }
         }
       }
       Surface(shape = RoundedCornerShape(999.dp), color = Color.Transparent, border = BorderStroke(1.dp, ChaekBorder)) {
@@ -912,7 +960,7 @@ private fun ReviewsSection(
       }
     }
     when {
-      loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+      loading && reviews.isEmpty() -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
       reviews.isEmpty() -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
       else -> reviews.forEach { review ->
         val locked = shouldLockReview(currentPage, review.currentPage, spoilersRevealed)
@@ -922,7 +970,10 @@ private fun ReviewsSection(
           onOpenLockedReview = { review.currentPage?.let(onOpenLockedReview) },
           onLike = onLike,
           onLoadReplies = { onLoadReplies(review.reviewId) },
-          onReply = { replyTarget = review },
+          onReply = {
+            if (signedIn) replyTarget = review
+            else onLoginRequired { replyTarget = review }
+          },
           onReplyLike = onReplyLike,
         )
       }
@@ -938,6 +989,15 @@ private fun ReviewsSection(
     )
   }
 }
+
+private val ReviewSort.label: String
+  get() =
+    when (this) {
+      ReviewSort.LATEST -> "최신순"
+      ReviewSort.PAGE -> "페이지순"
+      ReviewSort.OLDEST -> "오래된순"
+      ReviewSort.POPULAR -> "인기순"
+    }
 
 @Composable
 private fun ReviewCard(
