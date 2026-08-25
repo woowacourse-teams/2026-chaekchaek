@@ -20,7 +20,7 @@ import { useCallback, useState } from 'react';
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
 
-export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
+export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookReviewProps) => {
   const getReviewsReviewIdRepliesLoadData = useCallback(() => {
     return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
   }, [review.reviewId]);
@@ -84,6 +84,8 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
     handleClickCloseWriteReply();
   };
 
+  const showSpoilerVisible = isSpoilerVisible || review.isSpoiler;
+
   return (
     <Entry variant={review.deleted ? 'subtle' : 'plain'}>
       <Entry.Main>
@@ -100,9 +102,9 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
           </Shell>
         </Entry.Header>
         <Entry.Body>
-          {!review.isSpoiler ? review.content : SPOILER_PLACEHOLDER_REVIEW}
+          {!showSpoilerVisible ? review.content : SPOILER_PLACEHOLDER_REVIEW}
           {review.quote && (
-            <Note>{!review.isSpoiler ? review.quote : SPOILER_PLACEHOLDER_REVIEW}</Note>
+            <Note>{!showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}</Note>
           )}
         </Entry.Body>
         <Entry.Footer>
@@ -132,7 +134,7 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
                   </Shell.Leading>
                   <Shell.Content
                     title={reply.author.displayName}
-                    description={!review.isSpoiler ? reply.content : SPOILER_PLACEHOLDER_REPLY}
+                    description={!showSpoilerVisible ? reply.content : SPOILER_PLACEHOLDER_REPLY}
                   />
                   <Shell.Trailing>
                     <span

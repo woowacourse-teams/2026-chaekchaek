@@ -37,6 +37,7 @@ export type BookReviewsProps = {
   sort: SortType;
   count: number | undefined;
   reviews: BookReview[] | undefined;
+  isSpoilerVisible: boolean;
   onFeedChange: (feed: FeedType) => void;
   onSortChange: (sort: SortType) => void;
   onReviewsRefresh: () => void;

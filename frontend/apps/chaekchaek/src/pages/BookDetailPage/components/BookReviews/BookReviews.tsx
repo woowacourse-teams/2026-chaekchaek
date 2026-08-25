@@ -13,6 +13,7 @@ export const BookReviews = ({
   feed,
   count,
   reviews,
+  isSpoilerVisible,
   onReviewsRefresh,
   onSortChange,
   onFeedChange,
@@ -76,7 +77,12 @@ export const BookReviews = ({
       </Title>
       {reviews?.map((review) => {
         return (
-          <BookReview key={review.reviewId} review={review} onReviewsRefresh={onReviewsRefresh} />
+          <BookReview
+            key={review.reviewId}
+            review={review}
+            isSpoilerVisible={isSpoilerVisible}
+            onReviewsRefresh={onReviewsRefresh}
+          />
         );
       })}
       <Field>

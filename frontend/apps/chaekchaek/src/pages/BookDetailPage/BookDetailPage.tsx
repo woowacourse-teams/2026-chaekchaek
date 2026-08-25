@@ -101,6 +101,11 @@ export const BookDetailPage = () => {
     queryFn: getBooksBookIdReviewsLoadData,
   });
 
+  const [isSpoilerVisible, setIsSpoilerVisible] = useState(false);
+  const showSpoiler = () => {
+    setIsSpoilerVisible(true);
+  };
+
   const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null>(
     null,
   );
@@ -120,6 +125,7 @@ export const BookDetailPage = () => {
             <UpdateCurrentPageDialog
               bookId={data?.bookId}
               currentPage={data?.myRecord?.currentPage || 0}
+              onSpoilerVisible={showSpoiler}
               onCurrentPageUpdated={async () => {
                 await refetchGetBooksIsbnLoadData();
               }}
@@ -194,6 +200,7 @@ export const BookDetailPage = () => {
                 feed={reviewsRequestParams.feed}
                 count={reviewsData?.totalCount}
                 reviews={reviewsData?.items}
+                isSpoilerVisible={isSpoilerVisible}
                 onSortChange={(sort) => {
                   handleChangeReviewRequestParams({ name: 'sort', value: sort });
                 }}
