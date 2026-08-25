@@ -83,7 +83,9 @@ import com.chamsae.chaekchaek.R
 import com.chamsae.chaekchaek.auth.AuthSession
 import com.chamsae.chaekchaek.auth.requestGoogleIdToken
 import com.chamsae.chaekchaek.data.ArchivedBook
+import com.chamsae.chaekchaek.data.BookRatingStore
 import com.chamsae.chaekchaek.data.LibraryRepository
+import com.chamsae.chaekchaek.data.RatedBook
 import com.chamsae.chaekchaek.data.ReadingStatus
 import com.chamsae.chaekchaek.theme.ChaekAccent
 import com.chamsae.chaekchaek.theme.ChaekAccentInk
@@ -113,6 +115,7 @@ import kotlinx.coroutines.launch
 fun BookDetailRoute(
   book: BookDetailArgs,
   bookDetailRepository: BookDetailRemoteRepository,
+  bookRatingStore: BookRatingStore,
   mobileAuthRepository: MobileAuthRemoteRepository,
   authSession: AuthSession,
   libraryRepository: LibraryRepository,
@@ -121,6 +124,8 @@ fun BookDetailRoute(
 ) {
   val tokens by authSession.tokens.collectAsStateWithLifecycle()
   val archivedBooks by libraryRepository.items.collectAsStateWithLifecycle()
+  val memberId by libraryRepository.memberId.collectAsStateWithLifecycle()
+  val ratings by bookRatingStore.ratings.collectAsStateWithLifecycle()
   var detail by remember(book.isbn13) { mutableStateOf<BookDetail?>(null) }
   var reviews by remember(book.isbn13) { mutableStateOf(emptyList<BookReview>()) }
   var reviewCount by remember(book.isbn13) { mutableStateOf(0) }
@@ -132,12 +137,16 @@ fun BookDetailRoute(
   var reloadNonce by remember { mutableStateOf(0) }
   val archivedBook = archivedBooks.firstOrNull { it.id == book.isbn13.ifBlank { book.id } }
   val displayBook = detail?.toBookDetailArgs(book) ?: archivedBook?.toBookDetailArgs() ?: book
+  val ratingBookId = displayBook.isbn13.ifBlank { displayBook.id }
 
   suspend fun bookIdForWrite(): Long =
     detail?.bookId ?: requireNotNull(libraryRepository.add(displayBook.toArchivedBook()))
 
   LaunchedEffect(book.isbn13, archivedBook?.bookId, tokens?.accessToken, reloadNonce) {
     detail = book.isbn13.takeIf(String::isNotBlank)?.let { runCatching { bookDetailRepository.detail(it, tokens?.accessToken) }.getOrNull() }
+  }
+  LaunchedEffect(memberId) {
+    bookRatingStore.selectAccount(memberId)
   }
   LaunchedEffect(detail?.bookId, reviewScope, reviewSort, tokens?.accessToken, reloadNonce) {
     val bookId = detail?.bookId ?: return@LaunchedEffect
@@ -164,6 +173,7 @@ fun BookDetailRoute(
     reviewScope = reviewScope,
     reviewSort = reviewSort,
     myRecord = detail?.myRecord,
+    recentRatings = ratings.sortedBy(RatedBook::ratedAt).takeLast(3),
     onBack = onBack,
     onReviewScopeChange = { reviewScope = it },
     onReviewSortChange = { reviewSort = it },
@@ -205,6 +215,7 @@ fun BookDetailRoute(
     onRatingSave = { rating ->
       val accessToken = requireNotNull(tokens).accessToken
       bookDetailRepository.rate(bookIdForWrite(), rating.score.toDouble(), accessToken)
+      memberId?.let { bookRatingStore.rate(it, ratingBookId, displayBook.title, rating) }
       reloadNonce++
     },
     onReviewCreate = { request ->
@@ -235,6 +246,7 @@ fun BookDetailScreen(
   reviewScope: ReviewScope = ReviewScope.ALL,
   reviewSort: ReviewSort = ReviewSort.LATEST,
   myRecord: LibraryRecord? = null,
+  recentRatings: List<RatedBook> = emptyList(),
   onBack: () -> Unit,
   modifier: Modifier = Modifier,
   onReviewScopeChange: (ReviewScope) -> Unit = {},
@@ -401,9 +413,9 @@ fun BookDetailScreen(
 
   if (showRatingDialog) {
     BookRatingDialog(
-      currentBookId = book.bookId?.toString().orEmpty(),
+      currentBookId = book.id,
       initialRating = myRecord?.rating?.let { Rating.ofScore(it.toFloat()) },
-      recentRatings = emptyList(),
+      recentRatings = recentRatings,
       onDismiss = { showRatingDialog = false },
       onSave = { rating ->
         runAuthenticated("별점 저장") { onRatingSave(rating) }

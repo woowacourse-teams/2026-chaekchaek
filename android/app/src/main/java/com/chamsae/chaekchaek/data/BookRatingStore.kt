@@ -2,8 +2,6 @@ package com.chamsae.chaekchaek.data
 
 import android.content.Context
 import com.chaekchaek.app.domain.rating.Rating
-import java.time.LocalDate
-import java.time.ZoneId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,40 +22,33 @@ data class RatedBook(
  */
 class BookRatingStore(context: Context) {
   private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-  private val _ratings = MutableStateFlow(load())
+  private val _ratings = MutableStateFlow(emptyList<RatedBook>())
   val ratings: StateFlow<List<RatedBook>> = _ratings.asStateFlow()
+  private var selectedMemberId: Long? = null
 
-  fun rate(bookId: String, title: String, rating: Rating) {
+  fun selectAccount(memberId: Long?) {
+    if (selectedMemberId == memberId) return
+    selectedMemberId = memberId
+    _ratings.value = memberId?.let(::load).orEmpty()
+  }
+
+  fun rate(memberId: Long, bookId: String, title: String, rating: Rating) {
+    selectAccount(memberId)
     val updated =
       listOf(RatedBook(bookId, title, rating, System.currentTimeMillis())) +
         _ratings.value.filterNot { it.bookId == bookId }
     _ratings.value = updated
-    prefs.edit().putString(KEY_ITEMS, serialize(updated)).apply()
+    prefs.edit().putString(key(memberId), serialize(updated)).apply()
   }
 
-  private fun load(): List<RatedBook> {
-    val json = prefs.getString(KEY_ITEMS, null) ?: return sampleRatings()
-    return runCatching { parse(json) }.getOrElse { sampleRatings() }
+  private fun load(memberId: Long): List<RatedBook> {
+    val json = prefs.getString(key(memberId), null) ?: return emptyList()
+    return runCatching { parse(json) }.getOrElse { emptyList() }
   }
 
   private companion object {
     const val PREFS_NAME = "book_ratings"
-    const val KEY_ITEMS = "items"
-
-    fun sampleRatings(): List<RatedBook> =
-      listOf(
-        sample("bk_001", "보이지 않는 도시", 7, LocalDate.of(2026, 5, 12)),
-        sample("bk_002", "역병", 8, LocalDate.of(2026, 6, 21)),
-        sample("bk_003", "마션", 8, LocalDate.of(2026, 8, 5)),
-      )
-
-    fun sample(bookId: String, title: String, halfStars: Int, date: LocalDate): RatedBook =
-      RatedBook(
-        bookId = bookId,
-        title = title,
-        rating = Rating.ofHalfStars(halfStars),
-        ratedAt = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-      )
+    fun key(memberId: Long) = "items_$memberId"
 
     fun serialize(items: List<RatedBook>): String {
       val array = JSONArray()
