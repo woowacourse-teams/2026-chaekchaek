@@ -98,7 +98,12 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
               title={review.author.displayName}
               content={new Date(review.createdAt).toLocaleDateString('ko-KR')}
             />
-            <Shell.Trailing>Trailing</Shell.Trailing>
+            {review.author.mine && (
+              <Shell.Trailing>
+                <Button size="small">수정</Button>
+                <Button size="small">삭제</Button>
+              </Shell.Trailing>
+            )}
           </Shell>
         </Entry.Header>
         <Entry.Body>

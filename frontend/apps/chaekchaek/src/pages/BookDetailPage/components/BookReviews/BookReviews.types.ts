@@ -19,6 +19,7 @@ export type BookReview = {
   author: {
     displayName: string;
     profileImageUrl: string;
+    mine: boolean;
   };
   createdAt: string;
   content: string;
