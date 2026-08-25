@@ -1,4 +1,9 @@
+import { useState } from 'react';
+
 import { Button, ButtonStack, Dialog, Field, SegmentedControl } from '@chaekchaek/design-system';
+
+import { postLibrary } from '@/services/apis/library/repository';
+import { useExecute } from '@/services/core/useExecute';
 
 import type { ReadingStatus, RegisterLibraryDialogProps } from './RegisterLibraryDialog.types';
 
@@ -8,7 +13,28 @@ const READING_STATUS_OPTIONS: { value: ReadingStatus; text: string }[] = [
   { value: 'FINISHED', text: '다 읽음' },
 ];
 
-export const RegisterLibraryDialog = ({ onClose }: RegisterLibraryDialogProps) => {
+export const RegisterLibraryDialog = ({
+  isbn,
+  onLibraryRegistered,
+  onClose,
+}: RegisterLibraryDialogProps) => {
+  const [status, setStatus] = useState<ReadingStatus>('READING');
+
+  const handleChangeStatus = (nextStatus: ReadingStatus) => {
+    setStatus(nextStatus);
+  };
+
+  const { mutate: mutatePostLibrary } = useExecute({
+    executeFn: postLibrary,
+    onSuccess: onLibraryRegistered,
+  });
+
+  const handleSubmitRegisterLibrary = async () => {
+    await mutatePostLibrary({ isbn13: isbn, status });
+
+    onClose();
+  };
+
   return (
     <Dialog size="medium" onClose={onClose}>
       <Dialog.Container>
@@ -23,8 +49,9 @@ export const RegisterLibraryDialog = ({ onClose }: RegisterLibraryDialogProps) =
               <Field.Content>
                 <SegmentedControl
                   shape="normal"
-                  value={'WANT_TO_READ'}
+                  value={status}
                   options={READING_STATUS_OPTIONS}
+                  onChange={handleChangeStatus}
                 />
               </Field.Content>
             </Field>
@@ -35,7 +62,13 @@ export const RegisterLibraryDialog = ({ onClose }: RegisterLibraryDialogProps) =
               <Button type="button" variant="ghost" size="large" block onClick={onClose}>
                 취소
               </Button>
-              <Button type="submit" variant="primary" size="large" block>
+              <Button
+                type="submit"
+                variant="primary"
+                size="large"
+                block
+                onClick={handleSubmitRegisterLibrary}
+              >
                 내 서재에 넣기
               </Button>
             </ButtonStack>

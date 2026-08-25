@@ -126,7 +126,15 @@ export const BookDetailPage = () => {
   ) => {
     switch (dialog) {
       case 'RegisterLibraryDialog':
-        return <RegisterLibraryDialog onClose={handleCloseDialog} />;
+        return (
+          data?.isbn13 && (
+            <RegisterLibraryDialog
+              isbn={data.isbn13}
+              onLibraryRegistered={refetchGetBooksIsbnLoadData}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
       case 'UpdateCurrentPageDialog':
         return (
           data?.bookId && (
