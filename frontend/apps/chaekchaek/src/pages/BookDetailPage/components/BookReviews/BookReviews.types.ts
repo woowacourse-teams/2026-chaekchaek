@@ -27,6 +27,7 @@ export type BookReview = {
   likeCount: number;
   replyCount: number;
   deleted: boolean;
+  isSpoiler: boolean;
   recentReplies: RecentReply[];
 };
 

@@ -17,6 +17,9 @@ import type { BookReviewProps } from './BookReview.types';
 import { WriteReply } from './WriteReply';
 import { useCallback, useState } from 'react';
 
+const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
+const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
+
 export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
   const getReviewsReviewIdRepliesLoadData = useCallback(() => {
     return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
@@ -97,8 +100,10 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
           </Shell>
         </Entry.Header>
         <Entry.Body>
-          {review.content}
-          {review.quote && <Note>{review.quote}</Note>}
+          {!review.isSpoiler ? review.content : SPOILER_PLACEHOLDER_REVIEW}
+          {review.quote && (
+            <Note>{!review.isSpoiler ? review.quote : SPOILER_PLACEHOLDER_REVIEW}</Note>
+          )}
         </Entry.Body>
         <Entry.Footer>
           <Button
@@ -125,7 +130,10 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
                   <Shell.Leading>
                     <Avatar img={reply.author.profileImageUrl} size="small" />
                   </Shell.Leading>
-                  <Shell.Content title={reply.author.displayName} description={reply.content} />
+                  <Shell.Content
+                    title={reply.author.displayName}
+                    description={!review.isSpoiler ? reply.content : SPOILER_PLACEHOLDER_REPLY}
+                  />
                   <Shell.Trailing>
                     <span
                       onClick={() => {
