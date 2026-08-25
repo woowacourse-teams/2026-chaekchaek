@@ -151,7 +151,7 @@ export const LibraryPage = () => {
   const { user } = useAuthContext();
 
   const handleToggleAnonymous = () => {
-    if (user?.displayAnonymous) {
+    if (!user?.displayAnonymous) {
       return;
     }
 
