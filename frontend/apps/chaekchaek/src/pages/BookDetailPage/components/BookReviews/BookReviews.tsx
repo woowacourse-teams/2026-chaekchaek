@@ -42,13 +42,11 @@ export const BookReviews = ({
 
       case 'UpdateReviewDialog':
         return (
-          bookId && (
-            <UpdateReviewDialog
-              bookId={bookId}
-              onReviewWritten={onReviewsRefresh}
-              onClose={handleCloseDialog}
-            />
-          )
+          <UpdateReviewDialog
+            review={{}}
+            onReviewUpdated={onReviewsRefresh}
+            onClose={handleCloseDialog}
+          />
         );
 
       default:

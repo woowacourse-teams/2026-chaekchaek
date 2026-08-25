@@ -4,7 +4,7 @@ import { Button, Callout, Checkbox, Dialog, Field, Input, Tag } from '@chaekchae
 
 import { useFormValues } from '@/hooks/useFormValues';
 import { useExecute } from '@/services/core/useExecute';
-import { postBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
+import { patchReviewsReviewId } from '@/services/apis/reviewsReviewId/repository';
 
 import { validateReview } from './validator';
 import type { ReviewFormValues } from './validator';
@@ -27,22 +27,22 @@ const buildReviewRequest = (formValues: ReviewFormValues) => {
 };
 
 export const UpdateReviewDialog = ({
-  bookId,
-  onReviewWritten,
+  review,
+  onReviewUpdated,
   onClose,
 }: UpdateReviewDialogProps) => {
   const { values, errors, onChange, isValid, valids } = useFormValues<ReviewFormValues>({
     initialValues: {
-      content: '',
-      isSpoiler: false,
-      quote: '',
-      currentPage: '',
-      chapter: '',
+      content: review.content,
+      isSpoiler: review.isSpoiler,
+      quote: review.quote || '',
+      currentPage: review.currentPage ? String(review.currentPage) : '',
+      chapter: review.chapter || '',
     },
     validate: validateReview,
   });
 
-  const { mutate } = useExecute({ executeFn: postBooksBookIdReviews });
+  const { mutate } = useExecute({ executeFn: patchReviewsReviewId });
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
@@ -50,11 +50,11 @@ export const UpdateReviewDialog = ({
     const requestData = buildReviewRequest(values);
 
     await mutate({
-      bookId,
+      reviewId: review.reviewId,
       ...requestData,
     });
 
-    onReviewWritten();
+    onReviewUpdated();
     onClose();
   };
 

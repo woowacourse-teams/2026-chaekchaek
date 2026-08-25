@@ -1,5 +1,7 @@
+import type { BookReview } from '../../components/BookReviews';
+
 export type UpdateReviewDialogProps = {
-  bookId: number;
-  onReviewWritten: () => void;
+  review: BookReview;
+  onReviewUpdated: () => void;
   onClose: () => void;
 };
