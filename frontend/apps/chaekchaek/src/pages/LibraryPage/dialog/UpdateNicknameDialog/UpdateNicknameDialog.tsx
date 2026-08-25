@@ -1,8 +1,20 @@
 import { Button, ButtonStack, Dialog, Field, Input } from '@chaekchaek/design-system';
 
+import { useFormValues } from '@/hooks/useFormValues';
+
+import { validateNickname } from './validator';
+import type { NicknameFormValues } from './validator';
+
 import type { UpdateNicknameDialogProps } from './UpdateNicknameDialog.types';
 
 export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => {
+  const { values, errors, onChange, isValid, valids } = useFormValues<NicknameFormValues>({
+    initialValues: {
+      nickname: '',
+    },
+    validate: validateNickname,
+  });
+
   return (
     <Dialog size="medium" onClose={onClose}>
       <Dialog.Container>
@@ -17,9 +29,19 @@ export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => 
                 닉네임
               </Field.Label>
               <Field.Content>
-                <Input id="nickname" name="nickname" placeholder="닉네임을 입력하세요" />
+                <Input
+                  id="nickname"
+                  name="nickname"
+                  placeholder="닉네임을 입력하세요"
+                  value={values.nickname}
+                  onChange={onChange}
+                />
               </Field.Content>
-              <Field.Description>2-15자 · 이미 사용 중인 닉네임은 쓸 수 없어요</Field.Description>
+              <Field.Description>
+                {valids.nickname
+                  ? '2-15자 · 이미 사용 중인 닉네임은 쓸 수 없어요'
+                  : errors.nickname.find(({ valid }) => !valid)?.message}
+              </Field.Description>
             </Field>
           </Dialog.Body>
 
@@ -28,7 +50,7 @@ export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => 
               <Button type="button" variant="ghost" size="large" block onClick={onClose}>
                 취소
               </Button>
-              <Button type="button" variant="primary" size="large" block>
+              <Button type="button" variant="primary" size="large" block disabled={!isValid}>
                 확인
               </Button>
             </ButtonStack>
