@@ -1,3 +1,5 @@
+import { useCallback, useState } from 'react';
+
 import { Avatar, Button, Entry, Note, Shell, Surface } from '@chaekchaek/design-system';
 
 import { getReviewsReviewIdReplies } from '@/services/apis/reviewsReviewIdReplies/repository';
@@ -11,11 +13,12 @@ import {
   deleteReviewsReviewIdReactions,
   postReviewsReviewIdReactions,
 } from '@/services/apis/reviewsReviewIdReactions/repository';
+import { deleteReviewsReviewId } from '@/services/apis/reviewsReviewId/repository';
+
 import { useExecute } from '@/services/core/useExecute';
 
 import type { BookReviewProps } from './BookReview.types';
 import { WriteReply } from './WriteReply';
-import { useCallback, useState } from 'react';
 
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
@@ -31,6 +34,16 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
   } = useLoadData({
     queryFn: getReviewsReviewIdRepliesLoadData,
   });
+
+  const { mutate: deleteReview } = useExecute({
+    executeFn: deleteReviewsReviewId,
+  });
+
+  const handleClickDeleteReview = async (reviewId: number) => {
+    await deleteReview({ reviewId });
+
+    onReviewsRefresh();
+  };
 
   const { mutate: postReviewReactionMutate } = useExecute({
     executeFn: postReviewsReviewIdReactions,
@@ -101,7 +114,9 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
             {review.author.mine && (
               <Shell.Trailing>
                 <Button size="small">수정</Button>
-                <Button size="small">삭제</Button>
+                <Button size="small" onClick={() => handleClickDeleteReview(review.reviewId)}>
+                  삭제
+                </Button>
               </Shell.Trailing>
             )}
           </Shell>

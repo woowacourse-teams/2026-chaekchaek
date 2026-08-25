@@ -75,16 +75,18 @@ export const BookReviews = ({
       >
         이 책에 남긴 감상 {count}
       </Title>
-      {reviews?.map((review) => {
-        return (
-          <BookReview
-            key={review.reviewId}
-            review={review}
-            isSpoilerVisible={isSpoilerVisible}
-            onReviewsRefresh={onReviewsRefresh}
-          />
-        );
-      })}
+      {reviews
+        ?.filter((review) => !review.deleted)
+        .map((review) => {
+          return (
+            <BookReview
+              key={review.reviewId}
+              review={review}
+              isSpoilerVisible={isSpoilerVisible}
+              onReviewsRefresh={onReviewsRefresh}
+            />
+          );
+        })}
       <Field>
         <Field.Content
           onClick={() => {
