@@ -1,8 +1,10 @@
 package com.chaekchaek.app.domain.book
 
 fun interface BookSearchRepository {
-    suspend fun search(query: String): List<BookSearchResult>
+    suspend fun search(query: String, sort: BookSearchSort): List<BookSearchResult>
 }
+
+enum class BookSearchSort { LATEST, COMMENT }
 
 data class BookSearchResult(
     val title: String,

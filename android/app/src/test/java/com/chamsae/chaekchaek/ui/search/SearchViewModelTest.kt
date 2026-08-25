@@ -5,6 +5,7 @@ import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
+import com.chaekchaek.app.domain.book.BookSearchSort
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,13 +21,17 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModelTest {
   @Test
-  fun `search exposes empty state and sorts results by newest year`() =
+  fun `정렬 선택 시 현재 검색어와 정렬값으로 다시 검색한다`() =
     runTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
       try {
-        val books = listOf(book("오래된 책", "2021"), book("연도 없음", ""), book("새 책", "2026"))
+        val requests = mutableListOf<Pair<String, BookSearchSort>>()
+        val books = listOf(book("첫 책", "2021"), book("두 번째 책", "2026"))
         val viewModel = SearchViewModel(
-          bookSearchRepository = BookSearchRepository { query -> if (query == "없음") emptyList() else books },
+          bookSearchRepository = BookSearchRepository { query, sort ->
+            requests += query to sort
+            if (query == "없음") emptyList() else books
+          },
           libraryRepository = FakeLibraryRepository(),
         )
 
@@ -36,7 +41,12 @@ class SearchViewModelTest {
 
         viewModel.search("책")
         advanceUntilIdle()
-        assertEquals(listOf("새 책", "오래된 책", "연도 없음"), (viewModel.uiState.value as SearchUiState.Success).results.map { it.title })
+        assertEquals(books, (viewModel.uiState.value as SearchUiState.Success).results)
+
+        viewModel.selectSort(BookSearchSort.COMMENT)
+        advanceUntilIdle()
+        assertEquals(BookSearchSort.COMMENT, viewModel.sort.value)
+        assertEquals("책" to BookSearchSort.COMMENT, requests.last())
       } finally {
         Dispatchers.resetMain()
       }
@@ -48,7 +58,7 @@ class SearchViewModelTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
       try {
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { emptyList() }, libraryRepository)
+        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository)
         val searchResult = book("검색 제목", "2026").copy(isbn13 = "9780000000001", category = "소설", totalPages = 320)
 
         viewModel.register(searchResult)
