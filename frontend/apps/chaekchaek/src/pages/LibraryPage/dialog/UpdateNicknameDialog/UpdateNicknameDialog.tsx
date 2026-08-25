@@ -1,8 +1,13 @@
+import type { FormEvent } from 'react';
+
 import { Button, ButtonStack, Dialog, Field, Input } from '@chaekchaek/design-system';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { useFormValues } from '@/hooks/useFormValues';
+
+import { patchMembersMeNickname } from '@/services/apis/membersMeNickname/repository';
+import { useExecute } from '@/services/core/useExecute';
 
 import { validateNickname } from './validator';
 import type { NicknameFormValues } from './validator';
@@ -10,7 +15,7 @@ import type { NicknameFormValues } from './validator';
 import type { UpdateNicknameDialogProps } from './UpdateNicknameDialog.types';
 
 export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => {
-  const { user } = useAuthContext();
+  const { user, login } = useAuthContext();
 
   const { values, errors, onChange, isValid, valids } = useFormValues<NicknameFormValues>({
     initialValues: {
@@ -19,10 +24,22 @@ export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => 
     validate: validateNickname,
   });
 
+  const { mutate } = useExecute({ executeFn: patchMembersMeNickname });
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const updatedUser = await mutate({ nickname: values.nickname });
+    if (!updatedUser) return;
+
+    login(updatedUser);
+    onClose();
+  };
+
   return (
     <Dialog size="medium" onClose={onClose}>
       <Dialog.Container>
-        <form>
+        <form onSubmit={handleSubmit}>
           <Dialog.Header subTitle="지금부터 감상과 답글에 이 닉네임이 표시됩니다.">
             닉네임 설정
           </Dialog.Header>
@@ -54,7 +71,7 @@ export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => 
               <Button type="button" variant="ghost" size="large" block onClick={onClose}>
                 취소
               </Button>
-              <Button type="button" variant="primary" size="large" block disabled={!isValid}>
+              <Button type="submit" variant="primary" size="large" block disabled={!isValid}>
                 확인
               </Button>
             </ButtonStack>
