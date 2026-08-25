@@ -1,5 +1,6 @@
 package com.chamsae.chaekchaek.ui.bookdetail
 
+import com.chamsae.chaekchaek.R
 import com.chaekchaek.app.data.remote.ReplyPage
 import com.chaekchaek.app.data.remote.ReviewReply
 import kotlinx.coroutines.test.runTest
@@ -43,10 +44,10 @@ class BookDetailInputRulesTest {
 
   @Test
   fun `감상 쪽수가 읽은 범위를 넘고 전체 공개하지 않았을 때만 잠근다`() {
-    assertFalse(shouldLockReview(currentPage = 80, reviewPage = 80, isSpoiler = false, spoilersRevealed = false))
-    assertTrue(shouldLockReview(currentPage = 80, reviewPage = 160, isSpoiler = false, spoilersRevealed = false))
-    assertTrue(shouldLockReview(currentPage = 80, reviewPage = null, isSpoiler = true, spoilersRevealed = false))
-    assertFalse(shouldLockReview(currentPage = 80, reviewPage = 160, isSpoiler = true, spoilersRevealed = true))
+    assertFalse(shouldLockReview(currentPage = 80, reviewPage = 80, spoilersRevealed = false))
+    assertTrue(shouldLockReview(currentPage = 80, reviewPage = 160, spoilersRevealed = false))
+    assertFalse(shouldLockReview(currentPage = 80, reviewPage = null, spoilersRevealed = false))
+    assertFalse(shouldLockReview(currentPage = 80, reviewPage = 160, spoilersRevealed = true))
   }
 
   @Test
@@ -57,5 +58,21 @@ class BookDetailInputRulesTest {
 
     assertEquals(content.length, masked.length)
     assertEquals("짹짹 짹짹짹!\n짹짹?", masked)
+  }
+
+  @Test
+  fun `같은 표시 이름은 항상 같은 참새 프로필을 사용한다`() {
+    val first = authorAvatarResource("참새 1204")
+    val second = authorAvatarResource("참새 1204")
+
+    assertEquals(first, second)
+    assertTrue(
+      first in setOf(
+        R.drawable.avatar_reading,
+        R.drawable.avatar_kim,
+        R.drawable.avatar_yoon,
+        R.drawable.avatar_tea,
+      ),
+    )
   }
 }

@@ -37,7 +37,7 @@ class BookDetailRemoteRepositoryTest {
           reviewId = 7,
           content = "재미있다",
           createdAt = "2026-08-19T00:00:00Z",
-          author = ReviewAuthorDto("참새 1204", true),
+          author = ReviewAuthorDto("참새 1204", true, "https://example.com/reviewer.jpg"),
           replyCount = 2,
           likeCount = 3,
           likedByMe = true,
@@ -46,7 +46,7 @@ class BookDetailRemoteRepositoryTest {
             ReviewReplyDto(
               replyId = 8,
               content = "맞아요",
-              author = ReviewAuthorDto("참새 0821", false),
+              author = ReviewAuthorDto("참새 0821", false, "https://example.com/replier.jpg"),
               likeCount = 1,
               likedByMe = true,
             ),
@@ -60,10 +60,12 @@ class BookDetailRemoteRepositoryTest {
     assertEquals(120, detail.myRecord?.currentPage)
     assertEquals(4.5, detail.myRecord?.rating)
     assertEquals("참새 1204", reviews.items.single().authorName)
+    assertEquals("https://example.com/reviewer.jpg", reviews.items.single().authorProfileImageUrl)
     assertEquals(true, reviews.items.single().isSpoiler)
     assertEquals(true, reviews.items.single().likedByMe)
     assertEquals("맞아요", reviews.items.single().recentReplies.single().content)
     assertEquals("참새 0821", reviews.items.single().recentReplies.single().authorName)
+    assertEquals("https://example.com/replier.jpg", reviews.items.single().recentReplies.single().authorProfileImageUrl)
     assertEquals(true, reviews.items.single().recentReplies.single().likedByMe)
     assertEquals(2, reviews.nextPage)
   }
