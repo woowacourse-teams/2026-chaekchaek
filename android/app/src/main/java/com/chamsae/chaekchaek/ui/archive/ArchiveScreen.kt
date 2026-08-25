@@ -110,9 +110,9 @@ fun ArchiveScreen(
   uiState: ArchiveUiState,
   editing: Boolean,
   onEditingChange: (Boolean) -> Unit,
-  onRemove: (Set<String>) -> Unit,
+  onRemove: suspend (Set<String>) -> Unit,
   onChangeStatus: (Set<String>, ReadingStatus) -> Unit,
-  onAnonymousReviewsChange: (Boolean, String) -> Unit,
+  onAnonymousReviewsChange: suspend (Boolean, String) -> Unit,
   onBookClick: (BookDetailArgs) -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -165,7 +165,7 @@ fun ArchiveScreen(
             checked = anonymousReviews,
             onClick = {
               if (anonymousReviews) showNicknameDialog = true
-              else onAnonymousReviewsChange(true, "")
+              else scope.launch { runCatching { onAnonymousReviewsChange(true, "") } }
             },
           )
         } else {
@@ -239,9 +239,14 @@ fun ArchiveScreen(
       selectedCount = pendingDeletionIds.size,
       onDismiss = { pendingDeletionIds = emptySet() },
       onConfirm = {
-        onRemove(pendingDeletionIds)
-        selectedIds -= pendingDeletionIds
-        pendingDeletionIds = emptySet()
+        val deletingIds = pendingDeletionIds
+        scope.launch {
+          runCatching { onRemove(deletingIds) }
+            .onSuccess {
+              selectedIds -= deletingIds
+              pendingDeletionIds = emptySet()
+            }
+        }
       },
     )
   }
@@ -252,8 +257,10 @@ fun ArchiveScreen(
       onNicknameChange = { nickname = it.take(10) },
       onDismiss = { showNicknameDialog = false },
       onConfirm = {
-        onAnonymousReviewsChange(false, nickname)
-        showNicknameDialog = false
+        scope.launch {
+          runCatching { onAnonymousReviewsChange(false, nickname) }
+            .onSuccess { showNicknameDialog = false }
+        }
       },
     )
   }

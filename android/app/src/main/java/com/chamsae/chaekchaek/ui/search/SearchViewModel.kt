@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.toArchivedBook
+import com.chamsae.chaekchaek.ui.common.withDelayedApiLoading
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
+import com.chaekchaek.app.domain.book.BookSearchSort
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,24 +34,33 @@ class SearchViewModel(
 ) : ViewModel() {
   private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
   val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
+  private val _sort = MutableStateFlow(BookSearchSort.LATEST)
+  val sort: StateFlow<BookSearchSort> = _sort.asStateFlow()
   private val _pendingRegistration = MutableStateFlow<BookSearchResult?>(null)
   val pendingRegistration: StateFlow<BookSearchResult?> = _pendingRegistration.asStateFlow()
   private var searchJob: Job? = null
+  private var currentQuery = ""
 
   fun clear() {
     searchJob?.cancel()
+    currentQuery = ""
     _uiState.value = SearchUiState.Idle
   }
 
   fun search(query: String) {
     val trimmed = query.trim()
     if (trimmed.isEmpty()) return
+    currentQuery = trimmed
     searchJob?.cancel()
-    _uiState.value = SearchUiState.Loading
     searchJob = viewModelScope.launch {
       _uiState.value =
         try {
-          val results = bookSearchRepository.search(trimmed).sortedByDescending { it.year.toIntOrNull() ?: Int.MIN_VALUE }
+          val results =
+            withDelayedApiLoading(
+              onLoadingChanged = { loading -> if (loading) _uiState.value = SearchUiState.Loading },
+            ) {
+              bookSearchRepository.search(trimmed, _sort.value)
+            }
           if (results.isEmpty()) SearchUiState.Empty else SearchUiState.Success(results)
         } catch (e: CancellationException) {
           throw e
@@ -57,6 +68,12 @@ class SearchViewModel(
           SearchUiState.Error(e.message ?: "검색 중 오류가 발생했습니다")
         }
     }
+  }
+
+  fun selectSort(sort: BookSearchSort) {
+    if (_sort.value == sort) return
+    _sort.value = sort
+    if (currentQuery.isNotEmpty()) search(currentQuery)
   }
 
   fun register(book: BookSearchResult) {

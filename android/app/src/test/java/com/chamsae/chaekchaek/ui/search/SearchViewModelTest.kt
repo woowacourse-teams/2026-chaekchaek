@@ -5,28 +5,67 @@ import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
+import com.chaekchaek.app.domain.book.BookSearchSort
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModelTest {
   @Test
-  fun `search exposes empty state and sorts results by newest year`() =
+  fun `검색 로딩은 500ms가 지난 뒤 표시하고 응답 즉시 닫는다`() =
+    runTest {
+      Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+      val viewModel = SearchViewModel(
+        bookSearchRepository = BookSearchRepository { _, _ ->
+          kotlinx.coroutines.delay(501)
+          listOf(book("검색 결과", "2026"))
+        },
+        libraryRepository = FakeLibraryRepository(),
+        isSignedIn = { true },
+      )
+      try {
+
+        viewModel.search("책")
+        runCurrent()
+        advanceTimeBy(499)
+        runCurrent()
+        assertNotEquals(SearchUiState.Loading, viewModel.uiState.value)
+        advanceTimeBy(1)
+        runCurrent()
+        assertEquals(SearchUiState.Loading, viewModel.uiState.value)
+        advanceUntilIdle()
+        assertEquals("검색 결과", (viewModel.uiState.value as SearchUiState.Success).results.single().title)
+      } finally {
+        viewModel.clear()
+        advanceUntilIdle()
+        Dispatchers.resetMain()
+      }
+    }
+
+  @Test
+  fun `정렬 선택 시 현재 검색어와 정렬값으로 다시 검색한다`() =
     runTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
       try {
-        val books = listOf(book("오래된 책", "2021"), book("연도 없음", ""), book("새 책", "2026"))
+        val requests = mutableListOf<Pair<String, BookSearchSort>>()
+        val books = listOf(book("첫 책", "2021"), book("두 번째 책", "2026"))
         val viewModel = SearchViewModel(
-          bookSearchRepository = BookSearchRepository { query -> if (query == "없음") emptyList() else books },
+          bookSearchRepository = BookSearchRepository { query, sort ->
+            requests += query to sort
+            if (query == "없음") emptyList() else books
+          },
           libraryRepository = FakeLibraryRepository(),
           isSignedIn = { true },
         )
@@ -37,7 +76,12 @@ class SearchViewModelTest {
 
         viewModel.search("책")
         advanceUntilIdle()
-        assertEquals(listOf("새 책", "오래된 책", "연도 없음"), (viewModel.uiState.value as SearchUiState.Success).results.map { it.title })
+        assertEquals(books, (viewModel.uiState.value as SearchUiState.Success).results)
+
+        viewModel.selectSort(BookSearchSort.COMMENT)
+        advanceUntilIdle()
+        assertEquals(BookSearchSort.COMMENT, viewModel.sort.value)
+        assertEquals("책" to BookSearchSort.COMMENT, requests.last())
       } finally {
         Dispatchers.resetMain()
       }
@@ -49,7 +93,7 @@ class SearchViewModelTest {
       Dispatchers.setMain(StandardTestDispatcher(testScheduler))
       try {
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { emptyList() }, libraryRepository) { true }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository) { true }
         val searchResult = book("검색 제목", "2026").copy(isbn13 = "9780000000001", category = "소설", totalPages = 320)
 
         viewModel.register(searchResult)
@@ -72,7 +116,7 @@ class SearchViewModelTest {
       try {
         var signedIn = false
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { emptyList() }, libraryRepository) { signedIn }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository) { signedIn }
         val searchResult = book("보류할 책", "2026").copy(isbn13 = "9780000000002")
 
         viewModel.register(searchResult)
@@ -100,7 +144,7 @@ class SearchViewModelTest {
       try {
         var signedIn = false
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { emptyList() }, libraryRepository) { signedIn }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> emptyList() }, libraryRepository) { signedIn }
         val searchResult = book("재시도할 책", "2026").copy(isbn13 = "9780000000004")
 
         viewModel.register(searchResult)
@@ -127,7 +171,7 @@ class SearchViewModelTest {
       try {
         val searchResult = book("검색 결과", "2026").copy(isbn13 = "9780000000003")
         val libraryRepository = FakeLibraryRepository()
-        val viewModel = SearchViewModel(BookSearchRepository { listOf(searchResult) }, libraryRepository) { false }
+        val viewModel = SearchViewModel(BookSearchRepository { _, _ -> listOf(searchResult) }, libraryRepository) { false }
 
         viewModel.search("검색")
         advanceUntilIdle()
@@ -169,9 +213,9 @@ private class FakeLibraryRepository : LibraryRepository {
     return book.bookId
   }
 
-  override fun remove(bookIds: Set<String>) = Unit
+  override suspend fun remove(bookIds: Set<String>) = Unit
 
   override fun changeStatus(bookIds: Set<String>, status: ReadingStatus) = Unit
 
-  override fun setAnonymousReviews(anonymous: Boolean, nickname: String) = Unit
+  override suspend fun setAnonymousReviews(anonymous: Boolean, nickname: String) = Unit
 }

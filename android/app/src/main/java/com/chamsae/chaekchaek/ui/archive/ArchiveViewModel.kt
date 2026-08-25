@@ -35,11 +35,11 @@ class ArchiveViewModel(private val libraryRepository: LibraryRepository) : ViewM
         ),
     )
 
-  fun remove(bookIds: Set<String>) = libraryRepository.remove(bookIds)
+  suspend fun remove(bookIds: Set<String>) = libraryRepository.remove(bookIds)
 
   fun changeStatus(bookIds: Set<String>, status: ReadingStatus) =
     libraryRepository.changeStatus(bookIds, status)
 
-  fun setAnonymousReviews(anonymous: Boolean, nickname: String = "") =
+  suspend fun setAnonymousReviews(anonymous: Boolean, nickname: String = "") =
     libraryRepository.setAnonymousReviews(anonymous, nickname)
 }

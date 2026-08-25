@@ -22,7 +22,7 @@ class AppContainer(context: Context) {
   val mobileAuthRepository = MobileAuthRemoteRepository()
   val authSession = AuthSession(RefreshTokenStore(context), mobileAuthRepository, scope)
   val bookRatingStore = BookRatingStore(context.applicationContext)
-  val libraryRepository: LibraryRepository = ServerLibraryRepository(context.applicationContext, authSession)
+  val libraryRepository: LibraryRepository = ServerLibraryRepository(authSession)
 
   fun close() {
     scope.cancel()

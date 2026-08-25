@@ -1,5 +1,16 @@
 package com.chaekchaek.app.data.remote
 
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -29,6 +40,17 @@ class BookDetailRemoteRepositoryTest {
           author = ReviewAuthorDto("참새 1204", true),
           replyCount = 2,
           likeCount = 3,
+          likedByMe = true,
+          isSpoiler = true,
+          recentReplies = listOf(
+            ReviewReplyDto(
+              replyId = 8,
+              content = "맞아요",
+              author = ReviewAuthorDto("참새 0821", false),
+              likeCount = 1,
+              likedByMe = true,
+            ),
+          ),
         ),
       ),
     ).toReviewPage()
@@ -38,7 +60,59 @@ class BookDetailRemoteRepositoryTest {
     assertEquals(120, detail.myRecord?.currentPage)
     assertEquals(4.5, detail.myRecord?.rating)
     assertEquals("참새 1204", reviews.items.single().authorName)
+    assertEquals(true, reviews.items.single().isSpoiler)
+    assertEquals(true, reviews.items.single().likedByMe)
+    assertEquals("맞아요", reviews.items.single().recentReplies.single().content)
+    assertEquals("참새 0821", reviews.items.single().recentReplies.single().authorName)
+    assertEquals(true, reviews.items.single().recentReplies.single().likedByMe)
     assertEquals(2, reviews.nextPage)
+  }
+
+  @Test
+  fun `답글 조회와 감상 답글 반응 요청은 서버 계약의 경로와 메서드를 사용한다`() = runTest {
+    val requests = mutableListOf<Pair<HttpMethod, String>>()
+    val engine = MockEngine { request ->
+      requests += request.method to request.url.toString()
+      when {
+        request.method == HttpMethod.Get -> respond(
+          content = """{"totalCount":1,"nextPage":null,"items":[{"replyId":8,"content":"맞아요","author":{"displayName":"참새 0821","anonymous":false},"likeCount":2,"likedByMe":true}]}""",
+          headers = headersOf(HttpHeaders.ContentType, "application/json"),
+        )
+        request.method == HttpMethod.Post -> respond(
+          content = """{"likeCount":3,"likedByMe":true}""",
+          status = HttpStatusCode.Created,
+          headers = headersOf(HttpHeaders.ContentType, "application/json"),
+        )
+        else -> respond(content = "", status = HttpStatusCode.NoContent)
+      }
+    }
+    val repository = BookDetailRemoteRepository(
+      HttpClient(engine) {
+        expectSuccess = true
+        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+      },
+    )
+
+    val replies = repository.replies(reviewId = 7, accessToken = "test-token", page = 2)
+    val reviewReaction = repository.likeReview(reviewId = 7, accessToken = "test-token")
+    repository.unlikeReview(reviewId = 7, accessToken = "test-token")
+    val replyReaction = repository.likeReply(replyId = 8, accessToken = "test-token")
+    repository.unlikeReply(replyId = 8, accessToken = "test-token")
+
+    assertEquals(8, replies.items.single().replyId)
+    assertEquals(true, replies.items.single().likedByMe)
+    assertEquals(ReactionResult(3, true), reviewReaction)
+    assertEquals(ReactionResult(3, true), replyReaction)
+    assertEquals(
+      listOf(
+        HttpMethod.Get to "https://api.chaekchaek.com/api/v1/reviews/7/replies?page=2",
+        HttpMethod.Post to "https://api.chaekchaek.com/api/v1/reviews/7/reactions",
+        HttpMethod.Delete to "https://api.chaekchaek.com/api/v1/reviews/7/reactions",
+        HttpMethod.Post to "https://api.chaekchaek.com/api/v1/replies/8/reactions",
+        HttpMethod.Delete to "https://api.chaekchaek.com/api/v1/replies/8/reactions",
+      ),
+      requests,
+    )
   }
 
   @Test

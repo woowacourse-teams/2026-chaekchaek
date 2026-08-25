@@ -1,6 +1,8 @@
 package com.chaekchaek.app.data.remote
 
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
@@ -13,8 +15,9 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 
-class BookDetailRemoteRepository {
-  private val client = createHttpClient()
+class BookDetailRemoteRepository(
+  private val client: HttpClient = createHttpClient(),
+) {
 
   suspend fun detail(isbn13: String, accessToken: String? = null): BookDetail =
     client.get("$BASE_URL/api/v1/books/by-isbn/$isbn13") {
@@ -60,15 +63,40 @@ class BookDetailRemoteRepository {
       authenticatedJson(accessToken, request)
     }.body<ReviewDto>().toBookReview()
 
-  suspend fun likeReview(reviewId: Long, accessToken: String) {
+  suspend fun replies(
+    reviewId: Long,
+    accessToken: String? = null,
+    page: Int = FIRST_PAGE,
+  ): ReplyPage =
+    client.get("$BASE_URL/api/v1/reviews/$reviewId/replies") {
+      parameter("page", page)
+      accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+    }.body<ReplyPageDto>().toReplyPage()
+
+  suspend fun likeReview(reviewId: Long, accessToken: String): ReactionResult =
     client.post("$BASE_URL/api/v1/reviews/$reviewId/reactions") {
+      header(HttpHeaders.Authorization, "Bearer $accessToken")
+    }.body<ReactionDto>().toReactionResult()
+
+  suspend fun unlikeReview(reviewId: Long, accessToken: String) {
+    client.delete("$BASE_URL/api/v1/reviews/$reviewId/reactions") {
       header(HttpHeaders.Authorization, "Bearer $accessToken")
     }
   }
 
-  suspend fun createReply(reviewId: Long, content: String, accessToken: String) {
+  suspend fun createReply(reviewId: Long, content: String, accessToken: String): ReviewReply =
     client.post("$BASE_URL/api/v1/reviews/$reviewId/replies") {
       authenticatedJson(accessToken, ReplyCreateRequest(content))
+    }.body<ReviewReplyDto>().toReviewReply()
+
+  suspend fun likeReply(replyId: Long, accessToken: String): ReactionResult =
+    client.post("$BASE_URL/api/v1/replies/$replyId/reactions") {
+      header(HttpHeaders.Authorization, "Bearer $accessToken")
+    }.body<ReactionDto>().toReactionResult()
+
+  suspend fun unlikeReply(replyId: Long, accessToken: String) {
+    client.delete("$BASE_URL/api/v1/replies/$replyId/reactions") {
+      header(HttpHeaders.Authorization, "Bearer $accessToken")
     }
   }
 
@@ -114,6 +142,10 @@ data class LibraryRecord(
 
 data class ReviewPage(val totalCount: Int, val nextPage: Int?, val items: List<BookReview>)
 
+data class ReplyPage(val totalCount: Int, val nextPage: Int?, val items: List<ReviewReply>)
+
+data class ReactionResult(val likeCount: Int, val likedByMe: Boolean)
+
 data class BookReview(
   val reviewId: Long,
   val content: String,
@@ -125,6 +157,18 @@ data class BookReview(
   val anonymous: Boolean,
   val replyCount: Int,
   val likeCount: Int,
+  val likedByMe: Boolean = false,
+  val isSpoiler: Boolean = false,
+  val recentReplies: List<ReviewReply> = emptyList(),
+)
+
+data class ReviewReply(
+  val replyId: Long,
+  val content: String,
+  val authorName: String,
+  val anonymous: Boolean,
+  val likeCount: Int,
+  val likedByMe: Boolean = false,
 )
 
 @Serializable
@@ -194,6 +238,13 @@ internal data class ReviewPageDto(
 )
 
 @Serializable
+internal data class ReplyPageDto(
+  val totalCount: Int,
+  val nextPage: Int? = null,
+  val items: List<ReviewReplyDto>,
+)
+
+@Serializable
 internal data class ReviewDto(
   val reviewId: Long,
   val content: String,
@@ -204,10 +255,25 @@ internal data class ReviewDto(
   val author: ReviewAuthorDto,
   val replyCount: Int,
   val likeCount: Int,
+  val likedByMe: Boolean = false,
+  val isSpoiler: Boolean = false,
+  val recentReplies: List<ReviewReplyDto> = emptyList(),
 )
 
 @Serializable
 internal data class ReviewAuthorDto(val displayName: String, val anonymous: Boolean)
+
+@Serializable
+internal data class ReviewReplyDto(
+  val replyId: Long,
+  val content: String,
+  val author: ReviewAuthorDto,
+  val likeCount: Int,
+  val likedByMe: Boolean = false,
+)
+
+@Serializable
+internal data class ReactionDto(val likeCount: Int, val likedByMe: Boolean)
 
 internal fun BookDetailDto.toBookDetail() =
   BookDetail(
@@ -239,6 +305,13 @@ internal fun ReviewPageDto.toReviewPage() =
     items = items.map(ReviewDto::toBookReview),
   )
 
+internal fun ReplyPageDto.toReplyPage() =
+  ReplyPage(
+    totalCount = totalCount,
+    nextPage = nextPage,
+    items = items.map(ReviewReplyDto::toReviewReply),
+  )
+
 internal fun ReviewDto.toBookReview() =
   BookReview(
     reviewId = reviewId,
@@ -251,4 +324,19 @@ internal fun ReviewDto.toBookReview() =
     anonymous = author.anonymous,
     replyCount = replyCount,
     likeCount = likeCount,
+    likedByMe = likedByMe,
+    isSpoiler = isSpoiler,
+    recentReplies = recentReplies.map(ReviewReplyDto::toReviewReply),
   )
+
+internal fun ReviewReplyDto.toReviewReply() =
+  ReviewReply(
+    replyId = replyId,
+    content = content,
+    authorName = author.displayName,
+    anonymous = author.anonymous,
+    likeCount = likeCount,
+    likedByMe = likedByMe,
+  )
+
+internal fun ReactionDto.toReactionResult() = ReactionResult(likeCount, likedByMe)
