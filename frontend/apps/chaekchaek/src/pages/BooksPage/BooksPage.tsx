@@ -141,14 +141,16 @@ export const BooksPage = () => {
                             감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
                           </Badge>
                         )}
-                        <Button
-                          variant="primary"
-                          onClick={() => {
-                            handleRegisterLibrary(item?.isbn13);
-                          }}
-                        >
-                          읽는 중 시작
-                        </Button>
+                        {!item.isRegisteredInMyLibrary && (
+                          <Button
+                            variant="primary"
+                            onClick={() => {
+                              handleRegisterLibrary(item?.isbn13);
+                            }}
+                          >
+                            읽는 중 시작
+                          </Button>
+                        )}
                       </List.Item.Trailing>
                     </List.Item>
                   );
