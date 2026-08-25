@@ -323,9 +323,8 @@ fun BookDetailScreen(
   var showRatingDialog by rememberSaveable { mutableStateOf(false) }
   var showPageDialog by rememberSaveable { mutableStateOf(false) }
   var showReviewSheet by rememberSaveable { mutableStateOf(false) }
-  var pendingSpoilerReviewId by rememberSaveable(book.id) { mutableStateOf<Long?>(null) }
   var pendingSpoilerPage by rememberSaveable(book.id) { mutableStateOf<Int?>(null) }
-  var revealedReviewIds by rememberSaveable(book.id) { mutableStateOf(longArrayOf()) }
+  var spoilersRevealed by rememberSaveable(book.id) { mutableStateOf(false) }
   val currentPage = myRecord?.currentPage ?: archivedBook?.currentPage ?: 0
   val snackbarHostState = remember { SnackbarHostState() }
   var pendingAfterLogin by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -392,7 +391,7 @@ fun BookDetailScreen(
           reviewCount = reviewCount,
           loading = reviewsLoading,
           currentPage = currentPage,
-          revealedReviewIds = revealedReviewIds,
+          spoilersRevealed = spoilersRevealed,
           scope = reviewScope,
           sort = reviewSort,
           onScopeChange = { requested ->
@@ -403,10 +402,7 @@ fun BookDetailScreen(
             }
           },
           onSortChange = onReviewSortChange,
-          onOpenLockedReview = { reviewId, reviewPage ->
-            pendingSpoilerReviewId = reviewId
-            pendingSpoilerPage = reviewPage
-          },
+          onOpenLockedReview = { pendingSpoilerPage = it },
           onLike = { reviewId, likedByMe -> runAuthenticated("감상 반응") { onReviewLike(reviewId, likedByMe) } },
           onLoadReplies = { reviewId -> execute("답글 조회") { onLoadReplies(reviewId) } },
           onReply = { reviewId, content -> runAuthenticated("답글 작성") { onReplyCreate(reviewId, content) } },
@@ -491,23 +487,18 @@ fun BookDetailScreen(
       },
     )
   }
-  pendingSpoilerReviewId?.let { reviewId ->
+  pendingSpoilerPage?.let { spoilerPage ->
     PageInputDialog(
       initialPage = currentPage,
       totalPages = book.totalPages,
-      spoilerPage = pendingSpoilerPage,
-      onDismiss = {
-        pendingSpoilerReviewId = null
-        pendingSpoilerPage = null
-      },
+      spoilerPage = spoilerPage,
+      onDismiss = { pendingSpoilerPage = null },
       onSave = { page ->
-        pendingSpoilerReviewId = null
         pendingSpoilerPage = null
         runAuthenticated("쪽수 저장") { onPageSave(page) }
       },
       onReadAnyway = {
-        if (reviewId !in revealedReviewIds) revealedReviewIds += reviewId
-        pendingSpoilerReviewId = null
+        spoilersRevealed = true
         pendingSpoilerPage = null
       },
     )
@@ -854,12 +845,12 @@ private fun ReviewsSection(
   reviewCount: Int,
   loading: Boolean,
   currentPage: Int,
-  revealedReviewIds: LongArray,
+  spoilersRevealed: Boolean,
   scope: ReviewScope,
   sort: ReviewSort,
   onScopeChange: (ReviewScope) -> Unit,
   onSortChange: (ReviewSort) -> Unit,
-  onOpenLockedReview: (Long, Int?) -> Unit,
+  onOpenLockedReview: (Int) -> Unit,
   onLike: (Long, Boolean) -> Unit,
   onLoadReplies: (Long) -> Unit,
   onReply: (Long, String) -> Unit,
@@ -923,11 +914,11 @@ private fun ReviewsSection(
       loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
       reviews.isEmpty() -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
       else -> reviews.forEach { review ->
-        val locked = shouldLockReview(currentPage, review.currentPage, review.isSpoiler, review.reviewId in revealedReviewIds)
+        val locked = shouldLockReview(currentPage, review.currentPage, spoilersRevealed)
         ReviewCard(
           review = review,
           locked = locked,
-          onOpenLockedReview = { onOpenLockedReview(review.reviewId, review.currentPage) },
+          onOpenLockedReview = { review.currentPage?.let(onOpenLockedReview) },
           onLike = onLike,
           onLoadReplies = { onLoadReplies(review.reviewId) },
           onReply = { replyTarget = review },
@@ -1173,9 +1164,8 @@ internal suspend fun loadAllReplies(loadPage: suspend (Int) -> ReplyPage): List<
 internal fun shouldLockReview(
   currentPage: Int,
   reviewPage: Int?,
-  isSpoiler: Boolean,
   spoilersRevealed: Boolean,
-): Boolean = !spoilersRevealed && (isSpoiler || reviewPage?.let { it > currentPage } == true)
+): Boolean = !spoilersRevealed && reviewPage?.let { it > currentPage } == true
 
 internal fun maskAsChirps(content: String): String =
   content.map { character -> if (character.isWhitespace() || character in VISIBLE_MASK_PUNCTUATION) character else '짹' }.joinToString("")
@@ -1281,7 +1271,10 @@ private fun PageInputDialog(
             emphasized = true,
           )
         }
-        SheetPrimaryButton(label = if (spoilerMode) "입력한 쪽수까지 보기" else "읽은 쪽수 저장", enabled = page != null) {
+        SheetPrimaryButton(
+          label = if (spoilerMode) "입력한 쪽수까지 보기" else "읽은 쪽수 저장",
+          enabled = page != null && (spoilerPage == null || page >= spoilerPage),
+        ) {
           page?.let(onSave)
         }
         onReadAnyway?.let { readAnyway ->
