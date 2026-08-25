@@ -2,10 +2,10 @@ import { useState } from 'react';
 
 import { Button, Field, Input, SegmentedControl, Select, Title } from '@chaekchaek/design-system';
 
-import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
-
 import { BookReview } from './BookReview';
 import type { BookReviewsProps } from './BookReviews.types';
+
+import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
 
 export const BookReviews = ({
   bookId,
@@ -13,6 +13,7 @@ export const BookReviews = ({
   feed,
   count,
   reviews,
+  isSpoilerVisible,
   onReviewsRefresh,
   onSortChange,
   onFeedChange,
@@ -74,11 +75,18 @@ export const BookReviews = ({
       >
         이 책에 남긴 감상 {count}
       </Title>
-      {reviews?.map((review) => {
-        return (
-          <BookReview key={review.reviewId} review={review} onReviewsRefresh={onReviewsRefresh} />
-        );
-      })}
+      {reviews
+        ?.filter((review) => !review.deleted)
+        .map((review) => {
+          return (
+            <BookReview
+              key={review.reviewId}
+              review={review}
+              isSpoilerVisible={isSpoilerVisible}
+              onReviewsRefresh={onReviewsRefresh}
+            />
+          );
+        })}
       <Field>
         <Field.Content
           onClick={() => {

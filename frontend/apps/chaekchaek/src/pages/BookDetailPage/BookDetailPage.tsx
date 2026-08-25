@@ -22,6 +22,8 @@ import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
 import { BookOverview } from './components/BookOverview';
 import { BookInfo } from './components/BookInfo';
 import { BookReviews } from './components/BookReviews';
+
+import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
 import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
 
@@ -101,10 +103,17 @@ export const BookDetailPage = () => {
     queryFn: getBooksBookIdReviewsLoadData,
   });
 
-  const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null>(
-    null,
-  );
-  const handleOpenDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog') => {
+  const [isSpoilerVisible, setIsSpoilerVisible] = useState(false);
+  const showSpoiler = () => {
+    setIsSpoilerVisible(true);
+  };
+
+  const [dialog, setDialog] = useState<
+    'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null
+  >(null);
+  const handleOpenDialog = (
+    dialog: 'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog',
+  ) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
     setDialog(dialog);
   };
@@ -112,14 +121,27 @@ export const BookDetailPage = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null) => {
+  const renderDialog = (
+    dialog: 'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null,
+  ) => {
     switch (dialog) {
+      case 'RegisterLibraryDialog':
+        return (
+          data?.isbn13 && (
+            <RegisterLibraryDialog
+              isbn={data.isbn13}
+              onLibraryRegistered={refetchGetBooksIsbnLoadData}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
       case 'UpdateCurrentPageDialog':
         return (
           data?.bookId && (
             <UpdateCurrentPageDialog
               bookId={data?.bookId}
               currentPage={data?.myRecord?.currentPage || 0}
+              onSpoilerVisible={showSpoiler}
               onCurrentPageUpdated={async () => {
                 await refetchGetBooksIsbnLoadData();
               }}
@@ -169,6 +191,7 @@ export const BookDetailPage = () => {
         <Split>
           <Split.Side>
             <BookInfo
+              myRecord={data?.myRecord ?? null}
               readingStatus={data?.myRecord?.status}
               currentPage={data?.myRecord?.currentPage}
               totalPages={data?.totalPages}
@@ -177,6 +200,9 @@ export const BookDetailPage = () => {
               isbn13={data?.isbn13}
               authors={data?.authors}
               translators={data?.translators}
+              onRegistryLibrary={() => {
+                handleOpenDialog('RegisterLibraryDialog');
+              }}
               onRatingCreate={() => {
                 handleOpenDialog('UpdateRatingDialog');
               }}
@@ -194,6 +220,7 @@ export const BookDetailPage = () => {
                 feed={reviewsRequestParams.feed}
                 count={reviewsData?.totalCount}
                 reviews={reviewsData?.items}
+                isSpoilerVisible={isSpoilerVisible}
                 onSortChange={(sort) => {
                   handleChangeReviewRequestParams({ name: 'sort', value: sort });
                 }}

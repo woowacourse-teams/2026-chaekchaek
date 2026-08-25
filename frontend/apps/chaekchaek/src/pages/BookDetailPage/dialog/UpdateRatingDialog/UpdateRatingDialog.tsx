@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
+import type { ChangeEvent } from 'react';
 
-import { Dialog } from '@chaekchaek/design-system';
+import { Dialog, Slider } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { Rating } from '@chaekchaek/design-system';
 import { CellList } from '@chaekchaek/design-system';
@@ -23,6 +24,10 @@ const RatingMessages = {
   4.0: '좋았어요',
   4.5: '정말 좋았어요',
   5.0: '최고였어요',
+};
+
+const getRatingMessageNumber = (rating: number) => {
+  return Math.round(rating * 2) / 2;
 };
 
 export const UpdateRatingDialog = ({
@@ -51,7 +56,8 @@ export const UpdateRatingDialog = ({
     status: { data: ratingsComparison },
   } = useLoadData({ queryFn: getMembersMeRatingsComparisonLoadData });
 
-  const ratingMessage = RatingMessages[rating as keyof typeof RatingMessages] || '-';
+  const ratingMessageNumber = getRatingMessageNumber(rating);
+  const ratingMessage = RatingMessages[ratingMessageNumber as keyof typeof RatingMessages] || '-';
 
   const { mutate } = useExecute({
     executeFn: putLibraryBookIdRating,
@@ -96,6 +102,15 @@ export const UpdateRatingDialog = ({
               );
             })}
           </CellList>
+          <Slider
+            value={rating || 0}
+            step={0.1}
+            min={0}
+            max={5}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              handleChangeRating(e.currentTarget.valueAsNumber);
+            }}
+          />
           <Rating
             value={rating || 0}
             onChange={handleChangeRating}

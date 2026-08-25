@@ -4,7 +4,7 @@ import generateApi from './generateApi';
 
 const endPoint = openApiSpec?.paths;
 
-const name = 'membersMeNickname';
-const endpoint = endPoint['/api/v1/members/me/nickname'] || {};
+const name = 'reviewsReviewId';
+const endpoint = endPoint['/api/v1/reviews/{reviewId}'] || {};
 
 generateApi(name, endpoint);

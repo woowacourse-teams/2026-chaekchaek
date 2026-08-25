@@ -10,6 +10,7 @@ import {
 import type { BookInfoProps } from './BookInfo.types';
 
 export const BookInfo = ({
+  myRecord,
   readingStatus,
   currentPage,
   totalPages,
@@ -18,6 +19,7 @@ export const BookInfo = ({
   isbn13,
   authors,
   translators,
+  onRegistryLibrary,
   onRatingCreate,
   onReadingStatusChange,
   onCurrentPageUpdate,
@@ -25,13 +27,23 @@ export const BookInfo = ({
   const readPageCount = currentPage || 0;
   const bookPageCount = totalPages || 0;
 
+  const handleClickRating = () => {
+    if (!myRecord) return onRegistryLibrary();
+    onRatingCreate();
+  };
+
+  const handleClickCurrentPage = () => {
+    if (!myRecord) return onRegistryLibrary();
+    onCurrentPageUpdate();
+  };
+
   return (
     <>
       <Title level="main">내 독서 기록</Title>
       <Banner>
         <Banner.Content title="내 별점" content="아직 평가하지 않았어요" />
         <Banner.Trailing>
-          <Button size="small" variant="primary" onClick={onRatingCreate}>
+          <Button size="small" variant="primary" onClick={handleClickRating}>
             별점 주기
           </Button>
         </Banner.Trailing>
@@ -52,7 +64,7 @@ export const BookInfo = ({
         title="현재 읽은 범위"
         label={`${readPageCount} / ${bookPageCount}쪽`}
       />
-      <Button variant="primary" block={true} onClick={onCurrentPageUpdate}>
+      <Button variant="primary" block={true} onClick={handleClickCurrentPage}>
         현재 읽은 쪽수 입력
       </Button>
       <DataInfo heading="책 정보">
