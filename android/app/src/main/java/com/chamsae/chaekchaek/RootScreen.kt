@@ -82,6 +82,8 @@ fun RootScreen(
       RootTab.Shelf ->
         ArchiveRoute(
           libraryRepository = appContainer.libraryRepository,
+          mobileAuthRepository = appContainer.mobileAuthRepository,
+          authSession = appContainer.authSession,
           editing = archiveEditing,
           onEditingChange = { archiveEditing = it },
           onBookClick = onBookClick,

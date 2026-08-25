@@ -1,5 +1,6 @@
 package com.chamsae.chaekchaek.ui.archive
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -53,6 +54,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
@@ -69,16 +71,23 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import coil3.compose.AsyncImage
+import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
+import com.chaekchaek.app.data.remote.MobileLoginException
+import com.chamsae.chaekchaek.auth.AuthSession
+import com.chamsae.chaekchaek.auth.requestGoogleIdToken
 import com.chamsae.chaekchaek.data.ArchivedBook
 import com.chamsae.chaekchaek.data.LibraryRepository
 import com.chamsae.chaekchaek.data.ReadingStatus
 import com.chamsae.chaekchaek.ui.bookdetail.BookDetailArgs
 import com.chamsae.chaekchaek.ui.bookdetail.toBookDetailArgs
+import com.chamsae.chaekchaek.ui.common.LoginRequiredSheet
 import kotlinx.coroutines.launch
 
 @Composable
 fun ArchiveRoute(
   libraryRepository: LibraryRepository,
+  mobileAuthRepository: MobileAuthRemoteRepository,
+  authSession: AuthSession,
   editing: Boolean,
   onEditingChange: (Boolean) -> Unit,
   onBookClick: (BookDetailArgs) -> Unit,
@@ -92,17 +101,57 @@ fun ArchiveRoute(
     }
   val viewModel: ArchiveViewModel = viewModel(factory = factory)
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+  val tokens by authSession.tokens.collectAsStateWithLifecycle()
+  val context = LocalContext.current
+  val scope = rememberCoroutineScope()
+  var showLoginSheet by rememberSaveable { mutableStateOf(false) }
+  var signingIn by remember { mutableStateOf(false) }
+  var loginError by rememberSaveable { mutableStateOf<String?>(null) }
 
   ArchiveScreen(
     uiState = uiState,
     editing = editing,
-    onEditingChange = onEditingChange,
+    onEditingChange = { value ->
+      if (!value || tokens != null) onEditingChange(value) else showLoginSheet = true
+    },
     onRemove = viewModel::remove,
     onChangeStatus = viewModel::changeStatus,
     onAnonymousReviewsChange = viewModel::setAnonymousReviews,
     onBookClick = onBookClick,
     modifier = modifier,
   )
+
+  if (showLoginSheet) {
+    LoginRequiredSheet(
+      signingIn = signingIn,
+      error = loginError,
+      onDismiss = {
+        if (!signingIn) {
+          showLoginSheet = false
+          loginError = null
+        }
+      },
+      onGoogleSignIn = {
+        if (signingIn) return@LoginRequiredSheet
+        scope.launch {
+          signingIn = true
+          loginError = null
+          runCatching {
+            val idToken = requestGoogleIdToken(context)
+            authSession.signIn(mobileAuthRepository.loginWithGoogle(idToken))
+          }.onSuccess {
+            showLoginSheet = false
+            onEditingChange(true)
+          }.onFailure {
+            val code = (it as? MobileLoginException)?.code ?: it::class.simpleName.orEmpty()
+            Log.w("ChaekchaekAuth", "Archive login failed: $code")
+            loginError = "로그인하지 못했어요. 다시 시도해 주세요."
+          }
+          signingIn = false
+        }
+      },
+    )
+  }
 }
 
 @Composable
