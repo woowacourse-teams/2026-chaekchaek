@@ -24,6 +24,20 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
   PR 없이 `an-develop`에 직접 커밋하고 push할 수 있다.
 - 이 예외는 `main` 브랜치 보호 규칙에는 적용하지 않는다.
 
+## GitHub 작업 흐름
+
+- 현재 프로젝트에서는 Notion 칸반 단계를 사용하지 않는다.
+- 새 작업은 GitHub 이슈 생성, 작업 브랜치 생성, Draft PR 생성, 구현 및 검증 순서로 진행한다.
+- GitHub 이슈에는 저장소에 이미 존재하는 범위 및 작업 유형 라벨을 적극적으로 적용한다.
+- 이슈와 PR 생성 승인은 전역 `AGENTS.md`의 `슛` 규칙을 따른다.
+
+## Pencil 디자인 파일 SSOT
+
+- Pencil 디자인의 단일 원본은 `/Users/ujeonghyeon/Downloads/designs.pen`이다.
+- Pencil 조회와 편집은 항상 이 파일을 대상으로 한다.
+- 저장소 루트나 다른 경로에 `designs.pen` 복사본을 만들거나 동기화하지 않는다.
+- `designs.pen`은 Git으로 추적하거나 PR에 포함하지 않는다.
+
 ## 문서 규칙
 
 - 오래 유지할 프로젝트 문서는 저장소 루트의 `/docs`에 Markdown 파일로 둔다.
