@@ -22,6 +22,8 @@ import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
 import { BookOverview } from './components/BookOverview';
 import { BookInfo } from './components/BookInfo';
 import { BookReviews } from './components/BookReviews';
+
+import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
 import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
 
@@ -106,10 +108,12 @@ export const BookDetailPage = () => {
     setIsSpoilerVisible(true);
   };
 
-  const [dialog, setDialog] = useState<'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null>(
-    null,
-  );
-  const handleOpenDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog') => {
+  const [dialog, setDialog] = useState<
+    'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null
+  >(null);
+  const handleOpenDialog = (
+    dialog: 'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog',
+  ) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
     setDialog(dialog);
   };
@@ -117,8 +121,12 @@ export const BookDetailPage = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null) => {
+  const renderDialog = (
+    dialog: 'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null,
+  ) => {
     switch (dialog) {
+      case 'RegisterLibraryDialog':
+        return <RegisterLibraryDialog onClose={handleCloseDialog} />;
       case 'UpdateCurrentPageDialog':
         return (
           data?.bookId && (
@@ -175,6 +183,7 @@ export const BookDetailPage = () => {
         <Split>
           <Split.Side>
             <BookInfo
+              myRecord={data?.myRecord ?? null}
               readingStatus={data?.myRecord?.status}
               currentPage={data?.myRecord?.currentPage}
               totalPages={data?.totalPages}
@@ -183,6 +192,9 @@ export const BookDetailPage = () => {
               isbn13={data?.isbn13}
               authors={data?.authors}
               translators={data?.translators}
+              onRegistryLibrary={() => {
+                handleOpenDialog('RegisterLibraryDialog');
+              }}
               onRatingCreate={() => {
                 handleOpenDialog('UpdateRatingDialog');
               }}
