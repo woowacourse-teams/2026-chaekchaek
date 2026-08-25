@@ -8,11 +8,11 @@ export type DeleteReviewsReviewIdResponseDto = ResponseDto<undefined>;
 export interface PatchReviewsReviewIdRequestDto {
   pathParams: [{ name: 'reviewId'; value: number }];
   data: {
-    chapter: string;
-    isSpoiler: boolean;
-    quote: string;
-    totalPages: number;
-    currentPage: number;
+    chapter?: string | undefined;
+    isSpoiler?: boolean | undefined;
+    quote?: string | undefined;
+    totalPages?: number | undefined;
+    currentPage?: number | undefined;
     content: string;
   };
 }

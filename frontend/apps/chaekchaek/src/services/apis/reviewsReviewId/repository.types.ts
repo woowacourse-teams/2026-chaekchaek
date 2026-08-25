@@ -5,11 +5,11 @@ export interface DeleteReviewsReviewIdParams {
 export type DeleteReviewsReviewId = (params: DeleteReviewsReviewIdParams) => Promise<undefined>;
 export interface PatchReviewsReviewIdParams {
   reviewId: number;
-  chapter: string;
-  isSpoiler: boolean;
-  quote: string;
-  totalPages: number;
-  currentPage: number;
+  chapter?: string | undefined;
+  isSpoiler?: boolean | undefined;
+  quote?: string | undefined;
+  totalPages?: number | undefined;
+  currentPage?: number | undefined;
   content: string;
 }
 
