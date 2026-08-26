@@ -1,7 +1,7 @@
 # 첵췍 앱 아키텍처 (KMP)
 
-Android(Compose)와 iOS(SwiftUI) 두 앱을 Kotlin Multiplatform으로 만든다. 레이어 구조, 모듈 경계,
-의존성 주입, 화면 상태 규칙, 테스트 전략을 정한다.
+Android와 iOS가 Compose Multiplatform 화면을 공유하는 Kotlin Multiplatform 앱이다. 레이어 구조,
+모듈 경계, 플랫폼 브리지, 화면 상태 규칙, 테스트 전략을 정한다.
 
 - 도메인 객체: [도메인 모델](domain-model.md)
 - 모듈 구성·빌드·iOS 연동: [KMP 셋업](kmp-setup.md)
@@ -13,47 +13,45 @@ Android(Compose)와 iOS(SwiftUI) 두 앱을 Kotlin Multiplatform으로 만든다
 | 항목 | 결정 |
 | --- | --- |
 | 플랫폼 | Android + iOS. 공유 모듈 하나 |
-| 공유 범위 | domain + data + **presentation** (ViewModel·UiModel까지) |
-| UI | Android는 Compose, iOS는 SwiftUI. 각자 작성 |
-| DI | kotlin-inject (컴파일타임 검증, KMP 지원) |
+| 공유 범위 | domain + data + presentation + Compose UI + 내비게이션 |
+| UI | `shared/commonMain`의 Compose Multiplatform 화면을 Android와 iOS가 함께 사용 |
+| 의존성 조립 | 공통 `Navigation.kt`에서 생성자 주입 |
 | 네트워크 | Ktor Client |
 | 시각 | kotlinx-datetime |
 | 직렬화 | kotlinx.serialization |
 | ViewModel | `androidx.lifecycle.ViewModel` (2.10.0+, KMP 지원) |
 | 데이터 공급 | 서버 준비 전까지 인메모리 Fake DataSource (commonMain) |
 | 표시 문자열 | commonMain에 한국어 직접 |
-| Swift 브리지 | iOS 착수 시 결정 (SKIE 유력) |
+| 플랫폼 브리지 | Android Activity와 인증 저장소, iOS `ComposeUIViewController`와 네트워크 엔진만 분리 |
 | 테스트 | kotlin.test + Kotest assertions + coroutines-test |
 | 코드 스타일 | Kotlin official (4칸) |
 
 Hilt·Retrofit·`java.time`은 KMP에서 쓸 수 없어 제외했다. 자세한 근거는
 [부록 B](#부록-b-kmp-때문에-바뀐-결정)에 있다.
 
-## 2. 공유 범위를 presentation까지 넓힌 이유
+## 2. 공유 범위를 UI까지 넓힌 이유
 
 두 가지 문제를 동시에 푼다.
 
 **첫째, 스포일러 안전장치가 한 곳에 남는다.** 이 앱의 핵심 규칙은 `isSpoiler`가 설정된 감상을
-가리고, 사용자가 탭한 `reviewId` 한 건만 공개하는 것이다. presentation을 공유하면 Android와
-iOS가 같은 판정과 공개 상태를 사용한다.
+가리고, 사용자가 탭한 `reviewId` 한 건만 공개하는 것이다. UI까지 공유하면 Android와 iOS가 같은
+판정, 공개 상태, 가림 표현을 사용한다.
 
-**둘째, `value class`가 Swift 경계에 노출되지 않는다.** Kotlin/Native의 Objective-C export는
-inline/value class를 underlying 타입이나 `id`(Swift의 `Any`)로 매핑한다. 즉 `PageNumber`가
-Swift에서 `Int32`나 `Any`로 보여 타입 안전성이 사라진다. UiModel이 `"80쪽 / 308쪽"` 같은 완성된
-`String`만 담으면 `value class`가 Swift까지 나가지 않는다.
+**둘째, 화면과 내비게이션의 플랫폼별 중복을 없앤다.** 화면 상태와 이벤트뿐 아니라 Composable과
+Navigation3 백스택도 공통 코드에 두므로 같은 기능을 두 번 구현하고 동기화하지 않는다.
 
-**대가**: iOS 화면 구조가 Android를 따라가고 SwiftUI다운 문법이 줄어든다. UiModel 형태를 바꿀 때
-양쪽 UI가 함께 영향을 받는다.
+**대가**: 플랫폼 고유 UI가 필요하면 공통 화면에서 분기하거나 별도 플랫폼 브리지를 추가해야 한다.
 
 ## 3. 레이어와 의존 방향
 
 ```
-       :androidApp (Compose)          :iosApp (SwiftUI)
-              │                              │
-              └──────────────┬───────────────┘
-                             ▼
-                    :shared / presentation
-                    (ViewModel, UiState, UiModel)
+       :app (Android host)          :iosApp (iOS host)
+              │                           │
+              └─────────────┬─────────────┘
+                            ▼
+               :shared / UI + navigation
+                            │
+               :shared / presentation
                              │
                              ▼
                     :shared / domain
@@ -66,15 +64,16 @@ Swift에서 `Int32`나 `Any`로 보여 타입 안전성이 사라진다. UiModel
 
 - `domain`은 아무것도 의존하지 않는다
 - `presentation`과 `data`는 서로를 모르고 둘 다 `domain`만 본다
-- `androidApp`·`iosApp`은 `presentation`만 본다. `data`를 직접 보지 않는다
-- DI 그래프가 `data`의 구현체를 `domain`의 인터페이스에 묶는 유일한 접점이다
+- Android와 iOS 호스트는 공통 `App`을 실행하고 플랫폼 인증 콜백만 제공한다
+- 공통 UI가 화면 상태와 내비게이션을 소유한다
+- DI 그래프 또는 공통 UI의 조립 지점에서 저장소 구현체를 생성한다
 
 **금지 사항**
 
 - `domain`에서 `androidx.*`, Ktor, `kotlinx.serialization` 어노테이션 import
 - `presentation`에서 `data` 패키지 import (DI 컴포넌트 제외)
 - `commonMain` 어디서든 `java.*` 사용 (Kotlin/Native에 없다)
-- `androidApp`에서 `domain`·`data` 타입 직접 사용
+- 플랫폼 호스트에서 화면과 내비게이션을 다시 구현
 
 ## 4. 패키지 구조
 
@@ -96,28 +95,29 @@ shared/src/commonMain/kotlin/com/chaekchaek/app/
 │   ├── fake        XxxFakeDataSource
 │   ├── local       DataStore (게스트 쿼터)
 │   └── repository  XxxRepositoryImpl
-├── presentation
-│   ├── home        HomeViewModel, HomeUiState, FeedSectionUiModel
-│   ├── search      SearchViewModel, SearchUiState
-│   ├── bookdetail  BookDetailViewModel, NoteUiModel, 다이얼로그 상태
-│   ├── shelf       ShelfViewModel, ShelfUiState
-│   └── common      AppError, UiEvent, 라벨 포맷터
+├── presentation    ViewModel, UiState, UiModel
+├── ui
+│   ├── home, search, archive, bookdetail, register
+│   ├── theme
+│   ├── RootScreen.kt
+│   └── Navigation.kt
 └── di              kotlin-inject Component, 모듈
 
-androidApp/src/main/kotlin/com/chaekchaek/app/
-├── ui              화면별 Composable
-├── navigation      NavKey, NavDisplay
-└── theme           Color, Type, Theme
+app/src/main/java/com/chamsae/chaekchaek/
+├── MainActivity.kt
+└── auth             Android 인증과 토큰 저장 브리지
 
-iosApp/
-└── (SwiftUI 뷰)
+shared/src/iosMain/kotlin/com/chaekchaek/app/
+├── MainViewController.kt
+└── data/remote      iOS Ktor 엔진
 ```
 
-`presentation`이 화면 단위로 나뉘고, 각 플랫폼의 UI가 같은 이름을 따라간다.
+공통 `App`과 `Navigation.kt`가 두 플랫폼의 화면과 백스택을 함께 구성한다.
 
 **패키지명은 `com.chaekchaek.app`을 유지한다.** Play Console에 등록된 `applicationId`는
 `com.chamsae.chaekchaek`으로 별개이며 변경하지 않는다(`android/CLAUDE.md`의 고정 사항).
-`shared`와 `androidApp`이 같은 패키지 루트를 쓰되 하위 경로로 구분한다.
+공통 코드는 `com.chaekchaek.app`, Android 호스트는 기존 applicationId에 맞춰
+`com.chamsae.chaekchaek` 패키지를 사용한다.
 
 ## 5. 데이터 레이어
 
@@ -189,65 +189,11 @@ fun noteDataSource(impl: NoteFakeDataSource): NoteDataSource = impl
 //                       ^^^^^^^^^^^^^^^^^^ 서버 준비 시 NoteRemoteDataSource
 ```
 
-## 6. 의존성 주입 (kotlin-inject)
+## 6. 의존성 조립
 
-Hilt는 Dagger 기반이라 Kotlin/Native를 지원하지 않는다. KMP 선택지는 Koin(런타임),
-kotlin-inject(컴파일타임), Metro 등이며, **의존성 누락을 컴파일 시점에 잡기 위해
-kotlin-inject**를 택했다.
-
-### 6.1 Component
-
-```kotlin
-// commonMain/di/AppComponent.kt
-@Component
-abstract class AppComponent {
-    abstract val homeViewModel: HomeViewModel
-    abstract val searchViewModel: SearchViewModel
-    abstract val shelfViewModel: ShelfViewModel
-
-    @Provides
-    fun noteDataSource(impl: NoteFakeDataSource): NoteDataSource = impl
-
-    @Provides
-    fun noteRepository(impl: NoteRepositoryImpl): NoteRepository = impl
-}
-```
-
-인자를 받는 ViewModel(책 상세의 `bookId`)은 팩토리를 노출한다.
-
-```kotlin
-abstract val bookDetailViewModelFactory: (BookId) -> BookDetailViewModel
-```
-
-### 6.2 Android에서 꺼내기
-
-kotlin-inject에는 `hiltViewModel()` 같은 것이 없다. Component를 `CompositionLocal`로 내려보내고
-화면이 거기서 꺼낸다.
-
-```kotlin
-// androidApp
-val LocalComponent = staticCompositionLocalOf<AppComponent> {
-    error("AppComponent가 제공되지 않았습니다.")
-}
-
-@Composable
-fun ShelfScreen(
-    onBookClick: (BookId) -> Unit,
-    viewModel: ShelfViewModel = viewModel { LocalComponent.current.shelfViewModel },
-) { ... }
-```
-
-`viewModel { }`로 감싸는 이유는 구성 변경(화면 회전) 시 인스턴스를 유지하기 위해서다.
-
-### 6.3 iOS에서 꺼내기
-
-Swift가 같은 Component에서 꺼낸다.
-
-```swift
-let viewModel = component.shelfViewModel
-```
-
-구조가 대칭이라 양쪽이 같은 그래프를 본다.
+`shared/commonMain/ui/Navigation.kt`가 공통 composition root다. 저장소와 ViewModel을 생성자 주입으로
+조립하고 `remember`로 화면 생명주기 동안 유지한다. Android와 iOS 호스트는 저장소나 ViewModel을
+직접 만들지 않고 인증처럼 플랫폼에서만 가능한 동작을 `AuthPlatformCallbacks`로 전달한다.
 
 ## 7. presentation 레이어
 
@@ -377,16 +323,15 @@ class ShelfViewModel(
 - 지속 상태는 `StateFlow<XxxUiState>`, 일회성은 `SharedFlow<UiEvent>`
 - 도메인 객체는 ViewModel 안에서만 다루고 밖으로 내보내지 않는다
 - 화면 전환은 ViewModel이 하지 않는다. UI가 콜백으로 처리한다
-- `viewModelScope`를 쓰되, iOS에서 생명주기를 직접 끊어줘야 하므로 `clear()` 호출 시점을 SwiftUI
-  쪽에서 관리한다 (구체적인 방법은 iOS 착수 시 확정)
+- 화면에서 생성한 장기 실행 객체는 `DisposableEffect` 등 Compose 생명주기에 맞춰 정리한다
 
 ## 8. UI 레이어
 
-### 8.1 Android (Compose)
+### 8.1 공통 Compose UI
 
 - `NavController`/`NavBackStack`을 받지 않는다. `onBookClick: (BookId) -> Unit` 같은 콜백을 받는다
-- 상태는 `collectAsStateWithLifecycle()`로 받는다
-- 화면 Composable(상태 연결)과 내용 Composable(상태 없음)을 나눈다. 내용 쪽에 `@Preview`를 붙인다
+- 상태는 공통 Composable에서 `collectAsState()`로 받는다
+- 화면 Composable은 `shared/commonMain/ui`에 두고 플랫폼 API를 직접 참조하지 않는다
 
 ```kotlin
 @Composable
@@ -399,30 +344,20 @@ fun ShelfScreen(onBookClick: (BookId) -> Unit, viewModel: ShelfViewModel = ...) 
 private fun ShelfContent(uiState: ShelfUiState, ...) { ... }
 ```
 
-### 8.2 iOS (SwiftUI)
+### 8.2 플랫폼 호스트
 
-`StateFlow`를 SwiftUI가 직접 관찰할 수 없어 브리지가 필요하다. 후보는 SKIE(sealed → Swift enum
-변환 포함)와 KMP-NativeCoroutines(Flow → async/await·Combine)이며, **iOS 착수 시점에 정한다.**
-
-브리지를 SKIE로 정하면 UI 코드가 이렇게 된다.
-
-```swift
-switch onEnum(of: model) {
-case .visible(let m): NoteCard(model: m)
-case .hidden(let m):  LockedNoteCard(model: m)
-}
-```
+Android `MainActivity`는 공통 `App`을 호출하고 Google 인증과 토큰 저장 콜백을 제공한다. iOS는
+`MainViewController`의 `ComposeUIViewController`에서 같은 `App`을 실행한다.
 
 ### 8.3 내비게이션
 
-내비게이션은 **공유하지 않는다.** Android는 Navigation3, iOS는 `NavigationStack`을 각자 쓴다.
-공유하는 것은 「어느 화면으로 가야 하는가」가 아니라 「무슨 일이 일어났는가」다.
+내비게이션은 `shared/commonMain/ui/Navigation.kt`의 Navigation3 백스택을 두 플랫폼이 공유한다.
 
 Figma에서 책 상세·서재 편집에는 하단 탭바가 없고 홈과 내 서재에만 있다. 상세가 탭 위로 올라오는
 전체 화면이라는 뜻이므로, 탭은 백스택에 넣지 않는다.
 
 ```
-Android backStack
+공통 backStack
   [RootKey]                                  탭 컨테이너 (탭바 보임)
   [RootKey, BookDetailKey(bookId)]           책 상세 (탭바 없음)
   [RootKey, BookDetailKey, NoteComposeKey]   감상 작성
@@ -482,8 +417,8 @@ iOS 시뮬레이터 양쪽에서 돈다.
 | ViewModel | `commonTest`. Fake Repository + `runTest` | 중간 |
 | DTO 매핑 | `commonTest` | 중간 |
 | 가림 문자열 변환 | `commonTest`. 원문 길이와 공백, 문장부호 유지 | 높음 |
-| Compose UI | `androidApp`. 핵심 흐름만 | 낮음 |
-| SwiftUI | `iosApp`. iOS 착수 후 | 낮음 |
+| Compose UI | `shared/commonTest`와 플랫폼 UI 테스트. 핵심 흐름만 | 낮음 |
+| 플랫폼 호스트 | Android와 iOS에서 공통 `App` 실행 확인 | 낮음 |
 
 ViewModel 테스트용 Fake는 `commonTest`에 둔다. `commonMain`의 `data/fake`(개발용 더미)와 목적이
 다르므로 공유하지 않는다. 개발용 Fake는 "그럴듯한 화면"을 만들고, 테스트용 Fake는 "특정 조건"을
@@ -510,60 +445,12 @@ fun `다 읽음으로 바꾸면 진행 쪽수가 총 쪽수가 된다`() {
 시각이 들어가는 객체는 `Instant`를 인자로 받게 만들어 테스트에서 고정값을 넣는다.
 `Clock.System.now()`를 도메인 안에서 부르지 않는다.
 
-## 11. 기존 코드 마이그레이션
+## 11. CMP 전환 상태
 
-현재 `app/src/main`은 811줄이고 레이어가 없다. KMP 전환과 함께 옮긴다.
-
-| 현재 | 이동 후 | 비고 |
-| --- | --- | --- |
-| `data/Book.kt` | `shared/domain/book/Book.kt` + `shared/data/remote/dto/BookDto.kt` | `org.json` → kotlinx.serialization |
-| `data/BookSearchApi.kt` | `shared/data/remote/api/BookApi.kt` | `HttpURLConnection` → Ktor. `object` → 주입 가능한 클래스 |
-| `data/ArchiveRepository.kt` | `shared/data/repository/ShelfRepositoryImpl.kt` | SharedPreferences → multiplatform-settings 또는 DataStore |
-| `ui/search/*` | `shared/presentation/search/*` + `androidApp/ui/search/*` | 상태와 UI 분리 |
-| `ui/archive/*` | `shared/presentation/shelf/*` + `androidApp/ui/shelf/*` | |
-| `RootScreen.kt` | `androidApp/ui/root/RootScreen.kt` | 탭 2개 → 3개 |
-| `Navigation.kt`, `NavigationKeys.kt` | `androidApp/navigation/*` | |
-| `theme/*` | `androidApp/theme/*` | iOS는 별도 |
-| `MainActivity.kt` | `androidApp/MainActivity.kt` | |
-
-현재 코드에서 함께 고칠 문제들이다.
-
-1. `BookSearchApi`가 `object` 싱글턴이라 테스트에서 바꿔 끼울 수 없고 `BuildConfig`를 직접
-   참조한다. `BuildConfig`는 Android 전용이므로 KMP에서는 `expect/actual`이나 생성자 주입으로
-   바꿔야 한다
-2. `ArchiveRepository(context)`가 `RootScreen`의 `remember { }`에서 생성된다
-   (`RootScreen.kt:32`). 화면이 의존성을 만들면 생명주기와 테스트가 꼬인다. DI로 옮긴다
-3. `BookSearchApi.search`의 `catch (e: IOException) { fetch(url) }`은 재시도 1회를 예외 처리로
-   표현해 의도가 드러나지 않는다. Ktor의 `HttpRequestRetry`로 대체한다
-4. `data/Book.kt`에 모델·JSON 파싱·직렬화가 한 파일에 섞여 있다
-5. `org.json`은 JVM 전용이라 KMP에서 쓸 수 없다
-
-## 12. 구현 순서 (이슈 분할안)
-
-프로젝트 규칙상 이슈는 "사용자가 완료된 동작 하나를 확인할 수 있는 단위"다. 아래는 제안이며
-확정 전에 함께 조정한다.
-
-| 순서 | 이슈 | 확인 가능한 동작 |
-| --- | --- | --- |
-| 0 | KMP 모듈 전환 | `shared`·`androidApp` 구조에서 기존 앱이 그대로 동작한다 |
-| 1 | 도메인 모델 + 테스트 | 규칙 30개가 `commonTest`에서 통과한다 |
-| 2 | 탭 3개 + 홈 피드 (이슈 #7) | 앱을 켜면 홈 피드가 보이고 탭 3개로 이동한다 |
-| 3 | 검색(발견 탭) | 책을 검색하고 「읽는 중 시작」으로 서재에 담는다 |
-| 4 | 내 서재 목록 | 상태 필터와 정렬로 서재를 본다 |
-| 5 | 책 상세 + 내 독서 기록 | 상태를 바꾸고 쪽수를 기록한다 |
-| 6 | 감상 목록 + 스포일러 가드 | 체크된 감상을 가리고 선택한 감상만 공개한다 |
-| 7 | 감상 작성 | 감상을 남기면 목록에 나타난다 |
-| 8 | 답글 + 좋아요 | 감상에 답글을 달고 좋아요를 누른다 |
-| 9 | 별점 | 별점을 매기고 최근 기록을 본다 |
-| 10 | 서재 편집 모드 | 여러 권을 골라 상태를 바꾸거나 지운다 |
-| 11 | 닉네임·익명 설정 | 익명 공개를 끄고 닉네임을 정한다 |
-| 12 | 게스트 열람 제한 | 감상 3개를 보면 배너가 소진 상태가 된다 |
-| 13+ | iOS 앱 착수 | 브리지 결정 후 SwiftUI로 같은 화면을 그린다 |
-
-0과 1은 화면 변화가 없어 이슈 단위 규칙에서 벗어난다. 다른 작업의 선행 조건이라 예외로 둔다.
-
-**iOS 착수 시점**: Android로 화면 몇 개를 완성해 UiModel 형태가 안정된 뒤가 좋다. 너무 이르면
-UiModel이 계속 바뀌어 양쪽을 동시에 고치게 된다.
+- 화면, 테마, 내비게이션, 화면 상태는 `shared/commonMain`에서 공유한다.
+- Android `app`에는 Activity, 인증 브리지, 매니페스트, 런처와 빌드 설정만 둔다.
+- iOS는 `ComposeUIViewController`로 공통 `App`을 실행하고 Darwin 네트워크 엔진을 사용한다.
+- 플랫폼별로 같은 화면이나 내비게이션을 다시 구현하지 않는다.
 
 ## 부록 A. 참고 프로젝트에서 바꾼 것
 
@@ -583,14 +470,14 @@ Android 단독 설계에서 정했다가 KMP 전환으로 뒤집힌 것들이다
 
 | 항목 | 이전 | 이후 | 이유 |
 | --- | --- | --- | --- |
-| DI | Hilt | kotlin-inject | Hilt는 Dagger 기반이라 KMP 미지원 |
+| 의존성 조립 | Hilt | 공통 composition root의 생성자 주입 | 플랫폼별 그래프 중복 방지 |
 | 네트워크 | Retrofit | Ktor Client | Retrofit은 JVM 전용 |
 | 시각 | `java.time` | kotlinx-datetime | `java.*`는 Kotlin/Native에 없음 |
 | JSON | `org.json` | kotlinx.serialization | `org.json`은 JVM 전용 |
 | 로컬 저장 | SharedPreferences | multiplatform-settings 또는 DataStore | Android 전용 API |
 | 테스트 | JUnit5 + AssertJ | kotlin.test + Kotest assertions | JUnit5는 JVM 전용 |
-| 모듈 | 단일 `:app` | `:shared` + `:androidApp` + `:iosApp` | |
-| UiModel 위치 | Android `feature` | 공유 `presentation` | 스포일러 판정 단일화, value class 노출 차단 |
+| 모듈 | 단일 `:app` | `:shared` + Android `:app` + `:iosApp` | |
+| UiModel 위치 | Android `feature` | 공유 `presentation`과 Compose UI | 스포일러 판정과 표현 단일화 |
 
 **살아남은 결정**: 도메인 모델 전체, Repository 인터페이스를 domain에 두기, 상태-쪽수 불변식,
 감상 쪽수 분리, sealed UiState, UiModel 변환, Fake를 DataSource에 두기, 스포일러 정책.

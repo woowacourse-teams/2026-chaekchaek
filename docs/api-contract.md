@@ -241,6 +241,7 @@ GET /books/bk_003/notes?sort=LATEST&scope=ALL&page=0&size=20
       },
       "chapter": "Chapter 1",
       "readingPoint": 80,
+      "isSpoiler": true,
       "readCompleted": true,
       "createdAt": "2026-08-05T10:00:00Z",
       "likeCount": 12,
@@ -287,12 +288,13 @@ GET /books/bk_003/notes?sort=LATEST&scope=ALL&page=0&size=20
     "page": 80
   },
   "chapter": "Chapter 1",
-  "readingPoint": 80
+  "readingPoint": 80,
+  "isSpoiler": true
 }
 ```
 
-`impression`만 필수다. `quote`, `chapter`는 `null` 가능하다. 응답은 생성된 감상 객체(위와 동일한
-모양)다.
+`impression`만 필수다. `quote`, `chapter`, `readingPoint`는 `null` 가능하고 `isSpoiler`를
+생략하면 `false`로 처리한다. 응답은 생성된 감상 객체(위와 동일한 모양)다.
 
 ### POST /notes/{noteId}/likes, DELETE /notes/{noteId}/likes
 

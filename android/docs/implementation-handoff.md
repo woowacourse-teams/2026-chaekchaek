@@ -47,6 +47,7 @@
 
 ```bash
 ./gradlew :shared:allTests
+./gradlew :shared:testAndroidHostTest :app:lintDebug
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ./gradlew :app:lintDebug
 ```
@@ -55,8 +56,8 @@
 홈 렌더링, 검색 결과, `LATEST`에서 `COMMENT` 정렬 전환, 상세 화면, 비로그인 로그인 시트의
 개인정보처리방침 노출을 실제 레이아웃에서 확인했다.
 
-shared 테스트와 app lint를 한 Gradle 호출에 함께 넣으면 AGP 9.0.1과 KSP의
-`generateAndroidHostTestLintModel` 암시적 의존성 검사로 실패한다. 각각 단독 실행하면 통과한다.
+`shared/build.gradle.kts`에서 Android host test용 lint model 태스크가 `kspAndroidHostTest`를
+명시적으로 선행하도록 설정했으므로 shared 테스트와 app lint를 한 Gradle 호출로 실행할 수 있다.
 
 ## 남은 작업
 
