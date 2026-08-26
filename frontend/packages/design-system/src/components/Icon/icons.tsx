@@ -15,8 +15,11 @@ export const CloseIcon = createIcon(Close);
 import Comment from './imgs/comment.svg?component';
 export const CommentIcon = createIcon(Comment);
 
-import Heart from './imgs/heart.svg?component';
-export const HeartIcon = createIcon(Heart);
+import HeartOff from './imgs/heart-off.svg?component';
+export const HeartOffIcon = createIcon(HeartOff);
+
+import HeartOn from './imgs/heart-on.svg?component';
+export const HeartOnIcon = createIcon(HeartOn);
 
 import Invisible from './imgs/invisible.svg?component';
 export const InvisibleIcon = createIcon(Invisible);
