@@ -33,9 +33,9 @@ Hilt·Retrofit·`java.time`은 KMP에서 쓸 수 없어 제외했다. 자세한 
 
 두 가지 문제를 동시에 푼다.
 
-**첫째, 스포일러 안전장치가 한 곳에 남는다.** 이 앱의 핵심 규칙은 「내가 읽은 쪽수보다 뒤에서
-쓰인 감상은 가린다」이다. presentation을 공유하지 않으면 iOS가 이 판정을 Swift로 다시 구현하고,
-유출 가능 지점이 두 배가 된다. ViewModel이 공유되면 판정과 가림이 한 번만 존재한다.
+**첫째, 스포일러 안전장치가 한 곳에 남는다.** 이 앱의 핵심 규칙은 `isSpoiler`가 설정된 감상을
+가리고, 사용자가 탭한 `reviewId` 한 건만 공개하는 것이다. presentation을 공유하면 Android와
+iOS가 같은 판정과 공개 상태를 사용한다.
 
 **둘째, `value class`가 Swift 경계에 노출되지 않는다.** Kotlin/Native의 Objective-C export는
 inline/value class를 underlying 타입이나 `id`(Swift의 `Any`)로 매핑한다. 즉 `PageNumber`가
@@ -84,7 +84,6 @@ shared/src/commonMain/kotlin/com/chaekchaek/app/
 │   ├── book        Book, BookId, PageNumber, PageCount, BookRepository
 │   ├── shelf       ShelfBook, Shelf, ReadingStatus, ReadingProgress, ShelfRepository
 │   ├── note        Note, VisibleNote, Quote, Reply, NoteAuthor, NoteRepository
-│   ├── spoiler     SpoilerBoundary, NoteVisibility
 │   ├── rating      Rating, RatingSummary, RatedBook, RatingRepository
 │   ├── reader      ReaderProfile, Nickname, Viewer, GuestQuota, ReaderRepository
 │   ├── feed        HomeFeed, FeedSection, FeedRepository
@@ -479,10 +478,10 @@ iOS 시뮬레이터 양쪽에서 돈다.
 | 대상 | 위치 | 우선순위 |
 | --- | --- | --- |
 | 도메인 불변식·상태 전이 | `commonTest`. [규칙 목록 30개](domain-model.md#10-규칙-목록-테스트-대상) | 높음 |
-| 스포일러 판정 | `commonTest`. 경계값 위주 | 높음 |
+| 스포일러 판정 | `commonTest`. 체크 여부와 감상별 공개 범위 | 높음 |
 | ViewModel | `commonTest`. Fake Repository + `runTest` | 중간 |
 | DTO 매핑 | `commonTest` | 중간 |
-| UiModel 매핑 (특히 Hidden) | `commonTest`. **본문이 안 담기는지 확인** | 높음 |
+| 가림 문자열 변환 | `commonTest`. 원문 길이와 공백, 문장부호 유지 | 높음 |
 | Compose UI | `androidApp`. 핵심 흐름만 | 낮음 |
 | SwiftUI | `iosApp`. iOS 착수 후 | 낮음 |
 
@@ -552,7 +551,7 @@ fun `다 읽음으로 바꾸면 진행 쪽수가 총 쪽수가 된다`() {
 | 3 | 검색(발견 탭) | 책을 검색하고 「읽는 중 시작」으로 서재에 담는다 |
 | 4 | 내 서재 목록 | 상태 필터와 정렬로 서재를 본다 |
 | 5 | 책 상세 + 내 독서 기록 | 상태를 바꾸고 쪽수를 기록한다 |
-| 6 | 감상 목록 + 스포일러 가드 | 감상을 읽고, 안 읽은 구간은 가려진다 |
+| 6 | 감상 목록 + 스포일러 가드 | 체크된 감상을 가리고 선택한 감상만 공개한다 |
 | 7 | 감상 작성 | 감상을 남기면 목록에 나타난다 |
 | 8 | 답글 + 좋아요 | 감상에 답글을 달고 좋아요를 누른다 |
 | 9 | 별점 | 별점을 매기고 최근 기록을 본다 |

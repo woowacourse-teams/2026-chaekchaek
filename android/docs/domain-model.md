@@ -56,7 +56,7 @@ Figma는 한글, 코드는 영문이라 대응을 먼저 고정한다. 화면 �
 | 감상 | `Note` | "감상 30", "감상 남기기" |
 | 느낀점 | `Note.impression` | 필수 입력 |
 | 인상 깊은 문구 | `Quote` | 선택 입력 |
-| p.80까지 | `Note.readingPoint` | 스포일러 기준 |
+| p.80까지 | `Note.readingPoint` | 선택적 감상 위치 정보 |
 | 인용 위치 · p.80 | `Quote.page` | |
 | 답글 | `Reply` | |
 | 좋아요 | `Reaction` | |
@@ -74,8 +74,8 @@ Figma는 한글, 코드는 영문이라 대응을 먼저 고정한다. 화면 �
 ### 3.1 쪽수
 
 쪽수는 이 앱에서 가장 많이 쓰이는 값이다. 책 상세의 "지금 읽는 쪽", 서재의 진행도, 감상의
-"p.80까지", 인용 위치, 그리고 **스포일러 판정 기준**이 전부 쪽수다. `Int`로 두면 좋아요 수나
-감상 수 같은 다른 `Int`와 섞여도 컴파일이 통과한다.
+"p.80까지", 인용 위치가 모두 쪽수다. `Int`로 두면 좋아요 수나 감상 수 같은 다른 `Int`와
+섞여도 컴파일이 통과한다.
 
 ```kotlin
 @JvmInline
@@ -431,8 +431,6 @@ class Note(
 
     fun replyCount(): Int = replies.size
 
-    fun containsSpoilerFor(readPage: PageNumber): Boolean = readingPoint > readPage
-
     companion object {
         const val MAX_IMPRESSION_LENGTH = 1000
     }
@@ -461,11 +459,8 @@ class Quote(
 }
 ```
 
-`Note.readingPoint`(어디까지 읽고 남긴 감상인가)와 `Quote.page`(문장을 어디서 가져왔나)를
-분리했다. 200쪽까지 읽은 사람이 50쪽 문장을 인용해도 스포일러 기준이 200으로 유지된다.
-
-**대가**: Figma 작성 폼에는 쪽수 입력칸이 하나뿐이라 **입력칸을 하나 더 추가해야 한다.** 폼 UI
-구체안은 화면 설계에서 따로 확정한다.
+`Note.readingPoint`(어디까지 읽고 남긴 감상인가)와 `Quote.page`(문장을 어디서 가져왔나)는 서로
+다른 위치 정보다. 현재 감상 작성 폼의 쪽수 입력은 선택 사항이며 스포일러 판정에는 사용하지 않는다.
 
 ### 7.3 답글
 
@@ -519,75 +514,34 @@ UiModel에서 조립한다.
 
 ## 8. 스포일러 경계
 
-이 앱의 시그니처 규칙이다. 판정이 화면 코드로 흩어지면 한 곳만 틀려도 본문이 샌다.
+스포일러 체크 여부를 기준으로 감상을 가리고, 사용자가 선택한 감상만 공개한다.
 
 ### 8.1 판정 규칙
 
-Figma(36:712)에서 카드 헤더의 `p.160까지`와 가드 문구의 `160쪽 이후 내용을 포함해요`가 일치한다.
-즉 **감상의 `readingPoint`가 내가 읽은 쪽수보다 크면 가린다.**
+`isSpoiler`가 `true`이고 해당 `reviewId`를 아직 공개하지 않았을 때만 가린다. 감상의 쪽수와
+사용자의 독서 진행 쪽수는 판정에 사용하지 않는다.
 
-기준이 되는 「내가 읽은 쪽수」는 `ShelfBook.progress.currentPage`와 **같은 값**이다. 다이얼로그의
-`/ 412쪽`이 그 책의 총 쪽수이고, 책 상세의 「지금 읽는 쪽 80 / 308쪽」과 같은 구조라는 점을
-근거로 삼았다. 별도의 열람 전용 쪽수를 두지 않는다.
-
-### 8.2 경계 객체
+### 8.2 판정 함수
 
 ```kotlin
-class SpoilerBoundary(
-    private val readPage: PageNumber,
-    private val revealedBooks: Set<BookId>,
-) {
-    fun visibilityOf(note: Note): NoteVisibility = when {
-        note.bookId in revealedBooks -> NoteVisibility.Visible
-        note.containsSpoilerFor(readPage) -> NoteVisibility.Hidden(note.readingPoint)
-        else -> NoteVisibility.Visible
-    }
-
-    fun reveal(bookId: BookId): SpoilerBoundary =
-        SpoilerBoundary(readPage, revealedBooks + bookId)
-
-    fun movedTo(page: PageNumber): SpoilerBoundary = SpoilerBoundary(page, revealedBooks)
-}
-
-sealed interface NoteVisibility {
-    data object Visible : NoteVisibility
-
-    data class Hidden(val requiredPage: PageNumber) : NoteVisibility
-}
+fun shouldLockReview(
+    reviewId: Long,
+    isSpoiler: Boolean,
+    revealedReviewIds: Set<Long>,
+): Boolean = isSpoiler && reviewId !in revealedReviewIds
 ```
 
 ### 8.3 정해진 범위
 
 | 항목 | 결정 | 근거 |
 | --- | --- | --- |
-| 「스포일러 감수하고 보기」 적용 범위 | 그 **책의 감상 전부** | 감상 30개짜리 책에서 다이얼로그가 반복되면 못 쓴다 |
-| 감수 상태 유지 | **메모리에만** (ViewModel) | 앱을 다시 켜면 보호가 기본값으로 돌아온다. 저장 코드 없음 |
-| 「입력한 쪽수까지 보기」의 저장 위치 | `ShelfBook.progress` | 8.1과 같은 이유 |
-| 서재에 없는 책에서 쪽수를 입력하면 | `READING` 상태로 **서재에 자동 추가** | 「쪽수 기록 = 읽는 중」 규칙 하나로 통일. 검색의 「읽는 중 시작」과 같은 동작 |
+| 가림 기준 | `isSpoiler` | 작성자가 명시적으로 체크한 감상만 가린다 |
+| 공개 적용 범위 | 선택한 `reviewId` 한 건 | 다른 스포일러 감상의 보호 상태를 유지한다 |
+| 함께 공개할 내용 | 본문, 인용문, 답글 | 하나의 감상에 속한 내용을 같은 상태로 처리한다 |
+| 공개 동작 | 카드 탭 즉시 공개 | 별도 팝업이나 쪽수 입력을 거치지 않는다 |
+| 공개 상태 유지 | 현재 책 상세 화면 메모리 | 화면을 다시 열면 기본 가림 상태로 돌아간다 |
 
-**감수한 손실**: 감상을 보려고 대충 입력한 쪽수가 독서 기록을 덮어쓴다. 스포일러를 보려다
-서재가 의도치 않게 늘어날 수도 있다.
-
-### 8.4 본문이 화면에 도달하지 않게 한다
-
-가려진 감상은 UiModel 단계에서 **본문 문자열을 담지 않는다.** 화면에 도달하지 않은 문자열은
-실수로도 그릴 수 없다.
-
-```kotlin
-sealed interface NoteUiModel {
-    data class Visible(val impression: String, ...) : NoteUiModel
-    data class Hidden(val requiredPageLabel: String, ...) : NoteUiModel   // 본문 없음
-}
-```
-
-**이 매핑은 `commonMain`의 presentation에 있다.** Android와 iOS가 같은 UiModel을 받으므로 판정이
-한 번만 존재하고, iOS가 Swift로 가림 로직을 다시 구현할 일이 없다. presentation을 공유하기로 한
-주된 이유가 이것이다.
-
-SKIE 같은 브리지를 붙이면 이 `sealed`가 Swift에서 exhaustive enum이 되어, iOS에서 `Hidden` 분기를
-빠뜨리면 컴파일 오류가 난다. 브리지 선택 기준은 [KMP 셋업](kmp-setup.md)에 있다.
-
-자세한 내용은 [앱 아키텍처의 UiModel 절](app-architecture.md#72-uimodel)에 있다.
+가려진 문자열은 공백과 문장부호를 유지하고 나머지 문자를 원문 길이만큼 `짹`으로 치환한다.
 
 ## 9. 독자와 정체성
 
@@ -729,11 +683,11 @@ interface AuthRepository {
 19. 인용문이 공백이면 `Quote`를 만들 수 없다.
 
 **스포일러**
-20. 감상의 `readingPoint`가 내가 읽은 쪽수보다 크면 가려진다.
-21. 같으면 보인다.
-22. 감수한 책의 감상은 `readingPoint`와 무관하게 보인다.
-23. 감수는 그 책에만 적용되고 다른 책은 여전히 가려진다.
-24. 읽은 쪽수를 올리면 그 이하 감상이 보인다.
+20. `isSpoiler`가 설정된 감상은 가려진다.
+21. `isSpoiler`가 설정되지 않은 감상은 쪽수와 무관하게 보인다.
+22. 가려진 감상을 탭하면 해당 `reviewId` 한 건만 공개된다.
+23. 공개된 감상의 본문, 인용문, 답글은 함께 보인다.
+24. 공개하지 않은 다른 스포일러 감상은 계속 가려진다.
 
 **정체성**
 25. 닉네임이 2자 미만이거나 15자 초과면 만들 수 없다.

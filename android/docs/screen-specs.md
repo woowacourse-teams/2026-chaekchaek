@@ -12,7 +12,7 @@ UiState 설계는 제품 의도와 이력 확인용이며, 실제 Android 동작
 | 디자인 시스템 | `SxMn5` | 기존 색상, 서체, 간격 토큰만 사용 |
 | 검색 정렬 | `jI61d` | `LATEST`와 `COMMENT`를 서버에 전달하고 선택 즉시 재조회 |
 | 책 상세 | `QgUZE` | 서재 추가와 해제를 현재 등록 상태에 따라 전환 |
-| 감상 잠금 | `DEquR`, `d6grPa` | 스포일러 또는 읽은 범위 초과 시 감상, 발췌, 답글을 원문 길이만큼 `짹`으로 표시 |
+| 감상 잠금 | `DEquR`, `d6grPa` | 스포일러 체크된 감상의 본문, 발췌, 답글을 원문 길이만큼 `짹`으로 표시 |
 | 감상 작성 | `ZozGQ`, `rU9vK` | 1000자 수, 작성 취소 확인, 실제 익명 설정과 공개 닉네임 표시 |
 | 답글 입력 | `NS3v7` | 1자부터 200자까지 제출, 글자 수 표시 |
 | 로그인 시트 | `mGHMD` | Google 로그인과 개인정보처리방침 링크 표시, 이용약관 링크 없음 |
@@ -45,7 +45,7 @@ Figma [node 36:3](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr/%EC%B1%85%
 | 6 | 닉네임 설정 | 36:900 | 다이얼로그 |
 | 7 | 책 상세 | 36:4, 36:1391 | 없음 |
 | 8 | 감상 목록 | 36:1391 내부 | 상세의 일부 |
-| 9 | 스포일러 가드 | 36:712 | 다이얼로그 |
+| 9 | 스포일러 가드 | `fKIr2` | 책 상세 내부 상태 |
 | 10 | 별점 매기기 | 36:1391 내부 | 다이얼로그 |
 | 11 | 감상 작성 | 36:1337 | 바텀시트 |
 | 12 | 답글 입력 | 36:264 | 감상 카드 내부 |
@@ -502,7 +502,7 @@ sealed interface NoteListUiState {
 
 | 액션 | 처리 |
 | --- | --- |
-| 가려진 카드 탭 | 스포일러 다이얼로그 |
+| 가려진 카드 탭 | 해당 감상의 본문, 인용문, 답글만 즉시 공개 |
 | 좋아요 탭 | `likedByMe`에 따라 감상 반응 등록 또는 취소 후 다시 로드 |
 | 「답글」 탭 | 답글 입력창 열기 |
 | 「답글 N개 모두 보기」 탭 | 마지막 페이지까지 조회해 중복 없이 펼침 |
@@ -517,39 +517,26 @@ sealed interface NoteListUiState {
 
 ```
 ┌─────────────────────────────────────┐
-│ 어디까지 읽으셨나요?              ✕ │
-│ 이 감상은 160쪽 이후 내용을 포함해요.│
-│ 내가 읽은 쪽수를 입력하면 읽은      │
-│ 범위까지 안전하게 볼 수 있어요.     │
-│ 내가 읽은 쪽수  [ 160 ] 쪽 / 412쪽  │
-│ [      입력한 쪽수까지 보기       ] │
-│ [     스포일러 감수하고 보기      ] │
+│ 참새 0912 (익명)       p.160까지    │
+│ 짹짹짹 짹짹 짹짹짹...             │
+│ 스포일러 감상이에요 · 탭해서 보기   │
 └─────────────────────────────────────┘
 ```
 
 ### 상태
 
 ```kotlin
-data class SpoilerDialogUiModel(
-    val requiredPageLabel: String,      // "160쪽 이후 내용을 포함해요"
-    val pageInput: String,
-    val totalPageLabel: String,         // "/ 412쪽"
-    val confirmEnabled: Boolean,
-)
+val locked = review.isSpoiler && review.reviewId !in revealedReviewIds
 ```
 
 ### 액션
 
 | 액션 | 처리 |
 | --- | --- |
-| 「입력한 쪽수까지 보기」 | `ShelfBook.recordPage(입력값)` → **독서 기록이 갱신된다**. 서재에 없으면 `READING`으로 추가 |
-| 「스포일러 감수하고 보기」 | `SpoilerBoundary.reveal(bookId)` → 그 책의 감상 전부 열림. 메모리에만 보관 |
-| ✕ | 닫기, 아무 것도 안 함 |
+| 가려진 감상 탭 | 해당 `reviewId`를 공개 목록에 추가하고 본문, 인용문, 답글을 함께 표시 |
 
-입력값이 총 쪽수와 같으면 상태가 `FINISHED`가 된다는 점에 주의한다.
-
-읽은 쪽수를 저장하지 않고 「스포일러 감수하고 보기」를 선택하면 현재 상세 화면에서만 잠금을
-해제한다.
+공개 상태는 현재 책 상세 화면의 메모리에만 유지한다. 다른 스포일러 감상은 계속 가린다. 감상
+쪽수는 선택적으로 입력하고 표시하지만 가림 판정에는 사용하지 않는다.
 
 ---
 
@@ -620,7 +607,7 @@ data class RatingDialogUiModel(
 data class NoteComposeUiModel(
     val impression: String,
     val quoteText: String,
-    val readingPageInput: String,       // 어디까지 읽었나 (스포일러 기준)
+    val readingPageInput: String,       // 감상과 함께 남길 선택적 쪽수
     val chapter: String,
     val identityLabel: String,          // 실제 익명 설정 또는 LibraryRepository.nickname
     val counterLabel: String,           // "0 / 1000"

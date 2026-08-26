@@ -264,9 +264,9 @@ GET /books/bk_003/notes?sort=LATEST&scope=ALL&page=0&size=20
 }
 ```
 
-**중요**: `readingPoint`와 `quote.page`는 **서로 다른 값**이다.
+**중요**: `readingPoint`와 `quote.page`는 **서로 다른 선택적 위치 정보**다.
 
-- `readingPoint`: 어디까지 읽고 남긴 감상인가. **스포일러 판정 기준**이다
+- `readingPoint`: 어디까지 읽고 남긴 감상인가
 - `quote.page`: 인용한 문장이 몇 쪽에 있나
 
 200쪽까지 읽고 50쪽 문장을 인용하면 `readingPoint: 200, quote.page: 50`이 된다.
@@ -274,8 +274,8 @@ GET /books/bk_003/notes?sort=LATEST&scope=ALL&page=0&size=20
 `author.displayName`은 서버가 완성해서 내려준다. 익명이면 `참새 1204`, 실명이면 닉네임이다.
 `(익명)` 접미사는 앱이 붙인다.
 
-**스포일러 가림은 서버가 하지 않는다.** 서버는 전부 내려주고 앱이 `readingPoint`와 내 진행
-쪽수를 비교해 가린다. 서버 가림으로 바꾸려면 별도 논의가 필요하다.
+**스포일러 가림은 서버가 하지 않는다.** 서버는 `isSpoiler`와 원문을 내려주고 앱이 체크된 감상을
+가린다. 공개 상태는 감상 ID별로 앱 메모리에만 유지한다.
 
 ### POST /books/{bookId}/notes
 
