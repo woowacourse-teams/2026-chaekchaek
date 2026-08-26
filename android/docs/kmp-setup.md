@@ -202,8 +202,8 @@ Xcode의 Build Phases에 Gradle 태스크를 실행하는 Run Script를 추가�
 | **SKIE** (Touchlab) | Flow → Combine/async-await, **sealed → Swift exhaustive enum**, 기본 인자 지원 | 컴파일러 플러그인이라 Kotlin 코드 수정 없이 적용된다. `NoteUiModel`의 Visible/Hidden 분기 누락을 Swift 컴파일러가 잡아준다 |
 | **KMP-NativeCoroutines** | Flow·suspend → async/await·Combine·RxSwift | Flow 브리지는 되지만 sealed → enum 변환은 없다. iOS에서 분기 누락이 런타임 문제로 남는다 |
 
-**스포일러 안전장치를 컴파일러가 보증하게 하려면 SKIE가 유리하다.** 다만 컴파일러 플러그인이라
-Kotlin 버전 호환성에 묶이므로, 착수 시점에 Kotlin 2.3.20 지원 여부를 확인해야 한다.
+스포일러 판정과 화면을 CMP에서 공유하므로 플랫폼별 분기를 다시 구현하지 않는다. SKIE 도입은
+스포일러 처리와 무관하게 Flow와 suspend의 Swift 브리지가 필요할 때 검토한다.
 
 ### 3.3 ViewModel 생명주기
 

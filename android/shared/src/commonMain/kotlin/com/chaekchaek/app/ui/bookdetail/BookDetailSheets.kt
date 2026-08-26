@@ -70,8 +70,6 @@ internal fun PageInputDialog(
     totalPages: Int,
     onDismiss: () -> Unit,
     onSave: (Int) -> Unit,
-    spoilerPage: Int? = null,
-    onReadAnyway: (() -> Unit)? = null,
 ) {
     var value by rememberSaveable { mutableStateOf(initialPage.toString()) }
     val page = BookDetailInputRules.validPage(value, totalPages)
@@ -88,9 +86,7 @@ internal fun PageInputDialog(
             ) {
                 SheetHeader(title = "어디까지 읽으셨나요?", titleSize = 16, onDismiss = onDismiss)
                 Text(
-                    spoilerPage?.let {
-                        "이 감상은 ${it}쪽 이후 내용을 포함해요. 내가 읽은 쪽수를 입력하면 읽은 범위까지 안전하게 볼 수 있어요."
-                    } ?: "지금까지 읽은 쪽수를 입력하면 독서 진행률과 감상 열람 범위에 반영돼요.",
+                    "지금까지 읽은 쪽수를 입력하면 독서 진행률에 반영돼요.",
                     modifier = Modifier.fillMaxWidth(),
                     color = ChaekInkSecondary,
                     fontSize = 11.5.sp,
@@ -112,12 +108,9 @@ internal fun PageInputDialog(
                     )
                 }
                 SheetPrimaryButton(
-                    label = if (spoilerPage == null) "읽은 쪽수 저장" else "입력한 쪽수까지 보기",
-                    enabled = BookDetailInputRules.canSubmitPage(page, spoilerPage),
+                    label = "읽은 쪽수 저장",
+                    enabled = BookDetailInputRules.canSubmitPage(page),
                 ) { page?.let(onSave) }
-                onReadAnyway?.let { readAnyway ->
-                    SheetPrimaryButton(label = "스포일러 감수하고 보기", enabled = true, danger = true, onClick = readAnyway)
-                }
             }
         }
     }

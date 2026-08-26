@@ -14,9 +14,10 @@
 
 ## 구현 완료
 
-- 감상 스포일러와 읽은 범위 초과 잠금
+- 감상 스포일러 체크 기반 잠금
   - 감상, 발췌, 답글의 공백과 문장부호를 유지하고 실제 원문 길이만큼 `짹`으로 표시
-  - 읽은 쪽수 저장 또는 현재 상세 화면에서 전체 공개
+  - 가려진 감상 탭 시 해당 감상 한 건만 즉시 공개
+  - 감상 쪽수는 입력과 표시에만 사용하고 잠금 판정에서는 제외
 - 검색 정렬
   - `LATEST`, `COMMENT`를 `GET /api/v1/books`의 `sort`로 전달
   - 선택 상태를 유지하고 현재 검색어로 즉시 재조회
@@ -46,6 +47,7 @@
 
 ```bash
 ./gradlew :shared:allTests
+./gradlew :shared:testAndroidHostTest :app:lintDebug
 ./gradlew :app:testDebugUnitTest :app:assembleDebug
 ./gradlew :app:lintDebug
 ```
@@ -54,8 +56,8 @@
 홈 렌더링, 검색 결과, `LATEST`에서 `COMMENT` 정렬 전환, 상세 화면, 비로그인 로그인 시트의
 개인정보처리방침 노출을 실제 레이아웃에서 확인했다.
 
-shared 테스트와 app lint를 한 Gradle 호출에 함께 넣으면 AGP 9.0.1과 KSP의
-`generateAndroidHostTestLintModel` 암시적 의존성 검사로 실패한다. 각각 단독 실행하면 통과한다.
+`shared/build.gradle.kts`에서 Android host test용 lint model 태스크가 `kspAndroidHostTest`를
+명시적으로 선행하도록 설정했으므로 shared 테스트와 app lint를 한 Gradle 호출로 실행할 수 있다.
 
 ## 남은 작업
 

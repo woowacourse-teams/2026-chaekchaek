@@ -54,7 +54,7 @@ class ShelfBook(
     fun rate(rating: Rating, at: Instant): ShelfBook =
         ShelfBook(book, status, progress, rating, at)
 
-    /** 스포일러 판정 기준이 되는 "내가 읽은 쪽수". */
+    /** 사용자가 기록한 현재 독서 쪽수. */
     fun readingPoint(): PageNumber = progress.currentPage
 
     /**

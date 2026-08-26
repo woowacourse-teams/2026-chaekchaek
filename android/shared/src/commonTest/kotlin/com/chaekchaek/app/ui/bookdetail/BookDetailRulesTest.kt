@@ -22,18 +22,20 @@ class BookDetailRulesTest {
         assertNull(BookDetailInputRules.validPage("-1", 308))
         assertFalse(BookDetailInputRules.hasReviewDraft("", "", "", "80", 80, false))
         assertTrue(BookDetailInputRules.hasReviewDraft("초안", "", "", "80", 80, false))
-        assertTrue(shouldLockReview(80, 160, spoilersRevealed = false))
-        assertFalse(shouldLockReview(80, 160, spoilersRevealed = true))
+        assertTrue(shouldLockReview(reviewId = 1, isSpoiler = true, revealedReviewIds = emptySet()))
+        assertFalse(shouldLockReview(reviewId = 1, isSpoiler = false, revealedReviewIds = emptySet()))
         assertEquals("짹짹 짹짹짹!\n짹짹?", maskAsChirps("감상 42쪽!\n좋다?"))
     }
 
     @Test
-    fun spoilerPageMustBeReachedBeforeSubmittingPage() {
-        assertFalse(BookDetailInputRules.canSubmitPage(null, 160))
-        assertTrue(BookDetailInputRules.canSubmitPage(80, null))
-        assertFalse(BookDetailInputRules.canSubmitPage(159, 160))
-        assertTrue(BookDetailInputRules.canSubmitPage(160, 160))
-        assertTrue(BookDetailInputRules.canSubmitPage(161, 160))
+    fun spoilerRevealOnlyUnlocksSelectedReview() {
+        val revealedReviewIds = setOf(1L)
+
+        assertFalse(shouldLockReview(reviewId = 1, isSpoiler = true, revealedReviewIds = revealedReviewIds))
+        assertTrue(shouldLockReview(reviewId = 2, isSpoiler = true, revealedReviewIds = revealedReviewIds))
+        assertFalse(shouldLockReview(reviewId = 3, isSpoiler = false, revealedReviewIds = revealedReviewIds))
+        assertFalse(BookDetailInputRules.canSubmitPage(null))
+        assertTrue(BookDetailInputRules.canSubmitPage(80))
     }
 
     @Test

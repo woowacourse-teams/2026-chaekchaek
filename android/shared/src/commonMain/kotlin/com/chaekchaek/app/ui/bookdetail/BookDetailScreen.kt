@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
@@ -159,8 +160,7 @@ fun BookDetailScreen(
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
     var showPageDialog by rememberSaveable { mutableStateOf(false) }
     var showReviewSheet by rememberSaveable { mutableStateOf(false) }
-    var pendingSpoilerPage by rememberSaveable(book.id) { mutableStateOf<Int?>(null) }
-    var spoilersRevealed by rememberSaveable(book.id) { mutableStateOf(false) }
+    var revealedSpoilerReviewIds by remember(book.id) { mutableStateOf(emptySet<Long>()) }
 
     fun authorizeOrRun(action: BookDetailAuthenticatedAction, onAuthorized: () -> Unit) {
         if (state.signedIn) onAuthorized() else onLoginRequired(action)
@@ -232,8 +232,7 @@ fun BookDetailScreen(
                     reviewCount = state.reviewCount,
                     loading = state.isLoading,
                     loadingMore = state.isLoadingMore,
-                    currentPage = currentPage,
-                    spoilersRevealed = spoilersRevealed,
+                    revealedSpoilerReviewIds = revealedSpoilerReviewIds,
                     scope = state.reviewScope,
                     sort = state.reviewSort,
                     onScopeChange = { requested ->
@@ -244,8 +243,9 @@ fun BookDetailScreen(
                         }
                     },
                     onSortChange = onReviewSortChange,
-                    onOpenLockedReview = { pendingSpoilerPage = it },
-                    onRevealSpoilers = { spoilersRevealed = true },
+                    onRevealSpoiler = { reviewId ->
+                        revealedSpoilerReviewIds += reviewId
+                    },
                     onLike = { reviewId, likedByMe ->
                         authorizeOrRun(BookDetailAuthenticatedAction.LikeReview(reviewId, likedByMe)) {
                             onReviewLike(reviewId, likedByMe)
@@ -303,22 +303,6 @@ fun BookDetailScreen(
             onSave = { page ->
                 onPageSave(page)
                 showPageDialog = false
-            },
-        )
-    }
-    pendingSpoilerPage?.let { spoilerPage ->
-        PageInputDialog(
-            initialPage = currentPage,
-            totalPages = book.totalPages,
-            spoilerPage = spoilerPage,
-            onDismiss = { pendingSpoilerPage = null },
-            onSave = { page ->
-                pendingSpoilerPage = null
-                authorizeOrRun(BookDetailAuthenticatedAction.SavePage(page)) { onPageSave(page) }
-            },
-            onReadAnyway = {
-                spoilersRevealed = true
-                pendingSpoilerPage = null
             },
         )
     }
@@ -659,14 +643,12 @@ private fun ReviewsSection(
     reviewCount: Int,
     loading: Boolean,
     loadingMore: Boolean,
-    currentPage: Int,
-    spoilersRevealed: Boolean,
+    revealedSpoilerReviewIds: Set<Long>,
     scope: ReviewScope,
     sort: ReviewSort,
     onScopeChange: (ReviewScope) -> Unit,
     onSortChange: (ReviewSort) -> Unit,
-    onOpenLockedReview: (Int) -> Unit,
-    onRevealSpoilers: () -> Unit,
+    onRevealSpoiler: (Long) -> Unit,
     onLike: (Long, Boolean) -> Unit,
     onLoadReplies: (Long) -> Unit,
     onReply: (Long, String) -> Unit,
@@ -718,17 +700,15 @@ private fun ReviewsSection(
             loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
             reviews.isEmpty() -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
             else -> reviews.forEach { review ->
-                val locked = shouldLockReview(currentPage, review.currentPage, spoilersRevealed)
+                val locked = shouldLockReview(review.reviewId, review.isSpoiler, revealedSpoilerReviewIds)
                 ReviewCard(
                     review = review,
                     locked = locked,
-                    onOpenLockedReview = {
-                        review.currentPage?.takeIf { it > currentPage }?.let(onOpenLockedReview) ?: onRevealSpoilers()
-                    },
+                    onOpenLockedReview = { onRevealSpoiler(review.reviewId) },
                     onLike = onLike,
                     onLoadReplies = { onLoadReplies(review.reviewId) },
                     onReply = {
-                        if (locked) review.currentPage?.let(onOpenLockedReview) else replyTarget = review
+                        if (locked) onRevealSpoiler(review.reviewId) else replyTarget = review
                     },
                     onReplyLike = onReplyLike,
                 )
@@ -784,7 +764,23 @@ private fun ReviewCard(
     onReply: () -> Unit,
     onReplyLike: (Long, Boolean) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier.fillMaxWidth().then(
+            if (locked) {
+                Modifier.clickable(role = Role.Button, onClick = onOpenLockedReview)
+                    .clearAndSetSemantics {
+                        contentDescription = "스포일러 감상 가림. 탭해서 보기"
+                        role = Role.Button
+                        onClick {
+                            onOpenLockedReview()
+                            true
+                        }
+                    }
+            } else {
+                Modifier
+            },
+        ),
+    ) {
         Column(
             modifier = Modifier.fillMaxWidth().background(ChaekBackground).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -802,19 +798,12 @@ private fun ReviewCard(
             }
             Text(
                 if (locked) maskAsChirps(review.content) else review.content,
-                modifier = if (locked) {
-                    Modifier.clickable(role = Role.Button, onClick = onOpenLockedReview)
-                        .clearAndSetSemantics { contentDescription = "감상 내용 잠김" }
-                } else {
-                    Modifier
-                },
                 fontSize = 12.5.sp,
                 lineHeight = 21.sp,
             )
             review.quote?.let { quote ->
                 Row(
                     modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min).background(ChaekAccentSoft)
-                        .then(if (locked) Modifier.clickable(role = Role.Button, onClick = onOpenLockedReview) else Modifier),
                 ) {
                     Box(Modifier.width(2.dp).fillMaxHeight().background(ChaekInk))
                     Text(

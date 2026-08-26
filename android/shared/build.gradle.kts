@@ -51,6 +51,7 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
         }
         androidMain.dependencies {
+            implementation(libs.coil.network.okhttp)
             implementation(libs.ktor.client.okhttp)
         }
         iosMain.dependencies {
@@ -72,4 +73,10 @@ dependencies {
     add("kspIosX64", libs.kotlin.inject.compiler)
     add("kspIosArm64", libs.kotlin.inject.compiler)
     add("kspIosSimulatorArm64", libs.kotlin.inject.compiler)
+}
+
+tasks.configureEach {
+    if (name == "generateAndroidHostTestLintModel" || name == "lintAnalyzeAndroidHostTest") {
+        dependsOn("kspAndroidHostTest")
+    }
 }

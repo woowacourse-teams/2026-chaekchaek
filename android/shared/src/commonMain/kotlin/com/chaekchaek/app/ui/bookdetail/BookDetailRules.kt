@@ -18,8 +18,7 @@ internal object BookDetailInputRules {
     fun validPage(value: String, totalPages: Int): Int? =
         value.toIntOrNull()?.takeIf { it >= 0 && (totalPages <= 0 || it <= totalPages) }
 
-    fun canSubmitPage(page: Int?, spoilerPage: Int?): Boolean =
-        page != null && (spoilerPage == null || page >= spoilerPage)
+    fun canSubmitPage(page: Int?): Boolean = page != null
 
     fun canSubmitReview(content: String, pageValue: String, totalPages: Int): Boolean =
         content.isNotBlank() && content.length <= MAX_CONTENT_LENGTH &&
@@ -59,10 +58,10 @@ internal object RatingDialogRules {
 }
 
 internal fun shouldLockReview(
-    currentPage: Int,
-    reviewPage: Int?,
-    spoilersRevealed: Boolean,
-): Boolean = !spoilersRevealed && reviewPage?.let { it > currentPage } == true
+    reviewId: Long,
+    isSpoiler: Boolean,
+    revealedReviewIds: Set<Long>,
+): Boolean = isSpoiler && reviewId !in revealedReviewIds
 
 internal suspend fun loadAllReplies(loadPage: suspend (Int) -> ReplyPage): List<ReviewReply> {
     val replies = mutableListOf<ReviewReply>()
