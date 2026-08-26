@@ -62,7 +62,7 @@ public class ApiExceptionHandler {
     private HttpStatus statusOf(ErrorCode errorCode) {
         return switch (errorCode) {
             case UNAUTHORIZED, REFRESH_TOKEN_REQUIRED, INVALID_REFRESH_TOKEN, UNUSABLE_REFRESH_TOKEN,
-                 INVALID_GOOGLE_ID_TOKEN -> HttpStatus.UNAUTHORIZED;
+                 INVALID_GUEST_TOKEN, UNUSABLE_GUEST_TOKEN, INVALID_GOOGLE_ID_TOKEN -> HttpStatus.UNAUTHORIZED;
             case INVALID_APPLE_AUTHORIZATION -> HttpStatus.UNAUTHORIZED;
             case FORBIDDEN -> HttpStatus.FORBIDDEN;
             case BOOK_NOT_FOUND, REVIEW_NOT_FOUND, REPLY_NOT_FOUND, LIBRARY_ITEM_NOT_FOUND, MEMBER_NOT_FOUND ->

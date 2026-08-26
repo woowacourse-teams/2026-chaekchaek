@@ -85,4 +85,11 @@ public class Actor {
         }
         return new Actor(null, ActorType.GUEST, tokenHash, nickname, createdAt, expiresAt);
     }
+
+    public boolean isUsableGuestAt(LocalDateTime now) {
+        return type == ActorType.GUEST
+                && revokedAt == null
+                && expiresAt != null
+                && expiresAt.isAfter(now);
+    }
 }

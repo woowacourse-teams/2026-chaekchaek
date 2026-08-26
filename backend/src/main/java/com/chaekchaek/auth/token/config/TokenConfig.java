@@ -3,6 +3,7 @@ package com.chaekchaek.auth.token.config;
 import com.chaekchaek.auth.token.access.AccessTokenProperties;
 import com.chaekchaek.auth.token.cookie.AuthCookieProperties;
 import com.chaekchaek.auth.token.refresh.RefreshTokenProperties;
+import com.chaekchaek.auth.token.guest.GuestTokenProperties;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -24,6 +25,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 @EnableConfigurationProperties({
         AccessTokenProperties.class,
         RefreshTokenProperties.class,
+        GuestTokenProperties.class,
         AuthCookieProperties.class
 })
 public class TokenConfig {

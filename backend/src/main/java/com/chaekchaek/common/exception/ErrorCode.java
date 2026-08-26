@@ -34,6 +34,14 @@ public enum ErrorCode {
             "UNUSABLE_REFRESH_TOKEN",
             "Refresh Token이 만료되었거나 폐기되었습니다."
     ),
+    INVALID_GUEST_TOKEN(
+            "INVALID_GUEST_TOKEN",
+            "게스트 토큰이 유효하지 않습니다."
+    ),
+    UNUSABLE_GUEST_TOKEN(
+            "UNUSABLE_GUEST_TOKEN",
+            "게스트 토큰이 만료되었거나 폐기되었습니다."
+    ),
     INVALID_GOOGLE_ID_TOKEN(
             "INVALID_GOOGLE_ID_TOKEN",
             "Google 인증 정보가 유효하지 않습니다."
