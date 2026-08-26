@@ -7,11 +7,16 @@ const meta = {
   component: Icons.SearchIcon, // 대표 컴포넌트
   args: {
     size: 'medium',
+    color: 'default',
   },
   argTypes: {
     size: {
       control: 'radio',
       options: ['small', 'medium', 'large'],
+    },
+    color: {
+      control: 'radio',
+      options: ['default', 'secondary', 'error', 'inverse'],
     },
   },
 } satisfies Meta<typeof Icons.SearchIcon>;
@@ -64,5 +69,40 @@ export const LargeSize: Story = {
   args: {
     size: 'large',
   },
+  render,
+};
+
+export const DefaultColor: Story = {
+  args: {
+    color: 'default',
+  },
+  render,
+};
+
+export const SecondaryColor: Story = {
+  args: {
+    color: 'secondary',
+  },
+  render,
+};
+
+export const ErrorColor: Story = {
+  args: {
+    color: 'error',
+  },
+  render,
+};
+
+export const InverseColor: Story = {
+  args: {
+    color: 'inverse',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ padding: 16, backgroundColor: '#1a1a1a', color: '#ffffff' }}>
+        <Story />
+      </div>
+    ),
+  ],
   render,
 };
