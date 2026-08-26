@@ -21,6 +21,9 @@ export const HeartIcon = createIcon(Heart);
 import Invisible from './imgs/invisible.svg?component';
 export const InvisibleIcon = createIcon(Invisible);
 
+import Meatballs from './imgs/meatballs.svg?component';
+export const MeatballsOffIcon = createIcon(Meatballs);
+
 import Pencil from './imgs/pencil.svg?component';
 export const PencilIcon = createIcon(Pencil);
 
