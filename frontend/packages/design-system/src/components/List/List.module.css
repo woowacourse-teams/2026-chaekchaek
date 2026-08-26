@@ -11,6 +11,7 @@
 .column-5,
 .column-6 {
   display: grid;
+  column-gap: 28px;
 }
 
 .column-1 {
