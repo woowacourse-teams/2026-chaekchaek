@@ -10,6 +10,7 @@ export type GetBooksResponseDto = ResponseDto<{
   items: {
     translators: string[];
     coverImageUrl: string;
+    isRegisteredInMyLibrary: boolean;
     isbn13: string;
     publisher: string;
     publishedDate: string;
