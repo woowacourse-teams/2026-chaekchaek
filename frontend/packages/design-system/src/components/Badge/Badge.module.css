@@ -27,9 +27,20 @@
   color: #fff;
 }
 
+.variant-soft {
+  background: #fff4df;
+  color: #a05a27;
+}
+
 .variant-subtle {
   background: #f0ece5;
   color: #1a1a1a;
+}
+
+.size-x-small {
+  height: 24px;
+  padding-inline: 8px;
+  font-size: 11px;
 }
 
 .size-small {
