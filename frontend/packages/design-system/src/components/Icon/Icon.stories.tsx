@@ -20,33 +20,49 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+const render: Story['render'] = (args) => (
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+      gap: 16,
+    }}
+  >
+    {Object.entries(Icons).map(([name, Icon]) => (
+      <div
+        key={name}
+        style={{
+          display: 'flex',
+          minHeight: 80,
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          border: '1px solid #e5e5e5',
+          borderRadius: 8,
+        }}
+      >
+        <Icon {...args} />
+        <span style={{ fontSize: 12 }}>{name}</span>
+      </div>
+    ))}
+  </div>
+);
+
 export const Gallery: Story = {
-  render: (args) => (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-        gap: 16,
-      }}
-    >
-      {Object.entries(Icons).map(([name, Icon]) => (
-        <div
-          key={name}
-          style={{
-            display: 'flex',
-            minHeight: 80,
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 12,
-            border: '1px solid #e5e5e5',
-            borderRadius: 8,
-          }}
-        >
-          <Icon {...args} />
-          <span style={{ fontSize: 12 }}>{name}</span>
-        </div>
-      ))}
-    </div>
-  ),
+  render,
+};
+
+export const SmallSize: Story = {
+  args: {
+    size: 'small',
+  },
+  render,
+};
+
+export const LargeSize: Story = {
+  args: {
+    size: 'large',
+  },
+  render,
 };
