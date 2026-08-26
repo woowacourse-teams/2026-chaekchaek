@@ -101,7 +101,24 @@ export default (_, argv) => {
           test: /\.svg$/i,
           resourceQuery: /component/,
           issuer: /\.[jt]sx?$/,
-          use: ['@svgr/webpack'],
+          use: [
+            {
+              loader: '@svgr/webpack',
+              options: {
+                svgoConfig: {
+                  plugins: [
+                    {
+                      params: {
+                        overrides: {
+                          removeViewBox: false,
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
         },
         {
           test: /\.svg$/i,
