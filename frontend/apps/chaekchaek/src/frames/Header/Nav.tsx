@@ -8,6 +8,7 @@ import { ROUTES } from '@/constants/routes';
 import styles from './Header.module.css';
 
 import type { NavProps } from './Header.types';
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 const navs = [
   { link: ROUTES.HOME, text: '발견' },
@@ -29,12 +30,14 @@ export const Nav = <T extends ElementType>(props: NavProps<T>) => {
     className,
   });
 
+  const { isAuthenticated } = useAuthContext();
+
   return (
     <View as={as} className={classname} {...restProps}>
       {navs.map((nav) => {
         return (
           <a
-            href={nav.link}
+            href={isAuthenticated ? nav.link : ROUTES.LOGIN}
             // className={styles[`is-active`]}
           >
             {nav.text}
