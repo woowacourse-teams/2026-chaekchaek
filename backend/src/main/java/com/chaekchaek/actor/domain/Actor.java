@@ -92,4 +92,17 @@ public class Actor {
                 && expiresAt != null
                 && expiresAt.isAfter(now);
     }
+
+    public void convertToMember(Member member) {
+        if (type != ActorType.GUEST || member == null) {
+            throw new IllegalStateException("Only a guest actor can be converted to a member actor");
+        }
+
+        this.member = member;
+        this.type = ActorType.MEMBER;
+        this.guestTokenHash = null;
+        this.guestNickname = null;
+        this.expiresAt = null;
+        this.revokedAt = null;
+    }
 }

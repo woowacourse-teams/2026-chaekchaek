@@ -32,4 +32,19 @@ class ActorTest {
         assertThat(actor.getMember()).isNull();
         assertThat(actor.getGuestNickname()).isEqualTo("다정한 참새");
     }
+
+    @Test
+    void convertsGuestActorToMemberAndRemovesGuestCredentials() {
+        LocalDateTime now = LocalDateTime.of(2026, 8, 26, 12, 0);
+        Actor actor = Actor.guest("a".repeat(64), "다정한 참새", now, now.plusDays(30));
+        Member member = Member.create(actor.getGuestNickname(), null, now.plusHours(1));
+
+        actor.convertToMember(member);
+
+        assertThat(actor.getType()).isEqualTo(ActorType.MEMBER);
+        assertThat(actor.getMember()).isSameAs(member);
+        assertThat(actor.getGuestTokenHash()).isNull();
+        assertThat(actor.getGuestNickname()).isNull();
+        assertThat(actor.getExpiresAt()).isNull();
+    }
 }
