@@ -1,6 +1,8 @@
 package com.chaekchaek.review.service;
 
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.common.auth.CurrentActor;
+import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.service.BookCommentCountReader;
@@ -54,6 +56,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     private final ReviewReactionRepository reviewReactionRepository;
     private final ReplyReactionRepository replyReactionRepository;
     private final CurrentMemberIdProvider currentMemberIdProvider;
+    private final CurrentActorProvider currentActorProvider;
     private final ReadingRecordCoordinator readingRecordCoordinator;
     private final ReviewBookReader reviewBookReader;
     private final ReviewMemberReader reviewMemberReader;
@@ -61,28 +64,30 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     @Transactional(readOnly = true)
     public PageResponse<ReviewResponse> findReviews(long bookId, int page, Feed feed, ReviewSort sort) {
         reviewBookReader.validateBookExists(bookId);
+        Long actorId = currentActorIdOrNull();
         Long memberId = currentMemberIdOrNull();
-        if (feed == Feed.MINE && memberId == null) {
+        if (feed == Feed.MINE && actorId == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         List<Review> reviews = sort == ReviewSort.POPULAR
-                ? findPopularReviews(bookId, memberId, feed, page)
-                : findPagedReviews(bookId, memberId, feed, sort, page);
-        long totalCount = countReviews(bookId, memberId, feed, sort);
-        return new PageResponse<>(totalCount, nextPage(totalCount, page), toReviewResponses(reviews, memberId));
+                ? findPopularReviews(bookId, actorId, feed, page)
+                : findPagedReviews(bookId, actorId, feed, sort, page);
+        long totalCount = countReviews(bookId, actorId, feed, sort);
+        return new PageResponse<>(totalCount, nextPage(totalCount, page),
+                toReviewResponses(reviews, actorId, memberId));
     }
 
-    private List<Review> findPagedReviews(long bookId, Long memberId, Feed feed, ReviewSort sort, int page) {
+    private List<Review> findPagedReviews(long bookId, Long actorId, Feed feed, ReviewSort sort, int page) {
         Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE, sort.toSpringSort());
         Page<Review> reviews = feed == Feed.MINE
-                ? reviewRepository.findByBookIdAndMemberId(bookId, memberId, pageable)
+                ? reviewRepository.findByBookIdAndActorId(bookId, actorId, pageable)
                 : reviewRepository.findByBookId(bookId, pageable);
         return reviews.getContent();
     }
 
-    private List<Review> findPopularReviews(long bookId, Long memberId, Feed feed, int page) {
+    private List<Review> findPopularReviews(long bookId, Long actorId, Feed feed, int page) {
         List<Review> reviews = feed == Feed.MINE
-                ? reviewRepository.findByBookIdAndMemberId(bookId, memberId)
+                ? reviewRepository.findByBookIdAndActorId(bookId, actorId)
                 : reviewRepository.findByBookId(bookId);
         Map<Long, Long> replies = replyCounts(reviews.stream().map(Review::getId).toList());
         Map<Long, Long> reactions = reviewReactionCounts(reviews.stream().map(Review::getId).toList());
@@ -95,30 +100,31 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 .toList();
     }
 
-    private long countReviews(long bookId, Long memberId, Feed feed, ReviewSort sort) {
+    private long countReviews(long bookId, Long actorId, Feed feed, ReviewSort sort) {
         if (sort == ReviewSort.POPULAR) {
             return feed == Feed.MINE
-                    ? reviewRepository.findByBookIdAndMemberId(bookId, memberId).size()
+                    ? reviewRepository.findByBookIdAndActorId(bookId, actorId).size()
                     : reviewRepository.findByBookId(bookId).size();
         }
         Pageable oneItem = PageRequest.of(0, 1);
         return feed == Feed.MINE
-                ? reviewRepository.findByBookIdAndMemberId(bookId, memberId, oneItem).getTotalElements()
+                ? reviewRepository.findByBookIdAndActorId(bookId, actorId, oneItem).getTotalElements()
                 : reviewRepository.findByBookId(bookId, oneItem).getTotalElements();
     }
 
     @Transactional
     public ReviewResponse createReview(long bookId, ReviewCreateRequest request) {
+        CurrentActor actor = currentActorProvider.getCurrentActor();
         long memberId = currentMemberIdProvider.getCurrentMemberId();
         reviewBookReader.validateBookExists(bookId);
         validateReviewCreate(request);
         validateRequestPage(request.currentPage(), request.totalPages());
         readingRecordCoordinator.recordReview(memberId, bookId, request.currentPage(), request.totalPages());
-        ReviewMemberProfile memberProfile = memberProfileOf(memberId);
-        Review review = reviewRepository.save(Review.create(bookId, memberId, request.content(), request.quote(),
+        ReviewMemberProfile memberProfile = memberProfileOf(actor.actorId());
+        Review review = reviewRepository.save(Review.create(bookId, actor.actorId(), request.content(), request.quote(),
                 request.chapter(), request.currentPage(), request.spoiler(), memberProfile.anonymousEnabled()));
-        return toReviewResponse(review, memberId, Map.of(), Map.of(), Map.of(), Map.of(), Set.of(), Set.of(),
-                Map.of(memberId, memberProfile));
+        return toReviewResponse(review, actor.actorId(), Map.of(), Map.of(), Map.of(), Map.of(), Set.of(), Set.of(),
+                Map.of(actor.actorId(), memberProfile));
     }
 
     @Transactional
@@ -127,9 +133,9 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
         validateReviewUpdate(request);
-        long memberId = currentMemberIdProvider.getCurrentMemberId();
+        long actorId = currentActorProvider.getCurrentActor().actorId();
         Review review = getReview(reviewId);
-        review.assertModifiableBy(memberId);
+        review.assertModifiableBy(actorId);
         if (request.isCurrentPagePresent() && request.getCurrentPage() != null) {
             readingRecordCoordinator.validateReviewPage(review.getBookId(), request.getCurrentPage(),
                     request.isTotalPagesPresent() ? request.getTotalPages() : null);
@@ -139,50 +145,51 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 request.isChapterPresent() ? request.getChapter() : review.getChapter(),
                 request.isCurrentPagePresent() ? request.getCurrentPage() : review.getCurrentPage(),
                 request.isSpoilerPresent() ? request.getIsSpoiler() : review.isSpoiler());
-        return toReviewResponse(review, memberId, Map.of(), Map.of(), Map.of(), Map.of(), Set.of(), Set.of(),
-                Map.of(review.getMemberId(), memberProfileOf(review.getMemberId())));
+        return toReviewResponse(review, actorId, Map.of(), Map.of(), Map.of(), Map.of(), Set.of(), Set.of(),
+                Map.of(review.getActorId(), memberProfileOf(review.getActorId())));
     }
 
     @Transactional
     public void deleteReview(long reviewId) {
-        getReview(reviewId).deleteBy(currentMemberIdProvider.getCurrentMemberId());
+        getReview(reviewId).deleteBy(currentActorProvider.getCurrentActor().actorId());
     }
 
     @Transactional(readOnly = true)
     public PageResponse<ReplyResponse> findReplies(long reviewId, int page) {
         getReview(reviewId);
+        Long actorId = currentActorIdOrNull();
         Long memberId = currentMemberIdOrNull();
         Page<Reply> replies = replyRepository.findByReviewId(reviewId, PageRequest.of(page - 1, PAGE_SIZE,
                 Sort.by("createdAt").ascending().and(Sort.by("id").ascending())));
-        List<ReplyResponse> items = toReplyResponses(replies.getContent(), memberId);
+        List<ReplyResponse> items = toReplyResponses(replies.getContent(), actorId, memberId);
         return new PageResponse<>(replies.getTotalElements(), nextPage(replies.getTotalElements(), page), items);
     }
 
     @Transactional
     public ReplyResponse createReply(long reviewId, ReplyCreateRequest request) {
-        long memberId = currentMemberIdProvider.getCurrentMemberId();
+        CurrentActor actor = currentActorProvider.getCurrentActor();
         Review review = getReview(reviewId);
         if (review.isDeleted()) {
             throw new BusinessException(ErrorCode.DELETED_RESOURCE);
         }
-        ReviewMemberProfile memberProfile = memberProfileOf(memberId);
+        ReviewMemberProfile memberProfile = memberProfileOf(actor.actorId());
         Reply reply = replyRepository.save(Reply.create(
-                reviewId, memberId, request.content(), memberProfile.anonymousEnabled()
+                reviewId, actor.actorId(), request.content(), memberProfile.anonymousEnabled()
         ));
-        return toReplyResponse(reply, memberId, 0, false, Map.of(memberId, memberProfile));
+        return toReplyResponse(reply, actor.actorId(), 0, false, Map.of(actor.actorId(), memberProfile));
     }
 
     @Transactional
     public ReplyResponse updateReply(long replyId, ReplyUpdateRequest request) {
-        long memberId = currentMemberIdProvider.getCurrentMemberId();
+        long actorId = currentActorProvider.getCurrentActor().actorId();
         Reply reply = getReply(replyId);
-        reply.updateBy(memberId, request.content());
-        return toReplyResponse(reply, memberId, replyReactionRepository.countByReplyId(replyId), false);
+        reply.updateBy(actorId, request.content());
+        return toReplyResponse(reply, actorId, replyReactionRepository.countByReplyId(replyId), false);
     }
 
     @Transactional
     public void deleteReply(long replyId) {
-        getReply(replyId).deleteBy(currentMemberIdProvider.getCurrentMemberId());
+        getReply(replyId).deleteBy(currentActorProvider.getCurrentActor().actorId());
     }
 
     @Transactional
@@ -237,7 +244,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         replyReactionRepository.deleteById(replyReactionId(replyId, memberId));
     }
 
-    private List<ReviewResponse> toReviewResponses(List<Review> reviews, Long memberId) {
+    private List<ReviewResponse> toReviewResponses(List<Review> reviews, Long actorId, Long memberId) {
         List<Long> reviewIds = reviews.stream().map(Review::getId).toList();
         Map<Long, Long> replyCounts = replyCounts(reviewIds);
         Map<Long, Long> reactionCounts = reviewReactionCounts(reviewIds);
@@ -247,44 +254,44 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         Set<Long> likedReviews = likedReviewIds(reviewIds, memberId);
         Set<Long> likedReplies = likedReplyIds(replyList.stream().map(Reply::getId).toList(), memberId);
         Map<Long, ReviewMemberProfile> memberProfiles = memberProfilesOf(reviews, replyList);
-        return reviews.stream().map(review -> toReviewResponse(review, memberId, replyCounts, reactionCounts,
+        return reviews.stream().map(review -> toReviewResponse(review, actorId, replyCounts, reactionCounts,
                 recentReplies, replyReactionCounts, likedReviews, likedReplies, memberProfiles)).toList();
     }
 
-    private ReviewResponse toReviewResponse(Review review, Long memberId, Map<Long, Long> replyCounts,
+    private ReviewResponse toReviewResponse(Review review, Long actorId, Map<Long, Long> replyCounts,
                                             Map<Long, Long> reactionCounts, Map<Long, List<Reply>> recentReplies,
                                             Map<Long, Long> replyReactionCounts, Set<Long> likedReviews,
                                             Set<Long> likedReplies, Map<Long, ReviewMemberProfile> memberProfiles) {
         List<ReplyResponse> replies = recentReplies.getOrDefault(review.getId(), List.of()).stream()
                 .limit(RECENT_REPLY_LIMIT)
                 .sorted(Comparator.comparing(Reply::getCreatedAt).thenComparing(Reply::getId))
-                .map(reply -> toReplyResponse(reply, memberId, replyReactionCounts.getOrDefault(reply.getId(), 0L),
+                .map(reply -> toReplyResponse(reply, actorId, replyReactionCounts.getOrDefault(reply.getId(), 0L),
                         likedReplies.contains(reply.getId()), memberProfiles))
                 .toList();
         return new ReviewResponse(review.getId(), review.getContent(), review.getQuote(), review.getChapter(),
                 review.getCurrentPage(), review.isSpoiler(), review.isDeleted(), review.getCreatedAt(),
-                authorOf(review.getMemberId(), review.isAnonymous(), memberId, memberProfiles),
+                authorOf(review.getActorId(), review.isAnonymous(), actorId, memberProfiles),
                 reactionCounts.getOrDefault(review.getId(), 0L), likedReviews.contains(review.getId()),
                 replyCounts.getOrDefault(review.getId(), 0L), replies);
     }
 
-    private List<ReplyResponse> toReplyResponses(List<Reply> replies, Long memberId) {
+    private List<ReplyResponse> toReplyResponses(List<Reply> replies, Long actorId, Long memberId) {
         Map<Long, Long> reactions = replyReactionCounts(replies.stream().map(Reply::getId).toList());
         Set<Long> liked = likedReplyIds(replies.stream().map(Reply::getId).toList(), memberId);
         Map<Long, ReviewMemberProfile> memberProfiles = memberProfilesOf(List.of(), replies);
-        return replies.stream().map(reply -> toReplyResponse(reply, memberId,
+        return replies.stream().map(reply -> toReplyResponse(reply, actorId,
                 reactions.getOrDefault(reply.getId(), 0L), liked.contains(reply.getId()), memberProfiles)).toList();
     }
 
-    private ReplyResponse toReplyResponse(Reply reply, Long memberId, long likeCount, boolean likedByMe) {
-        return toReplyResponse(reply, memberId, likeCount, likedByMe,
-                Map.of(reply.getMemberId(), memberProfileOf(reply.getMemberId())));
+    private ReplyResponse toReplyResponse(Reply reply, Long actorId, long likeCount, boolean likedByMe) {
+        return toReplyResponse(reply, actorId, likeCount, likedByMe,
+                Map.of(reply.getActorId(), memberProfileOf(reply.getActorId())));
     }
 
-    private ReplyResponse toReplyResponse(Reply reply, Long memberId, long likeCount, boolean likedByMe,
+    private ReplyResponse toReplyResponse(Reply reply, Long actorId, long likeCount, boolean likedByMe,
                                           Map<Long, ReviewMemberProfile> memberProfiles) {
         return new ReplyResponse(reply.getId(), reply.getContent(), reply.isDeleted(), reply.getCreatedAt(),
-                authorOf(reply.getMemberId(), reply.isAnonymous(), memberId, memberProfiles), likeCount, likedByMe);
+                authorOf(reply.getActorId(), reply.isAnonymous(), actorId, memberProfiles), likeCount, likedByMe);
     }
 
     private AuthorResponse authorOf(long authorId, boolean anonymous, Long currentMemberId,
@@ -347,6 +354,10 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         return currentMemberId.isPresent() ? currentMemberId.getAsLong() : null;
     }
 
+    private Long currentActorIdOrNull() {
+        return currentActorProvider.findCurrentActor().map(CurrentActor::actorId).orElse(null);
+    }
+
     private Integer nextPage(long totalCount, int page) {
         return totalCount > (long) page * PAGE_SIZE ? page + 1 : null;
     }
@@ -378,15 +389,15 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         if (totalPages != null && totalPages <= 0) throw new BusinessException(ErrorCode.INVALID_REQUEST);
     }
 
-    private ReviewMemberProfile memberProfileOf(long memberId) {
-        return reviewMemberReader.findByMemberIds(List.of(memberId)).get(memberId);
+    private ReviewMemberProfile memberProfileOf(long actorId) {
+        return reviewMemberReader.findByActorIds(List.of(actorId)).get(actorId);
     }
 
     private Map<Long, ReviewMemberProfile> memberProfilesOf(List<Review> reviews, List<Reply> replies) {
-        Set<Long> memberIds = java.util.stream.Stream.concat(
-                        reviews.stream().map(Review::getMemberId), replies.stream().map(Reply::getMemberId))
+        Set<Long> actorIds = java.util.stream.Stream.concat(
+                        reviews.stream().map(Review::getActorId), replies.stream().map(Reply::getActorId))
                 .collect(Collectors.toSet());
-        return memberIds.isEmpty() ? Map.of() : reviewMemberReader.findByMemberIds(memberIds);
+        return actorIds.isEmpty() ? Map.of() : reviewMemberReader.findByActorIds(actorIds);
     }
 
     @Override

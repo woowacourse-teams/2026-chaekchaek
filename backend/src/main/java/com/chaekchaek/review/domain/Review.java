@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "review", indexes = {
         @Index(name = "idx_review_book_created", columnList = "book_id,created_at"),
         @Index(name = "idx_review_book_page", columnList = "book_id,current_page"),
-        @Index(name = "idx_review_member_book", columnList = "member_id,book_id")
+        @Index(name = "idx_review_actor_book", columnList = "actor_id,book_id")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Review {
@@ -34,8 +34,8 @@ public class Review {
     @Column(name = "book_id", nullable = false)
     private long bookId;
 
-    @Column(name = "member_id", nullable = false)
-    private long memberId;
+    @Column(name = "actor_id")
+    private long actorId;
 
     @Column(nullable = false, length = 1000)
     private String content;
@@ -64,10 +64,10 @@ public class Review {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    private Review(long bookId, long memberId, String content, String quote, String chapter,
+    private Review(long bookId, long actorId, String content, String quote, String chapter,
                    Integer currentPage, boolean spoiler, boolean anonymous) {
         this.bookId = bookId;
-        this.memberId = memberId;
+        this.actorId = actorId;
         this.content = content;
         this.quote = quote;
         this.chapter = chapter;
@@ -76,9 +76,9 @@ public class Review {
         this.anonymous = anonymous;
     }
 
-    public static Review create(long bookId, long memberId, String content, String quote, String chapter,
+    public static Review create(long bookId, long actorId, String content, String quote, String chapter,
                                 Integer currentPage, boolean spoiler, boolean anonymous) {
-        return new Review(bookId, memberId, content, quote, chapter, currentPage, spoiler, anonymous);
+        return new Review(bookId, actorId, content, quote, chapter, currentPage, spoiler, anonymous);
     }
 
     public void update(String content, String quote, String chapter, Integer currentPage, boolean spoiler) {
@@ -89,16 +89,16 @@ public class Review {
         this.spoiler = spoiler;
     }
 
-    public void deleteBy(long memberId) {
-        assertModifiableBy(memberId);
+    public void deleteBy(long actorId) {
+        assertModifiableBy(actorId);
         deletedAt = Instant.now();
     }
 
-    public void assertModifiableBy(long memberId) {
+    public void assertModifiableBy(long actorId) {
         if (deletedAt != null) {
             throw new BusinessException(ErrorCode.DELETED_RESOURCE);
         }
-        if (this.memberId != memberId) {
+        if (this.actorId != actorId) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
     }

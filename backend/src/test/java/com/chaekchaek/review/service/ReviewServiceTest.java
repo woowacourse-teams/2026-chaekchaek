@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.common.auth.CurrentActor;
+import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
@@ -41,7 +43,7 @@ class ReviewServiceTest {
         ReviewBookReader bookReader = mock(ReviewBookReader.class);
         ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
         ReviewMemberReader memberReader = mock(ReviewMemberReader.class);
-        when(memberReader.findByMemberIds(List.of(1L))).thenReturn(Map.of(
+        when(memberReader.findByActorIds(List.of(1L))).thenReturn(Map.of(
                 1L, new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", true, false)
         ));
         ReviewService reviewService = reviewService(reviewRepository, bookReader, readingRecordCoordinator, memberReader);
@@ -58,7 +60,7 @@ class ReviewServiceTest {
         // then
         verify(bookReader).validateBookExists(5L);
         verify(readingRecordCoordinator).recordReview(1L, 5L, 10, 100);
-        verify(memberReader).findByMemberIds(List.of(1L));
+        verify(memberReader).findByActorIds(List.of(1L));
         assertThat(actual.author().anonymous()).isTrue();
         assertThat(actual.author().displayName()).isEqualTo("참새-a1b2c3d4");
     }
@@ -125,6 +127,7 @@ class ReviewServiceTest {
         ReviewService reviewService = new ReviewService(
                 reviewRepository, replyRepository, mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class), currentMemberIdProvider,
+                currentActorProvider(),
                 mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false));
 
         // when
@@ -154,6 +157,7 @@ class ReviewServiceTest {
         ReviewService reviewService = new ReviewService(
                 reviewRepository, replyRepository, mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class), currentMemberIdProvider,
+                currentActorProvider(),
                 mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false));
 
         // when
@@ -169,14 +173,18 @@ class ReviewServiceTest {
                                         ReviewMemberReader memberReader) {
         CurrentMemberIdProvider currentMemberIdProvider = () -> 1L;
         return new ReviewService(reviewRepository, mock(ReplyRepository.class), mock(ReviewReactionRepository.class),
-                mock(ReplyReactionRepository.class), currentMemberIdProvider, readingRecordCoordinator, bookReader,
-                memberReader);
+                mock(ReplyReactionRepository.class), currentMemberIdProvider, currentActorProvider(),
+                readingRecordCoordinator, bookReader, memberReader);
     }
 
     private ReviewMemberReader memberReader(boolean anonymousEnabled) {
-        return memberIds -> memberIds.stream().collect(java.util.stream.Collectors.toMap(
-                memberId -> memberId,
-                memberId -> new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", anonymousEnabled, false)
+        return actorIds -> actorIds.stream().collect(java.util.stream.Collectors.toMap(
+                actorId -> actorId,
+                actorId -> new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", anonymousEnabled, false)
         ));
+    }
+
+    private CurrentActorProvider currentActorProvider() {
+        return () -> CurrentActor.member(1L, 1L);
     }
 }

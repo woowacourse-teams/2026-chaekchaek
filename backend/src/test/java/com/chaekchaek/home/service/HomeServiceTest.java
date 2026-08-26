@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.repository.BookRepository;
-import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.home.dto.PopularBookResponse;
 import com.chaekchaek.home.dto.LatestReviewResponse;
 import com.chaekchaek.review.dto.AuthorResponse;
@@ -18,7 +18,7 @@ import com.chaekchaek.review.repository.ReplyRepository;
 import com.chaekchaek.review.repository.ReviewRepository;
 import java.time.Instant;
 import java.util.List;
-import java.util.OptionalLong;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -87,17 +87,17 @@ class HomeServiceTest {
 
     private static HomeService homeService(ReviewRepository reviewRepository, ReplyRepository replyRepository,
                                            BookRepository bookRepository) {
-        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        CurrentActorProvider currentActorProvider = mock(CurrentActorProvider.class);
         ReviewMemberReader reviewMemberReader = mock(ReviewMemberReader.class);
-        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
-        when(reviewMemberReader.findByMemberIds(anyCollection())).thenReturn(java.util.Map.of(
+        when(currentActorProvider.findCurrentActor()).thenReturn(Optional.empty());
+        when(reviewMemberReader.findByActorIds(anyCollection())).thenReturn(java.util.Map.of(
                 1L, new ReviewMemberProfile("책 읽는 사람", "https://example.com/profile-1.jpg",
                         "익명 사용자 1", false, false),
                 2L, new ReviewMemberProfile("닉네임", "https://example.com/profile.jpg",
                         "다정한 참새", true, false)
         ));
         return new HomeService(reviewRepository, replyRepository, bookRepository,
-                currentMemberIdProvider, reviewMemberReader);
+                currentActorProvider, reviewMemberReader);
     }
 
     private static ReviewRepository.PopularBookCount popularBookCount(long bookId, long reviewCount, long replyCount) {
@@ -125,12 +125,12 @@ class HomeServiceTest {
         return countProjection;
     }
 
-    private static Review review(long id, long bookId, long memberId, String content, Instant createdAt) {
+    private static Review review(long id, long bookId, long actorId, String content, Instant createdAt) {
         Review review = mock(Review.class);
         when(review.getId()).thenReturn(id);
         when(review.getBookId()).thenReturn(bookId);
-        when(review.getMemberId()).thenReturn(memberId);
-        when(review.isAnonymous()).thenReturn(memberId == 2L);
+        when(review.getActorId()).thenReturn(actorId);
+        when(review.isAnonymous()).thenReturn(actorId == 2L);
         when(review.getContent()).thenReturn(content);
         when(review.getCreatedAt()).thenReturn(createdAt);
         return review;

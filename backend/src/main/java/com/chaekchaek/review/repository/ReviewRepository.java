@@ -12,11 +12,11 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     Page<Review> findByBookId(long bookId, Pageable pageable);
 
-    Page<Review> findByBookIdAndMemberId(long bookId, long memberId, Pageable pageable);
+    Page<Review> findByBookIdAndActorId(long bookId, long actorId, Pageable pageable);
 
     List<Review> findByBookId(long bookId);
 
-    List<Review> findByBookIdAndMemberId(long bookId, long memberId);
+    List<Review> findByBookIdAndActorId(long bookId, long actorId);
 
     List<Review> findTop10ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
 
