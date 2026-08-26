@@ -71,15 +71,18 @@
 
 .size-small {
   box-sizing: border-box;
+  height: 40px;
   font-size: 11px;
 }
 
 .size-medium {
   box-sizing: border-box;
+  height: 48px;
   font-size: 12.5px;
 }
 
 .size-large {
   box-sizing: border-box;
+  height: 56px;
   font-size: 14px;
 }
