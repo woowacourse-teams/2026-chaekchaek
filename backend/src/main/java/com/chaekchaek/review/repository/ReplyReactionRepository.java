@@ -14,7 +14,7 @@ public interface ReplyReactionRepository extends JpaRepository<ReplyReaction, Re
     @Query("select r.replyId as replyId, count(r) as count from ReplyReaction r where r.replyId in :replyIds group by r.replyId")
     List<ReactionCount> countByReplyIdInGroupByReplyId(Collection<Long> replyIds);
 
-    List<ReplyReaction> findByReplyIdInAndMemberId(Collection<Long> replyIds, long memberId);
+    List<ReplyReaction> findByReplyIdInAndActorId(Collection<Long> replyIds, long actorId);
 
     interface ReactionCount {
         long getReplyId();

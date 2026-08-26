@@ -16,6 +16,9 @@ import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import com.chaekchaek.review.book.ReviewBookReader;
 import com.chaekchaek.review.domain.Review;
+import com.chaekchaek.review.domain.Reply;
+import com.chaekchaek.review.domain.ReviewReaction;
+import com.chaekchaek.review.domain.ReplyReaction;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
@@ -31,9 +34,42 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class ReviewServiceTest {
+
+    @Test
+    @DisplayName("감상과 답글 좋아요는 현재 Actor에 귀속된다")
+    void should_AssignReactionsToCurrentActor() {
+        ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        ReplyRepository replyRepository = mock(ReplyRepository.class);
+        ReviewReactionRepository reviewReactionRepository = mock(ReviewReactionRepository.class);
+        ReplyReactionRepository replyReactionRepository = mock(ReplyReactionRepository.class);
+        Review review = Review.create(5L, 1L, "감상", null, null, null, false, false);
+        Reply reply = Reply.create(10L, 1L, "답글", false);
+        ReflectionTestUtils.setField(review, "id", 10L);
+        ReflectionTestUtils.setField(reply, "id", 20L);
+        when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
+        when(replyRepository.findById(20L)).thenReturn(Optional.of(reply));
+        when(reviewReactionRepository.countByReviewId(10L)).thenReturn(1L);
+        when(replyReactionRepository.countByReplyId(20L)).thenReturn(1L);
+        CurrentMemberIdProvider currentMemberIdProvider = () -> 99L;
+        CurrentActorProvider currentActorProvider = () -> CurrentActor.member(7L, 99L);
+        ReviewService service = new ReviewService(reviewRepository, replyRepository, reviewReactionRepository,
+                replyReactionRepository, currentMemberIdProvider, currentActorProvider,
+                mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false));
+
+        service.createReviewReaction(10L);
+        service.createReplyReaction(20L);
+
+        ArgumentCaptor<ReviewReaction> reviewReaction = ArgumentCaptor.forClass(ReviewReaction.class);
+        ArgumentCaptor<ReplyReaction> replyReaction = ArgumentCaptor.forClass(ReplyReaction.class);
+        verify(reviewReactionRepository).saveAndFlush(reviewReaction.capture());
+        verify(replyReactionRepository).saveAndFlush(replyReaction.capture());
+        assertThat(reviewReaction.getValue().getActorId()).isEqualTo(7L);
+        assertThat(replyReaction.getValue().getActorId()).isEqualTo(7L);
+    }
 
     @Test
     @DisplayName("감상 작성 시 책을 검증하고 회원 익명 설정을 snapshot으로 저장한다")

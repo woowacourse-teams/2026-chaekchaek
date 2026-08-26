@@ -25,15 +25,15 @@ public class ReplyReaction {
     private long replyId;
 
     @Id
-    @Column(name = "member_id")
-    private long memberId;
+    @Column(name = "actor_id")
+    private long actorId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public ReplyReaction(long replyId, long memberId) {
+    public ReplyReaction(long replyId, long actorId) {
         this.replyId = replyId;
-        this.memberId = memberId;
+        this.actorId = actorId;
     }
 
     @PrePersist
@@ -44,14 +44,14 @@ public class ReplyReaction {
     @EqualsAndHashCode
     public static class ReplyReactionId implements Serializable {
         private long replyId;
-        private long memberId;
+        private long actorId;
 
         public ReplyReactionId() {
         }
 
-        public ReplyReactionId(long replyId, long memberId) {
+        public ReplyReactionId(long replyId, long actorId) {
             this.replyId = replyId;
-            this.memberId = memberId;
+            this.actorId = actorId;
         }
     }
 }
