@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 data class BookRegistrationUiState(
     val pendingBook: BookSearchResult? = null,
-    val registeredBookIds: Set<String> = emptySet(),
+    val completedRegistrationCount: Int = 0,
     val isBusy: Boolean = false,
     val showLoading: Boolean = false,
     val errorMessage: String? = null,
@@ -78,7 +78,7 @@ class BookRegistrationViewModel internal constructor(
                 if (accessToken == token) {
                     _uiState.value = _uiState.value.copy(
                         pendingBook = null,
-                        registeredBookIds = _uiState.value.registeredBookIds + book.isbn13,
+                        completedRegistrationCount = _uiState.value.completedRegistrationCount + 1,
                     )
                 }
             }.onFailure { error ->

@@ -113,7 +113,7 @@ internal fun PageInputDialog(
                 }
                 SheetPrimaryButton(
                     label = if (spoilerPage == null) "읽은 쪽수 저장" else "입력한 쪽수까지 보기",
-                    enabled = page != null,
+                    enabled = BookDetailInputRules.canSubmitPage(page, spoilerPage),
                 ) { page?.let(onSave) }
                 onReadAnyway?.let { readAnyway ->
                     SheetPrimaryButton(label = "스포일러 감수하고 보기", enabled = true, danger = true, onClick = readAnyway)
@@ -128,6 +128,8 @@ internal fun PageInputDialog(
 internal fun ReviewInputSheet(
     initialPage: Int,
     totalPages: Int,
+    anonymous: Boolean,
+    nickname: String,
     onDismiss: () -> Unit,
     onSave: (ReviewCreateRequest) -> Unit,
 ) {
@@ -240,8 +242,19 @@ internal fun ReviewInputSheet(
                         modifier = Modifier.size(14.dp),
                         tint = ChaekInk,
                     )
-                    Text("익명", modifier = Modifier.padding(start = 7.dp), color = ChaekInk, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    Text("‘골똘한 참새’로 표시돼요", modifier = Modifier.padding(start = 7.dp), color = ChaekInkSecondary, fontSize = 11.5.sp)
+                    Text(
+                        if (anonymous) "익명" else "공개",
+                        modifier = Modifier.padding(start = 7.dp),
+                        color = ChaekInk,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        if (anonymous) "이름을 숨겨서 표시돼요" else "‘${nickname.ifBlank { "닉네임 없음" }}’으로 표시돼요",
+                        modifier = Modifier.padding(start = 7.dp),
+                        color = ChaekInkSecondary,
+                        fontSize = 11.5.sp,
+                    )
                 }
             }
             SheetPrimaryButton(label = "감상 남기기", enabled = canSubmit) {

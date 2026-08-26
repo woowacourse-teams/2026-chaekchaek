@@ -123,12 +123,15 @@ fun BookDetailScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     recentRatings: List<RatedBookUiModel> = emptyList(),
+    savedToLibrary: Boolean = state.detail?.myRecord != null,
+    anonymousReviews: Boolean = true,
+    nickname: String = "",
     localCurrentPage: Int = 0,
     coverContent: (@Composable (BookDetailArgs, Modifier) -> Unit)? = null,
     resumedAuthenticatedAction: BookDetailAuthenticatedAction? = null,
     onAuthenticatedActionHandled: () -> Unit = {},
     onLoginRequired: (BookDetailAuthenticatedAction) -> Unit = {},
-    onAddToLibrary: () -> Unit = {},
+    onToggleLibrary: () -> Unit = {},
     onStatusChange: (ReadingStatus) -> Unit = {},
     onPageSave: (Int) -> Unit = {},
     onRatingSave: (Rating) -> Unit = {},
@@ -174,7 +177,7 @@ fun BookDetailScreen(
     }
     LaunchedEffect(resumedAuthenticatedAction) {
         when (val action = resumedAuthenticatedAction ?: return@LaunchedEffect) {
-            BookDetailAuthenticatedAction.AddToLibrary -> onAddToLibrary()
+            BookDetailAuthenticatedAction.AddToLibrary -> onToggleLibrary()
             BookDetailAuthenticatedAction.OpenPageInput -> showPageDialog = true
             BookDetailAuthenticatedAction.OpenRating -> showRatingDialog = true
             BookDetailAuthenticatedAction.OpenReview -> showReviewSheet = true
@@ -197,9 +200,10 @@ fun BookDetailScreen(
             item {
                 ArchiveStage(
                     book = book,
+                    saved = savedToLibrary,
                     onBack = onBack,
                     onLibraryClick = {
-                        authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onAddToLibrary)
+                        authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onToggleLibrary)
                     },
                     coverContent = coverContent,
                 )
@@ -322,6 +326,8 @@ fun BookDetailScreen(
         ReviewInputSheet(
             initialPage = currentPage,
             totalPages = book.totalPages,
+            anonymous = anonymousReviews,
+            nickname = nickname,
             onDismiss = { showReviewSheet = false },
             onSave = { request ->
                 onReviewCreate(request)
@@ -356,6 +362,7 @@ private fun RequestLoadingOverlay(modifier: Modifier = Modifier) {
 @Composable
 private fun ArchiveStage(
     book: BookDetailArgs,
+    saved: Boolean,
     onBack: () -> Unit,
     onLibraryClick: () -> Unit,
     coverContent: (@Composable (BookDetailArgs, Modifier) -> Unit)?,
@@ -381,10 +388,16 @@ private fun ArchiveStage(
             onClick = onLibraryClick,
             modifier = Modifier.align(Alignment.TopEnd).offset((-16).dp, 8.dp).size(38.dp),
             shape = RoundedCornerShape(4.dp),
-            color = ChaekAccent,
+            color = if (saved) ChaekAccent else Color.Transparent,
+            border = if (saved) null else BorderStroke(1.dp, ChaekSurface),
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("⌑", modifier = Modifier.semantics { contentDescription = "서재에 담기" }, color = ChaekInk, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier.semantics {
+                    contentDescription = if (saved) "서재에서 삭제" else "서재에 추가"
+                },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("⌑", color = if (saved) ChaekInk else ChaekSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold)
             }
         }
         Text(

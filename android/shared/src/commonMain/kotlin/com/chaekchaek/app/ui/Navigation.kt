@@ -32,6 +32,8 @@ import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
+import com.chaekchaek.app.ui.bookdetail.RatedBookUiModel
+import com.chaekchaek.app.ui.bookdetail.withRecentRating
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
@@ -67,6 +69,8 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
     val libraryRepository = remember { LibraryRemoteRepository() }
     val registrationViewModel = remember { BookRegistrationViewModel(libraryRepository) }
     val archiveViewModel = remember { ArchiveViewModel(libraryRepository) }
+    val archiveState by archiveViewModel.uiState.collectAsState()
+    var recentRatings by remember { mutableStateOf(emptyList<RatedBookUiModel>()) }
     val searchViewModel = remember(registrationViewModel, authViewModel) {
         SearchViewModel(
             bookSearchRepository = BookSearchRemoteRepository(),
@@ -79,6 +83,10 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
     val safeContent = Modifier.windowInsetsPadding(
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     )
+
+    LaunchedEffect(authTokens == null) {
+        if (authTokens == null) recentRatings = emptyList()
+    }
 
     CompositionLocalProvider(
         LocalRemoteBookCover provides { url, description, modifier ->
@@ -101,8 +109,14 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                     )
                 }
                 entry<BookDetailKey> { key ->
-                    val viewModel = remember(key.book) { BookDetailViewModel(detailRepository) }
+                    val viewModel = remember(key.book) { BookDetailViewModel(detailRepository, libraryRepository) }
                     val state by viewModel.uiState.collectAsState()
+                    val displayBook = state.displayBook ?: key.book
+                    val archivedBook = archiveState.items.firstOrNull {
+                        it.id == displayBook.isbn13.ifBlank { displayBook.id }
+                    }
+                    val savedBookId = archivedBook?.bookId
+                        ?: state.detail?.takeIf { it.myRecord != null }?.bookId
                     var resumedAction by remember(key.book) {
                         mutableStateOf<BookDetailAuthenticatedAction?>(null)
                     }
@@ -122,16 +136,32 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                         state = state,
                         onBack = { backStack.removeLastOrNull() },
                         modifier = safeContent,
+                        recentRatings = recentRatings,
+                        savedToLibrary = savedBookId != null,
+                        anonymousReviews = archiveState.anonymousReviews,
+                        nickname = archiveState.nickname,
                         coverContent = { book, modifier ->
                             RemoteBookImage(book.coverUrl, "${book.title} 표지", modifier)
                         },
                         resumedAuthenticatedAction = resumedAction,
                         onAuthenticatedActionHandled = { resumedAction = null },
                         onLoginRequired = viewModel::requestAuthentication,
-                        onAddToLibrary = viewModel::addToLibrary,
+                        onToggleLibrary = {
+                            viewModel.toggleLibrary(savedBookId, archiveViewModel::retry)
+                        },
                         onStatusChange = viewModel::updateStatus,
                         onPageSave = viewModel::savePage,
-                        onRatingSave = viewModel::saveRating,
+                        onRatingSave = { rating ->
+                            viewModel.saveRating(rating) {
+                                val ratedBook = viewModel.uiState.value.displayBook ?: key.book
+                                recentRatings = recentRatings.withRecentRating(
+                                    bookId = ratedBook.id,
+                                    title = ratedBook.title,
+                                    rating = rating,
+                                    ratedAtLabel = "방금",
+                                )
+                            }
+                        },
                         onReviewCreate = viewModel::createReview,
                         onReviewLike = viewModel::likeReview,
                         onLoadReplies = viewModel::loadReplies,

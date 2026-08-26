@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.BookReview
+import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
@@ -17,6 +18,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 class BookDetailViewModel(
     private val repository: BookDetailRemoteRepository,
+    private val libraryRepository: LibraryRemoteRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(BookDetailUiState())
     val uiState: StateFlow<BookDetailUiState> = _uiState.asStateFlow()
@@ -106,10 +108,14 @@ class BookDetailViewModel(
         }
     }
 
-    fun addToLibrary() = mutate {
+    fun toggleLibrary(savedBookId: Long?, onSuccess: () -> Unit = {}) = mutate(onSuccess) {
         val state = _uiState.value
-        val book = requireNotNull(state.displayBook)
-        repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken())
+        if (savedBookId == null) {
+            val book = requireNotNull(state.displayBook)
+            repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken())
+        } else {
+            libraryRepository.bulkDelete(listOf(savedBookId), requireToken())
+        }
     }
 
     fun updateStatus(status: ReadingStatus) = mutate {
@@ -121,7 +127,7 @@ class BookDetailViewModel(
         repository.updateCurrentPage(bookIdForWrite(), page, totalPages, requireToken())
     }
 
-    fun saveRating(rating: Rating) = mutate {
+    fun saveRating(rating: Rating, onSuccess: () -> Unit = {}) = mutate(onSuccess) {
         repository.rate(bookIdForWrite(), rating.score.toDouble(), requireToken())
     }
 
@@ -218,7 +224,7 @@ class BookDetailViewModel(
         }
     }
 
-    private fun mutate(action: suspend () -> Unit) {
+    private fun mutate(onSuccess: () -> Unit = {}, action: suspend () -> Unit) {
         if (mutationJob?.isActive == true) return
         mutationJob = viewModelScope.launch {
             runCatching {
@@ -228,7 +234,10 @@ class BookDetailViewModel(
                     },
                     request = action,
                 )
-            }.onSuccess { reload() }.onFailure(::handleFailure)
+            }.onSuccess {
+                onSuccess()
+                reload()
+            }.onFailure(::handleFailure)
         }
     }
 

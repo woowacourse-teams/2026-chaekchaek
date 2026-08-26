@@ -28,6 +28,15 @@ class BookDetailRulesTest {
     }
 
     @Test
+    fun spoilerPageMustBeReachedBeforeSubmittingPage() {
+        assertFalse(BookDetailInputRules.canSubmitPage(null, 160))
+        assertTrue(BookDetailInputRules.canSubmitPage(80, null))
+        assertFalse(BookDetailInputRules.canSubmitPage(159, 160))
+        assertTrue(BookDetailInputRules.canSubmitPage(160, 160))
+        assertTrue(BookDetailInputRules.canSubmitPage(161, 160))
+    }
+
+    @Test
     fun repliesLoadEveryPageOnceAndRemoveDuplicates() = runTest {
         val loadedPages = mutableListOf<Int>()
         val reply = ReviewReply(1, "답글", "참새", false, 0)

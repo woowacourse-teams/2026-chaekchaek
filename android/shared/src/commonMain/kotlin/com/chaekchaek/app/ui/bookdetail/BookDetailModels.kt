@@ -35,6 +35,14 @@ data class RatedBookUiModel(
     val ratedAtLabel: String,
 )
 
+internal fun List<RatedBookUiModel>.withRecentRating(
+    bookId: String,
+    title: String,
+    rating: Rating,
+    ratedAtLabel: String,
+): List<RatedBookUiModel> =
+    (filterNot { it.bookId == bookId } + RatedBookUiModel(bookId, title, rating, ratedAtLabel)).takeLast(3)
+
 sealed interface BookDetailAuthenticatedAction {
     data object AddToLibrary : BookDetailAuthenticatedAction
     data object OpenPageInput : BookDetailAuthenticatedAction

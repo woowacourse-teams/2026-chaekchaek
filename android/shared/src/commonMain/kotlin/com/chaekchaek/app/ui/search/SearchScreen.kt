@@ -48,6 +48,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.*
 import com.chaekchaek.app.domain.book.BookSearchResult
@@ -106,6 +109,12 @@ fun SearchScreen(
     onClear()
     onBack()
   }
+  val navigationEventState = rememberNavigationEventState(NavigationEventInfo.None)
+
+  NavigationBackHandler(
+    state = navigationEventState,
+    onBackCompleted = leaveSearch,
+  )
 
   Column(modifier = modifier.fillMaxSize()) {
     SearchTopBar(

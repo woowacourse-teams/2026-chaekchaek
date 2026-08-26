@@ -39,7 +39,13 @@ class BookRegistrationViewModelTest {
 
             assertEquals(listOf(book.isbn13 to "access-token"), calls)
             assertFalse(viewModel.uiState.value.loginRequired)
-            assertTrue(book.isbn13 in viewModel.uiState.value.registeredBookIds)
+            assertEquals(1, viewModel.uiState.value.completedRegistrationCount)
+
+            viewModel.register(book)
+            advanceUntilIdle()
+
+            assertEquals(2, calls.size)
+            assertEquals(2, viewModel.uiState.value.completedRegistrationCount)
         } finally {
             Dispatchers.resetMain()
         }

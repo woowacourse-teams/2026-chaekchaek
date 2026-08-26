@@ -89,7 +89,15 @@ internal fun RootScreen(
     val snackbarHost = remember { SnackbarHostState() }
     val accessToken = tokens?.accessToken
 
-    LaunchedEffect(accessToken) { registrationViewModel.authenticate(accessToken) }
+    LaunchedEffect(accessToken) {
+        registrationViewModel.authenticate(accessToken)
+        archiveViewModel.authenticate(accessToken)
+    }
+    LaunchedEffect(registrationState.completedRegistrationCount) {
+        if (registrationState.completedRegistrationCount > 0) {
+            archiveViewModel.retry()
+        }
+    }
     LaunchedEffect(registrationState.errorMessage) {
         registrationState.errorMessage?.let {
             snackbarHost.showSnackbar(it)
@@ -111,7 +119,7 @@ internal fun RootScreen(
             )
             RootTab.Discover -> SearchRoute(
                 viewModel = searchViewModel,
-                registeredBookIds = registrationState.registeredBookIds + archiveState.items.map { it.id },
+                registeredBookIds = archiveState.items.mapTo(mutableSetOf()) { it.id },
                 modifier = contentModifier,
                 onBack = { selectedTab = RootTab.Home },
                 onBookClick = { onBookClick(it.toBookDetailArgs()) },
