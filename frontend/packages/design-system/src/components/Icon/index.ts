@@ -1,3 +1,5 @@
+export { Icon } from './Icon';
+
 export type { Props } from './Icon.types';
 
 export {
@@ -13,4 +15,4 @@ export {
   SearchIcon,
   StartIcon,
   TrashIcon,
-} from './Icon';
+} from './icons';
