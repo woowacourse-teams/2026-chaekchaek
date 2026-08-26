@@ -10,7 +10,7 @@ import type { Props } from './';
 const classnameDefault = 'ui-Textarea';
 
 export const Textarea = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'textarea', className, variant, ...restProps } = props;
+  const { as = 'textarea', className, variant, height, style, ...restProps } = props;
 
   const modifiers = {
     variant: variant && styles?.[`variant-${variant}`],
@@ -25,7 +25,7 @@ export const Textarea = <T extends ElementType>(props: Props<T>) => {
 
   return (
     <div className={classname}>
-      <View as={as} {...restProps} />
+      <View as={as} style={height === undefined ? style : { ...style, height }} {...restProps} />
     </div>
   );
 };

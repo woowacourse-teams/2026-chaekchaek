@@ -24,3 +24,11 @@ export const Soft: Story = {
     placeholder: '기억하고 싶은 문장을 옮겨 적어보세요.',
   },
 };
+
+export const CustomHeight: Story = {
+  args: {
+    variant: 'soft',
+    height: 160,
+    placeholder: '높이를 자유롭게 지정할 수 있어요.',
+  },
+};
