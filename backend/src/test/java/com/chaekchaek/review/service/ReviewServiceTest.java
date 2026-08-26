@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
-import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
@@ -40,6 +40,47 @@ import org.springframework.test.util.ReflectionTestUtils;
 class ReviewServiceTest {
 
     @Test
+    @DisplayName("게스트는 서재를 변경하지 않고 감상을 작성한다")
+    void should_CreateGuestReviewWithoutChangingLibrary() {
+        ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        ReviewBookReader bookReader = mock(ReviewBookReader.class);
+        ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
+        ReviewMemberReader memberReader = mock(ReviewMemberReader.class);
+        when(memberReader.findByActorIds(List.of(7L))).thenReturn(Map.of(
+                7L, new ReviewMemberProfile("게스트", null, "다정한 참새", true, false)));
+        when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
+            Review review = invocation.getArgument(0);
+            ReflectionTestUtils.setField(review, "id", 10L);
+            return review;
+        });
+        ReviewService service = new ReviewService(reviewRepository, mock(ReplyRepository.class),
+                mock(ReviewReactionRepository.class), mock(ReplyReactionRepository.class),
+                () -> CurrentActor.guest(7L), readingRecordCoordinator, bookReader, memberReader);
+
+        ReviewResponse response = service.createReview(5L,
+                new ReviewCreateRequest("게스트 감상", null, null, null, null, false));
+
+        assertThat(response.author().displayName()).isEqualTo("다정한 참새");
+        verify(readingRecordCoordinator, never()).recordReview(
+                org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("게스트는 감상에서 개인 독서 쪽수를 입력할 수 없다")
+    void should_RejectReadingPage_When_GuestCreatesReview() {
+        ReviewService service = new ReviewService(mock(ReviewRepository.class), mock(ReplyRepository.class),
+                mock(ReviewReactionRepository.class), mock(ReplyReactionRepository.class),
+                () -> CurrentActor.guest(7L), mock(ReadingRecordCoordinator.class),
+                mock(ReviewBookReader.class), memberReader(true));
+
+        assertThatThrownBy(() -> service.createReview(5L,
+                new ReviewCreateRequest("게스트 감상", null, null, 10, 100, false)))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
+    }
+
+    @Test
     @DisplayName("감상과 답글 좋아요는 현재 Actor에 귀속된다")
     void should_AssignReactionsToCurrentActor() {
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
@@ -54,10 +95,9 @@ class ReviewServiceTest {
         when(replyRepository.findById(20L)).thenReturn(Optional.of(reply));
         when(reviewReactionRepository.countByReviewId(10L)).thenReturn(1L);
         when(replyReactionRepository.countByReplyId(20L)).thenReturn(1L);
-        CurrentMemberIdProvider currentMemberIdProvider = () -> 99L;
         CurrentActorProvider currentActorProvider = () -> CurrentActor.member(7L, 99L);
         ReviewService service = new ReviewService(reviewRepository, replyRepository, reviewReactionRepository,
-                replyReactionRepository, currentMemberIdProvider, currentActorProvider,
+                replyReactionRepository, currentActorProvider,
                 mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false));
 
         service.createReviewReaction(10L);
@@ -159,10 +199,9 @@ class ReviewServiceTest {
                 .thenReturn(List.of(reviewCount));
         when(replyRepository.countByReviewBookIdInGroupByBookId(List.of(5L, 6L)))
                 .thenReturn(List.of(replyCount));
-        CurrentMemberIdProvider currentMemberIdProvider = () -> 1L;
         ReviewService reviewService = new ReviewService(
                 reviewRepository, replyRepository, mock(ReviewReactionRepository.class),
-                mock(ReplyReactionRepository.class), currentMemberIdProvider,
+                mock(ReplyReactionRepository.class),
                 currentActorProvider(),
                 mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false));
 
@@ -189,10 +228,9 @@ class ReviewServiceTest {
                 .thenReturn(List.of(reviewCount));
         when(replyRepository.countByReviewBookIdInGroupByBookId(List.of(5L, 6L)))
                 .thenReturn(List.of(replyCount));
-        CurrentMemberIdProvider currentMemberIdProvider = () -> 1L;
         ReviewService reviewService = new ReviewService(
                 reviewRepository, replyRepository, mock(ReviewReactionRepository.class),
-                mock(ReplyReactionRepository.class), currentMemberIdProvider,
+                mock(ReplyReactionRepository.class),
                 currentActorProvider(),
                 mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false));
 
@@ -207,9 +245,8 @@ class ReviewServiceTest {
     private ReviewService reviewService(ReviewRepository reviewRepository, ReviewBookReader bookReader,
                                         ReadingRecordCoordinator readingRecordCoordinator,
                                         ReviewMemberReader memberReader) {
-        CurrentMemberIdProvider currentMemberIdProvider = () -> 1L;
         return new ReviewService(reviewRepository, mock(ReplyRepository.class), mock(ReviewReactionRepository.class),
-                mock(ReplyReactionRepository.class), currentMemberIdProvider, currentActorProvider(),
+                mock(ReplyReactionRepository.class), currentActorProvider(),
                 readingRecordCoordinator, bookReader, memberReader);
     }
 
