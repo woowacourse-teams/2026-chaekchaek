@@ -1,0 +1,52 @@
+import type { Meta, StoryObj } from '@storybook/react-webpack5';
+
+import * as Icons from './';
+
+const meta = {
+  title: 'Icon/Icon',
+  component: Icons.SearchIcon, // 대표 컴포넌트
+  args: {
+    size: 'medium',
+  },
+  argTypes: {
+    size: {
+      control: 'radio',
+      options: ['small', 'medium', 'large'],
+    },
+  },
+} satisfies Meta<typeof Icons.SearchIcon>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Gallery: Story = {
+  render: (args) => (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+        gap: 16,
+      }}
+    >
+      {Object.entries(Icons).map(([name, Icon]) => (
+        <div
+          key={name}
+          style={{
+            display: 'flex',
+            minHeight: 80,
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            border: '1px solid #e5e5e5',
+            borderRadius: 8,
+          }}
+        >
+          <Icon {...args} />
+          <span style={{ fontSize: 12 }}>{name}</span>
+        </div>
+      ))}
+    </div>
+  ),
+};
