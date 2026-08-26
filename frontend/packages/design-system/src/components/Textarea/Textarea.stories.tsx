@@ -17,3 +17,10 @@ export const Example: Story = {
     value: 'Textarea',
   },
 };
+
+export const Soft: Story = {
+  args: {
+    variant: 'soft',
+    placeholder: '기억하고 싶은 문장을 옮겨 적어보세요.',
+  },
+};

@@ -10,9 +10,11 @@ import type { Props } from './';
 const classnameDefault = 'ui-Textarea';
 
 export const Textarea = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'textarea', className, ...restProps } = props;
+  const { as = 'textarea', className, variant, ...restProps } = props;
 
-  const modifiers = {};
+  const modifiers = {
+    variant: variant && styles?.[`variant-${variant}`],
+  };
 
   const classname = createClassName({
     styles,
