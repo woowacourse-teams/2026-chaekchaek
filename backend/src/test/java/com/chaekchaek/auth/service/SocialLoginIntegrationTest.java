@@ -3,6 +3,7 @@ package com.chaekchaek.auth.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.auth.oauth.google.GoogleProfile;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
@@ -32,6 +33,9 @@ public class SocialLoginIntegrationTest {
     private SocialAccountRepository socialAccountRepository;
 
     @Autowired
+    private ActorRepository actorRepository;
+
+    @Autowired
     private EntityManager entityManager;
 
     @Test
@@ -59,6 +63,7 @@ public class SocialLoginIntegrationTest {
                 () -> assertThat(member.getId()).isNotNull(),
                 () -> assertThat(memberRepository.count()).isEqualTo(1),
                 () -> assertThat(socialAccountRepository.count()).isEqualTo(1),
+                () -> assertThat(actorRepository.findByMemberId(member.getId())).isPresent(),
                 () -> assertThat(socialAccount.getMember().getId()).isEqualTo(member.getId()),
                 () -> assertThat(socialAccount.getProvider()).isEqualTo(Provider.GOOGLE),
                 () -> assertThat(socialAccount.getProviderUserId()).isEqualTo(profile.providerUserId())

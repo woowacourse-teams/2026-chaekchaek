@@ -7,7 +7,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.chaekchaek.actor.domain.Actor;
+import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.auth.oauth.google.GoogleProfile;
+import com.chaekchaek.common.auth.CurrentActor;
+import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.chaekchaek.member.service.NicknameGenerator;
@@ -35,6 +39,12 @@ public class SocialLoginServiceTest {
 
     @Mock
     private NicknameGenerator nicknameGenerator;
+
+    @Mock
+    private ActorRepository actorRepository;
+
+    @Mock
+    private CurrentActorProvider currentActorProvider;
 
     @InjectMocks
     private SocialLoginService socialLoginService;
@@ -74,6 +84,7 @@ public class SocialLoginServiceTest {
         assertThat(result).isSameAs(existingMember);
 
         verify(memberRepository, never()).save(any(Member.class));
+        verify(actorRepository, never()).save(any(Actor.class));
         verify(socialAccountRepository, never()).save(any(SocialAccount.class));
         verify(nicknameGenerator, never()).generate();
     }
@@ -103,12 +114,15 @@ public class SocialLoginServiceTest {
         ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);
 
         ArgumentCaptor<SocialAccount> accountCaptor = ArgumentCaptor.forClass(SocialAccount.class);
+        ArgumentCaptor<Actor> actorCaptor = ArgumentCaptor.forClass(Actor.class);
 
         verify(memberRepository).save(memberCaptor.capture());
+        verify(actorRepository).save(actorCaptor.capture());
         verify(socialAccountRepository).save(accountCaptor.capture());
 
         Member savedMember = memberCaptor.getValue();
         SocialAccount savedAccount = accountCaptor.getValue();
+        Actor savedActor = actorCaptor.getValue();
 
         assertAll(
                 () -> assertThat(result).isSameAs(savedMember),
@@ -116,6 +130,8 @@ public class SocialLoginServiceTest {
                 () -> assertThat(savedMember.getProfileImageUrl()).isEqualTo(googleProfile.profileImageUrl()),
                 () -> assertThat(savedMember.getAnonymousNickname()).isEqualTo("우아한 달빛 참새"),
                 () -> assertThat(savedMember.isDisplayAnonymous()).isTrue(),
+                () -> assertThat(savedActor.getMember()).isSameAs(savedMember),
+                () -> assertThat(savedActor.getType()).isEqualTo(com.chaekchaek.common.auth.ActorType.MEMBER),
 
                 () -> assertThat(savedAccount.getMember()).isSameAs(savedMember),
                 () -> assertThat(savedAccount.getProvider()).isEqualTo(Provider.GOOGLE),
@@ -123,5 +139,38 @@ public class SocialLoginServiceTest {
                 () -> assertThat(savedAccount.getConnectedAt()).isEqualTo(savedMember.getCreatedAt())
         );
 
+    }
+
+    @Test
+    @DisplayName("게스트가 최초 소셜 로그인하면 기존 Actor와 닉네임을 회원에게 계승한다")
+    void should_InheritGuestActorAndNickname_When_GuestSignsUp() {
+        GoogleProfile googleProfile = new GoogleProfile(
+                "google-user-123",
+                "member@example.com",
+                "exUrl"
+        );
+        LocalDateTime now = LocalDateTime.now();
+        Actor guestActor = Actor.guest("a".repeat(64), "게스트 참새", now.minusDays(1), now.plusDays(29));
+
+        when(socialAccountRepository.findByProviderAndProviderUserId(
+                Provider.GOOGLE,
+                googleProfile.providerUserId()
+        )).thenReturn(Optional.empty());
+        when(currentActorProvider.findCurrentActor()).thenReturn(Optional.of(CurrentActor.guest(7L)));
+        when(actorRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(guestActor));
+
+        Member result = socialLoginService.loginOrSignUp(googleProfile);
+
+        assertAll(
+                () -> assertThat(result.getAnonymousNickname()).isEqualTo("게스트 참새"),
+                () -> assertThat(guestActor.getType()).isEqualTo(com.chaekchaek.common.auth.ActorType.MEMBER),
+                () -> assertThat(guestActor.getMember()).isSameAs(result),
+                () -> assertThat(guestActor.getGuestTokenHash()).isNull(),
+                () -> assertThat(guestActor.getGuestNickname()).isNull()
+        );
+        verify(nicknameGenerator, never()).generate();
+        verify(actorRepository, never()).save(any(Actor.class));
+        verify(memberRepository).save(result);
+        verify(socialAccountRepository).save(any(SocialAccount.class));
     }
 }

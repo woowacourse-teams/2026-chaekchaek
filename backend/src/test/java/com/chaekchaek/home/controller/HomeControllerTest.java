@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.home.dto.LatestReviewListResponse;
+import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.home.dto.LatestReviewResponse;
 import com.chaekchaek.home.dto.PopularBookListResponse;
 import com.chaekchaek.home.dto.PopularBookResponse;
@@ -84,7 +85,8 @@ class HomeControllerTest {
         when(homeService.getLatestReviews()).thenReturn(new LatestReviewListResponse(List.of(
                 new LatestReviewResponse("도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.",
                         java.time.Instant.parse("2026-08-18T14:00:00Z"),
-                        new AuthorResponse("다정한 참새", "https://example.com/profile.jpg", false, false), 12L,
+                        new AuthorResponse("다정한 참새", "https://example.com/profile.jpg", false, false,
+                                ActorType.MEMBER), 12L,
                         42L, "9788936433598", "보이지 않는 도시", "https://example.com/invisible-cities.jpg")
         )));
 
@@ -97,6 +99,7 @@ class HomeControllerTest {
                 .andExpect(jsonPath("$.reviews[0].author.displayName").value("다정한 참새"))
                 .andExpect(jsonPath("$.reviews[0].author.profileImageUrl").value("https://example.com/profile.jpg"))
                 .andExpect(jsonPath("$.reviews[0].author.anonymous").value(false))
+                .andExpect(jsonPath("$.reviews[0].author.actorType").value("MEMBER"))
                 .andExpect(jsonPath("$.reviews[0].bookId").value(42))
                 .andExpect(jsonPath("$.reviews[0].isbn13").value("9788936433598"))
                 .andDo(document("home-latest-reviews",
@@ -146,6 +149,8 @@ class HomeControllerTest {
                         .description("작성자 프로필 이미지 URL").optional(),
                 fieldWithPath("reviews[].author.anonymous").type(JsonFieldType.BOOLEAN).description("익명 작성 여부"),
                 fieldWithPath("reviews[].author.mine").type(JsonFieldType.BOOLEAN).description("내가 작성한 감상인지 여부"),
+                fieldWithPath("reviews[].author.actorType").type(JsonFieldType.STRING)
+                        .description("작성자 유형(MEMBER, GUEST)"),
                 fieldWithPath("reviews[].replyCount").type(JsonFieldType.NUMBER).description("삭제되지 않은 답글 수"),
                 fieldWithPath("reviews[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
                 fieldWithPath("reviews[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),

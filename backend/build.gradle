@@ -91,6 +91,13 @@ openapi3 {
 - `accessTokenExpiresIn`, `refreshTokenExpiresIn`의 단위는 초입니다.
 - 모바일 토큰 재발급 시 기존 Refresh Token은 폐기되고 새 토큰이 발급됩니다.
 
+## 게스트 인증
+- `POST /api/v1/auth/guest-token`으로 게스트 토큰과 작성자 닉네임을 발급받습니다.
+- 감상·답글의 작성, 수정, 삭제와 좋아요 등록, 취소 요청에는 `X-Guest-Token: {guestToken}` 헤더를 사용할 수 있습니다.
+- 서재, 별점, 독서 상태, 쪽수는 회원 전용 기능입니다.
+- 게스트가 최초 소셜 회원가입할 때 같은 게스트 토큰을 전달하면 기존 Actor와 닉네임 및 공개 상호작용이 계승됩니다.
+- 토큰이 유실되거나 만료되면 기존 게스트 콘텐츠를 수정하거나 삭제할 수 없습니다.
+
 ## 오류 처리
 - 클라이언트의 오류 분기에는 ProblemDetail의 `code`를 사용합니다.
 - `detail`은 사용자 표시 또는 디버깅 참고용이며 분기 기준으로 사용하지 않습니다.
@@ -202,6 +209,15 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			def description = operation?.get('description')?.toString() ?: ''
 			operation?.put('description', description ? ("${description}\n\n${addition}").toString() : addition.toString())
 		}
+		def addOptionalHeaderParameter = { path, method, name, description ->
+			def operation = ((specification.get('paths') as Map)?.get(path) as Map)?.get(method) as Map
+			def parameters = (operation?.get('parameters') as List) ?: []
+			if (!parameters.any { parameter -> (parameter as Map)?.get('name') == name }) {
+				parameters.add([name: name, in: 'header', required: false, description: description,
+				                schema: [type: 'string']])
+			}
+			operation?.put('parameters', parameters)
+		}
 		def addJsonExample = { path, method, status, name, summary, value ->
 			def operation = ((specification.get('paths') as Map)?.get(path) as Map)?.get(method) as Map
 			def response = ((operation?.get('responses') as Map)?.get(status) as Map)
@@ -243,6 +259,21 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		requestProperty('/api/v1/books/{bookId}/reviews', 'post', 'isSpoiler')?.putAll([nullable: false, default: false])
 		requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'content')?.remove('nullable')
 		requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'isSpoiler')?.remove('nullable')
+		['/api/v1/auth/mobile/google', '/api/v1/auth/mobile/apple'].each { path ->
+			addOptionalHeaderParameter(path, 'post', 'X-Guest-Token',
+					'신규 회원가입 시 기존 게스트 Actor, 닉네임과 공개 상호작용을 계승할 게스트 토큰')
+		}
+		def guestInteractionGuidance = '회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.'
+		[
+			['/api/v1/books/{bookId}/reviews', 'post'],
+			['/api/v1/reviews/{reviewId}', 'patch'], ['/api/v1/reviews/{reviewId}', 'delete'],
+			['/api/v1/reviews/{reviewId}/replies', 'post'],
+			['/api/v1/replies/{replyId}', 'patch'], ['/api/v1/replies/{replyId}', 'delete'],
+			['/api/v1/reviews/{reviewId}/reactions', 'post'], ['/api/v1/reviews/{reviewId}/reactions', 'delete'],
+			['/api/v1/replies/{replyId}/reactions', 'post'], ['/api/v1/replies/{replyId}/reactions', 'delete']
+		].each { operation -> appendOperationDescription(operation[0], operation[1], guestInteractionGuidance) }
+		appendOperationDescription('/api/v1/books/{bookId}/reviews', 'post',
+				'게스트는 currentPage와 totalPages를 입력할 수 없으며 서재·독서 기록은 변경되지 않습니다.')
 		['/api/v1/library/bulk-delete', '/api/v1/library/bulk-status'].each { path ->
 			def method = path.endsWith('bulk-delete') ? 'post' : 'patch'
 			def bookIds = (requestSchema(path, method)?.get('properties') as Map)?.get('bookIds') as Map
@@ -336,6 +367,12 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 				type: 'apiKey',
 				in: 'cookie',
 				name: 'access_token'
+			],
+			guestToken: [
+				type: 'apiKey',
+				in: 'header',
+				name: 'X-Guest-Token',
+				description: '게스트 공개 상호작용 인증 토큰'
 			]
 		])
 
@@ -352,15 +389,26 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 					|| path == '/api/v1/books/{bookId}/reviews'
 					|| path == '/api/v1/reviews/{reviewId}/replies'
 		}
-		def securityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
+		def memberSecurityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
+		def publicInteractionSecurityRequirement = memberSecurityRequirement + [[guestToken: []]]
+		def publicInteractionOperations = [
+			['/api/v1/books/{bookId}/reviews', 'post'],
+			['/api/v1/reviews/{reviewId}', 'patch'], ['/api/v1/reviews/{reviewId}', 'delete'],
+			['/api/v1/reviews/{reviewId}/replies', 'post'],
+			['/api/v1/replies/{replyId}', 'patch'], ['/api/v1/replies/{replyId}', 'delete'],
+			['/api/v1/reviews/{reviewId}/reactions', 'post'], ['/api/v1/reviews/{reviewId}/reactions', 'delete'],
+			['/api/v1/replies/{replyId}/reactions', 'post'], ['/api/v1/replies/{replyId}/reactions', 'delete']
+		]
 		def httpMethods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as Set
 		(specification.get('paths') as Map).each { path, pathItem ->
 			(pathItem as Map).each { method, operation ->
 				if (httpMethods.contains(method.toString())) {
 					if (isPublicOperation(path.toString(), method.toString())) {
 						(operation as Map).remove('security')
+					} else if (publicInteractionOperations.contains([path.toString(), method.toString()])) {
+						(operation as Map).put('security', publicInteractionSecurityRequirement)
 					} else {
-						(operation as Map).put('security', securityRequirement)
+						(operation as Map).put('security', memberSecurityRequirement)
 					}
 				}
 			}
@@ -401,7 +449,7 @@ tasks.register('verifyOpenApi') {
 		def specification = new Yaml().load(specificationText) as Map
 		def info = specification?.get('info') as Map
 		def infoDescription = info?.get('description')?.toString() ?: ''
-		['Swagger 이용 안내', '웹 인증', '모바일 인증', 'ProblemDetail'].each { requiredSection ->
+		['Swagger 이용 안내', '웹 인증', '모바일 인증', '게스트 인증', 'ProblemDetail'].each { requiredSection ->
 			if (!infoDescription.contains(requiredSection)) {
 				throw new GradleException("OpenAPI info description is missing ${requiredSection} guidance")
 			}
@@ -510,6 +558,7 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def authOperations = [
+			'/api/v1/auth/guest-token'     : [post: ['201']],
 			'/api/v1/auth/mobile/google'   : [post: ['200', '400']],
 			'/api/v1/auth/mobile/reissue' : [post: ['200', '400']],
 			'/api/v1/auth/mobile/logout'  : [post: ['204', '400']],
@@ -549,7 +598,22 @@ tasks.register('verifyOpenApi') {
 				|| accessTokenCookie?.get('name') != 'access_token') {
 			throw new GradleException('OpenAPI specification is missing accessTokenCookie security scheme')
 		}
-		def expectedSecurityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
+		def guestToken = securitySchemes?.get('guestToken') as Map
+		if (guestToken?.get('type') != 'apiKey'
+				|| guestToken?.get('in') != 'header'
+				|| guestToken?.get('name') != 'X-Guest-Token') {
+			throw new GradleException('OpenAPI specification is missing guestToken security scheme')
+		}
+		def expectedMemberSecurityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
+		def expectedPublicInteractionSecurityRequirement = expectedMemberSecurityRequirement + [[guestToken: []]]
+		def publicInteractionOperations = [
+			['/api/v1/books/{bookId}/reviews', 'post'],
+			['/api/v1/reviews/{reviewId}', 'patch'], ['/api/v1/reviews/{reviewId}', 'delete'],
+			['/api/v1/reviews/{reviewId}/replies', 'post'],
+			['/api/v1/replies/{replyId}', 'patch'], ['/api/v1/replies/{replyId}', 'delete'],
+			['/api/v1/reviews/{reviewId}/reactions', 'post'], ['/api/v1/reviews/{reviewId}/reactions', 'delete'],
+			['/api/v1/replies/{replyId}/reactions', 'post'], ['/api/v1/replies/{replyId}/reactions', 'delete']
+		]
 		def publicOperation = { path, method ->
 			if (path.toString().startsWith('/api/v1/auth/')) {
 				return true
@@ -574,7 +638,11 @@ tasks.register('verifyOpenApi') {
 					if (security != null) {
 						throw new GradleException("OpenAPI specification adds authentication to public ${method.toString().toUpperCase()} ${path}")
 					}
-				} else if (security != expectedSecurityRequirement) {
+				} else if (publicInteractionOperations.contains([path.toString(), method.toString()])) {
+					if (security != expectedPublicInteractionSecurityRequirement) {
+						throw new GradleException("OpenAPI specification is missing guest authentication for ${method.toString().toUpperCase()} ${path}")
+					}
+				} else if (security != expectedMemberSecurityRequirement) {
 					throw new GradleException("OpenAPI specification is missing alternative authentication for ${method.toString().toUpperCase()} ${path}")
 				}
 			}

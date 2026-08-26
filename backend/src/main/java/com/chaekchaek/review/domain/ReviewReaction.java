@@ -25,15 +25,15 @@ public class ReviewReaction {
     private long reviewId;
 
     @Id
-    @Column(name = "member_id")
-    private long memberId;
+    @Column(name = "actor_id")
+    private long actorId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public ReviewReaction(long reviewId, long memberId) {
+    public ReviewReaction(long reviewId, long actorId) {
         this.reviewId = reviewId;
-        this.memberId = memberId;
+        this.actorId = actorId;
     }
 
     @PrePersist
@@ -44,14 +44,14 @@ public class ReviewReaction {
     @EqualsAndHashCode
     public static class ReviewReactionId implements Serializable {
         private long reviewId;
-        private long memberId;
+        private long actorId;
 
         public ReviewReactionId() {
         }
 
-        public ReviewReactionId(long reviewId, long memberId) {
+        public ReviewReactionId(long reviewId, long actorId) {
             this.reviewId = reviewId;
-            this.memberId = memberId;
+            this.actorId = actorId;
         }
     }
 }

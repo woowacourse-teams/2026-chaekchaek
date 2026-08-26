@@ -14,7 +14,7 @@ public interface ReviewReactionRepository extends JpaRepository<ReviewReaction, 
     @Query("select r.reviewId as reviewId, count(r) as count from ReviewReaction r where r.reviewId in :reviewIds group by r.reviewId")
     List<ReactionCount> countByReviewIdInGroupByReviewId(Collection<Long> reviewIds);
 
-    List<ReviewReaction> findByReviewIdInAndMemberId(Collection<Long> reviewIds, long memberId);
+    List<ReviewReaction> findByReviewIdInAndActorId(Collection<Long> reviewIds, long actorId);
 
     interface ReactionCount {
         long getReviewId();

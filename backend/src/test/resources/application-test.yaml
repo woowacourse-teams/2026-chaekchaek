@@ -35,6 +35,9 @@ app:
       secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
       expiration: 30m
 
+    guest-token:
+      expiration: 30d
+
     google-id-token:
       issuer: https://accounts.google.com
       jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs

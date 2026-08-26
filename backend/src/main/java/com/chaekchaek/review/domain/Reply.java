@@ -30,8 +30,8 @@ public class Reply {
     @Column(name = "review_id", nullable = false)
     private long reviewId;
 
-    @Column(name = "member_id", nullable = false)
-    private long memberId;
+    @Column(name = "actor_id")
+    private long actorId;
 
     @Column(nullable = false, length = 200)
     private String content;
@@ -48,32 +48,32 @@ public class Reply {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    private Reply(long reviewId, long memberId, String content, boolean anonymous) {
+    private Reply(long reviewId, long actorId, String content, boolean anonymous) {
         this.reviewId = reviewId;
-        this.memberId = memberId;
+        this.actorId = actorId;
         this.content = content;
         this.anonymous = anonymous;
     }
 
-    public static Reply create(long reviewId, long memberId, String content, boolean anonymous) {
-        return new Reply(reviewId, memberId, content, anonymous);
+    public static Reply create(long reviewId, long actorId, String content, boolean anonymous) {
+        return new Reply(reviewId, actorId, content, anonymous);
     }
 
-    public void updateBy(long memberId, String content) {
-        assertModifiableBy(memberId);
+    public void updateBy(long actorId, String content) {
+        assertModifiableBy(actorId);
         this.content = content;
     }
 
-    public void deleteBy(long memberId) {
-        assertModifiableBy(memberId);
+    public void deleteBy(long actorId) {
+        assertModifiableBy(actorId);
         deletedAt = Instant.now();
     }
 
-    public void assertModifiableBy(long memberId) {
+    public void assertModifiableBy(long actorId) {
         if (deletedAt != null) {
             throw new BusinessException(ErrorCode.DELETED_RESOURCE);
         }
-        if (this.memberId != memberId) {
+        if (this.actorId != actorId) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
     }

@@ -1,4 +1,7 @@
 package com.chaekchaek.review.dto;
 
-public record AuthorResponse(String displayName, String profileImageUrl, boolean anonymous, boolean mine) {
+import com.chaekchaek.common.auth.ActorType;
+
+public record AuthorResponse(String displayName, String profileImageUrl, boolean anonymous, boolean mine,
+                             ActorType actorType) {
 }

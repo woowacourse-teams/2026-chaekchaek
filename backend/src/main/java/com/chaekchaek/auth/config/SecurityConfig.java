@@ -56,7 +56,15 @@ public class SecurityConfig {
         return http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/v1/auth/**"))
+                        .ignoringRequestMatchers(
+                                "/api/v1/auth/**",
+                                "/api/v1/books/*/reviews",
+                                "/api/v1/reviews/*",
+                                "/api/v1/reviews/*/replies",
+                                "/api/v1/reviews/*/reactions",
+                                "/api/v1/replies/*",
+                                "/api/v1/replies/*/reactions"
+                        ))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 HttpMethod.GET, "/health"
@@ -74,6 +82,26 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.GET,
                                 PublicEndpointPaths.GET_ENDPOINTS
+                        ).permitAll()
+                        .requestMatchers(
+                                "/api/v1/library/**",
+                                "/api/v1/members/me/ratings/**"
+                        ).authenticated()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/books/*/reviews",
+                                "/api/v1/reviews/*/replies",
+                                "/api/v1/reviews/*/reactions",
+                                "/api/v1/replies/*/reactions"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.PATCH,
+                                "/api/v1/reviews/*",
+                                "/api/v1/replies/*"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.DELETE,
+                                "/api/v1/reviews/*",
+                                "/api/v1/replies/*",
+                                "/api/v1/reviews/*/reactions",
+                                "/api/v1/replies/*/reactions"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

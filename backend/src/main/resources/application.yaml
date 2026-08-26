@@ -47,6 +47,9 @@ app:
     refresh-token:
       expiration: 14d
 
+    guest-token:
+      expiration: ${GUEST_TOKEN_EXPIRATION:30d}
+
     cookie:
       secure: ${AUTH_COOKIE_SECURE:false}
       same-site: ${AUTH_COOKIE_SAME_SITE:Lax}

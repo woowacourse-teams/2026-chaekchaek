@@ -2,7 +2,8 @@ package com.chaekchaek.home.service;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.repository.BookRepository;
-import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.common.auth.CurrentActor;
+import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.home.dto.LatestReviewListResponse;
 import com.chaekchaek.home.dto.LatestReviewResponse;
 import com.chaekchaek.home.dto.PopularBookListResponse;
@@ -16,7 +17,6 @@ import com.chaekchaek.review.repository.ReplyRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.OptionalLong;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +28,7 @@ public class HomeService {
     private final ReviewRepository reviewRepository;
     private final ReplyRepository replyRepository;
     private final BookRepository bookRepository;
-    private final CurrentMemberIdProvider currentMemberIdProvider;
+    private final CurrentActorProvider currentActorProvider;
     private final ReviewMemberReader reviewMemberReader;
 
     @Transactional(readOnly = true)
@@ -48,10 +48,10 @@ public class HomeService {
         List<Review> reviews = reviewRepository.findTop10ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
         Map<Long, Long> replyCounts = replyCountsByReviewId(reviews);
         Map<Long, Book> books = booksById(reviews.stream().map(Review::getBookId).distinct().toList());
-        Long currentMemberId = currentMemberIdOrNull();
+        Long currentActorId = currentActorIdOrNull();
         Map<Long, ReviewMemberProfile> memberProfiles = memberProfilesByReview(reviews);
         List<LatestReviewResponse> responses = reviews.stream()
-                .map(review -> toLatestReviewResponse(review, replyCounts, books, currentMemberId, memberProfiles))
+                .map(review -> toLatestReviewResponse(review, replyCounts, books, currentActorId, memberProfiles))
                 .filter(Objects::nonNull)
                 .toList();
         return new LatestReviewListResponse(responses);
@@ -106,27 +106,26 @@ public class HomeService {
 
     private AuthorResponse authorOf(Review review, Long currentMemberId,
                                     Map<Long, ReviewMemberProfile> memberProfiles) {
-        long authorId = review.getMemberId();
+        long authorId = review.getActorId();
         ReviewMemberProfile profile = memberProfiles.get(authorId);
         boolean mine = currentMemberId != null && authorId == currentMemberId;
         if (review.isAnonymous()) {
-            return new AuthorResponse(profile.anonymousNickname(), null, true, mine);
+            return new AuthorResponse(profile.anonymousNickname(), null, true, mine, profile.actorType());
         }
         String displayName = profile.withdrawn() ? "탈퇴한 사용자" : profile.displayName();
         String profileImageUrl = profile.withdrawn() ? null : profile.profileImageUrl();
-        return new AuthorResponse(displayName, profileImageUrl, false, mine);
+        return new AuthorResponse(displayName, profileImageUrl, false, mine, profile.actorType());
     }
 
-    private Long currentMemberIdOrNull() {
-        OptionalLong currentMemberId = currentMemberIdProvider.findCurrentMemberId();
-        return currentMemberId.isPresent() ? currentMemberId.getAsLong() : null;
+    private Long currentActorIdOrNull() {
+        return currentActorProvider.findCurrentActor().map(CurrentActor::actorId).orElse(null);
     }
 
     private Map<Long, ReviewMemberProfile> memberProfilesByReview(List<Review> reviews) {
-        List<Long> memberIds = reviews.stream().map(Review::getMemberId).distinct().toList();
-        if (memberIds.isEmpty()) {
+        List<Long> actorIds = reviews.stream().map(Review::getActorId).distinct().toList();
+        if (actorIds.isEmpty()) {
             return Map.of();
         }
-        return reviewMemberReader.findByMemberIds(memberIds);
+        return reviewMemberReader.findByActorIds(actorIds);
     }
 }
