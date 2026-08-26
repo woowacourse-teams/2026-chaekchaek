@@ -51,6 +51,7 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
         }
         androidMain.dependencies {
+            implementation(libs.coil.network.okhttp)
             implementation(libs.ktor.client.okhttp)
         }
         iosMain.dependencies {
