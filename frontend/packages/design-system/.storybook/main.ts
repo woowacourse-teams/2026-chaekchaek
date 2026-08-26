@@ -87,6 +87,7 @@ const config: StorybookConfig = {
                 svgoConfig: {
                   plugins: [
                     {
+                      name: 'preset-default',
                       params: {
                         overrides: {
                           removeViewBox: false,
