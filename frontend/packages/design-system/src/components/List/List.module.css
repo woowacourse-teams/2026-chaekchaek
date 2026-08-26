@@ -50,7 +50,10 @@
 }
 
 .ui-List-Item-Leading {
-  padding-left: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
 }
 
 .ui-List-Item-Content {
