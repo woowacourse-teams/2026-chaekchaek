@@ -86,6 +86,26 @@ class ReviewServiceTest {
     }
 
     @Test
+    @DisplayName("게스트는 기존 감상의 개인 독서 쪽수를 수정할 수 없다")
+    void should_RejectReadingPage_When_GuestUpdatesReview() {
+        ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        Review review = Review.create(5L, 7L, "게스트 감상", null, null, null, false, true);
+        ReflectionTestUtils.setField(review, "id", 10L);
+        when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
+        ReviewService service = new ReviewService(reviewRepository, mock(ReplyRepository.class),
+                mock(ReviewReactionRepository.class), mock(ReplyReactionRepository.class),
+                () -> CurrentActor.guest(7L), mock(ReadingRecordCoordinator.class),
+                mock(ReviewBookReader.class), memberReader(true));
+        ReviewUpdateRequest request = new ReviewUpdateRequest();
+        request.setCurrentPage(10);
+        request.setTotalPages(100);
+
+        assertThatThrownBy(() -> service.updateReview(10L, request))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
+    }
+
+    @Test
     @DisplayName("감상과 답글 좋아요는 현재 Actor에 귀속된다")
     void should_AssignReactionsToCurrentActor() {
         ReviewRepository reviewRepository = mock(ReviewRepository.class);

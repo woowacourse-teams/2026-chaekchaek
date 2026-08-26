@@ -83,6 +83,10 @@ public class SecurityConfig {
                                 HttpMethod.GET,
                                 PublicEndpointPaths.GET_ENDPOINTS
                         ).permitAll()
+                        .requestMatchers(
+                                "/api/v1/library/**",
+                                "/api/v1/members/me/ratings/**"
+                        ).authenticated()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/books/*/reviews",
                                 "/api/v1/reviews/*/replies",
