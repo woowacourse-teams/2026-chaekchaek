@@ -3,19 +3,19 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		3212D5F9818079E21FCAD3C5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D55D6C97221F513AE0BCFAAB /* ContentView.swift */; };
-		330D090DED702E088CCD60C3 /* Book.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D023D25B0D6A79DDD90C5F5 /* Book.swift */; };
-		49C3DD90B496FD45A372EBA0 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F311F1CCAB821332E8980A9 /* Theme.swift */; };
 		4A15FAACE600294DBF52F532 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 19D0BD55F8A3754D36BA743B /* Foundation.framework */; };
 		6AD10E5BA60949CD51D966B4 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 19D0BD55F8A3754D36BA743B /* Foundation.framework */; };
 		6ED143CCB7658FFD45C4B742 /* ChaekchaekApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */; };
 		74D496A28AE8876E8F7BF668 /* ChaekchaekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E4ABD4BA4F5B4E8CA2294BE /* ChaekchaekTests.swift */; };
+		A10000000000000000000001 /* GoogleSignInProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* GoogleSignInProvider.swift */; };
+		A10000000000000000000003 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000005 /* GoogleSignIn */; };
+		A10000000000000000000007 /* RefreshTokenKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* RefreshTokenKeychain.swift */; };
 		C1D48550D30C0BB273B37351 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */; };
-		EE59C3DAF190F5C9F0E3CC70 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AECD69D0CD1F72B8E13904E3 /* AppModel.swift */; };
 		FF331168D03AF9252AA103AA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6E70D11AEAFF647C18D3139 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -31,15 +31,14 @@
 
 /* Begin PBXFileReference section */
 		088EB291EEE334B891EA3CA5 /* Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
-		16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		19D0BD55F8A3754D36BA743B /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
-		1F311F1CCAB821332E8980A9 /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		5E4ABD4BA4F5B4E8CA2294BE /* ChaekchaekTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChaekchaekTests.swift; sourceTree = "<group>"; };
 		67105785D20FB89EB92254CE /* Release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
-		6D023D25B0D6A79DDD90C5F5 /* Book.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Book.swift; sourceTree = "<group>"; };
 		91AA8D77ED3D6DB15210D4BE /* ChaekchaekTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChaekchaekTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000002 /* GoogleSignInProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoogleSignInProvider.swift; sourceTree = "<group>"; };
+		A10000000000000000000008 /* RefreshTokenKeychain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RefreshTokenKeychain.swift; sourceTree = "<group>"; };
 		AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chaekchaek.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AECD69D0CD1F72B8E13904E3 /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		D55D6C97221F513AE0BCFAAB /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChaekchaekApp.swift; sourceTree = "<group>"; };
 		F6E70D11AEAFF647C18D3139 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -58,6 +57,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000003 /* GoogleSignIn in Frameworks */,
 				6AD10E5BA60949CD51D966B4 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -70,7 +70,6 @@
 			children = (
 				5E4ABD4BA4F5B4E8CA2294BE /* ChaekchaekTests.swift */,
 			);
-			name = ChaekchaekTests;
 			path = ChaekchaekTests;
 			sourceTree = "<group>";
 		};
@@ -89,14 +88,12 @@
 			isa = PBXGroup;
 			children = (
 				D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */,
-				6D023D25B0D6A79DDD90C5F5 /* Book.swift */,
-				AECD69D0CD1F72B8E13904E3 /* AppModel.swift */,
-				1F311F1CCAB821332E8980A9 /* Theme.swift */,
+				A10000000000000000000002 /* GoogleSignInProvider.swift */,
+				A10000000000000000000008 /* RefreshTokenKeychain.swift */,
 				D55D6C97221F513AE0BCFAAB /* ContentView.swift */,
 				F6E70D11AEAFF647C18D3139 /* Assets.xcassets */,
 				16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */,
 			);
-			name = Chaekchaek;
 			path = Chaekchaek;
 			sourceTree = "<group>";
 		};
@@ -114,7 +111,6 @@
 				088EB291EEE334B891EA3CA5 /* Debug.xcconfig */,
 				67105785D20FB89EB92254CE /* Release.xcconfig */,
 			);
-			name = Configuration;
 			path = Configuration;
 			sourceTree = "<group>";
 		};
@@ -142,6 +138,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = DA00C03C2B99BEFE204BD8AF /* Build configuration list for PBXNativeTarget "Chaekchaek" */;
 			buildPhases = (
+				A10000000000000000000006 /* Build Shared framework */,
 				49B1547F1F85FFF9C4E6196B /* Sources */,
 				FB1D8635B72AE66B4450069B /* Frameworks */,
 				938A8F17E7D9425C7608DAF6 /* Resources */,
@@ -151,6 +148,9 @@
 			dependencies = (
 			);
 			name = Chaekchaek;
+			packageProductDependencies = (
+				A10000000000000000000005 /* GoogleSignIn */,
+			);
 			productName = Chaekchaek;
 			productReference = AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */;
 			productType = "com.apple.product-type.application";
@@ -187,10 +187,14 @@
 			developmentRegion = ko;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				ko,
 				en,
 				Base,
 			);
 			mainGroup = 467A3487449985D2D21CE9C8;
+			packageReferences = (
+				A10000000000000000000004 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+			);
 			productRefGroup = 815571CF2752CE9DE2F6D3B2 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -220,15 +224,32 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		A10000000000000000000006 /* Build Shared framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Build Shared framework";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build because the IDE already built Shared\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		49B1547F1F85FFF9C4E6196B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				6ED143CCB7658FFD45C4B742 /* ChaekchaekApp.swift in Sources */,
-				330D090DED702E088CCD60C3 /* Book.swift in Sources */,
-				EE59C3DAF190F5C9F0E3CC70 /* AppModel.swift in Sources */,
-				49C3DD90B496FD45A372EBA0 /* Theme.swift in Sources */,
+				A10000000000000000000001 /* GoogleSignInProvider.swift in Sources */,
+				A10000000000000000000007 /* RefreshTokenKeychain.swift in Sources */,
 				3212D5F9818079E21FCAD3C5 /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -262,7 +283,8 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = CB3GUFX279;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Chaekchaek/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "첵췍";
@@ -270,7 +292,10 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -369,7 +394,8 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = CB3GUFX279;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Chaekchaek/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "첵췍";
@@ -377,7 +403,10 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -489,6 +518,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A10000000000000000000004 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A10000000000000000000005 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000004 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9A74E89CB29BBA050B1FADB3 /* Project object */;
 }

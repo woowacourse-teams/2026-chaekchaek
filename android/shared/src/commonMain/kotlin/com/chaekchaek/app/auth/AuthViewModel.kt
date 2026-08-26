@@ -1,0 +1,125 @@
+package com.chaekchaek.app.auth
+
+import androidx.lifecycle.ViewModel
+import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
+import com.chaekchaek.app.data.remote.MobileAuthTokens
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlin.time.Clock
+
+data class AuthUiState(
+  val signingIn: Boolean = false,
+  val errorMessage: String? = null,
+)
+
+class AuthViewModel private constructor(
+  private val callbacks: AuthPlatformCallbacks,
+  private val loginWithGoogle: suspend (String) -> MobileAuthTokens,
+  reissue: suspend (String) -> MobileAuthTokens,
+  logout: suspend (String) -> Unit,
+  private val scope: CoroutineScope,
+  private val ownsScope: Boolean,
+  currentTimeMillis: () -> Long,
+) : ViewModel() {
+  constructor(
+    callbacks: AuthPlatformCallbacks,
+    remoteRepository: MobileAuthRemoteRepository = MobileAuthRemoteRepository(),
+  ) : this(
+    callbacks = callbacks,
+    loginWithGoogle = remoteRepository::loginWithGoogle,
+    reissue = remoteRepository::reissue,
+    logout = remoteRepository::logout,
+    scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
+    ownsScope = true,
+    currentTimeMillis = { Clock.System.now().toEpochMilliseconds() },
+  )
+
+  internal constructor(
+    callbacks: AuthPlatformCallbacks,
+    loginWithGoogle: suspend (String) -> MobileAuthTokens,
+    reissue: suspend (String) -> MobileAuthTokens,
+    logout: suspend (String) -> Unit,
+    scope: CoroutineScope,
+    currentTimeMillis: () -> Long,
+  ) : this(callbacks, loginWithGoogle, reissue, logout, scope, false, currentTimeMillis)
+
+  private val session = AuthSession(
+    readRefreshToken = callbacks.readRefreshToken,
+    writeRefreshToken = callbacks.writeRefreshToken,
+    clearRefreshToken = callbacks.clearRefreshToken,
+    reissue = reissue,
+    logout = logout,
+    scope = scope,
+    currentTimeMillis = currentTimeMillis,
+  )
+  val tokens: StateFlow<MobileAuthTokens?> = session.tokens
+
+  private val _uiState = MutableStateFlow(AuthUiState())
+  val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+  private var pendingAction: (suspend (accessToken: String) -> Unit)? = null
+
+  fun requireAuthentication(action: suspend (accessToken: String) -> Unit) {
+    val accessToken = tokens.value?.accessToken
+    if (accessToken != null) {
+      scope.launch { action(accessToken) }
+      return
+    }
+
+    pendingAction = action
+    if (!_uiState.value.signingIn) requestGoogleSignIn()
+  }
+
+  fun cancelPendingAuthentication() {
+    pendingAction = null
+  }
+
+  fun clearError() {
+    _uiState.value = _uiState.value.copy(errorMessage = null)
+  }
+
+  fun signOut() {
+    pendingAction = null
+    scope.launch { session.signOut() }
+  }
+
+  fun close() {
+    if (ownsScope) scope.cancel()
+  }
+
+  override fun onCleared() {
+    close()
+  }
+
+  private fun requestGoogleSignIn() {
+    _uiState.value = AuthUiState(signingIn = true)
+    callbacks.requestGoogleIdToken { idToken, platformError ->
+      if (idToken == null) {
+        _uiState.value = AuthUiState(errorMessage = platformError ?: LOGIN_ERROR)
+        return@requestGoogleIdToken
+      }
+
+      scope.launch {
+        try {
+          val tokens = loginWithGoogle(idToken)
+          session.signIn(tokens)
+          val action = pendingAction
+          pendingAction = null
+          action?.invoke(tokens.accessToken)
+          _uiState.value = AuthUiState()
+        } catch (_: Exception) {
+          _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
+        }
+      }
+    }
+  }
+
+  private companion object {
+    const val LOGIN_ERROR = "로그인에 실패했어요. 다시 시도해 주세요."
+  }
+}

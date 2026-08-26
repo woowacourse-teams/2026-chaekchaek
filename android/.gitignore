@@ -19,3 +19,4 @@ keystore.properties
 *.keystore
 iosApp/DerivedData/
 iosApp/*.xcodeproj/xcuserdata/
+iosApp/Configuration/Secrets.xcconfig
