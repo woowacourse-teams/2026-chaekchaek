@@ -44,12 +44,14 @@ export const BooksPage = () => {
   const [page, setPage] = useState(() => Number(defaultPage) ?? 1);
 
   const handleChangeQuery = (e: ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const { value } = e.target;
+    setQuery(value);
     setPage(1);
 
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      next.set('query', query);
+      next.set('page', '1');
+      next.set('query', value);
       return next;
     });
   };
