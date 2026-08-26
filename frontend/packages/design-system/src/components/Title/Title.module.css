@@ -34,3 +34,6 @@
 .orientation-vertical { 
   align-items: stretch;
 }
+.orientation-vertical .trailing {
+  text-align: left;
+}
