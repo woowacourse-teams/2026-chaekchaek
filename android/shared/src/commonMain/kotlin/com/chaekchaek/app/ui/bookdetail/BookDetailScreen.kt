@@ -92,7 +92,6 @@ import chaekchaek.shared.generated.resources.ic_back
 import chaekchaek.shared.generated.resources.ic_bookmark
 import chaekchaek.shared.generated.resources.ic_chevron_down
 import chaekchaek.shared.generated.resources.ic_comment
-import chaekchaek.shared.generated.resources.ic_eye_off
 import chaekchaek.shared.generated.resources.ic_heart_filled
 import chaekchaek.shared.generated.resources.ic_heart_outline
 import chaekchaek.shared.generated.resources.ic_pencil
@@ -813,17 +812,6 @@ private fun ReviewCard(
                         fontSize = 12.sp,
                         lineHeight = 19.sp,
                     )
-                }
-            }
-            if (locked) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
-                        .background(ChaekSurfaceMuted).padding(horizontal = 12.dp, vertical = 9.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(painterResource(Res.drawable.ic_eye_off), contentDescription = null, modifier = Modifier.size(14.dp))
-                    Text("스포일러 감상이에요 · 탭해서 보기", color = ChaekInkSecondary, style = MaterialTheme.typography.labelSmall)
                 }
             }
             Row(
