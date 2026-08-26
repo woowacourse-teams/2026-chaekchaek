@@ -99,6 +99,13 @@ export default (_, argv) => {
         },
         {
           test: /\.svg$/i,
+          include: path.resolve(__dirname, 'src/components/Icon/imgs'),
+          issuer: /\.[jt]sx?$/,
+          use: ['@svgr/webpack'],
+        },
+        {
+          test: /\.svg$/i,
+          exclude: path.resolve(__dirname, 'src/components/Icon/imgs'),
           type: 'asset/resource',
         },
         {
