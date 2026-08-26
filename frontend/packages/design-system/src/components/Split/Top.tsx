@@ -7,13 +7,9 @@ import styles from './Split.module.css';
 
 import type { Props } from './';
 
-import { Top } from './Top';
-import { Side } from './Side';
-import { Content } from './Content';
+const classnameDefault = 'ui-Split-Top';
 
-const classnameDefault = 'ui-Split';
-
-export const Split = <T extends ElementType>(props: Props<T>) => {
+export const Top = <T extends ElementType>(props: Props<T>) => {
   const { as = 'div', className, ...restProps } = props;
 
   const modifiers = {};
@@ -27,7 +23,3 @@ export const Split = <T extends ElementType>(props: Props<T>) => {
 
   return <View as={as} className={classname} {...restProps} />;
 };
-
-Split.Top = Top;
-Split.Content = Content;
-Split.Side = Side;
