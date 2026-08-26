@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
+import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
@@ -47,7 +48,7 @@ class ReviewServiceTest {
         ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
         ReviewMemberReader memberReader = mock(ReviewMemberReader.class);
         when(memberReader.findByActorIds(List.of(7L))).thenReturn(Map.of(
-                7L, new ReviewMemberProfile("게스트", null, "다정한 참새", true, false)));
+                7L, new ReviewMemberProfile("게스트", null, "다정한 참새", true, false, ActorType.GUEST)));
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review review = invocation.getArgument(0);
             ReflectionTestUtils.setField(review, "id", 10L);
@@ -61,6 +62,10 @@ class ReviewServiceTest {
                 new ReviewCreateRequest("게스트 감상", null, null, null, null, false));
 
         assertThat(response.author().displayName()).isEqualTo("다정한 참새");
+        assertThat(response.author().profileImageUrl()).isNull();
+        assertThat(response.author().anonymous()).isTrue();
+        assertThat(response.author().mine()).isTrue();
+        assertThat(response.author().actorType()).isEqualTo(ActorType.GUEST);
         verify(readingRecordCoordinator, never()).recordReview(
                 org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong(),
                 org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
@@ -120,7 +125,7 @@ class ReviewServiceTest {
         ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
         ReviewMemberReader memberReader = mock(ReviewMemberReader.class);
         when(memberReader.findByActorIds(List.of(1L))).thenReturn(Map.of(
-                1L, new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", true, false)
+                1L, new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", true, false, ActorType.MEMBER)
         ));
         ReviewService reviewService = reviewService(reviewRepository, bookReader, readingRecordCoordinator, memberReader);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
@@ -253,7 +258,8 @@ class ReviewServiceTest {
     private ReviewMemberReader memberReader(boolean anonymousEnabled) {
         return actorIds -> actorIds.stream().collect(java.util.stream.Collectors.toMap(
                 actorId -> actorId,
-                actorId -> new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", anonymousEnabled, false)
+                actorId -> new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", anonymousEnabled, false,
+                        ActorType.MEMBER)
         ));
     }
 

@@ -304,12 +304,12 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         ReviewMemberProfile profile = memberProfiles.get(authorId);
         if (anonymous) {
             return new AuthorResponse(profile.anonymousNickname(), null, true,
-                    currentActorId != null && authorId == currentActorId);
+                    currentActorId != null && authorId == currentActorId, profile.actorType());
         }
         String displayName = profile.withdrawn() ? "탈퇴한 사용자" : profile.displayName();
         String profileImageUrl = profile.withdrawn() ? null : profile.profileImageUrl();
         return new AuthorResponse(displayName, profileImageUrl, false,
-                currentActorId != null && authorId == currentActorId);
+                currentActorId != null && authorId == currentActorId, profile.actorType());
     }
 
     private Map<Long, Long> replyCounts(Collection<Long> reviewIds) {

@@ -110,11 +110,11 @@ public class HomeService {
         ReviewMemberProfile profile = memberProfiles.get(authorId);
         boolean mine = currentMemberId != null && authorId == currentMemberId;
         if (review.isAnonymous()) {
-            return new AuthorResponse(profile.anonymousNickname(), null, true, mine);
+            return new AuthorResponse(profile.anonymousNickname(), null, true, mine, profile.actorType());
         }
         String displayName = profile.withdrawn() ? "탈퇴한 사용자" : profile.displayName();
         String profileImageUrl = profile.withdrawn() ? null : profile.profileImageUrl();
-        return new AuthorResponse(displayName, profileImageUrl, false, mine);
+        return new AuthorResponse(displayName, profileImageUrl, false, mine, profile.actorType());
     }
 
     private Long currentActorIdOrNull() {

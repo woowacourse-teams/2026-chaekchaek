@@ -2,6 +2,7 @@ package com.chaekchaek.review.member;
 
 import com.chaekchaek.actor.domain.Actor;
 import com.chaekchaek.actor.repository.ActorRepository;
+import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import java.util.Collection;
@@ -23,8 +24,9 @@ class PersistentReviewMemberReader implements ReviewMemberReader {
     }
 
     private ReviewMemberProfile toProfile(Actor actor) {
-        if (actor.getMember() == null) {
-            return new ReviewMemberProfile(actor.getGuestNickname(), null, actor.getGuestNickname(), true, false);
+        if (actor.getType() == ActorType.GUEST) {
+            return new ReviewMemberProfile(actor.getGuestNickname(), null, actor.getGuestNickname(), true, false,
+                    actor.getType());
         }
         Member member = actor.getMember();
         return new ReviewMemberProfile(
@@ -32,7 +34,8 @@ class PersistentReviewMemberReader implements ReviewMemberReader {
                 member.getProfileImageUrl(),
                 member.getAnonymousNickname(),
                 member.isDisplayAnonymous(),
-                member.getAccountStatus() == AccountStatus.WITHDRAWN
+                member.getAccountStatus() == AccountStatus.WITHDRAWN,
+                actor.getType()
         );
     }
 }
