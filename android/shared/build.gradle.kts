@@ -74,3 +74,9 @@ dependencies {
     add("kspIosArm64", libs.kotlin.inject.compiler)
     add("kspIosSimulatorArm64", libs.kotlin.inject.compiler)
 }
+
+tasks.configureEach {
+    if (name == "generateAndroidHostTestLintModel" || name == "lintAnalyzeAndroidHostTest") {
+        dependsOn("kspAndroidHostTest")
+    }
+}
