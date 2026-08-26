@@ -1,5 +1,7 @@
 package com.chaekchaek.auth.service;
 
+import com.chaekchaek.actor.domain.Actor;
+import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.auth.oauth.google.GoogleProfile;
 import com.chaekchaek.auth.oauth.apple.AppleProfile;
 import com.chaekchaek.member.domain.Member;
@@ -18,15 +20,18 @@ public class SocialLoginService {
     private final MemberRepository memberRepository;
     private final SocialAccountRepository socialAccountRepository;
     private final NicknameGenerator nicknameGenerator;
+    private final ActorRepository actorRepository;
 
     public SocialLoginService(
             MemberRepository memberRepository,
             SocialAccountRepository socialAccountRepository,
-            NicknameGenerator nicknameGenerator
+            NicknameGenerator nicknameGenerator,
+            ActorRepository actorRepository
     ) {
         this.memberRepository = memberRepository;
         this.socialAccountRepository = socialAccountRepository;
         this.nicknameGenerator = nicknameGenerator;
+        this.actorRepository = actorRepository;
     }
 
     @Transactional
@@ -63,6 +68,7 @@ public class SocialLoginService {
                 now
         );
         memberRepository.save(member);
+        actorRepository.save(Actor.member(member, now));
 
         SocialAccount socialAccount = SocialAccount.connect(
                 member,
