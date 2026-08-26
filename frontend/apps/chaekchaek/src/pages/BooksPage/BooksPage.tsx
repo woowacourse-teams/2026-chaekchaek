@@ -48,22 +48,28 @@ export const BooksPage = () => {
     setQuery(value);
     setPage(1);
 
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('page', '1');
-      next.set('query', value);
-      return next;
-    });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('page', '1');
+        next.set('query', value);
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const handleChangeDefaultPage = (defaultPage: number) => {
     setPage(defaultPage);
 
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('page', String(defaultPage));
-      return next;
-    });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('page', String(defaultPage));
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const getBooksLoadData = useCallback(async () => {
