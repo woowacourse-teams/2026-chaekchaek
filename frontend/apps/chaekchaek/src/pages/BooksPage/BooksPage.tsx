@@ -44,24 +44,32 @@ export const BooksPage = () => {
   const [page, setPage] = useState(() => Number(defaultPage) ?? 1);
 
   const handleChangeQuery = (e: ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const { value } = e.target;
+    setQuery(value);
     setPage(1);
 
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('query', query);
-      return next;
-    });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('page', '1');
+        next.set('query', value);
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const handleChangeDefaultPage = (defaultPage: number) => {
     setPage(defaultPage);
 
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('page', String(defaultPage));
-      return next;
-    });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('page', String(defaultPage));
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const getBooksLoadData = useCallback(async () => {
@@ -85,7 +93,9 @@ export const BooksPage = () => {
   });
   const handleRegisterLibrary = async (isbn: string) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
-    await mutate({ isbn13: isbn, status: 'READING' });
+    await mutate({ isbn13: isbn, status: 'WANT_TO_READ' });
+
+    handleMove(isbn);
   };
 
   return (
@@ -141,14 +151,16 @@ export const BooksPage = () => {
                             감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
                           </Badge>
                         )}
-                        <Button
-                          variant="primary"
-                          onClick={() => {
-                            handleRegisterLibrary(item?.isbn13);
-                          }}
-                        >
-                          읽는 중 시작
-                        </Button>
+                        {!item.isRegisteredInMyLibrary && (
+                          <Button
+                            variant="primary"
+                            onClick={() => {
+                              handleRegisterLibrary(item?.isbn13);
+                            }}
+                          >
+                            내 서재 담기
+                          </Button>
+                        )}
                       </List.Item.Trailing>
                     </List.Item>
                   );
