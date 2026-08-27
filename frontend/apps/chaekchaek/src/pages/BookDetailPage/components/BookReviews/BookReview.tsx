@@ -25,7 +25,8 @@ import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
 
-export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookReviewProps) => {
+export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
+  const isSpoilerVisible = false;
   const getReviewsReviewIdRepliesLoadData = useCallback(() => {
     return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
   }, [review.reviewId]);
