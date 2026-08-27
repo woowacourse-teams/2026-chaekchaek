@@ -108,7 +108,7 @@ export type { Props as BadgeProps } from './components/Badge';
 export * as Icon from './components/Icon';
 export type { Props as IconProps } from './components/Icon';
 
-export * as IconButton from './components/IconButton';
+export { IconButton } from './components/IconButton';
 export type { Props as IconButtonProps } from './components/IconButton';
 
 export { View } from './components/View';
