@@ -44,16 +44,26 @@ internal fun List<RatedBookUiModel>.withRecentRating(
     (filterNot { it.bookId == bookId } + RatedBookUiModel(bookId, title, rating, ratedAtLabel)).takeLast(3)
 
 sealed interface BookDetailAuthenticatedAction {
+    val requiresMember: Boolean get() = true
+
     data object AddToLibrary : BookDetailAuthenticatedAction
     data object OpenPageInput : BookDetailAuthenticatedAction
     data object OpenRating : BookDetailAuthenticatedAction
-    data object OpenReview : BookDetailAuthenticatedAction
+    data object OpenReview : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
     data object OpenMineFeed : BookDetailAuthenticatedAction
     data class ChangeStatus(val status: ReadingStatus) : BookDetailAuthenticatedAction
     data class SavePage(val page: Int) : BookDetailAuthenticatedAction
-    data class LikeReview(val reviewId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction
-    data class CreateReply(val reviewId: Long, val content: String) : BookDetailAuthenticatedAction
-    data class LikeReply(val replyId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction
+    data class LikeReview(val reviewId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
+    data class CreateReply(val reviewId: Long, val content: String) : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
+    data class LikeReply(val replyId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
 }
 
 data class BookDetailUiState(

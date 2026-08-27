@@ -2,23 +2,30 @@ package com.chaekchaek.app.ui.bookdetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
+import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
+import com.chaekchaek.app.data.remote.WriteCredential
 import com.chaekchaek.app.domain.rating.Rating
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import io.ktor.client.plugins.ResponseException
+import io.ktor.http.HttpStatusCode
 import kotlin.coroutines.cancellation.CancellationException
 
 class BookDetailViewModel(
     private val repository: BookDetailRemoteRepository,
     private val libraryRepository: LibraryRemoteRepository,
+    private val authPlatform: AuthPlatformCallbacks,
+    private val authRepository: MobileAuthRemoteRepository = MobileAuthRemoteRepository(),
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(BookDetailUiState())
     val uiState: StateFlow<BookDetailUiState> = _uiState.asStateFlow()
@@ -50,7 +57,7 @@ class BookDetailViewModel(
     }
 
     fun requestAuthentication(action: BookDetailAuthenticatedAction): Boolean {
-        if (accessToken != null) return true
+        if (accessToken != null || !action.requiresMember) return true
         _uiState.value = _uiState.value.copy(pendingAction = action)
         return false
     }
@@ -94,7 +101,7 @@ class BookDetailViewModel(
                         _uiState.value = _uiState.value.copy(isLoadingMore = loading)
                     },
                 ) {
-                    repository.reviews(bookId, requestedScope, requestedSort, accessToken, page)
+                    repository.reviews(bookId, requestedScope, requestedSort, readCredential(), page)
                 }
             }.onSuccess { result ->
                 val current = _uiState.value
@@ -132,23 +139,25 @@ class BookDetailViewModel(
     }
 
     fun createReview(request: ReviewCreateRequest) = mutate {
-        repository.createReview(bookIdForWrite(), request, requireToken())
+        publicWrite(retryUnauthorized = true) { repository.createReview(bookIdForPublicWrite(), request, it) }
     }
 
     fun likeReview(reviewId: Long, likedByMe: Boolean) = mutate {
-        if (likedByMe) repository.unlikeReview(reviewId, requireToken())
-        else repository.likeReview(reviewId, requireToken())
+        publicWrite(retryUnauthorized = !likedByMe) { credential ->
+            if (likedByMe) repository.unlikeReview(reviewId, credential)
+            else repository.likeReview(reviewId, credential)
+        }
     }
 
     fun createReply(reviewId: Long, content: String) = mutate {
-        repository.createReply(reviewId, content, requireToken())
+        publicWrite(retryUnauthorized = true) { repository.createReply(reviewId, content, it) }
     }
 
     fun loadReplies(reviewId: Long) {
         repliesJob?.cancel()
         repliesJob = viewModelScope.launch {
             runCatching {
-                loadAllReplies { page -> repository.replies(reviewId, accessToken, page) }
+                loadAllReplies { page -> repository.replies(reviewId, readCredential(), page) }
             }.onSuccess { replies ->
                 _uiState.value = _uiState.value.copy(
                     reviews = _uiState.value.reviews.map { review ->
@@ -160,8 +169,10 @@ class BookDetailViewModel(
     }
 
     fun likeReply(replyId: Long, likedByMe: Boolean) = mutate {
-        if (likedByMe) repository.unlikeReply(replyId, requireToken())
-        else repository.likeReply(replyId, requireToken())
+        publicWrite(retryUnauthorized = !likedByMe) { credential ->
+            if (likedByMe) repository.unlikeReply(replyId, credential)
+            else repository.likeReply(replyId, credential)
+        }
     }
 
     private fun reload() {
@@ -175,13 +186,13 @@ class BookDetailViewModel(
                     },
                 ) {
                     val detail = book.isbn13.takeIf(String::isNotBlank)
-                        ?.let { repository.detail(it, accessToken) }
+                        ?.let { repository.detail(it, readCredential()) }
                     val reviews = detail?.bookId?.let { bookId ->
                         repository.reviews(
                             bookId,
                             _uiState.value.reviewScope,
                             _uiState.value.reviewSort,
-                            accessToken,
+                            readCredential(),
                         )
                     }
                     detail to reviews
@@ -211,7 +222,7 @@ class BookDetailViewModel(
                         bookId,
                         _uiState.value.reviewScope,
                         _uiState.value.reviewSort,
-                        accessToken,
+                        readCredential(),
                     )
                 }
             }.onSuccess { reviews ->
@@ -252,8 +263,49 @@ class BookDetailViewModel(
 
     private fun requireToken(): String = requireNotNull(accessToken)
 
+    private fun readCredential(): WriteCredential? =
+        accessToken?.let { WriteCredential.Member(it) }
+            ?: authPlatform.readGuest()?.token?.let { WriteCredential.Guest(it) }
+
+    private fun bookIdForPublicWrite(): Long = requireNotNull(
+        _uiState.value.detail?.bookId ?: _uiState.value.book?.bookId,
+    )
+
+    private suspend fun writeCredential(): WriteCredential = readCredential() ?: issueGuestCredential()
+
+    private suspend fun issueGuestCredential(): WriteCredential.Guest {
+        val guest = authRepository.issueGuest()
+        authPlatform.writeGuest(guest)
+        return WriteCredential.Guest(guest.token)
+    }
+
+    private suspend fun <T> publicWrite(
+        retryUnauthorized: Boolean,
+        request: suspend (WriteCredential) -> T,
+    ): T {
+        val credential = writeCredential()
+        return try {
+            request(credential)
+        } catch (error: Throwable) {
+            if (credential !is WriteCredential.Guest || !error.isUnauthorized()) throw error
+            if (!retryUnauthorized) throw GuestOwnershipLostException()
+            request(issueGuestCredential())
+        }
+    }
+
     private fun handleFailure(error: Throwable) {
         if (error is CancellationException) throw error
-        _uiState.value = _uiState.value.copy(requestError = "요청을 처리하지 못했어요. 다시 시도해 주세요.")
+        _uiState.value = _uiState.value.copy(
+            requestError = if (error is GuestOwnershipLostException) {
+                "이 기기에서는 더 이상 수정할 수 없습니다."
+            } else {
+                "요청을 처리하지 못했어요. 다시 시도해 주세요."
+            },
+        )
     }
 }
+
+private class GuestOwnershipLostException : RuntimeException()
+
+private fun Throwable.isUnauthorized(): Boolean =
+    this is ResponseException && response.status == HttpStatusCode.Unauthorized

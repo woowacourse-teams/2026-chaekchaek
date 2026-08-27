@@ -19,23 +19,23 @@ class BookDetailRemoteRepository(
   private val client: HttpClient = createHttpClient(),
 ) {
 
-  suspend fun detail(isbn13: String, accessToken: String? = null): BookDetail =
+  suspend fun detail(isbn13: String, credential: WriteCredential? = null): BookDetail =
     client.get("$BASE_URL/api/v1/books/by-isbn/$isbn13") {
-      accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+      credential?.let { authenticate(it) }
     }.body<BookDetailDto>().toBookDetail()
 
   suspend fun reviews(
     bookId: Long,
     scope: ReviewScope,
     sort: ReviewSort,
-    accessToken: String? = null,
+    credential: WriteCredential? = null,
     page: Int = FIRST_PAGE,
   ): ReviewPage =
     client.get("$BASE_URL/api/v1/books/$bookId/reviews") {
       parameter("page", page)
       parameter("feed", scope.name)
       parameter("sort", sort.name)
-      accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+      credential?.let { authenticate(it) }
     }.body<ReviewPageDto>().toReviewPage()
 
   suspend fun addToLibrary(isbn13: String, totalPages: Int?, accessToken: String): LibraryRecord =
@@ -58,45 +58,48 @@ class BookDetailRemoteRepository(
       authenticatedJson(accessToken, RatingRequest(rating))
     }.body<LibraryRecordDto>().toLibraryRecord()
 
-  suspend fun createReview(bookId: Long, request: ReviewCreateRequest, accessToken: String): BookReview =
+  suspend fun createReview(bookId: Long, request: ReviewCreateRequest, credential: WriteCredential): BookReview =
     client.post("$BASE_URL/api/v1/books/$bookId/reviews") {
-      authenticatedJson(accessToken, request)
+      authenticatedJson(
+        credential,
+        if (credential is WriteCredential.Guest) request.copy(currentPage = null, totalPages = null) else request,
+      )
     }.body<ReviewDto>().toBookReview()
 
   suspend fun replies(
     reviewId: Long,
-    accessToken: String? = null,
+    credential: WriteCredential? = null,
     page: Int = FIRST_PAGE,
   ): ReplyPage =
     client.get("$BASE_URL/api/v1/reviews/$reviewId/replies") {
       parameter("page", page)
-      accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+      credential?.let { authenticate(it) }
     }.body<ReplyPageDto>().toReplyPage()
 
-  suspend fun likeReview(reviewId: Long, accessToken: String): ReactionResult =
+  suspend fun likeReview(reviewId: Long, credential: WriteCredential): ReactionResult =
     client.post("$BASE_URL/api/v1/reviews/$reviewId/reactions") {
-      header(HttpHeaders.Authorization, "Bearer $accessToken")
+      authenticate(credential)
     }.body<ReactionDto>().toReactionResult()
 
-  suspend fun unlikeReview(reviewId: Long, accessToken: String) {
+  suspend fun unlikeReview(reviewId: Long, credential: WriteCredential) {
     client.delete("$BASE_URL/api/v1/reviews/$reviewId/reactions") {
-      header(HttpHeaders.Authorization, "Bearer $accessToken")
+      authenticate(credential)
     }
   }
 
-  suspend fun createReply(reviewId: Long, content: String, accessToken: String): ReviewReply =
+  suspend fun createReply(reviewId: Long, content: String, credential: WriteCredential): ReviewReply =
     client.post("$BASE_URL/api/v1/reviews/$reviewId/replies") {
-      authenticatedJson(accessToken, ReplyCreateRequest(content))
+      authenticatedJson(credential, ReplyCreateRequest(content))
     }.body<ReviewReplyDto>().toReviewReply()
 
-  suspend fun likeReply(replyId: Long, accessToken: String): ReactionResult =
+  suspend fun likeReply(replyId: Long, credential: WriteCredential): ReactionResult =
     client.post("$BASE_URL/api/v1/replies/$replyId/reactions") {
-      header(HttpHeaders.Authorization, "Bearer $accessToken")
+      authenticate(credential)
     }.body<ReactionDto>().toReactionResult()
 
-  suspend fun unlikeReply(replyId: Long, accessToken: String) {
+  suspend fun unlikeReply(replyId: Long, credential: WriteCredential) {
     client.delete("$BASE_URL/api/v1/replies/$replyId/reactions") {
-      header(HttpHeaders.Authorization, "Bearer $accessToken")
+      authenticate(credential)
     }
   }
 
@@ -104,6 +107,19 @@ class BookDetailRemoteRepository(
     header(HttpHeaders.Authorization, "Bearer $accessToken")
     contentType(ContentType.Application.Json)
     setBody(body)
+  }
+
+  private fun io.ktor.client.request.HttpRequestBuilder.authenticatedJson(
+    credential: WriteCredential,
+    body: Any,
+  ) {
+    authenticate(credential)
+    contentType(ContentType.Application.Json)
+    setBody(body)
+  }
+
+  private fun io.ktor.client.request.HttpRequestBuilder.authenticate(credential: WriteCredential) {
+    header(credential.headerName, credential.headerValue)
   }
 
   private companion object {

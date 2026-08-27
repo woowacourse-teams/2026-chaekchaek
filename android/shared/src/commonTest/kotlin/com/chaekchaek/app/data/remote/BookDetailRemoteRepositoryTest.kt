@@ -7,6 +7,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
@@ -113,11 +114,12 @@ class BookDetailRemoteRepositoryTest {
       },
     )
 
-    val replies = repository.replies(reviewId = 7, accessToken = "test-token", page = 2)
-    val reviewReaction = repository.likeReview(reviewId = 7, accessToken = "test-token")
-    repository.unlikeReview(reviewId = 7, accessToken = "test-token")
-    val replyReaction = repository.likeReply(replyId = 8, accessToken = "test-token")
-    repository.unlikeReply(replyId = 8, accessToken = "test-token")
+    val credential = WriteCredential.Member("test-token")
+    val replies = repository.replies(reviewId = 7, credential = credential, page = 2)
+    val reviewReaction = repository.likeReview(reviewId = 7, credential = credential)
+    repository.unlikeReview(reviewId = 7, credential = credential)
+    val replyReaction = repository.likeReply(replyId = 8, credential = credential)
+    repository.unlikeReply(replyId = 8, credential = credential)
 
     assertEquals(8, replies.items.single().replyId)
     assertEquals(true, replies.items.single().likedByMe)
@@ -134,6 +136,90 @@ class BookDetailRemoteRepositoryTest {
       ),
       requests,
     )
+  }
+
+  @Test
+  fun `회원과 게스트 쓰기 자격을 각각 올바른 헤더로 보낸다`() = runTest {
+    val headers = mutableListOf<Pair<String?, String?>>()
+    val engine = MockEngine { request ->
+      headers += request.headers[HttpHeaders.Authorization] to
+        request.headers[WriteCredential.GUEST_TOKEN_HEADER]
+      respond(
+        content = """{"likeCount":1,"likedByMe":true}""",
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+      )
+    }
+    val repository = BookDetailRemoteRepository(
+      HttpClient(engine) {
+        expectSuccess = true
+        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+      },
+    )
+
+    repository.likeReview(7, WriteCredential.Member("member-token"))
+    repository.likeReview(7, WriteCredential.Guest("guest-token"))
+
+    assertEquals(
+      listOf("Bearer member-token" to null, null to "guest-token"),
+      headers,
+    )
+  }
+
+  @Test
+  fun `게스트 감상 작성 본문에서는 쪽수 필드를 제외한다`() = runTest {
+    val bodies = mutableListOf<String>()
+    val engine = MockEngine { request ->
+      bodies += (request.body as TextContent).text
+      respond(
+        content = """{"reviewId":7,"content":"감상","createdAt":"2026-08-27T00:00:00Z","author":{"displayName":"게스트","anonymous":false,"mine":true,"actorType":"GUEST"},"replyCount":0,"likeCount":0,"deleted":false}""",
+        status = HttpStatusCode.Created,
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+      )
+    }
+    val repository = BookDetailRemoteRepository(
+      HttpClient(engine) {
+        expectSuccess = true
+        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+      },
+    )
+    val request = ReviewCreateRequest("감상", currentPage = 10, totalPages = 100)
+
+    repository.createReview(42, request, WriteCredential.Member("member"))
+    repository.createReview(42, request, WriteCredential.Guest("guest"))
+
+    assertEquals(true, bodies.first().contains("\"currentPage\":10"))
+    assertEquals(true, bodies.first().contains("\"totalPages\":100"))
+    assertEquals(false, bodies.last().contains("currentPage"))
+    assertEquals(false, bodies.last().contains("totalPages"))
+  }
+
+  @Test
+  fun `상세와 감상 답글 조회에 게스트 토큰을 보낸다`() = runTest {
+    val sentGuestTokens = mutableListOf<String?>()
+    val engine = MockEngine { request ->
+      sentGuestTokens += request.headers[WriteCredential.GUEST_TOKEN_HEADER]
+      val content = when {
+        request.url.encodedPath.endsWith("/by-isbn/9780000000042") ->
+          """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":""}"""
+        request.url.encodedPath.endsWith("/reviews/7/replies") ->
+          """{"totalCount":0,"items":[]}"""
+        else -> """{"totalCount":0,"items":[]}"""
+      }
+      respond(content, headers = headersOf(HttpHeaders.ContentType, "application/json"))
+    }
+    val repository = BookDetailRemoteRepository(
+      HttpClient(engine) {
+        expectSuccess = true
+        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+      },
+    )
+    val guest = WriteCredential.Guest("guest-token")
+
+    repository.detail("9780000000042", guest)
+    repository.reviews(42, ReviewScope.ALL, ReviewSort.LATEST, guest)
+    repository.replies(7, guest)
+
+    assertEquals(listOf<String?>("guest-token", "guest-token", "guest-token"), sentGuestTokens)
   }
 
   @Test

@@ -109,7 +109,9 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                     )
                 }
                 entry<BookDetailKey> { key ->
-                    val viewModel = remember(key.book) { BookDetailViewModel(detailRepository, libraryRepository) }
+                    val viewModel = remember(key.book) {
+                        BookDetailViewModel(detailRepository, libraryRepository, authPlatform)
+                    }
                     val state by viewModel.uiState.collectAsState()
                     val displayBook = state.displayBook ?: key.book
                     val archivedBook = archiveState.items.firstOrNull {
