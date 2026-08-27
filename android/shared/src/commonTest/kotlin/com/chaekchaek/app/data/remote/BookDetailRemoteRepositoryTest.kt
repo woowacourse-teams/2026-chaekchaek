@@ -223,6 +223,51 @@ class BookDetailRemoteRepositoryTest {
   }
 
   @Test
+  fun `감상과 답글 수정 삭제는 계약의 메서드와 경로를 사용한다`() = runTest {
+    val requests = mutableListOf<Pair<HttpMethod, String>>()
+    val patchBodies = mutableListOf<String>()
+    val engine = MockEngine { request ->
+      requests += request.method to request.url.toString()
+      if (request.method == HttpMethod.Patch) patchBodies += (request.body as TextContent).text
+      val content = if (request.url.encodedPath.contains("/replies/")) {
+        """{"replyId":8,"content":"수정 답글","author":{"displayName":"게스트","anonymous":false,"mine":true,"actorType":"GUEST"},"likeCount":0,"likedByMe":false,"deleted":false}"""
+      } else {
+        """{"reviewId":7,"content":"수정 감상","createdAt":"2026-08-27T00:00:00Z","author":{"displayName":"게스트","anonymous":false,"mine":true,"actorType":"GUEST"},"replyCount":0,"likeCount":0,"likedByMe":false,"isSpoiler":false,"recentReplies":[],"deleted":false}"""
+      }
+      if (request.method == HttpMethod.Delete) {
+        respond("", HttpStatusCode.NoContent)
+      } else {
+        respond(content, headers = headersOf(HttpHeaders.ContentType, "application/json"))
+      }
+    }
+    val repository = BookDetailRemoteRepository(testClient(engine))
+    val guest = WriteCredential.Guest("guest-token")
+
+    repository.updateReview(
+      7,
+      ReviewCreateRequest("수정 감상", quote = null, chapter = null, currentPage = 10, totalPages = 100),
+      guest,
+    )
+    repository.deleteReview(7, guest)
+    repository.updateReply(8, "수정 답글", guest)
+    repository.deleteReply(8, guest)
+
+    assertEquals(
+      listOf(
+        HttpMethod.Patch to "https://api.chaekchaek.com/api/v1/reviews/7",
+        HttpMethod.Delete to "https://api.chaekchaek.com/api/v1/reviews/7",
+        HttpMethod.Patch to "https://api.chaekchaek.com/api/v1/replies/8",
+        HttpMethod.Delete to "https://api.chaekchaek.com/api/v1/replies/8",
+      ),
+      requests,
+    )
+    assertEquals(true, patchBodies.first().contains("\"quote\":null"))
+    assertEquals(true, patchBodies.first().contains("\"chapter\":null"))
+    assertEquals(false, patchBodies.first().contains("currentPage"))
+    assertEquals(false, patchBodies.first().contains("totalPages"))
+  }
+
+  @Test
   fun `상세 서재 기록의 비어 있는 현재 페이지는 0으로 변환한다`() {
     val record = BookDetailRecordDto(status = "WANT_TO_READ", currentPage = null, myRating = null)
       .toLibraryRecord()
@@ -237,5 +282,10 @@ class BookDetailRemoteRepositoryTest {
       .toLibraryRecord()
 
     assertEquals(10, record.bookId)
+  }
+
+  private fun testClient(engine: MockEngine) = HttpClient(engine) {
+    expectSuccess = true
+    install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
   }
 }

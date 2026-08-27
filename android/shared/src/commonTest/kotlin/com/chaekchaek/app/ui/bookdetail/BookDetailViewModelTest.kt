@@ -12,6 +12,7 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
@@ -157,6 +158,83 @@ class BookDetailViewModelTest {
     assertEquals(1, writeCount)
     assertEquals(0, issueCount)
     assertEquals("이 기기에서는 더 이상 수정할 수 없습니다.", viewModel.uiState.value.requestError)
+  }
+
+  @Test
+  fun `게스트 감상 삭제 401은 재발급하지 않는다`() = runViewModelTest {
+    var issueCount = 0
+    var writeCount = 0
+    val writeEngine = MockEngine {
+      writeCount += 1
+      respond("", HttpStatusCode.Unauthorized)
+    }
+    val authEngine = MockEngine {
+      issueCount += 1
+      error("게스트 토큰을 재발급하면 안 됨")
+    }
+    val viewModel = viewModel(
+      testClient(writeEngine),
+      testClient(authEngine),
+      platform(readGuest = { guest("old") }),
+    )
+
+    viewModel.deleteReview(reviewId = 7)
+    awaitReal { viewModel.uiState.first { it.requestError != null } }
+
+    assertEquals(1, writeCount)
+    assertEquals(0, issueCount)
+    assertEquals("이 기기에서는 더 이상 수정할 수 없습니다.", viewModel.uiState.value.requestError)
+  }
+
+  @Test
+  fun `첫 감상 작성 시도에서 게스트 닉네임을 발급한 뒤 시트를 준비한다`() = runViewModelTest {
+    var guest: GuestAuth? = null
+    val ready = CompletableDeferred<Unit>()
+    val client = testClient(MockEngine {
+      respond(
+        content = """{"guestToken":"new","nickname":"다정한 파란 참새","expiresAt":"2026-09-25T09:00:00"}""",
+        status = HttpStatusCode.Created,
+        headers = jsonHeaders(),
+      )
+    })
+    val viewModel = viewModel(client, client, platform({ guest }, { guest = it }))
+
+    viewModel.openReviewComposer { ready.complete(Unit) }
+    awaitReal { ready.await() }
+
+    assertTrue(ready.isCompleted)
+    assertEquals("다정한 파란 참새", guest?.nickname)
+    assertEquals("다정한 파란 참새", viewModel.uiState.value.guestNickname)
+  }
+
+  @Test
+  fun `감상 삭제 성공은 재조회 없이 목록에서 제거한다`() = runViewModelTest {
+    var reviewGetCount = 0
+    val engine = MockEngine { request ->
+      when {
+        request.method == HttpMethod.Delete -> respond("", HttpStatusCode.NoContent)
+        request.url.encodedPath.contains("/by-isbn/") -> respond(
+          """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":""}""",
+          headers = jsonHeaders(),
+        )
+        else -> {
+          reviewGetCount += 1
+          respond(
+            """{"totalCount":1,"nextPage":null,"items":[$REVIEW_RESPONSE]}""",
+            headers = jsonHeaders(),
+          )
+        }
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { guest("old") }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = null)
+    awaitReal { viewModel.uiState.first { it.reviews.isNotEmpty() } }
+
+    viewModel.deleteReview(reviewId = 7)
+    awaitReal { viewModel.uiState.first { it.reviews.isEmpty() && it.reviewCount == 0 } }
+
+    assertEquals(1, reviewGetCount)
   }
 
   private fun viewModel(

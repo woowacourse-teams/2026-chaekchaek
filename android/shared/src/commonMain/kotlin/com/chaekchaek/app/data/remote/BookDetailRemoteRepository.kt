@@ -14,6 +14,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 class BookDetailRemoteRepository(
   private val client: HttpClient = createHttpClient(),
@@ -66,6 +70,23 @@ class BookDetailRemoteRepository(
       )
     }.body<ReviewDto>().toBookReview()
 
+  suspend fun updateReview(
+    reviewId: Long,
+    request: ReviewCreateRequest,
+    credential: WriteCredential,
+  ): BookReview =
+    client.patch("$BASE_URL/api/v1/reviews/$reviewId") {
+      authenticate(credential)
+      contentType(ContentType.Application.Json)
+      setBody(request.toUpdateBody(includeReadingProgress = credential is WriteCredential.Member))
+    }.body<ReviewDto>().toBookReview()
+
+  suspend fun deleteReview(reviewId: Long, credential: WriteCredential) {
+    client.delete("$BASE_URL/api/v1/reviews/$reviewId") {
+      authenticate(credential)
+    }
+  }
+
   suspend fun replies(
     reviewId: Long,
     credential: WriteCredential? = null,
@@ -91,6 +112,17 @@ class BookDetailRemoteRepository(
     client.post("$BASE_URL/api/v1/reviews/$reviewId/replies") {
       authenticatedJson(credential, ReplyCreateRequest(content))
     }.body<ReviewReplyDto>().toReviewReply()
+
+  suspend fun updateReply(replyId: Long, content: String, credential: WriteCredential): ReviewReply =
+    client.patch("$BASE_URL/api/v1/replies/$replyId") {
+      authenticatedJson(credential, ReplyCreateRequest(content))
+    }.body<ReviewReplyDto>().toReviewReply()
+
+  suspend fun deleteReply(replyId: Long, credential: WriteCredential) {
+    client.delete("$BASE_URL/api/v1/replies/$replyId") {
+      authenticate(credential)
+    }
+  }
 
   suspend fun likeReply(replyId: Long, credential: WriteCredential): ReactionResult =
     client.post("$BASE_URL/api/v1/replies/$replyId/reactions") {
@@ -125,6 +157,17 @@ class BookDetailRemoteRepository(
   private companion object {
     const val BASE_URL = "https://api.chaekchaek.com"
     const val FIRST_PAGE = 1
+  }
+}
+
+private fun ReviewCreateRequest.toUpdateBody(includeReadingProgress: Boolean) = buildJsonObject {
+  put("content", content)
+  put("quote", quote?.let(::JsonPrimitive) ?: JsonNull)
+  put("chapter", chapter?.let(::JsonPrimitive) ?: JsonNull)
+  put("isSpoiler", isSpoiler)
+  if (includeReadingProgress) {
+    put("currentPage", currentPage?.let(::JsonPrimitive) ?: JsonNull)
+    put("totalPages", totalPages?.let(::JsonPrimitive) ?: JsonNull)
   }
 }
 

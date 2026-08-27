@@ -38,21 +38,29 @@ class BookDetailViewModel(
 
     fun open(book: BookDetailArgs, accessToken: String?) {
         this.accessToken = accessToken
-        _uiState.value = BookDetailUiState(book = book, signedIn = accessToken != null)
+        _uiState.value = BookDetailUiState(
+            book = book,
+            signedIn = accessToken != null,
+            guestNickname = accessToken?.let { null } ?: authPlatform.readGuest()?.nickname,
+        )
         reload()
     }
 
     fun authenticate(accessToken: String): BookDetailAuthenticatedAction? {
         this.accessToken = accessToken
         val pending = _uiState.value.pendingAction
-        _uiState.value = _uiState.value.copy(signedIn = true, pendingAction = null)
+        _uiState.value = _uiState.value.copy(signedIn = true, pendingAction = null, guestNickname = null)
         reload()
         return pending
     }
 
     fun signOut() {
         accessToken = null
-        _uiState.value = _uiState.value.copy(signedIn = false, pendingAction = null)
+        _uiState.value = _uiState.value.copy(
+            signedIn = false,
+            pendingAction = null,
+            guestNickname = authPlatform.readGuest()?.nickname,
+        )
         reload()
     }
 
@@ -115,7 +123,7 @@ class BookDetailViewModel(
         }
     }
 
-    fun toggleLibrary(savedBookId: Long?, onSuccess: () -> Unit = {}) = mutate(onSuccess) {
+    fun toggleLibrary(savedBookId: Long?, onSuccess: () -> Unit = {}) = mutate(onSuccess = { onSuccess() }) {
         val state = _uiState.value
         if (savedBookId == null) {
             val book = requireNotNull(state.displayBook)
@@ -134,12 +142,46 @@ class BookDetailViewModel(
         repository.updateCurrentPage(bookIdForWrite(), page, totalPages, requireToken())
     }
 
-    fun saveRating(rating: Rating, onSuccess: () -> Unit = {}) = mutate(onSuccess) {
+    fun saveRating(rating: Rating, onSuccess: () -> Unit = {}) = mutate(onSuccess = { onSuccess() }) {
         repository.rate(bookIdForWrite(), rating.score.toDouble(), requireToken())
     }
 
     fun createReview(request: ReviewCreateRequest) = mutate {
         publicWrite(retryUnauthorized = true) { repository.createReview(bookIdForPublicWrite(), request, it) }
+    }
+
+    fun openReviewComposer(onReady: () -> Unit) {
+        authPlatform.readGuest()?.let {
+            _uiState.value = _uiState.value.copy(guestNickname = it.nickname)
+        }
+        if (accessToken != null || readCredential() != null) {
+            onReady()
+            return
+        }
+        mutate(onSuccess = { onReady() }, reloadAfterSuccess = false) { issueGuestCredential() }
+    }
+
+    fun updateReview(reviewId: Long, request: ReviewCreateRequest) = mutate(
+        onSuccess = { updated ->
+            _uiState.value = _uiState.value.copy(
+                reviews = _uiState.value.reviews.map { if (it.reviewId == reviewId) updated else it },
+            )
+        },
+        reloadAfterSuccess = false,
+    ) {
+        publicWrite(retryUnauthorized = false) { repository.updateReview(reviewId, request, it) }
+    }
+
+    fun deleteReview(reviewId: Long) = mutate(
+        onSuccess = {
+            _uiState.value = _uiState.value.copy(
+                reviews = _uiState.value.reviews.filterNot { it.reviewId == reviewId },
+                reviewCount = (_uiState.value.reviewCount - 1).coerceAtLeast(0),
+            )
+        },
+        reloadAfterSuccess = false,
+    ) {
+        publicWrite(retryUnauthorized = false) { repository.deleteReview(reviewId, it) }
     }
 
     fun likeReview(reviewId: Long, likedByMe: Boolean) = mutate {
@@ -151,6 +193,37 @@ class BookDetailViewModel(
 
     fun createReply(reviewId: Long, content: String) = mutate {
         publicWrite(retryUnauthorized = true) { repository.createReply(reviewId, content, it) }
+    }
+
+    fun updateReply(replyId: Long, content: String) = mutate(
+        onSuccess = { updated ->
+            _uiState.value = _uiState.value.copy(
+                reviews = _uiState.value.reviews.map { review ->
+                    review.copy(
+                        recentReplies = review.recentReplies.map { if (it.replyId == replyId) updated else it },
+                    )
+                },
+            )
+        },
+        reloadAfterSuccess = false,
+    ) {
+        publicWrite(retryUnauthorized = false) { repository.updateReply(replyId, content, it) }
+    }
+
+    fun deleteReply(replyId: Long) = mutate(
+        onSuccess = {
+            _uiState.value = _uiState.value.copy(
+                reviews = _uiState.value.reviews.map { review ->
+                    if (review.recentReplies.none { it.replyId == replyId }) review else review.copy(
+                        recentReplies = review.recentReplies.filterNot { it.replyId == replyId },
+                        replyCount = (review.replyCount - 1).coerceAtLeast(0),
+                    )
+                },
+            )
+        },
+        reloadAfterSuccess = false,
+    ) {
+        publicWrite(retryUnauthorized = false) { repository.deleteReply(replyId, it) }
     }
 
     fun loadReplies(reviewId: Long) {
@@ -235,7 +308,11 @@ class BookDetailViewModel(
         }
     }
 
-    private fun mutate(onSuccess: () -> Unit = {}, action: suspend () -> Unit) {
+    private fun <T> mutate(
+        onSuccess: (T) -> Unit = {},
+        reloadAfterSuccess: Boolean = true,
+        action: suspend () -> T,
+    ) {
         if (mutationJob?.isActive == true) return
         mutationJob = viewModelScope.launch {
             runCatching {
@@ -245,9 +322,9 @@ class BookDetailViewModel(
                     },
                     request = action,
                 )
-            }.onSuccess {
-                onSuccess()
-                reload()
+            }.onSuccess { result ->
+                onSuccess(result)
+                if (reloadAfterSuccess) reload()
             }.onFailure(::handleFailure)
         }
     }
@@ -276,6 +353,7 @@ class BookDetailViewModel(
     private suspend fun issueGuestCredential(): WriteCredential.Guest {
         val guest = authRepository.issueGuest()
         authPlatform.writeGuest(guest)
+        _uiState.value = _uiState.value.copy(guestNickname = guest.nickname)
         return WriteCredential.Guest(guest.token)
     }
 
