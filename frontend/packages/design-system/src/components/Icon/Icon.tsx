@@ -11,7 +11,7 @@ import type { Props } from './';
 const classnameDefault = 'ui-Icon';
 
 export const Icon = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, sx, style, ...restProps } = props;
+  const { as = 'span', className, sx, style, ...restProps } = props;
 
   const modifiers = {};
 
