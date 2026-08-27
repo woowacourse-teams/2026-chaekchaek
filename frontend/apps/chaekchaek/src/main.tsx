@@ -5,6 +5,7 @@ import { AppProviders } from '@/providers/AppProvider';
 import { enableMocking } from '@/mocks/msw/browser';
 
 import { initializeGA } from '@/analytics/ga';
+import { initializeErrorTracking } from '@/monitoring';
 
 import { App } from '@/App';
 
@@ -18,6 +19,7 @@ if (__DEV__) {
 
 if (!__DEV__) {
   initializeGA();
+  initializeErrorTracking();
 }
 
 const root = createRoot(container);
