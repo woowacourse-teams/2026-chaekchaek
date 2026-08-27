@@ -54,6 +54,15 @@
 - 500ms가 지나도 요청 중이면 로딩 인디케이터를 표시한다.
 - 표시 후에는 최소 노출 시간을 두지 않고 API 응답 즉시 닫는다.
 
+## OpenAPI 최신성 확인 (2026-08-27)
+
+- API 계약의 단일 원본은
+  [`https://api.chaekchaek.com/docs/openapi3.yaml`](https://api.chaekchaek.com/docs/openapi3.yaml)이다.
+- API 구현, 화면 기획서 작성과 API 연결 QA를 시작하기 전에 원격 원본과
+  `android/openapi3.yaml`을 비교하고, 다르면 로컬 파일을 원격 원본으로 갱신한 뒤 작업한다.
+- 원격 원본을 확인할 수 없으면 로컬 파일을 최신이라고 간주하지 말고, 확인하지 못한 계약과
+  그 영향을 사용자에게 알린다.
+
 ## Android 앱 버전 및 릴리스 커밋 (2026-08-21)
 
 - 앱 버전의 단일 출처는 `app/build.gradle.kts`의 `defaultConfig`에 있는 `versionCode`와
