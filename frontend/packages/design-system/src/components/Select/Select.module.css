@@ -8,6 +8,15 @@
   font-weight: 400;
 }
 
+.root:not(li)::after {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: 4px;
+  content: '';
+}
+
 .box {
   box-sizing: border-box;
   display: inline-flex;

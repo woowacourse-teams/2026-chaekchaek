@@ -43,6 +43,8 @@
   font-weight: 400;
   line-height: normal;
   white-space: nowrap;
+
+  width: 100%;
 }
 
 .ui-Shell-Trailing {

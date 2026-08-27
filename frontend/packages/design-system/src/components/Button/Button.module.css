@@ -27,8 +27,6 @@
   padding: 0;
   border-color: transparent;
   border-radius: 0;
-  padding-left: 10px; 
-  padding-right: 10px;
   background: transparent;
 }
 
@@ -99,6 +97,13 @@
   padding-inline: 24px;
   font-size: 14px;
   font-weight: 700;
+}
+
+.shape-link.size-small,
+.shape-link.size-medium,
+.shape-link.size-large {
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .root:disabled,
