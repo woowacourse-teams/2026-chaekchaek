@@ -45,7 +45,7 @@ public class HomeService {
 
     @Transactional(readOnly = true)
     public LatestReviewListResponse getLatestReviews() {
-        List<Review> reviews = reviewRepository.findTop10ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
+        List<Review> reviews = reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc();
         Map<Long, Long> replyCounts = replyCountsByReviewId(reviews);
         Map<Long, Book> books = booksById(reviews.stream().map(Review::getBookId).distinct().toList());
         Long currentActorId = currentActorIdOrNull();

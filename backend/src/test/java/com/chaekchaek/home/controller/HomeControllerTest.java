@@ -106,7 +106,7 @@ class HomeControllerTest {
                         responseFields(latestReviewResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("최신 감상 목록 조회")
-                                .description("삭제되지 않은 최신 감상을 최대 10개 조회한다. 조회할 감상이 없으면 빈 배열을 반환한다")
+                                .description("삭제되지 않고 스포일러가 아닌 최신 감상을 최대 10개 조회한다. 조회할 감상이 없으면 빈 배열을 반환한다")
                                 .tag("홈")
                                 .responseFields(latestReviewResponseFields())
                                 .build())));
