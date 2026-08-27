@@ -154,6 +154,7 @@ export default (_, argv) => {
         ...env,
       }),
     ].filter(Boolean),
+    devtool: 'source-map',
     devServer: {
       port: 3000,
       open: true,
