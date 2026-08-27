@@ -1,6 +1,7 @@
 import type { ElementType } from 'react';
 
 import { View } from '#internal/components/View';
+import { resolveSx } from '#internal/systems/index';
 import { createClassName } from '#internal/utils/classname';
 
 import styles from './Pagination.module.css';
@@ -47,7 +48,16 @@ const getPageItems = (currentPage: number, totalPages: number): PageItem[] => {
 };
 
 export const Pagination = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, defaultPage, totalPages, onChange, ...restProps } = props;
+  const {
+    as = 'div',
+    className,
+    defaultPage,
+    totalPages,
+    onChange,
+    sx,
+    style,
+    ...restProps
+  } = props;
   const lastPage = Math.max(1, totalPages);
   const currentPage = Math.min(Math.max(1, defaultPage), lastPage);
   const pageItems = getPageItems(currentPage, lastPage);
@@ -61,12 +71,23 @@ export const Pagination = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const spacingStyle = resolveSx({ sx });
+
+  const customStyles = { ...spacingStyle, ...style };
+
   const handleChangePage = (page: number) => {
     onChange?.(page);
   };
 
   return (
-    <View aria-label="Pagination" as={as} className={classname} role="navigation" {...restProps}>
+    <View
+      aria-label="Pagination"
+      as={as}
+      className={classname}
+      role="navigation"
+      style={customStyles}
+      {...restProps}
+    >
       <Item
         aria-label="Previous page"
         as="button"

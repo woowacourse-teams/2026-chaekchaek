@@ -1,6 +1,7 @@
 import type { ElementType } from 'react';
 
 import { View } from '#internal/components/View';
+import { resolveSx } from '#internal/systems/index';
 import { createClassName } from '#internal/utils/classname';
 
 import styles from './Input.module.css';
@@ -10,7 +11,18 @@ import type { Props } from './';
 const classnameDefault = 'ui-Input';
 
 export const Input = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'input', className, size, block, leading, trailing, reverse, ...restProps } = props;
+  const {
+    as = 'input',
+    className,
+    size,
+    block,
+    leading,
+    trailing,
+    reverse,
+    sx,
+    style,
+    ...restProps
+  } = props;
 
   const modifiers = {
     size: size && styles?.[`size-${size}`],
@@ -27,8 +39,12 @@ export const Input = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const spacingStyle = resolveSx({ sx });
+
+  const customStyles = { ...spacingStyle, ...style };
+
   return (
-    <div className={classname}>
+    <div className={classname} style={customStyles}>
       {leading && <span className={styles.leading}>{leading}</span>}
       <View as={as} {...restProps} />
       {trailing && <span className={styles.trailing}>{trailing}</span>}

@@ -1,6 +1,7 @@
 import type { ElementType } from 'react';
 
 import { View } from '#internal/components/View';
+import { resolveSx } from '#internal/systems/index';
 import { createClassName } from '#internal/utils/classname';
 
 import styles from './Select.module.css';
@@ -11,7 +12,7 @@ import type { Props } from './';
 const classnameDefault = 'ui-Select';
 
 export const Select = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, value, options, onChange, size, ...restProps } = props;
+  const { as = 'div', className, value, options, onChange, size, sx, style, ...restProps } = props;
 
   const modifiers = {
     size: size && styles?.[`size-${size}`],
@@ -24,6 +25,10 @@ export const Select = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const spacingStyle = resolveSx({ sx });
+
+  const customStyles = { ...spacingStyle, ...style };
+
   const selectedOption = options.find((option) => option.value === value);
 
   const handleChange = (value: any) => {
@@ -31,7 +36,7 @@ export const Select = <T extends ElementType>(props: Props<T>) => {
   };
 
   return (
-    <View as={as} className={classname} {...restProps}>
+    <View as={as} className={classname} style={customStyles} {...restProps}>
       <div className={styles.box}>{selectedOption?.text}</div>
       <div className={styles.container}>
         <ul>

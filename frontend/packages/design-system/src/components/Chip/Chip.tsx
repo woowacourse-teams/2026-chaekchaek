@@ -1,6 +1,7 @@
 import type { ElementType } from 'react';
 
 import { View } from '#internal/components/View';
+import { resolveSx } from '#internal/systems/index';
 import { createClassName } from '#internal/utils/classname';
 
 import styles from './Chip.module.css';
@@ -17,6 +18,8 @@ export const Chip = <T extends ElementType>(props: Props<T>) => {
     selected,
     children,
     className,
+    sx,
+    style,
     ...restProps
   } = props;
 
@@ -33,8 +36,12 @@ export const Chip = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const spacingStyle = resolveSx({ sx });
+
+  const customStyles = { ...spacingStyle, ...style };
+
   return (
-    <View as={as} className={classname} {...restProps}>
+    <View as={as} className={classname} style={customStyles} {...restProps}>
       <span className={styles.label}>{children}</span>
     </View>
   );

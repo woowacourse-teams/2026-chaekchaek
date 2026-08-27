@@ -1,6 +1,7 @@
 import type { CSSProperties, ElementType } from 'react';
 
 import { View } from '#internal/components/View';
+import { resolveSx } from '#internal/systems/index';
 import { createClassName } from '#internal/utils/classname';
 
 import styles from './Slider.module.css';
@@ -21,6 +22,7 @@ export const Slider = <T extends ElementType>(props: Props<T>) => {
     defaultValue,
     min = 0,
     max = 100,
+    sx,
     style,
     ...restProps
   } = props;
@@ -37,7 +39,9 @@ export const Slider = <T extends ElementType>(props: Props<T>) => {
   const range = numericMax - numericMin;
   const progress = range > 0 ? ((numericValue - numericMin) / range) * 100 : 0;
   const clampedProgress = Math.min(100, Math.max(0, progress));
+  const spacingStyle = resolveSx({ sx });
   const sliderStyle: SliderStyle = {
+    ...spacingStyle,
     ...style,
     '--slider-progress': `${clampedProgress}%`,
   };

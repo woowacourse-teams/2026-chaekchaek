@@ -1,8 +1,8 @@
 import type { ElementType } from 'react';
 
 import { View } from '#internal/components/View';
-import { createClassName } from '#internal/utils/classname';
 import { resolveSx } from '#internal/systems/index';
+import { createClassName } from '#internal/utils/classname';
 
 import styles from './Title.module.css';
 

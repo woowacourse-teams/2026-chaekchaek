@@ -1,6 +1,7 @@
 import type { ElementType } from 'react';
 
 import { View } from '#internal/components/View';
+import { resolveSx } from '#internal/systems/index';
 import { createClassName } from '#internal/utils/classname';
 
 import styles from './Button.module.css';
@@ -20,6 +21,8 @@ export const Button = <T extends ElementType>(props: Props<T>) => {
     leading,
     trailing,
     className,
+    sx,
+    style,
     ...restProps
   } = props;
 
@@ -37,8 +40,12 @@ export const Button = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const spacingStyle = resolveSx({ sx });
+
+  const customStyles = { ...spacingStyle, ...style };
+
   return (
-    <View as={as} className={classname} {...restProps}>
+    <View as={as} className={classname} style={customStyles} {...restProps}>
       {leading && <span className={styles.leading}>{leading}</span>}
       {children}
       {trailing && <span className={styles.trailing}>{trailing}</span>}
