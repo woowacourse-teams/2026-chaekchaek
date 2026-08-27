@@ -627,7 +627,7 @@ private fun ReadingRecord(
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(Color(0xFFEDE6DC))) {
+        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(ChaekBand)) {
             Box(
                 Modifier.fillMaxWidth(
                     if (book.totalPages > 0) currentPage.toFloat().div(book.totalPages).coerceIn(0f, 1f) else 0f,

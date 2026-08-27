@@ -78,6 +78,9 @@ import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.*
 import com.chaekchaek.app.ui.theme.ChaekBand
+import com.chaekchaek.app.ui.theme.InvisibleCitiesCoverBlock
+import com.chaekchaek.app.ui.theme.InvisibleCitiesCoverInk
+import com.chaekchaek.app.ui.theme.InvisibleCitiesCoverPaper
 import kotlin.math.abs
 import kotlin.random.Random
 import kotlinx.coroutines.delay
@@ -724,7 +727,7 @@ private fun InvisibleCitiesCover(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(2.dp))
-            .background(Color(0xFFF0F0EC))
+            .background(InvisibleCitiesCoverPaper)
             .border(.5.dp, Color.Black.copy(alpha = .12f), RoundedCornerShape(2.dp)),
     ) {
         Text(
@@ -732,7 +735,7 @@ private fun InvisibleCitiesCover(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(start = 7.dp, top = 7.dp),
-            color = Color(0xFF171717),
+            color = InvisibleCitiesCoverInk,
             fontSize = 8.sp,
             lineHeight = 8.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -742,14 +745,14 @@ private fun InvisibleCitiesCover(modifier: Modifier = Modifier) {
                 .offset(x = 27.dp, y = 51.dp)
                 .size(width = 67.dp, height = 73.dp)
                 .graphicsLayer { rotationZ = 8f }
-                .background(Color(0xFF252525)),
+                .background(InvisibleCitiesCoverBlock),
         )
         Text(
             "看不見的城市",
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(start = 8.dp, bottom = 8.dp),
-            color = Color(0xFF252525),
+            color = InvisibleCitiesCoverBlock,
             fontSize = 7.sp,
             fontWeight = FontWeight.Bold,
         )

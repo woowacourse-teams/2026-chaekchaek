@@ -59,9 +59,11 @@ import chaekchaek.shared.generated.resources.ic_close
 import chaekchaek.shared.generated.resources.ic_eye_off
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.ui.theme.ChaekBorder
+import com.chaekchaek.app.ui.theme.ChaekDanger
 import com.chaekchaek.app.ui.theme.ChaekInk
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import com.chaekchaek.app.ui.theme.ChaekSurface
+import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
@@ -145,7 +147,7 @@ internal fun ReviewInputSheet(
         dragHandle = {
             Box(
                 Modifier.padding(top = 10.dp).width(40.dp).height(4.dp)
-                    .clip(RoundedCornerShape(2.dp)).background(Color(0xFFDDDDDD)),
+                    .clip(RoundedCornerShape(2.dp)).background(ChaekBorder),
             )
         },
     ) {
@@ -169,7 +171,7 @@ internal fun ReviewInputSheet(
                     modifier = Modifier.fillMaxWidth().height(40.dp)
                         .toggleable(value = isSpoiler, role = Role.Checkbox) { isSpoiler = it },
                     shape = RoundedCornerShape(6.dp),
-                    color = Color(0xFFF6F2EC),
+                    color = ChaekSurfaceMuted,
                 ) {
                     Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(
@@ -182,7 +184,7 @@ internal fun ReviewInputSheet(
                         Text(
                             "스포일러",
                             modifier = Modifier.padding(start = 8.dp),
-                            color = Color(0xFFC92A24),
+                            color = ChaekDanger,
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.Medium,
                         )
@@ -227,7 +229,7 @@ internal fun ReviewInputSheet(
                     )
                 }
             }
-            Surface(modifier = Modifier.fillMaxWidth().height(40.dp), shape = RoundedCornerShape(6.dp), color = Color(0xFFF6F2EC)) {
+            Surface(modifier = Modifier.fillMaxWidth().height(40.dp), shape = RoundedCornerShape(6.dp), color = ChaekSurfaceMuted) {
                 Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         painterResource(Res.drawable.ic_eye_off),
