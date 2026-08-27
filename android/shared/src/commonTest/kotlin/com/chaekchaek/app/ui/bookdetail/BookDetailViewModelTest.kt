@@ -19,7 +19,9 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -52,13 +54,15 @@ class BookDetailViewModelTest {
     var guest: GuestAuth? = null
     var issueCount = 0
     val sentGuestTokens = mutableListOf<String?>()
-    val writesDone = CompletableDeferred<Unit>()
+    val secondWriteStarted = CompletableDeferred<Unit>()
+    val finishSecondWrite = CompletableDeferred<Unit>()
     val writeEngine = MockEngine { request ->
       sentGuestTokens += request.headers[WriteCredential.GUEST_TOKEN_HEADER]
       if (sentGuestTokens.size == 1) {
         respond("", HttpStatusCode.Unauthorized)
       } else {
-        writesDone.complete(Unit)
+        secondWriteStarted.complete(Unit)
+        finishSecondWrite.await()
         respond(
           content = REVIEW_RESPONSE,
           status = HttpStatusCode.Created,
@@ -83,7 +87,13 @@ class BookDetailViewModelTest {
     advanceUntilIdle()
 
     viewModel.createReview(ReviewCreateRequest("감상", currentPage = 10, totalPages = 100))
-    awaitReal { writesDone.await() }
+    awaitReal { secondWriteStarted.await() }
+    advanceTimeBy(API_LOADING_DELAY_MILLIS)
+    runCurrent()
+    assertTrue(viewModel.uiState.value.isSubmitting)
+    finishSecondWrite.complete(Unit)
+    awaitReal { viewModel.uiState.first { !it.isSubmitting } }
+    advanceUntilIdle()
 
     assertEquals(listOf<String?>("guest-1", "guest-2"), sentGuestTokens)
     assertEquals(2, issueCount)
