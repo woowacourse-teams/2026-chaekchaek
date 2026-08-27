@@ -5,12 +5,20 @@ import webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
+import { sentryWebpackPlugin } from '@sentry/webpack-plugin';
 import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config();
+const envFiles = ['.env', '.env.local', '.env.development', '.env.test', '.env.production'];
+
+for (const file of envFiles) {
+  dotenv.config({
+    path: path.resolve(__dirname, `./${file}`),
+    override: true,
+  });
+}
 
 export default (_, argv) => {
   const isDevelopment = argv.mode === 'development';
@@ -152,6 +160,11 @@ export default (_, argv) => {
       new webpack.DefinePlugin({
         __DEV__: JSON.stringify(isDevelopment),
         ...env,
+      }),
+      sentryWebpackPlugin({
+        org: 'chaeksparow',
+        project: 'typescript-react',
+        authToken: process.env.SENTRY_AUTH_TOKEN,
       }),
     ].filter(Boolean),
     devtool: 'source-map',
