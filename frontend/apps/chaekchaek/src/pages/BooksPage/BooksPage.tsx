@@ -83,6 +83,8 @@ export const BooksPage = () => {
     queryFn: getBooksLoadData,
   });
 
+  const totalPages = data ? Math.ceil(data.totalCount / 10) : 1;
+
   const navigation = useNavigate();
   const handleMove = (isbn: string) => {
     navigation(`/books/${isbn}`);
@@ -178,7 +180,7 @@ export const BooksPage = () => {
               <Pagination
                 sx={{ mt: 5, mb: 10 }}
                 defaultPage={page}
-                totalPages={data?.totalCount}
+                totalPages={totalPages}
                 onChange={handleChangeDefaultPage}
               />
             )}

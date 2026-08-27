@@ -110,6 +110,8 @@ export const LibraryPage = () => {
     status: { data: libraryData },
   } = useLoadData({ queryFn: getLibraryLoadData });
 
+  const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
+
   const [isEditing, setIsEditing] = useState(false);
   const handleClickStartEdit = () => {
     setIsEditing(true);
@@ -384,7 +386,7 @@ export const LibraryPage = () => {
             <Pagination
               sx={{ mt: 5, mb: 10 }}
               defaultPage={1}
-              totalPages={libraryData?.filteredCount ?? 1}
+              totalPages={filteredTotalPages}
               onChange={handleChangeDefaultPage}
             />
           </Split.Content>
