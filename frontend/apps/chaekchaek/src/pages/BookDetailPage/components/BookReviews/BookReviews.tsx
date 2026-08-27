@@ -93,8 +93,13 @@ export const BookReviews = ({
             handleOpenDialog('WriteReviewDialog');
           }}
         >
-          <Input />
-          <Button variant="primary">남기기</Button>
+          <Input
+            trailing={
+              <Button variant="primary" size="small">
+                남기기
+              </Button>
+            }
+          />
         </Field.Content>
       </Field>
       {dialogElement}

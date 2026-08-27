@@ -6,7 +6,7 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 
-import { Split } from '@chaekchaek/design-system';
+import { Icon, Notice, Split } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
 import { List } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
@@ -109,7 +109,12 @@ export const BooksPage = () => {
               orientation="vertical"
               trailing={
                 <>
-                  <Input block value={query} onChange={handleChangeQuery} />
+                  <Input
+                    block
+                    leading={<Icon.SearchIcon />}
+                    value={query}
+                    onChange={handleChangeQuery}
+                  />
                 </>
               }
             >
@@ -120,6 +125,9 @@ export const BooksPage = () => {
             <Title level="main" trailing={<></>}>
               '{keywordQuery}' 검색 결과
             </Title>
+            {data && !data?.items?.length && (
+              <Notice height={500}>검색된 데이터가 없습니다.</Notice>
+            )}
             <List>
               {!!data?.items.length &&
                 data?.items.map((item) => {

@@ -4,8 +4,11 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Button,
   Checkbox,
+  Icon,
+  IconButton,
   ImgBox,
   List,
+  Notice,
   OptionList,
   Pagination,
   ProgressBar,
@@ -215,46 +218,64 @@ export const LibraryPage = () => {
     <Layout>
       <Header />
       <Main>
-        <Title
-          level="page"
-          trailing={
-            <>
-              {user !== null && (
-                <Button
-                  variant="ghost"
-                  disabled={anonymityStatus.status === 'loading'}
-                  onClick={handleToggleAnonymous}
-                >
-                  {user?.displayAnonymous ? '익명 감상 비공개' : '감상 익명 공개'}
-                </Button>
-              )}
-              {isEditing && (
+        <Split>
+          <Split.Top>
+            <Title
+              level="page"
+              trailing={
                 <>
-                  <Button
-                    variant="ghost"
-                    disabled={!isAbleUpdateStatus}
-                    onClick={() => handleOpenDialog('UpdateBookStatusDialog')}
-                  >
-                    상태 변경
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    disabled={!isAbleDeleteStatus}
-                    onClick={() => handleOpenDialog('DeleteBooksDialog')}
-                  >
-                    삭제
+                  {(user !== null || true) && (
+                    <>
+                      {user?.displayAnonymous && (
+                        <Button
+                          leading={<Icon.CheckboxOffIcon />}
+                          variant="soft"
+                          disabled={anonymityStatus.status === 'loading'}
+                          onClick={handleToggleAnonymous}
+                        >
+                          익명 감상 비공개
+                        </Button>
+                      )}
+                      {!user?.displayAnonymous && (
+                        <Button
+                          leading={<Icon.CheckboxOnIcon />}
+                          variant="soft"
+                          disabled={anonymityStatus.status === 'loading'}
+                          onClick={handleToggleAnonymous}
+                        >
+                          익명 감상 비공개
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  {isEditing && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        disabled={!isAbleUpdateStatus}
+                        onClick={() => handleOpenDialog('UpdateBookStatusDialog')}
+                      >
+                        상태 변경
+                      </Button>
+                      <Button
+                        leading={<Icon.TrashIcon color="error" />}
+                        variant="danger-weak"
+                        disabled={!isAbleDeleteStatus}
+                        onClick={() => handleOpenDialog('DeleteBooksDialog')}
+                      >
+                        {!!bookSelection.length && `${bookSelection.length}권`} 삭제
+                      </Button>
+                    </>
+                  )}
+                  <Button variant="primary" onClick={handleClickStartEdit}>
+                    서재 편집
                   </Button>
                 </>
-              )}
-              <Button variant="primary" onClick={handleClickStartEdit}>
-                서재 편집
-              </Button>
-            </>
-          }
-        >
-          내 서재
-        </Title>
-        <Split>
+              }
+            >
+              내 서재
+            </Title>
+          </Split.Top>
           <Split.Side>
             <Title
               level="main"
@@ -295,7 +316,10 @@ export const LibraryPage = () => {
             >
               독서 상태
             </Title>
-            <List>
+            {!libraryData?.items.length && (
+              <Notice height={500}>내 서재에 등록된 책이 없습니다.</Notice>
+            )}
+            <List columns={2}>
               {libraryData?.items.map((item) => {
                 const isIncluded = bookSelection.includes(item.bookId);
 
@@ -336,15 +360,18 @@ export const LibraryPage = () => {
                       }
                     />
                     <List.Item.Trailing>
-                      {!isEditing && <>&gt;</>}
+                      {!isEditing && <Icon.ArrowRightIcon />}
                       {isEditing && (
-                        <Button
-                          onClick={() => {
-                            handleClickDelete(item.bookId);
-                          }}
-                        >
+                        <>
                           삭제
-                        </Button>
+                          {/* <IconButton
+                            onClick={() => {
+                              handleClickDelete(item.bookId);
+                            }}
+                          >
+                            <Icon.TrashIcon />
+                          </IconButton> */}
+                        </>
                       )}
                     </List.Item.Trailing>
                   </List.Item>
