@@ -1,0 +1,128 @@
+/* 책마다 등장 시점과 떠다니는 속도를 다르게 설정한다. */
+.book {
+  --enter-delay: 0ms;
+  --float-duration: 3.8s;
+  --float-path: book-drift-right;
+}
+
+.book:nth-child(1) { --enter-delay: 100ms; --float-duration: 3.2s; --float-path: book-drift-right; }
+.book:nth-child(2) { --enter-delay: 180ms; --float-duration: 4.1s; --float-path: book-drift-left; }
+.book:nth-child(3) { --enter-delay: 260ms; --float-duration: 3.6s; --float-path: book-drift-high; }
+.book:nth-child(4) { --enter-delay: 340ms; --float-duration: 4.4s; --float-path: book-drift-right; }
+.book:nth-child(5) { --enter-delay: 420ms; --float-duration: 3.4s; --float-path: book-drift-left; }
+.book:nth-child(6) { --enter-delay: 500ms; --float-duration: 4s; --float-path: book-drift-high; }
+.book:nth-child(7) { --enter-delay: 580ms; --float-duration: 3.7s; --float-path: book-drift-right; }
+
+/* 1단계: 아래에 있던 책이 원래 위치로 등장한다. */
+.book-entry {
+  opacity: 0;
+  transform: translateY(50px);
+  animation: book-enter 700ms ease-out var(--enter-delay) forwards;
+}
+
+/* 2단계: 등장이 끝난 뒤 책이 계속 위아래로 움직인다. */
+.book-float {
+  display: block;
+  border-radius: 4px;
+  outline: 1px solid #ffffff2e;
+  outline-offset: -0.5px;
+  box-shadow: 18px 24px 34px #000000d9, -3px -3px 10px #ffffff14;
+  cursor: pointer;
+  will-change: transform;
+  animation: var(--float-path) var(--float-duration) ease-in-out infinite;
+  animation-delay: calc(var(--enter-delay) + 700ms);
+}
+
+.book-float:hover {
+  animation-play-state: paused;
+}
+
+.book img {
+  width: 100%;
+  transition:
+    transform 250ms ease,
+    filter 250ms ease;
+}
+
+.book a:hover img {
+  transform: scale(1.06);
+  filter: brightness(1.12);
+}
+
+@keyframes book-enter {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes book-drift-right {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  25% {
+    transform: translate(12px, -16px) rotate(1.5deg);
+  }
+
+  52% {
+    transform: translate(-5px, -34px) rotate(-1deg);
+  }
+
+  78% {
+    transform: translate(-13px, -11px) rotate(-1.5deg);
+  }
+}
+
+@keyframes book-drift-left {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  22% {
+    transform: translate(-14px, -13px) rotate(-1.4deg);
+  }
+
+  55% {
+    transform: translate(6px, -30px) rotate(1.2deg);
+  }
+
+  80% {
+    transform: translate(12px, -8px) rotate(1deg);
+  }
+}
+
+@keyframes book-drift-high {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  30% {
+    transform: translate(-8px, -26px) rotate(-1deg);
+  }
+
+  62% {
+    transform: translate(10px, -42px) rotate(1.4deg);
+  }
+
+  84% {
+    transform: translate(5px, -12px) rotate(0.5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book-entry,
+  .book-float {
+    animation: none;
+  }
+
+  .book-entry {
+    opacity: 1;
+    transform: none;
+  }
+}
