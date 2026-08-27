@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
-import { Dialog, Slider } from '@chaekchaek/design-system';
+import { ButtonStack, Dialog, Slider } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { Rating } from '@chaekchaek/design-system';
 import { CellList } from '@chaekchaek/design-system';
@@ -120,12 +120,14 @@ export const UpdateRatingDialog = ({
           />
         </Dialog.Body>
         <Dialog.Footer>
-          <Button variant="ghost" block>
-            취소
-          </Button>
-          <Button variant="primary" block onClick={handleSubmit}>
-            별점 저장
-          </Button>
+          <ButtonStack>
+            <Button variant="ghost" block>
+              취소
+            </Button>
+            <Button variant="primary" block onClick={handleSubmit}>
+              별점 저장
+            </Button>
+          </ButtonStack>
         </Dialog.Footer>
       </Dialog.Container>
     </Dialog>

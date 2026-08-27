@@ -75,6 +75,16 @@ export const BookReviews = ({
       >
         이 책에 남긴 감상 {count}
       </Title>
+      <Field sx={{ mt: 4, mb: 6 }}>
+        <Field.Content
+          onClick={() => {
+            handleOpenDialog('WriteReviewDialog');
+          }}
+        >
+          <Input />
+          <Button variant="primary">남기기</Button>
+        </Field.Content>
+      </Field>
       {reviews
         ?.filter((review) => !review.deleted)
         .map((review) => {

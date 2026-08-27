@@ -1,6 +1,17 @@
 import type { SubmitEvent } from 'react';
 
-import { Button, Callout, Checkbox, Dialog, Field, Input, Tag } from '@chaekchaek/design-system';
+import {
+  Button,
+  Callout,
+  Checkbox,
+  Dialog,
+  Field,
+  FieldGroup,
+  Icon,
+  Input,
+  Tag,
+  Textarea,
+} from '@chaekchaek/design-system';
 
 import { useFormValues } from '@/hooks/useFormValues';
 import { useExecute } from '@/services/core/useExecute';
@@ -55,7 +66,7 @@ export const WriteReviewDialog = ({ bookId, onReviewWritten, onClose }: WriteRev
   };
 
   return (
-    <Dialog size="medium" onClose={onClose}>
+    <Dialog size="large" onClose={onClose}>
       <Dialog.Container>
         <form>
           <Dialog.Header>감상 남기기</Dialog.Header>
@@ -69,8 +80,8 @@ export const WriteReviewDialog = ({ bookId, onReviewWritten, onClose }: WriteRev
                 </Tag>
               </Field.Label>
               <Field.Content>
-                <Input
-                  as="textarea"
+                <Textarea
+                  height={100}
                   placeholder="이 책을 읽으며 든 생각을 남겨보세요."
                   id="content"
                   value={values.content}
@@ -93,8 +104,9 @@ export const WriteReviewDialog = ({ bookId, onReviewWritten, onClose }: WriteRev
             <Field>
               <Field.Label>인상 깊은 문구</Field.Label>
               <Field.Content>
-                <Input
-                  as="textarea"
+                <Textarea
+                  variant="soft"
+                  height={90}
                   placeholder="기억하고 싶은 문장을 옮겨 적어보세요."
                   id="quote"
                   value={values.quote}
@@ -103,38 +115,39 @@ export const WriteReviewDialog = ({ bookId, onReviewWritten, onClose }: WriteRev
               </Field.Content>
             </Field>
 
-            <Field>
-              <Field.Label>쪽수</Field.Label>
-              <Field.Content>
-                <Input
-                  block
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="80쪽"
-                  id="currentPage"
-                  value={values.currentPage}
-                  onChange={onChange}
-                />
-              </Field.Content>
-              {!valids.currentPage && (
-                <Field.Description>{errors.currentPage[0]?.message}</Field.Description>
-              )}
-            </Field>
+            <FieldGroup sx={{ mt: 4 }}>
+              <Field>
+                <Field.Label>쪽수</Field.Label>
+                <Field.Content>
+                  <Input
+                    block
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="80"
+                    id="currentPage"
+                    value={values.currentPage}
+                    onChange={onChange}
+                  />
+                </Field.Content>
+                {!valids.currentPage && (
+                  <Field.Description>{errors.currentPage[0]?.message}</Field.Description>
+                )}
+              </Field>
+              <Field>
+                <Field.Label>목차 / 챕터</Field.Label>
+                <Field.Content>
+                  <Input
+                    block
+                    placeholder="Chapter 1"
+                    id="chapter"
+                    values={values.chapter}
+                    onChange={onChange}
+                  />
+                </Field.Content>
+              </Field>
+            </FieldGroup>
 
-            <Field>
-              <Field.Label>목차 / 챕터</Field.Label>
-              <Field.Content>
-                <Input
-                  block
-                  placeholder="Chapter 1"
-                  id="chapter"
-                  values={values.chapter}
-                  onChange={onChange}
-                />
-              </Field.Content>
-            </Field>
-
-            <Callout leading={<span aria-hidden="true">i</span>}>
+            <Callout sx={{ mt: 4 }} leading={<Icon.InvisibleIcon />}>
               <strong>익명 공개</strong>
               <span>‘골똘한 참새’로 표시돼요</span>
             </Callout>
