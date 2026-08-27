@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,15 +10,11 @@ import { useLoadData } from '@/services/core/useLoadData';
 import { getHomePopularBooks } from '@/services/apis/homePopularBooks/repository';
 
 import './IntroPage.css';
-import { init } from './book-physics';
+import './IntroInteraction.css';
 
 const BOOKS_MAX_LENGTH = 7;
 
 export const IntroPage = () => {
-  useEffect(() => {
-    // init();
-  }, []);
-
   const getHomePopularBooksLoadData = useCallback(async () => {
     return await getHomePopularBooks({});
   }, []);
@@ -47,15 +43,18 @@ export const IntroPage = () => {
 
                 return (
                   <div data-pencil-name={`다크 홈 전체 책 ${bookIndex}`} className="book">
-                    <a
-                      href="#"
-                      onClick={(e: MouseEvent<HTMLAnchorElement>) => {
-                        e.preventDefault();
-                        handleClickMoveDetail(book.isbn13);
-                      }}
-                    >
-                      <img src={book.coverImageUrl} alt="" />
-                    </a>
+                    <div className="book-entry">
+                      <a
+                        className="book-float"
+                        href="#"
+                        onClick={(e: MouseEvent<HTMLAnchorElement>) => {
+                          e.preventDefault();
+                          handleClickMoveDetail(book.isbn13);
+                        }}
+                      >
+                        <img src={book.coverImageUrl} alt="" />
+                      </a>
+                    </div>
                   </div>
                 );
               })}

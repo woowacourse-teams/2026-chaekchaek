@@ -18,10 +18,6 @@
 
 [data-pencil-name="다크 흩어진 책 웹 홈"] > div {
   position: absolute;
-  border-radius: 4px;
-  outline: 1px solid #ffffff2e;
-  outline-offset: -0.5px;
-  box-shadow: 18px 24px 34px #000000d9, -3px -3px 10px #ffffff14;
   transform-origin: top left;
 }
 
@@ -47,17 +43,10 @@
 [data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(20) { left: 1027.2px; top: 688.8px; width: 217.6px; transform: rotate(-7deg); z-index: 19; }
 
 [data-pencil-name="다크 흩어진 책 웹 홈"] > div {
-  cursor: grab;
-  touch-action: none;
   user-select: none;
-  will-change: transform;
 }
 
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:active {
-  cursor: grabbing;
-}
-
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:focus-visible {
+[data-pencil-name="다크 흩어진 책 웹 홈"] .book-float:focus-visible {
   outline: 3px solid #fff !important;
   outline-offset: 4px !important;
 }
