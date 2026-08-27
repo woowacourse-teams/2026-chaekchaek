@@ -2,6 +2,7 @@ import {
   Banner,
   Button,
   DataInfo,
+  Icon,
   ProgressBar,
   SegmentedControl,
   Title,
@@ -43,7 +44,12 @@ export const BookInfo = ({
       <Banner>
         <Banner.Content title="내 별점" content="아직 평가하지 않았어요" />
         <Banner.Trailing>
-          <Button size="small" variant="primary" onClick={handleClickRating}>
+          <Button
+            size="small"
+            variant="primary"
+            leading={<Icon.StartIcon color="inverse" />}
+            onClick={handleClickRating}
+          >
             별점 주기
           </Button>
         </Banner.Trailing>

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { Avatar, Button, Entry, Note, Shell, Surface } from '@chaekchaek/design-system';
+import { Avatar, Button, Entry, Icon, Note, Shell, Surface } from '@chaekchaek/design-system';
 
 import { getReviewsReviewIdReplies } from '@/services/apis/reviewsReviewIdReplies/repository';
 import { useLoadData } from '@/services/core/useLoadData';
@@ -128,7 +128,7 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
   const showSpoilerVisible = isSpoilerVisible || review.isSpoiler;
 
   return (
-    <Entry variant={review.deleted ? 'subtle' : 'plain'}>
+    <Entry variant={showSpoilerVisible ? 'subtle' : 'plain'}>
       <Entry.Main>
         <Entry.Header>
           <Shell>
@@ -142,14 +142,19 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
             {review.author.mine && (
               <Shell.Trailing>
                 <Button
-                  size="small"
+                  shape="link"
+                  variant="ghost"
                   onClick={() => {
                     handleOpenDialog('UpdateReviewDialog');
                   }}
                 >
                   수정
                 </Button>
-                <Button size="small" onClick={() => handleClickDeleteReview(review.reviewId)}>
+                <Button
+                  shape="link"
+                  variant="ghost"
+                  onClick={() => handleClickDeleteReview(review.reviewId)}
+                >
                   삭제
                 </Button>
               </Shell.Trailing>
@@ -159,18 +164,32 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
         <Entry.Body>
           {!showSpoilerVisible ? review.content : SPOILER_PLACEHOLDER_REVIEW}
           {review.quote && (
-            <Note>{!showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}</Note>
+            <Note variant={showSpoilerVisible ? 'subtle' : 'plain'}>
+              {!showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}
+            </Note>
           )}
         </Entry.Body>
         <Entry.Footer>
           <Button
-            size="small"
-            leading={review.likedByMe ? '♥' : '♡'}
+            shape="link"
+            variant="ghost"
+            leading={
+              review.likedByMe ? (
+                <Icon.HeartOnIcon color="secondary" />
+              ) : (
+                <Icon.HeartOffIcon color="secondary" />
+              )
+            }
             onClick={handleClickReviewReaction}
           >
             좋아요 {review.likeCount}
           </Button>
-          <Button size="small" leading={'💬'} onClick={handleClickToggleWriteReply}>
+          <Button
+            shape="link"
+            variant="ghost"
+            leading={<Icon.CommentIcon color="secondary" />}
+            onClick={handleClickToggleWriteReply}
+          >
             답글 {review.replyCount}
           </Button>
         </Entry.Footer>
@@ -192,7 +211,10 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
                     description={!showSpoilerVisible ? reply.content : SPOILER_PLACEHOLDER_REPLY}
                   />
                   <Shell.Trailing>
-                    <span
+                    <Button
+                      leading={reply.likedByMe ? <Icon.HeartOnIcon /> : <Icon.HeartOffIcon />}
+                      shape="link"
+                      variant="ghost"
                       onClick={() => {
                         handleClickReplyReaction({
                           replyId: reply.replyId,
@@ -200,9 +222,8 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
                         });
                       }}
                     >
-                      {reply.likedByMe ? '♥' : '♡'}
                       {reply.likeCount}
-                    </span>
+                    </Button>
                   </Shell.Trailing>
                 </Shell>
               </Surface>
