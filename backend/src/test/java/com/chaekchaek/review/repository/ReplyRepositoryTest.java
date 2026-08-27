@@ -90,24 +90,25 @@ class ReplyRepositoryTest {
     }
 
     @Test
-    @DisplayName("삭제된 감상을 제외한 최신 감상 열 개를 반환한다")
-    void should_ReturnTopTenActiveReviewsInLatestOrder_When_FindingLatestReviews() {
+    @DisplayName("삭제와 스포일러 감상을 제외한 최신 감상 열 개를 반환한다")
+    void should_ReturnTopTenNonSpoilerReviewsInLatestOrder_When_FindingLatestReviews() {
         // given
-        List<Review> activeReviews = new java.util.ArrayList<>();
-        for (int index = 0; index < 11; index++) {
-            activeReviews.add(reviewRepository.save(
+        List<Review> nonSpoilerReviews = new java.util.ArrayList<>();
+        for (int index = 0; index < 10; index++) {
+            nonSpoilerReviews.add(reviewRepository.save(
                     Review.create(1L, 1L, "감상 " + index, null, null, null, false, false)
             ));
         }
+        reviewRepository.save(Review.create(1L, 1L, "스포일러 감상", null, null, null, true, false));
         Review deletedReview = reviewRepository.save(Review.create(1L, 1L, "삭제 감상", null, null, null, false, false));
         deletedReview.deleteBy(1L);
         reviewRepository.flush();
 
         // when
-        List<Review> actual = reviewRepository.findTop10ByDeletedAtIsNullOrderByCreatedAtDescIdDesc();
+        List<Review> actual = reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc();
 
         // then
         assertThat(actual).extracting(Review::getId)
-                .containsExactlyElementsOf(activeReviews.subList(1, 11).reversed().stream().map(Review::getId).toList());
+                .containsExactlyElementsOf(nonSpoilerReviews.reversed().stream().map(Review::getId).toList());
     }
 }

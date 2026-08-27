@@ -67,7 +67,7 @@ class HomeServiceTest {
                 replyCount(101L, 12L), replyCount(100L, 3L)
         );
         List<Book> books = List.of(book(1L, "첫 번째 책"), book(2L, "두 번째 책"));
-        when(reviewRepository.findTop10ByDeletedAtIsNullOrderByCreatedAtDescIdDesc())
+        when(reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc())
                 .thenReturn(List.of(latestReview, previousReview));
         when(replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(101L, 100L))).thenReturn(replyCounts);
         when(bookRepository.findAllById(List.of(2L, 1L))).thenReturn(books);
