@@ -7,6 +7,7 @@ import styles from './Split.module.css';
 
 import type { Props } from './';
 
+import { Top } from './Top';
 import { Side } from './Side';
 import { Content } from './Content';
 
@@ -27,5 +28,6 @@ export const Split = <T extends ElementType>(props: Props<T>) => {
   return <View as={as} className={classname} {...restProps} />;
 };
 
-Split.Side = Side;
+Split.Top = Top;
 Split.Content = Content;
+Split.Side = Side;

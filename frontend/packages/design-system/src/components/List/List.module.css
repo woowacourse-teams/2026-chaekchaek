@@ -11,6 +11,7 @@
 .column-5,
 .column-6 {
   display: grid;
+  column-gap: 28px;
 }
 
 .column-1 {
@@ -49,7 +50,10 @@
 }
 
 .ui-List-Item-Leading {
-  padding-left: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
 }
 
 .ui-List-Item-Content {

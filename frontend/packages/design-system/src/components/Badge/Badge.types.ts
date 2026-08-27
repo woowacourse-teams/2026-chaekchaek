@@ -5,8 +5,8 @@ import type { PolymorphicProps } from '#internal/components/View';
 export type AS = 'div';
 
 export type OwnProps = {
-  size?: 'small' | 'medium';
-  variant?: 'default' | 'ghost' | 'subtle';
+  size?: 'x-small' | 'small' | 'medium';
+  variant?: 'default' | 'ghost' | 'soft' | 'subtle';
   reverse?: boolean;
 };
 

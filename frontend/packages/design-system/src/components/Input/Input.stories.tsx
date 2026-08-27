@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
+import { CloseIcon, SearchIcon } from '../Icon';
+
 import { Input } from '.';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
@@ -30,6 +32,30 @@ export const Reverse: Story = {
       </div>
     ),
   ],
+};
+
+export const WithLeading: Story = {
+  args: {
+    leading: <SearchIcon size="small" />,
+    placeholder: '책, 작가, 감상 검색',
+  },
+};
+
+export const WithTrailing: Story = {
+  args: {
+    trailing: <CloseIcon size="small" />,
+    value: 'Input',
+    readOnly: true,
+  },
+};
+
+export const WithLeadingAndTrailing: Story = {
+  args: {
+    leading: <SearchIcon size="small" />,
+    trailing: <CloseIcon size="small" />,
+    value: 'Input',
+    readOnly: true,
+  },
 };
 
 export const SizeSmall: Story = {

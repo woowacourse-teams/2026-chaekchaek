@@ -1,0 +1,25 @@
+.root {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  gap: 13px;
+}
+
+.orientation-horizontal {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.orientation-horizontal > :global(.ui-Field) {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.orientation-vertical {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.root > :global(.ui-Field) {
+  margin-top: 0;
+}

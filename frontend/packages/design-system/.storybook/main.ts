@@ -58,6 +58,56 @@ const config: StorybookConfig = {
       ],
     });
 
+    if (config.module?.rules) {
+      config.module.rules = config.module?.rules?.map((rule) => {
+        if (
+          typeof rule === 'object' &&
+          rule !== null &&
+          rule.test instanceof RegExp &&
+          rule.test.test('.svg')
+        ) {
+          return {
+            ...rule,
+            exclude: /\.svg$/i,
+          };
+        }
+
+        return rule;
+      });
+
+      config.module?.rules?.push(
+        {
+          test: /\.svg$/i,
+          resourceQuery: /component/,
+          issuer: /\.[jt]sx?$/,
+          use: [
+            {
+              loader: '@svgr/webpack',
+              options: {
+                svgoConfig: {
+                  plugins: [
+                    {
+                      name: 'preset-default',
+                      params: {
+                        overrides: {
+                          removeViewBox: false,
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+        {
+          test: /\.svg$/i,
+          resourceQuery: { not: [/component/] },
+          type: 'asset/resource',
+        },
+      );
+    }
+
     return config;
   },
 };

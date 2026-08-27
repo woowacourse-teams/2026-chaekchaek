@@ -20,3 +20,10 @@ declare module '*.svg' {
 
   export default src;
 }
+
+declare module '*.svg?component' {
+  import type { ComponentType, SVGProps } from 'react';
+
+  const component: ComponentType<SVGProps<SVGSVGElement>>;
+  export default component;
+}

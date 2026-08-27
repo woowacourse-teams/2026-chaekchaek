@@ -13,6 +13,8 @@
 
 .root .trailing {
   text-align: right;
+  display: inline-flex;
+  align-items: center;
 }
 
 .level-page .title {
@@ -33,4 +35,7 @@
 
 .orientation-vertical { 
   align-items: stretch;
+}
+.orientation-vertical .trailing {
+  text-align: left;
 }

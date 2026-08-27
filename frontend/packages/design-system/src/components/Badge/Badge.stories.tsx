@@ -15,11 +15,11 @@ const meta = {
   argTypes: {
     size: {
       control: 'inline-radio',
-      options: ['small', 'medium'],
+      options: ['x-small', 'small', 'medium'],
     },
     variant: {
       control: 'inline-radio',
-      options: ['default', 'ghost', 'subtle'],
+      options: ['default', 'ghost', 'soft', 'subtle'],
     },
   },
 } satisfies Meta<typeof Badge>;
@@ -34,6 +34,14 @@ export const SmallSize: Story = {
   args: {
     children: 'small',
     size: 'small',
+    variant: 'ghost',
+  },
+};
+
+export const XSmallSize: Story = {
+  args: {
+    children: 'x-small',
+    size: 'x-small',
     variant: 'ghost',
   },
 };
@@ -66,6 +74,13 @@ export const GhostReverse: Story = {
       </div>
     ),
   ],
+};
+
+export const Soft: Story = {
+  args: {
+    children: 'Soft`',
+    variant: 'soft',
+  },
 };
 
 export const Subtle: Story = {
