@@ -37,7 +37,13 @@ class BookDetailRemoteRepositoryTest {
           reviewId = 7,
           content = "재미있다",
           createdAt = "2026-08-19T00:00:00Z",
-          author = ReviewAuthorDto("참새 1204", true, "https://example.com/reviewer.jpg"),
+          author = ReviewAuthorDto(
+            displayName = "참새 1204",
+            anonymous = true,
+            mine = true,
+            actorType = "GUEST",
+            profileImageUrl = "https://example.com/reviewer.jpg",
+          ),
           replyCount = 2,
           likeCount = 3,
           likedByMe = true,
@@ -46,11 +52,19 @@ class BookDetailRemoteRepositoryTest {
             ReviewReplyDto(
               replyId = 8,
               content = "맞아요",
-              author = ReviewAuthorDto("참새 0821", false, "https://example.com/replier.jpg"),
+              author = ReviewAuthorDto(
+                displayName = "참새 0821",
+                anonymous = false,
+                mine = false,
+                actorType = "MEMBER",
+                profileImageUrl = "https://example.com/replier.jpg",
+              ),
               likeCount = 1,
               likedByMe = true,
+              deleted = false,
             ),
           ),
+          deleted = false,
         ),
       ),
     ).toReviewPage()
@@ -63,10 +77,14 @@ class BookDetailRemoteRepositoryTest {
     assertEquals("https://example.com/reviewer.jpg", reviews.items.single().authorProfileImageUrl)
     assertEquals(true, reviews.items.single().isSpoiler)
     assertEquals(true, reviews.items.single().likedByMe)
+    assertEquals(true, reviews.items.single().writtenByMe)
+    assertEquals(false, reviews.items.single().deleted)
     assertEquals("맞아요", reviews.items.single().recentReplies.single().content)
     assertEquals("참새 0821", reviews.items.single().recentReplies.single().authorName)
     assertEquals("https://example.com/replier.jpg", reviews.items.single().recentReplies.single().authorProfileImageUrl)
     assertEquals(true, reviews.items.single().recentReplies.single().likedByMe)
+    assertEquals(false, reviews.items.single().recentReplies.single().writtenByMe)
+    assertEquals(false, reviews.items.single().recentReplies.single().deleted)
     assertEquals(2, reviews.nextPage)
   }
 
@@ -77,7 +95,7 @@ class BookDetailRemoteRepositoryTest {
       requests += request.method to request.url.toString()
       when {
         request.method == HttpMethod.Get -> respond(
-          content = """{"totalCount":1,"nextPage":null,"items":[{"replyId":8,"content":"맞아요","author":{"displayName":"참새 0821","anonymous":false},"likeCount":2,"likedByMe":true}]}""",
+          content = """{"totalCount":1,"nextPage":null,"items":[{"replyId":8,"content":"맞아요","author":{"displayName":"참새 0821","anonymous":false,"mine":true,"actorType":"GUEST"},"likeCount":2,"likedByMe":true,"deleted":false}]}""",
           headers = headersOf(HttpHeaders.ContentType, "application/json"),
         )
         request.method == HttpMethod.Post -> respond(
@@ -103,6 +121,7 @@ class BookDetailRemoteRepositoryTest {
 
     assertEquals(8, replies.items.single().replyId)
     assertEquals(true, replies.items.single().likedByMe)
+    assertEquals(true, replies.items.single().writtenByMe)
     assertEquals(ReactionResult(3, true), reviewReaction)
     assertEquals(ReactionResult(3, true), replyReaction)
     assertEquals(

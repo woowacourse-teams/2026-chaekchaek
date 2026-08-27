@@ -161,6 +161,8 @@ data class BookReview(
   val isSpoiler: Boolean = false,
   val recentReplies: List<ReviewReply> = emptyList(),
   val authorProfileImageUrl: String? = null,
+  val writtenByMe: Boolean = false,
+  val deleted: Boolean = false,
 )
 
 data class ReviewReply(
@@ -171,6 +173,8 @@ data class ReviewReply(
   val likeCount: Int,
   val likedByMe: Boolean = false,
   val authorProfileImageUrl: String? = null,
+  val writtenByMe: Boolean = false,
+  val deleted: Boolean = false,
 )
 
 @Serializable
@@ -260,12 +264,15 @@ internal data class ReviewDto(
   val likedByMe: Boolean = false,
   val isSpoiler: Boolean = false,
   val recentReplies: List<ReviewReplyDto> = emptyList(),
+  val deleted: Boolean,
 )
 
 @Serializable
 internal data class ReviewAuthorDto(
   val displayName: String,
   val anonymous: Boolean,
+  val mine: Boolean,
+  val actorType: String,
   val profileImageUrl: String? = null,
 )
 
@@ -276,6 +283,7 @@ internal data class ReviewReplyDto(
   val author: ReviewAuthorDto,
   val likeCount: Int,
   val likedByMe: Boolean = false,
+  val deleted: Boolean,
 )
 
 @Serializable
@@ -334,6 +342,8 @@ internal fun ReviewDto.toBookReview() =
     likedByMe = likedByMe,
     isSpoiler = isSpoiler,
     recentReplies = recentReplies.map(ReviewReplyDto::toReviewReply),
+    writtenByMe = author.mine,
+    deleted = deleted,
   )
 
 internal fun ReviewReplyDto.toReviewReply() =
@@ -345,6 +355,8 @@ internal fun ReviewReplyDto.toReviewReply() =
     anonymous = author.anonymous,
     likeCount = likeCount,
     likedByMe = likedByMe,
+    writtenByMe = author.mine,
+    deleted = deleted,
   )
 
 internal fun ReactionDto.toReactionResult() = ReactionResult(likeCount, likedByMe)
