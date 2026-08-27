@@ -4,6 +4,7 @@ import com.chaekchaek.app.auth.GuestAuth
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ResponseException
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -14,8 +15,8 @@ class MobileAuthRemoteRepository(
   private val client: HttpClient = createHttpClient(),
 ) {
 
-  suspend fun loginWithGoogle(idToken: String): MobileAuthTokens =
-    requestTokens("google", GoogleLoginRequest(idToken))
+  suspend fun loginWithGoogle(idToken: String, guestToken: String? = null): MobileAuthTokens =
+    requestTokens("google", GoogleLoginRequest(idToken), guestToken)
 
   suspend fun issueGuest(): GuestAuth =
     try {
@@ -40,9 +41,14 @@ class MobileAuthRemoteRepository(
     }
   }
 
-  private suspend fun requestTokens(path: String, body: Any): MobileAuthTokens =
+  private suspend fun requestTokens(
+    path: String,
+    body: Any,
+    guestToken: String? = null,
+  ): MobileAuthTokens =
     try {
       client.post("$BASE_URL/api/v1/auth/mobile/$path") {
+        guestToken?.let { header(WriteCredential.GUEST_TOKEN_HEADER, it) }
         contentType(ContentType.Application.Json)
         setBody(body)
       }.body<MobileAuthTokens>()

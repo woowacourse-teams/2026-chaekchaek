@@ -43,6 +43,28 @@ class MobileAuthRemoteRepositoryTest {
   }
 
   @Test
+  fun `모바일 로그인 요청에 게스트 토큰을 전달한다`() = runTest {
+    var guestHeader: String? = null
+    val engine = MockEngine { request ->
+      guestHeader = request.headers[WriteCredential.GUEST_TOKEN_HEADER]
+      respond(
+        content = """{"accessToken":"access","refreshToken":"refresh","tokenType":"Bearer","accessTokenExpiresIn":1800,"refreshTokenExpiresIn":1209600}""",
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+      )
+    }
+    val repository = MobileAuthRemoteRepository(
+      HttpClient(engine) {
+        expectSuccess = true
+        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+      },
+    )
+
+    repository.loginWithGoogle("google-id-token", "guest-token")
+
+    assertEquals("guest-token", guestHeader)
+  }
+
+  @Test
   fun `모바일 로그인 응답 토큰을 역직렬화한다`() {
     val tokens = Json.decodeFromString<MobileAuthTokens>("""{"accessToken":"access","refreshToken":"refresh","tokenType":"Bearer","accessTokenExpiresIn":1800,"refreshTokenExpiresIn":1209600}""")
 
