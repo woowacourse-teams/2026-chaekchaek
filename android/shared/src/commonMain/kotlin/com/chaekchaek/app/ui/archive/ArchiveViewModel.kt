@@ -49,7 +49,27 @@ class ArchiveViewModel(
     }
 
     fun setAnonymousReviews(anonymous: Boolean, nickname: String = "") {
-        _uiState.value = _uiState.value.copy(anonymousReviews = anonymous, nickname = nickname.trim())
+        val token = accessToken ?: return
+        requestJob?.cancel()
+        requestJob = viewModelScope.launch {
+            mutationMutex.withLock {
+                withDelayedLoading(::setLoading) {
+                    if (!anonymous) repository.updateNickname(nickname.trim(), token)
+                    repository.updateAnonymity(anonymous, token)
+                }.onSuccess { profile ->
+                    if (accessToken == token) {
+                        _uiState.value = _uiState.value.copy(
+                            anonymousReviews = profile.displayAnonymous,
+                            nickname = profile.nickname,
+                            errorMessage = null,
+                        )
+                    }
+                }.onFailure { error ->
+                    if (error is CancellationException) throw error
+                    _uiState.value = _uiState.value.copy(errorMessage = "설정을 변경하지 못했어요")
+                }
+            }
+        }
     }
 
     private fun load() {
