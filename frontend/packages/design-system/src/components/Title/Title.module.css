@@ -17,6 +17,10 @@
   align-items: center;
 }
 
+.root .trailing > * {
+  margin-left: 8px;
+}
+
 .level-page .title {
   font-size: 38px;
   font-weight: 600;
@@ -36,6 +40,7 @@
 .orientation-vertical { 
   align-items: stretch;
 }
-.orientation-vertical .trailing {
+.orientation-vertical .trailing > * {
   text-align: left;
+  margin-left: 0;
 }
