@@ -19,3 +19,17 @@
   color: #999;
   opacity: 1;
 }
+
+.variant-soft > textarea {
+  padding: 16px;
+  border: 1px solid #c9c3ba;
+  border-radius: 4px;
+  background-color: #fff4df;
+  color: #1a1a1a;
+  font-size: 13px;
+  line-height: normal;
+}
+
+.variant-soft > textarea::placeholder {
+  color: #888;
+}

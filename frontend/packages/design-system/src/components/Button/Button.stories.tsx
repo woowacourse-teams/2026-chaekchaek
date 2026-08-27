@@ -19,7 +19,16 @@ const meta = {
     },
     variant: {
       control: 'select',
-      options: ['default', 'primary', 'secondary', 'accent', 'ghost', 'danger'],
+      options: [
+        'default',
+        'primary',
+        'secondary',
+        'accent',
+        'ghost',
+        'soft',
+        'danger',
+        'danger-weak',
+      ],
     },
     size: {
       control: 'inline-radio',
@@ -69,10 +78,24 @@ export const GhostVariant: Story = {
   },
 };
 
+export const SoftVariant: Story = {
+  args: {
+    children: '감상 익명 공개',
+    variant: 'soft',
+  },
+};
+
 export const DangerVariant: Story = {
   args: {
     children: 'danger',
     variant: 'danger',
+  },
+};
+
+export const DangerWeakVariant: Story = {
+  args: {
+    children: '2권 삭제',
+    variant: 'danger-weak',
   },
 };
 

@@ -3,6 +3,7 @@ import type { ElementType } from 'react';
 import clsx from 'clsx';
 
 import { View } from '#internal/components/View';
+import { resolveSx } from '#internal/systems/index';
 import { createClassName } from '#internal/utils/classname';
 
 import styles from './Rating.module.css';
@@ -21,6 +22,8 @@ export const Rating = <T extends ElementType>(props: Props<T>) => {
     title,
     description,
     block,
+    sx,
+    style,
     ...restProps
   } = props;
 
@@ -36,12 +39,16 @@ export const Rating = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const spacingStyle = resolveSx({ sx });
+
+  const customStyles = { ...spacingStyle, ...style };
+
   const handleChange = (rating: number) => {
     onChange?.(rating);
   };
 
   return (
-    <View as={as} className={classname} {...restProps}>
+    <View as={as} className={classname} style={customStyles} {...restProps}>
       {title && <div className={styles.title}>{title}</div>}
       <div className={styles.stars}>
         {Array.from({ length: 5 }).map((_, index) => {

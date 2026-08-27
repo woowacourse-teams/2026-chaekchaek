@@ -1,7 +1,6 @@
 .ui-Pagination {
   box-sizing: border-box;
-  display: inline-flex;
-  width: fit-content;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;

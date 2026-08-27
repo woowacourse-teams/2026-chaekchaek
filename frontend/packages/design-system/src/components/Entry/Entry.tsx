@@ -1,6 +1,7 @@
 import type { ElementType } from 'react';
 
 import { View } from '#internal/components/View';
+import { resolveSx } from '#internal/systems/index';
 import { createClassName } from '#internal/utils/classname';
 
 import styles from './Entry.module.css';
@@ -16,7 +17,7 @@ import { Extension } from './Extension';
 const classnameDefault = 'ui-Entry';
 
 export const Entry = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, variant = 'plain', ...restProps } = props;
+  const { as = 'div', className, variant = 'plain', sx, style, ...restProps } = props;
 
   const modifiers = {
     variant: variant && styles?.[`variant-${variant}`],
@@ -29,7 +30,11 @@ export const Entry = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
-  return <View as={as} className={classname} {...restProps} />;
+  const spacingStyle = resolveSx({ sx });
+
+  const customStyles = { ...spacingStyle, ...style };
+
+  return <View as={as} className={classname} style={customStyles} {...restProps} />;
 };
 
 Entry.Main = Main;

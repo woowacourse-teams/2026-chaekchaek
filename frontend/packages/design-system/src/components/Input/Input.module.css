@@ -1,4 +1,5 @@
 .root {
+  position: relative;
   box-sizing: border-box;
   display: flex;
   width: 100%;
@@ -7,13 +8,13 @@
   border: 1px solid #c9c3ba;
   border-radius: 4px;
   background-color: #fff;
-  color: #1A1A1A;
+  color: #1a1a1a;
   font-family: 'Funnel Sans', sans-serif;
   font-size: 12px;
   font-weight: 400;
 }
 
-.root > * {
+.root > input {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
@@ -35,6 +36,33 @@
   font-weight: 700;
 }
 
+.root > .leading,
+.root > .trailing {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+}
+
+.root > .leading {
+  left: 12px;
+}
+
+.root > .trailing {
+  right: 12px;
+}
+
+.has-leading > input {
+  padding-left: 36px;
+}
+
+.has-trailing > input {
+  padding-right: 36px;
+}
+
 .is-reverse {
   border-color: rgb(255 255 255 / 15%);
   background-color: transparent;
@@ -43,15 +71,18 @@
 
 .size-small {
   box-sizing: border-box;
+  height: 40px;
   font-size: 11px;
 }
 
 .size-medium {
   box-sizing: border-box;
+  height: 48px;
   font-size: 12.5px;
 }
 
 .size-large {
   box-sizing: border-box;
+  height: 56px;
   font-size: 14px;
 }

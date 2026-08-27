@@ -34,6 +34,11 @@
   flex: 1;
 }
 
+.ui-Field-Content > :where(button, a) {
+  flex: 0 0 auto;
+  width: fit-content;
+}
+
 .ui-Field-Description {
   gap: 4px;
   margin-top: 6px;

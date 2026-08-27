@@ -42,7 +42,7 @@ export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
           <Avatar img={user?.profileImageUrl || ''} size="small" />
         </Shell.Leading>
         <Shell.Content
-          title={
+          content={
             <Field>
               <Field.Content>
                 <Input id="content" value={values.content} onChange={onChange} block />
@@ -50,9 +50,6 @@ export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
                   답글 남기기
                 </Button>
               </Field.Content>
-              {!valids.content && (
-                <Field.Description>{errors.content[0]?.message}</Field.Description>
-              )}
             </Field>
           }
         />

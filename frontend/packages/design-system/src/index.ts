@@ -21,6 +21,9 @@ export type { Props as ListProps } from './components/List';
 export { Note } from './components/Note';
 export type { Props as NoteProps } from './components/Note';
 
+export { Notice } from './components/Notice';
+export type { Props as NoticeProps } from './components/Notice';
+
 export { Loading } from './components/Loading';
 export type { Props as LoadingProps } from './components/Loading';
 
@@ -84,12 +87,14 @@ export type { Props as SegmentedControlProps } from './components/SegmentedContr
 export { Field } from './components/Field';
 export type { Props as FieldProps } from './components/Field';
 
+export { FieldGroup } from './components/FieldGroup';
+export type { Props as FieldGroupProps } from './components/FieldGroup';
+
 export { Dialog } from './components/Dialog';
 export type { Props as DialogProps } from './components/Dialog';
 
 export { Pagination } from './components/Pagination';
 export type { Props as PaginationProps } from './components/Pagination';
-
 
 export { Chip } from './components/Chip';
 export type { Props as ChipProps } from './components/Chip';
@@ -99,6 +104,12 @@ export type { Props as TagProps } from './components/Tag';
 
 export { Badge } from './components/Badge';
 export type { Props as BadgeProps } from './components/Badge';
+
+export * as Icon from './components/Icon';
+export type { Props as IconProps } from './components/Icon';
+
+export { IconButton } from './components/IconButton';
+export type { Props as IconButtonProps } from './components/IconButton';
 
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';

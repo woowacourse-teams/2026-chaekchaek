@@ -6,7 +6,7 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 
-import { Split } from '@chaekchaek/design-system';
+import { Icon, Notice, Split } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
 import { List } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
@@ -44,24 +44,32 @@ export const BooksPage = () => {
   const [page, setPage] = useState(() => Number(defaultPage) ?? 1);
 
   const handleChangeQuery = (e: ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const { value } = e.target;
+    setQuery(value);
     setPage(1);
 
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('query', query);
-      return next;
-    });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('page', '1');
+        next.set('query', value);
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const handleChangeDefaultPage = (defaultPage: number) => {
     setPage(defaultPage);
 
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('page', String(defaultPage));
-      return next;
-    });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('page', String(defaultPage));
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const getBooksLoadData = useCallback(async () => {
@@ -85,7 +93,9 @@ export const BooksPage = () => {
   });
   const handleRegisterLibrary = async (isbn: string) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
-    await mutate({ isbn13: isbn, status: 'READING' });
+    await mutate({ isbn13: isbn, status: 'WANT_TO_READ' });
+
+    handleMove(isbn);
   };
 
   return (
@@ -99,7 +109,12 @@ export const BooksPage = () => {
               orientation="vertical"
               trailing={
                 <>
-                  <Input block value={query} onChange={handleChangeQuery} />
+                  <Input
+                    block
+                    leading={<Icon.SearchIcon />}
+                    value={query}
+                    onChange={handleChangeQuery}
+                  />
                 </>
               }
             >
@@ -110,6 +125,9 @@ export const BooksPage = () => {
             <Title level="main" trailing={<></>}>
               '{keywordQuery}' 검색 결과
             </Title>
+            {data && !data?.items?.length && (
+              <Notice height={500}>검색된 데이터가 없습니다.</Notice>
+            )}
             <List>
               {!!data?.items.length &&
                 data?.items.map((item) => {
@@ -141,14 +159,16 @@ export const BooksPage = () => {
                             감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
                           </Badge>
                         )}
-                        <Button
-                          variant="primary"
-                          onClick={() => {
-                            handleRegisterLibrary(item?.isbn13);
-                          }}
-                        >
-                          읽는 중 시작
-                        </Button>
+                        {!item.isRegisteredInMyLibrary && (
+                          <Button
+                            variant="primary"
+                            onClick={() => {
+                              handleRegisterLibrary(item?.isbn13);
+                            }}
+                          >
+                            내 서재 담기
+                          </Button>
+                        )}
                       </List.Item.Trailing>
                     </List.Item>
                   );
@@ -156,6 +176,7 @@ export const BooksPage = () => {
             </List>
             {data && (
               <Pagination
+                sx={{ mt: 5, mb: 10 }}
                 defaultPage={page}
                 totalPages={data?.totalCount}
                 onChange={handleChangeDefaultPage}

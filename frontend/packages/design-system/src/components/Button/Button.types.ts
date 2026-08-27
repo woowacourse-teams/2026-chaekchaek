@@ -6,7 +6,8 @@ export type AS = 'div';
 
 export type OwnProps = {
   shape?: 'default' | 'normal' | 'link';
-  variant?: 'default' | 'primary' | 'secondary' | 'accent' | 'ghost' | 'danger';
+  variant?:
+    'default' | 'primary' | 'secondary' | 'accent' | 'ghost' | 'soft' | 'danger' | 'danger-weak';
   size?: 'small' | 'medium' | 'large';
   block?: boolean;
   leading?: ReactNode;

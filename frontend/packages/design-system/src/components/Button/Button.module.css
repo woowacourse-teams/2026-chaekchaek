@@ -60,10 +60,22 @@
   --button-color: #555;
 }
 
+.variant-soft {
+  --button-background: #fff4df;
+  --button-border-color: #d9c6a5;
+  --button-color: #333;
+}
+
 .variant-danger {
-  --button-background: #f00;
-  --button-border-color: #f00;
+  --button-background: #C92A24;
+  --button-border-color: #C92A24;
   --button-color: #fff;
+}
+
+.variant-danger-weak {
+  --button-background: #fff;
+  --button-border-color: #b3261e;
+  --button-color: #b3261e;
 }
 
 .size-small {
@@ -85,6 +97,13 @@
   padding-inline: 24px;
   font-size: 14px;
   font-weight: 700;
+}
+
+.shape-link.size-small,
+.shape-link.size-medium,
+.shape-link.size-large {
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .root:disabled,

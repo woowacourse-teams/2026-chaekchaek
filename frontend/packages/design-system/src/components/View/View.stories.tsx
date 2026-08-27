@@ -17,3 +17,10 @@ export const ViewExample: Story = {
     children: '',
   },
 };
+
+export const Spacing: Story = {
+  args: {
+    sx: { mt: 10, mr: 5, mb: 4, ml: 2 },
+    children: 'Spacing',
+  },
+};

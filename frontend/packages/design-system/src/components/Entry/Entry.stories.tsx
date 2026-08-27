@@ -80,7 +80,7 @@ export const ExampleReview: Story = {
 
 export const VariantSubtle: Story = {
   args: {
-    varaint: 'subtle',
+    variant: 'subtle',
     children: (
       <>
         <Entry.Main>

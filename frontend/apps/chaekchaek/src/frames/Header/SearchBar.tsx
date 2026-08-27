@@ -1,7 +1,7 @@
 import type { ElementType } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { View } from '@chaekchaek/design-system';
+import { Icon, View } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 import { createClassName } from '@chaekchaek/design-system';
 
@@ -34,6 +34,7 @@ export const SearchBar = <T extends ElementType>(props: SearchBarProps<T>) => {
   return (
     <View as={as} className={classname} {...restProps}>
       <Input
+        leading={<Icon.SearchIcon color="secondary" />}
         shape="default"
         size="medium"
         reverse

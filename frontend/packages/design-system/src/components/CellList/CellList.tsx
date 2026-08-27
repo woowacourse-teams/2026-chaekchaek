@@ -1,6 +1,7 @@
 import type { ElementType } from 'react';
 
 import { View } from '#internal/components/View';
+import { resolveSx } from '#internal/systems/index';
 import { createClassName } from '#internal/utils/classname';
 
 import { Item } from './Item';
@@ -12,7 +13,7 @@ import type { Props } from './';
 const classnameDefault = 'ui-CellList';
 
 export const CellList = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, children, title, ...restProps } = props;
+  const { as = 'div', className, children, title, sx, style, ...restProps } = props;
 
   const modifiers = {};
 
@@ -23,8 +24,12 @@ export const CellList = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const spacingStyle = resolveSx({ sx });
+
+  const customStyles = { ...spacingStyle, ...style };
+
   return (
-    <View as={as} className={classname} {...restProps}>
+    <View as={as} className={classname} style={customStyles} {...restProps}>
       {title && <p className={styles[`cell-list-title`]}>{title}</p>}
       <div as={as} className={styles.content} {...restProps}>
         {children}

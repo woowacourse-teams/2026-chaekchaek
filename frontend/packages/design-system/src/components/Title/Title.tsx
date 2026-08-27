@@ -1,6 +1,7 @@
 import type { ElementType } from 'react';
 
 import { View } from '#internal/components/View';
+import { resolveSx } from '#internal/systems/index';
 import { createClassName } from '#internal/utils/classname';
 
 import styles from './Title.module.css';
@@ -17,6 +18,8 @@ export const Title = <T extends ElementType>(props: Props<T>) => {
     level = 'page',
     trailing,
     orientation = 'horizontal',
+    sx,
+    style,
     ...restProps
   } = props;
 
@@ -32,8 +35,12 @@ export const Title = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
+  const spacingStyle = resolveSx({ sx });
+
+  const customStyles = { ...spacingStyle, ...style };
+
   return (
-    <View as={as} className={classname} {...restProps}>
+    <View as={as} className={classname} style={customStyles} {...restProps}>
       <div className={styles.title}>{children}</div>
       {trailing && <div className={styles.trailing}>{trailing}</div>}
     </View>

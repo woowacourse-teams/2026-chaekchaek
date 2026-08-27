@@ -9,6 +9,7 @@ export type GetBooks = (params: GetBooksParams) => Promise<{
   items: {
     translators: string[];
     coverImageUrl: string;
+    isRegisteredInMyLibrary: boolean;
     isbn13: string;
     publisher: string;
     publishedDate: string;

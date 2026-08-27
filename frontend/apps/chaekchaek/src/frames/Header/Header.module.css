@@ -22,6 +22,10 @@
   align-items: center;
 }
 
+.frame-Header-Logo a {
+  text-decoration: none;
+}
+
 .frame-Header-Logo .img {
   padding-right: 12px;
 }
