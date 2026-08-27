@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@chaekchaek/design-system": "^1.0.0",
+    "@sentry/react": "^10.71.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-ga4": "^3.0.1",
