@@ -5,6 +5,8 @@ import { useFormValues } from '@/hooks/useFormValues';
 import { useExecute } from '@/services/core/useExecute';
 import { postReviewsReviewIdReplies } from '@/services/apis/reviewsReviewIdReplies/repository';
 
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
 import { validateReply } from './validator';
 import type { ReplyFormValues } from './validator';
 
@@ -31,11 +33,13 @@ export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
     await onReplyWritten();
   };
 
+  const { user } = useAuthContext();
+
   return (
     <Surface>
       <Shell>
         <Shell.Leading>
-          <Avatar img="" size="small" />
+          <Avatar img={user?.profileImageUrl || ''} size="small" />
         </Shell.Leading>
         <Shell.Content
           content={

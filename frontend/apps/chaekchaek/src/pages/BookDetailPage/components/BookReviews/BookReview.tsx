@@ -25,7 +25,7 @@ import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
 
-export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookReviewProps) => {
+export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
   const getReviewsReviewIdRepliesLoadData = useCallback(() => {
     return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
   }, [review.reviewId]);
@@ -125,7 +125,14 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
 
   const dialogElement = renderDialog(dialog);
 
-  const showSpoilerVisible = isSpoilerVisible || review.isSpoiler;
+  const [isSpoilerVisible, setIsSpoilerVisible] = useState(false);
+  const handleClickShowSpoiler = () => {
+    if (!review.isSpoiler) return;
+
+    setIsSpoilerVisible(true);
+  };
+
+  const showSpoilerVisible = isSpoilerVisible || !review.isSpoiler;
 
   return (
     <Entry variant={showSpoilerVisible ? 'subtle' : 'plain'}>
@@ -161,12 +168,10 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
             )}
           </Shell>
         </Entry.Header>
-        <Entry.Body>
-          {!showSpoilerVisible ? review.content : SPOILER_PLACEHOLDER_REVIEW}
+        <Entry.Body onClick={handleClickShowSpoiler}>
+          {showSpoilerVisible ? review.content : SPOILER_PLACEHOLDER_REVIEW}
           {review.quote && (
-            <Note variant={showSpoilerVisible ? 'subtle' : 'plain'}>
-              {!showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}
-            </Note>
+            <Note variant={showSpoilerVisible ? 'subtle' : 'plain'}>{showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}</Note>
           )}
         </Entry.Body>
         <Entry.Footer>
@@ -207,8 +212,9 @@ export const BookReview = ({ review, isSpoilerVisible, onReviewsRefresh }: BookR
                     <Avatar img={reply.author.profileImageUrl} size="small" />
                   </Shell.Leading>
                   <Shell.Content
+                    onClick={handleClickShowSpoiler}
                     title={reply.author.displayName}
-                    description={!showSpoilerVisible ? reply.content : SPOILER_PLACEHOLDER_REPLY}
+                    description={showSpoilerVisible ? reply.content : SPOILER_PLACEHOLDER_REPLY}
                   />
                   <Shell.Trailing>
                     <Button
