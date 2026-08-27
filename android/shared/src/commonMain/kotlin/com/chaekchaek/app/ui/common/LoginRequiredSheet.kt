@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.common
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,7 +24,9 @@ import com.chaekchaek.app.ui.theme.ChaekSurface
 internal fun LoginRequiredSheet(
     signingIn: Boolean,
     error: String?,
+    appleSignInAvailable: Boolean,
     onDismiss: () -> Unit,
+    onAppleSignIn: () -> Unit,
     onGoogleSignIn: () -> Unit,
 ) {
     ModalBottomSheet(
@@ -42,16 +45,33 @@ internal fun LoginRequiredSheet(
             error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
+            if (appleSignInAvailable) {
+                Surface(
+                    onClick = { if (!signingIn) onAppleSignIn() },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = ChaekInk,
+                ) {
+                    Text(
+                        if (signingIn) "로그인 중..." else "Apple로 계속하기",
+                        modifier = Modifier.padding(vertical = 14.dp),
+                        color = ChaekSurface,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
+            }
             Surface(
                 onClick = { if (!signingIn) onGoogleSignIn() },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = if (appleSignInAvailable) 0.dp else 8.dp),
                 shape = RoundedCornerShape(8.dp),
-                color = ChaekInk,
+                color = if (appleSignInAvailable) ChaekSurface else ChaekInk,
+                border = if (appleSignInAvailable) BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
             ) {
                 Text(
                     if (signingIn) "로그인 중..." else "Google로 계속하기",
                     modifier = Modifier.padding(vertical = 14.dp),
-                    color = ChaekSurface,
+                    color = if (appleSignInAvailable) ChaekInk else ChaekSurface,
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelLarge,
                 )

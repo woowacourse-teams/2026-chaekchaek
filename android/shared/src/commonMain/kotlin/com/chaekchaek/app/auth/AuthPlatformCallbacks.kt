@@ -5,4 +5,13 @@ class AuthPlatformCallbacks(
   val readRefreshToken: () -> String?,
   val writeRefreshToken: (String) -> Unit,
   val clearRefreshToken: () -> Unit,
+  val requestAppleCredential: (
+    (onResult: (credential: AppleSignInCredential?, errorMessage: String?) -> Unit) -> Unit
+  )? = null,
+)
+
+data class AppleSignInCredential(
+  val identityToken: String,
+  val authorizationCode: String,
+  val nonce: String,
 )

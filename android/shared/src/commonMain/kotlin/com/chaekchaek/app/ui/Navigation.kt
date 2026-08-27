@@ -177,11 +177,18 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                         LoginRequiredSheet(
                             signingIn = authState.signingIn,
                             error = authState.errorMessage,
+                            appleSignInAvailable = authViewModel.appleSignInAvailable,
                             onDismiss = {
                                 if (!authState.signingIn) {
                                     authViewModel.clearError()
                                     authViewModel.cancelPendingAuthentication()
                                     viewModel.dismissAuthentication()
+                                }
+                            },
+                            onAppleSignIn = {
+                                authViewModel.clearError()
+                                authViewModel.requireAppleAuthentication { token ->
+                                    resumedAction = viewModel.authenticate(token)
                                 }
                             },
                             onGoogleSignIn = {

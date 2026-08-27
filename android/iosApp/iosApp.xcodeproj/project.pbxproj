@@ -15,6 +15,7 @@
 		A10000000000000000000001 /* GoogleSignInProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* GoogleSignInProvider.swift */; };
 		A10000000000000000000003 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000005 /* GoogleSignIn */; };
 		A10000000000000000000007 /* RefreshTokenKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* RefreshTokenKeychain.swift */; };
+		A20000000000000000000001 /* AppleSignInProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* AppleSignInProvider.swift */; };
 		C1D48550D30C0BB273B37351 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */; };
 		FF331168D03AF9252AA103AA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6E70D11AEAFF647C18D3139 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -38,6 +39,8 @@
 		91AA8D77ED3D6DB15210D4BE /* ChaekchaekTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChaekchaekTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000002 /* GoogleSignInProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoogleSignInProvider.swift; sourceTree = "<group>"; };
 		A10000000000000000000008 /* RefreshTokenKeychain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RefreshTokenKeychain.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* AppleSignInProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleSignInProvider.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* Chaekchaek.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = Chaekchaek.entitlements; sourceTree = "<group>"; };
 		AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chaekchaek.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D55D6C97221F513AE0BCFAAB /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChaekchaekApp.swift; sourceTree = "<group>"; };
@@ -88,10 +91,12 @@
 			isa = PBXGroup;
 			children = (
 				D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */,
+				A20000000000000000000002 /* AppleSignInProvider.swift */,
 				A10000000000000000000002 /* GoogleSignInProvider.swift */,
 				A10000000000000000000008 /* RefreshTokenKeychain.swift */,
 				D55D6C97221F513AE0BCFAAB /* ContentView.swift */,
 				F6E70D11AEAFF647C18D3139 /* Assets.xcassets */,
+				A20000000000000000000003 /* Chaekchaek.entitlements */,
 				16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */,
 			);
 			path = Chaekchaek;
@@ -181,6 +186,15 @@
 			attributes = {
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					8DF42E7328D695A26D759DA7 = {
+						SystemCapabilities = {
+							com.apple.SignInWithApple = {
+								enabled = 1;
+							};
+						};
+					};
+				};
 			};
 			buildConfigurationList = 46811D8437878002732A83F9 /* Build configuration list for PBXProject "iosApp" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -248,6 +262,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6ED143CCB7658FFD45C4B742 /* ChaekchaekApp.swift in Sources */,
+				A20000000000000000000001 /* AppleSignInProvider.swift in Sources */,
 				A10000000000000000000001 /* GoogleSignInProvider.swift in Sources */,
 				A10000000000000000000007 /* RefreshTokenKeychain.swift in Sources */,
 				3212D5F9818079E21FCAD3C5 /* ContentView.swift in Sources */,
@@ -281,6 +296,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = Chaekchaek/Chaekchaek.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CB3GUFX279;
@@ -392,6 +408,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = Chaekchaek/Chaekchaek.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CB3GUFX279;

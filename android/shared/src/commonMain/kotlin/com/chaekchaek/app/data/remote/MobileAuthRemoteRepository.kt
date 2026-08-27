@@ -14,6 +14,9 @@ class MobileAuthRemoteRepository {
   suspend fun loginWithGoogle(idToken: String): MobileAuthTokens =
     requestTokens("google", GoogleLoginRequest(idToken))
 
+  suspend fun loginWithApple(identityToken: String, authorizationCode: String, nonce: String): MobileAuthTokens =
+    requestTokens("apple", AppleLoginRequest(identityToken, authorizationCode, nonce))
+
   suspend fun reissue(refreshToken: String): MobileAuthTokens =
     requestTokens("reissue", RefreshTokenRequest(refreshToken))
 
@@ -51,6 +54,13 @@ class MobileAuthRemoteRepository {
 
 @Serializable
 private data class GoogleLoginRequest(val idToken: String)
+
+@Serializable
+internal data class AppleLoginRequest(
+  val identityToken: String,
+  val authorizationCode: String,
+  val nonce: String,
+)
 
 @Serializable
 internal data class RefreshTokenRequest(val refreshToken: String)

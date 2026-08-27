@@ -11,6 +11,7 @@ struct ContentView: View {
 private struct ComposeViewController: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
         let keychain = RefreshTokenKeychain()
+        let appleSignIn = AppleSignInProvider()
         let authPlatform = AuthPlatformCallbacks(
             requestGoogleIdToken: { onResult in
                 Task { @MainActor in
@@ -23,7 +24,26 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             },
             readRefreshToken: keychain.read,
             writeRefreshToken: keychain.write,
-            clearRefreshToken: keychain.clear
+            clearRefreshToken: keychain.clear,
+            requestAppleCredential: { onResult in
+                Task { @MainActor in
+                    do {
+                        let credential = try await appleSignIn.signIn()
+                        _ = onResult(
+                            AppleSignInCredential(
+                                identityToken: credential.identityToken,
+                                authorizationCode: credential.authorizationCode,
+                                nonce: credential.nonce
+                            ),
+                            nil
+                        )
+                    } catch is CancellationError {
+                        _ = onResult(nil, "Apple 로그인을 취소했어요.")
+                    } catch {
+                        _ = onResult(nil, error.localizedDescription)
+                    }
+                }
+            }
         )
         return MainViewControllerKt.MainViewController(authPlatform: authPlatform)
     }
