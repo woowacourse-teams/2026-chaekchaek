@@ -1,5 +1,7 @@
 package com.chaekchaek.app.data.remote
 
+import com.chaekchaek.app.auth.GuestAuth
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ResponseException
 import io.ktor.client.request.post
@@ -8,11 +10,21 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 
-class MobileAuthRemoteRepository {
-  private val client = createHttpClient()
+class MobileAuthRemoteRepository(
+  private val client: HttpClient = createHttpClient(),
+) {
 
   suspend fun loginWithGoogle(idToken: String): MobileAuthTokens =
     requestTokens("google", GoogleLoginRequest(idToken))
+
+  suspend fun issueGuest(): GuestAuth =
+    try {
+      client.post("$BASE_URL/api/v1/auth/guest-token")
+        .body<GuestAuthResponse>()
+        .toGuestAuth()
+    } catch (error: ResponseException) {
+      throw error.toMobileLoginException()
+    }
 
   suspend fun reissue(refreshToken: String): MobileAuthTokens =
     requestTokens("reissue", RefreshTokenRequest(refreshToken))
@@ -51,6 +63,15 @@ class MobileAuthRemoteRepository {
 
 @Serializable
 private data class GoogleLoginRequest(val idToken: String)
+
+@Serializable
+internal data class GuestAuthResponse(
+  val guestToken: String,
+  val nickname: String,
+  val expiresAt: String,
+)
+
+internal fun GuestAuthResponse.toGuestAuth() = GuestAuth(guestToken, nickname, expiresAt)
 
 @Serializable
 internal data class RefreshTokenRequest(val refreshToken: String)
