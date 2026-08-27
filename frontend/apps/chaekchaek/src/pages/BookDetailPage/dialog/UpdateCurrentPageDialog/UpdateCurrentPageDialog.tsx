@@ -64,7 +64,7 @@ export const UpdateCurrentPageDialog = ({
           <Button variant="primary" block onClick={handleSubmit}>
             입력한 쪽수까지 보기
           </Button>
-          <Button variant="danger" block onClick={onSpoilerVisible}>
+          <Button sx={{ mt: 4 }} variant="danger" block onClick={onSpoilerVisible}>
             스포일러 감수하고 전체 보기
           </Button>
         </Dialog.Footer>

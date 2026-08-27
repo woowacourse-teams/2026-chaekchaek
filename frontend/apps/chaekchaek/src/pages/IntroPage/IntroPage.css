@@ -67,6 +67,7 @@
 }
 
 [data-pencil-name="다크 흩어진 책 웹 홈"] > div img {
+  width: 100%;
   vertical-align: top;
 }
 

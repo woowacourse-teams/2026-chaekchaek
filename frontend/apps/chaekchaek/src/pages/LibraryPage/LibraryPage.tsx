@@ -219,7 +219,7 @@ export const LibraryPage = () => {
       <Header />
       <Main>
         <Split>
-          <Split.Top>
+          <Split.Top sx={{ mb: 6 }}>
             <Title
               level="page"
               trailing={
@@ -282,6 +282,7 @@ export const LibraryPage = () => {
               orientation="vertical"
               trailing={
                 <OptionList
+                  sx={{ mt: 3 }}
                   value={status}
                   options={Object.entries(READING_STATUS_LABELS).map(([labelKey, labelValue]) => {
                     return {
@@ -342,6 +343,7 @@ export const LibraryPage = () => {
                       title={
                         <>
                           <Tag
+                            sx={{ mb: 2 }}
                             variant={item.status === READING_STATUS.READING ? 'primary' : 'subtle'}
                           >
                             {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
@@ -363,14 +365,14 @@ export const LibraryPage = () => {
                       {!isEditing && <Icon.ArrowRightIcon />}
                       {isEditing && (
                         <>
-                          삭제
-                          {/* <IconButton
+                          <IconButton
+                            sx={{ ml: 4 }}
                             onClick={() => {
                               handleClickDelete(item.bookId);
                             }}
                           >
-                            <Icon.TrashIcon />
-                          </IconButton> */}
+                            <Icon.TrashIcon color="error" />
+                          </IconButton>
                         </>
                       )}
                     </List.Item.Trailing>
@@ -380,6 +382,7 @@ export const LibraryPage = () => {
             </List>
 
             <Pagination
+              sx={{ mt: 5, mb: 10 }}
               defaultPage={1}
               totalPages={libraryData?.filteredCount ?? 1}
               onChange={handleChangeDefaultPage}

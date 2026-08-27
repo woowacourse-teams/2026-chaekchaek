@@ -41,7 +41,7 @@ export const BookInfo = ({
   return (
     <>
       <Title level="main">내 독서 기록</Title>
-      <Banner>
+      <Banner sx={{ mt: 6 }}>
         <Banner.Content title="내 별점" content="아직 평가하지 않았어요" />
         <Banner.Trailing>
           <Button
@@ -55,6 +55,7 @@ export const BookInfo = ({
         </Banner.Trailing>
       </Banner>
       <SegmentedControl
+        sx={{ mt: 6 }}
         shape="normal"
         value={readingStatus}
         options={[
@@ -65,15 +66,16 @@ export const BookInfo = ({
         onChange={onReadingStatusChange}
       />
       <ProgressBar
+        sx={{ mt: 6 }}
         value={readPageCount}
         max={bookPageCount}
         title="현재 읽은 범위"
         label={`${readPageCount} / ${bookPageCount}쪽`}
       />
-      <Button variant="primary" block={true} onClick={handleClickCurrentPage}>
+      <Button sx={{ mt: 2 }} variant="primary" block={true} onClick={handleClickCurrentPage}>
         현재 읽은 쪽수 입력
       </Button>
-      <DataInfo heading="책 정보">
+      <DataInfo sx={{ mt: 6 }} heading="책 정보">
         {category && <DataInfo.Item title="장르" content={category} />}
         {publishedDate && <DataInfo.Item title="출간" content={publishedDate} />}
         {isbn13 && <DataInfo.Item title="ISBN" content={isbn13} />}
