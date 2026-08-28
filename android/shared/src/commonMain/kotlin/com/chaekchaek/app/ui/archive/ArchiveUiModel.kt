@@ -23,8 +23,6 @@ data class ArchiveBookUiModel(
 
 data class ArchiveUiState(
     val items: List<ArchiveBookUiModel> = emptyList(),
-    val anonymousReviews: Boolean = true,
-    val nickname: String = "",
     val showLoading: Boolean = false,
     val errorMessage: String? = null,
 )

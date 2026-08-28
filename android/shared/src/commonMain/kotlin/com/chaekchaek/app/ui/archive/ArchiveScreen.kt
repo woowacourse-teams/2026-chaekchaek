@@ -72,7 +72,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ArchiveRoute(
     viewModel: ArchiveViewModel,
-    accessToken: String?,
+    memberSettingsViewModel: MemberSettingsViewModel,
     editing: Boolean,
     onEditingChange: (Boolean) -> Unit,
     onBookClick: (ArchiveBookUiModel) -> Unit,
@@ -80,14 +80,15 @@ fun ArchiveRoute(
     bookCover: @Composable (ArchiveBookUiModel) -> Unit = { DefaultBookCover(it) },
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    LaunchedEffect(accessToken) { viewModel.authenticate(accessToken) }
+    val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     ArchiveScreen(
         uiState = uiState,
+        memberSettingsState = memberSettingsState,
         editing = editing,
         onEditingChange = onEditingChange,
         onRemove = viewModel::remove,
         onChangeStatus = viewModel::changeStatus,
-        onAnonymousReviewsChange = viewModel::setAnonymousReviews,
+        onAnonymousReviewsChange = memberSettingsViewModel::setAnonymousReviews,
         onRetry = viewModel::retry,
         onBookClick = onBookClick,
         modifier = modifier,
@@ -98,6 +99,7 @@ fun ArchiveRoute(
 @Composable
 fun ArchiveScreen(
     uiState: ArchiveUiState,
+    memberSettingsState: MemberSettingsUiState,
     editing: Boolean,
     onEditingChange: (Boolean) -> Unit,
     onRemove: (Set<String>) -> Unit,
@@ -114,7 +116,7 @@ fun ArchiveScreen(
     var pendingDeletionIds by remember { mutableStateOf(emptySet<String>()) }
     var showStatusDialog by remember { mutableStateOf(false) }
     var showNicknameDialog by remember { mutableStateOf(false) }
-    var nickname by rememberSaveable(uiState.nickname) { mutableStateOf(uiState.nickname) }
+    var nickname by rememberSaveable(memberSettingsState.nickname) { mutableStateOf(memberSettingsState.nickname) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val visibleItems = remember(uiState.items, filter, sort) {
@@ -153,9 +155,9 @@ fun ArchiveScreen(
                         },
                     )
                     AnonymousSetting(
-                        checked = uiState.anonymousReviews,
+                        checked = memberSettingsState.anonymousReviews,
                         onClick = {
-                            if (uiState.anonymousReviews) showNicknameDialog = true
+                            if (memberSettingsState.anonymousReviews) showNicknameDialog = true
                             else onAnonymousReviewsChange(true, "")
                         },
                     )
@@ -211,7 +213,7 @@ fun ArchiveScreen(
             )
         }
 
-        if (uiState.showLoading) {
+        if (uiState.showLoading || memberSettingsState.showLoading) {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center).size(32.dp).semantics { contentDescription = "서재를 불러오는 중" },
                 color = MaterialTheme.colorScheme.primary,

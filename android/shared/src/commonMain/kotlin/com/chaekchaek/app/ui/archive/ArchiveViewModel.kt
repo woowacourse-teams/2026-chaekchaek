@@ -14,20 +14,20 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class ArchiveViewModel(
-    private val repository: LibraryRemoteRepository = LibraryRemoteRepository(),
+    private val repository: LibraryRemoteRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ArchiveUiState())
     val uiState: StateFlow<ArchiveUiState> = _uiState.asStateFlow()
 
     private val mutationMutex = Mutex()
     private var accessToken: String? = null
-    private var requestJob: Job? = null
+    private var libraryJob: Job? = null
 
     fun authenticate(accessToken: String?) {
         if (this.accessToken == accessToken) return
         this.accessToken = accessToken
         if (accessToken == null) {
-            requestJob?.cancel()
+            libraryJob?.cancel()
             _uiState.value = _uiState.value.copy(items = emptyList(), showLoading = false, errorMessage = null)
         } else {
             load()
@@ -48,40 +48,16 @@ class ArchiveViewModel(
         mutate { token -> repository.bulkChangeStatus(serverBookIds, status.apiValue, token) }
     }
 
-    fun setAnonymousReviews(anonymous: Boolean, nickname: String = "") {
-        val token = accessToken ?: return
-        requestJob?.cancel()
-        requestJob = viewModelScope.launch {
-            mutationMutex.withLock {
-                withDelayedLoading(::setLoading) {
-                    if (!anonymous) repository.updateNickname(nickname.trim(), token)
-                    repository.updateAnonymity(anonymous, token)
-                }.onSuccess { profile ->
-                    if (accessToken == token) {
-                        _uiState.value = _uiState.value.copy(
-                            anonymousReviews = profile.displayAnonymous,
-                            nickname = profile.nickname,
-                            errorMessage = null,
-                        )
-                    }
-                }.onFailure { error ->
-                    if (error is CancellationException) throw error
-                    _uiState.value = _uiState.value.copy(errorMessage = "설정을 변경하지 못했어요")
-                }
-            }
-        }
-    }
-
     private fun load() {
         val token = accessToken ?: return
-        requestJob?.cancel()
-        requestJob = viewModelScope.launch { loadIntoState(token) }
+        libraryJob?.cancel()
+        libraryJob = viewModelScope.launch { loadIntoState(token) }
     }
 
     private fun mutate(action: suspend (String) -> Unit) {
         val token = accessToken ?: return
-        requestJob?.cancel()
-        requestJob = viewModelScope.launch {
+        libraryJob?.cancel()
+        libraryJob = viewModelScope.launch {
             mutationMutex.withLock {
                 withDelayedLoading(::setLoading) {
                     action(token)

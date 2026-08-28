@@ -14,21 +14,6 @@ import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 
 class LibraryRemoteRepository(private val client: HttpClient = createHttpClient()) {
-  suspend fun getMember(accessToken: String): RemoteMemberProfile =
-    client.get("$BASE_URL/api/v1/members/me") {
-      header(HttpHeaders.Authorization, "Bearer $accessToken")
-    }.body<MemberResponseDto>().toRemoteMemberProfile()
-
-  suspend fun updateNickname(nickname: String, accessToken: String): RemoteMemberProfile =
-    client.patch("$BASE_URL/api/v1/members/me/nickname") {
-      authenticatedJson(accessToken, NicknameRequest(nickname))
-    }.body<MemberResponseDto>().toRemoteMemberProfile()
-
-  suspend fun updateAnonymity(displayAnonymous: Boolean, accessToken: String): RemoteMemberProfile =
-    client.patch("$BASE_URL/api/v1/members/me/anonymity") {
-      authenticatedJson(accessToken, AnonymityRequest(displayAnonymous))
-    }.body<MemberResponseDto>().toRemoteMemberProfile()
-
   suspend fun getAll(accessToken: String): List<RemoteLibraryBook> {
     val items = mutableListOf<RemoteLibraryBook>()
     var page: Int? = FIRST_PAGE
@@ -95,12 +80,6 @@ data class RemoteLibraryBook(
   val readingUpdatedAt: String,
 )
 
-data class RemoteMemberProfile(
-  val memberId: Long,
-  val nickname: String,
-  val displayAnonymous: Boolean,
-)
-
 @Serializable
 private data class LibraryPageDto(
   val nextPage: Int? = null,
@@ -147,18 +126,3 @@ private data class BulkDeleteRequest(val bookIds: List<Long>)
 
 @Serializable
 private data class BulkStatusRequest(val bookIds: List<Long>, val status: String)
-
-@Serializable
-private data class NicknameRequest(val nickname: String)
-
-@Serializable
-private data class AnonymityRequest(val displayAnonymous: Boolean)
-
-@Serializable
-private data class MemberResponseDto(
-  val memberId: Long,
-  val nickname: String? = null,
-  val displayAnonymous: Boolean,
-) {
-  fun toRemoteMemberProfile() = RemoteMemberProfile(memberId, nickname.orEmpty(), displayAnonymous)
-}
