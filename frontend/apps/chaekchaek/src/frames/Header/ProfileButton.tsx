@@ -1,11 +1,11 @@
 import { createClassName } from '@chaekchaek/design-system';
 
-import { ENV } from '@/configs/env';
-
 import profileIcon from './imgs/header-action.svg';
 import styles from './Header.module.css';
 
 import type { ProfileButtonProps } from './ProfileButton.types';
+
+import { getOauthLoginUrl } from '@/auth/oauth';
 
 const classnameDefault = 'frame-Header-ProfileButton';
 
@@ -18,7 +18,7 @@ export const ProfileButton = ({ className, type = 'button', ...restProps }: Prof
   });
 
   const handleMove = () => {
-    window.location.href = `${ENV.APP_API_URL}/oauth2/authorization/google`;
+    window.location.href = getOauthLoginUrl('google');
   };
 
   return (
