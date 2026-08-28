@@ -1,5 +1,6 @@
 import Shared
 import SwiftUI
+import GoogleSignIn
 
 struct ContentView: View {
     var body: some View {
@@ -11,6 +12,11 @@ struct ContentView: View {
 private struct ComposeViewController: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
         let keychain = RefreshTokenKeychain()
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uiTestingGuest") {
+            keychain.clear()
+        }
+#endif
         let appleSignIn = AppleSignInProvider()
         let authPlatform = AuthPlatformCallbacks(
             requestGoogleIdToken: { onResult in
@@ -45,7 +51,15 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                 }
             }
         )
-        return MainViewControllerKt.MainViewController(authPlatform: authPlatform)
+        return MainViewControllerKt.MainViewController(
+            authPlatform: authPlatform,
+            createGoogleSignInButton: {
+                let button = GIDSignInButton()
+                button.style = .wide
+                button.colorScheme = .light
+                return button
+            }
+        )
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}

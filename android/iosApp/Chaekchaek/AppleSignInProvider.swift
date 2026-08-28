@@ -71,7 +71,7 @@ final class AppleSignInProvider: NSObject {
         presentationWindow = nil
     }
 
-    private static func makeNonce() throws -> String {
+    static func makeNonce() throws -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
         let status = bytes.withUnsafeMutableBytes { buffer in
             SecRandomCopyBytes(kSecRandomDefault, buffer.count, buffer.baseAddress!)
@@ -83,7 +83,7 @@ final class AppleSignInProvider: NSObject {
             .replacingOccurrences(of: "=", with: "")
     }
 
-    private static func sha256(_ value: String) -> String {
+    static func sha256(_ value: String) -> String {
         SHA256.hash(data: Data(value.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 }
