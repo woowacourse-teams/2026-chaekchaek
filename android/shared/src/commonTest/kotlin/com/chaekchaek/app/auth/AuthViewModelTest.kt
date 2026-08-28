@@ -165,6 +165,46 @@ class AuthViewModelTest {
     assertEquals("access-signed-in", resumedWith)
     assertEquals("signed-in", storedRefreshToken)
     assertEquals("access-signed-in", viewModel.tokens.value?.accessToken)
+    assertEquals(false, viewModel.appleSignInAvailable)
+    assertNull(guest)
+  }
+
+  @Test
+  fun `Apple 로그인 뒤 보류 작업을 새 Access Token으로 재개한다`() = runTest {
+    var appleResult: ((AppleSignInCredential?, String?) -> Unit)? = null
+    var receivedCredential: AppleSignInCredential? = null
+    var resumedWith: String? = null
+    var guest: GuestAuth? = GuestAuth("guest-token", "게스트", "2026-09-25T09:00:00")
+    val viewModel = AuthViewModel(
+      callbacks = AuthPlatformCallbacks(
+        requestGoogleIdToken = { error("호출되면 안 됨") },
+        readRefreshToken = { null },
+        writeRefreshToken = {},
+        clearRefreshToken = {},
+        requestAppleCredential = { appleResult = it },
+        readGuest = { guest },
+        clearGuest = { guest = null },
+      ),
+      loginWithGoogle = { _, _ -> error("호출되면 안 됨") },
+      loginWithApple = { received, guestToken ->
+        receivedCredential = received
+        assertEquals("guest-token", guestToken)
+        tokens("apple")
+      },
+      reissue = { error("호출되면 안 됨") },
+      logout = {},
+      scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    val credential = AppleSignInCredential("identity", "code", "nonce")
+
+    viewModel.requireAppleAuthentication { resumedWith = it }
+    appleResult?.invoke(credential, null)
+    runCurrent()
+
+    assertEquals(true, viewModel.appleSignInAvailable)
+    assertEquals(credential, receivedCredential)
+    assertEquals("access-apple", resumedWith)
     assertNull(guest)
   }
 

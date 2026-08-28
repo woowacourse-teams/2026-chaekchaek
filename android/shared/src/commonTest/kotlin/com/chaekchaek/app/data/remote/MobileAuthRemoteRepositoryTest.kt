@@ -85,4 +85,14 @@ class MobileAuthRemoteRepositoryTest {
 
     assertEquals("{\"refreshToken\":\"refresh\"}", request)
   }
+
+  @Test
+  fun `Apple 로그인 요청 필수값을 직렬화한다`() {
+    val request = Json.encodeToString(AppleLoginRequest("identity", "code", "nonce"))
+
+    assertEquals(
+      "{\"identityToken\":\"identity\",\"authorizationCode\":\"code\",\"nonce\":\"nonce\"}",
+      request,
+    )
+  }
 }

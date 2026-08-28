@@ -27,6 +27,14 @@ class MobileAuthRemoteRepository(
       throw error.toMobileLoginException()
     }
 
+  suspend fun loginWithApple(
+    identityToken: String,
+    authorizationCode: String,
+    nonce: String,
+    guestToken: String? = null,
+  ): MobileAuthTokens =
+    requestTokens("apple", AppleLoginRequest(identityToken, authorizationCode, nonce), guestToken)
+
   suspend fun reissue(refreshToken: String): MobileAuthTokens =
     requestTokens("reissue", RefreshTokenRequest(refreshToken))
 
@@ -69,6 +77,13 @@ class MobileAuthRemoteRepository(
 
 @Serializable
 private data class GoogleLoginRequest(val idToken: String)
+
+@Serializable
+internal data class AppleLoginRequest(
+  val identityToken: String,
+  val authorizationCode: String,
+  val nonce: String,
+)
 
 @Serializable
 internal data class GuestAuthResponse(

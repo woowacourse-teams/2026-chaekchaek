@@ -171,11 +171,19 @@ internal fun RootScreen(
         LoginRequiredSheet(
             signingIn = authState.signingIn,
             error = authState.errorMessage,
+            appleSignInAvailable = authViewModel.appleSignInAvailable,
             onDismiss = {
                 if (!authState.signingIn) {
                     authViewModel.clearError()
                     authViewModel.cancelPendingAuthentication()
                     searchViewModel.cancelRegistration()
+                }
+            },
+            onAppleSignIn = {
+                authViewModel.clearError()
+                authViewModel.requireAppleAuthentication { token ->
+                    registrationViewModel.authenticate(token)
+                    searchViewModel.resumeRegistration()
                 }
             },
             onGoogleSignIn = {
@@ -192,11 +200,19 @@ internal fun RootScreen(
         LoginRequiredSheet(
             signingIn = authState.signingIn,
             error = authState.errorMessage,
+            appleSignInAvailable = authViewModel.appleSignInAvailable,
             onDismiss = {
                 if (!authState.signingIn) {
                     authViewModel.clearError()
                     authViewModel.cancelPendingAuthentication()
                     showArchiveLoginSheet = false
+                }
+            },
+            onAppleSignIn = {
+                authViewModel.clearError()
+                authViewModel.requireAppleAuthentication {
+                    showArchiveLoginSheet = false
+                    archiveEditing = true
                 }
             },
             onGoogleSignIn = {

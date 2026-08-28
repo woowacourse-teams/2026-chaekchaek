@@ -21,6 +21,7 @@ data class AuthUiState(
 class AuthViewModel private constructor(
   private val callbacks: AuthPlatformCallbacks,
   private val loginWithGoogle: suspend (String, String?) -> MobileAuthTokens,
+  private val loginWithApple: suspend (AppleSignInCredential, String?) -> MobileAuthTokens,
   reissue: suspend (String) -> MobileAuthTokens,
   logout: suspend (String) -> Unit,
   private val scope: CoroutineScope,
@@ -33,6 +34,14 @@ class AuthViewModel private constructor(
   ) : this(
     callbacks = callbacks,
     loginWithGoogle = remoteRepository::loginWithGoogle,
+    loginWithApple = { credential, guestToken ->
+      remoteRepository.loginWithApple(
+        credential.identityToken,
+        credential.authorizationCode,
+        credential.nonce,
+        guestToken,
+      )
+    },
     reissue = remoteRepository::reissue,
     logout = remoteRepository::logout,
     scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
@@ -43,11 +52,14 @@ class AuthViewModel private constructor(
   internal constructor(
     callbacks: AuthPlatformCallbacks,
     loginWithGoogle: suspend (String, String?) -> MobileAuthTokens,
+    loginWithApple: suspend (AppleSignInCredential, String?) -> MobileAuthTokens = { _, _ ->
+      error("예상하지 않은 Apple 로그인")
+    },
     reissue: suspend (String) -> MobileAuthTokens,
     logout: suspend (String) -> Unit,
     scope: CoroutineScope,
     currentTimeMillis: () -> Long,
-  ) : this(callbacks, loginWithGoogle, reissue, logout, scope, false, currentTimeMillis)
+  ) : this(callbacks, loginWithGoogle, loginWithApple, reissue, logout, scope, false, currentTimeMillis)
 
   private val session = AuthSession(
     readRefreshToken = callbacks.readRefreshToken,
@@ -59,12 +71,30 @@ class AuthViewModel private constructor(
     currentTimeMillis = currentTimeMillis,
   )
   val tokens: StateFlow<MobileAuthTokens?> = session.tokens
+  val appleSignInAvailable: Boolean = callbacks.requestAppleCredential != null
 
   private val _uiState = MutableStateFlow(AuthUiState())
   val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
   private var pendingAction: (suspend (accessToken: String) -> Unit)? = null
 
   fun requireAuthentication(action: suspend (accessToken: String) -> Unit) {
+    requestAuthentication(action, callbacks.requestGoogleIdToken) { idToken ->
+      loginWithGoogle(idToken, callbacks.readGuest()?.token)
+    }
+  }
+
+  fun requireAppleAuthentication(action: suspend (accessToken: String) -> Unit) {
+    val requestAppleCredential = callbacks.requestAppleCredential ?: return
+    requestAuthentication(action, requestAppleCredential) { credential ->
+      loginWithApple(credential, callbacks.readGuest()?.token)
+    }
+  }
+
+  private fun <Credential> requestAuthentication(
+    action: suspend (accessToken: String) -> Unit,
+    requestCredential: ((Credential?, String?) -> Unit) -> Unit,
+    login: suspend (Credential) -> MobileAuthTokens,
+  ) {
     val accessToken = tokens.value?.accessToken
     if (accessToken != null) {
       scope.launch { action(accessToken) }
@@ -72,7 +102,28 @@ class AuthViewModel private constructor(
     }
 
     pendingAction = action
-    if (!_uiState.value.signingIn) requestGoogleSignIn()
+    if (_uiState.value.signingIn) return
+    _uiState.value = AuthUiState(signingIn = true)
+    requestCredential { credential, platformError ->
+      if (credential == null) {
+        _uiState.value = AuthUiState(errorMessage = platformError ?: LOGIN_ERROR)
+        return@requestCredential
+      }
+
+      scope.launch {
+        try {
+          val tokens = login(credential)
+          session.signIn(tokens)
+          callbacks.clearGuest()
+          val actionToResume = pendingAction
+          this@AuthViewModel.pendingAction = null
+          actionToResume?.invoke(tokens.accessToken)
+          _uiState.value = AuthUiState()
+        } catch (_: Exception) {
+          _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
+        }
+      }
+    }
   }
 
   fun cancelPendingAuthentication() {
@@ -94,30 +145,6 @@ class AuthViewModel private constructor(
 
   override fun onCleared() {
     close()
-  }
-
-  private fun requestGoogleSignIn() {
-    _uiState.value = AuthUiState(signingIn = true)
-    callbacks.requestGoogleIdToken { idToken, platformError ->
-      if (idToken == null) {
-        _uiState.value = AuthUiState(errorMessage = platformError ?: LOGIN_ERROR)
-        return@requestGoogleIdToken
-      }
-
-      scope.launch {
-        try {
-          val tokens = loginWithGoogle(idToken, callbacks.readGuest()?.token)
-          session.signIn(tokens)
-          callbacks.clearGuest()
-          val action = pendingAction
-          pendingAction = null
-          action?.invoke(tokens.accessToken)
-          _uiState.value = AuthUiState()
-        } catch (_: Exception) {
-          _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
-        }
-      }
-    }
   }
 
   private companion object {
