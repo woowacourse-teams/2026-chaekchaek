@@ -1,6 +1,7 @@
 package com.chaekchaek.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import com.chaekchaek.app.ui.bookdetail.ArchiveStageBackground
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -47,6 +48,17 @@ class ChaekColorsContrastTest {
                 assertTrue(ratio >= 3.0, "$colorName on $backgroundName contrast was $ratio")
             }
         }
+    }
+
+    @Test
+    fun darkScreenTextPairsMeetWcagAa() {
+        assertTextContrast("accent on archive stage", DarkChaekColors.accent, ArchiveStageBackground)
+        assertTextContrast("inkSecondary on surfaceMuted", DarkChaekColors.inkSecondary, DarkChaekColors.surfaceMuted)
+    }
+
+    private fun assertTextContrast(name: String, foreground: Color, background: Color) {
+        val ratio = contrastRatio(foreground, background)
+        assertTrue(ratio >= 4.5, "$name contrast was $ratio")
     }
 }
 

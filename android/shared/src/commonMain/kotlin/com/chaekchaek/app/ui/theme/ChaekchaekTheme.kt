@@ -87,10 +87,6 @@ val ChaekAccentInk: Color @Composable get() = LocalChaekColors.current.accentInk
 val ChaekOnDarkMuted: Color @Composable get() = LocalChaekColors.current.onDarkMuted
 val ChaekDanger: Color @Composable get() = LocalChaekColors.current.danger
 
-internal val InvisibleCitiesCoverPaper = Color(0xFFF0F0EC)
-internal val InvisibleCitiesCoverInk = Color(0xFF171717)
-internal val InvisibleCitiesCoverBlock = Color(0xFF252525)
-
 @Immutable
 data class TextStyleScale(
     val small: TextStyle,

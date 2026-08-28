@@ -78,9 +78,6 @@ import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.*
 import com.chaekchaek.app.ui.theme.ChaekBand
-import com.chaekchaek.app.ui.theme.InvisibleCitiesCoverBlock
-import com.chaekchaek.app.ui.theme.InvisibleCitiesCoverInk
-import com.chaekchaek.app.ui.theme.InvisibleCitiesCoverPaper
 import kotlin.math.abs
 import kotlin.random.Random
 import kotlinx.coroutines.delay
@@ -721,6 +718,10 @@ private fun ReflectionCover(title: String, coverId: String, modifier: Modifier =
         Cover(coverId, title, modifier)
     }
 }
+
+private val InvisibleCitiesCoverPaper = Color(0xFFF0F0EC)
+private val InvisibleCitiesCoverInk = Color(0xFF171717)
+private val InvisibleCitiesCoverBlock = Color(0xFF252525)
 
 @Composable
 private fun InvisibleCitiesCover(modifier: Modifier = Modifier) {
