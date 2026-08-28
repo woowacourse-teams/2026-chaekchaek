@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
+import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.auth.ActorType;
@@ -20,6 +22,7 @@ import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.domain.Reply;
 import com.chaekchaek.review.domain.ReviewReaction;
 import com.chaekchaek.review.domain.ReplyReaction;
+import com.chaekchaek.review.dto.ReviewCreateByIsbnResponse;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
@@ -36,7 +39,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 class ReviewServiceTest {
 
@@ -56,7 +61,8 @@ class ReviewServiceTest {
         });
         ReviewService service = new ReviewService(reviewRepository, mock(ReplyRepository.class),
                 mock(ReviewReactionRepository.class), mock(ReplyReactionRepository.class),
-                () -> CurrentActor.guest(7L), readingRecordCoordinator, bookReader, memberReader);
+                () -> CurrentActor.guest(7L), readingRecordCoordinator, bookReader, memberReader,
+                mock(BookResolver.class), transactionManager());
 
         ReviewResponse response = service.createReview(5L,
                 new ReviewCreateRequest("게스트 감상", null, null, null, null, false));
@@ -77,7 +83,7 @@ class ReviewServiceTest {
         ReviewService service = new ReviewService(mock(ReviewRepository.class), mock(ReplyRepository.class),
                 mock(ReviewReactionRepository.class), mock(ReplyReactionRepository.class),
                 () -> CurrentActor.guest(7L), mock(ReadingRecordCoordinator.class),
-                mock(ReviewBookReader.class), memberReader(true));
+                mock(ReviewBookReader.class), memberReader(true), mock(BookResolver.class), transactionManager());
 
         assertThatThrownBy(() -> service.createReview(5L,
                 new ReviewCreateRequest("게스트 감상", null, null, 10, 100, false)))
@@ -95,7 +101,7 @@ class ReviewServiceTest {
         ReviewService service = new ReviewService(reviewRepository, mock(ReplyRepository.class),
                 mock(ReviewReactionRepository.class), mock(ReplyReactionRepository.class),
                 () -> CurrentActor.guest(7L), mock(ReadingRecordCoordinator.class),
-                mock(ReviewBookReader.class), memberReader(true));
+                mock(ReviewBookReader.class), memberReader(true), mock(BookResolver.class), transactionManager());
         ReviewUpdateRequest request = new ReviewUpdateRequest();
         request.setCurrentPage(10);
         request.setTotalPages(100);
@@ -123,7 +129,8 @@ class ReviewServiceTest {
         CurrentActorProvider currentActorProvider = () -> CurrentActor.member(7L, 99L);
         ReviewService service = new ReviewService(reviewRepository, replyRepository, reviewReactionRepository,
                 replyReactionRepository, currentActorProvider,
-                mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false));
+                mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false),
+                mock(BookResolver.class), transactionManager());
 
         service.createReviewReaction(10L);
         service.createReplyReaction(20L);
@@ -164,6 +171,56 @@ class ReviewServiceTest {
         verify(memberReader).findByActorIds(List.of(1L));
         assertThat(actual.author().anonymous()).isTrue();
         assertThat(actual.author().displayName()).isEqualTo("참새-a1b2c3d4");
+    }
+
+    @Test
+    @DisplayName("ISBN13으로 감상을 작성하면 해소된 도서 ID와 감상을 반환한다")
+    void should_ReturnResolvedBookIdAndReview_When_CreatingReviewByIsbn13() {
+        // given
+        ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        ReviewBookReader bookReader = mock(ReviewBookReader.class);
+        ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
+        BookResolver bookResolver = mock(BookResolver.class);
+        Book book = mock(Book.class);
+        when(book.getId()).thenReturn(5L);
+        when(bookResolver.findOrCreate("9788925568683")).thenReturn(book);
+        when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
+            Review review = invocation.getArgument(0);
+            ReflectionTestUtils.setField(review, "id", 10L);
+            return review;
+        });
+        ReviewService reviewService = reviewService(reviewRepository, bookReader, readingRecordCoordinator,
+                memberReader(false), bookResolver);
+
+        // when
+        ReviewCreateByIsbnResponse actual = reviewService.createReviewByIsbn13("9788925568683",
+                new ReviewCreateRequest("감상", null, null, null, null, false));
+
+        // then
+        assertThat(actual.bookId()).isEqualTo(5L);
+        assertThat(actual.review().reviewId()).isEqualTo(10L);
+        verify(bookResolver).findOrCreate("9788925568683");
+        verify(bookReader).validateBookExists(5L);
+    }
+
+    @Test
+    @DisplayName("게스트의 ISBN13 감상 페이지 입력은 도서를 등록하기 전에 거절한다")
+    void should_RejectGuestReadingPageBeforeResolvingBook_When_CreatingReviewByIsbn13() {
+        // given
+        BookResolver bookResolver = mock(BookResolver.class);
+        ReviewService reviewService = new ReviewService(
+                mock(ReviewRepository.class), mock(ReplyRepository.class), mock(ReviewReactionRepository.class),
+                mock(ReplyReactionRepository.class), () -> CurrentActor.guest(7L),
+                mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false),
+                bookResolver, transactionManager()
+        );
+
+        // when & then
+        assertThatThrownBy(() -> reviewService.createReviewByIsbn13("9788925568683",
+                new ReviewCreateRequest("감상", null, null, 10, 100, false)))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
+        verify(bookResolver, never()).findOrCreate(org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test
@@ -228,7 +285,8 @@ class ReviewServiceTest {
                 reviewRepository, replyRepository, mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class),
                 currentActorProvider(),
-                mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false));
+                mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false),
+                mock(BookResolver.class), transactionManager());
 
         // when
         Map<Long, Long> counts = reviewService.getCommentCounts(List.of(5L, 6L));
@@ -257,7 +315,8 @@ class ReviewServiceTest {
                 reviewRepository, replyRepository, mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class),
                 currentActorProvider(),
-                mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false));
+                mock(ReadingRecordCoordinator.class), mock(ReviewBookReader.class), memberReader(false),
+                mock(BookResolver.class), transactionManager());
 
         // when
         Map<Long, ActivityCounts> actual = reviewService.getActivityCounts(List.of(5L, 6L));
@@ -270,9 +329,22 @@ class ReviewServiceTest {
     private ReviewService reviewService(ReviewRepository reviewRepository, ReviewBookReader bookReader,
                                         ReadingRecordCoordinator readingRecordCoordinator,
                                         ReviewMemberReader memberReader) {
+        return reviewService(reviewRepository, bookReader, readingRecordCoordinator, memberReader,
+                mock(BookResolver.class));
+    }
+
+    private ReviewService reviewService(ReviewRepository reviewRepository, ReviewBookReader bookReader,
+                                        ReadingRecordCoordinator readingRecordCoordinator,
+                                        ReviewMemberReader memberReader, BookResolver bookResolver) {
         return new ReviewService(reviewRepository, mock(ReplyRepository.class), mock(ReviewReactionRepository.class),
                 mock(ReplyReactionRepository.class), currentActorProvider(),
-                readingRecordCoordinator, bookReader, memberReader);
+                readingRecordCoordinator, bookReader, memberReader, bookResolver, transactionManager());
+    }
+
+    private PlatformTransactionManager transactionManager() {
+        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
+        when(transactionManager.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
+        return transactionManager;
     }
 
     private ReviewMemberReader memberReader(boolean anonymousEnabled) {

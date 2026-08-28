@@ -1,5 +1,7 @@
 package com.chaekchaek.review.service;
 
+import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
@@ -18,6 +20,7 @@ import com.chaekchaek.review.dto.ReactionResponse;
 import com.chaekchaek.review.dto.ReplyCreateRequest;
 import com.chaekchaek.review.dto.ReplyResponse;
 import com.chaekchaek.review.dto.ReplyUpdateRequest;
+import com.chaekchaek.review.dto.ReviewCreateByIsbnResponse;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
@@ -32,19 +35,20 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
-@RequiredArgsConstructor
 public class ReviewService implements BookCommentCountReader, BookActivityCountReader {
 
     private static final int PAGE_SIZE = 10;
@@ -58,6 +62,32 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     private final ReadingRecordCoordinator readingRecordCoordinator;
     private final ReviewBookReader reviewBookReader;
     private final ReviewMemberReader reviewMemberReader;
+    private final BookResolver bookResolver;
+    private final TransactionTemplate transactionTemplate;
+
+    public ReviewService(
+            ReviewRepository reviewRepository,
+            ReplyRepository replyRepository,
+            ReviewReactionRepository reviewReactionRepository,
+            ReplyReactionRepository replyReactionRepository,
+            CurrentActorProvider currentActorProvider,
+            ReadingRecordCoordinator readingRecordCoordinator,
+            ReviewBookReader reviewBookReader,
+            ReviewMemberReader reviewMemberReader,
+            BookResolver bookResolver,
+            PlatformTransactionManager transactionManager
+    ) {
+        this.reviewRepository = reviewRepository;
+        this.replyRepository = replyRepository;
+        this.reviewReactionRepository = reviewReactionRepository;
+        this.replyReactionRepository = replyReactionRepository;
+        this.currentActorProvider = currentActorProvider;
+        this.readingRecordCoordinator = readingRecordCoordinator;
+        this.reviewBookReader = reviewBookReader;
+        this.reviewMemberReader = reviewMemberReader;
+        this.bookResolver = bookResolver;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
+    }
 
     @Transactional(readOnly = true)
     public PageResponse<ReviewResponse> findReviews(long bookId, int page, Feed feed, ReviewSort sort) {
@@ -113,11 +143,31 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     public ReviewResponse createReview(long bookId, ReviewCreateRequest request) {
         CurrentActor actor = currentActorProvider.getCurrentActor();
         reviewBookReader.validateBookExists(bookId);
+        validateReviewCreation(actor, request);
+        return saveReview(bookId, request, actor);
+    }
+
+    public ReviewCreateByIsbnResponse createReviewByIsbn13(String isbn13, ReviewCreateRequest request) {
+        CurrentActor actor = currentActorProvider.getCurrentActor();
+        validateReviewCreation(actor, request);
+        Book book = bookResolver.findOrCreate(isbn13);
+        long bookId = Objects.requireNonNull(book.getId());
+        ReviewResponse review = Objects.requireNonNull(transactionTemplate.execute(status -> {
+            reviewBookReader.validateBookExists(bookId);
+            return saveReview(bookId, request, actor);
+        }));
+        return new ReviewCreateByIsbnResponse(bookId, review);
+    }
+
+    private void validateReviewCreation(CurrentActor actor, ReviewCreateRequest request) {
         validateReviewCreate(request);
         validateRequestPage(request.currentPage(), request.totalPages());
         if (actor.isGuest() && (request.currentPage() != null || request.totalPages() != null)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
+    }
+
+    private ReviewResponse saveReview(long bookId, ReviewCreateRequest request, CurrentActor actor) {
         if (actor.isMember()) {
             readingRecordCoordinator.recordReview(actor.memberId(), bookId,
                     request.currentPage(), request.totalPages());

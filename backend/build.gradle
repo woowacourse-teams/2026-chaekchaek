@@ -249,6 +249,9 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		constrainString('/api/v1/books/{bookId}/reviews', 'post', 'content', 1000)
 		constrainString('/api/v1/books/{bookId}/reviews', 'post', 'quote', 500)
 		constrainString('/api/v1/books/{bookId}/reviews', 'post', 'chapter', 255)
+		constrainString('/api/v1/books/by-isbn/{isbn13}/reviews', 'post', 'content', 1000)
+		constrainString('/api/v1/books/by-isbn/{isbn13}/reviews', 'post', 'quote', 500)
+		constrainString('/api/v1/books/by-isbn/{isbn13}/reviews', 'post', 'chapter', 255)
 		constrainString('/api/v1/reviews/{reviewId}', 'patch', 'content', 1000)
 		constrainString('/api/v1/reviews/{reviewId}', 'patch', 'quote', 500)
 		constrainString('/api/v1/reviews/{reviewId}', 'patch', 'chapter', 255)
@@ -257,6 +260,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		requestProperty('/api/v1/members/me/nickname', 'patch', 'nickname')
 				?.putAll([minLength: 1, maxLength: 100])
 		requestProperty('/api/v1/books/{bookId}/reviews', 'post', 'isSpoiler')?.putAll([nullable: false, default: false])
+		requestProperty('/api/v1/books/by-isbn/{isbn13}/reviews', 'post', 'isSpoiler')?.putAll([nullable: false, default: false])
 		requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'content')?.remove('nullable')
 		requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'isSpoiler')?.remove('nullable')
 		['/api/v1/auth/mobile/google', '/api/v1/auth/mobile/apple'].each { path ->
@@ -266,6 +270,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		def guestInteractionGuidance = '회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.'
 		[
 			['/api/v1/books/{bookId}/reviews', 'post'],
+			['/api/v1/books/by-isbn/{isbn13}/reviews', 'post'],
 			['/api/v1/reviews/{reviewId}', 'patch'], ['/api/v1/reviews/{reviewId}', 'delete'],
 			['/api/v1/reviews/{reviewId}/replies', 'post'],
 			['/api/v1/replies/{replyId}', 'patch'], ['/api/v1/replies/{replyId}', 'delete'],
@@ -273,6 +278,8 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			['/api/v1/replies/{replyId}/reactions', 'post'], ['/api/v1/replies/{replyId}/reactions', 'delete']
 		].each { operation -> appendOperationDescription(operation[0], operation[1], guestInteractionGuidance) }
 		appendOperationDescription('/api/v1/books/{bookId}/reviews', 'post',
+				'게스트는 currentPage와 totalPages를 입력할 수 없으며 서재·독서 기록은 변경되지 않습니다.')
+		appendOperationDescription('/api/v1/books/by-isbn/{isbn13}/reviews', 'post',
 				'게스트는 currentPage와 totalPages를 입력할 수 없으며 서재·독서 기록은 변경되지 않습니다.')
 		['/api/v1/library/bulk-delete', '/api/v1/library/bulk-status'].each { path ->
 			def method = path.endsWith('bulk-delete') ? 'post' : 'patch'
@@ -393,6 +400,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		def publicInteractionSecurityRequirement = memberSecurityRequirement + [[guestToken: []]]
 		def publicInteractionOperations = [
 			['/api/v1/books/{bookId}/reviews', 'post'],
+			['/api/v1/books/by-isbn/{isbn13}/reviews', 'post'],
 			['/api/v1/reviews/{reviewId}', 'patch'], ['/api/v1/reviews/{reviewId}', 'delete'],
 			['/api/v1/reviews/{reviewId}/replies', 'post'],
 			['/api/v1/replies/{replyId}', 'patch'], ['/api/v1/replies/{replyId}', 'delete'],
@@ -532,6 +540,7 @@ tasks.register('verifyOpenApi') {
 
 		def reviewOperations = [
 			'/api/v1/books/{bookId}/reviews'       : [get: '200', post: '201'],
+			'/api/v1/books/by-isbn/{isbn13}/reviews': [post: '201'],
 			'/api/v1/reviews/{reviewId}'           : [patch: '200', delete: '204'],
 			'/api/v1/reviews/{reviewId}/replies'   : [get: '200', post: '201'],
 			'/api/v1/replies/{replyId}'            : [patch: '200', delete: '204'],
@@ -608,6 +617,7 @@ tasks.register('verifyOpenApi') {
 		def expectedPublicInteractionSecurityRequirement = expectedMemberSecurityRequirement + [[guestToken: []]]
 		def publicInteractionOperations = [
 			['/api/v1/books/{bookId}/reviews', 'post'],
+			['/api/v1/books/by-isbn/{isbn13}/reviews', 'post'],
 			['/api/v1/reviews/{reviewId}', 'patch'], ['/api/v1/reviews/{reviewId}', 'delete'],
 			['/api/v1/reviews/{reviewId}/replies', 'post'],
 			['/api/v1/replies/{replyId}', 'patch'], ['/api/v1/replies/{replyId}', 'delete'],
@@ -682,6 +692,11 @@ tasks.register('verifyOpenApi') {
 				get : ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '404': ['BOOK_NOT_FOUND']],
 				post: ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '404': ['BOOK_NOT_FOUND'],
 						'409': ['TOTAL_PAGES_CONFLICT'], '422': ['INVALID_READING_STATE']]
+			],
+			'/api/v1/books/by-isbn/{isbn13}/reviews': [
+				post: ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'],
+						'404': ['BOOK_NOT_FOUND'], '409': ['TOTAL_PAGES_CONFLICT'],
+						'422': ['INVALID_READING_STATE'], '502': ['EXTERNAL_API_ERROR']]
 			],
 			'/api/v1/reviews/{reviewId}': [
 				patch : ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REVIEW_NOT_FOUND'],
@@ -835,6 +850,9 @@ tasks.register('verifyOpenApi') {
 			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'content', maxLength: 1000],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'quote', maxLength: 500],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'chapter', maxLength: 255],
+			[path: '/api/v1/books/by-isbn/{isbn13}/reviews', method: 'post', name: 'content', maxLength: 1000],
+			[path: '/api/v1/books/by-isbn/{isbn13}/reviews', method: 'post', name: 'quote', maxLength: 500],
+			[path: '/api/v1/books/by-isbn/{isbn13}/reviews', method: 'post', name: 'chapter', maxLength: 255],
 			[path: '/api/v1/reviews/{reviewId}', method: 'patch', name: 'content', maxLength: 1000],
 			[path: '/api/v1/reviews/{reviewId}', method: 'patch', name: 'quote', maxLength: 500],
 			[path: '/api/v1/reviews/{reviewId}', method: 'patch', name: 'chapter', maxLength: 255],
@@ -856,6 +874,7 @@ tasks.register('verifyOpenApi') {
 			}
 		}
 		if (requestProperty('/api/v1/books/{bookId}/reviews', 'post', 'isSpoiler')?.get('default') != false
+				|| requestProperty('/api/v1/books/by-isbn/{isbn13}/reviews', 'post', 'isSpoiler')?.get('default') != false
 				|| requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'content')?.get('nullable') == true
 				|| requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'isSpoiler')?.get('nullable') == true) {
 			throw new GradleException('OpenAPI specification has invalid nullability for review create/update fields')
@@ -977,6 +996,7 @@ tasks.register('verifyOpenApi') {
 
 		[
 			['/api/v1/books/{bookId}/reviews', 'post'],
+			['/api/v1/books/by-isbn/{isbn13}/reviews', 'post'],
 			['/api/v1/reviews/{reviewId}/replies', 'post']
 		].each { path, method ->
 			def response = (((paths.get(path) as Map).get(method) as Map).get('responses') as Map)?.get('201') as Map
