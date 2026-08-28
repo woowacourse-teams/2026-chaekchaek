@@ -39,6 +39,13 @@ class BookDetailRulesTest {
     }
 
     @Test
+    fun onlyMyActiveContentCanBeManaged() {
+        assertTrue(canManageContent(writtenByMe = true, deleted = false))
+        assertFalse(canManageContent(writtenByMe = true, deleted = true))
+        assertFalse(canManageContent(writtenByMe = false, deleted = false))
+    }
+
+    @Test
     fun repliesLoadEveryPageOnceAndRemoveDuplicates() = runTest {
         val loadedPages = mutableListOf<Int>()
         val reply = ReviewReply(1, "답글", "참새", false, 0)

@@ -63,6 +63,8 @@ internal fun shouldLockReview(
     revealedReviewIds: Set<Long>,
 ): Boolean = isSpoiler && reviewId !in revealedReviewIds
 
+internal fun canManageContent(writtenByMe: Boolean, deleted: Boolean): Boolean = writtenByMe && !deleted
+
 internal suspend fun loadAllReplies(loadPage: suspend (Int) -> ReplyPage): List<ReviewReply> {
     val replies = mutableListOf<ReviewReply>()
     val loadedPages = mutableSetOf<Int>()

@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.domain.feed.FeedSection
-import com.chaekchaek.app.domain.reader.GuestQuota
 import com.chaekchaek.app.presentation.common.TimeLabels
 import com.chaekchaek.app.presentation.common.toAppError
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
@@ -27,7 +26,7 @@ class HomeViewModel(
     private var hasObservedAuthentication = false
     private var loadJob: Job? = null
     private val _uiState = MutableStateFlow<HomeUiState>(
-        HomeUiState.Content(emptyList(), guestBanner = null),
+        HomeUiState.Content(emptyList()),
     )
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -68,14 +67,8 @@ class HomeViewModel(
                         HomeUiState.Empty
                     } else {
                         val now = clock.now()
-                        // ponytail: 홈 피드가 더미인 동안 2/3 고정. 인증 연결 시 Viewer에서 매핑한다.
-                        val quota = GuestQuota(viewed = 2)
                         HomeUiState.Content(
                             sections = sections.map { it.toUiModel(now) },
-                            guestBanner = GuestBannerUiModel(
-                                progressLabel = HomeLabels.guestProgress(quota.viewed, quota.limit),
-                                exhausted = quota.isExhausted(),
-                            ),
                             readingBook = feed.readingBook?.let { book ->
                                 ReadingBookUiModel(
                                     bookId = book.bookId,

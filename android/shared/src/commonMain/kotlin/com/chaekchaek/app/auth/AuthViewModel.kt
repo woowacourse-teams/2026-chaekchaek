@@ -20,7 +20,7 @@ data class AuthUiState(
 
 class AuthViewModel private constructor(
   private val callbacks: AuthPlatformCallbacks,
-  private val loginWithGoogle: suspend (String) -> MobileAuthTokens,
+  private val loginWithGoogle: suspend (String, String?) -> MobileAuthTokens,
   reissue: suspend (String) -> MobileAuthTokens,
   logout: suspend (String) -> Unit,
   private val scope: CoroutineScope,
@@ -42,7 +42,7 @@ class AuthViewModel private constructor(
 
   internal constructor(
     callbacks: AuthPlatformCallbacks,
-    loginWithGoogle: suspend (String) -> MobileAuthTokens,
+    loginWithGoogle: suspend (String, String?) -> MobileAuthTokens,
     reissue: suspend (String) -> MobileAuthTokens,
     logout: suspend (String) -> Unit,
     scope: CoroutineScope,
@@ -106,8 +106,9 @@ class AuthViewModel private constructor(
 
       scope.launch {
         try {
-          val tokens = loginWithGoogle(idToken)
+          val tokens = loginWithGoogle(idToken, callbacks.readGuest()?.token)
           session.signIn(tokens)
+          callbacks.clearGuest()
           val action = pendingAction
           pendingAction = null
           action?.invoke(tokens.accessToken)

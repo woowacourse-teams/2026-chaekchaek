@@ -9,32 +9,62 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import com.chaekchaek.app.auth.GuestAuth
 
 class RefreshTokenStore(context: Context) {
   private val preferences = context.applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
   fun read(): String? {
-    val encrypted = preferences.getString(REFRESH_TOKEN_KEY, null) ?: return null
-    return runCatching {
-      val (iv, ciphertext) = encrypted.split(SEPARATOR, limit = 2).map(::decode)
-      Cipher.getInstance(TRANSFORMATION).run {
-        init(Cipher.DECRYPT_MODE, secretKey(), GCMParameterSpec(TAG_LENGTH_BITS, iv))
-        doFinal(ciphertext).decodeToString()
-      }
-    }.getOrElse {
-      clear()
-      null
-    }
+    return readEncrypted(REFRESH_TOKEN_KEY).also { if (it == null) clear() }
   }
 
   fun write(refreshToken: String) {
-    val cipher = Cipher.getInstance(TRANSFORMATION).apply { init(Cipher.ENCRYPT_MODE, secretKey()) }
-    val encrypted = "${encode(cipher.iv)}$SEPARATOR${encode(cipher.doFinal(refreshToken.encodeToByteArray()))}"
-    preferences.edit().putString(REFRESH_TOKEN_KEY, encrypted).apply()
+    preferences.edit().putString(REFRESH_TOKEN_KEY, encrypt(refreshToken)).apply()
   }
 
   fun clear() {
     preferences.edit().remove(REFRESH_TOKEN_KEY).apply()
+  }
+
+  fun readGuest(): GuestAuth? {
+    val token = readEncrypted(GUEST_TOKEN_KEY)
+    val nickname = readEncrypted(GUEST_NICKNAME_KEY)
+    val expiresAt = readEncrypted(GUEST_EXPIRES_AT_KEY)
+    if (token == null || nickname == null || expiresAt == null) {
+      clearGuest()
+      return null
+    }
+    return GuestAuth(token, nickname, expiresAt)
+  }
+
+  fun writeGuest(guest: GuestAuth) {
+    preferences.edit()
+      .putString(GUEST_TOKEN_KEY, encrypt(guest.token))
+      .putString(GUEST_NICKNAME_KEY, encrypt(guest.nickname))
+      .putString(GUEST_EXPIRES_AT_KEY, encrypt(guest.expiresAt))
+      .apply()
+  }
+
+  fun clearGuest() {
+    preferences.edit()
+      .remove(GUEST_TOKEN_KEY)
+      .remove(GUEST_NICKNAME_KEY)
+      .remove(GUEST_EXPIRES_AT_KEY)
+      .apply()
+  }
+
+  private fun readEncrypted(key: String): String? = runCatching {
+    val encrypted = preferences.getString(key, null) ?: return null
+    val (iv, ciphertext) = encrypted.split(SEPARATOR, limit = 2).map(::decode)
+    Cipher.getInstance(TRANSFORMATION).run {
+      init(Cipher.DECRYPT_MODE, secretKey(), GCMParameterSpec(TAG_LENGTH_BITS, iv))
+      doFinal(ciphertext).decodeToString()
+    }
+  }.getOrNull()
+
+  private fun encrypt(value: String): String {
+    val cipher = Cipher.getInstance(TRANSFORMATION).apply { init(Cipher.ENCRYPT_MODE, secretKey()) }
+    return "${encode(cipher.iv)}$SEPARATOR${encode(cipher.doFinal(value.encodeToByteArray()))}"
   }
 
   private fun secretKey(): SecretKey {
@@ -61,6 +91,9 @@ class RefreshTokenStore(context: Context) {
   private companion object {
     const val PREFERENCES_NAME = "auth_session"
     const val REFRESH_TOKEN_KEY = "refresh_token"
+    const val GUEST_TOKEN_KEY = "guest_token"
+    const val GUEST_NICKNAME_KEY = "guest_nickname"
+    const val GUEST_EXPIRES_AT_KEY = "guest_expires_at"
     const val KEYSTORE_PROVIDER = "AndroidKeyStore"
     const val KEY_ALIAS = "chaekchaek_refresh_token"
     const val TRANSFORMATION = "AES/GCM/NoPadding"

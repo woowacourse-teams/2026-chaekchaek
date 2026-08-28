@@ -121,7 +121,9 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                     )
                 }
                 entry<BookDetailKey> { key ->
-                    val viewModel = remember(key.book) { BookDetailViewModel(detailRepository, libraryRepository) }
+                    val viewModel = remember(key.book) {
+                        BookDetailViewModel(detailRepository, libraryRepository, authPlatform)
+                    }
                     val state by viewModel.uiState.collectAsState()
                     val displayBook = state.displayBook ?: key.book
                     val archivedBook = archiveState.items.firstOrNull {
@@ -151,7 +153,7 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                         recentRatings = recentRatings,
                         savedToLibrary = savedBookId != null,
                         anonymousReviews = memberSettingsState.anonymousReviews,
-                        nickname = memberSettingsState.nickname,
+                        nickname = if (state.signedIn) memberSettingsState.nickname else state.guestNickname.orEmpty(),
                         coverContent = { book, modifier ->
                             RemoteBookImage(book.coverUrl, "${book.title} 표지", modifier)
                         },
@@ -175,9 +177,14 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                             }
                         },
                         onReviewCreate = viewModel::createReview,
+                        onReviewOpen = viewModel::openReviewComposer,
+                        onReviewUpdate = viewModel::updateReview,
+                        onReviewDelete = viewModel::deleteReview,
                         onReviewLike = viewModel::likeReview,
                         onLoadReplies = viewModel::loadReplies,
                         onReplyCreate = viewModel::createReply,
+                        onReplyUpdate = viewModel::updateReply,
+                        onReplyDelete = viewModel::deleteReply,
                         onReplyLike = viewModel::likeReply,
                         onReviewScopeChange = viewModel::changeReviewScope,
                         onReviewSortChange = viewModel::changeReviewSort,
