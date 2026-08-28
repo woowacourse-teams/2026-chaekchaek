@@ -137,14 +137,21 @@ class AuthViewModelTest {
     var googleResult: ((String?, String?) -> Unit)? = null
     var storedRefreshToken: String? = null
     var resumedWith: String? = null
+    var guest: GuestAuth? = GuestAuth("guest-token", "게스트", "2026-09-25T09:00:00")
     val viewModel = AuthViewModel(
       callbacks = AuthPlatformCallbacks(
         requestGoogleIdToken = { googleResult = it },
         readRefreshToken = { storedRefreshToken },
         writeRefreshToken = { storedRefreshToken = it },
         clearRefreshToken = { storedRefreshToken = null },
+        readGuest = { guest },
+        clearGuest = { guest = null },
       ),
-      loginWithGoogle = { tokens("signed-in") },
+      loginWithGoogle = { idToken, guestToken ->
+        assertEquals("google-id-token", idToken)
+        assertEquals("guest-token", guestToken)
+        tokens("signed-in")
+      },
       reissue = { error("예상하지 않은 재발급") },
       logout = {},
       scope = backgroundScope,
@@ -158,6 +165,7 @@ class AuthViewModelTest {
     assertEquals("access-signed-in", resumedWith)
     assertEquals("signed-in", storedRefreshToken)
     assertEquals("access-signed-in", viewModel.tokens.value?.accessToken)
+    assertNull(guest)
   }
 
   @Test
@@ -171,7 +179,7 @@ class AuthViewModelTest {
         writeRefreshToken = {},
         clearRefreshToken = {},
       ),
-      loginWithGoogle = { error("호출되면 안 됨") },
+      loginWithGoogle = { _, _ -> error("호출되면 안 됨") },
       reissue = { error("호출되면 안 됨") },
       logout = {},
       scope = backgroundScope,

@@ -136,10 +136,15 @@ fun BookDetailScreen(
     onStatusChange: (ReadingStatus) -> Unit = {},
     onPageSave: (Int) -> Unit = {},
     onRatingSave: (Rating) -> Unit = {},
+    onReviewOpen: (() -> Unit) -> Unit = { it() },
     onReviewCreate: (ReviewCreateRequest) -> Unit = {},
+    onReviewUpdate: (Long, ReviewCreateRequest) -> Unit = { _, _ -> },
+    onReviewDelete: (Long) -> Unit = {},
     onReviewLike: (Long, Boolean) -> Unit = { _, _ -> },
     onLoadReplies: (Long) -> Unit = {},
     onReplyCreate: (Long, String) -> Unit = { _, _ -> },
+    onReplyUpdate: (Long, String) -> Unit = { _, _ -> },
+    onReplyDelete: (Long) -> Unit = {},
     onReplyLike: (Long, Boolean) -> Unit = { _, _ -> },
     onReviewScopeChange: (ReviewScope) -> Unit = {},
     onReviewSortChange: (ReviewSort) -> Unit = {},
@@ -160,10 +165,16 @@ fun BookDetailScreen(
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
     var showPageDialog by rememberSaveable { mutableStateOf(false) }
     var showReviewSheet by rememberSaveable { mutableStateOf(false) }
+    var reviewActionTarget by remember { mutableStateOf<BookReview?>(null) }
+    var replyActionTarget by remember { mutableStateOf<ReviewReply?>(null) }
+    var editingReview by remember { mutableStateOf<BookReview?>(null) }
+    var editingReply by remember { mutableStateOf<ReviewReply?>(null) }
+    var deletingReview by remember { mutableStateOf<BookReview?>(null) }
+    var deletingReply by remember { mutableStateOf<ReviewReply?>(null) }
     var revealedSpoilerReviewIds by remember(book.id) { mutableStateOf(emptySet<Long>()) }
 
     fun authorizeOrRun(action: BookDetailAuthenticatedAction, onAuthorized: () -> Unit) {
-        if (state.signedIn) onAuthorized() else onLoginRequired(action)
+        if (!action.requiresMember || state.signedIn) onAuthorized() else onLoginRequired(action)
     }
 
     LaunchedEffect(reachedBottom, state.nextReviewPage, state.reviewScope, state.reviewSort) {
@@ -180,13 +191,17 @@ fun BookDetailScreen(
             BookDetailAuthenticatedAction.AddToLibrary -> onToggleLibrary()
             BookDetailAuthenticatedAction.OpenPageInput -> showPageDialog = true
             BookDetailAuthenticatedAction.OpenRating -> showRatingDialog = true
-            BookDetailAuthenticatedAction.OpenReview -> showReviewSheet = true
+            BookDetailAuthenticatedAction.OpenReview -> onReviewOpen { showReviewSheet = true }
             BookDetailAuthenticatedAction.OpenMineFeed -> onReviewScopeChange(ReviewScope.MINE)
             is BookDetailAuthenticatedAction.ChangeStatus -> onStatusChange(action.status)
             is BookDetailAuthenticatedAction.SavePage -> onPageSave(action.page)
             is BookDetailAuthenticatedAction.LikeReview -> onReviewLike(action.reviewId, action.likedByMe)
             is BookDetailAuthenticatedAction.CreateReply -> onReplyCreate(action.reviewId, action.content)
             is BookDetailAuthenticatedAction.LikeReply -> onReplyLike(action.replyId, action.likedByMe)
+            is BookDetailAuthenticatedAction.EditReview -> onReviewUpdate(action.reviewId, action.request)
+            is BookDetailAuthenticatedAction.DeleteReview -> onReviewDelete(action.reviewId)
+            is BookDetailAuthenticatedAction.EditReply -> onReplyUpdate(action.replyId, action.content)
+            is BookDetailAuthenticatedAction.DeleteReply -> onReplyDelete(action.replyId)
         }
         onAuthenticatedActionHandled()
     }
@@ -262,13 +277,17 @@ fun BookDetailScreen(
                             onReplyLike(replyId, likedByMe)
                         }
                     },
+                    onManageReview = { reviewActionTarget = it },
+                    onManageReply = { replyActionTarget = it },
                 )
             }
         }
 
         ComposeBar(
             onClick = {
-                authorizeOrRun(BookDetailAuthenticatedAction.OpenReview) { showReviewSheet = true }
+                authorizeOrRun(BookDetailAuthenticatedAction.OpenReview) {
+                    onReviewOpen { showReviewSheet = true }
+                }
             },
             modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 10.dp),
         )
@@ -310,12 +329,94 @@ fun BookDetailScreen(
         ReviewInputSheet(
             initialPage = currentPage,
             totalPages = book.totalPages,
-            anonymous = anonymousReviews,
+            anonymous = state.signedIn && anonymousReviews,
             nickname = nickname,
+            allowReadingProgress = state.signedIn,
             onDismiss = { showReviewSheet = false },
             onSave = { request ->
                 onReviewCreate(request)
                 showReviewSheet = false
+            },
+        )
+    }
+    reviewActionTarget?.let { review ->
+        OwnedContentActionSheet(
+            title = "내 감상 관리",
+            onDismiss = { reviewActionTarget = null },
+            onEdit = {
+                reviewActionTarget = null
+                editingReview = review
+            },
+            onDelete = {
+                reviewActionTarget = null
+                deletingReview = review
+            },
+        )
+    }
+    replyActionTarget?.let { reply ->
+        OwnedContentActionSheet(
+            title = "내 답글 관리",
+            onDismiss = { replyActionTarget = null },
+            onEdit = {
+                replyActionTarget = null
+                editingReply = reply
+            },
+            onDelete = {
+                replyActionTarget = null
+                deletingReply = reply
+            },
+        )
+    }
+    editingReview?.let { review ->
+        ReviewInputSheet(
+            initialPage = currentPage,
+            totalPages = book.totalPages,
+            anonymous = state.signedIn && anonymousReviews,
+            nickname = nickname,
+            initialReview = review,
+            allowReadingProgress = state.signedIn,
+            onDismiss = { editingReview = null },
+            onSave = { request ->
+                authorizeOrRun(BookDetailAuthenticatedAction.EditReview(review.reviewId, request)) {
+                    onReviewUpdate(review.reviewId, request)
+                }
+                editingReview = null
+            },
+        )
+    }
+    editingReply?.let { reply ->
+        ReplyInputSheet(
+            initialContent = reply.content,
+            onDismiss = { editingReply = null },
+            onSave = { content ->
+                authorizeOrRun(BookDetailAuthenticatedAction.EditReply(reply.replyId, content)) {
+                    onReplyUpdate(reply.replyId, content)
+                }
+                editingReply = null
+            },
+        )
+    }
+    deletingReview?.let { review ->
+        DeleteContentConfirmation(
+            contentName = "감상",
+            onDismiss = { deletingReview = null },
+            onConfirm = {
+                authorizeOrRun(BookDetailAuthenticatedAction.DeleteReview(review.reviewId)) {
+                    onReviewDelete(review.reviewId)
+                }
+                deletingReview = null
+            },
+        )
+    }
+    deletingReply?.let { reply ->
+        DeleteContentConfirmation(
+            contentName = "답글",
+            onDismiss = { deletingReply = null },
+            onConfirm = {
+                authorizeOrRun(BookDetailAuthenticatedAction.DeleteReply(reply.replyId)) {
+                    onReplyDelete(reply.replyId)
+                }
+                deletingReply = null
             },
         )
     }
@@ -653,6 +754,8 @@ private fun ReviewsSection(
     onLoadReplies: (Long) -> Unit,
     onReply: (Long, String) -> Unit,
     onReplyLike: (Long, Boolean) -> Unit,
+    onManageReview: (BookReview) -> Unit,
+    onManageReply: (ReviewReply) -> Unit,
 ) {
     var replyTarget by remember { mutableStateOf<BookReview?>(null) }
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -711,6 +814,8 @@ private fun ReviewsSection(
                         if (locked) onRevealSpoiler(review.reviewId) else replyTarget = review
                     },
                     onReplyLike = onReplyLike,
+                    onManage = { onManageReview(review) },
+                    onManageReply = onManageReply,
                 )
             }
         }
@@ -763,6 +868,8 @@ private fun ReviewCard(
     onLoadReplies: () -> Unit,
     onReply: () -> Unit,
     onReplyLike: (Long, Boolean) -> Unit,
+    onManage: () -> Unit,
+    onManageReply: (ReviewReply) -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth().then(
@@ -794,6 +901,15 @@ private fun ReviewCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
                     )
+                }
+                if (canManageContent(review.writtenByMe, review.deleted)) {
+                    Box(
+                        modifier = Modifier.size(48.dp).clickable(role = Role.Button, onClick = onManage)
+                            .semantics { contentDescription = "내 감상 수정 또는 삭제" },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("⋯", color = ChaekInkSecondary, fontSize = 20.sp)
+                    }
                 }
             }
             Text(
@@ -832,7 +948,15 @@ private fun ReviewCard(
             }
         }
         if (review.replyCount > 0) {
-            Replies(review.recentReplies, review.replyCount, locked, onOpenLockedReview, onLoadReplies, onReplyLike)
+            Replies(
+                review.recentReplies,
+                review.replyCount,
+                locked,
+                onOpenLockedReview,
+                onLoadReplies,
+                onReplyLike,
+                onManageReply,
+            )
         }
     }
 }
@@ -845,6 +969,7 @@ private fun Replies(
     onOpenLockedReview: () -> Unit,
     onLoadAll: () -> Unit,
     onLike: (Long, Boolean) -> Unit,
+    onManage: (ReviewReply) -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth().background(ChaekSurfaceMuted)
@@ -866,6 +991,15 @@ private fun Replies(
                         fontSize = 11.5.sp,
                         lineHeight = 18.sp,
                     )
+                }
+                if (canManageContent(reply.writtenByMe, reply.deleted)) {
+                    Box(
+                        modifier = Modifier.size(40.dp).clickable(role = Role.Button) { onManage(reply) }
+                            .semantics { contentDescription = "내 답글 수정 또는 삭제" },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("⋯", color = ChaekInkSecondary, fontSize = 18.sp)
+                    }
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(

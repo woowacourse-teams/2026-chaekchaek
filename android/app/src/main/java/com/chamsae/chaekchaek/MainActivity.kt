@@ -56,6 +56,9 @@ class MainActivity : ComponentActivity() {
                     readRefreshToken = tokenStore::read,
                     writeRefreshToken = tokenStore::write,
                     clearRefreshToken = tokenStore::clear,
+                    readGuest = tokenStore::readGuest,
+                    writeGuest = tokenStore::writeGuest,
+                    clearGuest = tokenStore::clearGuest,
                 )
             }
             App(authPlatform)
