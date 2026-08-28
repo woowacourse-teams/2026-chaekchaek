@@ -71,6 +71,20 @@ class SecurityContextCurrentActorProviderTest {
         verify(fixtures.repository, never()).findByGuestTokenHash(org.mockito.ArgumentMatchers.anyString());
     }
 
+    @Test
+    void resolvesAdminActorForAdminMember() {
+        Fixtures fixtures = new Fixtures();
+        Member member = Member.create("관리자", null, LocalDateTime.now(CLOCK));
+        ReflectionTestUtils.setField(member, "id", 3L);
+        Actor adminActor = Actor.member(member, LocalDateTime.now(CLOCK));
+        adminActor.grantAdmin();
+        ReflectionTestUtils.setField(adminActor, "id", 4L);
+        when(fixtures.memberProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(3L));
+        when(fixtures.repository.findByMemberId(3L)).thenReturn(Optional.of(adminActor));
+
+        assertThat(fixtures.provider().findCurrentActor()).contains(CurrentActor.admin(4L, 3L));
+    }
+
     private static class Fixtures {
         final SecurityContextCurrentMemberIdProvider memberProvider = mock(SecurityContextCurrentMemberIdProvider.class);
         final ActorRepository repository = mock(ActorRepository.class);

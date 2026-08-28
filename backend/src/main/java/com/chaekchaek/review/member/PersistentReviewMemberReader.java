@@ -35,7 +35,7 @@ class PersistentReviewMemberReader implements ReviewMemberReader {
                 member.getAnonymousNickname(),
                 member.isDisplayAnonymous(),
                 member.getAccountStatus() == AccountStatus.WITHDRAWN,
-                actor.getType()
+                ActorType.MEMBER
         );
     }
 }

@@ -1,6 +1,7 @@
 package com.chaekchaek.actor.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.member.domain.Member;
@@ -46,5 +47,27 @@ class ActorTest {
         assertThat(actor.getGuestTokenHash()).isNull();
         assertThat(actor.getGuestNickname()).isNull();
         assertThat(actor.getExpiresAt()).isNull();
+    }
+
+    @Test
+    void grantsAdminPermissionToMemberActor() {
+        LocalDateTime now = LocalDateTime.of(2026, 8, 26, 12, 0);
+        Member member = Member.create("다정한 참새", null, now);
+        Actor actor = Actor.member(member, now);
+
+        actor.grantAdmin();
+
+        assertThat(actor.getType()).isEqualTo(ActorType.ADMIN);
+        assertThat(actor.isAdmin()).isTrue();
+        assertThat(actor.getMember()).isSameAs(member);
+    }
+
+    @Test
+    void rejectsAdminPermissionForGuestActor() {
+        LocalDateTime now = LocalDateTime.of(2026, 8, 26, 12, 0);
+        Actor actor = Actor.guest("a".repeat(64), "다정한 참새", now, now.plusDays(30));
+
+        assertThatThrownBy(actor::grantAdmin).isInstanceOf(IllegalStateException.class);
+        assertThat(actor.getType()).isEqualTo(ActorType.GUEST);
     }
 }

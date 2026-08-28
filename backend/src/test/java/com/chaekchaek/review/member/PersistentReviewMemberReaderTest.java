@@ -69,4 +69,25 @@ class PersistentReviewMemberReaderTest {
         assertThat(profiles).containsEntry(actor.getId(), new ReviewMemberProfile(
                 "다정한 파란 참새", null, "다정한 파란 참새", true, false, ActorType.GUEST));
     }
+
+    @Test
+    @DisplayName("관리자 Actor의 작성자 유형은 회원으로 노출한다")
+    void should_ExposeMemberActorType_When_ActorIsAdmin() {
+        // given
+        Member member = memberRepository.save(Member.create(
+                "책책 관리자",
+                "exUrl",
+                LocalDateTime.of(2026, 8, 18, 12, 0)
+        ));
+        Actor actor = Actor.member(member, member.getCreatedAt());
+        actor.grantAdmin();
+        actorRepository.save(actor);
+
+        // when
+        Map<Long, ReviewMemberProfile> profiles = reviewMemberReader.findByActorIds(List.of(actor.getId()));
+
+        // then
+        assertThat(profiles).containsEntry(actor.getId(), new ReviewMemberProfile(
+                null, "exUrl", "책책 관리자", true, false, ActorType.MEMBER));
+    }
 }
