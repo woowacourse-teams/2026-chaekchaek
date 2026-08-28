@@ -75,6 +75,15 @@ public enum ErrorCode {
     LIBRARY_ITEM_ALREADY_EXISTS(
             "LIBRARY_ITEM_ALREADY_EXISTS",
             "이미 서재에 등록된 책입니다."),
+    RECOMMENDED_BOOK_NOT_FOUND(
+            "RECOMMENDED_BOOK_NOT_FOUND",
+            "추천 도서를 찾을 수 없습니다."),
+    RECOMMENDED_BOOK_ALREADY_EXISTS(
+            "RECOMMENDED_BOOK_ALREADY_EXISTS",
+            "이미 추천 중인 책입니다."),
+    RECOMMENDED_BOOK_LIMIT_EXCEEDED(
+            "RECOMMENDED_BOOK_LIMIT_EXCEEDED",
+            "추천 도서는 최대 10권까지 등록할 수 있습니다."),
     REACTION_ALREADY_EXISTS(
             "REACTION_ALREADY_EXISTS",
             "이미 좋아요를 남겼습니다."),
