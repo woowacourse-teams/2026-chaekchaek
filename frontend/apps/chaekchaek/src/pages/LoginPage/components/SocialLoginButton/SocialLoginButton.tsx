@@ -22,7 +22,7 @@ const providerDetails = {
   google: {
     label: 'Google로 시작하기',
     icon: googleIcon,
-    link: `${ENV.APP_API_URL}/oauth2/authorization/google?${clientEnv}`,
+    link: `${ENV.APP_API_URL}/api/v1/auth/oauth2/google?${clientEnv}`,
   },
 } as const;
 
