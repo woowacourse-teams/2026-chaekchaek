@@ -10,6 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import com.chaekchaek.auth.principal.SecurityContextCurrentActorProvider;
+import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.repository.BookRepository;
+import java.time.LocalDate;
+import java.util.List;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +30,26 @@ class GuestInteractionAuthorizationIntegrationTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
+    @Autowired BookRepository bookRepository;
+
+    @Test
+    void should_CreateReview_When_GuestTokenUsesIsbnReviewPath() throws Exception {
+        // given
+        String guestToken = issueGuestToken();
+        Book book = bookRepository.save(Book.create(
+                "9788925568683", "마션", "https://example.com/martian.jpg", "책 설명",
+                List.of("앤디 위어"), List.of(), "알에이치코리아", "SF", LocalDate.of(2026, 1, 1), 308
+        ));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", book.getIsbn13())
+                        .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"게스트 감상\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.bookId").value(book.getId()))
+                .andExpect(jsonPath("$.review.content").value("게스트 감상"));
+    }
 
     @Test
     void guestTokenPassesPublicInteractionSecurityButNotMemberOnlySecurity() throws Exception {
@@ -84,6 +108,12 @@ class GuestInteractionAuthorizationIntegrationTest {
     @Test
     void publicInteractionStillRequiresAnActor() throws Exception {
         mockMvc.perform(post("/api/v1/books/999/reviews")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"식별자 없는 감상\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568683")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"content\":\"식별자 없는 감상\"}"))
                 .andExpect(status().isUnauthorized())

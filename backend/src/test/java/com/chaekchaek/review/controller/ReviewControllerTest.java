@@ -22,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.chaekchaek.book.client.AladinClientException;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.ErrorCode;
@@ -31,6 +32,7 @@ import com.chaekchaek.review.dto.ReactionResponse;
 import com.chaekchaek.review.dto.ReplyCreateRequest;
 import com.chaekchaek.review.dto.ReplyResponse;
 import com.chaekchaek.review.dto.ReplyUpdateRequest;
+import com.chaekchaek.review.dto.ReviewCreateByIsbnResponse;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
@@ -181,6 +183,44 @@ class ReviewControllerTest {
                                 .build())));
 
         verify(reviewService).createReview(org.mockito.ArgumentMatchers.eq(42L),
+                org.mockito.ArgumentMatchers.any(ReviewCreateRequest.class));
+    }
+
+    @Test
+    @DisplayName("ISBN13으로 감상을 작성하면 도서 ID와 감상을 반환한다")
+    void should_ReturnBookIdAndReview_When_CreatingReviewByIsbn13() throws Exception {
+        // given
+        when(reviewService.createReviewByIsbn13(
+                org.mockito.ArgumentMatchers.eq("9788925568683"),
+                org.mockito.ArgumentMatchers.any(ReviewCreateRequest.class)
+        )).thenReturn(new ReviewCreateByIsbnResponse(42L, reviewResponse()));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568683")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"인상 깊었다.\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", "/api/v1/reviews/101"))
+                .andExpect(jsonPath("$.bookId").value(42))
+                .andExpect(jsonPath("$.review.reviewId").value(101))
+                .andDo(document("review-create-by-isbn",
+                        pathParameters(parameterWithName("isbn13").description("ISBN-13")),
+                        requestFields(REVIEW_CREATE_REQUEST_FIELDS),
+                        responseHeaders(LOCATION_HEADER),
+                        responseFields(reviewCreateByIsbnResponseFields()),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary("ISBN13으로 감상 작성")
+                                .description("ISBN13으로 도서를 조회하고, 로컬에 없으면 등록한 뒤 감상을 작성한다. "
+                                        + "응답의 bookId로 도서 상세와 감상 목록을 갱신할 수 있다")
+                                .tag(REVIEW_TAG)
+                                .pathParameters(isbn13PathParameter())
+                                .requestFields(REVIEW_CREATE_REQUEST_FIELDS)
+                                .responseHeaders(LOCATION_HEADER)
+                                .responseFields(reviewCreateByIsbnResponseFields())
+                                .build())));
+
+        verify(reviewService).createReviewByIsbn13(
+                org.mockito.ArgumentMatchers.eq("9788925568683"),
                 org.mockito.ArgumentMatchers.any(ReviewCreateRequest.class));
     }
 
@@ -494,6 +534,54 @@ class ReviewControllerTest {
     }
 
     @Test
+    @DisplayName("ISBN13 감상 작성의 입력, 인증, 도서, 페이지와 외부 API 오류를 문서화한다")
+    void should_DocumentReviewCreateByIsbnErrors_When_RequestCannotBeProcessed() throws Exception {
+        // given
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568684"),
+                org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568685"),
+                org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568686"),
+                org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568687"),
+                org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568688"),
+                org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568689"),
+                org.mockito.ArgumentMatchers.any())).thenThrow(new AladinClientException(1, "invalid secret key"));
+
+        // when & then
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568683")
+                        .contentType(MediaType.APPLICATION_JSON).content("{}")), HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST", "/api/v1/books/by-isbn/9788925568683/reviews",
+                "review-create-by-isbn-invalid-request", "ISBN13으로 감상 작성");
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568684")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED", "/api/v1/books/by-isbn/9788925568684/reviews",
+                "review-create-by-isbn-unauthorized", "ISBN13으로 감상 작성");
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568685")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.FORBIDDEN,
+                "FORBIDDEN", "/api/v1/books/by-isbn/9788925568685/reviews",
+                "review-create-by-isbn-forbidden", "ISBN13으로 감상 작성");
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568686")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.NOT_FOUND,
+                "BOOK_NOT_FOUND", "/api/v1/books/by-isbn/9788925568686/reviews",
+                "review-create-by-isbn-book-not-found", "ISBN13으로 감상 작성");
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568687")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.CONFLICT,
+                "TOTAL_PAGES_CONFLICT", "/api/v1/books/by-isbn/9788925568687/reviews",
+                "review-create-by-isbn-total-pages-conflict", "ISBN13으로 감상 작성");
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568688")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.UNPROCESSABLE_CONTENT,
+                "INVALID_READING_STATE", "/api/v1/books/by-isbn/9788925568688/reviews",
+                "review-create-by-isbn-invalid-reading-state", "ISBN13으로 감상 작성");
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568689")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.BAD_GATEWAY,
+                "EXTERNAL_API_ERROR", "/api/v1/books/by-isbn/9788925568689/reviews",
+                "review-create-by-isbn-external-api-error", "ISBN13으로 감상 작성");
+    }
+
+    @Test
     @DisplayName("감상 수정의 입력과 리소스 및 페이지 오류를 문서화한다")
     void should_DocumentReviewUpdateErrors_When_RequestCannotBeProcessed() throws Exception {
         // given
@@ -783,6 +871,23 @@ class ReviewControllerTest {
                         .build()));
     }
 
+    private RestDocumentationResultHandler isbnProblemDetailDocument(
+            String identifier,
+            String summary
+    ) {
+        return document(identifier,
+                pathParameters(parameterWithName("isbn13").description("ISBN-13")),
+                responseFields(PROBLEM_DETAIL_FIELDS),
+                resource(ResourceSnippetParameters.builder()
+                        .summary(summary)
+                        .description("ISBN13으로 도서를 조회하고, 로컬에 없으면 등록한 뒤 감상을 작성한다")
+                        .tag(REVIEW_TAG)
+                        .pathParameters(isbn13PathParameter())
+                        .responseSchema(Schema.schema("ProblemDetail"))
+                        .responseFields(PROBLEM_DETAIL_FIELDS)
+                        .build()));
+    }
+
     private ResultActions expectProblemDetail(ResultActions result, HttpStatus expectedStatus, String code, String instance)
             throws Exception {
         return result
@@ -810,8 +915,29 @@ class ReviewControllerTest {
                 .andDo(problemDetailDocument(identifier, summary, description, pathName, pathDescription));
     }
 
+    private void documentProblemDetailByIsbn(
+            ResultActions result,
+            HttpStatus expectedStatus,
+            String code,
+            String instance,
+            String identifier,
+            String summary
+    ) throws Exception {
+        expectProblemDetail(result, expectedStatus, code, instance)
+                .andDo(isbnProblemDetailDocument(identifier, summary));
+    }
+
     private static FieldDescriptor[] pageReviewResponseFields() {
         return prependPageFields(reviewResponseFields("items[]"));
+    }
+
+    private static FieldDescriptor[] reviewCreateByIsbnResponseFields() {
+        FieldDescriptor[] reviewFields = reviewResponseFields("review");
+        FieldDescriptor[] fields = new FieldDescriptor[reviewFields.length + 2];
+        fields[0] = fieldWithPath("bookId").type(JsonFieldType.NUMBER).description("로컬 도서 ID");
+        fields[1] = fieldWithPath("review").type(JsonFieldType.OBJECT).description("작성된 감상");
+        System.arraycopy(reviewFields, 0, fields, 2, reviewFields.length);
+        return fields;
     }
 
     private static FieldDescriptor[] pageReplyResponseFields() {
@@ -882,6 +1008,10 @@ class ReviewControllerTest {
 
     private static com.epages.restdocs.apispec.ParameterDescriptorWithType pathParameter(String name, String description) {
         return ResourceDocumentation.parameterWithName(name).type(SimpleType.INTEGER).description(description);
+    }
+
+    private static com.epages.restdocs.apispec.ParameterDescriptorWithType isbn13PathParameter() {
+        return ResourceDocumentation.parameterWithName("isbn13").type(SimpleType.STRING).description("ISBN-13");
     }
 
     private static com.epages.restdocs.apispec.ParameterDescriptorWithType queryParameter(

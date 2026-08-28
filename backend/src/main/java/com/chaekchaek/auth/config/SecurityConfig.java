@@ -59,6 +59,7 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/books/*/reviews",
+                                "/api/v1/books/by-isbn/*/reviews",
                                 "/api/v1/reviews/*",
                                 "/api/v1/reviews/*/replies",
                                 "/api/v1/reviews/*/reactions",
@@ -89,6 +90,7 @@ public class SecurityConfig {
                         ).authenticated()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/books/*/reviews",
+                                "/api/v1/books/by-isbn/*/reviews",
                                 "/api/v1/reviews/*/replies",
                                 "/api/v1/reviews/*/reactions",
                                 "/api/v1/replies/*/reactions"
