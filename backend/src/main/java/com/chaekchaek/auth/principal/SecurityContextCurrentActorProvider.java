@@ -56,6 +56,10 @@ public class SecurityContextCurrentActorProvider implements CurrentActorProvider
     }
 
     private CurrentActor toMemberActor(Actor actor) {
-        return CurrentActor.member(actor.getId(), actor.getMember().getId());
+        long memberId = actor.getMember().getId();
+        if (actor.isAdmin()) {
+            return CurrentActor.admin(actor.getId(), memberId);
+        }
+        return CurrentActor.member(actor.getId(), memberId);
     }
 }
