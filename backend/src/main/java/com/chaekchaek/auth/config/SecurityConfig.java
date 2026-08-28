@@ -58,6 +58,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
                                 "/api/v1/auth/**",
+                                "/api/v1/admin/**",
                                 "/api/v1/books/*/reviews",
                                 "/api/v1/books/by-isbn/*/reviews",
                                 "/api/v1/reviews/*",
@@ -85,6 +86,7 @@ public class SecurityConfig {
                                 PublicEndpointPaths.GET_ENDPOINTS
                         ).permitAll()
                         .requestMatchers(
+                                "/api/v1/admin/**",
                                 "/api/v1/library/**",
                                 "/api/v1/members/me/ratings/**"
                         ).authenticated()

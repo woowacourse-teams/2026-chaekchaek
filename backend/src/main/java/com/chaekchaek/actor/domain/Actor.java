@@ -86,6 +86,18 @@ public class Actor {
         return new Actor(null, ActorType.GUEST, tokenHash, nickname, createdAt, expiresAt);
     }
 
+    public boolean isAdmin() {
+        return type == ActorType.ADMIN;
+    }
+
+    public void grantAdmin() {
+        if (type != ActorType.MEMBER) {
+            throw new IllegalStateException("Only a member actor can be granted admin permission");
+        }
+
+        this.type = ActorType.ADMIN;
+    }
+
     public boolean isUsableGuestAt(LocalDateTime now) {
         return type == ActorType.GUEST
                 && revokedAt == null
