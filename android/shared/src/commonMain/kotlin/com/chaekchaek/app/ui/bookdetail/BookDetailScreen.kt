@@ -118,6 +118,9 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import kotlin.math.roundToInt
 
+internal val ArchiveStageBackground = Color(0xFF1A1A1A)
+private val ArchiveStageForeground = Color.White
+
 @Composable
 fun BookDetailScreen(
     state: BookDetailUiState,
@@ -452,20 +455,20 @@ private fun ArchiveStage(
     onLibraryClick: () -> Unit,
     coverContent: (@Composable (BookDetailArgs, Modifier) -> Unit)?,
 ) {
-    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(298.dp).background(ChaekInk)) {
+    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(298.dp).background(ArchiveStageBackground)) {
         Surface(
             onClick = onBack,
             modifier = Modifier.offset(16.dp, 8.dp).size(38.dp),
             shape = RoundedCornerShape(4.dp),
             color = Color.Transparent,
-            border = BorderStroke(1.dp, ChaekSurface),
+            border = BorderStroke(1.dp, ArchiveStageForeground),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     painter = painterResource(Res.drawable.ic_back),
                     contentDescription = "뒤로 가기",
                     modifier = Modifier.size(20.dp),
-                    tint = ChaekSurface,
+                    tint = ArchiveStageForeground,
                 )
             }
         }
@@ -474,7 +477,7 @@ private fun ArchiveStage(
             modifier = Modifier.align(Alignment.TopEnd).offset((-16).dp, 8.dp).size(38.dp),
             shape = RoundedCornerShape(4.dp),
             color = if (saved) ChaekAccent else Color.Transparent,
-            border = if (saved) null else BorderStroke(1.dp, ChaekSurface),
+            border = if (saved) null else BorderStroke(1.dp, ArchiveStageForeground),
         ) {
             Box(
                 modifier = Modifier.semantics {
@@ -482,7 +485,12 @@ private fun ArchiveStage(
                 },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("⌑", color = if (saved) ChaekInk else ChaekSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    "⌑",
+                    color = if (saved) MaterialTheme.colorScheme.onPrimaryContainer else ArchiveStageForeground,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         }
         Text(
@@ -497,7 +505,7 @@ private fun ArchiveStage(
         )
         Box(
             modifier = Modifier.align(Alignment.Center).offset(y = 5.dp).size(width = 164.dp, height = 217.dp)
-                .background(ChaekSurface).border(1.dp, ChaekSurface)
+                .background(ArchiveStageForeground).border(1.dp, ArchiveStageForeground)
                 .shadow(10.dp, spotColor = ChaekAccent.copy(alpha = 0.4f)),
             contentAlignment = Alignment.Center,
         ) {
@@ -728,7 +736,7 @@ private fun ReadingRecord(
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(Color(0xFFEDE6DC))) {
+        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(ChaekBand)) {
             Box(
                 Modifier.fillMaxWidth(
                     if (book.totalPages > 0) currentPage.toFloat().div(book.totalPages).coerceIn(0f, 1f) else 0f,
