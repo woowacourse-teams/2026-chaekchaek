@@ -14,28 +14,32 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 class BookDetailRemoteRepository(
   private val client: HttpClient = createHttpClient(),
 ) {
 
-  suspend fun detail(isbn13: String, accessToken: String? = null): BookDetail =
+  suspend fun detail(isbn13: String, credential: WriteCredential? = null): BookDetail =
     client.get("$BASE_URL/api/v1/books/by-isbn/$isbn13") {
-      accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+      credential?.let { authenticate(it) }
     }.body<BookDetailDto>().toBookDetail()
 
   suspend fun reviews(
     bookId: Long,
     scope: ReviewScope,
     sort: ReviewSort,
-    accessToken: String? = null,
+    credential: WriteCredential? = null,
     page: Int = FIRST_PAGE,
   ): ReviewPage =
     client.get("$BASE_URL/api/v1/books/$bookId/reviews") {
       parameter("page", page)
       parameter("feed", scope.name)
       parameter("sort", sort.name)
-      accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+      credential?.let { authenticate(it) }
     }.body<ReviewPageDto>().toReviewPage()
 
   suspend fun addToLibrary(isbn13: String, totalPages: Int?, accessToken: String): LibraryRecord =
@@ -58,45 +62,76 @@ class BookDetailRemoteRepository(
       authenticatedJson(accessToken, RatingRequest(rating))
     }.body<LibraryRecordDto>().toLibraryRecord()
 
-  suspend fun createReview(bookId: Long, request: ReviewCreateRequest, accessToken: String): BookReview =
+  suspend fun createReview(bookId: Long, request: ReviewCreateRequest, credential: WriteCredential): BookReview =
     client.post("$BASE_URL/api/v1/books/$bookId/reviews") {
-      authenticatedJson(accessToken, request)
+      authenticatedJson(
+        credential,
+        if (credential is WriteCredential.Guest) request.copy(currentPage = null, totalPages = null) else request,
+      )
     }.body<ReviewDto>().toBookReview()
+
+  suspend fun updateReview(
+    reviewId: Long,
+    request: ReviewCreateRequest,
+    credential: WriteCredential,
+  ): BookReview =
+    client.patch("$BASE_URL/api/v1/reviews/$reviewId") {
+      authenticate(credential)
+      contentType(ContentType.Application.Json)
+      setBody(request.toUpdateBody(includeReadingProgress = credential is WriteCredential.Member))
+    }.body<ReviewDto>().toBookReview()
+
+  suspend fun deleteReview(reviewId: Long, credential: WriteCredential) {
+    client.delete("$BASE_URL/api/v1/reviews/$reviewId") {
+      authenticate(credential)
+    }
+  }
 
   suspend fun replies(
     reviewId: Long,
-    accessToken: String? = null,
+    credential: WriteCredential? = null,
     page: Int = FIRST_PAGE,
   ): ReplyPage =
     client.get("$BASE_URL/api/v1/reviews/$reviewId/replies") {
       parameter("page", page)
-      accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+      credential?.let { authenticate(it) }
     }.body<ReplyPageDto>().toReplyPage()
 
-  suspend fun likeReview(reviewId: Long, accessToken: String): ReactionResult =
+  suspend fun likeReview(reviewId: Long, credential: WriteCredential): ReactionResult =
     client.post("$BASE_URL/api/v1/reviews/$reviewId/reactions") {
-      header(HttpHeaders.Authorization, "Bearer $accessToken")
+      authenticate(credential)
     }.body<ReactionDto>().toReactionResult()
 
-  suspend fun unlikeReview(reviewId: Long, accessToken: String) {
+  suspend fun unlikeReview(reviewId: Long, credential: WriteCredential) {
     client.delete("$BASE_URL/api/v1/reviews/$reviewId/reactions") {
-      header(HttpHeaders.Authorization, "Bearer $accessToken")
+      authenticate(credential)
     }
   }
 
-  suspend fun createReply(reviewId: Long, content: String, accessToken: String): ReviewReply =
+  suspend fun createReply(reviewId: Long, content: String, credential: WriteCredential): ReviewReply =
     client.post("$BASE_URL/api/v1/reviews/$reviewId/replies") {
-      authenticatedJson(accessToken, ReplyCreateRequest(content))
+      authenticatedJson(credential, ReplyCreateRequest(content))
     }.body<ReviewReplyDto>().toReviewReply()
 
-  suspend fun likeReply(replyId: Long, accessToken: String): ReactionResult =
+  suspend fun updateReply(replyId: Long, content: String, credential: WriteCredential): ReviewReply =
+    client.patch("$BASE_URL/api/v1/replies/$replyId") {
+      authenticatedJson(credential, ReplyCreateRequest(content))
+    }.body<ReviewReplyDto>().toReviewReply()
+
+  suspend fun deleteReply(replyId: Long, credential: WriteCredential) {
+    client.delete("$BASE_URL/api/v1/replies/$replyId") {
+      authenticate(credential)
+    }
+  }
+
+  suspend fun likeReply(replyId: Long, credential: WriteCredential): ReactionResult =
     client.post("$BASE_URL/api/v1/replies/$replyId/reactions") {
-      header(HttpHeaders.Authorization, "Bearer $accessToken")
+      authenticate(credential)
     }.body<ReactionDto>().toReactionResult()
 
-  suspend fun unlikeReply(replyId: Long, accessToken: String) {
+  suspend fun unlikeReply(replyId: Long, credential: WriteCredential) {
     client.delete("$BASE_URL/api/v1/replies/$replyId/reactions") {
-      header(HttpHeaders.Authorization, "Bearer $accessToken")
+      authenticate(credential)
     }
   }
 
@@ -106,9 +141,33 @@ class BookDetailRemoteRepository(
     setBody(body)
   }
 
+  private fun io.ktor.client.request.HttpRequestBuilder.authenticatedJson(
+    credential: WriteCredential,
+    body: Any,
+  ) {
+    authenticate(credential)
+    contentType(ContentType.Application.Json)
+    setBody(body)
+  }
+
+  private fun io.ktor.client.request.HttpRequestBuilder.authenticate(credential: WriteCredential) {
+    header(credential.headerName, credential.headerValue)
+  }
+
   private companion object {
     const val BASE_URL = "https://api.chaekchaek.com"
     const val FIRST_PAGE = 1
+  }
+}
+
+private fun ReviewCreateRequest.toUpdateBody(includeReadingProgress: Boolean) = buildJsonObject {
+  put("content", content)
+  put("quote", quote?.let(::JsonPrimitive) ?: JsonNull)
+  put("chapter", chapter?.let(::JsonPrimitive) ?: JsonNull)
+  put("isSpoiler", isSpoiler)
+  if (includeReadingProgress) {
+    put("currentPage", currentPage?.let(::JsonPrimitive) ?: JsonNull)
+    put("totalPages", totalPages?.let(::JsonPrimitive) ?: JsonNull)
   }
 }
 
@@ -161,6 +220,8 @@ data class BookReview(
   val isSpoiler: Boolean = false,
   val recentReplies: List<ReviewReply> = emptyList(),
   val authorProfileImageUrl: String? = null,
+  val writtenByMe: Boolean = false,
+  val deleted: Boolean = false,
 )
 
 data class ReviewReply(
@@ -171,6 +232,8 @@ data class ReviewReply(
   val likeCount: Int,
   val likedByMe: Boolean = false,
   val authorProfileImageUrl: String? = null,
+  val writtenByMe: Boolean = false,
+  val deleted: Boolean = false,
 )
 
 @Serializable
@@ -260,12 +323,15 @@ internal data class ReviewDto(
   val likedByMe: Boolean = false,
   val isSpoiler: Boolean = false,
   val recentReplies: List<ReviewReplyDto> = emptyList(),
+  val deleted: Boolean,
 )
 
 @Serializable
 internal data class ReviewAuthorDto(
   val displayName: String,
   val anonymous: Boolean,
+  val mine: Boolean,
+  val actorType: String,
   val profileImageUrl: String? = null,
 )
 
@@ -276,6 +342,7 @@ internal data class ReviewReplyDto(
   val author: ReviewAuthorDto,
   val likeCount: Int,
   val likedByMe: Boolean = false,
+  val deleted: Boolean,
 )
 
 @Serializable
@@ -334,6 +401,8 @@ internal fun ReviewDto.toBookReview() =
     likedByMe = likedByMe,
     isSpoiler = isSpoiler,
     recentReplies = recentReplies.map(ReviewReplyDto::toReviewReply),
+    writtenByMe = author.mine,
+    deleted = deleted,
   )
 
 internal fun ReviewReplyDto.toReviewReply() =
@@ -345,6 +414,8 @@ internal fun ReviewReplyDto.toReviewReply() =
     anonymous = author.anonymous,
     likeCount = likeCount,
     likedByMe = likedByMe,
+    writtenByMe = author.mine,
+    deleted = deleted,
   )
 
 internal fun ReactionDto.toReactionResult() = ReactionResult(likeCount, likedByMe)

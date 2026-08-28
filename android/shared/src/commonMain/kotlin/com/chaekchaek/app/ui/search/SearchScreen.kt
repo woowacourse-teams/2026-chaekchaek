@@ -59,8 +59,8 @@ import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.theme.ChaekAccentInk
 import com.chaekchaek.app.ui.theme.ChaekBand
 import com.chaekchaek.app.ui.theme.ChaekBorder
-import com.chaekchaek.app.ui.theme.ChaekBorderSoft
-import com.chaekchaek.app.ui.theme.ChaekInkTertiary
+import com.chaekchaek.app.ui.theme.ChaekInkSecondary
+import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import kotlinx.coroutines.delay
@@ -396,7 +396,7 @@ private fun SearchResultRow(
             .height(32.dp)
             .clickable(enabled = !isReading, role = Role.Button, onClick = onRegister),
         shape = RoundedCornerShape(6.dp),
-        color = if (isReading) ChaekBorderSoft else MaterialTheme.colorScheme.surface,
+        color = if (isReading) ChaekSurfaceMuted else MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, if (isReading) ChaekBorder else MaterialTheme.colorScheme.onSurface),
       ) {
         Row(
@@ -408,7 +408,7 @@ private fun SearchResultRow(
           Text(
             if (isReading) "읽는 중" else "읽는 중 시작",
             style = MaterialTheme.typography.labelMedium,
-            color = if (isReading) ChaekInkTertiary else MaterialTheme.colorScheme.onSurface,
+            color = if (isReading) ChaekInkSecondary else MaterialTheme.colorScheme.onSurface,
           )
         }
       }

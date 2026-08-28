@@ -112,7 +112,6 @@ class HomeViewModelTest {
         // then : 섹션 하나를 담은 Content 상태가 된다
         val content = viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
         content.sections.size shouldBe 1
-        content.guestBanner shouldBe GuestBannerUiModel("지금 2 / 3", exhausted = false)
     }
 
     @Test

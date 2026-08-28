@@ -25,9 +25,11 @@ import com.chaekchaek.app.auth.AuthViewModel
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.BookSearchRemoteRepository
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
+import com.chaekchaek.app.data.remote.MemberRemoteRepository
 import com.chaekchaek.app.data.remote.PopularBooksRemoteRepository
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.ui.archive.ArchiveViewModel
+import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
@@ -67,9 +69,12 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
     val authState by authViewModel.uiState.collectAsState()
     val homeViewModel = remember { HomeViewModel(PopularBooksRemoteRepository(), Clock.System) }
     val libraryRepository = remember { LibraryRemoteRepository() }
+    val memberRepository = remember { MemberRemoteRepository() }
     val registrationViewModel = remember { BookRegistrationViewModel(libraryRepository) }
     val archiveViewModel = remember { ArchiveViewModel(libraryRepository) }
+    val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository) }
     val archiveState by archiveViewModel.uiState.collectAsState()
+    val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     var recentRatings by remember { mutableStateOf(emptyList<RatedBookUiModel>()) }
     val searchViewModel = remember(registrationViewModel, authViewModel) {
         SearchViewModel(
@@ -77,6 +82,12 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
             registerBook = { registrationViewModel.register(it) },
             isSignedIn = { authViewModel.tokens.value != null },
         )
+    }
+    LaunchedEffect(authTokens?.accessToken) {
+        val accessToken = authTokens?.accessToken
+        registrationViewModel.authenticate(accessToken)
+        archiveViewModel.authenticate(accessToken)
+        memberSettingsViewModel.authenticate(accessToken)
     }
     val detailRepository = remember { BookDetailRemoteRepository() }
     val backStack = rememberNavBackStack(navigationConfig, Root)
@@ -103,13 +114,16 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                         searchViewModel = searchViewModel,
                         registrationViewModel = registrationViewModel,
                         archiveViewModel = archiveViewModel,
+                        memberSettingsViewModel = memberSettingsViewModel,
                         authViewModel = authViewModel,
                         onBookClick = { backStack.add(BookDetailKey(it)) },
                         modifier = safeContent,
                     )
                 }
                 entry<BookDetailKey> { key ->
-                    val viewModel = remember(key.book) { BookDetailViewModel(detailRepository, libraryRepository) }
+                    val viewModel = remember(key.book) {
+                        BookDetailViewModel(detailRepository, libraryRepository, authPlatform)
+                    }
                     val state by viewModel.uiState.collectAsState()
                     val displayBook = state.displayBook ?: key.book
                     val archivedBook = archiveState.items.firstOrNull {
@@ -138,8 +152,8 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                         modifier = safeContent,
                         recentRatings = recentRatings,
                         savedToLibrary = savedBookId != null,
-                        anonymousReviews = archiveState.anonymousReviews,
-                        nickname = archiveState.nickname,
+                        anonymousReviews = memberSettingsState.anonymousReviews,
+                        nickname = if (state.signedIn) memberSettingsState.nickname else state.guestNickname.orEmpty(),
                         coverContent = { book, modifier ->
                             RemoteBookImage(book.coverUrl, "${book.title} 표지", modifier)
                         },
@@ -163,9 +177,14 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                             }
                         },
                         onReviewCreate = viewModel::createReview,
+                        onReviewOpen = viewModel::openReviewComposer,
+                        onReviewUpdate = viewModel::updateReview,
+                        onReviewDelete = viewModel::deleteReview,
                         onReviewLike = viewModel::likeReview,
                         onLoadReplies = viewModel::loadReplies,
                         onReplyCreate = viewModel::createReply,
+                        onReplyUpdate = viewModel::updateReply,
+                        onReplyDelete = viewModel::deleteReply,
                         onReplyLike = viewModel::likeReply,
                         onReviewScopeChange = viewModel::changeReviewScope,
                         onReviewSortChange = viewModel::changeReviewSort,

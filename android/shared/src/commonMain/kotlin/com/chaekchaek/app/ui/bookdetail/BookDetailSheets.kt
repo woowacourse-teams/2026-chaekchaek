@@ -57,11 +57,14 @@ import androidx.compose.ui.window.DialogProperties
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.ic_close
 import chaekchaek.shared.generated.resources.ic_eye_off
+import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.ui.theme.ChaekBorder
+import com.chaekchaek.app.ui.theme.ChaekDanger
 import com.chaekchaek.app.ui.theme.ChaekInk
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import com.chaekchaek.app.ui.theme.ChaekSurface
+import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
@@ -123,18 +126,31 @@ internal fun ReviewInputSheet(
     totalPages: Int,
     anonymous: Boolean,
     nickname: String,
+    initialReview: BookReview? = null,
+    allowReadingProgress: Boolean = true,
     onDismiss: () -> Unit,
     onSave: (ReviewCreateRequest) -> Unit,
 ) {
-    var content by rememberSaveable { mutableStateOf("") }
-    var quote by rememberSaveable { mutableStateOf("") }
-    var chapter by rememberSaveable { mutableStateOf("") }
-    var pageValue by rememberSaveable { mutableStateOf(initialPage.takeIf { it > 0 }?.toString().orEmpty()) }
-    var isSpoiler by rememberSaveable { mutableStateOf(false) }
+    val initialContent = initialReview?.content.orEmpty()
+    val initialQuote = initialReview?.quote.orEmpty()
+    val initialChapter = initialReview?.chapter.orEmpty()
+    val initialPageValue = (initialReview?.currentPage ?: initialPage.takeIf { initialReview == null })
+        ?.takeIf { allowReadingProgress && it > 0 }?.toString().orEmpty()
+    val initialSpoiler = initialReview?.isSpoiler == true
+    var content by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialContent) }
+    var quote by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialQuote) }
+    var chapter by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialChapter) }
+    var pageValue by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialPageValue) }
+    var isSpoiler by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialSpoiler) }
     var showDiscardConfirmation by rememberSaveable { mutableStateOf(false) }
-    val page = BookDetailInputRules.validPage(pageValue, totalPages)
+    val page = if (allowReadingProgress) BookDetailInputRules.validPage(pageValue, totalPages) else null
     val canSubmit = BookDetailInputRules.canSubmitReview(content, pageValue, totalPages)
-    val hasDraft = BookDetailInputRules.hasReviewDraft(content, quote, chapter, pageValue, initialPage, isSpoiler)
+    val hasDraft = if (initialReview == null) {
+        BookDetailInputRules.hasReviewDraft(content, quote, chapter, pageValue, initialPage, isSpoiler)
+    } else {
+        content != initialContent || quote != initialQuote || chapter != initialChapter ||
+            pageValue != initialPageValue || isSpoiler != initialSpoiler
+    }
     val requestDismiss = { if (hasDraft) showDiscardConfirmation = true else onDismiss() }
 
     ModalBottomSheet(
@@ -145,7 +161,7 @@ internal fun ReviewInputSheet(
         dragHandle = {
             Box(
                 Modifier.padding(top = 10.dp).width(40.dp).height(4.dp)
-                    .clip(RoundedCornerShape(2.dp)).background(Color(0xFFDDDDDD)),
+                    .clip(RoundedCornerShape(2.dp)).background(ChaekBorder),
             )
         },
     ) {
@@ -154,7 +170,7 @@ internal fun ReviewInputSheet(
                 .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            SheetHeader(title = "감상 남기기", titleSize = 20, onDismiss = requestDismiss)
+            SheetHeader(title = if (initialReview == null) "감상 남기기" else "감상 수정", titleSize = 20, onDismiss = requestDismiss)
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 FormLabel("느낀점", required = true)
                 ChaekTextInput(
@@ -169,7 +185,7 @@ internal fun ReviewInputSheet(
                     modifier = Modifier.fillMaxWidth().height(40.dp)
                         .toggleable(value = isSpoiler, role = Role.Checkbox) { isSpoiler = it },
                     shape = RoundedCornerShape(6.dp),
-                    color = Color(0xFFF6F2EC),
+                    color = ChaekSurfaceMuted,
                 ) {
                     Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(
@@ -182,7 +198,7 @@ internal fun ReviewInputSheet(
                         Text(
                             "스포일러",
                             modifier = Modifier.padding(start = 8.dp),
-                            color = Color(0xFFC92A24),
+                            color = ChaekDanger,
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.Medium,
                         )
@@ -201,18 +217,20 @@ internal fun ReviewInputSheet(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Column(modifier = Modifier.width(104.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FormLabel("쪽수")
-                    ChaekTextInput(
-                        value = pageValue,
-                        onValueChange = { pageValue = it.filter(Char::isDigit).take(7) },
-                        placeholder = "80",
-                        accessibilityLabel = "쪽수",
-                        modifier = Modifier.fillMaxWidth(),
-                        height = 44,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        suffix = "쪽",
-                    )
+                if (allowReadingProgress) {
+                    Column(modifier = Modifier.width(104.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FormLabel("쪽수")
+                        ChaekTextInput(
+                            value = pageValue,
+                            onValueChange = { pageValue = it.filter(Char::isDigit).take(7) },
+                            placeholder = "80",
+                            accessibilityLabel = "쪽수",
+                            modifier = Modifier.fillMaxWidth(),
+                            height = 44,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            suffix = "쪽",
+                        )
+                    }
                 }
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     FormLabel("목차 / 챕터")
@@ -227,7 +245,7 @@ internal fun ReviewInputSheet(
                     )
                 }
             }
-            Surface(modifier = Modifier.fillMaxWidth().height(40.dp), shape = RoundedCornerShape(6.dp), color = Color(0xFFF6F2EC)) {
+            Surface(modifier = Modifier.fillMaxWidth().height(40.dp), shape = RoundedCornerShape(6.dp), color = ChaekSurfaceMuted) {
                 Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         painterResource(Res.drawable.ic_eye_off),
@@ -250,7 +268,7 @@ internal fun ReviewInputSheet(
                     )
                 }
             }
-            SheetPrimaryButton(label = "감상 남기기", enabled = canSubmit) {
+            SheetPrimaryButton(label = if (initialReview == null) "감상 남기기" else "수정 저장", enabled = canSubmit) {
                 if (!canSubmit) return@SheetPrimaryButton
                 onSave(
                     ReviewCreateRequest(
@@ -258,7 +276,7 @@ internal fun ReviewInputSheet(
                         quote = quote.trim().ifEmpty { null },
                         chapter = chapter.trim().ifEmpty { null },
                         currentPage = page,
-                        totalPages = totalPages.takeIf { page != null && it > 0 },
+                        totalPages = totalPages.takeIf { allowReadingProgress && page != null && it > 0 },
                         isSpoiler = isSpoiler,
                     ),
                 )
@@ -268,7 +286,7 @@ internal fun ReviewInputSheet(
     if (showDiscardConfirmation) {
         AlertDialog(
             onDismissRequest = { showDiscardConfirmation = false },
-            title = { Text("감상 작성을 그만둘까요?") },
+            title = { Text(if (initialReview == null) "감상 작성을 그만둘까요?" else "감상 수정을 그만둘까요?") },
             text = { Text("작성한 내용은 저장되지 않아요.") },
             confirmButton = { TextButton(onClick = onDismiss) { Text("작성 취소") } },
             dismissButton = { TextButton(onClick = { showDiscardConfirmation = false }) { Text("계속 작성") } },
@@ -278,15 +296,19 @@ internal fun ReviewInputSheet(
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-internal fun ReplyInputSheet(onDismiss: () -> Unit, onSave: (String) -> Unit) {
-    var content by rememberSaveable { mutableStateOf("") }
+internal fun ReplyInputSheet(
+    initialContent: String = "",
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+) {
+    var content by rememberSaveable(initialContent) { mutableStateOf(initialContent) }
     val canSubmit = ReplyInputRules.canSubmit(content)
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = ChaekSurface) {
         Column(
             modifier = Modifier.fillMaxWidth().imePadding().padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("답글 작성", style = MaterialTheme.typography.titleLarge)
+            Text(if (initialContent.isEmpty()) "답글 작성" else "답글 수정", style = MaterialTheme.typography.titleLarge)
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it.take(ReplyInputRules.MAX_LENGTH) },
@@ -301,10 +323,74 @@ internal fun ReplyInputSheet(onDismiss: () -> Unit, onSave: (String) -> Unit) {
                 shape = RoundedCornerShape(8.dp),
                 color = if (canSubmit) ChaekInk else ChaekInkSecondary,
             ) {
-                Text("등록", modifier = Modifier.padding(vertical = 14.dp), color = ChaekSurface, textAlign = TextAlign.Center)
+                Text(
+                    if (initialContent.isEmpty()) "등록" else "수정 저장",
+                    modifier = Modifier.padding(vertical = 14.dp),
+                    color = ChaekSurface,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+internal fun OwnedContentActionSheet(
+    title: String,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = ChaekSurface,
+        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                title,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                color = ChaekInk,
+                fontFamily = FontFamily.Serif,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+            ContentAction("수정", ChaekInk, onEdit)
+            ContentAction("삭제", ChaekDanger, onDelete)
+        }
+    }
+}
+
+@Composable
+private fun ContentAction(label: String, color: Color, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(56.dp),
+        color = Color.Transparent,
+    ) {
+        Row(modifier = Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(label, color = color, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+internal fun DeleteContentConfirmation(
+    contentName: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("${contentName}을 삭제할까요?") },
+        text = { Text("삭제한 ${contentName}은 다시 복구할 수 없어요.") },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("삭제", color = ChaekDanger) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } },
+    )
 }
 
 @Composable

@@ -49,7 +49,10 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                         _ = onResult(nil, error.localizedDescription)
                     }
                 }
-            }
+            },
+            readGuest: { nil },
+            writeGuest: { _ in },
+            clearGuest: {}
         )
         return MainViewControllerKt.MainViewController(
             authPlatform: authPlatform,

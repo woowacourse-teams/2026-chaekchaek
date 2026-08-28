@@ -6,6 +6,9 @@ Android 빌드 환경, 릴리스 서명, Google Play 배포 절차는
 현재 Play 상태, 버전 부여 규칙, 릴리스별 변경과 복구 기준은
 [Android 버전 및 릴리스 관리](../docs/android-release-management.md)에서 확인한다.
 
+Google Play 프로덕션 심사 제출과 실제 사용자 관찰 과제의 수행 근거는
+[Android 정식 출시 심사 및 사용자 관찰](../docs/android-production-review-user-observation.md)에 기록한다.
+
 ## 개발 문서
 
 - [Android CI 운영 및 학습 기록](docs/android-ci.md) - 자동 검증 범위, 실행 방법, 실패 대응

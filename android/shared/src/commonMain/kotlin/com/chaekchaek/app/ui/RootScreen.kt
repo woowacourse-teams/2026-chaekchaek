@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -48,6 +49,7 @@ import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.ui.archive.ArchiveBookUiModel
 import com.chaekchaek.app.ui.archive.ArchiveRoute
 import com.chaekchaek.app.ui.archive.ArchiveViewModel
+import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
 import com.chaekchaek.app.ui.home.BookDetailTarget
@@ -74,6 +76,7 @@ internal fun RootScreen(
     searchViewModel: SearchViewModel,
     registrationViewModel: BookRegistrationViewModel,
     archiveViewModel: ArchiveViewModel,
+    memberSettingsViewModel: MemberSettingsViewModel,
     authViewModel: AuthViewModel,
     onBookClick: (BookDetailArgs) -> Unit,
     modifier: Modifier = Modifier,
@@ -86,13 +89,10 @@ internal fun RootScreen(
     val pendingRegistration by searchViewModel.pendingRegistration.collectAsState()
     val registrationState by registrationViewModel.uiState.collectAsState()
     val archiveState by archiveViewModel.uiState.collectAsState()
+    val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     val snackbarHost = remember { SnackbarHostState() }
     val accessToken = tokens?.accessToken
 
-    LaunchedEffect(accessToken) {
-        registrationViewModel.authenticate(accessToken)
-        archiveViewModel.authenticate(accessToken)
-    }
     LaunchedEffect(registrationState.completedRegistrationCount) {
         if (registrationState.completedRegistrationCount > 0) {
             archiveViewModel.retry()
@@ -102,6 +102,13 @@ internal fun RootScreen(
         registrationState.errorMessage?.let {
             snackbarHost.showSnackbar(it)
             registrationViewModel.clearError()
+        }
+    }
+    LaunchedEffect(memberSettingsState.errorMessage) {
+        memberSettingsState.errorMessage?.let { message ->
+            val result = snackbarHost.showSnackbar(message, actionLabel = "다시 시도")
+            memberSettingsViewModel.clearError()
+            if (result == SnackbarResult.ActionPerformed) memberSettingsViewModel.retry()
         }
     }
 
@@ -126,7 +133,7 @@ internal fun RootScreen(
             )
             RootTab.Shelf -> ArchiveRoute(
                 viewModel = archiveViewModel,
-                accessToken = accessToken,
+                memberSettingsViewModel = memberSettingsViewModel,
                 editing = archiveEditing,
                 onEditingChange = { editing ->
                     if (!editing || accessToken != null) archiveEditing = editing

@@ -2,6 +2,7 @@ package com.chaekchaek.app.ui.bookdetail
 
 import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.BookReview
+import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.domain.rating.Rating
@@ -44,16 +45,38 @@ internal fun List<RatedBookUiModel>.withRecentRating(
     (filterNot { it.bookId == bookId } + RatedBookUiModel(bookId, title, rating, ratedAtLabel)).takeLast(3)
 
 sealed interface BookDetailAuthenticatedAction {
+    val requiresMember: Boolean get() = true
+
     data object AddToLibrary : BookDetailAuthenticatedAction
     data object OpenPageInput : BookDetailAuthenticatedAction
     data object OpenRating : BookDetailAuthenticatedAction
-    data object OpenReview : BookDetailAuthenticatedAction
+    data object OpenReview : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
     data object OpenMineFeed : BookDetailAuthenticatedAction
     data class ChangeStatus(val status: ReadingStatus) : BookDetailAuthenticatedAction
     data class SavePage(val page: Int) : BookDetailAuthenticatedAction
-    data class LikeReview(val reviewId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction
-    data class CreateReply(val reviewId: Long, val content: String) : BookDetailAuthenticatedAction
-    data class LikeReply(val replyId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction
+    data class LikeReview(val reviewId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
+    data class CreateReply(val reviewId: Long, val content: String) : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
+    data class LikeReply(val replyId: Long, val likedByMe: Boolean) : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
+    data class EditReview(val reviewId: Long, val request: ReviewCreateRequest) : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
+    data class DeleteReview(val reviewId: Long) : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
+    data class EditReply(val replyId: Long, val content: String) : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
+    data class DeleteReply(val replyId: Long) : BookDetailAuthenticatedAction {
+        override val requiresMember = false
+    }
 }
 
 data class BookDetailUiState(
@@ -70,6 +93,7 @@ data class BookDetailUiState(
     val signedIn: Boolean = false,
     val pendingAction: BookDetailAuthenticatedAction? = null,
     val requestError: String? = null,
+    val guestNickname: String? = null,
 ) {
     val displayBook: BookDetailArgs?
         get() = detail?.toBookDetailArgs(book ?: return null) ?: book

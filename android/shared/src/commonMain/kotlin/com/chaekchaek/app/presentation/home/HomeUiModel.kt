@@ -50,11 +50,6 @@ data class OverlappedCardUiModel(
     val replyLabel: String,
 )
 
-data class GuestBannerUiModel(
-    val progressLabel: String,
-    val exhausted: Boolean,
-)
-
 data class ReadingBookUiModel(
     val bookId: BookId = BookId(""),
     val isbn13: String = "",
@@ -81,5 +76,4 @@ internal object HomeLabels {
 
     fun overlappedReply(replyCount: Int): String = "답글 $replyCount"
 
-    fun guestProgress(viewed: Int, limit: Int): String = "지금 $viewed / $limit"
 }

@@ -20,8 +20,8 @@ data class AuthUiState(
 
 class AuthViewModel private constructor(
   private val callbacks: AuthPlatformCallbacks,
-  private val loginWithGoogle: suspend (String) -> MobileAuthTokens,
-  private val loginWithApple: suspend (AppleSignInCredential) -> MobileAuthTokens,
+  private val loginWithGoogle: suspend (String, String?) -> MobileAuthTokens,
+  private val loginWithApple: suspend (AppleSignInCredential, String?) -> MobileAuthTokens,
   reissue: suspend (String) -> MobileAuthTokens,
   logout: suspend (String) -> Unit,
   private val scope: CoroutineScope,
@@ -34,11 +34,12 @@ class AuthViewModel private constructor(
   ) : this(
     callbacks = callbacks,
     loginWithGoogle = remoteRepository::loginWithGoogle,
-    loginWithApple = { credential ->
+    loginWithApple = { credential, guestToken ->
       remoteRepository.loginWithApple(
         credential.identityToken,
         credential.authorizationCode,
         credential.nonce,
+        guestToken,
       )
     },
     reissue = remoteRepository::reissue,
@@ -50,8 +51,8 @@ class AuthViewModel private constructor(
 
   internal constructor(
     callbacks: AuthPlatformCallbacks,
-    loginWithGoogle: suspend (String) -> MobileAuthTokens,
-    loginWithApple: suspend (AppleSignInCredential) -> MobileAuthTokens = {
+    loginWithGoogle: suspend (String, String?) -> MobileAuthTokens,
+    loginWithApple: suspend (AppleSignInCredential, String?) -> MobileAuthTokens = { _, _ ->
       error("예상하지 않은 Apple 로그인")
     },
     reissue: suspend (String) -> MobileAuthTokens,
@@ -77,12 +78,16 @@ class AuthViewModel private constructor(
   private var pendingAction: (suspend (accessToken: String) -> Unit)? = null
 
   fun requireAuthentication(action: suspend (accessToken: String) -> Unit) {
-    requestAuthentication(action, callbacks.requestGoogleIdToken, loginWithGoogle)
+    requestAuthentication(action, callbacks.requestGoogleIdToken) { idToken ->
+      loginWithGoogle(idToken, callbacks.readGuest()?.token)
+    }
   }
 
   fun requireAppleAuthentication(action: suspend (accessToken: String) -> Unit) {
     val requestAppleCredential = callbacks.requestAppleCredential ?: return
-    requestAuthentication(action, requestAppleCredential, loginWithApple)
+    requestAuthentication(action, requestAppleCredential) { credential ->
+      loginWithApple(credential, callbacks.readGuest()?.token)
+    }
   }
 
   private fun <Credential> requestAuthentication(
@@ -109,6 +114,7 @@ class AuthViewModel private constructor(
         try {
           val tokens = login(credential)
           session.signIn(tokens)
+          callbacks.clearGuest()
           val actionToResume = pendingAction
           this@AuthViewModel.pendingAction = null
           actionToResume?.invoke(tokens.accessToken)
