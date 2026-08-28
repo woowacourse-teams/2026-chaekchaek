@@ -902,7 +902,7 @@ private fun ReviewCard(
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                if (review.writtenByMe) {
+                if (canManageContent(review.writtenByMe, review.deleted)) {
                     Box(
                         modifier = Modifier.size(48.dp).clickable(role = Role.Button, onClick = onManage)
                             .semantics { contentDescription = "내 감상 수정 또는 삭제" },
@@ -992,7 +992,7 @@ private fun Replies(
                         lineHeight = 18.sp,
                     )
                 }
-                if (reply.writtenByMe) {
+                if (canManageContent(reply.writtenByMe, reply.deleted)) {
                     Box(
                         modifier = Modifier.size(40.dp).clickable(role = Role.Button) { onManage(reply) }
                             .semantics { contentDescription = "내 답글 수정 또는 삭제" },
