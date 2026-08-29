@@ -391,7 +391,7 @@ export const LibraryPage = () => {
 
             <Pagination
               sx={{ mt: 5, mb: 10 }}
-              defaultPage={1}
+              defaultPage={defaultPage}
               totalPages={filteredTotalPages}
               onChange={handleChangeDefaultPage}
             />
