@@ -113,8 +113,8 @@ export const LibraryPage = () => {
   const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
 
   const [isEditing, setIsEditing] = useState(false);
-  const handleClickStartEdit = () => {
-    setIsEditing(true);
+  const handleClickToggleEdit = () => {
+    setIsEditing((prev) => !prev);
   };
   const handleClickEndEdit = () => {
     setIsEditing(false);
@@ -269,8 +269,8 @@ export const LibraryPage = () => {
                       </Button>
                     </>
                   )}
-                  <Button variant="primary" onClick={handleClickStartEdit}>
-                    서재 편집
+                  <Button variant="primary" onClick={handleClickToggleEdit}>
+                    {!isEditing ? '서재 편집' : '편집 종료'}
                   </Button>
                 </>
               }
