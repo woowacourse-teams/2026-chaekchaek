@@ -1,4 +1,8 @@
 /.gradle/
 /designs.pen
-/.codex/
+/.codex/*
+!/.codex/hooks.json
+!/.codex/hooks/
+/.codex/hooks/*
+!/.codex/hooks/chaekchaek-design-system-guard.py
 /.claude/

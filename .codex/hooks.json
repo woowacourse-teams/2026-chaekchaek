@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/chaekchaek-design-system-guard.py\"",
+            "timeout": 5,
+            "statusMessage": "Checking Chaekchaek design system"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/chaekchaek-design-system-guard.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/chaekchaek-design-system-guard.py\"",
+            "timeout": 5,
+            "statusMessage": "Checking Chaekchaek UI task"
+          }
+        ]
+      }
+    ]
+  }
+}

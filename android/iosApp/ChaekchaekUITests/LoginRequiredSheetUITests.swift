@@ -23,6 +23,8 @@ final class LoginRequiredSheetUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Apple로 계속하기"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["GIDSignInButton"].waitForExistence(timeout: 5))
 
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
+
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = "iOS 네이티브 로그인 버튼"
         attachment.lifetime = .keepAlways
