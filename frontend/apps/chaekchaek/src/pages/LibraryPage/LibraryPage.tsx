@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { MouseEvent } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import {
   Button,
@@ -112,11 +111,6 @@ export const LibraryPage = () => {
   } = useLoadData({ queryFn: getLibraryLoadData });
 
   const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
-
-  const navigation = useNavigate();
-  const handleMove = (isbn: string) => {
-    navigation(`/books/${isbn}`);
-  };
 
   const [isEditing, setIsEditing] = useState(false);
   const handleClickToggleEdit = () => {
@@ -349,25 +343,13 @@ export const LibraryPage = () => {
                           }}
                         />
                       )}
-                      <a
-                        href={`/books/${item.isbn13}`}
-                        onClick={(e: MouseEvent<HTMLAnchorElement>) => {
-                          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
-                            return;
-                          }
-
-                          e.preventDefault();
-
-                          handleMove(item.isbn13);
-                        }}
-                      >
+                      <Link to={`/books/${item.isbn13}`}>
                         <ImgBox img={item.coverImageUrl} size="small" />
-                      </a>
+                      </Link>
                     </List.Item.Leading>
                     <List.Item.Content
-                      onClick={() => {
-                        handleMove(item.isbn13);
-                      }}
+                      as={Link}
+                      to={`/books/${item.isbn13}`}
                       title={
                         <>
                           <Tag
