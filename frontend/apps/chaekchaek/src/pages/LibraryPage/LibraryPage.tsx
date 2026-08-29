@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import {
   Button,
@@ -111,6 +111,11 @@ export const LibraryPage = () => {
   } = useLoadData({ queryFn: getLibraryLoadData });
 
   const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
+
+  const navigation = useNavigate();
+  const handleMove = (isbn: string) => {
+    navigation(`/books/${isbn}`);
+  };
 
   const [isEditing, setIsEditing] = useState(false);
   const handleClickToggleEdit = () => {
@@ -348,6 +353,9 @@ export const LibraryPage = () => {
                       </a>
                     </List.Item.Leading>
                     <List.Item.Content
+                      onClick={() => {
+                        handleMove(item.isbn13);
+                      }}
                       title={
                         <>
                           <Tag
