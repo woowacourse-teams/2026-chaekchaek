@@ -164,7 +164,13 @@ export const LibraryPage = () => {
     if (!user) return;
 
     if (user.displayAnonymous) {
-      handleOpenDialog('UpdateNicknameDialog');
+      if (!user.nickname) return handleOpenDialog('UpdateNicknameDialog');
+
+      const userWithAnonymityDisabled = await updateAnonymity({ displayAnonymous: false });
+      if (!userWithAnonymityDisabled) return;
+
+      login(userWithAnonymityDisabled);
+
       return;
     }
 
