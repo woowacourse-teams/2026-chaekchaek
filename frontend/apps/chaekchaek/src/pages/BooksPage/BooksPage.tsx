@@ -114,6 +114,7 @@ export const BooksPage = () => {
                   <Input
                     block
                     leading={<Icon.SearchIcon />}
+                    autoFocus
                     value={query}
                     onChange={handleChangeQuery}
                   />
