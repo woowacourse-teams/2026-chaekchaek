@@ -24,6 +24,7 @@
   min-width: 0;
   height: 44px;
   gap: 3px;
+  white-space: pre-wrap;
 }
 
 .title {
