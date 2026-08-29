@@ -19,7 +19,7 @@ export const DeleteBooksDialog = ({ bookIds, onBooksDeleted, onClose }: DeleteBo
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
-        <Dialog.Header subTitle={`선택한 ${bookIds.length}권의 책을 서재에서 삭제할까?`}>
+        <Dialog.Header subTitle={`선택한 ${bookIds.length}권의 책을 서재에서 삭제할까요?`}>
           책 삭제
         </Dialog.Header>
 
