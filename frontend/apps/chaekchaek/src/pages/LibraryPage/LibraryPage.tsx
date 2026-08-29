@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import type { MouseEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import {
@@ -348,7 +349,18 @@ export const LibraryPage = () => {
                           }}
                         />
                       )}
-                      <a href={`/books/${item.isbn13}`}>
+                      <a
+                        href={`/books/${item.isbn13}`}
+                        onClick={(e: MouseEvent<HTMLAnchorElement>) => {
+                          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+                            return;
+                          }
+
+                          e.preventDefault();
+
+                          handleMove(item.isbn13);
+                        }}
+                      >
                         <ImgBox img={item.coverImageUrl} size="small" />
                       </a>
                     </List.Item.Leading>
