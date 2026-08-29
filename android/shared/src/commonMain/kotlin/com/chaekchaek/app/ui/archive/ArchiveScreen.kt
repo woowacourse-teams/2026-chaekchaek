@@ -263,7 +263,7 @@ private fun LibraryTopBar(onEdit: () -> Unit) {
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("내 서재", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp))
+        Text("내 서재", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp))
         Spacer(Modifier.weight(1f))
         TextButton(onClick = onEdit) {
             Text("편집", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
@@ -281,7 +281,7 @@ private fun EditTopBar(selectedCount: Int, onCancel: () -> Unit, onDone: () -> U
         TextButton(onClick = onCancel, contentPadding = PaddingValues(horizontal = 0.dp)) {
             Text("취소", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
         }
-        Text("${selectedCount}권 선택", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp))
+        Text("${selectedCount}권 선택", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp))
         Spacer(Modifier.weight(1f))
         TextButton(onClick = onDone) {
             Text("완료", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
@@ -455,7 +455,7 @@ private fun LibraryBookRow(
                 Text("⌫", modifier = Modifier.clearAndSetSemantics {}, color = MaterialTheme.colorScheme.error, fontSize = 20.sp)
             }
         } else {
-            Text("›", modifier = Modifier.clearAndSetSemantics {}, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 24.sp)
+            Text("›", modifier = Modifier.clearAndSetSemantics {}, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 22.sp)
         }
     }
 }
@@ -493,7 +493,7 @@ private fun ReadingStatusTag(status: ReadingStatus) {
             status.label,
             modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
             color = if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
         )
     }
 }
@@ -536,7 +536,7 @@ private fun ScrollTopButton(onClick: () -> Unit, modifier: Modifier = Modifier) 
             Text(
                 "TOP",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
             )
         }
     }
@@ -586,7 +586,7 @@ private fun StatusChangeDialog(selectedCount: Int, onDismiss: () -> Unit, onChan
         Text(
             "선택한 ${selectedCount}권의 상태를 변경합니다.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
         )
         Column(modifier = Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             ReadingStatus.entries.forEach { status ->
@@ -604,7 +604,7 @@ private fun DeleteConfirmationDialog(selectedCount: Int, onDismiss: () -> Unit, 
         Text(
             "선택한 ${selectedCount}권을 서재에서 삭제할까요?",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
         )
         DialogActions(confirmLabel = "삭제", onDismiss = onDismiss, onConfirm = onConfirm)
     }
@@ -642,7 +642,7 @@ private fun DialogActions(
             modifier = Modifier.weight(1f).height(48.dp),
             shape = RoundedCornerShape(6.dp),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        ) { Text("취소", style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp)) }
+        ) { Text("취소", style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp)) }
         Button(
             onClick = onConfirm,
             modifier = Modifier.weight(1f).height(48.dp),
@@ -654,7 +654,7 @@ private fun DialogActions(
                 disabledContainerColor = MaterialTheme.colorScheme.outline,
                 disabledContentColor = MaterialTheme.colorScheme.surface,
             ),
-        ) { Text(confirmLabel, style = MaterialTheme.typography.labelLarge.copy(fontSize = 14.sp)) }
+        ) { Text(confirmLabel, style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp)) }
     }
 }
 
@@ -703,7 +703,7 @@ private fun NicknameDialog(
         Text(
             "기록과 감상에 표시할 닉네임이 필요해요.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
         )
         NicknameInput(nickname = nickname, onNicknameChange = onNicknameChange)
         DialogActions(
@@ -730,7 +730,7 @@ private fun NicknameInput(nickname: String, onNicknameChange: (String) -> Unit) 
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium.copy(
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 12.5.sp,
+                fontSize = 13.sp,
             ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
             decorationBox = { innerTextField ->
@@ -739,7 +739,7 @@ private fun NicknameInput(nickname: String, onNicknameChange: (String) -> Unit) 
                         Text(
                             "닉네임을 입력하세요",
                             color = MaterialTheme.colorScheme.outline,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.5.sp),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
                         )
                     }
                     innerTextField()

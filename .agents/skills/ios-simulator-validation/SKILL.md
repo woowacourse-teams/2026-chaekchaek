@@ -27,7 +27,7 @@ description: 첵췍 KMP iOS 앱을 iOS Simulator에서 빌드, 테스트, UI 조
 - [UI Design Tips](https://developer.apple.com/design/tips/): 최소 44x44pt hit target
 - [Performing accessibility audits](https://developer.apple.com/documentation/accessibility/performing-accessibility-audits-for-your-app): XCUITest `performAccessibilityAudit()`
 
-대표 화면을 기본 Dynamic Type 크기와 AX5에서 각각 검증한다. AX5는 Simulator의 `accessibility-extra-extra-extra-large`이다. 각 상태에서 텍스트 잘림과 겹침, 의도하지 않은 가로 스크롤, 핵심 동작의 손실, 사용자 표시 텍스트 11pt 미만 여부, 직접 누르는 컨트롤의 44x44pt hit target을 확인한다.
+대표 화면의 앱 소유 텍스트가 디자인 시스템의 11개 의미 역할에 연결됐는지 확인하고, 기본 Dynamic Type 크기와 AX5에서 각각 검증한다. AX5는 Simulator의 `accessibility-extra-extra-extra-large`이다. 각 상태에서 텍스트 잘림과 겹침, 의도하지 않은 가로 스크롤, 핵심 동작의 손실, 사용자 표시 텍스트 11pt 미만 여부, 직접 누르는 컨트롤의 44x44pt hit target을 확인한다.
 
 ## 검증 절차
 

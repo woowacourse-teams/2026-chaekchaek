@@ -20,8 +20,15 @@ final class LoginRequiredSheetUITests: XCTestCase {
         editButton.tap()
 
         XCTAssertTrue(app.staticTexts["로그인이 필요해요"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Apple로 계속하기"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["GIDSignInButton"].waitForExistence(timeout: 5))
+        let appleButton = app.buttons["Apple로 계속하기"]
+        let googleButton = app.buttons["GIDSignInButton"]
+        XCTAssertTrue(appleButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(googleButton.waitForExistence(timeout: 5))
+
+        if !googleButton.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(googleButton.isHittable)
 
         try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
 

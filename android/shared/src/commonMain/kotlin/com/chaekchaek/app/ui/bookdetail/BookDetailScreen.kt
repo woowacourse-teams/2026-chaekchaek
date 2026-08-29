@@ -498,8 +498,8 @@ private fun ArchiveStage(
             modifier = Modifier.offset(16.dp, 78.dp),
             color = ChaekAccent,
             fontFamily = FontFamily.Monospace,
-            fontSize = 9.sp,
-            lineHeight = 14.sp,
+            fontSize = 11.sp,
+            lineHeight = 13.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.5.sp,
         )
@@ -523,7 +523,7 @@ private fun ArchiveStage(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("MOST READ", color = ChaekAccent, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                Text("30 NOTES / TODAY", color = ChaekAccent, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                Text("30 NOTES / TODAY", color = ChaekAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -579,7 +579,7 @@ private fun BookSummary(book: BookDetailArgs, averageRating: Double?) {
             book.title,
             style = MaterialTheme.typography.headlineLarge.copy(
                 fontFamily = FontFamily.Serif,
-                fontSize = 32.sp,
+                fontSize = 34.sp,
                 fontWeight = FontWeight.SemiBold,
             ),
             maxLines = 2,
@@ -590,7 +590,7 @@ private fun BookSummary(book: BookDetailArgs, averageRating: Double?) {
             book.creator.ifBlank { "책 정보 준비 중" },
             color = ChaekInkSecondary,
             fontFamily = FontFamily.SansSerif,
-            fontSize = 14.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
         )
@@ -612,7 +612,7 @@ private fun BookSummary(book: BookDetailArgs, averageRating: Double?) {
 private fun MetaChip(label: String) {
     Surface(modifier = Modifier.padding(horizontal = 4.dp).height(28.dp), shape = RoundedCornerShape(999.dp), color = ChaekBand) {
         Box(modifier = Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
-            Text(label, color = ChaekInk, fontFamily = FontFamily.Monospace, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+            Text(label, color = ChaekInk, fontFamily = FontFamily.Monospace, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -647,7 +647,7 @@ private fun ReadingRecord(
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("내 독서 기록", color = ChaekInk, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("내 독서 기록", color = ChaekInk, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
             Surface(
                 onClick = onRate,
@@ -661,7 +661,7 @@ private fun ReadingRecord(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(painterResource(Res.drawable.ic_star), contentDescription = null, modifier = Modifier.size(12.dp), tint = ChaekInk)
-                    Text("별점 주기", color = ChaekInk, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+                    Text("별점 주기", color = ChaekInk, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -709,13 +709,13 @@ private fun ReadingRecord(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(painterResource(Res.drawable.ic_bookmark), contentDescription = null, modifier = Modifier.size(13.dp), tint = ChaekInkSecondary)
-                    Text("지금 읽는 쪽", color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 10.5.sp)
-                    Text("$currentPage", color = ChaekInk, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("지금 읽는 쪽", color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 11.sp)
+                    Text("$currentPage", color = ChaekInk, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     Text(
                         if (book.totalPages > 0) "/ ${book.totalPages}쪽" else "/ 쪽수 미정",
                         color = ChaekInkSecondary,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
                     )
                 }
             }
@@ -732,7 +732,7 @@ private fun ReadingRecord(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(painterResource(Res.drawable.ic_pencil), contentDescription = null, modifier = Modifier.size(14.dp), tint = ChaekSurface)
-                    Text("쪽수 입력", color = ChaekSurface, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                    Text("쪽수 입력", color = ChaekSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -794,7 +794,7 @@ private fun ReviewsSection(
                         if (sort == ReviewSort.LATEST) "최신순" else "페이지순",
                         color = ChaekInk,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Icon(painterResource(Res.drawable.ic_chevron_down), contentDescription = null, modifier = Modifier.size(11.dp), tint = ChaekInk)
@@ -861,7 +861,7 @@ private fun FeedScopeChip(label: String, selected: Boolean, onClick: () -> Unit)
             label,
             color = if (selected) ChaekSurface else ChaekInkSecondary,
             fontFamily = FontFamily.Monospace,
-            fontSize = 9.sp,
+            fontSize = 11.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
@@ -922,8 +922,8 @@ private fun ReviewCard(
             }
             Text(
                 if (locked) maskAsChirps(review.content) else review.content,
-                fontSize = 12.5.sp,
-                lineHeight = 21.sp,
+                fontSize = 13.sp,
+                lineHeight = 18.sp,
             )
             review.quote?.let { quote ->
                 Row(
@@ -934,7 +934,7 @@ private fun ReviewCard(
                         "“${if (locked) maskAsChirps(quote) else quote}”",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                         fontSize = 12.sp,
-                        lineHeight = 19.sp,
+                        lineHeight = 16.sp,
                     )
                 }
             }
@@ -996,8 +996,8 @@ private fun Replies(
                     Text(
                         if (locked) maskAsChirps(reply.content) else reply.content,
                         color = ChaekInkSecondary,
-                        fontSize = 11.5.sp,
-                        lineHeight = 18.sp,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
                     )
                 }
                 if (canManageContent(reply.writtenByMe, reply.deleted)) {
@@ -1006,7 +1006,7 @@ private fun Replies(
                             .semantics { contentDescription = "내 답글 수정 또는 삭제" },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("⋯", color = ChaekInkSecondary, fontSize = 18.sp)
+                        Text("⋯", color = ChaekInkSecondary, fontSize = 17.sp)
                     }
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1018,7 +1018,7 @@ private fun Replies(
                         },
                         tint = ChaekInkSecondary,
                     )
-                    Text("${reply.likeCount}", color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 9.5.sp)
+                    Text("${reply.likeCount}", color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 11.sp)
                 }
             }
         }
@@ -1073,7 +1073,7 @@ private fun ComposeBar(onClick: () -> Unit, modifier: Modifier = Modifier) {
         Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(modifier = Modifier.weight(1f).height(40.dp), shape = RoundedCornerShape(6.dp), color = ChaekSurfaceMuted) {
                 Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("✎", color = ChaekInkSecondary, fontSize = 14.sp)
+                    Text("✎", color = ChaekInkSecondary, fontSize = 15.sp)
                     Text("이 순간의 감상 남기기", modifier = Modifier.padding(start = 8.dp), color = ChaekInkSecondary, fontSize = 11.sp)
                 }
             }
@@ -1093,7 +1093,7 @@ private fun ScrollTopButton(onClick: () -> Unit, modifier: Modifier = Modifier) 
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text("⌃", fontSize = 15.sp, lineHeight = 12.sp)
-            Text("TOP", fontSize = 8.sp, fontFamily = FontFamily.Monospace)
+            Text("TOP", fontSize = 11.sp, fontFamily = FontFamily.Monospace)
         }
     }
 }

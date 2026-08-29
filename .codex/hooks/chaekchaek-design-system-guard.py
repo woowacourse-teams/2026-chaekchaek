@@ -15,7 +15,7 @@ import tempfile
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DESIGN_FILE = Path("/Users/ujeonghyeon/Downloads/designs.pen")
 STATE_VERSION = 1
-MIN_IOS_TEXT_SIZE = 11.0
+HIG_TEXT_SIZES = {11.0, 12.0, 13.0, 15.0, 16.0, 17.0, 20.0, 22.0, 28.0, 34.0}
 APPROVED_COLORS = {
     "#00000000", "#00000022", "#00000033", "#00000073", "#171717",
     "#1A1A1A", "#242424", "#252525", "#302C27", "#4A3520", "#4A4035",
@@ -116,7 +116,7 @@ def display_size(value: float) -> str:
 def find_violations(code: str, check_font_size: bool = False) -> list[str]:
     colors = sorted({value.upper() for value in HEX_COLOR.findall(code)} - APPROVED_COLORS)
     fonts = sorted({value for value in FONT_FAMILY.findall(code) if not value.startswith("$")} - APPROVED_FONTS)
-    font_sizes = sorted({float(value) for value in PENCIL_FONT_SIZE.findall(code) if float(value) < MIN_IOS_TEXT_SIZE}) if check_font_size else []
+    font_sizes = sorted({float(value) for value in PENCIL_FONT_SIZE.findall(code) if float(value) not in HIG_TEXT_SIZES}) if check_font_size else []
     violations = []
     if colors:
         violations.append(f"SxMn5에 없는 색상: {', '.join(colors)}")
@@ -124,7 +124,7 @@ def find_violations(code: str, check_font_size: bool = False) -> list[str]:
         violations.append(f"SxMn5에 없는 서체: {', '.join(fonts)}")
     if font_sizes:
         values = ", ".join(display_size(value) for value in font_sizes)
-        violations.append(f"iOS HIG 최소 11pt 미만 fontSize: {values}")
+        violations.append(f"HIG 의미 역할에 없는 fontSize: {values}")
     return violations
 
 
@@ -335,7 +335,7 @@ def find_ios_kotlin_violations(command: str) -> list[str]:
     for path, body in patch_sections(command):
         if not is_ios_reachable_kotlin(path):
             continue
-        sizes = sorted({float(value) for value in KOTLIN_FONT_SIZE.findall(added_lines(body)) if float(value) < MIN_IOS_TEXT_SIZE})
+        sizes = sorted({float(value) for value in KOTLIN_FONT_SIZE.findall(added_lines(body)) if float(value) not in HIG_TEXT_SIZES})
         if sizes:
             values = ", ".join(display_size(value) for value in sizes)
             violations.append(f"{path}: {values}sp")
@@ -365,7 +365,7 @@ def check_diff(base_sha: str) -> int:
     violations = find_ios_kotlin_violations(result.stdout)
     if violations:
         details = "; ".join(violations)
-        print("ios_hig_diff: 신규 11sp 미만 fontSize가 있습니다: " + details, file=sys.stderr)
+        print("ios_hig_diff: HIG 의미 역할에 없는 신규 fontSize가 있습니다: " + details, file=sys.stderr)
         return 1
     print("ios_hig_diff: ok")
     return 0
@@ -382,7 +382,7 @@ def self_test() -> None:
     assert existing_worktrees and all(is_project_path(path) for path in existing_worktrees)
     assert not find_violations('Update("x",{fill:"#C92A24",fontFamily:"Funnel Sans",fontSize:11})', True)
     assert find_violations('Update("x",{fill:"#123456"})') == ["SxMn5에 없는 색상: #123456"]
-    assert find_violations('Update("x",{"fontSize":10.5})', True) == ["iOS HIG 최소 11pt 미만 fontSize: 10.5"]
+    assert find_violations('Update("x",{"fontSize":10.5})', True) == ["HIG 의미 역할에 없는 fontSize: 10.5"]
     assert exact_target_node({"tool_input": {"input": "TakeScreenshot(['target'])"}}) == "target"
     assert not exact_target_node({"tool_input": {"input": "TakeScreenshot(['SxMn5'])"}})
     assert not exact_target_node({"tool_input": {"input": "TakeScreenshot(['a','b'])"}})
@@ -437,6 +437,7 @@ def self_test() -> None:
 *** End Patch"""
     android_patch = kotlin_patch.replace("commonMain", "androidMain")
     safe_patch = kotlin_patch.replace("10.5.sp", "11.sp")
+    arbitrary_patch = kotlin_patch.replace("10.5.sp", "14.sp")
     function_payload = {"tool_name": "functions.exec", "tool_input": {"input": f"await tools.apply_patch(`{kotlin_patch}`)"}}
     git_diff = """diff --git a/android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt b/android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt
 --- a/android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt
@@ -448,6 +449,7 @@ def self_test() -> None:
     assert not find_ios_kotlin_violations(git_diff.replace("commonMain", "androidMain"))
     assert not find_ios_kotlin_violations(android_patch)
     assert not find_ios_kotlin_violations(safe_patch)
+    assert find_ios_kotlin_violations(arbitrary_patch) == ["android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt: 14sp"]
     assert is_apply_patch_call(function_payload)
     assert is_design_mutation({"tool_input": {"filePath": str(DESIGN_FILE), "input": "Copy('a','b')"}})
     assert is_design_mutation({"tool_input": {"filePath": str(DESIGN_FILE), "input": "Generate('a',{})"}})
@@ -482,7 +484,7 @@ def main() -> None:
                 "additionalContext": (
                     "Chaekchaek UI soft nudge: designs.pen의 정확한 대상 node와 "
                     "android/docs/screen-specs.md의 component/state 계약을 확인하세요. "
-                    "iOS 도달 UI는 신규 11pt 미만 fontSize를 추가하지 말고, "
+                    "사용자 표시 텍스트는 HIG 11개 의미 역할의 fontSize만 사용하고, "
                     "구현 전에 변경 후 대상 스크린샷으로 검증합니다."
                 ),
             }}, ensure_ascii=False))
@@ -504,7 +506,7 @@ def main() -> None:
             deny("designs.pen 직접 편집 차단: Pencil 도구를 사용하세요.")
         elif hig_violations:
             details = "; ".join(hig_violations)
-            deny("iOS HIG 변경 차단: iOS 도달 Kotlin 추가행에 11sp 미만 fontSize가 있습니다: " + details)
+            deny("HIG Typography 변경 차단: iOS 도달 Kotlin 추가행에 의미 역할 밖의 fontSize가 있습니다: " + details)
         elif ui_patch and not has_fresh_screenshot(payload):
             deny("UI 구현 차단: designs.pen 변경 이후 SxMn5/document가 아닌 정확히 한 대상 노드의 성공한 스크린샷을 먼저 검증하세요.")
         return

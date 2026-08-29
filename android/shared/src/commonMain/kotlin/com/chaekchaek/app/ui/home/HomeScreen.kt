@@ -264,7 +264,7 @@ private fun CurrentReadingSection(book: ReadingBookUiModel, onBookClick: (BookDe
                         Text(
                             "›",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 18.sp,
+                            fontSize = 17.sp,
                             lineHeight = 18.sp,
                         )
                     }
@@ -289,7 +289,7 @@ private fun CurrentReadingSection(book: ReadingBookUiModel, onBookClick: (BookDe
                     }
                     Text(
                         "이어서 기록하기  ↗",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -318,7 +318,7 @@ private fun EmptyReadingSection(onSearchBook: () -> Unit) {
             )
             Text(
                 "책을 등록하면 읽은 쪽수와 감상을 남길 수 있어요.",
-                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 15.sp),
+                style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(
@@ -587,8 +587,8 @@ private fun RecentReflectionsSection(
         Text(
             title,
             style = MaterialTheme.typography.headlineLarge.copy(
-                fontSize = 25.sp,
-                lineHeight = 30.sp,
+                fontSize = 28.sp,
+                lineHeight = 34.sp,
                 fontWeight = FontWeight.Normal,
             ),
         )
@@ -684,7 +684,7 @@ private fun ReflectionCard(
                 AuthorLine(authorLabel, avatar, profileImageUrl, imageSize = 20.dp)
                 Text(
                     "“$excerpt”",
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 17.sp),
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp),
                     maxLines = 4,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -737,8 +737,8 @@ private fun InvisibleCitiesCover(modifier: Modifier = Modifier) {
                 .align(Alignment.TopStart)
                 .padding(start = 7.dp, top = 7.dp),
             color = InvisibleCitiesCoverInk,
-            fontSize = 8.sp,
-            lineHeight = 8.sp,
+            fontSize = 11.sp,
+            lineHeight = 13.sp,
             fontWeight = FontWeight.ExtraBold,
         )
         Box(
@@ -754,7 +754,7 @@ private fun InvisibleCitiesCover(modifier: Modifier = Modifier) {
                 .align(Alignment.BottomStart)
                 .padding(start = 8.dp, bottom = 8.dp),
             color = InvisibleCitiesCoverBlock,
-            fontSize = 7.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
         )
     }
@@ -779,7 +779,7 @@ private fun AuthorLine(
         }
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
