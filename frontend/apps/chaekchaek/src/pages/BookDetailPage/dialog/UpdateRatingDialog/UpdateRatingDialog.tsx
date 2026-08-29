@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
-import { ButtonStack, Dialog, Slider } from '@chaekchaek/design-system';
+import { ButtonStack, Dialog, Notice, Slider } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { Rating } from '@chaekchaek/design-system';
 import { CellList } from '@chaekchaek/design-system';
@@ -92,6 +92,7 @@ export const UpdateRatingDialog = ({
               </>
             }
           >
+            {!ratingsComparisonData?.length && <Notice height={80}>아직 남긴 평점이 없어요</Notice>}
             {ratingsComparisonData?.map((comparison) => {
               return (
                 <CellList.Item

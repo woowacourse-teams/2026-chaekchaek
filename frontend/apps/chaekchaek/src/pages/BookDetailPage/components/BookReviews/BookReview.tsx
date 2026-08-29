@@ -31,6 +31,8 @@ import { WriteReply } from './WriteReply';
 
 import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
 
+import styles from './BookReview.module.css';
+
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
 
@@ -144,7 +146,7 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
   const showSpoilerVisible = isSpoilerVisible || !review.isSpoiler;
 
   return (
-    <Entry variant={showSpoilerVisible ? 'subtle' : 'plain'}>
+    <Entry variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
       <Entry.Main>
         <Entry.Header>
           <Shell>
@@ -186,10 +188,13 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
             )}
           </Shell>
         </Entry.Header>
-        <Entry.Body onClick={handleClickShowSpoiler}>
+        <Entry.Body
+          className={!showSpoilerVisible && review.isSpoiler && styles.clickable}
+          onClick={handleClickShowSpoiler}
+        >
           {showSpoilerVisible ? review.content : SPOILER_PLACEHOLDER_REVIEW}
           {review.quote && (
-            <Note variant={showSpoilerVisible ? 'subtle' : 'plain'}>
+            <Note variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
               {showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}
             </Note>
           )}

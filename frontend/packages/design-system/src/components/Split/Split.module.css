@@ -1,9 +1,7 @@
 .ui-Split {
   display: flex;
   flex-wrap: wrap;
-  padding-top: 36px;
-  padding-left: 70px;
-  padding-right: 70px;
+  padding: 36px 70px 60px;
   width: 1440px;
   box-sizing: border-box;
   margin: 0 auto;

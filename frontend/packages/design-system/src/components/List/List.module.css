@@ -61,6 +61,8 @@
   flex: 1;
   flex-direction: column;
   justify-content: center;
+  text-decoration: none;
+  color: inherit;
 }
 
 .ui-List-Item-Leading + .ui-List-Item-Content {

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import {
   Button,
@@ -343,11 +343,13 @@ export const LibraryPage = () => {
                           }}
                         />
                       )}
-                      <a href={`/books/${item.isbn13}`}>
+                      <Link to={`/books/${item.isbn13}`}>
                         <ImgBox img={item.coverImageUrl} size="small" />
-                      </a>
+                      </Link>
                     </List.Item.Leading>
                     <List.Item.Content
+                      as={Link}
+                      to={`/books/${item.isbn13}`}
                       title={
                         <>
                           <Tag
@@ -390,7 +392,7 @@ export const LibraryPage = () => {
             </List>
 
             <Pagination
-              sx={{ mt: 5, mb: 10 }}
+              sx={{ mt: 5 }}
               defaultPage={defaultPage}
               totalPages={filteredTotalPages}
               onChange={handleChangeDefaultPage}

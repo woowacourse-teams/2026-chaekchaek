@@ -4,6 +4,7 @@ import {
   DataInfo,
   Icon,
   ProgressBar,
+  Rating,
   SegmentedControl,
   Title,
 } from '@chaekchaek/design-system';
@@ -42,7 +43,16 @@ export const BookInfo = ({
     <>
       <Title level="main">내 독서 기록</Title>
       <Banner sx={{ mt: 6 }}>
-        <Banner.Content title="내 별점" content="아직 평가하지 않았어요" />
+        <Banner.Content
+          title="내 별점"
+          content={
+            myRecord?.myRating ? (
+              <Rating size="small" value={myRecord.myRating} />
+            ) : (
+              '아직 평가하지 않았어요'
+            )
+          }
+        />
         <Banner.Trailing>
           <Button
             size="small"

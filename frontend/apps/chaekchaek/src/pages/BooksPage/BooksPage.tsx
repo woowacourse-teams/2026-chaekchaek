@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import type { ChangeEvent, MouseEvent } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import type { ChangeEvent } from 'react';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
 import { Layout } from '@/frames';
 import { Header } from '@/frames';
@@ -114,6 +114,7 @@ export const BooksPage = () => {
                   <Input
                     block
                     leading={<Icon.SearchIcon />}
+                    autoFocus
                     value={query}
                     onChange={handleChangeQuery}
                   />
@@ -136,24 +137,16 @@ export const BooksPage = () => {
                   return (
                     <List.Item>
                       <List.Item.Leading>
-                        <a
-                          href="#"
-                          onClick={(e: MouseEvent<HTMLAnchorElement>) => {
-                            e.preventDefault();
-
-                            handleMove(item.isbn13);
-                          }}
-                        >
+                        <Link to={`/books/${item.isbn13}`}>
                           <ImgBox img={item.coverImageUrl} size="small" />
-                        </a>
+                        </Link>
                       </List.Item.Leading>
                       <List.Item.Content
+                        as={Link}
+                        to={`/books/${item.isbn13}`}
                         title={item.title}
                         content={item.authors.join(' · ')}
                         description={`${item.publisher} · ${item.publishedDate}`}
-                        onClick={() => {
-                          handleMove(item.isbn13);
-                        }}
                       />
                       <List.Item.Trailing>
                         {(item.reviewCount || item.replyCount) && (
@@ -178,7 +171,7 @@ export const BooksPage = () => {
             </List>
             {data && (
               <Pagination
-                sx={{ mt: 5, mb: 10 }}
+                sx={{ mt: 5 }}
                 defaultPage={defaultPage}
                 totalPages={totalPages}
                 onChange={handleChangeDefaultPage}
