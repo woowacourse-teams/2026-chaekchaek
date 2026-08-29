@@ -146,7 +146,7 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
   const showSpoilerVisible = isSpoilerVisible || !review.isSpoiler;
 
   return (
-    <Entry variant={showSpoilerVisible ? 'subtle' : 'plain'}>
+    <Entry variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
       <Entry.Main>
         <Entry.Header>
           <Shell>
@@ -194,7 +194,7 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
         >
           {showSpoilerVisible ? review.content : SPOILER_PLACEHOLDER_REVIEW}
           {review.quote && (
-            <Note variant={showSpoilerVisible ? 'subtle' : 'plain'}>
+            <Note variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
               {showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}
             </Note>
           )}
