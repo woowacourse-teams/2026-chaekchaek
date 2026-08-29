@@ -113,8 +113,8 @@ export const LibraryPage = () => {
   const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
 
   const [isEditing, setIsEditing] = useState(false);
-  const handleClickStartEdit = () => {
-    setIsEditing(true);
+  const handleClickToggleEdit = () => {
+    setIsEditing((prev) => !prev);
   };
   const handleClickEndEdit = () => {
     setIsEditing(false);
@@ -164,7 +164,13 @@ export const LibraryPage = () => {
     if (!user) return;
 
     if (user.displayAnonymous) {
-      handleOpenDialog('UpdateNicknameDialog');
+      if (!user.nickname) return handleOpenDialog('UpdateNicknameDialog');
+
+      const userWithAnonymityDisabled = await updateAnonymity({ displayAnonymous: false });
+      if (!userWithAnonymityDisabled) return;
+
+      login(userWithAnonymityDisabled);
+
       return;
     }
 
@@ -269,8 +275,8 @@ export const LibraryPage = () => {
                       </Button>
                     </>
                   )}
-                  <Button variant="primary" onClick={handleClickStartEdit}>
-                    서재 편집
+                  <Button variant="primary" onClick={handleClickToggleEdit}>
+                    {!isEditing ? '서재 편집' : '편집 종료'}
                   </Button>
                 </>
               }
@@ -385,7 +391,7 @@ export const LibraryPage = () => {
 
             <Pagination
               sx={{ mt: 5, mb: 10 }}
-              defaultPage={1}
+              defaultPage={defaultPage}
               totalPages={filteredTotalPages}
               onChange={handleChangeDefaultPage}
             />

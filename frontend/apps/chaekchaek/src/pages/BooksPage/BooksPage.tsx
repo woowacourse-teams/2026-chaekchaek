@@ -179,7 +179,7 @@ export const BooksPage = () => {
             {data && (
               <Pagination
                 sx={{ mt: 5, mb: 10 }}
-                defaultPage={page}
+                defaultPage={defaultPage}
                 totalPages={totalPages}
                 onChange={handleChangeDefaultPage}
               />

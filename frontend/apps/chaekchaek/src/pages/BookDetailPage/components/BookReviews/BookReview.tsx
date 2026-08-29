@@ -1,6 +1,15 @@
 import { useCallback, useState } from 'react';
 
-import { Avatar, Button, Entry, Icon, Note, Shell, Surface } from '@chaekchaek/design-system';
+import {
+  Avatar,
+  Badge,
+  Button,
+  Entry,
+  Icon,
+  Note,
+  Shell,
+  Surface,
+} from '@chaekchaek/design-system';
 
 import { getReviewsReviewIdReplies } from '@/services/apis/reviewsReviewIdReplies/repository';
 import { useLoadData } from '@/services/core/useLoadData';
@@ -143,7 +152,16 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
               <Avatar img={review.author.profileImageUrl} />
             </Shell.Leading>
             <Shell.Content
-              title={review.author.displayName}
+              title={
+                <>
+                  {review.author.displayName}{' '}
+                  {review.currentPage && (
+                    <Badge variant="soft" size="small">
+                      P. {review.currentPage} 까지
+                    </Badge>
+                  )}
+                </>
+              }
               content={new Date(review.createdAt).toLocaleDateString('ko-KR')}
             />
             {review.author.mine && (
@@ -171,7 +189,9 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
         <Entry.Body onClick={handleClickShowSpoiler}>
           {showSpoilerVisible ? review.content : SPOILER_PLACEHOLDER_REVIEW}
           {review.quote && (
-            <Note variant={showSpoilerVisible ? 'subtle' : 'plain'}>{showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}</Note>
+            <Note variant={showSpoilerVisible ? 'subtle' : 'plain'}>
+              {showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}
+            </Note>
           )}
         </Entry.Body>
         <Entry.Footer>

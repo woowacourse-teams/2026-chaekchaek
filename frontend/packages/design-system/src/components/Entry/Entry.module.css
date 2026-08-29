@@ -21,6 +21,10 @@
   color: #ffffff;
 }
 
+.ui-Entry-Body {
+  white-space: pre-wrap;
+}
+
 .ui-Entry-Footer {
   display: block;
   text-align: right;

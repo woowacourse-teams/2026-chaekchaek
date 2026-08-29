@@ -14,6 +14,7 @@
   font-weight: 400;
   line-height: 19px;
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .root .title {
