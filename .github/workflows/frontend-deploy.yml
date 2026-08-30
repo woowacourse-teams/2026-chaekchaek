@@ -30,13 +30,13 @@ jobs:
       - name: Build
         run: npm run build -w @chaekchaek/web
         env:
-          APP_NAME: ${{ secrets.APP_NAME }}
-          APP_URL: ${{ secrets.APP_URL }}
-          NODE_ENV: ${{ secrets.NODE_ENV }}
-          APP_API_URL: ${{ secrets.APP_API_URL }}
-          APP_GA_ID: ${{ secrets.APP_GA_ID }}
-          APP_SENTRY_DSN: ${{ secrets.APP_SENTRY_DSN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          APP_NAME: ${{ vars.APP_NAME }}
+          APP_URL: ${{ vars.APP_URL }}
+          NODE_ENV: ${{ vars.NODE_ENV }}
+          APP_API_URL: ${{ vars.APP_API_URL }}
+          APP_GA_ID: ${{ vars.APP_GA_ID }}
+          APP_SENTRY_DSN: ${{ vars.APP_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ vars.SENTRY_AUTH_TOKEN }}
 
       - name: Deploy
         run: |
