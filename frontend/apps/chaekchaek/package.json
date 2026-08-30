@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "webpack serve --mode development",
     "build": "webpack --config webpack.config.js",
+    "record-deploy": "bash ./scripts/record-deploy.sh",
     "gc:service": "tsx ./src/services/.generate/index.ts && prettier --write -- ./src/services/apis ",
     "test": "vitest run",
     "test:watch": "vitest",
