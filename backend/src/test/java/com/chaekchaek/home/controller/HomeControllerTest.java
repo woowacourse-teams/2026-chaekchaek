@@ -155,7 +155,7 @@ class HomeControllerTest {
                 fieldWithPath("reviews[].author.actorType").type(JsonFieldType.STRING)
                         .description("작성자 유형(MEMBER, GUEST)"),
                 fieldWithPath("reviews[].author.profileStatus").type(JsonFieldType.STRING)
-                        .description("프로필 접근 상태(AVAILABLE, WITHDRAWN, UNAVAILABLE)"),
+                        .description("프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"),
                 fieldWithPath("reviews[].replyCount").type(JsonFieldType.NUMBER).description("삭제되지 않은 답글 수"),
                 fieldWithPath("reviews[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
                 fieldWithPath("reviews[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),

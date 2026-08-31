@@ -231,6 +231,7 @@ class LibraryControllerTest {
                         .param("page", "1")),
                 HttpStatus.NOT_FOUND, ErrorCode.LIBRARY_NOT_FOUND,
                 "/api/v1/members/" + MEMBER_ID + "/library")
+                .andExpect(jsonPath("$.detail").value("공개된 회원의 서재만 접근 가능합니다."))
                 .andDo(problemDetailDocument("public-library-list-not-found",
                         PUBLIC_LIBRARY_LIST_SUMMARY, PUBLIC_LIBRARY_LIST_DESCRIPTION,
                         memberIdResourcePathParameters(), libraryListResourceQueryParameters()));

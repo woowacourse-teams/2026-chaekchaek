@@ -90,6 +90,36 @@ class HomeServiceTest {
                                 false, ActorType.MEMBER, AuthorProfileStatus.AVAILABLE));
     }
 
+    @Test
+    @DisplayName("탈퇴 회원의 감상은 공개 프로필에 접근할 수 없다")
+    void should_MarkProfileUnavailable_When_ReviewAuthorIsWithdrawn() {
+        ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        ReplyRepository replyRepository = mock(ReplyRepository.class);
+        BookRepository bookRepository = mock(BookRepository.class);
+        CurrentActorProvider currentActorProvider = mock(CurrentActorProvider.class);
+        ReviewMemberReader reviewMemberReader = mock(ReviewMemberReader.class);
+        Review review = review(100L, 1L, 1L, "탈퇴 회원 감상", Instant.parse("2026-08-18T13:00:00Z"));
+        Book book = book(1L, "첫 번째 책");
+
+        when(currentActorProvider.findCurrentActor()).thenReturn(Optional.empty());
+        when(reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc())
+                .thenReturn(List.of(review));
+        when(replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(100L))).thenReturn(List.of());
+        when(bookRepository.findAllById(List.of(1L))).thenReturn(List.of(book));
+        when(reviewMemberReader.findByActorIds(List.of(1L))).thenReturn(java.util.Map.of(
+                1L, new ReviewMemberProfile(101L, null, null, "익명 사용자 1",
+                        true, AccountStatus.WITHDRAWN, ActorType.MEMBER)
+        ));
+        HomeService homeService = new HomeService(reviewRepository, replyRepository, bookRepository,
+                currentActorProvider, reviewMemberReader);
+
+        AuthorResponse author = homeService.getLatestReviews().reviews().getFirst().author();
+
+        assertThat(author.displayName()).isEqualTo("탈퇴한 사용자");
+        assertThat(author.memberId()).isNull();
+        assertThat(author.profileStatus()).isEqualTo(AuthorProfileStatus.UNAVAILABLE);
+    }
+
     private static HomeService homeService(ReviewRepository reviewRepository, ReplyRepository replyRepository,
                                            BookRepository bookRepository) {
         CurrentActorProvider currentActorProvider = mock(CurrentActorProvider.class);
