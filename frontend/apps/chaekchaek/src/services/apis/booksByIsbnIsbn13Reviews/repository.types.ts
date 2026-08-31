@@ -1,5 +1,4 @@
 export interface PostBooksByIsbnIsbn13ReviewsCommand {
-  guestToken: string;
   isbn13: string;
   chapter?: string | undefined;
   isSpoiler?: boolean | undefined;
@@ -9,6 +8,11 @@ export interface PostBooksByIsbnIsbn13ReviewsCommand {
   content: string;
 }
 
+type RequestContext = {
+  guestToken: string;
+};
+
 export type PostBooksByIsbnIsbn13Reviews = (
   command: PostBooksByIsbnIsbn13ReviewsCommand,
+  context: RequestContext,
 ) => Promise<undefined>;

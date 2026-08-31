@@ -6,9 +6,14 @@ import {
 
 import type { PostBooksByIsbnIsbn13Reviews } from './repository.types';
 
-export const postBooksByIsbnIsbn13Reviews: PostBooksByIsbnIsbn13Reviews = async (model) => {
-  const { isbn13, chapter, isSpoiler, quote, totalPages, currentPage, content, guestToken } =
+export const postBooksByIsbnIsbn13Reviews: PostBooksByIsbnIsbn13Reviews = async (
+  model,
+  context,
+) => {
+  const { isbn13, chapter, isSpoiler, quote, totalPages, currentPage, content } =
     mapPostBooksByIsbnIsbn13ReviewsModelToRequestDTO(model);
+
+  const { guestToken } = context;
 
   const responseDTO = await fetcher.postBooksByIsbnIsbn13Reviews({
     pathParams: [{ name: 'isbn13', value: isbn13 }],
