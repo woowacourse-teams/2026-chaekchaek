@@ -3,11 +3,11 @@ import type { ResponseDto } from '@/services/apis/api.types';
 export interface PostBooksByIsbnIsbn13ReviewsRequestDto {
   pathParams: [{ name: 'isbn13'; value: string }];
   data: {
-    chapter: string;
-    isSpoiler: boolean;
-    quote: string;
-    totalPages: number;
-    currentPage: number;
+    chapter?: string | undefined;
+    isSpoiler?: boolean | undefined;
+    quote?: string | undefined;
+    totalPages?: number | undefined;
+    currentPage?: number | undefined;
     content: string;
   };
 }
