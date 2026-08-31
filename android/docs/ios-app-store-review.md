@@ -7,7 +7,7 @@
 - 독서 상태를 선택해 로컬 서재에 추가, 변경, 삭제
 - `UserDefaults`에 서재 기록 저장
 - 앱 안에서 개인정보처리방침과 문의 링크 제공
-- 번들 ID `com.chamsae.chaekchaek`, 버전 `1.1.0`, 빌드 `2`
+- 번들 ID `com.chamsae.chaekchaek`, 버전 `1.1.1`, 빌드 `3`
 
 검색은 앱에 비밀값을 포함하지 않고 첵췍 API를 호출한다. 서재 기록은 SwiftUI 앱에서 로컬로
 관리한다.
@@ -20,7 +20,7 @@
 4. App Store Connect에 번들 ID `com.chamsae.chaekchaek`로 앱 레코드를 만든다.
 5. Release Archive를 만들고 Validate App을 통과한 뒤 업로드한다.
 
-현재 프로젝트는 자동 서명을 사용하고 Team ID만 비워 두었다. 2026-08-19 기준 업로드 빌드는
+현재 프로젝트는 자동 서명과 Team ID `CB3GUFX279`를 사용한다. 2026-08-19 기준 업로드 빌드는
 Xcode 26 이상과 iOS 26 SDK를 사용해야 한다.
 
 ## 검증 명령
