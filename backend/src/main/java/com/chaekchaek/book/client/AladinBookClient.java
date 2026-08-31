@@ -3,6 +3,7 @@ package com.chaekchaek.book.client;
 import com.chaekchaek.book.client.dto.AladinSearchResponse;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import java.net.URI;
+import java.time.LocalDate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
 @Component
-public class AladinBookClient {
+public class AladinBookClient implements BookSearchClient {
 
     private static final int PAGE_SIZE = 10;
 
@@ -25,6 +26,18 @@ public class AladinBookClient {
     ) {
         this.restClient = builder.baseUrl(baseUrl).build();
         this.ttbKey = ttbKey;
+    }
+
+    @Override
+    public BookSearchResult search(String query, int page) {
+        AladinSearchResponse response = searchBooks(query, page);
+        return new BookSearchResult(
+                response.totalResults(),
+                response.hasNextPage() ? response.startIndex() + 1 : null,
+                response.items().stream()
+                        .map(this::toBookSearchItem)
+                        .toList()
+        );
     }
 
     public AladinSearchResponse searchBooks(String query, int page) {
@@ -86,5 +99,19 @@ public class AladinBookClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .requiredBody(AladinSearchResponse.class);
+    }
+
+    private BookSearchItem toBookSearchItem(com.chaekchaek.book.client.dto.AladinBookItem source) {
+        AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
+        return new BookSearchItem(
+                source.title(),
+                source.cover(),
+                contributors.authors(),
+                contributors.translators(),
+                source.pubDate() == null ? null : LocalDate.parse(source.pubDate()),
+                source.isbn13(),
+                source.categoryName(),
+                source.publisher()
+        );
     }
 }

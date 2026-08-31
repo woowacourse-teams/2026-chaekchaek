@@ -7,6 +7,7 @@ import com.chaekchaek.book.client.dto.AladinSearchResponse;
 import com.chaekchaek.book.client.fixture.AladinMockServer;
 import com.chaekchaek.book.client.fixture.AladinResponseFixture;
 import java.io.IOException;
+import java.time.LocalDate;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,45 @@ class AladinBookClientTest {
 
         // then
         aladinServer.검색_요청을_검증한다("마션", 1);
+    }
+
+    @Test
+    @DisplayName("도서를 검색하면 공급자 중립 검색 결과로 변환한다")
+    void should_ReturnBookSearchResult_When_SearchingBooks() {
+        // given
+        aladinServer.검색_응답한다(AladinResponseFixture.마션_검색_결과());
+
+        // when
+        BookSearchResult result = client.search("마션", 1);
+
+        // then
+        assertThat(result.totalCount()).isEqualTo(6);
+        assertThat(result.nextPage()).isNull();
+        assertThat(result.items()).singleElement().satisfies(book ->
+                SoftAssertions.assertSoftly(softly -> {
+                    softly.assertThat(book.title()).isEqualTo("마션 (알라딘 리커버 특별판)");
+                    softly.assertThat(book.coverImageUrl()).isEqualTo("https://image.aladin.co.kr/martian.jpg");
+                    softly.assertThat(book.authors()).containsExactly("앤디 위어");
+                    softly.assertThat(book.translators()).containsExactly("박아람");
+                    softly.assertThat(book.publishedDate()).isEqualTo(LocalDate.of(2026, 7, 1));
+                    softly.assertThat(book.isbn13()).isEqualTo("9788925568683");
+                    softly.assertThat(book.category()).isEqualTo("국내도서>소설>과학소설");
+                    softly.assertThat(book.publisher()).isEqualTo("알에이치코리아(RHK)");
+                })
+        );
+    }
+
+    @Test
+    @DisplayName("알라딘 검색 결과에 다음 페이지가 있으면 다음 요청 페이지로 변환한다")
+    void should_ReturnNextPage_When_AladinSearchResultHasNextPage() {
+        // given
+        aladinServer.검색_응답한다(AladinResponseFixture.다음_페이지가_있는_검색_결과());
+
+        // when
+        BookSearchResult result = client.search("마션", 2);
+
+        // then
+        assertThat(result.nextPage()).isEqualTo(3);
     }
 
     @Test

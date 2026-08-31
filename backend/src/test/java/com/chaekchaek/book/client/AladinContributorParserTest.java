@@ -1,4 +1,4 @@
-package com.chaekchaek.book.service;
+package com.chaekchaek.book.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

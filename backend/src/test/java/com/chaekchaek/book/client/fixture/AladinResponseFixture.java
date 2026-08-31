@@ -57,4 +57,15 @@ public final class AladinResponseFixture {
                 }
                 """;
     }
+
+    public static String 다음_페이지가_있는_검색_결과() {
+        return """
+                {
+                  "totalResults": 21,
+                  "startIndex": 2,
+                  "itemsPerPage": 10,
+                  "item": []
+                }
+                """;
+    }
 }

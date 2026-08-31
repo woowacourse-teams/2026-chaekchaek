@@ -3,6 +3,7 @@ package com.chaekchaek.book.service;
 import static org.springframework.web.util.HtmlUtils.htmlUnescape;
 
 import com.chaekchaek.book.client.AladinBookClient;
+import com.chaekchaek.book.client.AladinContributorParser;
 import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
