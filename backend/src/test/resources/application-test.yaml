@@ -36,7 +36,8 @@ app:
       expiration: 30m
 
     guest-token:
-      expiration: 30d
+      expiration: 90d
+      refresh-window: 14d
 
     google-id-token:
       issuer: https://accounts.google.com

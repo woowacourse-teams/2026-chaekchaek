@@ -92,7 +92,9 @@ openapi3 {
 - 모바일 토큰 재발급 시 기존 Refresh Token은 폐기되고 새 토큰이 발급됩니다.
 
 ## 게스트 인증
-- `POST /api/v1/auth/guest-token`으로 게스트 토큰과 작성자 닉네임을 발급받습니다.
+- `POST /api/v1/auth/guest-token`으로 90일간 유효한 게스트 토큰과 작성자 닉네임을 발급받습니다.
+- 토큰 만료까지 14일 이하로 남으면 `POST /api/v1/auth/guest-token/refresh`에 현재 `X-Guest-Token`을 전달해 같은 Actor의 토큰을 갱신합니다.
+- 갱신 성공 시 새 토큰의 유효기간은 다시 90일이며 기존 토큰은 즉시 무효화됩니다.
 - 감상·답글의 작성, 수정, 삭제와 좋아요 등록, 취소 요청에는 `X-Guest-Token: {guestToken}` 헤더를 사용할 수 있습니다.
 - 서재, 별점, 독서 상태, 쪽수는 회원 전용 기능입니다.
 - 게스트가 최초 소셜 회원가입할 때 같은 게스트 토큰을 전달하면 기존 Actor와 닉네임 및 공개 상호작용이 계승됩니다.
@@ -397,6 +399,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 					|| path == '/api/v1/reviews/{reviewId}/replies'
 		}
 		def memberSecurityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
+		def guestOnlySecurityRequirement = [[guestToken: []]]
 		def publicInteractionSecurityRequirement = memberSecurityRequirement + [[guestToken: []]]
 		def publicInteractionOperations = [
 			['/api/v1/books/{bookId}/reviews', 'post'],
@@ -411,7 +414,9 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		(specification.get('paths') as Map).each { path, pathItem ->
 			(pathItem as Map).each { method, operation ->
 				if (httpMethods.contains(method.toString())) {
-					if (isPublicOperation(path.toString(), method.toString())) {
+					if (path.toString() == '/api/v1/auth/guest-token/refresh' && method.toString() == 'post') {
+						(operation as Map).put('security', guestOnlySecurityRequirement)
+					} else if (isPublicOperation(path.toString(), method.toString())) {
 						(operation as Map).remove('security')
 					} else if (publicInteractionOperations.contains([path.toString(), method.toString()])) {
 						(operation as Map).put('security', publicInteractionSecurityRequirement)
@@ -568,6 +573,7 @@ tasks.register('verifyOpenApi') {
 
 		def authOperations = [
 			'/api/v1/auth/guest-token'     : [post: ['201']],
+			'/api/v1/auth/guest-token/refresh': [post: ['200', '401', '409']],
 			'/api/v1/auth/mobile/google'   : [post: ['200', '400']],
 			'/api/v1/auth/mobile/reissue' : [post: ['200', '400']],
 			'/api/v1/auth/mobile/logout'  : [post: ['204', '400']],
@@ -614,6 +620,7 @@ tasks.register('verifyOpenApi') {
 			throw new GradleException('OpenAPI specification is missing guestToken security scheme')
 		}
 		def expectedMemberSecurityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
+		def expectedGuestOnlySecurityRequirement = [[guestToken: []]]
 		def expectedPublicInteractionSecurityRequirement = expectedMemberSecurityRequirement + [[guestToken: []]]
 		def publicInteractionOperations = [
 			['/api/v1/books/{bookId}/reviews', 'post'],
@@ -644,7 +651,11 @@ tasks.register('verifyOpenApi') {
 					return
 				}
 				def security = (operation as Map).get('security')
-				if (publicOperation(path, method)) {
+				if (path.toString() == '/api/v1/auth/guest-token/refresh' && method.toString() == 'post') {
+					if (security != expectedGuestOnlySecurityRequirement) {
+						throw new GradleException('OpenAPI specification is missing guest-only authentication for POST /api/v1/auth/guest-token/refresh')
+					}
+				} else if (publicOperation(path, method)) {
 					if (security != null) {
 						throw new GradleException("OpenAPI specification adds authentication to public ${method.toString().toUpperCase()} ${path}")
 					}

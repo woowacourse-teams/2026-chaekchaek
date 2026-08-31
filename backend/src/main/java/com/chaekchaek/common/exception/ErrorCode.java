@@ -42,6 +42,10 @@ public enum ErrorCode {
             "UNUSABLE_GUEST_TOKEN",
             "게스트 토큰이 만료되었거나 폐기되었습니다."
     ),
+    GUEST_TOKEN_REFRESH_NOT_ALLOWED(
+            "GUEST_TOKEN_REFRESH_NOT_ALLOWED",
+            "게스트 토큰 갱신 가능 기간이 아닙니다."
+    ),
     INVALID_GOOGLE_ID_TOKEN(
             "INVALID_GOOGLE_ID_TOKEN",
             "Google 인증 정보가 유효하지 않습니다."

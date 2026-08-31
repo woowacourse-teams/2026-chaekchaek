@@ -50,6 +50,9 @@ public class Actor {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "guest_token_issued_at")
+    private LocalDateTime guestTokenIssuedAt;
+
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
@@ -57,12 +60,13 @@ public class Actor {
     private LocalDateTime revokedAt;
 
     private Actor(Member member, ActorType type, String guestTokenHash, String guestNickname,
-                  LocalDateTime createdAt, LocalDateTime expiresAt) {
+                  LocalDateTime createdAt, LocalDateTime guestTokenIssuedAt, LocalDateTime expiresAt) {
         this.member = member;
         this.type = type;
         this.guestTokenHash = guestTokenHash;
         this.guestNickname = guestNickname;
         this.createdAt = createdAt;
+        this.guestTokenIssuedAt = guestTokenIssuedAt;
         this.expiresAt = expiresAt;
     }
 
@@ -70,7 +74,7 @@ public class Actor {
         if (member == null || createdAt == null) {
             throw new IllegalArgumentException("Member actor requires a member and creation time");
         }
-        return new Actor(member, ActorType.MEMBER, null, null, createdAt, null);
+        return new Actor(member, ActorType.MEMBER, null, null, createdAt, null, null);
     }
 
     public static Actor guest(String tokenHash, String nickname, LocalDateTime createdAt, LocalDateTime expiresAt) {
@@ -83,7 +87,7 @@ public class Actor {
         if (createdAt == null || expiresAt == null || !expiresAt.isAfter(createdAt)) {
             throw new IllegalArgumentException("Guest actor requires a valid expiration time");
         }
-        return new Actor(null, ActorType.GUEST, tokenHash, nickname, createdAt, expiresAt);
+        return new Actor(null, ActorType.GUEST, tokenHash, nickname, createdAt, createdAt, expiresAt);
     }
 
     public boolean isAdmin() {
@@ -105,6 +109,27 @@ public class Actor {
                 && expiresAt.isAfter(now);
     }
 
+    public boolean isRefreshableGuestAt(LocalDateTime now, java.time.Duration refreshWindow) {
+        return isUsableGuestAt(now)
+                && refreshWindow != null
+                && !refreshWindow.isNegative()
+                && !refreshWindow.isZero()
+                && !now.isBefore(expiresAt.minus(refreshWindow));
+    }
+
+    public void refreshGuestToken(String tokenHash, LocalDateTime issuedAt, LocalDateTime newExpiresAt) {
+        if (type != ActorType.GUEST || tokenHash == null || tokenHash.isBlank() || tokenHash.length() > 64) {
+            throw new IllegalStateException("Only a guest actor can refresh a valid guest token");
+        }
+        if (issuedAt == null || newExpiresAt == null || !newExpiresAt.isAfter(issuedAt)) {
+            throw new IllegalArgumentException("Guest token refresh requires a valid expiration time");
+        }
+
+        this.guestTokenHash = tokenHash;
+        this.guestTokenIssuedAt = issuedAt;
+        this.expiresAt = newExpiresAt;
+    }
+
     public void convertToMember(Member member) {
         if (type != ActorType.GUEST || member == null) {
             throw new IllegalStateException("Only a guest actor can be converted to a member actor");
@@ -114,6 +139,7 @@ public class Actor {
         this.type = ActorType.MEMBER;
         this.guestTokenHash = null;
         this.guestNickname = null;
+        this.guestTokenIssuedAt = null;
         this.expiresAt = null;
         this.revokedAt = null;
     }

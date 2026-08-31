@@ -32,6 +32,7 @@ class ActorTest {
         assertThat(actor.getType()).isEqualTo(ActorType.GUEST);
         assertThat(actor.getMember()).isNull();
         assertThat(actor.getGuestNickname()).isEqualTo("다정한 참새");
+        assertThat(actor.getGuestTokenIssuedAt()).isEqualTo(now);
     }
 
     @Test
@@ -47,6 +48,31 @@ class ActorTest {
         assertThat(actor.getGuestTokenHash()).isNull();
         assertThat(actor.getGuestNickname()).isNull();
         assertThat(actor.getExpiresAt()).isNull();
+        assertThat(actor.getGuestTokenIssuedAt()).isNull();
+    }
+
+    @Test
+    void refreshesGuestTokenWithinRefreshWindow() {
+        LocalDateTime now = LocalDateTime.of(2026, 8, 26, 12, 0);
+        Actor actor = Actor.guest("a".repeat(64), "다정한 참새", now.minusDays(80), now.plusDays(10));
+
+        assertThat(actor.isRefreshableGuestAt(now, java.time.Duration.ofDays(14))).isTrue();
+
+        actor.refreshGuestToken("b".repeat(64), now, now.plusDays(90));
+
+        assertThat(actor.getGuestTokenHash()).isEqualTo("b".repeat(64));
+        assertThat(actor.getGuestTokenIssuedAt()).isEqualTo(now);
+        assertThat(actor.getExpiresAt()).isEqualTo(now.plusDays(90));
+    }
+
+    @Test
+    void doesNotAllowRefreshBeforeWindowOrAfterExpiration() {
+        LocalDateTime now = LocalDateTime.of(2026, 8, 26, 12, 0);
+        Actor early = Actor.guest("a".repeat(64), "다정한 참새", now, now.plusDays(15));
+        Actor expired = Actor.guest("b".repeat(64), "다정한 참새", now.minusDays(91), now.minusDays(1));
+
+        assertThat(early.isRefreshableGuestAt(now, java.time.Duration.ofDays(14))).isFalse();
+        assertThat(expired.isRefreshableGuestAt(now, java.time.Duration.ofDays(14))).isFalse();
     }
 
     @Test
