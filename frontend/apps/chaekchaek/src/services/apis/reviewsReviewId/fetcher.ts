@@ -18,11 +18,19 @@ import type { PatchReviewsReviewIdRequestDto, PatchReviewsReviewIdResponseDto } 
 export const patchReviewsReviewId = async ({
   pathParams: [{ value: reviewId }],
   data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
+  headers,
 }: PatchReviewsReviewIdRequestDto): Promise<PatchReviewsReviewIdResponseDto> => {
+  const guestToken = headers?.['X-Guest-Token'];
+
   const response = await instance(`/api/v1/reviews/${reviewId}`, {
     method: 'patch',
     // pathParams: [{ name: 'reviewId', value: reviewId }],
     data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
+    ...(guestToken && {
+      headers: {
+        'X-Guest-Token': guestToken,
+      },
+    }),
   });
 
   return response.data;

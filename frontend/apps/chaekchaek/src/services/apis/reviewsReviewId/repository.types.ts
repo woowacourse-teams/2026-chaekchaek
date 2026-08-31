@@ -13,7 +13,14 @@ export interface PatchReviewsReviewIdParams {
   content: string;
 }
 
-export type PatchReviewsReviewId = (params: PatchReviewsReviewIdParams) => Promise<{
+type RequestContext = {
+  guestToken: string;
+};
+
+export type PatchReviewsReviewId = (
+  params: PatchReviewsReviewIdParams,
+  context?: RequestContext,
+) => Promise<{
   chapter: string;
   author: {
     mine: boolean;

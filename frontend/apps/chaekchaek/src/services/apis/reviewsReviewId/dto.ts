@@ -15,6 +15,7 @@ export interface PatchReviewsReviewIdRequestDto {
     currentPage?: number | undefined;
     content: string;
   };
+  headers?: { 'X-Guest-Token': string };
 }
 
 export type PatchReviewsReviewIdResponseDto = ResponseDto<{
