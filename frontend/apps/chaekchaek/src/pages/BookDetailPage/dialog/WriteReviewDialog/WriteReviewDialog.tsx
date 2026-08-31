@@ -75,11 +75,15 @@ export const WriteReviewDialog = ({
         ...requestData,
       });
     } else {
-      await postBookReviewByIsbnMutate({
-        isbn13: isbn,
-        ...requestData,
-        guestToken: guest.guestToken,
-      });
+      await postBookReviewByIsbnMutate(
+        {
+          isbn13: isbn,
+          ...requestData,
+        },
+        {
+          guestToken: guest.guestToken,
+        },
+      );
     }
 
     onReviewWritten();
