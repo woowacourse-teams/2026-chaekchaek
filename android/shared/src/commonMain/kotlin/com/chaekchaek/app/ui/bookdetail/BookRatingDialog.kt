@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,7 +51,6 @@ import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.ic_close
 import com.chaekchaek.app.domain.rating.Rating
 import com.chaekchaek.app.ui.theme.ChaekAccent
-import com.chaekchaek.app.ui.theme.ChaekAccentSoft
 import com.chaekchaek.app.ui.theme.ChaekBorderSoft
 import com.chaekchaek.app.ui.theme.ChaekInk
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
@@ -60,13 +60,15 @@ import org.jetbrains.compose.resources.painterResource
 
 @Composable
 internal fun BookRatingDialog(
-    currentBookId: String,
     initialRating: Rating?,
-    recentRatings: List<RatedBookUiModel>,
+    comparisonRatings: List<RatingComparisonBookUiModel>,
+    onCriterionChange: (Rating) -> Unit,
     onDismiss: () -> Unit,
     onSave: (Rating) -> Unit,
 ) {
     var selected by remember(initialRating) { mutableStateOf(initialRating ?: Rating.ofHalfStars(8)) }
+
+    LaunchedEffect(selected) { onCriterionChange(selected) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(
@@ -94,8 +96,7 @@ internal fun BookRatingDialog(
                     }
                 }
                 Text(
-                    if (initialRating == null) "최근 남긴 별점을 확인하고 새 별점을 선택하세요."
-                    else "최근 남긴 별점을 확인하고 기존 별점을 수정하세요.",
+                    "선택한 별점과 내 평점 기록을 비교해 보세요.",
                     color = ChaekInkSecondary,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -103,10 +104,10 @@ internal fun BookRatingDialog(
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("내 평점 기록", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.weight(1f))
-                    Text("${recentRatings.size}회", color = ChaekInkSecondary, style = MaterialTheme.typography.labelSmall)
+                    Text("${comparisonRatings.size}권", color = ChaekInkSecondary, style = MaterialTheme.typography.labelSmall)
                 }
                 Spacer(Modifier.height(8.dp))
-                RecentRatings(recentRatings, currentBookId)
+                RatingComparisons(comparisonRatings)
                 Spacer(Modifier.height(16.dp))
                 HorizontalDivider(color = ChaekBorderSoft)
                 Spacer(Modifier.height(14.dp))
@@ -157,10 +158,10 @@ internal fun BookRatingDialog(
 }
 
 @Composable
-private fun RecentRatings(ratings: List<RatedBookUiModel>, currentBookId: String) {
+private fun RatingComparisons(ratings: List<RatingComparisonBookUiModel>) {
     if (ratings.isEmpty()) {
         Box(modifier = Modifier.fillMaxWidth().height(92.dp), contentAlignment = Alignment.Center) {
-            Text("아직 남긴 별점이 없어요", color = ChaekInkTertiary, style = MaterialTheme.typography.bodySmall)
+            Text("비교할 평점 기록이 없어요", color = ChaekInkTertiary, style = MaterialTheme.typography.bodySmall)
         }
         return
     }
@@ -171,12 +172,12 @@ private fun RecentRatings(ratings: List<RatedBookUiModel>, currentBookId: String
         ratings.forEachIndexed { index, item ->
             Column(
                 modifier = Modifier.weight(1f).fillMaxHeight()
-                    .background(if (item.bookId == currentBookId) ChaekAccentSoft else ChaekSurface)
+                    .background(ChaekSurface)
                     .padding(horizontal = 8.dp, vertical = 9.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    item.rating.score.toString(),
+                    item.rating.toString(),
                     color = ChaekAccent,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Black,

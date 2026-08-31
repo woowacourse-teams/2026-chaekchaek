@@ -34,8 +34,6 @@ import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
-import com.chaekchaek.app.ui.bookdetail.RatedBookUiModel
-import com.chaekchaek.app.ui.bookdetail.withRecentRating
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
@@ -75,7 +73,6 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
     val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository) }
     val archiveState by archiveViewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
-    var recentRatings by remember { mutableStateOf(emptyList<RatedBookUiModel>()) }
     val searchViewModel = remember(registrationViewModel, authViewModel) {
         SearchViewModel(
             bookSearchRepository = BookSearchRemoteRepository(),
@@ -94,10 +91,6 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
     val safeContent = Modifier.windowInsetsPadding(
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     )
-
-    LaunchedEffect(authTokens == null) {
-        if (authTokens == null) recentRatings = emptyList()
-    }
 
     CompositionLocalProvider(
         LocalRemoteBookCover provides { url, description, modifier ->
@@ -148,7 +141,6 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                         state = state,
                         onBack = { backStack.removeLastOrNull() },
                         modifier = safeContent,
-                        recentRatings = recentRatings,
                         savedToLibrary = savedBookId != null,
                         anonymousReviews = memberSettingsState.anonymousReviews,
                         nickname = if (state.signedIn) {
@@ -172,16 +164,10 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                         onPageSave = { page ->
                             viewModel.savePage(page, archiveViewModel::retry)
                         },
+                        onRatingCriterionChange = viewModel::loadRatingComparison,
                         onRatingSave = { rating, onSaved ->
                             viewModel.saveRating(rating) {
                                 archiveViewModel.retry()
-                                val ratedBook = viewModel.uiState.value.displayBook ?: key.book
-                                recentRatings = recentRatings.withRecentRating(
-                                    bookId = ratedBook.id,
-                                    title = ratedBook.title,
-                                    rating = rating,
-                                    ratedAtLabel = "방금",
-                                )
                                 onSaved()
                             }
                         },

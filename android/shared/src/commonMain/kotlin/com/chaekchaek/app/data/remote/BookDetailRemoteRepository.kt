@@ -62,6 +62,13 @@ class BookDetailRemoteRepository(
       authenticatedJson(accessToken, RatingRequest(rating))
     }.body<LibraryRecordDto>().toLibraryRecord()
 
+  suspend fun ratingComparison(isbn13: String, criterion: Double, accessToken: String): RatingComparison =
+    client.get("$BASE_URL/api/v1/members/me/ratings/comparison") {
+      header(HttpHeaders.Authorization, "Bearer $accessToken")
+      parameter("isbn13", isbn13)
+      parameter("criterion", criterion)
+    }.body<RatingComparisonDto>().toRatingComparison()
+
   suspend fun createReview(bookId: Long, request: ReviewCreateRequest, credential: WriteCredential): BookReview =
     client.post("$BASE_URL/api/v1/books/$bookId/reviews") {
       authenticatedJson(
@@ -199,6 +206,19 @@ data class LibraryRecord(
   val bookId: Long? = null,
 )
 
+data class RatingComparison(
+  val lower: RatingComparisonBook?,
+  val current: RatingComparisonBook?,
+  val higher: RatingComparisonBook?,
+)
+
+data class RatingComparisonBook(
+  val bookId: Long,
+  val title: String,
+  val myRating: Double,
+  val ratingUpdatedAt: String,
+)
+
 data class ReviewPage(val totalCount: Int, val nextPage: Int?, val items: List<BookReview>)
 
 data class ReplyPage(val totalCount: Int, val nextPage: Int?, val items: List<ReviewReply>)
@@ -281,6 +301,21 @@ private data class LibraryUpdateRequest(
 
 @Serializable
 private data class RatingRequest(val rating: Double)
+
+@Serializable
+private data class RatingComparisonDto(
+  val lower: RatingComparisonBookDto? = null,
+  val current: RatingComparisonBookDto? = null,
+  val higher: RatingComparisonBookDto? = null,
+)
+
+@Serializable
+private data class RatingComparisonBookDto(
+  val bookId: Long,
+  val title: String,
+  val myRating: Double,
+  val ratingUpdatedAt: String,
+)
 
 @Serializable
 data class ReviewCreateRequest(
@@ -367,6 +402,12 @@ internal fun BookDetailDto.toBookDetail() =
   )
 
 internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage, rating, bookId)
+
+private fun RatingComparisonDto.toRatingComparison() =
+  RatingComparison(lower?.toRatingComparisonBook(), current?.toRatingComparisonBook(), higher?.toRatingComparisonBook())
+
+private fun RatingComparisonBookDto.toRatingComparisonBook() =
+  RatingComparisonBook(bookId, title, myRating, ratingUpdatedAt)
 
 internal fun BookDetailRecordDto.toLibraryRecord() =
   status?.let { LibraryRecord(it, currentPage ?: 0, myRating) }

@@ -8,6 +8,7 @@ import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
+import com.chaekchaek.app.data.remote.RatingComparison
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
@@ -36,6 +37,7 @@ class BookDetailViewModel(
     private var loadMoreJob: Job? = null
     private var repliesJob: Job? = null
     private var mutationJob: Job? = null
+    private var ratingComparisonJob: Job? = null
 
     fun open(book: BookDetailArgs, accessToken: String?) {
         this.accessToken = accessToken
@@ -58,11 +60,13 @@ class BookDetailViewModel(
     fun syncAuthentication(accessToken: String?): BookDetailAuthenticatedAction? {
         if (this.accessToken == accessToken) return null
         this.accessToken = accessToken
+        ratingComparisonJob?.cancel()
         val pending = _uiState.value.pendingAction.takeIf { accessToken != null }
         _uiState.value = _uiState.value.copy(
             signedIn = accessToken != null,
             pendingAction = null,
             guestNickname = accessToken?.let { null } ?: authPlatform.readGuest()?.nickname,
+            ratingComparison = emptyList(),
         )
         reload()
         return pending
@@ -170,6 +174,22 @@ class BookDetailViewModel(
         },
         reloadAfterSuccess = false,
     ) { repository.rate(bookIdForWrite(), rating.score.toDouble(), requireToken()) }
+
+    fun loadRatingComparison(criterion: Rating) {
+        val token = accessToken ?: return
+        val isbn13 = _uiState.value.displayBook?.isbn13?.takeIf(String::isNotBlank) ?: return
+        ratingComparisonJob?.cancel()
+        _uiState.value = _uiState.value.copy(ratingComparison = emptyList())
+        ratingComparisonJob = viewModelScope.launch {
+            runCatching {
+                repository.ratingComparison(isbn13, criterion.score.toDouble(), token)
+            }.onSuccess { comparison ->
+                if (accessToken == token) {
+                    _uiState.value = _uiState.value.copy(ratingComparison = comparison.toUiModels())
+                }
+            }.onFailure(::handleFailure)
+        }
+    }
 
     fun createReview(request: ReviewCreateRequest) = mutate {
         publicWrite(retryUnauthorized = true) { repository.createReview(bookIdForPublicWrite(), request, it) }
@@ -421,6 +441,16 @@ class BookDetailViewModel(
 }
 
 private class GuestOwnershipLostException : RuntimeException()
+
+private fun RatingComparison.toUiModels(): List<RatingComparisonBookUiModel> =
+    listOfNotNull(lower, current, higher).map {
+        RatingComparisonBookUiModel(
+            bookId = it.bookId,
+            title = it.title,
+            rating = it.myRating,
+            ratedAtLabel = it.ratingUpdatedAt.take(10).replace('-', '.'),
+        )
+    }
 
 private fun Throwable.isUnauthorized(): Boolean =
     this is ResponseException && response.status == HttpStatusCode.Unauthorized

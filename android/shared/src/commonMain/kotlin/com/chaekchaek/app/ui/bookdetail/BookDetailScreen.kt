@@ -128,7 +128,6 @@ fun BookDetailScreen(
     state: BookDetailUiState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    recentRatings: List<RatedBookUiModel> = emptyList(),
     savedToLibrary: Boolean = state.detail?.myRecord != null,
     anonymousReviews: Boolean = true,
     nickname: String = "",
@@ -140,6 +139,7 @@ fun BookDetailScreen(
     onToggleLibrary: () -> Unit = {},
     onStatusChange: (ReadingStatus) -> Unit = {},
     onPageSave: (Int) -> Unit = {},
+    onRatingCriterionChange: (Rating) -> Unit = {},
     onRatingSave: (Rating, () -> Unit) -> Unit = { _, _ -> },
     onReviewOpen: (() -> Unit) -> Unit = { it() },
     onReviewCreate: (ReviewCreateRequest) -> Unit = {},
@@ -309,9 +309,9 @@ fun BookDetailScreen(
 
     if (showRatingDialog) {
         BookRatingDialog(
-            currentBookId = book.id,
             initialRating = state.detail?.myRecord?.rating?.let { Rating.ofScore(it.toFloat()) },
-            recentRatings = recentRatings,
+            comparisonRatings = state.ratingComparison,
+            onCriterionChange = onRatingCriterionChange,
             onDismiss = { showRatingDialog = false },
             onSave = { rating ->
                 onRatingSave(rating) { showRatingDialog = false }

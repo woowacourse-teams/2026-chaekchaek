@@ -291,6 +291,42 @@ class BookDetailViewModelTest {
   }
 
   @Test
+  fun `선택 별점 기준으로 낮은 같은 높은 평점 기록을 조회한다`() = runViewModelTest {
+    var comparisonQuery: String? = null
+    var comparisonIsbn: String? = null
+    var comparisonAuthorization: String? = null
+    val engine = MockEngine { request ->
+      when {
+        request.url.encodedPath == "/api/v1/members/me/ratings/comparison" -> {
+          comparisonQuery = request.url.parameters["criterion"]
+          comparisonIsbn = request.url.parameters["isbn13"]
+          comparisonAuthorization = request.headers[HttpHeaders.Authorization]
+          respond(
+            """{"lower":{"bookId":1,"title":"낮은 책","myRating":4.0,"ratingUpdatedAt":"2026-08-01T00:00:00Z"},"current":{"bookId":2,"title":"같은 책","myRating":4.5,"ratingUpdatedAt":"2026-08-02T00:00:00Z"},"higher":{"bookId":3,"title":"높은 책","myRating":4.8,"ratingUpdatedAt":"2026-08-03T00:00:00Z"}}""",
+            headers = jsonHeaders(),
+          )
+        }
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "access-token")
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    viewModel.loadRatingComparison(Rating.ofScore(4.5f))
+    awaitReal { viewModel.uiState.first { it.ratingComparison.size == 3 } }
+
+    assertEquals("4.5", comparisonQuery)
+    assertEquals("9780000000042", comparisonIsbn)
+    assertEquals("Bearer access-token", comparisonAuthorization)
+    assertEquals(listOf("낮은 책", "같은 책", "높은 책"), viewModel.uiState.value.ratingComparison.map { it.title })
+    assertEquals(4.8, viewModel.uiState.value.ratingComparison.last().rating)
+    assertEquals("2026.08.03", viewModel.uiState.value.ratingComparison.last().ratedAtLabel)
+  }
+
+  @Test
   fun `감상 삭제 성공은 재조회 없이 목록에서 제거한다`() = runViewModelTest {
     var reviewGetCount = 0
     val engine = MockEngine { request ->
