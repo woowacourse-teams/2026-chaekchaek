@@ -4,7 +4,7 @@ import generateApi from './generateApi';
 
 const endPoint = openApiSpec?.paths;
 
-const name = 'authGuestToken';
-const endpoint = endPoint['/api/v1/auth/guest-token'] || {};
+const name = 'booksByIsbnIsbn13Reviews';
+const endpoint = endPoint['/api/v1/books/by-isbn/{isbn13}/reviews'] || {};
 
 generateApi(name, endpoint);
