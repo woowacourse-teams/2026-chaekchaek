@@ -169,6 +169,25 @@ class BookSearchServiceTest {
     }
 
     @Test
+    @DisplayName("등록된 도서에 감상과 답글이 없으면 각 수를 0으로 반환한다")
+    void should_ReturnZeroCounts_When_RegisteredBookHasNoActivity() {
+        // given
+        AladinBookItem aladinBookItem = aladinBook("마션", "2026-01-01", "9788925568683");
+        BookSearchService service = serviceWith(
+                new AladinSearchResponse(null, null, 1, 1, 10, List.of(aladinBookItem)),
+                Map.of(),
+                registeredBook(42L, aladinBookItem.isbn13())
+        );
+
+        // when
+        BookItem item = service.search("책", 1).items().getFirst();
+
+        // then
+        assertThat(item.reviewCount()).isZero();
+        assertThat(item.replyCount()).isZero();
+    }
+
+    @Test
     @DisplayName("로그인한 회원의 서재에 있는 도서를 검색하면 내 서재 등록 여부로 true를 반환한다")
     void should_ReturnTrue_When_SearchResultIsInAuthenticatedMembersLibrary() {
         // given
