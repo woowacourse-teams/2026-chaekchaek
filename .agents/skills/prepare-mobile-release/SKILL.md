@@ -14,15 +14,22 @@ description: 첵췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준
 - TestFlight 업로드, Play Console 업로드와 프로덕션 게시는 각각 사용자가 명시한 범위에서만 수행한다.
 - 비밀값은 존재 여부만 확인하고 출력하거나 커밋하지 않는다.
 
+## 산출물 경로
+
+최종 빌드 산출물은 저장소 루트 기준 아래 경로에만 둔다. 디렉터리는 고정하고 파일명에서 버전과 빌드 번호만 바꾼다. 임시 worktree, DerivedData, 날짜나 무작위 문자열이 들어간 경로를 최종 산출물 경로로 사용하지 않는다.
+
+- Android AAB: `android/app/release/chaekchaek-<versionName>-code<versionCode>.aab`
+- iOS Archive: `android/iosApp/release/Chaekchaek-<MARKETING_VERSION>-<CURRENT_PROJECT_VERSION>.xcarchive`
+
 ## 절차
 
 1. `git status --untracked-files=no`가 깨끗한지 확인하고 `an-develop`을 `origin/an-develop`에 fast-forward한다.
 2. Android 버전 SSOT인 `android/app/build.gradle.kts`와 iOS 버전 SSOT인 `android/iosApp/iosApp.xcodeproj/project.pbxproj`를 읽는다.
 3. 저장소 릴리즈 기록과 각 스토어에서 사용한 가장 큰 빌드 번호를 확인한다. `versionName`은 같은 SemVer로 맞추고 Android `versionCode`와 iOS build는 사용된 최댓값보다 크게 정한다.
 4. `docs/android-release-management.md`와 `android/docs/ios-app-store-review.md`를 버전 변경과 같은 커밋에서 갱신한다.
-5. Android는 `build-signed-aab` 스킬로 AAB를 만들고 서명, manifest, 아이콘과 SHA-256을 검증한다.
+5. Android는 `build-signed-aab` 스킬로 AAB를 만들고 서명, manifest, 아이콘과 SHA-256을 검증한 뒤 고정 산출물 경로에 파일이 있는지 확인한다.
 6. iOS는 `ios-simulator-validation` 스킬로 테스트한다. KMP Release Archive 전에 `df -h /`로 이 프로젝트 기준 5GB 이상의 여유 공간을 확인하고, 부족하면 현재 작업에서 만든 빌드 산출물만 정확한 경로로 정리한다.
-7. Release Archive를 만들고, 사용자가 업로드를 요청한 경우에만 App Store Connect에 업로드한다.
+7. `xcodebuild archive`의 `-archivePath`에 고정 iOS Archive 경로를 지정한다. 사용자가 업로드를 요청한 경우에만 그 Archive를 App Store Connect에 업로드한다.
 8. 실제 AAB 해시, TestFlight 상태, 소스 커밋을 릴리즈 문서에 반영하고 `release-commit` 스킬 형식으로 커밋한다.
 9. 직접 push가 승인된 작업이면 원격 `an-develop`이 예상 기준에서 움직이지 않았는지 확인한 뒤 fast-forward push한다.
 
