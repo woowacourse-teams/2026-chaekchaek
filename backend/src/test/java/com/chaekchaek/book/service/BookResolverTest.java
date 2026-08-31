@@ -81,10 +81,49 @@ class BookResolverTest {
         verify(repository, never()).saveAndFlush(org.mockito.ArgumentMatchers.any(Book.class));
     }
 
+    @Test
+    @DisplayName("알라딘 설명에 HTML 엔티티가 있으면 디코딩해서 반환한다")
+    void should_UnescapeHtmlEntities_When_DescriptionContainsHtmlEntities() {
+        // given
+        AladinBookClient client = mock(AladinBookClient.class);
+        BookRepository repository = mock(BookRepository.class);
+        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+        when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
+        when(client.findBookByIsbn13(ISBN13)).thenReturn(
+                aladinBook("&lt;프리즘&gt;은 &quot;빛&quot;을 나눈다 &amp; 다시 합친다. &#39;끝&#39;"));
+
+        // when
+        Book book = resolver.lookup(ISBN13);
+
+        // then
+        assertThat(book.getDescription()).isEqualTo("<프리즘>은 \"빛\"을 나눈다 & 다시 합친다. '끝'");
+    }
+
+    @Test
+    @DisplayName("알라딘 설명에 HTML 엔티티가 없으면 원문을 그대로 반환한다")
+    void should_KeepDescriptionAsIs_When_DescriptionHasNoHtmlEntities() {
+        // given
+        AladinBookClient client = mock(AladinBookClient.class);
+        BookRepository repository = mock(BookRepository.class);
+        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+        when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
+        when(client.findBookByIsbn13(ISBN13)).thenReturn(aladinBook("화성에 홀로 남은 식물학자의 이야기"));
+
+        // when
+        Book book = resolver.lookup(ISBN13);
+
+        // then
+        assertThat(book.getDescription()).isEqualTo("화성에 홀로 남은 식물학자의 이야기");
+    }
+
     private AladinBookItem aladinBook() {
+        return aladinBook("책 설명");
+    }
+
+    private AladinBookItem aladinBook(String description) {
         return new AladinBookItem(
                 "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)",
-                "책 설명",
+                description,
                 "2026-01-01", ISBN13, "SF", "알에이치코리아", new AladinBookSubInfo(308)
         );
     }
