@@ -13,6 +13,7 @@ import type { ReplyFormValues } from './validator';
 import type { WriteReplyProps } from './WriteReply.types';
 
 export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
+  const { user, guest } = useAuthContext();
   const { values, errors, onChange, isValid, valids } = useFormValues<ReplyFormValues>({
     initialValues: {
       content: '',
@@ -25,15 +26,20 @@ export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
   });
 
   const handleSubmit = async () => {
-    await postReplyMutate({
-      reviewId,
-      content: values.content,
-    });
+    await postReplyMutate(
+      {
+        reviewId,
+        content: values.content,
+      },
+      guest?.guestToken
+        ? {
+            guestToken: guest?.guestToken,
+          }
+        : undefined,
+    );
 
     await onReplyWritten();
   };
-
-  const { user } = useAuthContext();
 
   return (
     <Surface>
