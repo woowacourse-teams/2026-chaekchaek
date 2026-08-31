@@ -3,10 +3,10 @@ package com.chaekchaek.book.service;
 import com.chaekchaek.book.client.AladinBookClient;
 import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.client.dto.AladinSearchResponse;
-import com.chaekchaek.book.dto.BookItem;
-import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.BookSearchSort;
+import com.chaekchaek.book.dto.BookItem;
+import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
@@ -95,7 +95,8 @@ public class BookSearchService {
     private Comparator<BookItem> comparator(BookSearchSort sort) {
         BookSearchSort effectiveSort = sort == null ? BookSearchSort.LATEST : sort;
         return switch (effectiveSort) {
-            case TITLE_ASC -> Comparator.comparing(BookItem::title, Comparator.nullsLast(Comparator.naturalOrder()));
+            case TITLE_ASC -> Comparator.comparing(BookItem::title,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
             case TITLE_DESC -> Comparator.comparing(BookItem::title,
                     Comparator.nullsLast(Comparator.reverseOrder()));
             case OLDEST -> Comparator.comparing(BookItem::publishedDate,
