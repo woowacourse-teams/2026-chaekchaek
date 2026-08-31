@@ -15,6 +15,7 @@ import com.chaekchaek.review.domain.ReplyReaction;
 import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.domain.ReviewReaction;
 import com.chaekchaek.review.dto.AuthorResponse;
+import com.chaekchaek.review.dto.AuthorProfileStatus;
 import com.chaekchaek.review.dto.PageResponse;
 import com.chaekchaek.review.dto.ReactionResponse;
 import com.chaekchaek.review.dto.ReplyCreateRequest;
@@ -353,13 +354,18 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                                     Map<Long, ReviewMemberProfile> memberProfiles) {
         ReviewMemberProfile profile = memberProfiles.get(authorId);
         if (anonymous) {
-            return new AuthorResponse(profile.anonymousNickname(), null, true,
-                    currentActorId != null && authorId == currentActorId, profile.actorType());
+            return new AuthorResponse(null, profile.anonymousNickname(), null, true,
+                    currentActorId != null && authorId == currentActorId, profile.actorType(),
+                    AuthorProfileStatus.UNAVAILABLE);
         }
-        String displayName = profile.withdrawn() ? "탈퇴한 사용자" : profile.displayName();
-        String profileImageUrl = profile.withdrawn() ? null : profile.profileImageUrl();
-        return new AuthorResponse(displayName, profileImageUrl, false,
-                currentActorId != null && authorId == currentActorId, profile.actorType());
+        boolean withdrawn = profile.accountStatus() == com.chaekchaek.member.domain.AccountStatus.WITHDRAWN;
+        boolean available = profile.accountStatus() == com.chaekchaek.member.domain.AccountStatus.ACTIVE;
+        String displayName = withdrawn ? "탈퇴한 사용자" : profile.displayName();
+        String profileImageUrl = withdrawn ? null : profile.profileImageUrl();
+        AuthorProfileStatus profileStatus = withdrawn ? AuthorProfileStatus.WITHDRAWN
+                : available ? AuthorProfileStatus.AVAILABLE : AuthorProfileStatus.UNAVAILABLE;
+        return new AuthorResponse(available ? profile.memberId() : null, displayName, profileImageUrl, false,
+                currentActorId != null && authorId == currentActorId, profile.actorType(), profileStatus);
     }
 
     private Map<Long, Long> replyCounts(Collection<Long> reviewIds) {

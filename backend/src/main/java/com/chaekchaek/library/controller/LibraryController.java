@@ -8,6 +8,7 @@ import com.chaekchaek.library.dto.BulkDeleteLibraryItemsRequest;
 import com.chaekchaek.library.dto.BulkUpdateLibraryStatusRequest;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
+import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RateBookRequest;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.dto.UpdateLibraryItemRequest;
@@ -48,6 +49,16 @@ public class LibraryController {
             @RequestParam(required = false, defaultValue = "RECENT") LibrarySort sort
     ) {
         return ResponseEntity.ok(libraryService.getLibrary(memberId(), page, status, sort));
+    }
+
+    @GetMapping("/members/{memberId}/library")
+    public ResponseEntity<PublicLibraryListResponse> getPublicLibrary(
+            @PathVariable @Positive long memberId,
+            @RequestParam @Positive int page,
+            @RequestParam(required = false) ReadingStatus status,
+            @RequestParam(required = false, defaultValue = "RECENT") LibrarySort sort
+    ) {
+        return ResponseEntity.ok(libraryService.getPublicLibrary(memberId, page, status, sort));
     }
 
     @PostMapping("/library")

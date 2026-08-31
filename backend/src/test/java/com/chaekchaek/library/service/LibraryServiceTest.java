@@ -18,6 +18,9 @@ import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.member.repository.MemberRepository;
+import com.chaekchaek.member.domain.AccountStatus;
+import com.chaekchaek.member.domain.Member;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -50,6 +53,9 @@ class LibraryServiceTest {
 
     @Mock
     private BookCommentCountReader commentCountReader;
+
+    @Mock
+    private MemberRepository memberRepository;
 
     @Mock
     private PlatformTransactionManager transactionManager;
@@ -190,9 +196,45 @@ class LibraryServiceTest {
                 .containsExactly(tuple(3L, 5L), tuple(2L, 1L));
     }
 
+    @Test
+    @DisplayName("활성 회원의 빈 공개 서재는 빈 목록을 반환한다")
+    void should_ReturnEmptyPublicLibrary_When_ActiveMemberHasNoItems() {
+        Member member = mock(Member.class);
+        when(member.getAccountStatus()).thenReturn(AccountStatus.ACTIVE);
+        when(memberRepository.findById(1L)).thenReturn(java.util.Optional.of(member));
+        when(libraryItemRepository.findAllByMemberId(1L)).thenReturn(List.of());
+        when(commentCountReader.getCommentCounts(java.util.Set.of())).thenReturn(Map.of());
+
+        var response = service().getPublicLibrary(1L, 1, null, LibrarySort.RECENT);
+
+        assertThat(response.totalCount()).isZero();
+        assertThat(response.filteredCount()).isZero();
+        assertThat(response.items()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("존재하지 않거나 비활성 상태인 회원의 공개 서재는 조회할 수 없다")
+    void should_RejectPublicLibrary_When_MemberIsMissingOrInactive() {
+        when(memberRepository.findById(1L)).thenReturn(java.util.Optional.empty());
+        assertLibraryNotFound(1L);
+
+        for (AccountStatus status : List.of(AccountStatus.WITHDRAWN, AccountStatus.SUSPENDED)) {
+            Member member = mock(Member.class);
+            when(member.getAccountStatus()).thenReturn(status);
+            when(memberRepository.findById(1L)).thenReturn(java.util.Optional.of(member));
+            assertLibraryNotFound(1L);
+        }
+    }
+
+    private void assertLibraryNotFound(long memberId) {
+        assertThatThrownBy(() -> service().getPublicLibrary(memberId, 1, null, LibrarySort.RECENT))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND));
+    }
+
     private LibraryService service() {
         return new LibraryService(libraryItemRepository, bookRepository, bookResolver,
-                commentCountReader, CLOCK, transactionManager);
+                commentCountReader, memberRepository, CLOCK, transactionManager);
     }
 
     private Book book(Integer totalPages) {

@@ -26,6 +26,7 @@ import com.chaekchaek.review.dto.ReviewCreateByIsbnResponse;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
+import com.chaekchaek.review.dto.AuthorProfileStatus;
 import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
@@ -72,6 +73,8 @@ class ReviewServiceTest {
         assertThat(response.author().anonymous()).isTrue();
         assertThat(response.author().mine()).isTrue();
         assertThat(response.author().actorType()).isEqualTo(ActorType.GUEST);
+        assertThat(response.author().memberId()).isNull();
+        assertThat(response.author().profileStatus()).isEqualTo(AuthorProfileStatus.UNAVAILABLE);
         verify(readingRecordCoordinator, never()).recordReview(
                 org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong(),
                 org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
@@ -171,6 +174,8 @@ class ReviewServiceTest {
         verify(memberReader).findByActorIds(List.of(1L));
         assertThat(actual.author().anonymous()).isTrue();
         assertThat(actual.author().displayName()).isEqualTo("참새-a1b2c3d4");
+        assertThat(actual.author().memberId()).isNull();
+        assertThat(actual.author().profileStatus()).isEqualTo(AuthorProfileStatus.UNAVAILABLE);
     }
 
     @Test
