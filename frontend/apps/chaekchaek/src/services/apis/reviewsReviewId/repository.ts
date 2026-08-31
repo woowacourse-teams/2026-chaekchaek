@@ -16,7 +16,7 @@ export const deleteReviewsReviewId: DeleteReviewsReviewId = async (model) => {
   return mapDeleteReviewsReviewIdResponseDTOToModel(responseDTO);
 };
 
-import { createRequestHeaders } from '@/services/context/requestHeaders';
+import { createRepositoryRequestHeaders } from '@/services/context/requestHeaders';
 
 import {
   mapPatchReviewsReviewIdModelToRequestDTO,
@@ -29,7 +29,8 @@ export const patchReviewsReviewId: PatchReviewsReviewId = async (model, context)
   const { reviewId, chapter, isSpoiler, quote, totalPages, currentPage, content } =
     mapPatchReviewsReviewIdModelToRequestDTO(model);
 
-  const headers = createRequestHeaders(context);
+  const { guestToken } = context ?? {};
+  const headers = createRepositoryRequestHeaders({ guestToken });
 
   const responseDTO = await fetcher.patchReviewsReviewId({
     pathParams: [{ name: 'reviewId', value: reviewId }],
