@@ -32,6 +32,7 @@ description: 첵췍 KMP iOS 앱을 iOS Simulator에서 빌드, 테스트, UI 조
 ## 검증 절차
 
 1. `git status --untracked-files=no`로 대상 worktree의 추적 변경을 확인한다.
+   사용자 전용 `xcuserdata`의 같은 이름 scheme이 공유 scheme을 가려 `test action` 오류가 나면 사용자 scheme을 수정하거나 삭제하지 않는다. 같은 커밋의 임시 detached worktree를 만들고 공유 scheme으로 검증한 뒤 임시 worktree만 정리한다.
 2. `xcrun simctl list devices booted`로 현재 기기 수와 UDID, runtime을 기록한다.
 3. 적합한 기기 한 대를 선택하고 `xcrun simctl ui <UDID> content_size`로 원래 Dynamic Type 크기를 기록한다.
 4. 다음 형식으로 테스트한다.

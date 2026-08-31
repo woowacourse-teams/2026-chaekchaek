@@ -12,7 +12,7 @@
 | --- | --- | --- | --- | --- |
 | 프로덕션 배포 | 없음 | 없음 | 없음 | 아직 배포하지 않음 |
 | 최신 Play 심사 | `1.0` | `2` | 없음 | 심사 통과, 관리형 게시 대기 |
-| 현재 소스 | `1.1.1` | `5` | 없음 | Android AAB와 iOS TestFlight 준비 중 |
+| 현재 소스 | `1.1.1` | `5` | 없음 | 서명 AAB 생성, iOS TestFlight 업로드 |
 
 QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 정보에서 `versionName`과
 `versionCode`를 함께 확인한다. `1.0 (2)`처럼 두 값을 함께 말해야 같은 이름의 다른 빌드를
@@ -61,17 +61,20 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 
 ### 1.1.1 (5)
 
-- 상태: Android 서명 AAB와 iOS TestFlight 준비 중
-- 배포일: 미배포
-- 소스 커밋: 준비 커밋 예정
+- 상태: Google Play 제출용 서명 AAB 생성, iOS TestFlight `1.1.1 (3)` 업로드
+- 배포일: Android 미배포, iOS TestFlight 2026-08-31
+- 소스 커밋: `dca0219`
 - Git 태그: 없음
-- AAB SHA-256: 아직 생성하지 않음
+- AAB SHA-256: `79344684d272d17fd551e4a922a6ec753f406b16122ed0af9566185b408c736d`
 - 변경 내역:
   - iOS HIG에 맞춰 공통 화면의 타이포그래피와 접근성 의미를 보완
   - iOS 디자인 시스템 훅과 CI 접근성 감사를 추가
 - 검증 결과:
   - PR #264 Android CI와 iOS 접근성 감사 통과
-  - Android release AAB와 iOS TestFlight 검증 예정
+  - Android 단위 테스트와 release AAB 빌드 성공
+  - AAB 서명, manifest, 런처 아이콘 검증 성공
+  - iPhone 17 Pro, iOS 26.2에서 iOS 단위 테스트 3개와 UI 테스트 1개 통과
+  - iOS Release Archive 서명 검증과 App Store Connect 업로드 성공, TestFlight 처리 중
 - 이전 정상 기준: Android `1.1.0 (3)`, iOS TestFlight `1.1.0 (2)`
 
 ### 1.1.0 (4)
