@@ -10,6 +10,9 @@ export interface PostBooksByIsbnIsbn13ReviewsRequestDto {
     currentPage?: number | undefined;
     content: string;
   };
+  headers: {
+    'X-Guest-Token': string;
+  };
 }
 
 export type PostBooksByIsbnIsbn13ReviewsResponseDto = ResponseDto<undefined>;

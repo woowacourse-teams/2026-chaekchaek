@@ -1,4 +1,5 @@
 export interface PostBooksByIsbnIsbn13ReviewsCommand {
+  guestToken: string;
   isbn13: string;
   chapter?: string | undefined;
   isSpoiler?: boolean | undefined;
