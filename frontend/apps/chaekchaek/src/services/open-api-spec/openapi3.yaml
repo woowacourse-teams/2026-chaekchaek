@@ -21,6 +21,13 @@ info:
     - `accessTokenExpiresIn`, `refreshTokenExpiresIn`의 단위는 초입니다.
     - 모바일 토큰 재발급 시 기존 Refresh Token은 폐기되고 새 토큰이 발급됩니다.
 
+    ## 게스트 인증
+    - `POST /api/v1/auth/guest-token`으로 게스트 토큰과 작성자 닉네임을 발급받습니다.
+    - 감상·답글의 작성, 수정, 삭제와 좋아요 등록, 취소 요청에는 `X-Guest-Token: {guestToken}` 헤더를 사용할 수 있습니다.
+    - 서재, 별점, 독서 상태, 쪽수는 회원 전용 기능입니다.
+    - 게스트가 최초 소셜 회원가입할 때 같은 게스트 토큰을 전달하면 기존 Actor와 닉네임 및 공개 상호작용이 계승됩니다.
+    - 토큰이 유실되거나 만료되면 기존 게스트 콘텐츠를 수정하거나 삭제할 수 없습니다.
+
     ## 오류 처리
     - 클라이언트의 오류 분기에는 ProblemDetail의 `code`를 사용합니다.
     - `detail`은 사용자 표시 또는 디버깅 참고용이며 분기 기준으로 사용하지 않습니다.
@@ -60,10 +67,10 @@ paths:
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-books-20378274'}
+              schema: {$ref: '#/components/schemas/api-v1-books1146673278'}
               examples:
                 book-search: {value: '{"totalCount":1,"nextPage":null,"items":[{"bookId":null,"title":"마션","coverImageUrl":"https://image.aladin.co.kr/martian.jpg","authors":["앤디
-                    위어"],"translators":["박아람"],"publishedDate":"2026-07-01","isbn13":"9788925568683","category":"국내도서>소설>과학소설","publisher":"알에이치코리아(RHK)","reviewCount":null,"replyCount":null}]}'}
+                    위어"],"translators":["박아람"],"publishedDate":"2026-07-01","isbn13":"9788925568683","category":"국내도서>소설>과학소설","publisher":"알에이치코리아(RHK)","reviewCount":null,"replyCount":null,"isRegisteredInMyLibrary":null}]}'}
                 search-registered-book:
                   summary: 서재에 등록된 도서
                   value:
@@ -81,6 +88,7 @@ paths:
                       publisher: 창비
                       reviewCount: 1
                       replyCount: 1
+                      isRegisteredInMyLibrary: true
                 search-unregistered-book:
                   summary: 서재에 등록하지 않은 도서
                   value:
@@ -98,6 +106,25 @@ paths:
                       publisher: 알에이치코리아
                       reviewCount: null
                       replyCount: null
+                      isRegisteredInMyLibrary: false
+                search-guest-book:
+                  summary: 비로그인 사용자의 도서 검색
+                  value:
+                    totalCount: 1
+                    nextPage: null
+                    items:
+                    - bookId: null
+                      title: 마션
+                      coverImageUrl: https://example.com/book.jpg
+                      authors: [앤디 위어]
+                      translators: []
+                      publishedDate: '2015-07-10'
+                      isbn13: '9788925568683'
+                      category: 국내도서>소설
+                      publisher: 알에이치코리아
+                      reviewCount: null
+                      replyCount: null
+                      isRegisteredInMyLibrary: null
         '400':
           description: '400'
           content:
@@ -176,8 +203,10 @@ paths:
               examples:
                 library-list-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/library","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
       security: &id001
-      - bearerAuth: []
-      - accessTokenCookie: []
+      - &id002
+        bearerAuth: []
+      - &id003
+        accessTokenCookie: []
     post:
       tags: [내 서재]
       summary: 내 서재에 도서 추가
@@ -263,6 +292,89 @@ paths:
               examples:
                 library-add: {value: '{"bookId":10,"isbn13":"9788936433598","title":"채식주의자","coverImageUrl":"https://image.aladin.co.kr/cover.jpg","authors":["한강"],"translators":[],"publisher":"창비","category":"국내도서>소설","publishedDate":"2007-10-30","totalPages":368,"commentCount":2,"status":"READING","currentPage":100,"rating":4.5,"addedAt":"2026-08-14T03:00:00Z","readingUpdatedAt":"2026-08-14T03:30:00Z"}'}
       security: *id001
+  /api/v1/admin/recommended-books:
+    get:
+      tags: [관리자]
+      summary: 추천 도서 목록 조회
+      description: 관리자가 지정한 추천 도서를 최근에 추천한 순서로 조회한다. 추천한 책이 없으면 빈 배열을 반환한다
+      operationId: admin-recommended-books
+      responses:
+        '403':
+          description: '403'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                admin-recommended-books-forbidden: {value: '{"detail":"요청한 작업을 수행할
+                    권한이 없습니다.","instance":"/api/v1/admin/recommended-books","status":403,"title":"Forbidden","type":"about:blank","code":"FORBIDDEN"}'}
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-admin-recommended-books908039350'}
+              examples:
+                admin-recommended-books: {value: '{"books":[{"bookId":42,"isbn13":"9788925568683","title":"마션","coverImageUrl":"https://example.com/martian.jpg","authors":["앤디
+                    위어"],"createdAt":"2026-08-28T00:00:00Z"}]}'}
+      security: *id001
+    post:
+      tags: [관리자]
+      summary: 추천 도서 추가
+      description: 관리자가 ISBN-13으로 도서를 조회해 추천 도서로 등록한다. 추천 도서는 최대 10권까지 등록할 수 있다
+      operationId: admin-recommended-book-add
+      requestBody:
+        content:
+          application/json;charset=UTF-8:
+            schema: {$ref: '#/components/schemas/api-v1-admin-recommended-books-1231260270'}
+            examples:
+              admin-recommended-book-add-invalid-request: {value: '{"isbn13":"9788925568680"}'}
+              admin-recommended-book-add: {value: '{"isbn13":"9788925568683"}'}
+              admin-recommended-book-add-limit-exceeded: {value: '{"isbn13":"9788925568683"}'}
+      responses:
+        '400':
+          description: '400'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                admin-recommended-book-add-invalid-request: {value: '{"detail":"요청값이
+                    올바르지 않습니다.","instance":"/api/v1/admin/recommended-books","status":400,"title":"Bad
+                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
+        '201':
+          description: '201'
+          headers:
+            Location:
+              description: 등록된 추천 도서 URI
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-admin-recommended-books-916433424'}
+              examples:
+                admin-recommended-book-add: {value: '{"bookId":42,"isbn13":"9788925568683","title":"마션","coverImageUrl":"https://example.com/martian.jpg","authors":["앤디
+                    위어"],"createdAt":"2026-08-28T00:00:00Z"}'}
+        '409':
+          description: '409'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                admin-recommended-book-add-limit-exceeded: {value: '{"detail":"추천
+                    도서는 최대 10권까지 등록할 수 있습니다.","instance":"/api/v1/admin/recommended-books","status":409,"title":"Conflict","type":"about:blank","code":"RECOMMENDED_BOOK_LIMIT_EXCEEDED"}'}
+      security: *id001
+  /api/v1/auth/guest-token:
+    post:
+      tags: [인증]
+      summary: 게스트 토큰 발급
+      description: 로그인 없이 공개 상호작용에 사용할 게스트 토큰과 닉네임을 발급한다
+      operationId: guest-token-issue
+      responses:
+        '201':
+          description: '201'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-auth-guest-token-452028415'}
+              examples:
+                guest-token-issue: {value: '{"guestToken":"guest-token","nickname":"다정한
+                    파란 참새","expiresAt":"2026-09-25T09:00:00"}'}
   /api/v1/auth/logout:
     post:
       tags: [인증]
@@ -293,18 +405,18 @@ paths:
     get:
       tags: [홈]
       summary: 최신 감상 목록 조회
-      description: 삭제되지 않은 최신 감상을 최대 10개 조회한다. 조회할 감상이 없으면 빈 배열을 반환한다
+      description: 삭제되지 않고 스포일러가 아닌 최신 감상을 최대 10개 조회한다. 조회할 감상이 없으면 빈 배열을 반환한다
       operationId: home-latest-reviews
       responses:
         '200':
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-home-latest-reviews619322835'}
+              schema: {$ref: '#/components/schemas/api-v1-home-latest-reviews-1183893359'}
               examples:
                 home-latest-reviews: {value: '{"reviews":[{"content":"도시는 기억으로 만들어진다는
                     문장에서 오래 멈췄다.","createdAt":"2026-08-18T14:00:00Z","author":{"displayName":"다정한
-                    참새","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":false},"replyCount":12,"bookId":42,"isbn13":"9788936433598","bookTitle":"보이지
+                    참새","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":false,"actorType":"MEMBER"},"replyCount":12,"bookId":42,"isbn13":"9788936433598","bookTitle":"보이지
                     않는 도시","bookCoverImageUrl":"https://example.com/invisible-cities.jpg"}]}'}
   /api/v1/home/popular-books:
     get:
@@ -597,7 +709,10 @@ paths:
     delete:
       tags: [감상]
       summary: 답글 삭제
-      description: 작성자가 답글을 soft delete한다
+      description: |-
+        작성자가 답글을 soft delete한다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
       operationId: reply-delete
       parameters:
       - name: replyId
@@ -636,11 +751,17 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 reply-delete-deleted-resource: {value: '{"detail":"삭제된 리소스입니다.","instance":"/api/v1/replies/409","status":409,"title":"Conflict","type":"about:blank","code":"DELETED_RESOURCE"}'}
-      security: *id001
+      security: &id004
+      - *id002
+      - *id003
+      - guestToken: []
     patch:
       tags: [감상]
       summary: 답글 수정
-      description: 작성자가 답글 내용을 수정한다
+      description: |-
+        작성자가 답글 내용을 수정한다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
       operationId: reply-update
       parameters:
       - name: replyId
@@ -678,9 +799,9 @@ paths:
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-replies-replyId1110178474'}
+              schema: {$ref: '#/components/schemas/api-v1-replies-replyId1905221144'}
               examples:
-                reply-update: {value: '{"replyId":201,"content":"저도 그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}'}
+                reply-update: {value: '{"replyId":201,"content":"저도 그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":3,"likedByMe":true}'}
         '401':
           description: '401'
           content:
@@ -704,12 +825,15 @@ paths:
               examples:
                 reply-update-not-found: {value: '{"detail":"답글을 찾을 수 없습니다.","instance":"/api/v1/replies/404","status":404,"title":"Not
                     Found","type":"about:blank","code":"REPLY_NOT_FOUND"}'}
-      security: *id001
+      security: *id004
   /api/v1/reviews/{reviewId}:
     delete:
       tags: [감상]
       summary: 감상 삭제
-      description: 작성자가 감상을 soft delete한다
+      description: |-
+        작성자가 감상을 soft delete한다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
       operationId: review-delete
       parameters:
       - name: reviewId
@@ -748,12 +872,14 @@ paths:
               examples:
                 review-delete-deleted-resource: {value: '{"detail":"삭제된 리소스입니다.","instance":"/api/v1/reviews/409","status":409,"title":"Conflict","type":"about:blank","code":"DELETED_RESOURCE"}'}
         '204': {description: '204'}
-      security: *id001
+      security: *id004
     patch:
       tags: [감상]
       summary: 감상 수정
       description: |-
         작성자가 감상의 지정된 필드만 수정한다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
 
         필드를 생략하면 기존 값을 유지합니다. `quote`, `chapter`, `currentPage`는 `null`을 보내면 삭제하고, `content`와 `isSpoiler`는 `null`을 보낼 수 없습니다. 빈 객체는 허용되지 않습니다.
       operationId: review-update
@@ -821,11 +947,11 @@ paths:
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-books-bookId-reviews210617359'}
+              schema: {$ref: '#/components/schemas/api-v1-books-bookId-reviews1205899871'}
               examples:
                 review-update: {value: '{"reviewId":101,"content":"인상 깊었다.","quote":"화성에서
-                    살아남아야 한다.","chapter":"3장","currentPage":120,"isSpoiler":false,"deleted":false,"createdAt":"2026-08-13T15:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":12,"likedByMe":false,"replyCount":1,"recentReplies":[{"replyId":201,"content":"저도
-                    그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}]}'}
+                    살아남아야 한다.","chapter":"3장","currentPage":120,"isSpoiler":false,"deleted":false,"createdAt":"2026-08-13T15:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":12,"likedByMe":false,"replyCount":1,"recentReplies":[{"replyId":201,"content":"저도
+                    그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":3,"likedByMe":true}]}'}
         '404':
           description: '404'
           content:
@@ -834,7 +960,79 @@ paths:
               examples:
                 review-update-not-found: {value: '{"detail":"감상을 찾을 수 없습니다.","instance":"/api/v1/reviews/404","status":404,"title":"Not
                     Found","type":"about:blank","code":"REVIEW_NOT_FOUND"}'}
+      security: *id004
+  /api/v1/admin/recommended-books/{bookId}:
+    delete:
+      tags: [관리자]
+      summary: 추천 도서 삭제
+      description: 관리자가 추천 도서에서 도서를 삭제한다
+      operationId: admin-recommended-book-delete
+      parameters:
+      - name: bookId
+        in: path
+        description: 추천 도서에서 삭제할 도서 ID
+        required: true
+        schema: {type: integer, format: int32}
+      responses:
+        '404':
+          description: '404'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                admin-recommended-book-delete-not-found: {value: '{"detail":"추천 도서를
+                    찾을 수 없습니다.","instance":"/api/v1/admin/recommended-books/42","status":404,"title":"Not
+                    Found","type":"about:blank","code":"RECOMMENDED_BOOK_NOT_FOUND"}'}
+        '204': {description: '204'}
       security: *id001
+  /api/v1/auth/mobile/apple:
+    post:
+      tags: [인증]
+      summary: 모바일 Apple 로그인
+      description: Apple 인증 필수값이 없거나 비어 있으면 요청을 거부한다
+      operationId: mobile-apple-login
+      requestBody:
+        content:
+          application/json;charset=UTF-8:
+            schema: {$ref: '#/components/schemas/api-v1-auth-mobile-apple-345788424'}
+            examples:
+              mobile-apple-login-invalid-request:
+                value: |
+                  {
+                    "identityToken": "",
+                    "authorizationCode": "",
+                    "nonce": ""
+                  }
+              mobile-apple-login:
+                value: |
+                  {
+                    "identityToken": "apple-identity-token",
+                    "authorizationCode": "apple-authorization-code",
+                    "nonce": "raw-nonce"
+                  }
+      responses:
+        '400':
+          description: '400'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                mobile-apple-login-invalid-request: {value: '{"detail":"요청값이 올바르지
+                    않습니다.","instance":"/api/v1/auth/mobile/apple","status":400,"title":"Bad
+                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
+        '200':
+          description: '200'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-auth-mobile-google1675364789'}
+              examples:
+                mobile-apple-login: {value: '{"accessToken":"access-token","refreshToken":"refresh-token","tokenType":"Bearer","accessTokenExpiresIn":1800,"refreshTokenExpiresIn":1209600}'}
+      parameters:
+      - name: X-Guest-Token
+        in: header
+        required: false
+        description: 신규 회원가입 시 기존 게스트 Actor, 닉네임과 공개 상호작용을 계승할 게스트 토큰
+        schema: {type: string}
   /api/v1/auth/mobile/google:
     post:
       tags: [인증]
@@ -874,6 +1072,12 @@ paths:
                 mobile-google-login-invalid-request: {value: '{"detail":"요청값이 올바르지
                     않습니다.","instance":"/api/v1/auth/mobile/google","status":400,"title":"Bad
                     Request","type":"about:blank","code":"INVALID_REQUEST"}'}
+      parameters:
+      - name: X-Guest-Token
+        in: header
+        required: false
+        description: 신규 회원가입 시 기존 게스트 Actor, 닉네임과 공개 상호작용을 계승할 게스트 토큰
+        schema: {type: string}
   /api/v1/auth/mobile/logout:
     post:
       tags: [인증]
@@ -1032,11 +1236,11 @@ paths:
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-books-bookId-reviews1286608498'}
+              schema: {$ref: '#/components/schemas/api-v1-books-bookId-reviews1585211170'}
               examples:
                 review-list: {value: '{"totalCount":1,"nextPage":null,"items":[{"reviewId":101,"content":"인상
-                    깊었다.","quote":"화성에서 살아남아야 한다.","chapter":"3장","currentPage":120,"isSpoiler":false,"deleted":false,"createdAt":"2026-08-13T15:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":12,"likedByMe":false,"replyCount":1,"recentReplies":[{"replyId":201,"content":"저도
-                    그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}]}]}'}
+                    깊었다.","quote":"화성에서 살아남아야 한다.","chapter":"3장","currentPage":120,"isSpoiler":false,"deleted":false,"createdAt":"2026-08-13T15:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":12,"likedByMe":false,"replyCount":1,"recentReplies":[{"replyId":201,"content":"저도
+                    그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":3,"likedByMe":true}]}]}'}
                 review-normal:
                   summary: 일반 감상
                   value:
@@ -1123,7 +1327,12 @@ paths:
     post:
       tags: [감상]
       summary: 감상 작성
-      description: 도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다
+      description: |-
+        도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
+
+        게스트는 currentPage와 totalPages를 입력할 수 없으며 서재·독서 기록은 변경되지 않습니다.
       operationId: review-create
       parameters:
       - name: bookId
@@ -1179,11 +1388,11 @@ paths:
               schema: {type: string}
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-books-bookId-reviews210617359'}
+              schema: {$ref: '#/components/schemas/api-v1-books-bookId-reviews1205899871'}
               examples:
                 review-create: {value: '{"reviewId":101,"content":"인상 깊었다.","quote":"화성에서
-                    살아남아야 한다.","chapter":"3장","currentPage":120,"isSpoiler":false,"deleted":false,"createdAt":"2026-08-13T15:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":12,"likedByMe":false,"replyCount":1,"recentReplies":[{"replyId":201,"content":"저도
-                    그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}]}'}
+                    살아남아야 한다.","chapter":"3장","currentPage":120,"isSpoiler":false,"deleted":false,"createdAt":"2026-08-13T15:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":12,"likedByMe":false,"replyCount":1,"recentReplies":[{"replyId":201,"content":"저도
+                    그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":3,"likedByMe":true}]}'}
         '401':
           description: '401'
           content:
@@ -1199,7 +1408,7 @@ paths:
               examples:
                 review-create-invalid-request: {value: '{"detail":"요청값이 올바르지 않습니다.","instance":"/api/v1/books/42/reviews","status":400,"title":"Bad
                     Request","type":"about:blank","code":"INVALID_REQUEST"}'}
-      security: *id001
+      security: *id004
   /api/v1/library/{bookId}/rating:
     put:
       tags: [내 서재]
@@ -1391,7 +1600,10 @@ paths:
     post:
       tags: [감상]
       summary: 답글 좋아요
-      description: 답글에 좋아요를 남긴다
+      description: |-
+        답글에 좋아요를 남긴다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
       operationId: reply-reaction-create
       parameters:
       - name: replyId
@@ -1430,11 +1642,14 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 reply-reaction-create-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/replies/201/reactions","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
-      security: *id001
+      security: *id004
     delete:
       tags: [감상]
       summary: 답글 좋아요 취소
-      description: 답글의 좋아요를 취소한다
+      description: |-
+        답글의 좋아요를 취소한다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
       operationId: reply-reaction-delete
       parameters:
       - name: replyId
@@ -1459,12 +1674,15 @@ paths:
               examples:
                 reply-reaction-delete-not-found: {value: '{"detail":"답글을 찾을 수 없습니다.","instance":"/api/v1/replies/404/reactions","status":404,"title":"Not
                     Found","type":"about:blank","code":"REPLY_NOT_FOUND"}'}
-      security: *id001
+      security: *id004
   /api/v1/reviews/{reviewId}/reactions:
     post:
       tags: [감상]
       summary: 감상 좋아요
-      description: 감상에 좋아요를 남긴다
+      description: |-
+        감상에 좋아요를 남긴다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
       operationId: review-reaction-create
       parameters:
       - name: reviewId
@@ -1503,11 +1721,14 @@ paths:
               examples:
                 review-reaction-create-not-found: {value: '{"detail":"감상을 찾을 수 없습니다.","instance":"/api/v1/reviews/404/reactions","status":404,"title":"Not
                     Found","type":"about:blank","code":"REVIEW_NOT_FOUND"}'}
-      security: *id001
+      security: *id004
     delete:
       tags: [감상]
       summary: 감상 좋아요 취소
-      description: 감상의 좋아요를 취소한다
+      description: |-
+        감상의 좋아요를 취소한다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
       operationId: review-reaction-delete
       parameters:
       - name: reviewId
@@ -1532,7 +1753,7 @@ paths:
                 review-reaction-delete-not-found: {value: '{"detail":"감상을 찾을 수 없습니다.","instance":"/api/v1/reviews/404/reactions","status":404,"title":"Not
                     Found","type":"about:blank","code":"REVIEW_NOT_FOUND"}'}
         '204': {description: '204'}
-      security: *id001
+      security: *id004
   /api/v1/reviews/{reviewId}/replies:
     get:
       tags: [감상]
@@ -1571,14 +1792,17 @@ paths:
           description: '200'
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-reviews-reviewId-replies-1442674441'}
+              schema: {$ref: '#/components/schemas/api-v1-reviews-reviewId-replies-1716768951'}
               examples:
                 reply-list: {value: '{"totalCount":1,"nextPage":null,"items":[{"replyId":201,"content":"저도
-                    그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}]}'}
+                    그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":3,"likedByMe":true}]}'}
     post:
       tags: [감상]
       summary: 답글 작성
-      description: 감상에 답글을 작성한다
+      description: |-
+        감상에 답글을 작성한다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
       operationId: reply-create
       parameters:
       - name: reviewId
@@ -1628,9 +1852,9 @@ paths:
               schema: {type: string}
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/api-v1-replies-replyId1110178474'}
+              schema: {$ref: '#/components/schemas/api-v1-replies-replyId1905221144'}
               examples:
-                reply-create: {value: '{"replyId":201,"content":"저도 그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true},"likeCount":3,"likedByMe":true}'}
+                reply-create: {value: '{"replyId":201,"content":"저도 그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":3,"likedByMe":true}'}
         '401':
           description: '401'
           content:
@@ -1638,7 +1862,111 @@ paths:
               schema: {$ref: '#/components/schemas/ProblemDetail'}
               examples:
                 reply-create-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/reviews/101/replies","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
-      security: *id001
+      security: *id004
+  /api/v1/books/by-isbn/{isbn13}/reviews:
+    post:
+      tags: [감상]
+      summary: ISBN13으로 감상 작성
+      description: |-
+        ISBN13으로 도서를 조회하고, 로컬에 없으면 등록한 뒤 감상을 작성한다
+
+        회원 Access Token 또는 X-Guest-Token으로 요청할 수 있습니다. 게스트는 자신이 생성한 데이터만 수정·삭제 또는 좋아요 취소할 수 있습니다.
+
+        게스트는 currentPage와 totalPages를 입력할 수 없으며 서재·독서 기록은 변경되지 않습니다.
+      operationId: review-create-by-isbn
+      parameters:
+      - name: isbn13
+        in: path
+        description: ISBN-13
+        required: true
+        schema: {type: string}
+      requestBody:
+        content:
+          application/json;charset=UTF-8:
+            schema: {$ref: '#/components/schemas/api-v1-books-bookId-reviews453186613'}
+            examples:
+              review-create-by-isbn-invalid-request: {value: '{}'}
+              review-create-by-isbn-external-api-error: {value: '{"content":"감상"}'}
+              review-create-by-isbn-forbidden: {value: '{"content":"감상"}'}
+              review-create-by-isbn-unauthorized: {value: '{"content":"감상"}'}
+              review-create-by-isbn-invalid-reading-state: {value: '{"content":"감상"}'}
+              review-create-by-isbn: {value: '{"content":"인상 깊었다."}'}
+              review-create-by-isbn-total-pages-conflict: {value: '{"content":"감상"}'}
+              review-create-by-isbn-book-not-found: {value: '{"content":"감상"}'}
+      responses:
+        '400':
+          description: '400'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-create-by-isbn-invalid-request: {value: '{"detail":"요청값이 올바르지
+                    않습니다.","instance":"/api/v1/books/by-isbn/9788925568683/reviews","status":400,"title":"Bad
+                    Request","type":"about:blank","code":"INVALID_REQUEST"}'}
+        '502':
+          description: '502'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-create-by-isbn-external-api-error: {value: '{"detail":"외부 서비스
+                    호출에 실패했습니다.","instance":"/api/v1/books/by-isbn/9788925568689/reviews","status":502,"title":"Bad
+                    Gateway","type":"about:blank","code":"EXTERNAL_API_ERROR"}'}
+        '403':
+          description: '403'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-create-by-isbn-forbidden: {value: '{"detail":"요청한 작업을 수행할 권한이
+                    없습니다.","instance":"/api/v1/books/by-isbn/9788925568685/reviews","status":403,"title":"Forbidden","type":"about:blank","code":"FORBIDDEN"}'}
+        '401':
+          description: '401'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-create-by-isbn-unauthorized: {value: '{"detail":"인증이 필요합니다.","instance":"/api/v1/books/by-isbn/9788925568684/reviews","status":401,"title":"Unauthorized","type":"about:blank","code":"UNAUTHORIZED"}'}
+        '422':
+          description: '422'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-create-by-isbn-invalid-reading-state: {value: '{"detail":"현재
+                    읽기 상태에서는 요청을 처리할 수 없습니다.","instance":"/api/v1/books/by-isbn/9788925568688/reviews","status":422,"title":"Unprocessable
+                    Content","type":"about:blank","code":"INVALID_READING_STATE"}'}
+        '201':
+          description: '201'
+          headers:
+            Location:
+              description: 생성된 리소스의 상대 경로
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/api-v1-books-by-isbn-isbn13-reviews2070408622'}
+              examples:
+                review-create-by-isbn: {value: '{"bookId":42,"review":{"reviewId":101,"content":"인상
+                    깊었다.","quote":"화성에서 살아남아야 한다.","chapter":"3장","currentPage":120,"isSpoiler":false,"deleted":false,"createdAt":"2026-08-13T15:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":12,"likedByMe":false,"replyCount":1,"recentReplies":[{"replyId":201,"content":"저도
+                    그 부분이 좋았어요.","deleted":false,"createdAt":"2026-08-13T16:00:00Z","author":{"displayName":"닉네임","profileImageUrl":"https://example.com/profile.jpg","anonymous":false,"mine":true,"actorType":"MEMBER"},"likeCount":3,"likedByMe":true}]}}'}
+        '409':
+          description: '409'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-create-by-isbn-total-pages-conflict: {value: '{"detail":"전체
+                    페이지 수가 기존 정보와 다릅니다.","instance":"/api/v1/books/by-isbn/9788925568687/reviews","status":409,"title":"Conflict","type":"about:blank","code":"TOTAL_PAGES_CONFLICT"}'}
+        '404':
+          description: '404'
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/ProblemDetail'}
+              examples:
+                review-create-by-isbn-book-not-found: {value: '{"detail":"책을 찾을 수
+                    없습니다.","instance":"/api/v1/books/by-isbn/9788925568686/reviews","status":404,"title":"Not
+                    Found","type":"about:blank","code":"BOOK_NOT_FOUND"}'}
+      security: *id004
   /api/v1/members/me/ratings/comparison:
     get:
       tags: [내 서재]
@@ -1701,131 +2029,6 @@ components:
       properties:
         rating: {type: number, description: 0.1부터 5.0까지 0.1 단위의 별점, minimum: 0.1,
           maximum: 5.0, multipleOf: 0.1}
-    api-v1-replies-replyId1110178474:
-      required: [author, content, createdAt, deleted, likeCount, likedByMe, replyId]
-      type: object
-      properties:
-        createdAt: {type: string, description: 작성 시각(UTC)}
-        likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
-        deleted: {type: boolean, description: soft delete 여부}
-        author:
-          required: [anonymous, displayName, mine]
-          type: object
-          properties:
-            mine: {type: boolean, description: 내가 작성한 답글인지 여부}
-            displayName: {type: string, description: 작성자 표시 이름}
-            anonymous: {type: boolean, description: 익명 작성 여부}
-            profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
-          description: 작성자 정보
-        replyId: {type: number, description: 답글 ID}
-        likeCount: {type: number, description: 좋아요 수}
-        content: {type: string, description: 답글 내용}
-    api-v1-books-bookId-reviews210617359:
-      required: [author, content, createdAt, deleted, isSpoiler, likeCount, likedByMe,
-        recentReplies, replyCount, reviewId]
-      type: object
-      properties:
-        chapter: {type: string, description: 챕터, nullable: true}
-        author:
-          required: [anonymous, displayName, mine]
-          type: object
-          properties:
-            mine: {type: boolean, description: 내가 작성한 감상인지 여부}
-            displayName: {type: string, description: 작성자 표시 이름}
-            anonymous: {type: boolean, description: 익명 작성 여부}
-            profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
-          description: 작성자 정보
-        likeCount: {type: number, description: 좋아요 수}
-        content: {type: string, description: 감상 내용}
-        createdAt: {type: string, description: 작성 시각(UTC)}
-        recentReplies:
-          type: array
-          description: 최근 답글 최대 3개
-          items:
-            required: [author, content, createdAt, deleted, likeCount, likedByMe,
-              replyId]
-            type: object
-            properties:
-              createdAt: {type: string, description: 작성 시각(UTC)}
-              likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
-              deleted: {type: boolean, description: soft delete 여부}
-              author:
-                required: [anonymous, displayName, mine]
-                type: object
-                properties:
-                  mine: {type: boolean, description: 내가 작성한 답글인지 여부}
-                  displayName: {type: string, description: 작성자 표시 이름}
-                  anonymous: {type: boolean, description: 익명 작성 여부}
-                  profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
-                description: 작성자 정보
-              replyId: {type: number, description: 답글 ID}
-              likeCount: {type: number, description: 좋아요 수}
-              content: {type: string, description: 답글 내용}
-        replyCount: {type: number, description: 답글 수}
-        isSpoiler: {type: boolean, description: 스포일러 여부}
-        likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
-        deleted: {type: boolean, description: soft delete 여부}
-        quote: {type: string, description: 인용문, nullable: true}
-        currentPage: {type: number, description: 감상을 남긴 현재 페이지, nullable: true}
-        reviewId: {type: number, description: 감상 ID}
-    api-v1-books-bookId-reviews1286608498:
-      required: [items, totalCount, nextPage]
-      type: object
-      properties:
-        nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지면 null, nullable: true}
-        totalCount: {type: number, description: 전체 항목 수}
-        items:
-          type: array
-          description: 페이지 항목 목록
-          items:
-            required: [author, content, createdAt, deleted, isSpoiler, likeCount,
-              likedByMe, recentReplies, replyCount, reviewId, quote, chapter, currentPage]
-            type: object
-            properties:
-              chapter: {type: string, description: 챕터, nullable: true}
-              author:
-                required: [anonymous, displayName, mine]
-                type: object
-                properties:
-                  mine: {type: boolean, description: 내가 작성한 감상인지 여부}
-                  displayName: {type: string, description: 작성자 표시 이름}
-                  anonymous: {type: boolean, description: 익명 작성 여부}
-                  profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
-                description: 작성자 정보
-              likeCount: {type: number, description: 좋아요 수}
-              content: {type: string, description: 감상 내용}
-              createdAt: {type: string, description: 작성 시각(UTC)}
-              recentReplies:
-                type: array
-                description: 최근 답글 최대 3개
-                items:
-                  required: [author, content, createdAt, deleted, likeCount, likedByMe,
-                    replyId]
-                  type: object
-                  properties:
-                    createdAt: {type: string, description: 작성 시각(UTC)}
-                    likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
-                    deleted: {type: boolean, description: soft delete 여부}
-                    author:
-                      required: [anonymous, displayName, mine]
-                      type: object
-                      properties:
-                        mine: {type: boolean, description: 내가 작성한 답글인지 여부}
-                        displayName: {type: string, description: 작성자 표시 이름}
-                        anonymous: {type: boolean, description: 익명 작성 여부}
-                        profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL,
-                          nullable: true}
-                      description: 작성자 정보
-                    replyId: {type: number, description: 답글 ID}
-                    likeCount: {type: number, description: 좋아요 수}
-                    content: {type: string, description: 답글 내용}
-              replyCount: {type: number, description: 답글 수}
-              isSpoiler: {type: boolean, description: 스포일러 여부}
-              likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
-              deleted: {type: boolean, description: soft delete 여부}
-              quote: {type: string, description: 인용문, nullable: true}
-              currentPage: {type: number, description: 감상을 남긴 현재 페이지, nullable: true}
-              reviewId: {type: number, description: 감상 ID}
     api-v1-replies-replyId-reactions1578631323:
       required: [likeCount, likedByMe]
       type: object
@@ -1837,6 +2040,63 @@ components:
       type: object
       properties:
         refreshToken: {type: string, description: 재발급 또는 로그아웃할 Refresh Token}
+    api-v1-books-by-isbn-isbn13-reviews2070408622:
+      required: [bookId, review]
+      type: object
+      properties:
+        review:
+          required: [author, content, createdAt, deleted, isSpoiler, likeCount, likedByMe,
+            recentReplies, replyCount, reviewId]
+          type: object
+          properties:
+            chapter: {type: string, description: 챕터, nullable: true}
+            author:
+              required: [actorType, anonymous, displayName, mine]
+              type: object
+              properties:
+                mine: {type: boolean, description: 내가 작성한 감상인지 여부}
+                actorType: {type: string, description: '작성자 유형(MEMBER, GUEST)'}
+                displayName: {type: string, description: 작성자 표시 이름}
+                anonymous: {type: boolean, description: 익명 작성 여부}
+                profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
+              description: 작성자 정보
+            likeCount: {type: number, description: 좋아요 수}
+            content: {type: string, description: 감상 내용}
+            createdAt: {type: string, description: 작성 시각(UTC)}
+            recentReplies:
+              type: array
+              description: 최근 답글 최대 3개
+              items:
+                required: [author, content, createdAt, deleted, likeCount, likedByMe,
+                  replyId]
+                type: object
+                properties:
+                  createdAt: {type: string, description: 작성 시각(UTC)}
+                  likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
+                  deleted: {type: boolean, description: soft delete 여부}
+                  author:
+                    required: [actorType, anonymous, displayName, mine]
+                    type: object
+                    properties:
+                      mine: {type: boolean, description: 내가 작성한 답글인지 여부}
+                      actorType: {type: string, description: '작성자 유형(MEMBER, GUEST)'}
+                      displayName: {type: string, description: 작성자 표시 이름}
+                      anonymous: {type: boolean, description: 익명 작성 여부}
+                      profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL,
+                        nullable: true}
+                    description: 작성자 정보
+                  replyId: {type: number, description: 답글 ID}
+                  likeCount: {type: number, description: 좋아요 수}
+                  content: {type: string, description: 답글 내용}
+            replyCount: {type: number, description: 답글 수}
+            isSpoiler: {type: boolean, description: 스포일러 여부}
+            likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
+            deleted: {type: boolean, description: soft delete 여부}
+            quote: {type: string, description: 인용문, nullable: true}
+            currentPage: {type: number, description: 감상을 남긴 현재 페이지, nullable: true}
+            reviewId: {type: number, description: 감상 ID}
+          description: 작성된 감상
+        bookId: {type: number, description: 로컬 도서 ID}
     api-v1-library-bookId-rating-1519410846:
       required: [addedAt, authors, bookId, category, commentCount, coverImageUrl,
         currentPage, isbn13, publishedDate, publisher, readingUpdatedAt, status, title,
@@ -1911,6 +2171,31 @@ components:
             - {type: boolean}
             - {type: string}
             - {type: number}
+    api-v1-admin-recommended-books-1231260270:
+      required: [isbn13]
+      type: object
+      properties:
+        isbn13: {type: string, description: 추천할 도서의 ISBN-13}
+    api-v1-auth-guest-token-452028415:
+      required: [expiresAt, guestToken, nickname]
+      type: object
+      properties:
+        nickname: {type: string, description: 서버가 할당한 게스트 작성자 닉네임}
+        guestToken: {type: string, description: 게스트 공개 상호작용 인증에 사용할 토큰}
+        expiresAt: {type: string, description: 게스트 토큰 만료 시각(UTC)}
+    api-v1-admin-recommended-books-916433424:
+      required: [authors, bookId, coverImageUrl, createdAt, isbn13, title]
+      type: object
+      properties:
+        createdAt: {type: string, description: 추천 등록 시각(UTC)}
+        coverImageUrl: {type: string, description: 표지 이미지 URL}
+        isbn13: {type: string, description: ISBN-13}
+        title: {type: string, description: 도서 제목}
+        authors:
+          type: array
+          description: 저자 목록
+          items: {type: string}
+        bookId: {type: number, description: 도서 ID}
     api-v1-library-bulk-delete-348264081:
       required: [bookIds]
       type: object
@@ -1933,43 +2218,99 @@ components:
       type: object
       properties:
         idToken: {type: string, description: Google SDK에서 발급받은 ID Token}
-    api-v1-books-20378274:
-      required: [items, totalCount, nextPage]
+    api-v1-replies-replyId1905221144:
+      required: [author, content, createdAt, deleted, likeCount, likedByMe, replyId]
       type: object
       properties:
-        nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지라면 null, nullable: true}
-        totalCount: {type: number, description: 검색 결과의 전체 도서 수}
-        items:
-          type: array
-          description: 검색된 도서 목록. 한 페이지당 최대 10개
-          items:
-            required: [authors, category, coverImageUrl, isbn13, publishedDate, publisher,
-              title, translators, bookId, reviewCount, replyCount]
-            type: object
-            properties:
-              replyCount: {type: number, description: 답글 수. 미등록 도서라면 null, nullable: true}
-              translators:
-                type: array
-                description: 옮긴이 이름 목록
-                items: {type: string}
-              reviewCount: {type: number, description: 감상 수. 미등록 도서라면 null, nullable: true}
-              coverImageUrl: {type: string, description: 표지 이미지 URL. 알라딘 Big 규격(너비
-                  200px)을 따름}
-              isbn13: {type: string, description: ISBN-13}
-              publisher: {type: string, description: 출판사}
-              publishedDate: {type: string, description: 출판일}
-              category: {type: string, description: 도서 카테고리}
-              title: {type: string, description: 도서 제목}
-              authors:
-                type: array
-                description: 저자 이름 목록
-                items: {type: string}
-              bookId: {type: number, description: 등록된 도서 ID. 미등록 도서라면 null, nullable: true}
+        createdAt: {type: string, description: 작성 시각(UTC)}
+        likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
+        deleted: {type: boolean, description: soft delete 여부}
+        author:
+          required: [actorType, anonymous, displayName, mine]
+          type: object
+          properties:
+            mine: {type: boolean, description: 내가 작성한 답글인지 여부}
+            actorType: {type: string, description: '작성자 유형(MEMBER, GUEST)'}
+            displayName: {type: string, description: 작성자 표시 이름}
+            anonymous: {type: boolean, description: 익명 작성 여부}
+            profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
+          description: 작성자 정보
+        replyId: {type: number, description: 답글 ID}
+        likeCount: {type: number, description: 좋아요 수}
+        content: {type: string, description: 답글 내용}
+    api-v1-auth-mobile-apple-345788424:
+      required: [authorizationCode, identityToken, nonce]
+      type: object
+      properties:
+        identityToken: {type: string, description: Apple에서 발급받은 Identity Token}
+        authorizationCode: {type: string, description: Apple에서 발급받은 일회용 Authorization
+            Code}
+        nonce: {type: string, description: Apple 로그인 요청에 사용한 해시 전 원본 nonce}
     api-v1-replies-replyId89780935:
       required: [content]
       type: object
       properties:
         content: {type: string, description: '답글 내용. 공백 불가, 최대 200자', maxLength: 200}
+    api-v1-books-bookId-reviews1585211170:
+      required: [items, totalCount, nextPage]
+      type: object
+      properties:
+        nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지면 null, nullable: true}
+        totalCount: {type: number, description: 전체 항목 수}
+        items:
+          type: array
+          description: 페이지 항목 목록
+          items:
+            required: [author, content, createdAt, deleted, isSpoiler, likeCount,
+              likedByMe, recentReplies, replyCount, reviewId, quote, chapter, currentPage]
+            type: object
+            properties:
+              chapter: {type: string, description: 챕터, nullable: true}
+              author:
+                required: [actorType, anonymous, displayName, mine]
+                type: object
+                properties:
+                  mine: {type: boolean, description: 내가 작성한 감상인지 여부}
+                  actorType: {type: string, description: '작성자 유형(MEMBER, GUEST)'}
+                  displayName: {type: string, description: 작성자 표시 이름}
+                  anonymous: {type: boolean, description: 익명 작성 여부}
+                  profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
+                description: 작성자 정보
+              likeCount: {type: number, description: 좋아요 수}
+              content: {type: string, description: 감상 내용}
+              createdAt: {type: string, description: 작성 시각(UTC)}
+              recentReplies:
+                type: array
+                description: 최근 답글 최대 3개
+                items:
+                  required: [author, content, createdAt, deleted, likeCount, likedByMe,
+                    replyId]
+                  type: object
+                  properties:
+                    createdAt: {type: string, description: 작성 시각(UTC)}
+                    likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
+                    deleted: {type: boolean, description: soft delete 여부}
+                    author:
+                      required: [actorType, anonymous, displayName, mine]
+                      type: object
+                      properties:
+                        mine: {type: boolean, description: 내가 작성한 답글인지 여부}
+                        actorType: {type: string, description: '작성자 유형(MEMBER, GUEST)'}
+                        displayName: {type: string, description: 작성자 표시 이름}
+                        anonymous: {type: boolean, description: 익명 작성 여부}
+                        profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL,
+                          nullable: true}
+                      description: 작성자 정보
+                    replyId: {type: number, description: 답글 ID}
+                    likeCount: {type: number, description: 좋아요 수}
+                    content: {type: string, description: 답글 내용}
+              replyCount: {type: number, description: 답글 수}
+              isSpoiler: {type: boolean, description: 스포일러 여부}
+              likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
+              deleted: {type: boolean, description: soft delete 여부}
+              quote: {type: string, description: 인용문, nullable: true}
+              currentPage: {type: number, description: 감상을 남긴 현재 페이지, nullable: true}
+              reviewId: {type: number, description: 감상 ID}
     api-v1-library-bulk-status1159375813:
       required: [bookIds, status]
       type: object
@@ -2067,6 +2408,90 @@ components:
             bookId: {type: number, description: 도서 ID}
           description: 기준보다 높은 별점 중 가장 가까운 도서. 없으면 null
           nullable: true
+    api-v1-reviews-reviewId-replies-1716768951:
+      required: [items, totalCount]
+      type: object
+      properties:
+        nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지면 null, nullable: true}
+        totalCount: {type: number, description: 전체 항목 수}
+        items:
+          type: array
+          description: 페이지 항목 목록
+          items:
+            required: [author, content, createdAt, deleted, likeCount, likedByMe,
+              replyId]
+            type: object
+            properties:
+              createdAt: {type: string, description: 작성 시각(UTC)}
+              likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
+              deleted: {type: boolean, description: soft delete 여부}
+              author:
+                required: [actorType, anonymous, displayName, mine]
+                type: object
+                properties:
+                  mine: {type: boolean, description: 내가 작성한 답글인지 여부}
+                  actorType: {type: string, description: '작성자 유형(MEMBER, GUEST)'}
+                  displayName: {type: string, description: 작성자 표시 이름}
+                  anonymous: {type: boolean, description: 익명 작성 여부}
+                  profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
+                description: 작성자 정보
+              replyId: {type: number, description: 답글 ID}
+              likeCount: {type: number, description: 좋아요 수}
+              content: {type: string, description: 답글 내용}
+    api-v1-books1146673278:
+      required: [items, totalCount, nextPage]
+      type: object
+      properties:
+        nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지라면 null, nullable: true}
+        totalCount: {type: number, description: 검색 결과의 전체 도서 수}
+        items:
+          type: array
+          description: 검색된 도서 목록. 한 페이지당 최대 10개
+          items:
+            required: [authors, category, coverImageUrl, isbn13, publishedDate, publisher,
+              title, translators, bookId, reviewCount, replyCount, isRegisteredInMyLibrary]
+            type: object
+            properties:
+              replyCount: {type: number, description: 답글 수. 미등록 도서라면 null, nullable: true}
+              translators:
+                type: array
+                description: 옮긴이 이름 목록
+                items: {type: string}
+              reviewCount: {type: number, description: 감상 수. 미등록 도서라면 null, nullable: true}
+              coverImageUrl: {type: string, description: 표지 이미지 URL. 알라딘 Big 규격(너비
+                  200px)을 따름}
+              isbn13: {type: string, description: ISBN-13}
+              publisher: {type: string, description: 출판사}
+              publishedDate: {type: string, description: 출판일}
+              category: {type: string, description: 도서 카테고리}
+              title: {type: string, description: 도서 제목}
+              isRegisteredInMyLibrary: {type: boolean, description: '로그인 회원의 내 서재
+                  등록 여부. 등록되어 있으면 true, 미등록이면 false, 비로그인 요청이면 null', nullable: true}
+              authors:
+                type: array
+                description: 저자 이름 목록
+                items: {type: string}
+              bookId: {type: number, description: 등록된 도서 ID. 미등록 도서라면 null, nullable: true}
+    api-v1-admin-recommended-books908039350:
+      required: [books]
+      type: object
+      properties:
+        books:
+          type: array
+          description: 추천 도서 목록
+          items:
+            required: [authors, bookId, coverImageUrl, createdAt, isbn13, title]
+            type: object
+            properties:
+              createdAt: {type: string, description: 추천 등록 시각(UTC)}
+              coverImageUrl: {type: string, description: 표지 이미지 URL}
+              isbn13: {type: string, description: ISBN-13}
+              title: {type: string, description: 도서 제목}
+              authors:
+                type: array
+                description: 저자 목록
+                items: {type: string}
+              bookId: {type: number, description: 도서 ID}
     api-v1-auth-mobile-google1675364789:
       required: [accessToken, accessTokenExpiresIn, refreshToken, refreshTokenExpiresIn,
         tokenType]
@@ -2145,35 +2570,6 @@ components:
         totalPages: {type: number, description: 페이지 검증에 사용할 전체 페이지 수, nullable: true}
         currentPage: {type: number, description: 변경할 현재 페이지. null이면 삭제, nullable: true}
         content: {type: string, description: 변경할 감상 내용, maxLength: 1000}
-    api-v1-reviews-reviewId-replies-1442674441:
-      required: [items, totalCount]
-      type: object
-      properties:
-        nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지면 null, nullable: true}
-        totalCount: {type: number, description: 전체 항목 수}
-        items:
-          type: array
-          description: 페이지 항목 목록
-          items:
-            required: [author, content, createdAt, deleted, likeCount, likedByMe,
-              replyId]
-            type: object
-            properties:
-              createdAt: {type: string, description: 작성 시각(UTC)}
-              likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
-              deleted: {type: boolean, description: soft delete 여부}
-              author:
-                required: [anonymous, displayName, mine]
-                type: object
-                properties:
-                  mine: {type: boolean, description: 내가 작성한 답글인지 여부}
-                  displayName: {type: string, description: 작성자 표시 이름}
-                  anonymous: {type: boolean, description: 익명 작성 여부}
-                  profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
-                description: 작성자 정보
-              replyId: {type: number, description: 답글 ID}
-              likeCount: {type: number, description: 좋아요 수}
-              content: {type: string, description: 답글 내용}
     api-v1-books-bookId-reviews453186613:
       required: [content]
       type: object
@@ -2197,7 +2593,19 @@ components:
           type: string
           description: 초기 읽기 상태
           enum: [WANT_TO_READ, READING, FINISHED]
-    api-v1-home-latest-reviews619322835:
+    MemberResponse:
+      title: MemberResponse
+      required: [accountStatus, anonymousNickname, displayAnonymous, memberId, nickname,
+        profileImageUrl]
+      type: object
+      properties:
+        accountStatus: {type: string, description: 계정 상태}
+        nickname: {type: string, description: 사용자가 설정한 공개 닉네임, nullable: true}
+        profileImageUrl: {type: string, description: 프로필 이미지 URL, nullable: true}
+        displayAnonymous: {type: boolean, description: 감상 작성 시 익명 표시를 기본으로 사용하는지 여부}
+        anonymousNickname: {type: string, description: 가입 시 생성된 익명 닉네임}
+        memberId: {type: number, description: 회원 ID}
+    api-v1-home-latest-reviews-1183893359:
       required: [reviews]
       type: object
       properties:
@@ -2212,10 +2620,11 @@ components:
               createdAt: {type: string, description: 감상 작성 시각(UTC)}
               replyCount: {type: number, description: 삭제되지 않은 답글 수}
               author:
-                required: [anonymous, displayName, mine]
+                required: [actorType, anonymous, displayName, mine]
                 type: object
                 properties:
                   mine: {type: boolean, description: 내가 작성한 감상인지 여부}
+                  actorType: {type: string, description: '작성자 유형(MEMBER, GUEST)'}
                   displayName: {type: string, description: 작성자 표시 이름}
                   anonymous: {type: boolean, description: 익명 작성 여부}
                   profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
@@ -2225,18 +2634,58 @@ components:
               content: {type: string, description: 감상 내용}
               bookTitle: {type: string, description: 도서 제목}
               bookId: {type: number, description: 도서 ID}
-    MemberResponse:
-      title: MemberResponse
-      required: [accountStatus, anonymousNickname, displayAnonymous, memberId, nickname,
-        profileImageUrl]
+    api-v1-books-bookId-reviews1205899871:
+      required: [author, content, createdAt, deleted, isSpoiler, likeCount, likedByMe,
+        recentReplies, replyCount, reviewId]
       type: object
       properties:
-        accountStatus: {type: string, description: 계정 상태}
-        nickname: {type: string, description: 사용자가 설정한 공개 닉네임, nullable: true}
-        profileImageUrl: {type: string, description: 프로필 이미지 URL, nullable: true}
-        displayAnonymous: {type: boolean, description: 감상 작성 시 익명 표시를 기본으로 사용하는지 여부}
-        anonymousNickname: {type: string, description: 가입 시 생성된 익명 닉네임}
-        memberId: {type: number, description: 회원 ID}
+        chapter: {type: string, description: 챕터, nullable: true}
+        author:
+          required: [actorType, anonymous, displayName, mine]
+          type: object
+          properties:
+            mine: {type: boolean, description: 내가 작성한 감상인지 여부}
+            actorType: {type: string, description: '작성자 유형(MEMBER, GUEST)'}
+            displayName: {type: string, description: 작성자 표시 이름}
+            anonymous: {type: boolean, description: 익명 작성 여부}
+            profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
+          description: 작성자 정보
+        likeCount: {type: number, description: 좋아요 수}
+        content: {type: string, description: 감상 내용}
+        createdAt: {type: string, description: 작성 시각(UTC)}
+        recentReplies:
+          type: array
+          description: 최근 답글 최대 3개
+          items:
+            required: [author, content, createdAt, deleted, likeCount, likedByMe,
+              replyId]
+            type: object
+            properties:
+              createdAt: {type: string, description: 작성 시각(UTC)}
+              likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
+              deleted: {type: boolean, description: soft delete 여부}
+              author:
+                required: [actorType, anonymous, displayName, mine]
+                type: object
+                properties:
+                  mine: {type: boolean, description: 내가 작성한 답글인지 여부}
+                  actorType: {type: string, description: '작성자 유형(MEMBER, GUEST)'}
+                  displayName: {type: string, description: 작성자 표시 이름}
+                  anonymous: {type: boolean, description: 익명 작성 여부}
+                  profileImageUrl: {type: string, description: 작성자 프로필 이미지 URL, nullable: true}
+                description: 작성자 정보
+              replyId: {type: number, description: 답글 ID}
+              likeCount: {type: number, description: 좋아요 수}
+              content: {type: string, description: 답글 내용}
+        replyCount: {type: number, description: 답글 수}
+        isSpoiler: {type: boolean, description: 스포일러 여부}
+        likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부}
+        deleted: {type: boolean, description: soft delete 여부}
+        quote: {type: string, description: 인용문, nullable: true}
+        currentPage: {type: number, description: 감상을 남긴 현재 페이지, nullable: true}
+        reviewId: {type: number, description: 감상 ID}
   securitySchemes:
     bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
     accessTokenCookie: {type: apiKey, in: cookie, name: access_token}
+    guestToken: {type: apiKey, in: header, name: X-Guest-Token, description: 게스트 공개
+        상호작용 인증 토큰}
