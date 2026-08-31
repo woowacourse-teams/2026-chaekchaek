@@ -3,13 +3,13 @@ package com.chaekchaek.book.service;
 import static org.springframework.web.util.HtmlUtils.htmlUnescape;
 
 import com.chaekchaek.book.client.AladinBookClient;
+import com.chaekchaek.book.client.AladinContributorParser;
 import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
-import java.time.LocalDate;
 import java.util.Objects;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
@@ -67,9 +67,6 @@ public class BookResolver {
 
     private Book toBook(AladinBookItem source) {
         AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
-        LocalDate publishedDate = source.pubDate() == null || source.pubDate().isBlank()
-                ? null
-                : LocalDate.parse(source.pubDate());
         return Book.create(
                 source.isbn13(),
                 source.title(),
@@ -79,7 +76,7 @@ public class BookResolver {
                 contributors.translators(),
                 source.publisher(),
                 source.categoryName(),
-                publishedDate,
+                source.publishedDate(),
                 source.totalPages()
         );
     }

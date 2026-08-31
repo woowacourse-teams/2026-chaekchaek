@@ -1,11 +1,11 @@
-package com.chaekchaek.book.service;
+package com.chaekchaek.book.client;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-final class AladinContributorParser {
+public final class AladinContributorParser {
 
     private static final Pattern ROLE_GROUP_END = Pattern.compile(
             "(?:\\s+\\(([^()]*)\\)|\\s*\\((지은이|옮긴이)\\))\\s*(?:,\\s*|$)"
@@ -14,7 +14,7 @@ final class AladinContributorParser {
     private AladinContributorParser() {
     }
 
-    static Contributors parse(String source) {
+    public static Contributors parse(String source) {
         if (source == null || source.isBlank()) {
             return new Contributors(List.of(), List.of());
         }
@@ -70,11 +70,11 @@ final class AladinContributorParser {
         }
     }
 
-    record Contributors(
+    public record Contributors(
             List<String> authors,
             List<String> translators
     ) {
-        Contributors {
+        public Contributors {
             authors = List.copyOf(authors);
             translators = List.copyOf(translators);
         }
