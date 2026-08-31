@@ -13,6 +13,8 @@ export const deleteReviewsReviewId = async ({
   return response.data;
 };
 
+import { createRequestHeaders } from '@/services/context/requestHeaders';
+
 import type { PatchReviewsReviewIdRequestDto, PatchReviewsReviewIdResponseDto } from './dto';
 
 export const patchReviewsReviewId = async ({
@@ -20,17 +22,11 @@ export const patchReviewsReviewId = async ({
   data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
   headers,
 }: PatchReviewsReviewIdRequestDto): Promise<PatchReviewsReviewIdResponseDto> => {
-  const guestToken = headers?.['X-Guest-Token'];
-
   const response = await instance(`/api/v1/reviews/${reviewId}`, {
     method: 'patch',
     // pathParams: [{ name: 'reviewId', value: reviewId }],
     data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
-    ...(guestToken && {
-      headers: {
-        'X-Guest-Token': guestToken,
-      },
-    }),
+    headers,
   });
 
   return response.data;

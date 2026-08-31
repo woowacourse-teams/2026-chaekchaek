@@ -5,6 +5,9 @@ export interface DeleteReviewsReviewIdRequestDto {
 }
 
 export type DeleteReviewsReviewIdResponseDto = ResponseDto<undefined>;
+
+import type { RequestHeaders } from '@/services/context/requestHeaders';
+
 export interface PatchReviewsReviewIdRequestDto {
   pathParams: [{ name: 'reviewId'; value: number }];
   data: {
@@ -15,7 +18,7 @@ export interface PatchReviewsReviewIdRequestDto {
     currentPage?: number | undefined;
     content: string;
   };
-  headers?: { 'X-Guest-Token': string };
+  headers?: RequestHeaders;
 }
 
 export type PatchReviewsReviewIdResponseDto = ResponseDto<{

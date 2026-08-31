@@ -13,9 +13,7 @@ export interface PatchReviewsReviewIdParams {
   content: string;
 }
 
-type RequestContext = {
-  guestToken: string;
-};
+import type { RequestContext } from '@/services/context/requestContext';
 
 export type PatchReviewsReviewId = (
   params: PatchReviewsReviewIdParams,
