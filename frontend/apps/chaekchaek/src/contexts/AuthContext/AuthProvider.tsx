@@ -21,9 +21,7 @@ export const AuthProvider = ({ children }: Props) => {
   const getMembersMeLoadData = useCallback(async () => {
     return await getMembersMe({});
   }, []);
-  const {
-    status: { data: membersMeData },
-  } = useLoadData({
+  const { status: membersMeStatus } = useLoadData({
     queryFn: getMembersMeLoadData,
   });
 
@@ -40,9 +38,16 @@ export const AuthProvider = ({ children }: Props) => {
   });
 
   useEffect(() => {
-    if (membersMeData) return login(membersMeData);
-    else postAuthGuestTokenMutate({});
-  }, [membersMeData]);
+    if (membersMeStatus.data) return login(membersMeStatus.data);
+
+    if (
+      membersMeStatus.status === 'error' &&
+      membersMeStatus.error &&
+      membersMeStatus.error?.status === 401
+    ) {
+      postAuthGuestTokenMutate({});
+    }
+  }, [membersMeStatus]);
 
   useEffect(() => {
     if (authGuestToken) {
