@@ -31,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BookSearchService {
 
+    public static final ActivityCounts EMPTY_ACTIVITY_COUNTS = new ActivityCounts(0L, 0L);
+
     private final AladinBookClient bookClient;
     private final BookRepository bookRepository;
     private final BookActivityCountReader activityCountReader;
