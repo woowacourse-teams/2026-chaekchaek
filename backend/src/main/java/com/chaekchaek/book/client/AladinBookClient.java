@@ -3,7 +3,6 @@ package com.chaekchaek.book.client;
 import com.chaekchaek.book.client.dto.AladinSearchResponse;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import java.net.URI;
-import java.time.LocalDate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -108,7 +107,7 @@ public class AladinBookClient implements BookSearchClient {
                 source.cover(),
                 contributors.authors(),
                 contributors.translators(),
-                source.pubDate() == null ? null : LocalDate.parse(source.pubDate()),
+                source.publishedDate(),
                 source.isbn13(),
                 source.categoryName(),
                 source.publisher()
