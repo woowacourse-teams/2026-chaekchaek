@@ -11,7 +11,11 @@ import type { Props, UserData, GuestData } from './AuthContext.types';
 export const AuthProvider = ({ children }: Props) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<UserData | null>(null);
-  const [guest, setGuest] = useState<GuestData | null>(null);
+
+  const guestStorageString = localStorage.getItem('guest');
+  const guestStorage =
+    guestStorageString && guestStorageString !== null ? JSON.parse(guestStorageString) : null;
+  const [guest, setGuest] = useState<GuestData | null>(guestStorage || null);
 
   const login = useCallback((userData: UserData) => {
     setIsAuthenticated(true);
@@ -41,6 +45,7 @@ export const AuthProvider = ({ children }: Props) => {
     if (membersMeStatus.data) return login(membersMeStatus.data);
 
     if (
+      guest === null &&
       membersMeStatus.status === 'error' &&
       membersMeStatus.error &&
       membersMeStatus.error?.status === 401
@@ -51,6 +56,7 @@ export const AuthProvider = ({ children }: Props) => {
 
   useEffect(() => {
     if (authGuestToken) {
+      localStorage.setItem('guest', JSON.stringify(authGuestToken));
       guestLogin(authGuestToken);
     }
   }, [authGuestToken]);
