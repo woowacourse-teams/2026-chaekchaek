@@ -1,8 +1,8 @@
 package com.chaekchaek.book.service;
 
-import com.chaekchaek.book.client.AladinBookClient;
-import com.chaekchaek.book.client.dto.AladinBookItem;
-import com.chaekchaek.book.client.dto.AladinSearchResponse;
+import com.chaekchaek.book.client.BookSearchClient;
+import com.chaekchaek.book.client.BookSearchItem;
+import com.chaekchaek.book.client.BookSearchResult;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.domain.Book;
@@ -31,9 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BookSearchService {
 
-    public static final ActivityCounts EMPTY_ACTIVITY_COUNTS = new ActivityCounts(0L, 0L);
-
-    private final AladinBookClient bookClient;
+    private final BookSearchClient bookClient;
     private final BookRepository bookRepository;
     private final BookActivityCountReader activityCountReader;
     private final CurrentMemberIdProvider currentMemberIdProvider;
@@ -44,10 +42,10 @@ public class BookSearchService {
     }
 
     public BookSearchResponse search(String query, int page, BookSearchSort sort) {
-        AladinSearchResponse source = bookClient.searchBooks(query, page);
-        List<AladinBookItem> searchedBooks = source.items();
+        BookSearchResult source = bookClient.search(query, page);
+        List<BookSearchItem> searchedBooks = source.items();
         List<String> searchResultIsbn13s = searchedBooks.stream()
-                .map(AladinBookItem::isbn13)
+                .map(BookSearchItem::isbn13)
                 .toList();
 
         List<Book> registeredBooks = bookRepository.findAllByIsbn13In(searchResultIsbn13s);
@@ -63,7 +61,7 @@ public class BookSearchService {
         Set<Long> libraryBookIds = findLibraryBookIds(memberId, registeredBooks);
 
         List<BookItem> items = new ArrayList<>(searchedBooks.size());
-        for (AladinBookItem searchedBook : searchedBooks) {
+        for (BookSearchItem searchedBook : searchedBooks) {
             Book registeredBook = registeredBooksByIsbn13.get(searchedBook.isbn13());
             ActivityCounts activityCounts = registeredBook == null
                     ? null
@@ -73,12 +71,9 @@ public class BookSearchService {
         }
         items.sort(comparator(sort));
 
-        Integer nextPage = source.hasNextPage()
-                ? source.startIndex() + 1
-                : null;
         return new BookSearchResponse(
-                source.totalResults(),
-                nextPage,
+                source.totalCount(),
+                source.nextPage(),
                 List.copyOf(items)
         );
     }
@@ -109,27 +104,30 @@ public class BookSearchService {
     }
 
     private BookItem toBookItem(
-            AladinBookItem source,
+            BookSearchItem source,
             Book registeredBook,
             ActivityCounts activityCounts,
             OptionalLong memberId,
             Set<Long> libraryBookIds
     ) {
-        AladinContributorParser.Contributors contributors =
-                AladinContributorParser.parse(source.author());
-
         return new BookItem(
                 registeredBook == null ? null : registeredBook.getId(),
                 source.title(),
-                source.cover(),
-                contributors.authors(),
-                contributors.translators(),
-                source.pubDate(),
+                source.coverImageUrl(),
+                source.authors(),
+                source.translators(),
+                source.publishedDate() == null
+                        ? null
+                        : source.publishedDate().toString(),
                 source.isbn13(),
-                source.categoryName(),
+                source.category(),
                 source.publisher(),
-                activityCounts == null ? null : Math.toIntExact(activityCounts.reviewCount()),
-                activityCounts == null ? null : Math.toIntExact(activityCounts.replyCount()),
+                activityCounts == null
+                        ? null
+                        : Math.toIntExact(activityCounts.reviewCount()),
+                activityCounts == null
+                        ? null
+                        : Math.toIntExact(activityCounts.replyCount()),
                 isRegisteredInMyLibrary(registeredBook, memberId, libraryBookIds)
         );
     }
