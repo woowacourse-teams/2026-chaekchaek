@@ -23,8 +23,9 @@ import {
   postReviewsReviewIdReactions,
 } from '@/services/apis/reviewsReviewIdReactions/repository';
 import { deleteReviewsReviewId } from '@/services/apis/reviewsReviewId/repository';
-
 import { useExecute } from '@/services/core/useExecute';
+
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import type { BookReviewProps } from './BookReview.types';
 import { WriteReply } from './WriteReply';
@@ -37,6 +38,7 @@ const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
 
 export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
+  const { guest } = useAuthContext();
   const getReviewsReviewIdRepliesLoadData = useCallback(() => {
     return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
   }, [review.reviewId]);
@@ -53,7 +55,14 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
   });
 
   const handleClickDeleteReview = async (reviewId: number) => {
-    await deleteReview({ reviewId });
+    await deleteReview(
+      { reviewId },
+      guest?.guestToken
+        ? {
+            guestToken: guest?.guestToken,
+          }
+        : undefined,
+    );
 
     onReviewsRefresh();
   };
