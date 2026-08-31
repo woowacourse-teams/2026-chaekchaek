@@ -75,6 +75,7 @@ export const WriteReviewDialog = ({
         ...requestData,
       });
     } else {
+      if (!guest) return;
       await postBookReviewByIsbnMutate(
         {
           isbn13: isbn,
