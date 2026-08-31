@@ -12,16 +12,19 @@ class AladinSearchResponseTest {
 
     @ParameterizedTest
     @CsvSource({
-            "21, true",
-            "20, false"
+            "21, 2, 10, true",
+            "20, 2, 10, false",
+            "0, 1, 10, false"
     })
     @DisplayName("현재 페이지 범위와 전체 결과 수를 비교해 다음 페이지를 판정한다")
     void should_DetermineHasNextPage_When_ComparingPageRangeWithTotalResults(
             int totalResults,
+            int startIndex,
+            int itemsPerPage,
             boolean expected
     ) {
         // given
-        AladinSearchResponse response = response(totalResults, 2, 10);
+        AladinSearchResponse response = response(totalResults, startIndex, itemsPerPage);
 
         // when & then
         assertThat(response.hasNextPage()).isEqualTo(expected);
