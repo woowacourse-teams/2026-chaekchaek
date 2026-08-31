@@ -1,5 +1,7 @@
 package com.chaekchaek.book.service;
 
+import static org.springframework.web.util.HtmlUtils.htmlUnescape;
+
 import com.chaekchaek.book.client.AladinBookClient;
 import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.domain.Book;
@@ -72,7 +74,7 @@ public class BookResolver {
                 source.isbn13(),
                 source.title(),
                 source.cover(),
-                source.description(),
+                htmlUnescape(source.description()),
                 contributors.authors(),
                 contributors.translators(),
                 source.publisher(),
