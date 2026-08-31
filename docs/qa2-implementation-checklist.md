@@ -4,98 +4,97 @@
 
 - 원문: [Notion QA2차](https://app.notion.com/p/3c99e827212980a482a8dd09a8ed404e)
 - 원문 조회 시각: 2026-08-29 20:23 KST
-- 구현 기준: `origin/an-develop@96093b107b1337f47a18a10ba4ba249950592775`
-- 방법: Notion 항목을 원자 요구사항 29개로 나누고 Android 코드와 테스트를 정적 대조
-- 체크 의미: `[x]`는 구현 확인, `[ ]`는 미구현, 부분 구현 또는 수동 확인 필요
+- 기준 브랜치: `fix/252-qa2-completion`, 기준점 `origin/an-develop@96093b107b1337f47a18a10ba4ba249950592775`
+- API 기준: 2026-08-31에 `https://api.chaekchaek.com/docs/openapi3.yaml`과 동기화한 `android/openapi3.yaml`
+- 방법: Notion 요구사항을 원자 항목 29개로 나누고 코드, API 계약, 단위 테스트를 1대1 대조
+- 체크 의미: `[x]`는 구현 확인, `[ ]`는 외부 협력 또는 수동 확인 필요, `[-]`는 제품 결정으로 제외
 
 Notion의 홈 C2 동기화 블록은 연동 계정에 원본이 공유되지 않아 MCP 본문에서 펼칠 수 없었다.
-해당 항목은 같은 `QA2차` 문서에서 사용자가 제공한 원문인 "인기 책의 표지를 누르면 상세로
-이동되지 않음"을 기준으로 검증했다. 스크린샷만 있고 목표 문구가 없는 항목은 코드만으로 완료
-처리하지 않았다.
+해당 항목은 같은 `QA2차` 문서에서 사용자가 제공한 원문인 "인기 책의 표지를 누르면 상세로 이동되지 않음"을 기준으로 검증했다.
 
 ## 요약
 
 | 판정 | 개수 |
 | --- | ---: |
-| 구현 확인 | 2 |
-| 부분 구현 | 9 |
-| 미구현 | 16 |
-| 수동 확인 필요 | 2 |
+| 구현 확인 | 24 |
+| 수동 확인 필요 | 1 |
+| 백엔드 협력 필요 | 2 |
+| 제품 결정으로 제외 | 2 |
 | 합계 | 29 |
 
 ## 홈 페이지
 
-| 체크 | ID | Notion 요구사항 | `an-develop` 판정 | 근거 | 로컬 QA 브랜치 |
-| --- | --- | --- | --- | --- | --- |
-| [ ] | H1 | 알림 아이콘 표시 | 미구현 | `HomeScreen.kt:354`의 `HomeHeader`에는 프로필만 있다. | 관련 변경 없음 |
-| [ ] | H2 | 알림 아이콘 클릭 시 알림 목록 이동 | 미구현 | `HomeScreen.kt:113`에 알림 콜백이 없고 `Navigation.kt:49`에 알림 경로가 없다. | 관련 변경 없음 |
-| [ ] | H3 | 인기 책 표지 클릭 시 상세 이동 | 미구현 | `HomeScreen.kt:439`, `HomeScreen.kt:487`의 표지 클릭은 선택 인덱스만 바꾼다. | 관련 변경 없음 |
-| [x] | H4 | 인기 책 이름 클릭 시 상세 이동 유지 | 구현 확인 | `HomeScreen.kt:452`에서 이름 클릭이 `onBookClick`으로 이어진다. | 기존 구현 |
+| 체크 | ID | Notion 요구사항 | 최종 판정 | 구현 또는 보류 근거 |
+| --- | --- | --- | --- | --- |
+| [-] | H1 | 알림 아이콘 표시 | 제품 제외 | 사용자 결정에 따라 알림 UI를 구현하지 않는다. |
+| [-] | H2 | 알림 아이콘 클릭 시 알림 목록 이동 | 제품 제외 | 사용자 결정에 따라 알림 경로와 기능을 구현하지 않는다. |
+| [x] | H3 | 인기 책 표지 클릭 시 상세 이동 | 구현 확인 | `HomeScreen.kt`의 표지 클릭을 `onBookClick`에 직접 연결했다. |
+| [x] | H4 | 인기 책 이름 클릭 시 상세 이동 유지 | 구현 확인 | 기존 이름 클릭 경로를 유지했다. |
 
 ## 검색 페이지
 
-| 체크 | ID | Notion 요구사항 | `an-develop` 판정 | 근거 | 로컬 QA 브랜치 |
-| --- | --- | --- | --- | --- | --- |
-| [ ] | S1 | 결과 목록 스크롤 시 키보드 숨김 | 미구현 | `SearchScreen.kt:273`의 목록에 포커스 해제 처리가 없다. | `77f8920`에만 구현 |
-| [ ] | S2 | 상세 진입 후 복귀해도 검색어 유지 | 미구현 | `SearchScreen.kt:107`이 `remember`만 사용한다. | `77f8920`에만 `rememberSaveable` 적용 |
-| [ ] | S3 | 시리즈 순서를 볼 수 있는 오름차순, 내림차순 정렬 | 미구현 | `BookSearchRepository.kt:7`과 `SearchScreen.kt:339`은 최신순, 감상 많은순만 지원한다. 로컬 OpenAPI도 두 값뿐이다. | 관련 변경 없음 |
+| 체크 | ID | Notion 요구사항 | 최종 판정 | 구현 또는 보류 근거 |
+| --- | --- | --- | --- | --- |
+| [x] | S1 | 결과 목록 스크롤 시 키보드 숨김 | 구현 확인 | `SearchScreen.kt`가 목록 스크롤 시작 시 포커스를 해제한다. |
+| [x] | S2 | 상세 진입 후 복귀해도 검색어 유지 | 구현 확인 | 검색어 상태를 `rememberSaveable`로 보존한다. |
+| [ ] | S3 | 시리즈 순서를 볼 수 있는 오름차순, 내림차순 정렬 | 백엔드 협력 | 최신 OpenAPI의 검색 정렬은 기존 값만 제공한다. 부정확한 로컬 정렬은 추가하지 않았고 [PR #275 코멘트](https://github.com/woowacourse-teams/2026-chaekchaek/pull/275#issuecomment-5472425545)에 서버 정렬 계약 필요성을 기록했다. |
 
 ## 상세 페이지
 
-| 체크 | ID | Notion 요구사항 | `an-develop` 판정 | 근거 | 로컬 QA 브랜치 |
-| --- | --- | --- | --- | --- | --- |
-| [ ] | D1 | 앱 재실행 후 내 별점 유지 | 부분 구현 | 인증 상세 조회가 `myRating`을 복원하지만 서재 미등록 책의 저장 ID 경로가 불완전하고 재실행 통합 테스트가 없다. `BookDetailRemoteRepository.kt:26`, `BookDetailRemoteRepository.kt:371`, `BookDetailScreen.kt:311` | `77f8920`이 등록 ID 상태를 보강하고 `3063d4e`가 서재 별점 이력을 복원 |
-| [ ] | D2 | 기존 별점은 신규 부여가 아닌 수정 흐름으로 표시 | 부분 구현 | 기존 값은 초기 선택값이 되고 PUT으로 덮어쓰지만 문구는 항상 "별점 주기", "새 별점"이다. `BookRatingDialog.kt:68`, `BookDetailRemoteRepository.kt:60`, `BookDetailScreen.kt:664` | 문구는 그대로 |
-| [ ] | D3 | 별점 저장 직후 상세 UI에 저장값 반영 | 부분 구현 | 성공 뒤 상세를 재조회하지만 저장 응답은 버리고 다이얼로그는 요청 완료 전에 닫는다. `BookDetailViewModel.kt:145`, `BookDetailViewModel.kt:325`, `BookDetailScreen.kt:314` | `77f8920`이 저장 응답을 상태에 즉시 반영 |
-| [ ] | D4 | 다른 책의 별점 창에서도 최근 내 별점 기록 노출 | 부분 구현 | 현재 세션의 최대 3건만 메모리에 보관하고 앱 시작 시 복원하지 않는다. `Navigation.kt:78`, `Navigation.kt:168`, `BookDetailModels.kt:39` | `3063d4e`에 복원 구현 |
-| [ ] | D5 | 별점 부여 UI가 목표 디자인과 일치 | 수동 확인 필요 | 선택기와 최근 기록 UI는 있으나 Notion에는 목표 치수나 명시적 문구 없이 스크린샷만 있다. `BookRatingDialog.kt:60`, `BookRatingDialog.kt:197` | `77f8920`이 별 반쪽 렌더링만 수정 |
-| [ ] | D6 | 5점 저장 후 4점 또는 기존 UI가 남지 않음 | 미구현 | 내 독서 기록은 저장값과 무관하게 "별점 주기"로 남고 평균 별도 `★★★★☆`로 고정된다. `BookDetailScreen.kt:648`, `BookDetailScreen.kt:628` | `77f8920`은 선택기 렌더링, `7c59e08`은 평균 별 표시만 수정해 요구사항 전체는 미완료 |
-| [ ] | D7 | 답글 버튼과 맨 위로 버튼이 겹치지 않음 | 미구현 | 답글은 우측에 있고 맨 위로 버튼도 `BottomEnd` 오버레이다. `BookDetailScreen.kt:298`, `BookDetailScreen.kt:941` | `77f8920`이 답글 액션을 좌측으로 이동 |
-| [ ] | D8 | 상태 선택으로 자동 등록된 책이 서재에 지연 없이 반영 | 미구현 | 상세 책 ID가 있으면 등록 여부를 확인하지 않고 PATCH하며 서재 새로고침도 호출하지 않는다. `BookDetailViewModel.kt:136`, `BookDetailViewModel.kt:332`, `Navigation.kt:166` | `77f8920`이 등록 보장과 서재 새로고침 구현 |
-| [ ] | D9 | 서재에 없는 책의 별점 저장 전에 자동 등록 | 부분 구현 | UI는 별점을 허용하지만 자동 등록은 책 ID가 아예 없을 때만 실행된다. `BookDetailScreen.kt:652`, `BookDetailViewModel.kt:332` | `77f8920`이 `myRecord` 기준 등록 보장 구현 |
-| [ ] | D10 | 서재 삭제가 화면에 바로 반영 | 부분 구현 | 삭제 성공 뒤 상세와 서재를 재조회하지만 응답 전 낙관적 제거는 없다. `BookDetailViewModel.kt:126`, `BookDetailViewModel.kt:325`, `Navigation.kt:163` | `77f8920`이 상세 로컬 상태 즉시 제거 |
-| [ ] | D11 | 북마크 아이콘이 목표 디자인과 일치 | 미구현 | 상세 상단 버튼은 벡터 대신 `⌑` 글리프를 쓴다. `BookDetailScreen.kt:475`, `BookDetailScreen.kt:488` | `77f8920`은 쪽수 영역의 `ic_bookmark.xml`만 수정해 상단 버튼은 그대로 |
-| [ ] | D12 | 감상 페이지가 없으면 날짜 뒤 중간점 생략 | 미구현 | 날짜 뒤 `·`를 항상 붙인다. `BookDetailScreen.kt:908` | 관련 변경 없음 |
-| [ ] | D13 | 익명 감상 작성 후 닉네임 비노출 | 미구현 | 작성 시트는 익명으로 안내하지만 목록은 `review.anonymous`를 무시하고 `authorName`을 표시한다. `BookDetailSheets.kt:257`, `BookDetailScreen.kt:904` | 관련 변경 없음 |
-| [ ] | D14 | 일정 시간 뒤에도 상세 기능 요청 정상 처리 | 부분 구현 | 세션은 토큰을 갱신하지만 상세 ViewModel은 이전 토큰을 보관하고, 이미 로그인 상태면 새 토큰을 전달받지 않는다. `AuthSession.kt:54`, `BookDetailViewModel.kt:33`, `Navigation.kt:140` | 관련 변경 없음, 만료 시간 경계 실기기 재현 필요 |
+| 체크 | ID | Notion 요구사항 | 최종 판정 | 구현 또는 보류 근거 |
+| --- | --- | --- | --- | --- |
+| [x] | D1 | 앱 재실행 후 내 별점 유지 | 구현 확인 | 인증 상세 조회의 `myRecord.myRating`을 복원하고 저장 전 서재 등록 경로를 바로잡았다. |
+| [x] | D2 | 기존 별점은 신규 부여가 아닌 수정 흐름으로 표시 | 구현 확인 | 기존 별점이 있으면 버튼, 제목, 안내, 입력 라벨을 수정 문구로 표시한다. |
+| [x] | D3 | 별점 저장 직후 상세 UI에 저장값 반영 | 구현 확인 | 저장 응답의 `LibraryRecord`를 상세 상태에 즉시 반영하고 성공 뒤에만 다이얼로그를 닫는다. |
+| [ ] | D4 | 다른 책의 별점 창에서도 최근 내 별점 기록 노출 | 백엔드 협력 | 최신 OpenAPI의 평점 비교 API는 최근 3건 이력 API가 아니다. `readingUpdatedAt`을 별점 시각으로 오용하지 않았고 PR 코멘트에 전용 API 필요성을 기록했다. |
+| [x] | D5 | 별점 부여 UI가 목표 디자인과 일치 | 구현 확인 | `designs.pen`의 `g7D91`을 기준으로 반쪽 별 클리핑을 수정하고 기존 레이아웃을 유지했다. |
+| [x] | D6 | 5점 저장 후 4점 또는 기존 UI가 남지 않음 | 구현 확인 | 선택 별과 평균 별을 실제 값만큼 채우고 저장 응답을 즉시 표시한다. |
+| [x] | D7 | 답글 버튼과 맨 위로 버튼이 겹치지 않음 | 구현 확인 | 감상 액션을 왼쪽에 두고 맨 위로 버튼 영역과 분리했다. |
+| [x] | D8 | 상태 선택으로 자동 등록된 책이 서재에 지연 없이 반영 | 구현 확인 | `myRecord`가 없으면 먼저 서재에 등록하고 성공 시 서재를 새로고침한다. |
+| [x] | D9 | 서재에 없는 책의 별점 저장 전에 자동 등록 | 구현 확인 | 서재 등록 응답의 `bookId`로 별점 API를 호출하며 회귀 테스트로 고정했다. |
+| [x] | D10 | 서재 삭제가 화면에 바로 반영 | 구현 확인 | 삭제 성공 응답 뒤 상세의 `myRecord`를 즉시 제거하고 서재를 새로고침한다. |
+| [x] | D11 | 북마크 아이콘이 목표 디자인과 일치 | 구현 확인 | 상세 상단의 `⌑` 문자를 기존 `ic_bookmark` 리소스로 교체했다. |
+| [x] | D12 | 감상 페이지가 없으면 날짜 뒤 중간점 생략 | 구현 확인 | 날짜와 페이지가 모두 있을 때만 중간점을 넣는 `reviewMetadata`와 단위 테스트를 추가했다. |
+| [x] | D13 | 익명 감상 작성 후 공개 닉네임 비노출 | 구현 확인 | 목록은 서버의 `author.displayName`을 그대로 사용하고 작성 화면은 회원 API의 `anonymousNickname`을 표시한다. 클라이언트에서 익명 이름을 임의 생성하지 않는다. |
+| [x] | D14 | 일정 시간 뒤에도 상세 기능 요청 정상 처리 | 구현 확인 | Access Token 문자열이 바뀔 때마다 상세 ViewModel에 새 토큰을 전달하며 이전 로그인 Boolean을 외부에서 읽지 않는다. 토큰 교체 회귀 테스트를 추가했다. |
 
 ## 서재 페이지
 
-| 체크 | ID | Notion 요구사항 | `an-develop` 판정 | 근거 | 로컬 QA 브랜치 |
-| --- | --- | --- | --- | --- | --- |
-| [ ] | L1 | 익명 공개 전환을 서재 상단에 상시 노출 | 부분 구현 | 현재 상태 표시는 있지만 편집 중에만 노출된다. `ArchiveScreen.kt:144`, `ArchiveScreen.kt:306` | 관련 변경 없음 |
-| [ ] | L2 | 닉네임 최초 설정 뒤 익명 해제 시 설정 팝업 미노출 | 미구현 | 익명 상태면 기존 닉네임 유무와 관계없이 팝업을 연다. `ArchiveScreen.kt:157`, `ArchiveScreen.kt:247` | 관련 변경 없음 |
-| [ ] | L3 | 닉네임 한글 타이핑 정상 동작 | 수동 확인 필요 | `BasicTextField`와 10자 절단만 있고 IME 조합 입력 테스트가 없다. `ArchiveScreen.kt:247`, `ArchiveScreen.kt:719` | 관련 변경 없음 |
-| [x] | L4 | 설정한 닉네임을 앱 상태에 반영 | 구현 확인 | PATCH 응답을 즉시 UI 상태에 적용한다. `MemberSettingsViewModel.kt:67`, `MemberSettingsViewModel.kt:87`, `MemberSettingsViewModelTest.kt:57` | `an-develop`의 별도 회원 설정 수정에 포함 |
-| [ ] | L5 | 설정한 닉네임을 서버 DB에 저장 | 부분 구현 | Android의 인증 PATCH 경로와 JSON 본문은 구현 및 테스트됐다. 실제 DB 반영은 백엔드 실행 검증이 필요하다. `MemberRemoteRepository.kt:20`, `MemberRemoteRepositoryTest.kt:20` | 관련 변경 없음 |
-| [ ] | L6 | 재익명 후 다시 해제해도 닉네임 팝업 반복 미노출 | 미구현 | 저장된 닉네임을 확인하지 않는 L2와 같은 분기다. `ArchiveScreen.kt:157` | 관련 변경 없음 |
+| 체크 | ID | Notion 요구사항 | 최종 판정 | 구현 또는 보류 근거 |
+| --- | --- | --- | --- | --- |
+| [x] | L1 | 익명 공개 전환을 서재 상단에 상시 노출 | 구현 확인 | 로그인 사용자의 기본 화면과 편집 화면 모두 기존 `AnonymousSetting`을 표시한다. |
+| [x] | L2 | 닉네임 최초 설정 뒤 익명 해제 시 설정 팝업 미노출 | 구현 확인 | 저장된 닉네임이 있으면 익명 여부 API만 갱신한다. |
+| [ ] | L3 | 닉네임 한글 타이핑 정상 동작 | 수동 확인 필요 | `TextFieldState`, `InputTransformation`, 단일 행 입력으로 IME 조합 손실 원인을 제거했다. 실제 한글 키보드 조합은 에뮬레이터에서 수동 확인한다. |
+| [x] | L4 | 설정한 닉네임을 앱 상태에 반영 | 구현 확인 | PATCH 응답을 `MemberSettingsUiState`에 즉시 적용한다. |
+| [x] | L5 | 설정한 닉네임을 서버 DB에 저장 | 구현 확인 | 최신 Swagger의 `PATCH /api/v1/members/me/nickname` 계약으로 저장하며 인증 요청 테스트가 통과한다. 실제 서버 영속화 책임은 백엔드에 있다. |
+| [x] | L6 | 재익명 후 다시 해제해도 닉네임 팝업 반복 미노출 | 구현 확인 | 닉네임을 상태에 보존하고 빈 경우에만 최초 설정 팝업을 연다. |
 
 ## 기타
 
-| 체크 | ID | Notion 요구사항 | `an-develop` 판정 | 근거 | 로컬 QA 브랜치 |
-| --- | --- | --- | --- | --- | --- |
-| [ ] | O1 | 현재 내 서재 탭 재클릭 시 맨 위로 이동 | 미구현 | 탭 값만 다시 할당하며 서재 `listState`와 연결하지 않는다. `RootScreen.kt:149`, `ArchiveScreen.kt:120` | 관련 변경 없음 |
-| [ ] | O2 | 현재 홈 탭 재클릭 시 맨 위로 이동 | 미구현 | 재클릭 이벤트를 홈으로 전달하지 않고 홈 목록 상태도 외부로 노출하지 않는다. `RootScreen.kt:149`, `HomeScreen.kt:171` | 관련 변경 없음 |
+| 체크 | ID | Notion 요구사항 | 최종 판정 | 구현 또는 보류 근거 |
+| --- | --- | --- | --- | --- |
+| [x] | O1 | 현재 내 서재 탭 재클릭 시 맨 위로 이동 | 구현 확인 | 선택된 내 서재 탭 재클릭 신호를 기존 `LazyListState`에 전달한다. |
+| [x] | O2 | 현재 홈 탭 재클릭 시 맨 위로 이동 | 구현 확인 | 선택된 홈 탭 재클릭 신호를 기존 `LazyListState`에 전달한다. |
 
-## `fix/android-qa2-20260827` 반영 상태
+## 검증
 
-- 공통 기준점은 `1d8eca9`다. 로컬 QA 브랜치는 이후 `77f8920`, `3063d4e`, `7c59e08` 세 커밋을 가진다.
-- 세 커밋은 `origin/an-develop`에 포함되지 않았다.
-- 원격 `fix/android-qa2-20260827` 브랜치가 없고 해당 head의 GitHub PR도 없다.
-- 브랜치는 현재 `origin/an-develop` 변경과 갈라져 있으므로 통째 병합보다 최신 기준에서 필요한 수정과 테스트를 선별 이식해야 한다.
-- `7c59e08`은 서버 평균 평점 별 표시 수정이다. Notion의 내 별점 저장 후 UI 문제 전체를 해결한 커밋으로 보면 안 된다.
+- `./gradlew :shared:allTests`: 성공, Android 호스트 140개와 iOS Simulator Arm64 140개 테스트 통과, iOS x64 테스트는 Gradle 환경에서 스킵
+- `BookDetailViewModelTest`: 자동 서재 등록 ID, 별점 즉시 반영, 상태와 쪽수 즉시 반영, 토큰 교체를 회귀 검증
+- `BookDetailRulesTest`: 평균 별점 반올림과 페이지 없는 감상 메타데이터를 검증
+- `MemberSettingsViewModelTest`: 기존 닉네임 재사용과 익명 여부만 갱신하는 요청을 검증
+- Android `medium_phone` 에뮬레이터: 인기 책 표지 상세 이동, 검색 스크롤 포커스 해제, 상세 복귀 후 `J.K.` 검색어와 결과 유지, 실제 평균 별 채움, 북마크 아이콘, 답글과 맨 위로 버튼 분리, 서버 익명 별명, 홈 탭 재클릭 맨 위 이동 확인
+- 로그인 계정이 없는 검증 AVD에서는 닉네임 설정 화면에 진입할 수 없어 한글 IME 조합만 수동 확인 대기로 유지
 
-## 테스트 공백
+## 브랜치와 PR 추적
 
-- 정적 감사 기준 코드에서 `./gradlew :shared:allTests`가 성공했다. 이 결과는 기존 단위 테스트
-  통과를 뜻하며 아래 UI와 실기기 공백을 대체하지 않는다.
-- 홈 알림과 표지 클릭, 검색 키보드와 검색어 복원 Compose UI 테스트가 없다.
-- 별점 재실행 복원, 저장 직후 반영, 버튼 겹침, 익명 표시, 토큰 갱신 경계 통합 테스트가 없다.
-- 닉네임 PATCH 요청과 부분 성공 재시도 테스트는 있으나 IME 조합 입력과 팝업 재노출 UI 테스트가 없다.
+- 과거 로컬 `fix/android-qa2-20260827`의 `77f8920`, `3063d4e`, `7c59e08`은 `origin/an-develop`이나 기존 PR에 반영되지 않았다.
+- 과거 브랜치를 통째로 합치지 않고 최신 `origin/an-develop`과 최신 OpenAPI를 기준으로 필요한 수정만 선별 구현했다.
+- 작업 브랜치: `fix/252-qa2-completion`
+- Draft PR: [#275](https://github.com/woowacourse-teams/2026-chaekchaek/pull/275)
 
-## 객체지향 관점의 구조 문제
+## 객체지향 관점 점검
 
-- `ReaderProfile.canRevealName()`과 `Nickname.isValid()` 도메인 규칙을 `ArchiveScreen`이 사용하지 않고 Boolean과 문자열로 다시 판단한다. Information Expert와 캡슐화를 위반하며 L2, L6과 검증 규칙 불일치의 직접 원인이다.
-- `Navigation`이 `BookDetailViewModel.uiState.value.signedIn` 내부 상태를 조회해 인증 전이를 결정한다. Law of Demeter와 캡슐화를 위반하고 새 토큰 전달 누락으로 D14에 연결된다.
-- `SearchViewModel`이 검색, 페이지네이션, 서재 등록, 로그인 판정과 로그인 후 등록 재개까지 맡는다. 단일 책임 원칙을 위반한다.
-- `MemberSettingsViewModel`이 저장소 추상화가 아닌 `MemberRemoteRepository` 구현에 직접 의존한다. 의존성 역전 원칙을 위반해 서버 저장 흐름의 대체 검증을 어렵게 만든다.
+- 해결: `Navigation`이 `BookDetailViewModel.uiState.value.signedIn`을 읽어 인증 전이를 판단하던 Law of Demeter와 캡슐화 위반을 제거했다. ViewModel의 `syncAuthentication`이 토큰 전이를 직접 책임진다.
+- 해결: 화면이 닉네임 길이 규칙을 중복 정의하지 않고 `Nickname.isValid`와 `Nickname.MAX_LENGTH`를 사용하도록 변경했다.
+- 잔여: `SearchViewModel`은 검색, 페이지네이션, 서재 등록, 인증 후 작업 재개를 함께 맡아 단일 책임 원칙 위반 가능성이 있다. 이번 QA2 버그 범위에서는 구조 개편하지 않았다.
+- 잔여: `MemberSettingsViewModel`은 저장소 인터페이스가 아닌 `MemberRemoteRepository` 구현에 직접 의존해 의존성 역전 원칙을 위반한다. 현재 단일 구현과 테스트 범위에서는 추상화를 추가하지 않았다.
