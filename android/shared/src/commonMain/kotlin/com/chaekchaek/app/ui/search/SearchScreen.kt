@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -75,11 +77,14 @@ fun SearchRoute(
 ) {
   val state by viewModel.uiState.collectAsState()
   val sort by viewModel.sort.collectAsState()
+  val query by viewModel.query.collectAsState()
   SearchScreen(
     state = state,
     sort = sort,
+    query = query,
     registeredBookIds = registeredBookIds,
     onSearch = viewModel::search,
+    onQueryChange = viewModel::updateQuery,
     onClear = viewModel::clear,
     onRegister = viewModel::register,
     onLoadMore = viewModel::loadMore,
@@ -94,8 +99,10 @@ fun SearchRoute(
 fun SearchScreen(
   state: SearchUiState,
   sort: BookSearchSort,
+  query: String,
   registeredBookIds: Set<String>,
   onSearch: (String) -> Unit,
+  onQueryChange: (String) -> Unit,
   onClear: () -> Unit,
   onRegister: (BookSearchResult) -> Unit,
   onLoadMore: () -> Unit,
@@ -104,7 +111,6 @@ fun SearchScreen(
   onBack: () -> Unit = {},
   onBookClick: (BookDetailTarget) -> Unit = {},
 ) {
-  var query by remember { mutableStateOf("") }
   val leaveSearch = {
     onClear()
     onBack()
@@ -120,7 +126,7 @@ fun SearchScreen(
     SearchTopBar(
       query = query,
       onQueryChange = {
-        query = it
+        onQueryChange(it)
         if (it.isEmpty()) onClear()
       },
       onSearch = { onSearch(query) },
@@ -270,9 +276,14 @@ private fun SearchResults(
   onBookClick: (BookDetailTarget) -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val listState = rememberLazyListState()
+  val focusManager = LocalFocusManager.current
+  LaunchedEffect(listState.isScrollInProgress) {
+    if (listState.isScrollInProgress) focusManager.clearFocus()
+  }
   Column(modifier = modifier.fillMaxWidth()) {
     SearchResultHeader(totalCount, sort, onSortSelect)
-    LazyColumn(modifier = Modifier.weight(1f)) {
+    LazyColumn(modifier = Modifier.weight(1f), state = listState) {
       items(results) { book ->
         SearchResultRow(
           book = book,

@@ -32,7 +32,7 @@ class MemberSettingsViewModelTest {
         val requests = mutableListOf<HttpRequestData>()
         val client = testClient { request ->
             requests += request
-            respondJson("""{"memberId":9,"nickname":"서버 이름","displayAnonymous":false}""")
+            respondJson("""{"memberId":9,"nickname":"서버 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""")
         }
 
         try {
@@ -41,12 +41,45 @@ class MemberSettingsViewModelTest {
             viewModel.authenticate("access-token")
             viewModel.uiState.first { it.nickname == "서버 이름" }
 
+            assertEquals(true, viewModel.uiState.value.signedIn)
             assertEquals(false, viewModel.uiState.value.anonymousReviews)
+            assertEquals("우아한 달빛 참새", viewModel.uiState.value.anonymousNickname)
             assertEquals("Bearer access-token", requests.single().headers[HttpHeaders.Authorization])
 
             viewModel.authenticate(null)
 
             assertEquals(MemberSettingsUiState(), viewModel.uiState.value)
+        } finally {
+            client.close()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun existingNicknameOnlyUpdatesAnonymityWhenRevealingName() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val requests = mutableListOf<HttpRequestData>()
+        val client = testClient { request ->
+            requests += request
+            when (request.url.encodedPath) {
+                "/api/v1/members/me" ->
+                    respondJson("""{"memberId":9,"nickname":"기존 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":true}""")
+                "/api/v1/members/me/anonymity" ->
+                    respondJson("""{"memberId":9,"nickname":"기존 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""")
+                else -> error("Unexpected request: ${request.url.encodedPath}")
+            }
+        }
+
+        try {
+            val viewModel = MemberSettingsViewModel(MemberRemoteRepository(client))
+            viewModel.authenticate("access-token")
+            viewModel.uiState.first { it.nickname == "기존 이름" }
+            requests.clear()
+
+            viewModel.setAnonymousReviews(false, "기존 이름")
+            viewModel.uiState.first { !it.anonymousReviews }
+
+            assertEquals(listOf("/api/v1/members/me/anonymity"), requests.map { it.url.encodedPath })
         } finally {
             client.close()
             Dispatchers.resetMain()
@@ -62,15 +95,15 @@ class MemberSettingsViewModelTest {
             requests += request
             when (request.url.encodedPath) {
                 "/api/v1/members/me" ->
-                    respondJson("""{"memberId":9,"nickname":"이전 이름","displayAnonymous":true}""")
+                    respondJson("""{"memberId":9,"nickname":"이전 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":true}""")
                 "/api/v1/members/me/nickname" ->
-                    respondJson("""{"memberId":9,"nickname":"새 이름","displayAnonymous":true}""")
+                    respondJson("""{"memberId":9,"nickname":"새 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":true}""")
                 "/api/v1/members/me/anonymity" -> {
                     anonymityRequests += 1
                     if (anonymityRequests == 1) {
                         respondJson("""{"code":"SERVER_ERROR"}""", HttpStatusCode.InternalServerError)
                     } else {
-                        respondJson("""{"memberId":9,"nickname":"새 이름","displayAnonymous":false}""")
+                        respondJson("""{"memberId":9,"nickname":"새 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""")
                     }
                 }
                 else -> error("Unexpected request: ${request.url.encodedPath}")

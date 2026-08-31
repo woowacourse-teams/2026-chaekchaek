@@ -41,6 +41,7 @@ class MemberRemoteRepository(private val client: HttpClient = createHttpClient()
 data class RemoteMemberProfile(
     val memberId: Long,
     val nickname: String,
+    val anonymousNickname: String,
     val displayAnonymous: Boolean,
 )
 
@@ -54,7 +55,8 @@ private data class AnonymityRequest(val displayAnonymous: Boolean)
 private data class MemberResponseDto(
     val memberId: Long,
     val nickname: String? = null,
+    val anonymousNickname: String,
     val displayAnonymous: Boolean,
 ) {
-    fun toRemoteMemberProfile() = RemoteMemberProfile(memberId, nickname.orEmpty(), displayAnonymous)
+    fun toRemoteMemberProfile() = RemoteMemberProfile(memberId, nickname.orEmpty(), anonymousNickname, displayAnonymous)
 }

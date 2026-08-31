@@ -5,7 +5,6 @@ import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
-import com.chaekchaek.app.domain.rating.Rating
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -29,20 +28,12 @@ enum class ReadingStatus(val label: String, val apiValue: String) {
     Finished("다 읽음", "FINISHED"),
 }
 
-data class RatedBookUiModel(
-    val bookId: String,
+data class RatingComparisonBookUiModel(
+    val bookId: Long,
     val title: String,
-    val rating: Rating,
+    val rating: Double,
     val ratedAtLabel: String,
 )
-
-internal fun List<RatedBookUiModel>.withRecentRating(
-    bookId: String,
-    title: String,
-    rating: Rating,
-    ratedAtLabel: String,
-): List<RatedBookUiModel> =
-    (filterNot { it.bookId == bookId } + RatedBookUiModel(bookId, title, rating, ratedAtLabel)).takeLast(3)
 
 sealed interface BookDetailAuthenticatedAction {
     val requiresMember: Boolean get() = true
@@ -90,6 +81,7 @@ data class BookDetailUiState(
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
     val isSubmitting: Boolean = false,
+    val ratingComparison: List<RatingComparisonBookUiModel> = emptyList(),
     val signedIn: Boolean = false,
     val pendingAction: BookDetailAuthenticatedAction? = null,
     val requestError: String? = null,

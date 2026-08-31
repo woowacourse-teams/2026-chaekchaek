@@ -137,6 +137,8 @@ internal fun ReviewInputSheet(
     val initialPageValue = (initialReview?.currentPage ?: initialPage.takeIf { initialReview == null })
         ?.takeIf { allowReadingProgress && it > 0 }?.toString().orEmpty()
     val initialSpoiler = initialReview?.isSpoiler == true
+    val displayedAnonymously = initialReview?.anonymous ?: anonymous
+    val displayedNickname = initialReview?.authorName ?: nickname
     var content by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialContent) }
     var quote by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialQuote) }
     var chapter by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialChapter) }
@@ -254,14 +256,14 @@ internal fun ReviewInputSheet(
                         tint = ChaekInk,
                     )
                     Text(
-                        if (anonymous) "익명" else "공개",
+                        if (displayedAnonymously) "익명" else "공개",
                         modifier = Modifier.padding(start = 7.dp),
                         color = ChaekInk,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        if (anonymous) "이름을 숨겨서 표시돼요" else "‘${nickname.ifBlank { "닉네임 없음" }}’으로 표시돼요",
+                        "‘${displayedNickname.ifBlank { if (displayedAnonymously) "익명" else "닉네임 없음" }}’으로 표시돼요",
                         modifier = Modifier.padding(start = 7.dp),
                         color = ChaekInkSecondary,
                         fontSize = 11.5.sp,

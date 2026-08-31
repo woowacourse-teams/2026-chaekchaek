@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 
 class MemberRemoteRepositoryTest {
     @Test
@@ -24,7 +25,7 @@ class MemberRemoteRepositoryTest {
         val client = HttpClient(MockEngine { request ->
             requests += request
             respond(
-                content = """{"memberId":9,"nickname":"책책이","displayAnonymous":false}""",
+                content = """{"memberId":9,"nickname":"책책이","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""",
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
@@ -34,7 +35,9 @@ class MemberRemoteRepositoryTest {
         }
         val repository = MemberRemoteRepository(client)
 
-        assertEquals(9L, repository.get("access-token").memberId)
+        val profile = repository.get("access-token")
+        assertEquals(9L, profile.memberId)
+        assertEquals("우아한 달빛 참새", profile.anonymousNickname)
         repository.updateNickname("새 이름", "access-token")
         repository.updateAnonymity(true, "access-token")
 
@@ -49,6 +52,21 @@ class MemberRemoteRepositoryTest {
         assertEquals(List(3) { "Bearer access-token" }, requests.map { it.headers[HttpHeaders.Authorization] })
         assertEquals(Json.parseToJsonElement("""{"nickname":"새 이름"}"""), requests[1].jsonBody())
         assertEquals(Json.parseToJsonElement("""{"displayAnonymous":true}"""), requests[2].jsonBody())
+    }
+
+    @Test
+    fun memberSettingsRequireAnonymousNickname() = runTest {
+        val client = HttpClient(MockEngine {
+            respond(
+                content = """{"memberId":9,"nickname":"책책이","displayAnonymous":false}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
+        }) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        }
+
+        assertFails { MemberRemoteRepository(client).get("access-token") }
     }
 
     private fun HttpRequestData.jsonBody() =
