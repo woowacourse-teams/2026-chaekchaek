@@ -9,6 +9,8 @@ public interface BookActivityCountReader {
 
     record ActivityCounts(long reviewCount, long replyCount) {
 
+        public static final ActivityCounts ZERO = new ActivityCounts(0L, 0L);
+
         public long totalCount() {
             return reviewCount + replyCount;
         }
