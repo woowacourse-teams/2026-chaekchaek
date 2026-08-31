@@ -261,7 +261,7 @@ internal fun ReviewInputSheet(
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        if (anonymous) "이름을 숨겨서 표시돼요" else "‘${nickname.ifBlank { "닉네임 없음" }}’으로 표시돼요",
+                        "‘${nickname.ifBlank { if (anonymous) "익명" else "닉네임 없음" }}’으로 표시돼요",
                         modifier = Modifier.padding(start = 7.dp),
                         color = ChaekInkSecondary,
                         fontSize = 11.5.sp,

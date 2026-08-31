@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -82,6 +83,8 @@ internal fun RootScreen(
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
+    var homeScrollTopRequest by rememberSaveable { mutableIntStateOf(0) }
+    var archiveScrollTopRequest by rememberSaveable { mutableIntStateOf(0) }
     var archiveEditing by rememberSaveable { mutableStateOf(false) }
     var showArchiveLoginSheet by rememberSaveable { mutableStateOf(false) }
     val tokens by authViewModel.tokens.collectAsState()
@@ -120,6 +123,7 @@ internal fun RootScreen(
             RootTab.Home -> HomeScreen(
                 homeViewModel = homeViewModel,
                 accessToken = accessToken,
+                scrollTopRequest = homeScrollTopRequest,
                 modifier = contentModifier,
                 onSearchBook = { selectedTab = RootTab.Discover },
                 onBookClick = { onBookClick(it.toBookDetailArgs()) },
@@ -135,6 +139,7 @@ internal fun RootScreen(
                 viewModel = archiveViewModel,
                 memberSettingsViewModel = memberSettingsViewModel,
                 editing = archiveEditing,
+                scrollTopRequest = archiveScrollTopRequest,
                 onEditingChange = { editing ->
                     if (!editing || accessToken != null) archiveEditing = editing
                     else showArchiveLoginSheet = true
@@ -151,6 +156,13 @@ internal fun RootScreen(
                 selectedTab = selectedTab,
                 onTabSelected = {
                     archiveEditing = false
+                    if (selectedTab == it) {
+                        when (it) {
+                            RootTab.Home -> homeScrollTopRequest += 1
+                            RootTab.Shelf -> archiveScrollTopRequest += 1
+                            RootTab.Discover -> Unit
+                        }
+                    }
                     selectedTab = it
                 },
                 modifier = Modifier.align(Alignment.BottomCenter),

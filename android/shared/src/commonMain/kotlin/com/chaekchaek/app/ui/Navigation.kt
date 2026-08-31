@@ -139,11 +139,9 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                     }
                     LaunchedEffect(authTokens?.accessToken) {
                         val token = authTokens?.accessToken
-                        if (token == null && viewModel.uiState.value.signedIn) {
-                            viewModel.signOut()
-                        } else if (token != null && !viewModel.uiState.value.signedIn) {
-                            resumedAction = viewModel.authenticate(token)
-                        }
+                        val pendingAction = viewModel.syncAuthentication(token)
+                        if (token == null) resumedAction = null
+                        else if (pendingAction != null) resumedAction = pendingAction
                     }
 
                     BookDetailScreen(
@@ -153,7 +151,12 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                         recentRatings = recentRatings,
                         savedToLibrary = savedBookId != null,
                         anonymousReviews = memberSettingsState.anonymousReviews,
-                        nickname = if (state.signedIn) memberSettingsState.nickname else state.guestNickname.orEmpty(),
+                        nickname = if (state.signedIn) {
+                            if (memberSettingsState.anonymousReviews) memberSettingsState.anonymousNickname
+                            else memberSettingsState.nickname
+                        } else {
+                            state.guestNickname.orEmpty()
+                        },
                         coverContent = { book, modifier ->
                             RemoteBookImage(book.coverUrl, "${book.title} 표지", modifier)
                         },
@@ -163,10 +166,15 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                         onToggleLibrary = {
                             viewModel.toggleLibrary(savedBookId, archiveViewModel::retry)
                         },
-                        onStatusChange = viewModel::updateStatus,
-                        onPageSave = viewModel::savePage,
-                        onRatingSave = { rating ->
+                        onStatusChange = { status ->
+                            viewModel.updateStatus(status, archiveViewModel::retry)
+                        },
+                        onPageSave = { page ->
+                            viewModel.savePage(page, archiveViewModel::retry)
+                        },
+                        onRatingSave = { rating, onSaved ->
                             viewModel.saveRating(rating) {
+                                archiveViewModel.retry()
                                 val ratedBook = viewModel.uiState.value.displayBook ?: key.book
                                 recentRatings = recentRatings.withRecentRating(
                                     bookId = ratedBook.id,
@@ -174,6 +182,7 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                                     rating = rating,
                                     ratedAtLabel = "방금",
                                 )
+                                onSaved()
                             }
                         },
                         onReviewCreate = viewModel::createReview,

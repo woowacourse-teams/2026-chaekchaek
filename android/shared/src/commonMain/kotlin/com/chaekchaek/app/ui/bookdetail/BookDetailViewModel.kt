@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.BookReview
+import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
@@ -47,21 +48,24 @@ class BookDetailViewModel(
     }
 
     fun authenticate(accessToken: String): BookDetailAuthenticatedAction? {
-        this.accessToken = accessToken
-        val pending = _uiState.value.pendingAction
-        _uiState.value = _uiState.value.copy(signedIn = true, pendingAction = null, guestNickname = null)
-        reload()
-        return pending
+        return syncAuthentication(accessToken)
     }
 
     fun signOut() {
-        accessToken = null
+        syncAuthentication(null)
+    }
+
+    fun syncAuthentication(accessToken: String?): BookDetailAuthenticatedAction? {
+        if (this.accessToken == accessToken) return null
+        this.accessToken = accessToken
+        val pending = _uiState.value.pendingAction.takeIf { accessToken != null }
         _uiState.value = _uiState.value.copy(
-            signedIn = false,
+            signedIn = accessToken != null,
             pendingAction = null,
-            guestNickname = authPlatform.readGuest()?.nickname,
+            guestNickname = accessToken?.let { null } ?: authPlatform.readGuest()?.nickname,
         )
         reload()
+        return pending
     }
 
     fun requestAuthentication(action: BookDetailAuthenticatedAction): Boolean {
@@ -123,28 +127,49 @@ class BookDetailViewModel(
         }
     }
 
-    fun toggleLibrary(savedBookId: Long?, onSuccess: () -> Unit = {}) = mutate(onSuccess = { onSuccess() }) {
+    fun toggleLibrary(savedBookId: Long?, onSuccess: () -> Unit = {}) = mutate(
+        onSuccess = { record: LibraryRecord? ->
+            updateMyRecord(record)
+            onSuccess()
+        },
+        reloadAfterSuccess = false,
+    ) {
         val state = _uiState.value
         if (savedBookId == null) {
             val book = requireNotNull(state.displayBook)
             repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken())
         } else {
             libraryRepository.bulkDelete(listOf(savedBookId), requireToken())
+            null
         }
     }
 
-    fun updateStatus(status: ReadingStatus) = mutate {
-        repository.updateReadingStatus(bookIdForWrite(), status.apiValue, requireToken())
-    }
+    fun updateStatus(status: ReadingStatus, onSuccess: () -> Unit = {}) = mutate(
+        onSuccess = { record: LibraryRecord ->
+            updateMyRecord(record)
+            onSuccess()
+        },
+        reloadAfterSuccess = false,
+    ) { repository.updateReadingStatus(bookIdForWrite(), status.apiValue, requireToken()) }
 
-    fun savePage(page: Int) = mutate {
+    fun savePage(page: Int, onSuccess: () -> Unit = {}) = mutate(
+        onSuccess = { record: LibraryRecord ->
+            updateMyRecord(record)
+            onSuccess()
+        },
+        reloadAfterSuccess = false,
+    ) {
         val totalPages = _uiState.value.detail?.totalPages ?: _uiState.value.displayBook?.totalPages
         repository.updateCurrentPage(bookIdForWrite(), page, totalPages, requireToken())
     }
 
-    fun saveRating(rating: Rating, onSuccess: () -> Unit = {}) = mutate(onSuccess = { onSuccess() }) {
-        repository.rate(bookIdForWrite(), rating.score.toDouble(), requireToken())
-    }
+    fun saveRating(rating: Rating, onSuccess: () -> Unit = {}) = mutate(
+        onSuccess = { record: LibraryRecord ->
+            updateMyRecord(record)
+            onSuccess()
+        },
+        reloadAfterSuccess = false,
+    ) { repository.rate(bookIdForWrite(), rating.score.toDouble(), requireToken()) }
 
     fun createReview(request: ReviewCreateRequest) = mutate {
         publicWrite(retryUnauthorized = true) { repository.createReview(bookIdForPublicWrite(), request, it) }
@@ -330,12 +355,24 @@ class BookDetailViewModel(
     }
 
     private suspend fun bookIdForWrite(): Long {
-        _uiState.value.detail?.bookId?.let { return it }
-        _uiState.value.book?.bookId?.let { return it }
+        val state = _uiState.value
+        state.detail?.myRecord?.bookId?.let { return it }
+        if (state.detail?.myRecord != null) {
+            return requireNotNull(state.detail.bookId)
+        }
         val book = requireNotNull(_uiState.value.displayBook)
-        return requireNotNull(
-            repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken()).bookId,
+        val record = repository.addToLibrary(
+            book.isbn13,
+            book.totalPages.takeIf { it > 0 },
+            requireToken(),
         )
+        updateMyRecord(record)
+        return requireNotNull(record.bookId ?: _uiState.value.detail?.bookId)
+    }
+
+    private fun updateMyRecord(record: LibraryRecord?) {
+        val detail = _uiState.value.detail ?: return
+        _uiState.value = _uiState.value.copy(detail = detail.copy(myRecord = record))
     }
 
     private fun requireToken(): String = requireNotNull(accessToken)

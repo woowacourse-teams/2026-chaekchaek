@@ -7,6 +7,7 @@ import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.WriteCredential
+import com.chaekchaek.app.domain.rating.Rating
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -19,6 +20,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -208,6 +210,87 @@ class BookDetailViewModelTest {
   }
 
   @Test
+  fun `서재 미등록 책은 등록 응답 ID로 별점을 저장하고 즉시 반영한다`() = runViewModelTest {
+    val requestedPaths = mutableListOf<String>()
+    val engine = MockEngine { request ->
+      requestedPaths += request.url.encodedPath
+      when {
+        request.method == HttpMethod.Get && request.url.encodedPath.contains("/by-isbn/") ->
+          respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        request.method == HttpMethod.Get -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+        request.method == HttpMethod.Post -> respond(LIBRARY_RECORD, HttpStatusCode.Created, jsonHeaders())
+        request.method == HttpMethod.Put -> respond(RATED_LIBRARY_RECORD, headers = jsonHeaders())
+        else -> error("Unexpected request: ${request.method} ${request.url.encodedPath}")
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "access-token")
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    viewModel.saveRating(Rating.ofScore(5f))
+    awaitReal { viewModel.uiState.first { it.detail?.myRecord?.rating == 5.0 } }
+
+    assertTrue("/api/v1/library/73/rating" in requestedPaths)
+    assertEquals(73L, viewModel.uiState.value.detail?.myRecord?.bookId)
+    assertEquals(5.0, viewModel.uiState.value.detail?.myRecord?.rating)
+  }
+
+  @Test
+  fun `상태와 쪽수 변경 응답을 재조회 없이 즉시 반영한다`() = runViewModelTest {
+    var currentPage = 12
+    var status = "READING"
+    val engine = MockEngine { request ->
+      when {
+        request.method == HttpMethod.Get && request.url.encodedPath.contains("/by-isbn/") ->
+          respond(DETAIL_WITH_RECORD, headers = jsonHeaders())
+        request.method == HttpMethod.Get -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+        request.method == HttpMethod.Patch -> {
+          if (request.url.encodedPath.endsWith("/42")) {
+            if (currentPage == 12) currentPage = 80 else status = "FINISHED"
+          }
+          respond(
+            """{"bookId":42,"status":"$status","currentPage":$currentPage,"rating":4.0}""",
+            headers = jsonHeaders(),
+          )
+        }
+        else -> error("Unexpected request: ${request.method} ${request.url.encodedPath}")
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "access-token")
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    viewModel.savePage(80)
+    awaitReal { viewModel.uiState.first { it.detail?.myRecord?.currentPage == 80 } }
+    assertEquals(80, viewModel.uiState.value.detail?.myRecord?.currentPage)
+
+    viewModel.updateStatus(ReadingStatus.Finished)
+    awaitReal { viewModel.uiState.first { it.detail?.myRecord?.status == "FINISHED" } }
+    assertEquals("FINISHED", viewModel.uiState.value.detail?.myRecord?.status)
+  }
+
+  @Test
+  fun `로그인 토큰이 바뀌면 상세 요청도 새 토큰을 사용한다`() = runViewModelTest {
+    val authorizations = mutableListOf<String?>()
+    val engine = MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) authorizations += request.headers[HttpHeaders.Authorization]
+      if (request.url.encodedPath.contains("/by-isbn/")) respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      else respond(EMPTY_REVIEWS, headers = jsonHeaders())
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "old-token")
+    awaitReal { while (authorizations.size < 1) delay(1) }
+
+    viewModel.syncAuthentication("new-token")
+    awaitReal { while (authorizations.size < 2) delay(1) }
+
+    assertEquals(listOf<String?>("Bearer old-token", "Bearer new-token"), authorizations)
+  }
+
+  @Test
   fun `감상 삭제 성공은 재조회 없이 목록에서 제거한다`() = runViewModelTest {
     var reviewGetCount = 0
     val engine = MockEngine { request ->
@@ -284,6 +367,13 @@ class BookDetailViewModelTest {
   }
 
   private companion object {
+    const val EMPTY_REVIEWS = """{"totalCount":0,"nextPage":null,"items":[]}"""
+    const val DETAIL_WITHOUT_RECORD =
+      """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":null}"""
+    const val DETAIL_WITH_RECORD =
+      """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":{"status":"READING","currentPage":12,"myRating":4.0}}"""
+    const val LIBRARY_RECORD = """{"bookId":73,"status":"READING","currentPage":0,"rating":null}"""
+    const val RATED_LIBRARY_RECORD = """{"bookId":73,"status":"READING","currentPage":0,"rating":5.0}"""
     const val REVIEW_RESPONSE =
       """{"reviewId":7,"content":"감상","createdAt":"2026-08-27T00:00:00Z","author":{"displayName":"게스트","anonymous":false,"mine":true,"actorType":"GUEST"},"replyCount":0,"likeCount":0,"likedByMe":false,"isSpoiler":false,"recentReplies":[],"deleted":false}"""
   }

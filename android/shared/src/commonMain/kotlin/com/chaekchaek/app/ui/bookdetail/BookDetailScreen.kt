@@ -48,8 +48,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -108,6 +110,7 @@ import com.chaekchaek.app.ui.theme.ChaekAccentSoft
 import com.chaekchaek.app.ui.theme.ChaekBackground
 import com.chaekchaek.app.ui.theme.ChaekBand
 import com.chaekchaek.app.ui.theme.ChaekBorder
+import com.chaekchaek.app.ui.theme.ChaekBorderSoft
 import com.chaekchaek.app.ui.theme.ChaekInk
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import com.chaekchaek.app.ui.theme.ChaekSurface
@@ -116,7 +119,6 @@ import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
-import kotlin.math.roundToInt
 
 internal val ArchiveStageBackground = Color(0xFF1A1A1A)
 private val ArchiveStageForeground = Color.White
@@ -138,7 +140,7 @@ fun BookDetailScreen(
     onToggleLibrary: () -> Unit = {},
     onStatusChange: (ReadingStatus) -> Unit = {},
     onPageSave: (Int) -> Unit = {},
-    onRatingSave: (Rating) -> Unit = {},
+    onRatingSave: (Rating, () -> Unit) -> Unit = { _, _ -> },
     onReviewOpen: (() -> Unit) -> Unit = { it() },
     onReviewCreate: (ReviewCreateRequest) -> Unit = {},
     onReviewUpdate: (Long, ReviewCreateRequest) -> Unit = { _, _ -> },
@@ -312,8 +314,7 @@ fun BookDetailScreen(
             recentRatings = recentRatings,
             onDismiss = { showRatingDialog = false },
             onSave = { rating ->
-                onRatingSave(rating)
-                showRatingDialog = false
+                onRatingSave(rating) { showRatingDialog = false }
             },
         )
     }
@@ -485,11 +486,11 @@ private fun ArchiveStage(
                 },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    "⌑",
-                    color = if (saved) MaterialTheme.colorScheme.onPrimaryContainer else ArchiveStageForeground,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
+                Icon(
+                    painter = painterResource(Res.drawable.ic_bookmark),
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = if (saved) MaterialTheme.colorScheme.onPrimaryContainer else ArchiveStageForeground,
                 )
             }
         }
@@ -603,8 +604,8 @@ private fun BookSummary(book: BookDetailArgs, averageRating: Double?) {
                 book.year.takeIf(String::isNotBlank)?.let { "${it} 초판" }.orEmpty(),
                 book.totalPages.takeIf { it > 0 }?.let { "${it}쪽" }.orEmpty(),
             ).filter(String::isNotBlank).forEach { MetaChip(it) }
-            AverageRatingChip(averageRating)
         }
+        AverageRatingChip(averageRating)
     }
 }
 
@@ -619,18 +620,33 @@ private fun MetaChip(label: String) {
 
 @Composable
 private fun AverageRatingChip(averageRating: Double?) {
+    val ratingTenths = averageRating?.takeIf { it > 0.0 }?.let(::averageRatingInTenths)
     Surface(modifier = Modifier.padding(start = 4.dp).height(28.dp), shape = RoundedCornerShape(4.dp), color = ChaekAccentSoft) {
         Row(
             modifier = Modifier.padding(horizontal = 9.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("★★★★☆", color = ChaekAccent, fontSize = 15.sp)
+            Box {
+                Text("★★★★★", color = ChaekBorderSoft, fontSize = 15.sp)
+                ratingTenths?.let { tenths ->
+                    Text(
+                        "★★★★★",
+                        modifier = Modifier.drawWithContent {
+                            clipRect(right = size.width * tenths / 50f) {
+                                this@drawWithContent.drawContent()
+                            }
+                        },
+                        color = ChaekAccent,
+                        fontSize = 15.sp,
+                    )
+                }
+            }
             Text(
-                averageRating?.let { ((it * 10).roundToInt() / 10.0).toString() } ?: "평점 없음",
-                color = ChaekInk,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
+                ratingTenths?.let { (it / 10.0).toString() } ?: "평가 없음",
+                color = if (ratingTenths == null) ChaekInkSecondary else ChaekInk,
+                fontSize = if (ratingTenths == null) 12.sp else 15.sp,
+                fontWeight = if (ratingTenths == null) FontWeight.Normal else FontWeight.Bold,
             )
         }
     }
@@ -661,7 +677,12 @@ private fun ReadingRecord(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(painterResource(Res.drawable.ic_star), contentDescription = null, modifier = Modifier.size(12.dp), tint = ChaekInk)
-                    Text("별점 주기", color = ChaekInk, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        record?.rating?.let { "별점 ${it} 수정" } ?: "별점 주기",
+                        color = ChaekInk,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                 }
             }
         }
@@ -905,7 +926,7 @@ private fun ReviewCard(
                 Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
                     Text(review.authorName, style = MaterialTheme.typography.titleSmall)
                     Text(
-                        "${review.createdAt.take(10).replace('-', '.')} · ${review.currentPage?.let { "p.${it}까지" }.orEmpty()}",
+                        reviewMetadata(review.createdAt, review.currentPage),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -943,7 +964,6 @@ private fun ReviewCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Spacer(Modifier.weight(1f))
                 ReviewAction(
                     icon = if (review.likedByMe) Res.drawable.ic_heart_filled else Res.drawable.ic_heart_outline,
                     label = "좋아요 ${review.likeCount}",
@@ -953,6 +973,7 @@ private fun ReviewCard(
                     Icon(painterResource(Res.drawable.ic_comment), contentDescription = "감상에 답글 작성", modifier = Modifier.size(14.dp))
                     Text("답글 ${review.replyCount}", modifier = Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelSmall)
                 }
+                Spacer(Modifier.weight(1f))
             }
         }
         if (review.replyCount > 0) {

@@ -15,6 +15,14 @@ import kotlin.test.assertTrue
 
 class BookDetailRulesTest {
     @Test
+    fun averageRatingAndReviewMetadataPreserveExactValues() {
+        assertEquals(43, averageRatingInTenths(4.3))
+        assertEquals(50, averageRatingInTenths(5.1))
+        assertEquals("2026.08.27 · p.80까지", reviewMetadata("2026-08-27T21:44:19", 80))
+        assertEquals("2026.08.27", reviewMetadata("2026-08-27T21:44:19", null))
+    }
+
+    @Test
     fun reviewValidationAndSpoilerMaskKeepAndroidBehavior() {
         assertTrue(BookDetailInputRules.canSubmitReview("좋았다", "80", 308))
         assertFalse(BookDetailInputRules.canSubmitReview("  ", "80", 308))

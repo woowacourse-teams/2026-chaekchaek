@@ -12,8 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class MemberSettingsUiState(
+    val signedIn: Boolean = false,
     val anonymousReviews: Boolean = true,
     val nickname: String = "",
+    val anonymousNickname: String = "",
     val showLoading: Boolean = false,
     val errorMessage: String? = null,
 )
@@ -36,6 +38,7 @@ class MemberSettingsViewModel(
         if (accessToken == null) {
             _uiState.value = MemberSettingsUiState()
         } else {
+            _uiState.value = _uiState.value.copy(signedIn = true)
             load(accessToken)
         }
     }
@@ -89,6 +92,7 @@ class MemberSettingsViewModel(
         _uiState.value = _uiState.value.copy(
             anonymousReviews = profile.displayAnonymous,
             nickname = profile.nickname,
+            anonymousNickname = profile.anonymousNickname,
             errorMessage = null,
         )
     }

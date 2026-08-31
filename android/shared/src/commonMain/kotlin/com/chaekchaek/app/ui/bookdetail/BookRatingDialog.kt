@@ -29,8 +29,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -75,7 +76,11 @@ internal fun BookRatingDialog(
         ) {
             Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("이 책에 별점 매기기", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (initialRating == null) "이 책에 별점 매기기" else "이 책의 별점 수정하기",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
                     Spacer(Modifier.weight(1f))
                     Surface(onClick = onDismiss, color = Color.Transparent, modifier = Modifier.size(40.dp)) {
                         Box(contentAlignment = Alignment.Center) {
@@ -89,7 +94,8 @@ internal fun BookRatingDialog(
                     }
                 }
                 Text(
-                    "최근 남긴 별점을 확인하고 새 별점을 선택하세요.",
+                    if (initialRating == null) "최근 남긴 별점을 확인하고 새 별점을 선택하세요."
+                    else "최근 남긴 별점을 확인하고 기존 별점을 수정하세요.",
                     color = ChaekInkSecondary,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -105,7 +111,7 @@ internal fun BookRatingDialog(
                 HorizontalDivider(color = ChaekBorderSoft)
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    "새 별점",
+                    if (initialRating == null) "새 별점" else "별점 수정",
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelMedium,
@@ -202,13 +208,17 @@ private fun RatingSelector(selected: Rating, onSelect: (Rating) -> Unit) {
             Box(modifier = Modifier.width(40.dp).height(48.dp), contentAlignment = Alignment.Center) {
                 Text("★", modifier = Modifier.width(40.dp), color = ChaekBorderSoft, fontSize = 34.sp, textAlign = TextAlign.Center)
                 if (filledHalfStars > 0) {
-                    Box(
-                        modifier = Modifier.align(Alignment.CenterStart).fillMaxHeight()
-                            .fillMaxWidth(filledHalfStars / 2f).clipToBounds(),
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        Text("★", modifier = Modifier.width(40.dp), color = ChaekAccent, fontSize = 34.sp, textAlign = TextAlign.Center)
-                    }
+                    Text(
+                        "★",
+                        modifier = Modifier.width(40.dp).drawWithContent {
+                            clipRect(right = size.width * filledHalfStars / 2f) {
+                                this@drawWithContent.drawContent()
+                            }
+                        },
+                        color = ChaekAccent,
+                        fontSize = 34.sp,
+                        textAlign = TextAlign.Center,
+                    )
                 }
                 Row(Modifier.fillMaxSize()) {
                     repeat(2) { halfIndex ->

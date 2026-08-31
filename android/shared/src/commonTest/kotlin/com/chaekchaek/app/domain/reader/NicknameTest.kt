@@ -46,14 +46,14 @@ class NicknameTest {
     }
 
     @Test
-    fun `15자까지 만들 수 있고 16자부터는 만들 수 없다`() {
-        // given : 15자와 16자 닉네임이 주어진다
-        val fifteen = "가".repeat(15)
-        val sixteen = "가".repeat(16)
+    fun `10자까지 만들 수 있고 11자부터는 만들 수 없다`() {
+        // given : 10자와 11자 닉네임이 주어진다
+        val ten = "가".repeat(10)
+        val eleven = "가".repeat(11)
 
-        // when & then : 15자는 통과하고 16자는 막힌다
-        shouldNotThrowAny { Nickname(fifteen) }
-        shouldThrow<IllegalArgumentException> { Nickname(sixteen) }
+        // when & then : 10자는 통과하고 11자는 막힌다
+        shouldNotThrowAny { Nickname(ten) }
+        shouldThrow<IllegalArgumentException> { Nickname(eleven) }
     }
 
     @Test
