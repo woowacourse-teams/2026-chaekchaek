@@ -1,3 +1,5 @@
+import type { RequestContext } from '@/services/context/requestContext';
+
 export interface GetReviewsReviewIdRepliesParams {
   reviewId: number;
   page: number;
@@ -28,4 +30,5 @@ export interface PostReviewsReviewIdRepliesCommand {
 
 export type PostReviewsReviewIdReplies = (
   command: PostReviewsReviewIdRepliesCommand,
+  context?: RequestContext,
 ) => Promise<undefined>;

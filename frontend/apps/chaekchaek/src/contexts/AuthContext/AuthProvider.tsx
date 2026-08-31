@@ -2,13 +2,20 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 
 import { getMembersMe } from '@/services/apis/membersMe/repository';
 import { useLoadData } from '@/services/core/useLoadData';
+import { postAuthGuestToken } from '@/services/apis/authGuestToken/repository';
+import { useExecute } from '@/services/core/useExecute';
 
 import { authContext } from './AuthContext';
-import type { Props, UserData } from './AuthContext.types';
+import type { Props, UserData, GuestData } from './AuthContext.types';
 
 export const AuthProvider = ({ children }: Props) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<UserData | null>(null);
+
+  const guestStorageString = localStorage.getItem('guest');
+  const guestStorage =
+    guestStorageString && guestStorageString !== null ? JSON.parse(guestStorageString) : null;
+  const [guest, setGuest] = useState<GuestData | null>(guestStorage || null);
 
   const login = useCallback((userData: UserData) => {
     setIsAuthenticated(true);
@@ -18,17 +25,46 @@ export const AuthProvider = ({ children }: Props) => {
   const getMembersMeLoadData = useCallback(async () => {
     return await getMembersMe({});
   }, []);
-  const {
-    status: { data: membersMeData },
-  } = useLoadData({
+  const { status: membersMeStatus } = useLoadData({
     queryFn: getMembersMeLoadData,
   });
 
-  useEffect(() => {
-    if (membersMeData) return login(membersMeData);
-  }, [membersMeData]);
+  const guestLogin = useCallback((guestData: GuestData) => {
+    setIsAuthenticated(false);
+    setGuest(guestData);
+  }, []);
 
-  const value = useMemo(() => ({ isAuthenticated, user, login }), [isAuthenticated, user, login]);
+  const {
+    mutate: postAuthGuestTokenMutate,
+    status: { data: authGuestToken },
+  } = useExecute({
+    executeFn: postAuthGuestToken,
+  });
+
+  useEffect(() => {
+    if (membersMeStatus.data) return login(membersMeStatus.data);
+
+    if (
+      guest === null &&
+      membersMeStatus.status === 'error' &&
+      membersMeStatus.error &&
+      membersMeStatus.error?.status === 401
+    ) {
+      postAuthGuestTokenMutate({});
+    }
+  }, [membersMeStatus]);
+
+  useEffect(() => {
+    if (authGuestToken) {
+      localStorage.setItem('guest', JSON.stringify(authGuestToken));
+      guestLogin(authGuestToken);
+    }
+  }, [authGuestToken]);
+
+  const value = useMemo(
+    () => ({ isAuthenticated, user, login, guest, guestLogin }),
+    [isAuthenticated, user, login, guest, guestLogin],
+  );
 
   return <authContext.Provider value={value}>{children}</authContext.Provider>;
 };

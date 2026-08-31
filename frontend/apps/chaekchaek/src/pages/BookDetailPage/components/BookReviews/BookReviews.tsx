@@ -9,6 +9,7 @@ import { WriteReviewDialog } from '../../dialog/WriteReviewDialog';
 
 export const BookReviews = ({
   bookId,
+  isbn,
   sort,
   feed,
   count,
@@ -32,6 +33,7 @@ export const BookReviews = ({
           bookId && (
             <WriteReviewDialog
               bookId={bookId}
+              isbn={isbn}
               onReviewWritten={onReviewsRefresh}
               onClose={handleCloseDialog}
             />

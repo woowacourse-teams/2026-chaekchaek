@@ -9,6 +9,12 @@ export type UserData = {
   memberId: number;
 };
 
+export type GuestData = {
+  guestToken: string;
+  nickname: string;
+  expiresAt: string;
+};
+
 export type Props = {
   children: ReactNode;
 };

@@ -1,10 +1,13 @@
 import type { ResponseDto } from '@/services/apis/api.types';
+import type { RequestHeaders } from '@/services/context/requestHeaders';
 
 export interface DeleteReviewsReviewIdRequestDto {
   pathParams: [{ name: 'reviewId'; value: number }];
+  headers?: RequestHeaders;
 }
 
 export type DeleteReviewsReviewIdResponseDto = ResponseDto<undefined>;
+
 export interface PatchReviewsReviewIdRequestDto {
   pathParams: [{ name: 'reviewId'; value: number }];
   data: {
@@ -15,6 +18,7 @@ export interface PatchReviewsReviewIdRequestDto {
     currentPage?: number | undefined;
     content: string;
   };
+  headers?: RequestHeaders;
 }
 
 export type PatchReviewsReviewIdResponseDto = ResponseDto<{

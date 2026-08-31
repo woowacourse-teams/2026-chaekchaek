@@ -17,6 +17,8 @@ import { useFormValues } from '@/hooks/useFormValues';
 import { useExecute } from '@/services/core/useExecute';
 import { patchReviewsReviewId } from '@/services/apis/reviewsReviewId/repository';
 
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
 import { validateReview } from './validator';
 import type { ReviewFormValues } from './validator';
 
@@ -42,6 +44,8 @@ export const UpdateReviewDialog = ({
   onReviewUpdated,
   onClose,
 }: UpdateReviewDialogProps) => {
+  const { isAuthenticated, guest } = useAuthContext();
+
   const { values, errors, onChange, isValid, valids } = useFormValues<ReviewFormValues>({
     initialValues: {
       content: review.content,
@@ -60,10 +64,17 @@ export const UpdateReviewDialog = ({
 
     const requestData = buildReviewRequest(values);
 
-    await mutate({
-      reviewId: review.reviewId,
-      ...requestData,
-    });
+    await mutate(
+      {
+        reviewId: review.reviewId,
+        ...requestData,
+      },
+      guest?.guestToken
+        ? {
+            guestToken: guest?.guestToken,
+          }
+        : undefined,
+    );
 
     onReviewUpdated();
     onClose();
