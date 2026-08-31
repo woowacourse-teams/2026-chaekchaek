@@ -20,6 +20,10 @@ aladin:
   base-url: http://localhost:8080
   ttb-key: test-ttb-key
 
+yes24:
+  base-url: http://localhost:8080
+  api-key: test-yes24-api-key
+
 app:
   frontend:
     base-url: http://localhost:3000
