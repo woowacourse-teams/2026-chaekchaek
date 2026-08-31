@@ -1,6 +1,6 @@
 package com.chaekchaek.common.exception;
 
-import com.chaekchaek.book.client.AladinClientException;
+import com.chaekchaek.book.client.BookClientException;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import org.slf4j.Logger;
@@ -37,9 +37,9 @@ public class ApiExceptionHandler {
         return createProblemDetail(exception.getErrorCode(), statusOf(exception.getErrorCode()));
     }
 
-    @ExceptionHandler(AladinClientException.class)
-    public ProblemDetail handleAladinClientException(AladinClientException exception) {
-        log.warn("Aladin API call failed", exception);
+    @ExceptionHandler(BookClientException.class)
+    public ProblemDetail handleBookClientException(BookClientException exception) {
+        log.warn("Book API call failed");
         return createProblemDetail(ErrorCode.EXTERNAL_API_ERROR, HttpStatus.BAD_GATEWAY);
     }
 

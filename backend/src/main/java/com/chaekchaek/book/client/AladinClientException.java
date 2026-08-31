@@ -1,6 +1,6 @@
 package com.chaekchaek.book.client;
 
-public class AladinClientException extends RuntimeException {
+public class AladinClientException extends BookClientException {
 
     public AladinClientException(Throwable cause) {
         super("Failed to call Aladin API", cause);
