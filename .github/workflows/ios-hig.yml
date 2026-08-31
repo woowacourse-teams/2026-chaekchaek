@@ -11,6 +11,7 @@ on:
       - "android/scripts/**"
       - ".agents/skills/chaekchaek-design-system/**"
       - ".agents/skills/ios-simulator-validation/**"
+      - ".codex/hooks.json"
       - ".codex/hooks/**"
       - ".github/workflows/ios-hig.yml"
   push:
@@ -26,6 +27,7 @@ on:
       - "android/scripts/**"
       - ".agents/skills/chaekchaek-design-system/**"
       - ".agents/skills/ios-simulator-validation/**"
+      - ".codex/hooks.json"
       - ".codex/hooks/**"
       - ".github/workflows/ios-hig.yml"
 

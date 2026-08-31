@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/chaekchaek-design-system-guard.py\"",
+            "command": "project_hook_root=$(dirname \"$(git rev-parse --path-format=absolute --git-common-dir)\") && /usr/bin/python3 \"$project_hook_root/.codex/hooks/chaekchaek-design-system-guard.py\"",
             "timeout": 5,
             "statusMessage": "Checking Chaekchaek design system"
           }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/chaekchaek-design-system-guard.py\"",
+            "command": "project_hook_root=$(dirname \"$(git rev-parse --path-format=absolute --git-common-dir)\") && /usr/bin/python3 \"$project_hook_root/.codex/hooks/chaekchaek-design-system-guard.py\"",
             "timeout": 5
           }
         ]
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/chaekchaek-design-system-guard.py\"",
+            "command": "project_hook_root=$(dirname \"$(git rev-parse --path-format=absolute --git-common-dir)\") && /usr/bin/python3 \"$project_hook_root/.codex/hooks/chaekchaek-design-system-guard.py\"",
             "timeout": 5,
             "statusMessage": "Checking Chaekchaek UI task"
           }
