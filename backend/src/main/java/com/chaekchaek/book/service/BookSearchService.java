@@ -79,7 +79,7 @@ public class BookSearchService {
         return new BookSearchResponse(
                 source.totalResults(),
                 nextPage,
-                items
+                List.copyOf(items)
         );
     }
 

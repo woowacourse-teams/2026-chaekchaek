@@ -7,4 +7,8 @@ public record BookSearchResponse(
         Integer nextPage,
         List<BookItem> items
 ) {
+
+    public BookSearchResponse {
+        items = items == null ? List.of() : List.copyOf(items);
+    }
 }
