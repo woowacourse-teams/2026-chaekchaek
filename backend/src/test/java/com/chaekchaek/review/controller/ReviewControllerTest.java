@@ -27,6 +27,7 @@ import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.review.dto.AuthorResponse;
+import com.chaekchaek.review.dto.AuthorProfileStatus;
 import com.chaekchaek.review.dto.PageResponse;
 import com.chaekchaek.review.dto.ReactionResponse;
 import com.chaekchaek.review.dto.ReplyCreateRequest;
@@ -69,8 +70,8 @@ import org.springframework.test.web.servlet.ResultActions;
 class ReviewControllerTest {
 
     private static final String REVIEW_TAG = "감상";
-    private static final AuthorResponse AUTHOR = new AuthorResponse("닉네임", "https://example.com/profile.jpg", false,
-            true, ActorType.MEMBER);
+    private static final AuthorResponse AUTHOR = new AuthorResponse(1L, "닉네임",
+            "https://example.com/profile.jpg", false, true, ActorType.MEMBER, AuthorProfileStatus.AVAILABLE);
     private static final HeaderDescriptor LOCATION_HEADER = headerWithName("Location")
             .description("생성된 리소스의 상대 경로");
 
@@ -964,11 +965,14 @@ class ReviewControllerTest {
                 field(prefix, "deleted", JsonFieldType.BOOLEAN, "soft delete 여부"),
                 field(prefix, "createdAt", JsonFieldType.STRING, "작성 시각(UTC)"),
                 field(prefix, "author", JsonFieldType.OBJECT, "작성자 정보"),
+                field(prefix, "author.memberId", JsonFieldType.NUMBER, "공개 서재 조회용 회원 ID").optional(),
                 field(prefix, "author.displayName", JsonFieldType.STRING, "작성자 표시 이름"),
                 field(prefix, "author.profileImageUrl", JsonFieldType.STRING, "작성자 프로필 이미지 URL").optional(),
                 field(prefix, "author.anonymous", JsonFieldType.BOOLEAN, "익명 작성 여부"),
                 field(prefix, "author.mine", JsonFieldType.BOOLEAN, "내가 작성한 감상인지 여부"),
                 field(prefix, "author.actorType", JsonFieldType.STRING, "작성자 유형(MEMBER, GUEST)"),
+                field(prefix, "author.profileStatus", JsonFieldType.STRING,
+                        "프로필 접근 상태(AVAILABLE, WITHDRAWN, UNAVAILABLE)"),
                 field(prefix, "likeCount", JsonFieldType.NUMBER, "좋아요 수"),
                 field(prefix, "likedByMe", JsonFieldType.BOOLEAN, "내가 좋아요를 눌렀는지 여부"),
                 field(prefix, "replyCount", JsonFieldType.NUMBER, "답글 수"),
@@ -988,11 +992,14 @@ class ReviewControllerTest {
                 field(prefix, "deleted", JsonFieldType.BOOLEAN, "soft delete 여부"),
                 field(prefix, "createdAt", JsonFieldType.STRING, "작성 시각(UTC)"),
                 field(prefix, "author", JsonFieldType.OBJECT, "작성자 정보"),
+                field(prefix, "author.memberId", JsonFieldType.NUMBER, "공개 서재 조회용 회원 ID").optional(),
                 field(prefix, "author.displayName", JsonFieldType.STRING, "작성자 표시 이름"),
                 field(prefix, "author.profileImageUrl", JsonFieldType.STRING, "작성자 프로필 이미지 URL").optional(),
                 field(prefix, "author.anonymous", JsonFieldType.BOOLEAN, "익명 작성 여부"),
                 field(prefix, "author.mine", JsonFieldType.BOOLEAN, "내가 작성한 답글인지 여부"),
                 field(prefix, "author.actorType", JsonFieldType.STRING, "작성자 유형(MEMBER, GUEST)"),
+                field(prefix, "author.profileStatus", JsonFieldType.STRING,
+                        "프로필 접근 상태(AVAILABLE, WITHDRAWN, UNAVAILABLE)"),
                 field(prefix, "likeCount", JsonFieldType.NUMBER, "좋아요 수"),
                 field(prefix, "likedByMe", JsonFieldType.BOOLEAN, "내가 좋아요를 눌렀는지 여부")
         };

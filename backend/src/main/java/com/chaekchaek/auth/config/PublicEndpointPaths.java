@@ -7,7 +7,8 @@ public final class PublicEndpointPaths {
             "/api/v1/books",
             "/api/v1/books/**",
             "/api/v1/books/*/reviews",
-            "/api/v1/reviews/*/replies"
+            "/api/v1/reviews/*/replies",
+            "/api/v1/members/*/library"
     };
 
     private PublicEndpointPaths() {

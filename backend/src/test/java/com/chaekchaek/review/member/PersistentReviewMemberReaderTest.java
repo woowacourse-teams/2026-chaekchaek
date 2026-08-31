@@ -6,6 +6,7 @@ import com.chaekchaek.actor.domain.Actor;
 import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,11 +49,12 @@ class PersistentReviewMemberReaderTest {
 
         // then
         assertThat(profiles).containsEntry(actor.getId(), new ReviewMemberProfile(
+                member.getId(),
                 null,
                 "exUrl",
                 "책책 회원",
                 true,
-                false,
+                AccountStatus.ACTIVE,
                 ActorType.MEMBER
         ));
     }
@@ -88,6 +90,6 @@ class PersistentReviewMemberReaderTest {
 
         // then
         assertThat(profiles).containsEntry(actor.getId(), new ReviewMemberProfile(
-                null, "exUrl", "책책 관리자", true, false, ActorType.MEMBER));
+                member.getId(), null, "exUrl", "책책 관리자", true, AccountStatus.ACTIVE, ActorType.MEMBER));
     }
 }
