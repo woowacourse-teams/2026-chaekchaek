@@ -86,16 +86,19 @@ public class BookSearchService {
 
     private Comparator<BookItem> comparator(BookSearchSort sort) {
         BookSearchSort effectiveSort = sort == null ? BookSearchSort.LATEST : sort;
-        if (effectiveSort == BookSearchSort.COMMENT) {
-            return Comparator.comparing(
-                    this::totalCount,
-                    Comparator.nullsLast(Comparator.reverseOrder())
-            );
-        }
-        return Comparator.comparing(
-                BookItem::publishedDate,
-                Comparator.nullsLast(Comparator.reverseOrder())
-        );
+        return switch (effectiveSort) {
+            case TITLE_ASC -> Comparator.comparing(BookItem::title, Comparator.nullsLast(Comparator.naturalOrder()));
+            case TITLE_DESC -> Comparator.comparing(BookItem::title,
+                    Comparator.nullsLast(Comparator.reverseOrder()));
+            case OLDEST -> Comparator.comparing(BookItem::publishedDate,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            case LATEST -> Comparator.comparing(BookItem::publishedDate,
+                    Comparator.nullsLast(Comparator.reverseOrder()));
+            case REVIEW -> Comparator.comparing(BookItem::reviewCount,
+                    Comparator.nullsLast(Comparator.reverseOrder()));
+            case COMMENT -> Comparator.comparing(this::totalCount,
+                    Comparator.nullsLast(Comparator.reverseOrder()));
+        };
     }
 
     private BookItem toBookItem(
