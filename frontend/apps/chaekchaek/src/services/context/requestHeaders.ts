@@ -1,11 +1,13 @@
-import type { RequestContext } from './requestContext';
-
 export type RequestHeaders = {
   'X-Guest-Token'?: string;
 };
 
-export const createRequestHeaders = (context?: RequestContext): Record<string, string> => {
-  if (!context) return {};
+export type RequestHeaderContext = {
+  guestToken: string | undefined;
+};
+
+export const createRequestHeaders = (context?: RequestHeaderContext): Record<string, string> => {
+  if (!context?.guestToken) return {};
 
   return {
     'X-Guest-Token': context.guestToken,
