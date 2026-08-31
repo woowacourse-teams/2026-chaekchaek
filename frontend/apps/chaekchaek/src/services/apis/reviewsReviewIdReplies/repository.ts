@@ -1,4 +1,5 @@
 import * as fetcher from './fetcher';
+import { createRepositoryRequestHeaders } from '@/services/context/requestHeaders';
 import {
   mapGetReviewsReviewIdRepliesModelToRequestDTO,
   mapGetReviewsReviewIdRepliesResponseDTOToModel,
@@ -23,12 +24,16 @@ import {
 
 import type { PostReviewsReviewIdReplies } from './repository.types';
 
-export const postReviewsReviewIdReplies: PostReviewsReviewIdReplies = async (model) => {
+export const postReviewsReviewIdReplies: PostReviewsReviewIdReplies = async (model, context) => {
   const { reviewId, content } = mapPostReviewsReviewIdRepliesModelToRequestDTO(model);
+
+  const { guestToken } = context ?? {};
+  const headers = createRepositoryRequestHeaders({ guestToken });
 
   const responseDTO = await fetcher.postReviewsReviewIdReplies({
     pathParams: [{ name: 'reviewId', value: reviewId }],
     data: { content },
+    headers,
   });
 
   return mapPostReviewsReviewIdRepliesResponseDTOToModel(responseDTO);

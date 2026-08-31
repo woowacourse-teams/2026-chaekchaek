@@ -1,4 +1,5 @@
 import type { ResponseDto } from '@/services/apis/api.types';
+import type { RequestHeaders } from '@/services/context/requestHeaders';
 
 export interface GetReviewsReviewIdRepliesRequestDto {
   pathParams: [{ name: 'reviewId'; value: number }];
@@ -26,6 +27,7 @@ export type GetReviewsReviewIdRepliesResponseDto = ResponseDto<{
 export interface PostReviewsReviewIdRepliesRequestDto {
   pathParams: [{ name: 'reviewId'; value: number }];
   data: { content: string };
+  headers?: RequestHeaders;
 }
 
 export type PostReviewsReviewIdRepliesResponseDto = ResponseDto<undefined>;

@@ -1,4 +1,5 @@
 import { instance } from '@/services/core/http';
+import { createFetcherRequestHeaders } from '@/services/context/requestHeaders';
 
 import type {
   GetReviewsReviewIdRepliesRequestDto,
@@ -26,11 +27,15 @@ import type {
 export const postReviewsReviewIdReplies = async ({
   pathParams: [{ value: reviewId }],
   data: { content },
+  headers: { 'X-Guest-Token': guestToken } = {},
 }: PostReviewsReviewIdRepliesRequestDto): Promise<PostReviewsReviewIdRepliesResponseDto> => {
+  const requestHeaders = createFetcherRequestHeaders({ 'X-Guest-Token': guestToken });
+
   const response = await instance(`/api/v1/reviews/${reviewId}/replies`, {
     method: 'post',
     //  pathParams: [{ name: 'reviewId', value: reviewId }]
     data: { content },
+    headers: requestHeaders,
   });
 
   return response.data;
