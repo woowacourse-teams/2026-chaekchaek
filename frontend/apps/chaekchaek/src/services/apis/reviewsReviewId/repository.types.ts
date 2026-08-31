@@ -1,8 +1,13 @@
+import type { RequestContext } from '@/services/context/requestContext';
+
 export interface DeleteReviewsReviewIdParams {
   reviewId: number;
 }
 
-export type DeleteReviewsReviewId = (params: DeleteReviewsReviewIdParams) => Promise<undefined>;
+export type DeleteReviewsReviewId = (
+  params: DeleteReviewsReviewIdParams,
+  context?: RequestContext,
+) => Promise<undefined>;
 export interface PatchReviewsReviewIdParams {
   reviewId: number;
   chapter?: string | undefined;
@@ -12,8 +17,6 @@ export interface PatchReviewsReviewIdParams {
   currentPage?: number | undefined;
   content: string;
 }
-
-import type { RequestContext } from '@/services/context/requestContext';
 
 export type PatchReviewsReviewId = (
   params: PatchReviewsReviewIdParams,

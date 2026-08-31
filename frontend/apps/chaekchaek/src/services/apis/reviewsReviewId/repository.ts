@@ -1,4 +1,5 @@
 import * as fetcher from './fetcher';
+import { createRepositoryRequestHeaders } from '@/services/context/requestHeaders';
 import {
   mapDeleteReviewsReviewIdModelToRequestDTO,
   mapDeleteReviewsReviewIdResponseDTOToModel,
@@ -6,17 +7,19 @@ import {
 
 import type { DeleteReviewsReviewId } from './repository.types';
 
-export const deleteReviewsReviewId: DeleteReviewsReviewId = async (model) => {
+export const deleteReviewsReviewId: DeleteReviewsReviewId = async (model, context) => {
   const { reviewId } = mapDeleteReviewsReviewIdModelToRequestDTO(model);
+
+  const { guestToken } = context ?? {};
+  const headers = createRepositoryRequestHeaders({ guestToken });
 
   const responseDTO = await fetcher.deleteReviewsReviewId({
     pathParams: [{ name: 'reviewId', value: reviewId }],
+    headers,
   });
 
   return mapDeleteReviewsReviewIdResponseDTOToModel(responseDTO);
 };
-
-import { createRepositoryRequestHeaders } from '@/services/context/requestHeaders';
 
 import {
   mapPatchReviewsReviewIdModelToRequestDTO,
