@@ -972,7 +972,7 @@ class ReviewControllerTest {
                 field(prefix, "author.mine", JsonFieldType.BOOLEAN, "내가 작성한 감상인지 여부"),
                 field(prefix, "author.actorType", JsonFieldType.STRING, "작성자 유형(MEMBER, GUEST)"),
                 field(prefix, "author.profileStatus", JsonFieldType.STRING,
-                        "프로필 접근 상태(AVAILABLE, WITHDRAWN, UNAVAILABLE)"),
+                        "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"),
                 field(prefix, "likeCount", JsonFieldType.NUMBER, "좋아요 수"),
                 field(prefix, "likedByMe", JsonFieldType.BOOLEAN, "내가 좋아요를 눌렀는지 여부"),
                 field(prefix, "replyCount", JsonFieldType.NUMBER, "답글 수"),
@@ -999,7 +999,7 @@ class ReviewControllerTest {
                 field(prefix, "author.mine", JsonFieldType.BOOLEAN, "내가 작성한 답글인지 여부"),
                 field(prefix, "author.actorType", JsonFieldType.STRING, "작성자 유형(MEMBER, GUEST)"),
                 field(prefix, "author.profileStatus", JsonFieldType.STRING,
-                        "프로필 접근 상태(AVAILABLE, WITHDRAWN, UNAVAILABLE)"),
+                        "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"),
                 field(prefix, "likeCount", JsonFieldType.NUMBER, "좋아요 수"),
                 field(prefix, "likedByMe", JsonFieldType.BOOLEAN, "내가 좋아요를 눌렀는지 여부")
         };

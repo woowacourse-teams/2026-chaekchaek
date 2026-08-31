@@ -118,8 +118,8 @@ public class HomeService {
         boolean available = profile.accountStatus() == com.chaekchaek.member.domain.AccountStatus.ACTIVE;
         String displayName = withdrawn ? "탈퇴한 사용자" : profile.displayName();
         String profileImageUrl = withdrawn ? null : profile.profileImageUrl();
-        AuthorProfileStatus profileStatus = withdrawn ? AuthorProfileStatus.WITHDRAWN
-                : available ? AuthorProfileStatus.AVAILABLE : AuthorProfileStatus.UNAVAILABLE;
+        AuthorProfileStatus profileStatus = available
+                ? AuthorProfileStatus.AVAILABLE : AuthorProfileStatus.UNAVAILABLE;
         return new AuthorResponse(available ? profile.memberId() : null, displayName, profileImageUrl, false, mine,
                 profile.actorType(), profileStatus);
     }

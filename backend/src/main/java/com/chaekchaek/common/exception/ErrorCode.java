@@ -74,7 +74,7 @@ public enum ErrorCode {
             "서재 항목을 찾을 수 없습니다."),
     LIBRARY_NOT_FOUND(
             "LIBRARY_NOT_FOUND",
-            "서재가 없습니다."),
+            "공개된 회원의 서재만 접근 가능합니다."),
     LIBRARY_ITEM_ALREADY_EXISTS(
             "LIBRARY_ITEM_ALREADY_EXISTS",
             "이미 서재에 등록된 책입니다."),
