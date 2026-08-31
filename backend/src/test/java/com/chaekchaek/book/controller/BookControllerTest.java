@@ -193,7 +193,9 @@ class BookControllerTest {
                                 parameterWithName("query").description("검색할 도서명"),
                                 parameterWithName("page").description("1부터 시작하는 페이지 번호"),
                                 parameterWithName("sort")
-                                        .description("정렬 기준. LATEST는 최신순, COMMENT는 댓글순이며 생략하면 LATEST를 사용한다")
+                                        .description("정렬 기준. TITLE_ASC는 이름 오름차순, TITLE_DESC는 이름 내림차순, "
+                                                + "OLDEST는 오래된순, LATEST는 최신순, REVIEW는 감상 많은 순, "
+                                                + "COMMENT는 댓글순이며 생략하면 LATEST를 사용한다")
                                         .optional()
                         ),
                         responseFields(BOOK_SEARCH_RESPONSE_FIELDS),
@@ -210,7 +212,9 @@ class BookControllerTest {
                                                 .description("1부터 시작하는 페이지 번호"),
                                         ResourceDocumentation.parameterWithName("sort")
                                                 .type(SimpleType.STRING)
-                                                .description("정렬 기준. LATEST는 최신순, COMMENT는 댓글순이며 생략하면 LATEST를 사용한다")
+                                                .description("정렬 기준. TITLE_ASC는 이름 오름차순, TITLE_DESC는 이름 내림차순, "
+                                                        + "OLDEST는 오래된순, LATEST는 최신순, REVIEW는 감상 많은 순, "
+                                                        + "COMMENT는 댓글순이며 생략하면 LATEST를 사용한다")
                                                 .optional()
                                 )
                                 .responseFields(BOOK_SEARCH_RESPONSE_FIELDS)
@@ -224,17 +228,17 @@ class BookControllerTest {
     @DisplayName("정렬 기준을 지정하면 해당 기준으로 도서 검색을 요청한다")
     void should_RequestBookSearchWithSort_When_SortIsProvided() throws Exception {
         // given
-        when(bookSearchService.search("마션", 1, BookSearchSort.COMMENT))
+        when(bookSearchService.search("마션", 1, BookSearchSort.REVIEW))
                 .thenReturn(new BookSearchResponse(0, null, List.of()));
 
         // when & then
         mockMvc.perform(get("/api/v1/books")
                         .param("query", "마션")
                         .param("page", "1")
-                        .param("sort", "COMMENT"))
+                        .param("sort", "REVIEW"))
                 .andExpect(status().isOk());
 
-        verify(bookSearchService).search("마션", 1, BookSearchSort.COMMENT);
+        verify(bookSearchService).search("마션", 1, BookSearchSort.REVIEW);
     }
 
     @Test

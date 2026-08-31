@@ -238,6 +238,51 @@ class BookSearchServiceTest {
     }
 
     @Test
+    @DisplayName("이름 오름차순으로 검색하면 이름이 빠른 도서부터 반환한다")
+    void should_SortByTitleAscending_When_SortIsTitleAsc() {
+        BookSearchService service = serviceWithBooks(
+                aladinBook("클린 아키텍처", "2024-01-01", "9780000000001"),
+                aladinBook("가상 면접 사례로 배우는 대규모 시스템 설계 기초", "2026-01-01", "9780000000002"),
+                aladinBook("리팩터링", "2021-01-01", "9780000000003")
+        );
+
+        BookSearchResponse response = service.search("책", 1, BookSearchSort.TITLE_ASC);
+
+        assertThat(response.items()).extracting(BookItem::title)
+                .containsExactly("가상 면접 사례로 배우는 대규모 시스템 설계 기초", "리팩터링", "클린 아키텍처");
+    }
+
+    @Test
+    @DisplayName("이름 내림차순으로 검색하면 이름이 늦은 도서부터 반환한다")
+    void should_SortByTitleDescending_When_SortIsTitleDesc() {
+        BookSearchService service = serviceWithBooks(
+                aladinBook("클린 아키텍처", "2024-01-01", "9780000000001"),
+                aladinBook("가상 면접 사례로 배우는 대규모 시스템 설계 기초", "2026-01-01", "9780000000002"),
+                aladinBook("리팩터링", "2021-01-01", "9780000000003")
+        );
+
+        BookSearchResponse response = service.search("책", 1, BookSearchSort.TITLE_DESC);
+
+        assertThat(response.items()).extracting(BookItem::title)
+                .containsExactly("클린 아키텍처", "리팩터링", "가상 면접 사례로 배우는 대규모 시스템 설계 기초");
+    }
+
+    @Test
+    @DisplayName("오래된순으로 검색하면 출판일이 오래된 도서부터 반환한다")
+    void should_SortByPublishedDateAscending_When_SortIsOldest() {
+        BookSearchService service = serviceWithBooks(
+                aladinBook("중간 책", "2024-01-01", "9780000000001"),
+                aladinBook("최신 책", "2026-01-01", "9780000000002"),
+                aladinBook("오래된 책", "2021-01-01", "9780000000003")
+        );
+
+        BookSearchResponse response = service.search("책", 1, BookSearchSort.OLDEST);
+
+        assertThat(response.items()).extracting(BookItem::title)
+                .containsExactly("오래된 책", "중간 책", "최신 책");
+    }
+
+    @Test
     @DisplayName("최신순으로 검색하면 출판일이 최신인 도서부터 반환한다")
     void should_SortByPublishedDateDescending_When_SortIsLatest() {
         // given
@@ -263,6 +308,30 @@ class BookSearchServiceTest {
         // then
         assertThat(response.items()).extracting(BookItem::title)
                 .containsExactly("최신 책", "중간 책", "오래된 책");
+    }
+
+    @Test
+    @DisplayName("감상 많은 순으로 검색하면 답글 수와 관계없이 감상 수가 많은 도서부터 반환한다")
+    void should_SortByReviewCountDescending_When_SortIsReview() {
+        AladinBookItem fewReviews = aladinBook("감상 적은 책", "2021-01-01", "9780000000001");
+        AladinBookItem mostReviews = aladinBook("감상 많은 책", "2024-01-01", "9780000000002");
+        AladinBookItem middleReviews = aladinBook("감상 중간 책", "2026-01-01", "9780000000003");
+        AladinBookItem unregisteredBook = aladinBook("미등록 책", "2025-01-01", "9780000000004");
+        BookSearchService service = serviceWith(
+                new AladinSearchResponse(null, null, 4, 1, 10,
+                        List.of(fewReviews, mostReviews, middleReviews, unregisteredBook)),
+                Map.of(1L, new ActivityCounts(1L, 100L),
+                        2L, new ActivityCounts(6L, 0L),
+                        3L, new ActivityCounts(2L, 3L)),
+                registeredBook(1L, fewReviews.isbn13()),
+                registeredBook(2L, mostReviews.isbn13()),
+                registeredBook(3L, middleReviews.isbn13())
+        );
+
+        BookSearchResponse response = service.search("책", 1, BookSearchSort.REVIEW);
+
+        assertThat(response.items()).extracting(BookItem::title)
+                .containsExactly("감상 많은 책", "감상 중간 책", "감상 적은 책", "미등록 책");
     }
 
     @Test
@@ -306,6 +375,10 @@ class BookSearchServiceTest {
         when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
                 .thenReturn(activityCounts);
         return guestService(bookClient, bookRepository, activityCountReader);
+    }
+
+    private BookSearchService serviceWithBooks(AladinBookItem... books) {
+        return serviceWith(new AladinSearchResponse(null, null, books.length, 1, 10, List.of(books)), Map.of());
     }
 
     private BookSearchService guestService(
