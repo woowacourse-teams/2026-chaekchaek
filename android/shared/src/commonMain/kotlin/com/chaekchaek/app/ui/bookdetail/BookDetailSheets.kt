@@ -92,8 +92,8 @@ internal fun PageInputDialog(
                     "지금까지 읽은 쪽수를 입력하면 독서 진행률에 반영돼요.",
                     modifier = Modifier.fillMaxWidth(),
                     color = ChaekInkSecondary,
-                    fontSize = 11.5.sp,
-                    lineHeight = 18.sp,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     FormLabel("내가 읽은 쪽수")
@@ -201,7 +201,7 @@ internal fun ReviewInputSheet(
                             "스포일러",
                             modifier = Modifier.padding(start = 8.dp),
                             color = ChaekDanger,
-                            fontSize = 12.5.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                         )
                     }
@@ -266,7 +266,7 @@ internal fun ReviewInputSheet(
                         "‘${displayedNickname.ifBlank { if (displayedAnonymously) "익명" else "닉네임 없음" }}’으로 표시돼요",
                         modifier = Modifier.padding(start = 7.dp),
                         color = ChaekInkSecondary,
-                        fontSize = 11.5.sp,
+                        fontSize = 12.sp,
                     )
                 }
             }
@@ -425,7 +425,7 @@ private fun FormLabel(label: String, required: Boolean = false) {
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                     color = ChaekSurface,
                     fontFamily = FontFamily.Monospace,
-                    fontSize = 9.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
@@ -455,14 +455,14 @@ private fun ChaekTextInput(
             .border(if (emphasized) 1.5.dp else 1.dp, if (emphasized) ChaekInk else ChaekBorder, shape)
             .semantics { contentDescription = accessibilityLabel }
             .padding(horizontal = 12.dp, vertical = if (singleLine || suffix != null || endText != null) 0.dp else 10.dp),
-        textStyle = TextStyle(color = ChaekInk, fontFamily = FontFamily.SansSerif, fontSize = 12.5.sp),
+        textStyle = TextStyle(color = ChaekInk, fontFamily = FontFamily.SansSerif, fontSize = 13.sp),
         keyboardOptions = keyboardOptions,
         singleLine = singleLine || suffix != null || endText != null,
         decorationBox = { innerTextField ->
             if (singleLine || suffix != null || endText != null) {
                 Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.weight(1f)) {
-                        if (value.isEmpty()) Text(placeholder, color = ChaekInkSecondary, fontSize = 11.5.sp)
+                        if (value.isEmpty()) Text(placeholder, color = ChaekInkSecondary, fontSize = 12.sp)
                         innerTextField()
                     }
                     suffix?.let { Text(it, color = ChaekInk, fontSize = 11.sp) }
@@ -472,13 +472,13 @@ private fun ChaekTextInput(
                             modifier = Modifier.padding(start = 6.dp),
                             color = ChaekInkSecondary,
                             fontFamily = FontFamily.Monospace,
-                            fontSize = 9.5.sp,
+                            fontSize = 11.sp,
                         )
                     }
                 }
             } else {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    if (value.isEmpty()) Text(placeholder, color = ChaekInkSecondary, fontSize = 11.5.sp)
+                    if (value.isEmpty()) Text(placeholder, color = ChaekInkSecondary, fontSize = 12.sp)
                     innerTextField()
                 }
             }

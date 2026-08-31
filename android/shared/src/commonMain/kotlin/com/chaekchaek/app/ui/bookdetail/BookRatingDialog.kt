@@ -193,7 +193,7 @@ private fun RatingComparisons(ratings: List<RatingComparisonBookUiModel>) {
                 Text(
                     item.ratedAtLabel,
                     color = ChaekInkTertiary,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                 )
             }
             if (index < ratings.lastIndex) Box(Modifier.width(1.dp).fillMaxHeight().background(ChaekBorderSoft))
