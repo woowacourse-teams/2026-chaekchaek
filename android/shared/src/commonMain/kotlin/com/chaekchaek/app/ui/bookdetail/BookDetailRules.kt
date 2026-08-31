@@ -7,8 +7,18 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 internal const val API_LOADING_DELAY_MILLIS = 500L
+
+internal fun averageRatingInTenths(averageRating: Double): Int =
+    (averageRating.coerceIn(0.0, 5.0) * 10).roundToInt()
+
+internal fun reviewMetadata(createdAt: String, currentPage: Int?): String =
+    listOfNotNull(
+        createdAt.take(10).replace('-', '.'),
+        currentPage?.let { "p.${it}까지" },
+    ).joinToString(" · ")
 
 internal object BookDetailInputRules {
     const val MAX_CONTENT_LENGTH = 1000

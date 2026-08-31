@@ -32,9 +32,35 @@ android {
         applicationId = "com.chamsae.chaekchaek"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0"
+        versionCode = 4
+        versionName = "1.1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        externalNativeBuild {
+            cmake {
+                cppFlags.addAll(
+                    listOf(
+                        "-std=c++17",
+                        "-Wno-unused-command-line-argument",
+                        "-Wl,--hash-style=both",
+                        "-fno-exceptions",
+                        "-fno-unwind-tables",
+                        "-fno-asynchronous-unwind-tables",
+                        "-fno-rtti",
+                        "-ffast-math",
+                        "-ffp-contract=fast",
+                        "-fvisibility-inlines-hidden",
+                        "-fvisibility=hidden",
+                        "-fomit-frame-pointer",
+                        "-ffunction-sections",
+                        "-fdata-sections",
+                        "-Wl,--gc-sections",
+                        "-Wl,-Bsymbolic-functions",
+                        "-nostdlib++",
+                    ),
+                )
+            }
+        }
     }
 
     signingConfigs {
@@ -48,10 +74,24 @@ android {
         }
     }
     buildTypes {
+        create("integration") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".integration"
+            versionNameSuffix = "-integration"
+            matchingFallbacks += listOf("debug")
+        }
         release {
             if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            ndk.debugSymbolLevel = "SYMBOL_TABLE"
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/androidx-graphics-path/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
     compileOptions {
@@ -66,6 +106,9 @@ android {
     }
 
     packaging {
+      jniLibs {
+        pickFirsts += "**/libandroidx.graphics.path.so"
+      }
       resources {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
       }
@@ -100,4 +143,7 @@ dependencies {
   implementation(libs.compose.runtime)
   implementation(libs.compose.foundation)
   implementation(libs.compose.ui)
+
+  androidTestImplementation(libs.androidx.test.ext.junit)
+  androidTestImplementation(libs.androidx.test.runner)
 }

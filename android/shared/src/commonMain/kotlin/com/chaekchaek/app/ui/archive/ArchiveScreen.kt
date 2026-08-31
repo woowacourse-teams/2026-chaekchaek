@@ -29,6 +29,12 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,6 +73,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.chaekchaek.app.domain.shelf.ReadingStatus
+import com.chaekchaek.app.domain.reader.Nickname
 import kotlinx.coroutines.launch
 
 @Composable
@@ -74,6 +81,7 @@ fun ArchiveRoute(
     viewModel: ArchiveViewModel,
     memberSettingsViewModel: MemberSettingsViewModel,
     editing: Boolean,
+    scrollTopRequest: Int = 0,
     onEditingChange: (Boolean) -> Unit,
     onBookClick: (ArchiveBookUiModel) -> Unit,
     modifier: Modifier = Modifier,
@@ -85,6 +93,7 @@ fun ArchiveRoute(
         uiState = uiState,
         memberSettingsState = memberSettingsState,
         editing = editing,
+        scrollTopRequest = scrollTopRequest,
         onEditingChange = onEditingChange,
         onRemove = viewModel::remove,
         onChangeStatus = viewModel::changeStatus,
@@ -101,6 +110,7 @@ fun ArchiveScreen(
     uiState: ArchiveUiState,
     memberSettingsState: MemberSettingsUiState,
     editing: Boolean,
+    scrollTopRequest: Int = 0,
     onEditingChange: (Boolean) -> Unit,
     onRemove: (Set<String>) -> Unit,
     onChangeStatus: (Set<String>, ReadingStatus) -> Unit,
@@ -116,7 +126,7 @@ fun ArchiveScreen(
     var pendingDeletionIds by remember { mutableStateOf(emptySet<String>()) }
     var showStatusDialog by remember { mutableStateOf(false) }
     var showNicknameDialog by remember { mutableStateOf(false) }
-    var nickname by rememberSaveable(memberSettingsState.nickname) { mutableStateOf(memberSettingsState.nickname) }
+    val nicknameState = rememberTextFieldState()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val visibleItems = remember(uiState.items, filter, sort) {
@@ -133,6 +143,12 @@ fun ArchiveScreen(
 
     LaunchedEffect(uiState.items) {
         selectedIds = selectedIds.intersect(uiState.items.mapTo(mutableSetOf()) { it.id })
+    }
+    LaunchedEffect(memberSettingsState.nickname) {
+        nicknameState.setTextAndPlaceCursorAtEnd(memberSettingsState.nickname)
+    }
+    LaunchedEffect(scrollTopRequest) {
+        if (scrollTopRequest > 0) listState.animateScrollToItem(0)
     }
 
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -154,15 +170,23 @@ fun ArchiveScreen(
                             onEditingChange(false)
                         },
                     )
-                    AnonymousSetting(
-                        checked = memberSettingsState.anonymousReviews,
-                        onClick = {
-                            if (memberSettingsState.anonymousReviews) showNicknameDialog = true
-                            else onAnonymousReviewsChange(true, "")
-                        },
-                    )
                 } else {
                     LibraryTopBar(onEdit = { onEditingChange(true) })
+                }
+                if (memberSettingsState.signedIn) {
+                    AnonymousSetting(
+                        checked = memberSettingsState.anonymousReviews,
+                        nickname = memberSettingsState.nickname,
+                        onClick = {
+                            if (!memberSettingsState.anonymousReviews) {
+                                onAnonymousReviewsChange(true, "")
+                            } else if (memberSettingsState.nickname.isBlank()) {
+                                showNicknameDialog = true
+                            } else {
+                                onAnonymousReviewsChange(false, memberSettingsState.nickname)
+                            }
+                        },
+                    )
                 }
             }
             item {
@@ -246,11 +270,10 @@ fun ArchiveScreen(
     }
     if (showNicknameDialog) {
         NicknameDialog(
-            nickname = nickname,
-            onNicknameChange = { nickname = it.take(10) },
+            nicknameState = nicknameState,
             onDismiss = { showNicknameDialog = false },
             onConfirm = {
-                onAnonymousReviewsChange(false, nickname)
+                onAnonymousReviewsChange(false, nicknameState.text.toString().trim())
                 showNicknameDialog = false
             },
         )
@@ -303,7 +326,7 @@ private fun ProfileAvatar() {
 }
 
 @Composable
-private fun AnonymousSetting(checked: Boolean, onClick: () -> Unit) {
+private fun AnonymousSetting(checked: Boolean, nickname: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -314,7 +337,11 @@ private fun AnonymousSetting(checked: Boolean, onClick: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text("익명으로 감상 공개", style = MaterialTheme.typography.titleSmall)
             Text(
-                if (checked) "해제하면 닉네임을 설정해야 합니다" else "닉네임이 감상에 표시됩니다",
+                when {
+                    checked && nickname.isNotBlank() -> "해제하면 기존 닉네임으로 공개됩니다"
+                    checked -> "해제하면 닉네임을 설정해야 합니다"
+                    else -> "닉네임이 감상에 표시됩니다"
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelSmall,
             )
@@ -693,11 +720,11 @@ private fun StatusOptionRow(status: ReadingStatus, selected: Boolean, onClick: (
 
 @Composable
 private fun NicknameDialog(
-    nickname: String,
-    onNicknameChange: (String) -> Unit,
+    nicknameState: TextFieldState,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
+    val nickname = nicknameState.text.toString()
     ArchiveDialog(onDismiss = onDismiss) {
         Text("닉네임 설정", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp))
         Text(
@@ -705,10 +732,10 @@ private fun NicknameDialog(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
         )
-        NicknameInput(nickname = nickname, onNicknameChange = onNicknameChange)
+        NicknameInput(nicknameState)
         DialogActions(
             confirmLabel = "확인",
-            confirmEnabled = nickname.isNotBlank(),
+            confirmEnabled = Nickname.isValid(nickname.trim()),
             onDismiss = onDismiss,
             onConfirm = onConfirm,
         )
@@ -716,7 +743,8 @@ private fun NicknameDialog(
 }
 
 @Composable
-private fun NicknameInput(nickname: String, onNicknameChange: (String) -> Unit) {
+private fun NicknameInput(nicknameState: TextFieldState) {
+    val nickname = nicknameState.text.toString()
     Row(
         modifier = Modifier.fillMaxWidth().height(44.dp).background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
             .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp)).padding(horizontal = 12.dp),
@@ -724,16 +752,16 @@ private fun NicknameInput(nickname: String, onNicknameChange: (String) -> Unit) 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicTextField(
-            value = nickname,
-            onValueChange = onNicknameChange,
+            state = nicknameState,
             modifier = Modifier.weight(1f),
-            singleLine = true,
+            inputTransformation = InputTransformation.maxLength(Nickname.MAX_LENGTH),
+            lineLimits = TextFieldLineLimits.SingleLine,
             textStyle = MaterialTheme.typography.bodyMedium.copy(
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 13.sp,
             ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-            decorationBox = { innerTextField ->
+            decorator = { innerTextField ->
                 Box {
                     if (nickname.isEmpty()) {
                         Text(

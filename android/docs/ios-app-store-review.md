@@ -7,7 +7,7 @@
 - 독서 상태를 선택해 로컬 서재에 추가, 변경, 삭제
 - `UserDefaults`에 서재 기록 저장
 - 앱 안에서 개인정보처리방침과 문의 링크 제공
-- 번들 ID `com.chamsae.chaekchaek`, 버전 `1.0`, 빌드 `1`
+- 번들 ID `com.chamsae.chaekchaek`, 버전 `1.1.0`, 빌드 `2`
 
 검색은 앱에 비밀값을 포함하지 않고 첵췍 API를 호출한다. 서재 기록은 SwiftUI 앱에서 로컬로
 관리한다.

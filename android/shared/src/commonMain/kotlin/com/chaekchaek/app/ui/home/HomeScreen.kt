@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -113,6 +114,7 @@ val LocalRemoteBookCover = staticCompositionLocalOf<RemoteBookCover> {
 fun HomeScreen(
     homeViewModel: HomeViewModel,
     accessToken: String? = null,
+    scrollTopRequest: Int = 0,
     modifier: Modifier = Modifier,
     onSearchBook: () -> Unit = {},
     onBookClick: (BookDetailTarget) -> Unit = {},
@@ -127,7 +129,7 @@ fun HomeScreen(
         HomeUiState.Loading -> LoadingContent(modifier)
         HomeUiState.Empty -> EmptyContent(modifier)
         is HomeUiState.Failure -> ErrorContent(state.error, homeViewModel::retry, modifier)
-        is HomeUiState.Content -> HomeContent(state, onSearchBook, onBookClick, modifier)
+        is HomeUiState.Content -> HomeContent(state, onSearchBook, onBookClick, scrollTopRequest, modifier)
     }
 }
 
@@ -173,12 +175,18 @@ private fun HomeContent(
     state: HomeUiState.Content,
     onSearchBook: () -> Unit,
     onBookClick: (BookDetailTarget) -> Unit,
+    scrollTopRequest: Int,
     modifier: Modifier,
 ) {
+    val listState = rememberLazyListState()
+    LaunchedEffect(scrollTopRequest) {
+        if (scrollTopRequest > 0) listState.animateScrollToItem(0)
+    }
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
+        state = listState,
     ) {
         item { HomeHeader() }
         items(state.sections) { section ->
@@ -440,7 +448,7 @@ private fun TrendingSection(
                 book = book,
                 rank = index + 1,
                 selected = selectedIndex == index,
-                onSelect = { selectedIndex = index },
+                onClick = { onBookClick(book.toBookDetailTarget()) },
                 x = x,
                 y = y,
                 scaleX = scaleX,
@@ -488,7 +496,7 @@ private fun HeroCover(
     book: TrendingBookUiModel?,
     rank: Int,
     selected: Boolean,
-    onSelect: () -> Unit,
+    onClick: () -> Unit,
     x: Float,
     y: Float,
     scaleX: Float,
@@ -516,7 +524,7 @@ private fun HeroCover(
             .semantics {
                 this.selected = selected
             }
-            .clickable(role = Role.Button, onClick = onSelect),
+            .clickable(role = Role.Button, onClick = onClick),
     )
 }
 
