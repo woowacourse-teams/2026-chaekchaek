@@ -10,6 +10,7 @@ import com.chaekchaek.home.dto.PopularBookListResponse;
 import com.chaekchaek.home.dto.PopularBookResponse;
 import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.dto.AuthorResponse;
+import com.chaekchaek.review.dto.AuthorProfileStatus;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
 import com.chaekchaek.review.repository.ReviewRepository;
@@ -110,11 +111,17 @@ public class HomeService {
         ReviewMemberProfile profile = memberProfiles.get(authorId);
         boolean mine = currentMemberId != null && authorId == currentMemberId;
         if (review.isAnonymous()) {
-            return new AuthorResponse(profile.anonymousNickname(), null, true, mine, profile.actorType());
+            return new AuthorResponse(null, profile.anonymousNickname(), null, true, mine, profile.actorType(),
+                    AuthorProfileStatus.UNAVAILABLE);
         }
-        String displayName = profile.withdrawn() ? "탈퇴한 사용자" : profile.displayName();
-        String profileImageUrl = profile.withdrawn() ? null : profile.profileImageUrl();
-        return new AuthorResponse(displayName, profileImageUrl, false, mine, profile.actorType());
+        boolean withdrawn = profile.accountStatus() == com.chaekchaek.member.domain.AccountStatus.WITHDRAWN;
+        boolean available = profile.accountStatus() == com.chaekchaek.member.domain.AccountStatus.ACTIVE;
+        String displayName = withdrawn ? "탈퇴한 사용자" : profile.displayName();
+        String profileImageUrl = withdrawn ? null : profile.profileImageUrl();
+        AuthorProfileStatus profileStatus = withdrawn ? AuthorProfileStatus.WITHDRAWN
+                : available ? AuthorProfileStatus.AVAILABLE : AuthorProfileStatus.UNAVAILABLE;
+        return new AuthorResponse(available ? profile.memberId() : null, displayName, profileImageUrl, false, mine,
+                profile.actorType(), profileStatus);
     }
 
     private Long currentActorIdOrNull() {

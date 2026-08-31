@@ -12,6 +12,8 @@ import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.home.dto.PopularBookResponse;
 import com.chaekchaek.home.dto.LatestReviewResponse;
 import com.chaekchaek.review.dto.AuthorResponse;
+import com.chaekchaek.review.dto.AuthorProfileStatus;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
@@ -82,9 +84,10 @@ class HomeServiceTest {
         assertThat(result).extracting(LatestReviewResponse::replyCount).containsExactly(12L, 3L);
         assertThat(result).extracting(LatestReviewResponse::bookTitle).containsExactly("두 번째 책", "첫 번째 책");
         assertThat(result).extracting(LatestReviewResponse::author)
-                .containsExactly(new AuthorResponse("다정한 참새", null, true, false, ActorType.MEMBER),
-                        new AuthorResponse("책 읽는 사람", "https://example.com/profile-1.jpg", false, false,
-                                ActorType.MEMBER));
+                .containsExactly(new AuthorResponse(null, "다정한 참새", null, true, false, ActorType.MEMBER,
+                                AuthorProfileStatus.UNAVAILABLE),
+                        new AuthorResponse(101L, "책 읽는 사람", "https://example.com/profile-1.jpg", false,
+                                false, ActorType.MEMBER, AuthorProfileStatus.AVAILABLE));
     }
 
     private static HomeService homeService(ReviewRepository reviewRepository, ReplyRepository replyRepository,
@@ -93,10 +96,10 @@ class HomeServiceTest {
         ReviewMemberReader reviewMemberReader = mock(ReviewMemberReader.class);
         when(currentActorProvider.findCurrentActor()).thenReturn(Optional.empty());
         when(reviewMemberReader.findByActorIds(anyCollection())).thenReturn(java.util.Map.of(
-                1L, new ReviewMemberProfile("책 읽는 사람", "https://example.com/profile-1.jpg",
-                        "익명 사용자 1", false, false, ActorType.MEMBER),
-                2L, new ReviewMemberProfile("닉네임", "https://example.com/profile.jpg",
-                        "다정한 참새", true, false, ActorType.MEMBER)
+                1L, new ReviewMemberProfile(101L, "책 읽는 사람", "https://example.com/profile-1.jpg",
+                        "익명 사용자 1", false, AccountStatus.ACTIVE, ActorType.MEMBER),
+                2L, new ReviewMemberProfile(102L, "닉네임", "https://example.com/profile.jpg",
+                        "다정한 참새", true, AccountStatus.ACTIVE, ActorType.MEMBER)
         ));
         return new HomeService(reviewRepository, replyRepository, bookRepository,
                 currentActorProvider, reviewMemberReader);

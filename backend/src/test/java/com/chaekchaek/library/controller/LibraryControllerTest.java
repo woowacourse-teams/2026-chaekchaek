@@ -31,6 +31,8 @@ import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
+import com.chaekchaek.library.dto.PublicLibraryItemResponse;
+import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RatingComparisonBookResponse;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.service.LibraryService;
@@ -73,6 +75,13 @@ class LibraryControllerTest {
     private static final String LIBRARY_TAG = "내 서재";
     private static final String LIBRARY_LIST_SUMMARY = "내 서재 조회";
     private static final String LIBRARY_LIST_DESCRIPTION = "인증된 사용자가 읽기 상태와 정렬 기준으로 내 서재를 조회한다";
+    private static final String PUBLIC_LIBRARY_LIST_SUMMARY = "사용자 공개 서재 조회";
+    private static final String PUBLIC_LIBRARY_LIST_DESCRIPTION = """
+            비로그인 사용자를 포함한 모든 사용자가 활성 회원의 공개 서재를 조회한다.
+            `page`는 1부터 시작하며 한 페이지에 최대 10개를 반환한다. 마지막 페이지의 `nextPage`는 `null`이다.
+            필터 결과나 서재가 비어 있으면 200 응답과 빈 `items`를 반환한다.
+            존재하지 않거나 탈퇴·정지된 회원의 서재는 `LIBRARY_NOT_FOUND`를 반환한다.
+            """;
     private static final String LIBRARY_ADD_SUMMARY = "내 서재에 도서 추가";
     private static final String LIBRARY_ADD_DESCRIPTION = "인증된 사용자가 ISBN-13으로 도서를 조회해 내 서재에 추가한다";
     private static final String LIBRARY_UPDATE_SUMMARY = "내 서재 항목 수정";
@@ -174,6 +183,57 @@ class LibraryControllerTest {
                 HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST, "/api/v1/library")
                 .andDo(problemDetailDocument("library-list-invalid-request", LIBRARY_LIST_SUMMARY,
                         LIBRARY_LIST_DESCRIPTION, noPathParameters(), libraryListResourceQueryParameters()));
+    }
+
+    @Test
+    @DisplayName("비로그인 사용자도 활성 회원의 공개 서재를 조회할 수 있다")
+    void should_ReturnPublicLibrary_When_RequestIsValid() throws Exception {
+        PublicLibraryListResponse response = new PublicLibraryListResponse(1, 1, null,
+                List.of(PublicLibraryItemResponse.from(libraryItemResponse())));
+        when(libraryService.getPublicLibrary(MEMBER_ID, 1, ReadingStatus.READING, LibrarySort.RECENT))
+                .thenReturn(response);
+
+        mockMvc.perform(get("/api/v1/members/{memberId}/library", MEMBER_ID)
+                        .param("page", "1")
+                        .param("status", "READING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].bookId").value(BOOK_ID))
+                .andExpect(jsonPath("$.items[0].status").value("READING"))
+                .andExpect(jsonPath("$.items[0].currentPage").value(100))
+                .andExpect(jsonPath("$.items[0].rating").value(4.5))
+                .andExpect(jsonPath("$.items[0].addedAt").doesNotExist())
+                .andExpect(jsonPath("$.items[0].readingUpdatedAt").doesNotExist())
+                .andDo(document(
+                        "public-library-list",
+                        pathParameters(memberIdPathParameter()),
+                        queryParameters(libraryListQueryParameters()),
+                        responseFields(publicLibraryListResponseFields()),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary(PUBLIC_LIBRARY_LIST_SUMMARY)
+                                .description(PUBLIC_LIBRARY_LIST_DESCRIPTION)
+                                .tag(LIBRARY_TAG)
+                                .pathParameters(memberIdResourcePathParameters())
+                                .queryParameters(libraryListResourceQueryParameters())
+                                .responseFields(publicLibraryListResponseFields())
+                                .build())
+                ));
+
+        verify(libraryService).getPublicLibrary(MEMBER_ID, 1, ReadingStatus.READING, LibrarySort.RECENT);
+    }
+
+    @Test
+    @DisplayName("공개할 수 없는 회원의 서재는 찾을 수 없음 응답을 반환한다")
+    void should_ReturnNotFound_When_PublicLibraryIsUnavailable() throws Exception {
+        when(libraryService.getPublicLibrary(MEMBER_ID, 1, null, LibrarySort.RECENT))
+                .thenThrow(new BusinessException(ErrorCode.LIBRARY_NOT_FOUND));
+
+        expectProblemDetail(mockMvc.perform(get("/api/v1/members/{memberId}/library", MEMBER_ID)
+                        .param("page", "1")),
+                HttpStatus.NOT_FOUND, ErrorCode.LIBRARY_NOT_FOUND,
+                "/api/v1/members/" + MEMBER_ID + "/library")
+                .andDo(problemDetailDocument("public-library-list-not-found",
+                        PUBLIC_LIBRARY_LIST_SUMMARY, PUBLIC_LIBRARY_LIST_DESCRIPTION,
+                        memberIdResourcePathParameters(), libraryListResourceQueryParameters()));
     }
 
     @Test
@@ -781,6 +841,34 @@ class LibraryControllerTest {
         };
     }
 
+    private FieldDescriptor[] publicLibraryListResponseFields() {
+        return new FieldDescriptor[]{
+                fieldWithPath("totalCount").type(JsonFieldType.NUMBER).description("공개 서재 전체 도서 수"),
+                fieldWithPath("filteredCount").type(JsonFieldType.NUMBER).description("필터 적용 후 도서 수"),
+                fieldWithPath("nextPage").type(JsonFieldType.NUMBER)
+                        .description("다음 페이지 번호. 마지막 페이지면 null").optional(),
+                fieldWithPath("items").type(JsonFieldType.ARRAY).description("공개 서재 도서 목록"),
+                fieldWithPath("items[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
+                fieldWithPath("items[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
+                fieldWithPath("items[].title").type(JsonFieldType.STRING).description("도서 제목"),
+                fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
+                fieldWithPath("items[].authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
+                        .attributes(key("itemsType").value(JsonFieldType.STRING)),
+                fieldWithPath("items[].translators").type(JsonFieldType.ARRAY).description("옮긴이 이름 목록")
+                        .attributes(key("itemsType").value(JsonFieldType.STRING)),
+                fieldWithPath("items[].publisher").type(JsonFieldType.STRING).description("출판사"),
+                fieldWithPath("items[].category").type(JsonFieldType.STRING).description("도서 카테고리"),
+                fieldWithPath("items[].publishedDate").type(JsonFieldType.STRING).description("출판일"),
+                fieldWithPath("items[].totalPages").type(JsonFieldType.NUMBER).description("전체 페이지 수").optional(),
+                fieldWithPath("items[].commentCount").type(JsonFieldType.NUMBER).description("감상과 답글 수"),
+                fieldWithPath("items[].status").type(JsonFieldType.STRING).description("서재 소유자의 읽기 상태"),
+                fieldWithPath("items[].currentPage").type(JsonFieldType.NUMBER)
+                        .description("서재 소유자의 현재 읽은 페이지"),
+                fieldWithPath("items[].rating").type(JsonFieldType.NUMBER)
+                        .description("서재 소유자가 부여한 별점").optional()
+        };
+    }
+
     private FieldDescriptor[] addLibraryItemRequestFields() {
         return new FieldDescriptor[]{
                 fieldWithPath("isbn13").type(JsonFieldType.STRING).description("추가할 도서의 ISBN-13"),
@@ -893,6 +981,19 @@ class LibraryControllerTest {
     private ParameterDescriptor bookIdPathParameter() {
         return org.springframework.restdocs.request.RequestDocumentation.parameterWithName("bookId")
                 .description("도서 ID");
+    }
+
+    private ParameterDescriptor memberIdPathParameter() {
+        return org.springframework.restdocs.request.RequestDocumentation.parameterWithName("memberId")
+                .description("공개 서재를 조회할 회원 ID");
+    }
+
+    private ParameterDescriptorWithType[] memberIdResourcePathParameters() {
+        return new ParameterDescriptorWithType[]{
+                ResourceDocumentation.parameterWithName("memberId")
+                        .type(SimpleType.INTEGER)
+                        .description("공개 서재를 조회할 회원 ID")
+        };
     }
 
     private ParameterDescriptorWithType bookIdResourcePathParameter() {

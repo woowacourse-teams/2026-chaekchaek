@@ -13,7 +13,10 @@ import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
 import com.chaekchaek.library.dto.RatingComparisonBookResponse;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
+import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.member.domain.AccountStatus;
+import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -38,6 +41,7 @@ public class LibraryService {
     private final BookRepository bookRepository;
     private final BookResolver bookResolver;
     private final BookCommentCountReader commentCountReader;
+    private final MemberRepository memberRepository;
     private final Clock clock;
     private final TransactionTemplate transactionTemplate;
 
@@ -46,6 +50,7 @@ public class LibraryService {
             BookRepository bookRepository,
             BookResolver bookResolver,
             BookCommentCountReader commentCountReader,
+            MemberRepository memberRepository,
             Clock clock,
             PlatformTransactionManager transactionManager
     ) {
@@ -53,6 +58,7 @@ public class LibraryService {
         this.bookRepository = bookRepository;
         this.bookResolver = bookResolver;
         this.commentCountReader = commentCountReader;
+        this.memberRepository = memberRepository;
         this.clock = clock;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
@@ -80,6 +86,17 @@ public class LibraryService {
                         .map(item -> response(item, books.get(item.getBookId()), commentCounts))
                         .toList()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public PublicLibraryListResponse getPublicLibrary(long memberId, int page, ReadingStatus status,
+                                                      LibrarySort sort) {
+        if (memberRepository.findById(memberId)
+                .filter(member -> member.getAccountStatus() == AccountStatus.ACTIVE)
+                .isEmpty()) {
+            throw new BusinessException(ErrorCode.LIBRARY_NOT_FOUND);
+        }
+        return PublicLibraryListResponse.from(getLibrary(memberId, page, status, sort));
     }
 
     @Transactional
