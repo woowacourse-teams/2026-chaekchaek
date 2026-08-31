@@ -209,6 +209,7 @@ export const BookDetailPage = () => {
           <Split.Content>
             {data?.bookId && (
               <BookReviews
+                isbn={isbn}
                 bookId={data.bookId}
                 sort={reviewsRequestParams.sort}
                 feed={reviewsRequestParams.feed}

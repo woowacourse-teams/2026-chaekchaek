@@ -16,6 +16,9 @@ import {
 import { useFormValues } from '@/hooks/useFormValues';
 import { useExecute } from '@/services/core/useExecute';
 import { postBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
+import { postBooksByIsbnIsbn13Reviews } from '@/services/apis/booksByIsbnIsbn13Reviews/repository';
+
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { validateReview } from './validator';
 import type { ReviewFormValues } from './validator';
@@ -37,7 +40,14 @@ const buildReviewRequest = (formValues: ReviewFormValues) => {
   };
 };
 
-export const WriteReviewDialog = ({ bookId, onReviewWritten, onClose }: WriteReviewDialogProps) => {
+export const WriteReviewDialog = ({
+  bookId,
+  isbn,
+  onReviewWritten,
+  onClose,
+}: WriteReviewDialogProps) => {
+  const { isAuthenticated, guest } = useAuthContext();
+
   const { values, errors, onChange, isValid, valids } = useFormValues<ReviewFormValues>({
     initialValues: {
       content: '',
@@ -49,17 +59,28 @@ export const WriteReviewDialog = ({ bookId, onReviewWritten, onClose }: WriteRev
     validate: validateReview,
   });
 
-  const { mutate } = useExecute({ executeFn: postBooksBookIdReviews });
+  const { mutate: postBookReviewMutate } = useExecute({ executeFn: postBooksBookIdReviews });
+  const { mutate: postBookReviewByIsbnMutate } = useExecute({
+    executeFn: postBooksByIsbnIsbn13Reviews,
+  });
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
     const requestData = buildReviewRequest(values);
 
-    await mutate({
-      bookId,
-      ...requestData,
-    });
+    if (isAuthenticated) {
+      await postBookReviewMutate({
+        bookId,
+        ...requestData,
+      });
+    } else {
+      await postBookReviewByIsbnMutate({
+        isbn13: isbn,
+        ...requestData,
+        guestToken: guest.guestToken,
+      });
+    }
 
     onReviewWritten();
     onClose();
