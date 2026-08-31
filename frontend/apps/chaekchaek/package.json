@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:test": "tsc --noEmit -p tsconfig.test.json",
     "typecheck:test:watch": "tsc --noEmit -p tsconfig.test.json --watch",
-    "yaml-to-json": "npx -p @apidevtools/swagger-cli swagger-cli bundle -r -t json src/services/open-api-spec/openapi3.yaml > src/services/open-api-spec/openapi3.json"
+    "yaml-to-json": "npx -p @apidevtools/swagger-cli swagger-cli bundle --dereference -t json src/services/open-api-spec/openapi3.yaml > src/services/open-api-spec/openapi3.json"
   },
   "devDependencies": {
     "@mswjs/source": "^0.5.0",
