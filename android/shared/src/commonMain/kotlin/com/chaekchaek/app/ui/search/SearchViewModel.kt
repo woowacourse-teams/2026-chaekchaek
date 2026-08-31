@@ -35,6 +35,8 @@ class SearchViewModel(
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
     private val _sort = MutableStateFlow(BookSearchSort.LATEST)
     val sort: StateFlow<BookSearchSort> = _sort.asStateFlow()
+    private val _query = MutableStateFlow("")
+    val query: StateFlow<String> = _query.asStateFlow()
     private val _pendingRegistration = MutableStateFlow<BookSearchResult?>(null)
     val pendingRegistration: StateFlow<BookSearchResult?> = _pendingRegistration.asStateFlow()
     private var searchJob: Job? = null
@@ -43,7 +45,12 @@ class SearchViewModel(
     fun clear() {
         searchJob?.cancel()
         currentQuery = ""
+        _query.value = ""
         _uiState.value = SearchUiState.Idle
+    }
+
+    fun updateQuery(query: String) {
+        _query.value = query
     }
 
     fun search(query: String) {

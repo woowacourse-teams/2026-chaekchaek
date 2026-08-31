@@ -36,7 +36,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,11 +77,14 @@ fun SearchRoute(
 ) {
   val state by viewModel.uiState.collectAsState()
   val sort by viewModel.sort.collectAsState()
+  val query by viewModel.query.collectAsState()
   SearchScreen(
     state = state,
     sort = sort,
+    query = query,
     registeredBookIds = registeredBookIds,
     onSearch = viewModel::search,
+    onQueryChange = viewModel::updateQuery,
     onClear = viewModel::clear,
     onRegister = viewModel::register,
     onLoadMore = viewModel::loadMore,
@@ -97,8 +99,10 @@ fun SearchRoute(
 fun SearchScreen(
   state: SearchUiState,
   sort: BookSearchSort,
+  query: String,
   registeredBookIds: Set<String>,
   onSearch: (String) -> Unit,
+  onQueryChange: (String) -> Unit,
   onClear: () -> Unit,
   onRegister: (BookSearchResult) -> Unit,
   onLoadMore: () -> Unit,
@@ -107,7 +111,6 @@ fun SearchScreen(
   onBack: () -> Unit = {},
   onBookClick: (BookDetailTarget) -> Unit = {},
 ) {
-  var query by rememberSaveable { mutableStateOf("") }
   val leaveSearch = {
     onClear()
     onBack()
@@ -123,7 +126,7 @@ fun SearchScreen(
     SearchTopBar(
       query = query,
       onQueryChange = {
-        query = it
+        onQueryChange(it)
         if (it.isEmpty()) onClear()
       },
       onSearch = { onSearch(query) },

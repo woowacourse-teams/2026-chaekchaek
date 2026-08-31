@@ -176,6 +176,7 @@ fun ArchiveScreen(
                 if (memberSettingsState.signedIn) {
                     AnonymousSetting(
                         checked = memberSettingsState.anonymousReviews,
+                        nickname = memberSettingsState.nickname,
                         onClick = {
                             if (!memberSettingsState.anonymousReviews) {
                                 onAnonymousReviewsChange(true, "")
@@ -325,7 +326,7 @@ private fun ProfileAvatar() {
 }
 
 @Composable
-private fun AnonymousSetting(checked: Boolean, onClick: () -> Unit) {
+private fun AnonymousSetting(checked: Boolean, nickname: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
@@ -336,7 +337,11 @@ private fun AnonymousSetting(checked: Boolean, onClick: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text("익명으로 감상 공개", style = MaterialTheme.typography.titleSmall)
             Text(
-                if (checked) "해제하면 닉네임을 설정해야 합니다" else "닉네임이 감상에 표시됩니다",
+                when {
+                    checked && nickname.isNotBlank() -> "해제하면 기존 닉네임으로 공개됩니다"
+                    checked -> "해제하면 닉네임을 설정해야 합니다"
+                    else -> "닉네임이 감상에 표시됩니다"
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelSmall,
             )

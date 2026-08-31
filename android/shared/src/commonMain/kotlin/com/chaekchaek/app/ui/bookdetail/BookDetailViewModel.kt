@@ -38,8 +38,10 @@ class BookDetailViewModel(
     private var repliesJob: Job? = null
     private var mutationJob: Job? = null
     private var ratingComparisonJob: Job? = null
+    private var requestGeneration = 0
 
     fun open(book: BookDetailArgs, accessToken: String?) {
+        invalidateRequests()
         this.accessToken = accessToken
         _uiState.value = BookDetailUiState(
             book = book,
@@ -59,14 +61,17 @@ class BookDetailViewModel(
 
     fun syncAuthentication(accessToken: String?): BookDetailAuthenticatedAction? {
         if (this.accessToken == accessToken) return null
+        invalidateRequests()
         this.accessToken = accessToken
-        ratingComparisonJob?.cancel()
         val pending = _uiState.value.pendingAction.takeIf { accessToken != null }
         _uiState.value = _uiState.value.copy(
             signedIn = accessToken != null,
             pendingAction = null,
             guestNickname = accessToken?.let { null } ?: authPlatform.readGuest()?.nickname,
             ratingComparison = emptyList(),
+            isLoading = false,
+            isLoadingMore = false,
+            isSubmitting = false,
         )
         reload()
         return pending
@@ -140,6 +145,8 @@ class BookDetailViewModel(
     ) {
         val state = _uiState.value
         if (savedBookId == null) {
+            state.detail?.myRecord?.let { return@mutate it }
+            requireNotNull(state.detail)
             val book = requireNotNull(state.displayBook)
             repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken())
         } else {
@@ -148,32 +155,34 @@ class BookDetailViewModel(
         }
     }
 
-    fun updateStatus(status: ReadingStatus, onSuccess: () -> Unit = {}) = mutate(
-        onSuccess = { record: LibraryRecord ->
-            updateMyRecord(record)
-            onSuccess()
-        },
-        reloadAfterSuccess = false,
-    ) { repository.updateReadingStatus(bookIdForWrite(), status.apiValue, requireToken()) }
-
-    fun savePage(page: Int, onSuccess: () -> Unit = {}) = mutate(
-        onSuccess = { record: LibraryRecord ->
-            updateMyRecord(record)
-            onSuccess()
-        },
-        reloadAfterSuccess = false,
-    ) {
-        val totalPages = _uiState.value.detail?.totalPages ?: _uiState.value.displayBook?.totalPages
-        repository.updateCurrentPage(bookIdForWrite(), page, totalPages, requireToken())
+    fun updateStatus(
+        status: ReadingStatus,
+        onLibraryAdded: () -> Unit = {},
+        onSuccess: () -> Unit = {},
+    ) = mutateLibraryRecord(onSuccess, onLibraryAdded) { bookId, token ->
+        repository.updateReadingStatus(bookId, status.apiValue, token)
     }
 
-    fun saveRating(rating: Rating, onSuccess: () -> Unit = {}) = mutate(
-        onSuccess = { record: LibraryRecord ->
-            updateMyRecord(record)
-            onSuccess()
-        },
-        reloadAfterSuccess = false,
-    ) { repository.rate(bookIdForWrite(), rating.score.toDouble(), requireToken()) }
+    fun savePage(
+        page: Int,
+        onLibraryAdded: () -> Unit = {},
+        onSuccess: () -> Unit = {},
+    ) = mutateLibraryRecord(onSuccess, onLibraryAdded) { bookId, token ->
+        val totalPages = _uiState.value.detail?.totalPages ?: _uiState.value.displayBook?.totalPages
+        repository.updateCurrentPage(bookId, page, totalPages, token)
+    }
+
+    fun saveRating(
+        rating: Rating,
+        onLibraryAdded: () -> Unit = {},
+        onSuccess: () -> Unit = {},
+    ) = mutateLibraryRecord(
+        onSuccess = onSuccess,
+        onLibraryAdded = onLibraryAdded,
+        reloadAfterSuccess = true,
+    ) { bookId, token ->
+        repository.rate(bookId, rating.score.toDouble(), token)
+    }
 
     fun loadRatingComparison(criterion: Rating) {
         val token = accessToken ?: return
@@ -295,34 +304,43 @@ class BookDetailViewModel(
 
     private fun reload() {
         val book = _uiState.value.book ?: return
+        val generation = requestGeneration
+        val credential = readCredential()
+        val reviewScope = _uiState.value.reviewScope
+        val reviewSort = _uiState.value.reviewSort
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             runCatching {
                 withDelayedLoading(
                     onLoadingChanged = { loading ->
-                        _uiState.value = _uiState.value.copy(isLoading = loading)
+                        if (generation == requestGeneration) {
+                            _uiState.value = _uiState.value.copy(isLoading = loading)
+                        }
                     },
                 ) {
                     val detail = book.isbn13.takeIf(String::isNotBlank)
-                        ?.let { repository.detail(it, readCredential()) }
+                        ?.let { repository.detail(it, credential) }
                     val reviews = detail?.bookId?.let { bookId ->
                         repository.reviews(
                             bookId,
-                            _uiState.value.reviewScope,
-                            _uiState.value.reviewSort,
-                            readCredential(),
+                            reviewScope,
+                            reviewSort,
+                            credential,
                         )
                     }
                     detail to reviews
                 }
             }.onSuccess { (detail, reviews) ->
+                if (generation != requestGeneration) return@onSuccess
                 _uiState.value = _uiState.value.copy(
                     detail = detail,
                     reviews = reviews?.items.orEmpty(),
                     reviewCount = reviews?.totalCount ?: 0,
                     nextReviewPage = reviews?.nextPage,
                 )
-            }.onFailure(::handleFailure)
+            }.onFailure { error ->
+                if (generation == requestGeneration || error is CancellationException) handleFailure(error)
+            }
         }
     }
 
@@ -359,35 +377,79 @@ class BookDetailViewModel(
         action: suspend () -> T,
     ) {
         if (mutationJob?.isActive == true) return
+        val generation = requestGeneration
         mutationJob = viewModelScope.launch {
             runCatching {
                 withDelayedLoading(
                     onLoadingChanged = { loading ->
-                        _uiState.value = _uiState.value.copy(isSubmitting = loading)
+                        if (generation == requestGeneration) {
+                            _uiState.value = _uiState.value.copy(isSubmitting = loading)
+                        }
                     },
-                    request = action,
-                )
+                ) {
+                    loadJob?.join()
+                    action()
+                }
             }.onSuccess { result ->
+                if (generation != requestGeneration) return@onSuccess
+                loadJob?.cancel()
                 onSuccess(result)
                 if (reloadAfterSuccess) reload()
-            }.onFailure(::handleFailure)
+            }.onFailure { error ->
+                if (generation == requestGeneration || error is CancellationException) handleFailure(error)
+            }
         }
     }
 
-    private suspend fun bookIdForWrite(): Long {
-        val state = _uiState.value
-        state.detail?.myRecord?.bookId?.let { return it }
-        if (state.detail?.myRecord != null) {
-            return requireNotNull(state.detail.bookId)
+    private fun mutateLibraryRecord(
+        onSuccess: () -> Unit,
+        onLibraryAdded: () -> Unit,
+        reloadAfterSuccess: Boolean = false,
+        action: suspend (bookId: Long, token: String) -> LibraryRecord,
+    ) {
+        val generation = requestGeneration
+        mutate(
+            onSuccess = { record: LibraryRecord ->
+                updateMyRecord(record)
+                onSuccess()
+            },
+            reloadAfterSuccess = reloadAfterSuccess,
+        ) {
+            val token = requireToken()
+            action(
+                bookIdForWrite(token, generation, onLibraryAdded),
+                token,
+            )
         }
+    }
+
+    private suspend fun bookIdForWrite(
+        token: String,
+        generation: Int,
+        onLibraryAdded: () -> Unit,
+    ): Long {
+        val detail = requireNotNull(_uiState.value.detail)
+        detail.myRecord?.bookId?.let { return it }
+        if (detail.myRecord != null) return requireNotNull(detail.bookId)
         val book = requireNotNull(_uiState.value.displayBook)
         val record = repository.addToLibrary(
             book.isbn13,
             book.totalPages.takeIf { it > 0 },
-            requireToken(),
+            token,
         )
+        if (generation != requestGeneration) throw CancellationException("인증 상태가 변경됨")
         updateMyRecord(record)
+        onLibraryAdded()
         return requireNotNull(record.bookId ?: _uiState.value.detail?.bookId)
+    }
+
+    private fun invalidateRequests() {
+        requestGeneration += 1
+        loadJob?.cancel()
+        loadMoreJob?.cancel()
+        repliesJob?.cancel()
+        mutationJob?.cancel()
+        ratingComparisonJob?.cancel()
     }
 
     private fun updateMyRecord(record: LibraryRecord?) {

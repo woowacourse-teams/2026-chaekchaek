@@ -159,17 +159,29 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                             viewModel.toggleLibrary(savedBookId, archiveViewModel::retry)
                         },
                         onStatusChange = { status ->
-                            viewModel.updateStatus(status, archiveViewModel::retry)
+                            viewModel.updateStatus(
+                                status,
+                                onSuccess = archiveViewModel::retry,
+                                onLibraryAdded = archiveViewModel::retry,
+                            )
                         },
                         onPageSave = { page ->
-                            viewModel.savePage(page, archiveViewModel::retry)
+                            viewModel.savePage(
+                                page,
+                                onSuccess = archiveViewModel::retry,
+                                onLibraryAdded = archiveViewModel::retry,
+                            )
                         },
                         onRatingCriterionChange = viewModel::loadRatingComparison,
                         onRatingSave = { rating, onSaved ->
-                            viewModel.saveRating(rating) {
-                                archiveViewModel.retry()
-                                onSaved()
-                            }
+                            viewModel.saveRating(
+                                rating,
+                                onSuccess = {
+                                    archiveViewModel.retry()
+                                    onSaved()
+                                },
+                                onLibraryAdded = archiveViewModel::retry,
+                            )
                         },
                         onReviewCreate = viewModel::createReview,
                         onReviewOpen = viewModel::openReviewComposer,

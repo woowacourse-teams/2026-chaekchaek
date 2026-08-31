@@ -63,9 +63,9 @@ class MemberSettingsViewModelTest {
             requests += request
             when (request.url.encodedPath) {
                 "/api/v1/members/me" ->
-                    respondJson("""{"memberId":9,"nickname":"기존 이름","displayAnonymous":true}""")
+                    respondJson("""{"memberId":9,"nickname":"기존 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":true}""")
                 "/api/v1/members/me/anonymity" ->
-                    respondJson("""{"memberId":9,"nickname":"기존 이름","displayAnonymous":false}""")
+                    respondJson("""{"memberId":9,"nickname":"기존 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""")
                 else -> error("Unexpected request: ${request.url.encodedPath}")
             }
         }
@@ -95,15 +95,15 @@ class MemberSettingsViewModelTest {
             requests += request
             when (request.url.encodedPath) {
                 "/api/v1/members/me" ->
-                    respondJson("""{"memberId":9,"nickname":"이전 이름","displayAnonymous":true}""")
+                    respondJson("""{"memberId":9,"nickname":"이전 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":true}""")
                 "/api/v1/members/me/nickname" ->
-                    respondJson("""{"memberId":9,"nickname":"새 이름","displayAnonymous":true}""")
+                    respondJson("""{"memberId":9,"nickname":"새 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":true}""")
                 "/api/v1/members/me/anonymity" -> {
                     anonymityRequests += 1
                     if (anonymityRequests == 1) {
                         respondJson("""{"code":"SERVER_ERROR"}""", HttpStatusCode.InternalServerError)
                     } else {
-                        respondJson("""{"memberId":9,"nickname":"새 이름","displayAnonymous":false}""")
+                        respondJson("""{"memberId":9,"nickname":"새 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""")
                     }
                 }
                 else -> error("Unexpected request: ${request.url.encodedPath}")

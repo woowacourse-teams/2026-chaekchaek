@@ -55,7 +55,7 @@ private data class AnonymityRequest(val displayAnonymous: Boolean)
 private data class MemberResponseDto(
     val memberId: Long,
     val nickname: String? = null,
-    val anonymousNickname: String = "",
+    val anonymousNickname: String,
     val displayAnonymous: Boolean,
 ) {
     fun toRemoteMemberProfile() = RemoteMemberProfile(memberId, nickname.orEmpty(), anonymousNickname, displayAnonymous)

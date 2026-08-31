@@ -20,7 +20,6 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -212,11 +211,14 @@ class BookDetailViewModelTest {
   @Test
   fun `서재 미등록 책은 등록 응답 ID로 별점을 저장하고 즉시 반영한다`() = runViewModelTest {
     val requestedPaths = mutableListOf<String>()
+    var detailGetCount = 0
     val engine = MockEngine { request ->
       requestedPaths += request.url.encodedPath
       when {
-        request.method == HttpMethod.Get && request.url.encodedPath.contains("/by-isbn/") ->
-          respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        request.method == HttpMethod.Get && request.url.encodedPath.contains("/by-isbn/") -> {
+          detailGetCount += 1
+          respond(if (detailGetCount == 1) DETAIL_WITHOUT_RECORD else DETAIL_AFTER_RATING, headers = jsonHeaders())
+        }
         request.method == HttpMethod.Get -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
         request.method == HttpMethod.Post -> respond(LIBRARY_RECORD, HttpStatusCode.Created, jsonHeaders())
         request.method == HttpMethod.Put -> respond(RATED_LIBRARY_RECORD, headers = jsonHeaders())
@@ -229,11 +231,98 @@ class BookDetailViewModelTest {
     awaitReal { viewModel.uiState.first { it.detail != null } }
 
     viewModel.saveRating(Rating.ofScore(5f))
-    awaitReal { viewModel.uiState.first { it.detail?.myRecord?.rating == 5.0 } }
+    awaitReal { viewModel.uiState.first { it.detail?.averageRating == 5.0 } }
 
     assertTrue("/api/v1/library/73/rating" in requestedPaths)
-    assertEquals(73L, viewModel.uiState.value.detail?.myRecord?.bookId)
+    assertEquals(73L, viewModel.uiState.value.detail?.bookId)
     assertEquals(5.0, viewModel.uiState.value.detail?.myRecord?.rating)
+  }
+
+  @Test
+  fun `상세 로딩 중 별점 저장은 기존 서재 ID를 기다리고 평균을 재조회한다`() = runViewModelTest {
+    val firstDetailStarted = CompletableDeferred<Unit>()
+    val finishFirstDetail = CompletableDeferred<Unit>()
+    val requestedPaths = mutableListOf<String>()
+    var detailGetCount = 0
+    var successCount = 0
+    val engine = MockEngine { request ->
+      requestedPaths += request.url.encodedPath
+      when {
+        request.method == HttpMethod.Get && request.url.encodedPath.contains("/by-isbn/") -> {
+          detailGetCount += 1
+          if (detailGetCount == 1) {
+            firstDetailStarted.complete(Unit)
+            finishFirstDetail.await()
+            respond(DETAIL_WITH_RECORD_AND_AVERAGE, headers = jsonHeaders())
+          } else {
+            respond(DETAIL_AFTER_EXISTING_RATING, headers = jsonHeaders())
+          }
+        }
+        request.method == HttpMethod.Get -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+        request.method == HttpMethod.Put -> respond(
+          """{"bookId":42,"status":"READING","currentPage":12,"rating":5.0}""",
+          headers = jsonHeaders(),
+        )
+        request.method == HttpMethod.Post -> error("기존 서재 책을 다시 등록하면 안 됨")
+        else -> error("Unexpected request: ${request.method} ${request.url.encodedPath}")
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "access-token")
+    runCurrent()
+    awaitReal { firstDetailStarted.await() }
+    viewModel.saveRating(Rating.ofScore(5f)) { successCount += 1 }
+    runCurrent()
+
+    assertEquals(0, requestedPaths.count { it.endsWith("/rating") })
+    finishFirstDetail.complete(Unit)
+    awaitReal { viewModel.uiState.first { it.detail?.averageRating == 4.2 } }
+
+    assertEquals(2, detailGetCount)
+    assertTrue("/api/v1/library/42/rating" in requestedPaths)
+    assertEquals(0, requestedPaths.count { it == "/api/v1/library" })
+    assertEquals(1, successCount)
+    assertEquals(5.0, viewModel.uiState.value.detail?.myRecord?.rating)
+    assertEquals(4.2, viewModel.uiState.value.detail?.averageRating)
+    assertEquals(11, viewModel.uiState.value.detail?.ratingCount)
+  }
+
+  @Test
+  fun `자동 서재 등록 뒤 별점 실패도 등록 성공을 즉시 알린다`() = runViewModelTest {
+    var libraryAddedCount = 0
+    var successCount = 0
+    val requestedPaths = mutableListOf<String>()
+    val engine = MockEngine { request ->
+      requestedPaths += request.url.encodedPath
+      when {
+        request.method == HttpMethod.Get && request.url.encodedPath.contains("/by-isbn/") ->
+          respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        request.method == HttpMethod.Get -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+        request.method == HttpMethod.Post -> respond(LIBRARY_RECORD, HttpStatusCode.Created, jsonHeaders())
+        request.method == HttpMethod.Put -> respond("", HttpStatusCode.InternalServerError)
+        else -> error("Unexpected request: ${request.method} ${request.url.encodedPath}")
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "access-token")
+    advanceUntilIdle()
+
+    viewModel.saveRating(
+      Rating.ofScore(5f),
+      onSuccess = { successCount += 1 },
+      onLibraryAdded = { libraryAddedCount += 1 },
+    )
+    awaitReal { viewModel.uiState.first { it.requestError != null } }
+
+    assertTrue("/api/v1/library/73/rating" in requestedPaths)
+    assertEquals(1, libraryAddedCount)
+    assertEquals(0, successCount)
+    assertEquals(73L, viewModel.uiState.value.detail?.myRecord?.bookId)
+    assertNull(viewModel.uiState.value.detail?.myRecord?.rating)
+    assertEquals("요청을 처리하지 못했어요. 다시 시도해 주세요.", viewModel.uiState.value.requestError)
   }
 
   @Test
@@ -274,20 +363,77 @@ class BookDetailViewModelTest {
   @Test
   fun `로그인 토큰이 바뀌면 상세 요청도 새 토큰을 사용한다`() = runViewModelTest {
     val authorizations = mutableListOf<String?>()
+    val oldDetailStarted = CompletableDeferred<Unit>()
+    val finishOldDetail = CompletableDeferred<Unit>()
     val engine = MockEngine { request ->
-      if (request.url.encodedPath.contains("/by-isbn/")) authorizations += request.headers[HttpHeaders.Authorization]
-      if (request.url.encodedPath.contains("/by-isbn/")) respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
-      else respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      if (!request.url.encodedPath.contains("/by-isbn/")) return@MockEngine respond(
+        EMPTY_REVIEWS,
+        headers = jsonHeaders(),
+      )
+      val authorization = request.headers[HttpHeaders.Authorization]
+      authorizations += authorization
+      if (authorization == "Bearer old-token") {
+        oldDetailStarted.complete(Unit)
+        finishOldDetail.await()
+        respond(DETAIL_WITH_RECORD, headers = jsonHeaders())
+      } else {
+        respond(DETAIL_AFTER_AUTH_CHANGE, headers = jsonHeaders())
+      }
     }
     val client = testClient(engine)
     val viewModel = viewModel(client, client, platform(readGuest = { null }))
     viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "old-token")
-    awaitReal { while (authorizations.size < 1) delay(1) }
+    runCurrent()
+    awaitReal { oldDetailStarted.await() }
 
     viewModel.syncAuthentication("new-token")
-    awaitReal { while (authorizations.size < 2) delay(1) }
+    finishOldDetail.complete(Unit)
+    awaitReal { viewModel.uiState.first { it.detail?.myRecord?.currentPage == 7 } }
 
     assertEquals(listOf<String?>("Bearer old-token", "Bearer new-token"), authorizations)
+    assertEquals(7, viewModel.uiState.value.detail?.myRecord?.currentPage)
+  }
+
+  @Test
+  fun `계정 전환 전 mutation 결과는 새 계정 상태에 반영하지 않는다`() = runViewModelTest {
+    val oldMutationStarted = CompletableDeferred<Unit>()
+    val finishOldMutation = CompletableDeferred<Unit>()
+    var successCount = 0
+    val engine = MockEngine { request ->
+      when {
+        request.method == HttpMethod.Get && request.url.encodedPath.contains("/by-isbn/") -> {
+          val detail = if (request.headers[HttpHeaders.Authorization] == "Bearer new-token") {
+            DETAIL_AFTER_AUTH_CHANGE
+          } else {
+            DETAIL_WITH_RECORD
+          }
+          respond(detail, headers = jsonHeaders())
+        }
+        request.method == HttpMethod.Get -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+        request.method == HttpMethod.Patch -> {
+          oldMutationStarted.complete(Unit)
+          finishOldMutation.await()
+          respond(
+            """{"bookId":42,"status":"READING","currentPage":80,"rating":4.0}""",
+            headers = jsonHeaders(),
+          )
+        }
+        else -> error("Unexpected request: ${request.method} ${request.url.encodedPath}")
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "old-token")
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    viewModel.savePage(80) { successCount += 1 }
+    awaitReal { oldMutationStarted.await() }
+    viewModel.syncAuthentication("new-token")
+    finishOldMutation.complete(Unit)
+    awaitReal { viewModel.uiState.first { it.detail?.myRecord?.currentPage == 7 } }
+
+    assertEquals(0, successCount)
+    assertEquals(7, viewModel.uiState.value.detail?.myRecord?.currentPage)
   }
 
   @Test
@@ -408,6 +554,14 @@ class BookDetailViewModelTest {
       """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":null}"""
     const val DETAIL_WITH_RECORD =
       """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":{"status":"READING","currentPage":12,"myRating":4.0}}"""
+    const val DETAIL_WITH_RECORD_AND_AVERAGE =
+      """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","averageRating":3.8,"ratingCount":10,"myRecord":{"status":"READING","currentPage":12,"myRating":4.0}}"""
+    const val DETAIL_AFTER_EXISTING_RATING =
+      """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","averageRating":4.2,"ratingCount":11,"myRecord":{"status":"READING","currentPage":12,"myRating":5.0}}"""
+    const val DETAIL_AFTER_RATING =
+      """{"bookId":73,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","averageRating":5.0,"ratingCount":1,"myRecord":{"status":"READING","currentPage":0,"myRating":5.0}}"""
+    const val DETAIL_AFTER_AUTH_CHANGE =
+      """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":{"status":"READING","currentPage":7,"myRating":3.0}}"""
     const val LIBRARY_RECORD = """{"bookId":73,"status":"READING","currentPage":0,"rating":null}"""
     const val RATED_LIBRARY_RECORD = """{"bookId":73,"status":"READING","currentPage":0,"rating":5.0}"""
     const val REVIEW_RESPONSE =

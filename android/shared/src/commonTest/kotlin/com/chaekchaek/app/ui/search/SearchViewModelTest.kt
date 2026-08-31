@@ -20,6 +20,33 @@ import kotlin.test.assertNotEquals
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModelTest {
     @Test
+    fun queryAndResultsClearTogether() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val viewModel = SearchViewModel(
+                BookSearchRepository { _, _, _ ->
+                    BookSearchPage(1, null, listOf(book("검색 결과", "2026")))
+                },
+                registerBook = {},
+                isSignedIn = { true },
+            )
+
+            viewModel.updateQuery("책")
+            viewModel.search(viewModel.query.value)
+            advanceUntilIdle()
+            assertEquals("책", viewModel.query.value)
+            assertEquals("검색 결과", (viewModel.uiState.value as SearchUiState.Success).results.single().title)
+
+            viewModel.clear()
+
+            assertEquals("", viewModel.query.value)
+            assertEquals(SearchUiState.Idle, viewModel.uiState.value)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
     fun searchUsesServerOrderAndExposesEmpty() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
