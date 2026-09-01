@@ -38,7 +38,7 @@ const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
 
 export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
-  const { guest } = useAuthContext();
+  const { isAuthenticated, guest } = useAuthContext();
   const getReviewsReviewIdRepliesLoadData = useCallback(() => {
     return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
   }, [review.reviewId]);
@@ -219,6 +219,7 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
                 <Icon.HeartOffIcon color="secondary" />
               )
             }
+            disabled={!isAuthenticated}
             onClick={handleClickReviewReaction}
           >
             좋아요 {review.likeCount}
@@ -255,6 +256,7 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
                       leading={reply.likedByMe ? <Icon.HeartOnIcon /> : <Icon.HeartOffIcon />}
                       shape="link"
                       variant="ghost"
+                      disabled={!isAuthenticated}
                       onClick={() => {
                         handleClickReplyReaction({
                           replyId: reply.replyId,
