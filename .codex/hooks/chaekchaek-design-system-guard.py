@@ -28,6 +28,7 @@ APPROVED_FONTS = {"Funnel Sans", "Geist Mono", "Newsreader", "Roboto"}
 HEX_COLOR = re.compile(r"#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{2})?)?\b")
 FONT_FAMILY = re.compile(r"fontFamily\s*:\s*['\"]([^'\"]+)['\"]")
 PENCIL_FONT_SIZE = re.compile(r"['\"]?fontSize['\"]?\s*:\s*(\d+(?:\.\d+)?)")
+PENCIL_OBJECT = re.compile(r"\{[^{}]*\}", re.DOTALL)
 KOTLIN_FONT_SIZE = re.compile(r"\bfontSize\s*=\s*(\d+(?:\.\d+)?)\.sp\b")
 PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$", re.MULTILINE)
 GIT_DIFF_FILE = re.compile(r"^\+\+\+ (?!/dev/null)(?:b/)?(.+)$", re.MULTILINE)
@@ -116,8 +117,16 @@ def display_size(value: float) -> str:
 def find_violations(code: str, check_font_size: bool = False) -> list[str]:
     colors = sorted({value.upper() for value in HEX_COLOR.findall(code)} - APPROVED_COLORS)
     fonts = sorted({value for value in FONT_FAMILY.findall(code) if not value.startswith("$")} - APPROVED_FONTS)
-    approved_sizes = HIG_TEXT_SIZES | ({14.0} if 'fontFamily:"Roboto"' in code else set())
-    font_sizes = sorted({float(value) for value in PENCIL_FONT_SIZE.findall(code) if float(value) not in approved_sizes}) if check_font_size else []
+    font_sizes = []
+    if check_font_size:
+        objects = list(PENCIL_OBJECT.finditer(code))
+        for match in PENCIL_FONT_SIZE.finditer(code):
+            container = next((item.group() for item in objects if item.start() <= match.start() < item.end()), "")
+            approved_sizes = HIG_TEXT_SIZES | ({14.0} if set(FONT_FAMILY.findall(container)) == {"Roboto"} else set())
+            size = float(match.group(1))
+            if size not in approved_sizes:
+                font_sizes.append(size)
+        font_sizes = sorted(set(font_sizes))
     violations = []
     if colors:
         violations.append(f"SxMn5에 없는 색상: {', '.join(colors)}")
@@ -383,6 +392,9 @@ def self_test() -> None:
     assert existing_worktrees and all(is_project_path(path) for path in existing_worktrees)
     assert not find_violations('Update("x",{fill:"#C92A24",fontFamily:"Funnel Sans",fontSize:11})', True)
     assert not find_violations('Update("x",{fill:"#FFFFFF",stroke:"#8E918F",fontFamily:"Roboto",fontSize:14})', True)
+    assert not find_violations('Update("x", {fontFamily: "Roboto", fontSize: 14})', True)
+    assert not find_violations("Update('x', {fontFamily:'Roboto', fontSize:14})", True)
+    assert find_violations('Update("a",{fontFamily:"Roboto",fontSize:14}); Update("b",{fontFamily:"Funnel Sans",fontSize:14})', True) == ["HIG 의미 역할에 없는 fontSize: 14"]
     assert find_violations('Update("x",{fill:"#123456"})') == ["SxMn5에 없는 색상: #123456"]
     assert find_violations('Update("x",{"fontSize":10.5})', True) == ["HIG 의미 역할에 없는 fontSize: 10.5"]
     assert exact_target_node({"tool_input": {"input": "TakeScreenshot(['target'])"}}) == "target"

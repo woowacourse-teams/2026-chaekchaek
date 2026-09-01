@@ -19,7 +19,8 @@ final class LoginRequiredSheetUITests: XCTestCase {
         XCTAssertTrue(editButton.waitForExistence(timeout: 10))
         editButton.tap()
 
-        XCTAssertTrue(app.staticTexts["로그인이 필요해요"].waitForExistence(timeout: 5))
+        let title = app.staticTexts["로그인이 필요해요"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
         let appleButton = app.buttons["Apple로 계속하기"]
         let googleButton = app.buttons["GIDSignInButton"]
         XCTAssertTrue(appleButton.waitForExistence(timeout: 5))
@@ -31,16 +32,16 @@ final class LoginRequiredSheetUITests: XCTestCase {
         XCTAssertEqual(googleButton.frame.height, 48, accuracy: 1)
         XCTAssertEqual(googleButton.frame.minY - appleButton.frame.maxY, 12, accuracy: 1)
 
-        if googleButton.frame.maxY > app.frame.maxY {
+        if title.frame.height > appleButton.frame.height {
             app.swipeUp()
         }
         XCTAssertTrue(googleButton.isHittable)
-
-        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
 
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = "iOS 네이티브 로그인 버튼"
         attachment.lifetime = .keepAlways
         add(attachment)
+
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
     }
 }
