@@ -101,6 +101,26 @@ class FallbackBookSearchClientTest {
     }
 
     @Test
+    @DisplayName("2페이지 이후 YES24 재시도가 실패하면 해당 오류를 전파하고 알라딘을 호출하지 않는다")
+    void should_RethrowRetryExceptionWithoutCallingAladin_When_RetriedYes24FailsOnLaterPage() {
+        // given
+        Yes24BookClient yes24 = mock(Yes24BookClient.class);
+        AladinBookClient aladin = mock(AladinBookClient.class);
+        FallbackBookSearchClient client = new FallbackBookSearchClient(yes24, aladin);
+        Yes24ClientException retryException = Yes24ClientException.fallbackAllowed(
+                new RuntimeException("retry timeout")
+        );
+        when(yes24.search("데미안", 2))
+                .thenThrow(Yes24ClientException.fallbackAllowed(new RuntimeException("timeout")))
+                .thenThrow(retryException);
+
+        // when & then
+        assertThatThrownBy(() -> client.search("데미안", 2)).isSameAs(retryException);
+        verify(yes24, times(2)).search("데미안", 2);
+        verifyNoInteractions(aladin);
+    }
+
+    @Test
     @DisplayName("YES24 대체 불가능 오류가 발생하면 같은 예외를 던지고 알라딘을 호출하지 않는다")
     void should_RethrowSameExceptionWithoutCallingAladin_When_Yes24FailureDisallowsFallback() {
         // given
@@ -115,6 +135,24 @@ class FallbackBookSearchClientTest {
         // when & then
         assertThatThrownBy(() -> client.search("데미안", 1)).isSameAs(exception);
         verify(yes24).search("데미안", 1);
+        verifyNoInteractions(aladin);
+    }
+
+    @Test
+    @DisplayName("2페이지 이후 YES24 대체 불가능 오류가 발생하면 즉시 오류를 전파한다")
+    void should_RethrowSameExceptionWithoutRetrying_When_Yes24FailureDisallowsFallbackOnLaterPage() {
+        // given
+        Yes24BookClient yes24 = mock(Yes24BookClient.class);
+        AladinBookClient aladin = mock(AladinBookClient.class);
+        FallbackBookSearchClient client = new FallbackBookSearchClient(yes24, aladin);
+        Yes24ClientException exception = Yes24ClientException.notFallbackAllowed(
+                "YES24 authentication failed", new RuntimeException()
+        );
+        when(yes24.search("데미안", 2)).thenThrow(exception);
+
+        // when & then
+        assertThatThrownBy(() -> client.search("데미안", 2)).isSameAs(exception);
+        verify(yes24).search("데미안", 2);
         verifyNoInteractions(aladin);
     }
 
