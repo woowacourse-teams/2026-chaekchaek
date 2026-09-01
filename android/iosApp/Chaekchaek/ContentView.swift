@@ -81,7 +81,7 @@ private final class GoogleSignInControl: UIControl {
         providerFont = UIFont(name: "Roboto-Bold", size: 14) ?? .systemFont(ofSize: 14, weight: .medium)
         super.init(frame: .zero)
 
-        backgroundColor = UIColor(red: 19.0 / 255.0, green: 19.0 / 255.0, blue: 20.0 / 255.0, alpha: 1)
+        backgroundColor = .white
         clipsToBounds = true
         layer.cornerRadius = 8
         layer.borderColor = UIColor(red: 142.0 / 255.0, green: 145.0 / 255.0, blue: 143.0 / 255.0, alpha: 1).cgColor
@@ -97,7 +97,7 @@ private final class GoogleSignInControl: UIControl {
         let title = "Google로 계속하기"
         let attributes: [NSAttributedString.Key: Any] = [
             .font: providerFont,
-            .foregroundColor: UIColor(red: 227.0 / 255.0, green: 227.0 / 255.0, blue: 227.0 / 255.0, alpha: 1),
+            .foregroundColor: UIColor(red: 23.0 / 255.0, green: 23.0 / 255.0, blue: 23.0 / 255.0, alpha: 1),
         ]
         let textSize = title.size(withAttributes: attributes)
         let logoHeight = 18.0

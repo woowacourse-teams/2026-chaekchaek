@@ -18,9 +18,9 @@ STATE_VERSION = 1
 HIG_TEXT_SIZES = {11.0, 12.0, 13.0, 15.0, 16.0, 17.0, 20.0, 22.0, 28.0, 34.0}
 APPROVED_COLORS = {
     "#00000000", "#00000022", "#00000033", "#00000073", "#171717",
-    "#131314", "#1A1A1A", "#242424", "#252525", "#302C27", "#4A3520", "#4A4035",
+    "#1A1A1A", "#242424", "#252525", "#302C27", "#4A3520", "#4A4035",
     "#666666", "#7A7570", "#999999", "#A05A27", "#AAA39A", "#C92A24",
-    "#8E918F", "#C9C3BA", "#C9C9C9", "#E3E3E3", "#EEEEEE", "#F0F0EC", "#F1E9DE", "#F6F2EC",
+    "#8E918F", "#C9C3BA", "#C9C9C9", "#EEEEEE", "#F0F0EC", "#F1E9DE", "#F6F2EC",
     "#F7F2EC", "#F7F2ECCC", "#FCFAF7", "#FF6B5A", "#FF9800", "#FFB74D",
     "#FFBF66", "#FFF4DF", "#FFF4DF80", "#FFFFFF", "#FFFFFFB8",
 }
@@ -382,7 +382,7 @@ def self_test() -> None:
     existing_worktrees = [Path(line.removeprefix("worktree ")) for line in worktrees if line.startswith("worktree ") and Path(line.removeprefix("worktree ")).exists()]
     assert existing_worktrees and all(is_project_path(path) for path in existing_worktrees)
     assert not find_violations('Update("x",{fill:"#C92A24",fontFamily:"Funnel Sans",fontSize:11})', True)
-    assert not find_violations('Update("x",{fill:"#131314",stroke:"#8E918F",fontFamily:"Roboto",fontSize:14})', True)
+    assert not find_violations('Update("x",{fill:"#FFFFFF",stroke:"#8E918F",fontFamily:"Roboto",fontSize:14})', True)
     assert find_violations('Update("x",{fill:"#123456"})') == ["SxMn5에 없는 색상: #123456"]
     assert find_violations('Update("x",{"fontSize":10.5})', True) == ["HIG 의미 역할에 없는 fontSize: 10.5"]
     assert exact_target_node({"tool_input": {"input": "TakeScreenshot(['target'])"}}) == "target"
