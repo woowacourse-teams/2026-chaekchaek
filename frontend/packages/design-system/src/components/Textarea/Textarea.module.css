@@ -12,7 +12,7 @@
   font-family: 'Funnel Sans', sans-serif;
   font-size: 12px;
   font-weight: 400;
-  line-height: 19px;
+  line-height: 1.5833;
 }
 
 .root > textarea::placeholder {

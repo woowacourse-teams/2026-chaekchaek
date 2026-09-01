@@ -12,7 +12,7 @@
   font-family: 'Funnel Sans', sans-serif;
   font-size: 20px;
   font-weight: 700;
-  line-height: 24px;
+  line-height: 1.2;
 }
 
 .ui-DataInfo-Item {
@@ -29,7 +29,7 @@
   font-family: 'Geist Mono', monospace;
   font-size: 10px;
   font-weight: 400;
-  line-height: 15px;
+  line-height: 1.5;
   white-space: nowrap;
 }
 
@@ -39,6 +39,6 @@
   font-family: 'Funnel Sans', sans-serif;
   font-size: 12px;
   font-weight: 600;
-  line-height: 15px;
+  line-height: 1.25;
   text-align: right;
 }

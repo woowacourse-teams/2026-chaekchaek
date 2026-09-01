@@ -44,7 +44,7 @@
 .size-small {
   height: 34px;
   font-size: 11px;
-  line-height: 14px;
+  line-height: 1.2727;
 }
 
 .size-small .box {
