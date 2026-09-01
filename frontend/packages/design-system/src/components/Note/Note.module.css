@@ -10,7 +10,7 @@
   background-color: #fff4df;
   color: #000;
   font-family: 'Funnel Sans', sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem; /* 14px */
   font-weight: 400;
   line-height: 1.5833;
   overflow-wrap: anywhere;
@@ -19,7 +19,7 @@
 
 .root .title {
   margin: 0;
-  font-size: 11px;
+  font-size: 0.6875rem; /* 11px */
   font-weight: 700;
   color: #A05A27;
   padding-bottom: 4px;

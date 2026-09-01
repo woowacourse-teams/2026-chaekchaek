@@ -22,17 +22,17 @@
 }
 
 .level-page .title {
-  font-size: 40px;
+  font-size: 2.5rem; /* 40px */
   font-weight: 600;
 }
 
 .level-main .title {
-  font-size: 34px;
+  font-size: 2.125rem; /* 34px */
   font-weight: 600;
 }
 
 .level-caption .title {
-  font-size: 13px;
+  font-size: 0.8125rem; /* 13px */
   font-weight: 700;
   color: #777777;
 }

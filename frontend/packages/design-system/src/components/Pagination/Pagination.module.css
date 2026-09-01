@@ -20,7 +20,7 @@
   background-color: #fcfaf7;
   color: #666;
   font-family: 'Geist Mono', monospace;
-  font-size: 13px;
+  font-size: 0.8125rem; /* 13px */
   font-weight: 700;
   line-height: normal;
   cursor: pointer;
@@ -51,6 +51,6 @@
   justify-content: center;
   color: #666;
   font-family: 'Geist Mono', monospace;
-  font-size: 13px;
+  font-size: 0.8125rem; /* 13px */
   font-weight: 700;
 }

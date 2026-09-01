@@ -38,17 +38,17 @@
 
 .size-small {
   height: 24px;
-  font-size: 11px;
+  font-size: 0.6875rem; /* 11px */
 }
 
 .size-medium {
   height: 28px;
-  font-size: 12px;
+  font-size: 0.75rem; /* 12px */
 }
 
 .size-large {
   height: 32px;
-  font-size: 13px;
+  font-size: 0.8125rem; /* 13px */
 }
 
 .label {

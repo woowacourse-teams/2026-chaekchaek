@@ -11,7 +11,7 @@
   background-color: #f6f2ec;
   color: #1a1a1a;
   font-family: 'Funnel Sans', sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem; /* 14px */
   font-weight: 400;
   line-height: normal;
   overflow-wrap: anywhere;
