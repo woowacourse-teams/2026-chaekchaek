@@ -6,6 +6,8 @@ import { Button } from '@chaekchaek/design-system';
 import { Rating } from '@chaekchaek/design-system';
 import { CellList } from '@chaekchaek/design-system';
 
+import { track } from '@/analytics/track';
+
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 import { getMembersMeRatingsComparison } from '@/services/apis/membersMeRatingsComparison/repository';
@@ -43,6 +45,7 @@ export const UpdateRatingDialog = ({
 
   const handleChangeRating = (rating: number) => {
     setRating(rating);
+    track('rating_select');
   };
 
   const getMembersMeRatingsComparisonLoadData = useCallback(async () => {
@@ -65,6 +68,9 @@ export const UpdateRatingDialog = ({
 
   const handleSubmit = async () => {
     await mutate({ bookId, rating });
+
+    track('rating_submit');
+
     onRatingUpdated();
     onClose();
   };
