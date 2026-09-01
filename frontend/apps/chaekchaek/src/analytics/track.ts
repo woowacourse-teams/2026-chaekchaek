@@ -1,5 +1,10 @@
 import ReactGA from 'react-ga4';
 
-export const track = (eventName: string, params?: Record<string, string | number | boolean>) => {
+import type { AnalyticsEventMap } from './event.types';
+
+export const track = <TEventName extends keyof AnalyticsEventMap>(
+  eventName: TEventName,
+  params?: AnalyticsEventMap[TEventName],
+) => {
   ReactGA.event(eventName, params);
 };
