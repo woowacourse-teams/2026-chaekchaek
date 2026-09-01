@@ -68,7 +68,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.collectAsState
 import com.chaekchaek.app.presentation.common.AppError
-import com.chaekchaek.app.ui.common.ChaekAlertDialog
+import com.chaekchaek.app.ui.common.ChaekOneActionDialog
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
 import com.chaekchaek.app.presentation.home.HomeUiState
 import com.chaekchaek.app.presentation.home.HomeViewModel
@@ -162,7 +162,7 @@ private fun EmptyContent(modifier: Modifier) {
 @Composable
 private fun ErrorContent(error: AppError, retry: () -> Unit, modifier: Modifier) {
     Box(modifier.fillMaxSize())
-    ChaekAlertDialog(
+    ChaekOneActionDialog(
         onDismissRequest = {},
         title = { Text("홈을 불러오지 못했어요") },
         text = { Text(error.message()) },

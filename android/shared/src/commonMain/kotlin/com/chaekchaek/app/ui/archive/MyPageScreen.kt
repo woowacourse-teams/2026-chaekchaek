@@ -48,7 +48,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.chaekchaek.app.ui.common.ChaekAlertDialog
+import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 
 @Composable
@@ -266,7 +266,7 @@ private fun WithdrawalRow(onClick: () -> Unit) {
 
 @Composable
 private fun WithdrawalDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    ChaekAlertDialog(
+    ChaekTwoActionDialog(
         onDismissRequest = onDismiss,
         title = { Text("회원 탈퇴") },
         text = { Text("탈퇴하면 계정과 관련 데이터가 삭제되며 되돌릴 수 없습니다. 정말 탈퇴할까요?") },

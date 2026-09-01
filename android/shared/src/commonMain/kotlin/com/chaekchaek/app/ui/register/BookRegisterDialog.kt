@@ -18,7 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chaekchaek.app.domain.book.BookSearchResult
-import com.chaekchaek.app.ui.common.ChaekAlertDialog
+import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
 
 @Composable
 fun BookRegisterDialog(
@@ -33,9 +33,8 @@ fun BookRegisterDialog(
     var note by remember(book) { mutableStateOf("") }
     val editedBook = book.copy(title = title.trim(), creator = creator.trim(), publisher = publisher.trim(), year = year.trim())
 
-    ChaekAlertDialog(
+    ChaekTwoActionDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
         title = {
             Column {
                 Text("ADD TO ARCHIVE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
