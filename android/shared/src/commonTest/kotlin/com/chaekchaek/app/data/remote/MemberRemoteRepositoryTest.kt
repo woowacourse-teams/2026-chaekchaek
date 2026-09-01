@@ -24,11 +24,15 @@ class MemberRemoteRepositoryTest {
         val requests = mutableListOf<HttpRequestData>()
         val client = HttpClient(MockEngine { request ->
             requests += request
-            respond(
-                content = """{"memberId":9,"nickname":"책책이","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""",
-                status = HttpStatusCode.OK,
-                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
-            )
+            if (request.method == HttpMethod.Delete) {
+                respond(content = "", status = HttpStatusCode.NoContent)
+            } else {
+                respond(
+                    content = """{"memberId":9,"nickname":"책책이","anonymousNickname":"우아한 달빛 참새","profileImageUrl":"https://example.com/profile.png","displayAnonymous":false}""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                )
+            }
         }) {
             expectSuccess = true
             install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
@@ -38,18 +42,21 @@ class MemberRemoteRepositoryTest {
         val profile = repository.get("access-token")
         assertEquals(9L, profile.memberId)
         assertEquals("우아한 달빛 참새", profile.anonymousNickname)
+        assertEquals("https://example.com/profile.png", profile.profileImageUrl)
         repository.updateNickname("새 이름", "access-token")
         repository.updateAnonymity(true, "access-token")
+        repository.withdraw("access-token")
 
         assertEquals(
             listOf(
                 HttpMethod.Get to "/api/v1/members/me",
                 HttpMethod.Patch to "/api/v1/members/me/nickname",
                 HttpMethod.Patch to "/api/v1/members/me/anonymity",
+                HttpMethod.Delete to "/api/v1/members/me",
             ),
             requests.map { it.method to it.url.encodedPath },
         )
-        assertEquals(List(3) { "Bearer access-token" }, requests.map { it.headers[HttpHeaders.Authorization] })
+        assertEquals(List(4) { "Bearer access-token" }, requests.map { it.headers[HttpHeaders.Authorization] })
         assertEquals(Json.parseToJsonElement("""{"nickname":"새 이름"}"""), requests[1].jsonBody())
         assertEquals(Json.parseToJsonElement("""{"displayAnonymous":true}"""), requests[2].jsonBody())
     }

@@ -1,6 +1,6 @@
 # 첵췍 화면 명세
 
-최종 갱신: 2026-08-25
+최종 갱신: 2026-09-01
 
 현재 디자인 단일 원본은 `/Users/ujeonghyeon/Downloads/designs.pen`이다. 아래 Figma 노드와 초기
 UiState 설계는 제품 의도와 이력 확인용이며, 실제 Android 동작은 Pencil과 현재 코드가 우선한다.
@@ -16,6 +16,8 @@ UiState 설계는 제품 의도와 이력 확인용이며, 실제 Android 동작
 | 감상 작성 | `ZozGQ`, `rU9vK` | 1000자 수, 작성 취소 확인, 실제 익명 설정과 공개 닉네임 표시 |
 | 답글 입력 | `NS3v7` | 1자부터 200자까지 제출, 글자 수 표시 |
 | 로그인 시트 | `mGHMD` | Google 로그인과 개인정보처리방침 링크 표시, 이용약관 링크 없음 |
+| 내 서재 프로필 | `F0qdM9` | 실제 사용자 프로필 이미지를 표시하고 마이페이지로 이동 |
+| 마이페이지 | `f2vla`, `th4SN` | 익명 공개 설정과 회원 탈퇴 확인 흐름 제공 |
 
 홈, 검색, 상세 API 로딩은 요청이 500ms 안에 끝나면 표시하지 않는다. 500ms가 지나도 진행 중일
 때만 표시하고 응답 즉시 닫는다.
@@ -49,6 +51,7 @@ Figma [node 36:3](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr/%EC%B1%85%
 | 10 | 별점 매기기 | 36:1391 내부 | 다이얼로그 |
 | 11 | 감상 작성 | 36:1337 | 바텀시트 |
 | 12 | 답글 입력 | 36:264 | 감상 카드 내부 |
+| 13 | 마이페이지 | `f2vla`, `th4SN` | 없음 |
 
 ---
 
@@ -291,7 +294,7 @@ data class ShelfBookUiModel(
 | 정렬 변경 | `Shelf.sortedByRecent()` |
 | 항목 탭 | 책 상세로 이동 |
 | 「편집」 탭 | 편집 모드로 전환 |
-| 프로필 아이콘 탭 | 미정 |
+| 프로필 아이콘 탭 | 로그인 상태면 마이페이지로 이동, 게스트면 로그인 시트 표시 |
 
 **신규 UI**: 빈 서재 화면, 로딩·오류 표시.
 
@@ -301,8 +304,6 @@ data class ShelfBookUiModel(
 
 ```
 취소            2권 선택            완료
-☑ 익명으로 감상 공개
-  해제하면 닉네임을 설정해야 합니다
 [전체] [읽고 싶어요] [읽는 중] [다 읽음]
 전체 12권                  최근 기록순 ▾
 ☑ [표지] [읽는 중] 마션            🗑
@@ -316,15 +317,7 @@ data class ShelfBookUiModel(
 data class ShelfEditUiModel(
     val selectedIds: Set<BookId>,
     val titleLabel: String,             // "2권 선택"
-    val anonymousToggle: AnonymousToggleUiModel,
     val canApply: Boolean,              // 선택이 1개 이상
-)
-
-data class AnonymousToggleUiModel(
-    val checked: Boolean,
-    val description: String,
-    // checked  : "해제하면 닉네임을 설정해야 합니다"
-    // unchecked: "닉네임이 감상에 표시됩니다"
 )
 ```
 
@@ -336,7 +329,6 @@ data class AnonymousToggleUiModel(
 | 「상태 변경」 탭 | **신규 UI**: 상태 3택 선택 수단이 시안에 없음 |
 | 「서재에서 삭제」 탭 | `Shelf.remove(selectedIds)` |
 | 개별 휴지통 탭 | 그 한 권 삭제 |
-| 익명 토글 해제 | 닉네임 있으면 즉시 반영, 없으면 닉네임 다이얼로그 |
 | 「취소」 | 변경 버리고 목록으로 |
 | 「완료」 | 변경 반영하고 목록으로 |
 
@@ -380,6 +372,36 @@ data class NicknameDialogUiModel(
 입력 중에는 `String`으로 들고 최대 10자로 자른다. 공백이 아니면 확인할 수 있다.
 
 **미결정**: 닉네임 중복 검사 여부. 서버 결정 사항.
+
+## 6.1. 마이페이지 (`ui/archive`)
+
+### 상태
+
+```kotlin
+data class MemberSettingsUiState(
+    val signedIn: Boolean,
+    val anonymousReviews: Boolean,
+    val nickname: String,
+    val anonymousNickname: String,
+    val profileImageUrl: String?,
+    val withdrawing: Boolean,
+    val withdrawalErrorMessage: String?,
+)
+```
+
+- 프로필 이미지는 `profileImageUrl`을 표시하고 값이 없으면 기본 참새 이미지를 사용한다.
+- 공개 닉네임은 익명 공개 중이면 `anonymousNickname`, 아니면 `nickname`을 표시한다.
+- 회원 탈퇴 실패 시 로그인 상태를 유지하고 오류와 「다시 시도」 액션을 표시한다.
+
+### 액션
+
+| 액션 | 처리 |
+| --- | --- |
+| 뒤로가기 | 내 서재로 복귀 |
+| 익명 공개 설정 탭 | `PATCH /api/v1/members/me/anonymity`, 닉네임이 없으면 닉네임 다이얼로그 표시 |
+| 회원 탈퇴 탭 | 되돌릴 수 없음을 알리는 확인 다이얼로그 표시 |
+| 「탈퇴하기」 탭 | `DELETE /api/v1/members/me`, 성공 시 로컬 인증을 지우고 비로그인 상태로 복귀 |
+| 「다시 시도」 탭 | 회원 탈퇴 API 재요청 |
 
 ---
 

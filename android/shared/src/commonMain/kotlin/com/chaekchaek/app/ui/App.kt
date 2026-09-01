@@ -9,13 +9,13 @@ import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.ui.theme.ChaekchaekTheme
 
 @Composable
-fun App(authPlatform: AuthPlatformCallbacks) {
+fun App(authPlatform: AuthPlatformCallbacks, uiTestingMyPage: Boolean = false) {
     ChaekchaekTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
         ) {
-            AppNavigation(authPlatform)
+            AppNavigation(authPlatform, uiTestingMyPage)
         }
     }
 }

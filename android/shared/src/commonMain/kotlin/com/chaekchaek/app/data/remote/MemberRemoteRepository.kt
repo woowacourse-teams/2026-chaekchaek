@@ -2,6 +2,7 @@ package com.chaekchaek.app.data.remote
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.patch
@@ -27,6 +28,12 @@ class MemberRemoteRepository(private val client: HttpClient = createHttpClient()
             authenticatedJson(accessToken, AnonymityRequest(displayAnonymous))
         }.body<MemberResponseDto>().toRemoteMemberProfile()
 
+    suspend fun withdraw(accessToken: String) {
+        client.delete("$BASE_URL/api/v1/members/me") {
+            header(HttpHeaders.Authorization, "Bearer $accessToken")
+        }
+    }
+
     private fun io.ktor.client.request.HttpRequestBuilder.authenticatedJson(accessToken: String, body: Any) {
         header(HttpHeaders.Authorization, "Bearer $accessToken")
         contentType(ContentType.Application.Json)
@@ -42,6 +49,7 @@ data class RemoteMemberProfile(
     val memberId: Long,
     val nickname: String,
     val anonymousNickname: String,
+    val profileImageUrl: String?,
     val displayAnonymous: Boolean,
 )
 
@@ -56,7 +64,9 @@ private data class MemberResponseDto(
     val memberId: Long,
     val nickname: String? = null,
     val anonymousNickname: String,
+    val profileImageUrl: String? = null,
     val displayAnonymous: Boolean,
 ) {
-    fun toRemoteMemberProfile() = RemoteMemberProfile(memberId, nickname.orEmpty(), anonymousNickname, displayAnonymous)
+    fun toRemoteMemberProfile() =
+        RemoteMemberProfile(memberId, nickname.orEmpty(), anonymousNickname, profileImageUrl, displayAnonymous)
 }

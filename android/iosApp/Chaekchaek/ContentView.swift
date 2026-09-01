@@ -18,6 +18,12 @@ private struct ComposeViewController: UIViewControllerRepresentable {
         }
 #endif
         let appleSignIn = AppleSignInProvider()
+        let uiTestingMyPage: Bool
+#if DEBUG
+        uiTestingMyPage = ProcessInfo.processInfo.arguments.contains("-uiTestingMyPage")
+#else
+        uiTestingMyPage = false
+#endif
         let authPlatform = AuthPlatformCallbacks(
             requestGoogleIdToken: { onResult in
                 Task { @MainActor in
@@ -61,7 +67,8 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                 button.style = .wide
                 button.colorScheme = .light
                 return button
-            }
+            },
+            uiTestingMyPage: uiTestingMyPage
         )
     }
 
