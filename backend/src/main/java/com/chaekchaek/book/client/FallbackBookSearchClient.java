@@ -19,12 +19,7 @@ public class FallbackBookSearchClient implements BookSearchClient {
     @Override
     public BookSearchResult search(String query, int page) {
         try {
-            BookSearchResult result = yes24BookClient.search(query, page);
-            if (page == 1 && result.items().isEmpty()) {
-                log.warn("YES24 first-page search returned no results; using Aladin fallback");
-                return aladinBookClient.search(query, page);
-            }
-            return result;
+            return yes24BookClient.search(query, page);
         } catch (Yes24ClientException exception) {
             if (!exception.isFallbackAllowed()) {
                 throw exception;

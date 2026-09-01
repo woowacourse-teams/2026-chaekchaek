@@ -35,42 +35,22 @@ class FallbackBookSearchClientTest {
     }
 
     @Test
-    @DisplayName("YES24 첫 페이지 검색 결과가 비어 있으면 알라딘 결과를 반환한다")
-    void should_ReturnAladinResult_When_Yes24FirstPageIsEmpty() {
-        // given
-        Yes24BookClient yes24 = mock(Yes24BookClient.class);
-        AladinBookClient aladin = mock(AladinBookClient.class);
-        FallbackBookSearchClient client = new FallbackBookSearchClient(yes24, aladin);
-        BookSearchResult aladinResult = new BookSearchResult(1, null, List.of());
-        when(yes24.search("데미안", 1)).thenReturn(new BookSearchResult(0, null, List.of()));
-        when(aladin.search("데미안", 1)).thenReturn(aladinResult);
-
-        // when
-        BookSearchResult result = client.search("데미안", 1);
-
-        // then
-        assertThat(result).isSameAs(aladinResult);
-        verify(yes24).search("데미안", 1);
-        verify(aladin).search("데미안", 1);
-    }
-
-    @Test
-    @DisplayName("YES24 두 번째 이후 페이지 검색 결과가 비어 있으면 알라딘을 호출하지 않는다")
-    void should_ReturnEmptyYes24ResultWithoutCallingAladin_When_LaterPageIsEmpty() {
+    @DisplayName("YES24 검색 결과가 비어 있어도 같은 결과를 반환하고 알라딘을 호출하지 않는다")
+    void should_ReturnEmptyYes24ResultWithoutCallingAladin_When_Yes24ResultIsEmpty() {
         // given
         Yes24BookClient yes24 = mock(Yes24BookClient.class);
         AladinBookClient aladin = mock(AladinBookClient.class);
         FallbackBookSearchClient client = new FallbackBookSearchClient(yes24, aladin);
         BookSearchResult yes24Result = new BookSearchResult(0, null, List.of());
-        when(yes24.search("데미안", 2)).thenReturn(yes24Result);
+        when(yes24.search("데미안", 1)).thenReturn(yes24Result);
 
         // when
-        BookSearchResult result = client.search("데미안", 2);
+        BookSearchResult result = client.search("데미안", 1);
 
         // then
         assertThat(result).isSameAs(yes24Result);
         assertThat(result.items()).isEmpty();
-        verify(yes24).search("데미안", 2);
+        verify(yes24).search("데미안", 1);
         verifyNoInteractions(aladin);
     }
 
