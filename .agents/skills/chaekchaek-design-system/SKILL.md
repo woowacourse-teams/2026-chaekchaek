@@ -26,6 +26,7 @@ Apple 또는 Google 등 공급업체가 소유한 네이티브 로그인 컨트�
 
 1. Restate the requested UI change and identify its scope.
 2. Inspect `SxMn5` and the target with the Pencil tools before editing a `.pen` file. Never read or edit `.pen` files through shell tools.
+   Before inserting a new top-level screen or component, inspect the document order and bounds of its same-kind peers. Append it immediately to the right of the last peer using the sequence's existing gap. Never place it at an arbitrary empty canvas position; only start the next aligned row when the right side would overlap existing content.
 3. Find a matching target design in `designs.pen`. If none exists, create the smallest complete design draft before touching Android or frontend implementation files.
 4. Reuse an existing component or instance first, then existing tokens. Do not recreate an equivalent component or introduce a visual value already covered by the system.
    For user-facing text, reuse one of the 11 semantic typography roles; do not reuse legacy S/M/L typography tokens or add a raw size outside those roles.
