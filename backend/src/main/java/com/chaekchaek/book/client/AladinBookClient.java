@@ -88,7 +88,7 @@ public class AladinBookClient implements BookSearchClient {
             throw new AladinClientException(response.errorCode(), response.errorMessage());
         }
         return response.items().stream()
-                .filter(item -> isbn13.value().equals(item.isbn13()))
+                .filter(item -> item.matchesIsbn13(isbn13))
                 .findFirst()
                 .orElseThrow(BookNotFoundException::new);
     }
