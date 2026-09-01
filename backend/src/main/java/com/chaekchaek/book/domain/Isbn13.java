@@ -1,13 +1,19 @@
 package com.chaekchaek.book.domain;
 
-public final class Isbn13 {
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
+
+public record Isbn13(String value) {
 
     private static final int ISBN13_LENGTH = 13;
 
-    private Isbn13() {
+    public Isbn13 {
+        if (!isValid(value)) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
     }
 
-    public static boolean isValid(String value) {
+    private static boolean isValid(String value) {
         if (value == null || !value.matches("\\d{" + ISBN13_LENGTH + "}")) {
             return false;
         }

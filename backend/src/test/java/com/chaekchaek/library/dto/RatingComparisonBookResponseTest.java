@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import java.math.BigDecimal;
@@ -25,7 +26,7 @@ class RatingComparisonBookResponseTest {
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, null, ADDED_AT);
         item.rate(new BigDecimal("4.5"), RATING_UPDATED_AT);
         Book book = mock(Book.class);
-        when(book.getIsbn13()).thenReturn("9788936433598");
+        when(book.getIsbn13()).thenReturn(new Isbn13("9788936433598"));
         when(book.getTitle()).thenReturn("채식주의자");
         when(book.getCoverImageUrl()).thenReturn("https://image.aladin.co.kr/cover.jpg");
         when(book.getAuthors()).thenReturn(List.of("한강"));

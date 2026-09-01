@@ -5,6 +5,7 @@ import com.chaekchaek.admin.dto.RecommendedBookListResponse;
 import com.chaekchaek.admin.dto.RecommendedBookResponse;
 import com.chaekchaek.admin.repository.RecommendedBookRepository;
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
@@ -62,7 +63,7 @@ public class AdminService {
         return new RecommendedBookListResponse(responses);
     }
 
-    public RecommendedBookResponse addRecommendedBookByIsbn13(String isbn13) {
+    public RecommendedBookResponse addRecommendedBookByIsbn13(Isbn13 isbn13) {
         requireAdmin();
         Book book = bookResolver.findOrCreate(isbn13);
         return transactionTemplate.execute(status -> addRecommendedBook(book.getId()));
@@ -114,7 +115,7 @@ public class AdminService {
         if (book == null) {
             return null;
         }
-        return new RecommendedBookResponse(book.getId(), book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(),
+        return new RecommendedBookResponse(book.getId(), book.getIsbn13().value(), book.getTitle(), book.getCoverImageUrl(),
                 book.getAuthors(), recommendedBook.getCreatedAt());
     }
 }

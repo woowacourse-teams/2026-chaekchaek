@@ -4,6 +4,7 @@ import com.chaekchaek.admin.dto.AddRecommendedBookRequest;
 import com.chaekchaek.admin.dto.RecommendedBookListResponse;
 import com.chaekchaek.admin.dto.RecommendedBookResponse;
 import com.chaekchaek.admin.service.AdminService;
+import com.chaekchaek.book.domain.Isbn13;
 import jakarta.validation.Valid;
 import java.net.URI;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,7 @@ public class AdminController {
     public ResponseEntity<RecommendedBookResponse> addRecommendedBook(
             @Valid @RequestBody AddRecommendedBookRequest request
     ) {
-        RecommendedBookResponse response = adminService.addRecommendedBookByIsbn13(request.isbn13());
+        RecommendedBookResponse response = adminService.addRecommendedBookByIsbn13(new Isbn13(request.isbn13()));
         return ResponseEntity.created(URI.create("/api/v1/admin/recommended-books/" + response.bookId()))
                 .body(response);
     }

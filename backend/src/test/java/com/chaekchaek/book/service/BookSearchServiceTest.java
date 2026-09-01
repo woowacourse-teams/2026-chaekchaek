@@ -8,6 +8,7 @@ import com.chaekchaek.book.client.BookSearchClient;
 import com.chaekchaek.book.client.BookSearchItem;
 import com.chaekchaek.book.client.BookSearchResult;
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
@@ -130,10 +131,10 @@ class BookSearchServiceTest {
         );
         Book registeredBook = mock(Book.class);
         when(registeredBook.getId()).thenReturn(42L);
-        when(registeredBook.getIsbn13()).thenReturn("9788925568683");
+        when(registeredBook.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(
                 1, null, List.of(searchedBook)));
-        when(bookRepository.findAllByIsbn13In(List.of("9788925568683")))
+        when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683"))))
                 .thenReturn(List.of(registeredBook));
         when(activityCountReader.getActivityCounts(List.of(42L)))
                 .thenReturn(Map.of(42L, new ActivityCounts(2L, 5L)));
@@ -183,7 +184,7 @@ class BookSearchServiceTest {
         when(libraryItem.getBookId()).thenReturn(42L);
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(
                 1, null, List.of(searchedBook)));
-        when(bookRepository.findAllByIsbn13In(List.of("9788925568683"))).thenReturn(List.of(registeredBook));
+        when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(List.of(registeredBook));
         when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
         when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(42L)))
@@ -221,9 +222,9 @@ class BookSearchServiceTest {
     void should_SortByTitleAscending_When_SortIsTitleAsc() {
         // given
         BookSearchService service = serviceWithBooks(
-                searchedBook("클린 아키텍처", "2024-01-01", "9780000000001"),
-                searchedBook("가상 면접 사례로 배우는 대규모 시스템 설계 기초", "2026-01-01", "9780000000002"),
-                searchedBook("리팩터링", "2021-01-01", "9780000000003")
+                searchedBook("클린 아키텍처", "2024-01-01", "9780000000002"),
+                searchedBook("가상 면접 사례로 배우는 대규모 시스템 설계 기초", "2026-01-01", "9780000000019"),
+                searchedBook("리팩터링", "2021-01-01", "9780000000026")
         );
 
         // when
@@ -239,9 +240,9 @@ class BookSearchServiceTest {
     void should_SortByTitleDescending_When_SortIsTitleDesc() {
         // given
         BookSearchService service = serviceWithBooks(
-                searchedBook("클린 아키텍처", "2024-01-01", "9780000000001"),
-                searchedBook("가상 면접 사례로 배우는 대규모 시스템 설계 기초", "2026-01-01", "9780000000002"),
-                searchedBook("리팩터링", "2021-01-01", "9780000000003")
+                searchedBook("클린 아키텍처", "2024-01-01", "9780000000002"),
+                searchedBook("가상 면접 사례로 배우는 대규모 시스템 설계 기초", "2026-01-01", "9780000000019"),
+                searchedBook("리팩터링", "2021-01-01", "9780000000026")
         );
 
         // when
@@ -257,9 +258,9 @@ class BookSearchServiceTest {
     void should_SortByPublishedDateAscending_When_SortIsOldest() {
         // given
         BookSearchService service = serviceWithBooks(
-                searchedBook("중간 책", "2024-01-01", "9780000000001"),
-                searchedBook("최신 책", "2026-01-01", "9780000000002"),
-                searchedBook("오래된 책", "2021-01-01", "9780000000003")
+                searchedBook("중간 책", "2024-01-01", "9780000000002"),
+                searchedBook("최신 책", "2026-01-01", "9780000000019"),
+                searchedBook("오래된 책", "2021-01-01", "9780000000026")
         );
 
         // when
@@ -279,9 +280,9 @@ class BookSearchServiceTest {
                         3,
                         null,
                         List.of(
-                                searchedBook("오래된 책", "2021-01-01", "9780000000001"),
-                                searchedBook("최신 책", "2026-01-01", "9780000000002"),
-                                searchedBook("중간 책", "2024-01-01", "9780000000003")
+                                searchedBook("오래된 책", "2021-01-01", "9780000000002"),
+                                searchedBook("최신 책", "2026-01-01", "9780000000019"),
+                                searchedBook("중간 책", "2024-01-01", "9780000000026")
                         )
                 ),
                 Map.of()
@@ -299,10 +300,10 @@ class BookSearchServiceTest {
     @DisplayName("감상 많은 순으로 검색하면 답글 수와 관계없이 감상 수가 많은 도서부터 반환한다")
     void should_SortByReviewCountDescending_When_SortIsReview() {
         // given
-        BookSearchItem fewReviews = searchedBook("감상 적은 책", "2021-01-01", "9780000000001");
-        BookSearchItem mostReviews = searchedBook("감상 많은 책", "2024-01-01", "9780000000002");
-        BookSearchItem middleReviews = searchedBook("감상 중간 책", "2026-01-01", "9780000000003");
-        BookSearchItem unregisteredBook = searchedBook("미등록 책", "2025-01-01", "9780000000004");
+        BookSearchItem fewReviews = searchedBook("감상 적은 책", "2021-01-01", "9780000000002");
+        BookSearchItem mostReviews = searchedBook("감상 많은 책", "2024-01-01", "9780000000019");
+        BookSearchItem middleReviews = searchedBook("감상 중간 책", "2026-01-01", "9780000000026");
+        BookSearchItem unregisteredBook = searchedBook("미등록 책", "2025-01-01", "9780000000033");
         BookSearchService service = serviceWith(
                 new BookSearchResult(4, null,
                         List.of(fewReviews, mostReviews, middleReviews, unregisteredBook)),
@@ -326,10 +327,10 @@ class BookSearchServiceTest {
     @DisplayName("댓글순으로 검색하면 댓글 수가 많은 도서부터 반환한다")
     void should_SortByCommentCountDescending_When_SortIsComment() {
         // given
-        BookSearchItem oldestBook = searchedBook("댓글 적은 책", "2021-01-01", "9780000000001");
-        BookSearchItem mostCommentedBook = searchedBook("댓글 많은 책", "2024-01-01", "9780000000002");
-        BookSearchItem middleBook = searchedBook("댓글 중간 책", "2026-01-01", "9780000000003");
-        BookSearchItem unregisteredBook = searchedBook("미등록 책", "2025-01-01", "9780000000004");
+        BookSearchItem oldestBook = searchedBook("댓글 적은 책", "2021-01-01", "9780000000002");
+        BookSearchItem mostCommentedBook = searchedBook("댓글 많은 책", "2024-01-01", "9780000000019");
+        BookSearchItem middleBook = searchedBook("댓글 중간 책", "2026-01-01", "9780000000026");
+        BookSearchItem unregisteredBook = searchedBook("미등록 책", "2025-01-01", "9780000000033");
         BookSearchService service = serviceWith(
                 new BookSearchResult(4, null,
                         List.of(oldestBook, mostCommentedBook, middleBook, unregisteredBook)),
@@ -397,7 +398,7 @@ class BookSearchServiceTest {
         Book registeredBook = registeredBook(42L, searchedBook.isbn13());
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(
                 1, null, List.of(searchedBook)));
-        when(bookRepository.findAllByIsbn13In(List.of("9788925568683"))).thenReturn(List.of(registeredBook));
+        when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(List.of(registeredBook));
         when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(memberId);
         if (memberId.isPresent()) {
@@ -424,7 +425,7 @@ class BookSearchServiceTest {
     private Book registeredBook(Long id, String isbn13) {
         Book book = mock(Book.class);
         when(book.getId()).thenReturn(id);
-        when(book.getIsbn13()).thenReturn(isbn13);
+        when(book.getIsbn13()).thenReturn(new Isbn13(isbn13));
         return book;
     }
 }

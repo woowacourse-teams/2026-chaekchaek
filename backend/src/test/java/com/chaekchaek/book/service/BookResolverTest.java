@@ -11,9 +11,8 @@ import com.chaekchaek.book.client.AladinBookClient;
 import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.client.dto.AladinBookSubInfo;
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
-import com.chaekchaek.common.exception.BusinessException;
-import com.chaekchaek.common.exception.ErrorCode;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 class BookResolverTest {
 
-    private static final String ISBN13 = "9788925568683";
+    private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
 
     @Test
     @DisplayName("등록된 ISBN13으로 책을 조회하거나 생성하면 기존 책을 반환한다")
@@ -40,22 +39,6 @@ class BookResolverTest {
         assertThat(book).isSameAs(storedBook);
         verify(repository).findByIsbn13(ISBN13);
         verifyNoInteractions(client);
-    }
-
-    @Test
-    @DisplayName("잘못된 ISBN13으로 책을 조회하거나 생성하면 입력 오류를 던진다")
-    void should_ThrowInvalidRequestException_When_ResolvingMalformedIsbn13() {
-        // given
-        AladinBookClient client = mock(AladinBookClient.class);
-        BookRepository repository = mock(BookRepository.class);
-        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
-
-        // when & then
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> resolver.findOrCreate("9788925568682"))
-                .isInstanceOf(BusinessException.class)
-                .extracting(exception -> ((BusinessException) exception).getErrorCode())
-                .isEqualTo(ErrorCode.INVALID_REQUEST);
-        verifyNoInteractions(client, repository);
     }
 
     @Test
@@ -124,7 +107,7 @@ class BookResolverTest {
         return new AladinBookItem(
                 "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)",
                 description,
-                "2026-01-01", ISBN13, "SF", "알에이치코리아", new AladinBookSubInfo(308)
+                "2026-01-01", ISBN13.value(), "SF", "알에이치코리아", new AladinBookSubInfo(308)
         );
     }
 }

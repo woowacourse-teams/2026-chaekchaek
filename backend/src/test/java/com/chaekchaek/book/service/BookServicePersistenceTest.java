@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
@@ -11,6 +12,7 @@ import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
+import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -34,6 +36,9 @@ class BookServicePersistenceTest {
     private BookRepository bookRepository;
 
     @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
     private BookService bookService;
 
     @Autowired
@@ -54,7 +59,7 @@ class BookServicePersistenceTest {
     void should_ReturnDetailWithContributors_When_GettingStoredBookOutsideTransaction() {
         // given
         Book savedBook = bookRepository.saveAndFlush(Book.create(
-                "9788925568683", "마션", "https://image.example/martian.jpg",
+                new Isbn13("9788925568683"), "마션", "https://image.example/martian.jpg",
                 "책 설명",
                 List.of("앤디 위어", "공동 저자"), List.of("박아람", "공동 번역가"),
                 "알에이치코리아", "SF",
@@ -63,7 +68,7 @@ class BookServicePersistenceTest {
         libraryItemRepository.saveAndFlush(ratedItem(1L, savedBook.getId(), "4.2"));
         libraryItemRepository.saveAndFlush(ratedItem(2L, savedBook.getId(), "4.4"));
         Book anotherBook = bookRepository.saveAndFlush(Book.create(
-                "9781234567897", "별점 없는 책", "https://image.example/unrated.jpg",
+                new Isbn13("9781234567897"), "별점 없는 책", "https://image.example/unrated.jpg",
                 "책 설명", List.of("작가"), List.of(), "출판사", "소설",
                 LocalDate.of(2026, 1, 2), 100
         ));
@@ -83,6 +88,27 @@ class BookServicePersistenceTest {
         assertThat(response.averageRating()).isEqualByComparingTo("4.3");
         assertThat(response.ratingCount()).isEqualTo(2);
         assertThat(response.myRatingCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("ISBN13 값 객체로 단건 및 IN 조건 도서를 조회한다")
+    void should_FindBooksByIsbn13ValueObject() {
+        // given
+        Isbn13 isbn13 = new Isbn13("9788925568683");
+        bookRepository.saveAndFlush(Book.create(
+                isbn13, "마션", "https://image.example/martian.jpg", "책 설명",
+                List.of("앤디 위어"), List.of(), "알에이치코리아", "SF",
+                LocalDate.of(2026, 1, 1), 308
+        ));
+        entityManager.clear();
+
+        // when & then
+        assertThat(bookRepository.findByIsbn13(isbn13))
+                .map(Book::getIsbn13)
+                .contains(isbn13);
+        assertThat(bookRepository.findAllByIsbn13In(List.of(isbn13)))
+                .extracting(Book::getIsbn13)
+                .containsExactly(isbn13);
     }
 
     private LibraryItem ratedItem(long memberId, long bookId, String rating) {

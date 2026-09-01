@@ -11,6 +11,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 
 import com.chaekchaek.auth.principal.SecurityContextCurrentActorProvider;
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -37,12 +38,12 @@ class GuestInteractionAuthorizationIntegrationTest {
         // given
         String guestToken = issueGuestToken();
         Book book = bookRepository.save(Book.create(
-                "9788925568683", "마션", "https://example.com/martian.jpg", "책 설명",
+                new Isbn13("9788925568683"), "마션", "https://example.com/martian.jpg", "책 설명",
                 List.of("앤디 위어"), List.of(), "알에이치코리아", "SF", LocalDate.of(2026, 1, 1), 308
         ));
 
         // when & then
-        mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", book.getIsbn13())
+        mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", book.getIsbn13().value())
                         .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"content\":\"게스트 감상\"}"))

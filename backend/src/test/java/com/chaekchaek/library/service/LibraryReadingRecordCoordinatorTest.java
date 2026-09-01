@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
@@ -96,7 +97,7 @@ class LibraryReadingRecordCoordinatorTest {
     }
 
     private Book book(Integer totalPages) {
-        return Book.create("9788925568683", "마션", "https://example.com/cover.jpg", null,
+        return Book.create(new Isbn13("9788925568683"), "마션", "https://example.com/cover.jpg", null,
                 List.of("앤디 위어"), List.of(), "알에이치코리아", "SF", null, totalPages);
     }
 }

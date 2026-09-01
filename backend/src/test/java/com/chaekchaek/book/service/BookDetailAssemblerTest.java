@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
@@ -158,7 +159,7 @@ class BookDetailAssemblerTest {
     private Book book() {
         Book book = mock(Book.class);
         when(book.getId()).thenReturn(1L);
-        when(book.getIsbn13()).thenReturn("9788925568683");
+        when(book.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
         when(book.getTitle()).thenReturn("마션");
         when(book.getCoverImageUrl()).thenReturn("https://image.example/martian.jpg");
         when(book.getDescription()).thenReturn("책 설명");

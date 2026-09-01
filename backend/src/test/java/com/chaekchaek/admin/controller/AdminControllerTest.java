@@ -24,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.chaekchaek.admin.dto.RecommendedBookListResponse;
 import com.chaekchaek.admin.dto.RecommendedBookResponse;
 import com.chaekchaek.admin.service.AdminService;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.epages.restdocs.apispec.ParameterDescriptorWithType;
@@ -130,7 +131,7 @@ class AdminControllerTest {
     @DisplayName("유효한 요청이라면 추천 도서를 추가한다")
     void should_AddRecommendedBook_When_RequestIsValid() throws Exception {
         // given
-        when(adminService.addRecommendedBookByIsbn13(ISBN13)).thenReturn(recommendedBookResponse());
+        when(adminService.addRecommendedBookByIsbn13(new Isbn13(ISBN13))).thenReturn(recommendedBookResponse());
 
         // when & then
         postRecommendedBook(ISBN13)
@@ -153,7 +154,7 @@ class AdminControllerTest {
                                         .type(SimpleType.STRING).description("등록된 추천 도서 URI"))
                                 .build())));
 
-        verify(adminService).addRecommendedBookByIsbn13(ISBN13);
+        verify(adminService).addRecommendedBookByIsbn13(new Isbn13(ISBN13));
     }
 
     @Test
@@ -170,7 +171,7 @@ class AdminControllerTest {
     @DisplayName("추천 도서가 10권이라면 문제 응답을 반환한다")
     void should_ReturnProblemDetail_When_RecommendedBookLimitIsReached() throws Exception {
         // given
-        when(adminService.addRecommendedBookByIsbn13(ISBN13))
+        when(adminService.addRecommendedBookByIsbn13(new Isbn13(ISBN13)))
                 .thenThrow(new BusinessException(ErrorCode.RECOMMENDED_BOOK_LIMIT_EXCEEDED));
 
         // when & then

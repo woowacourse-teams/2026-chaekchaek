@@ -20,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.chaekchaek.book.client.AladinClientException;
 import com.chaekchaek.book.domain.BookSearchSort;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.dto.BookMyRecordResponse;
@@ -245,7 +246,7 @@ class BookControllerTest {
     @DisplayName("ISBN13으로 상세 정보를 조회하면 상세 정보를 반환한다")
     void should_ReturnBookDetailResponse_When_BookExists() throws Exception {
         // given
-        when(bookService.getDetail("9788925568683")).thenReturn(bookDetailResponse());
+        when(bookService.getDetail(new Isbn13("9788925568683"))).thenReturn(bookDetailResponse());
 
         // when & then
         mockMvc.perform(get("/api/v1/books/by-isbn/{isbn13}", "9788925568683"))
@@ -267,14 +268,14 @@ class BookControllerTest {
                                 .build())
                 ));
 
-        verify(bookService).getDetail("9788925568683");
+        verify(bookService).getDetail(new Isbn13("9788925568683"));
     }
 
     @Test
     @DisplayName("상세 조회 중 책을 찾지 못하면 404 응답을 반환한다")
     void should_ReturnNotFound_When_BookDoesNotExist() throws Exception {
         // given
-        when(bookService.getDetail("9788925568683")).thenThrow(new BookNotFoundException());
+        when(bookService.getDetail(new Isbn13("9788925568683"))).thenThrow(new BookNotFoundException());
 
         // when & then
         expectProblemDetail(
@@ -285,6 +286,21 @@ class BookControllerTest {
                 "/api/v1/books/by-isbn/9788925568683"
         ).andDo(problemDetailDocument("book-detail-not-found", BOOK_DETAIL_SUMMARY,
                 "요청한 도서가 존재하지 않는다"));
+    }
+
+    @Test
+    @DisplayName("ISBN13 검증에 실패하면 400 응답을 반환한다")
+    void should_ReturnBadRequest_When_Isbn13IsInvalid() throws Exception {
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/books/by-isbn/{isbn13}", "9788925568684")),
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "요청값이 올바르지 않습니다.",
+                "/api/v1/books/by-isbn/9788925568684"
+        );
+
+        verifyNoInteractions(bookService);
     }
 
     @Test

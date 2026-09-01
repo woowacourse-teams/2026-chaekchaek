@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.book.client.AladinClientException;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.ErrorCode;
@@ -192,7 +193,7 @@ class ReviewControllerTest {
     void should_ReturnBookIdAndReview_When_CreatingReviewByIsbn13() throws Exception {
         // given
         when(reviewService.createReviewByIsbn13(
-                org.mockito.ArgumentMatchers.eq("9788925568683"),
+                org.mockito.ArgumentMatchers.eq(new Isbn13("9788925568683")),
                 org.mockito.ArgumentMatchers.any(ReviewCreateRequest.class)
         )).thenReturn(new ReviewCreateByIsbnResponse(42L, reviewResponse()));
 
@@ -221,7 +222,7 @@ class ReviewControllerTest {
                                 .build())));
 
         verify(reviewService).createReviewByIsbn13(
-                org.mockito.ArgumentMatchers.eq("9788925568683"),
+                org.mockito.ArgumentMatchers.eq(new Isbn13("9788925568683")),
                 org.mockito.ArgumentMatchers.any(ReviewCreateRequest.class));
     }
 
@@ -538,17 +539,17 @@ class ReviewControllerTest {
     @DisplayName("ISBN13 감상 작성의 입력, 인증, 도서, 페이지와 외부 API 오류를 문서화한다")
     void should_DocumentReviewCreateByIsbnErrors_When_RequestCannotBeProcessed() throws Exception {
         // given
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568684"),
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9788936433598")),
                 org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568685"),
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9788966260959")),
                 org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568686"),
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9781234567897")),
                 org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568687"),
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9780000000002")),
                 org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568688"),
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9780000000019")),
                 org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq("9788925568689"),
+        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9780000000026")),
                 org.mockito.ArgumentMatchers.any())).thenThrow(new AladinClientException(1, "invalid secret key"));
 
         // when & then
@@ -556,29 +557,29 @@ class ReviewControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{}")), HttpStatus.BAD_REQUEST,
                 "INVALID_REQUEST", "/api/v1/books/by-isbn/9788925568683/reviews",
                 "review-create-by-isbn-invalid-request", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568684")
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788936433598")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.UNAUTHORIZED,
-                "UNAUTHORIZED", "/api/v1/books/by-isbn/9788925568684/reviews",
+                "UNAUTHORIZED", "/api/v1/books/by-isbn/9788936433598/reviews",
                 "review-create-by-isbn-unauthorized", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568685")
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788966260959")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.FORBIDDEN,
-                "FORBIDDEN", "/api/v1/books/by-isbn/9788925568685/reviews",
+                "FORBIDDEN", "/api/v1/books/by-isbn/9788966260959/reviews",
                 "review-create-by-isbn-forbidden", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568686")
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9781234567897")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.NOT_FOUND,
-                "BOOK_NOT_FOUND", "/api/v1/books/by-isbn/9788925568686/reviews",
+                "BOOK_NOT_FOUND", "/api/v1/books/by-isbn/9781234567897/reviews",
                 "review-create-by-isbn-book-not-found", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568687")
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000002")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.CONFLICT,
-                "TOTAL_PAGES_CONFLICT", "/api/v1/books/by-isbn/9788925568687/reviews",
+                "TOTAL_PAGES_CONFLICT", "/api/v1/books/by-isbn/9780000000002/reviews",
                 "review-create-by-isbn-total-pages-conflict", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568688")
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000019")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.UNPROCESSABLE_CONTENT,
-                "INVALID_READING_STATE", "/api/v1/books/by-isbn/9788925568688/reviews",
+                "INVALID_READING_STATE", "/api/v1/books/by-isbn/9780000000019/reviews",
                 "review-create-by-isbn-invalid-reading-state", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568689")
+        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000026")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.BAD_GATEWAY,
-                "EXTERNAL_API_ERROR", "/api/v1/books/by-isbn/9788925568689/reviews",
+                "EXTERNAL_API_ERROR", "/api/v1/books/by-isbn/9780000000026/reviews",
                 "review-create-by-isbn-external-api-error", "ISBN13으로 감상 작성");
     }
 
