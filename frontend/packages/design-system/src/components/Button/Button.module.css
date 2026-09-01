@@ -81,21 +81,21 @@
 .size-small {
   height: 32px;
   padding-inline: 20px;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
 }
 
 .size-medium {
   height: 40px;
   padding-inline: 24px;
-  font-size: 14.5px;
+  font-size: 12.5px;
   font-weight: 700;
 }
 
 .size-large {
   height: 48px;
   padding-inline: 24px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
 }
 

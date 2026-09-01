@@ -40,7 +40,7 @@
 .size-x-small {
   height: 24px;
   padding-inline: 8px;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .size-small {
@@ -52,5 +52,5 @@
 .size-medium {
   height: 32px;
   padding-inline: 11px;
-  font-size: 13px;
+  font-size: 12px;
 }
