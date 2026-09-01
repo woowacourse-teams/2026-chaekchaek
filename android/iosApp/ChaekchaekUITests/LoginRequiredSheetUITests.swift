@@ -54,6 +54,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
 
         withdrawal.tap()
         XCTAssertTrue(app.buttons["탈퇴하기"].waitForExistence(timeout: 5))
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
         attachScreenshot(named: "마이페이지 회원 탈퇴 확인")
     }
 

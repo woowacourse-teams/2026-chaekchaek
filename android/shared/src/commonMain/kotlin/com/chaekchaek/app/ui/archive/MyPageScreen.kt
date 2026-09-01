@@ -268,6 +268,7 @@ private fun WithdrawalRow(onClick: () -> Unit) {
 private fun WithdrawalDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
         title = { Text("회원 탈퇴") },
         text = { Text("탈퇴하면 계정과 관련 데이터가 삭제되며 되돌릴 수 없습니다. 정말 탈퇴할까요?") },
         dismissButton = {
