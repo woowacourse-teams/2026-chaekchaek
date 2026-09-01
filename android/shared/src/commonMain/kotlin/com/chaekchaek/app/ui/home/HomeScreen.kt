@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -69,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.collectAsState
 import com.chaekchaek.app.presentation.common.AppError
+import com.chaekchaek.app.ui.common.ChaekAlertDialog
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
 import com.chaekchaek.app.presentation.home.HomeUiState
 import com.chaekchaek.app.presentation.home.HomeViewModel
@@ -162,7 +162,7 @@ private fun EmptyContent(modifier: Modifier) {
 @Composable
 private fun ErrorContent(error: AppError, retry: () -> Unit, modifier: Modifier) {
     Box(modifier.fillMaxSize())
-    AlertDialog(
+    ChaekAlertDialog(
         onDismissRequest = {},
         title = { Text("홈을 불러오지 못했어요") },
         text = { Text(error.message()) },
