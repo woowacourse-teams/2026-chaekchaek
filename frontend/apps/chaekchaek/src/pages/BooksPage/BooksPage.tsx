@@ -2,8 +2,6 @@ import { useCallback, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
-import ReactGA from 'react-ga4';
-
 import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
@@ -17,6 +15,8 @@ import { Button } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 import { Pagination } from '@chaekchaek/design-system';
 import { Badge } from '@chaekchaek/design-system';
+
+import { track } from '@/analytics/track';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
@@ -89,7 +89,7 @@ export const BooksPage = () => {
 
   const navigation = useNavigate();
   const handleMove = (isbn: string) => {
-    ReactGA.event('select_book', {
+    track('select_book', {
       source: 'search',
     });
 
