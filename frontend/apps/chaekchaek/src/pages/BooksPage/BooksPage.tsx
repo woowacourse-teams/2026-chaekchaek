@@ -2,6 +2,8 @@ import { useCallback, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
+import ReactGA from 'react-ga4';
+
 import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
@@ -87,6 +89,10 @@ export const BooksPage = () => {
 
   const navigation = useNavigate();
   const handleMove = (isbn: string) => {
+    ReactGA.event('select_book', {
+      source: 'search',
+    });
+
     navigation(`/books/${isbn}`);
   };
 

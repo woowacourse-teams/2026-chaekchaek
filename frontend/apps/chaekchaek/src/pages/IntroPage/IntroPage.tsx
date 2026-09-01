@@ -2,6 +2,8 @@ import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import ReactGA from 'react-ga4';
+
 import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
@@ -27,6 +29,10 @@ export const IntroPage = () => {
   const navigation = useNavigate();
 
   const handleClickMoveDetail = (isbn: string) => {
+    ReactGA.event('select_book', {
+      source: 'intro_popular',
+    });
+
     navigation(`/books/${isbn}`);
   };
 
