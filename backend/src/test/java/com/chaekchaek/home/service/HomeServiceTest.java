@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActorProvider;
@@ -50,7 +51,7 @@ class HomeServiceTest {
         // then
         assertThat(result).extracting(PopularBookResponse::bookId).containsExactly(3L, 2L, 1L);
         assertThat(result).extracting(PopularBookResponse::isbn13)
-                .containsExactly("9780000000003", "9780000000002", "9780000000001");
+                .containsExactly("9780000000026", "9780000000019", "9780000000002");
         assertThat(result).extracting(PopularBookResponse::reviewCount).containsExactly(2L, 5L, 8L);
         assertThat(result).extracting(PopularBookResponse::replyCount).containsExactly(8L, 5L, 1L);
     }
@@ -146,11 +147,20 @@ class HomeServiceTest {
     private static Book book(long id, String title) {
         Book book = mock(Book.class);
         when(book.getId()).thenReturn(id);
-        when(book.getIsbn13()).thenReturn("978000000000" + id);
+        when(book.getIsbn13()).thenReturn(isbn13(id));
         when(book.getTitle()).thenReturn(title);
         when(book.getCoverImageUrl()).thenReturn("https://example.com/" + id + ".jpg");
         when(book.getAuthors()).thenReturn(List.of("저자 " + id));
         return book;
+    }
+
+    private static Isbn13 isbn13(long id) {
+        return switch ((int) id) {
+            case 1 -> new Isbn13("9780000000002");
+            case 2 -> new Isbn13("9780000000019");
+            case 3 -> new Isbn13("9780000000026");
+            default -> new Isbn13("9788925568683");
+        };
     }
 
     private static ReplyRepository.ReviewCount replyCount(long reviewId, long count) {

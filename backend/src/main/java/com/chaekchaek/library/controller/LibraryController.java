@@ -12,6 +12,7 @@ import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RateBookRequest;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.dto.UpdateLibraryItemRequest;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.library.service.LibraryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -63,7 +64,7 @@ public class LibraryController {
 
     @PostMapping("/library")
     public ResponseEntity<LibraryItemResponse> add(@Valid @RequestBody AddLibraryItemRequest request) {
-        LibraryItemResponse response = libraryService.addByIsbn13(memberId(), request.isbn13(),
+        LibraryItemResponse response = libraryService.addByIsbn13(memberId(), new Isbn13(request.isbn13()),
                 request.status(), request.totalPages());
         return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
                         .path("/{bookId}").buildAndExpand(response.bookId()).toUri())
@@ -121,7 +122,7 @@ public class LibraryController {
             @RequestParam @NotNull @DecimalMin("0.1") @DecimalMax("5.0") @Digits(integer = 1, fraction = 1)
             java.math.BigDecimal criterion
     ) {
-        return ResponseEntity.ok(libraryService.compareRatingsByIsbn13(memberId(), isbn13, criterion));
+        return ResponseEntity.ok(libraryService.compareRatingsByIsbn13(memberId(), new Isbn13(isbn13), criterion));
     }
 
     private long memberId() {

@@ -1,6 +1,7 @@
 package com.chaekchaek.review.service;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
@@ -148,7 +149,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         return saveReview(bookId, request, actor);
     }
 
-    public ReviewCreateByIsbnResponse createReviewByIsbn13(String isbn13, ReviewCreateRequest request) {
+    public ReviewCreateByIsbnResponse createReviewByIsbn13(Isbn13 isbn13, ReviewCreateRequest request) {
         CurrentActor actor = currentActorProvider.getCurrentActor();
         validateReviewCreation(actor, request);
         Book book = bookResolver.findOrCreate(isbn13);

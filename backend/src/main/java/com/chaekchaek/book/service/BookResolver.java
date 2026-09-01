@@ -8,8 +8,6 @@ import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
-import com.chaekchaek.common.exception.BusinessException;
-import com.chaekchaek.common.exception.ErrorCode;
 import java.util.Objects;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
@@ -35,40 +33,32 @@ public class BookResolver {
         newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
-    public Book findOrCreate(String isbn13) {
-        validateIsbn13(isbn13);
+    public Book findOrCreate(Isbn13 isbn13) {
         return bookRepository.findByIsbn13(isbn13)
                 .orElseGet(() -> registerBookFetchedOutsideTransaction(isbn13));
     }
 
-    public Book lookup(String isbn13) {
-        validateIsbn13(isbn13);
+    public Book lookup(Isbn13 isbn13) {
         return bookRepository.findByIsbn13(isbn13)
-                .orElseGet(() -> toBook(bookClient.findBookByIsbn13(isbn13)));
+                .orElseGet(() -> toBook(isbn13, bookClient.findBookByIsbn13(isbn13)));
     }
 
-    private void validateIsbn13(String isbn13) {
-        if (!Isbn13.isValid(isbn13)) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
-    }
-
-    private Book registerBookFetchedOutsideTransaction(String isbn13) {
+    private Book registerBookFetchedOutsideTransaction(Isbn13 isbn13) {
         AladinBookItem source = bookClient.findBookByIsbn13(isbn13);
         try {
             return Objects.requireNonNull(newTransaction.execute(status -> bookRepository
                     .findByIsbn13(isbn13)
-                    .orElseGet(() -> bookRepository.saveAndFlush(toBook(source)))));
+                    .orElseGet(() -> bookRepository.saveAndFlush(toBook(isbn13, source)))));
         } catch (DataIntegrityViolationException exception) {
             return bookRepository.findByIsbn13(isbn13)
                     .orElseThrow(() -> exception);
         }
     }
 
-    private Book toBook(AladinBookItem source) {
+    private Book toBook(Isbn13 isbn13, AladinBookItem source) {
         AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
         return Book.create(
-                source.isbn13(),
+                isbn13,
                 source.title(),
                 source.cover(),
                 htmlUnescape(source.description()),

@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.LibrarySort;
@@ -242,7 +243,7 @@ class LibraryControllerTest {
     void should_AddLibraryItem_When_RequestIsValid() throws Exception {
         // given
         LibraryItemResponse response = libraryItemResponse();
-        when(libraryService.addByIsbn13(MEMBER_ID, ISBN13, ReadingStatus.READING, 368))
+        when(libraryService.addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368))
                 .thenReturn(response);
 
         // when & then
@@ -272,7 +273,7 @@ class LibraryControllerTest {
                                 .build())
                 ));
 
-        verify(libraryService).addByIsbn13(MEMBER_ID, ISBN13, ReadingStatus.READING, 368);
+        verify(libraryService).addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
     }
 
     @Test
@@ -442,7 +443,7 @@ class LibraryControllerTest {
                 comparisonBook(9L, "9788954699919", "파친코", "이민진", "4.0", Instant.parse("2026-08-01T00:00:00Z")),
                 comparisonBook(12L, "9788965746829", "아몬드", "손원평", "4.5", Instant.parse("2026-08-03T00:00:00Z")),
                 comparisonBook(11L, "9788956609959", "불편한 편의점", "김호연", "4.8", Instant.parse("2026-08-05T00:00:00Z")));
-        when(libraryService.compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5")))
+        when(libraryService.compareRatingsByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5")))
                 .thenReturn(response);
 
         // when & then
@@ -470,7 +471,7 @@ class LibraryControllerTest {
                                 .build())
                 ));
 
-        verify(libraryService).compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5"));
+        verify(libraryService).compareRatingsByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5"));
     }
 
     @Test
@@ -478,7 +479,7 @@ class LibraryControllerTest {
     void should_ReturnNullableRatingComparison_When_NoBookHasCriterionRating() throws Exception {
         // given
         RatingComparisonResponse response = new RatingComparisonResponse(null, null, null);
-        when(libraryService.compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5")))
+        when(libraryService.compareRatingsByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5")))
                 .thenReturn(response);
 
         // when & then
@@ -508,7 +509,7 @@ class LibraryControllerTest {
     void should_DocumentProblemDetails_When_AddingLibraryItemFails() throws Exception {
         // given
         doThrow(new BusinessException(ErrorCode.INVALID_REQUEST)).when(libraryService)
-                .addByIsbn13(MEMBER_ID, ISBN13, ReadingStatus.READING, 368);
+                .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
 
         // when & then
         documentProblemDetail(postLibraryItem(), HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
@@ -516,25 +517,25 @@ class LibraryControllerTest {
                 LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
 
         doThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND)).when(libraryService)
-                .addByIsbn13(MEMBER_ID, ISBN13, ReadingStatus.READING, 368);
+                .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
         documentProblemDetail(postLibraryItem(), HttpStatus.NOT_FOUND, ErrorCode.BOOK_NOT_FOUND,
                 "/api/v1/library", "library-add-book-not-found", LIBRARY_ADD_SUMMARY,
                 LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
 
         doThrow(new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS)).when(libraryService)
-                .addByIsbn13(MEMBER_ID, ISBN13, ReadingStatus.READING, 368);
+                .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
         documentProblemDetail(postLibraryItem(), HttpStatus.CONFLICT, ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS,
                 "/api/v1/library", "library-add-already-exists", LIBRARY_ADD_SUMMARY,
                 LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
 
         doThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT)).when(libraryService)
-                .addByIsbn13(MEMBER_ID, ISBN13, ReadingStatus.READING, 368);
+                .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
         documentProblemDetail(postLibraryItem(), HttpStatus.CONFLICT, ErrorCode.TOTAL_PAGES_CONFLICT,
                 "/api/v1/library", "library-add-total-pages-conflict", LIBRARY_ADD_SUMMARY,
                 LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
 
         doThrow(new BusinessException(ErrorCode.INVALID_READING_STATE)).when(libraryService)
-                .addByIsbn13(MEMBER_ID, ISBN13, ReadingStatus.READING, 368);
+                .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
         documentProblemDetail(postLibraryItem(), HttpStatus.UNPROCESSABLE_CONTENT,
                 ErrorCode.INVALID_READING_STATE, "/api/v1/library", "library-add-invalid-reading-state",
                 LIBRARY_ADD_SUMMARY, LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
@@ -652,7 +653,7 @@ class LibraryControllerTest {
     void should_DocumentProblemDetails_When_ComparingRatingsFails() throws Exception {
         // given
         doThrow(new BusinessException(ErrorCode.INVALID_REQUEST)).when(libraryService)
-                .compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5"));
+                .compareRatingsByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5"));
 
         // when & then
         documentProblemDetail(getRatingComparison(), HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
@@ -661,7 +662,7 @@ class LibraryControllerTest {
                 ratingComparisonResourceQueryParameters());
 
         doThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND)).when(libraryService)
-                .compareRatingsByIsbn13(MEMBER_ID, ISBN13, new BigDecimal("4.5"));
+                .compareRatingsByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5"));
         documentProblemDetail(getRatingComparison(), HttpStatus.NOT_FOUND, ErrorCode.BOOK_NOT_FOUND,
                 "/api/v1/members/me/ratings/comparison", "library-rating-comparison-book-not-found",
                 RATING_COMPARISON_SUMMARY, RATING_COMPARISON_DESCRIPTION, noPathParameters(),

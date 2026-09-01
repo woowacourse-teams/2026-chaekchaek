@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.exception.BusinessException;
@@ -40,7 +41,7 @@ class LibraryServiceTest {
 
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-08-14T00:00:00Z"),
             ZoneOffset.UTC);
-    private static final String ISBN13 = "9788925568683";
+    private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
 
     @Mock
     private LibraryItemRepository libraryItemRepository;
@@ -140,7 +141,7 @@ class LibraryServiceTest {
                 CLOCK.instant());
         sameRatedItem.rate(new BigDecimal("4.5"), CLOCK.instant().plusSeconds(10));
         Book sameRatedBook = mock(Book.class);
-        when(sameRatedBook.getIsbn13()).thenReturn("9788925568683");
+        when(sameRatedBook.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
         when(sameRatedBook.getTitle()).thenReturn("같은 별점 도서");
         when(sameRatedBook.getCoverImageUrl()).thenReturn("https://example.com/cover.jpg");
         when(sameRatedBook.getAuthors()).thenReturn(List.of("작가"));
@@ -181,6 +182,8 @@ class LibraryServiceTest {
         Book secondBook = mock(Book.class);
         when(firstBook.getId()).thenReturn(2L);
         when(secondBook.getId()).thenReturn(3L);
+        when(firstBook.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
+        when(secondBook.getIsbn13()).thenReturn(new Isbn13("9788936433598"));
         when(libraryItemRepository.findAllByMemberId(1L)).thenReturn(List.of(firstItem, secondItem));
         when(bookRepository.findAllById(List.of(2L, 3L))).thenReturn(List.of(firstBook, secondBook));
         when(commentCountReader.getCommentCounts(anyCollection()))
@@ -238,7 +241,7 @@ class LibraryServiceTest {
     }
 
     private Book book(Integer totalPages) {
-        return Book.create("9788925568683", "마션", "https://example.com/cover.jpg", null, List.of("앤디 위어"),
+        return Book.create(new Isbn13("9788925568683"), "마션", "https://example.com/cover.jpg", null, List.of("앤디 위어"),
                 List.of(), "알에이치코리아", "SF", null, totalPages);
     }
 }

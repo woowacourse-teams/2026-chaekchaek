@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
@@ -188,7 +189,8 @@ class ReviewServiceTest {
         BookResolver bookResolver = mock(BookResolver.class);
         Book book = mock(Book.class);
         when(book.getId()).thenReturn(5L);
-        when(bookResolver.findOrCreate("9788925568683")).thenReturn(book);
+        Isbn13 isbn13 = new Isbn13("9788925568683");
+        when(bookResolver.findOrCreate(isbn13)).thenReturn(book);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review review = invocation.getArgument(0);
             ReflectionTestUtils.setField(review, "id", 10L);
@@ -198,13 +200,13 @@ class ReviewServiceTest {
                 memberReader(false), bookResolver);
 
         // when
-        ReviewCreateByIsbnResponse actual = reviewService.createReviewByIsbn13("9788925568683",
+        ReviewCreateByIsbnResponse actual = reviewService.createReviewByIsbn13(isbn13,
                 new ReviewCreateRequest("감상", null, null, null, null, false));
 
         // then
         assertThat(actual.bookId()).isEqualTo(5L);
         assertThat(actual.review().reviewId()).isEqualTo(10L);
-        verify(bookResolver).findOrCreate("9788925568683");
+        verify(bookResolver).findOrCreate(isbn13);
         verify(bookReader).validateBookExists(5L);
     }
 
@@ -221,11 +223,11 @@ class ReviewServiceTest {
         );
 
         // when & then
-        assertThatThrownBy(() -> reviewService.createReviewByIsbn13("9788925568683",
+        assertThatThrownBy(() -> reviewService.createReviewByIsbn13(new Isbn13("9788925568683"),
                 new ReviewCreateRequest("감상", null, null, 10, 100, false)))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
-        verify(bookResolver, never()).findOrCreate(org.mockito.ArgumentMatchers.anyString());
+        verify(bookResolver, never()).findOrCreate(any(Isbn13.class));
     }
 
     @Test

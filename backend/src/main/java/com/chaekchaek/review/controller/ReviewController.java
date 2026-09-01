@@ -6,6 +6,7 @@ import com.chaekchaek.review.dto.ReplyCreateRequest;
 import com.chaekchaek.review.dto.ReplyResponse;
 import com.chaekchaek.review.dto.ReplyUpdateRequest;
 import com.chaekchaek.review.dto.ReviewCreateByIsbnResponse;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
@@ -54,7 +55,7 @@ public class ReviewController {
             @PathVariable String isbn13,
             @Valid @RequestBody ReviewCreateRequest request
     ) {
-        ReviewCreateByIsbnResponse response = reviewService.createReviewByIsbn13(isbn13, request);
+        ReviewCreateByIsbnResponse response = reviewService.createReviewByIsbn13(new Isbn13(isbn13), request);
         return ResponseEntity.created(URI.create("/api/v1/reviews/" + response.review().reviewId())).body(response);
     }
 

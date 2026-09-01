@@ -8,6 +8,7 @@ import com.chaekchaek.book.client.AladinBookClient;
 import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.client.dto.AladinBookSubInfo;
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CyclicBarrier;
@@ -27,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 @ActiveProfiles("test")
 class BookResolveConcurrencyTest {
 
-    private static final String ISBN13 = "9788925568683";
+    private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
 
     @Autowired
     private BookRepository bookRepository;
@@ -47,7 +48,7 @@ class BookResolveConcurrencyTest {
             return new AladinBookItem(
                     "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)",
                     "책 설명",
-                    "2026-01-01", ISBN13, "SF", "알에이치코리아", new AladinBookSubInfo(308)
+                    "2026-01-01", ISBN13.value(), "SF", "알에이치코리아", new AladinBookSubInfo(308)
             );
         });
         BookResolver resolver = new BookResolver(client, bookRepository, transactionManager);

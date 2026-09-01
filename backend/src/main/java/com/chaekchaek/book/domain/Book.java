@@ -2,6 +2,7 @@ package com.chaekchaek.book.domain;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -29,7 +30,8 @@ public class Book {
     private Long id;
 
     @Column(nullable = false, length = 13)
-    private String isbn13;
+    @Convert(converter = Isbn13Converter.class)
+    private Isbn13 isbn13;
 
     @Column(nullable = false)
     private String title;
@@ -66,7 +68,7 @@ public class Book {
     }
 
     private Book(
-            String isbn13,
+            Isbn13 isbn13,
             String title,
             String coverImageUrl,
             String description,
@@ -90,7 +92,7 @@ public class Book {
     }
 
     public static Book create(
-            String isbn13,
+            Isbn13 isbn13,
             String title,
             String coverImageUrl,
             String description,
@@ -101,9 +103,6 @@ public class Book {
             LocalDate publishedDate,
             Integer totalPages
     ) {
-        if (!Isbn13.isValid(isbn13)) {
-            throw new IllegalArgumentException("ISBN13 must have a valid checksum");
-        }
         validateTotalPages(totalPages);
         return new Book(isbn13, title, coverImageUrl, description, authors, translators, publisher, category,
                 publishedDate, totalPages);
@@ -133,7 +132,7 @@ public class Book {
         return id;
     }
 
-    public String getIsbn13() {
+    public Isbn13 getIsbn13() {
         return isbn13;
     }
 

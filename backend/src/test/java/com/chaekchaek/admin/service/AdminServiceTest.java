@@ -12,6 +12,7 @@ import com.chaekchaek.admin.domain.RecommendedBook;
 import com.chaekchaek.admin.dto.RecommendedBookResponse;
 import com.chaekchaek.admin.repository.RecommendedBookRepository;
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
@@ -31,7 +32,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 class AdminServiceTest {
 
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-08-28T00:00:00Z"), ZoneOffset.UTC);
-    private static final String ISBN13 = "9788925568683";
+    private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
     private static final CurrentActor ADMIN_ACTOR = CurrentActor.admin(1L, 1L);
     private static final CurrentActor MEMBER_ACTOR = CurrentActor.member(2L, 2L);
 
@@ -56,7 +57,7 @@ class AdminServiceTest {
         assertThat(result).extracting(RecommendedBookResponse::bookId).containsExactly(3L, 1L);
         assertThat(result).extracting(RecommendedBookResponse::title).containsExactly("세 번째 책", "첫 번째 책");
         assertThat(result).extracting(RecommendedBookResponse::isbn13)
-                .containsExactly("9780000000003", "9780000000001");
+                .containsExactly("9780000000026", "9780000000002");
         assertThat(result).extracting(RecommendedBookResponse::createdAt)
                 .containsExactly(Instant.parse("2026-08-28T00:00:00Z"), Instant.parse("2026-08-27T00:00:00Z"));
     }
@@ -271,10 +272,19 @@ class AdminServiceTest {
     private static Book book(long id, String title) {
         Book book = mock(Book.class);
         when(book.getId()).thenReturn(id);
-        when(book.getIsbn13()).thenReturn("978000000000" + id);
+        when(book.getIsbn13()).thenReturn(isbn13(id));
         when(book.getTitle()).thenReturn(title);
         when(book.getCoverImageUrl()).thenReturn("https://example.com/" + id + ".jpg");
         when(book.getAuthors()).thenReturn(List.of("저자 " + id));
         return book;
+    }
+
+    private static Isbn13 isbn13(long id) {
+        return switch ((int) id) {
+            case 1 -> new Isbn13("9780000000002");
+            case 2 -> new Isbn13("9780000000019");
+            case 3 -> new Isbn13("9780000000026");
+            default -> new Isbn13("9788925568683");
+        };
     }
 }

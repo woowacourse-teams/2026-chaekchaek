@@ -13,6 +13,16 @@ import org.junit.jupiter.api.Test;
 class BookTest {
 
     @Test
+    @DisplayName("책은 검증된 ISBN13 값 객체를 보관한다")
+    void should_ReturnIsbn13ValueObject_When_BookIsCreated() {
+        // given
+        Book book = bookWithoutTotalPages();
+
+        // when & then
+        assertThat(book.getIsbn13()).isEqualTo(new Isbn13("9788925568683"));
+    }
+
+    @Test
     @DisplayName("전체 페이지가 없던 책에 처음 입력한 값을 저장한다")
     void should_RecordTotalPages_When_BookDoesNotHaveTotalPages() {
         // given
@@ -52,7 +62,7 @@ class BookTest {
 
     private Book bookWithoutTotalPages() {
         return Book.create(
-                "9788925568683", "마션", "https://image.example/martian.jpg",
+                new Isbn13("9788925568683"), "마션", "https://image.example/martian.jpg",
                 null,
                 List.of("앤디 위어"), List.of("박아람"), "알에이치코리아", "SF",
                 LocalDate.of(2026, 1, 1), null

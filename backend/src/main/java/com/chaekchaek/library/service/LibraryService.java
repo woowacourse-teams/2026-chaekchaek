@@ -1,6 +1,7 @@
 package com.chaekchaek.library.service;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
@@ -109,7 +110,7 @@ public class LibraryService {
         return saveNewItem(memberId, book, status);
     }
 
-    public LibraryItemResponse addByIsbn13(long memberId, String isbn13, ReadingStatus status,
+    public LibraryItemResponse addByIsbn13(long memberId, Isbn13 isbn13, ReadingStatus status,
                                            Integer totalPages) {
         Book book = bookResolver.findOrCreate(isbn13);
         return transactionTemplate.execute(statusTemplate ->
@@ -117,7 +118,7 @@ public class LibraryService {
     }
 
     @Transactional(readOnly = true)
-    public RatingComparisonResponse compareRatingsByIsbn13(long memberId, String isbn13,
+    public RatingComparisonResponse compareRatingsByIsbn13(long memberId, Isbn13 isbn13,
                                                            BigDecimal criterion) {
         validateRating(criterion);
         Book currentBook = bookRepository.findByIsbn13(isbn13)

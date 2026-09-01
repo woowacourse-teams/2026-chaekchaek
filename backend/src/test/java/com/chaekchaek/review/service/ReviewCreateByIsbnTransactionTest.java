@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.chaekchaek.book.client.AladinBookClient;
 import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.client.dto.AladinBookSubInfo;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.auth.ActorType;
@@ -37,7 +38,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @DataJpaTest
 class ReviewCreateByIsbnTransactionTest {
 
-    private static final String ISBN13 = "9788925568683";
+    private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
 
     @Autowired
     private BookRepository bookRepository;
@@ -57,7 +58,7 @@ class ReviewCreateByIsbnTransactionTest {
             externalCallInTransaction.set(TransactionSynchronizationManager.isActualTransactionActive());
             return new AladinBookItem(
                     "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)", "책 설명",
-                    "2026-01-01", ISBN13, "SF", "알에이치코리아", new AladinBookSubInfo(308)
+                    "2026-01-01", ISBN13.value(), "SF", "알에이치코리아", new AladinBookSubInfo(308)
             );
         });
         BookResolver bookResolver = new BookResolver(bookClient, bookRepository, transactionManager);

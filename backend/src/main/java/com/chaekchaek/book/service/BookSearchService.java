@@ -4,6 +4,7 @@ import com.chaekchaek.book.client.BookSearchClient;
 import com.chaekchaek.book.client.BookSearchItem;
 import com.chaekchaek.book.client.BookSearchResult;
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
@@ -44,12 +45,13 @@ public class BookSearchService {
     public BookSearchResponse search(String query, int page, BookSearchSort sort) {
         BookSearchResult source = bookClient.search(query, page);
         List<BookSearchItem> searchedBooks = source.items();
-        List<String> searchResultIsbn13s = searchedBooks.stream()
+        List<Isbn13> searchResultIsbn13s = searchedBooks.stream()
                 .map(BookSearchItem::isbn13)
+                .map(Isbn13::new)
                 .toList();
 
         List<Book> registeredBooks = bookRepository.findAllByIsbn13In(searchResultIsbn13s);
-        Map<String, Book> registeredBooksByIsbn13 = registeredBooks.stream()
+        Map<Isbn13, Book> registeredBooksByIsbn13 = registeredBooks.stream()
                 .collect(Collectors.toMap(Book::getIsbn13, Function.identity()));
 
         Map<Long, ActivityCounts> activityCountsByBookId = activityCountReader.getActivityCounts(
@@ -61,8 +63,9 @@ public class BookSearchService {
         Set<Long> libraryBookIds = findLibraryBookIds(memberId, registeredBooks);
 
         List<BookItem> items = new ArrayList<>(searchedBooks.size());
-        for (BookSearchItem searchedBook : searchedBooks) {
-            Book registeredBook = registeredBooksByIsbn13.get(searchedBook.isbn13());
+        for (int index = 0; index < searchedBooks.size(); index++) {
+            BookSearchItem searchedBook = searchedBooks.get(index);
+            Book registeredBook = registeredBooksByIsbn13.get(searchResultIsbn13s.get(index));
             ActivityCounts activityCounts = registeredBook == null
                     ? null
                     : activityCountsByBookId.getOrDefault(registeredBook.getId(), ActivityCounts.ZERO);

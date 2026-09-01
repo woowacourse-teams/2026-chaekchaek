@@ -29,7 +29,7 @@ public record LibraryItemResponse(
 
     public static LibraryItemResponse from(LibraryItem item, Book book, long commentCount) {
         return new LibraryItemResponse(
-                item.getBookId(), book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(),
+                item.getBookId(), book.getIsbn13().value(), book.getTitle(), book.getCoverImageUrl(),
                 book.getAuthors(), book.getTranslators(), book.getPublisher(), book.getCategory(),
                 book.getPublishedDate(), book.getTotalPages(), commentCount,
                 item.getStatus(), item.getCurrentPage(),

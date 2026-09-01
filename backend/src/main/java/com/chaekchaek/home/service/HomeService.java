@@ -79,7 +79,7 @@ public class HomeService {
             return null;
         }
         long bookId = book.getId();
-        return new PopularBookResponse(bookId, book.getIsbn13(), book.getTitle(), book.getCoverImageUrl(), book.getAuthors(),
+        return new PopularBookResponse(bookId, book.getIsbn13().value(), book.getTitle(), book.getCoverImageUrl(), book.getAuthors(),
                 count.getReviewCount(), count.getReplyCount());
     }
 
@@ -102,7 +102,7 @@ public class HomeService {
         }
         return new LatestReviewResponse(review.getContent(), review.getCreatedAt(),
                 authorOf(review, currentMemberId, memberProfiles), replyCounts.getOrDefault(review.getId(), 0L),
-                book.getId(), book.getIsbn13(), book.getTitle(), book.getCoverImageUrl());
+                book.getId(), book.getIsbn13().value(), book.getTitle(), book.getCoverImageUrl());
     }
 
     private AuthorResponse authorOf(Review review, Long currentMemberId,

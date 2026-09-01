@@ -1,6 +1,7 @@
 package com.chaekchaek.book.service;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.dto.BookDetailResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ public class BookService {
     private final BookDetailAssembler bookDetailAssembler;
 
     @Transactional(readOnly = true)
-    public BookDetailResponse getDetail(String isbn13) {
+    public BookDetailResponse getDetail(Isbn13 isbn13) {
         Book book = bookResolver.lookup(isbn13);
         return bookDetailAssembler.assemble(book);
     }
