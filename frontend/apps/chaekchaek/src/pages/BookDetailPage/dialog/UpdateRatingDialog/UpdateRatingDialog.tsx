@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { ButtonStack, Dialog, Notice, Slider } from '@chaekchaek/design-system';
@@ -43,9 +43,13 @@ export const UpdateRatingDialog = ({
 }: Props) => {
   const [rating, setRating] = useState(defaultRating);
 
+  const hasTrackedRatingSelectRef = useRef<boolean>(false);
   const handleChangeRating = (rating: number) => {
     setRating(rating);
-    track('rating_select');
+    if (!hasTrackedRatingSelectRef.current) {
+      track('rating_select');
+      hasTrackedRatingSelectRef.current = true;
+    }
   };
 
   const getMembersMeRatingsComparisonLoadData = useCallback(async () => {
