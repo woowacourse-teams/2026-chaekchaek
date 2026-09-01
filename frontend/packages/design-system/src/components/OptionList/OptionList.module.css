@@ -16,7 +16,7 @@
   box-sizing: border-box;
   padding: 5px 0 2px;
   color: #1a1a1a;
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 600;
   line-height: normal;
   overflow-wrap: break-word;
@@ -35,7 +35,7 @@
   background-color: #fcfaf7;
   color: #555;
   font-family: 'Funnel Sans', sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   line-height: normal;
   overflow-wrap: break-word;
@@ -50,7 +50,7 @@
 .content {
   display: inline-block;
   font-family: 'Geist Mono', monospace;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   line-height: normal;
   flex: 1;
@@ -60,7 +60,7 @@
   display: inline-block;
   color: #999;
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   line-height: normal;
 }

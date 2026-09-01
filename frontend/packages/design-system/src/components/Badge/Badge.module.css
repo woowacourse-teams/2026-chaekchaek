@@ -40,17 +40,17 @@
 .size-x-small {
   height: 24px;
   padding-inline: 8px;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .size-small {
   height: 28px;
   padding-inline: 10px;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .size-medium {
   height: 32px;
   padding-inline: 11px;
-  font-size: 11px;
+  font-size: 13px;
 }

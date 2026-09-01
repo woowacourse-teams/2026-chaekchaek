@@ -10,7 +10,7 @@
 .heading {
   color: #1a1a1a;
   font-family: 'Funnel Sans', sans-serif;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -27,7 +27,7 @@
   margin: 0;
   color: #888;
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   line-height: 1.5;
   white-space: nowrap;
@@ -37,7 +37,7 @@
   margin: 0;
   color: #333;
   font-family: 'Funnel Sans', sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.25;
   text-align: right;

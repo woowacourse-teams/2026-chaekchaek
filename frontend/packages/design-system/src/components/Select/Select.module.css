@@ -4,7 +4,7 @@
   height: 42px;
   color: #555;
   font-family: 'Funnel Sans', sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
 }
 
@@ -43,7 +43,7 @@
 
 .size-small {
   height: 34px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.2727;
 }
 
@@ -54,7 +54,7 @@
 
 .size-medium {
   height: 42px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .size-medium .box {

@@ -38,17 +38,17 @@
 
 .size-small {
   height: 24px;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .size-medium {
   height: 28px;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .size-large {
   height: 32px;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .label {
