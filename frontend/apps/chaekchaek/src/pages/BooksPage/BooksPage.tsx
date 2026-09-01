@@ -62,6 +62,10 @@ export const BooksPage = () => {
   };
 
   const handleChangeDefaultPage = (defaultPage: number) => {
+    track('search_more', {
+      page: defaultPage,
+    });
+
     setPage(defaultPage);
 
     setSearchParams(

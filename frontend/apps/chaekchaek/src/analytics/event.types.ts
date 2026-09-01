@@ -24,4 +24,7 @@ export type AnalyticsEventMap = {
   current_page_open: undefined;
   current_page_submit: undefined;
   search: undefined;
+  search_more: {
+    page: number;
+  };
 };
