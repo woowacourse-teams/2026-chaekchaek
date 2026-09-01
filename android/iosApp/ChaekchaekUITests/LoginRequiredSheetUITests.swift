@@ -25,7 +25,13 @@ final class LoginRequiredSheetUITests: XCTestCase {
         XCTAssertTrue(appleButton.waitForExistence(timeout: 5))
         XCTAssertTrue(googleButton.waitForExistence(timeout: 5))
 
-        if !googleButton.isHittable {
+        XCTAssertEqual(appleButton.frame.minX, googleButton.frame.minX, accuracy: 1)
+        XCTAssertEqual(appleButton.frame.width, googleButton.frame.width, accuracy: 1)
+        XCTAssertEqual(appleButton.frame.height, 48, accuracy: 1)
+        XCTAssertEqual(googleButton.frame.height, 48, accuracy: 1)
+        XCTAssertEqual(googleButton.frame.minY - appleButton.frame.maxY, 12, accuracy: 1)
+
+        if googleButton.frame.maxY > app.frame.maxY {
             app.swipeUp()
         }
         XCTAssertTrue(googleButton.isHittable)
