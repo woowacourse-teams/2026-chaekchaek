@@ -3,6 +3,7 @@ package com.chaekchaek.book.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -58,24 +59,45 @@ class FallbackBookSearchClientTest {
     }
 
     @Test
-    @DisplayName("YES24 대체 가능 오류가 발생하면 같은 페이지의 알라딘 결과를 반환한다")
-    void should_ReturnSamePageAladinResult_When_Yes24FailureAllowsFallback() {
+    @DisplayName("1페이지에서 YES24 대체 가능 오류가 발생하면 알라딘 결과를 반환한다")
+    void should_ReturnAladinResult_When_Yes24FailureAllowsFallbackOnFirstPage() {
         // given
         Yes24BookClient yes24 = mock(Yes24BookClient.class);
         AladinBookClient aladin = mock(AladinBookClient.class);
         FallbackBookSearchClient client = new FallbackBookSearchClient(yes24, aladin);
         BookSearchResult aladinResult = new BookSearchResult(1, null, List.of());
-        when(yes24.search("데미안", 3))
+        when(yes24.search("데미안", 1))
                 .thenThrow(Yes24ClientException.fallbackAllowed(new RuntimeException("timeout")));
-        when(aladin.search("데미안", 3)).thenReturn(aladinResult);
+        when(aladin.search("데미안", 1)).thenReturn(aladinResult);
 
         // when
-        BookSearchResult result = client.search("데미안", 3);
+        BookSearchResult result = client.search("데미안", 1);
 
         // then
         assertThat(result).isSameAs(aladinResult);
-        verify(yes24).search("데미안", 3);
-        verify(aladin).search("데미안", 3);
+        verify(yes24).search("데미안", 1);
+        verify(aladin).search("데미안", 1);
+    }
+
+    @Test
+    @DisplayName("2페이지 이후 YES24 대체 가능 오류가 발생하면 알라딘 없이 재시도 결과를 반환한다")
+    void should_ReturnRetriedYes24ResultWithoutCallingAladin_When_Yes24FailsOnLaterPage() {
+        // given
+        Yes24BookClient yes24 = mock(Yes24BookClient.class);
+        AladinBookClient aladin = mock(AladinBookClient.class);
+        FallbackBookSearchClient client = new FallbackBookSearchClient(yes24, aladin);
+        BookSearchResult retriedYes24Result = new BookSearchResult(1, null, List.of());
+        when(yes24.search("데미안", 2))
+                .thenThrow(Yes24ClientException.fallbackAllowed(new RuntimeException("timeout")))
+                .thenReturn(retriedYes24Result);
+
+        // when
+        BookSearchResult result = client.search("데미안", 2);
+
+        // then
+        assertThat(result).isSameAs(retriedYes24Result);
+        verify(yes24, times(2)).search("데미안", 2);
+        verifyNoInteractions(aladin);
     }
 
     @Test
