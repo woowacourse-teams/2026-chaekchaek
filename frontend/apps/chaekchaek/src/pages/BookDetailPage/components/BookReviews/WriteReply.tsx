@@ -11,6 +11,7 @@ import { validateReply } from './validator';
 import type { ReplyFormValues } from './validator';
 
 import type { WriteReplyProps } from './WriteReply.types';
+import { track } from '@/analytics/track';
 
 export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
   const { user, guest } = useAuthContext();
@@ -37,6 +38,8 @@ export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
           }
         : undefined,
     );
+
+    track('reply_submit', { user_type: guest ? 'guest' : 'member' });
 
     await onReplyWritten();
   };

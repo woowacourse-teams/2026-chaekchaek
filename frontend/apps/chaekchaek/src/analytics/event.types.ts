@@ -15,4 +15,10 @@ export type AnalyticsEventMap = {
   review_submit: {
     user_type: 'member' | 'guest';
   };
+  reply_write_open: {
+    user_type: 'member' | 'guest';
+  };
+  reply_submit: {
+    user_type: 'member' | 'guest';
+  };
 };
