@@ -11,6 +11,8 @@ import {
   Surface,
 } from '@chaekchaek/design-system';
 
+import { track } from '@/analytics/track';
+
 import { getReviewsReviewIdReplies } from '@/services/apis/reviewsReviewIdReplies/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
@@ -109,7 +111,13 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
 
   const [openWriteReply, setOpenWriteReply] = useState(false);
   const handleClickToggleWriteReply = () => {
-    setOpenWriteReply((prev) => !prev);
+    if (!openWriteReply) {
+      setOpenWriteReply(true);
+
+      track('reply_write_open', { user_type: guest ? 'guest' : 'member' });
+    } else {
+      setOpenWriteReply(false);
+    }
   };
   const handleClickCloseWriteReply = () => {
     setOpenWriteReply(false);

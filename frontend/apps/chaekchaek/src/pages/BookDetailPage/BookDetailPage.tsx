@@ -8,6 +8,8 @@ import { Main } from '@/frames';
 // import DummyLargeImgBox from '../../components/ImgBox/imgs/dummy-large.png';
 import { Split } from '@chaekchaek/design-system';
 
+import { track } from '@/analytics/track';
+
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
@@ -61,7 +63,21 @@ export const BookDetailPage = () => {
   });
   const handleRegisterLibrary = async (status: string) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
-    if (!data?.myRecord) return await mutatePostLibrary({ isbn13: isbn, status });
+    if (!data?.myRecord) {
+      await mutatePostLibrary({ isbn13: isbn, status });
+
+      track('library_add', {
+        source: 'detail_info',
+        status:
+          status === 'WANT_TO_READ'
+            ? 'want_to_read'
+            : status === 'READING'
+              ? 'reading'
+              : 'finished',
+      });
+
+      return;
+    }
     await mutatePatchLibraryBookId({ bookId: data?.bookId, status });
   };
 

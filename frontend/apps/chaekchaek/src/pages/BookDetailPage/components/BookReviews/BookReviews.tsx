@@ -1,6 +1,10 @@
 import { useState } from 'react';
 
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
 import { Button, Field, Input, SegmentedControl, Select, Title } from '@chaekchaek/design-system';
+
+import { track } from '@/analytics/track';
 
 import { BookReview } from './BookReview';
 import type { BookReviewsProps } from './BookReviews.types';
@@ -18,9 +22,15 @@ export const BookReviews = ({
   onSortChange,
   onFeedChange,
 }: BookReviewsProps) => {
+  const { guest } = useAuthContext();
+
   const [dialog, setDialog] = useState<'WriteReviewDialog' | null>(null);
   const handleOpenDialog = (dialog: 'WriteReviewDialog') => {
     setDialog(dialog);
+
+    track('review_write_open', {
+      user_type: guest ? 'guest' : 'member',
+    });
   };
   const handleCloseDialog = () => {
     setDialog(null);

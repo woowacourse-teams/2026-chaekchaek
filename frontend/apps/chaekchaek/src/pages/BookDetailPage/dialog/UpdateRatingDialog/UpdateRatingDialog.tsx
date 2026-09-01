@@ -1,10 +1,12 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { ButtonStack, Dialog, Notice, Slider } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { Rating } from '@chaekchaek/design-system';
 import { CellList } from '@chaekchaek/design-system';
+
+import { track } from '@/analytics/track';
 
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
@@ -41,8 +43,13 @@ export const UpdateRatingDialog = ({
 }: Props) => {
   const [rating, setRating] = useState(defaultRating);
 
+  const hasTrackedRatingSelectRef = useRef<boolean>(false);
   const handleChangeRating = (rating: number) => {
     setRating(rating);
+    if (!hasTrackedRatingSelectRef.current) {
+      track('rating_select');
+      hasTrackedRatingSelectRef.current = true;
+    }
   };
 
   const getMembersMeRatingsComparisonLoadData = useCallback(async () => {
@@ -65,6 +72,9 @@ export const UpdateRatingDialog = ({
 
   const handleSubmit = async () => {
     await mutate({ bookId, rating });
+
+    track('rating_submit');
+
     onRatingUpdated();
     onClose();
   };

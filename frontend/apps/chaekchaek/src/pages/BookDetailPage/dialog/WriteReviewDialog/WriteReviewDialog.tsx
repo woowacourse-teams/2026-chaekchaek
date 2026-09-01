@@ -13,6 +13,8 @@ import {
   Textarea,
 } from '@chaekchaek/design-system';
 
+import { track } from '@/analytics/track';
+
 import { useFormValues } from '@/hooks/useFormValues';
 import { useExecute } from '@/services/core/useExecute';
 import { postBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
@@ -74,6 +76,10 @@ export const WriteReviewDialog = ({
         bookId,
         ...requestData,
       });
+
+      track('review_write_open', {
+        user_type: 'member',
+      });
     } else {
       if (!guest) return;
       await postBookReviewByIsbnMutate(
@@ -85,6 +91,10 @@ export const WriteReviewDialog = ({
           guestToken: guest.guestToken,
         },
       );
+
+      track('review_write_open', {
+        user_type: 'guest',
+      });
     }
 
     onReviewWritten();

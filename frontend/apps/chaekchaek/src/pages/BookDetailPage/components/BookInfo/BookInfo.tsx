@@ -9,6 +9,8 @@ import {
   Title,
 } from '@chaekchaek/design-system';
 
+import { track } from '@/analytics/track';
+
 import type { BookInfoProps } from './BookInfo.types';
 
 export const BookInfo = ({
@@ -31,11 +33,16 @@ export const BookInfo = ({
 
   const handleClickRating = () => {
     if (!myRecord) return onRegistryLibrary();
+
+    track('rating_open');
     onRatingCreate();
   };
 
   const handleClickCurrentPage = () => {
     if (!myRecord) return onRegistryLibrary();
+
+    track('current_page_open');
+
     onCurrentPageUpdate();
   };
 
