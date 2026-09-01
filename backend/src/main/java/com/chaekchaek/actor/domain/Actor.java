@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -109,7 +110,7 @@ public class Actor {
                 && expiresAt.isAfter(now);
     }
 
-    public boolean isRefreshableGuestAt(LocalDateTime now, java.time.Duration refreshWindow) {
+    public boolean isRefreshableGuestAt(LocalDateTime now, Duration refreshWindow) {
         return isUsableGuestAt(now)
                 && refreshWindow != null
                 && !refreshWindow.isNegative()
