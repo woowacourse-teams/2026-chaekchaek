@@ -4,7 +4,6 @@ import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.dto.BookMyRecordResponse;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
-import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
