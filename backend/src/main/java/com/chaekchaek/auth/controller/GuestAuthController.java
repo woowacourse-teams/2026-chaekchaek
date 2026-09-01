@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -20,6 +21,15 @@ public class GuestAuthController {
     public ResponseEntity<GuestTokenResponse> issue() {
         IssuedGuestToken token = guestTokenService.issue();
         return ResponseEntity.status(201).body(new GuestTokenResponse(
+                token.value(), token.nickname(), token.expiresAt()));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<GuestTokenResponse> refresh(
+            @RequestHeader(name = "X-Guest-Token", required = false) String guestToken
+    ) {
+        IssuedGuestToken token = guestTokenService.refresh(guestToken);
+        return ResponseEntity.ok(new GuestTokenResponse(
                 token.value(), token.nickname(), token.expiresAt()));
     }
 

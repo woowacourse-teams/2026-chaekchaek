@@ -2,6 +2,8 @@ package com.chaekchaek.auth.token.guest;
 
 import com.chaekchaek.actor.domain.Actor;
 import com.chaekchaek.actor.repository.ActorRepository;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.member.service.NicknameGenerator;
 import java.security.SecureRandom;
 import java.time.Clock;
@@ -27,13 +29,45 @@ public class GuestTokenService {
 
     @Transactional
     public IssuedGuestToken issue() {
-        byte[] bytes = new byte[TOKEN_BYTES];
-        secureRandom.nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        String token = generateToken();
         String nickname = nicknameGenerator.generate();
         LocalDateTime issuedAt = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
         LocalDateTime expiresAt = issuedAt.plus(properties.expiration());
         actorRepository.save(Actor.guest(tokenHasher.hash(token), nickname, issuedAt, expiresAt));
         return new IssuedGuestToken(token, nickname, expiresAt);
+    }
+
+    @Transactional
+    public IssuedGuestToken refresh(String currentToken) {
+        if (currentToken == null || currentToken.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_GUEST_TOKEN);
+        }
+
+        String currentTokenHash = tokenHasher.hash(currentToken);
+        Actor foundActor = actorRepository.findByGuestTokenHash(currentTokenHash)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_GUEST_TOKEN));
+        Actor actor = actorRepository.findByIdForUpdate(foundActor.getId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_GUEST_TOKEN));
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+        if (!currentTokenHash.equals(actor.getGuestTokenHash())) {
+            throw new BusinessException(ErrorCode.INVALID_GUEST_TOKEN);
+        }
+        if (!actor.isUsableGuestAt(now)) {
+            throw new BusinessException(ErrorCode.UNUSABLE_GUEST_TOKEN);
+        }
+        if (!actor.isRefreshableGuestAt(now, properties.refreshWindow())) {
+            throw new BusinessException(ErrorCode.GUEST_TOKEN_REFRESH_NOT_ALLOWED);
+        }
+
+        String newToken = generateToken();
+        LocalDateTime expiresAt = now.plus(properties.expiration());
+        actor.refreshGuestToken(tokenHasher.hash(newToken), now, expiresAt);
+        return new IssuedGuestToken(newToken, actor.getGuestNickname(), expiresAt);
+    }
+
+    private String generateToken() {
+        byte[] bytes = new byte[TOKEN_BYTES];
+        secureRandom.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 }

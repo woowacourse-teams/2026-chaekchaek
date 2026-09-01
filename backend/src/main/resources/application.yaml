@@ -48,7 +48,8 @@ app:
       expiration: 14d
 
     guest-token:
-      expiration: ${GUEST_TOKEN_EXPIRATION:30d}
+      expiration: ${GUEST_TOKEN_EXPIRATION:90d}
+      refresh-window: ${GUEST_TOKEN_REFRESH_WINDOW:14d}
 
     cookie:
       secure: ${AUTH_COOKIE_SECURE:false}
