@@ -63,7 +63,7 @@
 
 .content {
   padding-top: 18px;
-  color: #BDBDBD;  
+  color: #9E9E9E;
   font-family: 'Funnel Sans', sans-serif;
   font-size: 1rem; /* 16px */
   font-weight: 500;
@@ -76,7 +76,6 @@
   font-size: 1.125rem; /* 18px */
   color: #E0E0E0;
   font-family: 'Geist Mono', monospace;
-  font-size: 0.75rem; /* 12px */
   font-weight: 400;
   line-height: 1.5;
   overflow-wrap: anywhere;
