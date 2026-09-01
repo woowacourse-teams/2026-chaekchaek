@@ -40,6 +40,9 @@ export const BookInfo = ({
 
   const handleClickCurrentPage = () => {
     if (!myRecord) return onRegistryLibrary();
+
+    track('current_page_open');
+
     onCurrentPageUpdate();
   };
 

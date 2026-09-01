@@ -21,4 +21,6 @@ export type AnalyticsEventMap = {
   reply_submit: {
     user_type: 'member' | 'guest';
   };
+  current_page_open: undefined;
+  current_page_submit: undefined;
 };

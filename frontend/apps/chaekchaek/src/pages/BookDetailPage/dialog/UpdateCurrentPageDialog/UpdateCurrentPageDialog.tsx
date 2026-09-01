@@ -6,6 +6,8 @@ import { Field } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 
+import { track } from '@/analytics/track';
+
 import { useExecute } from '@/services/core/useExecute';
 import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
 
@@ -29,6 +31,9 @@ export const UpdateCurrentPageDialog = ({
 
   const handleSubmit = async () => {
     await mutate({ bookId, currentPage: Number(formValues.currentPage) });
+
+    track('current_page_submit');
+
     onCurrentPageUpdated();
     onClose();
   };
