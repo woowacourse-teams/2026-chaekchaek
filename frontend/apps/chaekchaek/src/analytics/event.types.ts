@@ -9,4 +9,10 @@ export type AnalyticsEventMap = {
     source: 'search' | 'detail_info' | 'detail_required';
     status: 'want_to_read' | 'reading' | 'finished';
   };
+  review_write_open: {
+    user_type: 'member' | 'guest';
+  };
+  review_submit: {
+    user_type: 'member' | 'guest';
+  };
 };
