@@ -115,7 +115,14 @@ export const BooksPage = () => {
   useEffect(() => {
     if (!query.length) return;
 
-    track('search');
+    const TIMEOUT = 500;
+    const timeoutId = setTimeout(() => {
+      track('search');
+    }, TIMEOUT);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [query]);
 
   return (
