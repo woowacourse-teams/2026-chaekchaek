@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
@@ -111,6 +111,12 @@ export const BooksPage = () => {
 
     handleMove(isbn);
   };
+
+  useEffect(() => {
+    if (!query.length) return;
+
+    track('search');
+  }, [query]);
 
   return (
     <Layout>
