@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class FallbackBookSearchClientTest {
 
@@ -34,23 +36,24 @@ class FallbackBookSearchClientTest {
         verifyNoInteractions(aladin);
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2})
     @DisplayName("YES24 검색 결과가 비어 있어도 같은 결과를 반환하고 알라딘을 호출하지 않는다")
-    void should_ReturnEmptyYes24ResultWithoutCallingAladin_When_Yes24ResultIsEmpty() {
+    void should_ReturnEmptyYes24ResultWithoutCallingAladin_When_Yes24ResultIsEmpty(int page) {
         // given
         Yes24BookClient yes24 = mock(Yes24BookClient.class);
         AladinBookClient aladin = mock(AladinBookClient.class);
         FallbackBookSearchClient client = new FallbackBookSearchClient(yes24, aladin);
         BookSearchResult yes24Result = new BookSearchResult(0, null, List.of());
-        when(yes24.search("데미안", 1)).thenReturn(yes24Result);
+        when(yes24.search("데미안", page)).thenReturn(yes24Result);
 
         // when
-        BookSearchResult result = client.search("데미안", 1);
+        BookSearchResult result = client.search("데미안", page);
 
         // then
         assertThat(result).isSameAs(yes24Result);
         assertThat(result.items()).isEmpty();
-        verify(yes24).search("데미안", 1);
+        verify(yes24).search("데미안", page);
         verifyNoInteractions(aladin);
     }
 
