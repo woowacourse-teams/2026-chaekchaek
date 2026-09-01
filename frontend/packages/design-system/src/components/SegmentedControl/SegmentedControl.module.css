@@ -29,9 +29,9 @@
   border-radius: 3px;
   color: #666;
   font-family: 'Funnel Sans', sans-serif;
-  font-size: 11px;
+  font-size: 0.8125rem; /* 13px */
   font-weight: 600;
-  line-height: 14px;
+  line-height: 1.2727;
 }
 
 .shape-default .ui-SegmentedControl-Item.is-active {
@@ -54,9 +54,9 @@
   background-color: #fff;
   color: #666;
   font-family: 'Funnel Sans', sans-serif;
-  font-size: 11px;
+  font-size: 0.8125rem; /* 13px */
   font-weight: 600;
-  line-height: 14px;
+  line-height: 1.2727;
 }
 
 .shape-normal .ui-SegmentedControl-Item.is-active {

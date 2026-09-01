@@ -32,14 +32,14 @@
 }
 
 .title {
-  font-size: 30px;
+  font-size: 2rem; /* 32px */
   font-weight: 600;
   color: #1A1A1A;
 }
 
 .sub-title {
   padding-top: 18px;
-  font-size: 13px; 
+  font-size: 0.9375rem; /* 15px */
   color: #666666;
 }
 

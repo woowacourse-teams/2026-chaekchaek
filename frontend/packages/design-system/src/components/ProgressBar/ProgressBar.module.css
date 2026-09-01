@@ -45,9 +45,9 @@
   padding-bottom: 2px;
   color: #1a1a1a;
   font-family: 'Funnel Sans', sans-serif;
-  font-size: 14px;
+  font-size: 1rem; /* 16px */
   font-weight: 600;
-  line-height: 16px;
+  line-height: 1.1429;
 }
 
 .label {
@@ -55,7 +55,7 @@
   padding-bottom: 1px;
   color: #666;
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: 0.75rem; /* 12px */
   font-weight: 400;
   line-height: normal;
   white-space: nowrap;
