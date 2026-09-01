@@ -185,10 +185,10 @@ private fun SectionLabel(text: String) {
 @Composable
 private fun AnonymousSetting(checked: Boolean, nickname: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer)
+        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp)
             .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onClick() })
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
