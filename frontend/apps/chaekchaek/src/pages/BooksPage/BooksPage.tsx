@@ -101,7 +101,13 @@ export const BooksPage = () => {
   });
   const handleRegisterLibrary = async (isbn: string) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
+
     await mutate({ isbn13: isbn, status: 'WANT_TO_READ' });
+
+    track('library_add', {
+      source: 'search',
+      status: 'want_to_read',
+    });
 
     handleMove(isbn);
   };
