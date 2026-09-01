@@ -143,13 +143,21 @@ export const BooksPage = () => {
                   return (
                     <List.Item>
                       <List.Item.Leading>
-                        <Link to={`/books/${item.isbn13}`}>
+                        <Link
+                          to={`/books/${item.isbn13}`}
+                          onClick={() => {
+                            handleMove(item.isbn13);
+                          }}
+                        >
                           <ImgBox img={item.coverImageUrl} size="small" />
                         </Link>
                       </List.Item.Leading>
                       <List.Item.Content
                         as={Link}
                         to={`/books/${item.isbn13}`}
+                        onClick={() => {
+                          handleMove(item.isbn13);
+                        }}
                         title={item.title}
                         content={item.authors.join(' · ')}
                         description={`${item.publisher} · ${item.publishedDate}`}
