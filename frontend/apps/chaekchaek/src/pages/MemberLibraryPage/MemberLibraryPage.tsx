@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import {
   Icon,
@@ -21,6 +21,8 @@ import { Main } from '@/frames';
 
 import { getMembersMemberIdLibrary } from '@/services/apis/membersMemberIdLibrary/repository';
 import { useLoadData } from '@/services/core/useLoadData';
+
+import { ROUTES } from '@/constants/routes';
 
 export const READING_STATUS = {
   ALL: 'ALL',
@@ -100,10 +102,20 @@ export const MemberLibraryPage = () => {
     });
   }, [defaultPage, status, sort]);
   const {
-    status: { data: libraryData },
+    status: { data: libraryData, error },
   } = useLoadData({ queryFn: getMembersMemberIdLibraryLoadData });
 
   const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
+
+  const navigation = useNavigate();
+  useEffect(() => {
+    if (error)
+      navigation(ROUTES.HOME, {
+        replace: true,
+      });
+  }, [error]);
+
+  if (error) return null;
 
   return (
     <Layout>
