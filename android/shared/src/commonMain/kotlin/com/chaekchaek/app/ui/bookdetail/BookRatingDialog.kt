@@ -1,6 +1,5 @@
 package com.chaekchaek.app.ui.bookdetail
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -14,13 +13,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
@@ -45,18 +43,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import chaekchaek.shared.generated.resources.Res
-import chaekchaek.shared.generated.resources.ic_close
 import com.chaekchaek.app.domain.rating.Rating
+import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
 import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.theme.ChaekBorderSoft
 import com.chaekchaek.app.ui.theme.ChaekInk
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import com.chaekchaek.app.ui.theme.ChaekInkTertiary
 import com.chaekchaek.app.ui.theme.ChaekSurface
-import org.jetbrains.compose.resources.painterResource
 
 @Composable
 internal fun BookRatingDialog(
@@ -70,35 +64,21 @@ internal fun BookRatingDialog(
 
     LaunchedEffect(selected) { onCriterionChange(selected) }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-            shape = RoundedCornerShape(10.dp),
-            color = ChaekSurface,
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        if (initialRating == null) "이 책에 별점 매기기" else "이 책의 별점 수정하기",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Surface(onClick = onDismiss, color = Color.Transparent, modifier = Modifier.size(40.dp)) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(Res.drawable.ic_close),
-                                contentDescription = "별점 창 닫기",
-                                modifier = Modifier.size(16.dp),
-                                tint = ChaekInk,
-                            )
-                        }
-                    }
-                }
+    ChaekTwoActionDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (initialRating == null) "이 책에 별점 매기기" else "이 책의 별점 수정하기",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+        },
+        text = {
+            Column {
                 Text(
                     "선택한 별점과 내 평점 기록을 비교해 보세요.",
                     color = ChaekInkSecondary,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyLarge,
                 )
                 Spacer(Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -127,34 +107,27 @@ internal fun BookRatingDialog(
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelMedium,
                 )
-                Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f).height(44.dp),
-                        shape = RoundedCornerShape(4.dp),
-                        color = ChaekSurface,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("취소", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    Surface(
-                        onClick = { onSave(selected) },
-                        modifier = Modifier.weight(1f).height(44.dp),
-                        shape = RoundedCornerShape(4.dp),
-                        color = ChaekInk,
-                        contentColor = ChaekSurface,
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("별점 저장", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
             }
-        }
-    }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss, modifier = Modifier.height(48.dp), shape = RoundedCornerShape(6.dp)) {
+                Text("취소", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(selected) },
+                modifier = Modifier.height(48.dp),
+                shape = RoundedCornerShape(6.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onBackground,
+                    contentColor = MaterialTheme.colorScheme.surface,
+                ),
+            ) {
+                Text("별점 저장", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+    )
 }
 
 @Composable
