@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "ChaekChaek API",
-    "description": "ChaekChaek 웹·모바일 클라이언트를 위한 REST API입니다.\n\n## Swagger 이용 안내\n- 운영 Swagger는 API 계약 확인을 위한 읽기 전용 문서입니다.\n- Try it out은 GET 요청만 지원합니다.\n- Swagger UI에서는 쿠키와 Authorization 헤더를 전송하지 않습니다.\n- 인증이 필요한 API의 실행은 개발·QA 환경 또는 별도 API 클라이언트를 사용합니다.\n\n## 웹 인증\n- OAuth 로그인 성공 후 `access_token`, `refresh_token` 쿠키를 사용합니다.\n- 보호된 API는 `access_token` 쿠키 또는 `Authorization: Bearer {accessToken}` 헤더로 인증할 수 있습니다.\n- 웹 토큰 재발급과 로그아웃은 `refresh_token` 쿠키를 사용합니다.\n\n## 모바일 인증\n- Google SDK에서 받은 ID Token을 모바일 로그인 API에 전달합니다.\n- 응답의 Access Token은 `Authorization: Bearer {accessToken}` 헤더로 전달합니다.\n- `accessTokenExpiresIn`, `refreshTokenExpiresIn`의 단위는 초입니다.\n- 모바일 토큰 재발급 시 기존 Refresh Token은 폐기되고 새 토큰이 발급됩니다.\n\n## 게스트 인증\n- `POST /api/v1/auth/guest-token`으로 게스트 토큰과 작성자 닉네임을 발급받습니다.\n- 감상·답글의 작성, 수정, 삭제와 좋아요 등록, 취소 요청에는 `X-Guest-Token: {guestToken}` 헤더를 사용할 수 있습니다.\n- 서재, 별점, 독서 상태, 쪽수는 회원 전용 기능입니다.\n- 게스트가 최초 소셜 회원가입할 때 같은 게스트 토큰을 전달하면 기존 Actor와 닉네임 및 공개 상호작용이 계승됩니다.\n- 토큰이 유실되거나 만료되면 기존 게스트 콘텐츠를 수정하거나 삭제할 수 없습니다.\n\n## 오류 처리\n- 클라이언트의 오류 분기에는 ProblemDetail의 `code`를 사용합니다.\n- `detail`은 사용자 표시 또는 디버깅 참고용이며 분기 기준으로 사용하지 않습니다.\n- `type`은 현재 `about:blank`으로 고정됩니다.",
+    "description": "ChaekChaek 웹·모바일 클라이언트를 위한 REST API입니다.\n\n## Swagger 이용 안내\n- 운영 Swagger는 API 계약 확인을 위한 읽기 전용 문서입니다.\n- Try it out은 GET 요청만 지원합니다.\n- Swagger UI에서는 쿠키와 Authorization 헤더를 전송하지 않습니다.\n- 인증이 필요한 API의 실행은 개발·QA 환경 또는 별도 API 클라이언트를 사용합니다.\n\n## 웹 인증\n- OAuth 로그인 성공 후 `access_token`, `refresh_token` 쿠키를 사용합니다.\n- 보호된 API는 `access_token` 쿠키 또는 `Authorization: Bearer {accessToken}` 헤더로 인증할 수 있습니다.\n- 웹 토큰 재발급과 로그아웃은 `refresh_token` 쿠키를 사용합니다.\n\n## 모바일 인증\n- Google SDK에서 받은 ID Token을 모바일 로그인 API에 전달합니다.\n- 응답의 Access Token은 `Authorization: Bearer {accessToken}` 헤더로 전달합니다.\n- `accessTokenExpiresIn`, `refreshTokenExpiresIn`의 단위는 초입니다.\n- 모바일 토큰 재발급 시 기존 Refresh Token은 폐기되고 새 토큰이 발급됩니다.\n\n## 게스트 인증\n- `POST /api/v1/auth/guest-token`으로 90일간 유효한 게스트 토큰과 작성자 닉네임을 발급받습니다.\n- 토큰 만료까지 14일 이하로 남으면 `POST /api/v1/auth/guest-token/refresh`에 현재 `X-Guest-Token`을 전달해 같은 Actor의 토큰을 갱신합니다.\n- 갱신 성공 시 새 토큰의 유효기간은 다시 90일이며 기존 토큰은 즉시 무효화됩니다.\n- 감상·답글의 작성, 수정, 삭제와 좋아요 등록, 취소 요청에는 `X-Guest-Token: {guestToken}` 헤더를 사용할 수 있습니다.\n- 서재, 별점, 독서 상태, 쪽수는 회원 전용 기능입니다.\n- 게스트가 최초 소셜 회원가입할 때 같은 게스트 토큰을 전달하면 기존 Actor와 닉네임 및 공개 상호작용이 계승됩니다.\n- 토큰이 유실되거나 만료되면 기존 게스트 콘텐츠를 수정하거나 삭제할 수 없습니다.\n\n## 오류 처리\n- 클라이언트의 오류 분기에는 ProblemDetail의 `code`를 사용합니다.\n- `detail`은 사용자 표시 또는 디버깅 참고용이며 분기 기준으로 사용하지 않습니다.\n- `type`은 현재 `about:blank`으로 고정됩니다.",
     "version": "local"
   },
   "servers": [
@@ -44,7 +44,7 @@
           {
             "name": "sort",
             "in": "query",
-            "description": "정렬 기준. LATEST는 최신순, COMMENT는 댓글순이며 생략하면 LATEST를 사용한다",
+            "description": "정렬 기준. TITLE_ASC는 이름 오름차순, TITLE_DESC는 이름 내림차순, OLDEST는 오래된순, LATEST는 최신순, REVIEW는 감상 많은 순, COMMENT는 댓글순이며 생략하면 LATEST를 사용한다",
             "required": false,
             "schema": {
               "type": "string",
@@ -1471,7 +1471,7 @@
           "인증"
         ],
         "summary": "게스트 토큰 발급",
-        "description": "로그인 없이 공개 상호작용에 사용할 게스트 토큰과 닉네임을 발급한다",
+        "description": "로그인 없이 공개 상호작용에 사용할 90일 유효 게스트 토큰과 닉네임을 발급한다. 저장된 토큰이 없을 때만 호출한다",
         "operationId": "guest-token-issue",
         "responses": {
           "201": {
@@ -1492,17 +1492,17 @@
                     },
                     "guestToken": {
                       "type": "string",
-                      "description": "게스트 공개 상호작용 인증에 사용할 토큰"
+                      "description": "게스트 공개 상호작용 인증에 사용할 원본 토큰. 응답 시 한 번만 제공"
                     },
                     "expiresAt": {
                       "type": "string",
-                      "description": "게스트 토큰 만료 시각(UTC)"
+                      "description": "게스트 토큰 만료 시각(UTC). 발급 또는 갱신 시점부터 90일"
                     }
                   }
                 },
                 "examples": {
                   "guest-token-issue": {
-                    "value": "{\"guestToken\":\"guest-token\",\"nickname\":\"다정한 파란 참새\",\"expiresAt\":\"2026-09-25T09:00:00\"}"
+                    "value": "{\"guestToken\":\"guest-token\",\"nickname\":\"다정한 파란 참새\",\"expiresAt\":\"2026-11-24T09:00:00\"}"
                   }
                 }
               }
@@ -1605,7 +1605,8 @@
                               "actorType",
                               "anonymous",
                               "displayName",
-                              "mine"
+                              "mine",
+                              "profileStatus"
                             ],
                             "type": "object",
                             "properties": {
@@ -1621,6 +1622,10 @@
                                 "type": "string",
                                 "description": "작성자 표시 이름"
                               },
+                              "profileStatus": {
+                                "type": "string",
+                                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                              },
                               "anonymous": {
                                 "type": "boolean",
                                 "description": "익명 작성 여부"
@@ -1628,6 +1633,11 @@
                               "profileImageUrl": {
                                 "type": "string",
                                 "description": "작성자 프로필 이미지 URL",
+                                "nullable": true
+                              },
+                              "memberId": {
+                                "type": "number",
+                                "description": "공개 서재 조회용 회원 ID",
                                 "nullable": true
                               }
                             },
@@ -1660,7 +1670,7 @@
                 },
                 "examples": {
                   "home-latest-reviews": {
-                    "value": "{\"reviews\":[{\"content\":\"도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.\",\"createdAt\":\"2026-08-18T14:00:00Z\",\"author\":{\"displayName\":\"다정한 참새\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":false,\"actorType\":\"MEMBER\"},\"replyCount\":12,\"bookId\":42,\"isbn13\":\"9788936433598\",\"bookTitle\":\"보이지 않는 도시\",\"bookCoverImageUrl\":\"https://example.com/invisible-cities.jpg\"}]}"
+                    "value": "{\"reviews\":[{\"content\":\"도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.\",\"createdAt\":\"2026-08-18T14:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"다정한 참새\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":false,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"replyCount\":12,\"bookId\":42,\"isbn13\":\"9788936433598\",\"bookTitle\":\"보이지 않는 도시\",\"bookCoverImageUrl\":\"https://example.com/invisible-cities.jpg\"}]}"
                   }
                 }
               }
@@ -3320,7 +3330,8 @@
                         "actorType",
                         "anonymous",
                         "displayName",
-                        "mine"
+                        "mine",
+                        "profileStatus"
                       ],
                       "type": "object",
                       "properties": {
@@ -3336,6 +3347,10 @@
                           "type": "string",
                           "description": "작성자 표시 이름"
                         },
+                        "profileStatus": {
+                          "type": "string",
+                          "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                        },
                         "anonymous": {
                           "type": "boolean",
                           "description": "익명 작성 여부"
@@ -3343,6 +3358,11 @@
                         "profileImageUrl": {
                           "type": "string",
                           "description": "작성자 프로필 이미지 URL",
+                          "nullable": true
+                        },
+                        "memberId": {
+                          "type": "number",
+                          "description": "공개 서재 조회용 회원 ID",
                           "nullable": true
                         }
                       },
@@ -3364,7 +3384,7 @@
                 },
                 "examples": {
                   "reply-update": {
-                    "value": "{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":3,\"likedByMe\":true}"
+                    "value": "{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}"
                   }
                 }
               }
@@ -3979,7 +3999,8 @@
                         "actorType",
                         "anonymous",
                         "displayName",
-                        "mine"
+                        "mine",
+                        "profileStatus"
                       ],
                       "type": "object",
                       "properties": {
@@ -3995,6 +4016,10 @@
                           "type": "string",
                           "description": "작성자 표시 이름"
                         },
+                        "profileStatus": {
+                          "type": "string",
+                          "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                        },
                         "anonymous": {
                           "type": "boolean",
                           "description": "익명 작성 여부"
@@ -4002,6 +4027,11 @@
                         "profileImageUrl": {
                           "type": "string",
                           "description": "작성자 프로필 이미지 URL",
+                          "nullable": true
+                        },
+                        "memberId": {
+                          "type": "number",
+                          "description": "공개 서재 조회용 회원 ID",
                           "nullable": true
                         }
                       },
@@ -4051,7 +4081,8 @@
                               "actorType",
                               "anonymous",
                               "displayName",
-                              "mine"
+                              "mine",
+                              "profileStatus"
                             ],
                             "type": "object",
                             "properties": {
@@ -4067,6 +4098,10 @@
                                 "type": "string",
                                 "description": "작성자 표시 이름"
                               },
+                              "profileStatus": {
+                                "type": "string",
+                                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                              },
                               "anonymous": {
                                 "type": "boolean",
                                 "description": "익명 작성 여부"
@@ -4074,6 +4109,11 @@
                               "profileImageUrl": {
                                 "type": "string",
                                 "description": "작성자 프로필 이미지 URL",
+                                "nullable": true
+                              },
+                              "memberId": {
+                                "type": "number",
+                                "description": "공개 서재 조회용 회원 ID",
                                 "nullable": true
                               }
                             },
@@ -4128,7 +4168,7 @@
                 },
                 "examples": {
                   "review-update": {
-                    "value": "{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":3,\"likedByMe\":true}]}"
+                    "value": "{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}"
                   }
                 }
               }
@@ -4525,6 +4565,170 @@
           },
           {
             "accessTokenCookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/guest-token/refresh": {
+      "post": {
+        "tags": [
+          "인증"
+        ],
+        "summary": "게스트 토큰 갱신",
+        "description": "유효하지 않은 게스트 토큰이면 인증 오류를 반환한다",
+        "operationId": "guest-token-refresh",
+        "parameters": [
+          {
+            "name": "X-Guest-Token",
+            "in": "header",
+            "description": "갱신할 현재 게스트 토큰",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "invalid-token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "expiresAt",
+                    "guestToken",
+                    "nickname"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "nickname": {
+                      "type": "string",
+                      "description": "서버가 할당한 게스트 작성자 닉네임"
+                    },
+                    "guestToken": {
+                      "type": "string",
+                      "description": "게스트 공개 상호작용 인증에 사용할 원본 토큰. 응답 시 한 번만 제공"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "description": "게스트 토큰 만료 시각(UTC). 발급 또는 갱신 시점부터 90일"
+                    }
+                  }
+                },
+                "examples": {
+                  "guest-token-refresh": {
+                    "value": "{\"guestToken\":\"new-token\",\"nickname\":\"다정한 파란 참새\",\"expiresAt\":\"2026-11-24T09:00:00\"}"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "클라이언트 분기에 사용할 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로",
+                      "nullable": true
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "guest-token-refresh-invalid": {
+                    "value": "{\"detail\":\"게스트 토큰이 유효하지 않습니다.\",\"instance\":\"/api/v1/auth/guest-token/refresh\",\"status\":401,\"title\":\"Unauthorized\",\"type\":\"about:blank\",\"code\":\"INVALID_GUEST_TOKEN\"}"
+                  },
+                  "guest-token-refresh-expired": {
+                    "value": "{\"detail\":\"게스트 토큰이 만료되었거나 폐기되었습니다.\",\"instance\":\"/api/v1/auth/guest-token/refresh\",\"status\":401,\"title\":\"Unauthorized\",\"type\":\"about:blank\",\"code\":\"UNUSABLE_GUEST_TOKEN\"}"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "클라이언트 분기에 사용할 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로",
+                      "nullable": true
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "guest-token-refresh-not-allowed": {
+                    "value": "{\"detail\":\"게스트 토큰 갱신 가능 기간이 아닙니다.\",\"instance\":\"/api/v1/auth/guest-token/refresh\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"GUEST_TOKEN_REFRESH_NOT_ALLOWED\"}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "guestToken": []
           }
         ]
       }
@@ -5414,7 +5618,8 @@
                               "actorType",
                               "anonymous",
                               "displayName",
-                              "mine"
+                              "mine",
+                              "profileStatus"
                             ],
                             "type": "object",
                             "properties": {
@@ -5430,6 +5635,10 @@
                                 "type": "string",
                                 "description": "작성자 표시 이름"
                               },
+                              "profileStatus": {
+                                "type": "string",
+                                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                              },
                               "anonymous": {
                                 "type": "boolean",
                                 "description": "익명 작성 여부"
@@ -5437,6 +5646,11 @@
                               "profileImageUrl": {
                                 "type": "string",
                                 "description": "작성자 프로필 이미지 URL",
+                                "nullable": true
+                              },
+                              "memberId": {
+                                "type": "number",
+                                "description": "공개 서재 조회용 회원 ID",
                                 "nullable": true
                               }
                             },
@@ -5486,7 +5700,8 @@
                                     "actorType",
                                     "anonymous",
                                     "displayName",
-                                    "mine"
+                                    "mine",
+                                    "profileStatus"
                                   ],
                                   "type": "object",
                                   "properties": {
@@ -5502,6 +5717,10 @@
                                       "type": "string",
                                       "description": "작성자 표시 이름"
                                     },
+                                    "profileStatus": {
+                                      "type": "string",
+                                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                                    },
                                     "anonymous": {
                                       "type": "boolean",
                                       "description": "익명 작성 여부"
@@ -5509,6 +5728,11 @@
                                     "profileImageUrl": {
                                       "type": "string",
                                       "description": "작성자 프로필 이미지 URL",
+                                      "nullable": true
+                                    },
+                                    "memberId": {
+                                      "type": "number",
+                                      "description": "공개 서재 조회용 회원 ID",
                                       "nullable": true
                                     }
                                   },
@@ -5566,7 +5790,7 @@
                 },
                 "examples": {
                   "review-list": {
-                    "value": "{\"totalCount\":1,\"nextPage\":null,\"items\":[{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":3,\"likedByMe\":true}]}]}"
+                    "value": "{\"totalCount\":1,\"nextPage\":null,\"items\":[{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}]}"
                   },
                   "review-normal": {
                     "summary": "일반 감상",
@@ -5932,7 +6156,8 @@
                         "actorType",
                         "anonymous",
                         "displayName",
-                        "mine"
+                        "mine",
+                        "profileStatus"
                       ],
                       "type": "object",
                       "properties": {
@@ -5948,6 +6173,10 @@
                           "type": "string",
                           "description": "작성자 표시 이름"
                         },
+                        "profileStatus": {
+                          "type": "string",
+                          "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                        },
                         "anonymous": {
                           "type": "boolean",
                           "description": "익명 작성 여부"
@@ -5955,6 +6184,11 @@
                         "profileImageUrl": {
                           "type": "string",
                           "description": "작성자 프로필 이미지 URL",
+                          "nullable": true
+                        },
+                        "memberId": {
+                          "type": "number",
+                          "description": "공개 서재 조회용 회원 ID",
                           "nullable": true
                         }
                       },
@@ -6004,7 +6238,8 @@
                               "actorType",
                               "anonymous",
                               "displayName",
-                              "mine"
+                              "mine",
+                              "profileStatus"
                             ],
                             "type": "object",
                             "properties": {
@@ -6020,6 +6255,10 @@
                                 "type": "string",
                                 "description": "작성자 표시 이름"
                               },
+                              "profileStatus": {
+                                "type": "string",
+                                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                              },
                               "anonymous": {
                                 "type": "boolean",
                                 "description": "익명 작성 여부"
@@ -6027,6 +6266,11 @@
                               "profileImageUrl": {
                                 "type": "string",
                                 "description": "작성자 프로필 이미지 URL",
+                                "nullable": true
+                              },
+                              "memberId": {
+                                "type": "number",
+                                "description": "공개 서재 조회용 회원 ID",
                                 "nullable": true
                               }
                             },
@@ -6081,7 +6325,7 @@
                 },
                 "examples": {
                   "review-create": {
-                    "value": "{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":3,\"likedByMe\":true}]}"
+                    "value": "{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}"
                   }
                 }
               }
@@ -7300,6 +7544,237 @@
         ]
       }
     },
+    "/api/v1/members/{memberId}/library": {
+      "get": {
+        "tags": [
+          "내 서재"
+        ],
+        "summary": "사용자 공개 서재 조회",
+        "description": "비로그인 사용자를 포함한 모든 사용자가 활성 회원의 공개 서재를 조회한다.\n`page`는 1부터 시작하며 한 페이지에 최대 10개를 반환한다. 마지막 페이지의 `nextPage`는 `null`이다.\n필터 결과나 서재가 비어 있으면 200 응답과 빈 `items`를 반환한다.\n존재하지 않거나 탈퇴·정지된 회원의 서재는 `LIBRARY_NOT_FOUND`를 반환한다.\n",
+        "operationId": "public-library-list",
+        "parameters": [
+          {
+            "name": "memberId",
+            "in": "path",
+            "description": "공개 서재를 조회할 회원 ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "1부터 시작하는 페이지 번호",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "필터할 읽기 상태. 생략하면 전체 상태를 조회한다",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "정렬 기준. 생략하면 RECENT를 사용한다",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "filteredCount",
+                    "items",
+                    "totalCount"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "filteredCount": {
+                      "type": "number",
+                      "description": "필터 적용 후 도서 수"
+                    },
+                    "nextPage": {
+                      "type": "number",
+                      "description": "다음 페이지 번호. 마지막 페이지면 null",
+                      "nullable": true
+                    },
+                    "totalCount": {
+                      "type": "number",
+                      "description": "공개 서재 전체 도서 수"
+                    },
+                    "items": {
+                      "type": "array",
+                      "description": "공개 서재 도서 목록",
+                      "items": {
+                        "required": [
+                          "authors",
+                          "bookId",
+                          "category",
+                          "commentCount",
+                          "coverImageUrl",
+                          "currentPage",
+                          "isbn13",
+                          "publishedDate",
+                          "publisher",
+                          "status",
+                          "title",
+                          "translators"
+                        ],
+                        "type": "object",
+                        "properties": {
+                          "coverImageUrl": {
+                            "type": "string",
+                            "description": "표지 이미지 URL"
+                          },
+                          "rating": {
+                            "type": "number",
+                            "description": "서재 소유자가 부여한 별점",
+                            "nullable": true
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "도서 제목"
+                          },
+                          "commentCount": {
+                            "type": "number",
+                            "description": "감상과 답글 수"
+                          },
+                          "bookId": {
+                            "type": "number",
+                            "description": "도서 ID"
+                          },
+                          "translators": {
+                            "type": "array",
+                            "description": "옮긴이 이름 목록",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "isbn13": {
+                            "type": "string",
+                            "description": "ISBN-13"
+                          },
+                          "totalPages": {
+                            "type": "number",
+                            "description": "전체 페이지 수",
+                            "nullable": true
+                          },
+                          "publisher": {
+                            "type": "string",
+                            "description": "출판사"
+                          },
+                          "publishedDate": {
+                            "type": "string",
+                            "description": "출판일"
+                          },
+                          "currentPage": {
+                            "type": "number",
+                            "description": "서재 소유자의 현재 읽은 페이지"
+                          },
+                          "category": {
+                            "type": "string",
+                            "description": "도서 카테고리"
+                          },
+                          "status": {
+                            "type": "string",
+                            "description": "서재 소유자의 읽기 상태"
+                          },
+                          "authors": {
+                            "type": "array",
+                            "description": "저자 이름 목록",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "public-library-list": {
+                    "value": "{\"totalCount\":1,\"filteredCount\":1,\"nextPage\":null,\"items\":[{\"bookId\":10,\"isbn13\":\"9788936433598\",\"title\":\"채식주의자\",\"coverImageUrl\":\"https://image.aladin.co.kr/cover.jpg\",\"authors\":[\"한강\"],\"translators\":[],\"publisher\":\"창비\",\"category\":\"국내도서>소설\",\"publishedDate\":\"2007-10-30\",\"totalPages\":368,\"commentCount\":2,\"status\":\"READING\",\"currentPage\":100,\"rating\":4.5}]}"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "public-library-list-not-found": {
+                    "value": "{\"detail\":\"공개된 회원의 서재만 접근 가능합니다.\",\"instance\":\"/api/v1/members/1/library\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"LIBRARY_NOT_FOUND\"}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessTokenCookie": []
+          }
+        ]
+      }
+    },
     "/api/v1/replies/{replyId}/reactions": {
       "post": {
         "tags": [
@@ -8080,7 +8555,8 @@
                               "actorType",
                               "anonymous",
                               "displayName",
-                              "mine"
+                              "mine",
+                              "profileStatus"
                             ],
                             "type": "object",
                             "properties": {
@@ -8096,6 +8572,10 @@
                                 "type": "string",
                                 "description": "작성자 표시 이름"
                               },
+                              "profileStatus": {
+                                "type": "string",
+                                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                              },
                               "anonymous": {
                                 "type": "boolean",
                                 "description": "익명 작성 여부"
@@ -8103,6 +8583,11 @@
                               "profileImageUrl": {
                                 "type": "string",
                                 "description": "작성자 프로필 이미지 URL",
+                                "nullable": true
+                              },
+                              "memberId": {
+                                "type": "number",
+                                "description": "공개 서재 조회용 회원 ID",
                                 "nullable": true
                               }
                             },
@@ -8127,7 +8612,7 @@
                 },
                 "examples": {
                   "reply-list": {
-                    "value": "{\"totalCount\":1,\"nextPage\":null,\"items\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":3,\"likedByMe\":true}]}"
+                    "value": "{\"totalCount\":1,\"nextPage\":null,\"items\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}"
                   }
                 }
               }
@@ -8330,7 +8815,8 @@
                         "actorType",
                         "anonymous",
                         "displayName",
-                        "mine"
+                        "mine",
+                        "profileStatus"
                       ],
                       "type": "object",
                       "properties": {
@@ -8346,6 +8832,10 @@
                           "type": "string",
                           "description": "작성자 표시 이름"
                         },
+                        "profileStatus": {
+                          "type": "string",
+                          "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                        },
                         "anonymous": {
                           "type": "boolean",
                           "description": "익명 작성 여부"
@@ -8353,6 +8843,11 @@
                         "profileImageUrl": {
                           "type": "string",
                           "description": "작성자 프로필 이미지 URL",
+                          "nullable": true
+                        },
+                        "memberId": {
+                          "type": "number",
+                          "description": "공개 서재 조회용 회원 ID",
                           "nullable": true
                         }
                       },
@@ -8374,7 +8869,7 @@
                 },
                 "examples": {
                   "reply-create": {
-                    "value": "{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":3,\"likedByMe\":true}"
+                    "value": "{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}"
                   }
                 }
               }
@@ -8727,7 +9222,8 @@
                             "actorType",
                             "anonymous",
                             "displayName",
-                            "mine"
+                            "mine",
+                            "profileStatus"
                           ],
                           "type": "object",
                           "properties": {
@@ -8743,6 +9239,10 @@
                               "type": "string",
                               "description": "작성자 표시 이름"
                             },
+                            "profileStatus": {
+                              "type": "string",
+                              "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                            },
                             "anonymous": {
                               "type": "boolean",
                               "description": "익명 작성 여부"
@@ -8750,6 +9250,11 @@
                             "profileImageUrl": {
                               "type": "string",
                               "description": "작성자 프로필 이미지 URL",
+                              "nullable": true
+                            },
+                            "memberId": {
+                              "type": "number",
+                              "description": "공개 서재 조회용 회원 ID",
                               "nullable": true
                             }
                           },
@@ -8799,7 +9304,8 @@
                                   "actorType",
                                   "anonymous",
                                   "displayName",
-                                  "mine"
+                                  "mine",
+                                  "profileStatus"
                                 ],
                                 "type": "object",
                                 "properties": {
@@ -8815,6 +9321,10 @@
                                     "type": "string",
                                     "description": "작성자 표시 이름"
                                   },
+                                  "profileStatus": {
+                                    "type": "string",
+                                    "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                                  },
                                   "anonymous": {
                                     "type": "boolean",
                                     "description": "익명 작성 여부"
@@ -8822,6 +9332,11 @@
                                   "profileImageUrl": {
                                     "type": "string",
                                     "description": "작성자 프로필 이미지 URL",
+                                    "nullable": true
+                                  },
+                                  "memberId": {
+                                    "type": "number",
+                                    "description": "공개 서재 조회용 회원 ID",
                                     "nullable": true
                                   }
                                 },
@@ -8883,7 +9398,7 @@
                 },
                 "examples": {
                   "review-create-by-isbn": {
-                    "value": "{\"bookId\":42,\"review\":{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\"},\"likeCount\":3,\"likedByMe\":true}]}}"
+                    "value": "{\"bookId\":42,\"review\":{\"reviewId\":101,\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\"currentPage\":120,\"isSpoiler\":false,\"deleted\":false,\"createdAt\":\"2026-08-13T15:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":12,\"likedByMe\":false,\"replyCount\":1,\"recentReplies\":[{\"replyId\":201,\"content\":\"저도 그 부분이 좋았어요.\",\"deleted\":false,\"createdAt\":\"2026-08-13T16:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"닉네임\",\"profileImageUrl\":\"https://example.com/profile.jpg\",\"anonymous\":false,\"mine\":true,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":3,\"likedByMe\":true}]}}"
                   }
                 }
               }
@@ -8981,7 +9496,7 @@
                 },
                 "examples": {
                   "review-create-by-isbn-unauthorized": {
-                    "value": "{\"detail\":\"인증이 필요합니다.\",\"instance\":\"/api/v1/books/by-isbn/9788925568684/reviews\",\"status\":401,\"title\":\"Unauthorized\",\"type\":\"about:blank\",\"code\":\"UNAUTHORIZED\"}"
+                    "value": "{\"detail\":\"인증이 필요합니다.\",\"instance\":\"/api/v1/books/by-isbn/9788936433598/reviews\",\"status\":401,\"title\":\"Unauthorized\",\"type\":\"about:blank\",\"code\":\"UNAUTHORIZED\"}"
                   }
                 }
               }
@@ -9030,7 +9545,7 @@
                 },
                 "examples": {
                   "review-create-by-isbn-forbidden": {
-                    "value": "{\"detail\":\"요청한 작업을 수행할 권한이 없습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788925568685/reviews\",\"status\":403,\"title\":\"Forbidden\",\"type\":\"about:blank\",\"code\":\"FORBIDDEN\"}"
+                    "value": "{\"detail\":\"요청한 작업을 수행할 권한이 없습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788966260959/reviews\",\"status\":403,\"title\":\"Forbidden\",\"type\":\"about:blank\",\"code\":\"FORBIDDEN\"}"
                   }
                 }
               }
@@ -9079,7 +9594,7 @@
                 },
                 "examples": {
                   "review-create-by-isbn-book-not-found": {
-                    "value": "{\"detail\":\"책을 찾을 수 없습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788925568686/reviews\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"BOOK_NOT_FOUND\"}"
+                    "value": "{\"detail\":\"책을 찾을 수 없습니다.\",\"instance\":\"/api/v1/books/by-isbn/9781234567897/reviews\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"BOOK_NOT_FOUND\"}"
                   }
                 }
               }
@@ -9128,7 +9643,7 @@
                 },
                 "examples": {
                   "review-create-by-isbn-total-pages-conflict": {
-                    "value": "{\"detail\":\"전체 페이지 수가 기존 정보와 다릅니다.\",\"instance\":\"/api/v1/books/by-isbn/9788925568687/reviews\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"TOTAL_PAGES_CONFLICT\"}"
+                    "value": "{\"detail\":\"전체 페이지 수가 기존 정보와 다릅니다.\",\"instance\":\"/api/v1/books/by-isbn/9780000000002/reviews\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"TOTAL_PAGES_CONFLICT\"}"
                   }
                 }
               }
@@ -9177,7 +9692,7 @@
                 },
                 "examples": {
                   "review-create-by-isbn-invalid-reading-state": {
-                    "value": "{\"detail\":\"현재 읽기 상태에서는 요청을 처리할 수 없습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788925568688/reviews\",\"status\":422,\"title\":\"Unprocessable Content\",\"type\":\"about:blank\",\"code\":\"INVALID_READING_STATE\"}"
+                    "value": "{\"detail\":\"현재 읽기 상태에서는 요청을 처리할 수 없습니다.\",\"instance\":\"/api/v1/books/by-isbn/9780000000019/reviews\",\"status\":422,\"title\":\"Unprocessable Content\",\"type\":\"about:blank\",\"code\":\"INVALID_READING_STATE\"}"
                   }
                 }
               }
@@ -9226,7 +9741,7 @@
                 },
                 "examples": {
                   "review-create-by-isbn-external-api-error": {
-                    "value": "{\"detail\":\"외부 서비스 호출에 실패했습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788925568689/reviews\",\"status\":502,\"title\":\"Bad Gateway\",\"type\":\"about:blank\",\"code\":\"EXTERNAL_API_ERROR\"}"
+                    "value": "{\"detail\":\"외부 서비스 호출에 실패했습니다.\",\"instance\":\"/api/v1/books/by-isbn/9780000000026/reviews\",\"status\":502,\"title\":\"Bad Gateway\",\"type\":\"about:blank\",\"code\":\"EXTERNAL_API_ERROR\"}"
                   }
                 }
               }
@@ -9612,6 +10127,116 @@
           }
         }
       },
+      "api-v1-members-memberId-library2061156954": {
+        "required": [
+          "filteredCount",
+          "items",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "filteredCount": {
+            "type": "number",
+            "description": "필터 적용 후 도서 수"
+          },
+          "nextPage": {
+            "type": "number",
+            "description": "다음 페이지 번호. 마지막 페이지면 null",
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "공개 서재 전체 도서 수"
+          },
+          "items": {
+            "type": "array",
+            "description": "공개 서재 도서 목록",
+            "items": {
+              "required": [
+                "authors",
+                "bookId",
+                "category",
+                "commentCount",
+                "coverImageUrl",
+                "currentPage",
+                "isbn13",
+                "publishedDate",
+                "publisher",
+                "status",
+                "title",
+                "translators"
+              ],
+              "type": "object",
+              "properties": {
+                "coverImageUrl": {
+                  "type": "string",
+                  "description": "표지 이미지 URL"
+                },
+                "rating": {
+                  "type": "number",
+                  "description": "서재 소유자가 부여한 별점",
+                  "nullable": true
+                },
+                "title": {
+                  "type": "string",
+                  "description": "도서 제목"
+                },
+                "commentCount": {
+                  "type": "number",
+                  "description": "감상과 답글 수"
+                },
+                "bookId": {
+                  "type": "number",
+                  "description": "도서 ID"
+                },
+                "translators": {
+                  "type": "array",
+                  "description": "옮긴이 이름 목록",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "isbn13": {
+                  "type": "string",
+                  "description": "ISBN-13"
+                },
+                "totalPages": {
+                  "type": "number",
+                  "description": "전체 페이지 수",
+                  "nullable": true
+                },
+                "publisher": {
+                  "type": "string",
+                  "description": "출판사"
+                },
+                "publishedDate": {
+                  "type": "string",
+                  "description": "출판일"
+                },
+                "currentPage": {
+                  "type": "number",
+                  "description": "서재 소유자의 현재 읽은 페이지"
+                },
+                "category": {
+                  "type": "string",
+                  "description": "도서 카테고리"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "서재 소유자의 읽기 상태"
+                },
+                "authors": {
+                  "type": "array",
+                  "description": "저자 이름 목록",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "api-v1-replies-replyId-reactions1578631323": {
         "required": [
           "likeCount",
@@ -9629,6 +10254,87 @@
           }
         }
       },
+      "api-v1-replies-replyId1244238446": {
+        "required": [
+          "author",
+          "content",
+          "createdAt",
+          "deleted",
+          "likeCount",
+          "likedByMe",
+          "replyId"
+        ],
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "description": "작성 시각(UTC)"
+          },
+          "likedByMe": {
+            "type": "boolean",
+            "description": "내가 좋아요를 눌렀는지 여부"
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "soft delete 여부"
+          },
+          "author": {
+            "required": [
+              "actorType",
+              "anonymous",
+              "displayName",
+              "mine",
+              "profileStatus"
+            ],
+            "type": "object",
+            "properties": {
+              "mine": {
+                "type": "boolean",
+                "description": "내가 작성한 답글인지 여부"
+              },
+              "actorType": {
+                "type": "string",
+                "description": "작성자 유형(MEMBER, GUEST)"
+              },
+              "displayName": {
+                "type": "string",
+                "description": "작성자 표시 이름"
+              },
+              "profileStatus": {
+                "type": "string",
+                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+              },
+              "anonymous": {
+                "type": "boolean",
+                "description": "익명 작성 여부"
+              },
+              "profileImageUrl": {
+                "type": "string",
+                "description": "작성자 프로필 이미지 URL",
+                "nullable": true
+              },
+              "memberId": {
+                "type": "number",
+                "description": "공개 서재 조회용 회원 ID",
+                "nullable": true
+              }
+            },
+            "description": "작성자 정보"
+          },
+          "replyId": {
+            "type": "number",
+            "description": "답글 ID"
+          },
+          "likeCount": {
+            "type": "number",
+            "description": "좋아요 수"
+          },
+          "content": {
+            "type": "string",
+            "description": "답글 내용"
+          }
+        }
+      },
       "api-v1-auth-mobile-reissue-248242179": {
         "required": [
           "refreshToken"
@@ -9641,189 +10347,221 @@
           }
         }
       },
-      "api-v1-books-by-isbn-isbn13-reviews2070408622": {
+      "api-v1-books-bookId-reviews383900138": {
         "required": [
-          "bookId",
-          "review"
+          "items",
+          "totalCount",
+          "nextPage"
         ],
         "type": "object",
         "properties": {
-          "review": {
-            "required": [
-              "author",
-              "content",
-              "createdAt",
-              "deleted",
-              "isSpoiler",
-              "likeCount",
-              "likedByMe",
-              "recentReplies",
-              "replyCount",
-              "reviewId"
-            ],
-            "type": "object",
-            "properties": {
-              "chapter": {
-                "type": "string",
-                "description": "챕터",
-                "nullable": true
-              },
-              "author": {
-                "required": [
-                  "actorType",
-                  "anonymous",
-                  "displayName",
-                  "mine"
-                ],
-                "type": "object",
-                "properties": {
-                  "mine": {
-                    "type": "boolean",
-                    "description": "내가 작성한 감상인지 여부"
-                  },
-                  "actorType": {
-                    "type": "string",
-                    "description": "작성자 유형(MEMBER, GUEST)"
-                  },
-                  "displayName": {
-                    "type": "string",
-                    "description": "작성자 표시 이름"
-                  },
-                  "anonymous": {
-                    "type": "boolean",
-                    "description": "익명 작성 여부"
-                  },
-                  "profileImageUrl": {
-                    "type": "string",
-                    "description": "작성자 프로필 이미지 URL",
-                    "nullable": true
-                  }
+          "nextPage": {
+            "type": "number",
+            "description": "다음 페이지 번호. 마지막 페이지면 null",
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "전체 항목 수"
+          },
+          "items": {
+            "type": "array",
+            "description": "페이지 항목 목록",
+            "items": {
+              "required": [
+                "author",
+                "content",
+                "createdAt",
+                "deleted",
+                "isSpoiler",
+                "likeCount",
+                "likedByMe",
+                "recentReplies",
+                "replyCount",
+                "reviewId",
+                "quote",
+                "chapter",
+                "currentPage"
+              ],
+              "type": "object",
+              "properties": {
+                "chapter": {
+                  "type": "string",
+                  "description": "챕터",
+                  "nullable": true
                 },
-                "description": "작성자 정보"
-              },
-              "likeCount": {
-                "type": "number",
-                "description": "좋아요 수"
-              },
-              "content": {
-                "type": "string",
-                "description": "감상 내용"
-              },
-              "createdAt": {
-                "type": "string",
-                "description": "작성 시각(UTC)"
-              },
-              "recentReplies": {
-                "type": "array",
-                "description": "최근 답글 최대 3개",
-                "items": {
+                "author": {
                   "required": [
-                    "author",
-                    "content",
-                    "createdAt",
-                    "deleted",
-                    "likeCount",
-                    "likedByMe",
-                    "replyId"
+                    "actorType",
+                    "anonymous",
+                    "displayName",
+                    "mine",
+                    "profileStatus"
                   ],
                   "type": "object",
                   "properties": {
-                    "createdAt": {
+                    "mine": {
+                      "type": "boolean",
+                      "description": "내가 작성한 감상인지 여부"
+                    },
+                    "actorType": {
                       "type": "string",
-                      "description": "작성 시각(UTC)"
+                      "description": "작성자 유형(MEMBER, GUEST)"
                     },
-                    "likedByMe": {
+                    "displayName": {
+                      "type": "string",
+                      "description": "작성자 표시 이름"
+                    },
+                    "profileStatus": {
+                      "type": "string",
+                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                    },
+                    "anonymous": {
                       "type": "boolean",
-                      "description": "내가 좋아요를 눌렀는지 여부"
+                      "description": "익명 작성 여부"
                     },
-                    "deleted": {
-                      "type": "boolean",
-                      "description": "soft delete 여부"
+                    "profileImageUrl": {
+                      "type": "string",
+                      "description": "작성자 프로필 이미지 URL",
+                      "nullable": true
                     },
-                    "author": {
-                      "required": [
-                        "actorType",
-                        "anonymous",
-                        "displayName",
-                        "mine"
-                      ],
-                      "type": "object",
-                      "properties": {
-                        "mine": {
-                          "type": "boolean",
-                          "description": "내가 작성한 답글인지 여부"
-                        },
-                        "actorType": {
-                          "type": "string",
-                          "description": "작성자 유형(MEMBER, GUEST)"
-                        },
-                        "displayName": {
-                          "type": "string",
-                          "description": "작성자 표시 이름"
-                        },
-                        "anonymous": {
-                          "type": "boolean",
-                          "description": "익명 작성 여부"
-                        },
-                        "profileImageUrl": {
-                          "type": "string",
-                          "description": "작성자 프로필 이미지 URL",
-                          "nullable": true
-                        }
+                    "memberId": {
+                      "type": "number",
+                      "description": "공개 서재 조회용 회원 ID",
+                      "nullable": true
+                    }
+                  },
+                  "description": "작성자 정보"
+                },
+                "likeCount": {
+                  "type": "number",
+                  "description": "좋아요 수"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "감상 내용"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "description": "작성 시각(UTC)"
+                },
+                "recentReplies": {
+                  "type": "array",
+                  "description": "최근 답글 최대 3개",
+                  "items": {
+                    "required": [
+                      "author",
+                      "content",
+                      "createdAt",
+                      "deleted",
+                      "likeCount",
+                      "likedByMe",
+                      "replyId"
+                    ],
+                    "type": "object",
+                    "properties": {
+                      "createdAt": {
+                        "type": "string",
+                        "description": "작성 시각(UTC)"
                       },
-                      "description": "작성자 정보"
-                    },
-                    "replyId": {
-                      "type": "number",
-                      "description": "답글 ID"
-                    },
-                    "likeCount": {
-                      "type": "number",
-                      "description": "좋아요 수"
-                    },
-                    "content": {
-                      "type": "string",
-                      "description": "답글 내용"
+                      "likedByMe": {
+                        "type": "boolean",
+                        "description": "내가 좋아요를 눌렀는지 여부"
+                      },
+                      "deleted": {
+                        "type": "boolean",
+                        "description": "soft delete 여부"
+                      },
+                      "author": {
+                        "required": [
+                          "actorType",
+                          "anonymous",
+                          "displayName",
+                          "mine",
+                          "profileStatus"
+                        ],
+                        "type": "object",
+                        "properties": {
+                          "mine": {
+                            "type": "boolean",
+                            "description": "내가 작성한 답글인지 여부"
+                          },
+                          "actorType": {
+                            "type": "string",
+                            "description": "작성자 유형(MEMBER, GUEST)"
+                          },
+                          "displayName": {
+                            "type": "string",
+                            "description": "작성자 표시 이름"
+                          },
+                          "profileStatus": {
+                            "type": "string",
+                            "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                          },
+                          "anonymous": {
+                            "type": "boolean",
+                            "description": "익명 작성 여부"
+                          },
+                          "profileImageUrl": {
+                            "type": "string",
+                            "description": "작성자 프로필 이미지 URL",
+                            "nullable": true
+                          },
+                          "memberId": {
+                            "type": "number",
+                            "description": "공개 서재 조회용 회원 ID",
+                            "nullable": true
+                          }
+                        },
+                        "description": "작성자 정보"
+                      },
+                      "replyId": {
+                        "type": "number",
+                        "description": "답글 ID"
+                      },
+                      "likeCount": {
+                        "type": "number",
+                        "description": "좋아요 수"
+                      },
+                      "content": {
+                        "type": "string",
+                        "description": "답글 내용"
+                      }
                     }
                   }
+                },
+                "replyCount": {
+                  "type": "number",
+                  "description": "답글 수"
+                },
+                "isSpoiler": {
+                  "type": "boolean",
+                  "description": "스포일러 여부"
+                },
+                "likedByMe": {
+                  "type": "boolean",
+                  "description": "내가 좋아요를 눌렀는지 여부"
+                },
+                "deleted": {
+                  "type": "boolean",
+                  "description": "soft delete 여부"
+                },
+                "quote": {
+                  "type": "string",
+                  "description": "인용문",
+                  "nullable": true
+                },
+                "currentPage": {
+                  "type": "number",
+                  "description": "감상을 남긴 현재 페이지",
+                  "nullable": true
+                },
+                "reviewId": {
+                  "type": "number",
+                  "description": "감상 ID"
                 }
-              },
-              "replyCount": {
-                "type": "number",
-                "description": "답글 수"
-              },
-              "isSpoiler": {
-                "type": "boolean",
-                "description": "스포일러 여부"
-              },
-              "likedByMe": {
-                "type": "boolean",
-                "description": "내가 좋아요를 눌렀는지 여부"
-              },
-              "deleted": {
-                "type": "boolean",
-                "description": "soft delete 여부"
-              },
-              "quote": {
-                "type": "string",
-                "description": "인용문",
-                "nullable": true
-              },
-              "currentPage": {
-                "type": "number",
-                "description": "감상을 남긴 현재 페이지",
-                "nullable": true
-              },
-              "reviewId": {
-                "type": "number",
-                "description": "감상 ID"
               }
-            },
-            "description": "작성된 감상"
-          },
-          "bookId": {
-            "type": "number",
-            "description": "로컬 도서 ID"
+            }
           }
         }
       },
@@ -10081,28 +10819,6 @@
           }
         }
       },
-      "api-v1-auth-guest-token-452028415": {
-        "required": [
-          "expiresAt",
-          "guestToken",
-          "nickname"
-        ],
-        "type": "object",
-        "properties": {
-          "nickname": {
-            "type": "string",
-            "description": "서버가 할당한 게스트 작성자 닉네임"
-          },
-          "guestToken": {
-            "type": "string",
-            "description": "게스트 공개 상호작용 인증에 사용할 토큰"
-          },
-          "expiresAt": {
-            "type": "string",
-            "description": "게스트 토큰 만료 시각(UTC)"
-          }
-        }
-      },
       "api-v1-admin-recommended-books-916433424": {
         "required": [
           "authors",
@@ -10174,6 +10890,43 @@
           }
         }
       },
+      "api-v1-auth-guest-token-refresh924963892": {
+        "required": [
+          "code",
+          "detail",
+          "status",
+          "title",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "클라이언트 분기에 사용할 오류 코드"
+          },
+          "instance": {
+            "type": "string",
+            "description": "오류가 발생한 요청 경로",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "description": "오류 상세 메시지"
+          },
+          "title": {
+            "type": "string",
+            "description": "HTTP 상태 설명"
+          },
+          "type": {
+            "type": "string",
+            "description": "문제 유형 URI"
+          },
+          "status": {
+            "type": "number",
+            "description": "HTTP 상태 코드"
+          }
+        }
+      },
       "api-v1-auth-mobile-google1868037826": {
         "required": [
           "idToken"
@@ -10183,77 +10936,6 @@
           "idToken": {
             "type": "string",
             "description": "Google SDK에서 발급받은 ID Token"
-          }
-        }
-      },
-      "api-v1-replies-replyId1905221144": {
-        "required": [
-          "author",
-          "content",
-          "createdAt",
-          "deleted",
-          "likeCount",
-          "likedByMe",
-          "replyId"
-        ],
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string",
-            "description": "작성 시각(UTC)"
-          },
-          "likedByMe": {
-            "type": "boolean",
-            "description": "내가 좋아요를 눌렀는지 여부"
-          },
-          "deleted": {
-            "type": "boolean",
-            "description": "soft delete 여부"
-          },
-          "author": {
-            "required": [
-              "actorType",
-              "anonymous",
-              "displayName",
-              "mine"
-            ],
-            "type": "object",
-            "properties": {
-              "mine": {
-                "type": "boolean",
-                "description": "내가 작성한 답글인지 여부"
-              },
-              "actorType": {
-                "type": "string",
-                "description": "작성자 유형(MEMBER, GUEST)"
-              },
-              "displayName": {
-                "type": "string",
-                "description": "작성자 표시 이름"
-              },
-              "anonymous": {
-                "type": "boolean",
-                "description": "익명 작성 여부"
-              },
-              "profileImageUrl": {
-                "type": "string",
-                "description": "작성자 프로필 이미지 URL",
-                "nullable": true
-              }
-            },
-            "description": "작성자 정보"
-          },
-          "replyId": {
-            "type": "number",
-            "description": "답글 ID"
-          },
-          "likeCount": {
-            "type": "number",
-            "description": "좋아요 수"
-          },
-          "content": {
-            "type": "string",
-            "description": "답글 내용"
           }
         }
       },
@@ -10279,24 +10961,10 @@
           }
         }
       },
-      "api-v1-replies-replyId89780935": {
-        "required": [
-          "content"
-        ],
-        "type": "object",
-        "properties": {
-          "content": {
-            "type": "string",
-            "description": "답글 내용. 공백 불가, 최대 200자",
-            "maxLength": 200
-          }
-        }
-      },
-      "api-v1-books-bookId-reviews1585211170": {
+      "api-v1-reviews-reviewId-replies389013299": {
         "required": [
           "items",
-          "totalCount",
-          "nextPage"
+          "totalCount"
         ],
         "type": "object",
         "properties": {
@@ -10318,150 +10986,15 @@
                 "content",
                 "createdAt",
                 "deleted",
-                "isSpoiler",
                 "likeCount",
                 "likedByMe",
-                "recentReplies",
-                "replyCount",
-                "reviewId",
-                "quote",
-                "chapter",
-                "currentPage"
+                "replyId"
               ],
               "type": "object",
               "properties": {
-                "chapter": {
-                  "type": "string",
-                  "description": "챕터",
-                  "nullable": true
-                },
-                "author": {
-                  "required": [
-                    "actorType",
-                    "anonymous",
-                    "displayName",
-                    "mine"
-                  ],
-                  "type": "object",
-                  "properties": {
-                    "mine": {
-                      "type": "boolean",
-                      "description": "내가 작성한 감상인지 여부"
-                    },
-                    "actorType": {
-                      "type": "string",
-                      "description": "작성자 유형(MEMBER, GUEST)"
-                    },
-                    "displayName": {
-                      "type": "string",
-                      "description": "작성자 표시 이름"
-                    },
-                    "anonymous": {
-                      "type": "boolean",
-                      "description": "익명 작성 여부"
-                    },
-                    "profileImageUrl": {
-                      "type": "string",
-                      "description": "작성자 프로필 이미지 URL",
-                      "nullable": true
-                    }
-                  },
-                  "description": "작성자 정보"
-                },
-                "likeCount": {
-                  "type": "number",
-                  "description": "좋아요 수"
-                },
-                "content": {
-                  "type": "string",
-                  "description": "감상 내용"
-                },
                 "createdAt": {
                   "type": "string",
                   "description": "작성 시각(UTC)"
-                },
-                "recentReplies": {
-                  "type": "array",
-                  "description": "최근 답글 최대 3개",
-                  "items": {
-                    "required": [
-                      "author",
-                      "content",
-                      "createdAt",
-                      "deleted",
-                      "likeCount",
-                      "likedByMe",
-                      "replyId"
-                    ],
-                    "type": "object",
-                    "properties": {
-                      "createdAt": {
-                        "type": "string",
-                        "description": "작성 시각(UTC)"
-                      },
-                      "likedByMe": {
-                        "type": "boolean",
-                        "description": "내가 좋아요를 눌렀는지 여부"
-                      },
-                      "deleted": {
-                        "type": "boolean",
-                        "description": "soft delete 여부"
-                      },
-                      "author": {
-                        "required": [
-                          "actorType",
-                          "anonymous",
-                          "displayName",
-                          "mine"
-                        ],
-                        "type": "object",
-                        "properties": {
-                          "mine": {
-                            "type": "boolean",
-                            "description": "내가 작성한 답글인지 여부"
-                          },
-                          "actorType": {
-                            "type": "string",
-                            "description": "작성자 유형(MEMBER, GUEST)"
-                          },
-                          "displayName": {
-                            "type": "string",
-                            "description": "작성자 표시 이름"
-                          },
-                          "anonymous": {
-                            "type": "boolean",
-                            "description": "익명 작성 여부"
-                          },
-                          "profileImageUrl": {
-                            "type": "string",
-                            "description": "작성자 프로필 이미지 URL",
-                            "nullable": true
-                          }
-                        },
-                        "description": "작성자 정보"
-                      },
-                      "replyId": {
-                        "type": "number",
-                        "description": "답글 ID"
-                      },
-                      "likeCount": {
-                        "type": "number",
-                        "description": "좋아요 수"
-                      },
-                      "content": {
-                        "type": "string",
-                        "description": "답글 내용"
-                      }
-                    }
-                  }
-                },
-                "replyCount": {
-                  "type": "number",
-                  "description": "답글 수"
-                },
-                "isSpoiler": {
-                  "type": "boolean",
-                  "description": "스포일러 여부"
                 },
                 "likedByMe": {
                   "type": "boolean",
@@ -10471,22 +11004,76 @@
                   "type": "boolean",
                   "description": "soft delete 여부"
                 },
-                "quote": {
+                "author": {
+                  "required": [
+                    "actorType",
+                    "anonymous",
+                    "displayName",
+                    "mine",
+                    "profileStatus"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "mine": {
+                      "type": "boolean",
+                      "description": "내가 작성한 답글인지 여부"
+                    },
+                    "actorType": {
+                      "type": "string",
+                      "description": "작성자 유형(MEMBER, GUEST)"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "작성자 표시 이름"
+                    },
+                    "profileStatus": {
+                      "type": "string",
+                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                    },
+                    "anonymous": {
+                      "type": "boolean",
+                      "description": "익명 작성 여부"
+                    },
+                    "profileImageUrl": {
+                      "type": "string",
+                      "description": "작성자 프로필 이미지 URL",
+                      "nullable": true
+                    },
+                    "memberId": {
+                      "type": "number",
+                      "description": "공개 서재 조회용 회원 ID",
+                      "nullable": true
+                    }
+                  },
+                  "description": "작성자 정보"
+                },
+                "replyId": {
+                  "type": "number",
+                  "description": "답글 ID"
+                },
+                "likeCount": {
+                  "type": "number",
+                  "description": "좋아요 수"
+                },
+                "content": {
                   "type": "string",
-                  "description": "인용문",
-                  "nullable": true
-                },
-                "currentPage": {
-                  "type": "number",
-                  "description": "감상을 남긴 현재 페이지",
-                  "nullable": true
-                },
-                "reviewId": {
-                  "type": "number",
-                  "description": "감상 ID"
+                  "description": "답글 내용"
                 }
               }
             }
+          }
+        }
+      },
+      "api-v1-replies-replyId89780935": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "답글 내용. 공백 불가, 최대 200자",
+            "maxLength": 200
           }
         }
       },
@@ -10736,99 +11323,6 @@
           }
         }
       },
-      "api-v1-reviews-reviewId-replies-1716768951": {
-        "required": [
-          "items",
-          "totalCount"
-        ],
-        "type": "object",
-        "properties": {
-          "nextPage": {
-            "type": "number",
-            "description": "다음 페이지 번호. 마지막 페이지면 null",
-            "nullable": true
-          },
-          "totalCount": {
-            "type": "number",
-            "description": "전체 항목 수"
-          },
-          "items": {
-            "type": "array",
-            "description": "페이지 항목 목록",
-            "items": {
-              "required": [
-                "author",
-                "content",
-                "createdAt",
-                "deleted",
-                "likeCount",
-                "likedByMe",
-                "replyId"
-              ],
-              "type": "object",
-              "properties": {
-                "createdAt": {
-                  "type": "string",
-                  "description": "작성 시각(UTC)"
-                },
-                "likedByMe": {
-                  "type": "boolean",
-                  "description": "내가 좋아요를 눌렀는지 여부"
-                },
-                "deleted": {
-                  "type": "boolean",
-                  "description": "soft delete 여부"
-                },
-                "author": {
-                  "required": [
-                    "actorType",
-                    "anonymous",
-                    "displayName",
-                    "mine"
-                  ],
-                  "type": "object",
-                  "properties": {
-                    "mine": {
-                      "type": "boolean",
-                      "description": "내가 작성한 답글인지 여부"
-                    },
-                    "actorType": {
-                      "type": "string",
-                      "description": "작성자 유형(MEMBER, GUEST)"
-                    },
-                    "displayName": {
-                      "type": "string",
-                      "description": "작성자 표시 이름"
-                    },
-                    "anonymous": {
-                      "type": "boolean",
-                      "description": "익명 작성 여부"
-                    },
-                    "profileImageUrl": {
-                      "type": "string",
-                      "description": "작성자 프로필 이미지 URL",
-                      "nullable": true
-                    }
-                  },
-                  "description": "작성자 정보"
-                },
-                "replyId": {
-                  "type": "number",
-                  "description": "답글 ID"
-                },
-                "likeCount": {
-                  "type": "number",
-                  "description": "좋아요 수"
-                },
-                "content": {
-                  "type": "string",
-                  "description": "답글 내용"
-                }
-              }
-            }
-          }
-        }
-      },
       "api-v1-books1146673278": {
         "required": [
           "items",
@@ -11010,6 +11504,212 @@
           "refreshToken": {
             "type": "string",
             "description": "Access Token 재발급에 사용할 Refresh Token"
+          }
+        }
+      },
+      "api-v1-books-by-isbn-isbn13-reviews555275894": {
+        "required": [
+          "bookId",
+          "review"
+        ],
+        "type": "object",
+        "properties": {
+          "review": {
+            "required": [
+              "author",
+              "content",
+              "createdAt",
+              "deleted",
+              "isSpoiler",
+              "likeCount",
+              "likedByMe",
+              "recentReplies",
+              "replyCount",
+              "reviewId"
+            ],
+            "type": "object",
+            "properties": {
+              "chapter": {
+                "type": "string",
+                "description": "챕터",
+                "nullable": true
+              },
+              "author": {
+                "required": [
+                  "actorType",
+                  "anonymous",
+                  "displayName",
+                  "mine",
+                  "profileStatus"
+                ],
+                "type": "object",
+                "properties": {
+                  "mine": {
+                    "type": "boolean",
+                    "description": "내가 작성한 감상인지 여부"
+                  },
+                  "actorType": {
+                    "type": "string",
+                    "description": "작성자 유형(MEMBER, GUEST)"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "description": "작성자 표시 이름"
+                  },
+                  "profileStatus": {
+                    "type": "string",
+                    "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                  },
+                  "anonymous": {
+                    "type": "boolean",
+                    "description": "익명 작성 여부"
+                  },
+                  "profileImageUrl": {
+                    "type": "string",
+                    "description": "작성자 프로필 이미지 URL",
+                    "nullable": true
+                  },
+                  "memberId": {
+                    "type": "number",
+                    "description": "공개 서재 조회용 회원 ID",
+                    "nullable": true
+                  }
+                },
+                "description": "작성자 정보"
+              },
+              "likeCount": {
+                "type": "number",
+                "description": "좋아요 수"
+              },
+              "content": {
+                "type": "string",
+                "description": "감상 내용"
+              },
+              "createdAt": {
+                "type": "string",
+                "description": "작성 시각(UTC)"
+              },
+              "recentReplies": {
+                "type": "array",
+                "description": "최근 답글 최대 3개",
+                "items": {
+                  "required": [
+                    "author",
+                    "content",
+                    "createdAt",
+                    "deleted",
+                    "likeCount",
+                    "likedByMe",
+                    "replyId"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "description": "작성 시각(UTC)"
+                    },
+                    "likedByMe": {
+                      "type": "boolean",
+                      "description": "내가 좋아요를 눌렀는지 여부"
+                    },
+                    "deleted": {
+                      "type": "boolean",
+                      "description": "soft delete 여부"
+                    },
+                    "author": {
+                      "required": [
+                        "actorType",
+                        "anonymous",
+                        "displayName",
+                        "mine",
+                        "profileStatus"
+                      ],
+                      "type": "object",
+                      "properties": {
+                        "mine": {
+                          "type": "boolean",
+                          "description": "내가 작성한 답글인지 여부"
+                        },
+                        "actorType": {
+                          "type": "string",
+                          "description": "작성자 유형(MEMBER, GUEST)"
+                        },
+                        "displayName": {
+                          "type": "string",
+                          "description": "작성자 표시 이름"
+                        },
+                        "profileStatus": {
+                          "type": "string",
+                          "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                        },
+                        "anonymous": {
+                          "type": "boolean",
+                          "description": "익명 작성 여부"
+                        },
+                        "profileImageUrl": {
+                          "type": "string",
+                          "description": "작성자 프로필 이미지 URL",
+                          "nullable": true
+                        },
+                        "memberId": {
+                          "type": "number",
+                          "description": "공개 서재 조회용 회원 ID",
+                          "nullable": true
+                        }
+                      },
+                      "description": "작성자 정보"
+                    },
+                    "replyId": {
+                      "type": "number",
+                      "description": "답글 ID"
+                    },
+                    "likeCount": {
+                      "type": "number",
+                      "description": "좋아요 수"
+                    },
+                    "content": {
+                      "type": "string",
+                      "description": "답글 내용"
+                    }
+                  }
+                }
+              },
+              "replyCount": {
+                "type": "number",
+                "description": "답글 수"
+              },
+              "isSpoiler": {
+                "type": "boolean",
+                "description": "스포일러 여부"
+              },
+              "likedByMe": {
+                "type": "boolean",
+                "description": "내가 좋아요를 눌렀는지 여부"
+              },
+              "deleted": {
+                "type": "boolean",
+                "description": "soft delete 여부"
+              },
+              "quote": {
+                "type": "string",
+                "description": "인용문",
+                "nullable": true
+              },
+              "currentPage": {
+                "type": "number",
+                "description": "감상을 남긴 현재 페이지",
+                "nullable": true
+              },
+              "reviewId": {
+                "type": "number",
+                "description": "감상 ID"
+              }
+            },
+            "description": "작성된 감상"
+          },
+          "bookId": {
+            "type": "number",
+            "description": "로컬 도서 ID"
           }
         }
       },
@@ -11200,6 +11900,296 @@
           }
         }
       },
+      "api-v1-reviews-reviewId-387773801": {
+        "required": [
+          "author",
+          "content",
+          "createdAt",
+          "deleted",
+          "isSpoiler",
+          "likeCount",
+          "likedByMe",
+          "recentReplies",
+          "replyCount",
+          "reviewId"
+        ],
+        "type": "object",
+        "properties": {
+          "chapter": {
+            "type": "string",
+            "description": "챕터",
+            "nullable": true
+          },
+          "author": {
+            "required": [
+              "actorType",
+              "anonymous",
+              "displayName",
+              "mine",
+              "profileStatus"
+            ],
+            "type": "object",
+            "properties": {
+              "mine": {
+                "type": "boolean",
+                "description": "내가 작성한 감상인지 여부"
+              },
+              "actorType": {
+                "type": "string",
+                "description": "작성자 유형(MEMBER, GUEST)"
+              },
+              "displayName": {
+                "type": "string",
+                "description": "작성자 표시 이름"
+              },
+              "profileStatus": {
+                "type": "string",
+                "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+              },
+              "anonymous": {
+                "type": "boolean",
+                "description": "익명 작성 여부"
+              },
+              "profileImageUrl": {
+                "type": "string",
+                "description": "작성자 프로필 이미지 URL",
+                "nullable": true
+              },
+              "memberId": {
+                "type": "number",
+                "description": "공개 서재 조회용 회원 ID",
+                "nullable": true
+              }
+            },
+            "description": "작성자 정보"
+          },
+          "likeCount": {
+            "type": "number",
+            "description": "좋아요 수"
+          },
+          "content": {
+            "type": "string",
+            "description": "감상 내용"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "작성 시각(UTC)"
+          },
+          "recentReplies": {
+            "type": "array",
+            "description": "최근 답글 최대 3개",
+            "items": {
+              "required": [
+                "author",
+                "content",
+                "createdAt",
+                "deleted",
+                "likeCount",
+                "likedByMe",
+                "replyId"
+              ],
+              "type": "object",
+              "properties": {
+                "createdAt": {
+                  "type": "string",
+                  "description": "작성 시각(UTC)"
+                },
+                "likedByMe": {
+                  "type": "boolean",
+                  "description": "내가 좋아요를 눌렀는지 여부"
+                },
+                "deleted": {
+                  "type": "boolean",
+                  "description": "soft delete 여부"
+                },
+                "author": {
+                  "required": [
+                    "actorType",
+                    "anonymous",
+                    "displayName",
+                    "mine",
+                    "profileStatus"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "mine": {
+                      "type": "boolean",
+                      "description": "내가 작성한 답글인지 여부"
+                    },
+                    "actorType": {
+                      "type": "string",
+                      "description": "작성자 유형(MEMBER, GUEST)"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "작성자 표시 이름"
+                    },
+                    "profileStatus": {
+                      "type": "string",
+                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                    },
+                    "anonymous": {
+                      "type": "boolean",
+                      "description": "익명 작성 여부"
+                    },
+                    "profileImageUrl": {
+                      "type": "string",
+                      "description": "작성자 프로필 이미지 URL",
+                      "nullable": true
+                    },
+                    "memberId": {
+                      "type": "number",
+                      "description": "공개 서재 조회용 회원 ID",
+                      "nullable": true
+                    }
+                  },
+                  "description": "작성자 정보"
+                },
+                "replyId": {
+                  "type": "number",
+                  "description": "답글 ID"
+                },
+                "likeCount": {
+                  "type": "number",
+                  "description": "좋아요 수"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "답글 내용"
+                }
+              }
+            }
+          },
+          "replyCount": {
+            "type": "number",
+            "description": "답글 수"
+          },
+          "isSpoiler": {
+            "type": "boolean",
+            "description": "스포일러 여부"
+          },
+          "likedByMe": {
+            "type": "boolean",
+            "description": "내가 좋아요를 눌렀는지 여부"
+          },
+          "deleted": {
+            "type": "boolean",
+            "description": "soft delete 여부"
+          },
+          "quote": {
+            "type": "string",
+            "description": "인용문",
+            "nullable": true
+          },
+          "currentPage": {
+            "type": "number",
+            "description": "감상을 남긴 현재 페이지",
+            "nullable": true
+          },
+          "reviewId": {
+            "type": "number",
+            "description": "감상 ID"
+          }
+        }
+      },
+      "api-v1-home-latest-reviews49969295": {
+        "required": [
+          "reviews"
+        ],
+        "type": "object",
+        "properties": {
+          "reviews": {
+            "type": "array",
+            "description": "최신 감상 목록",
+            "items": {
+              "required": [
+                "author",
+                "bookCoverImageUrl",
+                "bookId",
+                "bookTitle",
+                "content",
+                "createdAt",
+                "isbn13",
+                "replyCount"
+              ],
+              "type": "object",
+              "properties": {
+                "createdAt": {
+                  "type": "string",
+                  "description": "감상 작성 시각(UTC)"
+                },
+                "replyCount": {
+                  "type": "number",
+                  "description": "삭제되지 않은 답글 수"
+                },
+                "author": {
+                  "required": [
+                    "actorType",
+                    "anonymous",
+                    "displayName",
+                    "mine",
+                    "profileStatus"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "mine": {
+                      "type": "boolean",
+                      "description": "내가 작성한 감상인지 여부"
+                    },
+                    "actorType": {
+                      "type": "string",
+                      "description": "작성자 유형(MEMBER, GUEST)"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "작성자 표시 이름"
+                    },
+                    "profileStatus": {
+                      "type": "string",
+                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                    },
+                    "anonymous": {
+                      "type": "boolean",
+                      "description": "익명 작성 여부"
+                    },
+                    "profileImageUrl": {
+                      "type": "string",
+                      "description": "작성자 프로필 이미지 URL",
+                      "nullable": true
+                    },
+                    "memberId": {
+                      "type": "number",
+                      "description": "공개 서재 조회용 회원 ID",
+                      "nullable": true
+                    }
+                  },
+                  "description": "작성자 정보"
+                },
+                "isbn13": {
+                  "type": "string",
+                  "description": "ISBN-13"
+                },
+                "bookCoverImageUrl": {
+                  "type": "string",
+                  "description": "도서 표지 이미지 URL"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "감상 내용"
+                },
+                "bookTitle": {
+                  "type": "string",
+                  "description": "도서 제목"
+                },
+                "bookId": {
+                  "type": "number",
+                  "description": "도서 ID"
+                }
+              }
+            }
+          }
+        }
+      },
       "api-v1-reviews-reviewId-1466917339": {
         "type": "object",
         "properties": {
@@ -11236,7 +12226,7 @@
           }
         }
       },
-      "api-v1-books-bookId-reviews453186613": {
+      "api-v1-books-by-isbn-isbn13-reviews453186613": {
         "required": [
           "content"
         ],
@@ -11305,6 +12295,28 @@
           }
         }
       },
+      "api-v1-auth-guest-token-refresh-2120401049": {
+        "required": [
+          "expiresAt",
+          "guestToken",
+          "nickname"
+        ],
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "description": "서버가 할당한 게스트 작성자 닉네임"
+          },
+          "guestToken": {
+            "type": "string",
+            "description": "게스트 공개 상호작용 인증에 사용할 원본 토큰. 응답 시 한 번만 제공"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "게스트 토큰 만료 시각(UTC). 발급 또는 갱신 시점부터 90일"
+          }
+        }
+      },
       "MemberResponse": {
         "title": "MemberResponse",
         "required": [
@@ -11342,266 +12354,6 @@
           "memberId": {
             "type": "number",
             "description": "회원 ID"
-          }
-        }
-      },
-      "api-v1-home-latest-reviews-1183893359": {
-        "required": [
-          "reviews"
-        ],
-        "type": "object",
-        "properties": {
-          "reviews": {
-            "type": "array",
-            "description": "최신 감상 목록",
-            "items": {
-              "required": [
-                "author",
-                "bookCoverImageUrl",
-                "bookId",
-                "bookTitle",
-                "content",
-                "createdAt",
-                "isbn13",
-                "replyCount"
-              ],
-              "type": "object",
-              "properties": {
-                "createdAt": {
-                  "type": "string",
-                  "description": "감상 작성 시각(UTC)"
-                },
-                "replyCount": {
-                  "type": "number",
-                  "description": "삭제되지 않은 답글 수"
-                },
-                "author": {
-                  "required": [
-                    "actorType",
-                    "anonymous",
-                    "displayName",
-                    "mine"
-                  ],
-                  "type": "object",
-                  "properties": {
-                    "mine": {
-                      "type": "boolean",
-                      "description": "내가 작성한 감상인지 여부"
-                    },
-                    "actorType": {
-                      "type": "string",
-                      "description": "작성자 유형(MEMBER, GUEST)"
-                    },
-                    "displayName": {
-                      "type": "string",
-                      "description": "작성자 표시 이름"
-                    },
-                    "anonymous": {
-                      "type": "boolean",
-                      "description": "익명 작성 여부"
-                    },
-                    "profileImageUrl": {
-                      "type": "string",
-                      "description": "작성자 프로필 이미지 URL",
-                      "nullable": true
-                    }
-                  },
-                  "description": "작성자 정보"
-                },
-                "isbn13": {
-                  "type": "string",
-                  "description": "ISBN-13"
-                },
-                "bookCoverImageUrl": {
-                  "type": "string",
-                  "description": "도서 표지 이미지 URL"
-                },
-                "content": {
-                  "type": "string",
-                  "description": "감상 내용"
-                },
-                "bookTitle": {
-                  "type": "string",
-                  "description": "도서 제목"
-                },
-                "bookId": {
-                  "type": "number",
-                  "description": "도서 ID"
-                }
-              }
-            }
-          }
-        }
-      },
-      "api-v1-books-bookId-reviews1205899871": {
-        "required": [
-          "author",
-          "content",
-          "createdAt",
-          "deleted",
-          "isSpoiler",
-          "likeCount",
-          "likedByMe",
-          "recentReplies",
-          "replyCount",
-          "reviewId"
-        ],
-        "type": "object",
-        "properties": {
-          "chapter": {
-            "type": "string",
-            "description": "챕터",
-            "nullable": true
-          },
-          "author": {
-            "required": [
-              "actorType",
-              "anonymous",
-              "displayName",
-              "mine"
-            ],
-            "type": "object",
-            "properties": {
-              "mine": {
-                "type": "boolean",
-                "description": "내가 작성한 감상인지 여부"
-              },
-              "actorType": {
-                "type": "string",
-                "description": "작성자 유형(MEMBER, GUEST)"
-              },
-              "displayName": {
-                "type": "string",
-                "description": "작성자 표시 이름"
-              },
-              "anonymous": {
-                "type": "boolean",
-                "description": "익명 작성 여부"
-              },
-              "profileImageUrl": {
-                "type": "string",
-                "description": "작성자 프로필 이미지 URL",
-                "nullable": true
-              }
-            },
-            "description": "작성자 정보"
-          },
-          "likeCount": {
-            "type": "number",
-            "description": "좋아요 수"
-          },
-          "content": {
-            "type": "string",
-            "description": "감상 내용"
-          },
-          "createdAt": {
-            "type": "string",
-            "description": "작성 시각(UTC)"
-          },
-          "recentReplies": {
-            "type": "array",
-            "description": "최근 답글 최대 3개",
-            "items": {
-              "required": [
-                "author",
-                "content",
-                "createdAt",
-                "deleted",
-                "likeCount",
-                "likedByMe",
-                "replyId"
-              ],
-              "type": "object",
-              "properties": {
-                "createdAt": {
-                  "type": "string",
-                  "description": "작성 시각(UTC)"
-                },
-                "likedByMe": {
-                  "type": "boolean",
-                  "description": "내가 좋아요를 눌렀는지 여부"
-                },
-                "deleted": {
-                  "type": "boolean",
-                  "description": "soft delete 여부"
-                },
-                "author": {
-                  "required": [
-                    "actorType",
-                    "anonymous",
-                    "displayName",
-                    "mine"
-                  ],
-                  "type": "object",
-                  "properties": {
-                    "mine": {
-                      "type": "boolean",
-                      "description": "내가 작성한 답글인지 여부"
-                    },
-                    "actorType": {
-                      "type": "string",
-                      "description": "작성자 유형(MEMBER, GUEST)"
-                    },
-                    "displayName": {
-                      "type": "string",
-                      "description": "작성자 표시 이름"
-                    },
-                    "anonymous": {
-                      "type": "boolean",
-                      "description": "익명 작성 여부"
-                    },
-                    "profileImageUrl": {
-                      "type": "string",
-                      "description": "작성자 프로필 이미지 URL",
-                      "nullable": true
-                    }
-                  },
-                  "description": "작성자 정보"
-                },
-                "replyId": {
-                  "type": "number",
-                  "description": "답글 ID"
-                },
-                "likeCount": {
-                  "type": "number",
-                  "description": "좋아요 수"
-                },
-                "content": {
-                  "type": "string",
-                  "description": "답글 내용"
-                }
-              }
-            }
-          },
-          "replyCount": {
-            "type": "number",
-            "description": "답글 수"
-          },
-          "isSpoiler": {
-            "type": "boolean",
-            "description": "스포일러 여부"
-          },
-          "likedByMe": {
-            "type": "boolean",
-            "description": "내가 좋아요를 눌렀는지 여부"
-          },
-          "deleted": {
-            "type": "boolean",
-            "description": "soft delete 여부"
-          },
-          "quote": {
-            "type": "string",
-            "description": "인용문",
-            "nullable": true
-          },
-          "currentPage": {
-            "type": "number",
-            "description": "감상을 남긴 현재 페이지",
-            "nullable": true
-          },
-          "reviewId": {
-            "type": "number",
-            "description": "감상 ID"
           }
         }
       }
