@@ -29,6 +29,10 @@ aladin:
   base-url: https://www.aladin.co.kr
   ttb-key: ${ALADIN_TTB_KEY}
 
+yes24:
+  base-url: https://apis.yes24.com
+  api-key: ${YES24_API_KEY}
+
 app:
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:3000}

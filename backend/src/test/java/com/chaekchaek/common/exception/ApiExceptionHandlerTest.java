@@ -3,6 +3,8 @@ package com.chaekchaek.common.exception;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import com.chaekchaek.book.client.AladinClientException;
+import com.chaekchaek.book.client.BookClientException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -35,6 +37,26 @@ class ApiExceptionHandlerTest {
                                 "code",
                                 ErrorCode.MEMBER_NOT_FOUND.getCode()
                         )
+        );
+    }
+
+    @Test
+    @DisplayName("외부 도서 API 예외에 게이트웨이 오류 응답을 반환한다")
+    void should_ReturnBadGateway_When_BookClientExceptionOccurs() {
+        // given
+        BookClientException exception = new AladinClientException(
+                new IllegalStateException("external detail"));
+
+        // when
+        ProblemDetail response = handler.handleBookClientException(exception);
+
+        // then
+        assertAll(
+                () -> assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY.value()),
+                () -> assertThat(response.getDetail()).isEqualTo(ErrorCode.EXTERNAL_API_ERROR.getMessage()),
+                () -> assertThat(response.getDetail()).doesNotContain("external detail"),
+                () -> assertThat(response.getProperties())
+                        .containsEntry("code", ErrorCode.EXTERNAL_API_ERROR.getCode())
         );
     }
 
