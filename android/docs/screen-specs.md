@@ -1,6 +1,6 @@
 # 첵췍 화면 명세
 
-최종 갱신: 2026-09-01
+최종 갱신: 2026-09-02
 
 현재 디자인 단일 원본은 `/Users/ujeonghyeon/Downloads/designs.pen`이다. 아래 Figma 노드와 초기
 UiState 설계는 제품 의도와 이력 확인용이며, 실제 Android 동작은 Pencil과 현재 코드가 우선한다.
@@ -9,7 +9,7 @@ UiState 설계는 제품 의도와 이력 확인용이며, 실제 Android 동작
 
 | 화면 또는 규칙 | Pencil 노드 | 현재 동작 |
 | --- | --- | --- |
-| 디자인 시스템 | `SxMn5` | 기존 색상, 서체, 간격 토큰만 사용 |
+| 디자인 시스템 | `책췍 디자인 시스템` (`SxMn5`) | 기존 색상, 서체, 간격 토큰만 사용 |
 | 검색 정렬 | `jI61d` | `LATEST`와 `COMMENT`를 서버에 전달하고 선택 즉시 재조회 |
 | 책 상세 | `QgUZE` | 서재 추가와 해제를 현재 등록 상태에 따라 전환 |
 | 감상 잠금 | `DEquR`, `d6grPa` | 스포일러 체크된 감상의 본문, 발췌, 답글을 원문 길이만큼 `짹`으로 표시 |
@@ -21,6 +21,35 @@ UiState 설계는 제품 의도와 이력 확인용이며, 실제 Android 동작
 
 홈, 검색, 상세 API 로딩은 요청이 500ms 안에 끝나면 표시하지 않는다. 500ms가 지나도 진행 중일
 때만 표시하고 응답 즉시 닫는다.
+
+## 팝업 계약
+
+앱의 오버레이 UI는 다이얼로그, 바텀 시트, 드롭다운 메뉴로 구분한다. 확인, 입력, 선택처럼 현재
+맥락을 잠시 멈추는 작업만 다이얼로그를 사용하며 `ChaekOneActionDialog` 또는
+`ChaekTwoActionDialog`의 외형을 따른다. 바텀 시트와 드롭다운 메뉴에는 다이얼로그 외형을
+적용하지 않는다.
+
+### 다이얼로그
+
+| 팝업 | 표시 조건 | 주요 상태와 동작 | 닫기 | Pencil 화면 | 구현 |
+| --- | --- | --- | --- | --- | --- |
+| 홈 불러오기 실패 | 홈 API 실패 | 오류 메시지, 「다시 시도」 | 다시 시도 성공 전 바깥 영역으로 닫지 않음 | `책췍 디자인 시스템`의 버튼 하나 다이얼로그 | `HomeScreen.ErrorContent`, `ChaekOneActionDialog` |
+| 책 등록 | 검색 결과에서 서재 등록 | 제목, 저자, 출판사, 연도, 한줄평 입력, 유효할 때 등록 | 「취소」 또는 바깥 영역 | `책췍 디자인 시스템`의 버튼 둘 다이얼로그 | `BookRegisterDialog`, `ChaekTwoActionDialog` |
+| 읽은 쪽수 입력 | 책 상세의 「쪽수 입력」 | 숫자만 입력, 0 이상이고 총 쪽수 이하면 저장 | 「취소」 또는 바깥 영역 | `책 상세 - 읽은 쪽수 입력 · 공통 다이얼로그` | `PageInputDialog`, `ChaekTwoActionDialog` |
+| 별점 매기기 | 책 상세의 「별점 주기」 또는 기존 별점 | 최근 평점과 비교, 0.5점 단위 선택 후 저장 | 「취소」 또는 바깥 영역 | `책 상세 - 별점 매기기 · 공통 다이얼로그` | `BookRatingDialog`, `ChaekTwoActionDialog` |
+| 감상 작성 취소 | 작성 내용이 있는 감상 시트를 닫음 | 「계속 작성」 또는 저장하지 않고 「작성 취소」 | 「계속 작성」 또는 바깥 영역 | `Sheet · 감상 작성 취소 확인` | `ReviewInputSheet`, `ChaekTwoActionDialog` |
+| 감상과 답글 삭제 | 본인 콘텐츠의 삭제 선택 | 복구 불가 안내 후 삭제 | 「취소」 또는 바깥 영역 | `책췍 디자인 시스템`의 버튼 둘 다이얼로그 | `DeleteContentConfirmation`, `ChaekTwoActionDialog` |
+| 서재 상태 변경 | 편집 화면에서 선택한 책의 「상태 변경」 | 읽고 싶어요, 읽는 중, 다 읽음 중 하나를 선택해 변경 | 「취소」 또는 바깥 영역 | `내 서재 - 상태 변경 · 공통 다이얼로그` | `StatusChangeDialog`, `ChaekTwoActionDialog` |
+| 서재 삭제 | 편집 화면에서 선택한 책의 「서재에서 삭제」 | 선택 권수와 복구 불가 안내 후 삭제 | 「취소」 또는 바깥 영역 | `내 서재 - 삭제 확인 · 공통 다이얼로그` | `DeleteConfirmationDialog`, `ChaekTwoActionDialog` |
+| 닉네임 설정 | 익명 해제 시 공개 닉네임이 없음 | 공백이 아닌 최대 10자일 때 확인 활성화 | 「취소」 또는 바깥 영역 | `닉네임 설정 · 공통 다이얼로그` | `NicknameDialog`, `ChaekTwoActionDialog` |
+| 회원 탈퇴 | 마이페이지에서 「회원 탈퇴」 | 계정과 관련 데이터 삭제 및 복구 불가 안내 후 탈퇴 | 「취소」 또는 바깥 영역 | `마이페이지 - 회원 탈퇴 확인` | `WithdrawalDialog`, `ChaekTwoActionDialog` |
+
+### 다른 오버레이
+
+| 유형 | 구현 | 계약 |
+| --- | --- | --- |
+| 바텀 시트 | `LoginRequiredSheet`, `ReviewInputSheet`, `ReplyInputSheet`, `OwnedContentActionSheet` | 화면 하단에서 연속 입력이나 여러 작업을 제공하며 공통 다이얼로그를 사용하지 않음 |
+| 드롭다운 메뉴 | 검색 정렬, 내 서재 정렬 | 기준을 즉시 선택하고 닫으며 공통 다이얼로그를 사용하지 않음 |
 
 Figma [node 36:3](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr/%EC%B1%85%EC%B7%8D?node-id=36-3)의
 12개 화면별 상태·액션·이동을 정리한다. 도메인 규칙은 [도메인 모델](domain-model.md), 상태 클래스

@@ -23,9 +23,12 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -51,8 +54,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.ic_close
 import chaekchaek.shared.generated.resources.ic_eye_off
@@ -76,24 +77,16 @@ internal fun PageInputDialog(
 ) {
     var value by rememberSaveable { mutableStateOf(initialPage.toString()) }
     val page = BookDetailInputRules.validPage(value, totalPages)
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp).widthIn(max = 330.dp)
-                .shadow(16.dp, RoundedCornerShape(12.dp)),
-            shape = RoundedCornerShape(12.dp),
-            color = ChaekSurface,
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                SheetHeader(title = "어디까지 읽으셨나요?", titleSize = 16, onDismiss = onDismiss)
+    ChaekTwoActionDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("어디까지 읽으셨나요?", style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     "지금까지 읽은 쪽수를 입력하면 독서 진행률에 반영돼요.",
                     modifier = Modifier.fillMaxWidth(),
                     color = ChaekInkSecondary,
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp,
+                    style = MaterialTheme.typography.bodyLarge,
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     FormLabel("내가 읽은 쪽수")
@@ -110,13 +103,28 @@ internal fun PageInputDialog(
                         emphasized = true,
                     )
                 }
-                SheetPrimaryButton(
-                    label = "읽은 쪽수 저장",
-                    enabled = BookDetailInputRules.canSubmitPage(page),
-                ) { page?.let(onSave) }
             }
-        }
-    }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss, modifier = Modifier.height(48.dp), shape = RoundedCornerShape(6.dp)) {
+                Text("취소", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { page?.let(onSave) },
+                enabled = BookDetailInputRules.canSubmitPage(page),
+                modifier = Modifier.height(48.dp),
+                shape = RoundedCornerShape(6.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onBackground,
+                    contentColor = MaterialTheme.colorScheme.surface,
+                ),
+            ) {
+                Text("저장", style = MaterialTheme.typography.labelLarge)
+            }
+        },
+    )
 }
 
 @Composable
