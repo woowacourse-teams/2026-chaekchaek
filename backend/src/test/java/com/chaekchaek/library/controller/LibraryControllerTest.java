@@ -34,6 +34,7 @@ import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
 import com.chaekchaek.library.dto.PublicLibraryItemResponse;
 import com.chaekchaek.library.dto.PublicLibraryListResponse;
+import com.chaekchaek.library.dto.PublicMemberResponse;
 import com.chaekchaek.library.dto.RatingComparisonBookResponse;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.service.LibraryService;
@@ -189,7 +190,8 @@ class LibraryControllerTest {
     @Test
     @DisplayName("비로그인 사용자도 활성 회원의 공개 서재를 조회할 수 있다")
     void should_ReturnPublicLibrary_When_RequestIsValid() throws Exception {
-        PublicLibraryListResponse response = new PublicLibraryListResponse(1, 1, null,
+        PublicLibraryListResponse response = new PublicLibraryListResponse(
+                new PublicMemberResponse(MEMBER_ID, "책책이", "https://example.com/profile.jpg"), 1, 1, null,
                 List.of(PublicLibraryItemResponse.from(libraryItemResponse())));
         when(libraryService.getPublicLibrary(MEMBER_ID, 1, ReadingStatus.READING, LibrarySort.RECENT))
                 .thenReturn(response);
@@ -198,6 +200,9 @@ class LibraryControllerTest {
                         .param("page", "1")
                         .param("status", "READING"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.member.memberId").value(MEMBER_ID))
+                .andExpect(jsonPath("$.member.displayName").value("책책이"))
+                .andExpect(jsonPath("$.member.profileImageUrl").value("https://example.com/profile.jpg"))
                 .andExpect(jsonPath("$.items[0].bookId").value(BOOK_ID))
                 .andExpect(jsonPath("$.items[0].status").value("READING"))
                 .andExpect(jsonPath("$.items[0].currentPage").value(100))
@@ -845,6 +850,12 @@ class LibraryControllerTest {
 
     private FieldDescriptor[] publicLibraryListResponseFields() {
         return new FieldDescriptor[]{
+                fieldWithPath("member").type(JsonFieldType.OBJECT).description("공개 서재 회원 정보"),
+                fieldWithPath("member.memberId").type(JsonFieldType.NUMBER).description("회원 ID"),
+                fieldWithPath("member.displayName").type(JsonFieldType.STRING)
+                        .description("회원 표시 이름"),
+                fieldWithPath("member.profileImageUrl").type(JsonFieldType.STRING)
+                        .description("회원 프로필 이미지 URL").optional(),
                 fieldWithPath("totalCount").type(JsonFieldType.NUMBER).description("공개 서재 전체 도서 수"),
                 fieldWithPath("filteredCount").type(JsonFieldType.NUMBER).description("필터 적용 후 도서 수"),
                 fieldWithPath("nextPage").type(JsonFieldType.NUMBER)

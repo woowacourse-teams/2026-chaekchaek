@@ -17,6 +17,7 @@ import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.member.domain.AccountStatus;
+import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -92,12 +93,10 @@ public class LibraryService {
     @Transactional(readOnly = true)
     public PublicLibraryListResponse getPublicLibrary(long memberId, int page, ReadingStatus status,
                                                       LibrarySort sort) {
-        if (memberRepository.findById(memberId)
-                .filter(member -> member.getAccountStatus() == AccountStatus.ACTIVE)
-                .isEmpty()) {
-            throw new BusinessException(ErrorCode.LIBRARY_NOT_FOUND);
-        }
-        return PublicLibraryListResponse.from(getLibrary(memberId, page, status, sort));
+        Member member = memberRepository.findById(memberId)
+                .filter(candidate -> candidate.getAccountStatus() == AccountStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(ErrorCode.LIBRARY_NOT_FOUND));
+        return PublicLibraryListResponse.from(member, getLibrary(memberId, page, status, sort));
     }
 
     @Transactional
