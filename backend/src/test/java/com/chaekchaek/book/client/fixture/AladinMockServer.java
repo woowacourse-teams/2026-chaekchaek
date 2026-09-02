@@ -98,6 +98,26 @@ public final class AladinMockServer implements AutoCloseable {
         });
     }
 
+    public void 상세_요청을_검증한다(String isbn13) throws InterruptedException {
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+
+        assertThat(request).isNotNull();
+        assertThat(request.getMethod()).isEqualTo("GET");
+
+        HttpUrl url = request.getRequestUrl();
+        assertThat(url).isNotNull();
+
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(url.encodedPath()).isEqualTo("/ttb/api/ItemLookUp.aspx");
+            softly.assertThat(url.queryParameter("ttbkey")).isEqualTo(TEST_TTB_KEY);
+            softly.assertThat(url.queryParameter("ItemIdType")).isEqualTo("ISBN13");
+            softly.assertThat(url.queryParameter("ItemId")).isEqualTo(isbn13);
+            softly.assertThat(url.queryParameter("Cover")).isEqualTo("Big");
+            softly.assertThat(url.queryParameter("Output")).isEqualTo("JS");
+            softly.assertThat(url.queryParameter("Version")).isEqualTo("20131101");
+        });
+    }
+
     @Override
     public void close() throws IOException {
         server.shutdown();

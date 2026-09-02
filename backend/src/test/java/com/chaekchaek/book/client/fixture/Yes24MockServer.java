@@ -77,6 +77,26 @@ public final class Yes24MockServer implements AutoCloseable {
         });
     }
 
+    public void 상세_요청을_검증한다(String isbn13) throws InterruptedException {
+        RecordedRequest request = server.takeRequest(1, TimeUnit.SECONDS);
+
+        assertThat(request).isNotNull();
+        assertThat(request.getMethod()).isEqualTo("GET");
+        assertThat(request.getHeader("X-Api-Key")).isEqualTo(TEST_API_KEY);
+
+        HttpUrl url = request.getRequestUrl();
+        assertThat(url).isNotNull();
+
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(url.encodedPath()).isEqualTo("/v1/goods/itemDetail");
+            softly.assertThat(url.queryParameterNames())
+                    .containsExactlyInAnyOrder("searchType", "query", "detail");
+            softly.assertThat(url.queryParameter("searchType")).isEqualTo("ISBN13");
+            softly.assertThat(url.queryParameter("query")).isEqualTo(isbn13);
+            softly.assertThat(url.queryParameter("detail")).isEqualTo("Y");
+        });
+    }
+
     @Override
     public void close() throws IOException {
         server.shutdown();

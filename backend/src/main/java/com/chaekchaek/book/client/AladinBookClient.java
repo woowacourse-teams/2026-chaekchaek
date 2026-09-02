@@ -67,7 +67,8 @@ public class AladinBookClient implements BookSearchClient {
         return response;
     }
 
-    public com.chaekchaek.book.client.dto.AladinBookItem findBookByIsbn13(Isbn13 isbn13) {
+    @Override
+    public BookDetailItem findBookByIsbn13(Isbn13 isbn13) {
         URI uri = new DefaultUriBuilderFactory().builder()
                 .path("/ttb/api/ItemLookUp.aspx")
                 .queryParam("ttbkey", ttbKey)
@@ -90,7 +91,24 @@ public class AladinBookClient implements BookSearchClient {
         return response.items().stream()
                 .filter(item -> item.matchesIsbn13(isbn13))
                 .findFirst()
+                .map(this::toBookDetailItem)
                 .orElseThrow(BookNotFoundException::new);
+    }
+
+    private BookDetailItem toBookDetailItem(com.chaekchaek.book.client.dto.AladinBookItem source) {
+        AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
+        return new BookDetailItem(
+                source.title(),
+                source.cover(),
+                source.description(),
+                contributors.authors(),
+                contributors.translators(),
+                source.publishedDate(),
+                source.isbn13(),
+                source.categoryName(),
+                source.publisher(),
+                source.totalPages()
+        );
     }
 
     private AladinSearchResponse requestBooks(URI uri) {

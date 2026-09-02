@@ -6,9 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.chaekchaek.book.client.AladinBookClient;
-import com.chaekchaek.book.client.dto.AladinBookItem;
-import com.chaekchaek.book.client.dto.AladinBookSubInfo;
+import com.chaekchaek.book.client.BookDetailItem;
+import com.chaekchaek.book.client.BookSearchClient;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
@@ -24,6 +23,8 @@ import com.chaekchaek.review.repository.ReplyReactionRepository;
 import com.chaekchaek.review.repository.ReplyRepository;
 import com.chaekchaek.review.repository.ReviewReactionRepository;
 import com.chaekchaek.review.repository.ReviewRepository;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.DisplayName;
@@ -53,12 +54,13 @@ class ReviewCreateByIsbnTransactionTest {
         // given
         AtomicBoolean externalCallInTransaction = new AtomicBoolean(true);
         AtomicBoolean reviewSaveInTransaction = new AtomicBoolean(false);
-        AladinBookClient bookClient = mock(AladinBookClient.class);
+        BookSearchClient bookClient = mock(BookSearchClient.class);
         when(bookClient.findBookByIsbn13(ISBN13)).thenAnswer(invocation -> {
             externalCallInTransaction.set(TransactionSynchronizationManager.isActualTransactionActive());
-            return new AladinBookItem(
-                    "마션", "https://image.example/martian.jpg", "앤디 위어 (지은이)", "책 설명",
-                    "2026-01-01", ISBN13.value(), "SF", "알에이치코리아", new AladinBookSubInfo(308)
+            return new BookDetailItem(
+                    "마션", "https://image.example/martian.jpg", "책 설명",
+                    List.of("앤디 위어"), List.of(), LocalDate.of(2026, 1, 1),
+                    ISBN13.value(), "SF", "알에이치코리아", 308
             );
         });
         BookResolver bookResolver = new BookResolver(bookClient, bookRepository, transactionManager);

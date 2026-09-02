@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.chaekchaek.book.client.fixture.Yes24MockServer;
 import com.chaekchaek.book.client.fixture.Yes24ResponseFixture;
+import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.exception.BookNotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +22,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.web.client.RestClient;
 
 class Yes24BookClientTest {
+
+    private static final Isbn13 ISBN13 = new Isbn13("9788937460449");
 
     private Yes24MockServer yes24Server;
     private Yes24BookClient client;
@@ -65,6 +69,46 @@ class Yes24BookClientTest {
                     softly.assertThat(book.publisher()).isEqualTo("민음사");
                 })
         );
+    }
+
+    @Test
+    @DisplayName("ISBN13으로 YES24 상세 정보를 조회해 공급자 중립 결과로 변환한다")
+    void should_ReturnBookDetailItem_When_FindingBookByIsbn13() throws InterruptedException {
+        // given
+        yes24Server.응답한다(200, Yes24ResponseFixture.데미안_상세_결과());
+
+        // when
+        BookDetailItem result = client.findBookByIsbn13(ISBN13);
+
+        // then
+        yes24Server.상세_요청을_검증한다(ISBN13.value());
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(result.title()).isEqualTo("데미안");
+            softly.assertThat(result.coverImageUrl())
+                    .isEqualTo("https://image.yes24.com/goods/101375809/L");
+            softly.assertThat(result.description()).isEqualTo("내면의 길을 찾아가는 성장 소설");
+            softly.assertThat(result.authors()).containsExactly("헤르만 헤세");
+            softly.assertThat(result.translators()).containsExactly("전영애");
+            softly.assertThat(result.publishedDate()).isEqualTo(LocalDate.of(2000, 12, 20));
+            softly.assertThat(result.isbn13()).isEqualTo(ISBN13.value());
+            softly.assertThat(result.category()).isEqualTo("국내도서");
+            softly.assertThat(result.publisher()).isEqualTo("민음사");
+            softly.assertThat(result.totalPages()).isEqualTo(240);
+        });
+    }
+
+    @Test
+    @DisplayName("YES24에 ISBN13 상세 정보가 없으면 도서 없음 예외가 발생한다")
+    void should_ThrowBookNotFoundException_When_Yes24ReturnsDetailNotFoundError() {
+        // given
+        yes24Server.응답한다(
+                404,
+                Yes24ResponseFixture.오류_응답("GOODS_002", "ISBN13에 해당하는 상품을 찾을 수 없습니다.")
+        );
+
+        // when & then
+        assertThatThrownBy(() -> client.findBookByIsbn13(ISBN13))
+                .isInstanceOf(BookNotFoundException.class);
     }
 
     @ParameterizedTest
