@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import {
   Icon,
@@ -19,7 +19,7 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 
-import { getLibrary } from '@/services/apis/library/repository';
+import { getMembersMemberIdLibrary } from '@/services/apis/membersMemberIdLibrary/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
 export const READING_STATUS = {
@@ -57,6 +57,9 @@ const READING_SORT_LABELS = {
 } as const;
 
 export const MemberLibraryPage = () => {
+  const { memberId: memberIdString } = useParams<{ memberId: string }>();
+  const memberId = Number(memberIdString);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
   const status = (searchParams.get('status') ?? READING_STATUS.ALL) as ReadingStatus;
@@ -88,8 +91,9 @@ export const MemberLibraryPage = () => {
     });
   };
 
-  const getLibraryLoadData = useCallback(async () => {
-    return await getLibrary({
+  const getMembersMemberIdLibraryLoadData = useCallback(async () => {
+    return await getMembersMemberIdLibrary({
+      memberId,
       page: defaultPage,
       sort,
       status,
@@ -97,7 +101,7 @@ export const MemberLibraryPage = () => {
   }, [defaultPage, status, sort]);
   const {
     status: { data: libraryData },
-  } = useLoadData({ queryFn: getLibraryLoadData });
+  } = useLoadData({ queryFn: getMembersMemberIdLibraryLoadData });
 
   const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
 
