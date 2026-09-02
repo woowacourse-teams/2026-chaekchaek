@@ -6,6 +6,11 @@ export interface GetMembersMemberIdLibraryParams {
 }
 
 export type GetMembersMemberIdLibrary = (params: GetMembersMemberIdLibraryParams) => Promise<{
+  member: {
+    memberId: number;
+    displayName: string;
+    profileImageUrl: string;
+  };
   filteredCount: number;
   nextPage: number;
   totalCount: number;

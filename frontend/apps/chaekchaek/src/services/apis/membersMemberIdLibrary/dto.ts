@@ -10,6 +10,11 @@ export interface GetMembersMemberIdLibraryRequestDto {
 }
 
 export type GetMembersMemberIdLibraryResponseDto = ResponseDto<{
+  member: {
+    memberId: number;
+    displayName: string;
+    profileImageUrl: string;
+  };
   filteredCount: number;
   nextPage: number;
   totalCount: number;
