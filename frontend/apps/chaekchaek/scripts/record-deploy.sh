@@ -1,20 +1,21 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-FRONTEND_DIR=$(cd "$SCRIPT_DIR/../../.." && pwd)
+RECORD_DIR="${DEPLOY_RECORD_DIR:-/var/lib/chaekchaek-deploy}"
+VERSION_FILE="$RECORD_DIR/VERSION"
+HISTORY_FILE="$RECORD_DIR/deploy-history.log"
 
-VERSION_FILE="$FRONTEND_DIR/VERSION"
-HISTORY_FILE="$FRONTEND_DIR/deploy-history.log"
-
-COMMIT_SHA=$(git rev-parse HEAD)
+COMMIT_SHA="${GITHUB_SHA:-$(git rev-parse HEAD)}"
 DEPLOYED_AT=$(date '+%Y-%m-%d %H:%M:%S')
 
-# 현재 배포 버전
-echo "$COMMIT_SHA" > "$VERSION_FILE"
+# 동시 실행되는 workflow가 이력을 덮어쓰지 않도록 잠금
+exec 9>"$RECORD_DIR/.record-deploy.lock"
+flock 9
 
-# 기존 이력을 유지하면서 최신 배포를 맨 위에 추가
+echo "$COMMIT_SHA" > "${VERSION_FILE}.tmp"
+mv "${VERSION_FILE}.tmp" "$VERSION_FILE"
+
 {
   echo "$DEPLOYED_AT | $COMMIT_SHA"
   [ -f "$HISTORY_FILE" ] && cat "$HISTORY_FILE"
@@ -23,5 +24,6 @@ echo "$COMMIT_SHA" > "$VERSION_FILE"
 mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
 
 echo "Deployment recorded"
+echo "History file: $HISTORY_FILE"
 echo "Version: $COMMIT_SHA"
 echo "Deployed at: $DEPLOYED_AT"
