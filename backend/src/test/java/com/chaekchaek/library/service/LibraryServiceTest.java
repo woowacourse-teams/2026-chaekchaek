@@ -203,6 +203,9 @@ class LibraryServiceTest {
     @DisplayName("활성 회원의 빈 공개 서재는 빈 목록을 반환한다")
     void should_ReturnEmptyPublicLibrary_When_ActiveMemberHasNoItems() {
         Member member = mock(Member.class);
+        when(member.getId()).thenReturn(1L);
+        when(member.getDisplayName()).thenReturn("책책이");
+        when(member.getProfileImageUrl()).thenReturn("https://example.com/profile.jpg");
         when(member.getAccountStatus()).thenReturn(AccountStatus.ACTIVE);
         when(memberRepository.findById(1L)).thenReturn(java.util.Optional.of(member));
         when(libraryItemRepository.findAllByMemberId(1L)).thenReturn(List.of());
@@ -213,6 +216,8 @@ class LibraryServiceTest {
         assertThat(response.totalCount()).isZero();
         assertThat(response.filteredCount()).isZero();
         assertThat(response.items()).isEmpty();
+        assertThat(response.member()).extracting("memberId", "displayName", "profileImageUrl")
+                .containsExactly(1L, "책책이", "https://example.com/profile.jpg");
     }
 
     @Test
