@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import {
+  Avatar,
   Icon,
   ImgBox,
   List,
@@ -123,7 +124,12 @@ export const MemberLibraryPage = () => {
       <Main>
         <Split>
           <Split.Top sx={{ mb: 6 }}>
-            <Title level="page">내 서재</Title>
+            <Title level="page">
+              {libraryData?.member.profileImageUrl && (
+                <Avatar img={libraryData?.member.profileImageUrl} />
+              )}
+              '{libraryData?.member.displayName}' 서재
+            </Title>
           </Split.Top>
           <Split.Side>
             <Title
