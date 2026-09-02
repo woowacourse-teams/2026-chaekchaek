@@ -35,19 +35,20 @@ description: 첵췍 KMP iOS 앱을 iOS Simulator에서 빌드, 테스트, UI 조
    사용자 전용 `xcuserdata`의 같은 이름 scheme이 공유 scheme을 가려 `test action` 오류가 나면 사용자 scheme을 수정하거나 삭제하지 않는다. 같은 커밋의 임시 detached worktree를 만들고 공유 scheme으로 검증한 뒤 임시 worktree만 정리한다.
 2. `xcrun simctl list devices booted`로 현재 기기 수와 UDID, runtime을 기록한다.
 3. 적합한 기기 한 대를 선택하고 `xcrun simctl ui <UDID> content_size`로 원래 Dynamic Type 크기를 기록한다.
-4. 다음 형식으로 테스트한다.
+4. 전체 HIG 검증은 저장소 루트에서 다음 스크립트로 실행한다. 선택할 Simulator UDID를
+   인자로 전달할 수 있으며, 생략하면 이미 부팅된 iPhone을 우선 사용한다.
 
    ```sh
-   xcodebuild test \
-     -project android/iosApp/iosApp.xcodeproj \
-     -scheme Chaekchaek \
-     -destination 'platform=iOS Simulator,id=<UDID>' \
-     CODE_SIGNING_ALLOWED=NO
+   android/scripts/test-ios-hig.sh [UDID]
    ```
 
+   스크립트는 `build-for-testing`을 한 번 실행한 뒤 기본 크기와 AX5에서
+   `test-without-building`을 실행하고, 완료 시 원래 Dynamic Type 크기와 기기 상태를
+   복원한다.
+
 5. UI 조작이 필요하면 기존 XCUITest target을 우선 사용한다. 접근성 식별자나 표시 문자열로 요소를 찾고 요청 흐름을 재현한다. 고정 좌표 탭은 최후 수단으로만 사용한다. 도달한 화면에서 `try app.performAccessibilityAudit()`를 실행한다.
-6. `xcrun simctl ui <UDID> content_size large`로 기본 크기를 설정하고 앱을 다시 실행해 검증한다.
-7. `xcrun simctl ui <UDID> content_size accessibility-extra-extra-extra-large`로 AX5를 설정하고 앱을 다시 실행해 같은 흐름을 검증한다.
+6. 일부 테스트만 수동 실행할 때는 `xcrun simctl ui <UDID> content_size large`로 기본 크기를 설정하고 앱을 다시 실행해 검증한다.
+7. 일부 테스트만 수동 실행할 때는 `xcrun simctl ui <UDID> content_size accessibility-extra-extra-extra-large`로 AX5를 설정하고 앱을 다시 실행해 같은 흐름을 검증한다.
 8. 빌드된 앱을 직접 실행해야 하면 `xcrun simctl install`과 `xcrun simctl launch`를 사용한다.
 9. 각 Dynamic Type 상태에서 `xcrun simctl io <UDID> screenshot <절대경로>`로 최종 화면을 저장하고 직접 확인한다.
 10. 검증이 끝나면 3단계에서 기록한 Dynamic Type 크기로 복원한다.
