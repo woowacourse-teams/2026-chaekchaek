@@ -59,6 +59,17 @@ const READING_SORT_LABELS = {
   TITLE: '제목순',
 } as const;
 
+const sideImgKeys = [
+  195042981, 195042980, 195042966, 195042923, 122426425, 117014613, 99308021, 23030284, 65067259,
+  139725917, 8759796, 35896136, 116859268, 140045398, 195042967,
+];
+
+const sideImgs = sideImgKeys
+  .map((sideImgKey) => {
+    return `https://image.yes24.com/goods/${sideImgKey}/SIDE/XL`;
+  })
+  .filter((_, index) => index < 10);
+
 export const MemberLibraryPage = () => {
   const { memberId: memberIdString } = useParams<{ memberId: string }>();
   const memberId = Number(memberIdString);
@@ -133,20 +144,45 @@ export const MemberLibraryPage = () => {
           </Split.Top>
           <Split.Side>
             <Title
+              style={{ height: '800px' }}
               level="main"
               orientation="vertical"
               trailing={
-                <OptionList
-                  sx={{ mt: 3 }}
-                  value={status}
-                  options={Object.entries(READING_STATUS_LABELS).map(([labelKey, labelValue]) => {
-                    return {
-                      value: labelKey,
-                      text: labelValue,
-                    };
-                  })}
-                  onChange={handleChangeStatus}
-                />
+                <>
+                  <OptionList
+                    sx={{ mt: 3 }}
+                    value={status}
+                    options={Object.entries(READING_STATUS_LABELS).map(([labelKey, labelValue]) => {
+                      return {
+                        value: labelKey,
+                        text: labelValue,
+                      };
+                    })}
+                    onChange={handleChangeStatus}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                    {sideImgs.map((sideImg, index) => {
+                      return (
+                        <img
+                          src={sideImg}
+                          style={{
+                            width: '20px',
+                            verticalAlign: 'bottom',
+                            transform:
+                              index < sideImgs.length - 1
+                                ? 'rotate(5deg)'
+                                : 'rotate(-5deg) translateX(20px)',
+                            transformOrigin: 'bottom center',
+                          }}
+                          onError={(event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = sideImgs[0] as string;
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                </>
               }
             >
               독서 상태
