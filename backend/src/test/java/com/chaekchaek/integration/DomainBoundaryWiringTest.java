@@ -2,6 +2,8 @@ package com.chaekchaek.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.chaekchaek.book.client.BookSearchClient;
+import com.chaekchaek.book.client.Yes24BookClient;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.service.BookCommentCountReader;
 import com.chaekchaek.review.book.ReviewBookReader;
@@ -26,6 +28,7 @@ class DomainBoundaryWiringTest {
     void should_WireConcreteImplementations_When_ApplicationStarts() {
         // when
         var commentCountReaders = applicationContext.getBeansOfType(BookCommentCountReader.class);
+        BookSearchClient bookSearchClient = applicationContext.getBean(BookSearchClient.class);
         var currentMemberIdProviders = applicationContext.getBeansOfType(CurrentMemberIdProvider.class);
         var reviewBookReaders = applicationContext.getBeansOfType(ReviewBookReader.class);
         var reviewMemberReaders = applicationContext.getBeansOfType(ReviewMemberReader.class);
@@ -33,6 +36,7 @@ class DomainBoundaryWiringTest {
 
         // then
         assertThat(commentCountReaders).containsOnlyKeys("reviewService");
+        assertThat(bookSearchClient).isInstanceOf(Yes24BookClient.class);
         assertThat(currentMemberIdProviders).containsOnlyKeys("securityContextCurrentMemberIdProvider");
         assertThat(reviewBookReaders).containsOnlyKeys("persistentReviewBookReader");
         assertThat(reviewMemberReaders).containsOnlyKeys("persistentReviewMemberReader");

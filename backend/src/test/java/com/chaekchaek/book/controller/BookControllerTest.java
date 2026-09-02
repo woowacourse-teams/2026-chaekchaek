@@ -80,7 +80,7 @@ class BookControllerTest {
             fieldWithPath("items[].title").type(JsonFieldType.STRING)
                     .description("도서 제목"),
             fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING)
-                    .description("표지 이미지 URL. 알라딘 Big 규격(너비 200px)을 따름"),
+                    .description("표지 이미지 URL"),
             fieldWithPath("items[].authors").type(JsonFieldType.ARRAY)
                     .description("저자 이름 목록")
                     .attributes(key("itemsType").value(JsonFieldType.STRING)),

@@ -6,12 +6,17 @@ import com.chaekchaek.book.client.dto.Yes24SearchResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
+@Component
+@Primary
 public class Yes24BookClient implements BookSearchClient {
 
     private static final int PAGE_SIZE = 10;
@@ -19,7 +24,11 @@ public class Yes24BookClient implements BookSearchClient {
     private final RestClient restClient;
     private final String apiKey;
 
-    public Yes24BookClient(RestClient.Builder builder, String baseUrl, String apiKey) {
+    public Yes24BookClient(
+            RestClient.Builder builder,
+            @Value("${yes24.base-url}") String baseUrl,
+            @Value("${yes24.api-key}") String apiKey
+    ) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(2));
         requestFactory.setReadTimeout(Duration.ofSeconds(3));
