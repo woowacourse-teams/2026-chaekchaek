@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.chaekchaek.book.client.dto.AladinSearchResponse;
 import com.chaekchaek.book.client.fixture.AladinMockServer;
 import com.chaekchaek.book.client.fixture.AladinResponseFixture;
+import com.chaekchaek.book.domain.Isbn13;
 import java.io.IOException;
 import java.time.LocalDate;
 import org.assertj.core.api.SoftAssertions;
@@ -17,6 +18,8 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 class AladinBookClientTest {
+
+    private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
 
     private AladinMockServer aladinServer;
     private AladinBookClient client;
@@ -75,6 +78,31 @@ class AladinBookClientTest {
                     softly.assertThat(book.publisher()).isEqualTo("알에이치코리아(RHK)");
                 })
         );
+    }
+
+    @Test
+    @DisplayName("ISBN13으로 알라딘 상세 정보를 조회해 공급자 중립 결과로 변환한다")
+    void should_ReturnBookDetailItem_When_FindingBookByIsbn13() throws InterruptedException {
+        // given
+        aladinServer.검색_응답한다(AladinResponseFixture.마션_검색_결과());
+
+        // when
+        BookDetailItem result = client.findBookByIsbn13(ISBN13);
+
+        // then
+        aladinServer.상세_요청을_검증한다(ISBN13.value());
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(result.title()).isEqualTo("마션 (알라딘 리커버 특별판)");
+            softly.assertThat(result.coverImageUrl()).isEqualTo("https://image.aladin.co.kr/martian.jpg");
+            softly.assertThat(result.description()).isEqualTo("책 설명");
+            softly.assertThat(result.authors()).containsExactly("앤디 위어");
+            softly.assertThat(result.translators()).containsExactly("박아람");
+            softly.assertThat(result.publishedDate()).isEqualTo(LocalDate.of(2026, 7, 1));
+            softly.assertThat(result.isbn13()).isEqualTo(ISBN13.value());
+            softly.assertThat(result.category()).isEqualTo("국내도서>소설>과학소설");
+            softly.assertThat(result.publisher()).isEqualTo("알에이치코리아(RHK)");
+            softly.assertThat(result.totalPages()).isEqualTo(448);
+        });
     }
 
     @Test

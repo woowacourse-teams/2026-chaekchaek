@@ -42,7 +42,9 @@ public final class AladinResponseFixture {
                         "seriesId": 1364731,
                         "seriesName": "앤디 위어 우주 3부작"
                       },
-                      "subInfo": {}
+                      "subInfo": {
+                        "itemPage": 448
+                      }
                     }
                   ]
                 }

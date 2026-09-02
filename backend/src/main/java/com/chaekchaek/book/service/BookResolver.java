@@ -2,9 +2,8 @@ package com.chaekchaek.book.service;
 
 import static org.springframework.web.util.HtmlUtils.htmlUnescape;
 
-import com.chaekchaek.book.client.AladinBookClient;
-import com.chaekchaek.book.client.AladinContributorParser;
-import com.chaekchaek.book.client.dto.AladinBookItem;
+import com.chaekchaek.book.client.BookDetailItem;
+import com.chaekchaek.book.client.BookSearchClient;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
@@ -18,12 +17,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Component
 public class BookResolver {
 
-    private final AladinBookClient bookClient;
+    private final BookSearchClient bookClient;
     private final BookRepository bookRepository;
     private final TransactionTemplate newTransaction;
 
     public BookResolver(
-            AladinBookClient bookClient,
+            BookSearchClient bookClient,
             BookRepository bookRepository,
             PlatformTransactionManager transactionManager
     ) {
@@ -44,7 +43,7 @@ public class BookResolver {
     }
 
     private Book registerBookFetchedOutsideTransaction(Isbn13 isbn13) {
-        AladinBookItem source = bookClient.findBookByIsbn13(isbn13);
+        BookDetailItem source = bookClient.findBookByIsbn13(isbn13);
         try {
             return Objects.requireNonNull(newTransaction.execute(status -> bookRepository
                     .findByIsbn13(isbn13)
@@ -55,17 +54,16 @@ public class BookResolver {
         }
     }
 
-    private Book toBook(Isbn13 isbn13, AladinBookItem source) {
-        AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
+    private Book toBook(Isbn13 isbn13, BookDetailItem source) {
         return Book.create(
                 isbn13,
                 source.title(),
-                source.cover(),
+                source.coverImageUrl(),
                 htmlUnescape(source.description()),
-                contributors.authors(),
-                contributors.translators(),
+                source.authors(),
+                source.translators(),
                 source.publisher(),
-                source.categoryName(),
+                source.category(),
                 source.publishedDate(),
                 source.totalPages()
         );

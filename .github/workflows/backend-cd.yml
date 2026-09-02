@@ -88,6 +88,7 @@ jobs:
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           ALADIN_TTB_KEY: ${{ secrets.ALADIN_TTB_KEY }}
+          YES24_API_KEY: ${{ secrets.YES24_API_KEY }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
@@ -108,6 +109,7 @@ jobs:
             -e DB_USERNAME="$DB_USERNAME" \
             -e DB_PASSWORD="$DB_PASSWORD" \
             -e ALADIN_TTB_KEY="$ALADIN_TTB_KEY" \
+            -e YES24_API_KEY="$YES24_API_KEY" \
             -e JWT_SECRET="$JWT_SECRET" \
             -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
             -e GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
