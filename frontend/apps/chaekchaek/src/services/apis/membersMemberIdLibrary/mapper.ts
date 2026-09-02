@@ -4,8 +4,8 @@ import type { GetMembersMemberIdLibraryParams } from './repository.types';
 // GetMembersMemberIdLibrary
 export const mapGetMembersMemberIdLibraryModelToRequestDTO = (
   model: GetMembersMemberIdLibraryParams,
-): GetMembersMemberIdLibraryParams => {
-  return model;
+): { page: number; status: '' | 'WANT_TO_READ' | 'READING' | 'FINISHED'; sort: string } => {
+  return { ...model, status: model.status === 'ALL' ? '' : model.status };
 };
 
 export const mapGetMembersMemberIdLibraryResponseDTOToModel = (

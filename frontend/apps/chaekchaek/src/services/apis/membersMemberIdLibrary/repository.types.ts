@@ -1,7 +1,7 @@
 export interface GetMembersMemberIdLibraryParams {
   memberId: number;
   page: number;
-  status: string;
+  status: 'ALL' | 'WANT_TO_READ' | 'READING' | 'FINISHED';
   sort: string;
 }
 
