@@ -5,7 +5,9 @@ description: "Enforce design-first UI work with the existing Chaekchaek design s
 
 # Chaekchaek Design System
 
-Use `designs.pen` frame `SxMn5` as the canonical design source.
+Use the `designs.pen` frame named `책췍 디자인 시스템` (Node ID: `SxMn5`) as the canonical design source.
+
+When communicating with the user, refer to Pencil nodes by their visible names. Include a Node ID in parentheses only when it is needed for identification or an operation; never use the ID alone when a visible name is available.
 
 ## 글로벌 타이포그래피 기준
 
