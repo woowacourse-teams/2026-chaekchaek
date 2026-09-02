@@ -50,16 +50,21 @@ internal fun LoginRequiredSheet(
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
             if (appleSignInAvailable) {
-                AppleSignInButton(
-                    signingIn = signingIn,
-                    onClick = onAppleSignIn,
+                Column(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                )
-                GoogleSignInButton(
-                    signingIn = signingIn,
-                    onClick = onGoogleSignIn,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    AppleSignInButton(
+                        signingIn = signingIn,
+                        onClick = onAppleSignIn,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    GoogleSignInButton(
+                        signingIn = signingIn,
+                        onClick = onGoogleSignIn,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             } else {
                 Surface(
                     onClick = onGoogleSignIn,
