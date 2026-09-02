@@ -6,4 +6,5 @@ export const ROUTES = {
   BOOK_SEARCH: '/books',
   BOOK_DETAIL: '/books',
   LIBRARY: '/library',
+  MEMBER_LIBRARY: '/members/:memberId/library',
 };

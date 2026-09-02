@@ -13,6 +13,7 @@ import { IntroPage } from '@/pages/IntroPage';
 import { BooksPage } from '@/pages/BooksPage';
 import { BookDetailPage } from '@/pages/BookDetailPage';
 import { LibraryPage } from '@/pages/LibraryPage';
+import { MemberLibraryPage } from '@/pages/MemberLibraryPage';
 
 interface Route {
   path: string;
@@ -59,6 +60,10 @@ const routes: Route[] = [
         <LibraryPage />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: ROUTES.MEMBER_LIBRARY,
+    element: <MemberLibraryPage />,
   },
 ];
 
