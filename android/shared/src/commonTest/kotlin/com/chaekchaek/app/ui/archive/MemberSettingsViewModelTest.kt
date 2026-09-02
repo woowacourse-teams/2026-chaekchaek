@@ -13,6 +13,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -32,7 +33,7 @@ class MemberSettingsViewModelTest {
         val requests = mutableListOf<HttpRequestData>()
         val client = testClient { request ->
             requests += request
-            respondJson("""{"memberId":9,"nickname":"서버 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""")
+            respondJson("""{"memberId":9,"nickname":"서버 이름","anonymousNickname":"우아한 달빛 참새","profileImageUrl":"https://example.com/profile.png","displayAnonymous":false}""")
         }
 
         try {
@@ -44,11 +45,54 @@ class MemberSettingsViewModelTest {
             assertEquals(true, viewModel.uiState.value.signedIn)
             assertEquals(false, viewModel.uiState.value.anonymousReviews)
             assertEquals("우아한 달빛 참새", viewModel.uiState.value.anonymousNickname)
+            assertEquals("https://example.com/profile.png", viewModel.uiState.value.profileImageUrl)
             assertEquals("Bearer access-token", requests.single().headers[HttpHeaders.Authorization])
 
             viewModel.authenticate(null)
 
             assertEquals(MemberSettingsUiState(), viewModel.uiState.value)
+        } finally {
+            client.close()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun withdrawalFailureKeepsSessionAndCanRetry() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        var withdrawalRequests = 0
+        val withdrawalSucceeded = CompletableDeferred<Unit>()
+        val client = testClient { request ->
+            when (request.url.encodedPath) {
+                "/api/v1/members/me" -> if (request.method == io.ktor.http.HttpMethod.Delete) {
+                    withdrawalRequests += 1
+                    if (withdrawalRequests == 1) {
+                        respondJson("""{"code":"SERVER_ERROR"}""", HttpStatusCode.InternalServerError)
+                    } else {
+                        respondJson("{}")
+                    }
+                } else {
+                    respondJson("""{"memberId":9,"nickname":"서버 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""")
+                }
+                else -> error("Unexpected request: ${request.url.encodedPath}")
+            }
+        }
+
+        try {
+            val viewModel = MemberSettingsViewModel(MemberRemoteRepository(client))
+            viewModel.authenticate("access-token")
+            viewModel.uiState.first { it.nickname == "서버 이름" }
+
+            viewModel.withdraw { error("Failure response must not complete withdrawal") }
+            viewModel.uiState.first { it.withdrawalErrorMessage != null }
+
+            assertEquals(true, viewModel.uiState.value.signedIn)
+
+            viewModel.withdraw { withdrawalSucceeded.complete(Unit) }
+            withdrawalSucceeded.await()
+
+            assertEquals(2, withdrawalRequests)
+            assertEquals(null, viewModel.uiState.value.withdrawalErrorMessage)
         } finally {
             client.close()
             Dispatchers.resetMain()

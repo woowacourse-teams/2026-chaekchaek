@@ -11,10 +11,11 @@ import platform.UIKit.UIViewController
 fun MainViewController(
   authPlatform: AuthPlatformCallbacks,
   createGoogleSignInButton: () -> UIControl,
+  uiTestingMyPage: Boolean = false,
 ): UIViewController {
   return ComposeUIViewController {
     CompositionLocalProvider(LocalGoogleSignInButtonFactory provides createGoogleSignInButton) {
-      App(authPlatform)
+      App(authPlatform, uiTestingMyPage)
     }
   }
 }

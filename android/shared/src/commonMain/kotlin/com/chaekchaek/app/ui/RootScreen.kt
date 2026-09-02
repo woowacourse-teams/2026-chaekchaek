@@ -80,6 +80,7 @@ internal fun RootScreen(
     memberSettingsViewModel: MemberSettingsViewModel,
     authViewModel: AuthViewModel,
     onBookClick: (BookDetailArgs) -> Unit,
+    onMyPage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
@@ -87,6 +88,7 @@ internal fun RootScreen(
     var archiveScrollTopRequest by remember { mutableIntStateOf(0) }
     var archiveEditing by rememberSaveable { mutableStateOf(false) }
     var showArchiveLoginSheet by rememberSaveable { mutableStateOf(false) }
+    var archiveLoginOpensMyPage by rememberSaveable { mutableStateOf(false) }
     val tokens by authViewModel.tokens.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
     val pendingRegistration by searchViewModel.pendingRegistration.collectAsState()
@@ -142,7 +144,17 @@ internal fun RootScreen(
                 scrollTopRequest = archiveScrollTopRequest,
                 onEditingChange = { editing ->
                     if (!editing || accessToken != null) archiveEditing = editing
-                    else showArchiveLoginSheet = true
+                    else {
+                        archiveLoginOpensMyPage = false
+                        showArchiveLoginSheet = true
+                    }
+                },
+                onProfileClick = {
+                    if (accessToken != null) onMyPage()
+                    else {
+                        archiveLoginOpensMyPage = true
+                        showArchiveLoginSheet = true
+                    }
                 },
                 onBookClick = { onBookClick(it.toBookDetailArgs()) },
                 modifier = contentModifier,
@@ -218,20 +230,23 @@ internal fun RootScreen(
                     authViewModel.clearError()
                     authViewModel.cancelPendingAuthentication()
                     showArchiveLoginSheet = false
+                    archiveLoginOpensMyPage = false
                 }
             },
             onAppleSignIn = {
                 authViewModel.clearError()
                 authViewModel.requireAppleAuthentication {
                     showArchiveLoginSheet = false
-                    archiveEditing = true
+                    if (archiveLoginOpensMyPage) onMyPage() else archiveEditing = true
+                    archiveLoginOpensMyPage = false
                 }
             },
             onGoogleSignIn = {
                 authViewModel.clearError()
                 authViewModel.requireAuthentication {
                     showArchiveLoginSheet = false
-                    archiveEditing = true
+                    if (archiveLoginOpensMyPage) onMyPage() else archiveEditing = true
+                    archiveLoginOpensMyPage = false
                 }
             },
         )

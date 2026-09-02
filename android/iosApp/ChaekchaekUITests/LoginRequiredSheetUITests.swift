@@ -37,4 +37,51 @@ final class LoginRequiredSheetUITests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
     }
+
+    @MainActor
+    func testMyPageDefaultAndWithdrawalDialogAreAccessible() throws {
+        let app = launchMyPage()
+
+        XCTAssertTrue(app.staticTexts["마이페이지"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["익명으로 감상 공개"].exists)
+        let withdrawal = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "회원 탈퇴")
+        ).firstMatch
+        XCTAssertTrue(withdrawal.exists)
+
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
+        attachScreenshot(named: "마이페이지 기본")
+
+        withdrawal.tap()
+        XCTAssertTrue(app.buttons["탈퇴하기"].waitForExistence(timeout: 5))
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
+        attachScreenshot(named: "마이페이지 회원 탈퇴 확인")
+    }
+
+    @MainActor
+    func testMyPageSupportsAX5() throws {
+        let app = XCUIApplication()
+        app.launchArguments.append("-uiTestingMyPage")
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["마이페이지"].waitForExistence(timeout: 10))
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
+        attachScreenshot(named: "마이페이지 AX5")
+    }
+
+    @MainActor
+    private func launchMyPage() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments.append("-uiTestingMyPage")
+        app.launch()
+        return app
+    }
+
+    @MainActor
+    private func attachScreenshot(named name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
 }
