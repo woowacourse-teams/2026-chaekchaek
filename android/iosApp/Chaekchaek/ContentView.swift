@@ -85,7 +85,7 @@ private final class GoogleSignInControl: UIControl {
     init() {
         _ = GIDSignInButton()
         logo = UIImage(named: "GoogleSignInLogo") ?? UIImage()
-        providerFont = UIFont(name: "Roboto-Bold", size: 14) ?? .systemFont(ofSize: 14, weight: .medium)
+        providerFont = UIFont(name: "Roboto-Bold", size: 17) ?? .systemFont(ofSize: 17, weight: .semibold)
         super.init(frame: .zero)
 
         backgroundColor = .white
