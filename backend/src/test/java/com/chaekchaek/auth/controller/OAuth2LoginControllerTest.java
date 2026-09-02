@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 import com.chaekchaek.auth.oauth.OAuthFrontendClient;
+import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,8 +16,10 @@ class OAuth2LoginControllerTest {
 
     private final OAuthFrontendRedirectResolver redirectResolver =
             org.mockito.Mockito.mock(OAuthFrontendRedirectResolver.class);
+    private final OAuthGuestContextService guestContextService =
+            org.mockito.Mockito.mock(OAuthGuestContextService.class);
     private final OAuth2LoginController controller =
-            new OAuth2LoginController(redirectResolver);
+            new OAuth2LoginController(redirectResolver, guestContextService);
 
     @Test
     @DisplayName("허용된 프론트 클라이언트를 저장하고 Google 로그인을 시작한다")

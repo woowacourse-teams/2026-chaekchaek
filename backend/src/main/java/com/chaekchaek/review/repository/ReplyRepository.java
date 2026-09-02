@@ -6,11 +6,16 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface ReplyRepository extends JpaRepository<Reply, Long> {
 
     Page<Reply> findByReviewId(long reviewId, Pageable pageable);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Reply r set r.actorId = :targetActorId where r.actorId = :sourceActorId")
+    int reassignActorId(long sourceActorId, long targetActorId);
 
     @Query(value = """
             select recent_replies.*

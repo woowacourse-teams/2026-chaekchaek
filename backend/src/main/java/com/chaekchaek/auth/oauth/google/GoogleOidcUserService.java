@@ -1,7 +1,9 @@
 package com.chaekchaek.auth.oauth.google;
 
 import com.chaekchaek.auth.principal.AuthenticatedMember;
+import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import com.chaekchaek.auth.service.SocialLoginService;
+import jakarta.servlet.http.HttpServletRequest;
 import com.chaekchaek.member.domain.Member;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
@@ -19,10 +21,19 @@ public class GoogleOidcUserService implements OAuth2UserService<OidcUserRequest,
 
     private final OidcUserService delegate;
     private final SocialLoginService socialLoginService;
+    private final OAuthGuestContextService guestContextService;
+    private final HttpServletRequest request;
 
-    public GoogleOidcUserService(OidcUserService delegate, SocialLoginService socialLoginService) {
+    public GoogleOidcUserService(
+            OidcUserService delegate,
+            SocialLoginService socialLoginService,
+            OAuthGuestContextService guestContextService,
+            HttpServletRequest request
+    ) {
         this.delegate = delegate;
         this.socialLoginService = socialLoginService;
+        this.guestContextService = guestContextService;
+        this.request = request;
     }
 
     @Override
@@ -32,9 +43,13 @@ public class GoogleOidcUserService implements OAuth2UserService<OidcUserRequest,
         OidcUser oidcUser = delegate.loadUser(userRequest);
         GoogleProfile googleProfile = GoogleProfile.from(oidcUser);
 
-        Member member = socialLoginService.loginOrSignUp(googleProfile);
-
-        return AuthenticatedMember.of(member, oidcUser);
+        Long guestActorId = guestContextService.findGuestActorId(request).orElse(null);
+        try {
+            Member member = socialLoginService.loginOrSignUp(googleProfile, guestActorId);
+            return AuthenticatedMember.of(member, oidcUser);
+        } finally {
+            guestContextService.clear(request);
+        }
     }
 
     private void validateGoogleRegistration(OidcUserRequest userRequest) {

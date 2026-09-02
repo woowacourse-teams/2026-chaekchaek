@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
@@ -17,6 +18,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByBookId(long bookId);
 
     List<Review> findByBookIdAndActorId(long bookId, long actorId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Review r set r.actorId = :targetActorId where r.actorId = :sourceActorId")
+    int reassignActorId(long sourceActorId, long targetActorId);
 
     List<Review> findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc();
 

@@ -1,6 +1,7 @@
 package com.chaekchaek.auth.handler;
 
 import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
+import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,9 +14,14 @@ import org.springframework.stereotype.Component;
 public class OAuth2AuthenticationFailureHandler implements AuthenticationFailureHandler {
 
     private final OAuthFrontendRedirectResolver redirectResolver;
+    private final OAuthGuestContextService guestContextService;
 
-    public OAuth2AuthenticationFailureHandler(OAuthFrontendRedirectResolver redirectResolver) {
+    public OAuth2AuthenticationFailureHandler(
+            OAuthFrontendRedirectResolver redirectResolver,
+            OAuthGuestContextService guestContextService
+    ) {
         this.redirectResolver = redirectResolver;
+        this.guestContextService = guestContextService;
     }
 
     @Override
@@ -24,6 +30,7 @@ public class OAuth2AuthenticationFailureHandler implements AuthenticationFailure
             HttpServletResponse response,
             AuthenticationException authenticationException
     ) throws IOException, ServletException {
+        guestContextService.clear(request);
         response.sendRedirect(redirectResolver.resolveFailureUrl(request));
     }
 }

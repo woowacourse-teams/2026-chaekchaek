@@ -3,6 +3,8 @@ package com.chaekchaek.auth.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,6 +47,9 @@ public class SocialLoginServiceTest {
 
     @Mock
     private CurrentActorProvider currentActorProvider;
+
+    @Mock
+    private GuestActorMigrationService guestActorMigrationService;
 
     @InjectMocks
     private SocialLoginService socialLoginService;
@@ -158,6 +163,10 @@ public class SocialLoginServiceTest {
         )).thenReturn(Optional.empty());
         when(currentActorProvider.findCurrentActor()).thenReturn(Optional.of(CurrentActor.guest(7L)));
         when(actorRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(guestActor));
+        doAnswer(invocation -> {
+            guestActor.convertToMember(invocation.getArgument(1));
+            return null;
+        }).when(guestActorMigrationService).migrate(eq(7L), any(Member.class));
 
         Member result = socialLoginService.loginOrSignUp(googleProfile);
 

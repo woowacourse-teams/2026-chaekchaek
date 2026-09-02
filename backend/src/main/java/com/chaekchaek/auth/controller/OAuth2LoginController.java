@@ -1,6 +1,7 @@
 package com.chaekchaek.auth.controller;
 
 import com.chaekchaek.auth.oauth.OAuthFrontendClient;
+import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -9,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -19,9 +22,23 @@ public class OAuth2LoginController {
             URI.create("/oauth2/authorization/google");
 
     private final OAuthFrontendRedirectResolver redirectResolver;
+    private final OAuthGuestContextService guestContextService;
 
-    public OAuth2LoginController(OAuthFrontendRedirectResolver redirectResolver) {
+    public OAuth2LoginController(
+            OAuthFrontendRedirectResolver redirectResolver,
+            OAuthGuestContextService guestContextService
+    ) {
         this.redirectResolver = redirectResolver;
+        this.guestContextService = guestContextService;
+    }
+
+    @PostMapping("/guest-context")
+    public ResponseEntity<Void> rememberGuestContext(
+            @RequestHeader(name = "X-Guest-Token", required = false) String guestToken,
+            HttpServletRequest request
+    ) {
+        guestContextService.rememberGuestActor(request, guestToken);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/google")

@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
+import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -20,9 +21,12 @@ class OAuth2AuthenticationFailureHandlerTest {
         // given
         OAuthFrontendRedirectResolver redirectResolver =
                 mock(OAuthFrontendRedirectResolver.class);
+        OAuthGuestContextService guestContextService =
+                mock(OAuthGuestContextService.class);
         OAuth2AuthenticationFailureHandler handler =
                 new OAuth2AuthenticationFailureHandler(
-                        redirectResolver
+                        redirectResolver,
+                        guestContextService
                 );
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
