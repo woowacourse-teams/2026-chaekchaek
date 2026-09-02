@@ -16,8 +16,11 @@ data class MemberSettingsUiState(
     val anonymousReviews: Boolean = true,
     val nickname: String = "",
     val anonymousNickname: String = "",
+    val profileImageUrl: String? = null,
     val showLoading: Boolean = false,
     val errorMessage: String? = null,
+    val withdrawing: Boolean = false,
+    val withdrawalErrorMessage: String? = null,
 )
 
 class MemberSettingsViewModel(
@@ -58,6 +61,24 @@ class MemberSettingsViewModel(
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 
+    fun withdraw(onSuccess: () -> Unit) {
+        val token = accessToken ?: return
+        requestJob?.cancel()
+        _uiState.value = _uiState.value.copy(withdrawalErrorMessage = null)
+        requestJob = viewModelScope.launch {
+            withDelayedLoading(::setWithdrawing) { repository.withdraw(token) }
+                .onSuccess {
+                    if (accessToken == token) onSuccess()
+                }
+                .onFailure { error ->
+                    if (error is CancellationException) throw error
+                    if (accessToken == token) {
+                        _uiState.value = _uiState.value.copy(withdrawalErrorMessage = "회원 탈퇴에 실패했어요")
+                    }
+                }
+        }
+    }
+
     private fun load(token: String) {
         requestJob?.cancel()
         requestJob = viewModelScope.launch {
@@ -93,6 +114,7 @@ class MemberSettingsViewModel(
             anonymousReviews = profile.displayAnonymous,
             nickname = profile.nickname,
             anonymousNickname = profile.anonymousNickname,
+            profileImageUrl = profile.profileImageUrl,
             errorMessage = null,
         )
     }
@@ -104,6 +126,10 @@ class MemberSettingsViewModel(
 
     private fun setLoading(loading: Boolean) {
         _uiState.value = _uiState.value.copy(showLoading = loading)
+    }
+
+    private fun setWithdrawing(withdrawing: Boolean) {
+        _uiState.value = _uiState.value.copy(withdrawing = withdrawing)
     }
 }
 

@@ -30,6 +30,7 @@ import com.chaekchaek.app.data.remote.PopularBooksRemoteRepository
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.ui.archive.ArchiveViewModel
 import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
+import com.chaekchaek.app.ui.archive.MyPageScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
@@ -50,17 +51,46 @@ private data object Root : NavKey
 @Serializable
 private data class BookDetailKey(val book: BookDetailArgs) : NavKey
 
+@Serializable
+private data object MyPageKey : NavKey
+
 private val navigationConfig = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
             subclass(Root::class, Root.serializer())
             subclass(BookDetailKey::class, BookDetailKey.serializer())
+            subclass(MyPageKey::class, MyPageKey.serializer())
         }
     }
 }
 
 @Composable
-internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
+internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage: Boolean = false) {
+    val safeContent = Modifier.windowInsetsPadding(
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+    )
+    if (uiTestingMyPage) {
+        var previewState by remember {
+            mutableStateOf(
+                com.chaekchaek.app.ui.archive.MemberSettingsUiState(
+                    signedIn = true,
+                    anonymousReviews = true,
+                    nickname = "책책이",
+                    anonymousNickname = "정다운 참새",
+                ),
+            )
+        }
+        MyPageScreen(
+            state = previewState,
+            onBack = {},
+            onAnonymousReviewsChange = { anonymous, nickname ->
+                previewState = previewState.copy(anonymousReviews = anonymous, nickname = nickname)
+            },
+            onWithdraw = {},
+            modifier = safeContent,
+        )
+        return
+    }
     val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform) }
     DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     val authTokens by authViewModel.tokens.collectAsState()
@@ -88,10 +118,6 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
     }
     val detailRepository = remember { BookDetailRemoteRepository() }
     val backStack = rememberNavBackStack(navigationConfig, Root)
-    val safeContent = Modifier.windowInsetsPadding(
-        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-    )
-
     CompositionLocalProvider(
         LocalRemoteBookCover provides { url, description, modifier ->
             RemoteBookImage(url, description, modifier)
@@ -110,6 +136,21 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks) {
                         memberSettingsViewModel = memberSettingsViewModel,
                         authViewModel = authViewModel,
                         onBookClick = { backStack.add(BookDetailKey(it)) },
+                        onMyPage = { backStack.add(MyPageKey) },
+                        modifier = safeContent,
+                    )
+                }
+                entry<MyPageKey> {
+                    MyPageScreen(
+                        state = memberSettingsState,
+                        onBack = { backStack.removeLastOrNull() },
+                        onAnonymousReviewsChange = memberSettingsViewModel::setAnonymousReviews,
+                        onWithdraw = {
+                            memberSettingsViewModel.withdraw {
+                                authViewModel.signOut()
+                                backStack.removeLastOrNull()
+                            }
+                        },
                         modifier = safeContent,
                     )
                 }

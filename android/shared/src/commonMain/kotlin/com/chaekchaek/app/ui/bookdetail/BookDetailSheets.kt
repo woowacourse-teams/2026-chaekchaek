@@ -23,7 +23,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -59,6 +58,7 @@ import chaekchaek.shared.generated.resources.ic_close
 import chaekchaek.shared.generated.resources.ic_eye_off
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
+import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
 import com.chaekchaek.app.ui.theme.ChaekBorder
 import com.chaekchaek.app.ui.theme.ChaekDanger
 import com.chaekchaek.app.ui.theme.ChaekInk
@@ -286,7 +286,7 @@ internal fun ReviewInputSheet(
         }
     }
     if (showDiscardConfirmation) {
-        AlertDialog(
+        ChaekTwoActionDialog(
             onDismissRequest = { showDiscardConfirmation = false },
             title = { Text(if (initialReview == null) "감상 작성을 그만둘까요?" else "감상 수정을 그만둘까요?") },
             text = { Text("작성한 내용은 저장되지 않아요.") },
@@ -386,7 +386,7 @@ internal fun DeleteContentConfirmation(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    AlertDialog(
+    ChaekTwoActionDialog(
         onDismissRequest = onDismiss,
         title = { Text("${contentName}을 삭제할까요?") },
         text = { Text("삭제한 ${contentName}은 다시 복구할 수 없어요.") },

@@ -33,8 +33,6 @@ import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.maxLength
-import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -83,6 +81,7 @@ fun ArchiveRoute(
     editing: Boolean,
     scrollTopRequest: Int = 0,
     onEditingChange: (Boolean) -> Unit,
+    onProfileClick: () -> Unit,
     onBookClick: (ArchiveBookUiModel) -> Unit,
     modifier: Modifier = Modifier,
     bookCover: @Composable (ArchiveBookUiModel) -> Unit = { DefaultBookCover(it) },
@@ -97,8 +96,8 @@ fun ArchiveRoute(
         onEditingChange = onEditingChange,
         onRemove = viewModel::remove,
         onChangeStatus = viewModel::changeStatus,
-        onAnonymousReviewsChange = memberSettingsViewModel::setAnonymousReviews,
         onRetry = viewModel::retry,
+        onProfileClick = onProfileClick,
         onBookClick = onBookClick,
         modifier = modifier,
         bookCover = bookCover,
@@ -114,8 +113,8 @@ fun ArchiveScreen(
     onEditingChange: (Boolean) -> Unit,
     onRemove: (Set<String>) -> Unit,
     onChangeStatus: (Set<String>, ReadingStatus) -> Unit,
-    onAnonymousReviewsChange: (Boolean, String) -> Unit,
     onRetry: () -> Unit,
+    onProfileClick: () -> Unit,
     onBookClick: (ArchiveBookUiModel) -> Unit,
     modifier: Modifier = Modifier,
     bookCover: @Composable (ArchiveBookUiModel) -> Unit = { DefaultBookCover(it) },
@@ -125,8 +124,6 @@ fun ArchiveScreen(
     var selectedIds by remember { mutableStateOf(emptySet<String>()) }
     var pendingDeletionIds by remember { mutableStateOf(emptySet<String>()) }
     var showStatusDialog by remember { mutableStateOf(false) }
-    var showNicknameDialog by remember { mutableStateOf(false) }
-    val nicknameState = rememberTextFieldState()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val visibleItems = remember(uiState.items, filter, sort) {
@@ -143,9 +140,6 @@ fun ArchiveScreen(
 
     LaunchedEffect(uiState.items) {
         selectedIds = selectedIds.intersect(uiState.items.mapTo(mutableSetOf()) { it.id })
-    }
-    LaunchedEffect(memberSettingsState.nickname) {
-        nicknameState.setTextAndPlaceCursorAtEnd(memberSettingsState.nickname)
     }
     LaunchedEffect(scrollTopRequest) {
         if (scrollTopRequest > 0) listState.animateScrollToItem(0)
@@ -171,21 +165,10 @@ fun ArchiveScreen(
                         },
                     )
                 } else {
-                    LibraryTopBar(onEdit = { onEditingChange(true) })
-                }
-                if (memberSettingsState.signedIn) {
-                    AnonymousSetting(
-                        checked = memberSettingsState.anonymousReviews,
-                        nickname = memberSettingsState.nickname,
-                        onClick = {
-                            if (!memberSettingsState.anonymousReviews) {
-                                onAnonymousReviewsChange(true, "")
-                            } else if (memberSettingsState.nickname.isBlank()) {
-                                showNicknameDialog = true
-                            } else {
-                                onAnonymousReviewsChange(false, memberSettingsState.nickname)
-                            }
-                        },
+                    LibraryTopBar(
+                        profileImageUrl = memberSettingsState.profileImageUrl,
+                        onEdit = { onEditingChange(true) },
+                        onProfileClick = onProfileClick,
                     )
                 }
             }
@@ -268,20 +251,10 @@ fun ArchiveScreen(
             },
         )
     }
-    if (showNicknameDialog) {
-        NicknameDialog(
-            nicknameState = nicknameState,
-            onDismiss = { showNicknameDialog = false },
-            onConfirm = {
-                onAnonymousReviewsChange(false, nicknameState.text.toString().trim())
-                showNicknameDialog = false
-            },
-        )
-    }
 }
 
 @Composable
-private fun LibraryTopBar(onEdit: () -> Unit) {
+private fun LibraryTopBar(profileImageUrl: String?, onEdit: () -> Unit, onProfileClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -291,7 +264,7 @@ private fun LibraryTopBar(onEdit: () -> Unit) {
         TextButton(onClick = onEdit) {
             Text("편집", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
         }
-        ProfileAvatar()
+        ProfileButton(profileImageUrl, onProfileClick)
     }
 }
 
@@ -309,43 +282,18 @@ private fun EditTopBar(selectedCount: Int, onCancel: () -> Unit, onDone: () -> U
         TextButton(onClick = onDone) {
             Text("완료", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
         }
-        ProfileAvatar()
+        Spacer(Modifier.width(44.dp))
     }
 }
 
 @Composable
-private fun ProfileAvatar() {
-    Surface(
-        modifier = Modifier.size(28.dp).semantics { contentDescription = "프로필" },
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+private fun ProfileButton(profileImageUrl: String?, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier.size(44.dp).clickable(onClickLabel = "마이페이지 열기", role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = "프로필" },
+        contentAlignment = Alignment.Center,
     ) {
-        Box(contentAlignment = Alignment.Center) { Text("🐦", modifier = Modifier.clearAndSetSemantics {}, fontSize = 13.sp) }
-    }
-}
-
-@Composable
-private fun AnonymousSetting(checked: Boolean, nickname: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        SelectionBox(selected = checked)
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("익명으로 감상 공개", style = MaterialTheme.typography.titleSmall)
-            Text(
-                when {
-                    checked && nickname.isNotBlank() -> "해제하면 기존 닉네임으로 공개됩니다"
-                    checked -> "해제하면 닉네임을 설정해야 합니다"
-                    else -> "닉네임이 감상에 표시됩니다"
-                },
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall,
-            )
-        }
+        MemberAvatar(profileImageUrl, 32.dp)
     }
 }
 
@@ -719,7 +667,7 @@ private fun StatusOptionRow(status: ReadingStatus, selected: Boolean, onClick: (
 }
 
 @Composable
-private fun NicknameDialog(
+internal fun NicknameDialog(
     nicknameState: TextFieldState,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
