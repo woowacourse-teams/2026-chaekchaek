@@ -5,12 +5,12 @@
 - 제출 ID: `7294cb83-ecee-4ec2-831a-a11ce59afd2a`
 - 거절 빌드: `1.1.0 (2)`
 - 거절 사유: Guideline 2.1 - Information Needed - New App Submission
-- 재제출 빌드: `1.1.1 (4)`, 2026-09-02 App Store Connect 업로드 성공, 처리 확인 대기
+- 재제출 예정 빌드: `1.1.1 (5)`
 - 번들 ID: `com.chamsae.chaekchaek`
 - 지원 범위: iOS 17 이상, iPhone 전용
-- 이전 TestFlight 업로드: `1.1.1 (3)`, 2026-08-31
+- 이전 App Store Connect 업로드: `1.1.1 (4)`, 2026-09-02
 
-`1.1.1 (4)`에는 Apple과 Google 로그인, 서버 서재, 독서 상태와 진행률, 별점, 감상과 답글,
+`1.1.1 (5)`에는 Apple과 Google 로그인, 서버 서재, 독서 상태와 진행률, 별점, 감상과 답글,
 마이페이지, 앱 내부 회원 탈퇴가 포함된다. 결제, 구독, 광고, AI 기능과 카메라, 위치, 연락처,
 마이크, 사진 보관함, App Tracking Transparency 권한 요청은 없다.
 
