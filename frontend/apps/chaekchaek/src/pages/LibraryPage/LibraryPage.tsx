@@ -155,7 +155,7 @@ export const LibraryPage = () => {
   const isAbleUpdateStatus = bookSelection.length;
   const isAbleDeleteStatus = bookSelection.length;
 
-  const { user, login } = useAuthContext();
+  const { user, updateAccount } = useAuthContext();
   const { status: anonymityStatus, mutate: updateAnonymity } = useExecute({
     executeFn: patchMembersMeAnonymity,
   });
@@ -169,7 +169,7 @@ export const LibraryPage = () => {
       const userWithAnonymityDisabled = await updateAnonymity({ displayAnonymous: false });
       if (!userWithAnonymityDisabled) return;
 
-      login(userWithAnonymityDisabled);
+      updateAccount(userWithAnonymityDisabled);
 
       return;
     }
@@ -177,7 +177,7 @@ export const LibraryPage = () => {
     const updatedUser = await updateAnonymity({ displayAnonymous: true });
     if (!updatedUser) return;
 
-    login(updatedUser);
+    updateAccount(updatedUser);
   };
 
   const [dialog, setDialog] = useState<
