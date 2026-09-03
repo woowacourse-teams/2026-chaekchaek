@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 import { getMembersMe } from '@/services/apis/membersMe/repository';
 import { useLoadData } from '@/services/core/useLoadData';
@@ -59,15 +59,19 @@ export const AuthProvider = ({ children }: Props) => {
     executeFn: postAuthGuestTokenRefreshs,
   });
 
+  const refLink = useRef<null | string>(null);
+
   const { mutate: postAuthOauth2GuestContextMutate } = useExecute({
     executeFn: postAuthOauth2GuestContext,
     onSuccess: () => {
-      window.location.href = link;
+      if (refLink.current) window.location.href = refLink.current;
     },
   });
 
   const login = useCallback(
     async (link: string) => {
+      refLink.current = link;
+
       if (!guest) {
         window.location.href = link;
         return;
