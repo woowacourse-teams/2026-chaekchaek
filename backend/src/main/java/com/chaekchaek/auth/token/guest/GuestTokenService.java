@@ -37,6 +37,21 @@ public class GuestTokenService {
         return new IssuedGuestToken(token, nickname, expiresAt);
     }
 
+    @Transactional(readOnly = true)
+    public Actor findUsableActor(String token) {
+        if (token == null || token.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_GUEST_TOKEN);
+        }
+
+        Actor actor = actorRepository.findByGuestTokenHash(tokenHasher.hash(token))
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_GUEST_TOKEN));
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+        if (!actor.isUsableGuestAt(now)) {
+            throw new BusinessException(ErrorCode.UNUSABLE_GUEST_TOKEN);
+        }
+        return actor;
+    }
+
     @Transactional
     public IssuedGuestToken refresh(String currentToken) {
         if (currentToken == null || currentToken.isBlank()) {

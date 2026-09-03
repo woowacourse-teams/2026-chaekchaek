@@ -144,4 +144,16 @@ public class Actor {
         this.expiresAt = null;
         this.revokedAt = null;
     }
+
+    public void retireGuest(LocalDateTime retiredAt) {
+        if (type != ActorType.GUEST || retiredAt == null) {
+            throw new IllegalStateException("Only a guest actor can be retired");
+        }
+
+        this.guestTokenHash = null;
+        this.guestNickname = null;
+        this.guestTokenIssuedAt = null;
+        this.expiresAt = null;
+        this.revokedAt = retiredAt;
+    }
 }
