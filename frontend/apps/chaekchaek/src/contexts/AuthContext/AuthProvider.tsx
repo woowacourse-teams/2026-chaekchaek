@@ -4,7 +4,6 @@ import { getMembersMe } from '@/services/apis/membersMe/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { postAuthGuestToken } from '@/services/apis/authGuestToken/repository';
 import { postAuthGuestTokenRefreshs } from '@/services/apis/authGuestTokenRefreshs/repository';
-import { postAuthOauth2GuestContext } from '@/services/apis/authOauth2GuestContext/repository';
 import { useExecute } from '@/services/core/useExecute';
 import { RequestAjaxError } from '@/services/core/http/requestAjaxError';
 
@@ -59,30 +58,6 @@ export const AuthProvider = ({ children }: Props) => {
     executeFn: postAuthGuestTokenRefreshs,
   });
 
-  const { mutate: postAuthOauth2GuestContextMutate } = useExecute({
-    executeFn: postAuthOauth2GuestContext,
-    onSuccess: () => {
-      window.location.href = link;
-    },
-  });
-
-  const login = useCallback(
-    async (link: string) => {
-      if (!guest) {
-        window.location.href = link;
-        return;
-      }
-
-      await postAuthOauth2GuestContextMutate(
-        {},
-        {
-          guestToken: guest.guestToken,
-        },
-      );
-    },
-    [guest, postAuthOauth2GuestContextMutate],
-  );
-
   useEffect(() => {
     if (membersMeStatus.data) return updateAccount(membersMeStatus.data);
 
@@ -118,8 +93,8 @@ export const AuthProvider = ({ children }: Props) => {
   }, [authGuestTokenRefreshs]);
 
   const value = useMemo(
-    () => ({ isAuthenticated, login, user, updateAccount, guest, updateGuestAccount }),
-    [isAuthenticated, login, user, updateAccount, guest, updateGuestAccount],
+    () => ({ isAuthenticated, user, updateAccount, guest, updateGuestAccount }),
+    [isAuthenticated, user, updateAccount, guest, updateGuestAccount],
   );
 
   return <authContext.Provider value={value}>{children}</authContext.Provider>;
