@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { generatePath, Link } from 'react-router-dom';
 
 import {
   Avatar,
@@ -10,6 +11,8 @@ import {
   Shell,
   Surface,
 } from '@chaekchaek/design-system';
+
+import { ROUTES } from '@/constants/routes';
 
 import { track } from '@/analytics/track';
 
@@ -168,7 +171,15 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
         <Entry.Header>
           <Shell>
             <Shell.Leading>
-              <Avatar img={review.author.profileImageUrl} />
+              <Avatar
+                as={review.author?.memberId ? Link : 'div'}
+                {...(review.author?.memberId && {
+                  to: generatePath(ROUTES.MEMBER_LIBRARY, {
+                    memberId: review.author.memberId.toString(),
+                  }),
+                })}
+                img={review.author.profileImageUrl}
+              />
             </Shell.Leading>
             <Shell.Content
               title={
