@@ -102,6 +102,7 @@ extension AppleSignInProvider: ASAuthorizationControllerDelegate {
             finish(.failure(SignInError.invalidCredential))
             return
         }
+        NSLog("Apple credential received; forwarding credentials to the app server")
         finish(.success(Credential(
             identityToken: identityToken,
             authorizationCode: authorizationCode,
@@ -118,6 +119,7 @@ extension AppleSignInProvider: ASAuthorizationControllerDelegate {
            nsError.code == ASAuthorizationError.canceled.rawValue {
             finish(.failure(CancellationError()))
         } else {
+            NSLog("Apple credential request failed: domain=%@ code=%ld", nsError.domain, nsError.code)
             finish(.failure(error))
         }
     }
