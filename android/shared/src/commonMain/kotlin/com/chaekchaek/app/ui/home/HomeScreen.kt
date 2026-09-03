@@ -76,6 +76,7 @@ import com.chaekchaek.app.presentation.home.OverlappedCardUiModel
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
 import com.chaekchaek.app.presentation.home.ReadingBookUiModel
 import com.chaekchaek.app.presentation.home.TrendingBookUiModel
+import com.chaekchaek.app.ui.common.avatarResource
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.*
 import com.chaekchaek.app.ui.theme.ChaekBand
@@ -113,6 +114,7 @@ val LocalRemoteBookCover = staticCompositionLocalOf<RemoteBookCover> {
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel,
+    myDisplayName: String,
     accessToken: String? = null,
     scrollTopRequest: Int = 0,
     modifier: Modifier = Modifier,
@@ -129,7 +131,7 @@ fun HomeScreen(
         HomeUiState.Loading -> LoadingContent(modifier)
         HomeUiState.Empty -> EmptyContent(modifier)
         is HomeUiState.Failure -> ErrorContent(state.error, homeViewModel::retry, modifier)
-        is HomeUiState.Content -> HomeContent(state, onSearchBook, onBookClick, scrollTopRequest, modifier)
+        is HomeUiState.Content -> HomeContent(state, myDisplayName, onSearchBook, onBookClick, scrollTopRequest, modifier)
     }
 }
 
@@ -173,6 +175,7 @@ private fun ErrorContent(error: AppError, retry: () -> Unit, modifier: Modifier)
 @Composable
 private fun HomeContent(
     state: HomeUiState.Content,
+    myDisplayName: String,
     onSearchBook: () -> Unit,
     onBookClick: (BookDetailTarget) -> Unit,
     scrollTopRequest: Int,
@@ -188,7 +191,7 @@ private fun HomeContent(
             .background(MaterialTheme.colorScheme.background),
         state = listState,
     ) {
-        item { HomeHeader() }
+        item { HomeHeader(myDisplayName) }
         items(state.sections) { section ->
             when (section) {
                 is FeedSectionUiModel.TrendingBooks -> TrendingSection(section, onBookClick)
@@ -359,7 +362,7 @@ internal fun readingProgress(currentPage: Int, totalPages: Int): Float =
     if (totalPages <= 0) 0f else currentPage.toFloat().div(totalPages).coerceIn(0f, 1f)
 
 @Composable
-private fun HomeHeader() {
+private fun HomeHeader(displayName: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -367,7 +370,7 @@ private fun HomeHeader() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
-            painter = painterResource(Res.drawable.avatar_yoon),
+            painter = painterResource(avatarResource(displayName)),
             contentDescription = "내 프로필",
             modifier = Modifier
                 .size(44.dp)
@@ -611,10 +614,9 @@ private fun RecentReflectionsSection(
                     title = card.bookTitle,
                     coverId = card.coverId,
                     authorLabel = card.authorLabel,
+                    authorName = card.authorName,
                     excerpt = card.quoteText,
                     replyLabel = card.replyLabel,
-                    avatar = Res.drawable.avatar_kim,
-                    profileImageUrl = card.authorProfileImageUrl,
                     onClick = { onBookClick(card.toBookDetailTarget()) },
                 )
             }
@@ -623,9 +625,9 @@ private fun RecentReflectionsSection(
                     title = card.title,
                     coverId = card.coverId,
                     authorLabel = card.authorLabel,
+                    authorName = card.authorName,
                     excerpt = card.excerpt,
                     replyLabel = card.replyLabel,
-                    avatar = Res.drawable.avatar_yoon,
                     onClick = { onBookClick(card.toBookDetailTarget()) },
                 )
             }
@@ -638,10 +640,9 @@ private fun ReflectionCard(
     title: String,
     coverId: String,
     authorLabel: String,
+    authorName: String,
     excerpt: String,
     replyLabel: String,
-    avatar: DrawableResource,
-    profileImageUrl: String? = null,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -689,7 +690,7 @@ private fun ReflectionCard(
                         lineHeight = 20.sp,
                     )
                 }
-                AuthorLine(authorLabel, avatar, profileImageUrl, imageSize = 20.dp)
+                AuthorLine(authorLabel, authorName, imageSize = 20.dp)
                 Text(
                     "“$excerpt”",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp),
@@ -771,8 +772,7 @@ private fun InvisibleCitiesCover(modifier: Modifier = Modifier) {
 @Composable
 private fun AuthorLine(
     label: String,
-    avatar: DrawableResource,
-    profileImageUrl: String?,
+    authorName: String,
     imageSize: Dp,
 ) {
     Row(
@@ -780,11 +780,7 @@ private fun AuthorLine(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         val imageModifier = Modifier.size(imageSize).clip(CircleShape)
-        if (profileImageUrl.isNullOrBlank()) {
-            Image(painterResource(avatar), null, imageModifier, contentScale = ContentScale.Crop)
-        } else {
-            LocalRemoteBookCover.current(profileImageUrl, "", imageModifier)
-        }
+        Image(painterResource(avatarResource(authorName)), null, imageModifier, contentScale = ContentScale.Crop)
         Text(
             label,
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),

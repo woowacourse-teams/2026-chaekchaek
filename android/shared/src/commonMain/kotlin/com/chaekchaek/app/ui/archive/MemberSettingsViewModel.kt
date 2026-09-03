@@ -23,6 +23,9 @@ data class MemberSettingsUiState(
     val withdrawalErrorMessage: String? = null,
 )
 
+internal val MemberSettingsUiState.publicNickname: String
+    get() = (if (anonymousReviews) anonymousNickname else nickname).ifBlank { "책책이" }
+
 class MemberSettingsViewModel(
     private val repository: MemberRemoteRepository,
 ) : ViewModel() {

@@ -35,7 +35,7 @@ data class QuoteCardUiModel(
     val bookTitle: String,
     val coverId: String,
     val authorLabel: String,
-    val authorProfileImageUrl: String? = null,
+    val authorName: String,
     val quoteText: String,
     val replyLabel: String,
 )
@@ -46,6 +46,7 @@ data class OverlappedCardUiModel(
     val coverId: String,
     val noteCountLabel: String,
     val authorLabel: String,
+    val authorName: String,
     val excerpt: String,
     val replyLabel: String,
 )

@@ -1,7 +1,7 @@
 package com.chaekchaek.app.ui.archive
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -39,8 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -49,7 +49,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
-import com.chaekchaek.app.ui.home.LocalRemoteBookCover
+import com.chaekchaek.app.ui.common.avatarResource
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 internal fun MyPageScreen(
@@ -75,10 +76,10 @@ internal fun MyPageScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MemberAvatar(state.profileImageUrl, 80.dp)
+                MemberAvatar(state.publicNickname, 80.dp)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        state.publicNickname.ifBlank { "책책이" },
+                        state.publicNickname,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     )
                     Text(
@@ -151,9 +152,6 @@ internal fun MyPageScreen(
         )
     }
 }
-
-private val MemberSettingsUiState.publicNickname: String
-    get() = if (anonymousReviews) anonymousNickname else nickname
 
 @Composable
 private fun MyPageTopBar(onBack: () -> Unit) {
@@ -284,23 +282,17 @@ private fun WithdrawalDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
 }
 
 @Composable
-internal fun MemberAvatar(profileImageUrl: String?, size: Dp) {
+internal fun MemberAvatar(displayName: String, size: Dp) {
     Surface(
         modifier = Modifier.size(size),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.primaryContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        if (profileImageUrl.isNullOrBlank()) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("🐦", modifier = Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.titleMedium)
-            }
-        } else {
-            LocalRemoteBookCover.current(
-                profileImageUrl,
-                "프로필 이미지",
-                Modifier.fillMaxSize().clip(CircleShape),
-            )
-        }
+        Image(
+            painter = painterResource(avatarResource(displayName)),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+        )
     }
 }
