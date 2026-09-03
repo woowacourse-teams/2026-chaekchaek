@@ -4,6 +4,8 @@ plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.google.services)
+  alias(libs.plugins.firebase.crashlytics)
 }
 
 val releaseSigningPropertiesFile = rootProject.file("keystore.properties")
@@ -140,6 +142,8 @@ dependencies {
   implementation(libs.androidx.credentials)
   implementation(libs.androidx.credentials.play.services.auth)
   implementation(libs.googleid)
+  releaseImplementation(platform(libs.firebase.bom))
+  releaseImplementation(libs.firebase.crashlytics)
   implementation(libs.compose.runtime)
   implementation(libs.compose.foundation)
   implementation(libs.compose.ui)

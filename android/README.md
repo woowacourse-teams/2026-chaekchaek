@@ -6,6 +6,9 @@ Android 빌드 환경, 릴리스 서명, Google Play 배포 절차는
 현재 Play 상태, 버전 부여 규칙, 릴리스별 변경과 복구 기준은
 [Android 버전 및 릴리스 관리](../docs/android-release-management.md)에서 확인한다.
 
+Crashlytics 설정, R8 mapping 업로드와 난독화 오류 확인 절차는
+[Android Crashlytics와 난독화 오류 대응](../docs/android-crashlytics.md)에 정리한다.
+
 Google Play 프로덕션 심사 제출과 실제 사용자 관찰 과제의 수행 근거는
 [Android 정식 출시 심사 및 사용자 관찰](../docs/android-production-review-user-observation.md)에 기록한다.
 
