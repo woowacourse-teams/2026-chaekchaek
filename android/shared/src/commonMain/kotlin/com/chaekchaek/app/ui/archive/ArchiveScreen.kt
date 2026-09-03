@@ -163,6 +163,7 @@ fun ArchiveScreen(
                     )
                 } else {
                     LibraryTopBar(
+                        displayName = memberSettingsState.publicNickname,
                         onEdit = { onEditingChange(true) },
                         onProfileClick = onProfileClick,
                     )
@@ -250,7 +251,7 @@ fun ArchiveScreen(
 }
 
 @Composable
-private fun LibraryTopBar(onEdit: () -> Unit, onProfileClick: () -> Unit) {
+private fun LibraryTopBar(displayName: String, onEdit: () -> Unit, onProfileClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -260,7 +261,7 @@ private fun LibraryTopBar(onEdit: () -> Unit, onProfileClick: () -> Unit) {
         TextButton(onClick = onEdit) {
             Text("편집", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
         }
-        ProfileButton(onProfileClick)
+        ProfileButton(displayName, onProfileClick)
     }
 }
 
@@ -283,13 +284,13 @@ private fun EditTopBar(selectedCount: Int, onCancel: () -> Unit, onDone: () -> U
 }
 
 @Composable
-private fun ProfileButton(onClick: () -> Unit) {
+private fun ProfileButton(displayName: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier.size(44.dp).clickable(onClickLabel = "마이페이지 열기", role = Role.Button, onClick = onClick)
             .semantics { contentDescription = "프로필" },
         contentAlignment = Alignment.Center,
     ) {
-        MemberAvatar(32.dp)
+        MemberAvatar(displayName, 32.dp)
     }
 }
 

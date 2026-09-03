@@ -68,8 +68,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chaekchaek.shared.generated.resources.Res
-import chaekchaek.shared.generated.resources.avatar_kim
-import chaekchaek.shared.generated.resources.avatar_yoon
 import chaekchaek.shared.generated.resources.cover_01
 import chaekchaek.shared.generated.resources.cover_02
 import chaekchaek.shared.generated.resources.cover_03
@@ -105,6 +103,7 @@ import com.chaekchaek.app.data.remote.ReviewReply
 import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.domain.rating.Rating
+import com.chaekchaek.app.ui.common.avatarResource
 import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.theme.ChaekAccentSoft
 import com.chaekchaek.app.ui.theme.ChaekBackground
@@ -1058,11 +1057,8 @@ private fun Replies(
 @Composable
 private fun AuthorAvatar(name: String, size: Int) {
     val modifier = Modifier.size(size.dp).clip(CircleShape)
-    Image(painterResource(authorAvatarResource(name)), contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
+    Image(painterResource(avatarResource(name)), contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
 }
-
-private fun authorAvatarResource(displayName: String): DrawableResource =
-    if ((displayName.hashCode() and Int.MAX_VALUE) % 2 == 0) Res.drawable.avatar_kim else Res.drawable.avatar_yoon
 
 @Composable
 private fun ReviewAction(icon: DrawableResource, label: String, description: String, onClick: () -> Unit) {
