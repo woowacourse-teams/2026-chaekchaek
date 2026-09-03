@@ -27,10 +27,10 @@
 
 ## 제출 전 확인이 필요한 값
 
-- App Store 지원 URL을 인증서 오류가 있는 `https://www.chaekchaek.com/intro`에서 정상 접근되는 `https://chaekchaek.com/intro`로 변경
 - YES24 Open API 사용 권한을 보여주는 화면이 추가로 요청될 경우 API 키를 가린 증빙
 
-개인정보처리방침 URL은 로그아웃 상태에서 정상 접근됨을 확인했다.
+App Store 지원 URL은 `https://chaekchaek.com/intro`로 변경하고 재접속해 저장을 확인했다.
+개인정보처리방침 URL도 로그아웃 상태에서 정상 접근됨을 확인했다.
 
 ## 실제 기기 녹화 순서
 
