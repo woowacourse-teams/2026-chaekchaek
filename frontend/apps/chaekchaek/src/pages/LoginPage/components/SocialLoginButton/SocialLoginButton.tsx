@@ -4,9 +4,6 @@ import { getOauthLoginUrl } from '@/auth/oauth';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
-import { postAuthOauth2GuestContext } from '@/services/apis/authOauth2GuestContext/repository';
-import { useExecute } from '@/services/core/useExecute';
-
 import appleIcon from './assets/apple.svg';
 import googleIcon from './assets/google.svg';
 import kakaoIcon from './assets/kakao.svg';
@@ -30,34 +27,15 @@ const providerDetails = {
 export const SocialLoginButton = ({ provider, reverse }: SocialLoginButtonProps) => {
   const { label, icon, link } = providerDetails[provider];
 
-  const { guest } = useAuthContext();
-
-  const { mutate: postAuthOauth2GuestContextMutate } = useExecute({
-    executeFn: postAuthOauth2GuestContext,
-    onSuccess: () => {
-      window.location.href = link;
-    },
-  });
-
-  const handleClick = async () => {
-    if (!guest) {
-      window.location.href = link;
-      return;
-    }
-
-    await postAuthOauth2GuestContextMutate(
-      {},
-      {
-        guestToken: guest.guestToken,
-      },
-    );
-  };
+  const { login } = useAuthContext();
 
   return (
     <Button
       as="a"
       href="#"
-      onClick={handleClick}
+      onClick={() => {
+        login(link);
+      }}
       block
       size="large"
       className={`${styles.root} ${styles[provider]} ${reverse ? styles.reverse : ''}`}
