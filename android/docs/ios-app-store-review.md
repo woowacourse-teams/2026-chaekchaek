@@ -24,6 +24,7 @@
 - Archive 버전과 빌드: `1.1.1 (5)`
 - 서명과 Apple 로그인 entitlement 검증 통과
 - App Store Connect 업로드 및 TestFlight 처리 완료, 제출 준비 완료
+- iPhone 13에 TestFlight `1.1.1 (5)`를 설치해 주요 흐름 최종 확인
 
 ## 제출 전 확인이 필요한 값
 
@@ -91,12 +92,16 @@ App Store 지원 URL은 `https://chaekchaek.com/intro`로 변경하고 재접속
 영상은 재생해 앱 실행, 로그인, 감상 게시, 답글, 회원 탈퇴가 끊김 없이 보이는지 확인한 뒤
 PR #320 본문과 App Store Connect 심사 메시지에 각각 첨부한다.
 
-## App Review Notes 초안
+## App Review Notes 및 회신 최종안
 
-아래 대괄호 항목을 실제 값으로 교체한 뒤 4,000자 제한을 확인한다.
+App Review Information의 Notes와 Guideline 2.1 회신에 아래 내용을 사용한다.
 
 ```text
-App Review Information for ChaekChaek
+Hello App Review Team,
+
+Thank you for your guidance. We addressed the requested information and tested iOS build 1.1.1 (5) through TestFlight. Please find all requested details below.
+
+App Review Information for ChaekChaek, iOS 1.1.1 (5)
 
 1. Screen recording
 A screen recording captured on a physical iPhone running the latest available iOS is attached to this review reply as `책췍심사영상-오디오제거.mp4`.
@@ -108,7 +113,7 @@ There are no purchases, subscriptions, paid content, camera, location, contacts,
 The app includes user-created reviews and replies. Authors can edit or delete their own content. The current build does not provide content-reporting or user-blocking controls.
 
 2. Devices and operating systems tested
-- iPhone 13, iOS 26.6.1
+- iPhone 13, iOS 26.6.1, TestFlight build 1.1.1 (5)
 - iPhone 17 Pro Simulator, iOS 26.2
 
 3. App functions and target audience
@@ -153,6 +158,8 @@ The app is distributed only in South Korea and provides the same features throug
 ChaekChaek is a general book-discovery, reading-record, and community app. It does not provide medical, financial, gambling, legal, or other highly regulated services.
 
 Book search results, metadata, and cover images are supplied through the YES24 Open API via the ChaekChaek backend. Its API key is stored only on the backend. The app does not provide full book text or paid reading content. Documentation: https://developers.yes24.com/, https://developers.yes24.com/api-doc/goods-item-list, and https://developers.yes24.com/api-doc/goods-item-detail. A redacted developer-account screenshot can be provided if requested.
+
+Thank you.
 ```
 
 ## 알려진 심사 위험
