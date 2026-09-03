@@ -61,7 +61,9 @@ class MobileAuthRemoteRepository(
         setBody(body)
       }.body<MobileAuthTokens>()
     } catch (error: ResponseException) {
-      throw error.toMobileLoginException()
+      val loginError = error.toMobileLoginException()
+      println("Mobile auth $path failed: status=${loginError.statusCode}, code=${loginError.code}")
+      throw loginError
     }
 
   private suspend fun ResponseException.toMobileLoginException(): MobileLoginException {

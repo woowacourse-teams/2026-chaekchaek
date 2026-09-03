@@ -1,11 +1,13 @@
 package com.chaekchaek.app.ui.common
 
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
@@ -43,7 +45,7 @@ internal actual fun AppleSignInButton(
                 )
             }
         },
-        modifier = modifier.height(48.dp),
+        modifier = modifier.height(48.dp).clip(RoundedCornerShape(8.dp)),
         update = { it.enabled = !signingIn },
         properties = UIKitInteropProperties(isNativeAccessibilityEnabled = true),
     )
