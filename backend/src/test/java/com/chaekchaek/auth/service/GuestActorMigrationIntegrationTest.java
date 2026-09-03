@@ -17,6 +17,8 @@ import com.chaekchaek.review.repository.ReviewReactionRepository;
 import com.chaekchaek.review.repository.ReviewRepository;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,11 +88,17 @@ class GuestActorMigrationIntegrationTest {
                 () -> assertThat(replyRepository.findById(reply.getId()).orElseThrow().getActorId())
                         .isEqualTo(memberActor.getId()),
                 () -> assertThat(reviewReactionRepository.countByReviewId(conflictedReview.getId()))
-                        .isEqualTo(1),
+                        .isEqualTo(2),
                 () -> assertThat(reviewReactionRepository.countByReviewId(uniqueReview.getId()))
                         .isEqualTo(1),
                 () -> assertThat(replyReactionRepository.countByReplyId(reply.getId()))
                         .isEqualTo(1),
+                () -> assertThat(reviewReactionRepository.findByReviewIdInAndActorId(
+                        List.of(conflictedReview.getId(), uniqueReview.getId()), guestActor.getId()))
+                        .hasSize(2),
+                () -> assertThat(replyReactionRepository.findByReplyIdInAndActorId(
+                        List.of(reply.getId()), guestActor.getId()))
+                        .hasSize(1),
                 () -> assertThat(actorRepository.findById(guestActor.getId()).orElseThrow().getGuestTokenHash())
                         .isNull(),
                 () -> assertThat(actorRepository.findById(guestActor.getId()).orElseThrow().getGuestNickname())

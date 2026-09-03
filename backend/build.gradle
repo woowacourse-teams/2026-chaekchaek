@@ -98,7 +98,7 @@ openapi3 {
 - 감상·답글의 작성, 수정, 삭제와 좋아요 등록, 취소 요청에는 `X-Guest-Token: {guestToken}` 헤더를 사용할 수 있습니다.
 - 서재, 별점, 독서 상태, 쪽수는 회원 전용 기능입니다.
 - 게스트가 최초 소셜 회원가입할 때 같은 게스트 토큰을 전달하면 기존 Actor와 닉네임 및 공개 상호작용이 계승됩니다.
-- 웹 OAuth 로그인 전 `POST /api/v1/auth/oauth2/guest-context`에 `X-Guest-Token`을 전달하면 OAuth 리다이렉트 중에도 게스트 Actor가 로그인 세션에 임시 보관되어 감상·답글·좋아요 기록이 회원 Actor로 이전됩니다. 프론트는 성공 응답 후 기존 Google 로그인 링크로 이동합니다.
+- 웹 OAuth 로그인 전 `POST /api/v1/auth/oauth2/guest-context`에 `X-Guest-Token`을 전달하면 OAuth 리다이렉트 중에도 게스트 Actor가 로그인 세션에 임시 보관되어 감상·답글 기록이 회원 Actor로 이전됩니다. 좋아요 기록은 이전하지 않으며 기존 좋아요 수와 게스트 좋아요는 유지됩니다. 프론트는 성공 응답 후 기존 Google 로그인 링크로 이동합니다.
 - 게스트 기록 이전은 신규 회원가입뿐 아니라 기존 소셜 계정 로그인에도 적용되며, 모바일 로그인 API의 기존 헤더 기반 흐름은 변경하지 않습니다.
 - 토큰이 유실되거나 만료되면 기존 게스트 콘텐츠를 수정하거나 삭제할 수 없습니다.
 
@@ -579,7 +579,6 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/auth/guest-token'     : [post: ['201']],
 			'/api/v1/auth/guest-token/refresh': [post: ['200', '401', '409']],
 			'/api/v1/auth/oauth2/guest-context': [post: ['204', '401']],
-			'/api/v1/auth/oauth2/google': [get: ['302', '400']],
 			'/api/v1/auth/mobile/google'   : [post: ['200', '400']],
 			'/api/v1/auth/mobile/reissue' : [post: ['200', '400']],
 			'/api/v1/auth/mobile/logout'  : [post: ['204', '400']],

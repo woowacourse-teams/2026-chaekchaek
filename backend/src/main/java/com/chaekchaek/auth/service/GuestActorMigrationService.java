@@ -5,9 +5,8 @@ import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.member.domain.Member;
-import com.chaekchaek.review.repository.ReplyReactionRepository;
 import com.chaekchaek.review.repository.ReplyRepository;
-import com.chaekchaek.review.repository.ReviewReactionRepository;
+import com.chaekchaek.review.repository.ReplyReactionRepository;
 import com.chaekchaek.review.repository.ReviewRepository;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -24,8 +23,6 @@ public class GuestActorMigrationService {
     private final ActorRepository actorRepository;
     private final ReviewRepository reviewRepository;
     private final ReplyRepository replyRepository;
-    private final ReviewReactionRepository reviewReactionRepository;
-    private final ReplyReactionRepository replyReactionRepository;
     private final Clock clock;
 
     @Transactional
@@ -53,10 +50,6 @@ public class GuestActorMigrationService {
             return;
         }
 
-        reviewReactionRepository.deleteConflictingReactions(guestActorId, targetActor.getId());
-        reviewReactionRepository.reassignActorId(guestActorId, targetActor.getId());
-        replyReactionRepository.deleteConflictingReactions(guestActorId, targetActor.getId());
-        replyReactionRepository.reassignActorId(guestActorId, targetActor.getId());
         reviewRepository.reassignActorId(guestActorId, targetActor.getId());
         replyRepository.reassignActorId(guestActorId, targetActor.getId());
         guestActor.retireGuest(now);
