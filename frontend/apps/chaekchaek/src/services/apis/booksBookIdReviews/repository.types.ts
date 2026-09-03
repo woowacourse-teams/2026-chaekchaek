@@ -1,3 +1,5 @@
+import type { RequestContext } from '@/services/context/requestContext';
+
 export interface GetBooksBookIdReviewsParams {
   bookId: number;
   page: number;
@@ -5,7 +7,10 @@ export interface GetBooksBookIdReviewsParams {
   sort: string;
 }
 
-export type GetBooksBookIdReviews = (params: GetBooksBookIdReviewsParams) => Promise<{
+export type GetBooksBookIdReviews = (
+  params: GetBooksBookIdReviewsParams,
+  context?: RequestContext,
+) => Promise<{
   nextPage: number;
   totalCount: number;
   items: {

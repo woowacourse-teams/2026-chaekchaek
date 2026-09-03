@@ -43,7 +43,7 @@ export const BookDetailPage = () => {
     queryFn: getBooksIsbnLoadData,
   });
 
-  const { isAuthenticated } = useAuthContext();
+  const { isAuthenticated, guest } = useAuthContext();
 
   const [openLoginDialog, setOpenLoginDialog] = useState(false);
   const handleOpenLoginDialog = () => {
@@ -105,13 +105,20 @@ export const BookDetailPage = () => {
 
   const getBooksBookIdReviewsLoadData = useCallback(async () => {
     if (!data?.bookId) return;
-    return await getBooksBookIdReviews({
-      page: reviewsRequestParams.page,
-      feed: reviewsRequestParams.feed,
-      sort: reviewsRequestParams.sort,
-      bookId: data?.bookId,
-    });
-  }, [data?.bookId, reviewsRequestParams]);
+    return await getBooksBookIdReviews(
+      {
+        page: reviewsRequestParams.page,
+        feed: reviewsRequestParams.feed,
+        sort: reviewsRequestParams.sort,
+        bookId: data?.bookId,
+      },
+      guest && guest?.guestToken
+        ? {
+            guestToken: guest.guestToken,
+          }
+        : undefined,
+    );
+  }, [data?.bookId, guest?.guestToken, isAuthenticated, reviewsRequestParams]);
 
   const {
     status: { data: reviewsData },

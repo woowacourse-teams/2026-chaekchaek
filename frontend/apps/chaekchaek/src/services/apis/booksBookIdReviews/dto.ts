@@ -1,8 +1,10 @@
 import type { ResponseDto } from '@/services/apis/api.types';
+import type { RequestHeaders } from '@/services/context/requestHeaders';
 
 export interface GetBooksBookIdReviewsRequestDto {
   pathParams: [{ name: 'bookId'; value: number }];
   query: { page: number; feed: string; sort: string };
+  headers?: RequestHeaders;
 }
 
 export type GetBooksBookIdReviewsResponseDto = ResponseDto<{

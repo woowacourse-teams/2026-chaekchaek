@@ -4,7 +4,7 @@ import generateApi from './generateApi';
 
 const endPoint = openApiSpec?.paths;
 
-const name = 'membersMemberIdLibrary';
-const endpoint = endPoint['/api/v1/members/{memberId}/library'] || {};
+const name = 'authOauth2GuestContext';
+const endpoint = endPoint['/api/v1/auth/oauth2/guest-context'] || {};
 
 generateApi(name, endpoint);
