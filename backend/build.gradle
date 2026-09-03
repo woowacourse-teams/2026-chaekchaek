@@ -579,6 +579,7 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/auth/guest-token'     : [post: ['201']],
 			'/api/v1/auth/guest-token/refresh': [post: ['200', '401', '409']],
 			'/api/v1/auth/oauth2/guest-context': [post: ['204', '401']],
+			'/api/v1/auth/oauth2/google': [get: ['302', '400']],
 			'/api/v1/auth/mobile/google'   : [post: ['200', '400']],
 			'/api/v1/auth/mobile/reissue' : [post: ['200', '400']],
 			'/api/v1/auth/mobile/logout'  : [post: ['204', '400']],

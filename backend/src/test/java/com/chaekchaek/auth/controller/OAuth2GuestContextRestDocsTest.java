@@ -9,7 +9,12 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.headerWit
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
@@ -25,6 +30,7 @@ import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2Clien
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -36,6 +42,8 @@ import org.springframework.test.web.servlet.MockMvc;
 class OAuth2GuestContextRestDocsTest {
 
     private static final String AUTH_TAG = "인증";
+    private static final org.springframework.restdocs.headers.HeaderDescriptor LOCATION_HEADER =
+            headerWithName(HttpHeaders.LOCATION).description("Google OAuth 인증 시작 경로");
     private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
             fieldWithPath("type").type(JsonFieldType.STRING).description("문제 유형 URI"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("HTTP 상태 설명"),
@@ -93,6 +101,47 @@ class OAuth2GuestContextRestDocsTest {
                                 .requestHeaders(com.epages.restdocs.apispec.ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("검증할 게스트 토큰"))
                                 .responseFields(PROBLEM_DETAIL_FIELDS)
+                .build())));
+    }
+
+    @Test
+    @DisplayName("허용된 프론트 클라이언트의 웹 Google OAuth 로그인을 시작한다")
+    void should_RedirectToGoogleOAuth_When_ClientIsAllowed() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/oauth2/google")
+                        .queryParam("client", "dev"))
+                .andExpect(status().isFound())
+                .andExpect(header().string(HttpHeaders.LOCATION, "/oauth2/authorization/google"))
+                .andDo(document("oauth2-google-login",
+                        queryParameters(parameterWithName("client")
+                                .description("OAuth 로그인 완료 후 돌아갈 프론트 환경. local 또는 dev")),
+                        responseHeaders(LOCATION_HEADER),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary("웹 Google OAuth 로그인 시작")
+                                .description("허용된 프론트 환경을 세션에 저장하고 Google OAuth 인증으로 이동한다")
+                                .tag(AUTH_TAG)
+                                .queryParameters(com.epages.restdocs.apispec.ResourceDocumentation
+                                        .parameterWithName("client")
+                                        .description("OAuth 로그인 완료 후 돌아갈 프론트 환경. local 또는 dev"))
+                                .responseHeaders(LOCATION_HEADER)
+                                .build())));
+    }
+
+    @Test
+    @DisplayName("허용되지 않은 프론트 클라이언트의 웹 Google OAuth 로그인을 거부한다")
+    void should_RejectGoogleOAuth_When_ClientIsNotAllowed() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/oauth2/google")
+                        .queryParam("client", "attacker"))
+                .andExpect(status().isBadRequest())
+                .andDo(document("oauth2-google-login-invalid-client",
+                        queryParameters(parameterWithName("client")
+                                .description("OAuth 로그인 완료 후 돌아갈 프론트 환경")),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary("웹 Google OAuth 로그인 시작 실패")
+                                .description("허용 목록에 없는 프론트 환경은 OAuth 인증을 시작할 수 없다")
+                                .tag(AUTH_TAG)
+                                .queryParameters(com.epages.restdocs.apispec.ResourceDocumentation
+                                        .parameterWithName("client")
+                                        .description("OAuth 로그인 완료 후 돌아갈 프론트 환경"))
                                 .build())));
     }
 }
