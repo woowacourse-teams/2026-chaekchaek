@@ -11,6 +11,9 @@
         android:supportsRtl="true"
         android:windowSoftInputMode="adjustResize"
         android:theme="@style/Theme.Chaekchaek">
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="true" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
