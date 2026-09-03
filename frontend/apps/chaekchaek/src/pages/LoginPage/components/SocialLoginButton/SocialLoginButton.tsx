@@ -40,16 +40,17 @@ export const SocialLoginButton = ({ provider, reverse }: SocialLoginButtonProps)
   });
 
   const handleClick = async () => {
-    if (guest) {
-      await postAuthOauth2GuestContextMutate(
-        {},
-        {
-          guestToken: guest.guestToken,
-        },
-      );
-    } else {
+    if (!guest) {
       window.location.href = link;
+      return;
     }
+
+    await postAuthOauth2GuestContextMutate(
+      {},
+      {
+        guestToken: guest.guestToken,
+      },
+    );
   };
 
   return (
