@@ -40,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -49,7 +48,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
-import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 
 @Composable
 internal fun MyPageScreen(
@@ -75,7 +73,7 @@ internal fun MyPageScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MemberAvatar(state.profileImageUrl, 80.dp)
+                MemberAvatar(80.dp)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         state.publicNickname.ifBlank { "책책이" },
@@ -284,23 +282,15 @@ private fun WithdrawalDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
 }
 
 @Composable
-internal fun MemberAvatar(profileImageUrl: String?, size: Dp) {
+internal fun MemberAvatar(size: Dp) {
     Surface(
         modifier = Modifier.size(size),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.primaryContainer,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        if (profileImageUrl.isNullOrBlank()) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("🐦", modifier = Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.titleMedium)
-            }
-        } else {
-            LocalRemoteBookCover.current(
-                profileImageUrl,
-                "프로필 이미지",
-                Modifier.fillMaxSize().clip(CircleShape),
-            )
+        Box(contentAlignment = Alignment.Center) {
+            Text("🐦", modifier = Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.titleMedium)
         }
     }
 }

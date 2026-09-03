@@ -614,7 +614,6 @@ private fun RecentReflectionsSection(
                     excerpt = card.quoteText,
                     replyLabel = card.replyLabel,
                     avatar = Res.drawable.avatar_kim,
-                    profileImageUrl = card.authorProfileImageUrl,
                     onClick = { onBookClick(card.toBookDetailTarget()) },
                 )
             }
@@ -641,7 +640,6 @@ private fun ReflectionCard(
     excerpt: String,
     replyLabel: String,
     avatar: DrawableResource,
-    profileImageUrl: String? = null,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -689,7 +687,7 @@ private fun ReflectionCard(
                         lineHeight = 20.sp,
                     )
                 }
-                AuthorLine(authorLabel, avatar, profileImageUrl, imageSize = 20.dp)
+                AuthorLine(authorLabel, avatar, imageSize = 20.dp)
                 Text(
                     "“$excerpt”",
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp),
@@ -772,7 +770,6 @@ private fun InvisibleCitiesCover(modifier: Modifier = Modifier) {
 private fun AuthorLine(
     label: String,
     avatar: DrawableResource,
-    profileImageUrl: String?,
     imageSize: Dp,
 ) {
     Row(
@@ -780,11 +777,7 @@ private fun AuthorLine(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         val imageModifier = Modifier.size(imageSize).clip(CircleShape)
-        if (profileImageUrl.isNullOrBlank()) {
-            Image(painterResource(avatar), null, imageModifier, contentScale = ContentScale.Crop)
-        } else {
-            LocalRemoteBookCover.current(profileImageUrl, "", imageModifier)
-        }
+        Image(painterResource(avatar), null, imageModifier, contentScale = ContentScale.Crop)
         Text(
             label,
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),

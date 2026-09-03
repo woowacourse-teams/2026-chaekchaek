@@ -115,7 +115,6 @@ import com.chaekchaek.app.ui.theme.ChaekInk
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import com.chaekchaek.app.ui.theme.ChaekSurface
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
-import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -922,7 +921,7 @@ private fun ReviewCard(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AuthorAvatar(review.authorName, review.authorProfileImageUrl, 34)
+                AuthorAvatar(review.authorName, 34)
                 Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
                     Text(review.authorName, style = MaterialTheme.typography.titleSmall)
                     Text(
@@ -1007,7 +1006,7 @@ private fun Replies(
     ) {
         replies.forEach { reply ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                AuthorAvatar(reply.authorName, reply.authorProfileImageUrl, 24)
+                AuthorAvatar(reply.authorName, 24)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
                         reply.authorName,
@@ -1057,13 +1056,9 @@ private fun Replies(
 }
 
 @Composable
-private fun AuthorAvatar(name: String, profileImageUrl: String?, size: Int) {
+private fun AuthorAvatar(name: String, size: Int) {
     val modifier = Modifier.size(size.dp).clip(CircleShape)
-    if (profileImageUrl.isNullOrBlank()) {
-        Image(painterResource(authorAvatarResource(name)), contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
-    } else {
-        LocalRemoteBookCover.current(profileImageUrl, "", modifier)
-    }
+    Image(painterResource(authorAvatarResource(name)), contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
 }
 
 private fun authorAvatarResource(displayName: String): DrawableResource =
