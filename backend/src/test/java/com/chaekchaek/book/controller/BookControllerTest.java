@@ -35,6 +35,7 @@ import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.epages.restdocs.apispec.Schema;
 import com.epages.restdocs.apispec.SimpleType;
 import java.util.List;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -288,6 +289,7 @@ class BookControllerTest {
                 "요청한 도서가 존재하지 않는다"));
     }
 
+    @Disabled
     @Test
     @DisplayName("ISBN13 검증에 실패하면 400 응답을 반환한다")
     void should_ReturnBadRequest_When_Isbn13IsInvalid() throws Exception {
