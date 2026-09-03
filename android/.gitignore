@@ -15,6 +15,7 @@ build/
 .cxx
 local.properties
 keystore.properties
+app/google-services.json
 *.jks
 *.keystore
 iosApp/DerivedData/
