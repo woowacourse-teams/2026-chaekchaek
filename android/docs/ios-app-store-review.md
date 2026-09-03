@@ -5,7 +5,7 @@
 - 제출 ID: `7294cb83-ecee-4ec2-831a-a11ce59afd2a`
 - 거절 빌드: `1.1.0 (2)`
 - 거절 사유: Guideline 2.1 - Information Needed - New App Submission
-- 재제출 빌드: `1.1.1 (5)`, 2026-09-03 App Store Connect 업로드 성공, 처리 대기
+- 재제출 빌드: `1.1.1 (5)`, 2026-09-03 TestFlight 처리 완료, 제출 준비 완료
 - 번들 ID: `com.chamsae.chaekchaek`
 - 지원 범위: iOS 17 이상, iPhone 전용
 - 이전 App Store Connect 업로드: `1.1.1 (4)`, 2026-09-02
@@ -23,15 +23,14 @@
 - iPhone 17 Pro Simulator, iOS 26.2: 단위 테스트 3개와 UI 테스트 3개 통과
 - Archive 버전과 빌드: `1.1.1 (5)`
 - 서명과 Apple 로그인 entitlement 검증 통과
-- App Store Connect 업로드 성공, 빌드 처리 대기
+- App Store Connect 업로드 및 TestFlight 처리 완료, 제출 준비 완료
 
 ## 제출 전 확인이 필요한 값
 
-- 실제 테스트한 iPhone 모델과 최신 iOS 버전
-- 실제 기기 화면 녹화 파일 또는 심사관이 접근할 수 있는 URL
-- App Store Connect의 실제 배포 지역
-- Aladin Open API 이용 권한과 도서 정보 및 표지 사용 근거
-- 로그아웃한 브라우저에서 접근 가능한 개인정보처리방침과 지원 URL
+- App Store 지원 URL을 인증서 오류가 있는 `https://www.chaekchaek.com/intro`에서 정상 접근되는 `https://chaekchaek.com/intro`로 변경
+- YES24 Open API 사용 권한을 보여주는 화면이 추가로 요청될 경우 API 키를 가린 증빙
+
+개인정보처리방침 URL은 로그아웃 상태에서 정상 접근됨을 확인했다.
 
 ## 실제 기기 녹화 순서
 
@@ -100,17 +99,17 @@ PR #320 본문과 App Store Connect 심사 메시지에 각각 첨부한다.
 App Review Information for ChaekChaek
 
 1. Screen recording
-A screen recording captured on a physical iPhone running the latest available iOS is attached to this review message: [ATTACH RECORDING OR INSERT ACCESSIBLE URL].
+A screen recording captured on a physical iPhone running the latest available iOS is attached to this review reply as `책췍심사영상-오디오제거.mp4`.
 
-The recording begins with a cold launch and demonstrates the typical flow: browsing the Home feed, searching for a book in Discover, opening book details, signing in with Apple, adding the book to My Library, changing reading status and progress, rating the book, creating a review and reply, opening My Page from the profile image in My Library, and completing account deletion.
+The recording begins with a cold launch and shows Home, book search and details, Sign in with Apple, My Library, reading progress, rating, a review and reply, My Page, and account deletion.
 
 There are no purchases, subscriptions, paid content, camera, location, contacts, microphone, photo library, or App Tracking Transparency prompts in the app.
 
 The app includes user-created reviews and replies. Authors can edit or delete their own content. The current build does not provide content-reporting or user-blocking controls.
 
 2. Devices and operating systems tested
-- [PHYSICAL IPHONE MODEL], iOS [VERSION]
-- iPhone 17 Pro Simulator, iOS 26.2, including Large and AX5 accessibility text-size validation
+- iPhone 13, iOS 26.6.1
+- iPhone 17 Pro Simulator, iOS 26.2
 
 3. App functions and target audience
 ChaekChaek is a Korean-language reading companion for readers who want to discover books, organize books by reading status, record reading progress and ratings, and share short reading impressions with other readers.
@@ -127,7 +126,7 @@ Basic browsing:
 Account-based features:
 1. Open My Library and tap the profile image, or attempt to add a book to My Library.
 2. On the login sheet, tap Continue with Apple.
-3. The reviewer may use their own Apple ID. A ChaekChaek account is created automatically on first successful sign-in, so no separate username, password, or pre-created demo account is required.
+3. The reviewer may use their own Apple ID. The first successful sign-in automatically creates a ChaekChaek account, so no demo credentials are required.
 4. Google Sign-In is also available as an alternative.
 5. After signing in, the reviewer can add books, set reading status and progress, rate books, and manage My Library.
 
@@ -136,24 +135,24 @@ Account deletion:
 2. Tap the profile image to open My Page.
 3. Under Account Management, tap Delete Account.
 4. Review the irreversible deletion notice and tap Delete Account to confirm.
-5. The app deletes the account through the ChaekChaek service and clears the local authenticated session.
+5. The app deletes the account and clears the local authenticated session.
 
 5. External services, tools, and platforms
 - Apple Authentication Services for Sign in with Apple
 - Google Sign-In SDK for optional Google authentication
 - ChaekChaek backend API at api.chaekchaek.com for authentication, book discovery, library records, ratings, reviews, replies, and account deletion
-- Aladin Open API, accessed through the ChaekChaek backend, for bibliographic metadata and book cover images
+- YES24 Open API, accessed only through the ChaekChaek backend, for book search results, bibliographic metadata, and book cover images
 - Apple Keychain for storing the refresh token on the device
 
 The app does not use a payment processor, subscription service, advertising SDK, or AI service.
 
 6. Regional differences
-The app provides the same features in every distributed region. The interface and primary content are Korean. There are no region-specific purchases, subscriptions, or restrictions. Distribution regions: [CONFIRM APP STORE DISTRIBUTION REGIONS].
+The app is distributed only in South Korea and provides the same features throughout that region. The interface and primary content are Korean. There are no region-specific purchases, subscriptions, or restrictions.
 
 7. Regulated industry and protected third-party material
 ChaekChaek is a general book-discovery, reading-record, and community app. It does not provide medical, financial, gambling, legal, or other highly regulated services.
 
-Book bibliographic metadata and cover images are supplied through the Aladin Open API. The app does not provide full book text or paid reading content. Authorization evidence: [CONFIRM OR ATTACH ALADIN OPEN API USE EVIDENCE IF REQUESTED].
+Book search results, metadata, and cover images are supplied through the YES24 Open API via the ChaekChaek backend. Its API key is stored only on the backend. The app does not provide full book text or paid reading content. Documentation: https://developers.yes24.com/, https://developers.yes24.com/api-doc/goods-item-list, and https://developers.yes24.com/api-doc/goods-item-detail. A redacted developer-account screenshot can be provided if requested.
 ```
 
 ## 알려진 심사 위험
@@ -187,3 +186,6 @@ xcodebuild build \
 - [Apple App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/)
 - [Apple Platform Version Information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/)
 - [Apple Privacy Manifest Files](https://developer.apple.com/documentation/bundleresources/privacy-manifest-files)
+- [YES24 Open API](https://developers.yes24.com/)
+- [YES24 상품 검색 API](https://developers.yes24.com/api-doc/goods-item-list)
+- [YES24 상품 상세 API](https://developers.yes24.com/api-doc/goods-item-detail)
