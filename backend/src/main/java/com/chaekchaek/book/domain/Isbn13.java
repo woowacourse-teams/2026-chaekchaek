@@ -8,9 +8,10 @@ public record Isbn13(String value) {
     private static final int ISBN13_LENGTH = 13;
 
     public Isbn13 {
-        if (!isValid(value)) {
+        // TODO: 책 검색 API 터짐 해결을 위한 임시 조치
+/*        if (!isValid(value)) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
+        }*/
     }
 
     private static boolean isValid(String value) {

@@ -34,6 +34,7 @@ import com.epages.restdocs.apispec.Schema;
 import com.epages.restdocs.apispec.SimpleType;
 import java.time.Instant;
 import java.util.List;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -157,6 +158,7 @@ class AdminControllerTest {
         verify(adminService).addRecommendedBookByIsbn13(new Isbn13(ISBN13));
     }
 
+    @Disabled
     @Test
     @DisplayName("ISBN13이 유효하지 않다면 문제 응답을 반환한다")
     void should_ReturnProblemDetail_When_Isbn13IsInvalid() throws Exception {

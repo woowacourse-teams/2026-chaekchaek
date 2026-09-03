@@ -96,6 +96,10 @@ jobs:
           FRONTEND_LOCAL_BASE_URL: ${{ secrets.FRONTEND_LOCAL_BASE_URL }}
           FRONTEND_DEV_BASE_URL: ${{ secrets.FRONTEND_DEV_BASE_URL }}
           FRONTEND_ALLOWED_ORIGINS: ${{ secrets.FRONTEND_ALLOWED_ORIGINS }}
+          APPLE_CLIENT_ID: ${{ secrets.APPLE_CLIENT_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }}
           AUTH_COOKIE_SECURE: 'true'
           AUTH_COOKIE_SAME_SITE: 'None'
         run: |
@@ -119,5 +123,9 @@ jobs:
             -e FRONTEND_ALLOWED_ORIGINS="$FRONTEND_ALLOWED_ORIGINS" \
             -e AUTH_COOKIE_SECURE="$AUTH_COOKIE_SECURE" \
             -e AUTH_COOKIE_SAME_SITE="$AUTH_COOKIE_SAME_SITE" \
+            -e APPLE_CLIENT_ID="$APPLE_CLIENT_ID" \
+            -e APPLE_TEAM_ID="$APPLE_TEAM_ID" \
+            -e APPLE_KEY_ID="$APPLE_KEY_ID" \
+            -e APPLE_PRIVATE_KEY="$APPLE_PRIVATE_KEY" \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           docker image prune -af

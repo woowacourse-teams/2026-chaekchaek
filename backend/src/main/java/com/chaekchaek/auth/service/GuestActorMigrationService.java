@@ -6,6 +6,7 @@ import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.review.repository.ReplyRepository;
+import com.chaekchaek.review.repository.ReplyReactionRepository;
 import com.chaekchaek.review.repository.ReviewRepository;
 import java.time.Clock;
 import java.time.LocalDateTime;
