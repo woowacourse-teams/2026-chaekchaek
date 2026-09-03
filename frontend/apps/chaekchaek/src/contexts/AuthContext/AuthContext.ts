@@ -5,9 +5,9 @@ import type { GuestData, UserData } from './AuthContext.types';
 type ContextValue = {
   isAuthenticated: boolean;
   user: UserData | null;
-  login: (user: UserData) => void;
+  updateAccount: (user: UserData) => void;
   guest: GuestData | null;
-  guestLogin: (guest: GuestData) => void;
+  updateGuestAccount: (guest: GuestData) => void;
 };
 
 export const authContext = createContext<ContextValue | undefined>(undefined);

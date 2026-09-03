@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }: Props) => {
     guestStorageString && guestStorageString !== null ? JSON.parse(guestStorageString) : null;
   const [guest, setGuest] = useState<GuestData | null>(guestStorage || null);
 
-  const login = useCallback((userData: UserData) => {
+  const updateAccount = useCallback((userData: UserData) => {
     setIsAuthenticated(true);
     setUser(userData);
   }, []);
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: Props) => {
     queryFn: getMembersMeLoadData,
   });
 
-  const guestLogin = useCallback((guestData: GuestData) => {
+  const updateGuestAccount = useCallback((guestData: GuestData) => {
     setIsAuthenticated(false);
     setGuest(guestData);
   }, []);
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: Props) => {
   });
 
   useEffect(() => {
-    if (membersMeStatus.data) return login(membersMeStatus.data);
+    if (membersMeStatus.data) return updateAccount(membersMeStatus.data);
 
     if (
       membersMeStatus.status === 'error' &&
@@ -81,20 +81,20 @@ export const AuthProvider = ({ children }: Props) => {
   useEffect(() => {
     if (authGuestToken) {
       localStorage.setItem('guest', JSON.stringify(authGuestToken));
-      guestLogin(authGuestToken);
+      updateGuestAccount(authGuestToken);
     }
   }, [authGuestToken]);
 
   useEffect(() => {
     if (authGuestTokenRefreshs) {
       localStorage.setItem('guest', JSON.stringify(authGuestTokenRefreshs));
-      guestLogin(authGuestTokenRefreshs);
+      updateGuestAccount(authGuestTokenRefreshs);
     }
   }, [authGuestTokenRefreshs]);
 
   const value = useMemo(
-    () => ({ isAuthenticated, user, login, guest, guestLogin }),
-    [isAuthenticated, user, login, guest, guestLogin],
+    () => ({ isAuthenticated, user, updateAccount, guest, updateGuestAccount }),
+    [isAuthenticated, user, updateAccount, guest, updateGuestAccount],
   );
 
   return <authContext.Provider value={value}>{children}</authContext.Provider>;

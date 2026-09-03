@@ -18,12 +18,12 @@ export const OauthPage = () => {
     queryFn: getMembersMeLoadData,
   });
 
-  const { login } = useAuthContext();
+  const { updateAccount } = useAuthContext();
 
   const navigation = useNavigate();
 
   useEffect(() => {
-    if (membersMeData) return login(membersMeData);
+    if (membersMeData) return updateAccount(membersMeData);
 
     navigation(ROUTES.HOME);
   }, [membersMeData]);

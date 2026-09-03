@@ -16,7 +16,7 @@ import type { NicknameFormValues } from './validator';
 import type { UpdateNicknameDialogProps } from './UpdateNicknameDialog.types';
 
 export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => {
-  const { user, login } = useAuthContext();
+  const { user, updateAccount } = useAuthContext();
 
   const { values, errors, onChange, isValid, valids } = useFormValues<NicknameFormValues>({
     initialValues: {
@@ -34,12 +34,12 @@ export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => 
     const userWithUpdatedNickname = await updateNickname({ nickname: values.nickname });
     if (!userWithUpdatedNickname) return;
 
-    login(userWithUpdatedNickname);
+    updateAccount(userWithUpdatedNickname);
 
     const userWithAnonymityDisabled = await updateAnonymity({ displayAnonymous: false });
     if (!userWithAnonymityDisabled) return;
 
-    login(userWithAnonymityDisabled);
+    updateAccount(userWithAnonymityDisabled);
 
     onClose();
   };
