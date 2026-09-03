@@ -1,9 +1,29 @@
-# Android Crashlytics와 난독화 오류 대응
+# Android 릴리스 최적화와 코드 보호
 
 ## 목적
 
-release APK의 R8 코드 축소·난독화 상태에서도 크래시를 수집하고, 사람이 읽을 수 있는
-스택 트레이스로 복원한다.
+release APK에 R8 코드 축소·최적화·난독화를 적용하고, 난독화 상태의 크래시를 사람이 읽을 수
+있는 스택 트레이스로 복원한다. 앱에 포함되는 값의 공개 범위와 민감값 보관 한계도 함께 관리한다.
+
+## 완료 기준과 확인 근거
+
+| 완료 기준 | 현재 근거 |
+| --- | --- |
+| release에 코드 축소·난독화·리소스 축소 적용 | `android/app/build.gradle.kts`의 release에 `isMinifyEnabled = true`, `isShrinkResources = true`, `proguard-android-optimize.txt`가 설정돼 있다. |
+| 최적화된 release의 정상 동작 확인 | 2026-09-03에 서명된 release APK를 기기에 설치해 실행, 의도적 크래시, 재실행을 확인했다. |
+| 난독화 크래시 복원 | release mapping 파일을 Crashlytics Gradle plugin이 업로드하며 `uploadCrashlyticsMappingFileRelease` 태스크가 release 빌드에 연결돼 있다. |
+| 리플렉션 예외 규칙 | 2026-09-03 기준 Android 추적 소스에서 `Class.forName`, `getDeclaredMethod`, `getDeclaredField`, `getDeclaredConstructor` 호출과 사용자 keep rule은 발견되지 않았다. 따라서 근거 없는 keep rule은 추가하지 않는다. |
+
+## R8이 바꾸는 것
+
+- 코드 축소는 도달할 수 없는 클래스, 메서드, 필드를 제거한다.
+- 최적화는 안전한 범위에서 호출을 단순화하거나 합쳐 실행과 크기를 개선한다.
+- 난독화는 남은 클래스·메서드·필드 이름을 짧은 이름으로 바꾼다. 이 때문에 APK를 열어도 구현 이름을 그대로 읽기 어렵다.
+- 리소스 축소는 코드 축소 뒤 참조되지 않는 리소스를 제거한다.
+
+R8은 보안 경계가 아니다. APK에 들어간 문자열, `BuildConfig` 값, 리소스, 네이티브 라이브러리와
+복호화 로직은 추출할 수 있다. 난독화와 암호화는 추출 비용을 높일 뿐 서버 권한을 주는 비밀값을
+보호하지 못한다.
 
 ## 현재 구성
 
@@ -18,6 +38,29 @@ release APK의 R8 코드 축소·난독화 상태에서도 크래시를 수집�
 `google-services.json`의 실제 파일은 Firebase Console에서 내려받아
 `android/app/google-services.json`에만 둔다. 앱 패키지명과 파일의 Android 클라이언트
 패키지명이 일치해야 한다.
+
+## 리플렉션으로 release가 깨질 때
+
+R8은 정적으로 참조되지 않는 이름 기반 진입점을 제거하거나 이름을 바꿀 수 있다. release에서만
+`ClassNotFoundException`, `NoSuchMethodException` 또는 역직렬화 실패가 나면 다음 순서로 처리한다.
+
+1. Crashlytics의 복원된 스택 트레이스와 `mapping.txt`로 실제 실패한 클래스·멤버를 특정한다.
+2. `Class.forName`, `getDeclaredMethod`, `getDeclaredField`, 어노테이션 스캔, 문자열 기반
+   역직렬화처럼 정적 참조를 우회한 지점을 찾는다.
+3. 실패한 진입점만 `proguard-rules.pro`에 보존한다. 패키지 전체나 라이브러리 전체를 keep하지 않는다.
+4. 같은 release 변형을 다시 빌드해 해당 경로를 검증한다.
+
+예를 들어 문자열로 생성하는 단일 클래스의 기본 생성자만 필요하면 규칙도 그 범위만 보존한다.
+
+```pro
+-keep class com.example.feature.ReflectiveEntry {
+  <init>();
+}
+```
+
+`com.example.feature.** { *; }` 같은 넓은 규칙은 코드 축소와 난독화를 사실상 되돌리므로 사용하지
+않는다. 라이브러리가 consumer keep rule을 제공하면 그 규칙을 우선하고, 실제 release 장애가 확인된
+경우에만 앱 규칙을 추가한다.
 
 ## 릴리스 빌드와 mapping
 
@@ -72,5 +115,10 @@ adb -s <device> shell monkey -p com.chamsae.chaekchaek 1
 
 - 서버 권한을 주는 API 키, 서명 키, 서비스 계정 키는 앱에 넣지 않고 백엔드 또는 비밀 관리
   시스템에 둔다.
+- 앱은 로그인으로 받은 사용자 토큰만 런타임에 보관하고 Android Keystore 기반 저장소를 사용한다.
 - 앱에 필요한 공개 식별자는 API 제한을 적용하고, 서버에서 인증·인가와 호출량 제한을 검증한다.
 - `google-services.json`, `keystore.properties`, keystore 파일은 Git·PR·공개 채널에 올리지 않는다.
+
+현재 선택은 서버 권한이 필요한 값과 검증을 백엔드에 두고, Android 앱에는 공개 식별자와 사용자의
+런타임 토큰만 두는 방식이다. 이 방식도 공개 식별자의 오용과 탈취된 사용자 토큰을 막지는 못하므로,
+서버의 인증·인가, 호출량 제한, 토큰 만료·폐기는 별도로 필요하다.

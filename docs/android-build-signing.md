@@ -19,7 +19,7 @@ Android 앱은 Jetpack Compose로 만들고 Google Play에 배포한다. 향후 
 | `compileSdk` | 36 | API 36으로 컴파일해 해당 API를 참조할 수 있다. |
 | `minSdk` | 26 | Android 8.0 미만 기기는 설치할 수 없다. |
 | `targetSdk` | 36 | Android 16 동작 변경·Google Play 대상 API 정책을 따른다. |
-| release 난독화 | 꺼짐 | 현재 `isMinifyEnabled = false`다. 검증 전에는 켜지 않는다. |
+| release 최적화·난독화 | 켜짐 | `isMinifyEnabled = true`, `isShrinkResources = true`, `proguard-android-optimize.txt`로 R8 코드 축소·최적화·난독화를 적용한다. 상세 검증과 예외 규칙은 [Android 릴리스 최적화와 코드 보호](android-crashlytics.md)를 따른다. |
 
 이 프로젝트는 JDK 21, Gradle 9.1.0, Build Tools 36.0.0을 기준으로 한다. 터미널 명령은
 `android` 디렉터리에서 실행한다.
