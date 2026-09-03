@@ -5,6 +5,7 @@ import {
   Avatar,
   Badge,
   Button,
+  Dialog,
   Entry,
   Icon,
   Note,
@@ -130,15 +131,15 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
     handleClickCloseWriteReply();
   };
 
-  const [dialog, setDialog] = useState<'UpdateReviewDialog' | null>(null);
-  const handleOpenDialog = (dialog: 'UpdateReviewDialog') => {
+  const [dialog, setDialog] = useState<'UpdateReviewDialog' | 'AlertDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'UpdateReviewDialog' | 'AlertDialog') => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'UpdateReviewDialog' | null) => {
+  const renderDialog = (dialog: 'UpdateReviewDialog' | 'AlertDialog' | null) => {
     switch (dialog) {
       case 'UpdateReviewDialog':
         return (
@@ -147,6 +148,14 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
             onReviewUpdated={onReviewsRefresh}
             onClose={handleCloseDialog}
           />
+        );
+      case 'AlertDialog':
+        return (
+          <Dialog onClose={handleCloseDialog}>
+            <Dialog.Container>
+              <Dialog.Body>접근이 불가능한 프로필입니다</Dialog.Body>
+            </Dialog.Container>
+          </Dialog>
         );
 
       default:
@@ -178,6 +187,11 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
                     memberId: review.author.memberId.toString(),
                   }),
                 })}
+                onClick={() => {
+                  if (review.author?.profileStatus !== 'AVAILABLE') {
+                    handleOpenDialog('AlertDialog');
+                  }
+                }}
                 img={review.author.profileImageUrl}
               />
             </Shell.Leading>
