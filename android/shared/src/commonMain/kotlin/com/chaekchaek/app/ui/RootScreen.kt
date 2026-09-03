@@ -51,6 +51,7 @@ import com.chaekchaek.app.ui.archive.ArchiveBookUiModel
 import com.chaekchaek.app.ui.archive.ArchiveRoute
 import com.chaekchaek.app.ui.archive.ArchiveViewModel
 import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
+import com.chaekchaek.app.ui.archive.publicNickname
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
 import com.chaekchaek.app.ui.home.BookDetailTarget
@@ -124,6 +125,7 @@ internal fun RootScreen(
         when (selectedTab) {
             RootTab.Home -> HomeScreen(
                 homeViewModel = homeViewModel,
+                myDisplayName = memberSettingsState.publicNickname,
                 accessToken = accessToken,
                 scrollTopRequest = homeScrollTopRequest,
                 modifier = contentModifier,

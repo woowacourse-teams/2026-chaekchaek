@@ -118,7 +118,7 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
                     card.authorLabel,
                     TimeLabels.relative(card.createdAt, now),
                 ),
-                authorProfileImageUrl = card.authorProfileImageUrl,
+                authorName = card.authorLabel,
                 quoteText = card.quoteText,
                 replyLabel = HomeLabels.quoteReply(card.replyCount),
             )
@@ -137,6 +137,7 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
                     card.authorLabel,
                     TimeLabels.relative(card.createdAt, now),
                 ),
+                authorName = card.authorLabel,
                 excerpt = card.excerpt,
                 replyLabel = HomeLabels.overlappedReply(card.replyCount),
             )

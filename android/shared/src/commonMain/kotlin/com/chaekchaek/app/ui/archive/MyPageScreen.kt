@@ -1,6 +1,5 @@
 package com.chaekchaek.app.ui.archive
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -154,9 +153,6 @@ internal fun MyPageScreen(
     }
 }
 
-internal val MemberSettingsUiState.publicNickname: String
-    get() = (if (anonymousReviews) anonymousNickname else nickname).ifBlank { "책책이" }
-
 @Composable
 private fun MyPageTopBar(onBack: () -> Unit) {
     Row(
@@ -291,7 +287,6 @@ internal fun MemberAvatar(displayName: String, size: Dp) {
         modifier = Modifier.size(size),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.primaryContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Image(
             painter = painterResource(avatarResource(displayName)),
