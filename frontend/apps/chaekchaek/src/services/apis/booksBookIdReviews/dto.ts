@@ -11,6 +11,9 @@ export type GetBooksBookIdReviewsResponseDto = ResponseDto<{
   items: {
     chapter: string;
     author: {
+      memberId?: number | null;
+      actorType?: 'MEMBER' | 'GUEST';
+      profileStatus?: 'AVAILABLE' | 'UNAVAILABLE' | 'WITHDRAWN';
       mine: boolean;
       displayName: string;
       anonymous: boolean;
