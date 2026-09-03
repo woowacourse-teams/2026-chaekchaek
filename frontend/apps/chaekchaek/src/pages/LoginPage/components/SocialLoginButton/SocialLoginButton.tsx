@@ -34,6 +34,9 @@ export const SocialLoginButton = ({ provider, reverse }: SocialLoginButtonProps)
 
   const { mutate: postAuthOauth2GuestContextMutate } = useExecute({
     executeFn: postAuthOauth2GuestContext,
+    onSuccess: () => {
+      window.location.href = link;
+    },
   });
 
   const handleClick = async () => {
@@ -44,9 +47,9 @@ export const SocialLoginButton = ({ provider, reverse }: SocialLoginButtonProps)
           guestToken: guest.guestToken,
         },
       );
+    } else {
+      window.location.href = link;
     }
-
-    window.location.href = link;
   };
 
   return (
