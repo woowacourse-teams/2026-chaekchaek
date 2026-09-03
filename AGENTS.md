@@ -55,6 +55,9 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 - 각 디렉터리의 README는 해당 문서를 찾는 짧은 라우팅·시작 안내만 둔다. 상세 운영 절차나
   설계 설명을 README에 누적하지 않는다.
 - 새 문서에는 목적을 드러내는 kebab-case 파일명을 쓰고, 관련 README에서 링크한다.
+- Markdown 문서만 변경하는 독립 작업은 GitHub 이슈, 작업 브랜치, PR 없이 `an-develop`에
+  직접 커밋하고 push한다.
+- 기능이나 코드 변경에 수반되는 문서 변경은 해당 작업 브랜치와 PR에 함께 포함한다.
 
 ## an-develop 브랜치 운영
 
