@@ -58,8 +58,17 @@ export const AuthProvider = ({ children }: Props) => {
     executeFn: postAuthGuestTokenRefreshs,
   });
 
+  const logoutGuest = () => {
+    setGuest(null);
+    localStorage.removeItem('guest');
+  };
+
   useEffect(() => {
-    if (membersMeStatus.data) return updateAccount(membersMeStatus.data);
+    if (membersMeStatus.data) {
+      updateAccount(membersMeStatus.data);
+      logoutGuest();
+      return;
+    }
 
     if (
       membersMeStatus.status === 'error' &&
