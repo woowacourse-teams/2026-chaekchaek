@@ -1,11 +1,18 @@
 import { createClassName } from '@chaekchaek/design-system';
 
+import { getOauthLoginUrl } from '@/auth/oauth';
+
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
+import { useExecute } from '@/services/core/useExecute';
+import { postAuthOauth2GuestContext } from '@/services/apis/authOauth2GuestContext/repository';
+
 import profileIcon from './imgs/header-action.svg';
 import styles from './Header.module.css';
 
 import type { ProfileButtonProps } from './ProfileButton.types';
 
-import { getOauthLoginUrl } from '@/auth/oauth';
+const oauthProvider = 'google';
 
 const classnameDefault = 'frame-Header-ProfileButton';
 
@@ -17,8 +24,27 @@ export const ProfileButton = ({ className, type = 'button', ...restProps }: Prof
     className,
   });
 
-  const handleMove = () => {
-    window.location.href = getOauthLoginUrl('google');
+  const { guest } = useAuthContext();
+
+  const { mutate: postAuthOauth2GuestContextMutate } = useExecute({
+    executeFn: postAuthOauth2GuestContext,
+    onSuccess: () => {
+      window.location.href = getOauthLoginUrl(oauthProvider);
+    },
+  });
+
+  const handleClick = async () => {
+    if (!guest) {
+      window.location.href = getOauthLoginUrl(oauthProvider);
+      return;
+    }
+
+    await postAuthOauth2GuestContextMutate(
+      {},
+      {
+        guestToken: guest.guestToken,
+      },
+    );
   };
 
   return (
@@ -26,7 +52,7 @@ export const ProfileButton = ({ className, type = 'button', ...restProps }: Prof
       type={type}
       className={classname}
       aria-label="프로필"
-      onClick={handleMove}
+      onClick={handleClick}
       {...restProps}
     >
       <img src={profileIcon} alt="" />
