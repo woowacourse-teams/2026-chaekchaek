@@ -18,6 +18,9 @@ export type BookReview = {
   reviewId: number;
   chapter?: string;
   author: {
+    memberId?: number | null;
+    actorType?: 'MEMBER' | 'GUEST';
+    profileStatus?: 'AVAILABLE' | 'UNAVAILABLE' | 'WITHDRAWN';
     displayName: string;
     profileImageUrl: string;
     mine: boolean;

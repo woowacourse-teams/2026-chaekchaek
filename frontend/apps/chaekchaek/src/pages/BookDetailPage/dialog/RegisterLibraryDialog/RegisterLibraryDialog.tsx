@@ -2,6 +2,8 @@ import { useState } from 'react';
 
 import { Button, ButtonStack, Dialog, Field, SegmentedControl } from '@chaekchaek/design-system';
 
+import { track } from '@/analytics/track';
+
 import { postLibrary } from '@/services/apis/library/repository';
 import { useExecute } from '@/services/core/useExecute';
 
@@ -31,6 +33,12 @@ export const RegisterLibraryDialog = ({
 
   const handleSubmitRegisterLibrary = async () => {
     await mutatePostLibrary({ isbn13: isbn, status });
+
+    track('library_add', {
+      source: 'detail_required',
+      status:
+        status === 'WANT_TO_READ' ? 'want_to_read' : status === 'READING' ? 'reading' : 'finished',
+    });
 
     onClose();
   };

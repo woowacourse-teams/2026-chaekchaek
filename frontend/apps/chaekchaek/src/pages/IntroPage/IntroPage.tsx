@@ -6,6 +6,8 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 
+import { track } from '@/analytics/track';
+
 import { useLoadData } from '@/services/core/useLoadData';
 import { getHomePopularBooks } from '@/services/apis/homePopularBooks/repository';
 
@@ -27,6 +29,10 @@ export const IntroPage = () => {
   const navigation = useNavigate();
 
   const handleClickMoveDetail = (isbn: string) => {
+    track('select_book', {
+      source: 'intro_popular',
+    });
+
     navigation(`/books/${isbn}`);
   };
 

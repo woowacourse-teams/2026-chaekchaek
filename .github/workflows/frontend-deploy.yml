@@ -44,3 +44,5 @@ jobs:
 
       - name: Record deployment
         run: npm run record-deploy -w @chaekchaek/web
+        env:
+          DEPLOY_RECORD_DIR: /var/lib/chaekchaek-deploy

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
@@ -15,6 +15,8 @@ import { Button } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 import { Pagination } from '@chaekchaek/design-system';
 import { Badge } from '@chaekchaek/design-system';
+
+import { track } from '@/analytics/track';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
@@ -60,6 +62,10 @@ export const BooksPage = () => {
   };
 
   const handleChangeDefaultPage = (defaultPage: number) => {
+    track('search_more', {
+      page: defaultPage,
+    });
+
     setPage(defaultPage);
 
     setSearchParams(
@@ -87,6 +93,10 @@ export const BooksPage = () => {
 
   const navigation = useNavigate();
   const handleMove = (isbn: string) => {
+    track('select_book', {
+      source: 'search',
+    });
+
     navigation(`/books/${isbn}`);
   };
 
@@ -95,10 +105,29 @@ export const BooksPage = () => {
   });
   const handleRegisterLibrary = async (isbn: string) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
+
     await mutate({ isbn13: isbn, status: 'WANT_TO_READ' });
+
+    track('library_add', {
+      source: 'search',
+      status: 'want_to_read',
+    });
 
     handleMove(isbn);
   };
+
+  useEffect(() => {
+    if (!query.length) return;
+
+    const TIMEOUT = 500;
+    const timeoutId = setTimeout(() => {
+      track('search');
+    }, TIMEOUT);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [query]);
 
   return (
     <Layout>
@@ -137,13 +166,21 @@ export const BooksPage = () => {
                   return (
                     <List.Item>
                       <List.Item.Leading>
-                        <Link to={`/books/${item.isbn13}`}>
+                        <Link
+                          to={`/books/${item.isbn13}`}
+                          onClick={() => {
+                            handleMove(item.isbn13);
+                          }}
+                        >
                           <ImgBox img={item.coverImageUrl} size="small" />
                         </Link>
                       </List.Item.Leading>
                       <List.Item.Content
                         as={Link}
                         to={`/books/${item.isbn13}`}
+                        onClick={() => {
+                          handleMove(item.isbn13);
+                        }}
                         title={item.title}
                         content={item.authors.join(' · ')}
                         description={`${item.publisher} · ${item.publishedDate}`}

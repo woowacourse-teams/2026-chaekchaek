@@ -10,7 +10,7 @@
   background-color: #fff;
   color: #1a1a1a;
   font-family: 'Funnel Sans', sans-serif;
-  font-size: 12px;
+  font-size: 0.875rem; /* 14px */
   font-weight: 400;
 }
 
@@ -72,17 +72,17 @@
 .size-small {
   box-sizing: border-box;
   height: 40px;
-  font-size: 11px;
+  font-size: 0.8125rem; /* 13px */
 }
 
 .size-medium {
   box-sizing: border-box;
   height: 48px;
-  font-size: 12.5px;
+  font-size: 0.90625rem; /* 14.5px */
 }
 
 .size-large {
   box-sizing: border-box;
   height: 56px;
-  font-size: 14px;
+  font-size: 1rem; /* 16px */
 }

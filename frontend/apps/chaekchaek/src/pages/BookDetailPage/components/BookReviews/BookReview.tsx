@@ -1,15 +1,21 @@
 import { useCallback, useState } from 'react';
+import { generatePath, Link } from 'react-router-dom';
 
 import {
   Avatar,
   Badge,
   Button,
+  Dialog,
   Entry,
   Icon,
   Note,
   Shell,
   Surface,
 } from '@chaekchaek/design-system';
+
+import { ROUTES } from '@/constants/routes';
+
+import { track } from '@/analytics/track';
 
 import { getReviewsReviewIdReplies } from '@/services/apis/reviewsReviewIdReplies/repository';
 import { useLoadData } from '@/services/core/useLoadData';
@@ -109,7 +115,13 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
 
   const [openWriteReply, setOpenWriteReply] = useState(false);
   const handleClickToggleWriteReply = () => {
-    setOpenWriteReply((prev) => !prev);
+    if (!openWriteReply) {
+      setOpenWriteReply(true);
+
+      track('reply_write_open', { user_type: guest ? 'guest' : 'member' });
+    } else {
+      setOpenWriteReply(false);
+    }
   };
   const handleClickCloseWriteReply = () => {
     setOpenWriteReply(false);
@@ -119,15 +131,15 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
     handleClickCloseWriteReply();
   };
 
-  const [dialog, setDialog] = useState<'UpdateReviewDialog' | null>(null);
-  const handleOpenDialog = (dialog: 'UpdateReviewDialog') => {
+  const [dialog, setDialog] = useState<'UpdateReviewDialog' | 'AlertDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'UpdateReviewDialog' | 'AlertDialog') => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'UpdateReviewDialog' | null) => {
+  const renderDialog = (dialog: 'UpdateReviewDialog' | 'AlertDialog' | null) => {
     switch (dialog) {
       case 'UpdateReviewDialog':
         return (
@@ -136,6 +148,14 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
             onReviewUpdated={onReviewsRefresh}
             onClose={handleCloseDialog}
           />
+        );
+      case 'AlertDialog':
+        return (
+          <Dialog onClose={handleCloseDialog}>
+            <Dialog.Container>
+              <Dialog.Body>접근이 불가능한 프로필입니다</Dialog.Body>
+            </Dialog.Container>
+          </Dialog>
         );
 
       default:
@@ -160,7 +180,20 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
         <Entry.Header>
           <Shell>
             <Shell.Leading>
-              <Avatar img={review.author.profileImageUrl} />
+              <Avatar
+                as={review.author?.memberId ? Link : 'div'}
+                {...(review.author?.memberId && {
+                  to: generatePath(ROUTES.MEMBER_LIBRARY, {
+                    memberId: review.author.memberId.toString(),
+                  }),
+                })}
+                onClick={() => {
+                  if (review.author?.profileStatus !== 'AVAILABLE') {
+                    handleOpenDialog('AlertDialog');
+                  }
+                }}
+                img={review.author.profileImageUrl}
+              />
             </Shell.Leading>
             <Shell.Content
               title={

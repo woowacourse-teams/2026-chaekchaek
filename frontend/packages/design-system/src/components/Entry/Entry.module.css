@@ -16,8 +16,8 @@
 }
 
 .ui-Entry-Content {
-  font-size: 12.5px;
-  line-height: 21px;
+  font-size: 0.90625rem; /* 14.5px */
+  line-height: 1.68;
   color: #ffffff;
 }
 

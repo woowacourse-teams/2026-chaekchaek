@@ -2331,6 +2331,11 @@ components:
             - {type: boolean}
             - {type: string}
             - {type: number}
+    api-v1-admin-recommended-books-1231260270:
+      required: [isbn13]
+      type: object
+      properties:
+        isbn13: {type: string, description: 추천할 도서의 ISBN-13}
     api-v1-admin-recommended-books-916433424:
       required: [authors, bookId, coverImageUrl, createdAt, isbn13, title]
       type: object
@@ -2378,6 +2383,47 @@ components:
         idToken: {type: string, description: Google SDK에서 발급받은 ID Token}
     api-v1-books1370717732:
       required: [items, totalCount, nextPage]
+      type: object
+      properties:
+        nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지라면 null, nullable: true}
+        totalCount: {type: number, description: 검색 결과의 전체 도서 수}
+        items:
+          type: array
+          description: 검색된 도서 목록. 한 페이지당 최대 10개
+          items:
+            required: [authors, category, coverImageUrl, isbn13, publishedDate, publisher,
+              title, translators, bookId, reviewCount, replyCount, isRegisteredInMyLibrary]
+            type: object
+            properties:
+              replyCount: {type: number, description: 답글 수. 미등록 도서라면 null, nullable: true}
+              translators:
+                type: array
+                description: 옮긴이 이름 목록
+                items: {type: string}
+              reviewCount: {type: number, description: 감상 수. 미등록 도서라면 null, nullable: true}
+              coverImageUrl: {type: string, description: 표지 이미지 URL}
+              isbn13: {type: string, description: ISBN-13}
+              publisher: {type: string, description: 출판사}
+              publishedDate: {type: string, description: 출판일}
+              category: {type: string, description: 도서 카테고리}
+              title: {type: string, description: 도서 제목}
+              isRegisteredInMyLibrary: {type: boolean, description: '로그인 회원의 내 서재
+                  등록 여부. 등록되어 있으면 true, 미등록이면 false, 비로그인 요청이면 null', nullable: true}
+              authors:
+                type: array
+                description: 저자 이름 목록
+                items: {type: string}
+              bookId: {type: number, description: 등록된 도서 ID. 미등록 도서라면 null, nullable: true}
+    api-v1-auth-mobile-apple-345788424:
+      required: [authorizationCode, identityToken, nonce]
+      type: object
+      properties:
+        identityToken: {type: string, description: Apple에서 발급받은 Identity Token}
+        authorizationCode: {type: string, description: Apple에서 발급받은 일회용 Authorization
+            Code}
+        nonce: {type: string, description: Apple 로그인 요청에 사용한 해시 전 원본 nonce}
+    api-v1-reviews-reviewId-replies389013299:
+      required: [items, totalCount]
       type: object
       properties:
         nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지라면 null, nullable: true}
