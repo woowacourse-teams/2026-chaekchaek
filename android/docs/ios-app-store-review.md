@@ -119,8 +119,7 @@ The app includes user-created reviews and replies. Authors can edit or delete th
 3. App functions and target audience
 ChaekChaek is a Korean-language reading companion for readers who want to discover books, organize books by reading status, record reading progress and ratings, and share short reading impressions with other readers.
 
-4. Setup and access instructions
-No sample files are required.
+4. Setup and access instructions, No sample files are required.
 
 Basic browsing:
 1. Launch the app.
