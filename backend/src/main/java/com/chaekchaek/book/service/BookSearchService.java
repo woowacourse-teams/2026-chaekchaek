@@ -89,8 +89,7 @@ public class BookSearchService {
     }
 
     private Comparator<BookItem> comparator(BookSearchSort sort) {
-        BookSearchSort effectiveSort = sort == null ? BookSearchSort.LATEST : sort;
-        return switch (effectiveSort) {
+        return switch (sort) {
             case TITLE_ASC -> Comparator.comparing(BookItem::title,
                     Comparator.nullsLast(Comparator.naturalOrder()));
             case TITLE_DESC -> Comparator.comparing(BookItem::title,
