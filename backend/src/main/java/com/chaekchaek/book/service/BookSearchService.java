@@ -38,10 +38,6 @@ public class BookSearchService {
     private final CurrentMemberIdProvider currentMemberIdProvider;
     private final LibraryItemRepository libraryItemRepository;
 
-    public BookSearchResponse search(String query, int page) {
-        return search(query, page, BookSearchSort.LATEST);
-    }
-
     public BookSearchResponse search(String query, int page, BookSearchSort sort) {
         BookSearchResult source = bookClient.search(query, page);
         List<BookSearchItem> searchedBooks = source.items();
