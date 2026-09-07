@@ -38,10 +38,6 @@ public class BookSearchService {
     private final CurrentMemberIdProvider currentMemberIdProvider;
     private final LibraryItemRepository libraryItemRepository;
 
-    public BookSearchResponse search(String query, int page) {
-        return search(query, page, BookSearchSort.LATEST);
-    }
-
     public BookSearchResponse search(String query, int page, BookSearchSort sort) {
         BookSearchResult source = bookClient.search(query, page);
         List<BookSearchItem> searchedBooks = source.items();
@@ -93,8 +89,7 @@ public class BookSearchService {
     }
 
     private Comparator<BookItem> comparator(BookSearchSort sort) {
-        BookSearchSort effectiveSort = sort == null ? BookSearchSort.LATEST : sort;
-        return switch (effectiveSort) {
+        return switch (sort) {
             case TITLE_ASC -> Comparator.comparing(BookItem::title,
                     Comparator.nullsLast(Comparator.naturalOrder()));
             case TITLE_DESC -> Comparator.comparing(BookItem::title,
