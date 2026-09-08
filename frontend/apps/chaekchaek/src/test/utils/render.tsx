@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 
 import { render } from '@testing-library/react';
 
@@ -17,17 +18,30 @@ interface TestProviderProps {
   children: ReactNode;
   route?: string;
   auth: AuthContextValue;
+  initialEntries: string[];
 }
 
-export const TestProvider = ({ children, auth = defaultAuthContextValue }: TestProviderProps) => {
-  return <authContext.Provider value={auth}>{children}</authContext.Provider>;
+export const TestProvider = ({
+  children,
+  auth = defaultAuthContextValue,
+  initialEntries = ['/'],
+}: TestProviderProps) => {
+  return (
+    <MemoryRouter initialEntries={initialEntries}>
+      <authContext.Provider value={auth}>{children}</authContext.Provider>
+    </MemoryRouter>
+  );
 };
 
 export const renderProvider = (
   children: ReactNode,
-  { auth }: { auth: AuthContextValue } = {
+  { auth, initialEntries = ['/'] }: { auth: AuthContextValue; initialEntries?: string[] } = {
     auth: defaultAuthContextValue,
   },
 ) => {
-  return render(<TestProvider auth={auth}>{children}</TestProvider>);
+  return render(
+    <TestProvider auth={auth} initialEntries={initialEntries}>
+      {children}
+    </TestProvider>,
+  );
 };
