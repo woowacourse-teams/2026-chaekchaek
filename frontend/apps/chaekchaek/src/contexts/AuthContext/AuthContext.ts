@@ -2,7 +2,7 @@ import { createContext } from 'react';
 
 import type { GuestData, UserData } from './AuthContext.types';
 
-type ContextValue = {
+export type ContextValue = {
   isAuthenticated: boolean;
   user: UserData | null;
   updateAccount: (user: UserData) => void;
