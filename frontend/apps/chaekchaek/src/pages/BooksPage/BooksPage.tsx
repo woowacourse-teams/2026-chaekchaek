@@ -141,6 +141,7 @@ export const BooksPage = () => {
               trailing={
                 <>
                   <Input
+                    aria-label="책 검색"
                     block
                     leading={<Icon.SearchIcon />}
                     autoFocus
