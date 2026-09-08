@@ -2,6 +2,12 @@ import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
 
+import dotenv from 'dotenv';
+
+dotenv.config({
+  path: '.env.test',
+});
+
 const srcPath = fileURLToPath(new URL('./src', import.meta.url));
 
 export default defineConfig({
@@ -13,6 +19,7 @@ export default defineConfig({
 
   test: {
     environment: 'jsdom',
+    env: process.env,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'dist'],
