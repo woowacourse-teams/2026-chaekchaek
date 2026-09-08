@@ -170,4 +170,16 @@ describe('BooksPage', () => {
       within(bookItem!).queryByRole('button', { name: '내서재에 넣기' }),
     ).not.toBeInTheDocument();
   });
+
+  it('비로그인 사용자가 내서재에 넣기 버튼 클릭시 로그인 팝업이 뜬다', async () => {
+    renderProvider(<BooksPage />);
+
+    const user = userEvent.setup();
+
+    await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+
+    await user.click(screen.getByRole('button', { name: '내 서재 담기' }));
+
+    expect(screen.getByText(/로 시작하기/)).toBeInTheDocument();
+  });
 });
