@@ -1,8 +1,10 @@
 ---
 name: 기능 요청 (Feature Request)
 about: 새로운 기능을 제안합니다
-title: '[Feature] '
-labels: ['feat']
+title: "[Feature] "
+labels: "\U0001F528 refactor"
+assignees: ''
+
 ---
 
 ## 기능 설명
