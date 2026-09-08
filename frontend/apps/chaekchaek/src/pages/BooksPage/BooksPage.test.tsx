@@ -1,14 +1,14 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 import { server } from '@/mocks/msw/server';
 import { http, HttpResponse } from 'msw';
 
 import { ENV } from '@/configs/env';
 
-import { renderProvider } from '@/test/utils/render';
+import { defaultLoggedAuthContextValue, renderProvider } from '@/test/utils/render';
 
 import { BooksPage } from './BooksPage';
 
@@ -169,6 +169,56 @@ describe('BooksPage', () => {
     expect(
       within(bookItem!).queryByRole('button', { name: '내서재에 넣기' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('로그인 사용자가 내서재에 넣기 버튼 클릭시 내서재에 담긴다', async () => {
+    const requestListener = vi.fn();
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, () => {
+        return HttpResponse.json({
+          ...harrySearchPage1,
+          items: harrySearchPage1.items.map((item) => ({
+            ...item,
+            isRegisteredInMyLibrary: false,
+          })),
+        });
+      }),
+    );
+
+    server.events.on('request:start', async ({ request }) => {
+      const url = new URL(request.url);
+
+      if (request.method === 'POST' && url.pathname === '/api/v1/library') {
+        const body = await request.clone().json();
+        console.log(body);
+        requestListener(body);
+      }
+    });
+
+    renderProvider(<BooksPage />, { auth: defaultLoggedAuthContextValue });
+
+    const user = userEvent.setup();
+
+    await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+
+    const book = {
+      title: '개소리에 대하여',
+      isbn: '9791157833870',
+    };
+
+    const title = await screen.findByText(book.title);
+    const bookItem = title.closest('li');
+
+    expect(bookItem).not.toBeNull();
+
+    await user.click(within(bookItem!).getByRole('button', { name: '내 서재 담기' }));
+
+    expect(requestListener).toHaveBeenCalled();
+    expect(requestListener).toHaveBeenCalledWith({
+      isbn13: book.isbn,
+      status: 'WANT_TO_READ',
+    });
   });
 
   it('비로그인 사용자가 내서재에 넣기 버튼 클릭시 로그인 팝업이 뜬다', async () => {
