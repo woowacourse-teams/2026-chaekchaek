@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { describe, it, expect } from 'vitest';
@@ -122,5 +122,32 @@ describe('BooksPage', () => {
       'aria-current',
       'page',
     );
+  });
+
+  it('로그인 사용자가 내서재에 넣는 책의 경우 버튼이 안 나타난다', async () => {
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, () => {
+        return HttpResponse.json({
+          ...harrySearchPage1,
+        });
+      }),
+    );
+
+    renderProvider(<BooksPage />);
+
+    const user = userEvent.setup();
+
+    const searchInput = screen.getByRole('textbox', { name: '책 검색' });
+
+    await user.type(searchInput, '해리');
+
+    const title = screen.getByText(/^해리 포터와 마법사의 돌 1$/);
+    const bookItem = title.closest('li');
+
+    expect(bookItem).not.toBeNull();
+
+    expect(
+      within(bookItem!).queryByRole('button', { name: '내서재에 넣기' }),
+    ).not.toBeInTheDocument();
   });
 });
