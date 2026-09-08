@@ -25,4 +25,8 @@ export default defineConfig({
       tsconfig: './tsconfig.test.json',
     },
   },
+
+  define: {
+    __DEV__: JSON.stringify(true),
+  },
 });
