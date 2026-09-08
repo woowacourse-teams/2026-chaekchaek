@@ -64,4 +64,36 @@ describe('BooksPage', () => {
 
     expect(await screen.findByText(/마션/)).toBeInTheDocument();
   });
+
+  it('검색어가 변경되면 1페이지로 초기화한다', async () => {
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, () => {
+        return HttpResponse.json({
+          ...harrySearchPage1,
+        });
+      }),
+    );
+
+    renderProvider(<BooksPage />);
+
+    const user = userEvent.setup();
+
+    const searchInput = screen.getByRole('textbox', { name: '책 검색' });
+
+    await user.type(searchInput, '해리');
+    await user.click(await screen.findByRole('button', { name: /Page 2/i }));
+
+    expect(await screen.findByRole('button', { name: 'Page 2' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+
+    await user.clear(searchInput);
+    await user.type(searchInput, '마션');
+
+    expect(await screen.findByRole('button', { name: 'Page 1' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
 });
