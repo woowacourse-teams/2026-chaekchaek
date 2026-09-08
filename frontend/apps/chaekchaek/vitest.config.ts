@@ -2,6 +2,8 @@ import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
 
+import svgr from 'vite-plugin-svgr';
+
 import dotenv from 'dotenv';
 
 dotenv.config({
@@ -32,6 +34,12 @@ export default defineConfig({
       tsconfig: './tsconfig.test.json',
     },
   },
+
+  plugins: [
+    svgr({
+      include: '**/*.svg?component',
+    }),
+  ],
 
   define: {
     __DEV__: JSON.stringify(true),
