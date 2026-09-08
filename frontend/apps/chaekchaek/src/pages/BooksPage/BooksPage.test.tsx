@@ -12,7 +12,7 @@ import { renderProvider } from '@/test/utils/render';
 
 import { BooksPage } from './BooksPage';
 
-import { harrySearchPage1 } from './BooksPage.fixtures';
+import { harrySearchPage1, martianSearchPage } from './BooksPage.fixtures';
 
 describe('BooksPage', () => {
   it('기본 렌더링이 된다', () => {
@@ -39,5 +39,29 @@ describe('BooksPage', () => {
     expect(await screen.findByText(/개소리에/)).toBeInTheDocument();
 
     expect(await screen.findByText(/^해리 포터와 마법사의 돌 1$/)).toBeInTheDocument();
+  });
+
+  it('초기 url 주소에 검색어가 있으면 그 검색어로 검색 결과를 보여준다', async () => {
+    const searchKeyword = '마션';
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, ({ request }) => {
+        const url = new URL(request.url);
+
+        expect(url.searchParams.get('query')).toBe(searchKeyword);
+
+        return HttpResponse.json({
+          ...martianSearchPage,
+        });
+      }),
+    );
+
+    renderProvider(<BooksPage />, { initialEntries: [`/books?query=${searchKeyword}`] });
+
+    const user = userEvent.setup();
+
+    await user.type(screen.getByRole('textbox', { name: '책 검색' }), searchKeyword);
+
+    expect(await screen.findByText(/마션/)).toBeInTheDocument();
   });
 });

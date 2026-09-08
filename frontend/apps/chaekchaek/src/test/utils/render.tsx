@@ -14,6 +14,8 @@ const defaultAuthContextValue = {
   updateGuestAccount: () => {},
 };
 
+const defaultInitialEntries = ['/'];
+
 interface TestProviderProps {
   children: ReactNode;
   route?: string;
@@ -24,7 +26,7 @@ interface TestProviderProps {
 export const TestProvider = ({
   children,
   auth = defaultAuthContextValue,
-  initialEntries = ['/'],
+  initialEntries = defaultInitialEntries,
 }: TestProviderProps) => {
   return (
     <MemoryRouter initialEntries={initialEntries}>
@@ -33,12 +35,18 @@ export const TestProvider = ({
   );
 };
 
+const defaultConfig = {
+  auth: defaultAuthContextValue,
+  initialEntries: defaultInitialEntries,
+};
+
 export const renderProvider = (
   children: ReactNode,
-  { auth, initialEntries = ['/'] }: { auth: AuthContextValue; initialEntries?: string[] } = {
-    auth: defaultAuthContextValue,
-  },
+  config: { auth?: AuthContextValue; initialEntries?: string[] } = {},
 ) => {
+  const resolvedConfig = { ...defaultConfig, ...config };
+  const { auth, initialEntries } = resolvedConfig;
+
   return render(
     <TestProvider auth={auth} initialEntries={initialEntries}>
       {children}
