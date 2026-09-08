@@ -124,6 +124,26 @@ describe('BooksPage', () => {
     );
   });
 
+  it('로그인 사용자가 내서재에 안 넣는 책의 경우 버튼이 나타난다', async () => {
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, () => {
+        return HttpResponse.json(harrySearchPage1);
+      }),
+    );
+
+    renderProvider(<BooksPage />);
+
+    const user = userEvent.setup();
+
+    await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+
+    const title = await screen.findByText('개소리에 대하여');
+    const bookItem = title.closest('li');
+
+    expect(bookItem).not.toBeNull();
+    expect(within(bookItem!).getByRole('button', { name: '내 서재 담기' })).toBeInTheDocument();
+  });
+
   it('로그인 사용자가 내서재에 넣는 책의 경우 버튼이 안 나타난다', async () => {
     server.use(
       http.get(`${ENV.APP_API_URL}/api/v1/books`, () => {
