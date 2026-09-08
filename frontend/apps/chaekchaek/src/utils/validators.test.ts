@@ -7,11 +7,15 @@ suite('validators', () => {
     it('문자열이면 true를 반환한다', () => {
       expect(isString('string')).toBe(true);
     });
-    it('숫자이면 false를 반환한다', () => {
-      expect(isString(1)).toBe(false);
-    });
-    it('undefined이면 false를 반환한다', () => {
-      expect(isString(undefined)).toBe(false);
+
+    it.each([
+      ['숫자', 1],
+      [undefined, undefined],
+      [null, null],
+      ['객체', {}],
+      ['배열', []],
+    ])('%s 이면 false를 반환한다', (_, value) => {
+      expect(isString(value)).toBe(false);
     });
   });
 });
