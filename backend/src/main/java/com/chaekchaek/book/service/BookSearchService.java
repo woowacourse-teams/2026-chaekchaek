@@ -100,7 +100,7 @@ public class BookSearchService {
                     Comparator.nullsLast(Comparator.reverseOrder()));
             case REVIEW -> Comparator.comparing(BookItem::reviewCount,
                     Comparator.nullsLast(Comparator.reverseOrder()));
-            case COMMENT -> Comparator.comparing(this::totalCount,
+            case COMMENT -> Comparator.comparing(this::totalActivityCount,
                     Comparator.nullsLast(Comparator.reverseOrder()));
         };
     }
@@ -141,7 +141,7 @@ public class BookSearchService {
         return registeredBook != null && libraryBookIds.contains(registeredBook.getId());
     }
 
-    private Long totalCount(BookItem item) {
+    private Long totalActivityCount(BookItem item) {
         if (item.reviewCount() == null || item.replyCount() == null) {
             return null;
         }
