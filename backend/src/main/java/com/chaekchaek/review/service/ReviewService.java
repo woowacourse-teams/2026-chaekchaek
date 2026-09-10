@@ -462,7 +462,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     public Map<Long, Long> getCommentCounts(Collection<Long> bookIds) {
         return getActivityCounts(bookIds).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> entry.getValue().totalCount()));
+                        entry -> entry.getValue().totalActivityCount()));
     }
 
     @Override
