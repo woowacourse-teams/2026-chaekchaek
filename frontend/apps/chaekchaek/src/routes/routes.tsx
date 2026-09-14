@@ -26,6 +26,10 @@ const DummyPage = () => {
 
 const routes: Route[] = [
   {
+    path: ROUTES.QR,
+    element: <Navigate to={ROUTES.HOME} replace />,
+  },
+  {
     path: ROUTES.LOGIN,
     element: (
       <GuestRoute>
