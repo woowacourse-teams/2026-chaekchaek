@@ -11,7 +11,7 @@
   display: flex;
   align-items: stretch;
   gap: 40px;
-  width: 1440px;
+  width: 1040px;
   text-align: left;
   margin: 0 auto;
   box-sizing: border-box;
@@ -20,7 +20,7 @@
 .ui-Overview-Content {
   display: flex;
   min-width: 0;
-  padding-left: 70px;
+  padding-right: 70px;
   flex: 1 1 auto;
   flex-direction: column;
   justify-content: center;
@@ -111,13 +111,14 @@
 }
 
 .ui-Overview-Media {
+  order: -1;
   margin-top: 28px;
   display: flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   background-color: #F7F2EC;
-  width: 650px;
+  width: 450px;
   height: 408px;
 }
 
@@ -127,9 +128,10 @@
 
 .ui-Overview-Media .box {
   position: relative;
+  box-sizing: border-box;
   max-width: 100%;
-  border: 20px solid #FCFAF7;
-  box-shadow: 14px 14px 0 0 rgba(255, 152, 0, 0.33);
+  border: 14px solid #FCFAF7;
+  box-shadow: 10px 10px 0 0 rgba(255, 152, 0, 0.33);
 }
 .ui-Overview-Media .box:before {
   content: '';
@@ -141,4 +143,6 @@
   display: block;
   max-width: 100%;
   height: auto;
+  max-height: 380px;
+  object-fit: contain;
 }
