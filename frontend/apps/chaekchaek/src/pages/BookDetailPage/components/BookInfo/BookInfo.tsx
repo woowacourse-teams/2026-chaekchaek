@@ -13,6 +13,8 @@ import { track } from '@/analytics/track';
 
 import type { BookInfoProps } from './BookInfo.types';
 
+import styles from './BookInfo.module.css';
+
 export const BookInfo = ({
   myRecord,
   readingStatus,
@@ -47,7 +49,7 @@ export const BookInfo = ({
   };
 
   return (
-    <>
+    <section className={styles.root}>
       <Title level="main">내 독서 기록</Title>
       <Banner sx={{ mt: 6 }}>
         <Banner.Content
@@ -92,13 +94,13 @@ export const BookInfo = ({
       <Button sx={{ mt: 2 }} variant="primary" block={true} onClick={handleClickCurrentPage}>
         현재 읽은 쪽수 입력
       </Button>
-      <DataInfo sx={{ mt: 6 }} heading="책 정보">
+      <DataInfo className={styles.bookDetails} heading="책 정보">
         {category && <DataInfo.Item title="장르" content={category} />}
         {publishedDate && <DataInfo.Item title="출간" content={publishedDate} />}
         {isbn13 && <DataInfo.Item title="ISBN" content={isbn13} />}
         {!!authors?.length && <DataInfo.Item title="지은이" content={authors.join(' · ')} />}
         {!!translators?.length && <DataInfo.Item title="옮김" content={translators.join(' · ')} />}
       </DataInfo>
-    </>
+    </section>
   );
 };

@@ -19,10 +19,11 @@
   bottom: 0;
   right: max(70px, calc((100vw - 1440px) / 2 + 70px));
   width: var(--split-side-width);
+  height: 100dvh;
   background-color: #FCFAF7;
   border-left: 1px solid #e2ddd5;
   border-right: 1px solid #e2ddd5;
-  padding: 36px 40px;
+  padding: 36px 40px 0;
   overflow-y: auto;
   box-sizing: border-box;
   justify-content: flex-start;
