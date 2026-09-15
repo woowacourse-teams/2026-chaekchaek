@@ -13,6 +13,8 @@
 }
 
 .ui-Split-Side {
+  position: sticky;
+  top: 36px;
   flex: 0 0 320px;
   padding-left: 40px;
   box-sizing: border-box;
