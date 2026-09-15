@@ -1,4 +1,5 @@
 .ui-Split {
+  --split-side-width: 400px;
   display: flex;
   flex-wrap: wrap;
   padding: 36px 70px 60px;
@@ -13,10 +14,16 @@
 }
 
 .ui-Split-Side {
-  position: sticky;
-  top: 36px;
-  flex: 0 0 320px;
-  padding-left: 40px;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: max(70px, calc((100vw - 1440px) / 2 + 70px));
+  width: var(--split-side-width);
+  background-color: #FCFAF7;
+  border-left: 1px solid #e2ddd5;
+  border-right: 1px solid #e2ddd5;
+  padding: 36px 40px;
+  overflow-y: auto;
   box-sizing: border-box;
   justify-content: flex-start;
   align-self: flex-start;
@@ -31,4 +38,13 @@
 
 .ui-Split-Side + .ui-Split-Content {
   border-left: 1px solid #e2ddd5;
+}
+
+.ui-Split:has(> .ui-Split-Side) > .ui-Split-Content {
+  margin-right: var(--split-side-width);
+}
+
+.ui-Split:has(> .ui-Split-Side) > .ui-Split-Top {
+  flex-basis: calc(100% - var(--split-side-width));
+  margin-right: var(--split-side-width);
 }
