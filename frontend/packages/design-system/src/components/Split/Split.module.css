@@ -14,7 +14,7 @@
 
 .ui-Split-Side {
   flex: 0 0 320px;
-  padding-right: 40px;
+  padding-left: 40px;
   box-sizing: border-box;
   justify-content: flex-start;
   align-self: flex-start;
@@ -23,7 +23,7 @@
 .ui-Split-Content {
   flex: 1 1 0;
   min-width: 0;
-  padding-left: 40px;
+  padding-right: 40px;
   box-sizing: border-box;
 }
 
