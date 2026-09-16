@@ -93,3 +93,51 @@ export const VariantSubtle: Story = {
     ),
   },
 };
+
+export const ExampleReverse: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ padding: 16, backgroundColor: '#090A0C' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    reverse: true,
+    children: (
+      <>
+        <Entry.Main>
+          <Entry.Header>
+            <Shell reverse>
+              <Shell.Leading>
+                <Avatar img={DummyImgAvatar} />
+              </Shell.Leading>
+              <Shell.Content title="title" content="content" />
+              <Shell.Trailing>Trailing</Shell.Trailing>
+            </Shell>
+          </Entry.Header>
+          <Entry.Body>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
+            nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
+            accusantium magni quis voluptates, velit nisi dolorum id.
+          </Entry.Body>
+          <Entry.Footer>Footer</Entry.Footer>
+        </Entry.Main>
+        <Entry.Extension>
+          <Shell reverse>
+            <Shell.Leading>
+              <Avatar img={DummyImgAvatar} size="small" />
+            </Shell.Leading>
+            <Shell.Content title="title" content="content" />
+          </Shell>
+          <Shell reverse>
+            <Shell.Leading>
+              <Avatar img={DummyImgAvatar} size="small" />
+            </Shell.Leading>
+            <Shell.Content title="title" content="content" />
+          </Shell>
+        </Entry.Extension>
+      </>
+    ),
+  },
+};

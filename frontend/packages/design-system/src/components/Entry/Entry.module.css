@@ -15,12 +15,6 @@
   background: #FFFFFF;
 }
 
-.ui-Entry-Content {
-  font-size: 0.90625rem; /* 14.5px */
-  line-height: 1.68;
-  color: #ffffff;
-}
-
 .ui-Entry-Body {
   white-space: pre-wrap;
 }
@@ -42,5 +36,18 @@
 }
 
 .variant-subtle .ui-Entry-Main {
-  background: #F7F2EC  ;
+  background: #F7F2EC;
 }
+
+.is-reverse {
+  color: #ffffff;
+}
+
+.is-reverse .ui-Entry-Main {
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.is-reverse .ui-Entry-Body {
+  color: #E2E2E2
+} 
