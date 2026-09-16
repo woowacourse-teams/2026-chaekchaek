@@ -21,7 +21,7 @@ export const Content = <T extends ElementType>(props: ContentProps<T>) => {
   } = props;
 
   const modifiers = {
-    verticalAlign: verticalAlign && styles[`vertical-align-${verticalAlign}`],
+    verticalAlign: styles[`vertical-align-${verticalAlign}`],
   };
 
   const classname = createClassName({

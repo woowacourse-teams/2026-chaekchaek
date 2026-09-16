@@ -70,6 +70,32 @@ export const VerticalAlign: Story = {
       {(['top', 'center', 'bottom'] as const).map((verticalAlign) => (
         <div key={verticalAlign}>
           <p>{verticalAlign}</p>
+          <Shell
+            {...args}
+            verticalAlign={verticalAlign}
+            style={{ minHeight: 96, backgroundColor: '#f5f5f5' }}
+          >
+            <Shell.Leading>
+              <ImgBox size="small" img={DummyImgBox} />
+            </Shell.Leading>
+            <Shell.Content title="title" content="content" />
+            <Shell.Trailing>Trailing</Shell.Trailing>
+          </Shell>
+        </div>
+      ))}
+    </div>
+  ),
+  args: {
+    children: null,
+  },
+};
+
+export const ContentVerticalAlign: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {(['top', 'center', 'bottom'] as const).map((verticalAlign) => (
+        <div key={verticalAlign}>
+          <p>{verticalAlign}</p>
           <Shell {...args}>
             <Shell.Leading>
               <ImgBox size="small" img={DummyImgBox} />
@@ -106,6 +132,29 @@ export const Reverse: Story = {
           <ImgBox size="small" img={DummyImgBox} />
         </Shell.Leading>
         <Shell.Content
+          title="title"
+          content={
+            <>
+              <Avatar size="x-small" img={DummyImgAvatar} />
+              Content
+            </>
+          }
+        />
+      </>
+    ),
+  },
+};
+
+export const VerticalAlignTop: Story = {
+  args: {
+    verticalAlign: 'top',
+    children: (
+      <>
+        <Shell.Leading>
+          <ImgBox size="small" img={DummyImgBox} />
+        </Shell.Leading>
+        <Shell.Content
+          verticalAlign="top"
           title="title"
           content={
             <>

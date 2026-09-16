@@ -27,15 +27,27 @@
   white-space: pre-wrap;
 }
 
-.vertical-align-top {
+.ui-Shell.vertical-align-top {
+  align-items: flex-start;
+}
+
+.ui-Shell.vertical-align-center {
+  align-items: center;
+}
+
+.ui-Shell.vertical-align-bottom {
+  align-items: flex-end;
+}
+
+.ui-Shell-Content.vertical-align-top {
   justify-content: flex-start;
 }
 
-.vertical-align-center {
+.ui-Shell-Content.vertical-align-center {
   justify-content: center;
 }
 
-.vertical-align-bottom {
+.ui-Shell-Content.vertical-align-bottom {
   justify-content: flex-end;
 }
 
