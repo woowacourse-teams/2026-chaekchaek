@@ -64,6 +64,32 @@ export const WithImgBox: Story = {
   },
 };
 
+export const VerticalAlign: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {(['top', 'center', 'bottom'] as const).map((verticalAlign) => (
+        <div key={verticalAlign}>
+          <p>{verticalAlign}</p>
+          <Shell {...args}>
+            <Shell.Leading>
+              <ImgBox size="small" img={DummyImgBox} />
+            </Shell.Leading>
+            <Shell.Content
+              verticalAlign={verticalAlign}
+              title="title"
+              content="content"
+              style={{ height: 96, backgroundColor: '#f5f5f5' }}
+            />
+          </Shell>
+        </div>
+      ))}
+    </div>
+  ),
+  args: {
+    children: null,
+  },
+};
+
 export const Reverse: Story = {
   decorators: [
     (Story) => (

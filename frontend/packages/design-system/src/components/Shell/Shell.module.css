@@ -27,6 +27,18 @@
   white-space: pre-wrap;
 }
 
+.vertical-align-top {
+  justify-content: flex-start;
+}
+
+.vertical-align-center {
+  justify-content: center;
+}
+
+.vertical-align-bottom {
+  justify-content: flex-end;
+}
+
 .title {
   padding-bottom: 2px;
   color: #000;

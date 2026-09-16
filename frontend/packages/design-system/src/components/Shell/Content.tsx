@@ -10,9 +10,19 @@ import type { ContentProps } from './Shell.types';
 const classnameDefault = 'ui-Shell-Content';
 
 export const Content = <T extends ElementType>(props: ContentProps<T>) => {
-  const { as = 'div', className, title, content, description, ...restProps } = props;
+  const {
+    as = 'div',
+    className,
+    verticalAlign = 'center',
+    title,
+    content,
+    description,
+    ...restProps
+  } = props;
 
-  const modifiers = {};
+  const modifiers = {
+    verticalAlign: verticalAlign && styles[`vertical-align-${verticalAlign}`],
+  };
 
   const classname = createClassName({
     styles,
