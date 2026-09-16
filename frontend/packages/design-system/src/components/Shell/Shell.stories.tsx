@@ -4,6 +4,8 @@ import { Shell } from './';
 
 import { Avatar } from '../Avatar';
 import DummyImgAvatar from '../Avatar/imgs/dummy-avatar.png';
+import { ImgBox } from '../ImgBox';
+import DummyImgBox from '../ImgBox/imgs/dummy.png';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
@@ -36,6 +38,27 @@ export const WithAvatar: Story = {
         </Shell.Leading>
         <Shell.Content title="title" content="content" description="description" />
         <Shell.Trailing>Trailing</Shell.Trailing>
+      </>
+    ),
+  },
+};
+
+export const WithImgBox: Story = {
+  args: {
+    children: (
+      <>
+        <Shell.Leading>
+          <ImgBox size="small" img={DummyImgBox} />
+        </Shell.Leading>
+        <Shell.Content
+          title="title"
+          content={
+            <>
+              <Avatar size="x-small" img={DummyImgAvatar} />
+              Content
+            </>
+          }
+        />
       </>
     ),
   },

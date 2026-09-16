@@ -38,6 +38,9 @@
 }
 
 .content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: #666;
   font-family: 'Geist Mono', monospace;
   font-size: 0.75rem; /* 12px */
