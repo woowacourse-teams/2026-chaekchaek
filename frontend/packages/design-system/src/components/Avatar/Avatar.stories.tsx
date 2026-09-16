@@ -19,6 +19,13 @@ export const Default: Story = {
   },
 };
 
+export const XSmall: Story = {
+  args: {
+    size: 'x-small',
+    img: DummyImg,
+  },
+};
+
 export const Small: Story = {
   args: {
     size: 'small',

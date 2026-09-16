@@ -6,7 +6,7 @@ export type AS = 'div';
 
 export type OwnProps = {
   img: string | null;
-  size?: 'medium' | 'small';
+  size?: 'x-small' | 'small' | 'medium';
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;
