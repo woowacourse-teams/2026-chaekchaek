@@ -4,13 +4,13 @@ import { Main } from '@/frames';
 
 import { PopularBooks } from './components/PopularBooks';
 
-import './IntroPage.css';
+import styles from './IntroPage.module.css';
 
 export const IntroPage = () => {
   return (
-    <Layout>
+    <Layout className={styles[`intro-page`]}>
       <Header />
-      <Main>
+      <Main className={styles.wrap}>
         <PopularBooks />
       </Main>
     </Layout>
