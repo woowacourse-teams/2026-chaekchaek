@@ -9,9 +9,17 @@
 }
 
 .size-small {
-  width: 58px;
+  width: 44px;
 }
 
 .size-medium {
+  width: 58px;
+}
+
+.size-large {
+  width: 100px;
+}
+
+.size-x-large {
   width: 200px;
 }
