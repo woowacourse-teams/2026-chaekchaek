@@ -6,6 +6,15 @@
   border-radius: 50%;
 }
 
+.ui-Avatar:not(:has(> img)) {
+  background-color: #fff4df;
+  background-image: url(./imgs/default.png);
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: 115% auto;
+  box-shadow: inset 0 0 0 1px rgb(139 100 57 / 12%);
+}
+
 .ui-Avatar > img {
   display: block;
   width: 100%;

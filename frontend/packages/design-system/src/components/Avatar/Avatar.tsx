@@ -30,7 +30,7 @@ export const Avatar = <T extends ElementType>(props: Props<T>) => {
 
   return (
     <View as={as} className={classname} style={customStyles} {...restProps}>
-      <img src={img} />
+      {img && <img src={img} />}
     </View>
   );
 };
