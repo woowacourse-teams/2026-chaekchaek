@@ -1,63 +1,33 @@
 .scene {
   position: relative;
   width: 100%;
+  width: 936px;
+  padding-top: 112px;
   min-height: 1100px;
   background: #090a0c;
 }
 
-[data-pencil-name="다크 흩어진 책 웹 홈"] {
+/* // ── 상단 ────────────────────────────────────────────── */
+.popular-books {
+  position: relative;
+  padding-top: 112px;
+  height: 540px;
+  padding: 32px;
+}
+
+.popular-books .book {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 1440px;
-  height: 1100px;
-  transform: translate(-50%, -50%);
-  overflow: hidden;
-  background: #090a0c;
 }
 
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div {
-  position: absolute;
-  transform-origin: top left;
-}
+.popular-books .book:nth-child(4) {  top: 4%; left: -1%; width: 155px; height: 235px; z-index: 1; rotate: -18deg } /*src imgBook3*/
+.popular-books .book:nth-child(1) {  top: 6%; left: 9%;  width: 165px; height: 250px; z-index: 2; rotate: -8deg  } /*src imgBook0*/
+.popular-books .book:nth-child(2) {  top: -3%; left: 23%; width: 175px; height: 265px; z-index: 3; rotate:  3deg  } /*src imgBook1*/
+.popular-books .book:nth-child(3) {  top: 4%; left: 37%; width: 160px; height: 245px; z-index: 4; rotate: -5deg  } /*src imgBook2*/
+.popular-books .book:nth-child(4) {  top: -2%; left: 51%; width: 185px; height: 280px; z-index: 3; rotate:  7deg  } /*src imgBook3*/
+.popular-books .book:nth-child(5) {  top: 8%; left: 66%; width: 155px; height: 235px; z-index: 2; rotate: 12deg  } /*src imgBook4*/
+.popular-books .book:nth-child(7) {  top: 2%; left: 79%; width: 145px; height: 220px; z-index: 1; rotate: 20deg  } /*src imgBook6*/
 
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(1) { left: 111.8px; top: 105.7px; width: 190.4px; transform: rotate(9deg); z-index: 0; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(2) { left: 235.2px; top: 91.8px; width: 201.6px; transform: rotate(-6deg); z-index: 1; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(3) { left: 425.2px; top: 108.8px; width: 185.6px; transform: rotate(4deg); z-index: 2; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(4) { left: 611.4px; top: 97.6px; width: 211.2px; transform: rotate(-8deg); z-index: 3; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(5) { left: 813.6px; top: 117.4px; width: 188.8px; transform: rotate(7deg); z-index: 4; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(6) { left: 1003px; top: 75.5px; width: 200px; transform: rotate(-5deg); z-index: 5; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(7) { left: 1161px; top: 106.5px; width: 184px; transform: rotate(-7deg); z-index: 6; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(8) { left: 98px; top: 374px; width: 208px; transform: rotate(-7deg); z-index: 7; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(9) { left: 295.4px; top: 319.1px; width: 187.2px; transform: rotate(8deg); z-index: 8; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(10) { left: 480.4px; top: 386.1px; width: 203.2px; transform: rotate(-4deg); z-index: 9; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(11) { left: 677.4px; top: 328.6px; width: 195.2px; transform: rotate(5deg); z-index: 10; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(12) { left: 868.6px; top: 381.9px; width: 212.8px; transform: rotate(-9deg); z-index: 11; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(13) { left: 1073.8px; top: 327.7px; width: 190.4px; transform: rotate(6deg); z-index: 12; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(14) { left: 1220.8px; top: 387.2px; width: 166.4px; transform: rotate(-5deg); z-index: 13; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(15) { left: 98.2px; top: 740.3px; width: 193.6px; transform: rotate(6deg); z-index: 14; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(16) { left: 246.6px; top: 681.9px; width: 212.8px; transform: rotate(-8deg); z-index: 15; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(17) { left: 453.6px; top: 751.4px; width: 188.8px; transform: rotate(7deg); z-index: 16; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(18) { left: 641.4px; top: 692.1px; width: 203.2px; transform: rotate(-5deg); z-index: 17; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(19) { left: 839.2px; top: 746.3px; width: 193.6px; transform: rotate(4deg); z-index: 18; }
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div:nth-child(20) { left: 1027.2px; top: 688.8px; width: 217.6px; transform: rotate(-7deg); z-index: 19; }
-
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div {
-  user-select: none;
-}
-
-[data-pencil-name="다크 흩어진 책 웹 홈"] .book-float:focus-visible {
-  outline: 3px solid #fff !important;
-  outline-offset: 4px !important;
-}
-
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div a {
-  display: block;
-}
-
-[data-pencil-name="다크 흩어진 책 웹 홈"] > div img {
-  width: 100%;
-  vertical-align: top;
-}
-
-/* [data-pencil-name="다크 흩어진 책 웹 홈"] > div img { width: 100%; } */
+  /* // ── 하단 ────────────────────────────────────────────── */
+.popular-books .book:nth-child(6) {  top: 44%; left: 4%; width: 175px; height: 265ox; z-index: 5; rotate: -14deg } /*src imgBook5*/
+.popular-books .book:nth-child(8) {  top: 50%; left: 27%; width: 155px; height: 235ox; z-index: 5; rotate:  6deg  } /*src imgBook6*/
+.popular-books .book:nth-child(9) {  top: 47%; left: 46%; width: 170px; height: 255ox; z-index: 5; rotate: -3deg  } /*src imgBook2*/

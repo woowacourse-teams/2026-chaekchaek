@@ -10,8 +10,6 @@ import { getHomePopularBooks } from '@/services/apis/homePopularBooks/repository
 import './PopularBooks.css';
 import './IntroInteraction.css';
 
-const BOOKS_MAX_LENGTH = 7;
-
 export const PopularBooks = () => {
   const getHomePopularBooksLoadData = useCallback(async () => {
     return await getHomePopularBooks({});
@@ -34,29 +32,25 @@ export const PopularBooks = () => {
 
   return (
     <div className="scene">
-      <div data-pencil-name="다크 흩어진 책 웹 홈">
-        {data?.books
-          .filter((_, index) => index < BOOKS_MAX_LENGTH)
-          .map((book, index) => {
-            const bookIndex = index;
-
-            return (
-              <div data-pencil-name={`다크 홈 전체 책 ${bookIndex}`} className="book">
-                <div className="book-entry">
-                  <a
-                    className="book-float"
-                    href="#"
-                    onClick={(e: MouseEvent<HTMLAnchorElement>) => {
-                      e.preventDefault();
-                      handleClickMoveDetail(book.isbn13);
-                    }}
-                  >
-                    <img src={book.coverImageUrl} alt="" />
-                  </a>
-                </div>
+      <div className="popular-books">
+        {data?.books.map((book) => {
+          return (
+            <div className="book" key={book.isbn13}>
+              <div className="book-entry">
+                <a
+                  className="book-float"
+                  href="#"
+                  onClick={(e: MouseEvent<HTMLAnchorElement>) => {
+                    e.preventDefault();
+                    handleClickMoveDetail(book.isbn13);
+                  }}
+                >
+                  <img src={book.coverImageUrl} alt="" />
+                </a>
               </div>
-            );
-          })}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
