@@ -20,3 +20,10 @@ export const Example: Story = {
     size: 'medium',
   },
 };
+
+export const SmallSize: Story = {
+  args: {
+    img: DummyImg,
+    size: 'small',
+  },
+};
