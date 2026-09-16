@@ -15,9 +15,11 @@ import { Trailing } from './Trailing';
 const classnameDefault = 'ui-Shell';
 
 export const Shell = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, sx, style, ...restProps } = props;
+  const { as = 'div', className, reverse, sx, style, ...restProps } = props;
 
-  const modifiers = {};
+  const modifiers = {
+    reverse: reverse && styles[`is-reverse`],
+  };
 
   const classname = createClassName({
     styles,

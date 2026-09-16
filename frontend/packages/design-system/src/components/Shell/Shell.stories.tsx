@@ -63,3 +63,32 @@ export const WithImgBox: Story = {
     ),
   },
 };
+
+export const Reverse: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ padding: 16, backgroundColor: '#000000' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    reverse: true,
+    children: (
+      <>
+        <Shell.Leading>
+          <ImgBox size="small" img={DummyImgBox} />
+        </Shell.Leading>
+        <Shell.Content
+          title="title"
+          content={
+            <>
+              <Avatar size="x-small" img={DummyImgAvatar} />
+              Content
+            </>
+          }
+        />
+      </>
+    ),
+  },
+};

@@ -57,3 +57,14 @@
   justify-content: center;
   text-align: right;
 }
+.is-reverse {
+  color: #ffffff;
+}
+
+.is-reverse .title {
+  color: #ffffff;
+}
+
+.is-reverse .content {
+  color: #999999;
+}
