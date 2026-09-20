@@ -11,6 +11,12 @@ import { Note } from '../Note';
 const meta = {
   title: 'Entry/Entry',
   component: Entry,
+  argTypes: {
+    line: {
+      control: 'select',
+      options: ['outline', 'top', 'top-inset'],
+    },
+  },
 } satisfies Meta<typeof Entry>;
 
 export default meta;
@@ -30,6 +36,27 @@ export const Example: Story = {
         <Entry.Extension>Extension</Entry.Extension>
       </>
     ),
+  },
+};
+
+export const LineOutline: Story = {
+  args: {
+    ...Example.args,
+    line: 'outline',
+  },
+};
+
+export const LineTop: Story = {
+  args: {
+    ...Example.args,
+    line: 'top',
+  },
+};
+
+export const LineTopInset: Story = {
+  args: {
+    ...Example.args,
+    line: 'top-inset',
   },
 };
 

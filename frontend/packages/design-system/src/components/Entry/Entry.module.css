@@ -11,7 +11,7 @@
 
 .ui-Entry-Main {
   padding: 20px;
-  border: 1px solid #DDD7CE;
+  border: 1px solid transparent;
   background: #FFFFFF;
 }
 
@@ -39,15 +39,30 @@
   background: #F7F2EC;
 }
 
+.line-outline {
+  border-color: #DDD7CE;
+}
+
+.line-top {
+  border-top-color: #DDD7CE;
+}
+
 .is-reverse {
   color: #ffffff;
 }
 
 .is-reverse .ui-Entry-Main {
   background-color: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .is-reverse .ui-Entry-Body {
   color: #E2E2E2
 } 
+
+.is-reverse.line-outline .ui-Entry-Main {
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.is-reverse.line-top .ui-Entry-Main {
+  border-top-color: rgba(255, 255, 255, 0.05);
+}
