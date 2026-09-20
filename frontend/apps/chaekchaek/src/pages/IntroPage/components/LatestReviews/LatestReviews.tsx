@@ -1,8 +1,21 @@
 import { Avatar, Entry, Shell, ImgBox, Icon, Button } from '@chaekchaek/design-system';
 
+import { useLoadData } from '@/services/core/useLoadData';
+import { getHomeLatestReviews } from '@/services/apis/homeLatestReviews/repository';
+
 import styles from './LatestReviews.module.css';
+import { useCallback } from 'react';
 
 export const LatestReviews = () => {
+  const getHomeLatestReviewsLoadData = useCallback(async () => {
+    return await getHomeLatestReviews({});
+  }, []);
+  const {
+    status: { data },
+  } = useLoadData({
+    queryFn: getHomeLatestReviewsLoadData,
+  });
+
   return (
     <div className={styles['scene-latest-reviews']}>
       <div className={styles['latest-reviews-title']}>
@@ -14,44 +27,40 @@ export const LatestReviews = () => {
         </div>
       </div>
 
-      {Array.from({ length: 7 }).map((_) => {
+      {data?.reviews.map((review, index) => {
         return (
-          <Entry reverse line="top" spacing="large">
+          <Entry reverse line="top" spacing="large" key={`${review.bookId}${index}`}>
             <Entry.Main>
               <Entry.Header>
                 <Shell reverse>
                   <Shell.Leading>
-                    <ImgBox size="small" img="" />
+                    <ImgBox size="small" img={review.bookCoverImageUrl} />
                   </Shell.Leading>
                   <Shell.Content
-                    title="title"
+                    title={review.bookTitle}
                     content={
                       <>
-                        <Avatar size="x-small" img={null} />
-                        Content
+                        <Avatar size="x-small" img={review.author.profileImageUrl} />
+                        {
+                          <>
+                            {review.author.displayName ?? review.author.anonymous}
+                            {' · '}
+                            {new Date(review.createdAt).toLocaleDateString('ko-KR')}
+                          </>
+                        }
                       </>
                     }
                   />
                 </Shell>
               </Entry.Header>
-              <Entry.Body>
-                "기억은 우리가 과거와 맺는 관계의 이름이 아니라, 현재 우리가 누 구인지를 결정짓는
-                살아있는 풍경이다. 우리는 매 순간 기억을 통 해..."
-              </Entry.Body>
+              <Entry.Body>{review.content}</Entry.Body>
               <Entry.Footer>
                 <Button
                   shape="link"
                   size="small"
-                  variant="ghost"
-                  leading={<Icon.HeartOffIcon color="secondary" />}
-                >
-                  20
-                </Button>
-                <Button
-                  shape="link"
-                  size="small"
-                  variant="ghost"
-                  leading={<Icon.CommentIcon color="secondary" />}
+                  inverse
+                  leading={<Icon.CommentIcon color="inverse" />}
+                  disabled
                 >
                   20
                 </Button>
