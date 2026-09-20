@@ -4,6 +4,8 @@ import { Shell } from './';
 
 import { Avatar } from '../Avatar';
 import DummyImgAvatar from '../Avatar/imgs/dummy-avatar.png';
+import { ImgBox } from '../ImgBox';
+import DummyImgBox from '../ImgBox/imgs/dummy.png';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
@@ -36,6 +38,131 @@ export const WithAvatar: Story = {
         </Shell.Leading>
         <Shell.Content title="title" content="content" description="description" />
         <Shell.Trailing>Trailing</Shell.Trailing>
+      </>
+    ),
+  },
+};
+
+export const WithImgBox: Story = {
+  args: {
+    children: (
+      <>
+        <Shell.Leading>
+          <ImgBox size="small" img={DummyImgBox} />
+        </Shell.Leading>
+        <Shell.Content
+          title="title"
+          content={
+            <>
+              <Avatar size="x-small" img={DummyImgAvatar} />
+              Content
+            </>
+          }
+        />
+      </>
+    ),
+  },
+};
+
+export const VerticalAlign: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {(['top', 'center', 'bottom'] as const).map((verticalAlign) => (
+        <div key={verticalAlign}>
+          <p>{verticalAlign}</p>
+          <Shell
+            {...args}
+            verticalAlign={verticalAlign}
+            style={{ minHeight: 96, backgroundColor: '#f5f5f5' }}
+          >
+            <Shell.Leading>
+              <ImgBox size="small" img={DummyImgBox} />
+            </Shell.Leading>
+            <Shell.Content title="title" content="content" />
+            <Shell.Trailing>Trailing</Shell.Trailing>
+          </Shell>
+        </div>
+      ))}
+    </div>
+  ),
+  args: {
+    children: null,
+  },
+};
+
+export const ContentVerticalAlign: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {(['top', 'center', 'bottom'] as const).map((verticalAlign) => (
+        <div key={verticalAlign}>
+          <p>{verticalAlign}</p>
+          <Shell {...args}>
+            <Shell.Leading>
+              <ImgBox size="small" img={DummyImgBox} />
+            </Shell.Leading>
+            <Shell.Content
+              verticalAlign={verticalAlign}
+              title="title"
+              content="content"
+              style={{ height: 96, backgroundColor: '#f5f5f5' }}
+            />
+          </Shell>
+        </div>
+      ))}
+    </div>
+  ),
+  args: {
+    children: null,
+  },
+};
+
+export const Reverse: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ padding: 16, backgroundColor: '#000000' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    reverse: true,
+    children: (
+      <>
+        <Shell.Leading>
+          <ImgBox size="small" img={DummyImgBox} />
+        </Shell.Leading>
+        <Shell.Content
+          title="title"
+          content={
+            <>
+              <Avatar size="x-small" img={DummyImgAvatar} />
+              Content
+            </>
+          }
+        />
+      </>
+    ),
+  },
+};
+
+export const VerticalAlignTop: Story = {
+  args: {
+    verticalAlign: 'top',
+    children: (
+      <>
+        <Shell.Leading>
+          <ImgBox size="small" img={DummyImgBox} />
+        </Shell.Leading>
+        <Shell.Content
+          verticalAlign="top"
+          title="title"
+          content={
+            <>
+              <Avatar size="x-small" img={DummyImgAvatar} />
+              Content
+            </>
+          }
+        />
       </>
     ),
   },

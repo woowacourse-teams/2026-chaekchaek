@@ -1,0 +1,12 @@
+.intro-page {
+  position: relative;
+  width: 100%;
+  min-height: 1100px;
+  margin: 0 auto;
+  background: #090a0c;
+}
+
+.wrap {
+  width: 1440px;
+  margin: 0 auto;
+}

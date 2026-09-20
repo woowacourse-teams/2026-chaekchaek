@@ -11,6 +11,7 @@ export {
   HeartOffIcon,
   HeartOnIcon,
   InvisibleIcon,
+  LongArrowRightIcon,
   PencilIcon,
   RefreshIcon,
   SearchIcon,

@@ -5,8 +5,8 @@ import type { PolymorphicProps } from '#internal/components/View';
 export type AS = 'div';
 
 export type OwnProps = {
-  img: string;
-  size?: 'medium' | 'small';
+  img: string | null;
+  size?: 'x-small' | 'small' | 'medium';
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;

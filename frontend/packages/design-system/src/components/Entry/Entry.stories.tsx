@@ -11,6 +11,16 @@ import { Note } from '../Note';
 const meta = {
   title: 'Entry/Entry',
   component: Entry,
+  argTypes: {
+    line: {
+      control: 'select',
+      options: ['outline', 'top', 'top-inset'],
+    },
+    spacing: {
+      control: 'select',
+      options: ['medium', 'large'],
+    },
+  },
 } satisfies Meta<typeof Entry>;
 
 export default meta;
@@ -30,6 +40,41 @@ export const Example: Story = {
         <Entry.Extension>Extension</Entry.Extension>
       </>
     ),
+  },
+};
+
+export const LineOutline: Story = {
+  args: {
+    ...Example.args,
+    line: 'outline',
+  },
+};
+
+export const LineTop: Story = {
+  args: {
+    ...Example.args,
+    line: 'top',
+  },
+};
+
+export const LineTopInset: Story = {
+  args: {
+    ...Example.args,
+    line: 'top-inset',
+  },
+};
+
+export const SpacingMedium: Story = {
+  args: {
+    ...Example.args,
+    spacing: 'medium',
+  },
+};
+
+export const SpacingLarge: Story = {
+  args: {
+    ...Example.args,
+    spacing: 'large',
   },
 };
 
@@ -89,6 +134,54 @@ export const VariantSubtle: Story = {
           <Entry.Footer>Footer</Entry.Footer>
         </Entry.Main>
         <Entry.Extension>Extension</Entry.Extension>
+      </>
+    ),
+  },
+};
+
+export const ExampleReverse: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ padding: 16, backgroundColor: '#090A0C' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    reverse: true,
+    children: (
+      <>
+        <Entry.Main>
+          <Entry.Header>
+            <Shell reverse>
+              <Shell.Leading>
+                <Avatar img={DummyImgAvatar} />
+              </Shell.Leading>
+              <Shell.Content title="title" content="content" />
+              <Shell.Trailing>Trailing</Shell.Trailing>
+            </Shell>
+          </Entry.Header>
+          <Entry.Body>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus
+            nobis quas error consequatur cumque nam recusandae dicta ab commodi, reiciendis
+            accusantium magni quis voluptates, velit nisi dolorum id.
+          </Entry.Body>
+          <Entry.Footer>Footer</Entry.Footer>
+        </Entry.Main>
+        <Entry.Extension>
+          <Shell reverse>
+            <Shell.Leading>
+              <Avatar img={DummyImgAvatar} size="small" />
+            </Shell.Leading>
+            <Shell.Content title="title" content="content" />
+          </Shell>
+          <Shell reverse>
+            <Shell.Leading>
+              <Avatar img={DummyImgAvatar} size="small" />
+            </Shell.Leading>
+            <Shell.Content title="title" content="content" />
+          </Shell>
+        </Entry.Extension>
       </>
     ),
   },

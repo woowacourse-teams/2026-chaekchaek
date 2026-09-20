@@ -1,0 +1,41 @@
+.scene {
+  position: relative;
+  display: inline-block;
+  width: 936px;
+  padding-top: 40px;
+  min-height: 700px;
+  background: #090a0c;
+  vertical-align: top;
+}
+
+.popular-books-title {
+  font-size: 32px;
+  color: #fff;
+  font-weight: 700;
+  padding: 0 0 80px 60px;
+}
+
+/* // ── 상단 ────────────────────────────────────────────── */
+.popular-books {
+  position: relative;
+  padding-top: 112px;
+  height: 540px;
+  padding: 32px;
+}
+
+.popular-books .book {
+  position: absolute;
+}
+
+.popular-books .book:nth-child(4) {  top: 4%; left: -1%; width: 155px; height: 235px; z-index: 1; rotate: -18deg } /*src imgBook3*/
+.popular-books .book:nth-child(1) {  top: 6%; left: 9%;  width: 165px; height: 250px; z-index: 2; rotate: -8deg  } /*src imgBook0*/
+.popular-books .book:nth-child(2) {  top: -3%; left: 23%; width: 175px; height: 265px; z-index: 3; rotate:  3deg  } /*src imgBook1*/
+.popular-books .book:nth-child(3) {  top: 4%; left: 37%; width: 160px; height: 245px; z-index: 4; rotate: -5deg  } /*src imgBook2*/
+.popular-books .book:nth-child(4) {  top: -2%; left: 51%; width: 185px; height: 280px; z-index: 3; rotate:  7deg  } /*src imgBook3*/
+.popular-books .book:nth-child(5) {  top: 8%; left: 66%; width: 155px; height: 235px; z-index: 2; rotate: 12deg  } /*src imgBook4*/
+.popular-books .book:nth-child(7) {  top: 2%; left: 79%; width: 145px; height: 220px; z-index: 1; rotate: 20deg  } /*src imgBook6*/
+
+  /* // ── 하단 ────────────────────────────────────────────── */
+.popular-books .book:nth-child(6) {  top: 44%; left: 4%; width: 175px; height: 265ox; z-index: 5; rotate: -14deg } /*src imgBook5*/
+.popular-books .book:nth-child(8) {  top: 50%; left: 27%; width: 155px; height: 235ox; z-index: 5; rotate:  6deg  } /*src imgBook6*/
+.popular-books .book:nth-child(9) {  top: 47%; left: 46%; width: 170px; height: 255ox; z-index: 5; rotate: -3deg  } /*src imgBook2*/

@@ -17,10 +17,23 @@ import { Extension } from './Extension';
 const classnameDefault = 'ui-Entry';
 
 export const Entry = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, variant = 'plain', sx, style, ...restProps } = props;
+  const {
+    as = 'div',
+    className,
+    variant = 'plain',
+    line = 'outline',
+    spacing = 'medium',
+    reverse,
+    sx,
+    style,
+    ...restProps
+  } = props;
 
   const modifiers = {
     variant: variant && styles?.[`variant-${variant}`],
+    line: line && styles?.[`line-${line}`],
+    spacing: spacing && styles?.[`spacing-${spacing}`],
+    reverse: reverse && styles?.[`is-reverse`],
   };
 
   const classname = createClassName({

@@ -10,15 +10,16 @@
 }
 
 .ui-Entry-Main {
-  padding: 20px;
-  border: 1px solid #DDD7CE;
+  border: 1px solid transparent;
   background: #FFFFFF;
 }
 
-.ui-Entry-Content {
-  font-size: 0.90625rem; /* 14.5px */
-  line-height: 1.68;
-  color: #ffffff;
+.spacing-medium .ui-Entry-Main {
+  padding: 20px;
+}
+
+.spacing-large .ui-Entry-Main {
+  padding: 32px;
 }
 
 .ui-Entry-Body {
@@ -42,5 +43,33 @@
 }
 
 .variant-subtle .ui-Entry-Main {
-  background: #F7F2EC  ;
+  background: #F7F2EC;
+}
+
+.line-outline {
+  border-color: #DDD7CE;
+}
+
+.line-top {
+  border-top-color: #DDD7CE;
+}
+
+.is-reverse {
+  color: #ffffff;
+}
+
+.is-reverse .ui-Entry-Main {
+  background-color: transparent;
+}
+
+.is-reverse .ui-Entry-Body {
+  color: #E2E2E2
+} 
+
+.is-reverse.line-outline .ui-Entry-Main {
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.is-reverse.line-top .ui-Entry-Main {
+  border-top-color: rgba(255, 255, 255, 0.05);
 }

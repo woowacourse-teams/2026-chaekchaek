@@ -27,6 +27,30 @@
   white-space: pre-wrap;
 }
 
+.ui-Shell.vertical-align-top {
+  align-items: flex-start;
+}
+
+.ui-Shell.vertical-align-center {
+  align-items: center;
+}
+
+.ui-Shell.vertical-align-bottom {
+  align-items: flex-end;
+}
+
+.ui-Shell-Content.vertical-align-top {
+  justify-content: flex-start;
+}
+
+.ui-Shell-Content.vertical-align-center {
+  justify-content: center;
+}
+
+.ui-Shell-Content.vertical-align-bottom {
+  justify-content: flex-end;
+}
+
 .title {
   padding-bottom: 2px;
   color: #000;
@@ -38,6 +62,9 @@
 }
 
 .content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: #666;
   font-family: 'Geist Mono', monospace;
   font-size: 0.75rem; /* 12px */
@@ -53,4 +80,15 @@
   align-items: center;
   justify-content: center;
   text-align: right;
+}
+.is-reverse {
+  color: #ffffff;
+}
+
+.is-reverse .title {
+  color: #ffffff;
+}
+
+.is-reverse .content {
+  color: #999999;
 }
