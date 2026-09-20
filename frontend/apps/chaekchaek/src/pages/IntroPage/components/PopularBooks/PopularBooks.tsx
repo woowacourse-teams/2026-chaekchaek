@@ -32,6 +32,7 @@ export const PopularBooks = () => {
 
   return (
     <div className="scene">
+      <div className="popular-books-title">지금 책책에서 인기 있는 책</div>
       <div className="popular-books">
         {data?.books.map((book) => {
           return (

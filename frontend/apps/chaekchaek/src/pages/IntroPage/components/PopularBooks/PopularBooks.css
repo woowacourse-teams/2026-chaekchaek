@@ -2,10 +2,17 @@
   position: relative;
   display: inline-block;
   width: 936px;
-  padding-top: 112px;
+  padding-top: 40px;
   min-height: 700px;
   background: #090a0c;
   vertical-align: top;
+}
+
+.popular-books-title {
+  font-size: 32px;
+  color: #fff;
+  font-weight: 700;
+  padding: 0 0 80px 60px;
 }
 
 /* // ── 상단 ────────────────────────────────────────────── */
