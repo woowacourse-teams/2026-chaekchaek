@@ -1,7 +1,7 @@
 .scene-latest-reviews {
   display: inline-block;
   width: 464px;
-  max-height: 1100px;
+  max-height: calc(100vh - 80px);
   overflow-y: auto;
   color: white;
   border-left: 1px solid rgba(255, 255, 255, 0.05);
