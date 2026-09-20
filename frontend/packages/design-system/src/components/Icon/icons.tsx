@@ -24,6 +24,9 @@ export const HeartOnIcon = createIcon(HeartOn);
 import Invisible from './imgs/invisible.svg?component';
 export const InvisibleIcon = createIcon(Invisible);
 
+import LongArrowRight from './imgs/long-arrow-right.svg?component';
+export const LongArrowRightIcon = createIcon(LongArrowRight);
+
 import Meatballs from './imgs/meatballs.svg?component';
 export const MeatballsOffIcon = createIcon(Meatballs);
 
