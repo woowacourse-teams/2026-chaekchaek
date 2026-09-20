@@ -10,9 +10,16 @@
 }
 
 .ui-Entry-Main {
-  padding: 20px;
   border: 1px solid transparent;
   background: #FFFFFF;
+}
+
+.spacing-medium .ui-Entry-Main {
+  padding: 20px;
+}
+
+.spacing-large .ui-Entry-Main {
+  padding: 32px;
 }
 
 .ui-Entry-Body {

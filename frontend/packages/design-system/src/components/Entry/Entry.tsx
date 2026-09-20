@@ -22,6 +22,7 @@ export const Entry = <T extends ElementType>(props: Props<T>) => {
     className,
     variant = 'plain',
     line = 'outline',
+    spacing = 'medium',
     reverse,
     sx,
     style,
@@ -31,6 +32,7 @@ export const Entry = <T extends ElementType>(props: Props<T>) => {
   const modifiers = {
     variant: variant && styles?.[`variant-${variant}`],
     line: line && styles?.[`line-${line}`],
+    spacing: spacing && styles?.[`spacing-${spacing}`],
     reverse: reverse && styles?.[`is-reverse`],
   };
 

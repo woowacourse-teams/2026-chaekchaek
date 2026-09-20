@@ -7,6 +7,7 @@ export type AS = 'div';
 export type OwnProps = {
   reverse?: boolean;
   line?: 'outline' | 'top' | 'top-inset';
+  spacing?: 'medium' | 'large';
   variant?: 'plain' | 'subtle';
 };
 

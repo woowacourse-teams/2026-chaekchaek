@@ -16,6 +16,10 @@ const meta = {
       control: 'select',
       options: ['outline', 'top', 'top-inset'],
     },
+    spacing: {
+      control: 'select',
+      options: ['medium', 'large'],
+    },
   },
 } satisfies Meta<typeof Entry>;
 
@@ -57,6 +61,20 @@ export const LineTopInset: Story = {
   args: {
     ...Example.args,
     line: 'top-inset',
+  },
+};
+
+export const SpacingMedium: Story = {
+  args: {
+    ...Example.args,
+    spacing: 'medium',
+  },
+};
+
+export const SpacingLarge: Story = {
+  args: {
+    ...Example.args,
+    spacing: 'large',
   },
 };
 
