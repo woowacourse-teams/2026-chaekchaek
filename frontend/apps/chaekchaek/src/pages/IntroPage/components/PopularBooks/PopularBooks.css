@@ -1,10 +1,11 @@
 .scene {
   position: relative;
-  width: 100%;
+  display: inline-block;
   width: 936px;
   padding-top: 112px;
-  min-height: 1100px;
+  min-height: 700px;
   background: #090a0c;
+  vertical-align: top;
 }
 
 /* // ── 상단 ────────────────────────────────────────────── */
