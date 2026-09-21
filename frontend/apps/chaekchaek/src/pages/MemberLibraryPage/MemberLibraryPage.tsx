@@ -134,7 +134,7 @@ export const MemberLibraryPage = () => {
       <Header />
       <Main>
         <Split>
-          <Split.Top sx={{ mb: 6 }}>
+          <Split.Top sx={{ mb: 10 }}>
             <Title level="page">
               {libraryData?.member.profileImageUrl && (
                 <Avatar img={libraryData?.member.profileImageUrl} />

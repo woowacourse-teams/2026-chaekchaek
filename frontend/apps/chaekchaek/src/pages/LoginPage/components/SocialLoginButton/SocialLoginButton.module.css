@@ -3,7 +3,6 @@
   gap: 4px;
   padding-inline: 20px;
   border-radius: 8px;
-  font-family: Roboto, Arial, sans-serif;
   font-size: 15px;
   font-weight: 700;
   line-height: 22.5px;
@@ -17,20 +16,42 @@
   --button-background: #fff;
   --button-border-color: #fff;
   --button-color: #000;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
 }
-.root.google {
-  --button-background: transparent;
-  --button-border-color: rgb(255 255 255 / 20%);
+.root.apple.reverse {
+  --button-background: #000;
+  --button-border-color: #000;
   --button-color: #fff;
 }
+.root.apple.reverse .icon {
+  filter: invert(1);
+}
+.root.google {
+  --button-background: #131314;
+  --button-border-color: #8e918f;
+  --button-color: #e3e3e3;
+
+  padding-inline: 12px;
+  font-family: Roboto, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
 .root.google.reverse {
-  --button-background: transparent;
-  --button-border-color: rgb(0 0 0 / 20%);
-  --button-color: #000;
+  --button-background: #fff;
+  --button-border-color: #747775;
+  --button-color: #1f1f1f;
 }
 .icon {
   display: block;
   width: 18px;
   height: 20px;
   object-fit: contain;
+}
+
+.root.google .icon {
+  width: 18px;
+  height: 18px;
 }

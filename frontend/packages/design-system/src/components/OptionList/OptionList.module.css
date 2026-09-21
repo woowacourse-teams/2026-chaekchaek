@@ -34,7 +34,6 @@
   border-radius: 4px;
   background-color: #fcfaf7;
   color: #555;
-  font-family: 'Funnel Sans', sans-serif;
   font-size: 0.875rem; /* 14px */
   font-weight: 600;
   line-height: normal;
@@ -49,7 +48,6 @@
 
 .content {
   display: inline-block;
-  font-family: 'Geist Mono', monospace;
   font-size: 0.875rem; /* 14px */
   font-weight: 600;
   line-height: normal;
@@ -59,7 +57,6 @@
 .meta {
   display: inline-block;
   color: #999;
-  font-family: 'Geist Mono', monospace;
   font-size: 0.75rem; /* 12px */
   font-weight: 400;
   line-height: normal;

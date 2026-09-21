@@ -227,7 +227,7 @@ export const LibraryPage = () => {
       <Header />
       <Main>
         <Split>
-          <Split.Top sx={{ mb: 6 }}>
+          <Split.Top sx={{ mb: 10 }}>
             <Title
               level="page"
               trailing={
@@ -236,8 +236,8 @@ export const LibraryPage = () => {
                     <>
                       {user?.displayAnonymous && (
                         <Button
-                          leading={<Icon.CheckboxOffIcon />}
-                          variant="soft"
+                          leading={<Icon.CheckboxOffIcon color="secondary" />}
+                          variant="ghost"
                           disabled={anonymityStatus.status === 'loading'}
                           onClick={handleToggleAnonymous}
                         >
@@ -246,8 +246,8 @@ export const LibraryPage = () => {
                       )}
                       {!user?.displayAnonymous && (
                         <Button
-                          leading={<Icon.CheckboxOnIcon />}
-                          variant="soft"
+                          leading={<Icon.CheckboxOnIcon color="secondary" />}
+                          variant="ghost"
                           disabled={anonymityStatus.status === 'loading'}
                           onClick={handleToggleAnonymous}
                         >

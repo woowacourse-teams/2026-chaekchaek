@@ -25,7 +25,6 @@
   margin: 0 2px 6px;
   padding-bottom: 2px;
   color: #1a1a1a;
-  font-family: 'Funnel Sans', sans-serif;
   font-size: 0.875rem; /* 14px */
   font-weight: 700;
   line-height: normal;
@@ -34,7 +33,6 @@
 .cell-list-title > :last-child:not(:first-child) {
   padding-bottom: 1px;
   color: #777777;
-  font-family: 'Geist Mono', monospace;
   font-size: 0.6875rem; /* 11px */
   font-weight: 400;
 }
@@ -80,7 +78,6 @@
 
 .headline {
   color: #a05a27;
-  font-family: 'Newsreader', serif;
   font-size: 1.1875rem; /* 19px */
   font-weight: 700;
   line-height: normal;
@@ -96,7 +93,6 @@
   width: 100%;
   overflow: hidden;
   color: #1a1a1a;
-  font-family: 'Funnel Sans', sans-serif;
   font-size: 0.75rem; /* 12px */
   font-weight: 700;
   line-height: 1.2;
@@ -108,7 +104,6 @@
 .content {
   overflow: hidden;
   color: #888888;
-  font-family: 'Geist Mono', monospace;
   font-size: 0.625rem; /* 10px */
   font-weight: 400;
   line-height: normal;

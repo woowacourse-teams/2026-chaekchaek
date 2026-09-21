@@ -30,6 +30,7 @@ export const BookInfo = ({
 }: BookInfoProps) => {
   const readPageCount = currentPage || 0;
   const bookPageCount = totalPages || 0;
+  const formattedCategory = category?.replace(/\s*>\s*/g, ' > ');
 
   const handleClickRating = () => {
     if (!myRecord) return onRegistryLibrary();
@@ -93,7 +94,7 @@ export const BookInfo = ({
         현재 읽은 쪽수 입력
       </Button>
       <DataInfo sx={{ mt: 6 }} heading="책 정보">
-        {category && <DataInfo.Item title="장르" content={category} />}
+        {formattedCategory && <DataInfo.Item title="장르" content={formattedCategory} />}
         {publishedDate && <DataInfo.Item title="출간" content={publishedDate} />}
         {isbn13 && <DataInfo.Item title="ISBN" content={isbn13} />}
         {!!authors?.length && <DataInfo.Item title="지은이" content={authors.join(' · ')} />}

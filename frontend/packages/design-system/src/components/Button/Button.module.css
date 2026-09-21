@@ -12,7 +12,6 @@
   border-radius: 6px;
   background: var(--button-background);
   color: var(--button-color);
-  font-family: 'Funnel Sans', sans-serif;
   text-align: center;
   cursor: pointer;
 }

@@ -14,10 +14,12 @@ export const BookOverview = ({
   replyCount,
   coverImageUrl,
 }: Props) => {
+  const formattedCategory = category?.replace(/\s*>\s*/g, ' > ');
+
   return (
     <Overview>
       <Overview.Content
-        leading={`ARCHIVE / ${category} / ${publishedDate}`}
+        leading={`ARCHIVE / ${formattedCategory} / ${publishedDate}`}
         title={title}
         content={`${authors} · ${publisher}`}
         description={description}

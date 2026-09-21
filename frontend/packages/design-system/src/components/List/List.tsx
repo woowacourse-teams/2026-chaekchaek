@@ -13,7 +13,7 @@ import type { Props } from './';
 const classnameDefault = 'ui-List';
 
 export const List = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'ul', className, columns, sx, style, ...restProps } = props;
+  const { as = 'ul', className, columns = 1, sx, style, ...restProps } = props;
 
   const modifiers = {
     columns: styles[`column-${columns}`],
