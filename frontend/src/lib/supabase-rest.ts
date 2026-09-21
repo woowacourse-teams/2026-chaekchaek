@@ -1,6 +1,6 @@
 import "server-only";
 import type { Book, Like, Reflection, Reply } from "./experiment";
-import type { CloudExperiment, ExperimentMutation } from "./cloud-experiment";
+import type { BookEvent, CloudExperiment, ExperimentMutation } from "./cloud-experiment";
 
 type Row = Record<string, unknown>;
 
@@ -36,20 +36,23 @@ const reflectionFromRow = (row: Row): Reflection => ({ id: String(row.id), bookI
 const replyFromRow = (row: Row): Reply => ({ id: String(row.id), reflectionId: String(row.reflection_id), userId: String(row.user_id),
   nickname: String(row.nickname), body: String(row.body), createdAt: String(row.created_at) });
 const likeFromRow = (row: Row): Like => ({ reflectionId: String(row.reflection_id), userId: String(row.user_id) });
+const bookEventFromRow = (row: Row): BookEvent => ({ id: String(row.id), bookId: String(row.book_id), userId: String(row.user_id),
+  eventType: row.event_type as BookEvent["eventType"], durationMs: Number(row.duration_ms), createdAt: String(row.created_at) });
 
 async function rows(path: string): Promise<Row[]> {
   return (await (await request(path, { headers: { Prefer: "return=representation" } })).json()) as Row[];
 }
 
 export async function loadCloudExperiment(): Promise<CloudExperiment> {
-  const [books, reflections, replies, likes] = await Promise.all([
+  const [books, reflections, replies, likes, bookEvents] = await Promise.all([
     rows("experiment_books?select=*&order=created_at.asc"),
     rows("experiment_reflections?select=*&order=created_at.desc"),
     rows("experiment_replies?select=*&order=created_at.asc"),
     rows("experiment_likes?select=reflection_id,user_id"),
+    rows("experiment_book_events?select=*&order=created_at.asc"),
   ]);
   return { books: books.map(bookFromRow), reflections: reflections.map(reflectionFromRow),
-    replies: replies.map(replyFromRow), likes: likes.map(likeFromRow) };
+    replies: replies.map(replyFromRow), likes: likes.map(likeFromRow), bookEvents: bookEvents.map(bookEventFromRow) };
 }
 
 export async function applyCloudMutation(mutation: ExperimentMutation): Promise<void> {
@@ -66,6 +69,12 @@ export async function applyCloudMutation(mutation: ExperimentMutation): Promise<
     const { reply } = mutation;
     await request("experiment_replies", { method: "POST", body: JSON.stringify({ id: reply.id, reflection_id: reply.reflectionId,
       user_id: reply.userId, nickname: reply.nickname, body: reply.body, created_at: reply.createdAt }) });
+    return;
+  }
+  if (mutation.type === "bookEvent") {
+    const { event } = mutation;
+    await request("experiment_book_events", { method: "POST", body: JSON.stringify({ id: event.id, book_id: event.bookId,
+      user_id: event.userId, event_type: event.eventType, duration_ms: event.durationMs, created_at: event.createdAt }) });
     return;
   }
   const query = "experiment_likes?reflection_id=eq." + encodeURIComponent(mutation.reflectionId) + "&user_id=eq." + encodeURIComponent(mutation.userId);

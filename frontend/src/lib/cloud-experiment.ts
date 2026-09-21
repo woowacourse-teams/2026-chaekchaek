@@ -1,12 +1,22 @@
 import { initialExperiment } from "./examples";
 import { readStoredExperiment, type Book, type Experiment, type Like, type Reflection, type Reply } from "./experiment";
 
-export type CloudExperiment = { books: Book[]; reflections: Reflection[]; replies: Reply[]; likes: Like[] };
+export type BookEvent = {
+  id: string;
+  bookId: string;
+  userId: string;
+  eventType: "view" | "dwell";
+  durationMs: number;
+  createdAt: string;
+};
+
+export type CloudExperiment = { books: Book[]; reflections: Reflection[]; replies: Reply[]; likes: Like[]; bookEvents: BookEvent[] };
 export type ExperimentMutation =
   | { type: "book"; book: Book }
   | { type: "reflection"; reflection: Reflection }
   | { type: "reply"; reply: Reply }
-  | { type: "like"; reflectionId: string; userId: string };
+  | { type: "like"; reflectionId: string; userId: string }
+  | { type: "bookEvent"; event: BookEvent };
 
 export function mergeCloudExperiment(cloud: CloudExperiment): Experiment {
   const base = initialExperiment();

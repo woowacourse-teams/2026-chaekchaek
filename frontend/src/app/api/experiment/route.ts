@@ -24,6 +24,13 @@ function validMutation(value: unknown): value is ExperimentMutation {
     return Boolean(reply && validText(reply.id, 100) && validText(reply.reflectionId, 100) && validText(reply.userId, 100)
       && validText(reply.nickname, 100) && validText(reply.body, 1000) && validText(reply.createdAt, 40));
   }
+  if (mutation.type === "bookEvent") {
+    const event = mutation.event;
+    return Boolean(event && validText(event.id, 100) && validText(event.bookId, 100) && validText(event.userId, 100)
+      && (event.eventType === "view" || event.eventType === "dwell")
+      && Number.isInteger(event.durationMs) && event.durationMs >= 0 && event.durationMs <= 300_000
+      && validText(event.createdAt, 40));
+  }
   return mutation.type === "like" && validText(mutation.reflectionId, 100) && validText(mutation.userId, 100);
 }
 

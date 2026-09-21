@@ -3,13 +3,18 @@ import { useState, type FormEvent } from "react";
 import { Dialog } from "../../components/dialog";
 import { GENRES, metricsCsv, summarizeExperiment, type Genre } from "../../lib/experiment";
 import { useExperiment } from "../../lib/use-experiment";
+import { bookAnalyticsCsv, formatDuration, summarizeBookAnalytics } from "../../lib/book-analytics";
 export default function AdminPreview() {
-  const { experiment, ready, error, cloud, changeExperiment } = useExperiment();
+  const { experiment, ready, error, cloud, bookEvents, changeExperiment } = useExperiment();
   const [addingBook, setAddingBook] = useState(false);
   const [validation, setValidation] = useState("");
   const summary = summarizeExperiment(experiment);
+  const analytics = summarizeBookAnalytics(experiment.books, bookEvents);
+  const mostViewed = analytics.reduce((best, row) => row.views > best.views ? row : best, analytics[0]);
+  const longestDwell = analytics.reduce((best, row) => row.totalDurationMs > best.totalDurationMs ? row : best, analytics[0]);
   function downloadCsv() {
-    const url = URL.createObjectURL(new Blob([metricsCsv(experiment)], { type: "text/csv;charset=utf-8" }));
+    const csv = metricsCsv(experiment) + "\n\n" + bookAnalyticsCsv(analytics);
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url; link.download = "chaekchaek-preview-metrics.csv"; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -35,15 +40,20 @@ export default function AdminPreview() {
       <div><span>총 참여</span><strong data-testid="total-participation">{summary.total.total}</strong></div>
       <div><span>참여자</span><strong>{summary.total.participants}</strong></div>
       <div><span>소설 참여 비중</span><strong>{summary.novelShare === null ? "집계 전" : (summary.novelShare * 100).toFixed(1) + "%"}</strong></div>
+      <div><span>최다 조회</span><strong>{mostViewed?.views ? mostViewed.book.title : "집계 전"}</strong></div>
+      <div><span>최장 체류</span><strong>{longestDwell?.totalDurationMs ? longestDwell.book.title : "집계 전"}</strong></div>
     </div>
     <p className="muted">예시 감상 5개는 참여 수에서 제외합니다. 예시에 남긴 답글과 좋아요는 포함하며, 취소한 좋아요는 제외합니다. 참여자는 닉네임이 아닌 브라우저 식별자로 중복 제거합니다.</p>
     <section className="metrics-section"><h2>장르별 참여</h2><div className="table-scroll"><table>
       <thead><tr><th scope="col">장르</th><th scope="col">감상</th><th scope="col">답글</th><th scope="col">좋아요</th><th scope="col">총 참여</th><th scope="col">참여자</th><th scope="col">비중</th></tr></thead>
       <tbody>{summary.genres.map((row) => <tr key={row.genre}><td>{row.genre}</td><td>{row.reflections}</td><td>{row.replies}</td><td>{row.likes}</td><td>{row.total}</td><td>{row.participants}</td><td>{summary.total.total ? (row.total / summary.total.total * 100).toFixed(1) + "%" : "-"}</td></tr>)}</tbody>
     </table></div></section>
-    <section className="metrics-section"><h2>책별 참여</h2><div className="table-scroll"><table>
-      <thead><tr><th scope="col">책</th><th scope="col">장르</th><th scope="col">감상</th><th scope="col">답글</th><th scope="col">좋아요</th><th scope="col">참여자</th></tr></thead>
-      <tbody>{summary.books.map((row) => <tr key={row.book.id}><td>{row.book.title}</td><td>{row.book.genre}</td><td>{row.reflections}</td><td>{row.replies}</td><td>{row.likes}</td><td>{row.participants}</td></tr>)}</tbody>
+    <section className="metrics-section"><h2>책별 참여와 열람</h2><div className="table-scroll"><table>
+      <thead><tr><th scope="col">책</th><th scope="col">장르</th><th scope="col">감상</th><th scope="col">답글</th><th scope="col">좋아요</th><th scope="col">참여자</th><th scope="col">조회</th><th scope="col">고유 방문자</th><th scope="col">총 체류</th><th scope="col">평균 체류</th></tr></thead>
+      <tbody>{summary.books.map((row) => {
+        const reading = analytics.find((item) => item.book.id === row.book.id);
+        return <tr key={row.book.id}><td>{row.book.title}</td><td>{row.book.genre}</td><td>{row.reflections}</td><td>{row.replies}</td><td>{row.likes}</td><td>{row.participants}</td><td>{reading?.views ?? 0}</td><td>{reading?.visitors ?? 0}</td><td>{formatDuration(reading?.totalDurationMs ?? 0)}</td><td>{formatDuration(reading?.averageDurationMs ?? 0)}</td></tr>;
+      })}</tbody>
     </table></div></section>
     <p className="muted">소설 참여 비중 = (고전소설 참여 + 현대소설 참여) ÷ 전체 참여. 현재는 책 목록과 실험 조건이 확정되지 않았으므로 가설의 검증·기각을 판정하지 않습니다.</p>
     {addingBook && <Dialog title="책 등록하기" onClose={() => setAddingBook(false)}><form onSubmit={registerBook}>

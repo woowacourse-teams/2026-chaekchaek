@@ -3,9 +3,11 @@ import { useState, type FormEvent } from "react";
 import { ReflectionCard } from "../components/reflection-card";
 import { toggleLike, type Reflection } from "../lib/experiment";
 import { useExperiment } from "../lib/use-experiment";
+import { useBookAnalytics } from "../lib/use-book-analytics";
 
 export default function ExperimentPage() {
   const { experiment, participant, ready, error, cloud, changeExperiment } = useExperiment();
+  const trackBookSelection = useBookAnalytics(cloud, participant?.id);
   const [selectedId, setSelectedId] = useState("odyssey");
   const [sort, setSort] = useState("newest");
   const [notice, setNotice] = useState("");
@@ -32,7 +34,7 @@ export default function ExperimentPage() {
     <section className="books-section" aria-label="읽을 책">
       <div className="book-shelf" aria-label="책 선택">
         {experiment.books.map((item) => <button key={item.id} type="button" className={"book-choice " + (book?.id === item.id ? "selected" : "")}
-          aria-pressed={book?.id === item.id} onClick={() => { setSelectedId(item.id); setNotice(""); }} aria-label={item.title + " 선택"}>
+          aria-pressed={book?.id === item.id} onClick={() => { trackBookSelection(item.id); setSelectedId(item.id); setNotice(""); }} aria-label={item.title + " 선택"}>
           <span className="book-cover-frame">{item.coverUrl ? <img src={item.coverUrl} alt={item.title + " 표지"} width={120} height={174} referrerPolicy="no-referrer"/> : <span className="cover-placeholder">{item.title}</span>}</span>
           <strong className="book-title">{item.title}</strong>
         </button>)}

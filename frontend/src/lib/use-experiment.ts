@@ -4,7 +4,7 @@ import { initialExperiment, withSourcedReflections } from "./examples";
 import { withCollectedBooks } from "./books";
 import { assignNickname } from "./nickname";
 import { readStoredExperiment, type Experiment, type Participant } from "./experiment";
-import { mergeCloudExperiment, type CloudExperiment, type ExperimentMutation } from "./cloud-experiment";
+import { mergeCloudExperiment, type BookEvent, type CloudExperiment, type ExperimentMutation } from "./cloud-experiment";
 
 export const STORAGE_KEY = "chaekchaek-experiment-preview-v1";
 export const PARTICIPANT_KEY = "chaekchaek-preview-participant-v1";
@@ -15,6 +15,7 @@ export function useExperiment() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const [cloud, setCloud] = useState(false);
+  const [bookEvents, setBookEvents] = useState<BookEvent[]>([]);
   useEffect(() => {
     let active = true;
     try {
@@ -27,7 +28,9 @@ export function useExperiment() {
       fetch("/api/experiment", { cache: "no-store" }).then(async (response) => {
         if (!active) return;
         if (response.ok) {
-          setExperiment(mergeCloudExperiment(await response.json() as CloudExperiment));
+          const remote = await response.json() as CloudExperiment;
+          setExperiment(mergeCloudExperiment(remote));
+          setBookEvents(remote.bookEvents);
           setCloud(true);
         } else {
           const saved = localStorage.getItem(STORAGE_KEY);
@@ -67,5 +70,5 @@ export function useExperiment() {
       return false;
     }
   }
-  return { experiment, participant, ready, error, cloud, changeExperiment };
+  return { experiment, participant, ready, error, cloud, bookEvents, changeExperiment };
 }

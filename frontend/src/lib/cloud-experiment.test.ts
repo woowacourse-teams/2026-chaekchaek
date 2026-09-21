@@ -10,6 +10,7 @@ test("클라우드 참여 데이터와 준비된 책·감상을 합친다", () =
     replies: [{ id: "reply", reflectionId: "odyssey-web-review-1", userId: "reader", nickname: "고요한 백조",
       body: "답글", createdAt: "2026-09-21T00:00:00.000Z" }],
     likes: [{ reflectionId: "odyssey-web-review-1", userId: "reader" }],
+    bookEvents: [],
   });
   assert.equal(merged.books.length, 7);
   assert.equal(merged.reflections.filter((note) => !note.archived).length, 31);
