@@ -103,19 +103,14 @@ export const BookReviews = ({
             <BookReview key={review.reviewId} review={review} onReviewsRefresh={onReviewsRefresh} />
           );
         })}
-      <Field>
+      <Field sx={{ mt: 4, mb: 6 }}>
         <Field.Content
           onClick={() => {
             handleOpenDialog('WriteReviewDialog');
           }}
         >
-          <Input
-            trailing={
-              <Button variant="primary" size="small">
-                남기기
-              </Button>
-            }
-          />
+          <Input />
+          <Button variant="primary">남기기</Button>
         </Field.Content>
       </Field>
       {dialogElement}
