@@ -16,12 +16,12 @@ import styles from './SocialLoginButton.module.css';
 const providerDetails = {
   kakao: { label: '카카오로 시작하기', icon: kakaoIcon, link: `#` },
   apple: {
-    label: 'Apple로 시작하기',
+    label: 'Apple로 로그인',
     icon: appleIcon,
     link: `#`,
   },
   google: {
-    label: 'Google로 시작하기',
+    label: 'Google 계정으로 로그인',
     icon: googleIcon,
     link: getOauthLoginUrl('google'),
   },
