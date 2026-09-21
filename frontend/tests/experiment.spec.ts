@@ -4,7 +4,7 @@ test("참여자는 팝업과 이름 표시 없이 인라인으로 감상과 답�
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await expect(page.getByTestId("reflection")).toHaveCount(5);
+  await expect(page.getByTestId("reflection")).toHaveCount(1);
   await expect(page.getByRole("navigation")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "닉네임 설정" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "실험 집계" })).toHaveCount(0);
@@ -61,7 +61,7 @@ test("다른 장르의 책 등록 후 책을 선택하면 해당 책의 감상�
   await page.getByRole("button", { name: "남기기", exact: true }).click();
   await expect(page.getByTestId("reflection")).toHaveCount(1);
   await page.getByRole("button", { name: "오디세이 선택" }).click();
-  await expect(page.getByTestId("reflection")).toHaveCount(5);
+  await expect(page.getByTestId("reflection")).toHaveCount(1);
 });
 
 test("저장 실패 시 성공 표시를 하지 않고 감상 입력을 유지한다", async ({ page }) => {
@@ -77,7 +77,7 @@ test("저장 실패 시 성공 표시를 하지 않고 감상 입력을 유지�
   await page.getByRole("button", { name: "남기기", exact: true }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("저장하지 못했습니다");
   await expect(page.getByLabel("감상", { exact: true })).toHaveValue("저장 실패에도 남아야 하는 입력");
-  await expect(page.getByTestId("reflection")).toHaveCount(5);
+  await expect(page.getByTestId("reflection")).toHaveCount(1);
 });
 
 test("PC와 작은 화면에서 바로 입력할 수 있고 가로 넘침이 없다", async ({ page }) => {
@@ -89,4 +89,16 @@ test("PC와 작은 화면에서 바로 입력할 수 있고 가로 넘침이 없
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.getByLabel("감상", { exact: true })).toBeVisible();
   }
+});
+
+ test("모든 책에 출처가 있는 실제 감상이 보이고 수집 감상은 참여로 집계하지 않는다", async ({ page }) => {
+  await page.goto("/");
+  for (const card of await page.locator(".book-choice").all()) {
+    await card.click();
+    await expect(page.getByTestId("reflection")).toHaveCount(1);
+    await expect(page.locator(".review-source")).toHaveAttribute("href", /^https:\/\//);
+    await expect(page.locator(".review-source")).toContainText("발췌");
+  }
+  await page.goto("/admin");
+  await expect(page.getByTestId("total-participation")).toHaveText("0");
 });

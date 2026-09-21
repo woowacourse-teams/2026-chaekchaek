@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { initialExperiment } from "./examples";
+import { initialExperiment, withSourcedReflections } from "./examples";
 import { withCollectedBooks } from "./books";
 import { assignNickname } from "./nickname";
 import { readStoredExperiment, type Experiment, type Participant } from "./experiment";
@@ -16,7 +16,7 @@ export function useExperiment() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setExperiment(withCollectedBooks(readStoredExperiment(saved)));
+      if (saved) setExperiment(withSourcedReflections(withCollectedBooks(readStoredExperiment(saved))));
       const profile = localStorage.getItem(PARTICIPANT_KEY);
       const identity = profile ? JSON.parse(profile) : { id: crypto.randomUUID(), nickname: assignNickname() };
       if (!identity || typeof identity.id !== "string" || typeof identity.nickname !== "string") throw new Error("invalid participant");
@@ -29,7 +29,7 @@ export function useExperiment() {
     }
     const synchronize = (event: StorageEvent) => {
       if (event.key !== STORAGE_KEY) return;
-      try { setExperiment(event.newValue ? withCollectedBooks(readStoredExperiment(event.newValue)) : initialExperiment()); }
+      try { setExperiment(event.newValue ? withSourcedReflections(withCollectedBooks(readStoredExperiment(event.newValue))) : initialExperiment()); }
       catch { setError("다른 탭의 변경을 읽지 못했습니다. 페이지를 새로고침해 주세요."); setReady(false); }
     };
     window.addEventListener("storage", synchronize);
@@ -39,7 +39,7 @@ export function useExperiment() {
     if (!ready) return false;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      const next = update(saved ? withCollectedBooks(readStoredExperiment(saved)) : experiment);
+      const next = update(saved ? withSourcedReflections(withCollectedBooks(readStoredExperiment(saved))) : experiment);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       setExperiment(next);
       setError("");

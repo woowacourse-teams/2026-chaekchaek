@@ -2,9 +2,7 @@
 import { useState, type FormEvent } from "react";
 import { ReflectionCard } from "../components/reflection-card";
 import { toggleLike, type Reflection } from "../lib/experiment";
-import { initialExperiment } from "../lib/examples";
 import { useExperiment } from "../lib/use-experiment";
-const sampleReflections = initialExperiment().reflections;
 
 export default function ExperimentPage() {
   const { experiment, participant, ready, error, changeExperiment } = useExperiment();
@@ -14,7 +12,7 @@ export default function ExperimentPage() {
   const [validation, setValidation] = useState("");
   const book = experiment.books.find((item) => item.id === selectedId) ?? experiment.books[0];
   const likesFor = (id: string) => experiment.likes.filter((like) => like.reflectionId === id).length;
-  const notes = experiment.reflections.map((note) => note.isExample ? sampleReflections.find((sample) => sample.id === note.id) ?? note : note).filter((note) => note.bookId === book?.id).sort((a, b) =>
+  const notes = experiment.reflections.filter((note) => !note.archived && note.bookId === book?.id).sort((a, b) =>
     sort === "popular" ? likesFor(b.id) - likesFor(a.id) || b.createdAt.localeCompare(a.createdAt) : b.createdAt.localeCompare(a.createdAt));
   function submitReflection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

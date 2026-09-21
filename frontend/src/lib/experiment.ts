@@ -3,7 +3,7 @@ export type Genre = (typeof GENRES)[number];
 export type Book = { id: string; title: string; author: string; genre: Genre; coverUrl?: string; productUrl?: string };
 export type Reflection = {
   id: string; bookId: string; userId: string; nickname: string; title: string;
-  quote: string; source: string; body: string; createdAt: string; isExample: boolean;
+  quote: string; source: string; body: string; createdAt: string; isExample: boolean; sourceUrl?: string; archived?: boolean;
 };
 export type Reply = { id: string; reflectionId: string; userId: string; nickname: string; body: string; createdAt: string };
 export type Like = { reflectionId: string; userId: string };
