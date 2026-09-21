@@ -1,0 +1,4 @@
+interface:
+  display_name: "첵췍 UI 방향"
+  short_description: "확정된 첵췍 리브랜딩 취향으로 모바일 UI를 설계합니다"
+  default_prompt: "Use $chaekchaek-ui-direction to design the next ChaekChaek mobile screen."
