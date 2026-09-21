@@ -5,7 +5,7 @@ import { toggleLike, type Reflection } from "../lib/experiment";
 import { useExperiment } from "../lib/use-experiment";
 
 export default function ExperimentPage() {
-  const { experiment, participant, ready, error, changeExperiment } = useExperiment();
+  const { experiment, participant, ready, error, cloud, changeExperiment } = useExperiment();
   const [selectedId, setSelectedId] = useState("odyssey");
   const [sort, setSort] = useState("newest");
   const [notice, setNotice] = useState("");
@@ -14,7 +14,7 @@ export default function ExperimentPage() {
   const likesFor = (id: string) => experiment.likes.filter((like) => like.reflectionId === id).length;
   const notes = experiment.reflections.filter((note) => !note.archived && note.bookId === book?.id).sort((a, b) =>
     sort === "popular" ? likesFor(b.id) - likesFor(a.id) || b.createdAt.localeCompare(a.createdAt) : b.createdAt.localeCompare(a.createdAt));
-  function submitReflection(event: FormEvent<HTMLFormElement>) {
+  async function submitReflection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!participant || !book) return;
     const form = event.currentTarget;
@@ -24,7 +24,7 @@ export default function ExperimentPage() {
     const note: Reflection = { id: crypto.randomUUID(), bookId: book.id, userId: participant.id,
       nickname: participant.nickname, title: "", quote: "", source: "",
       body, createdAt: new Date().toISOString(), isExample: false };
-    if (changeExperiment((current) => ({ ...current, reflections: [note, ...current.reflections] }))) {
+    if (await changeExperiment((current) => ({ ...current, reflections: [note, ...current.reflections] }), { type: "reflection", reflection: note })) {
       form.reset(); setSort("newest"); setValidation(""); setNotice("감상을 남겼어요.");
     }
   }
@@ -56,14 +56,16 @@ export default function ExperimentPage() {
           replies={experiment.replies.filter((reply) => reply.reflectionId === note.id)}
           likeCount={likesFor(note.id)} liked={experiment.likes.some((like) => like.reflectionId === note.id && like.userId === participant?.id)}
           ready={ready}
-          onLike={() => { if (participant) changeExperiment((current) => toggleLike(current, note.id, participant.id)); }}
-          onReply={(body) => {
+          onLike={async () => { if (participant) await changeExperiment((current) => toggleLike(current, note.id, participant.id),
+            { type: "like", reflectionId: note.id, userId: participant.id }); }}
+          onReply={async (body) => {
             if (!participant) return false;
-            return changeExperiment((current) => ({ ...current, replies: [...current.replies, { id: crypto.randomUUID(), reflectionId: note.id,
-              userId: participant.id, nickname: participant.nickname, body, createdAt: new Date().toISOString() }] }));
+            const reply = { id: crypto.randomUUID(), reflectionId: note.id, userId: participant.id,
+              nickname: participant.nickname, body, createdAt: new Date().toISOString() };
+            return changeExperiment((current) => ({ ...current, replies: [...current.replies, reply] }), { type: "reply", reply });
           }}/>)}
       </section>
     </div>}
-    <p className="preview-note">미리보기 · 입력은 이 브라우저에만 저장됩니다.</p>
+    <p className="preview-note">{cloud ? "입력한 감상과 반응은 실험 데이터로 저장됩니다." : "미리보기 · 입력은 이 브라우저에만 저장됩니다."}</p>
   </main>;
 }

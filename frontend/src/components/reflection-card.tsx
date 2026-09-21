@@ -4,16 +4,16 @@ import type { Reflection, Reply } from "../lib/experiment";
 import { Heart, Comment } from "./icons";
 export function ReflectionCard({ note, replies, likeCount, liked, ready, onLike, onReply }: {
   note: Reflection; replies: Reply[]; likeCount: number; liked: boolean; ready: boolean;
-  onLike: () => void; onReply: (body: string) => boolean;
+  onLike: () => void | Promise<void>; onReply: (body: string) => Promise<boolean>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [validation, setValidation] = useState("");
-  function submitReply(event: FormEvent<HTMLFormElement>) {
+  async function submitReply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const body = String(new FormData(form).get("reply") ?? "").trim();
     if (!body) { setValidation("답글을 입력해 주세요."); return; }
-    if (onReply(body)) {
+    if (await onReply(body)) {
       (form.elements.namedItem("reply") as HTMLTextAreaElement).value = "";
       setValidation("");
     }

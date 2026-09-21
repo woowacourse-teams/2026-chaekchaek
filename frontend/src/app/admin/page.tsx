@@ -4,7 +4,7 @@ import { Dialog } from "../../components/dialog";
 import { GENRES, metricsCsv, summarizeExperiment, type Genre } from "../../lib/experiment";
 import { useExperiment } from "../../lib/use-experiment";
 export default function AdminPreview() {
-  const { experiment, ready, error, changeExperiment } = useExperiment();
+  const { experiment, ready, error, cloud, changeExperiment } = useExperiment();
   const [addingBook, setAddingBook] = useState(false);
   const [validation, setValidation] = useState("");
   const summary = summarizeExperiment(experiment);
@@ -14,21 +14,22 @@ export default function AdminPreview() {
     link.href = url; link.download = "chaekchaek-preview-metrics.csv"; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  function registerBook(event: FormEvent<HTMLFormElement>) {
+  async function registerBook(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const fields = new FormData(event.currentTarget);
     const title = String(fields.get("title") ?? "").trim();
     const author = String(fields.get("author") ?? "").trim();
     const genre = String(fields.get("genre") ?? "") as Genre;
     if (!title || !author || !GENRES.includes(genre)) { setValidation("책 제목과 저자, 장르를 확인해 주세요."); return; }
-    if (changeExperiment((current) => ({ ...current, books: [...current.books, { id: crypto.randomUUID(), title, author, genre }] }))) {
+    const book = { id: crypto.randomUUID(), title, author, genre };
+    if (await changeExperiment((current) => ({ ...current, books: [...current.books, book] }), { type: "book", book })) {
       setAddingBook(false); setValidation("");
     }
   }
   return <main className="experiment-shell admin-shell">
     <h1>실험 집계 미리보기</h1>
-    <p className="admin-intro">이 브라우저에 저장된 동작 확인용 데이터입니다. 다른 참여자의 데이터는 합산되지 않습니다. 실제 실험은 Supabase 연결과 관리자 인증을 적용한 뒤 시작합니다.</p>
-    <div className="admin-toolbar"><a href="/">참여 화면으로 돌아가기</a><button className="secondary" disabled={!ready} onClick={downloadCsv}>CSV 내려받기</button><button className="primary" disabled={!ready} onClick={() => setAddingBook(true)}>책 등록하기</button></div>
+    <p className="admin-intro">{cloud ? "모든 참여자의 감상, 답글과 좋아요를 합산한 실험 데이터입니다." : "이 브라우저에 저장된 동작 확인용 데이터입니다. 다른 참여자의 데이터는 합산되지 않습니다."}</p>
+    <div className="admin-toolbar"><a href="/">참여 화면으로 돌아가기</a><button className="secondary" disabled={!ready} onClick={downloadCsv}>CSV 내려받기</button>{!cloud && <button className="primary" disabled={!ready} onClick={() => setAddingBook(true)}>책 등록하기</button>}</div>
     {error && <p className="error-banner" role="alert">{error}</p>}
     <div className="metrics-summary">
       <div><span>총 참여</span><strong data-testid="total-participation">{summary.total.total}</strong></div>
@@ -49,7 +50,7 @@ export default function AdminPreview() {
       <label>책 제목<input name="title" required maxLength={120}/></label>
       <label>저자<input name="author" required maxLength={80}/></label>
       <label>장르<select className="genre-select" name="genre">{GENRES.map((genre) => <option key={genre}>{genre}</option>)}</select></label>
-      <p className="muted">제목으로 만든 임시 표지를 사용합니다. 등록한 책은 이 브라우저의 참여 화면에서 확인할 수 있습니다.</p>
+      <p className="muted">제목으로 만든 임시 표지를 사용합니다. 등록한 책은 참여 화면에서 확인할 수 있습니다.</p>
       {validation && <p className="field-error" role="alert">{validation}</p>}
       {error && <p className="error-banner" role="alert">{error}</p>}
       <div className="form-actions"><button type="button" className="secondary" onClick={() => setAddingBook(false)}>취소</button><button className="primary" disabled={!ready}>등록하기</button></div>
