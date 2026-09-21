@@ -1,23 +1,40 @@
 {
+  "description": "Chaekchaek local branch, PR, and design guards.",
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "^(?:Bash|exec_command|functions\\.exec)$",
         "hooks": [
           {
             "type": "command",
-            "command": "project_hook_root=$(dirname \"$(git rev-parse --path-format=absolute --git-common-dir)\") && /usr/bin/python3 \"$project_hook_root/.codex/hooks/chaekchaek-design-system-guard.py\"",
-            "timeout": 5,
-            "statusMessage": "Checking Chaekchaek design system"
+            "command": "/usr/bin/python3 \"/Users/ujeonghyeon/Desktop/dev/myDev/2026-chaekchaek/.codex/hooks/chaekchaek-branch-name-guard.py\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"/Users/ujeonghyeon/Desktop/dev/myDev/2026-chaekchaek/.codex/hooks/chaekchaek-pr-title-guard.py\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "^(?:mcp__pencil__execute|apply_patch|Bash|functions\\.exec)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"/Users/ujeonghyeon/Desktop/dev/myDev/2026-chaekchaek/.codex/hooks/chaekchaek-design-system-guard.py\"",
+            "timeout": 5
           }
         ]
       }
     ],
     "PostToolUse": [
       {
+        "matcher": "^mcp__pencil__(?:get_screenshot|execute)$",
         "hooks": [
           {
             "type": "command",
-            "command": "project_hook_root=$(dirname \"$(git rev-parse --path-format=absolute --git-common-dir)\") && /usr/bin/python3 \"$project_hook_root/.codex/hooks/chaekchaek-design-system-guard.py\"",
+            "command": "/usr/bin/python3 \"/Users/ujeonghyeon/Desktop/dev/myDev/2026-chaekchaek/.codex/hooks/chaekchaek-design-system-guard.py\"",
             "timeout": 5
           }
         ]
@@ -28,9 +45,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "project_hook_root=$(dirname \"$(git rev-parse --path-format=absolute --git-common-dir)\") && /usr/bin/python3 \"$project_hook_root/.codex/hooks/chaekchaek-design-system-guard.py\"",
-            "timeout": 5,
-            "statusMessage": "Checking Chaekchaek UI task"
+            "command": "/usr/bin/python3 \"/Users/ujeonghyeon/Desktop/dev/myDev/2026-chaekchaek/.codex/hooks/chaekchaek-design-system-guard.py\"",
+            "timeout": 5
           }
         ]
       }

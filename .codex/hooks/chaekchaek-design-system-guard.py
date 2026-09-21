@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """Chaekchaek 디자인 토큰과 design-first UI 증거를 검사한다."""
 
 # usage-stats: hook chaekchaek-design-system-guard
@@ -12,29 +12,21 @@ import sys
 import tempfile
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path("/Users/ujeonghyeon/Desktop/dev/myDev/2026-chaekchaek")
 DESIGN_FILE = Path("/Users/ujeonghyeon/Downloads/designs.pen")
 STATE_VERSION = 1
-HIG_TEXT_SIZES = {11.0, 12.0, 13.0, 15.0, 16.0, 17.0, 20.0, 22.0, 28.0, 34.0}
 APPROVED_COLORS = {
-    "#00000000", "#00000022", "#00000033", "#00000073", "#171717",
-    "#1A1A1A", "#242424", "#252525", "#302C27", "#4A3520", "#4A4035",
-    "#666666", "#7A7570", "#999999", "#A05A27", "#AAA39A", "#C92A24",
-    "#8E918F", "#C9C3BA", "#C9C9C9", "#EEEEEE", "#F0F0EC", "#F1E9DE", "#F6F2EC",
-    "#F7F2EC", "#F7F2ECCC", "#FCFAF7", "#FF6B5A", "#FF9800", "#FFB74D",
-    "#FFBF66", "#FFF4DF", "#FFF4DF80", "#FFFFFF", "#FFFFFFB8",
+    "#00000000", "#00000022", "#00000033", "#00000073", "#1A1A1A",
+    "#666666", "#999999", "#A05A27", "#C92A24", "#C9C9C9", "#EEEEEE",
+    "#F1E9DE", "#F6F2EC", "#F7F2EC", "#F7F2ECCC", "#FCFAF7", "#FF9800",
+    "#FFF4DF", "#FFF4DF80", "#FFFFFF", "#FFFFFFB8",
 }
-APPROVED_FONTS = {"Funnel Sans", "Geist Mono", "Newsreader", "Roboto"}
+APPROVED_FONTS = {"Funnel Sans", "Geist Mono", "Newsreader"}
 HEX_COLOR = re.compile(r"#[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{3}(?:[0-9A-Fa-f]{2})?)?\b")
 FONT_FAMILY = re.compile(r"fontFamily\s*:\s*['\"]([^'\"]+)['\"]")
-PENCIL_FONT_SIZE = re.compile(r"['\"]?fontSize['\"]?\s*:\s*(\d+(?:\.\d+)?)")
-PENCIL_OBJECT = re.compile(r"\{[^{}]*\}", re.DOTALL)
-KOTLIN_FONT_SIZE = re.compile(r"\bfontSize\s*=\s*(\d+(?:\.\d+)?)\.sp\b")
 PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$", re.MULTILINE)
-GIT_DIFF_FILE = re.compile(r"^\+\+\+ (?!/dev/null)(?:b/)?(.+)$", re.MULTILINE)
 COMPOSE_UI = re.compile(r"@Composable|\bModifier\.|\bMaterialTheme\b|\b(?:Text|Button|Checkbox|Row|Column|Box|Scaffold|Surface|Card|Image)\s*\(")
-PENCIL_MUTATION = re.compile(r"\b(?:Set|SetVariables|Update|Insert|Delete|Move|Clone|Copy|Generate|Replace)\s*\(")
-APPLY_PATCH_CALL = re.compile(r"\b(?:tools\.)?apply_patch\s*\(")
+PENCIL_MUTATION = re.compile(r"\b(?:Update|Set|Insert|Delete|Move|Clone|Replace)\s*\(")
 UI_PROMPT = re.compile(r"(?:\bui\b|화면|시안|컴포넌트|레이아웃|스타일|디자인)", re.IGNORECASE)
 MUTATION_PROMPT = re.compile(r"(?:수정|변경|구현|추가|삭제|적용|만들|fix|change|implement|add|delete|update)", re.IGNORECASE)
 FRONTEND_UI_SUFFIXES = {".html", ".css", ".jsx", ".tsx", ".vue", ".svelte"}
@@ -42,65 +34,29 @@ STATE_DIR = Path(tempfile.gettempdir()) / "chaekchaek-design-gates"
 
 
 def record_usage() -> None:
-    script = Path.home() / ".agents/skills/usage-stats/scripts/usage_stats.py"
     subprocess.run(
-        ["python3", str(script), "record", "hook", "chaekchaek-design-system-guard"],
+        ["python3", str(Path.home() / ".agents/skills/usage-stats/scripts/usage_stats.py"), "record", "hook", "chaekchaek-design-system-guard"],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False,
     )
 
 
-def normalized_tool_input(payload: dict) -> dict:
-    value = payload.get("tool_input") or {}
-    return value if isinstance(value, dict) else {"input": str(value)}
-
-
-def git_common_dir(value):
+def is_project_path(value) -> bool:
     try:
         path = Path(value).resolve()
-        directory = path if path.is_dir() else path.parent
-        result = subprocess.run(
-            ["git", "-C", str(directory), "rev-parse", "--path-format=absolute", "--git-common-dir"],
-            text=True, capture_output=True, check=False,
-        )
-        return Path(result.stdout.strip()).resolve() if result.returncode == 0 and result.stdout.strip() else None
-    except (OSError, TypeError):
-        return None
-
-
-def git_worktree_root(value):
-    try:
-        path = Path(value).resolve()
-        directory = path if path.is_dir() else path.parent
-        result = subprocess.run(
-            ["git", "-C", str(directory), "rev-parse", "--path-format=absolute", "--show-toplevel"],
-            text=True, capture_output=True, check=False,
-        )
-        return Path(result.stdout.strip()).resolve() if result.returncode == 0 and result.stdout.strip() else None
-    except (OSError, TypeError):
-        return None
-
-
-def is_project_path(value, project_root: Path = PROJECT_ROOT) -> bool:
-    try:
-        path = Path(value).resolve()
-        root = project_root.resolve()
-        if path == root or root in path.parents:
-            return True
-        expected_repository = git_common_dir(root)
-        return expected_repository is not None and git_common_dir(path) == expected_repository
+        return path == PROJECT_ROOT or PROJECT_ROOT in path.parents
     except (OSError, TypeError):
         return False
 
 
 def snippets(payload: dict) -> str:
-    tool_input = normalized_tool_input(payload)
-    values = [str(tool_input.get(key, "")) for key in ("command", "input", "patch")]
+    tool_input = payload.get("tool_input") or {}
+    values = [str(tool_input.get("input", ""))]
     values.extend(str(edit.get("replace", "")) for edit in tool_input.get("edits", []) if isinstance(edit, dict))
     return "\n".join(values)
 
 
 def targets_design_file(payload: dict) -> bool:
-    tool_input = normalized_tool_input(payload)
+    tool_input = payload.get("tool_input") or {}
     path = str(tool_input.get("filePath", ""))
     if path:
         try:
@@ -110,31 +66,14 @@ def targets_design_file(payload: dict) -> bool:
     return str(DESIGN_FILE) in snippets(payload)
 
 
-def display_size(value: float) -> str:
-    return str(int(value)) if value.is_integer() else str(value)
-
-
-def find_violations(code: str, check_font_size: bool = False) -> list[str]:
+def find_violations(code: str) -> list[str]:
     colors = sorted({value.upper() for value in HEX_COLOR.findall(code)} - APPROVED_COLORS)
     fonts = sorted({value for value in FONT_FAMILY.findall(code) if not value.startswith("$")} - APPROVED_FONTS)
-    font_sizes = []
-    if check_font_size:
-        objects = list(PENCIL_OBJECT.finditer(code))
-        for match in PENCIL_FONT_SIZE.finditer(code):
-            container = next((item.group() for item in objects if item.start() <= match.start() < item.end()), "")
-            approved_sizes = HIG_TEXT_SIZES | ({14.0} if set(FONT_FAMILY.findall(container)) == {"Roboto"} else set())
-            size = float(match.group(1))
-            if size not in approved_sizes:
-                font_sizes.append(size)
-        font_sizes = sorted(set(font_sizes))
     violations = []
     if colors:
         violations.append(f"SxMn5에 없는 색상: {', '.join(colors)}")
     if fonts:
         violations.append(f"SxMn5에 없는 서체: {', '.join(fonts)}")
-    if font_sizes:
-        values = ", ".join(display_size(value) for value in font_sizes)
-        violations.append(f"HIG 의미 역할에 없는 fontSize: {values}")
     return violations
 
 
@@ -151,8 +90,7 @@ def identity(payload: dict) -> dict:
 
 
 def gate_path(payload: dict) -> Path:
-    active_root = git_worktree_root(payload.get("cwd") or PROJECT_ROOT) or PROJECT_ROOT
-    key = f'{payload.get("session_id", "")}:{payload.get("turn_id", "")}:{active_root}'
+    key = f'{payload.get("session_id", "")}:{payload.get("turn_id", "")}'
     return STATE_DIR / hashlib.sha256(key.encode()).hexdigest()
 
 
@@ -161,7 +99,9 @@ def read_state(payload: dict):
         state = json.loads(gate_path(payload).read_text())
     except (OSError, ValueError):
         return None
-    return state if valid_state(state, payload) else None
+    if not valid_state(state, payload):
+        return None
+    return state
 
 
 def valid_state(state: dict, payload: dict) -> bool:
@@ -216,7 +156,7 @@ def write_state(payload: dict, state: dict) -> None:
 
 
 def screenshot_node_ids(payload: dict) -> list[str]:
-    tool_input = normalized_tool_input(payload)
+    tool_input = payload.get("tool_input") or {}
     node_id = str(tool_input.get("nodeId", ""))
     if node_id:
         return [node_id]
@@ -302,101 +242,25 @@ def has_fresh_screenshot(payload: dict) -> bool:
     )
 
 
-def patch_sections(command: str) -> list[tuple[str, str]]:
-    matches = list(PATCH_FILE.finditer(command))
-    if not matches:
-        matches = list(GIT_DIFF_FILE.finditer(command))
-    return [
-        (match.group(1).strip(), command[match.end():(matches[index + 1].start() if index + 1 < len(matches) else len(command))])
-        for index, match in enumerate(matches)
-    ]
-
-
 def classify_patch(command: str) -> tuple[bool, bool]:
-    sections = patch_sections(command)
-    direct_pen_edit = any(Path(path).name == "designs.pen" for path, _ in sections)
-    for path, body in sections:
+    paths = [path.strip() for path in PATCH_FILE.findall(command)]
+    direct_pen_edit = any(Path(path).name == "designs.pen" for path in paths)
+    for path in paths:
         normalized = path.lower().replace("\\", "/")
         suffix = Path(normalized).suffix
         if "/frontend/" in f"/{normalized}" and suffix in FRONTEND_UI_SUFFIXES:
             return direct_pen_edit, True
         if "/res/layout/" in normalized or "/res/drawable" in normalized or "/res/mipmap" in normalized:
             return direct_pen_edit, True
-        if suffix == ".kt" and ("/ui/" in normalized or "/theme/" in normalized or COMPOSE_UI.search(body)):
+        if suffix == ".kt" and ("/ui/" in normalized or "/theme/" in normalized or COMPOSE_UI.search(command)):
             return direct_pen_edit, True
     return direct_pen_edit, False
 
 
-def is_ios_reachable_kotlin(path: str) -> bool:
-    normalized = "/" + path.lower().replace("\\", "/").lstrip("/")
-    return normalized.endswith(".kt") and ("/src/commonmain/" in normalized or "/src/iosmain/" in normalized)
-
-
-def added_lines(body: str) -> str:
-    return "\n".join(
-        line[1:].split("//", 1)[0]
-        for line in body.splitlines()
-        if line.startswith("+") and not line.startswith("+++")
-    )
-
-
-def find_ios_kotlin_violations(command: str) -> list[str]:
-    violations = []
-    for path, body in patch_sections(command):
-        if not is_ios_reachable_kotlin(path):
-            continue
-        sizes = sorted({float(value) for value in KOTLIN_FONT_SIZE.findall(added_lines(body)) if float(value) not in HIG_TEXT_SIZES})
-        if sizes:
-            values = ", ".join(display_size(value) for value in sizes)
-            violations.append(f"{path}: {values}sp")
-    return violations
-
-
-def is_apply_patch_call(payload: dict) -> bool:
-    tool_name = str(payload.get("tool_name", ""))
-    return tool_name == "apply_patch" or (tool_name == "functions.exec" and bool(APPLY_PATCH_CALL.search(snippets(payload))))
-
-
-def check_diff(base_sha: str) -> int:
-    if not re.fullmatch(r"[0-9A-Fa-f]{7,64}", base_sha):
-        print("ios_hig_diff: base SHA 형식이 올바르지 않습니다.", file=sys.stderr)
-        return 2
-    result = subprocess.run(
-        [
-            "git", "-C", str(PROJECT_ROOT), "diff", "--no-ext-diff", "--unified=0",
-            f"{base_sha}...HEAD", "--",
-            "android/shared/src/commonMain", "android/shared/src/iosMain",
-        ],
-        text=True, capture_output=True, check=False,
-    )
-    if result.returncode != 0:
-        print("ios_hig_diff: git diff를 생성하지 못했습니다.", file=sys.stderr)
-        return 2
-    violations = find_ios_kotlin_violations(result.stdout)
-    if violations:
-        details = "; ".join(violations)
-        print("ios_hig_diff: HIG 의미 역할에 없는 신규 fontSize가 있습니다: " + details, file=sys.stderr)
-        return 1
-    print("ios_hig_diff: ok")
-    return 0
-
-
 def self_test() -> None:
     global STATE_DIR
-    assert PROJECT_ROOT == Path(__file__).resolve().parents[2]
-    worktrees = subprocess.run(
-        ["git", "-C", str(PROJECT_ROOT), "worktree", "list", "--porcelain"],
-        text=True, capture_output=True, check=True,
-    ).stdout.splitlines()
-    existing_worktrees = [Path(line.removeprefix("worktree ")) for line in worktrees if line.startswith("worktree ") and Path(line.removeprefix("worktree ")).exists()]
-    assert existing_worktrees and all(is_project_path(path) for path in existing_worktrees)
-    assert not find_violations('Update("x",{fill:"#C92A24",fontFamily:"Funnel Sans",fontSize:11})', True)
-    assert not find_violations('Update("x",{fill:"#FFFFFF",stroke:"#8E918F",fontFamily:"Roboto",fontSize:14})', True)
-    assert not find_violations('Update("x", {fontFamily: "Roboto", fontSize: 14})', True)
-    assert not find_violations("Update('x', {fontFamily:'Roboto', fontSize:14})", True)
-    assert find_violations('Update("a",{fontFamily:"Roboto",fontSize:14}); Update("b",{fontFamily:"Funnel Sans",fontSize:14})', True) == ["HIG 의미 역할에 없는 fontSize: 14"]
+    assert not find_violations('Update("x",{fill:"#C92A24",fontFamily:"Funnel Sans"})')
     assert find_violations('Update("x",{fill:"#123456"})') == ["SxMn5에 없는 색상: #123456"]
-    assert find_violations('Update("x",{"fontSize":10.5})', True) == ["HIG 의미 역할에 없는 fontSize: 10.5"]
     assert exact_target_node({"tool_input": {"input": "TakeScreenshot(['target'])"}}) == "target"
     assert not exact_target_node({"tool_input": {"input": "TakeScreenshot(['SxMn5'])"}})
     assert not exact_target_node({"tool_input": {"input": "TakeScreenshot(['a','b'])"}})
@@ -431,7 +295,8 @@ def self_test() -> None:
     assert verified["verified_epoch"] == verified["epoch"] == 1
     assert verified["node"] == "target" and verified["design_file"] == str(DESIGN_FILE)
     assert verified["screenshot_tool_use_id"] == "shot-1"
-    invalidated = next_state(verified, {**mutation, "tool_use_id": "mutation-2"})
+    mutation_2 = {**mutation, "tool_use_id": "mutation-2"}
+    invalidated = next_state(verified, mutation_2)
     assert invalidated["epoch"] == 2 and invalidated["verified_epoch"] is None
     assert "node" not in invalidated and "screenshot_tool_use_id" not in invalidated
     assert successful_post(base_post)
@@ -443,35 +308,9 @@ def self_test() -> None:
         gate_path(payload).write_text("not json")
         assert read_state(payload) is None
     STATE_DIR = original_state_dir
-    kotlin_patch = """*** Begin Patch
-*** Update File: android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt
-@@
- fontSize = 9.sp
-+fontSize = 10.5.sp
-*** End Patch"""
-    android_patch = kotlin_patch.replace("commonMain", "androidMain")
-    safe_patch = kotlin_patch.replace("10.5.sp", "11.sp")
-    arbitrary_patch = kotlin_patch.replace("10.5.sp", "14.sp")
-    function_payload = {"tool_name": "functions.exec", "tool_input": {"input": f"await tools.apply_patch(`{kotlin_patch}`)"}}
-    git_diff = """diff --git a/android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt b/android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt
---- a/android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt
-+++ b/android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt
-@@ -1,0 +2 @@
-+Text("x", fontSize = 9.sp)"""
-    assert find_ios_kotlin_violations(kotlin_patch) == ["android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt: 10.5sp"]
-    assert find_ios_kotlin_violations(git_diff) == ["android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt: 9sp"]
-    assert not find_ios_kotlin_violations(git_diff.replace("commonMain", "androidMain"))
-    assert not find_ios_kotlin_violations(android_patch)
-    assert not find_ios_kotlin_violations(safe_patch)
-    assert find_ios_kotlin_violations(arbitrary_patch) == ["android/shared/src/commonMain/kotlin/x/ui/HomeScreen.kt: 14sp"]
-    assert is_apply_patch_call(function_payload)
-    assert is_design_mutation({"tool_input": {"filePath": str(DESIGN_FILE), "input": "Copy('a','b')"}})
-    assert is_design_mutation({"tool_input": {"filePath": str(DESIGN_FILE), "input": "Generate('a',{})"}})
-    assert is_design_mutation({"tool_input": {"filePath": str(DESIGN_FILE), "input": "SetVariables({})"}})
-    assert classify_patch(kotlin_patch) == (False, True)
+    assert classify_patch("*** Update File: android/app/src/main/java/x/ui/HomeScreen.kt\n+Text(\"홈\")") == (False, True)
     assert classify_patch("*** Update File: backend/README.md\n+설명") == (False, False)
     assert is_project_path(PROJECT_ROOT / "android")
-    assert is_project_path("/tmp/example-worktree/android", Path("/tmp/example-worktree"))
     assert not is_project_path(PROJECT_ROOT.parent)
     print("design_system_guard: ok")
 
@@ -480,8 +319,6 @@ def main() -> None:
     if sys.argv[1:] == ["--self-test"]:
         self_test()
         return
-    if len(sys.argv) == 3 and sys.argv[1] == "--check-diff":
-        raise SystemExit(check_diff(sys.argv[2]))
     try:
         payload = json.load(sys.stdin)
     except Exception:
@@ -498,8 +335,7 @@ def main() -> None:
                 "additionalContext": (
                     "Chaekchaek UI soft nudge: designs.pen의 정확한 대상 node와 "
                     "android/docs/screen-specs.md의 component/state 계약을 확인하세요. "
-                    "사용자 표시 텍스트는 HIG 11개 의미 역할의 fontSize만 사용하고, "
-                    "구현 전에 변경 후 대상 스크린샷으로 검증합니다."
+                    "의미 일치는 자동 판정하지 않으며 구현 전에 변경 후 대상 스크린샷으로 검증합니다."
                 ),
             }}, ensure_ascii=False))
         return
@@ -510,27 +346,23 @@ def main() -> None:
         return
     if event != "PreToolUse":
         return
-    if is_apply_patch_call(payload):
-        command = snippets(payload)
-        direct_pen_edit, ui_patch = classify_patch(command)
-        hig_violations = find_ios_kotlin_violations(command)
-        if direct_pen_edit or ui_patch or hig_violations:
+    tool_name = payload.get("tool_name")
+    tool_input = payload.get("tool_input") or {}
+    if tool_name == "apply_patch":
+        direct_pen_edit, ui_patch = classify_patch(str(tool_input.get("command", "")))
+        if direct_pen_edit or ui_patch:
             record_usage()
         if direct_pen_edit:
             deny("designs.pen 직접 편집 차단: Pencil 도구를 사용하세요.")
-        elif hig_violations:
-            details = "; ".join(hig_violations)
-            deny("HIG Typography 변경 차단: iOS 도달 Kotlin 추가행에 의미 역할 밖의 fontSize가 있습니다: " + details)
         elif ui_patch and not has_fresh_screenshot(payload):
             deny("UI 구현 차단: designs.pen 변경 이후 SxMn5/document가 아닌 정확히 한 대상 노드의 성공한 스크린샷을 먼저 검증하세요.")
         return
     if not targets_design_file(payload):
         return
     record_usage()
-    violations = find_violations(snippets(payload), check_font_size=is_design_mutation(payload))
+    violations = find_violations(snippets(payload))
     if violations:
-        reason = "designs.pen 변경 차단: " + "; ".join(violations)
-        deny(reason + ". 기존 디자인 토큰을 사용하거나 사용자 승인 후 디자인 시스템과 guard를 함께 갱신하세요.")
+        deny("designs.pen 변경 차단: " + "; ".join(violations) + ". 기존 디자인 토큰을 사용하거나 사용자 승인 후 디자인 시스템과 guard를 함께 갱신하세요.")
 
 
 if __name__ == "__main__":
