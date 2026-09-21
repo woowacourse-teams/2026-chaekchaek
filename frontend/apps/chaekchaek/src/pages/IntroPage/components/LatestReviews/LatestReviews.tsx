@@ -57,7 +57,7 @@ export const LatestReviews = () => {
                   leading={<Icon.CommentIcon color="inverse" />}
                   disabled
                 >
-                  20
+                  {review.replyCount}
                 </Button>
               </Entry.Footer>
             </Entry.Main>
