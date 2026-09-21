@@ -98,6 +98,3 @@ td:first-child{max-width:300px;overflow-wrap:anywhere}
  .dialog{padding:20px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
-
-.review-source{display:inline-block;font-size:11px;color:var(--muted);margin:4px 0 8px;text-decoration:none}
-.review-source:hover{text-decoration:underline}

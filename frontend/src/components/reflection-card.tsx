@@ -22,7 +22,6 @@ export function ReflectionCard({ note, replies, likeCount, liked, ready, onLike,
     {note.title && <h3>{note.title}</h3>}
     {note.quote && <blockquote><p>{note.quote}</p>{(note.source || note.isExample) && <cite>{note.source}{note.isExample && " · 영문 번역을 바탕으로 옮긴 문구"}</cite>}</blockquote>}
     <p className="reflection-body">{note.body}</p>
-    {note.sourceUrl && <a className="review-source" href={note.sourceUrl} target="_blank" rel="noreferrer">{note.source} · 원문 보기 ↗</a>}
     <div className="reflection-actions">
       <button type="button" aria-pressed={liked} disabled={!ready} onClick={onLike} className={liked ? "liked" : ""}><Heart filled={liked}/>좋아요 <span>{likeCount}</span></button>
       <button type="button" aria-expanded={expanded} aria-controls={"replies-" + note.id} onClick={() => setExpanded(!expanded)}><Comment/>답글 <span>{replies.length}</span></button>
