@@ -38,6 +38,6 @@ Apple 또는 Google 등 공급업체가 소유한 네이티브 로그인 컨트�
 8. For an iOS surface, verify the default Dynamic Type size and AX5 with `$ios-simulator-validation`. Include `performAccessibilityAudit()` for the reached screen when the test environment supports it.
 9. Modify only the requested scope. Keep a modified root frame in placeholder mode until the work is complete. Check alignment, spacing, contrast, clipping, hit targets, and requested default states.
 
-The hook blocks UI implementation patches until a target screenshot from `designs.pen` has been produced in the current turn. Do not bypass it. If an approved new color or font is required, update `SxMn5` and the guard together.
+The automatic design screenshot guard was retired at the user's request. Review applicable designs and screenshots without a hook-based implementation gate. If an approved new color or font is required, update SxMn5.
 
 Do not claim HIG compliance when the required Simulator state, screenshot, or accessibility audit could not be completed. Report the affected check as unverified and include the blocking reason.
