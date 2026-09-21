@@ -1,6 +1,6 @@
 export const GENRES = ["철학", "고전소설", "현대소설", "에세이", "서브컬쳐", "시집"] as const;
 export type Genre = (typeof GENRES)[number];
-export type Book = { id: string; title: string; author: string; genre: Genre };
+export type Book = { id: string; title: string; author: string; genre: Genre; coverUrl?: string; productUrl?: string };
 export type Reflection = {
   id: string; bookId: string; userId: string; nickname: string; title: string;
   quote: string; source: string; body: string; createdAt: string; isExample: boolean;

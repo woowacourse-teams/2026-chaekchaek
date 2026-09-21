@@ -60,7 +60,7 @@ test("다른 장르의 책 등록 후 책을 선택하면 해당 책의 감상�
   await page.getByLabel("감상", { exact: true }).fill("새로 등록한 책의 감상");
   await page.getByRole("button", { name: "남기기", exact: true }).click();
   await expect(page.getByTestId("reflection")).toHaveCount(1);
-  await page.getByRole("button", { name: "오디세이아 선택" }).click();
+  await page.getByRole("button", { name: "오디세이 선택" }).click();
   await expect(page.getByTestId("reflection")).toHaveCount(5);
 });
 
@@ -84,7 +84,8 @@ test("PC와 작은 화면에서 바로 입력할 수 있고 가로 넘침이 없
   for (const width of [1440, 1024, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "함께 읽을 책" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "함께 읽을 책" })).toHaveCount(0);
+    await expect(page.locator(".book-choice")).toHaveCount(6);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.getByLabel("감상", { exact: true })).toBeVisible();
   }

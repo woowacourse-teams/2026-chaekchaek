@@ -31,12 +31,12 @@ export default function ExperimentPage() {
     }
   }
   return <main className="experiment-shell">
-    <section className="books-section" aria-labelledby="books-title">
-      <div className="section-heading"><h1 id="books-title">함께 읽을 책</h1><span className="muted">등록된 책 {experiment.books.length}권</span></div>
+    <section className="books-section" aria-label="읽을 책">
       <div className="book-shelf" aria-label="책 선택">
         {experiment.books.map((item) => <button key={item.id} type="button" className={"book-choice " + (book?.id === item.id ? "selected" : "")}
           aria-pressed={book?.id === item.id} onClick={() => { setSelectedId(item.id); setNotice(""); }} aria-label={item.title + " 선택"}>
-          <span className="book-genre">{item.genre}</span><strong className="book-title">{item.title}</strong>
+          <span className="book-cover-frame">{item.coverUrl ? <img src={item.coverUrl} alt={item.title + " 표지"} width={120} height={174} referrerPolicy="no-referrer"/> : <span className="cover-placeholder">{item.title}</span>}</span>
+          <strong className="book-title">{item.title}</strong>
         </button>)}
       </div>
     </section>

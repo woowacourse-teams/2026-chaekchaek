@@ -1,3 +1,4 @@
+import { withCollectedBooks } from "./books";
 import type { Experiment, Reflection } from "./experiment";
 
 // 실험용 창작 감상. 출판본 문장을 인용하지 않는다.
@@ -14,5 +15,5 @@ export function initialExperiment(): Experiment {
     id: "odyssey-example-" + (index + 1), bookId: "odyssey", userId: "example", nickname: "첵췍",
     title: "", quote: "", source: "", body, isExample: true, createdAt: "2026-09-21T00:00:00.000Z",
   }));
-  return { version: 1, books: [{ id: "odyssey", title: "오디세이아", author: "호메로스", genre: "고전소설" }], reflections, replies: [], likes: [] };
+  return withCollectedBooks({ version: 1, books: [], reflections, replies: [], likes: [] });
 }
