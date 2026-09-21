@@ -32,7 +32,6 @@
   position: relative;
   padding-left: 44px;
   color: #FF9800;
-  font-family: 'Geist Mono', monospace;
   font-size: 0.8125rem; /* 13px */
   font-weight: 400;
   line-height: 1.3636;
@@ -53,7 +52,6 @@
 .title {
   padding-top: 16px;
   color: #ffffff;  
-  font-family: 'Funnel Sans', sans-serif;
   font-size: 2.5rem; /* 40px */
   font-weight: 600;
   line-height: 1.2105;
@@ -64,7 +62,6 @@
 .content {
   padding-top: 18px;
   color: #9E9E9E;
-  font-family: 'Funnel Sans', sans-serif;
   font-size: 1rem; /* 16px */
   font-weight: 500;
   line-height: 1.125;
@@ -75,7 +72,6 @@
   padding-top: 17px;
   font-size: 0.875rem; /* 14px */
   color: #E0E0E0;
-  font-family: 'Geist Mono', monospace;
   font-weight: 400;
   line-height: 1.5;
   overflow-wrap: anywhere;
@@ -85,7 +81,6 @@
   padding-top: 17px;
   font-size: 1.125rem; /* 18px */
   color: #E0E0E0;
-  font-family: 'Geist Mono', monospace;
   font-size: 0.75rem; /* 12px */
   font-weight: 400;
   line-height: 1.5;

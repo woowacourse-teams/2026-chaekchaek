@@ -19,7 +19,6 @@
   border-radius: 4px;
   background-color: #fcfaf7;
   color: #666;
-  font-family: 'Geist Mono', monospace;
   font-size: 0.8125rem; /* 13px */
   font-weight: 700;
   line-height: normal;
@@ -50,7 +49,6 @@
   align-items: center;
   justify-content: center;
   color: #666;
-  font-family: 'Geist Mono', monospace;
   font-size: 0.8125rem; /* 13px */
   font-weight: 700;
 }
