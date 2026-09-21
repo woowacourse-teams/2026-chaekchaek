@@ -24,7 +24,7 @@ export const LatestReviews = () => {
 
       {data?.reviews.map((review, index) => {
         return (
-          <Entry reverse line="top" spacing="large" key={`${review.bookId}${index}`}>
+          <Entry sx={{ mt: 0 }} reverse line="top" spacing="large" key={`${review.bookId}${index}`}>
             <Entry.Main>
               <Entry.Header>
                 <Shell reverse>
@@ -57,7 +57,7 @@ export const LatestReviews = () => {
                   leading={<Icon.CommentIcon color="inverse" />}
                   disabled
                 >
-                  20
+                  {review.replyCount}
                 </Button>
               </Entry.Footer>
             </Entry.Main>
