@@ -227,7 +227,7 @@ export const LibraryPage = () => {
       <Header />
       <Main>
         <Split>
-          <Split.Top sx={{ mb: 6 }}>
+          <Split.Top sx={{ mb: 10 }}>
             <Title
               level="page"
               trailing={
