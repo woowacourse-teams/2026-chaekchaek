@@ -1,3 +1,25 @@
 .frame-Layout {
   min-width: 1440px;
 }
+
+.env-development:before{
+  content: '';
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background: #FF9800;
+}
+
+.env-local:before {
+  content: '';
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background: #10B981;
+}
