@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("읽음 여부, 발췌문, 감상 반응과 별도 통계를 유지한다", async ({ page }) => {
   await page.route("/api/experiments/stranger", (route) => route.fulfill({ status: 503, body: "{}" }));
-  await page.goto("/experiments/stranger");
+  await page.goto("/experiments/stranger?utm_source=instagram");
   await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toHaveCount(0);
   await page.getByRole("button", { name: "읽었어요", exact: true }).click();
   await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toBeVisible();
@@ -26,6 +26,8 @@ test("읽음 여부, 발췌문, 감상 반응과 별도 통계를 유지한다",
   const readRow = page.getByRole("row", { name: /^읽었어요/ });
   await expect(readRow).toContainText("100.0%");
   await expect(readRow).toContainText("1");
+  await expect(page.getByRole("row", { name: /^instagram/ })).toContainText("1");
+  await expect(page.getByRole("row", { name: /^PC/ })).toContainText("1");
   await page.goto("/admin");
   await expect(page.getByTestId("total-participation")).toHaveText("0");
 });

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { assignNickname } from "./nickname";
 import { applyStrangerMutation, emptyStrangerExperiment, type StrangerExperiment, type StrangerMutation } from "./stranger-experiment";
+import { detectDevice, detectSource } from "./stranger-platform";
 
 const DATA_KEY = "chaekchaek-stranger-preview-v1";
 const PERSON_KEY = "chaekchaek-stranger-participant-v1";
@@ -57,7 +58,9 @@ export function useStrangerExperiment(trackVisit = false) {
         setCloud(isCloud);
         setIdentity(person);
         if (person) {
-          const mutation: StrangerMutation = { type: "visit", userId: person.id, nickname: person.nickname };
+          const mutation: StrangerMutation = { type: "visit", userId: person.id, nickname: person.nickname,
+            source: detectSource(window.location.href, document.referrer),
+            device: detectDevice(navigator.userAgent, navigator.maxTouchPoints) };
           if (isCloud) {
             const saved = await fetch("/api/experiments/stranger", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(mutation) });
             if (!saved.ok) throw new Error("visit failed");

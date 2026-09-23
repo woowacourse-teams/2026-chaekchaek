@@ -28,6 +28,8 @@ export async function loadStrangerExperiment(): Promise<StrangerExperiment> {
   return {
     participants: participants.map((row) => ({ id: String(row.id), nickname: String(row.nickname),
       readingStatus: row.reading_status === "read" || row.reading_status === "unread" ? row.reading_status : null,
+      source: typeof row.source === "string" ? row.source : "unknown",
+      device: row.device === "iPhone" || row.device === "iPad" || row.device === "Android" || row.device === "PC" ? row.device : "other",
       viewedPages: pageViews.filter((view) => view.user_id === row.id).map((view) => Number(view.page_number)),
       composerStarted: row.composer_started === true })),
     reflections: reflections.map((row) => ({ id: String(row.id), userId: String(row.user_id), nickname: String(row.nickname), body: String(row.body), createdAt: String(row.created_at) })),
@@ -38,7 +40,7 @@ export async function loadStrangerExperiment(): Promise<StrangerExperiment> {
 export async function saveStrangerMutation(mutation: StrangerMutation): Promise<void> {
   if (mutation.type === "visit") {
     await request("stranger_participants?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
-      body: JSON.stringify({ id: mutation.userId, nickname: mutation.nickname }) });
+      body: JSON.stringify({ id: mutation.userId, nickname: mutation.nickname, source: mutation.source, device: mutation.device }) });
   } else if (mutation.type === "reading") {
     await request("stranger_participants?id=eq." + encodeURIComponent(mutation.userId), { method: "PATCH", body: JSON.stringify({ reading_status: mutation.readingStatus }) });
   } else if (mutation.type === "page") {

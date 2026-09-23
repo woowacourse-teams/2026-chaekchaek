@@ -1,10 +1,12 @@
 "use client";
-import { strangerMetricsCsv, summarizeStrangerExperiment } from "../../../lib/stranger-experiment";
+import { strangerMetricsCsv, summarizeStrangerExperiment, summarizeStrangerPlatforms } from "../../../lib/stranger-experiment";
+import { deviceLabel, sourceLabel } from "../../../lib/stranger-platform";
 import { useStrangerExperiment } from "../../../lib/use-stranger-experiment";
 
 export default function StrangerAdminPage() {
   const { data, ready, cloud, error } = useStrangerExperiment();
   const summary = summarizeStrangerExperiment(data);
+  const platforms = summarizeStrangerPlatforms(data);
   function downloadCsv() {
     const url = URL.createObjectURL(new Blob([strangerMetricsCsv(data)], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
@@ -27,6 +29,15 @@ export default function StrangerAdminPage() {
         {group.pageViews.map((count, index) => <td key={index}>{count}</td>)}<td>{group.completedPages}</td><td>{group.composerStarted}</td><td>{group.submitted}</td>
         <td>{group.submissionRate === null ? "집계 전" : (group.submissionRate * 100).toFixed(1) + "%"}</td><td>{group.replies}</td><td>{group.likes}</td></tr>)}</tbody>
     </table></div></section>
+    <section className="metrics-section"><h2>유입 경로별 참여</h2><div className="table-scroll"><table>
+      <thead><tr><th scope="col">유입 경로</th><th scope="col">방문자</th><th scope="col">읽었어요</th><th scope="col">안 읽었어요</th><th scope="col">감상 제출자</th></tr></thead>
+      <tbody>{platforms.sources.map((row) => <tr key={row.value}><td>{sourceLabel(row.value)}</td><td>{row.visitors}</td><td>{row.read}</td><td>{row.unread}</td><td>{row.submitted}</td></tr>)}</tbody>
+    </table></div></section>
+    <section className="metrics-section"><h2>접속 기기별 참여</h2><div className="table-scroll"><table>
+      <thead><tr><th scope="col">접속 기기</th><th scope="col">방문자</th><th scope="col">읽었어요</th><th scope="col">안 읽었어요</th><th scope="col">감상 제출자</th></tr></thead>
+      <tbody>{platforms.devices.map((row) => <tr key={row.value}><td>{deviceLabel(row.value)}</td><td>{row.visitors}</td><td>{row.read}</td><td>{row.unread}</td><td>{row.submitted}</td></tr>)}</tbody>
+    </table></div></section>
     <p className="muted">열람은 페이지를 표시한 기록이며 독해 완료를 뜻하지 않습니다. 제출률은 해당 읽음 여부 선택자 중 감상을 제출한 사람의 비율입니다.</p>
+    <p className="muted">유입 경로는 첫 방문의 utm_source 또는 확인 가능한 이전 사이트 도메인입니다. 기기 종류도 첫 방문 기준입니다. 출처를 확인할 수 없으면 직접/확인 불가로 표시합니다.</p>
   </main>;
 }

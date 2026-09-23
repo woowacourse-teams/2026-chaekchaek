@@ -1,7 +1,8 @@
 export type ReadingStatus = "read" | "unread";
+export type DevicePlatform = "iPhone" | "iPad" | "Android" | "PC" | "other";
 export type StrangerParticipant = {
   id: string; nickname: string; readingStatus: ReadingStatus | null;
-  viewedPages: number[]; composerStarted: boolean;
+  source: string; device: DevicePlatform; viewedPages: number[]; composerStarted: boolean;
 };
 export type StrangerReflection = { id: string; userId: string; nickname: string; body: string; createdAt: string };
 export type StrangerReply = { id: string; reflectionId: string; userId: string; nickname: string; body: string; createdAt: string };
@@ -11,7 +12,7 @@ export type StrangerExperiment = {
   replies: StrangerReply[]; likes: StrangerLike[];
 };
 export type StrangerMutation =
-  | { type: "visit"; userId: string; nickname: string }
+  | { type: "visit"; userId: string; nickname: string; source: string; device: DevicePlatform }
   | { type: "reading"; userId: string; readingStatus: ReadingStatus }
   | { type: "page"; userId: string; page: number }
   | { type: "composer"; userId: string }
@@ -25,7 +26,8 @@ export function applyStrangerMutation(current: StrangerExperiment, mutation: Str
   if (mutation.type === "visit") {
     if (current.participants.some((person) => person.id === mutation.userId)) return current;
     return { ...current, participants: [...current.participants, {
-      id: mutation.userId, nickname: mutation.nickname, readingStatus: null, viewedPages: [], composerStarted: false,
+      id: mutation.userId, nickname: mutation.nickname, readingStatus: null, source: mutation.source,
+      device: mutation.device, viewedPages: [], composerStarted: false,
     }] };
   }
   if (mutation.type === "reading" || mutation.type === "page" || mutation.type === "composer") {
@@ -63,12 +65,33 @@ export function summarizeStrangerExperiment(data: StrangerExperiment) {
   return { unselected: data.participants.filter((person) => person.readingStatus === null).length, groups };
 }
 
+export function summarizeStrangerPlatforms(data: StrangerExperiment) {
+  const submittedIds = new Set(data.reflections.map((item) => item.userId));
+  const summarize = (key: "source" | "device") => [...new Set(data.participants.map((person) => person[key]))]
+    .sort((a, b) => a.localeCompare(b))
+    .map((value) => {
+      const people = data.participants.filter((person) => person[key] === value);
+      return { value, visitors: people.length, read: people.filter((person) => person.readingStatus === "read").length,
+        unread: people.filter((person) => person.readingStatus === "unread").length,
+        submitted: people.filter((person) => submittedIds.has(person.id)).length };
+    });
+  return { sources: summarize("source"), devices: summarize("device") };
+}
+
 export function strangerMetricsCsv(data: StrangerExperiment) {
   const summary = summarizeStrangerExperiment(data);
+  const platforms = summarizeStrangerPlatforms(data);
   const rows: (string | number)[][] = [["읽음 여부", "선택자", "1쪽 열람", "2쪽 열람", "3쪽 열람", "4쪽 열람", "5쪽 열람", "6쪽 열람", "6쪽 모두 열람", "작성 시작", "감상 제출자", "제출률", "답글", "좋아요"],
     ...summary.groups.map((group) => [group.status === "read" ? "읽었어요" : "안 읽었어요", group.participants,
       ...group.pageViews, group.completedPages, group.composerStarted, group.submitted,
       group.submissionRate === null ? "집계 전" : (group.submissionRate * 100).toFixed(1) + "%", group.replies, group.likes]),
-    ["미선택 방문자", summary.unselected]];
-  return "\uFEFF" + rows.map((row) => row.map((value) => '"' + String(value).replaceAll('"', '""') + '"').join(",")).join("\r\n");
+    ["미선택 방문자", summary.unselected], [],
+    ["유입 경로", "방문자", "읽었어요", "안 읽었어요", "감상 제출자"],
+    ...platforms.sources.map((row) => [row.value, row.visitors, row.read, row.unread, row.submitted]), [],
+    ["접속 기기", "방문자", "읽었어요", "안 읽었어요", "감상 제출자"],
+    ...platforms.devices.map((row) => [row.value, row.visitors, row.read, row.unread, row.submitted])];
+  return "\uFEFF" + rows.map((row) => row.map((value) => {
+    const cell = String(value);
+    return '"' + (/^\s*[=+@-]/.test(cell) ? "'" : "") + cell.replaceAll('"', '""') + '"';
+  }).join(",")).join("\r\n");
 }

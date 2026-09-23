@@ -8,7 +8,9 @@ const id = (value: unknown) => valid(value, 100);
 function validMutation(value: unknown): value is StrangerMutation {
   if (!value || typeof value !== "object") return false;
   const item = value as Record<string, unknown>;
-  if (item.type === "visit") return id(item.userId) && valid(item.nickname, 100);
+  if (item.type === "visit") return id(item.userId) && valid(item.nickname, 100)
+    && valid(item.source, 64) && /^[\p{L}\p{N}._-]+$/u.test(String(item.source))
+    && ["iPhone", "iPad", "Android", "PC", "other"].includes(String(item.device));
   if (item.type === "reading") return id(item.userId) && (item.readingStatus === "read" || item.readingStatus === "unread");
   if (item.type === "page") return id(item.userId) && Number.isInteger(item.page) && Number(item.page) >= 1 && Number(item.page) <= 6;
   if (item.type === "composer") return id(item.userId);
