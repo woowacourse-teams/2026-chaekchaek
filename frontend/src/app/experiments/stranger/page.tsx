@@ -54,12 +54,9 @@ export default function StrangerExperimentPage() {
     }
   }
   return <main className="experiment-shell stranger-shell">
-    <nav className="stranger-breadcrumb"><a href="/">책췍</a><span aria-hidden="true"> / </span>감상 실험</nav>
-    <h1>『이방인』을 읽고 나누기</h1>
-    <p className="stranger-intro">앞선 줄거리와 발췌문, 감상평을 읽고 떠오른 생각을 나눠주세요.</p>
     <section className="stranger-book" aria-label="읽음 여부 선택">
       <img src={COVER_URL} alt="이방인 책 표지" width={110} height={160}/>
-      <div><h2>이방인</h2><p className="muted">읽어보셨나요?</p>
+      <div><h1>이방인</h1><p className="muted">읽어보셨나요?</p>
         <div className="stranger-choices">
           <button type="button" className={readingStatus === "read" ? "primary" : "secondary"} aria-pressed={readingStatus === "read"} disabled={!ready} onClick={() => chooseReading("read")}>읽었어요</button>
           <button type="button" className={readingStatus === "unread" ? "primary" : "secondary"} aria-pressed={readingStatus === "unread"} disabled={!ready} onClick={() => chooseReading("unread")}>안 읽었어요</button>

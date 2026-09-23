@@ -98,12 +98,9 @@ td:first-child{max-width:300px;overflow-wrap:anywhere}
  .dialog{padding:20px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
-.stranger-shell h1{font-size:28px;line-height:1.4;margin:24px 0 8px}
-.stranger-breadcrumb{font-size:13px;color:var(--muted)}
-.stranger-intro{color:var(--muted);margin-bottom:24px}
 .stranger-book{display:flex;gap:24px;align-items:center;padding:24px 0;border-bottom:1px solid var(--line)}
 .stranger-book img{width:110px;height:160px;object-fit:contain;flex:none}
-.stranger-book h2{font-size:20px;margin-bottom:4px}
+.stranger-book h1{font-size:20px;line-height:1.25;margin-bottom:4px}
 .stranger-choices{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .stranger-context,.stranger-examples{margin-top:28px}
 .stranger-context h2,.stranger-examples h2{font-size:20px;line-height:1.25;margin-bottom:12px}
@@ -130,4 +127,4 @@ td:first-child{max-width:300px;overflow-wrap:anywhere}
 .admin-tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);margin:24px 0}
 .admin-tabs a{display:inline-flex;align-items:center;min-height:44px;padding:8px 14px;text-decoration:none;color:var(--muted)}
 .admin-tabs a[aria-current=page]{color:var(--ink);border-bottom:3px solid var(--orange);font-weight:650}
-@media(max-width:400px){.stranger-shell h1{font-size:22px}.stranger-book{gap:12px}.stranger-book img{width:80px;height:120px}.stranger-book h2{font-size:17px}.stranger-choices .primary,.stranger-choices .secondary{padding:10px 12px}}
+@media(max-width:400px){.stranger-book{gap:12px}.stranger-book img{width:80px;height:120px}.stranger-book h1{font-size:17px}.stranger-choices .primary,.stranger-choices .secondary{padding:10px 12px}}
