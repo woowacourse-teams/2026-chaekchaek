@@ -43,7 +43,7 @@ class BookSearchServiceTest {
                 .thenReturn(Map.of());
 
         // when
-        BookSearchResponse response = service.search("마션", 1);
+        BookSearchResponse response = service.search("마션", 1, BookSearchSort.LATEST);
 
         // then
         assertThat(response.nextPage()).isEqualTo(2);
@@ -65,7 +65,7 @@ class BookSearchServiceTest {
                 .thenReturn(Map.of());
 
         // when
-        BookSearchResponse response = service.search("마션", 1);
+        BookSearchResponse response = service.search("마션", 1, BookSearchSort.LATEST);
 
         // then
         assertThat(response.totalCount()).isEqualTo(21);
@@ -97,7 +97,7 @@ class BookSearchServiceTest {
                 .thenReturn(Map.of());
 
         // when
-        BookSearchResponse response = service.search("클린 코드", 1);
+        BookSearchResponse response = service.search("클린 코드", 1, BookSearchSort.LATEST);
 
         // then
         BookItem item = response.items().getFirst();
@@ -140,7 +140,7 @@ class BookSearchServiceTest {
                 .thenReturn(Map.of(42L, new ActivityCounts(2L, 5L)));
 
         // when
-        BookItem item = service.search("마션", 1).items().getFirst();
+        BookItem item = service.search("마션", 1, BookSearchSort.LATEST).items().getFirst();
 
         // then
         assertThat(item.bookId()).isEqualTo(42L);
@@ -160,7 +160,7 @@ class BookSearchServiceTest {
         );
 
         // when
-        BookItem item = service.search("책", 1).items().getFirst();
+        BookItem item = service.search("책", 1, BookSearchSort.LATEST).items().getFirst();
 
         // then
         assertThat(item.reviewCount()).isZero();
@@ -191,7 +191,7 @@ class BookSearchServiceTest {
                 .thenReturn(List.of(libraryItem));
 
         // when
-        BookItem item = service.search("마션", 1).items().getFirst();
+        BookItem item = service.search("마션", 1, BookSearchSort.LATEST).items().getFirst();
 
         // then
         assertThat(item.isRegisteredInMyLibrary()).isTrue();
@@ -406,7 +406,7 @@ class BookSearchServiceTest {
                     .thenReturn(libraryItems);
         }
 
-        return service.search("마션", 1).items().getFirst();
+        return service.search("마션", 1, BookSearchSort.LATEST).items().getFirst();
     }
 
     private BookSearchItem searchedBook(String title, String publishedDate, String isbn13) {
