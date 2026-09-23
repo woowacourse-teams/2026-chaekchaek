@@ -111,13 +111,15 @@ export default function StrangerExperimentPage() {
         <h2 id="stranger-reading-title">발췌문 99-104쪽</h2>
         <p className="muted">책에 적힌 필기와 밑줄도 함께 볼 수 있어요.</p>
         <div className="stranger-reader">
-          <button className="stranger-scan-button" type="button" onClick={() => setZoom(true)} aria-label={`${page}번째 발췌문 크게 보기`}>
-            <img className={`stranger-scan stranger-scan-${page % 2 ? "odd" : "even"}`} src={scanPath(page)} alt={`이방인 발췌문 ${page} / 6, 책 ${page + 98}쪽`} width={960} height={1440}/>
-          </button>
-          <div className="stranger-page-controls">
-            <button className="secondary" type="button" disabled={pageLoading || page === 1} onClick={() => void changePage(page - 1)}>이전</button>
+          <div className="stranger-scan-stage">
+            <button className="stranger-scan-button" type="button" onClick={() => setZoom(true)} aria-label={`${page}번째 발췌문 크게 보기`}>
+              <img className={`stranger-scan stranger-scan-${page % 2 ? "odd" : "even"}`} src={scanPath(page)} alt={`이방인 발췌문 ${page} / 6, 책 ${page + 98}쪽`} width={960} height={1440}/>
+            </button>
+            <button className="secondary stranger-side-nav stranger-side-nav-prev" type="button" aria-label="이전" disabled={pageLoading || page === 1} onClick={() => void changePage(page - 1)}><span aria-hidden="true">‹</span></button>
+            <button className="secondary stranger-side-nav stranger-side-nav-next" type="button" aria-label="다음" disabled={pageLoading || page === 6} onClick={() => void changePage(page + 1)}><span aria-hidden="true">›</span></button>
+          </div>
+          <div className="stranger-page-position">
             <span aria-live="polite">{pageLoading ? "불러오는 중…" : `${page} / 6`}</span>
-            <button className="secondary" type="button" disabled={pageLoading || page === 6} onClick={() => void changePage(page + 1)}>다음</button>
           </div>
           {pageError && <p role="alert" className="field-error">{pageError}</p>}
           <button className="stranger-zoom-link" type="button" onClick={() => setZoom(true)}>필기까지 크게 보기</button>

@@ -112,12 +112,15 @@ td:first-child{max-width:300px;overflow-wrap:anywhere}
 .stranger-reading{margin-top:28px}
 .stranger-reading h2{font-size:20px;margin-bottom:4px}
 .stranger-reader{width:min(100%,440px);margin:20px auto 36px}
+.stranger-scan-stage{position:relative}
 .stranger-scan-button{display:block;width:100%;aspect-ratio:2/3;padding:0;overflow:hidden;border:1px solid var(--line);background:#fafafa}
 .stranger-scan{display:block;width:90%;height:90%;object-fit:contain;margin:auto}
 .stranger-scan-odd{transform:translateX(4.6%)}
 .stranger-scan-even{transform:translateX(-4.6%)}
-.stranger-page-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
-.stranger-page-controls span{min-width:100px;text-align:center;font-size:13px;color:var(--muted)}
+.stranger-side-nav{position:absolute;top:50%;z-index:1;display:grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;transform:translateY(-50%);font-size:28px;line-height:1}
+.stranger-side-nav-prev{left:8px}
+.stranger-side-nav-next{right:8px}
+.stranger-page-position{display:flex;justify-content:center;align-items:center;min-height:24px;margin-top:12px;font-size:13px;color:var(--muted)}
 .stranger-reader .field-error{margin-top:12px}
 .stranger-zoom-link{display:block;min-height:44px;margin:4px auto 0;padding:8px;text-decoration:underline;color:var(--accent-text)}
 .stranger-feed{padding-top:24px;border-top:1px solid var(--line)}
