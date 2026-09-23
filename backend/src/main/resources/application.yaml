@@ -1,6 +1,17 @@
 server:
   forward-headers-strategy: framework
 
+management:
+  server:
+    port: 9090
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
 spring:
   application:
     name: chaekchaek

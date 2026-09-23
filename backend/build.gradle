@@ -45,6 +45,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	runtimeOnly 'org.webjars:swagger-ui:5.32.11'
