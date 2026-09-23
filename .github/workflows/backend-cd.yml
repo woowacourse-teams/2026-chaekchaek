@@ -148,4 +148,16 @@ jobs:
           docker compose --env-file .env.dev up -d --remove-orphans
           docker compose --env-file .env.dev ps
 
-          curl -fsS https://dev-api.chaekchaek.com/health
+          for i in {1..30}; do
+            if curl -fsS https://dev-api.chaekchaek.com/health; then
+              exit 0
+            fi
+
+            if [ "$i" -eq 30 ]; then
+              echo "Development health check failed"
+              docker compose --env-file .env.dev logs --tail=100 backend
+              exit 1
+            fi
+
+            sleep 5
+          done
