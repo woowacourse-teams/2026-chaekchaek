@@ -56,7 +56,7 @@ export default function StrangerExperimentPage() {
   return <main className="experiment-shell stranger-shell">
     <nav className="stranger-breadcrumb"><a href="/">책췍</a><span aria-hidden="true"> / </span>감상 실험</nav>
     <h1>『이방인』을 읽고 나누기</h1>
-    <p className="stranger-intro">짧은 발췌문과 책에 남겨진 메모를 보고 떠오른 생각을 나눠주세요.</p>
+    <p className="stranger-intro">앞선 줄거리와 발췌문, 감상평을 읽고 떠오른 생각을 나눠주세요.</p>
     <section className="stranger-book" aria-label="읽음 여부 선택">
       <img src={COVER_URL} alt="이방인 책 표지" width={110} height={160}/>
       <div><h2>이방인</h2><p className="muted">읽어보셨나요?</p>
@@ -68,6 +68,10 @@ export default function StrangerExperimentPage() {
     </section>
     {error && <p role="alert" className="error-banner">{error}</p>}
     {readingStatus && <>
+      <section className="stranger-context" aria-labelledby="stranger-context-title">
+        <h2 id="stranger-context-title">앞선 줄거리</h2>
+        <p>뫼르소는 범죄 사건에 연루되어, 피의자 신분으로 법정 재판에 참석하게 된다. 재판이 시작되었지만, 뫼르소의 ‘범죄 행위’ 그 자체보다는 지난 어머니 장례식에서의 태도와 평소 행실을 끌어와 그를 비난하기 시작한다.</p>
+      </section>
       <section className="stranger-reading" aria-labelledby="stranger-reading-title">
         <h2 id="stranger-reading-title">발췌문 99-104쪽</h2>
         <p className="muted">책에 적힌 필기와 밑줄도 함께 볼 수 있어요.</p>
@@ -82,6 +86,17 @@ export default function StrangerExperimentPage() {
           </div>
           <button className="stranger-zoom-link" type="button" onClick={() => setZoom(true)}>필기까지 크게 보기</button>
         </div>
+      </section>
+      <section className="stranger-examples" aria-labelledby="stranger-examples-title">
+        <h2 id="stranger-examples-title">제공된 감상평</h2>
+        <p className="muted">발췌문을 읽고 생각을 나눌 때 참고해 보세요.</p>
+        <blockquote><p>가끔 삶이 거대한 어항 같다는 생각이 듭니다. 인간이 만든 법과 도덕 안에서 살고, 감정까지 정해진 방식으로 보여줘야 한다는 점에서 우리는 어항 속 금붕어와 크게 다르지 않은지도 모릅니다. 세상에 정해진 의미가 없다면 허무할 수도 있지만 무의미에서 시작되는 의미만큼은 누구도 강요할 수 없는 나만의 것이기도 합니다. 이방인은 당연하다고 믿어온 삶의 규칙과 감정이 정말 내 것인지 묻게 만드는 책입니다.</p></blockquote>
+        <blockquote><p>{`의욕이 없고 권태를 느끼는 주인공
+소시오패스와 다를 바 없지만 사실 누구나 가져봤을 만한 감정과 생각들
+결국 사회적 규범이라는 가면 아래에 있는 나의 모습이었다
+감정과 사건의 본질보다 도덕성에 집착하는 등장인물들은 현실과 다를 바 없어보였고
+사제 앞에서 속마음을 쏟아내는 마지막 장면은 한마디 한마디가 인상적이었다
+모두가 가면을 쓴 세상에서 민낯의 주인공은 이방인이었다`}</p></blockquote>
       </section>
       <section className="reflection-feed stranger-feed" aria-labelledby="stranger-feed-title">
         <div className="feed-heading"><h2 id="stranger-feed-title">함께 나눈 감상 <span>{reflections.length}</span></h2></div>

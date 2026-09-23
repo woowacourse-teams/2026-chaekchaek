@@ -5,7 +5,13 @@ test("읽음 여부, 발췌문, 감상 반응과 별도 통계를 유지한다",
   await page.goto("/experiments/stranger?utm_source=instagram");
   await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toHaveCount(0);
   await page.getByRole("button", { name: "읽었어요", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "앞선 줄거리" })).toBeVisible();
+  await expect(page.getByText("뫼르소는 범죄 사건에 연루되어", { exact: false })).toBeVisible();
   await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "제공된 감상평" })).toBeVisible();
+  await expect(page.getByText("가끔 삶이 거대한 어항 같다는 생각이 듭니다.", { exact: false })).toBeVisible();
+  await expect(page.getByText("모두가 가면을 쓴 세상에서 민낯의 주인공은 이방인이었다", { exact: false })).toBeVisible();
+  await expect(page.getByTestId("reflection")).toHaveCount(0);
   await page.getByRole("button", { name: "다음" }).click();
   await expect(page.getByText("2 / 6")).toBeVisible();
   await page.getByRole("button", { name: "필기까지 크게 보기" }).click();
