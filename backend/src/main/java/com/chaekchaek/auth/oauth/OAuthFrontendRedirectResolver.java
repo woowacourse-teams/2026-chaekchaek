@@ -64,6 +64,7 @@ public class OAuthFrontendRedirectResolver {
         return switch (client) {
             case LOCAL -> localBaseUrl;
             case DEV -> devBaseUrl;
+            case PROD -> defaultBaseUrl;
         };
     }
 }

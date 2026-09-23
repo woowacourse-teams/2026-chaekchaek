@@ -28,7 +28,7 @@ app:
   frontend:
     base-url: http://localhost:3000
     local-base-url: http://localhost:3000
-    dev-base-url: http://43.203.240.201
+    dev-base-url: https://dev.chaekchaek.com
     allowed-origins: https://chaekchaek.com, https://dev.chaekchaek.com, http://localhost:3000
     oauth-success-path: /oauth/callback
     oauth-failure-path: /login
