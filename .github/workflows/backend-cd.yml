@@ -65,67 +65,87 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev-${{ github.sha }}
 
   deploy:
     needs: build
-    runs-on: [ self-hosted, backend ]
+    runs-on: [ self-hosted, dev-backend ]
+    environment: development
     steps:
-      - name: Log in to GHCR
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull image
-        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-
-      - name: Restart container
+      - name: Deploy development
+        shell: bash
         env:
+          BACKEND_IMAGE: ghcr.io/woowacourse-teams/2026-chaekchaek/chaekchaek-backend:dev-${{ github.sha }}
           DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          ALADIN_TTB_KEY: ${{ secrets.ALADIN_TTB_KEY }}
-          YES24_API_KEY: ${{ secrets.YES24_API_KEY }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           FRONTEND_BASE_URL: ${{ secrets.FRONTEND_BASE_URL }}
           FRONTEND_LOCAL_BASE_URL: ${{ secrets.FRONTEND_LOCAL_BASE_URL }}
-          FRONTEND_DEV_BASE_URL: https://dev.chaekchaek.com
-          FRONTEND_ALLOWED_ORIGINS: ${{ secrets.FRONTEND_ALLOWED_ORIGINS }},https://dev.chaekchaek.com
+          FRONTEND_DEV_BASE_URL: ${{ secrets.FRONTEND_DEV_BASE_URL }}
+          FRONTEND_ALLOWED_ORIGINS: ${{ secrets.FRONTEND_ALLOWED_ORIGINS }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           APPLE_CLIENT_ID: ${{ secrets.APPLE_CLIENT_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
           APPLE_PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }}
-          AUTH_COOKIE_SECURE: 'true'
-          AUTH_COOKIE_SAME_SITE: 'None'
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ALADIN_TTB_KEY: ${{ secrets.ALADIN_TTB_KEY }}
+          YES24_API_KEY: ${{ secrets.YES24_API_KEY }}
+          AUTH_COOKIE_SECURE: "true"
+          AUTH_COOKIE_SAME_SITE: "None"
+
         run: |
-          docker stop chaekchaek-backend 2>/dev/null || true
-          docker rm chaekchaek-backend 2>/dev/null || true
-          docker run -d \
-            --name chaekchaek-backend \
-            --restart unless-stopped \
-            -p 8080:8080 \
-            -e DB_URL="$DB_URL" \
-            -e DB_USERNAME="$DB_USERNAME" \
-            -e DB_PASSWORD="$DB_PASSWORD" \
-            -e ALADIN_TTB_KEY="$ALADIN_TTB_KEY" \
-            -e YES24_API_KEY="$YES24_API_KEY" \
-            -e JWT_SECRET="$JWT_SECRET" \
-            -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
-            -e GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
-            -e FRONTEND_BASE_URL="$FRONTEND_BASE_URL" \
-            -e FRONTEND_LOCAL_BASE_URL="$FRONTEND_LOCAL_BASE_URL" \
-            -e FRONTEND_DEV_BASE_URL="$FRONTEND_DEV_BASE_URL" \
-            -e FRONTEND_ALLOWED_ORIGINS="$FRONTEND_ALLOWED_ORIGINS" \
-            -e AUTH_COOKIE_SECURE="$AUTH_COOKIE_SECURE" \
-            -e AUTH_COOKIE_SAME_SITE="$AUTH_COOKIE_SAME_SITE" \
-            -e APPLE_CLIENT_ID="$APPLE_CLIENT_ID" \
-            -e APPLE_TEAM_ID="$APPLE_TEAM_ID" \
-            -e APPLE_KEY_ID="$APPLE_KEY_ID" \
-            -e APPLE_PRIVATE_KEY="$APPLE_PRIVATE_KEY" \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker image prune -af
+          set -euo pipefail
+
+          cd /opt/chaekchaek
+          umask 077
+
+          env_file="$(mktemp .env.dev.XXXXXX)"
+          trap 'rm -f "$env_file"' EXIT
+
+          {
+            printf '%s\n' "BACKEND_IMAGE=$BACKEND_IMAGE"
+            printf '%s\n' "DB_URL=$DB_URL"
+            printf '%s\n' "DB_USERNAME=$DB_USERNAME"
+            printf '%s\n' "DB_PASSWORD=$DB_PASSWORD"
+            printf '%s\n' "MYSQL_DATABASE=$MYSQL_DATABASE"
+            printf '%s\n' "MYSQL_USER=$MYSQL_USER"
+            printf '%s\n' "MYSQL_PASSWORD=$MYSQL_PASSWORD"
+            printf '%s\n' "MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD"
+            printf '%s\n' "FRONTEND_BASE_URL=$FRONTEND_BASE_URL"
+            printf '%s\n' "FRONTEND_LOCAL_BASE_URL=$FRONTEND_LOCAL_BASE_URL"
+            printf '%s\n' "FRONTEND_DEV_BASE_URL=$FRONTEND_DEV_BASE_URL"
+            printf '%s\n' "FRONTEND_ALLOWED_ORIGINS=$FRONTEND_ALLOWED_ORIGINS"
+            printf '%s\n' "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID"
+            printf '%s\n' "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET"
+            printf '%s\n' "APPLE_CLIENT_ID=$APPLE_CLIENT_ID"
+            printf '%s\n' "APPLE_TEAM_ID=$APPLE_TEAM_ID"
+            printf '%s\n' "APPLE_KEY_ID=$APPLE_KEY_ID"
+            printf '%s\n' "APPLE_PRIVATE_KEY=$APPLE_PRIVATE_KEY"
+            printf '%s\n' "JWT_SECRET=$JWT_SECRET"
+            printf '%s\n' "ALADIN_TTB_KEY=$ALADIN_TTB_KEY"
+            printf '%s\n' "YES24_API_KEY=$YES24_API_KEY"
+            printf '%s\n' "AUTH_COOKIE_SECURE=$AUTH_COOKIE_SECURE"
+            printf '%s\n' "AUTH_COOKIE_SAME_SITE=$AUTH_COOKIE_SAME_SITE"
+          } > "$env_file"
+
+          chmod 600 "$env_file"
+          mv "$env_file" .env.dev
+
+          docker compose --env-file .env.dev pull
+          docker compose --env-file .env.dev up -d --remove-orphans
+          docker compose --env-file .env.dev ps
+
+          curl -fsS https://dev-api.chaekchaek.com/health
