@@ -20,6 +20,9 @@ if (__DEV__) {
 
 if (ENV.APP_ENV === 'production') {
   initializeGA();
+}
+
+if (ENV.APP_ENV !== 'local') {
   initializeErrorTracking();
 }
 
