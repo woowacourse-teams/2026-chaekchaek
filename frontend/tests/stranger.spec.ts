@@ -48,7 +48,33 @@ test("320px, 390px와 데스크톱에서 책과 페이지 조작이 넘치지 �
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.getByRole("button", { name: "다음" }).click();
     await expect(page.getByText("2 / 6")).toBeVisible();
+    await page.getByRole("button", { name: "필기까지 크게 보기" }).click();
+    const enlarged = await page.getByRole("dialog").locator("img").boundingBox();
+    expect(enlarged).not.toBeNull();
+    expect(enlarged!.height).toBeLessThanOrEqual(850 - 104);
+    expect(enlarged!.y + enlarged!.height).toBeLessThanOrEqual(850 - 12);
+    await page.getByRole("button", { name: "닫기" }).click();
   }
+});
+
+test("다음 이미지가 늦게 도착해도 현재 페이지를 유지한 뒤 전환한다", async ({ page }) => {
+  await page.route("/api/experiments/stranger", (route) => route.fulfill({ status: 503, body: "{}" }));
+  let releaseImage!: () => void;
+  const delayedImage = new Promise<void>((resolve) => { releaseImage = resolve; });
+  await page.route("**/experiments/stranger/page-2.jpg", async (route) => {
+    await delayedImage;
+    await route.continue();
+  });
+  await page.goto("/experiments/stranger");
+  await page.getByRole("button", { name: "읽었어요", exact: true }).click();
+  await page.getByRole("button", { name: "다음" }).click();
+  await expect(page.getByText("불러오는 중…")).toBeVisible();
+  await expect(page.locator(".stranger-scan")).toHaveAttribute("src", /page-1\.jpg$/);
+  await expect(page.getByRole("button", { name: "다음" })).toBeDisabled();
+  releaseImage();
+  await expect(page.getByText("2 / 6")).toBeVisible();
+  await expect(page.locator(".stranger-scan")).toHaveJSProperty("complete", true);
+  expect(await page.locator(".stranger-scan").evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
 });
 
 test("저장 실패 뒤 입력을 보존하고 다시 제출할 수 있다", async ({ page }) => {

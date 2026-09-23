@@ -6,15 +6,32 @@ import type { ReadingStatus, StrangerReflection } from "../../../lib/stranger-ex
 
 const COVER_URL = "https://image.yes24.com/goods/192097306/XL";
 const scanPath = (page: number) => `/experiments/stranger/page-${page}.jpg`;
+const scanLoads = new Map<number, Promise<void>>();
+
+function prepareScan(page: number): Promise<void> {
+  const cached = scanLoads.get(page);
+  if (cached) return cached;
+  const image = new Image();
+  image.src = scanPath(page);
+  const ready = image.decode().catch((error) => {
+    scanLoads.delete(page);
+    throw error;
+  });
+  scanLoads.set(page, ready);
+  return ready;
+}
 
 export default function StrangerExperimentPage() {
   const { data, identity, ready, cloud, error, commit } = useStrangerExperiment(true);
   const [page, setPage] = useState(1);
+  const [pageLoading, setPageLoading] = useState(false);
+  const [pageError, setPageError] = useState("");
   const [zoom, setZoom] = useState(false);
   const [notice, setNotice] = useState("");
   const [validation, setValidation] = useState("");
   const recordedPages = useRef(new Set<number>());
   const pendingReflectionId = useRef<string | null>(null);
+  const pageTransitioning = useRef(false);
   const person = data.participants.find((item) => item.id === identity?.id);
   const readingStatus = person?.readingStatus ?? null;
   const reflections = [...data.reflections].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -32,6 +49,27 @@ export default function StrangerExperimentPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [zoom]);
+  useEffect(() => {
+    if (!readingStatus) return;
+    for (const neighbor of [page - 1, page + 1]) {
+      if (neighbor >= 1 && neighbor <= 6) void prepareScan(neighbor).catch(() => {});
+    }
+  }, [page, readingStatus]);
+  async function changePage(nextPage: number) {
+    if (pageTransitioning.current || nextPage < 1 || nextPage > 6) return;
+    pageTransitioning.current = true;
+    setPageLoading(true);
+    setPageError("");
+    try {
+      await prepareScan(nextPage);
+      setPage(nextPage);
+    } catch {
+      setPageError("페이지 이미지를 불러오지 못했어요. 다시 눌러 주세요.");
+    } finally {
+      pageTransitioning.current = false;
+      setPageLoading(false);
+    }
+  }
   async function chooseReading(status: ReadingStatus) {
     if (!identity) return;
     if (await commit({ type: "reading", userId: identity.id, readingStatus: status })) setNotice("");
@@ -77,10 +115,11 @@ export default function StrangerExperimentPage() {
             <img className={`stranger-scan stranger-scan-${page % 2 ? "odd" : "even"}`} src={scanPath(page)} alt={`이방인 발췌문 ${page} / 6, 책 ${page + 98}쪽`} width={960} height={1440}/>
           </button>
           <div className="stranger-page-controls">
-            <button className="secondary" type="button" disabled={page === 1} onClick={() => setPage(page - 1)}>이전</button>
-            <span aria-live="polite">{page} / 6</span>
-            <button className="secondary" type="button" disabled={page === 6} onClick={() => setPage(page + 1)}>다음</button>
+            <button className="secondary" type="button" disabled={pageLoading || page === 1} onClick={() => void changePage(page - 1)}>이전</button>
+            <span aria-live="polite">{pageLoading ? "불러오는 중…" : `${page} / 6`}</span>
+            <button className="secondary" type="button" disabled={pageLoading || page === 6} onClick={() => void changePage(page + 1)}>다음</button>
           </div>
+          {pageError && <p role="alert" className="field-error">{pageError}</p>}
           <button className="stranger-zoom-link" type="button" onClick={() => setZoom(true)}>필기까지 크게 보기</button>
         </div>
       </section>
