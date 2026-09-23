@@ -40,6 +40,17 @@ class OAuthFrontendRedirectResolverTest {
     }
 
     @Test
+    @DisplayName("운영 프론트에서 시작한 OAuth 로그인은 운영 프론트로 이동한다")
+    void should_ResolveProductionSuccessUrl_When_ClientIsProduction() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        resolver.rememberClient(request, OAuthFrontendClient.PROD);
+
+        String redirectUrl = resolver.resolveSuccessUrl(request);
+
+        assertThat(redirectUrl).isEqualTo("https://chaekchaek.com/oauth/callback");
+    }
+
+    @Test
     @DisplayName("OAuth 로그인 실패도 시작한 프론트의 로그인 화면으로 이동한다")
     void should_ResolveFailureUrl_When_ClientExists() {
         MockHttpServletRequest request = new MockHttpServletRequest();

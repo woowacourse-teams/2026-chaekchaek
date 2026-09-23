@@ -6,7 +6,8 @@ import java.util.Optional;
 public enum OAuthFrontendClient {
 
     LOCAL("local"),
-    DEV("dev");
+    DEV("dev"),
+    PROD("prod");
 
     private final String value;
 

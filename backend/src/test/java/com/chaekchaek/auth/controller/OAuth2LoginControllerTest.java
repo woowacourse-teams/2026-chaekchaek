@@ -35,6 +35,19 @@ class OAuth2LoginControllerTest {
     }
 
     @Test
+    @DisplayName("운영 프론트 클라이언트를 저장하고 Google 로그인을 시작한다")
+    void should_RememberProductionClientAndRedirect_When_ClientIsProduction() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+
+        ResponseEntity<Void> response = controller.googleLogin("prod", request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        assertThat(response.getHeaders().getLocation())
+                .hasToString("/oauth2/authorization/google");
+        verify(redirectResolver).rememberClient(request, OAuthFrontendClient.PROD);
+    }
+
+    @Test
     @DisplayName("허용되지 않은 프론트 클라이언트는 거부한다")
     void should_RejectLogin_When_ClientIsNotAllowed() {
         MockHttpServletRequest request = new MockHttpServletRequest();
