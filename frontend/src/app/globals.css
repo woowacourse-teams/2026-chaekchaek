@@ -98,3 +98,29 @@ td:first-child{max-width:300px;overflow-wrap:anywhere}
  .dialog{padding:20px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+.stranger-shell h1{font-size:28px;line-height:1.4;margin:24px 0 8px}
+.stranger-breadcrumb{font-size:13px;color:var(--muted)}
+.stranger-intro{color:var(--muted);margin-bottom:24px}
+.stranger-book{display:flex;gap:24px;align-items:center;padding:24px 0;border-bottom:1px solid var(--line)}
+.stranger-book img{width:110px;height:160px;object-fit:contain;flex:none}
+.stranger-book h2{font-size:20px;margin-bottom:4px}
+.stranger-choices{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stranger-reading{margin-top:28px}
+.stranger-reading h2{font-size:20px;margin-bottom:4px}
+.stranger-reader{width:min(100%,440px);margin:20px auto 36px}
+.stranger-scan-button{display:block;width:100%;aspect-ratio:2/3;padding:0;overflow:hidden;border:1px solid var(--line);background:#fafafa}
+.stranger-scan{display:block;width:90%;height:90%;object-fit:contain;margin:auto}
+.stranger-scan-odd{transform:translateX(4.6%)}
+.stranger-scan-even{transform:translateX(-4.6%)}
+.stranger-page-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}
+.stranger-page-controls span{font-size:13px;color:var(--muted)}
+.stranger-zoom-link{display:block;min-height:44px;margin:4px auto 0;padding:8px;text-decoration:underline;color:var(--accent-text)}
+.stranger-feed{padding-top:24px;border-top:1px solid var(--line)}
+.stranger-zoom-overlay{position:fixed;inset:0;z-index:30;background:#191919b8;display:flex;align-items:center;justify-content:center;padding:12px}
+.stranger-zoom-panel{width:min(100%,1100px);max-height:calc(100dvh - 24px);overflow:auto;background:#fff;border-radius:10px;padding:12px}
+.stranger-zoom-panel img{display:block;width:max(100%,min(960px,100vw));height:auto;max-width:none}
+.stranger-zoom-close{position:sticky;top:0;z-index:1;display:block;margin:0 0 12px auto;background:#fff}
+.admin-tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);margin:24px 0}
+.admin-tabs a{display:inline-flex;align-items:center;min-height:44px;padding:8px 14px;text-decoration:none;color:var(--muted)}
+.admin-tabs a[aria-current=page]{color:var(--ink);border-bottom:3px solid var(--orange);font-weight:650}
+@media(max-width:400px){.stranger-shell h1{font-size:22px}.stranger-book{gap:12px}.stranger-book img{width:80px;height:120px}.stranger-book h2{font-size:17px}.stranger-choices .primary,.stranger-choices .secondary{padding:10px 12px}}

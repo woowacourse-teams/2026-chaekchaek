@@ -33,6 +33,7 @@ export default function AdminPreview() {
   }
   return <main className="experiment-shell admin-shell">
     <h1>실험 집계 미리보기</h1>
+    <nav className="admin-tabs" aria-label="실험 통계"><a href="/admin" aria-current="page">기존 실험</a><a href="/admin/stranger">이방인 실험</a></nav>
     <p className="admin-intro">{cloud ? "모든 참여자의 감상, 답글과 좋아요를 합산한 실험 데이터입니다." : "이 브라우저에 저장된 동작 확인용 데이터입니다. 다른 참여자의 데이터는 합산되지 않습니다."}</p>
     <div className="admin-toolbar"><a href="/">참여 화면으로 돌아가기</a><button className="secondary" disabled={!ready} onClick={downloadCsv}>CSV 내려받기</button>{!cloud && <button className="primary" disabled={!ready} onClick={() => setAddingBook(true)}>책 등록하기</button>}</div>
     {error && <p className="error-banner" role="alert">{error}</p>}
