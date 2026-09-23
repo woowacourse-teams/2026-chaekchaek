@@ -27,7 +27,6 @@ export default function StrangerExperimentPage() {
   const [page, setPage] = useState(1);
   const [pageLoading, setPageLoading] = useState(false);
   const [pageError, setPageError] = useState("");
-  const [zoom, setZoom] = useState(false);
   const [notice, setNotice] = useState("");
   const [validation, setValidation] = useState("");
   const recordedPages = useRef(new Set<number>());
@@ -45,12 +44,6 @@ export default function StrangerExperimentPage() {
       if (!saved) recordedPages.current.delete(page);
     });
   }, [ready, identity, readingStatus, page, commit]);
-  useEffect(() => {
-    if (!zoom) return;
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setZoom(false); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [zoom]);
   useEffect(() => {
     if (!readingStatus) return;
     for (const neighbor of [page - 1, page + 1]) {
@@ -114,17 +107,16 @@ export default function StrangerExperimentPage() {
         <p className="muted">책에 적힌 필기와 밑줄도 함께 볼 수 있어요.</p>
         <div className="stranger-reader">
           <div className="stranger-scan-stage">
-            <button className="stranger-scan-button" type="button" onClick={() => setZoom(true)} aria-label={`${page}번째 발췌문 크게 보기`}>
+            <button className="secondary stranger-side-nav" type="button" aria-label="이전" disabled={pageLoading || page === 1} onClick={() => void changePage(page - 1)}><span aria-hidden="true">‹</span></button>
+            <div className="stranger-scan-frame">
               <img className={`stranger-scan stranger-scan-${page % 2 ? "odd" : "even"}`} src={scanPath(page)} alt={`이방인 발췌문 ${page} / 6, 책 ${page + 98}쪽`} width={960} height={1440}/>
-            </button>
-            <button className="secondary stranger-side-nav stranger-side-nav-prev" type="button" aria-label="이전" disabled={pageLoading || page === 1} onClick={() => void changePage(page - 1)}><span aria-hidden="true">‹</span></button>
-            <button className="secondary stranger-side-nav stranger-side-nav-next" type="button" aria-label="다음" disabled={pageLoading || page === 6} onClick={() => void changePage(page + 1)}><span aria-hidden="true">›</span></button>
+            </div>
+            <button className="secondary stranger-side-nav" type="button" aria-label="다음" disabled={pageLoading || page === 6} onClick={() => void changePage(page + 1)}><span aria-hidden="true">›</span></button>
           </div>
           <div className="stranger-page-position">
             <span aria-live="polite">{pageLoading ? "불러오는 중…" : `${page} / 6`}</span>
           </div>
           {pageError && <p role="alert" className="field-error">{pageError}</p>}
-          <button className="stranger-zoom-link" type="button" onClick={() => setZoom(true)}>필기까지 크게 보기</button>
         </div>
       </section>
       <section className="reflection-feed stranger-feed" aria-labelledby="stranger-feed-title">
@@ -149,11 +141,5 @@ export default function StrangerExperimentPage() {
       </section>
     </>}
     <p className="preview-note">{cloud ? "입력한 감상과 반응은 실험 데이터로 저장됩니다." : "미리보기 · 입력은 이 브라우저에만 저장됩니다."}</p>
-    {zoom && <div className="stranger-zoom-overlay" role="presentation" onClick={() => setZoom(false)}>
-      <div className="stranger-zoom-panel" role="dialog" aria-modal="true" aria-label={`${page}번째 발췌문 확대 보기`} onClick={(event) => event.stopPropagation()}>
-        <button className="secondary stranger-zoom-close" type="button" autoFocus onClick={() => setZoom(false)}>닫기</button>
-        <img src={scanPath(page)} alt={`이방인 발췌문 ${page} / 6 확대`} width={960} height={1440}/>
-      </div>
-    </div>}
   </main>;
 }

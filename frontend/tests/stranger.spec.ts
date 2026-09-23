@@ -20,9 +20,7 @@ test("읽음 여부, 발췌문, 감상 반응과 별도 통계를 유지한다",
   await initialNote.getByRole("button", { name: "좋아요 0" }).click();
   await page.getByRole("button", { name: "다음" }).click();
   await expect(page.getByText("2 / 6")).toBeVisible();
-  await page.getByRole("button", { name: "필기까지 크게 보기" }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.getByRole("button", { name: "닫기" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByLabel("감상", { exact: true }).fill("다른 사람의 필기를 보며 다시 생각했어요.");
   await page.getByRole("button", { name: "남기기", exact: true }).click();
   await expect(page.getByTestId("reflection")).toHaveCount(3);
@@ -56,14 +54,15 @@ test("320px, 390px와 데스크톱에서 책과 페이지 조작이 넘치지 �
     await expect(page.locator(".stranger-scan")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const stage = await page.locator(".stranger-scan-stage").boundingBox();
+    const scan = await page.locator(".stranger-scan-frame").boundingBox();
     const previous = await page.getByRole("button", { name: "이전", exact: true }).boundingBox();
     const next = await page.getByRole("button", { name: "다음", exact: true }).boundingBox();
-    expect(stage && previous && next).toBeTruthy();
+    expect(stage && scan && previous && next).toBeTruthy();
     expect(previous!.height).toBeGreaterThanOrEqual(44);
     expect(next!.height).toBeGreaterThanOrEqual(44);
     expect(previous!.x).toBeGreaterThanOrEqual(stage!.x);
-    expect(previous!.x + previous!.width).toBeLessThan(stage!.x + stage!.width / 2);
-    expect(next!.x).toBeGreaterThan(stage!.x + stage!.width / 2);
+    expect(previous!.x + previous!.width).toBeLessThanOrEqual(scan!.x);
+    expect(next!.x).toBeGreaterThanOrEqual(scan!.x + scan!.width);
     expect(next!.x + next!.width).toBeLessThanOrEqual(stage!.x + stage!.width);
     expect(previous!.y).toBeGreaterThan(stage!.y);
     expect(next!.y + next!.height).toBeLessThan(stage!.y + stage!.height);
@@ -71,12 +70,8 @@ test("320px, 390px와 데스크톱에서 책과 페이지 조작이 넘치지 �
     await expect(page.getByText("2 / 6")).toBeVisible();
     await page.getByRole("button", { name: "이전" }).click();
     await expect(page.getByText("1 / 6")).toBeVisible();
-    await page.getByRole("button", { name: "필기까지 크게 보기" }).click();
-    const enlarged = await page.getByRole("dialog").locator("img").boundingBox();
-    expect(enlarged).not.toBeNull();
-    expect(enlarged!.height).toBeLessThanOrEqual(850 - 104);
-    expect(enlarged!.y + enlarged!.height).toBeLessThanOrEqual(850 - 12);
-    await page.getByRole("button", { name: "닫기" }).click();
+    await page.locator(".stranger-scan").click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   }
 });
 
