@@ -4,6 +4,7 @@ const ENV = {
   APP_API_URL: process.env.APP_API_URL,
   APP_GA_ID: process.env.APP_GA_ID,
   APP_SENTRY_DSN: process.env.APP_SENTRY_DSN,
+  APP_ENV: process.env.APP_ENV,
 } as const;
 
 export { ENV };
