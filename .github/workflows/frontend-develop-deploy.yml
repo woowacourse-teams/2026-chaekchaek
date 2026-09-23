@@ -1,16 +1,16 @@
-name: frontend-deploy
+name: frontend-development-deploy
 on:
   push:
     branches:
-      - fe
+      - fe-develop
     paths:
       - 'frontend/**'
-      - '.github/workflows/frontend-deploy.yml'
+      - '.github/workflows/frontend-develop-deploy.yml'
 
 jobs:
   deploy:
     runs-on: [self-hosted, frontend]
-    environment: production
+    environment: development
 
     defaults:
       run:
@@ -42,9 +42,9 @@ jobs:
 
       - name: Deploy
         run: |
-          cp -r apps/chaekchaek/dist/. /var/www/chaekchaek-frontend/
+          cp -r apps/chaekchaek/dist/. /var/www/chaekchaek-frontend-development/
 
       - name: Record deployment
         run: npm run record-deploy -w @chaekchaek/web
         env:
-          DEPLOY_RECORD_DIR: /var/lib/chaekchaek-deploy
+          DEPLOY_RECORD_DIR: /var/lib/chaekchaek-develop-deploy
