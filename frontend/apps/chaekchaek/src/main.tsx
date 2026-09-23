@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { ENV } from '@/configs/env';
 import { AppProviders } from '@/providers/AppProvider';
 import { enableMocking } from '@/mocks/msw/browser';
 
@@ -17,7 +18,7 @@ if (__DEV__) {
   await enableMocking();
 }
 
-if (!__DEV__) {
+if (ENV.APP_ENV === 'production') {
   initializeGA();
   initializeErrorTracking();
 }
