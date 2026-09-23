@@ -10,6 +10,7 @@ on:
 jobs:
   deploy:
     runs-on: [self-hosted, frontend]
+    environment: production
 
     defaults:
       run:
@@ -37,6 +38,7 @@ jobs:
           APP_GA_ID: ${{ vars.APP_GA_ID }}
           APP_SENTRY_DSN: ${{ vars.APP_SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ vars.SENTRY_AUTH_TOKEN }}
+          APP_ENV: ${{ vars.APP_ENV }}
 
       - name: Deploy
         run: |
