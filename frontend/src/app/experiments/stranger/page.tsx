@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ReflectionCard } from "../../../components/reflection-card";
+import { initialStrangerReflections, isInitialStrangerReflection } from "../../../lib/stranger-initial-reflections";
 import { useStrangerExperiment } from "../../../lib/use-stranger-experiment";
 import type { ReadingStatus, StrangerReflection } from "../../../lib/stranger-experiment";
 
@@ -34,7 +35,8 @@ export default function StrangerExperimentPage() {
   const pageTransitioning = useRef(false);
   const person = data.participants.find((item) => item.id === identity?.id);
   const readingStatus = person?.readingStatus ?? null;
-  const reflections = [...data.reflections].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const reflections = [...initialStrangerReflections,
+    ...data.reflections.filter((item) => !isInitialStrangerReflection(item.id)).sort((a, b) => b.createdAt.localeCompare(a.createdAt))];
 
   useEffect(() => {
     if (!ready || !identity || !readingStatus || recordedPages.current.has(page)) return;
@@ -125,17 +127,6 @@ export default function StrangerExperimentPage() {
           <button className="stranger-zoom-link" type="button" onClick={() => setZoom(true)}>필기까지 크게 보기</button>
         </div>
       </section>
-      <section className="stranger-examples" aria-labelledby="stranger-examples-title">
-        <h2 id="stranger-examples-title">제공된 감상평</h2>
-        <p className="muted">발췌문을 읽고 생각을 나눌 때 참고해 보세요.</p>
-        <blockquote><p>가끔 삶이 거대한 어항 같다는 생각이 듭니다. 인간이 만든 법과 도덕 안에서 살고, 감정까지 정해진 방식으로 보여줘야 한다는 점에서 우리는 어항 속 금붕어와 크게 다르지 않은지도 모릅니다. 세상에 정해진 의미가 없다면 허무할 수도 있지만 무의미에서 시작되는 의미만큼은 누구도 강요할 수 없는 나만의 것이기도 합니다. 이방인은 당연하다고 믿어온 삶의 규칙과 감정이 정말 내 것인지 묻게 만드는 책입니다.</p></blockquote>
-        <blockquote><p>{`의욕이 없고 권태를 느끼는 주인공
-소시오패스와 다를 바 없지만 사실 누구나 가져봤을 만한 감정과 생각들
-결국 사회적 규범이라는 가면 아래에 있는 나의 모습이었다
-감정과 사건의 본질보다 도덕성에 집착하는 등장인물들은 현실과 다를 바 없어보였고
-사제 앞에서 속마음을 쏟아내는 마지막 장면은 한마디 한마디가 인상적이었다
-모두가 가면을 쓴 세상에서 민낯의 주인공은 이방인이었다`}</p></blockquote>
-      </section>
       <section className="reflection-feed stranger-feed" aria-labelledby="stranger-feed-title">
         <div className="feed-heading"><h2 id="stranger-feed-title">함께 나눈 감상 <span>{reflections.length}</span></h2></div>
         <form onSubmit={submitReflection} className="inline-composer">
@@ -146,7 +137,6 @@ export default function StrangerExperimentPage() {
           {validation && <p role="alert" className="field-error">{validation}</p>}
         </form>
         <p className="save-notice" role="status">{notice}</p>
-        {reflections.length === 0 && <p className="empty-state">아직 나눈 감상이 없어요.</p>}
         {reflections.map((item) => <ReflectionCard key={item.id}
           note={{ ...item, bookId: "stranger", title: "", quote: "", source: "", isExample: false }}
           replies={data.replies.filter((reply) => reply.reflectionId === item.id)}

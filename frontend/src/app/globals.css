@@ -102,13 +102,10 @@ td:first-child{max-width:300px;overflow-wrap:anywhere}
 .stranger-book img{width:110px;height:160px;object-fit:contain;flex:none}
 .stranger-book h1{font-size:20px;line-height:1.25;margin-bottom:4px}
 .stranger-choices{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.stranger-context,.stranger-examples{margin-top:28px}
-.stranger-context h2,.stranger-examples h2{font-size:20px;line-height:1.25;margin-bottom:12px}
-.stranger-context>p,.stranger-examples blockquote p{font-size:17px;line-height:1.65;word-break:keep-all;overflow-wrap:anywhere}
+.stranger-context{margin-top:28px}
+.stranger-context h2{font-size:20px;line-height:1.25;margin-bottom:12px}
+.stranger-context>p{font-size:17px;line-height:1.65;word-break:keep-all;overflow-wrap:anywhere}
 .stranger-context>p{padding:20px 24px;background:var(--surface);border-radius:10px}
-.stranger-examples>.muted{margin-bottom:16px}
-.stranger-examples blockquote{margin:0 0 12px;padding:20px 24px;background:var(--surface);border-radius:10px}
-.stranger-examples blockquote p{white-space:pre-line}
 .stranger-reading{margin-top:28px}
 .stranger-reading h2{font-size:20px;margin-bottom:4px}
 .stranger-reader{width:min(100%,440px);margin:20px auto 36px}

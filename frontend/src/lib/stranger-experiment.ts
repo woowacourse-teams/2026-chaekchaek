@@ -1,4 +1,5 @@
 export type ReadingStatus = "read" | "unread";
+export const INITIAL_REFLECTION_AUTHOR_ID = "stranger-initial-author";
 export type DevicePlatform = "iPhone" | "iPad" | "Android" | "PC" | "other";
 export type StrangerParticipant = {
   id: string; nickname: string; readingStatus: ReadingStatus | null;
@@ -50,8 +51,9 @@ export function applyStrangerMutation(current: StrangerExperiment, mutation: Str
 }
 
 export function summarizeStrangerExperiment(data: StrangerExperiment) {
+  const participants = data.participants.filter((person) => person.id !== INITIAL_REFLECTION_AUTHOR_ID);
   const groups = (["read", "unread"] as const).map((status) => {
-    const people = data.participants.filter((person) => person.readingStatus === status);
+    const people = participants.filter((person) => person.readingStatus === status);
     const ids = new Set(people.map((person) => person.id));
     const submitted = new Set(data.reflections.filter((item) => ids.has(item.userId)).map((item) => item.userId)).size;
     return { status, participants: people.length, pageViews: Array.from({ length: 6 }, (_, index) =>
@@ -62,15 +64,16 @@ export function summarizeStrangerExperiment(data: StrangerExperiment) {
       replies: data.replies.filter((item) => ids.has(item.userId)).length,
       likes: data.likes.filter((item) => ids.has(item.userId)).length };
   });
-  return { unselected: data.participants.filter((person) => person.readingStatus === null).length, groups };
+  return { unselected: participants.filter((person) => person.readingStatus === null).length, groups };
 }
 
 export function summarizeStrangerPlatforms(data: StrangerExperiment) {
   const submittedIds = new Set(data.reflections.map((item) => item.userId));
-  const summarize = (key: "source" | "device") => [...new Set(data.participants.map((person) => person[key]))]
+  const participants = data.participants.filter((person) => person.id !== INITIAL_REFLECTION_AUTHOR_ID);
+  const summarize = (key: "source" | "device") => [...new Set(participants.map((person) => person[key]))]
     .sort((a, b) => a.localeCompare(b))
     .map((value) => {
-      const people = data.participants.filter((person) => person[key] === value);
+      const people = participants.filter((person) => person[key] === value);
       return { value, visitors: people.length, read: people.filter((person) => person.readingStatus === "read").length,
         unread: people.filter((person) => person.readingStatus === "unread").length,
         submitted: people.filter((person) => submittedIds.has(person.id)).length };
