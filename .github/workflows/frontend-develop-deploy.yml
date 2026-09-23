@@ -1,0 +1,50 @@
+name: frontend-development-deploy
+on:
+  push:
+    branches:
+      - fe-develop
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-develop-deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, frontend]
+    environment: development
+
+    defaults:
+      run:
+        working-directory: frontend
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.1
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build -w @chaekchaek/web
+        env:
+          APP_NAME: ${{ vars.APP_NAME }}
+          APP_URL: ${{ vars.APP_URL }}
+          NODE_ENV: ${{ vars.NODE_ENV }}
+          APP_API_URL: ${{ vars.APP_API_URL }}
+          APP_GA_ID: ${{ vars.APP_GA_ID }}
+          APP_SENTRY_DSN: ${{ vars.APP_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ vars.SENTRY_AUTH_TOKEN }}
+          APP_ENV: ${{ vars.APP_ENV }}
+
+      - name: Deploy
+        run: |
+          cp -r apps/chaekchaek/dist/. /var/www/chaekchaek-frontend-development/
+
+      - name: Record deployment
+        run: npm run record-deploy -w @chaekchaek/web
+        env:
+          DEPLOY_RECORD_DIR: /var/lib/chaekchaek-develop-deploy
