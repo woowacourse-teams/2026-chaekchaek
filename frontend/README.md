@@ -1,11 +1,8 @@
-# 책췍 실험 페이지
+# 책췍 웹 실험
 
-책을 선택하고 텍스트박스 하나에 바로 감상을 남기는 PC 웹 프로토타입입니다. 참여 화면에 팝업, 닉네임, 독자 아이콘은 표시하지 않습니다. 현재 데이터는 브라우저에만 저장하며 실제 참여 수집은 시작하지 않습니다.
+- 기존 책·장르 실험: `/`, 집계: `/admin`
+- 『이방인』 감상 실험: `/experiments/stranger`, 집계: `/admin/stranger`
+- 로컬 실행: `npm ci`, `npm run dev`
+- 검증: `npm run typecheck`, `npm test`, `npm run test:e2e`, `npm run build`
 
-- 실행: 이 디렉터리에서 `npm ci`, `npm run dev`
-- 참여 화면: `/`
-- 책 등록·집계 미리보기: `/admin` (로컬 데이터 확인용이며 인증된 관리자 기능이 아님)
-- 검증: `npm test`, `npm run test:e2e`, `npm run build`
-- Vercel 연결 시 Root Directory: `frontend`
-
-Supabase 프로젝트 연결, 익명 인증, 데이터 접근 규칙 및 관리자 인증은 다음 단계입니다. 현재 상태를 실제 실험 수집용으로 배포하지 않습니다.
+Vercel 프로젝트의 루트는 이 디렉터리입니다. 운영 환경은 Supabase에 참여 데이터를 저장하며, `supabase/migrations/`의 실험 테이블이 필요합니다. Supabase 환경변수가 없으면 입력은 해당 브라우저에만 저장됩니다. 관리자 경로는 현재 공개된 실험 통계 화면입니다.
