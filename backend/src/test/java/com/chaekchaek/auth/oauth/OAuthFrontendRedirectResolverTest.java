@@ -12,7 +12,7 @@ class OAuthFrontendRedirectResolverTest {
             new OAuthFrontendRedirectResolver(
                     "https://chaekchaek.com",
                     "http://localhost:3000",
-                    "http://43.203.240.201",
+                    "https://dev.chaekchaek.com",
                     "/oauth/callback",
                     "/login"
             );
@@ -36,7 +36,7 @@ class OAuthFrontendRedirectResolverTest {
 
         String redirectUrl = resolver.resolveSuccessUrl(request);
 
-        assertThat(redirectUrl).isEqualTo("http://43.203.240.201/oauth/callback");
+        assertThat(redirectUrl).isEqualTo("https://dev.chaekchaek.com/oauth/callback");
     }
 
     @Test
@@ -48,7 +48,7 @@ class OAuthFrontendRedirectResolverTest {
         String redirectUrl = resolver.resolveFailureUrl(request);
 
         assertThat(redirectUrl).isEqualTo(
-                "http://43.203.240.201/login?error=OAUTH_LOGIN_FAILED"
+                "https://dev.chaekchaek.com/login?error=OAUTH_LOGIN_FAILED"
         );
     }
 
