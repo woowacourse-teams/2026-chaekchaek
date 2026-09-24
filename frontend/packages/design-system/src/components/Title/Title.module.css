@@ -9,6 +9,11 @@
 .title {
   flex: 1;
   color: #1A1A1A;
+  align-items: center;
+}
+
+.title * {
+  vertical-align: top;
 }
 
 .root .trailing {

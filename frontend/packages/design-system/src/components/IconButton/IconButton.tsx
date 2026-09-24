@@ -11,9 +11,23 @@ import type { Props } from './';
 const classnameDefault = 'ui-IconButton';
 
 export const IconButton = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'button', className, sx, style, ...restProps } = props;
+  const {
+    as = 'button',
+    shape = 'default',
+    variant = 'default',
+    size = 'medium',
+    children,
+    className,
+    sx,
+    style,
+    ...restProps
+  } = props;
 
-  const modifiers = {};
+  const modifiers = {
+    shape: shape && styles?.[`shape-${shape}`],
+    variant: variant && styles?.[`variant-${variant}`],
+    size: size && styles?.[`size-${size}`],
+  };
 
   const classname = createClassName({
     styles,
@@ -26,5 +40,9 @@ export const IconButton = <T extends ElementType>(props: Props<T>) => {
 
   const customStyles = { ...spacingStyle, ...style };
 
-  return <View as={as} className={classname} style={customStyles} {...restProps} />;
+  return (
+    <View as={as} className={classname} style={customStyles} {...restProps}>
+      {children}
+    </View>
+  );
 };

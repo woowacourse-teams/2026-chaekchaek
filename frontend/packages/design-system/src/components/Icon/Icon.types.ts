@@ -5,7 +5,7 @@ import type { PolymorphicProps } from '#internal/components/View';
 export type AS = 'svg';
 
 export type OwnProps = {
-  size?: 'small' | 'medium' | 'large';
+  size?: 'small' | 'medium' | 'large' | 'x-large';
   color?: 'default' | 'secondary' | 'error' | 'inverse';
 };
 
