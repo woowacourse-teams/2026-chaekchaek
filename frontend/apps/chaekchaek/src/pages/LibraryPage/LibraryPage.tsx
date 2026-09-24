@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import {
@@ -180,10 +180,22 @@ export const LibraryPage = () => {
     updateAccount(updatedUser);
   };
 
+  const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    const TIME_OUT = 1500;
+    if (isCopied)
+      setTimeout(() => {
+        setIsCopied(false);
+      }, TIME_OUT);
+  }, [isCopied]);
+
   const handleCopyLink = async () => {
     if (!user?.memberId) return;
     const memberLibraryLink = `${window.location.origin}/members/${user?.memberId}/library`;
     await navigator.clipboard.writeText(memberLibraryLink);
+
+    setIsCopied(true);
   };
 
   const [dialog, setDialog] = useState<
@@ -289,7 +301,11 @@ export const LibraryPage = () => {
             >
               내 서재
               <IconButton shape="link" size="large" onClick={handleCopyLink}>
-                <Icon.ShareIcon size="x-large" color="secondary" />
+                {!isCopied ? (
+                  <Icon.ShareIcon size="x-large" color="secondary" />
+                ) : (
+                  <Icon.CheckAnimatedIcon size="x-large" color="secondary" />
+                )}
               </IconButton>
             </Title>
           </Split.Top>

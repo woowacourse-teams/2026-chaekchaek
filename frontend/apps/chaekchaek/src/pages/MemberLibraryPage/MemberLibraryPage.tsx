@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import {
@@ -120,9 +120,21 @@ export const MemberLibraryPage = () => {
 
   const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
 
+  const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    const TIME_OUT = 1500;
+    if (isCopied)
+      setTimeout(() => {
+        setIsCopied(false);
+      }, TIME_OUT);
+  }, [isCopied]);
+
   const handleCopyLink = async () => {
     const memberLibraryLink = window.location.href;
     await navigator.clipboard.writeText(memberLibraryLink);
+
+    setIsCopied(true);
   };
 
   const navigation = useNavigate();
@@ -147,7 +159,11 @@ export const MemberLibraryPage = () => {
               )}
               '{libraryData?.member.displayName}' 서재
               <IconButton shape="link" size="large" onClick={handleCopyLink}>
-                <Icon.ShareIcon size="x-large" color="secondary" />
+                {!isCopied ? (
+                  <Icon.ShareIcon size="x-large" color="secondary" />
+                ) : (
+                  <Icon.CheckAnimatedIcon size="x-large" color="secondary" />
+                )}
               </IconButton>
             </Title>
           </Split.Top>
