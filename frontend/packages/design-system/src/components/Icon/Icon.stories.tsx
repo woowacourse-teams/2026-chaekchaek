@@ -12,7 +12,7 @@ const meta = {
   argTypes: {
     size: {
       control: 'radio',
-      options: ['small', 'medium', 'large'],
+      options: ['small', 'medium', 'large', 'x-large'],
     },
     color: {
       control: 'radio',
@@ -68,6 +68,13 @@ export const SmallSize: Story = {
 export const LargeSize: Story = {
   args: {
     size: 'large',
+  },
+  render,
+};
+
+export const XLargeSize: Story = {
+  args: {
+    size: 'x-large',
   },
   render,
 };
