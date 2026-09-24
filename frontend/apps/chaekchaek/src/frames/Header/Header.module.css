@@ -9,7 +9,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 1440px;
+  width: var(--layout-width);
   padding-left: 44px;
   padding-right: 44px;
   margin: 0 auto;

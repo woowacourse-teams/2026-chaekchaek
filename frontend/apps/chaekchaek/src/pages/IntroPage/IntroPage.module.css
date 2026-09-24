@@ -7,6 +7,6 @@
 }
 
 .wrap {
-  width: 1440px;
+  width: var(--layout-width);
   margin: 0 auto;
 }

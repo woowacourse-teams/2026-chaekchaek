@@ -1,5 +1,9 @@
+:root {
+  --layout-width: 1440px;
+}
+
 .frame-Layout {
-  min-width: 1440px;
+  min-width: var(--layout-width);
 }
 
 .env-development:before{

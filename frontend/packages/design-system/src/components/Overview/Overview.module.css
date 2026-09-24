@@ -9,7 +9,7 @@
   display: flex;
   align-items: stretch;
   gap: 40px;
-  width: 1440px;
+  width: var(--layout-width);
   text-align: left;
   margin: 0 auto;
   box-sizing: border-box;
