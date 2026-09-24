@@ -5,6 +5,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
+import { Container } from '@/frames/Container';
 
 import { Icon, Notice, Split } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
@@ -133,90 +134,92 @@ export const BooksPage = () => {
     <Layout>
       <Header />
       <Main>
-        <Split>
-          <Split.Side>
-            <Title
-              level="page"
-              orientation="vertical"
-              trailing={
-                <>
-                  <Input
-                    aria-label="책 검색"
-                    block
-                    leading={<Icon.SearchIcon />}
-                    autoFocus
-                    value={query}
-                    onChange={handleChangeQuery}
-                  />
-                </>
-              }
-            >
-              책 찾기
-            </Title>
-          </Split.Side>
-          <Split.Content>
-            <Title level="main" trailing={<></>}>
-              '{keywordQuery}' 검색 결과
-            </Title>
-            {data && !data?.items?.length && (
-              <Notice height={500}>검색된 데이터가 없습니다.</Notice>
-            )}
-            <List>
-              {!!data?.items.length &&
-                data?.items.map((item) => {
-                  return (
-                    <List.Item>
-                      <List.Item.Leading>
-                        <Link
+        <Container>
+          <Split>
+            <Split.Side>
+              <Title
+                level="page"
+                orientation="vertical"
+                trailing={
+                  <>
+                    <Input
+                      aria-label="책 검색"
+                      block
+                      leading={<Icon.SearchIcon />}
+                      autoFocus
+                      value={query}
+                      onChange={handleChangeQuery}
+                    />
+                  </>
+                }
+              >
+                책 찾기
+              </Title>
+            </Split.Side>
+            <Split.Content>
+              <Title level="main" trailing={<></>}>
+                '{keywordQuery}' 검색 결과
+              </Title>
+              {data && !data?.items?.length && (
+                <Notice height={500}>검색된 데이터가 없습니다.</Notice>
+              )}
+              <List>
+                {!!data?.items.length &&
+                  data?.items.map((item) => {
+                    return (
+                      <List.Item>
+                        <List.Item.Leading>
+                          <Link
+                            to={`/books/${item.isbn13}`}
+                            onClick={() => {
+                              handleMove(item.isbn13);
+                            }}
+                          >
+                            <ImgBox img={item.coverImageUrl} size="small" />
+                          </Link>
+                        </List.Item.Leading>
+                        <List.Item.Content
+                          as={Link}
                           to={`/books/${item.isbn13}`}
                           onClick={() => {
                             handleMove(item.isbn13);
                           }}
-                        >
-                          <ImgBox img={item.coverImageUrl} size="small" />
-                        </Link>
-                      </List.Item.Leading>
-                      <List.Item.Content
-                        as={Link}
-                        to={`/books/${item.isbn13}`}
-                        onClick={() => {
-                          handleMove(item.isbn13);
-                        }}
-                        title={item.title}
-                        content={item.authors.join(' · ')}
-                        description={`${item.publisher} · ${item.publishedDate}`}
-                      />
-                      <List.Item.Trailing>
-                        {(item.reviewCount || item.replyCount) && (
-                          <Badge variant="subtle" size="small">
-                            감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
-                          </Badge>
-                        )}
-                        {!item.isRegisteredInMyLibrary && (
-                          <Button
-                            variant="primary"
-                            onClick={() => {
-                              handleRegisterLibrary(item?.isbn13);
-                            }}
-                          >
-                            내 서재 담기
-                          </Button>
-                        )}
-                      </List.Item.Trailing>
-                    </List.Item>
-                  );
-                })}
-            </List>
-            {data && (
-              <Pagination
-                sx={{ mt: 5 }}
-                defaultPage={defaultPage}
-                totalPages={totalPages}
-                onChange={handleChangeDefaultPage}
-              />
-            )}
-          </Split.Content>
-        </Split>
+                          title={item.title}
+                          content={item.authors.join(' · ')}
+                          description={`${item.publisher} · ${item.publishedDate}`}
+                        />
+                        <List.Item.Trailing>
+                          {(item.reviewCount || item.replyCount) && (
+                            <Badge variant="subtle" size="small">
+                              감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
+                            </Badge>
+                          )}
+                          {!item.isRegisteredInMyLibrary && (
+                            <Button
+                              variant="primary"
+                              onClick={() => {
+                                handleRegisterLibrary(item?.isbn13);
+                              }}
+                            >
+                              내 서재 담기
+                            </Button>
+                          )}
+                        </List.Item.Trailing>
+                      </List.Item>
+                    );
+                  })}
+              </List>
+              {data && (
+                <Pagination
+                  sx={{ mt: 5 }}
+                  defaultPage={defaultPage}
+                  totalPages={totalPages}
+                  onChange={handleChangeDefaultPage}
+                />
+              )}
+            </Split.Content>
+          </Split>
+        </Container>
 
         {openLoginDialog && <LoginDialog onClose={handleCloseLoginDialog} />}
       </Main>

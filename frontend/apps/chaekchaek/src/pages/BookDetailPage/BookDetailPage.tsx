@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
+import { Container } from '@/frames/Container';
 
 // import DummyLargeImgBox from '../../components/ImgBox/imgs/dummy-large.png';
 import { Split } from '@chaekchaek/design-system';
@@ -205,52 +206,54 @@ export const BookDetailPage = () => {
           replyCount={data?.replyCount}
           coverImageUrl={data?.coverImageUrl}
         />
-        <Split>
-          <Split.Side>
-            <BookInfo
-              myRecord={data?.myRecord ?? null}
-              readingStatus={data?.myRecord?.status}
-              currentPage={data?.myRecord?.currentPage}
-              totalPages={data?.totalPages}
-              category={data?.category}
-              publishedDate={data?.publishedDate}
-              isbn13={data?.isbn13}
-              authors={data?.authors}
-              translators={data?.translators}
-              onRegistryLibrary={() => {
-                handleOpenDialog('RegisterLibraryDialog');
-              }}
-              onRatingCreate={() => {
-                handleOpenDialog('UpdateRatingDialog');
-              }}
-              onReadingStatusChange={handleRegisterLibrary}
-              onCurrentPageUpdate={() => {
-                handleOpenDialog('UpdateCurrentPageDialog');
-              }}
-            />
-          </Split.Side>
-          <Split.Content>
-            {data?.bookId && (
-              <BookReviews
-                isbn={isbn}
-                bookId={data.bookId}
-                sort={reviewsRequestParams.sort}
-                feed={reviewsRequestParams.feed}
-                count={reviewsData?.totalCount}
-                reviews={reviewsData?.items}
-                onSortChange={(sort) => {
-                  handleChangeReviewRequestParams({ name: 'sort', value: sort });
+        <Container>
+          <Split>
+            <Split.Side>
+              <BookInfo
+                myRecord={data?.myRecord ?? null}
+                readingStatus={data?.myRecord?.status}
+                currentPage={data?.myRecord?.currentPage}
+                totalPages={data?.totalPages}
+                category={data?.category}
+                publishedDate={data?.publishedDate}
+                isbn13={data?.isbn13}
+                authors={data?.authors}
+                translators={data?.translators}
+                onRegistryLibrary={() => {
+                  handleOpenDialog('RegisterLibraryDialog');
                 }}
-                onFeedChange={(feed) => {
-                  handleChangeReviewRequestParams({ name: 'feed', value: feed });
+                onRatingCreate={() => {
+                  handleOpenDialog('UpdateRatingDialog');
                 }}
-                onReviewsRefresh={() => {
-                  refetchGetBooksIsbnLoadData();
+                onReadingStatusChange={handleRegisterLibrary}
+                onCurrentPageUpdate={() => {
+                  handleOpenDialog('UpdateCurrentPageDialog');
                 }}
               />
-            )}
-          </Split.Content>
-        </Split>
+            </Split.Side>
+            <Split.Content>
+              {data?.bookId && (
+                <BookReviews
+                  isbn={isbn}
+                  bookId={data.bookId}
+                  sort={reviewsRequestParams.sort}
+                  feed={reviewsRequestParams.feed}
+                  count={reviewsData?.totalCount}
+                  reviews={reviewsData?.items}
+                  onSortChange={(sort) => {
+                    handleChangeReviewRequestParams({ name: 'sort', value: sort });
+                  }}
+                  onFeedChange={(feed) => {
+                    handleChangeReviewRequestParams({ name: 'feed', value: feed });
+                  }}
+                  onReviewsRefresh={() => {
+                    refetchGetBooksIsbnLoadData();
+                  }}
+                />
+              )}
+            </Split.Content>
+          </Split>
+        </Container>
 
         {dialogElement}
         {openLoginDialog && <LoginDialog onClose={handleCloseLoginDialog} />}

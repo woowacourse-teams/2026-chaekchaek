@@ -19,6 +19,7 @@ import {
 import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
+import { Container } from '@/frames/Container';
 
 import { getMembersMemberIdLibrary } from '@/services/apis/membersMemberIdLibrary/repository';
 import { useLoadData } from '@/services/core/useLoadData';
@@ -133,134 +134,139 @@ export const MemberLibraryPage = () => {
     <Layout>
       <Header />
       <Main>
-        <Split>
-          <Split.Top sx={{ mb: 10 }}>
-            <Title level="page">
-              {libraryData?.member.profileImageUrl && (
-                <Avatar img={libraryData?.member.profileImageUrl} />
-              )}
-              '{libraryData?.member.displayName}' 서재
-            </Title>
-          </Split.Top>
-          <Split.Side>
-            <Title
-              style={{ height: '800px' }}
-              level="main"
-              orientation="vertical"
-              trailing={
-                <>
-                  <OptionList
-                    sx={{ mt: 3 }}
-                    value={status}
-                    options={Object.entries(READING_STATUS_LABELS).map(([labelKey, labelValue]) => {
-                      return {
-                        value: labelKey,
-                        text: labelValue,
-                      };
-                    })}
-                    onChange={handleChangeStatus}
-                  />
-                  <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                    {sideImgs.map((sideImg, index) => {
-                      return (
-                        <img
-                          src={sideImg}
-                          style={{
-                            width: '20px',
-                            verticalAlign: 'bottom',
-                            transform:
-                              index < sideImgs.length - 1
-                                ? 'rotate(5deg)'
-                                : 'rotate(-5deg) translateX(20px)',
-                            transformOrigin: 'bottom center',
-                          }}
-                          onError={(event: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                            event.currentTarget.onerror = null;
-                            event.currentTarget.src = sideImgs[0] as string;
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                </>
-              }
-            >
-              독서 상태
-            </Title>
-          </Split.Side>
-          <Split.Content>
-            <Title
-              level="caption"
-              trailing={
-                <>
-                  <Select
-                    value={sort}
-                    options={Object.entries(READING_SORT_LABELS).map(([labelKey, labelValue]) => {
-                      return {
-                        value: labelKey,
-                        text: labelValue,
-                      };
-                    })}
-                    onChange={handleChangeSort}
-                  />
-                </>
-              }
-            >
-              독서 상태
-            </Title>
-            {!libraryData?.items.length && (
-              <Notice height={500}>내 서재에 등록된 책이 없습니다.</Notice>
-            )}
-            <List columns={2}>
-              {libraryData?.items.map((item) => {
-                return (
-                  <List.Item key={item.bookId}>
-                    <List.Item.Leading>
-                      <Link to={`/books/${item.isbn13}`}>
-                        <ImgBox img={item.coverImageUrl} size="small" />
-                      </Link>
-                    </List.Item.Leading>
-                    <List.Item.Content
-                      as={Link}
-                      to={`/books/${item.isbn13}`}
-                      title={
-                        <>
-                          <Tag
-                            sx={{ mb: 2 }}
-                            variant={item.status === READING_STATUS.READING ? 'primary' : 'subtle'}
-                          >
-                            {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
-                          </Tag>
-                          <br />
-                          {item.title}
-                        </>
-                      }
-                      content={item.authors.join(' · ')}
-                      description={
-                        <>
-                          {item.totalPages > 0 && (
-                            <ProgressBar value={item.currentPage} max={item.totalPages} />
-                          )}
-                        </>
-                      }
+        <Container>
+          <Split>
+            <Split.Top sx={{ mb: 10 }}>
+              <Title level="page">
+                {libraryData?.member.profileImageUrl && (
+                  <Avatar img={libraryData?.member.profileImageUrl} />
+                )}
+                '{libraryData?.member.displayName}' 서재
+              </Title>
+            </Split.Top>
+            <Split.Side>
+              <Title
+                style={{ height: '800px' }}
+                level="main"
+                orientation="vertical"
+                trailing={
+                  <>
+                    <OptionList
+                      sx={{ mt: 3 }}
+                      value={status}
+                      options={Object.entries(READING_STATUS_LABELS).map(
+                        ([labelKey, labelValue]) => {
+                          return {
+                            value: labelKey,
+                            text: labelValue,
+                          };
+                        },
+                      )}
+                      onChange={handleChangeStatus}
                     />
-                    <List.Item.Trailing>
-                      <Icon.ArrowRightIcon />
-                    </List.Item.Trailing>
-                  </List.Item>
-                );
-              })}
-            </List>
+                    <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                      {sideImgs.map((sideImg, index) => {
+                        return (
+                          <img
+                            src={sideImg}
+                            style={{
+                              width: '20px',
+                              verticalAlign: 'bottom',
+                              transform:
+                                index < sideImgs.length - 1
+                                  ? 'rotate(5deg)'
+                                  : 'rotate(-5deg) translateX(20px)',
+                              transformOrigin: 'bottom center',
+                            }}
+                            onError={(event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                              event.currentTarget.onerror = null;
+                              event.currentTarget.src = sideImgs[0] as string;
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </>
+                }
+              >
+                독서 상태
+              </Title>
+            </Split.Side>
+            <Split.Content>
+              <Title
+                level="caption"
+                trailing={
+                  <>
+                    <Select
+                      value={sort}
+                      options={Object.entries(READING_SORT_LABELS).map(([labelKey, labelValue]) => {
+                        return {
+                          value: labelKey,
+                          text: labelValue,
+                        };
+                      })}
+                      onChange={handleChangeSort}
+                    />
+                  </>
+                }
+              >
+                독서 상태
+              </Title>
+              {!libraryData?.items.length && (
+                <Notice height={500}>내 서재에 등록된 책이 없습니다.</Notice>
+              )}
+              <List columns={2}>
+                {libraryData?.items.map((item) => {
+                  return (
+                    <List.Item key={item.bookId}>
+                      <List.Item.Leading>
+                        <Link to={`/books/${item.isbn13}`}>
+                          <ImgBox img={item.coverImageUrl} size="small" />
+                        </Link>
+                      </List.Item.Leading>
+                      <List.Item.Content
+                        as={Link}
+                        to={`/books/${item.isbn13}`}
+                        title={
+                          <>
+                            <Tag
+                              sx={{ mb: 2 }}
+                              variant={
+                                item.status === READING_STATUS.READING ? 'primary' : 'subtle'
+                              }
+                            >
+                              {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
+                            </Tag>
+                            <br />
+                            {item.title}
+                          </>
+                        }
+                        content={item.authors.join(' · ')}
+                        description={
+                          <>
+                            {item.totalPages > 0 && (
+                              <ProgressBar value={item.currentPage} max={item.totalPages} />
+                            )}
+                          </>
+                        }
+                      />
+                      <List.Item.Trailing>
+                        <Icon.ArrowRightIcon />
+                      </List.Item.Trailing>
+                    </List.Item>
+                  );
+                })}
+              </List>
 
-            <Pagination
-              sx={{ mt: 5 }}
-              defaultPage={defaultPage}
-              totalPages={filteredTotalPages}
-              onChange={handleChangeDefaultPage}
-            />
-          </Split.Content>
-        </Split>
-        s
+              <Pagination
+                sx={{ mt: 5 }}
+                defaultPage={defaultPage}
+                totalPages={filteredTotalPages}
+                onChange={handleChangeDefaultPage}
+              />
+            </Split.Content>
+          </Split>
+        </Container>
       </Main>
     </Layout>
   );
