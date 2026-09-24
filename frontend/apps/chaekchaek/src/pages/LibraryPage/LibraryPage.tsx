@@ -236,22 +236,22 @@ export const LibraryPage = () => {
                     <>
                       {user?.displayAnonymous && (
                         <Button
-                          leading={<Icon.CheckboxOffIcon color="secondary" />}
-                          variant="ghost"
-                          disabled={anonymityStatus.status === 'loading'}
-                          onClick={handleToggleAnonymous}
-                        >
-                          익명 감상 비공개
-                        </Button>
-                      )}
-                      {!user?.displayAnonymous && (
-                        <Button
                           leading={<Icon.CheckboxOnIcon color="secondary" />}
                           variant="ghost"
                           disabled={anonymityStatus.status === 'loading'}
                           onClick={handleToggleAnonymous}
                         >
-                          익명 감상 비공개
+                          익명으로 감상 공개
+                        </Button>
+                      )}
+                      {!user?.displayAnonymous && (
+                        <Button
+                          leading={<Icon.CheckboxOffIcon color="secondary" />}
+                          variant="ghost"
+                          disabled={anonymityStatus.status === 'loading'}
+                          onClick={handleToggleAnonymous}
+                        >
+                          익명으로 감상 공개
                         </Button>
                       )}
                     </>
