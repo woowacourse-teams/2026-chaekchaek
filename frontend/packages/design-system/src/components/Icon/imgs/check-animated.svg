@@ -1,0 +1,26 @@
+<svg
+  width="15"
+  height="15"
+  viewBox="0 0 15 15"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <path
+    d="M2.5 7.5L6 11L12.5 4"
+    stroke="black"
+    stroke-width="1.28"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    pathLength="1"
+    stroke-dasharray="1"
+    stroke-dashoffset="1"
+  >
+    <animate
+      attributeName="stroke-dashoffset"
+      from="1"
+      to="0"
+      dur="300ms"
+      fill="freeze"
+    />
+  </path>
+</svg>

@@ -7,6 +7,7 @@ const ICON_SIZES = {
   small: 12,
   medium: 15,
   large: 18,
+  'x-large': 24,
 } as const;
 
 const ICON_COLORS = {
