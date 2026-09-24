@@ -180,6 +180,12 @@ export const LibraryPage = () => {
     updateAccount(updatedUser);
   };
 
+  const handleCopyLink = async () => {
+    if (!user?.memberId) return;
+    const memberLibraryLink = `${window.location.origin}/members/${user?.memberId}/library`;
+    await navigator.clipboard.writeText(memberLibraryLink);
+  };
+
   const [dialog, setDialog] = useState<
     'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null
   >(null);
@@ -282,7 +288,7 @@ export const LibraryPage = () => {
               }
             >
               내 서재
-              <IconButton shape="link" size="large">
+              <IconButton shape="link" size="large" onClick={handleCopyLink}>
                 <Icon.ShareIcon size="x-large" color="secondary" />
               </IconButton>
             </Title>

@@ -120,6 +120,11 @@ export const MemberLibraryPage = () => {
 
   const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
 
+  const handleCopyLink = async () => {
+    const memberLibraryLink = window.location.href;
+    await navigator.clipboard.writeText(memberLibraryLink);
+  };
+
   const navigation = useNavigate();
   useEffect(() => {
     if (error)
@@ -141,7 +146,7 @@ export const MemberLibraryPage = () => {
                 <Avatar img={libraryData?.member.profileImageUrl} />
               )}
               '{libraryData?.member.displayName}' 서재
-              <IconButton shape="link" size="large">
+              <IconButton shape="link" size="large" onClick={handleCopyLink}>
                 <Icon.ShareIcon size="x-large" color="secondary" />
               </IconButton>
             </Title>
