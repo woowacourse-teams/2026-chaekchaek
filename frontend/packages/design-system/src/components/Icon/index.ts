@@ -4,6 +4,8 @@ export type { Props } from './Icon.types';
 
 export {
   ArrowRightIcon,
+  CheckIcon,
+  CheckAnimatedIcon,
   CheckboxOffIcon,
   CheckboxOnIcon,
   CloseIcon,

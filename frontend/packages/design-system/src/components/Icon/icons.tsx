@@ -3,6 +3,12 @@ import { createIcon } from './createIcon';
 import ArrowRight from './imgs/arrow-right.svg?component';
 export const ArrowRightIcon = createIcon(ArrowRight);
 
+import Check from './imgs/check.svg?component';
+export const CheckIcon = createIcon(Check);
+
+import CheckAnimated from './imgs/check-animated.svg?component';
+export const CheckAnimatedIcon = createIcon(CheckAnimated);
+
 import CheckboxOff from './imgs/checkbox-off.svg?component';
 export const CheckboxOffIcon = createIcon(CheckboxOff);
 
