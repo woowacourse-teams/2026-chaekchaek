@@ -282,6 +282,9 @@ export const LibraryPage = () => {
               }
             >
               내 서재
+              <IconButton shape="link" size="large">
+                <Icon.ShareIcon size="x-large" color="secondary" />
+              </IconButton>
             </Title>
           </Split.Top>
           <Split.Side>

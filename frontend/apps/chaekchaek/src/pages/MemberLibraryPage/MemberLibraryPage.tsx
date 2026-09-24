@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   Avatar,
   Icon,
+  IconButton,
   ImgBox,
   List,
   Notice,
@@ -140,6 +141,9 @@ export const MemberLibraryPage = () => {
                 <Avatar img={libraryData?.member.profileImageUrl} />
               )}
               '{libraryData?.member.displayName}' 서재
+              <IconButton shape="link" size="large">
+                <Icon.ShareIcon size="x-large" color="secondary" />
+              </IconButton>
             </Title>
           </Split.Top>
           <Split.Side>
