@@ -1,3 +1,7 @@
 @import './typo.css';
 @import './color.css';
 @import './space.css';
+
+:root {
+  --layout-width: 1440px;
+}
