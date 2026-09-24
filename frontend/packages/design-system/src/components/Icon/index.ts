@@ -14,6 +14,7 @@ export {
   LongArrowRightIcon,
   PencilIcon,
   RefreshIcon,
+  ShareIcon,
   SearchIcon,
   StartIcon,
   TrashIcon,

@@ -36,6 +36,9 @@ export const PencilIcon = createIcon(Pencil);
 import Refresh from './imgs/refresh.svg?component';
 export const RefreshIcon = createIcon(Refresh);
 
+import Share from './imgs/share.svg?component';
+export const ShareIcon = createIcon(Share);
+
 import Search from './imgs/search.svg?component';
 export const SearchIcon = createIcon(Search);
 
