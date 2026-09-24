@@ -1,5 +1,5 @@
 :root {
-  --layout-width: 1440px;
+  --layout-width: 1420px; /* 1440px - 20px = 지원하는 최소 viewport - 안전 여백 */
 }
 
 .frame-Layout {
