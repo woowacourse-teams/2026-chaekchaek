@@ -277,7 +277,21 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
               <Surface key={reply.replyId}>
                 <Shell>
                   <Shell.Leading>
-                    <Avatar img={reply.author.profileImageUrl} size="small" />
+                    <Avatar
+                      img={reply.author.profileImageUrl}
+                      size="small"
+                      as={reply.author.memberId ? Link : 'div'}
+                      {...(reply.author.memberId && {
+                        to: generatePath(ROUTES.MEMBER_LIBRARY, {
+                          memberId: reply.author.memberId.toString(),
+                        }),
+                      })}
+                      onClick={() => {
+                        if (reply.author.profileStatus !== 'AVAILABLE') {
+                          handleOpenDialog('AlertDialog');
+                        }
+                      }}
+                    />
                   </Shell.Leading>
                   <Shell.Content
                     onClick={handleClickShowSpoiler}

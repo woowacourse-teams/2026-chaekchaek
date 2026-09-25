@@ -18,6 +18,9 @@ export type GetReviewsReviewIdRepliesResponseDto = ResponseDto<{
       displayName: string;
       anonymous: boolean;
       profileImageUrl: string;
+      actor: string;
+      profileStatus: string;
+      memberId: number;
     };
     replyId: number;
     likeCount: number;
