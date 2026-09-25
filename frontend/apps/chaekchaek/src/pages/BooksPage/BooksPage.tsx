@@ -94,7 +94,8 @@ export const BooksPage = () => {
 
   const navigation = useNavigate();
   const handleMove = (isbn: string) => {
-    track('select_book', {
+    track('navigate', {
+      destination: 'book_detail',
       source: 'search',
     });
 

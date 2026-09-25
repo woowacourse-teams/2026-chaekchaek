@@ -17,6 +17,9 @@ export type GetReviewsReviewIdReplies = (params: GetReviewsReviewIdRepliesParams
       displayName: string;
       anonymous: boolean;
       profileImageUrl: string;
+      actor: string;
+      profileStatus: string;
+      memberId: number;
     };
     replyId: number;
     likeCount: number;

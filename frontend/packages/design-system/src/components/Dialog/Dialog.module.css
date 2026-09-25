@@ -4,6 +4,7 @@
   right: 0;
   left: 0;
   bottom: 0;
+  z-index: 10;
 }
 .ui-Dialog-Dim {
   width: 100%;
@@ -45,6 +46,10 @@
 
 .ui-Dialog-Footer {
   padding-top: 20px;
+}
+
+.ui-Dialog-Container {
+  color: #1A1A1A;
 }
 
 .size-medium .ui-Dialog-Container {

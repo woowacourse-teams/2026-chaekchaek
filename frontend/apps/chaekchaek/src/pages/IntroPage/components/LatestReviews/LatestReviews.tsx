@@ -1,10 +1,16 @@
-import { Avatar, Entry, Shell, ImgBox, Icon, Button, scrollbar } from '@chaekchaek/design-system';
+import { useCallback, useState } from 'react';
+import { generatePath, Link } from 'react-router-dom';
+
+import { Avatar, Entry, Shell, ImgBox, Icon, Button, Dialog, scrollbar } from '@chaekchaek/design-system';
 
 import { useLoadData } from '@/services/core/useLoadData';
 import { getHomeLatestReviews } from '@/services/apis/homeLatestReviews/repository';
 
+import { ROUTES } from '@/constants/routes';
+
+import { track } from '@/analytics/track';
+
 import styles from './LatestReviews.module.css';
-import { useCallback } from 'react';
 
 export const LatestReviews = () => {
   const getHomeLatestReviewsLoadData = useCallback(async () => {
@@ -15,6 +21,50 @@ export const LatestReviews = () => {
   } = useLoadData({
     queryFn: getHomeLatestReviewsLoadData,
   });
+
+  const handleClickReview = () => {
+    track('navigate', {
+      destination: 'book_detail',
+      source: 'intro_latest_reviews',
+    });
+  };
+
+  const handleClickAvatar = (isProfileAvailable: boolean) => {
+    if (isProfileAvailable) {
+      handleOpenDialog('AlertDialog');
+      return;
+    }
+    track('navigate', {
+      destination: 'members_library',
+      source: 'intro_latest_reviews',
+    });
+  };
+
+  const [dialog, setDialog] = useState<'AlertDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'AlertDialog') => {
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (dialog: 'AlertDialog' | null) => {
+    switch (dialog) {
+      case 'AlertDialog':
+        return (
+          <Dialog onClose={handleCloseDialog}>
+            <Dialog.Container>
+              <Dialog.Body>접근이 불가능한 프로필입니다</Dialog.Body>
+            </Dialog.Container>
+          </Dialog>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
 
   return (
     <div className={`${styles['scene-latest-reviews']} ${scrollbar.dark}`}>
@@ -29,13 +79,31 @@ export const LatestReviews = () => {
               <Entry.Header>
                 <Shell reverse>
                   <Shell.Leading>
-                    <ImgBox size="small" img={review.bookCoverImageUrl} />
+                    <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
+                      <ImgBox size="small" img={review.bookCoverImageUrl} />
+                    </Link>
                   </Shell.Leading>
                   <Shell.Content
-                    title={review.bookTitle}
+                    title={
+                      <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
+                        {review.bookTitle}
+                      </Link>
+                    }
                     content={
                       <>
-                        <Avatar size="x-small" img={review.author.profileImageUrl} />
+                        <Avatar
+                          size="x-small"
+                          img={review.author.profileImageUrl}
+                          as={review.author?.memberId ? Link : 'div'}
+                          {...(review.author?.memberId && {
+                            to: generatePath(ROUTES.MEMBER_LIBRARY, {
+                              memberId: review.author.memberId.toString(),
+                            }),
+                          })}
+                          onClick={() =>
+                            handleClickAvatar(review.author.profileStatus === 'AVAILABLE')
+                          }
+                        />
                         {
                           <>
                             {review.author.displayName ?? review.author.anonymous}
@@ -48,7 +116,11 @@ export const LatestReviews = () => {
                   />
                 </Shell>
               </Entry.Header>
-              <Entry.Body>{review.content}</Entry.Body>
+              <Entry.Body>
+                <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
+                  {review.content}
+                </Link>
+              </Entry.Body>
               <Entry.Footer>
                 <Button
                   shape="link"
@@ -64,6 +136,7 @@ export const LatestReviews = () => {
           </Entry>
         );
       })}
+      {dialogElement}
     </div>
   );
 };

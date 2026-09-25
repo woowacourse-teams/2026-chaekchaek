@@ -11,6 +11,7 @@ import {
   Note,
   Shell,
   Surface,
+  Text,
 } from '@chaekchaek/design-system';
 
 import { ROUTES } from '@/constants/routes';
@@ -131,6 +132,17 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
     handleClickCloseWriteReply();
   };
 
+  const handleClickAvatar = (isProfileAvailable: boolean) => {
+    if (isProfileAvailable) {
+      handleOpenDialog('AlertDialog');
+      return;
+    }
+    track('navigate', {
+      destination: 'members_library',
+      source: 'book_reviews',
+    });
+  };
+
   const [dialog, setDialog] = useState<'UpdateReviewDialog' | 'AlertDialog' | null>(null);
   const handleOpenDialog = (dialog: 'UpdateReviewDialog' | 'AlertDialog') => {
     setDialog(dialog);
@@ -188,9 +200,7 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
                   }),
                 })}
                 onClick={() => {
-                  if (review.author?.profileStatus !== 'AVAILABLE') {
-                    handleOpenDialog('AlertDialog');
-                  }
+                  handleClickAvatar(review.author.profileStatus !== 'AVAILABLE');
                 }}
                 img={review.author.profileImageUrl}
               />
@@ -234,10 +244,23 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
           className={!showSpoilerVisible && review.isSpoiler && styles.clickable}
           onClick={handleClickShowSpoiler}
         >
-          {showSpoilerVisible ? review.content : SPOILER_PLACEHOLDER_REVIEW}
+          {showSpoilerVisible ? (
+            review.content
+          ) : (
+            <>
+              <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
+              <Text size="small" color="error">
+                (스포일러 · 눌러보기)
+              </Text>
+            </>
+          )}
           {review.quote && (
             <Note variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
-              {showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}
+              {showSpoilerVisible ? (
+                review.quote
+              ) : (
+                <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
+              )}
             </Note>
           )}
         </Entry.Body>
@@ -277,12 +300,30 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
               <Surface key={reply.replyId}>
                 <Shell>
                   <Shell.Leading>
-                    <Avatar img={reply.author.profileImageUrl} size="small" />
+                    <Avatar
+                      img={reply.author.profileImageUrl}
+                      size="small"
+                      as={reply.author.memberId ? Link : 'div'}
+                      {...(reply.author.memberId && {
+                        to: generatePath(ROUTES.MEMBER_LIBRARY, {
+                          memberId: reply.author.memberId.toString(),
+                        }),
+                      })}
+                      onClick={() => {
+                        handleClickAvatar(reply.author.profileStatus !== 'AVAILABLE');
+                      }}
+                    />
                   </Shell.Leading>
                   <Shell.Content
                     onClick={handleClickShowSpoiler}
                     title={reply.author.displayName}
-                    description={showSpoilerVisible ? reply.content : SPOILER_PLACEHOLDER_REPLY}
+                    description={
+                      showSpoilerVisible ? (
+                        reply.content
+                      ) : (
+                        <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REPLY}</span>
+                      )
+                    }
                   />
                   <Shell.Trailing>
                     <Button

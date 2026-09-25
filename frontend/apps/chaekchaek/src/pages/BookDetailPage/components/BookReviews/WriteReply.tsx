@@ -1,4 +1,6 @@
-import { Avatar, Button, Field, Input, Shell, Surface } from '@chaekchaek/design-system';
+import { type KeyboardEvent } from 'react';
+
+import { Avatar, Button, Field, Shell, Surface, Textarea } from '@chaekchaek/design-system';
 
 import { useFormValues } from '@/hooks/useFormValues';
 
@@ -21,6 +23,14 @@ export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
     },
     validate: validateReply,
   });
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+
+      handleSubmit();
+    }
+  };
 
   const { mutate: postReplyMutate } = useExecute({
     executeFn: postReviewsReviewIdReplies,
@@ -54,8 +64,15 @@ export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
           content={
             <Field>
               <Field.Content>
-                <Input id="content" value={values.content} onChange={onChange} block />
-                <Button variant="ghost" disabled={!isValid} onClick={handleSubmit}>
+                <Textarea
+                  id="content"
+                  value={values.content}
+                  onChange={onChange}
+                  onKeyDown={handleKeyDown}
+                  height="100px"
+                  block
+                />
+                <Button type="button" variant="ghost" disabled={!isValid} onClick={handleSubmit}>
                   답글 남기기
                 </Button>
               </Field.Content>
