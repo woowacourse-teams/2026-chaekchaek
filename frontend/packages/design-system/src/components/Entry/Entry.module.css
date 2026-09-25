@@ -24,6 +24,7 @@
 
 .ui-Entry-Body {
   white-space: pre-wrap;
+  gap: 12px;
 }
 
 .ui-Entry-Footer {
