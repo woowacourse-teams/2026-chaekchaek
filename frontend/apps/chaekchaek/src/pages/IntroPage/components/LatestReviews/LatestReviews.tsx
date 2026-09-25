@@ -1,4 +1,4 @@
-import { Avatar, Entry, Shell, ImgBox, Icon, Button } from '@chaekchaek/design-system';
+import { Avatar, Entry, Shell, ImgBox, Icon, Button, scrollbar } from '@chaekchaek/design-system';
 
 import { useLoadData } from '@/services/core/useLoadData';
 import { getHomeLatestReviews } from '@/services/apis/homeLatestReviews/repository';
@@ -17,7 +17,7 @@ export const LatestReviews = () => {
   });
 
   return (
-    <div className={styles['scene-latest-reviews']}>
+    <div className={`${styles['scene-latest-reviews']} ${scrollbar.dark}`}>
       <div className={styles['latest-reviews-title']}>
         <h1>방금 남겨진 문장</h1>
       </div>
