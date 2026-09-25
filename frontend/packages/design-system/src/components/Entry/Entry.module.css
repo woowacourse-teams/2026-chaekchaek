@@ -34,7 +34,8 @@
 
 .ui-Entry-Extension {
   display: flex;
-  gap: 12px;
+  gap: 4px;
+  margin-left: 20px;
   /* background: #F7F2EC; */
 }
 
@@ -42,11 +43,11 @@
   background: #F7F2EC;
 }
 
-.line-outline {
+.line-outline .ui-Entry-Main {
   border-color: #DDD7CE;
 }
 
-.line-top {
+.line-top .ui-Entry-Main {
   border-top-color: #DDD7CE;
 }
 
