@@ -111,6 +111,9 @@ export type { Props as IconProps } from './components/Icon';
 export { IconButton } from './components/IconButton';
 export type { Props as IconButtonProps } from './components/IconButton';
 
+export { Text } from './components/Text';
+export type { Props as TextProps } from './components/Text';
+
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';
 
