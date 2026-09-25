@@ -1,3 +1,12 @@
 .clickable {
   cursor: pointer;
 }
+
+.spoiler {
+  width: fit-content;
+  display: inline-block;
+  padding: 0 1px;
+  background-image: linear-gradient(to bottom, transparent 45%, #f5dfa0 45%);
+  border-radius:  3px;
+  filter: blur(0.1px);
+}

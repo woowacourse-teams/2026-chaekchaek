@@ -243,10 +243,18 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
           className={!showSpoilerVisible && review.isSpoiler && styles.clickable}
           onClick={handleClickShowSpoiler}
         >
-          {showSpoilerVisible ? review.content : SPOILER_PLACEHOLDER_REVIEW}
+          {showSpoilerVisible ? (
+            review.content
+          ) : (
+            <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
+          )}
           {review.quote && (
             <Note variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
-              {showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}
+              {showSpoilerVisible ? (
+                review.quote
+              ) : (
+                <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
+              )}
             </Note>
           )}
         </Entry.Body>
@@ -303,7 +311,13 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
                   <Shell.Content
                     onClick={handleClickShowSpoiler}
                     title={reply.author.displayName}
-                    description={showSpoilerVisible ? reply.content : SPOILER_PLACEHOLDER_REPLY}
+                    description={
+                      showSpoilerVisible ? (
+                        reply.content
+                      ) : (
+                        <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REPLY}</span>
+                      )
+                    }
                   />
                   <Shell.Trailing>
                     <Button
