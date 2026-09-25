@@ -23,7 +23,8 @@ export const LatestReviews = () => {
   });
 
   const handleClickReview = () => {
-    track('select_book', {
+    track('navigate', {
+      destination: 'book_detail',
       source: 'intro_latest_reviews',
     });
   };
