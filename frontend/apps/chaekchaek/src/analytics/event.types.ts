@@ -1,6 +1,6 @@
 export type AnalyticsEventMap = {
   select_book: {
-    source: 'intro_popular' | 'search';
+    source: 'intro_popular' | 'intro_latest_reviews' | 'search';
   };
   rating_open: undefined;
   rating_submit: undefined;

@@ -8,6 +8,8 @@ import { getHomeLatestReviews } from '@/services/apis/homeLatestReviews/reposito
 
 import { ROUTES } from '@/constants/routes';
 
+import { track } from '@/analytics/track';
+
 import styles from './LatestReviews.module.css';
 
 export const LatestReviews = () => {
@@ -19,6 +21,12 @@ export const LatestReviews = () => {
   } = useLoadData({
     queryFn: getHomeLatestReviewsLoadData,
   });
+
+  const handleClickGoToBookDetail = () => {
+    track('select_book', {
+      source: 'intro_latest_reviews',
+    });
+  };
 
   const [dialog, setDialog] = useState<'AlertDialog' | null>(null);
   const handleOpenDialog = (dialog: 'AlertDialog') => {
@@ -59,12 +67,16 @@ export const LatestReviews = () => {
               <Entry.Header>
                 <Shell reverse>
                   <Shell.Leading>
-                    <Link to={`/books/${review.isbn13}`}>
+                    <Link to={`/books/${review.isbn13}`} onClick={handleClickGoToBookDetail}>
                       <ImgBox size="small" img={review.bookCoverImageUrl} />
                     </Link>
                   </Shell.Leading>
                   <Shell.Content
-                    title={<Link to={`/books/${review.isbn13}`}>{review.bookTitle}</Link>}
+                    title={
+                      <Link to={`/books/${review.isbn13}`} onClick={handleClickGoToBookDetail}>
+                        {review.bookTitle}
+                      </Link>
+                    }
                     content={
                       <>
                         <Avatar
@@ -95,7 +107,9 @@ export const LatestReviews = () => {
                 </Shell>
               </Entry.Header>
               <Entry.Body>
-                <Link to={`/books/${review.isbn13}`}>{review.content}</Link>
+                <Link to={`/books/${review.isbn13}`} onClick={handleClickGoToBookDetail}>
+                  {review.content}
+                </Link>
               </Entry.Body>
               <Entry.Footer>
                 <Button
