@@ -11,6 +11,7 @@ import {
   Note,
   Shell,
   Surface,
+  Text,
 } from '@chaekchaek/design-system';
 
 import { ROUTES } from '@/constants/routes';
@@ -246,7 +247,12 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
           {showSpoilerVisible ? (
             review.content
           ) : (
-            <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
+            <>
+              <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
+              <Text size="small" color="error">
+                (스포일러 · 눌러보기)
+              </Text>
+            </>
           )}
           {review.quote && (
             <Note variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
