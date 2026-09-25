@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 import { Avatar, Entry, Shell, ImgBox, Icon, Button } from '@chaekchaek/design-system';
 
 import { useLoadData } from '@/services/core/useLoadData';
@@ -29,10 +31,12 @@ export const LatestReviews = () => {
               <Entry.Header>
                 <Shell reverse>
                   <Shell.Leading>
-                    <ImgBox size="small" img={review.bookCoverImageUrl} />
+                    <Link to={`/books/${review.isbn13}`}>
+                      <ImgBox size="small" img={review.bookCoverImageUrl} />
+                    </Link>
                   </Shell.Leading>
                   <Shell.Content
-                    title={review.bookTitle}
+                    title={<Link to={`/books/${review.isbn13}`}>{review.bookTitle}</Link>}
                     content={
                       <>
                         <Avatar size="x-small" img={review.author.profileImageUrl} />
@@ -48,7 +52,9 @@ export const LatestReviews = () => {
                   />
                 </Shell>
               </Entry.Header>
-              <Entry.Body>{review.content}</Entry.Body>
+              <Entry.Body>
+                <Link to={`/books/${review.isbn13}`}>{review.content}</Link>
+              </Entry.Body>
               <Entry.Footer>
                 <Button
                   shape="link"
