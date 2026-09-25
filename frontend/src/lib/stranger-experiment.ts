@@ -50,8 +50,8 @@ export function applyStrangerMutation(current: StrangerExperiment, mutation: Str
     : [...current.likes, { reflectionId: mutation.reflectionId, userId: mutation.userId }] };
 }
 
-export function summarizeStrangerExperiment(data: StrangerExperiment) {
-  const participants = data.participants.filter((person) => person.id !== INITIAL_REFLECTION_AUTHOR_ID);
+export function summarizeStrangerExperiment(data: StrangerExperiment, initialAuthorId = INITIAL_REFLECTION_AUTHOR_ID) {
+  const participants = data.participants.filter((person) => person.id !== initialAuthorId);
   const groups = (["read", "unread"] as const).map((status) => {
     const people = participants.filter((person) => person.readingStatus === status);
     const ids = new Set(people.map((person) => person.id));
@@ -67,9 +67,9 @@ export function summarizeStrangerExperiment(data: StrangerExperiment) {
   return { unselected: participants.filter((person) => person.readingStatus === null).length, groups };
 }
 
-export function summarizeStrangerPlatforms(data: StrangerExperiment) {
+export function summarizeStrangerPlatforms(data: StrangerExperiment, initialAuthorId = INITIAL_REFLECTION_AUTHOR_ID) {
   const submittedIds = new Set(data.reflections.map((item) => item.userId));
-  const participants = data.participants.filter((person) => person.id !== INITIAL_REFLECTION_AUTHOR_ID);
+  const participants = data.participants.filter((person) => person.id !== initialAuthorId);
   const summarize = (key: "source" | "device") => [...new Set(participants.map((person) => person[key]))]
     .sort((a, b) => a.localeCompare(b))
     .map((value) => {
@@ -81,9 +81,9 @@ export function summarizeStrangerPlatforms(data: StrangerExperiment) {
   return { sources: summarize("source"), devices: summarize("device") };
 }
 
-export function strangerMetricsCsv(data: StrangerExperiment) {
-  const summary = summarizeStrangerExperiment(data);
-  const platforms = summarizeStrangerPlatforms(data);
+export function strangerMetricsCsv(data: StrangerExperiment, initialAuthorId = INITIAL_REFLECTION_AUTHOR_ID) {
+  const summary = summarizeStrangerExperiment(data, initialAuthorId);
+  const platforms = summarizeStrangerPlatforms(data, initialAuthorId);
   const rows: (string | number)[][] = [["읽음 여부", "선택자", "1쪽 열람", "2쪽 열람", "3쪽 열람", "4쪽 열람", "5쪽 열람", "6쪽 열람", "6쪽 모두 열람", "작성 시작", "감상 제출자", "제출률", "답글", "좋아요"],
     ...summary.groups.map((group) => [group.status === "read" ? "읽었어요" : "안 읽었어요", group.participants,
       ...group.pageViews, group.completedPages, group.composerStarted, group.submitted,

@@ -3,12 +3,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { assignNickname } from "./nickname";
 import { applyStrangerMutation, emptyStrangerExperiment, type StrangerExperiment, type StrangerMutation } from "./stranger-experiment";
 import { detectDevice, detectSource } from "./stranger-platform";
+import { newReadingId, type ReadingBookId } from "./reading-book-config";
 
-const DATA_KEY = "chaekchaek-stranger-preview-v1";
-const PERSON_KEY = "chaekchaek-stranger-participant-v1";
 type Identity = { id: string; nickname: string };
 
-export function useStrangerExperiment(trackVisit = false) {
+export function useReadingExperiment(book: ReadingBookId, trackVisit = false) {
+  const dataKey = `chaekchaek-${book}-preview-v1`;
+  const personKey = `chaekchaek-${book}-participant-v1`;
+  const apiPath = `/api/experiments/${book}`;
   const [data, setData] = useState<StrangerExperiment>(emptyStrangerExperiment);
   const dataRef = useRef(data);
   const [identity, setIdentity] = useState<Identity | null>(null);
@@ -21,11 +23,11 @@ export function useStrangerExperiment(trackVisit = false) {
     if (!readyRef.current) return false;
     try {
       if (cloudRef.current) {
-        const response = await fetch("/api/experiments/stranger", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(mutation) });
+        const response = await fetch(apiPath, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(mutation) });
         if (!response.ok) throw new Error("save failed");
       }
       const next = applyStrangerMutation(dataRef.current, mutation);
-      if (!cloudRef.current) localStorage.setItem(DATA_KEY, JSON.stringify(next));
+      if (!cloudRef.current) localStorage.setItem(dataKey, JSON.stringify(next));
       dataRef.current = next;
       setData(next);
       setError("");
@@ -34,23 +36,23 @@ export function useStrangerExperiment(trackVisit = false) {
       setError("저장하지 못했습니다. 입력은 유지됩니다. 잠시 후 다시 시도해 주세요.");
       return false;
     }
-  }, []);
+  }, [apiPath, dataKey]);
   useEffect(() => {
     let active = true;
     async function load() {
       try {
         let person: Identity | null = null;
         if (trackVisit) {
-          const stored = localStorage.getItem(PERSON_KEY);
-          person = stored ? JSON.parse(stored) as Identity : { id: crypto.randomUUID(), nickname: assignNickname() };
+          const stored = localStorage.getItem(personKey);
+          person = stored ? JSON.parse(stored) as Identity : { id: newReadingId(book), nickname: assignNickname() };
           if (!person || typeof person.id !== "string" || typeof person.nickname !== "string") throw new Error("invalid identity");
-          localStorage.setItem(PERSON_KEY, JSON.stringify(person));
+          localStorage.setItem(personKey, JSON.stringify(person));
         }
-        const response = await fetch("/api/experiments/stranger", { cache: "no-store" });
+        const response = await fetch(apiPath, { cache: "no-store" });
         if (!active) return;
         const isCloud = response.ok;
         const initial = isCloud ? await response.json() as StrangerExperiment
-          : localStorage.getItem(DATA_KEY) ? JSON.parse(localStorage.getItem(DATA_KEY)!) as StrangerExperiment : emptyStrangerExperiment();
+          : localStorage.getItem(dataKey) ? JSON.parse(localStorage.getItem(dataKey)!) as StrangerExperiment : emptyStrangerExperiment();
         if (!active) return;
         dataRef.current = initial;
         setData(initial);
@@ -62,12 +64,12 @@ export function useStrangerExperiment(trackVisit = false) {
             source: detectSource(window.location.href, document.referrer),
             device: detectDevice(navigator.userAgent, navigator.maxTouchPoints) };
           if (isCloud) {
-            const saved = await fetch("/api/experiments/stranger", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(mutation) });
+            const saved = await fetch(apiPath, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(mutation) });
             if (!saved.ok) throw new Error("visit failed");
           }
           if (!active) return;
           const next = applyStrangerMutation(dataRef.current, mutation);
-          if (!isCloud) localStorage.setItem(DATA_KEY, JSON.stringify(next));
+          if (!isCloud) localStorage.setItem(dataKey, JSON.stringify(next));
           dataRef.current = next;
           setData(next);
         }
@@ -79,6 +81,10 @@ export function useStrangerExperiment(trackVisit = false) {
     }
     void load();
     return () => { active = false; };
-  }, [trackVisit]);
+  }, [apiPath, book, dataKey, personKey, trackVisit]);
   return { data, identity, ready, cloud, error, commit };
+}
+
+export function useStrangerExperiment(trackVisit = false) {
+  return useReadingExperiment("stranger", trackVisit);
 }

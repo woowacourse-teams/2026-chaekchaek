@@ -115,7 +115,8 @@ td:first-child{max-width:300px;overflow-wrap:anywhere}
 .stranger-scan-odd{transform:translateX(4.6%)}
 .stranger-scan-even{transform:translateX(-4.6%)}
 .stranger-side-nav{display:grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;font-size:28px;line-height:1}
-.stranger-page-position{display:flex;justify-content:center;align-items:center;min-height:24px;margin-top:12px;font-size:13px;color:var(--muted)}
+.stranger-page-position{display:flex;justify-content:center;align-items:center;gap:12px;min-height:24px;margin-top:12px;font-size:13px;color:var(--muted)}
+.stranger-printed-page{padding-left:12px;border-left:1px solid var(--line)}
 .stranger-reader .field-error{margin-top:12px}
 .stranger-feed{padding-top:24px;border-top:1px solid var(--line)}
 .admin-tabs{display:flex;gap:8px;border-bottom:1px solid var(--line);margin:24px 0}

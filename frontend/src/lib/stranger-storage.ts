@@ -1,5 +1,7 @@
 import "server-only";
 import type { StrangerExperiment, StrangerMutation } from "./stranger-experiment";
+import { initialLoveReflections } from "./love-initial-reflections";
+import { belongsToReadingBook, LOVE_AUTHOR_ID, type ReadingBookId } from "./reading-book-config";
 
 type Row = Record<string, unknown>;
 function config() {
@@ -19,25 +21,50 @@ async function request(path: string, init: RequestInit = {}) {
 async function rows(path: string): Promise<Row[]> {
   return await (await request(path, { headers: { Prefer: "return=representation" } })).json() as Row[];
 }
-export async function loadStrangerExperiment(): Promise<StrangerExperiment> {
+let loveSeed: Promise<void> | null = null;
+function ensureLoveReflections() {
+  if (!loveSeed) loveSeed = (async () => {
+    await request("stranger_participants?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify({ id: LOVE_AUTHOR_ID, nickname: "책췍", source: "internal", device: "other" }) });
+    await request("stranger_reflections?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(initialLoveReflections.map((item) => ({ id: item.id, user_id: item.userId,
+        nickname: item.nickname, body: item.body, created_at: item.createdAt }))) });
+  })().catch((error) => { loveSeed = null; throw error; });
+  return loveSeed;
+}
+
+export async function loadReadingExperiment(book: ReadingBookId): Promise<StrangerExperiment> {
+  if (book === "love-fragments") await ensureLoveReflections();
   const [participants, pageViews, reflections, replies, likes] = await Promise.all([
     rows("stranger_participants?select=*&order=created_at.asc"), rows("stranger_page_views?select=user_id,page_number"),
     rows("stranger_reflections?select=*&order=created_at.desc"), rows("stranger_replies?select=*&order=created_at.asc"),
     rows("stranger_likes?select=reflection_id,user_id"),
   ]);
+  const people = participants.filter((row) => belongsToReadingBook(book, String(row.id)));
+  const peopleIds = new Set(people.map((row) => String(row.id)));
+  const bookReflections = reflections.filter((row) => peopleIds.has(String(row.user_id)));
+  const reflectionIds = new Set(bookReflections.map((row) => String(row.id)));
   return {
-    participants: participants.map((row) => ({ id: String(row.id), nickname: String(row.nickname),
+    participants: people.map((row) => ({ id: String(row.id), nickname: String(row.nickname),
       readingStatus: row.reading_status === "read" || row.reading_status === "unread" ? row.reading_status : null,
       source: typeof row.source === "string" ? row.source : "unknown",
       device: row.device === "iPhone" || row.device === "iPad" || row.device === "Android" || row.device === "PC" ? row.device : "other",
       viewedPages: pageViews.filter((view) => view.user_id === row.id).map((view) => Number(view.page_number)),
       composerStarted: row.composer_started === true })),
-    reflections: reflections.map((row) => ({ id: String(row.id), userId: String(row.user_id), nickname: String(row.nickname), body: String(row.body), createdAt: String(row.created_at) })),
-    replies: replies.map((row) => ({ id: String(row.id), reflectionId: String(row.reflection_id), userId: String(row.user_id), nickname: String(row.nickname), body: String(row.body), createdAt: String(row.created_at) })),
-    likes: likes.map((row) => ({ reflectionId: String(row.reflection_id), userId: String(row.user_id) })),
+    reflections: bookReflections.map((row) => ({ id: String(row.id), userId: String(row.user_id), nickname: String(row.nickname), body: String(row.body), createdAt: String(row.created_at) })),
+    replies: replies.filter((row) => reflectionIds.has(String(row.reflection_id)) && peopleIds.has(String(row.user_id)))
+      .map((row) => ({ id: String(row.id), reflectionId: String(row.reflection_id), userId: String(row.user_id), nickname: String(row.nickname), body: String(row.body), createdAt: String(row.created_at) })),
+    likes: likes.filter((row) => reflectionIds.has(String(row.reflection_id)) && peopleIds.has(String(row.user_id)))
+      .map((row) => ({ reflectionId: String(row.reflection_id), userId: String(row.user_id) })),
   };
 }
-export async function saveStrangerMutation(mutation: StrangerMutation): Promise<void> {
+
+export async function loadStrangerExperiment(): Promise<StrangerExperiment> {
+  return loadReadingExperiment("stranger");
+}
+
+export async function saveReadingMutation(book: ReadingBookId, mutation: StrangerMutation): Promise<void> {
+  if (book === "love-fragments") await ensureLoveReflections();
   if (mutation.type === "visit") {
     await request("stranger_participants?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
       body: JSON.stringify({ id: mutation.userId, nickname: mutation.nickname, source: mutation.source, device: mutation.device }) });
@@ -61,4 +88,8 @@ export async function saveStrangerMutation(mutation: StrangerMutation): Promise<
     if ((await rows(path + "&select=reflection_id")).length) await request(path, { method: "DELETE" });
     else await request("stranger_likes", { method: "POST", body: JSON.stringify({ reflection_id: mutation.reflectionId, user_id: mutation.userId }) });
   }
+}
+
+export async function saveStrangerMutation(mutation: StrangerMutation): Promise<void> {
+  return saveReadingMutation("stranger", mutation);
 }

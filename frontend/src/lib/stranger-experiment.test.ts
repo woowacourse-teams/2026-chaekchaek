@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { applyStrangerMutation, emptyStrangerExperiment, summarizeStrangerExperiment, summarizeStrangerPlatforms, INITIAL_REFLECTION_AUTHOR_ID } from "./stranger-experiment";
 import { initialStrangerReflections } from "./stranger-initial-reflections";
+import { LOVE_AUTHOR_ID, belongsToReadingBook } from "./reading-book-config";
+import { initialLoveReflections } from "./love-initial-reflections";
 
 test("읽음 여부별 열람, 작성, 제출을 고유 참여자로 집계하고 재전송을 중복하지 않는다", () => {
   let data = emptyStrangerExperiment();
@@ -28,4 +30,15 @@ test("읽음 여부별 열람, 작성, 제출을 고유 참여자로 집계하�
     { value: "instagram", visitors: 1, read: 1, unread: 0, submitted: 1 },
     { value: "unknown", visitors: 1, read: 0, unread: 0, submitted: 0 },
   ]);
+});
+
+test("사랑의 편린들 식별자와 초기 글은 이방인 집계와 구별된다", () => {
+  assert.equal(belongsToReadingBook("love-fragments", initialLoveReflections[0].id), true);
+  assert.equal(belongsToReadingBook("stranger", initialLoveReflections[0].id), false);
+  assert.equal(belongsToReadingBook("stranger", initialStrangerReflections[0].id), true);
+  let data = emptyStrangerExperiment();
+  data = applyStrangerMutation(data, { type: "visit", userId: LOVE_AUTHOR_ID, nickname: "책췍", source: "internal", device: "other" });
+  for (const reflection of initialLoveReflections) data = applyStrangerMutation(data, { type: "reflection", reflection });
+  assert.equal(summarizeStrangerExperiment(data, LOVE_AUTHOR_ID).unselected, 0);
+  assert.equal(summarizeStrangerPlatforms(data, LOVE_AUTHOR_ID).sources.length, 0);
 });
