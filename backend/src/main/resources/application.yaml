@@ -48,7 +48,7 @@ app:
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
     local-base-url: ${FRONTEND_LOCAL_BASE_URL:http://localhost:3000}
-    dev-base-url: ${FRONTEND_DEV_BASE_URL:http://43.203.240.201}
+    dev-base-url: ${FRONTEND_DEV_BASE_URL:https://dev.chaekchaek.com}
     allowed-origins: ${FRONTEND_ALLOWED_ORIGINS:http://localhost:3000,http://43.203.240.201,https://dev.chaekchaek.com}
     oauth-success-path: /oauth/callback
     oauth-failure-path: /login
