@@ -117,4 +117,6 @@ export type { Props as TextProps } from './components/Text';
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';
 
+export { scrollbar } from './utils/scrollbar/scrollbar';
+
 export { createClassName } from './utils/classname';
