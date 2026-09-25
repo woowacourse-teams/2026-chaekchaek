@@ -114,4 +114,6 @@ export type { Props as IconButtonProps } from './components/IconButton';
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';
 
+export { scrollbar } from './utils/scrollbar/scrollbar';
+
 export { createClassName } from './utils/classname';

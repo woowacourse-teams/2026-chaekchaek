@@ -1,0 +1,34 @@
+.default-scrollbar {
+  --scrollbar-thumb: #8b8e96;
+  --scrollbar-track: #fcfaf7;
+}
+
+.dark-scrollbar {
+  --scrollbar-thumb: #5b5e68;
+  --scrollbar-track: #090a0c;
+}
+
+.default-scrollbar,
+.dark-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.default-scrollbar::-webkit-scrollbar,
+.dark-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.default-scrollbar::-webkit-scrollbar-track,
+.default-scrollbar::-webkit-scrollbar-corner,
+.dark-scrollbar::-webkit-scrollbar-track,
+.dark-scrollbar::-webkit-scrollbar-corner {
+  background: var(--scrollbar-track);
+}
+
+.default-scrollbar::-webkit-scrollbar-thumb,
+.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
