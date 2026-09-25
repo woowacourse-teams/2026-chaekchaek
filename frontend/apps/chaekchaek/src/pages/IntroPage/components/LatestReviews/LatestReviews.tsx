@@ -28,6 +28,17 @@ export const LatestReviews = () => {
     });
   };
 
+  const handleClickAvatar = (isProfileAvailable: boolean) => {
+    if (isProfileAvailable) {
+      handleOpenDialog('AlertDialog');
+      return;
+    }
+    track('navigate', {
+      destination: 'members_library',
+      source: 'intro_latest_reviews',
+    });
+  };
+
   const [dialog, setDialog] = useState<'AlertDialog' | null>(null);
   const handleOpenDialog = (dialog: 'AlertDialog') => {
     setDialog(dialog);
@@ -88,11 +99,9 @@ export const LatestReviews = () => {
                               memberId: review.author.memberId.toString(),
                             }),
                           })}
-                          onClick={() => {
-                            if (review.author?.profileStatus !== 'AVAILABLE') {
-                              handleOpenDialog('AlertDialog');
-                            }
-                          }}
+                          onClick={() =>
+                            handleClickAvatar(review.author.profileStatus === 'AVAILABLE')
+                          }
                         />
                         {
                           <>
