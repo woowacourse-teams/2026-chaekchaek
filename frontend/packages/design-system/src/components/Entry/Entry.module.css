@@ -34,7 +34,8 @@
 
 .ui-Entry-Extension {
   display: flex;
-  gap: 12px;
+  gap: 4px;
+  margin-left: 20px;
   /* background: #F7F2EC; */
 }
 
