@@ -42,11 +42,11 @@
   background: #F7F2EC;
 }
 
-.line-outline {
+.line-outline .ui-Entry-Main {
   border-color: #DDD7CE;
 }
 
-.line-top {
+.line-top .ui-Entry-Main {
   border-top-color: #DDD7CE;
 }
 
