@@ -131,6 +131,17 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
     handleClickCloseWriteReply();
   };
 
+  const handleClickAvatar = (isProfileAvailable: boolean) => {
+    if (isProfileAvailable) {
+      handleOpenDialog('AlertDialog');
+      return;
+    }
+    track('navigate', {
+      destination: 'members_library',
+      source: 'book_reviews',
+    });
+  };
+
   const [dialog, setDialog] = useState<'UpdateReviewDialog' | 'AlertDialog' | null>(null);
   const handleOpenDialog = (dialog: 'UpdateReviewDialog' | 'AlertDialog') => {
     setDialog(dialog);
@@ -188,9 +199,7 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
                   }),
                 })}
                 onClick={() => {
-                  if (review.author?.profileStatus !== 'AVAILABLE') {
-                    handleOpenDialog('AlertDialog');
-                  }
+                  handleClickAvatar(review.author.profileStatus !== 'AVAILABLE');
                 }}
                 img={review.author.profileImageUrl}
               />
@@ -287,9 +296,7 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
                         }),
                       })}
                       onClick={() => {
-                        if (reply.author.profileStatus !== 'AVAILABLE') {
-                          handleOpenDialog('AlertDialog');
-                        }
+                        handleClickAvatar(reply.author.profileStatus !== 'AVAILABLE');
                       }}
                     />
                   </Shell.Leading>

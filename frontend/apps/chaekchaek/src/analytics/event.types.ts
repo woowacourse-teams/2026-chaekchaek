@@ -1,7 +1,7 @@
 export type AnalyticsEventMap = {
   navigate: {
     destination: 'members_library';
-    source: 'intro_latest_reviews';
+    source: 'intro_latest_reviews' | 'book_reviews';
   };
   select_book: {
     source: 'intro_popular' | 'intro_latest_reviews' | 'search';
