@@ -22,7 +22,7 @@ export const LatestReviews = () => {
     queryFn: getHomeLatestReviewsLoadData,
   });
 
-  const handleClickGoToBookDetail = () => {
+  const handleClickReview = () => {
     track('select_book', {
       source: 'intro_latest_reviews',
     });
@@ -67,13 +67,13 @@ export const LatestReviews = () => {
               <Entry.Header>
                 <Shell reverse>
                   <Shell.Leading>
-                    <Link to={`/books/${review.isbn13}`} onClick={handleClickGoToBookDetail}>
+                    <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
                       <ImgBox size="small" img={review.bookCoverImageUrl} />
                     </Link>
                   </Shell.Leading>
                   <Shell.Content
                     title={
-                      <Link to={`/books/${review.isbn13}`} onClick={handleClickGoToBookDetail}>
+                      <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
                         {review.bookTitle}
                       </Link>
                     }
@@ -107,7 +107,7 @@ export const LatestReviews = () => {
                 </Shell>
               </Entry.Header>
               <Entry.Body>
-                <Link to={`/books/${review.isbn13}`} onClick={handleClickGoToBookDetail}>
+                <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
                   {review.content}
                 </Link>
               </Entry.Body>
