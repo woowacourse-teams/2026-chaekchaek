@@ -19,7 +19,7 @@ export function ReadingExperimentAdmin({ book }: { book: ReadingBookId }) {
     <h1>실험 집계 미리보기</h1>
     <nav className="admin-tabs" aria-label="실험 통계"><a href="/admin">기존 실험</a><a href="/admin/stranger" aria-current={book === "stranger" ? "page" : undefined}>이방인 실험</a><a href="/admin/love-fragments" aria-current={book === "love-fragments" ? "page" : undefined}>사랑의 편린들 실험</a></nav>
     <p className="admin-intro">{cloud ? `『${config.title}』 실험에 참여한 사람들의 결과입니다.` : "이 브라우저에 저장된 동작 확인용 데이터입니다. 다른 참여자의 데이터는 합산되지 않습니다."}</p>
-    <div className="admin-toolbar"><a href={`/experiments/${book}`}>참여 화면으로 돌아가기</a><button className="secondary" disabled={!ready} onClick={downloadCsv}>CSV 내려받기</button></div>
+    <div className="admin-toolbar"><a href={`/experiments/stranger?book=${book}`}>참여 화면으로 돌아가기</a><button className="secondary" disabled={!ready} onClick={downloadCsv}>CSV 내려받기</button></div>
     {error && <p className="error-banner" role="alert">{error}</p>}
     <div className="metrics-summary"><div><span>미선택 방문자</span><strong>{summary.unselected}</strong></div>
       {summary.groups.map((group) => <div key={group.status}><span>{group.status === "read" ? "읽었어요" : "안 읽었어요"}</span><strong>{group.participants}</strong></div>)}

@@ -1,8 +1,9 @@
 # 책췍 웹 실험
 
 - 기존 책·장르 실험: `/`, 집계: `/admin`
-- 『이방인』 감상 실험: `/experiments/stranger`, 집계: `/admin/stranger`
-- 『사랑의 편린들』 감상 실험: `/experiments/love-fragments`, 집계: `/admin/love-fragments`
+- 『이방인』·『사랑의 편린들』 통합 감상 실험: `/experiments/stranger`
+- 책별 집계: `/admin/stranger`, `/admin/love-fragments`
+- 이전 『사랑의 편린들』 주소 `/experiments/love-fragments`는 통합 페이지로 이동
 - 로컬 실행: `npm ci`, `npm run dev`
 - 검증: `npm run typecheck`, `npm test`, `npm run test:e2e`, `npm run build`
 

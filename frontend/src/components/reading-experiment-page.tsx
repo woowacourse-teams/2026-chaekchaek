@@ -24,11 +24,66 @@ function prepareScan(book: ReadingBookId, page: number): Promise<void> {
   return ready;
 }
 
-export function ReadingExperimentPage({ book }: { book: ReadingBookId }) {
+type ExperimentState = ReturnType<typeof useReadingExperiment>;
+
+export function ReadingExperimentPage({ initialBook = null }: { initialBook?: ReadingBookId | null }) {
+  const stranger = useReadingExperiment("stranger", true);
+  const love = useReadingExperiment("love-fragments", true);
+  const [selectedBook, setSelectedBook] = useState<ReadingBookId | null>(initialBook);
+
+  useEffect(() => { setSelectedBook(initialBook); }, [initialBook]);
+  useEffect(() => {
+    const restoreSelection = () => {
+      const book = new URLSearchParams(window.location.search).get("book");
+      setSelectedBook(book === "stranger" || book === "love-fragments" ? book : null);
+    };
+    window.addEventListener("popstate", restoreSelection);
+    return () => window.removeEventListener("popstate", restoreSelection);
+  }, []);
+
+  async function chooseBook(book: ReadingBookId, status: ReadingStatus) {
+    const experiment = book === "stranger" ? stranger : love;
+    if (!experiment.identity) return;
+    if (!await experiment.commit({ type: "reading", userId: experiment.identity.id, readingStatus: status })) return;
+    setSelectedBook(book);
+    const url = new URL(window.location.href);
+    url.searchParams.set("book", book);
+    window.history.replaceState(window.history.state, "", url);
+  }
+
+  const books = (["stranger", "love-fragments"] as const).map((book) => {
+    const config = readingBooks[book];
+    const experiment = book === "stranger" ? stranger : love;
+    const person = experiment.data.participants.find((item) => item.id === experiment.identity?.id);
+    const readingStatus = person?.readingStatus ?? null;
+    return <section key={book} className={`reading-book-choice${selectedBook === book ? " selected" : ""}`} data-book={book}
+      aria-label={`${config.title} 읽음 여부 선택`}>
+      <img src={config.coverUrl} alt={`${config.title} 책 표지`} width={110} height={160}/>
+      <div className="reading-book-copy"><h2>{config.title}</h2><p className="muted">읽어보셨나요?</p>
+        <div className="stranger-choices">
+          <button type="button" className={readingStatus === "read" ? "primary" : "secondary"} aria-pressed={readingStatus === "read"}
+            disabled={!experiment.ready} onClick={() => void chooseBook(book, "read")}>읽었어요</button>
+          <button type="button" className={readingStatus === "unread" ? "primary" : "secondary"} aria-pressed={readingStatus === "unread"}
+            disabled={!experiment.ready} onClick={() => void chooseBook(book, "unread")}>안 읽었어요</button>
+        </div>
+        {experiment.error && <p role="alert" className="field-error">{experiment.error}</p>}
+      </div>
+    </section>;
+  });
+  const selected = selectedBook === "stranger" ? stranger : selectedBook === "love-fragments" ? love : null;
+  const selectedStatus = selected?.data.participants.find((item) => item.id === selected.identity?.id)?.readingStatus;
+  return <main className="experiment-shell stranger-shell">
+    <div className="reading-book-grid" aria-label="실험할 책 선택">{books}</div>
+    {selectedBook && selected && selectedStatus && <ReadingExperimentDetails key={selectedBook} book={selectedBook} experiment={selected}/>}
+    {selected && <p className="preview-note">{selected.cloud ? "입력한 감상과 반응은 실험 데이터로 저장됩니다." : "미리보기 · 입력은 이 브라우저에만 저장됩니다."}</p>}
+  </main>;
+}
+
+function ReadingExperimentDetails({ book, experiment }: { book: ReadingBookId; experiment: ExperimentState }) {
   const config = readingBooks[book];
   const initialReflections = book === "stranger" ? initialStrangerReflections : initialLoveReflections;
   const initialIds = new Set(initialReflections.map((item) => item.id));
-  const { data, identity, ready, cloud, error, commit } = useReadingExperiment(book, true);
+  const { data, identity, ready, commit } = experiment;
   const [page, setPage] = useState(1);
   const [pageLoading, setPageLoading] = useState(false);
   const [pageError, setPageError] = useState("");
@@ -70,10 +125,6 @@ export function ReadingExperimentPage({ book }: { book: ReadingBookId }) {
       setPageLoading(false);
     }
   }
-  async function chooseReading(status: ReadingStatus) {
-    if (!identity) return;
-    if (await commit({ type: "reading", userId: identity.id, readingStatus: status })) setNotice("");
-  }
   function startComposer() {
     if (identity && !person?.composerStarted) void commit({ type: "composer", userId: identity.id });
   }
@@ -91,18 +142,7 @@ export function ReadingExperimentPage({ book }: { book: ReadingBookId }) {
       form.reset(); setValidation(""); setNotice("감상을 남겼어요.");
     }
   }
-  return <main className="experiment-shell stranger-shell">
-    <section className="stranger-book" aria-label="읽음 여부 선택">
-      <img src={config.coverUrl} alt={`${config.title} 책 표지`} width={110} height={160}/>
-      <div><h1>{config.title}</h1><p className="muted">읽어보셨나요?</p>
-        <div className="stranger-choices">
-          <button type="button" className={readingStatus === "read" ? "primary" : "secondary"} aria-pressed={readingStatus === "read"} disabled={!ready} onClick={() => chooseReading("read")}>읽었어요</button>
-          <button type="button" className={readingStatus === "unread" ? "primary" : "secondary"} aria-pressed={readingStatus === "unread"} disabled={!ready} onClick={() => chooseReading("unread")}>안 읽었어요</button>
-        </div>
-      </div>
-    </section>
-    {error && <p role="alert" className="error-banner">{error}</p>}
-    {readingStatus && <>
+  return <>
       {config.context && <section className="stranger-context" aria-labelledby="stranger-context-title">
         <h2 id="stranger-context-title">앞선 줄거리</h2>
         <p>{config.context}</p>
@@ -147,7 +187,5 @@ export function ReadingExperimentPage({ book }: { book: ReadingBookId }) {
           onReply={async (body) => identity ? commit({ type: "reply", reply: { id: newReadingId(book), reflectionId: item.id,
             userId: identity.id, nickname: identity.nickname, body, createdAt: new Date().toISOString() } }) : false}/>) }
       </section>
-    </>}
-    <p className="preview-note">{cloud ? "입력한 감상과 반응은 실험 데이터로 저장됩니다." : "미리보기 · 입력은 이 브라우저에만 저장됩니다."}</p>
-  </main>;
+  </>;
 }

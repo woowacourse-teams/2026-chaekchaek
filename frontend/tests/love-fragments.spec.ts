@@ -1,12 +1,42 @@
 import { expect, test } from "@playwright/test";
 
+test("한 페이지의 두 책에서 읽음 여부를 따로 유지하고 상세 내용을 전환한다", async ({ page }) => {
+  await page.route("/api/experiments/love-fragments", (route) => route.fulfill({ status: 503, body: "{}" }));
+  await page.route("/api/experiments/stranger", (route) => route.fulfill({ status: 503, body: "{}" }));
+  await page.goto("/experiments/stranger");
+  const stranger = page.locator('[data-book="stranger"]');
+  const love = page.locator('[data-book="love-fragments"]');
+  await expect(stranger).toBeVisible();
+  await expect(love).toBeVisible();
+  await expect(stranger.getByRole("button")).toHaveCount(2);
+  await expect(love.getByRole("button")).toHaveCount(2);
+  await expect(page.getByRole("heading", { name: /발췌문/ })).toHaveCount(0);
+  await stranger.getByRole("button", { name: "읽었어요", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "함께 나눈 감상 2" })).toBeVisible();
+  await love.getByRole("button", { name: "안 읽었어요", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "발췌문 34-36쪽, 86-88쪽" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "함께 나눈 감상 3" })).toBeVisible();
+  await expect(stranger.getByRole("button", { name: "읽었어요", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(love.getByRole("button", { name: "안 읽었어요", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "발췌문 34-36쪽, 86-88쪽" })).toBeVisible();
+  await stranger.getByRole("button", { name: "읽었어요", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toBeVisible();
+  await expect(love.getByRole("button", { name: "안 읽었어요", exact: true })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("사랑의 편린들 발췌문과 초기 감상 세 편에 참여하고 별도 통계를 확인한다", async ({ page }) => {
   await page.route("/api/experiments/love-fragments", (route) => route.fulfill({ status: 503, body: "{}" }));
   await page.route("/api/experiments/stranger", (route) => route.fulfill({ status: 503, body: "{}" }));
   await page.goto("/experiments/love-fragments?utm_source=kakao");
+  await expect(page).toHaveURL(/\/experiments\/stranger\?.*utm_source=kakao.*book=love-fragments/);
+  const love = page.locator('[data-book="love-fragments"]');
+  await expect(page.locator('[data-book="stranger"]')).toBeVisible();
   await expect(page.getByRole("heading", { name: "사랑의 편린들" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "앞선 줄거리" })).toHaveCount(0);
-  await page.getByRole("button", { name: "안 읽었어요", exact: true }).click();
+  await love.getByRole("button", { name: "안 읽었어요", exact: true }).click();
   await expect(page.getByRole("heading", { name: "발췌문 34-36쪽, 86-88쪽" })).toBeVisible();
   await expect(page.getByTestId("reflection")).toHaveCount(3);
   await expect(page.getByTestId("reflection").first()).toContainText("헤어진 뒤에는 이상하게 과거까지 다시 평가하게 된다.");
@@ -40,7 +70,7 @@ test("320px와 390px에서 이미지 이동 버튼은 이미지 바깥에 남는
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 850 });
     await page.goto("/experiments/love-fragments");
-    await page.getByRole("button", { name: "읽었어요", exact: true }).click();
+    await page.locator('[data-book="love-fragments"]').getByRole("button", { name: "읽었어요", exact: true }).click();
     const scan = await page.locator(".stranger-scan-frame").boundingBox();
     const previous = await page.getByRole("button", { name: "이전", exact: true }).boundingBox();
     const next = await page.getByRole("button", { name: "다음", exact: true }).boundingBox();

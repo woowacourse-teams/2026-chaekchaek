@@ -3,8 +3,10 @@ import { expect, test } from "@playwright/test";
 test("읽음 여부, 발췌문, 감상 반응과 별도 통계를 유지한다", async ({ page }) => {
   await page.route("/api/experiments/stranger", (route) => route.fulfill({ status: 503, body: "{}" }));
   await page.goto("/experiments/stranger?utm_source=instagram");
+  const stranger = page.locator('[data-book="stranger"]');
+  await expect(page.locator('[data-book="love-fragments"]')).toBeVisible();
   await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toHaveCount(0);
-  await page.getByRole("button", { name: "읽었어요", exact: true }).click();
+  await stranger.getByRole("button", { name: "읽었어요", exact: true }).click();
   await expect(page.getByRole("heading", { name: "앞선 줄거리" })).toBeVisible();
   await expect(page.getByText("뫼르소는 범죄 사건에 연루되어", { exact: false })).toBeVisible();
   await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toBeVisible();
@@ -30,7 +32,7 @@ test("읽음 여부, 발췌문, 감상 반응과 별도 통계를 유지한다",
   await note.getByRole("button", { name: "답글 남기기" }).click();
   await note.getByRole("button", { name: "좋아요 0" }).click();
   await page.reload();
-  await expect(page.getByRole("button", { name: "읽었어요", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(stranger.getByRole("button", { name: "읽었어요", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("reflection")).toHaveCount(3);
   await expect(page.getByTestId("reflection").first().getByRole("button", { name: "좋아요 1" })).toBeVisible();
   await page.goto("/admin/stranger");
@@ -50,7 +52,7 @@ test("320px, 390px와 데스크톱에서 책과 페이지 조작이 넘치지 �
   for (const width of [320, 390, 1440]) {
     await page.setViewportSize({ width, height: 850 });
     await page.goto("/experiments/stranger");
-    await page.getByRole("button", { name: "안 읽었어요", exact: true }).click();
+    await page.locator('[data-book="stranger"]').getByRole("button", { name: "안 읽었어요", exact: true }).click();
     await expect(page.locator(".stranger-scan")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const stage = await page.locator(".stranger-scan-stage").boundingBox();
@@ -84,7 +86,7 @@ test("다음 이미지가 늦게 도착해도 현재 페이지를 유지한 뒤 
     await route.continue();
   });
   await page.goto("/experiments/stranger");
-  await page.getByRole("button", { name: "읽었어요", exact: true }).click();
+  await page.locator('[data-book="stranger"]').getByRole("button", { name: "읽었어요", exact: true }).click();
   await page.getByRole("button", { name: "다음" }).click();
   await expect(page.getByText("불러오는 중…")).toBeVisible();
   await expect(page.locator(".stranger-scan")).toHaveAttribute("src", /page-1\.jpg$/);
@@ -98,7 +100,7 @@ test("다음 이미지가 늦게 도착해도 현재 페이지를 유지한 뒤 
 test("저장 실패 뒤 입력을 보존하고 다시 제출할 수 있다", async ({ page }) => {
   await page.route("/api/experiments/stranger", (route) => route.fulfill({ status: 503, body: "{}" }));
   await page.goto("/experiments/stranger");
-  await page.getByRole("button", { name: "읽었어요", exact: true }).click();
+  await page.locator('[data-book="stranger"]').getByRole("button", { name: "읽었어요", exact: true }).click();
   await page.evaluate(() => {
     const original = Storage.prototype.setItem;
     (window as typeof window & { restoreStrangerStorage: () => void }).restoreStrangerStorage = () => { Storage.prototype.setItem = original; };
