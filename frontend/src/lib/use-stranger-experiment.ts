@@ -2,12 +2,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { assignNickname } from "./nickname";
 import { applyStrangerMutation, emptyStrangerExperiment, type StrangerExperiment, type StrangerMutation } from "./stranger-experiment";
-import { detectDevice, detectSource } from "./stranger-platform";
 import { newReadingId, type ReadingBookId } from "./reading-book-config";
 
 type Identity = { id: string; nickname: string };
 
-export function useReadingExperiment(book: ReadingBookId, trackVisit = false) {
+export function useReadingExperiment(book: ReadingBookId, identifyParticipant = false) {
   const dataKey = `chaekchaek-${book}-preview-v1`;
   const personKey = `chaekchaek-${book}-participant-v1`;
   const apiPath = `/api/experiments/${book}`;
@@ -42,7 +41,7 @@ export function useReadingExperiment(book: ReadingBookId, trackVisit = false) {
     async function load() {
       try {
         let person: Identity | null = null;
-        if (trackVisit) {
+        if (identifyParticipant) {
           const stored = localStorage.getItem(personKey);
           person = stored ? JSON.parse(stored) as Identity : { id: newReadingId(book), nickname: assignNickname() };
           if (!person || typeof person.id !== "string" || typeof person.nickname !== "string") throw new Error("invalid identity");
@@ -51,28 +50,15 @@ export function useReadingExperiment(book: ReadingBookId, trackVisit = false) {
         const response = await fetch(apiPath, { cache: "no-store" });
         if (!active) return;
         const isCloud = response.ok;
-        const initial = isCloud ? await response.json() as StrangerExperiment
+        const storedData = isCloud ? await response.json() as StrangerExperiment
           : localStorage.getItem(dataKey) ? JSON.parse(localStorage.getItem(dataKey)!) as StrangerExperiment : emptyStrangerExperiment();
+        const initial = { ...storedData, attentionEvents: storedData.attentionEvents ?? [] };
         if (!active) return;
         dataRef.current = initial;
         setData(initial);
         cloudRef.current = isCloud;
         setCloud(isCloud);
         setIdentity(person);
-        if (person) {
-          const mutation: StrangerMutation = { type: "visit", userId: person.id, nickname: person.nickname,
-            source: detectSource(window.location.href, document.referrer),
-            device: detectDevice(navigator.userAgent, navigator.maxTouchPoints) };
-          if (isCloud) {
-            const saved = await fetch(apiPath, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(mutation) });
-            if (!saved.ok) throw new Error("visit failed");
-          }
-          if (!active) return;
-          const next = applyStrangerMutation(dataRef.current, mutation);
-          if (!isCloud) localStorage.setItem(dataKey, JSON.stringify(next));
-          dataRef.current = next;
-          setData(next);
-        }
         readyRef.current = true;
         setReady(true);
       } catch {
@@ -81,10 +67,10 @@ export function useReadingExperiment(book: ReadingBookId, trackVisit = false) {
     }
     void load();
     return () => { active = false; };
-  }, [apiPath, book, dataKey, personKey, trackVisit]);
+  }, [apiPath, book, dataKey, personKey, identifyParticipant]);
   return { data, identity, ready, cloud, error, commit };
 }
 
-export function useStrangerExperiment(trackVisit = false) {
-  return useReadingExperiment("stranger", trackVisit);
+export function useStrangerExperiment(identifyParticipant = false) {
+  return useReadingExperiment("stranger", identifyParticipant);
 }

@@ -2,9 +2,9 @@
 import { useState, type FormEvent } from "react";
 import type { Reflection, Reply } from "../lib/experiment";
 import { Heart, Comment } from "./icons";
-export function ReflectionCard({ note, replies, likeCount, liked, ready, onLike, onReply }: {
+export function ReflectionCard({ note, replies, likeCount, liked, ready, onLike, onReply, onOpen }: {
   note: Reflection; replies: Reply[]; likeCount: number; liked: boolean; ready: boolean;
-  onLike: () => void | Promise<void>; onReply: (body: string) => Promise<boolean>;
+  onLike: () => void | Promise<void>; onReply: (body: string) => Promise<boolean>; onOpen?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [validation, setValidation] = useState("");
@@ -24,7 +24,7 @@ export function ReflectionCard({ note, replies, likeCount, liked, ready, onLike,
     <p className="reflection-body">{note.body}</p>
     <div className="reflection-actions">
       <button type="button" aria-pressed={liked} disabled={!ready} onClick={onLike} className={liked ? "liked" : ""}><Heart filled={liked}/>좋아요 <span>{likeCount}</span></button>
-      <button type="button" aria-expanded={expanded} aria-controls={"replies-" + note.id} onClick={() => setExpanded(!expanded)}><Comment/>답글 <span>{replies.length}</span></button>
+      <button type="button" aria-expanded={expanded} aria-controls={"replies-" + note.id} onClick={() => { if (!expanded) onOpen?.(); setExpanded(!expanded); }}><Comment/>답글 <span>{replies.length}</span></button>
     </div>
     {expanded && <div id={"replies-" + note.id} className="replies">
       {replies.length === 0 && <p className="muted">아직 답글이 없어요. 첫 생각을 나눠주세요.</p>}

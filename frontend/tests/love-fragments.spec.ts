@@ -1,5 +1,28 @@
 import { expect, test } from "@playwright/test";
 
+test("클라우드 방문은 읽음 여부를 선택한 책에만 기록한다", async ({ page }) => {
+  const mutations: Record<string, string[]> = { stranger: [], "love-fragments": [] };
+  const empty = { participants: [], reflections: [], replies: [], likes: [], attentionEvents: [] };
+  for (const book of ["stranger", "love-fragments"]) {
+    await page.route(`/api/experiments/${book}`, async (route) => {
+      if (route.request().method() === "GET") {
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(empty) });
+        return;
+      }
+      mutations[book].push(JSON.parse(route.request().postData() ?? "{}").type);
+      await route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' });
+    });
+  }
+  await page.goto("/experiments/stranger?utm_source=threads");
+  await expect(page.locator('[data-book="stranger"] button').first()).toBeEnabled();
+  expect(mutations.stranger).toEqual([]);
+  expect(mutations["love-fragments"]).toEqual([]);
+  await page.locator('[data-book="stranger"]').getByRole("button", { name: "읽었어요", exact: true }).click();
+  await expect.poll(() => mutations.stranger.includes("attention")).toBe(true);
+  expect(mutations.stranger.slice(0, 2)).toEqual(["visit", "reading"]);
+  expect(mutations["love-fragments"]).toEqual([]);
+});
+
 test("한 페이지의 두 책에서 읽음 여부를 따로 유지하고 상세 내용을 전환한다", async ({ page }) => {
   await page.route("/api/experiments/love-fragments", (route) => route.fulfill({ status: 503, body: "{}" }));
   await page.route("/api/experiments/stranger", (route) => route.fulfill({ status: 503, body: "{}" }));
@@ -11,15 +34,23 @@ test("한 페이지의 두 책에서 읽음 여부를 따로 유지하고 상세
   await expect(stranger.getByRole("button")).toHaveCount(2);
   await expect(love.getByRole("button")).toHaveCount(2);
   await expect(page.getByRole("heading", { name: /발췌문/ })).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem("chaekchaek-stranger-preview-v1"))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem("chaekchaek-love-fragments-preview-v1"))).toBeNull();
   await stranger.getByRole("button", { name: "읽었어요", exact: true }).click();
   await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "함께 나눈 감상 2" })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("chaekchaek-love-fragments-preview-v1"))).toBeNull();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("chaekchaek-stranger-preview-v1") ?? "{}")
+    .attentionEvents?.some((event: { target: string }) => event.target === "page:1"))).toBe(true);
   await love.getByRole("button", { name: "안 읽었어요", exact: true }).click();
   await expect(page.getByRole("heading", { name: "발췌문 34-36쪽, 86-88쪽" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "발췌문 99-104쪽" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "함께 나눈 감상 3" })).toBeVisible();
   await expect(stranger.getByRole("button", { name: "읽었어요", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(love.getByRole("button", { name: "안 읽었어요", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const participants = await page.evaluate(() => ["stranger", "love-fragments"].map((book) =>
+    JSON.parse(localStorage.getItem(`chaekchaek-${book}-preview-v1`) ?? "{}").participants?.length));
+  expect(participants).toEqual([1, 1]);
   await page.reload();
   await expect(page.getByRole("heading", { name: "발췌문 34-36쪽, 86-88쪽" })).toBeVisible();
   await stranger.getByRole("button", { name: "읽었어요", exact: true }).click();

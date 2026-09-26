@@ -15,6 +15,19 @@ function validMutation(value: unknown, book: ReadingBookId): value is StrangerMu
   if (item.type === "reading") return scopedId(item.userId) && (item.readingStatus === "read" || item.readingStatus === "unread");
   if (item.type === "page") return scopedId(item.userId) && Number.isInteger(item.page) && Number(item.page) >= 1 && Number(item.page) <= 6;
   if (item.type === "composer") return scopedId(item.userId);
+  if (item.type === "attention") {
+    const event = item.event as Record<string, unknown> | undefined;
+    const target = event?.target;
+    const validTarget = typeof target === "string" && (
+      /^(page:[1-6]|section:(context|excerpt|feed|composer)|action:page-move)$/.test(target)
+      || (target.startsWith("open:") && scopedId(target.slice(5)))
+    );
+    return Boolean(event && scopedId(event.id) && scopedId(event.userId) && valid(event.createdAt, 40)
+      && validTarget
+      && (event.eventType === "view" || event.eventType === "dwell")
+      && Number.isInteger(event.durationMs) && Number(event.durationMs) >= 0 && Number(event.durationMs) <= 300_000
+      && (event.eventType === "view" ? event.durationMs === 0 : Number(event.durationMs) > 0));
+  }
   if (item.type === "like") return scopedId(item.reflectionId) && scopedId(item.userId);
   if (item.type === "reflection" || item.type === "reply") {
     const entry = item[item.type] as Record<string, unknown> | undefined;

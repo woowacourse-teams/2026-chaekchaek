@@ -1,5 +1,6 @@
 "use client";
-import { strangerMetricsCsv, summarizeStrangerExperiment, summarizeStrangerPlatforms } from "../lib/stranger-experiment";
+import { strangerMetricsCsv, summarizeReadingAttention, summarizeStrangerExperiment, summarizeStrangerPlatforms } from "../lib/stranger-experiment";
+import { formatDuration } from "../lib/book-analytics";
 import { deviceLabel, sourceLabel } from "../lib/stranger-platform";
 import { readingBooks, type ReadingBookId } from "../lib/reading-book-config";
 import { useReadingExperiment } from "../lib/use-stranger-experiment";
@@ -9,6 +10,8 @@ export function ReadingExperimentAdmin({ book }: { book: ReadingBookId }) {
   const { data, ready, cloud, error } = useReadingExperiment(book);
   const summary = summarizeStrangerExperiment(data, config.initialAuthorId);
   const platforms = summarizeStrangerPlatforms(data, config.initialAuthorId);
+  const attention = summarizeReadingAttention(data, config.initialAuthorId);
+  const sectionNames = { context: "앞선 줄거리", excerpt: "발췌문", feed: "함께 나눈 감상", composer: "감상 작성" };
   function downloadCsv() {
     const url = URL.createObjectURL(new Blob([strangerMetricsCsv(data, config.initialAuthorId)], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
@@ -21,7 +24,7 @@ export function ReadingExperimentAdmin({ book }: { book: ReadingBookId }) {
     <p className="admin-intro">{cloud ? `『${config.title}』 실험에 참여한 사람들의 결과입니다.` : "이 브라우저에 저장된 동작 확인용 데이터입니다. 다른 참여자의 데이터는 합산되지 않습니다."}</p>
     <div className="admin-toolbar"><a href={`/experiments/stranger?book=${book}`}>참여 화면으로 돌아가기</a><button className="secondary" disabled={!ready} onClick={downloadCsv}>CSV 내려받기</button></div>
     {error && <p className="error-banner" role="alert">{error}</p>}
-    <div className="metrics-summary"><div><span>미선택 방문자</span><strong>{summary.unselected}</strong></div>
+    <div className="metrics-summary"><div><span>책 선택 방문자</span><strong>{attention.visitors}</strong></div>
       {summary.groups.map((group) => <div key={group.status}><span>{group.status === "read" ? "읽었어요" : "안 읽었어요"}</span><strong>{group.participants}</strong></div>)}
     </div>
     <section className="metrics-section"><h2>읽음 여부별 참여</h2><div className="table-scroll"><table>
@@ -31,6 +34,27 @@ export function ReadingExperimentAdmin({ book }: { book: ReadingBookId }) {
         {group.pageViews.map((count, index) => <td key={index}>{count}</td>)}<td>{group.completedPages}</td><td>{group.composerStarted}</td><td>{group.submitted}</td>
         <td>{group.submissionRate === null ? "집계 전" : (group.submissionRate * 100).toFixed(1) + "%"}</td><td>{group.replies}</td><td>{group.likes}</td></tr>)}</tbody>
     </table></div></section>
+    <section className="metrics-section"><h2>발췌 페이지별 화면 노출</h2><div className="table-scroll"><table>
+      <thead><tr><th scope="col">책 쪽수</th><th scope="col">고유 열람자</th><th scope="col">표시 횟수</th><th scope="col">노출 시간 합계</th><th scope="col">열람자당 평균</th></tr></thead>
+      <tbody>{attention.pages.map((row) => <tr key={row.page}><td>{config.printedPages[row.page - 1]}쪽</td><td>{row.visitors}</td>
+        <td>{row.displays}</td><td>{formatDuration(row.durationMs)}</td><td>{formatDuration(row.averageMs)}</td></tr>)}</tbody>
+    </table></div></section>
+    <section className="metrics-section"><h2>화면 영역별 노출</h2><div className="table-scroll"><table>
+      <thead><tr><th scope="col">영역</th><th scope="col">노출자</th><th scope="col">노출 시간 합계</th><th scope="col">노출자당 평균</th></tr></thead>
+      <tbody>{attention.sections.filter((row) => row.section !== "context" || config.context).map((row) =>
+        <tr key={row.section}><td>{sectionNames[row.section]}</td><td>{row.viewers}</td>
+          <td>{formatDuration(row.durationMs)}</td><td>{formatDuration(row.averageMs)}</td></tr>)}</tbody>
+    </table></div></section>
+    <section className="metrics-section"><h2>관심 행동</h2><div className="table-scroll"><table>
+      <thead><tr><th scope="col">페이지 이동</th><th scope="col">감상 답글 영역 열기</th><th scope="col">좋아요</th><th scope="col">답글</th><th scope="col">작성 시작자</th><th scope="col">감상 제출자</th></tr></thead>
+      <tbody><tr><td>{attention.pageMoves}</td><td>{attention.reflectionOpens}</td><td>{attention.likes}</td><td>{attention.replies}</td>
+        <td>{attention.composerStarted}</td><td>{attention.submitted}</td></tr></tbody>
+    </table></div></section>
+    <section className="metrics-section"><h2>감상별 반응</h2><div className="table-scroll"><table>
+      <thead><tr><th scope="col">감상</th><th scope="col">답글 영역 열기</th><th scope="col">좋아요</th><th scope="col">답글</th></tr></thead>
+      <tbody>{attention.reflections.map((row) => <tr key={row.id}><td>{row.body.slice(0, 80)}{row.body.length > 80 ? "…" : ""}</td>
+        <td>{row.opens}</td><td>{row.likes}</td><td>{row.replies}</td></tr>)}</tbody>
+    </table></div></section>
     <section className="metrics-section"><h2>유입 경로별 참여</h2><div className="table-scroll"><table>
       <thead><tr><th scope="col">유입 경로</th><th scope="col">방문자</th><th scope="col">읽었어요</th><th scope="col">안 읽었어요</th><th scope="col">감상 제출자</th></tr></thead>
       <tbody>{platforms.sources.map((row) => <tr key={row.value}><td>{sourceLabel(row.value)}</td><td>{row.visitors}</td><td>{row.read}</td><td>{row.unread}</td><td>{row.submitted}</td></tr>)}</tbody>
@@ -39,7 +63,8 @@ export function ReadingExperimentAdmin({ book }: { book: ReadingBookId }) {
       <thead><tr><th scope="col">접속 기기</th><th scope="col">방문자</th><th scope="col">읽었어요</th><th scope="col">안 읽었어요</th><th scope="col">감상 제출자</th></tr></thead>
       <tbody>{platforms.devices.map((row) => <tr key={row.value}><td>{deviceLabel(row.value)}</td><td>{row.visitors}</td><td>{row.read}</td><td>{row.unread}</td><td>{row.submitted}</td></tr>)}</tbody>
     </table></div></section>
-    <p className="muted">열람은 페이지를 표시한 기록이며 독해 완료를 뜻하지 않습니다. 제출률은 해당 읽음 여부 선택자 중 감상을 제출한 사람의 비율입니다.</p>
+    <p className="muted">책별 방문자는 해당 책의 읽음 여부를 선택한 사람만 집계합니다. 이전 방식으로 기록된 미선택 방문자는 제외합니다.</p>
+    <p className="muted">열람은 페이지를 표시한 기록이며 독해 완료를 뜻하지 않습니다. 노출 시간은 화면에 보이고 탭이 활성화된 시간을 대략 합산하며 실제 독해나 집중을 뜻하지 않습니다. 제출률은 해당 읽음 여부 선택자 중 감상을 제출한 사람의 비율입니다.</p>
     <p className="muted">유입 경로는 첫 방문의 utm_source 또는 확인 가능한 이전 사이트 도메인입니다. 기기 종류도 첫 방문 기준입니다. 출처를 확인할 수 없으면 직접/확인 불가로 표시합니다.</p>
   </main>;
 }

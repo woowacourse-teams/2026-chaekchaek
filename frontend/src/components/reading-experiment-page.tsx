@@ -4,6 +4,8 @@ import { ReflectionCard } from "./reflection-card";
 import { initialStrangerReflections } from "../lib/stranger-initial-reflections";
 import { initialLoveReflections } from "../lib/love-initial-reflections";
 import { newReadingId, readingBooks, type ReadingBookId } from "../lib/reading-book-config";
+import { detectDevice, detectSource } from "../lib/stranger-platform";
+import { useReadingAttention } from "../lib/use-reading-attention";
 import { useReadingExperiment } from "../lib/use-stranger-experiment";
 import type { ReadingStatus, StrangerReflection } from "../lib/stranger-experiment";
 
@@ -44,6 +46,9 @@ export function ReadingExperimentPage({ initialBook = null }: { initialBook?: Re
   async function chooseBook(book: ReadingBookId, status: ReadingStatus) {
     const experiment = book === "stranger" ? stranger : love;
     if (!experiment.identity) return;
+    if (!await experiment.commit({ type: "visit", userId: experiment.identity.id, nickname: experiment.identity.nickname,
+      source: detectSource(window.location.href, document.referrer),
+      device: detectDevice(navigator.userAgent, navigator.maxTouchPoints) })) return;
     if (!await experiment.commit({ type: "reading", userId: experiment.identity.id, readingStatus: status })) return;
     setSelectedBook(book);
     const url = new URL(window.location.href);
@@ -83,7 +88,7 @@ function ReadingExperimentDetails({ book, experiment }: { book: ReadingBookId; e
   const config = readingBooks[book];
   const initialReflections = book === "stranger" ? initialStrangerReflections : initialLoveReflections;
   const initialIds = new Set(initialReflections.map((item) => item.id));
-  const { data, identity, ready, commit } = experiment;
+  const { data, identity, ready, cloud, commit } = experiment;
   const [page, setPage] = useState(1);
   const [pageLoading, setPageLoading] = useState(false);
   const [pageError, setPageError] = useState("");
@@ -94,6 +99,7 @@ function ReadingExperimentDetails({ book, experiment }: { book: ReadingBookId; e
   const pageTransitioning = useRef(false);
   const person = data.participants.find((item) => item.id === identity?.id);
   const readingStatus = person?.readingStatus ?? null;
+  const recordAttention = useReadingAttention(book, page, identity?.id, cloud, commit);
   const reflections = [...initialReflections,
     ...data.reflections.filter((item) => !initialIds.has(item.id)).sort((a, b) => b.createdAt.localeCompare(a.createdAt))];
 
@@ -118,6 +124,7 @@ function ReadingExperimentDetails({ book, experiment }: { book: ReadingBookId; e
     try {
       await prepareScan(book, nextPage);
       setPage(nextPage);
+      recordAttention("action:page-move");
     } catch {
       setPageError("페이지 이미지를 불러오지 못했어요. 다시 눌러 주세요.");
     } finally {
@@ -143,18 +150,18 @@ function ReadingExperimentDetails({ book, experiment }: { book: ReadingBookId; e
     }
   }
   return <>
-      {config.context && <section className="stranger-context" aria-labelledby="stranger-context-title">
+      {config.context && <section className="stranger-context" aria-labelledby="stranger-context-title" data-attention="section:context">
         <h2 id="stranger-context-title">앞선 줄거리</h2>
         <p>{config.context}</p>
       </section>}
-      <section className="stranger-reading" aria-labelledby="stranger-reading-title">
+      <section className="stranger-reading" aria-labelledby="stranger-reading-title" data-attention="section:excerpt">
         <h2 id="stranger-reading-title">{config.excerptTitle}</h2>
         <p className="muted">{config.excerptDescription}</p>
         <div className="stranger-reader">
           <div className="stranger-scan-stage">
             <button className="secondary stranger-side-nav" type="button" aria-label="이전" disabled={pageLoading || page === 1} onClick={() => void changePage(page - 1)}><span aria-hidden="true">‹</span></button>
             <div className="stranger-scan-frame">
-              <img className={config.alignFacingPages ? `stranger-scan stranger-scan-${page % 2 ? "odd" : "even"}` : "stranger-scan"}
+              <img data-attention="page" className={config.alignFacingPages ? `stranger-scan stranger-scan-${page % 2 ? "odd" : "even"}` : "stranger-scan"}
                 src={scanPath(book, page)} alt={`${config.title} 발췌문 ${page} / ${config.printedPages.length}, 책 ${config.printedPages[page - 1]}쪽`}
                 width={config.scanWidth} height={config.scanHeight}/>
             </div>
@@ -167,9 +174,9 @@ function ReadingExperimentDetails({ book, experiment }: { book: ReadingBookId; e
           {pageError && <p role="alert" className="field-error">{pageError}</p>}
         </div>
       </section>
-      <section className="reflection-feed stranger-feed" aria-labelledby="stranger-feed-title">
+      <section className="reflection-feed stranger-feed" aria-labelledby="stranger-feed-title" data-attention="section:feed">
         <div className="feed-heading"><h2 id="stranger-feed-title">함께 나눈 감상 <span>{reflections.length}</span></h2></div>
-        <form onSubmit={submitReflection} className="inline-composer">
+        <form onSubmit={submitReflection} className="inline-composer" data-attention="section:composer">
           <label className="sr-only" htmlFor={`${book}-reflection-body`}>감상</label>
           <textarea id={`${book}-reflection-body`} name="body" required maxLength={3000} rows={2}
             onFocus={startComposer} onInput={startComposer} placeholder="이 책, 어떻게 읽었나요? 짧게 남겨도 좋아요."/>
@@ -183,6 +190,7 @@ function ReadingExperimentDetails({ book, experiment }: { book: ReadingBookId; e
           likeCount={data.likes.filter((like) => like.reflectionId === item.id).length}
           liked={data.likes.some((like) => like.reflectionId === item.id && like.userId === identity?.id)}
           ready={ready}
+          onOpen={() => recordAttention(`open:${item.id}`)}
           onLike={async () => { if (identity) await commit({ type: "like", reflectionId: item.id, userId: identity.id }); }}
           onReply={async (body) => identity ? commit({ type: "reply", reply: { id: newReadingId(book), reflectionId: item.id,
             userId: identity.id, nickname: identity.nickname, body, createdAt: new Date().toISOString() } }) : false}/>) }

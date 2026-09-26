@@ -21,6 +21,14 @@ async function request(path: string, init: RequestInit = {}) {
 async function rows(path: string): Promise<Row[]> {
   return await (await request(path, { headers: { Prefer: "return=representation" } })).json() as Row[];
 }
+async function allRows(path: string): Promise<Row[]> {
+  const result: Row[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const batch = await rows(`${path}&limit=1000&offset=${offset}`);
+    result.push(...batch);
+    if (batch.length < 1000) return result;
+  }
+}
 let loveSeed: Promise<void> | null = null;
 function ensureLoveReflections() {
   if (!loveSeed) loveSeed = (async () => {
@@ -35,10 +43,11 @@ function ensureLoveReflections() {
 
 export async function loadReadingExperiment(book: ReadingBookId): Promise<StrangerExperiment> {
   if (book === "love-fragments") await ensureLoveReflections();
-  const [participants, pageViews, reflections, replies, likes] = await Promise.all([
+  const [participants, pageViews, reflections, replies, likes, attention] = await Promise.all([
     rows("stranger_participants?select=*&order=created_at.asc"), rows("stranger_page_views?select=user_id,page_number"),
     rows("stranger_reflections?select=*&order=created_at.desc"), rows("stranger_replies?select=*&order=created_at.asc"),
     rows("stranger_likes?select=reflection_id,user_id"),
+    allRows("stranger_attention_events?select=id,user_id,target,event_type,duration_ms,created_at&order=created_at.asc,id.asc"),
   ]);
   const people = participants.filter((row) => belongsToReadingBook(book, String(row.id)));
   const peopleIds = new Set(people.map((row) => String(row.id)));
@@ -56,6 +65,11 @@ export async function loadReadingExperiment(book: ReadingBookId): Promise<Strang
       .map((row) => ({ id: String(row.id), reflectionId: String(row.reflection_id), userId: String(row.user_id), nickname: String(row.nickname), body: String(row.body), createdAt: String(row.created_at) })),
     likes: likes.filter((row) => reflectionIds.has(String(row.reflection_id)) && peopleIds.has(String(row.user_id)))
       .map((row) => ({ reflectionId: String(row.reflection_id), userId: String(row.user_id) })),
+    attentionEvents: attention.filter((row) => peopleIds.has(String(row.user_id)))
+      .map((row) => ({ id: String(row.id), userId: String(row.user_id),
+        target: String(row.target),
+        eventType: row.event_type === "dwell" ? "dwell" as const : "view" as const,
+        durationMs: Number(row.duration_ms), createdAt: String(row.created_at) })),
   };
 }
 
@@ -83,6 +97,11 @@ export async function saveReadingMutation(book: ReadingBookId, mutation: Strange
     const { reply } = mutation;
     await request("stranger_replies?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
       body: JSON.stringify({ id: reply.id, reflection_id: reply.reflectionId, user_id: reply.userId, nickname: reply.nickname, body: reply.body, created_at: reply.createdAt }) });
+  } else if (mutation.type === "attention") {
+    const { event } = mutation;
+    await request("stranger_attention_events?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify({ id: event.id, target: event.target, user_id: event.userId,
+        event_type: event.eventType, duration_ms: event.durationMs, created_at: event.createdAt }) });
   } else {
     const path = "stranger_likes?reflection_id=eq." + encodeURIComponent(mutation.reflectionId) + "&user_id=eq." + encodeURIComponent(mutation.userId);
     if ((await rows(path + "&select=reflection_id")).length) await request(path, { method: "DELETE" });

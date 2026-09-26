@@ -22,6 +22,11 @@ test("읽음 여부, 발췌문, 감상 반응과 별도 통계를 유지한다",
   await initialNote.getByRole("button", { name: "좋아요 0" }).click();
   await page.getByRole("button", { name: "다음" }).click();
   await expect(page.getByText("2 / 6")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const events = JSON.parse(localStorage.getItem("chaekchaek-stranger-preview-v1") ?? "{}").attentionEvents ?? [];
+    return [events.some((event: { target: string }) => event.target === "action:page-move"),
+      events.some((event: { target: string }) => event.target.startsWith("open:"))];
+  })).toEqual([true, true]);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByLabel("감상", { exact: true }).fill("다른 사람의 필기를 보며 다시 생각했어요.");
   await page.getByRole("button", { name: "남기기", exact: true }).click();
@@ -43,6 +48,8 @@ test("읽음 여부, 발췌문, 감상 반응과 별도 통계를 유지한다",
   await expect(readRow.locator("td").nth(13)).toHaveText("2");
   await expect(page.getByRole("row", { name: /^instagram/ })).toContainText("1");
   await expect(page.getByRole("row", { name: /^PC/ })).toContainText("1");
+  await expect(page.locator(".metrics-section").filter({ hasText: "관심 행동" })).toContainText("페이지 이동");
+  await expect(page.locator(".metrics-section").filter({ hasText: "관심 행동" })).toContainText("감상 답글 영역 열기");
   await page.goto("/admin");
   await expect(page.getByTestId("total-participation")).toHaveText("0");
 });
@@ -95,6 +102,23 @@ test("다음 이미지가 늦게 도착해도 현재 페이지를 유지한 뒤 
   await expect(page.getByText("2 / 6")).toBeVisible();
   await expect(page.locator(".stranger-scan")).toHaveJSProperty("complete", true);
   expect(await page.locator(".stranger-scan").evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+});
+
+test("보이는 발췌 페이지의 노출 시간을 기록하고 책별 관리자 화면에 표시한다", async ({ page }) => {
+  await page.route("/api/experiments/stranger", (route) => route.fulfill({ status: 503, body: "{}" }));
+  await page.route("/api/experiments/love-fragments", (route) => route.fulfill({ status: 503, body: "{}" }));
+  await page.goto("/experiments/stranger");
+  await page.locator('[data-book="stranger"]').getByRole("button", { name: "읽었어요", exact: true }).click();
+  await page.locator(".stranger-scan").scrollIntoViewIfNeeded();
+  await page.waitForTimeout(5_500);
+  await page.getByRole("button", { name: "다음", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("chaekchaek-stranger-preview-v1") ?? "{}")
+    .attentionEvents?.some((event: { target: string; eventType: string; durationMs: number }) =>
+      event.target === "page:1" && event.eventType === "dwell" && event.durationMs >= 1_000))).toBe(true);
+  await page.goto("/admin/stranger");
+  await expect(page.locator(".metrics-section").filter({ hasText: "발췌 페이지별 화면 노출" })).toContainText("99쪽");
+  await page.goto("/admin/love-fragments");
+  await expect(page.getByText("책 선택 방문자").locator("..").locator("strong")).toHaveText("0");
 });
 
 test("저장 실패 뒤 입력을 보존하고 다시 제출할 수 있다", async ({ page }) => {
