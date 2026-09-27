@@ -2,6 +2,7 @@ package com.chaekchaek.member.controller;
 
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.member.dto.MemberResponse;
+import com.chaekchaek.member.dto.MyInfoResponse;
 import com.chaekchaek.member.dto.UpdateAnonymityRequest;
 import com.chaekchaek.member.dto.UpdateNicknameRequest;
 import com.chaekchaek.member.service.MemberService;
@@ -32,7 +33,7 @@ public class MemberController {
     private final AuthCookieProvider authCookieProvider;
 
     @GetMapping()
-    public ResponseEntity<MemberResponse> getMyInfo(
+    public ResponseEntity<MyInfoResponse> getMyInfo(
             @AuthenticationPrincipal Jwt jwt
     ) {
         Long memberId = Long.valueOf(jwt.getSubject());

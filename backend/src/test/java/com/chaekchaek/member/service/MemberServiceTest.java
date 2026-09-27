@@ -7,15 +7,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-import com.chaekchaek.auth.token.refresh.RefreshToken;
+import com.chaekchaek.actor.domain.Actor;
+import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.auth.service.AppleAccountService;
+import com.chaekchaek.auth.token.refresh.RefreshToken;
 import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
+import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.common.exception.MemberNotFoundException;
 import com.chaekchaek.common.exception.NicknameAlreadyExistsException;
 import com.chaekchaek.common.exception.NicknameRequiredException;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.dto.MemberResponse;
+import com.chaekchaek.member.dto.MyInfoResponse;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -25,12 +29,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class MemberServiceTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private ActorRepository actorRepository;
 
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
@@ -53,15 +61,22 @@ class MemberServiceTest {
                 "exUrl",
                 LocalDateTime.of(2026, 8, 13, 12, 0)
         );
+        ReflectionTestUtils.setField(member, "id", 7L);
+        Actor actor = Actor.member(member, LocalDateTime.of(2026, 8, 13, 12, 0));
+        ReflectionTestUtils.setField(actor, "id", 41L);
 
-        given(memberRepository.findById(1L))
+        given(memberRepository.findById(7L))
                 .willReturn(Optional.of(member));
+        given(actorRepository.findByMemberId(7L)).willReturn(Optional.of(actor));
 
         // when
-        MemberResponse response = memberService.getMyInfo(1L);
+        MyInfoResponse response = memberService.getMyInfo(7L);
 
         // then
         assertAll(
+                () -> assertThat(response.memberId()).isEqualTo(7L),
+                () -> assertThat(response.actorId()).isEqualTo(41L),
+                () -> assertThat(response.actorType()).isEqualTo(ActorType.MEMBER),
                 () -> assertThat(response.nickname()).isNull(),
                 () -> assertThat(response.profileImageUrl()).isEqualTo("exUrl"),
                 () -> assertThat(response.anonymousNickname()).isEqualTo("덜 우아한 참새"),
@@ -69,6 +84,24 @@ class MemberServiceTest {
                 () -> assertThat(response.accountStatus()).isEqualTo("ACTIVE")
         );
 
+    }
+
+    @Test
+    @DisplayName("관리자 내 정보에는 실제 Actor 유형을 반환한다")
+    void should_GetAdminActorType_When_MemberIsAdmin() {
+        // given
+        Member member = Member.create("우아한 참새", null, LocalDateTime.now());
+        Actor actor = Actor.member(member, LocalDateTime.now());
+        actor.grantAdmin();
+        ReflectionTestUtils.setField(actor, "id", 41L);
+        given(memberRepository.findById(7L)).willReturn(Optional.of(member));
+        given(actorRepository.findByMemberId(7L)).willReturn(Optional.of(actor));
+
+        // when
+        MyInfoResponse response = memberService.getMyInfo(7L);
+
+        // then
+        assertThat(response.actorType()).isEqualTo(ActorType.ADMIN);
     }
 
     @Test

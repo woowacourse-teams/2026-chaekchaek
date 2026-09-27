@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.chaekchaek.auth.token.guest.GuestTokenService;
 import com.chaekchaek.auth.token.guest.IssuedGuestToken;
+import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
@@ -50,7 +51,11 @@ class GuestAuthControllerTest {
                     .description("서버가 할당한 게스트 작성자 닉네임"),
             fieldWithPath("expiresAt").type(JsonFieldType.STRING)
                     .description("게스트 토큰 만료 시각(UTC). 발급 또는 갱신 시점부터 %d일"
-                            .formatted(TOKEN_EXPIRATION_DAYS))
+                            .formatted(TOKEN_EXPIRATION_DAYS)),
+            fieldWithPath("actorId").type(JsonFieldType.NUMBER)
+                    .description("토큰이 연결된 게스트 Actor ID"),
+            fieldWithPath("actorType").type(JsonFieldType.STRING)
+                    .description("Actor 유형. 게스트 토큰 응답에서는 GUEST")
     };
     private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
             fieldWithPath("type").type(JsonFieldType.STRING).description("문제 유형 URI"),
@@ -67,11 +72,13 @@ class GuestAuthControllerTest {
     @Test
     void issuesGuestTokenWithoutLogin() throws Exception {
         when(guestTokenService.issue()).thenReturn(new IssuedGuestToken(
-                "guest-token", "다정한 파란 참새", TOKEN_EXPIRES_AT));
+                "guest-token", "다정한 파란 참새", TOKEN_EXPIRES_AT, 7L, ActorType.GUEST));
 
         mockMvc.perform(post("/api/v1/auth/guest-token"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.guestToken").value("guest-token"))
+                .andExpect(jsonPath("$.actorId").value(7))
+                .andExpect(jsonPath("$.actorType").value("GUEST"))
                 .andExpect(jsonPath("$.nickname").value("다정한 파란 참새"))
                 .andExpect(jsonPath("$.expiresAt").value(TOKEN_EXPIRES_AT_RESPONSE))
                 .andDo(document("guest-token-issue",
@@ -88,12 +95,14 @@ class GuestAuthControllerTest {
     @Test
     void refreshesGuestTokenWithinRefreshWindow() throws Exception {
         when(guestTokenService.refresh("current-token")).thenReturn(new IssuedGuestToken(
-                "new-token", "다정한 파란 참새", TOKEN_EXPIRES_AT));
+                "new-token", "다정한 파란 참새", TOKEN_EXPIRES_AT, 7L, ActorType.GUEST));
 
         mockMvc.perform(post("/api/v1/auth/guest-token/refresh")
                         .header("X-Guest-Token", "current-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.guestToken").value("new-token"))
+                .andExpect(jsonPath("$.actorId").value(7))
+                .andExpect(jsonPath("$.actorType").value("GUEST"))
                 .andExpect(jsonPath("$.nickname").value("다정한 파란 참새"))
                 .andExpect(jsonPath("$.expiresAt").value(TOKEN_EXPIRES_AT_RESPONSE))
                 .andDo(document("guest-token-refresh",
