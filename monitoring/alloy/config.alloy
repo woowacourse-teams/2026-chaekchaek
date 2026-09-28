@@ -1,0 +1,61 @@
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+prometheus.scrape "backend" {
+  targets = [
+    {"__address__" = sys.env("BACKEND_CONTAINER") + ":9090"},
+  ]
+  metrics_path    = "/actuator/prometheus"
+  scrape_interval = "15s"
+  job_name        = "chaekchaek-backend"
+  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+prometheus.remote_write "grafana_cloud" {
+  external_labels = {"env" = sys.env("APP_ENV")}
+
+  endpoint {
+    url = sys.env("GRAFANA_CLOUD_PROM_URL")
+    basic_auth {
+      username = sys.env("GRAFANA_CLOUD_PROM_USER")
+      password = sys.env("GRAFANA_CLOUD_API_TOKEN")
+    }
+  }
+}
+
+discovery.docker "backend" {
+  host = "unix:///var/run/docker.sock"
+  filter {
+    name   = "name"
+    values = [sys.env("BACKEND_CONTAINER")]
+  }
+}
+
+discovery.relabel "backend_logs" {
+  targets = []
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+}
+
+loki.source.docker "backend" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.docker.backend.targets
+  relabel_rules = discovery.relabel.backend_logs.rules
+  labels        = {"app" = "chaekchaek", "env" = sys.env("APP_ENV")}
+  forward_to    = [loki.write.grafana_cloud.receiver]
+}
+
+loki.write "grafana_cloud" {
+  endpoint {
+    url = sys.env("GRAFANA_CLOUD_LOKI_URL")
+    basic_auth {
+      username = sys.env("GRAFANA_CLOUD_LOKI_USER")
+      password = sys.env("GRAFANA_CLOUD_API_TOKEN")
+    }
+  }
+}

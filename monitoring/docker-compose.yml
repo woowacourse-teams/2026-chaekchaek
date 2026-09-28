@@ -1,0 +1,38 @@
+name: chaekchaek-monitoring
+
+services:
+  alloy:
+    image: grafana/alloy:v1.20.0
+    container_name: chaekchaek-alloy
+    restart: unless-stopped
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    ports:
+      - "127.0.0.1:12345:12345"
+    environment:
+      APP_ENV: ${APP_ENV:?APP_ENV is required}
+      BACKEND_CONTAINER: ${BACKEND_CONTAINER:?BACKEND_CONTAINER is required}
+      GRAFANA_CLOUD_PROM_URL: ${GRAFANA_CLOUD_PROM_URL:?GRAFANA_CLOUD_PROM_URL is required}
+      GRAFANA_CLOUD_PROM_USER: ${GRAFANA_CLOUD_PROM_USER:?GRAFANA_CLOUD_PROM_USER is required}
+      GRAFANA_CLOUD_LOKI_URL: ${GRAFANA_CLOUD_LOKI_URL:?GRAFANA_CLOUD_LOKI_URL is required}
+      GRAFANA_CLOUD_LOKI_USER: ${GRAFANA_CLOUD_LOKI_USER:?GRAFANA_CLOUD_LOKI_USER is required}
+      GRAFANA_CLOUD_API_TOKEN: ${GRAFANA_CLOUD_API_TOKEN:?GRAFANA_CLOUD_API_TOKEN is required}
+    labels:
+      com.chaekchaek.alloy-config-hash: ${ALLOY_CONFIG_HASH:-none}
+    volumes:
+      - ./alloy:/etc/alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy/data
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true
+    name: ${BACKEND_NETWORK:?BACKEND_NETWORK is required}
+
+volumes:
+  alloy-data:
