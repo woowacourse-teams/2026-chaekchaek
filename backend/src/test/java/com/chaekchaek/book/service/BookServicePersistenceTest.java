@@ -60,6 +60,7 @@ class BookServicePersistenceTest {
         // given
         Book savedBook = bookRepository.saveAndFlush(Book.create(
                 new Isbn13("9788925568683"), "마션", "https://image.example/martian.jpg",
+                "https://example.com/cover.jpg/side", "https://example.com/cover.jpg/back",
                 "책 설명",
                 List.of("앤디 위어", "공동 저자"), List.of("박아람", "공동 번역가"),
                 "알에이치코리아", "SF",
@@ -69,6 +70,7 @@ class BookServicePersistenceTest {
         libraryItemRepository.saveAndFlush(ratedItem(2L, savedBook.getId(), "4.4"));
         Book anotherBook = bookRepository.saveAndFlush(Book.create(
                 new Isbn13("9781234567897"), "별점 없는 책", "https://image.example/unrated.jpg",
+                "https://image.example/unrated.jpg/side", "https://image.example/unrated.jpg/back",
                 "책 설명", List.of("작가"), List.of(), "출판사", "소설",
                 LocalDate.of(2026, 1, 2), 100
         ));
@@ -96,16 +98,21 @@ class BookServicePersistenceTest {
         // given
         Isbn13 isbn13 = new Isbn13("9788925568683");
         bookRepository.saveAndFlush(Book.create(
-                isbn13, "마션", "https://image.example/martian.jpg", "책 설명",
+                isbn13, "마션", "https://image.example/martian.jpg",
+                "https://image.example/martian.jpg/side", "https://image.example/martian.jpg/back",
+                "책 설명",
                 List.of("앤디 위어"), List.of(), "알에이치코리아", "SF",
                 LocalDate.of(2026, 1, 1), 308
         ));
         entityManager.clear();
 
         // when & then
-        assertThat(bookRepository.findByIsbn13(isbn13))
-                .map(Book::getIsbn13)
-                .contains(isbn13);
+        Book storedBook = bookRepository.findByIsbn13(isbn13).orElseThrow();
+        assertThat(storedBook.getIsbn13()).isEqualTo(isbn13);
+        assertThat(storedBook.getSpineImageUrl())
+                .isEqualTo("https://image.example/martian.jpg/side");
+        assertThat(storedBook.getBackImageUrl())
+                .isEqualTo("https://image.example/martian.jpg/back");
         assertThat(bookRepository.findAllByIsbn13In(List.of(isbn13)))
                 .extracting(Book::getIsbn13)
                 .containsExactly(isbn13);

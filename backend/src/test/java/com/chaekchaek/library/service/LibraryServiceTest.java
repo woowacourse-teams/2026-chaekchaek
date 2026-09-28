@@ -19,9 +19,9 @@ import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
-import com.chaekchaek.member.repository.MemberRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -246,7 +246,9 @@ class LibraryServiceTest {
     }
 
     private Book book(Integer totalPages) {
-        return Book.create(new Isbn13("9788925568683"), "마션", "https://example.com/cover.jpg", null, List.of("앤디 위어"),
+        return Book.create(new Isbn13("9788925568683"), "마션", "https://example.com/cover.jpg",
+                "https://example.com/cover.jpg/side", "https://example.com/cover.jpg/back",
+                null, List.of("앤디 위어"),
                 List.of(), "알에이치코리아", "SF", null, totalPages);
     }
 }

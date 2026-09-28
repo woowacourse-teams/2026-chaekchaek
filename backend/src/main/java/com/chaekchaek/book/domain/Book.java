@@ -1,5 +1,7 @@
 package com.chaekchaek.book.domain;
 
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -12,8 +14,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import com.chaekchaek.common.exception.BusinessException;
-import com.chaekchaek.common.exception.ErrorCode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +38,12 @@ public class Book {
 
     @Column(nullable = false, length = 1_000)
     private String coverImageUrl;
+
+    @Column(length = 1_000)
+    private String spineImageUrl;
+
+    @Column(length = 1_000)
+    private String backImageUrl;
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -71,6 +77,8 @@ public class Book {
             Isbn13 isbn13,
             String title,
             String coverImageUrl,
+            String spineImageUrl,
+            String backImageUrl,
             String description,
             List<String> authors,
             List<String> translators,
@@ -82,6 +90,8 @@ public class Book {
         this.isbn13 = isbn13;
         this.title = title;
         this.coverImageUrl = coverImageUrl;
+        this.spineImageUrl = spineImageUrl;
+        this.backImageUrl = backImageUrl;
         this.description = description;
         this.authors = new ArrayList<>(authors);
         this.translators = new ArrayList<>(translators);
@@ -95,6 +105,8 @@ public class Book {
             Isbn13 isbn13,
             String title,
             String coverImageUrl,
+            String spineImageUrl,
+            String backImageUrl,
             String description,
             List<String> authors,
             List<String> translators,
@@ -104,7 +116,8 @@ public class Book {
             Integer totalPages
     ) {
         validateTotalPages(totalPages);
-        return new Book(isbn13, title, coverImageUrl, description, authors, translators, publisher, category,
+        return new Book(isbn13, title, coverImageUrl, spineImageUrl, backImageUrl,
+                description, authors, translators, publisher, category,
                 publishedDate, totalPages);
     }
 
@@ -142,6 +155,14 @@ public class Book {
 
     public String getCoverImageUrl() {
         return coverImageUrl;
+    }
+
+    public String getSpineImageUrl() {
+        return spineImageUrl;
+    }
+
+    public String getBackImageUrl() {
+        return backImageUrl;
     }
 
     public String getDescription() {

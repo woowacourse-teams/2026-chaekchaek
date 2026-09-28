@@ -1,13 +1,13 @@
 package com.chaekchaek.auth;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import com.chaekchaek.auth.principal.SecurityContextCurrentActorProvider;
 import com.chaekchaek.book.domain.Book;
@@ -15,7 +15,6 @@ import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import java.time.LocalDate;
 import java.util.List;
-import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,23 +22,29 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class GuestInteractionAuthorizationIntegrationTest {
 
-    @Autowired MockMvc mockMvc;
-    @Autowired ObjectMapper objectMapper;
-    @Autowired BookRepository bookRepository;
+    @Autowired
+    MockMvc mockMvc;
+    @Autowired
+    ObjectMapper objectMapper;
+    @Autowired
+    BookRepository bookRepository;
 
     @Test
     void should_CreateReview_When_GuestTokenUsesIsbnReviewPath() throws Exception {
         // given
         String guestToken = issueGuestToken();
         Book book = bookRepository.save(Book.create(
-                new Isbn13("9788925568683"), "마션", "https://example.com/martian.jpg", "책 설명",
-                List.of("앤디 위어"), List.of(), "알에이치코리아", "SF", LocalDate.of(2026, 1, 1), 308
+                new Isbn13("9788925568683"), "마션", "https://example.com/martian.jpg",
+                "https://example.com/martian.jpg/side", "https://example.com/martian.jpg/back",
+                "책 설명", List.of("앤디 위어"), List.of(),
+                "알에이치코리아", "SF", LocalDate.of(2026, 1, 1), 308
         ));
 
         // when & then
