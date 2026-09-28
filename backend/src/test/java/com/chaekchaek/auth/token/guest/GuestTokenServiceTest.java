@@ -35,6 +35,11 @@ class GuestTokenServiceTest {
         SecureRandom secureRandom = mock(SecureRandom.class);
         Clock clock = Clock.fixed(Instant.parse("2026-08-26T09:00:00Z"), ZoneOffset.UTC);
         when(nicknameGenerator.generate()).thenReturn("다정한 파란 참새");
+        when(actorRepository.save(any(Actor.class))).thenAnswer(invocation -> {
+            Actor saved = invocation.getArgument(0);
+            ReflectionTestUtils.setField(saved, "id", 7L);
+            return saved;
+        });
         fillRandomBytes(secureRandom, (byte) 1);
         GuestTokenService service = new GuestTokenService(actorRepository, hasher,
                 properties(), nicknameGenerator, secureRandom, clock);
@@ -45,6 +50,8 @@ class GuestTokenServiceTest {
         verify(actorRepository).save(actorCaptor.capture());
         Actor actor = actorCaptor.getValue();
         assertThat(actor.getType()).isEqualTo(ActorType.GUEST);
+        assertThat(issued.actorId()).isEqualTo(actor.getId());
+        assertThat(issued.actorType()).isEqualTo(ActorType.GUEST);
         assertThat(actor.getGuestNickname()).isEqualTo("다정한 파란 참새");
         assertThat(actor.getGuestTokenHash()).isEqualTo(hasher.hash(issued.value()));
         assertThat(actor.getGuestTokenHash()).isNotEqualTo(issued.value());
@@ -61,6 +68,8 @@ class GuestTokenServiceTest {
 
         assertThat(refreshed.value()).isNotEqualTo("current-token");
         assertThat(refreshed.nickname()).isEqualTo("다정한 파란 참새");
+        assertThat(refreshed.actorId()).isEqualTo(actor.getId());
+        assertThat(refreshed.actorType()).isEqualTo(ActorType.GUEST);
         assertThat(refreshed.expiresAt()).isEqualTo(fixture.now.plusDays(90));
         assertThat(actor.getGuestTokenHash()).isEqualTo(fixture.hasher.hash(refreshed.value()));
         assertThat(actor.getGuestTokenIssuedAt()).isEqualTo(fixture.now);

@@ -19,6 +19,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.chaekchaek.auth.token.access.AccessTokenProvider;
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
+import com.chaekchaek.actor.domain.Actor;
+import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
@@ -55,6 +57,17 @@ public class MemberControllerIntegrationTest {
                     .description("감상 작성 시 익명 표시를 기본으로 사용하는지 여부"),
             fieldWithPath("accountStatus").type(JsonFieldType.STRING).description("계정 상태")
     };
+    private static final FieldDescriptor[] MY_INFO_RESPONSE_FIELDS = {
+            fieldWithPath("memberId").type(JsonFieldType.NUMBER).description("회원 ID"),
+            fieldWithPath("actorId").type(JsonFieldType.NUMBER).description("현재 회원의 Actor ID"),
+            fieldWithPath("actorType").type(JsonFieldType.STRING).description("현재 Actor 유형(MEMBER 또는 ADMIN)"),
+            fieldWithPath("nickname").type(JsonFieldType.STRING).description("사용자가 설정한 공개 닉네임").optional(),
+            fieldWithPath("anonymousNickname").type(JsonFieldType.STRING).description("가입 시 생성된 익명 닉네임"),
+            fieldWithPath("profileImageUrl").type(JsonFieldType.STRING).description("프로필 이미지 URL").optional(),
+            fieldWithPath("displayAnonymous").type(JsonFieldType.BOOLEAN)
+                    .description("감상 작성 시 익명 표시를 기본으로 사용하는지 여부"),
+            fieldWithPath("accountStatus").type(JsonFieldType.STRING).description("계정 상태")
+    };
     private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
             fieldWithPath("type").type(JsonFieldType.STRING)
                     .description("현재 about:blank로 고정되는 문제 유형 URI"),
@@ -84,10 +97,14 @@ public class MemberControllerIntegrationTest {
     private MemberRepository memberRepository;
 
     @Autowired
+    private ActorRepository actorRepository;
+
+    @Autowired
     private AccessTokenProvider accessTokenProvider;
 
     @BeforeEach
     void setUp() {
+        actorRepository.deleteAll();
         memberRepository.deleteAll();
     }
 
@@ -102,6 +119,7 @@ public class MemberControllerIntegrationTest {
         );
         member.updateNickname("책책이");
         memberRepository.save(member);
+        Actor actor = actorRepository.save(Actor.member(member, LocalDateTime.of(2026, 8, 13, 12, 0)));
 
         String accessToken = accessTokenProvider.issue(member);
 
@@ -115,6 +133,8 @@ public class MemberControllerIntegrationTest {
                         .cookie(cookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.memberId").value(member.getId()))
+                .andExpect(jsonPath("$.actorId").value(actor.getId()))
+                .andExpect(jsonPath("$.actorType").value("MEMBER"))
                 .andExpect(jsonPath("$.nickname").value("책책이"))
                 .andExpect(jsonPath("$.anonymousNickname").value("우아한 달빛 참새"))
                 .andExpect(jsonPath("$.profileImageUrl")
@@ -123,14 +143,32 @@ public class MemberControllerIntegrationTest {
                 .andExpect(jsonPath("$.accountStatus").value("ACTIVE"))
                 .andDo(document(
                         "member-me",
-                        responseFields(MEMBER_RESPONSE_FIELDS),
+                        responseFields(MY_INFO_RESPONSE_FIELDS),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("내 정보 조회")
                                 .description("웹에서는 access_token 쿠키로, 모바일에서는 Authorization Bearer 헤더로 인증한 사용자의 정보를 조회한다")
                                 .tag(MEMBER_TAG)
-                                .responseSchema(Schema.schema("MemberResponse"))
-                                .responseFields(MEMBER_RESPONSE_FIELDS)
+                                .responseSchema(Schema.schema("MyInfoResponse"))
+                                .responseFields(MY_INFO_RESPONSE_FIELDS)
                                 .build())));
+    }
+
+    @Test
+    @DisplayName("Bearer 토큰으로 내 Actor 정보를 조회한다")
+    void should_GetMyInfo_When_AuthorizedWithBearerToken() throws Exception {
+        // given
+        Member member = memberRepository.save(Member.create(
+                "우아한 달빛 참새", null, LocalDateTime.of(2026, 8, 13, 12, 0)));
+        Actor actor = actorRepository.save(Actor.member(member, LocalDateTime.of(2026, 8, 13, 12, 0)));
+        String accessToken = accessTokenProvider.issue(member);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/members/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.memberId").value(member.getId()))
+                .andExpect(jsonPath("$.actorId").value(actor.getId()))
+                .andExpect(jsonPath("$.actorType").value("MEMBER"));
     }
 
     @Test

@@ -1,12 +1,15 @@
 package com.chaekchaek.member.service;
 
-import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
+import com.chaekchaek.actor.domain.Actor;
+import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.auth.service.AppleAccountService;
+import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
 import com.chaekchaek.common.exception.MemberNotFoundException;
 import com.chaekchaek.common.exception.NicknameAlreadyExistsException;
 import com.chaekchaek.common.exception.NicknameRequiredException;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.dto.MemberResponse;
+import com.chaekchaek.member.dto.MyInfoResponse;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +22,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final ActorRepository actorRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final AppleAccountService appleAccountService;
 
-    public MemberResponse getMyInfo(Long memberId) {
+    public MyInfoResponse getMyInfo(Long memberId) {
         Member member = getMember(memberId);
+        Actor actor = actorRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new IllegalStateException("회원 Actor가 존재해야 합니다: memberId=" + memberId));
 
-        return MemberResponse.from(member);
+        return MyInfoResponse.from(member, actor);
     }
 
     @Transactional
