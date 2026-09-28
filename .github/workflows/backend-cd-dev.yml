@@ -1,10 +1,11 @@
-name: Backend CD (Deploy to EC2)
+name: Backend CD (Development)
 
 on:
   push:
-    branches: [ be ]
+    branches: [ be-dev ]
     paths:
       - 'backend/**'
+      - ".github/workflows/backend-cd-dev.yml"
   workflow_dispatch:
 
 concurrency:
