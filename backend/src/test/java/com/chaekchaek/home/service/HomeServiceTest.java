@@ -20,6 +20,7 @@ import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
 import com.chaekchaek.review.repository.ReplyRepository;
 import com.chaekchaek.review.repository.ReviewRepository;
+import com.chaekchaek.review.service.ReviewSummaryReader;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -111,8 +112,8 @@ class HomeServiceTest {
                 1L, new ReviewMemberProfile(101L, null, null, "익명 사용자 1",
                         true, AccountStatus.WITHDRAWN, ActorType.MEMBER)
         ));
-        HomeService homeService = new HomeService(reviewRepository, replyRepository, bookRepository,
-                currentActorProvider, reviewMemberReader);
+        HomeService homeService = new HomeService(reviewRepository, bookRepository,
+                new ReviewSummaryReader(replyRepository, bookRepository, currentActorProvider, reviewMemberReader));
 
         AuthorResponse author = homeService.getLatestReviews().reviews().getFirst().author();
 
@@ -132,8 +133,8 @@ class HomeServiceTest {
                 2L, new ReviewMemberProfile(102L, "닉네임", "https://example.com/profile.jpg",
                         "다정한 참새", true, AccountStatus.ACTIVE, ActorType.MEMBER)
         ));
-        return new HomeService(reviewRepository, replyRepository, bookRepository,
-                currentActorProvider, reviewMemberReader);
+        return new HomeService(reviewRepository, bookRepository,
+                new ReviewSummaryReader(replyRepository, bookRepository, currentActorProvider, reviewMemberReader));
     }
 
     private static ReviewRepository.PopularBookCount popularBookCount(long bookId, long reviewCount, long replyCount) {

@@ -25,6 +25,17 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     List<Review> findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc();
 
+    @Query(value = """
+            select review from Review review
+            where review.deletedAt is null
+              and exists (select book.id from Book book where book.id = review.bookId)
+            """, countQuery = """
+            select count(review) from Review review
+            where review.deletedAt is null
+              and exists (select book.id from Book book where book.id = review.bookId)
+            """)
+    Page<Review> findFeedReviews(Pageable pageable);
+
     @Query("select r.bookId as bookId, count(r) as count from Review r where r.bookId in :bookIds group by r.bookId")
     List<BookCommentCount> countByBookIdInGroupByBookId(Collection<Long> bookIds);
 
