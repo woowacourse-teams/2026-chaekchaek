@@ -4,6 +4,7 @@ export type DevicePlatform = "iPhone" | "iPad" | "Android" | "PC" | "other";
 export type StrangerParticipant = {
   id: string; nickname: string; readingStatus: ReadingStatus | null;
   source: string; device: DevicePlatform; viewedPages: number[]; composerStarted: boolean;
+  createdAt?: string;
 };
 export type StrangerReflection = { id: string; userId: string; nickname: string; body: string; createdAt: string };
 export type StrangerReply = { id: string; reflectionId: string; userId: string; nickname: string; body: string; createdAt: string };
@@ -33,7 +34,7 @@ export function applyStrangerMutation(current: StrangerExperiment, mutation: Str
     if (current.participants.some((person) => person.id === mutation.userId)) return current;
     return { ...current, participants: [...current.participants, {
       id: mutation.userId, nickname: mutation.nickname, readingStatus: null, source: mutation.source,
-      device: mutation.device, viewedPages: [], composerStarted: false,
+      device: mutation.device, viewedPages: [], composerStarted: false, createdAt: new Date().toISOString(),
     }] };
   }
   if (mutation.type === "reading" || mutation.type === "page" || mutation.type === "composer") {

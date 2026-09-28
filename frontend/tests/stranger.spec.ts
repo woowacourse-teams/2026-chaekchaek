@@ -41,6 +41,14 @@ test("읽음 여부, 발췌문, 감상 반응과 별도 통계를 유지한다",
   await expect(page.getByTestId("reflection")).toHaveCount(3);
   await expect(page.getByTestId("reflection").first().getByRole("button", { name: "좋아요 1" })).toBeVisible();
   await page.goto("/admin/stranger");
+  await expect(page.getByRole("heading", { name: "방문 흐름" })).toBeVisible();
+  await expect(page.getByText("현재까지 누적 방문자").locator("..").locator("strong")).toHaveText("1명");
+  await expect(page.getByRole("heading", { name: "구간별 새 방문자" })).toBeVisible();
+  await page.getByRole("button", { name: "전체 일별" }).click();
+  await page.getByText("구간별 정확한 수치 보기").click();
+  await expect(page.locator(".traffic-details tbody tr").last()).toContainText("1");
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const readRow = page.getByRole("row", { name: /^읽었어요/ });
   await expect(readRow).toContainText("100.0%");
   await expect(readRow).toContainText("1");

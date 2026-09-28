@@ -1,16 +1,22 @@
 "use client";
+import { useEffect, useState } from "react";
 import { strangerMetricsCsv, summarizeReadingAttention, summarizeStrangerExperiment, summarizeStrangerPlatforms } from "../lib/stranger-experiment";
+import { summarizeReadingTraffic } from "../lib/reading-traffic";
 import { formatDuration } from "../lib/book-analytics";
 import { deviceLabel, sourceLabel } from "../lib/stranger-platform";
 import { readingBooks, type ReadingBookId } from "../lib/reading-book-config";
 import { useReadingExperiment } from "../lib/use-stranger-experiment";
+import { ReadingTrafficChart } from "./reading-traffic-chart";
 
 export function ReadingExperimentAdmin({ book }: { book: ReadingBookId }) {
+  const [asOf, setAsOf] = useState<number | null>(null);
   const config = readingBooks[book];
   const { data, ready, cloud, error } = useReadingExperiment(book);
+  useEffect(() => { if (ready) setAsOf(Date.now()); }, [ready]);
   const summary = summarizeStrangerExperiment(data, config.initialAuthorId);
   const platforms = summarizeStrangerPlatforms(data, config.initialAuthorId);
   const attention = summarizeReadingAttention(data, config.initialAuthorId);
+  const traffic = asOf === null ? null : summarizeReadingTraffic(data, config.initialAuthorId, asOf);
   const sectionNames = { context: "앞선 줄거리", excerpt: "발췌문", feed: "함께 나눈 감상", composer: "감상 작성" };
   function downloadCsv() {
     const url = URL.createObjectURL(new Blob([strangerMetricsCsv(data, config.initialAuthorId)], { type: "text/csv;charset=utf-8" }));
@@ -22,11 +28,12 @@ export function ReadingExperimentAdmin({ book }: { book: ReadingBookId }) {
     <h1>실험 집계 미리보기</h1>
     <nav className="admin-tabs" aria-label="실험 통계"><a href="/admin">기존 실험</a><a href="/admin/stranger" aria-current={book === "stranger" ? "page" : undefined}>이방인 실험</a><a href="/admin/love-fragments" aria-current={book === "love-fragments" ? "page" : undefined}>사랑의 편린들 실험</a></nav>
     <p className="admin-intro">{cloud ? `『${config.title}』 실험에 참여한 사람들의 결과입니다.` : "이 브라우저에 저장된 동작 확인용 데이터입니다. 다른 참여자의 데이터는 합산되지 않습니다."}</p>
-    <div className="admin-toolbar"><a href={`/experiments/stranger?book=${book}`}>참여 화면으로 돌아가기</a><button className="secondary" disabled={!ready} onClick={downloadCsv}>CSV 내려받기</button></div>
+    <div className="admin-toolbar"><a href={`/experiments/stranger?book=${book}`}>참여 화면으로 돌아가기</a><button className="secondary" disabled={!ready} onClick={() => window.location.reload()}>최신 기록 새로고침</button><button className="secondary" disabled={!ready} onClick={downloadCsv}>CSV 내려받기</button></div>
     {error && <p className="error-banner" role="alert">{error}</p>}
     <div className="metrics-summary"><div><span>책 선택 방문자</span><strong>{attention.visitors}</strong></div>
       {summary.groups.map((group) => <div key={group.status}><span>{group.status === "read" ? "읽었어요" : "안 읽었어요"}</span><strong>{group.participants}</strong></div>)}
     </div>
+    {ready && traffic && asOf !== null && <ReadingTrafficChart {...traffic} asOf={asOf}/>}
     <section className="metrics-section"><h2>읽음 여부별 참여</h2><div className="table-scroll"><table>
       <thead><tr><th scope="col">읽음 여부</th><th scope="col">선택자</th>{[1,2,3,4,5,6].map((page) => <th scope="col" key={page}>{page}쪽 열람</th>)}
         <th scope="col">6쪽 모두 열람</th><th scope="col">작성 시작</th><th scope="col">감상 제출자</th><th scope="col">제출률</th><th scope="col">답글</th><th scope="col">좋아요</th></tr></thead>

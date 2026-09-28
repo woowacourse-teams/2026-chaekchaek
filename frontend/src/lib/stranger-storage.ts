@@ -44,7 +44,7 @@ function ensureLoveReflections() {
 export async function loadReadingExperiment(book: ReadingBookId): Promise<StrangerExperiment> {
   if (book === "love-fragments") await ensureLoveReflections();
   const [participants, pageViews, reflections, replies, likes, attention] = await Promise.all([
-    rows("stranger_participants?select=*&order=created_at.asc"), rows("stranger_page_views?select=user_id,page_number"),
+    allRows("stranger_participants?select=*&order=created_at.asc,id.asc"), rows("stranger_page_views?select=user_id,page_number"),
     rows("stranger_reflections?select=*&order=created_at.desc"), rows("stranger_replies?select=*&order=created_at.asc"),
     rows("stranger_likes?select=reflection_id,user_id"),
     allRows("stranger_attention_events?select=id,user_id,target,event_type,duration_ms,created_at&order=created_at.asc,id.asc"),
@@ -59,7 +59,7 @@ export async function loadReadingExperiment(book: ReadingBookId): Promise<Strang
       source: typeof row.source === "string" ? row.source : "unknown",
       device: row.device === "iPhone" || row.device === "iPad" || row.device === "Android" || row.device === "PC" ? row.device : "other",
       viewedPages: pageViews.filter((view) => view.user_id === row.id).map((view) => Number(view.page_number)),
-      composerStarted: row.composer_started === true })),
+      composerStarted: row.composer_started === true, createdAt: String(row.created_at) })),
     reflections: bookReflections.map((row) => ({ id: String(row.id), userId: String(row.user_id), nickname: String(row.nickname), body: String(row.body), createdAt: String(row.created_at) })),
     replies: replies.filter((row) => reflectionIds.has(String(row.reflection_id)) && peopleIds.has(String(row.user_id)))
       .map((row) => ({ id: String(row.id), reflectionId: String(row.reflection_id), userId: String(row.user_id), nickname: String(row.nickname), body: String(row.body), createdAt: String(row.created_at) })),
