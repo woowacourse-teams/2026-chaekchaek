@@ -106,7 +106,7 @@ class BookResolverTest {
 
     private BookDetailItem bookDetailItem(String description) {
         return new BookDetailItem(
-                "마션", "https://image.example/martian.jpg", description,
+                "마션", "https://image.example/martian.jpg", null, null, description,
                 List.of("앤디 위어"), List.of(), LocalDate.of(2026, 1, 1),
                 ISBN13.value(), "SF", "알에이치코리아", 308
         );

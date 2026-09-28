@@ -1,5 +1,6 @@
 package com.chaekchaek.book.client;
 
+import com.chaekchaek.book.client.dto.AladinBookItem;
 import com.chaekchaek.book.client.dto.AladinSearchResponse;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.exception.BookNotFoundException;
@@ -95,11 +96,13 @@ public class AladinBookClient implements BookSearchClient {
                 .orElseThrow(BookNotFoundException::new);
     }
 
-    private BookDetailItem toBookDetailItem(com.chaekchaek.book.client.dto.AladinBookItem source) {
+    private BookDetailItem toBookDetailItem(AladinBookItem source) {
         AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
         return new BookDetailItem(
                 source.title(),
                 source.cover(),
+                null,
+                null,
                 source.description(),
                 contributors.authors(),
                 contributors.translators(),
@@ -119,7 +122,7 @@ public class AladinBookClient implements BookSearchClient {
                 .requiredBody(AladinSearchResponse.class);
     }
 
-    private BookSearchItem toBookSearchItem(com.chaekchaek.book.client.dto.AladinBookItem source) {
+    private BookSearchItem toBookSearchItem(AladinBookItem source) {
         AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
         return new BookSearchItem(
                 source.title(),
