@@ -106,12 +106,16 @@ jobs:
           set -euo pipefail
           docker pull "$BACKEND_IMAGE"
 
+          docker network inspect chaekchaek-network >/dev/null 2>&1 \
+            || docker network create chaekchaek-network
+
           docker stop chaekchaek-backend 2>/dev/null || true
           docker rm chaekchaek-backend 2>/dev/null || true
 
           docker run -d \
             --name chaekchaek-backend \
             --restart unless-stopped \
+            --network chaekchaek-network \
             -p 8080:8080 \
             --env-file <(
               printf '%s\n' \
