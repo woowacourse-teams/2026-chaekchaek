@@ -1,0 +1,71 @@
+name: Monitoring CD (Production Alloy)
+
+on:
+  push:
+    branches: [ be ]
+    paths:
+      - 'monitoring/**'
+      - '.github/workflows/monitoring-cd.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: monitoring-cd-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [ self-hosted, prod-backend ]
+    environment: production
+    steps:
+      - name: Checkout monitoring config
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: monitoring
+
+      - name: Deploy Alloy
+        shell: bash
+        env:
+          APP_ENV: prod
+          BACKEND_CONTAINER: chaekchaek-backend
+          BACKEND_NETWORK: chaekchaek-network
+          GRAFANA_CLOUD_PROM_URL: ${{ secrets.GRAFANA_CLOUD_PROM_URL }}
+          GRAFANA_CLOUD_PROM_USER: ${{ secrets.GRAFANA_CLOUD_PROM_USER }}
+          GRAFANA_CLOUD_LOKI_URL: ${{ secrets.GRAFANA_CLOUD_LOKI_URL }}
+          GRAFANA_CLOUD_LOKI_USER: ${{ secrets.GRAFANA_CLOUD_LOKI_USER }}
+          GRAFANA_CLOUD_API_TOKEN: ${{ secrets.GRAFANA_CLOUD_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          monitoring_dir="$HOME/chaekchaek-monitoring"
+
+          docker network inspect "$BACKEND_NETWORK" >/dev/null 2>&1 \
+            || docker network create "$BACKEND_NETWORK"
+
+          if docker inspect "$BACKEND_CONTAINER" >/dev/null 2>&1 \
+            && ! docker inspect -f '{{json .NetworkSettings.Networks}}' "$BACKEND_CONTAINER" | grep -q "\"$BACKEND_NETWORK\""; then
+            docker network connect "$BACKEND_NETWORK" "$BACKEND_CONTAINER"
+          fi
+
+          mkdir -p "$monitoring_dir/alloy"
+          cp monitoring/docker-compose.yml "$monitoring_dir/docker-compose.yml"
+          cp monitoring/alloy/config.alloy "$monitoring_dir/alloy/config.alloy"
+
+          cd "$monitoring_dir"
+          export ALLOY_CONFIG_HASH="$(sha256sum alloy/config.alloy | cut -c1-12)"
+
+          docker compose pull
+          docker compose up -d
+          docker compose ps
+
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:12345/-/ready; then
+              exit 0
+            fi
+
+            if [ "$i" -eq 20 ]; then
+              echo "Alloy readiness check failed"
+              docker compose logs --tail=100 alloy
+              exit 1
+            fi
+
+            sleep 3
+          done
