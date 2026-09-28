@@ -109,56 +109,52 @@ jobs:
 
         run: |
           set -euo pipefail
+          
+          docker pull "$BACKEND_IMAGE"
+          
+          docker stop chaekchaek-dev-backend 2>/dev/null || true
+          docker rm chaekchaek-dev-backend 2>/dev/null || true
+          
+          docker run -d \
+            --name chaekchaek-dev-backend \
+            --restart unless-stopped \
+            --network chaekchaek_chaekchaek-network \
+            -p 8080:8080 \
+            --env-file <(
+              printf '%s\n' \
+                "DB_URL=$DB_URL" \
+                "DB_USERNAME=$DB_USERNAME" \
+                "DB_PASSWORD=$DB_PASSWORD" \
+                "FRONTEND_BASE_URL=$FRONTEND_BASE_URL" \
+                "FRONTEND_LOCAL_BASE_URL=$FRONTEND_LOCAL_BASE_URL" \
+                "FRONTEND_DEV_BASE_URL=$FRONTEND_DEV_BASE_URL" \
+                "FRONTEND_ALLOWED_ORIGINS=$FRONTEND_ALLOWED_ORIGINS" \
+                "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" \
+                "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" \
+                "APPLE_CLIENT_ID=$APPLE_CLIENT_ID" \
+                "APPLE_TEAM_ID=$APPLE_TEAM_ID" \
+                "APPLE_KEY_ID=$APPLE_KEY_ID" \
+                "APPLE_PRIVATE_KEY=$APPLE_PRIVATE_KEY" \
+                "JWT_SECRET=$JWT_SECRET" \
+                "ALADIN_TTB_KEY=$ALADIN_TTB_KEY" \
+                "YES24_API_KEY=$YES24_API_KEY" \
+                "AUTH_COOKIE_SECURE=$AUTH_COOKIE_SECURE" \
+                "AUTH_COOKIE_SAME_SITE=$AUTH_COOKIE_SAME_SITE"
+              ) \
+              "$BACKEND_IMAGE"
 
-          cd /opt/chaekchaek
-          umask 077
+            docker ps --filter name=chaekchaek-dev-backend
 
-          env_file="$(mktemp .env.dev.XXXXXX)"
-          trap 'rm -f "$env_file"' EXIT
-
-          {
-            printf '%s\n' "BACKEND_IMAGE=$BACKEND_IMAGE"
-            printf '%s\n' "DB_URL=$DB_URL"
-            printf '%s\n' "DB_USERNAME=$DB_USERNAME"
-            printf '%s\n' "DB_PASSWORD=$DB_PASSWORD"
-            printf '%s\n' "MYSQL_DATABASE=$MYSQL_DATABASE"
-            printf '%s\n' "MYSQL_USER=$MYSQL_USER"
-            printf '%s\n' "MYSQL_PASSWORD=$MYSQL_PASSWORD"
-            printf '%s\n' "MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD"
-            printf '%s\n' "FRONTEND_BASE_URL=$FRONTEND_BASE_URL"
-            printf '%s\n' "FRONTEND_LOCAL_BASE_URL=$FRONTEND_LOCAL_BASE_URL"
-            printf '%s\n' "FRONTEND_DEV_BASE_URL=$FRONTEND_DEV_BASE_URL"
-            printf '%s\n' "FRONTEND_ALLOWED_ORIGINS=$FRONTEND_ALLOWED_ORIGINS"
-            printf '%s\n' "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID"
-            printf '%s\n' "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET"
-            printf '%s\n' "APPLE_CLIENT_ID=$APPLE_CLIENT_ID"
-            printf '%s\n' "APPLE_TEAM_ID=$APPLE_TEAM_ID"
-            printf '%s\n' "APPLE_KEY_ID=$APPLE_KEY_ID"
-            printf '%s\n' "APPLE_PRIVATE_KEY=$APPLE_PRIVATE_KEY"
-            printf '%s\n' "JWT_SECRET=$JWT_SECRET"
-            printf '%s\n' "ALADIN_TTB_KEY=$ALADIN_TTB_KEY"
-            printf '%s\n' "YES24_API_KEY=$YES24_API_KEY"
-            printf '%s\n' "AUTH_COOKIE_SECURE=$AUTH_COOKIE_SECURE"
-            printf '%s\n' "AUTH_COOKIE_SAME_SITE=$AUTH_COOKIE_SAME_SITE"
-          } > "$env_file"
-
-          chmod 600 "$env_file"
-          mv "$env_file" .env.dev
-
-          docker compose --env-file .env.dev pull
-          docker compose --env-file .env.dev up -d --remove-orphans
-          docker compose --env-file .env.dev ps
-
-          for i in {1..30}; do
-            if curl -fsS https://dev-api.chaekchaek.com/health; then
-              exit 0
-            fi
-
-            if [ "$i" -eq 30 ]; then
-              echo "Development health check failed"
-              docker compose --env-file .env.dev logs --tail=100 backend
-              exit 1
-            fi
-
-            sleep 5
-          done
+            for i in {1..30}; do
+              if curl -fsS https://dev-api.chaekchaek.com/health; then
+                exit 0
+              fi
+            
+              if [ "$i" -eq 30 ]; then
+                echo "Development health check failed"
+                docker logs --tail=100 chaekchaek-dev-backend
+                exit 1
+              fi
+            
+              sleep 5
+            done
