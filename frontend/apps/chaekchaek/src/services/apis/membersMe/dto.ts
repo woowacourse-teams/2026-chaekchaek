@@ -9,6 +9,8 @@ export type GetMembersMeResponseDto = ResponseDto<{
   displayAnonymous: boolean;
   anonymousNickname: string;
   memberId: number;
+  actorId: number;
+  actorType: string;
 }>;
 export interface DeleteMembersMeRequestDto {}
 

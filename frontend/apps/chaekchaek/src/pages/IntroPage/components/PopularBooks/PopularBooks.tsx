@@ -23,7 +23,8 @@ export const PopularBooks = () => {
   const navigation = useNavigate();
 
   const handleClickMoveDetail = (isbn: string) => {
-    track('select_book', {
+    track('navigate', {
+      destination: 'book_detail',
       source: 'intro_popular',
     });
 

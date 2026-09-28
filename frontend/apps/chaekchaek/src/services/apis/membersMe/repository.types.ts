@@ -7,6 +7,8 @@ export type GetMembersMe = (params: GetMembersMeParams) => Promise<{
   displayAnonymous: boolean;
   anonymousNickname: string;
   memberId: number;
+  actorId: number;
+  actorType: string;
 }>;
 export interface DeleteMembersMeParams {}
 

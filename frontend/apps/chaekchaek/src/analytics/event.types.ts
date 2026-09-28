@@ -1,6 +1,7 @@
 export type AnalyticsEventMap = {
-  select_book: {
-    source: 'intro_popular' | 'search';
+  navigate: {
+    destination: 'book_detail' | 'members_library';
+    source: 'intro_popular' | 'intro_latest_reviews' | 'search' | 'book_reviews';
   };
   rating_open: undefined;
   rating_submit: undefined;
@@ -10,16 +11,24 @@ export type AnalyticsEventMap = {
     status: 'want_to_read' | 'reading' | 'finished';
   };
   review_write_open: {
-    user_type: 'member' | 'guest';
+    actor_type: 'MEMBER' | 'GUEST';
+    actor_id: number;
+    isbn: string;
   };
   review_submit: {
-    user_type: 'member' | 'guest';
+    actor_type: 'MEMBER' | 'GUEST';
+    actor_id: number;
+    isbn: string;
   };
   reply_write_open: {
-    user_type: 'member' | 'guest';
+    actor_type: 'MEMBER' | 'GUEST';
+    actor_id: number;
+    isbn: string;
   };
   reply_submit: {
-    user_type: 'member' | 'guest';
+    actor_type: 'MEMBER' | 'GUEST';
+    actor_id: number;
+    isbn: string;
   };
   current_page_open: undefined;
   current_page_submit: undefined;

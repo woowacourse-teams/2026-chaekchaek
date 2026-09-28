@@ -1,0 +1,5 @@
+.frame-Container {
+  width: var(--layout-width);
+  margin: 0 auto;
+  text-align: left;
+}

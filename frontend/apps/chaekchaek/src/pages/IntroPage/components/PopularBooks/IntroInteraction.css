@@ -49,6 +49,10 @@
   filter: brightness(1.12);
 }
 
+.popular-books .book:hover {
+  z-index: 100;
+}
+
 @keyframes book-enter {
   from {
     opacity: 0;

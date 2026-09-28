@@ -11,6 +11,11 @@ export const useLoadData = <TData = unknown>({ queryFn }: Options<TData>): Resul
   });
 
   const fetchData = useCallback(async (): Promise<TData | void> => {
+    // setStatus((prev) => ({
+    //   ...prev,
+    //   status: 'loading',
+    // }));
+
     setStatus({
       status: 'loading',
       data: null,

@@ -7,12 +7,16 @@ export type UserData = {
   displayAnonymous: boolean;
   anonymousNickname: string;
   memberId: number;
+  actorId: number;
+  actorType: 'MEMBER' | 'GUEST';
 };
 
 export type GuestData = {
   guestToken: string;
   nickname: string;
   expiresAt: string;
+  actorId: number;
+  actorType: 'MEMBER' | 'GUEST';
 };
 
 export type Props = {

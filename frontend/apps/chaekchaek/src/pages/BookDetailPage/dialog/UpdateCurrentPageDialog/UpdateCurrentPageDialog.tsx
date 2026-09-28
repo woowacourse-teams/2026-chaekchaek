@@ -44,8 +44,8 @@ export const UpdateCurrentPageDialog = ({
         <Dialog.Header
           subTitle={
             <>
-              이 감상은 ${currentPage}쪽 이후 내용을 포함해요. <br />
-              내가 읽은 쪽수를 입력하면 읽은 범위까지 안 전하게 볼 수 있어요.
+              이 감상은 {currentPage}쪽 이후 내용을 포함해요. <br />
+              내가 읽은 쪽수를 입력하면 읽은 범위까지 안전하게 볼 수 있어요.
             </>
           }
         >

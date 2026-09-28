@@ -22,14 +22,14 @@ type ErrorStatus = {
   error: unknown;
 };
 
-type LoadingStatus = {
+type LoadingStatus<TData> = {
   status: 'loading';
-  data: null;
-  error: null;
+  data: TData | null;
+  error: unknown | null;
 };
 
 export type Status<TData = unknown> =
-  IdleStatus | SuccessStatus<TData> | ErrorStatus | LoadingStatus;
+  IdleStatus | SuccessStatus<TData> | ErrorStatus | LoadingStatus<TData>;
 
 export type Result<TData = unknown> = {
   status: Status<TData>;

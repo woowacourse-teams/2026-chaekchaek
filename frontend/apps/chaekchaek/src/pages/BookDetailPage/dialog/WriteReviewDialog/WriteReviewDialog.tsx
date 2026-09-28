@@ -48,7 +48,7 @@ export const WriteReviewDialog = ({
   onReviewWritten,
   onClose,
 }: WriteReviewDialogProps) => {
-  const { isAuthenticated, guest } = useAuthContext();
+  const { isAuthenticated, guest, user } = useAuthContext();
 
   const { values, errors, onChange, isValid, valids } = useFormValues<ReviewFormValues>({
     initialValues: {
@@ -77,9 +77,13 @@ export const WriteReviewDialog = ({
         ...requestData,
       });
 
-      track('review_write_open', {
-        user_type: 'member',
-      });
+      if (user) {
+        track('review_submit', {
+          actor_type: user.actorType,
+          actor_id: user.actorId,
+          isbn,
+        });
+      }
     } else {
       if (!guest) return;
       await postBookReviewByIsbnMutate(
@@ -92,8 +96,10 @@ export const WriteReviewDialog = ({
         },
       );
 
-      track('review_write_open', {
-        user_type: 'guest',
+      track('review_submit', {
+        actor_type: guest.actorType,
+        actor_id: guest.actorId,
+        isbn,
       });
     }
 
@@ -184,8 +190,18 @@ export const WriteReviewDialog = ({
             </FieldGroup>
 
             <Callout sx={{ mt: 4 }} leading={<Icon.InvisibleIcon />}>
-              <strong>익명 공개</strong>
-              <span>‘골똘한 참새’로 표시돼요</span>
+              {((isAuthenticated && user?.displayAnonymous) || !isAuthenticated) && (
+                <strong>익명 공개</strong>
+              )}
+              <span>
+                ‘
+                {isAuthenticated
+                  ? !user?.displayAnonymous
+                    ? user?.nickname
+                    : user?.anonymousNickname
+                  : guest?.nickname}
+                ’로 표시돼요
+              </span>
             </Callout>
           </Dialog.Body>
 

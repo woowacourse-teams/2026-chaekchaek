@@ -1,0 +1,61 @@
+.root {
+  box-sizing: border-box;
+  margin: 0;
+  color: #1a1a1a;
+  font-family: inherit;
+  font-size: 0.875rem; /* 14px */
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.color-default {
+  color: #1a1a1a;
+}
+
+.color-secondary {
+  color: #666;
+}
+
+.color-muted {
+  color: #888;
+}
+
+.color-accent {
+  color: #a05a27;
+}
+
+.color-error {
+  color: #b3261e;
+}
+
+.color-inverse {
+  color: #fff;
+}
+
+.size-xx-small {
+  font-size: 0.6875rem; /* 11px */
+}
+
+.size-x-small {
+  font-size: 0.75rem; /* 12px */
+}
+
+.size-small {
+  font-size: 0.8125rem; /* 13px */
+}
+
+.size-medium {
+  font-size: 0.875rem; /* 14px */
+}
+
+.size-large {
+  font-size: 0.9375rem; /* 15px */
+}
+
+.size-x-large {
+  font-size: 1rem; /* 16px */
+}
+
+.is-strong {
+  font-weight: 700;
+}

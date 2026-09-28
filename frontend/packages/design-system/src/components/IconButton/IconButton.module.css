@@ -1,12 +1,97 @@
-.ui-IconButton {
+.root {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 0;
+  border: 1px solid var(--button-border-color);
   appearance: none;
-  background: transparent;
-  color: inherit;
+  background: var(--button-background);
+  color: var(--button-color);
   font: inherit;
+  line-height: 1;
   cursor: pointer;
+}
+
+.shape-default {
+  border-radius: 6px;
+}
+
+.shape-normal {
+  border-radius: 50%;
+}
+
+.shape-link {
+  border-color: transparent;
+  border-radius: 0;
+  background: transparent;
+}
+
+.variant-default {
+  --button-background: #fff;
+  --button-border-color: #e5e5e5;
+  --button-color: #1a1a1a;
+}
+
+.variant-primary {
+  --button-background: #000;
+  --button-border-color: #000;
+  --button-color: #fff;
+}
+
+.variant-secondary {
+  --button-background: #fff;
+  --button-border-color: #000;
+  --button-color: #000;
+}
+
+.variant-accent {
+  --button-background: #ff9800;
+  --button-border-color: #ff9800;
+  --button-color: #000;
+}
+
+.variant-ghost {
+  --button-background: #fff;
+  --button-border-color: #aaa;
+  --button-color: #555;
+}
+
+.variant-soft {
+  --button-background: #fff4df;
+  --button-border-color: #d9c6a5;
+  --button-color: #333;
+}
+
+.variant-danger {
+  --button-background: #c92a24;
+  --button-border-color: #c92a24;
+  --button-color: #fff;
+}
+
+.variant-danger-weak {
+  --button-background: #fff;
+  --button-border-color: #b3261e;
+  --button-color: #b3261e;
+}
+
+.size-small {
+  width: 32px;
+  height: 32px;
+}
+
+.size-medium {
+  width: 40px;
+  height: 40px;
+}
+
+.size-large {
+  width: 48px;
+  height: 48px;
+}
+
+.root:disabled,
+.root[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.45;
 }

@@ -11,6 +11,7 @@ import {
   Note,
   Shell,
   Surface,
+  Text,
 } from '@chaekchaek/design-system';
 
 import { ROUTES } from '@/constants/routes';
@@ -43,8 +44,8 @@ import styles from './BookReview.module.css';
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
 
-export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
-  const { isAuthenticated, guest } = useAuthContext();
+export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) => {
+  const { isAuthenticated, user, guest } = useAuthContext();
   const getReviewsReviewIdRepliesLoadData = useCallback(() => {
     return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
   }, [review.reviewId]);
@@ -118,7 +119,12 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
     if (!openWriteReply) {
       setOpenWriteReply(true);
 
-      track('reply_write_open', { user_type: guest ? 'guest' : 'member' });
+      if (user) {
+        track('reply_write_open', { actor_type: user.actorType, actor_id: user.actorId, isbn });
+      }
+      if (guest) {
+        track('reply_write_open', { actor_type: guest.actorType, actor_id: guest.actorId, isbn });
+      }
     } else {
       setOpenWriteReply(false);
     }
@@ -129,6 +135,17 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
   const handleReplyWritten = async () => {
     await refetchGetReplies();
     handleClickCloseWriteReply();
+  };
+
+  const handleClickAvatar = (isProfileAvailable: boolean) => {
+    if (isProfileAvailable) {
+      handleOpenDialog('AlertDialog');
+      return;
+    }
+    track('navigate', {
+      destination: 'members_library',
+      source: 'book_reviews',
+    });
   };
 
   const [dialog, setDialog] = useState<'UpdateReviewDialog' | 'AlertDialog' | null>(null);
@@ -188,9 +205,7 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
                   }),
                 })}
                 onClick={() => {
-                  if (review.author?.profileStatus !== 'AVAILABLE') {
-                    handleOpenDialog('AlertDialog');
-                  }
+                  handleClickAvatar(review.author.profileStatus !== 'AVAILABLE');
                 }}
                 img={review.author.profileImageUrl}
               />
@@ -234,10 +249,23 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
           className={!showSpoilerVisible && review.isSpoiler && styles.clickable}
           onClick={handleClickShowSpoiler}
         >
-          {showSpoilerVisible ? review.content : SPOILER_PLACEHOLDER_REVIEW}
+          {showSpoilerVisible ? (
+            review.content
+          ) : (
+            <>
+              <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
+              <Text size="small" color="error">
+                (스포일러 · 눌러보기)
+              </Text>
+            </>
+          )}
           {review.quote && (
             <Note variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
-              {showSpoilerVisible ? review.quote : SPOILER_PLACEHOLDER_REVIEW}
+              {showSpoilerVisible ? (
+                review.quote
+              ) : (
+                <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
+              )}
             </Note>
           )}
         </Entry.Body>
@@ -270,19 +298,41 @@ export const BookReview = ({ review, onReviewsRefresh }: BookReviewProps) => {
       {(!!repliesData?.items.length || openWriteReply) && (
         <Entry.Extension>
           {openWriteReply && (
-            <WriteReply reviewId={review.reviewId} onReplyWritten={handleReplyWritten} />
+            <WriteReply
+              isbn={isbn}
+              reviewId={review.reviewId}
+              onReplyWritten={handleReplyWritten}
+            />
           )}
           {repliesData?.items.map((reply) => {
             return (
               <Surface key={reply.replyId}>
                 <Shell>
                   <Shell.Leading>
-                    <Avatar img={reply.author.profileImageUrl} size="small" />
+                    <Avatar
+                      img={reply.author.profileImageUrl}
+                      size="small"
+                      as={reply.author.memberId ? Link : 'div'}
+                      {...(reply.author.memberId && {
+                        to: generatePath(ROUTES.MEMBER_LIBRARY, {
+                          memberId: reply.author.memberId.toString(),
+                        }),
+                      })}
+                      onClick={() => {
+                        handleClickAvatar(reply.author.profileStatus !== 'AVAILABLE');
+                      }}
+                    />
                   </Shell.Leading>
                   <Shell.Content
                     onClick={handleClickShowSpoiler}
                     title={reply.author.displayName}
-                    description={showSpoilerVisible ? reply.content : SPOILER_PLACEHOLDER_REPLY}
+                    description={
+                      showSpoilerVisible ? (
+                        reply.content
+                      ) : (
+                        <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REPLY}</span>
+                      )
+                    }
                   />
                   <Shell.Trailing>
                     <Button

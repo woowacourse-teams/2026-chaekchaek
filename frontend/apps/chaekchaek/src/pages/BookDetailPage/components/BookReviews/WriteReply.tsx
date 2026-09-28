@@ -1,4 +1,6 @@
-import { Avatar, Button, Field, Input, Shell, Surface } from '@chaekchaek/design-system';
+import { type KeyboardEvent } from 'react';
+
+import { Avatar, Button, Field, Shell, Surface, Textarea } from '@chaekchaek/design-system';
 
 import { useFormValues } from '@/hooks/useFormValues';
 
@@ -13,7 +15,7 @@ import type { ReplyFormValues } from './validator';
 import type { WriteReplyProps } from './WriteReply.types';
 import { track } from '@/analytics/track';
 
-export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
+export const WriteReply = ({ isbn, reviewId, onReplyWritten }: WriteReplyProps) => {
   const { user, guest } = useAuthContext();
   const { values, errors, onChange, isValid, valids } = useFormValues<ReplyFormValues>({
     initialValues: {
@@ -21,6 +23,14 @@ export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
     },
     validate: validateReply,
   });
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+
+      handleSubmit();
+    }
+  };
 
   const { mutate: postReplyMutate } = useExecute({
     executeFn: postReviewsReviewIdReplies,
@@ -39,7 +49,12 @@ export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
         : undefined,
     );
 
-    track('reply_submit', { user_type: guest ? 'guest' : 'member' });
+    if (user) {
+      track('reply_submit', { actor_type: user.actorType, actor_id: user.actorId, isbn });
+    }
+    if (guest) {
+      track('reply_submit', { actor_type: guest.actorType, actor_id: guest.actorId, isbn });
+    }
 
     await onReplyWritten();
   };
@@ -54,8 +69,15 @@ export const WriteReply = ({ reviewId, onReplyWritten }: WriteReplyProps) => {
           content={
             <Field>
               <Field.Content>
-                <Input id="content" value={values.content} onChange={onChange} block />
-                <Button variant="ghost" disabled={!isValid} onClick={handleSubmit}>
+                <Textarea
+                  id="content"
+                  value={values.content}
+                  onChange={onChange}
+                  onKeyDown={handleKeyDown}
+                  height="100px"
+                  block
+                />
+                <Button type="button" variant="ghost" disabled={!isValid} onClick={handleSubmit}>
                   답글 남기기
                 </Button>
               </Field.Content>

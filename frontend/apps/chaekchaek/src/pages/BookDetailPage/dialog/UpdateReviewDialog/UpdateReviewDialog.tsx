@@ -44,7 +44,7 @@ export const UpdateReviewDialog = ({
   onReviewUpdated,
   onClose,
 }: UpdateReviewDialogProps) => {
-  const { isAuthenticated, guest } = useAuthContext();
+  const { isAuthenticated, guest, user } = useAuthContext();
 
   const { values, errors, onChange, isValid, valids } = useFormValues<ReviewFormValues>({
     initialValues: {
@@ -163,8 +163,18 @@ export const UpdateReviewDialog = ({
             </FieldGroup>
 
             <Callout sx={{ mt: 4 }} leading={<Icon.InvisibleIcon />}>
-              <strong>익명 공개</strong>
-              <span>‘골똘한 참새’로 표시돼요</span>
+              {((isAuthenticated && user?.displayAnonymous) || !isAuthenticated) && (
+                <strong>익명 공개</strong>
+              )}
+              <span>
+                ‘
+                {isAuthenticated
+                  ? !user?.displayAnonymous
+                    ? user?.nickname
+                    : user?.anonymousNickname
+                  : guest?.nickname}
+                ’로 표시돼요
+              </span>
             </Callout>
           </Dialog.Body>
 

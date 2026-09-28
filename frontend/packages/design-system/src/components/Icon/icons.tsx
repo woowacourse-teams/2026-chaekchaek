@@ -3,6 +3,12 @@ import { createIcon } from './createIcon';
 import ArrowRight from './imgs/arrow-right.svg?component';
 export const ArrowRightIcon = createIcon(ArrowRight);
 
+import Check from './imgs/check.svg?component';
+export const CheckIcon = createIcon(Check);
+
+import CheckAnimated from './imgs/check-animated.svg?component';
+export const CheckAnimatedIcon = createIcon(CheckAnimated);
+
 import CheckboxOff from './imgs/checkbox-off.svg?component';
 export const CheckboxOffIcon = createIcon(CheckboxOff);
 
@@ -35,6 +41,9 @@ export const PencilIcon = createIcon(Pencil);
 
 import Refresh from './imgs/refresh.svg?component';
 export const RefreshIcon = createIcon(Refresh);
+
+import Share from './imgs/share.svg?component';
+export const ShareIcon = createIcon(Share);
 
 import Search from './imgs/search.svg?component';
 export const SearchIcon = createIcon(Search);

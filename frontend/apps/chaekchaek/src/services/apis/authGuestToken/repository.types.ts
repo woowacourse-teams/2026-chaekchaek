@@ -4,4 +4,6 @@ export type PostAuthGuestToken = (command: PostAuthGuestTokenCommand) => Promise
   guestToken: string;
   nickname: string;
   expiresAt: string;
+  actorId: number;
+  actorType: string;
 }>;
