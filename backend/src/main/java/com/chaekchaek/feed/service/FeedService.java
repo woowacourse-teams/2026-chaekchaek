@@ -19,14 +19,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class FeedService {
 
     private static final int PAGE_SIZE = 20;
-    private static final Sort LATEST_FIRST = Sort.by(Sort.Direction.DESC, "createdAt", "id");
+    private static final Sort CREATED_AT_DESC_ID_DESC = Sort.by(Sort.Direction.DESC, "createdAt", "id");
 
     private final ReviewRepository reviewRepository;
     private final ReviewSummaryReader reviewSummaryReader;
 
     @Transactional(readOnly = true)
     public FeedReviewListResponse getReviews(int page) {
-        Page<Review> reviews = reviewRepository.findFeedReviews(PageRequest.of(page - 1, PAGE_SIZE, LATEST_FIRST));
+        Page<Review> reviews = reviewRepository.findFeedReviews(
+                PageRequest.of(page - 1, PAGE_SIZE, CREATED_AT_DESC_ID_DESC)
+        );
         Integer nextPage = null;
         if (reviews.hasNext()) {
             nextPage = page + 1;

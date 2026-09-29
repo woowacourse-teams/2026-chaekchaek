@@ -25,6 +25,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 class FeedServiceTest {
 
@@ -80,8 +81,10 @@ class FeedServiceTest {
         verify(reviewRepository).findFeedReviews(pageable.capture());
         assertThat(pageable.getValue().getPageNumber()).isZero();
         assertThat(pageable.getValue().getPageSize()).isEqualTo(20);
-        assertThat(pageable.getValue().getSort().getOrderFor("createdAt").isDescending()).isTrue();
-        assertThat(pageable.getValue().getSort().getOrderFor("id").isDescending()).isTrue();
+        assertThat(pageable.getValue().getSort()).containsExactly(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("id")
+        );
     }
 
     @Test
