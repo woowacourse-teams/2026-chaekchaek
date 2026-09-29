@@ -2,6 +2,7 @@ package com.chaekchaek.library.controller;
 
 import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.document;
 import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -105,6 +106,10 @@ class LibraryControllerTest {
             fieldWithPath("isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("도서 제목"),
             fieldWithPath("coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
+            fieldWithPath("spineImageUrl").type(JsonFieldType.STRING).description("책등 이미지 URL")
+                    .optional(),
+            fieldWithPath("backImageUrl").type(JsonFieldType.STRING).description("책뒷면 이미지 URL")
+                    .optional(),
             fieldWithPath("authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                     .attributes(key("itemsType").value(JsonFieldType.STRING)),
             fieldWithPath("translators").type(JsonFieldType.ARRAY).description("옮긴이 이름 목록")
@@ -161,6 +166,10 @@ class LibraryControllerTest {
                 .andExpect(jsonPath("$.totalCount").value(3))
                 .andExpect(jsonPath("$.filteredCount").value(2))
                 .andExpect(jsonPath("$.items[0].bookId").value(BOOK_ID))
+                .andExpect(jsonPath("$.items[0].spineImageUrl")
+                        .value("https://image.yes24.com/goods/118578901/side"))
+                .andExpect(jsonPath("$.items[0].backImageUrl")
+                        .value("https://image.yes24.com/goods/118578901/back"))
                 .andDo(document(
                         "library-list",
                         queryParameters(libraryListQueryParameters()),
@@ -175,6 +184,25 @@ class LibraryControllerTest {
                 ));
 
         verify(libraryService).getLibrary(MEMBER_ID, 1, ReadingStatus.READING, LibrarySort.RATING);
+    }
+
+    @Test
+    @DisplayName("책등과 책뒷면 이미지가 없으면 null로 반환한다")
+    void should_ReturnNullSpineAndBackImageUrls_When_ImagesAreMissing() throws Exception {
+        // given
+        LibraryListResponse response = new LibraryListResponse(
+                1, 1, null, List.of(libraryItemResponseWithoutImages()));
+        when(libraryService.getLibrary(MEMBER_ID, 1, ReadingStatus.READING, LibrarySort.RATING))
+                .thenReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/library")
+                        .param("page", "1")
+                        .param("status", "READING")
+                        .param("sort", "RATING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].spineImageUrl").value(nullValue()))
+                .andExpect(jsonPath("$.items[0].backImageUrl").value(nullValue()));
     }
 
     @Test
@@ -831,6 +859,10 @@ class LibraryControllerTest {
                 fieldWithPath("items[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
                 fieldWithPath("items[].title").type(JsonFieldType.STRING).description("도서 제목"),
                 fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
+                fieldWithPath("items[].spineImageUrl").type(JsonFieldType.STRING)
+                        .description("책등 이미지 URL").optional(),
+                fieldWithPath("items[].backImageUrl").type(JsonFieldType.STRING)
+                        .description("책뒷면 이미지 URL").optional(),
                 fieldWithPath("items[].authors").type(JsonFieldType.ARRAY).description("저자 이름 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
                 fieldWithPath("items[].translators").type(JsonFieldType.ARRAY).description("옮긴이 이름 목록")
@@ -1020,11 +1052,24 @@ class LibraryControllerTest {
     }
 
     private LibraryItemResponse libraryItemResponse() {
+        return libraryItemResponse(
+                "https://image.yes24.com/goods/118578901/side",
+                "https://image.yes24.com/goods/118578901/back"
+        );
+    }
+
+    private LibraryItemResponse libraryItemResponseWithoutImages() {
+        return libraryItemResponse(null, null);
+    }
+
+    private LibraryItemResponse libraryItemResponse(String spineImageUrl, String backImageUrl) {
         return new LibraryItemResponse(
                 BOOK_ID,
                 ISBN13,
                 "채식주의자",
-                "https://image.aladin.co.kr/cover.jpg",
+                "https://image.yes24.com/goods/118578901/xL",
+                spineImageUrl,
+                backImageUrl,
                 List.of("한강"),
                 List.of(),
                 "창비",

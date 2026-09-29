@@ -6,6 +6,8 @@ import java.util.List;
 public record BookDetailItem(
         String title,
         String coverImageUrl,
+        String spineImageUrl,
+        String backImageUrl,
         String description,
         List<String> authors,
         List<String> translators,

@@ -121,6 +121,8 @@ class ReviewFeedRepositoryTest {
                 "도서",
                 "https://example.com/cover.jpg",
                 null,
+                null,
+                null,
                 List.of("저자"),
                 List.of(),
                 "출판사",
