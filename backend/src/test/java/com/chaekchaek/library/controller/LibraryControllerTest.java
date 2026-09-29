@@ -2,6 +2,7 @@ package com.chaekchaek.library.controller;
 
 import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.document;
 import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -183,6 +184,25 @@ class LibraryControllerTest {
                 ));
 
         verify(libraryService).getLibrary(MEMBER_ID, 1, ReadingStatus.READING, LibrarySort.RATING);
+    }
+
+    @Test
+    @DisplayName("책등과 책뒷면 이미지가 없으면 null로 반환한다")
+    void should_ReturnNullSpineAndBackImageUrls_When_ImagesAreMissing() throws Exception {
+        // given
+        LibraryListResponse response = new LibraryListResponse(
+                1, 1, null, List.of(libraryItemResponseWithoutImages()));
+        when(libraryService.getLibrary(MEMBER_ID, 1, ReadingStatus.READING, LibrarySort.RATING))
+                .thenReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/library")
+                        .param("page", "1")
+                        .param("status", "READING")
+                        .param("sort", "RATING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].spineImageUrl").value(nullValue()))
+                .andExpect(jsonPath("$.items[0].backImageUrl").value(nullValue()));
     }
 
     @Test
@@ -1032,13 +1052,24 @@ class LibraryControllerTest {
     }
 
     private LibraryItemResponse libraryItemResponse() {
+        return libraryItemResponse(
+                "https://image.yes24.com/goods/118578901/side",
+                "https://image.yes24.com/goods/118578901/back"
+        );
+    }
+
+    private LibraryItemResponse libraryItemResponseWithoutImages() {
+        return libraryItemResponse(null, null);
+    }
+
+    private LibraryItemResponse libraryItemResponse(String spineImageUrl, String backImageUrl) {
         return new LibraryItemResponse(
                 BOOK_ID,
                 ISBN13,
                 "채식주의자",
                 "https://image.yes24.com/goods/118578901/xL",
-                "https://image.yes24.com/goods/118578901/side",
-                "https://image.yes24.com/goods/118578901/back",
+                spineImageUrl,
+                backImageUrl,
                 List.of("한강"),
                 List.of(),
                 "창비",
