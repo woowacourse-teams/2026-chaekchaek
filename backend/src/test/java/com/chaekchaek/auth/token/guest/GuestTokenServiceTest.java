@@ -21,11 +21,40 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class GuestTokenServiceTest {
+
+    @Test
+    @DisplayName("유효한 기존 게스트 토큰으로 Actor를 조회한다")
+    void should_FindGuestActor_When_ExistingTokenIsUsable() {
+        // given
+        TestFixture fixture = new TestFixture();
+        Actor actor = fixture.actorExpiringAt(fixture.now.plusDays(10));
+
+        // when
+        Actor found = fixture.service.findUsableActor("current-token");
+
+        // then
+        assertThat(found).isSameAs(actor);
+    }
+
+    @Test
+    @DisplayName("만료된 게스트 토큰으로 Actor를 조회할 수 없다")
+    void should_RejectGuestLookup_When_TokenIsExpired() {
+        // given
+        TestFixture fixture = new TestFixture();
+        fixture.actorExpiringAt(fixture.now.minusSeconds(1));
+
+        // when & then
+        assertThatThrownBy(() -> fixture.service.findUsableActor("current-token"))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.UNUSABLE_GUEST_TOKEN));
+    }
 
     @Test
     void issuesOpaqueTokenValidForNinetyDaysAndStoresOnlyItsHash() {

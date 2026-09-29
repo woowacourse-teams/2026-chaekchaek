@@ -9,10 +9,13 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.headerWit
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.chaekchaek.actor.domain.Actor;
+import com.chaekchaek.auth.token.guest.GuestTokenHasher;
 import com.chaekchaek.auth.token.guest.GuestTokenService;
 import com.chaekchaek.auth.token.guest.IssuedGuestToken;
 import com.chaekchaek.common.auth.ActorType;
@@ -21,15 +24,17 @@ import com.chaekchaek.common.exception.ErrorCode;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.restdocs.payload.FieldDescriptor;
+import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(value = GuestAuthController.class, excludeAutoConfiguration = OAuth2ClientAutoConfiguration.class)
 @AutoConfigureRestDocs
@@ -57,6 +62,16 @@ class GuestAuthControllerTest {
             fieldWithPath("actorType").type(JsonFieldType.STRING)
                     .description("Actor 유형. 게스트 토큰 응답에서는 GUEST")
     };
+    private static final FieldDescriptor[] GUEST_INFO_RESPONSE_FIELDS = {
+            fieldWithPath("nickname").type(JsonFieldType.STRING)
+                    .description("서버가 할당한 게스트 작성자 닉네임"),
+            fieldWithPath("expiresAt").type(JsonFieldType.STRING)
+                    .description("게스트 토큰 만료 시각(UTC)"),
+            fieldWithPath("actorId").type(JsonFieldType.NUMBER)
+                    .description("토큰이 연결된 게스트 Actor ID"),
+            fieldWithPath("actorType").type(JsonFieldType.STRING)
+                    .description("Actor 유형. GUEST")
+    };
     private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
             fieldWithPath("type").type(JsonFieldType.STRING).description("문제 유형 URI"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("HTTP 상태 설명"),
@@ -68,6 +83,65 @@ class GuestAuthControllerTest {
 
     @Autowired MockMvc mockMvc;
     @MockitoBean GuestTokenService guestTokenService;
+
+    @Test
+    @DisplayName("기존 게스트 토큰으로 Actor 정보를 조회한다")
+    void should_ReturnGuestInfo_When_ExistingTokenIsUsable() throws Exception {
+        // given
+        Actor actor = Actor.guest(new GuestTokenHasher().hash("existing-token"),
+                "다정한 파란 참새", TOKEN_ISSUED_AT, TOKEN_EXPIRES_AT);
+        ReflectionTestUtils.setField(actor, "id", 7L);
+        when(guestTokenService.findUsableActor("existing-token")).thenReturn(actor);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/auth/guest-token")
+                        .header("X-Guest-Token", "existing-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.actorId").value(7))
+                .andExpect(jsonPath("$.actorType").value("GUEST"))
+                .andExpect(jsonPath("$.nickname").value("다정한 파란 참새"))
+                .andExpect(jsonPath("$.expiresAt").value(TOKEN_EXPIRES_AT_RESPONSE))
+                .andExpect(jsonPath("$.guestToken").doesNotExist())
+                .andDo(document("guest-token-info",
+                        requestHeaders(headerWithName("X-Guest-Token")
+                                .description("조회할 현재 게스트 토큰")),
+                        responseFields(GUEST_INFO_RESPONSE_FIELDS),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary("게스트 정보 조회")
+                                .description("기존 게스트 토큰으로 연결된 Actor 정보와 만료 시각을 조회한다")
+                                .tag("인증")
+                                .requestHeaders(com.epages.restdocs.apispec.ResourceDocumentation
+                                        .headerWithName("X-Guest-Token").description("조회할 현재 게스트 토큰"))
+                                .responseFields(GUEST_INFO_RESPONSE_FIELDS)
+                                .build())));
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 게스트 토큰으로 Actor 정보를 조회할 수 없다")
+    void should_RejectGuestInfoLookup_When_TokenIsInvalid() throws Exception {
+        // given
+        when(guestTokenService.findUsableActor("invalid-token"))
+                .thenThrow(new BusinessException(ErrorCode.INVALID_GUEST_TOKEN));
+
+        // when & then
+        mockMvc.perform(get("/api/v1/auth/guest-token")
+                        .header("X-Guest-Token", "invalid-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("INVALID_GUEST_TOKEN"));
+    }
+
+    @Test
+    @DisplayName("게스트 토큰이 없으면 Actor 정보를 조회할 수 없다")
+    void should_RejectGuestInfoLookup_When_TokenIsMissing() throws Exception {
+        // given
+        when(guestTokenService.findUsableActor(null))
+                .thenThrow(new BusinessException(ErrorCode.INVALID_GUEST_TOKEN));
+
+        // when & then
+        mockMvc.perform(get("/api/v1/auth/guest-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("INVALID_GUEST_TOKEN"));
+    }
 
     @Test
     void issuesGuestTokenWithoutLogin() throws Exception {
