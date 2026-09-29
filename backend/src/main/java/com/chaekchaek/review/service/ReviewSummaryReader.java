@@ -84,17 +84,39 @@ public class ReviewSummaryReader {
         long authorId = review.getActorId();
         boolean mine = currentActorId != null && authorId == currentActorId;
         if (review.isAnonymous()) {
-            return new AuthorResponse(null, profile.anonymousNickname(), null, true, mine, profile.actorType(),
-                    AuthorProfileStatus.UNAVAILABLE);
+            return new AuthorResponse(
+                    null,
+                    profile.anonymousNickname(),
+                    null,
+                    true,
+                    mine,
+                    profile.actorType(),
+                    AuthorProfileStatus.UNAVAILABLE
+            );
         }
-        boolean withdrawn = profile.accountStatus() == AccountStatus.WITHDRAWN;
-        boolean available = profile.accountStatus() == AccountStatus.ACTIVE;
-        String displayName = withdrawn ? "탈퇴한 사용자" : profile.displayName();
-        String profileImageUrl = withdrawn ? null : profile.profileImageUrl();
-        AuthorProfileStatus profileStatus = available
-                ? AuthorProfileStatus.AVAILABLE : AuthorProfileStatus.UNAVAILABLE;
-        return new AuthorResponse(available ? profile.memberId() : null, displayName, profileImageUrl, false, mine,
-                profile.actorType(), profileStatus);
+        String displayName = profile.displayName();
+        String profileImageUrl = profile.profileImageUrl();
+        if (profile.accountStatus() == AccountStatus.WITHDRAWN) {
+            displayName = "탈퇴한 사용자";
+            profileImageUrl = null;
+        }
+
+        Long memberId = null;
+        AuthorProfileStatus profileStatus = AuthorProfileStatus.UNAVAILABLE;
+        if (profile.accountStatus() == AccountStatus.ACTIVE) {
+            memberId = profile.memberId();
+            profileStatus = AuthorProfileStatus.AVAILABLE;
+        }
+
+        return new AuthorResponse(
+                memberId,
+                displayName,
+                profileImageUrl,
+                false,
+                mine,
+                profile.actorType(),
+                profileStatus
+        );
     }
 
     public record ReviewSummary(Review review, Book book, AuthorResponse author, long replyCount) {

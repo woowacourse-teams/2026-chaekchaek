@@ -37,8 +37,15 @@ class FeedServiceTest {
         FeedService service = new FeedService(reviewRepository, summaryReader);
         Review review = mock(Review.class);
         Book book = mock(Book.class);
-        AuthorResponse author = new AuthorResponse(1L, "독자", null, false, true,
-                ActorType.MEMBER, AuthorProfileStatus.AVAILABLE);
+        AuthorResponse author = new AuthorResponse(
+                1L,
+                "독자",
+                null,
+                false,
+                true,
+                ActorType.MEMBER,
+                AuthorProfileStatus.AVAILABLE
+        );
         when(review.getId()).thenReturn(123L);
         when(review.getContent()).thenReturn("스포일러 감상");
         when(review.isSpoiler()).thenReturn(true);

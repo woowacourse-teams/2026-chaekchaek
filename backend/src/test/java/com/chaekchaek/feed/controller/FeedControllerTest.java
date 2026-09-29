@@ -48,11 +48,27 @@ class FeedControllerTest {
     @DisplayName("전체 감상 피드의 페이지 요청과 응답을 문서화한다")
     void should_ReturnAndDocumentReviewPage_When_PageIsValid() throws Exception {
         // given
-        FeedReviewResponse review = new FeedReviewResponse(123L, "감상 내용", true,
+        AuthorResponse author = new AuthorResponse(
+                1L,
+                "독자",
+                null,
+                false,
+                false,
+                ActorType.MEMBER,
+                AuthorProfileStatus.AVAILABLE
+        );
+        FeedReviewResponse review = new FeedReviewResponse(
+                123L,
+                "감상 내용",
+                true,
                 Instant.parse("2026-09-28T10:00:00Z"),
-                new AuthorResponse(1L, "독자", null, false, false, ActorType.MEMBER,
-                        AuthorProfileStatus.AVAILABLE),
-                3L, 42L, "9788936433598", "도서 제목", "https://example.com/cover.jpg");
+                author,
+                3L,
+                42L,
+                "9788936433598",
+                "도서 제목",
+                "https://example.com/cover.jpg"
+        );
         when(feedService.getReviews(1)).thenReturn(new FeedReviewListResponse(41, 2, List.of(review)));
 
         // when & then

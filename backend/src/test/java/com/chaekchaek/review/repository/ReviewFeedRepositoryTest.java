@@ -116,11 +116,30 @@ class ReviewFeedRepositoryTest {
     }
 
     private Book book() {
-        return Book.create(new Isbn13("9788936433598"), "도서", "https://example.com/cover.jpg", null,
-                List.of("저자"), List.of(), "출판사", "소설", null, null);
+        return Book.create(
+                new Isbn13("9788936433598"),
+                "도서",
+                "https://example.com/cover.jpg",
+                null,
+                List.of("저자"),
+                List.of(),
+                "출판사",
+                "소설",
+                null,
+                null
+        );
     }
 
     private Review review(long bookId, String content, boolean spoiler) {
-        return Review.create(bookId, 1L, content, null, null, null, spoiler, false);
+        return Review.create(
+                bookId,
+                1L,
+                content,
+                null,
+                null,
+                null,
+                spoiler,
+                false
+        );
     }
 }
