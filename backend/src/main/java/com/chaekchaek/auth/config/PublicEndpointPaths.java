@@ -4,6 +4,7 @@ public final class PublicEndpointPaths {
 
     public static final String[] GET_ENDPOINTS = {
             "/api/v1/home/**",
+            "/api/v1/feed/reviews",
             "/api/v1/books",
             "/api/v1/books/**",
             "/api/v1/books/*/reviews",
