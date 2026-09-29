@@ -10,6 +10,8 @@ public record PublicLibraryItemResponse(
         String isbn13,
         String title,
         String coverImageUrl,
+        String spineImageUrl,
+        String backImageUrl,
         List<String> authors,
         List<String> translators,
         String publisher,
@@ -22,8 +24,23 @@ public record PublicLibraryItemResponse(
         BigDecimal rating
 ) {
     public static PublicLibraryItemResponse from(LibraryItemResponse item) {
-        return new PublicLibraryItemResponse(item.bookId(), item.isbn13(), item.title(), item.coverImageUrl(),
-                item.authors(), item.translators(), item.publisher(), item.category(), item.publishedDate(),
-                item.totalPages(), item.commentCount(), item.status(), item.currentPage(), item.rating());
+        return new PublicLibraryItemResponse(
+                item.bookId(),
+                item.isbn13(),
+                item.title(),
+                item.coverImageUrl(),
+                item.spineImageUrl(),
+                item.backImageUrl(),
+                item.authors(),
+                item.translators(),
+                item.publisher(),
+                item.category(),
+                item.publishedDate(),
+                item.totalPages(),
+                item.commentCount(),
+                item.status(),
+                item.currentPage(),
+                item.rating()
+        );
     }
 }
