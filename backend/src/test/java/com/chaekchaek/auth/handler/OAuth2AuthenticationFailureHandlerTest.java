@@ -8,10 +8,16 @@ import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
 import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 
+@ExtendWith(OutputCaptureExtension.class)
 class OAuth2AuthenticationFailureHandlerTest {
 
     @Test
@@ -44,5 +50,31 @@ class OAuth2AuthenticationFailureHandlerTest {
                         "http://localhost:3000/login"
                                 + "?error=OAUTH_LOGIN_FAILED"
                 );
+    }
+
+    @Test
+    @DisplayName("OAuth2 로그인에 실패하면 실패 원인을 경고로 기록한다")
+    void should_LogFailureReason_When_OAuth2LoginFails(CapturedOutput output)
+            throws Exception {
+        // given
+        OAuthFrontendRedirectResolver redirectResolver =
+                mock(OAuthFrontendRedirectResolver.class);
+        OAuth2AuthenticationFailureHandler handler =
+                new OAuth2AuthenticationFailureHandler(
+                        redirectResolver,
+                        mock(OAuthGuestContextService.class)
+                );
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        AuthenticationException exception =
+                new OAuth2AuthenticationException(new OAuth2Error("invalid_token"), "id token expired");
+        when(redirectResolver.resolveFailureUrl(request))
+                .thenReturn("http://localhost:3000/login?error=OAUTH_LOGIN_FAILED");
+
+        // when
+        handler.onAuthenticationFailure(request, new MockHttpServletResponse(), exception);
+
+        // then
+        assertThat(output)
+                .contains("OAuth2 login failed: exception=OAuth2AuthenticationException, message=id token expired");
     }
 }
