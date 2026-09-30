@@ -202,7 +202,7 @@ private val ChaekShapes = Shapes(
 @Composable
 fun ChaekchaekTheme(
     darkTheme: Boolean = false,
-    fontCandidate: ChaekFontCandidate = ChaekFontCandidate.NanumGothic,
+    fontCandidate: ChaekFontCandidate = ChaekFontCandidate.GowunDodum,
     content: @Composable () -> Unit,
 ) {
     val colors = if (darkTheme) DarkChaekColors else LightChaekColors

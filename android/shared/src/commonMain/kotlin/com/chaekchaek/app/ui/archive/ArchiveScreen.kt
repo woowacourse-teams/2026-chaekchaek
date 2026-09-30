@@ -22,23 +22,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.InputTransformation
-import androidx.compose.foundation.text.input.TextFieldLineLimits
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,9 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -66,12 +55,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chaekchaek.app.domain.shelf.ReadingStatus
-import com.chaekchaek.app.domain.reader.Nickname
-import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
+import com.chaekchaek.app.ui.common.ChaekOverlayButton
+import com.chaekchaek.app.ui.common.ChaekCloseButton
 import com.chaekchaek.app.ui.common.BrandHeader
 import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
@@ -153,7 +141,7 @@ fun ArchiveScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(top = if (editing) 0.dp else 70.dp),
             state = listState,
-            contentPadding = PaddingValues(bottom = if (editing) 88.dp else 12.dp),
+            contentPadding = PaddingValues(bottom = if (editing) 188.dp else 12.dp),
         ) {
             item {
                 if (editing) {
@@ -218,7 +206,7 @@ fun ArchiveScreen(
         if (showScrollTop) {
             ScrollTopButton(
                 onClick = { scope.launch { listState.animateScrollToItem(0) } },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = if (editing) 88.dp else 16.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = if (editing) 188.dp else 16.dp),
             )
         }
 
@@ -287,19 +275,12 @@ private fun LibraryTopBar(displayName: String, onProfileClick: () -> Unit, onEdi
 
 @Composable
 private fun EditTopBar(selectedCount: Int, onCancel: () -> Unit, onDone: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        TextButton(onClick = onCancel, contentPadding = PaddingValues(horizontal = 0.dp)) {
-            Text("취소", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+    Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("${selectedCount}권 선택", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+            ChaekCloseButton(onCancel)
         }
-        Text("${selectedCount}권 선택", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp))
-        Spacer(Modifier.weight(1f))
-        TextButton(onClick = onDone) {
-            Text("완료", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
-        }
-        Spacer(Modifier.width(44.dp))
+        ChaekOverlayButton("완료", onDone, secondary = true)
     }
 }
 
@@ -580,11 +561,10 @@ private fun EmptyLibrary() {
 
 @Composable
 private fun ArchiveError(message: String, onRetry: () -> Unit) {
-    Box(modifier = Modifier.fillMaxWidth().height(420.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(message, style = MaterialTheme.typography.titleMedium)
-            TextButton(onClick = onRetry) { Text("다시 시도") }
-        }
+    Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        Text("서재를 불러오지 못했어요", style = MaterialTheme.typography.titleMedium)
+        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        ChaekOverlayButton("다시 시도", onRetry)
     }
 }
 
@@ -624,196 +604,12 @@ private fun EditActionBar(
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        Column(
+            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            OutlinedButton(
-                onClick = onStatusChange,
-                modifier = Modifier.weight(1f).height(48.dp),
-                enabled = enabled,
-                shape = RoundedCornerShape(4.dp),
-            ) { Text("상태 변경") }
-            Button(
-                onClick = onDelete,
-                modifier = Modifier.weight(1f).height(48.dp),
-                enabled = enabled,
-                shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = MaterialTheme.colorScheme.surface,
-                ),
-            ) { Text("서재에서 삭제") }
+            ChaekOverlayButton("상태 변경", onStatusChange, enabled = enabled, secondary = true)
+            ChaekOverlayButton("서재에서 삭제", onDelete, enabled = enabled)
         }
-    }
-}
-
-@Composable
-private fun StatusChangeDialog(selectedCount: Int, onDismiss: () -> Unit, onChange: (ReadingStatus) -> Unit) {
-    var selected by rememberSaveable { mutableStateOf(ReadingStatus.READING) }
-    ChaekTwoActionDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("독서 상태 변경", style = MaterialTheme.typography.titleMedium) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    "선택한 ${selectedCount}권의 상태를 변경합니다.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Column(modifier = Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ReadingStatus.entries.forEach { status ->
-                        StatusOptionRow(status = status, selected = selected == status, onClick = { selected = status })
-                    }
-                }
-            }
-        },
-        dismissButton = { DialogDismissButton(onDismiss) },
-        confirmButton = { DialogConfirmButton(label = "변경", onClick = { onChange(selected) }) },
-    )
-}
-
-@Composable
-private fun DeleteConfirmationDialog(selectedCount: Int, onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    ChaekTwoActionDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("책 삭제", style = MaterialTheme.typography.titleMedium) },
-        text = {
-            Text(
-                "선택한 ${selectedCount}권을 서재에서 삭제할까요? 삭제한 책은 다시 복구할 수 없어요.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        },
-        dismissButton = { DialogDismissButton(onDismiss) },
-        confirmButton = { DialogConfirmButton(label = "삭제", onClick = onConfirm, destructive = true) },
-    )
-}
-
-@Composable
-private fun DialogDismissButton(onClick: () -> Unit) {
-    OutlinedButton(onClick = onClick, modifier = Modifier.height(48.dp), shape = RoundedCornerShape(6.dp)) {
-        Text("취소", style = MaterialTheme.typography.labelLarge)
-    }
-}
-
-@Composable
-private fun DialogConfirmButton(label: String, onClick: () -> Unit, enabled: Boolean = true, destructive: Boolean = false) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.height(48.dp),
-        enabled = enabled,
-        shape = RoundedCornerShape(6.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground,
-            contentColor = if (destructive) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.surface,
-        ),
-    ) {
-        Text(label, style = MaterialTheme.typography.labelLarge)
-    }
-}
-
-@Composable
-private fun StatusOptionRow(status: ReadingStatus, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().height(48.dp)
-            .background(
-                color = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                shape = RoundedCornerShape(8.dp),
-            )
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier.size(20.dp).background(MaterialTheme.colorScheme.surface, CircleShape)
-                .border(
-                    1.dp,
-                    if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
-                    CircleShape,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (selected) Box(Modifier.size(10.dp).background(MaterialTheme.colorScheme.onSurface, CircleShape))
-        }
-        Text(
-            status.label,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            ),
-        )
-    }
-}
-
-@Composable
-internal fun NicknameDialog(
-    nicknameState: TextFieldState,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    val nickname = nicknameState.text.toString()
-    ChaekTwoActionDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("닉네임 설정", style = MaterialTheme.typography.titleMedium) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    "기록과 감상에 표시할 닉네임이 필요해요.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                NicknameInput(nicknameState)
-                Text("공백이 아닌 최대 10자", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            }
-        },
-        dismissButton = { DialogDismissButton(onDismiss) },
-        confirmButton = {
-            DialogConfirmButton(
-                label = "확인",
-                onClick = onConfirm,
-                enabled = Nickname.isValid(nickname.trim()),
-            )
-        },
-    )
-}
-
-@Composable
-private fun NicknameInput(nicknameState: TextFieldState) {
-    val nickname = nicknameState.text.toString()
-    Row(
-        modifier = Modifier.fillMaxWidth().height(44.dp).background(MaterialTheme.colorScheme.surface, RoundedCornerShape(6.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp)).padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        BasicTextField(
-            state = nicknameState,
-            modifier = Modifier.weight(1f),
-            inputTransformation = InputTransformation.maxLength(Nickname.MAX_LENGTH),
-            lineLimits = TextFieldLineLimits.SingleLine,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 13.sp,
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-            decorator = { innerTextField ->
-                Box {
-                    if (nickname.isEmpty()) {
-                        Text(
-                            "닉네임을 입력하세요",
-                            color = MaterialTheme.colorScheme.outline,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                        )
-                    }
-                    innerTextField()
-                }
-            },
-        )
-        Text(
-            "${nickname.length}/10",
-            color = MaterialTheme.colorScheme.outline,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-        )
     }
 }

@@ -1,14 +1,11 @@
 package com.chaekchaek.app.ui.archive
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +13,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
@@ -29,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,19 +32,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
 import com.chaekchaek.app.ui.common.avatarResource
+import com.chaekchaek.app.ui.common.ChaekCloseButton
+import com.chaekchaek.app.ui.common.ChaekOverlayButton
+import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
+import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
+import com.chaekchaek.app.ui.theme.ChaekAccent
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
@@ -69,57 +68,41 @@ internal fun MyPageScreen(
     }
 
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(ChaekOverlayTokens.contentPadding),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
             MyPageTopBar(onBack)
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            Box(
+                Modifier.size(30.dp).background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                contentAlignment = Alignment.Center,
             ) {
-                MemberAvatar(state.publicNickname, 80.dp)
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        state.publicNickname,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    )
-                    Text(
-                        "공개 프로필",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
+                Text(state.publicNickname.take(1), style = MaterialTheme.typography.bodySmall, fontSize = 12.sp)
             }
+            Text(state.publicNickname, style = MaterialTheme.typography.titleLarge, fontSize = 23.sp)
+            Text("공개 프로필", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, fontSize = 13.sp)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SectionLabel("공개 설정")
-                AnonymousSetting(
-                    checked = state.anonymousReviews,
-                    nickname = state.nickname,
-                    onClick = {
-                        when {
-                            !state.anonymousReviews -> onAnonymousReviewsChange(true, "")
-                            state.nickname.isBlank() -> showNicknameDialog = true
-                            else -> onAnonymousReviewsChange(false, state.nickname)
-                        }
-                    },
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SectionLabel("계정 관리")
-                WithdrawalRow { showWithdrawalDialog = true }
-                state.withdrawalErrorMessage?.let {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            it,
-                            modifier = Modifier.weight(1f),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        TextButton(onClick = onWithdraw) { Text("다시 시도") }
+            SectionLabel("공개 설정")
+            AnonymousSetting(
+                checked = state.anonymousReviews,
+                nickname = state.nickname,
+                onClick = {
+                    when {
+                        !state.anonymousReviews -> onAnonymousReviewsChange(true, "")
+                        state.nickname.isBlank() -> showNicknameDialog = true
+                        else -> onAnonymousReviewsChange(false, state.nickname)
                     }
+                },
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            SectionLabel("계정 관리")
+            if (state.withdrawalErrorMessage != null) {
+                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = ChaekOverlayTokens.cardShape) {
+                    Text(state.withdrawalErrorMessage, Modifier.fillMaxWidth().padding(12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
+                ChaekOverlayButton("다시 시도", onWithdraw, enabled = !state.withdrawing)
+            } else {
+                WithdrawalRow { showWithdrawalDialog = true }
             }
         }
         if (state.showLoading || state.withdrawing) {
@@ -155,110 +138,53 @@ internal fun MyPageScreen(
 
 @Composable
 private fun MyPageTopBar(onBack: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        TextButton(
-            onClick = onBack,
-            modifier = Modifier.size(44.dp),
-            contentPadding = PaddingValues(0.dp),
-        ) {
-            Text(
-                "‹",
-                modifier = Modifier.clearAndSetSemantics { contentDescription = "뒤로가기" },
-                style = MaterialTheme.typography.titleLarge,
-            )
-        }
-        Text("마이페이지", style = MaterialTheme.typography.headlineSmall)
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text("마이페이지", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontSize = 21.sp)
+        ChaekCloseButton(onBack)
     }
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 }
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+    Text(text, style = MaterialTheme.typography.labelMedium, fontSize = 12.sp)
 }
 
 @Composable
 private fun AnonymousSetting(checked: Boolean, nickname: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp)
-            .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onClick() })
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier.size(20.dp).background(
-                if (checked) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.surface,
-                RoundedCornerShape(4.dp),
-            ),
-            contentAlignment = Alignment.Center,
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                .clip(ChaekOverlayTokens.inputShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onClick() })
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (checked) {
-                val checkColor = MaterialTheme.colorScheme.surface
-                Canvas(Modifier.size(12.dp)) {
-                    drawLine(
-                        checkColor,
-                        Offset(0f, size.height * 0.55f),
-                        Offset(size.width * 0.35f, size.height),
-                        2.dp.toPx(),
-                        StrokeCap.Round,
-                    )
-                    drawLine(
-                        checkColor,
-                        Offset(size.width * 0.35f, size.height),
-                        Offset(size.width, 0f),
-                        2.dp.toPx(),
-                        StrokeCap.Round,
-                    )
-                }
-            }
+            Text(if (checked) "●" else "○", color = if (checked) ChaekAccent else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontFamily = ChaekIconFontFamily(), fontSize = 20.sp,
+                modifier = Modifier.clearAndSetSemantics {})
+            Text("익명으로 감상 공개", style = MaterialTheme.typography.bodySmall, fontSize = 14.sp)
         }
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("익명으로 감상 공개", style = MaterialTheme.typography.titleSmall)
-            Text(
-                when {
-                    checked && nickname.isNotBlank() -> "해제하면 기존 닉네임으로 공개됩니다"
-                    checked -> "해제하면 닉네임을 설정해야 합니다"
-                    else -> "닉네임이 감상에 표시됩니다"
-                },
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
+        Text(
+            when {
+                checked && nickname.isNotBlank() -> "해제하면 기존 닉네임으로 공개됩니다"
+                checked -> "해제하면 닉네임을 설정해야 합니다"
+                else -> "닉네임이 감상에 표시됩니다"
+            },
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+            fontSize = 13.sp,
+        )
     }
 }
 
 @Composable
 private fun WithdrawalRow(onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(role = Role.Button, onClick = onClick)
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            "⌫",
-            modifier = Modifier.clearAndSetSemantics {},
-            color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.titleLarge,
-        )
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("회원 탈퇴", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.titleMedium)
-            Text(
-                "계정과 관련 데이터가 삭제됩니다",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-        Text(
-            "›",
-            modifier = Modifier.clearAndSetSemantics {},
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.titleLarge,
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        ChaekOverlayButton("회원 탈퇴", onClick, secondary = true)
+        Text("계정과 관련 데이터가 삭제됩니다", color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall, fontSize = 13.sp)
     }
 }
 
