@@ -8,7 +8,6 @@ public record FeedReviewResponse(
         long reviewId,
         String content,
         String quote,
-        String chapter,
         Integer currentPage,
         boolean isSpoiler,
         Instant createdAt,
