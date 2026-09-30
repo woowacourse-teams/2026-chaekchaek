@@ -42,12 +42,16 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
   PR 생성 승인으로 간주하지 않는다.
 - 이슈와 PR 생성 승인은 전역 `AGENTS.md`의 `슛` 규칙을 따른다.
 
-## Pencil 디자인 파일 SSOT
+## 디자인 원본과 디자인 시스템
 
-- Pencil 디자인의 단일 원본은 `/Users/ujeonghyeon/Downloads/designs.pen`이다.
-- Pencil 조회와 편집은 항상 이 파일을 대상으로 한다.
-- 저장소 루트나 다른 경로에 `designs.pen` 복사본을 만들거나 동기화하지 않는다.
-- `designs.pen`은 Git으로 추적하거나 PR에 포함하지 않는다.
+- 현재 UI 디자인 원본은 [책췍 Figma](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr)이며, 이번 작업에서 사용자가 지정한 최신 승인 화면을 우선한답니다.
+- 공통 스타일과 컴포넌트는 [책췍 · 디자인 시스템](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=901-300)을 기준으로 사용한답니다.
+- 일반 텍스트는 Gowun Dodum Regular, 문자로 표현한 아이콘은 Pretendard를 사용한답니다. 벡터 아이콘을 글꼴 변경 대상으로 취급하지 않으며, 공급업체 네이티브 로그인 컨트롤은 해당 공급업체 규격을 유지한답니다.
+- 색상·간격·모서리·타이포그래피는 Figma의 책췍 / Primitives, Semantic, Layout, Typography 변수와 책췍/ 스타일을 재사용한답니다. 기존 컴포넌트의 인스턴스와 상태 변형을 먼저 사용하고, 반복되는 새 요소는 공통 컴포넌트로 추가한답니다.
+- 탐색 구조는 홈·피드·발견·내 서재 4탭이며, 최신 Figma 기준이 과거 가이드의 3탭·시스템 글꼴·주황 활성 표시점 지침보다 우선한답니다.
+- [추가 화면 재디자인](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=913-2)은 기존 미반영 화면과 팝업의 후속 시안이랍니다. Figma 시안 제작을 앱 구현 완료로 간주하지 않으며, 실제 반영 시 원본 노드·상태·플랫폼·뷰포트를 명시하고 캡처로 검증한답니다.
+- Pencil과 designs.pen은 과거 이력이며 현재 원본이나 구현 게이트로 사용하지 않는답니다. 기존 로컬 핸드오프와 충돌하면 사용자가 지정한 최신 승인 산출물을 우선한답니다.
+- 외부 디자인 도구 반영은 사용자가 지정한 순서와 승인 범위에 맞춰 수행한답니다.
 
 ## 문서 규칙
 
