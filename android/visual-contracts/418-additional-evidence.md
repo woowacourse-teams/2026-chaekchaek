@@ -26,7 +26,7 @@
 
 감상 제출은 기존 BookDetailInputRules를 사용하므로 공백 제출, 1000자 제한, 쪽수 범위, 스포일러와 초안 취소 조건을 유지한답니다. 필수 안내는 초기 안내이며 오류로 표시하지 않는답니다. 닉네임은 기존 Nickname 검증과 최대 10자 입력을 유지한답니다. 익명 해제, 실제 회원 탈퇴, 삭제와 저장 콜백은 기존 호출부를 유지한답니다.
 
-평점은 Rating의 0.5-5.0 범위와 반점 단위를 유지한답니다. 별 좌우 절반 선택 외에 48dp 감소/증가 버튼을 추가했고 경계에서는 해당 버튼을 비활성화한답니다. 비교 기록은 BookDetailViewModel의 listOfNotNull(lower, current, higher)라 최대 세 작품이며, 실제 0/1/2개 기록에 예시를 채우지 않는답니다. 별 자산은 Figma 932:187에서 내려받은 56px PNG를 Compose 리소스로 보존했답니다.
+평점은 Rating의 0.5-5.0 범위와 반점 단위를 유지한답니다. 별 좌우 절반 선택 외에 48dp 감소/증가 버튼을 추가했고 경계에서는 해당 버튼을 비활성화한답니다. 비교 기록은 BookDetailViewModel의 listOfNotNull(lower, current, higher)라 최대 세 작품이며, 실제 0/1/2개 기록에 예시를 채우지 않는답니다. 별 자산은 Figma 932:189의 채워진 별 벡터를 SVG 원본으로 보존하고, Android에서 표시할 투명 PNG로 변환했답니다. 처음 받은 932:187 프레임 PNG는 불투명한 흰 배경 때문에 Icon tint 적용 시 사각형으로 표시되어 교체했답니다. 최종 PNG의 알파 범위는 0-255이며 원본 벡터의 형태와 색상을 유지했답니다.
 
 Android GoogleSignInButton actual은 Unit이므로 기존 Android 검은 fallback을 유지한답니다. 공급업체 내부 스타일을 재구현하지 않았고 로그인 콜백과 signingIn 비활성화를 유지한답니다.
 
