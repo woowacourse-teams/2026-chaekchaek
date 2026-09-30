@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
+import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.common.avatarResource
 import com.chaekchaek.app.ui.common.ChaekCloseButton
 import com.chaekchaek.app.ui.common.ChaekOverlayButton
@@ -194,16 +195,8 @@ private fun WithdrawalDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text("회원 탈퇴") },
         text = { Text("탈퇴하면 계정과 관련 데이터가 삭제되며 되돌릴 수 없습니다. 정말 탈퇴할까요?") },
-        dismissButton = {
-            OutlinedButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text("취소") }
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                modifier = Modifier.heightIn(min = 48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            ) { Text("탈퇴하기") }
-        },
+        dismissButton = { ChaekOverlayButton("취소", onDismiss, secondary = true) },
+        confirmButton = { ChaekOverlayButton("탈퇴하기", onConfirm) },
     )
 }
 
