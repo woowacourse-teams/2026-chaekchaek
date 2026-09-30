@@ -49,13 +49,19 @@ public class FeedService {
         return new FeedReviewResponse(
                 review.getId(),
                 review.getContent(),
+                review.getQuote(),
+                review.getChapter(),
+                review.getCurrentPage(),
                 review.isSpoiler(),
                 review.getCreatedAt(),
                 summary.author(),
+                summary.likeCount(),
+                summary.likedByMe(),
                 summary.replyCount(),
                 book.getId(),
                 book.getIsbn13().value(),
                 book.getTitle(),
+                book.getAuthors(),
                 book.getCoverImageUrl()
         );
     }
