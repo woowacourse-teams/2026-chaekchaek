@@ -14,21 +14,24 @@
   "display_restore": "original override480 restored; physical size unchanged",
   "privacy_review": "No email/account credentials/tokens visible. Public profile and public review nicknames retained. Typed text is temporary test draft.",
   "verification": {
-    "rating": "fixed transparent original stars;4.0->3.5->4.0 by minus/plus; no save",
+    "rating": "e7e37941 APK: enlarged stars in360dp initial4.0 and decrement3.5 observed; initial comparison2cards, halfstep captured temporary empty comparison; no save; increment recheck not established in this build. Final5aeb787d168px asset APK: installed hash verified but rating action gated by login; rating runtime capture blocked.",
     "review360": "required guidance; empty submit visually disabled; temporary nonblank TTeem5characters submit visually enabled; keyboard; discard confirmation and discard",
     "review320": "empty required guidance + vertically scrollable sheet; optional quote Test typed with keyboard. Required content remained0/1000; does not verify320 submit enabled",
     "page360": "999 exceeds total260pages; invalid guidance; save visually disabled; cancelled",
     "library360": "one existing book selected; status dialog opened then cancelled; delete confirmation opened then cancelled",
-    "profile360": "public profile no email; withdrawal confirmation opened then cancelled"
+    "profile360": "public profile no email; withdrawal confirmation opened then cancelled",
+    "login360": "Final5aeb787d public book detail displays login-required sheet with Google button; sheet dismissed without authentication"
   },
   "unverified": [
     "iOS excluded",
     "Figma pixel matching/source collector failed elsewhere; these are runtime evidence only",
-    "Nickname dialog, provider login controls, actual authentication",
+    "Nickname dialog and actual provider authentication",
     "Saving ratings/reviews/pages, changing server reading state, deleting books/reviews/accounts",
     "Long1000character input, all network failures and empty archive states",
-    "Three populated rating comparison cards: existing account had only2 records",
-    "320dp submit enabled and other320 states beyond included screenshots"
+    "320dp submit enabled and other320 states beyond included screenshots",
+    "Latest5aeb787d rating runtime blocked by login gate",
+    "320dp latest enlarged rating capture blocked by ANR and subsequent login gate; no valid rating320 screenshot retained",
+    "Three populated comparison cards: earlier signed-in initial360capture had2records; other captures showed temporary empty comparison"
   ],
   "screenshots": [
     {
@@ -97,43 +100,30 @@
       "observation": "uiautomator anchors and screenshot visual inspection"
     },
     {
-      "file": "rating-320.png",
-      "source_commit": "ed3e4033",
-      "apk_sha256": "ca157936b3c19aee2a40511cf3ed44a85742604bfa812c759d193d22cc929f7a",
-      "pixels": [
-        1080,
-        2400
-      ],
-      "width_dp": 320,
-      "density": 540,
-      "sha256": "c7b3b208cb2d7ea3faee3b0d984f55464be24e47cd0944ea127b901b4cc3a9e6",
-      "observation": "direct screenshot visual inspection"
-    },
-    {
       "file": "rating-halfstep-360.png",
-      "source_commit": "ed3e4033",
-      "apk_sha256": "ca157936b3c19aee2a40511cf3ed44a85742604bfa812c759d193d22cc929f7a",
+      "source_commit": "e7e37941",
+      "apk_sha256": "05c148024a9476f34e715734713f13516be3912a42ddb717f1a4181e73faf495",
       "pixels": [
         1080,
         2400
       ],
       "width_dp": 360,
       "density": 480,
-      "sha256": "f48a25398e08714367c5946ad17bd2ac3ab759660f10e618a4790db662345780",
-      "observation": "direct screenshot visual inspection"
+      "sha256": "020d753559bf9206290b830491883e59a7a32b0c37f3ed99f6ae0c8c369c96c6",
+      "observation": "direct screenshot inspection; enlarged original56dp frame constrained by row;4.0 initial and3.5 halfstep visible"
     },
     {
       "file": "rating-initial-360.png",
-      "source_commit": "ed3e4033",
-      "apk_sha256": "ca157936b3c19aee2a40511cf3ed44a85742604bfa812c759d193d22cc929f7a",
+      "source_commit": "e7e37941",
+      "apk_sha256": "05c148024a9476f34e715734713f13516be3912a42ddb717f1a4181e73faf495",
       "pixels": [
         1080,
         2400
       ],
       "width_dp": 360,
       "density": 480,
-      "sha256": "e2122696c6102ab0861b566888f335d01b78eac77b512d975608e23d18bceffa",
-      "observation": "direct screenshot visual inspection"
+      "sha256": "77cd1c5cf4ef6a15aade49dd2ec4f861e55d5101c38a270826bf32035f6884fa",
+      "observation": "direct screenshot inspection; enlarged original56dp frame constrained by row;4.0 initial and3.5 halfstep visible"
     },
     {
       "file": "review-discard-360.png",
@@ -225,6 +215,31 @@
       "density": 480,
       "sha256": "7b52250eb1a22ab36e49965dfcc241b43fbfb203c6cd01d311f11f14f652847a",
       "observation": "uiautomator anchors and screenshot visual inspection"
+    },
+    {
+      "file": "login-required-360.png",
+      "source_commit": "5aeb787d",
+      "apk_sha256": "155a8db8a74d7b968d5ea42ebb2ef8d0ad9f4cdad992a97053f0141400e4529a",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "28dff2f6359f17052ef5bcec7d81e20343f707c86d2b9a2854c48fdf5c6e8ce1",
+      "observation": "Public discover book detail rating action opened login-required sheet; Google provider button visible; authentication not attempted"
     }
-  ]
+  ],
+  "rating_geometry": {
+    "source_commit": "e7e37941",
+    "first_star_orange_height_px": 131,
+    "height_dp": 43.67,
+    "observation": "Thresholded opaque-orange bbox, excluding antialias pixels; framed at56dp, constrained by equal-width5-star row"
+  },
+  "runtime_limits": {
+    "density_recreation": "e7e37941 while switching360to320 caused Android ANR: Input dispatching timed out,5064ms FocusEvent. Cause unknown. Blank rating320 image rejected and removed. Original density480 restored.",
+    "final_session": "After force-stop/restart and final5aeb787d install, archive showed0books and rating action showed login gate. No app data clear/uninstall/logout/auth/server writes performed. Cause of session change unknown.",
+    "latest_apk_hash": "155a8db8a74d7b968d5ea42ebb2ef8d0ad9f4cdad992a97053f0141400e4529a",
+    "latest_apk_source_commit": "5aeb787d"
+  }
 }
