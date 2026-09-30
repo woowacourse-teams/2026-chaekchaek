@@ -57,7 +57,8 @@ class FeedServiceTest {
         when(book.getCoverImageUrl()).thenReturn("https://example.com/cover.jpg");
         when(reviewRepository.findFeedReviews(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(review), PageRequest.of(0, 20), 21));
-        when(summaryReader.read(List.of(review))).thenReturn(List.of(new ReviewSummary(review, book, author, 3)));
+        when(summaryReader.read(List.of(review)))
+                .thenReturn(List.of(new ReviewSummary(review, book, author, 3, 0, false)));
 
         // when
         FeedReviewListResponse result = service.getReviews(1);

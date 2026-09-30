@@ -19,6 +19,7 @@ import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
 import com.chaekchaek.review.repository.ReplyRepository;
+import com.chaekchaek.review.repository.ReviewReactionRepository;
 import com.chaekchaek.review.repository.ReviewRepository;
 import com.chaekchaek.review.service.ReviewSummaryReader;
 import java.time.Instant;
@@ -75,7 +76,7 @@ class HomeServiceTest {
         when(reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc())
                 .thenReturn(List.of(latestReview, previousReview));
         when(replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(101L, 100L))).thenReturn(replyCounts);
-        when(bookRepository.findAllById(List.of(2L, 1L))).thenReturn(books);
+        when(bookRepository.findAllWithAuthorsByIdIn(List.of(2L, 1L))).thenReturn(books);
 
         // when
         List<LatestReviewResponse> result = homeService.getLatestReviews().reviews();
@@ -108,7 +109,7 @@ class HomeServiceTest {
         when(reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc())
                 .thenReturn(List.of(review));
         when(replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(100L))).thenReturn(List.of());
-        when(bookRepository.findAllById(List.of(1L))).thenReturn(List.of(book));
+        when(bookRepository.findAllWithAuthorsByIdIn(List.of(1L))).thenReturn(List.of(book));
         when(reviewMemberReader.findByActorIds(List.of(1L))).thenReturn(Map.of(
                 1L, new ReviewMemberProfile(
                         101L,
@@ -122,6 +123,7 @@ class HomeServiceTest {
         ));
         ReviewSummaryReader summaryReader = new ReviewSummaryReader(
                 replyRepository,
+                mock(ReviewReactionRepository.class),
                 bookRepository,
                 currentActorProvider,
                 reviewMemberReader
@@ -162,6 +164,7 @@ class HomeServiceTest {
         ));
         ReviewSummaryReader summaryReader = new ReviewSummaryReader(
                 replyRepository,
+                mock(ReviewReactionRepository.class),
                 bookRepository,
                 currentActorProvider,
                 reviewMemberReader
