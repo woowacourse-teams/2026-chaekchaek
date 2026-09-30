@@ -107,6 +107,7 @@ jobs:
           YES24_API_KEY: ${{ secrets.YES24_API_KEY }}
           AUTH_COOKIE_SECURE: "true"
           AUTH_COOKIE_SAME_SITE: "None"
+          LOGGING_STRUCTURED_FORMAT_CONSOLE: "logstash"
 
         run: |
           set -euo pipefail
@@ -140,7 +141,8 @@ jobs:
                 "ALADIN_TTB_KEY=$ALADIN_TTB_KEY" \
                 "YES24_API_KEY=$YES24_API_KEY" \
                 "AUTH_COOKIE_SECURE=$AUTH_COOKIE_SECURE" \
-                "AUTH_COOKIE_SAME_SITE=$AUTH_COOKIE_SAME_SITE"
+                "AUTH_COOKIE_SAME_SITE=$AUTH_COOKIE_SAME_SITE" \
+                "LOGGING_STRUCTURED_FORMAT_CONSOLE=$LOGGING_STRUCTURED_FORMAT_CONSOLE"
               ) \
               "$BACKEND_IMAGE"
 
