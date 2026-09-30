@@ -160,10 +160,10 @@ private fun RatingSelector(selected: Rating, onSelect: (Rating) -> Unit) {
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(painterResource(Res.drawable.rating_star_filled), null,
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 56.dp), tint = ChaekBorderSoft)
+                    modifier = Modifier.size(56.dp), tint = ChaekBorderSoft)
                 if (filledHalfStars > 0) {
                     Icon(painterResource(Res.drawable.rating_star_filled), null,
-                        modifier = Modifier.fillMaxWidth().heightIn(max = 56.dp).drawWithContent {
+                        modifier = Modifier.size(56.dp).drawWithContent {
                             clipRect(right = size.width * filledHalfStars / 2f) { this@drawWithContent.drawContent() }
                         }, tint = ChaekAccent)
                 }
