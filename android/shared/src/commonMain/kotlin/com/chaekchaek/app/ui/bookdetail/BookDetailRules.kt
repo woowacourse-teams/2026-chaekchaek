@@ -14,11 +14,16 @@ internal const val API_LOADING_DELAY_MILLIS = 500L
 internal fun averageRatingInTenths(averageRating: Double): Int =
     (averageRating.coerceIn(0.0, 5.0) * 10).roundToInt()
 
-internal fun reviewMetadata(createdAt: String, currentPage: Int?): String =
-    listOfNotNull(
-        createdAt.take(10).replace('-', '.'),
-        currentPage?.let { "p.${it}까지" },
-    ).joinToString(" · ")
+internal data class ReviewMetadata(
+    val dateLabel: String,
+    val progressLabel: String?,
+)
+
+internal fun reviewMetadata(createdAt: String, currentPage: Int?): ReviewMetadata =
+    ReviewMetadata(
+        dateLabel = createdAt.take(10).replace('-', '.'),
+        progressLabel = currentPage?.let { "p.${it}까지" },
+    )
 
 internal object BookDetailInputRules {
     const val MAX_CONTENT_LENGTH = 1000

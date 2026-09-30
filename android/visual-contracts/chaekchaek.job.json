@@ -1,0 +1,160 @@
+{
+  "schema": 1,
+  "id": "chaekchaek-approved-ui",
+  "implementation_root": "..",
+  "implementation_inputs": [
+    "shared/src/**/*",
+    "app/src/**/*",
+    "gradle/**/*",
+    "*.kts",
+    "shared/*.kts",
+    "app/*.kts",
+    "gradle.properties"
+  ],
+  "sources": [
+    {
+      "id": "approved",
+      "identity": "tn59Thk2GRcVLkzoO8k9Sr",
+      "path": "../build/design-guard/source.json",
+      "roots": [
+        "805:2",
+        "807:2",
+        "808:2",
+        "809:2",
+        "803:2"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "home-loaded-320",
+      "source": "approved",
+      "root": "805:2",
+      "state": "loaded",
+      "viewport": {
+        "width": 320,
+        "unit": "dp"
+      },
+      "reference": "references/home.png"
+    },
+    {
+      "id": "home-loaded-390",
+      "source": "approved",
+      "root": "805:2",
+      "state": "loaded",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/home.png"
+    },
+    {
+      "id": "feed-loaded-320",
+      "source": "approved",
+      "root": "807:2",
+      "state": "loaded",
+      "viewport": {
+        "width": 320,
+        "unit": "dp"
+      },
+      "reference": "references/feed.png"
+    },
+    {
+      "id": "feed-loaded-390",
+      "source": "approved",
+      "root": "807:2",
+      "state": "loaded",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/feed.png"
+    },
+    {
+      "id": "discover-loaded-320",
+      "source": "approved",
+      "root": "808:2",
+      "state": "loaded",
+      "viewport": {
+        "width": 320,
+        "unit": "dp"
+      },
+      "reference": "references/discover.png"
+    },
+    {
+      "id": "discover-loaded-390",
+      "source": "approved",
+      "root": "808:2",
+      "state": "loaded",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/discover.png"
+    },
+    {
+      "id": "library-populated-320",
+      "source": "approved",
+      "root": "809:2",
+      "state": "populated",
+      "viewport": {
+        "width": 320,
+        "unit": "dp"
+      },
+      "reference": "references/library.png"
+    },
+    {
+      "id": "library-populated-390",
+      "source": "approved",
+      "root": "809:2",
+      "state": "populated",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/library.png"
+    },
+    {
+      "id": "detail-loaded-320",
+      "source": "approved",
+      "root": "803:2",
+      "state": "loaded",
+      "viewport": {
+        "width": 320,
+        "unit": "dp"
+      },
+      "reference": "references/detail.png"
+    },
+    {
+      "id": "detail-loaded-390",
+      "source": "approved",
+      "root": "803:2",
+      "state": "loaded",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/detail.png"
+    }
+  ],
+  "reviews": "../build/design-guard/reviews.json",
+  "output": "../build/design-guard/report.json",
+  "unresolved": [
+    {
+      "id": "additional-state-coverage",
+      "reason": "홈 선택 카드, 피드/발견/서재/상세 스크롤, 상세 스포일러 상태의 시나리오와 근거 보충 필요"
+    },
+    {
+      "id": "review-menu-source",
+      "reason": "감상 메뉴가 열린 상태의 승인 원본과 본인/타인 감상 검증 필요"
+    },
+    {
+      "id": "alternate-state-sources",
+      "reason": "홈 읽는 중/빈 상태 및 내 서재 빈 상태의 원본과 별도 시나리오 보충 필요"
+    },
+    {
+      "id": "reference-freshness",
+      "reason": "기존 참조 PNG와 새 속성 원본의 동일 버전 여부 시각 확인 필요"
+    }
+  ]
+}

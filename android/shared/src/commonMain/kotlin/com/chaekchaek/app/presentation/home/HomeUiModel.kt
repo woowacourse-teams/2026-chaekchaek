@@ -24,7 +24,8 @@ data class TrendingBookUiModel(
     val bookId: BookId,
     val title: String,
     val coverId: String,
-    val statsLabel: String,
+    val noteCountLabel: String,
+    val replyCountLabel: String,
     val isbn13: String = "",
 )
 
@@ -34,8 +35,8 @@ data class QuoteCardUiModel(
     val isbn13: String = "",
     val bookTitle: String,
     val coverId: String,
-    val authorLabel: String,
     val authorName: String,
+    val timeLabel: String,
     val quoteText: String,
     val replyLabel: String,
 )
@@ -45,8 +46,8 @@ data class OverlappedCardUiModel(
     val title: String,
     val coverId: String,
     val noteCountLabel: String,
-    val authorLabel: String,
     val authorName: String,
+    val timeLabel: String,
     val excerpt: String,
     val replyLabel: String,
 )
@@ -66,10 +67,9 @@ internal object HomeLabels {
 
     fun trendingMore(totalCount: Int): String = "지금 인기 책들 +$totalCount"
 
-    fun trendingStats(noteCount: Int, replyCount: Int): String =
-        "감상 $noteCount · 댓글 $replyCount"
+    fun trendingNoteCount(noteCount: Int): String = "감상 $noteCount"
 
-    fun author(authorLabel: String, timeLabel: String): String = "$authorLabel · $timeLabel"
+    fun trendingReplyCount(replyCount: Int): String = "댓글 $replyCount"
 
     fun quoteReply(replyCount: Int): String = "답글 $replyCount"
 

@@ -30,6 +30,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -96,6 +97,7 @@ import chaekchaek.shared.generated.resources.ic_heart_filled
 import chaekchaek.shared.generated.resources.ic_heart_outline
 import chaekchaek.shared.generated.resources.ic_pencil
 import chaekchaek.shared.generated.resources.ic_star
+import chaekchaek.shared.generated.resources.mascot_outline_b
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
@@ -111,9 +113,11 @@ import com.chaekchaek.app.ui.theme.ChaekBand
 import com.chaekchaek.app.ui.theme.ChaekBorder
 import com.chaekchaek.app.ui.theme.ChaekBorderSoft
 import com.chaekchaek.app.ui.theme.ChaekInk
+import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import com.chaekchaek.app.ui.theme.ChaekSurface
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
+import com.chaekchaek.app.ui.theme.detailBookShadow
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -213,12 +217,13 @@ fun BookDetailScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             state = listState,
-            contentPadding = PaddingValues(bottom = 82.dp),
+            contentPadding = PaddingValues(bottom = 100.dp),
         ) {
             item {
-                ArchiveStage(
+                BookHero(
                     book = book,
                     saved = savedToLibrary,
+                    averageRating = state.detail?.averageRating,
                     onBack = onBack,
                     onLibraryClick = {
                         authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onToggleLibrary)
@@ -226,7 +231,6 @@ fun BookDetailScreen(
                     coverContent = coverContent,
                 )
             }
-            item { BookSummary(book, state.detail?.averageRating) }
             item {
                 ReadingRecord(
                     book = book,
@@ -243,7 +247,7 @@ fun BookDetailScreen(
                     },
                 )
             }
-            item { Box(Modifier.fillMaxWidth().height(6.dp).background(ChaekBand)) }
+            item { Spacer(Modifier.height(23.dp)) }
             item {
                 ReviewsSection(
                     reviews = state.reviews,
@@ -292,7 +296,7 @@ fun BookDetailScreen(
                     onReviewOpen { showReviewSheet = true }
                 }
             },
-            modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 10.dp),
+            modifier = Modifier.align(Alignment.BottomCenter).padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 16.dp),
         )
 
         if (showScrollTop) {
@@ -425,6 +429,118 @@ fun BookDetailScreen(
 }
 
 @Composable
+private fun BookHero(
+    book: BookDetailArgs,
+    saved: Boolean,
+    averageRating: Double?,
+    onBack: () -> Unit,
+    onLibraryClick: () -> Unit,
+    coverContent: (@Composable (BookDetailArgs, Modifier) -> Unit)?,
+) {
+    Column(modifier = Modifier.fillMaxWidth().background(ChaekSurface)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(44.dp).clickable(role = Role.Button, onClick = onBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(painterResource(Res.drawable.ic_back), "뒤로 가기", Modifier.size(21.dp), tint = ChaekInk)
+            }
+            Spacer(Modifier.weight(1f))
+            Image(
+                painter = painterResource(Res.drawable.mascot_outline_b),
+                contentDescription = null,
+                modifier = Modifier.size(34.dp),
+                contentScale = ContentScale.Fit,
+            )
+            Text(
+                "책췍",
+                modifier = Modifier.padding(start = 7.dp),
+                fontSize = 16.sp,
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+            Spacer(Modifier.weight(1f))
+            Box(
+                modifier = Modifier.size(44.dp).clickable(role = Role.Button, onClick = onLibraryClick)
+                    .semantics { contentDescription = if (saved) "서재에서 삭제" else "서재에 추가" },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painterResource(Res.drawable.ic_bookmark),
+                    contentDescription = null,
+                    modifier = Modifier.size(21.dp),
+                    tint = if (saved) ChaekAccent else ChaekInk,
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 18.dp, bottom = 27.dp),
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            val coverModifier = Modifier.size(width = 105.dp, height = 150.dp).detailBookShadow().clip(RoundedCornerShape(2.dp))
+            if (coverContent == null) BookCover(book, coverModifier) else coverContent(book, coverModifier)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    book.title,
+                    fontSize = 23.sp,
+                    lineHeight = 29.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    book.creator.ifBlank { "저자 정보 없음" },
+                    modifier = Modifier.padding(top = 10.dp),
+                    color = ChaekInkSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 20.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                val primaryMetadata = listOf(book.publisher, book.category).filter(String::isNotBlank)
+                val secondaryMetadata = listOf(book.year, book.totalPages.takeIf { it > 0 }?.let { "${it}쪽" }.orEmpty())
+                    .filter(String::isNotBlank)
+                Column(modifier = Modifier.padding(top = 5.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    BookMetadataRow(primaryMetadata)
+                    BookMetadataRow(secondaryMetadata, secondary = true)
+                }
+                Row(modifier = Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(painterResource(Res.drawable.ic_star), null, Modifier.size(13.dp), tint = ChaekAccent)
+                    Text(
+                        averageRating?.let { " ${averageRatingInTenths(it) / 10.0}" } ?: " 평가 없음",
+                        fontSize = 13.sp,
+                        lineHeight = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text("  평균 별점", color = ChaekInkSecondary, fontSize = 11.sp, lineHeight = 14.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BookMetadataRow(items: List<String>, secondary: Boolean = false) {
+    if (items.isEmpty()) return
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        items.forEachIndexed { index, item ->
+            Text(
+                item,
+                color = ChaekInkSecondary.copy(alpha = if (secondary || index > 0) 0.7f else 1f),
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
 private fun RequestLoadingOverlay(modifier: Modifier = Modifier) {
     val interactionSource = remember { MutableInteractionSource() }
     Box(
@@ -492,16 +608,6 @@ private fun ArchiveStage(
                 )
             }
         }
-        Text(
-            "SURVIVAL\nSTORIES\n2026",
-            modifier = Modifier.offset(16.dp, 78.dp),
-            color = ChaekAccent,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 11.sp,
-            lineHeight = 13.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.5.sp,
-        )
         Box(
             modifier = Modifier.align(Alignment.Center).offset(y = 5.dp).size(width = 164.dp, height = 217.dp)
                 .background(ArchiveStageForeground).border(1.dp, ArchiveStageForeground)
@@ -510,20 +616,6 @@ private fun ArchiveStage(
         ) {
             val coverModifier = Modifier.size(width = 130.dp, height = 194.dp)
             if (coverContent == null) BookCover(book, coverModifier) else coverContent(book, coverModifier)
-        }
-        Surface(
-            modifier = Modifier.align(Alignment.BottomEnd).offset((-28).dp, (-22).dp),
-            shape = RoundedCornerShape(4.dp),
-            color = Color.Transparent,
-            border = BorderStroke(3.dp, ChaekAccent),
-        ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text("MOST READ", color = ChaekAccent, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                Text("30 NOTES / TODAY", color = ChaekAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            }
         }
     }
 }
@@ -626,7 +718,7 @@ private fun AverageRatingChip(averageRating: Double?) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box {
-                Text("★★★★★", color = ChaekBorderSoft, fontSize = 15.sp)
+                Text("★★★★★", color = ChaekBorderSoft, fontSize = 15.sp, fontFamily = ChaekIconFontFamily())
                 ratingTenths?.let { tenths ->
                     Text(
                         "★★★★★",
@@ -637,6 +729,7 @@ private fun AverageRatingChip(averageRating: Double?) {
                         },
                         color = ChaekAccent,
                         fontSize = 15.sp,
+                        fontFamily = ChaekIconFontFamily(),
                     )
                 }
             }
@@ -659,18 +752,23 @@ private fun ReadingRecord(
     onStatusChange: (ReadingStatus) -> Unit,
     onPageInput: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = ChaekSurface,
+        border = BorderStroke(1.dp, Color(0xFFE5E5E8)),
+    ) {
+    Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 17.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("내 독서 기록", color = ChaekInk, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
             Surface(
                 onClick = onRate,
-                shape = RoundedCornerShape(4.dp),
-                color = ChaekSurface,
-                border = BorderStroke(1.dp, ChaekInk),
+                modifier = Modifier.height(32.dp),
+                color = Color.Transparent,
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -679,89 +777,66 @@ private fun ReadingRecord(
                         record?.rating?.let { "별점 ${it} 수정" } ?: "별점 주기",
                         color = ChaekInk,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
                     )
-                }
-            }
-        }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ReadingStatus.entries.forEach { status ->
-                val selected = record?.status == status.apiValue
-                Surface(
-                    onClick = { onStatusChange(status) },
-                    modifier = Modifier.weight(1f).height(32.dp).semantics {
-                        contentDescription = "독서 상태 ${status.label}"
-                        this.selected = selected
-                    },
-                    shape = RoundedCornerShape(999.dp),
-                    color = if (selected) ChaekBand else ChaekSurface,
-                    contentColor = ChaekInk,
-                    border = BorderStroke(1.dp, if (selected) ChaekInk else ChaekBorder),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            status.label,
-                            color = if (selected) ChaekInk else ChaekInkSecondary,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
                 }
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(39.dp)
+                .border(width = 0.dp, color = Color.Transparent),
         ) {
-            Surface(
-                onClick = onPageInput,
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(12.dp),
-                color = ChaekSurface,
-                border = BorderStroke(1.dp, ChaekBorder),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            ReadingStatus.entries.forEach { status ->
+                val selected = record?.status == status.apiValue
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight().selectable(
+                        selected = selected,
+                        role = Role.Tab,
+                        onClick = { onStatusChange(status) },
+                    ).semantics {
+                        contentDescription = "독서 상태 ${status.label}"
+                        this.selected = selected
+                    },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Bottom,
                 ) {
-                    Icon(painterResource(Res.drawable.ic_bookmark), contentDescription = null, modifier = Modifier.size(13.dp), tint = ChaekInkSecondary)
-                    Text("지금 읽는 쪽", color = ChaekInkSecondary, fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-                    Text("$currentPage", color = ChaekInk, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    Text(
-                        if (book.totalPages > 0) "/ ${book.totalPages}쪽" else "/ 쪽수 미정",
-                        color = ChaekInkSecondary,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 11.sp,
-                    )
-                }
-            }
-            Surface(
-                onClick = onPageInput,
-                modifier = Modifier.height(40.dp),
-                shape = RoundedCornerShape(6.dp),
-                color = ChaekInk,
-                border = BorderStroke(1.dp, ChaekSurface),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(painterResource(Res.drawable.ic_pencil), contentDescription = null, modifier = Modifier.size(14.dp), tint = ChaekSurface)
-                    Text("쪽수 입력", color = ChaekSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(status.label, color = if (selected) ChaekInk else ChaekInkSecondary, fontSize = 12.sp)
+                    Spacer(Modifier.height(11.dp))
+                    Box(Modifier.fillMaxWidth().height(2.dp).background(if (selected) ChaekInk else Color.Transparent))
                 }
             }
         }
-        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(999.dp)).background(ChaekBand)) {
+        HorizontalDivider(color = Color(0xFFDDDDE1))
+        Row(
+            modifier = Modifier.fillMaxWidth().height(48.dp).clickable(role = Role.Button, onClick = onPageInput),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("$currentPage", color = ChaekInk, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(
+                if (book.totalPages > 0) " / ${book.totalPages}쪽" else " / 쪽수 미정",
+                color = ChaekInkSecondary,
+                fontSize = 12.sp,
+            )
+            Icon(
+                painterResource(Res.drawable.ic_pencil),
+                contentDescription = "현재 쪽수 입력",
+                modifier = Modifier.padding(start = 7.dp).size(13.dp),
+                tint = ChaekInkSecondary,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                if (book.totalPages > 0) "${(currentPage * 100 / book.totalPages).coerceIn(0, 100)}%" else "0%",
+                color = ChaekInkSecondary,
+                fontSize = 12.sp,
+            )
+        }
+        Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(999.dp)).background(Color(0xFFDDDDE1))) {
             Box(
                 Modifier.fillMaxWidth(
                     if (book.totalPages > 0) currentPage.toFloat().div(book.totalPages).coerceIn(0f, 1f) else 0f,
-                ).height(5.dp).background(ChaekInk),
+                ).height(4.dp).background(ChaekAccent),
             )
         }
+    }
     }
 }
 
@@ -786,46 +861,48 @@ private fun ReviewsSection(
 ) {
     var replyTarget by remember { mutableStateOf<BookReview?>(null) }
     Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalDivider(color = ChaekBorderSoft)
         Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 18.dp, end = 24.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("감상 $reviewCount", style = MaterialTheme.typography.titleLarge.copy(fontFamily = FontFamily.Serif))
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+            Text("감상", fontSize = 21.sp, lineHeight = 27.sp, fontWeight = FontWeight.Bold)
+            Text(
+                reviewCount.toString(),
+                modifier = Modifier.padding(start = 5.dp),
+                color = ChaekInkSecondary,
+                fontSize = 14.sp,
+                lineHeight = 18.sp,
+            )
+            Spacer(Modifier.weight(1f))
             Surface(
                 onClick = { onSortChange(if (sort == ReviewSort.LATEST) ReviewSort.PAGE else ReviewSort.LATEST) },
-                modifier = Modifier.height(28.dp),
-                shape = RoundedCornerShape(999.dp),
-                color = ChaekBand,
-                border = BorderStroke(1.dp, ChaekInk),
+                modifier = Modifier.height(44.dp),
+                color = Color.Transparent,
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp),
+                    modifier = Modifier.padding(horizontal = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         if (sort == ReviewSort.LATEST) "최신순" else "페이지순",
                         color = ChaekInk,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
                     )
                     Icon(painterResource(Res.drawable.ic_chevron_down), contentDescription = null, modifier = Modifier.size(11.dp), tint = ChaekInk)
                 }
             }
-            Surface(shape = RoundedCornerShape(999.dp), color = Color.Transparent, border = BorderStroke(1.dp, ChaekBorder)) {
-                Row(modifier = Modifier.padding(2.dp)) {
-                    FeedScopeChip("전체 피드", scope == ReviewScope.ALL) { onScopeChange(ReviewScope.ALL) }
-                    FeedScopeChip("내 피드", scope == ReviewScope.MINE) { onScopeChange(ReviewScope.MINE) }
-                }
-            }
         }
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+            FeedScopeChip("전체", scope == ReviewScope.ALL) { onScopeChange(ReviewScope.ALL) }
+            FeedScopeChip("내 감상", scope == ReviewScope.MINE) { onScopeChange(ReviewScope.MINE) }
+        }
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            color = ChaekBorderSoft,
+        )
         when {
             loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
             reviews.isEmpty() -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
@@ -869,20 +946,15 @@ private fun ReviewsSection(
 
 @Composable
 private fun FeedScopeChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier.height(24.dp).clip(RoundedCornerShape(999.dp))
-            .background(if (selected) ChaekInk else Color.Transparent)
-            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 8.dp),
-        contentAlignment = Alignment.Center,
+    Column(
+        modifier = Modifier.height(36.dp).selectable(selected = selected, role = Role.Tab, onClick = onClick)
+            .padding(end = 20.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Bottom,
     ) {
-        Text(
-            label,
-            color = if (selected) ChaekSurface else ChaekInkSecondary,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 11.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-        )
+        Text(label, color = if (selected) ChaekInk else ChaekInkSecondary, fontSize = 14.sp, lineHeight = 18.sp)
+        Spacer(Modifier.height(8.dp))
+        Box(Modifier.width(26.dp).height(2.dp).background(if (selected) ChaekInk else Color.Transparent))
     }
 }
 
@@ -916,45 +988,69 @@ private fun ReviewCard(
         ),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().background(ChaekBackground).padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().background(ChaekBackground).padding(horizontal = 24.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(17.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AuthorAvatar(review.authorName, 34)
+                AuthorAvatar(review.authorName, 30)
                 Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
                     Text(review.authorName, style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        reviewMetadata(review.createdAt, review.currentPage),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    val metadata = reviewMetadata(review.createdAt, review.currentPage)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            metadata.dateLabel,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        metadata.progressLabel?.let { progressLabel ->
+                            Text(
+                                progressLabel,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
                 }
                 if (canManageContent(review.writtenByMe, review.deleted)) {
                     Box(
-                        modifier = Modifier.size(48.dp).clickable(role = Role.Button, onClick = onManage)
+                        modifier = Modifier.size(40.dp).clickable(role = Role.Button, onClick = onManage)
                             .semantics { contentDescription = "내 감상 수정 또는 삭제" },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("⋯", color = ChaekInkSecondary, fontSize = 20.sp)
+                        Text("⋯", color = ChaekInkSecondary, fontSize = 20.sp, fontFamily = ChaekIconFontFamily())
                     }
                 }
             }
-            Text(
-                if (locked) maskAsChirps(review.content) else review.content,
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
-            )
-            review.quote?.let { quote ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min).background(ChaekAccentSoft)
+            if (locked) {
+                Surface(
+                    onClick = onOpenLockedReview,
+                    modifier = Modifier.fillMaxWidth().height(84.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = ChaekSurfaceMuted,
                 ) {
-                    Box(Modifier.width(2.dp).fillMaxHeight().background(ChaekInk))
-                    Text(
-                        "“${if (locked) maskAsChirps(quote) else quote}”",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                        fontSize = 12.sp,
-                        lineHeight = 16.sp,
-                    )
+                    Column(modifier = Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.Center) {
+                        Text("▧ 스포일러가 포함된 감상이에요", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "감상과 인용 보기",
+                            modifier = Modifier.padding(top = 6.dp),
+                            color = ChaekInkSecondary,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                }
+            } else {
+                Text(review.content, fontSize = 17.sp, lineHeight = 31.sp)
+                review.quote?.let { quote ->
+                    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+                        Text("“", color = ChaekInk, fontSize = 32.sp, lineHeight = 32.sp)
+                        Text(
+                            quote,
+                            modifier = Modifier.padding(start = 8.dp, top = 5.dp),
+                            color = ChaekInkSecondary,
+                            fontSize = 14.sp,
+                            lineHeight = 25.sp,
+                        )
+                    }
                 }
             }
             Row(
@@ -968,8 +1064,8 @@ private fun ReviewCard(
                     description = if (review.likedByMe) "감상 좋아요 취소" else "감상 좋아요",
                 ) { onLike(review.reviewId, review.likedByMe) }
                 Row(modifier = Modifier.clickable(role = Role.Button, onClick = onReply), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painterResource(Res.drawable.ic_comment), contentDescription = "감상에 답글 작성", modifier = Modifier.size(14.dp))
-                    Text("답글 ${review.replyCount}", modifier = Modifier.padding(start = 4.dp), style = MaterialTheme.typography.labelSmall)
+                    Icon(painterResource(Res.drawable.ic_comment), contentDescription = "감상에 답글 작성", modifier = Modifier.size(17.dp))
+                    Text("답글 ${review.replyCount}", modifier = Modifier.padding(start = 4.dp), fontSize = 12.sp)
                 }
                 Spacer(Modifier.weight(1f))
             }
@@ -1025,7 +1121,7 @@ private fun Replies(
                             .semantics { contentDescription = "내 답글 수정 또는 삭제" },
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("⋯", color = ChaekInkSecondary, fontSize = 17.sp)
+                        Text("⋯", color = ChaekInkSecondary, fontSize = 17.sp, fontFamily = ChaekIconFontFamily())
                     }
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1068,28 +1164,23 @@ private fun ReviewAction(icon: DrawableResource, label: String, description: Str
         horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(14.dp), tint = ChaekInk)
-        Text(label, color = ChaekInk, fontFamily = FontFamily.Monospace, fontSize = 11.sp)
+        Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(17.dp), tint = ChaekInk)
+        Text(label, color = ChaekInk, fontSize = 12.sp)
     }
 }
 
 @Composable
 private fun ComposeBar(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
-        modifier = modifier.fillMaxWidth().height(56.dp).shadow(8.dp, RoundedCornerShape(28.dp))
+        modifier = modifier.fillMaxWidth().height(50.dp).shadow(8.dp, RoundedCornerShape(16.dp))
             .clickable(role = Role.Button, onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
-        color = ChaekSurface,
-        border = BorderStroke(1.dp, ChaekBorder),
+        shape = RoundedCornerShape(16.dp),
+        color = ChaekInk,
     ) {
-        Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(modifier = Modifier.weight(1f).height(40.dp), shape = RoundedCornerShape(6.dp), color = ChaekSurfaceMuted) {
-                Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("✎", color = ChaekInkSecondary, fontSize = 15.sp)
-                    Text("이 순간의 감상 남기기", modifier = Modifier.padding(start = 8.dp), color = ChaekInkSecondary, fontSize = 11.sp)
-                }
-            }
-            Text("➤", modifier = Modifier.padding(horizontal = 10.dp), color = ChaekInk)
+        Row(modifier = Modifier.padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("✎  이 순간의 감상 남기기", color = Color.White, fontSize = 14.sp, lineHeight = 18.sp)
+            Spacer(Modifier.weight(1f))
+            Text("↗", color = ChaekAccent, fontSize = 20.sp, lineHeight = 24.sp, fontFamily = ChaekIconFontFamily())
         }
     }
 }
@@ -1104,7 +1195,7 @@ private fun ScrollTopButton(onClick: () -> Unit, modifier: Modifier = Modifier) 
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text("⌃", fontSize = 15.sp, lineHeight = 12.sp)
+            Text("⌃", fontSize = 15.sp, lineHeight = 12.sp, fontFamily = ChaekIconFontFamily())
             Text("TOP", fontSize = 11.sp, fontFamily = FontFamily.Monospace)
         }
     }
