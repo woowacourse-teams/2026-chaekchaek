@@ -60,13 +60,18 @@ class FeedControllerTest {
         FeedReviewResponse review = new FeedReviewResponse(
                 123L,
                 "감상 내용",
+                "인용 문장",
+                120,
                 true,
                 Instant.parse("2026-09-28T10:00:00Z"),
                 author,
+                7L,
+                false,
                 3L,
                 42L,
                 "9788936433598",
                 "도서 제목",
+                List.of("저자"),
                 "https://example.com/cover.jpg"
         );
         when(feedService.getReviews(1)).thenReturn(new FeedReviewListResponse(41, 2, List.of(review)));
@@ -126,6 +131,9 @@ class FeedControllerTest {
                 fieldWithPath("reviews").type(JsonFieldType.ARRAY).description("감상 목록"),
                 fieldWithPath("reviews[].reviewId").type(JsonFieldType.NUMBER).description("감상 ID"),
                 fieldWithPath("reviews[].content").type(JsonFieldType.STRING).description("감상 내용. 스포일러도 포함"),
+                fieldWithPath("reviews[].quote").type(JsonFieldType.STRING).description("인용 문장").optional(),
+                fieldWithPath("reviews[].currentPage").type(JsonFieldType.NUMBER).description("감상 작성 시 읽은 페이지")
+                        .optional(),
                 fieldWithPath("reviews[].isSpoiler").type(JsonFieldType.BOOLEAN).description("스포일러 여부"),
                 fieldWithPath("reviews[].createdAt").type(JsonFieldType.STRING).description("감상 작성 시각(UTC)"),
                 fieldWithPath("reviews[].author").type(JsonFieldType.OBJECT).description("작성자 정보"),
@@ -140,10 +148,14 @@ class FeedControllerTest {
                         .description("작성자 유형(MEMBER, GUEST)"),
                 fieldWithPath("reviews[].author.profileStatus").type(JsonFieldType.STRING)
                         .description("프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"),
+                fieldWithPath("reviews[].likeCount").type(JsonFieldType.NUMBER).description("좋아요 수"),
+                fieldWithPath("reviews[].likedByMe").type(JsonFieldType.BOOLEAN)
+                        .description("내가 좋아요를 눌렀는지 여부. 비로그인 시 false"),
                 fieldWithPath("reviews[].replyCount").type(JsonFieldType.NUMBER).description("삭제되지 않은 답글 수"),
                 fieldWithPath("reviews[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
                 fieldWithPath("reviews[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
                 fieldWithPath("reviews[].bookTitle").type(JsonFieldType.STRING).description("도서 제목"),
+                fieldWithPath("reviews[].bookAuthors").type(JsonFieldType.ARRAY).description("도서 저자 목록"),
                 fieldWithPath("reviews[].bookCoverImageUrl").type(JsonFieldType.STRING).description("도서 표지 이미지 URL")
         };
     }
