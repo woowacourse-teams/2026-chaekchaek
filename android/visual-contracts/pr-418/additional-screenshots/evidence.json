@@ -1,0 +1,230 @@
+{
+  "device": "Pixel_6a_API_33_2 / emulator-5554 / Android13 API33",
+  "apk_variant": "debug",
+  "installed_apk_hash_verified_for_both_builds": true,
+  "capture_method": "adb exec-out screencap -p",
+  "original_display": {
+    "size_pixels": [
+      1080,
+      2400
+    ],
+    "physical_density": 420,
+    "override_density": 480
+  },
+  "display_restore": "original override480 restored; physical size unchanged",
+  "privacy_review": "No email/account credentials/tokens visible. Public profile and public review nicknames retained. Typed text is temporary test draft.",
+  "verification": {
+    "rating": "fixed transparent original stars;4.0->3.5->4.0 by minus/plus; no save",
+    "review360": "required guidance; empty submit visually disabled; temporary nonblank TTeem5characters submit visually enabled; keyboard; discard confirmation and discard",
+    "review320": "empty required guidance + vertically scrollable sheet; optional quote Test typed with keyboard. Required content remained0/1000; does not verify320 submit enabled",
+    "page360": "999 exceeds total260pages; invalid guidance; save visually disabled; cancelled",
+    "library360": "one existing book selected; status dialog opened then cancelled; delete confirmation opened then cancelled",
+    "profile360": "public profile no email; withdrawal confirmation opened then cancelled"
+  },
+  "unverified": [
+    "iOS excluded",
+    "Figma pixel matching/source collector failed elsewhere; these are runtime evidence only",
+    "Nickname dialog, provider login controls, actual authentication",
+    "Saving ratings/reviews/pages, changing server reading state, deleting books/reviews/accounts",
+    "Long1000character input, all network failures and empty archive states",
+    "Three populated rating comparison cards: existing account had only2 records",
+    "320dp submit enabled and other320 states beyond included screenshots"
+  ],
+  "screenshots": [
+    {
+      "file": "library-delete-confirm-360.png",
+      "source_commit": "94edfec2",
+      "apk_sha256": "d5b6eccd193a022f3f7edde9fec417e840c5ffc2a0c71a8ce9ac5ff418e0b511",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "12ae86fe962940f2af4561ab3ea0040b8a15a5e03158e9e3ab1cb1078eba803d",
+      "observation": "uiautomator anchors and screenshot visual inspection"
+    },
+    {
+      "file": "library-selected-360.png",
+      "source_commit": "94edfec2",
+      "apk_sha256": "d5b6eccd193a022f3f7edde9fec417e840c5ffc2a0c71a8ce9ac5ff418e0b511",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "03c6e5564e84f2317a2aade69661c3783c4d6c7aa4a68bbf69a0b21071b8488d",
+      "observation": "uiautomator anchors and screenshot visual inspection"
+    },
+    {
+      "file": "library-status-360.png",
+      "source_commit": "94edfec2",
+      "apk_sha256": "d5b6eccd193a022f3f7edde9fec417e840c5ffc2a0c71a8ce9ac5ff418e0b511",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "d931d380d119b7809cfcc9ae607a6bbf6caee4b8f00a610db1d6138a4804cfba",
+      "observation": "uiautomator anchors and screenshot visual inspection"
+    },
+    {
+      "file": "page-invalid-360.png",
+      "source_commit": "94edfec2",
+      "apk_sha256": "d5b6eccd193a022f3f7edde9fec417e840c5ffc2a0c71a8ce9ac5ff418e0b511",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "8b3cd59f06a88023ec9b3d20363766a2cf5393eb6bccda1302586c432cd468fd",
+      "observation": "uiautomator anchors and screenshot visual inspection"
+    },
+    {
+      "file": "profile-360.png",
+      "source_commit": "94edfec2",
+      "apk_sha256": "d5b6eccd193a022f3f7edde9fec417e840c5ffc2a0c71a8ce9ac5ff418e0b511",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "249ed96a14221d7bf3f24d59ab477e5bcd7f5c869331ac3aff21f5a40abd67dd",
+      "observation": "uiautomator anchors and screenshot visual inspection"
+    },
+    {
+      "file": "rating-320.png",
+      "source_commit": "ed3e4033",
+      "apk_sha256": "ca157936b3c19aee2a40511cf3ed44a85742604bfa812c759d193d22cc929f7a",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 320,
+      "density": 540,
+      "sha256": "c7b3b208cb2d7ea3faee3b0d984f55464be24e47cd0944ea127b901b4cc3a9e6",
+      "observation": "direct screenshot visual inspection"
+    },
+    {
+      "file": "rating-halfstep-360.png",
+      "source_commit": "ed3e4033",
+      "apk_sha256": "ca157936b3c19aee2a40511cf3ed44a85742604bfa812c759d193d22cc929f7a",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "f48a25398e08714367c5946ad17bd2ac3ab759660f10e618a4790db662345780",
+      "observation": "direct screenshot visual inspection"
+    },
+    {
+      "file": "rating-initial-360.png",
+      "source_commit": "ed3e4033",
+      "apk_sha256": "ca157936b3c19aee2a40511cf3ed44a85742604bfa812c759d193d22cc929f7a",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "e2122696c6102ab0861b566888f335d01b78eac77b512d975608e23d18bceffa",
+      "observation": "direct screenshot visual inspection"
+    },
+    {
+      "file": "review-discard-360.png",
+      "source_commit": "94edfec2",
+      "apk_sha256": "d5b6eccd193a022f3f7edde9fec417e840c5ffc2a0c71a8ce9ac5ff418e0b511",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "bc64eaf33bc228ea3101b53803a819a6b19e86c7d8263f30983982511be1c7bc",
+      "observation": "uiautomator anchors and screenshot visual inspection"
+    },
+    {
+      "file": "review-empty-320.png",
+      "source_commit": "ed3e4033",
+      "apk_sha256": "ca157936b3c19aee2a40511cf3ed44a85742604bfa812c759d193d22cc929f7a",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 320,
+      "density": 540,
+      "sha256": "6cfc2ba016e9a453dd5e9b1552eb400aebe14c4c19c4349328bae09e59a61ce2",
+      "observation": "direct screenshot visual inspection"
+    },
+    {
+      "file": "review-empty-360.png",
+      "source_commit": "94edfec2",
+      "apk_sha256": "d5b6eccd193a022f3f7edde9fec417e840c5ffc2a0c71a8ce9ac5ff418e0b511",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "656c19428cd60893dce3c24e261a824139b8c1b0f0ee9ed471751c2369c2fb13",
+      "observation": "uiautomator anchors and screenshot visual inspection"
+    },
+    {
+      "file": "review-filled-360.png",
+      "source_commit": "94edfec2",
+      "apk_sha256": "d5b6eccd193a022f3f7edde9fec417e840c5ffc2a0c71a8ce9ac5ff418e0b511",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "cc12620324fbc979e30306371e0770045fa31d6ff0a63fc96d27db008418c05f",
+      "observation": "uiautomator anchors and screenshot visual inspection"
+    },
+    {
+      "file": "review-filled-keyboard-360.png",
+      "source_commit": "94edfec2",
+      "apk_sha256": "d5b6eccd193a022f3f7edde9fec417e840c5ffc2a0c71a8ce9ac5ff418e0b511",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "1b4ad19acecf01c1b2122121376f01ca9dbb6eebb3beb921e58d7cb0dcfd38c9",
+      "observation": "uiautomator anchors and screenshot visual inspection"
+    },
+    {
+      "file": "review-quote-keyboard-320.png",
+      "source_commit": "ed3e4033",
+      "apk_sha256": "ca157936b3c19aee2a40511cf3ed44a85742604bfa812c759d193d22cc929f7a",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 320,
+      "density": 540,
+      "sha256": "6d1a8e99a45ac3b3ef152bea7c0ba064ac2a65ee336e41da830a154ca8a0d160",
+      "observation": "direct screenshot visual inspection"
+    },
+    {
+      "file": "withdraw-confirm-360.png",
+      "source_commit": "94edfec2",
+      "apk_sha256": "d5b6eccd193a022f3f7edde9fec417e840c5ffc2a0c71a8ce9ac5ff418e0b511",
+      "pixels": [
+        1080,
+        2400
+      ],
+      "width_dp": 360,
+      "density": 480,
+      "sha256": "7b52250eb1a22ab36e49965dfcc241b43fbfb203c6cd01d311f11f14f652847a",
+      "observation": "uiautomator anchors and screenshot visual inspection"
+    }
+  ]
+}
