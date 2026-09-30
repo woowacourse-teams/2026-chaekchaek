@@ -230,6 +230,6 @@ describe('BooksPage', () => {
 
     await user.click(screen.getByRole('button', { name: '내 서재 담기' }));
 
-    expect(screen.getByText(/로 시작하기/)).toBeInTheDocument();
+    expect(screen.getByText(/로 로그인/)).toBeInTheDocument();
   });
 });

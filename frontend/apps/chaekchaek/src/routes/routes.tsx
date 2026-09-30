@@ -9,6 +9,8 @@ import { ProtectedRoute } from '@/auth/ProtectedRoute';
 import { OauthPage } from '@/pages/OauthPage';
 import { LoginPage } from '@/pages/LoginPage';
 
+import { DownloadPage } from '@/pages/DownloadPage';
+
 import { IntroPage } from '@/pages/IntroPage';
 import { BooksPage } from '@/pages/BooksPage';
 import { BookDetailPage } from '@/pages/BookDetailPage';
@@ -28,6 +30,10 @@ const routes: Route[] = [
   {
     path: ROUTES.QR,
     element: <Navigate to={ROUTES.HOME} replace />,
+  },
+  {
+    path: ROUTES.DOWNLOAD,
+    element: <DownloadPage />,
   },
   {
     path: ROUTES.LOGIN,

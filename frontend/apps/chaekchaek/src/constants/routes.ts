@@ -3,6 +3,7 @@ export const ROUTES = {
   LOGIN: '/login',
   HOME: '/',
   QR: '/qr',
+  DOWNLOAD: '/download',
   INTRO: '/intro',
   BOOK_SEARCH: '/books',
   BOOK_DETAIL: '/books',
