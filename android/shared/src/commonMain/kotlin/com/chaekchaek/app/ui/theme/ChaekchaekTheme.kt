@@ -1,6 +1,5 @@
 package com.chaekchaek.app.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -17,6 +16,15 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import chaekchaek.shared.generated.resources.Res
+import chaekchaek.shared.generated.resources.gowun_dodum_regular
+import chaekchaek.shared.generated.resources.ibm_plex_sans_kr_regular
+import chaekchaek.shared.generated.resources.ibm_plex_sans_kr_semibold
+import chaekchaek.shared.generated.resources.nanum_gothic_bold
+import chaekchaek.shared.generated.resources.nanum_gothic_regular
+import chaekchaek.shared.generated.resources.pretendard_regular
+import chaekchaek.shared.generated.resources.pretendard_semibold
+import org.jetbrains.compose.resources.Font
 
 @Immutable
 data class ChaekColors(
@@ -37,16 +45,16 @@ data class ChaekColors(
 )
 
 internal val LightChaekColors = ChaekColors(
-    background = Color(0xFFFCFAF7),
+    background = Color(0xFFFFFFFF),
     surface = Color(0xFFFFFFFF),
-    surfaceMuted = Color(0xFFF7F2EC),
-    band = Color(0xFFF1E9DE),
-    ink = Color(0xFF1A1A1A),
+    surfaceMuted = Color(0xFFF3F3F5),
+    band = Color(0xFFF3F3F5),
+    ink = Color(0xFF191919),
     inkSecondary = Color(0xFF666666),
-    inkTertiary = Color(0xFF999999),
-    border = Color(0xFFC9C9C9),
-    borderSoft = Color(0xFFEEEEEE),
-    accent = Color(0xFFFF9800),
+    inkTertiary = Color(0xFF858585),
+    border = Color(0xFFE0E0E3),
+    borderSoft = Color(0xFFE7E7E9),
+    accent = Color(0xFFFF8500),
     accentSoft = Color(0xFFFFF4DF),
     accentInk = Color(0xFFA05A27),
     onDarkMuted = Color(0xB8FFFFFF),
@@ -87,37 +95,61 @@ val ChaekAccentInk: Color @Composable get() = LocalChaekColors.current.accentInk
 val ChaekOnDarkMuted: Color @Composable get() = LocalChaekColors.current.onDarkMuted
 val ChaekDanger: Color @Composable get() = LocalChaekColors.current.danger
 
-object ChaekTextStyles {
-    val largeTitle = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 34.sp, lineHeight = 41.sp)
-    val title1 = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 28.sp, lineHeight = 34.sp)
-    val title2 = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 22.sp, lineHeight = 28.sp)
-    val title3 = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 20.sp, lineHeight = 25.sp)
-    val headline = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 22.sp)
-    val body = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 17.sp, lineHeight = 22.sp)
-    val callout = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 16.sp, lineHeight = 21.sp)
-    val subhead = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 15.sp, lineHeight = 20.sp)
-    val footnote = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 13.sp, lineHeight = 18.sp)
-    val caption1 = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 12.sp, lineHeight = 16.sp)
-    val caption2 = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, lineHeight = 13.sp)
+enum class ChaekFontCandidate {
+    Pretendard,
+    IbmPlexSansKr,
+    GowunDodum,
+    NanumGothic,
 }
 
-private val ChaekTypography = Typography(
-    displayLarge = ChaekTextStyles.largeTitle,
-    displayMedium = ChaekTextStyles.title1,
-    displaySmall = ChaekTextStyles.title2,
-    headlineLarge = ChaekTextStyles.largeTitle,
-    headlineMedium = ChaekTextStyles.title1,
-    headlineSmall = ChaekTextStyles.title2,
-    titleLarge = ChaekTextStyles.title2,
-    titleMedium = ChaekTextStyles.title3,
-    titleSmall = ChaekTextStyles.headline,
-    bodyLarge = ChaekTextStyles.body,
-    bodyMedium = ChaekTextStyles.callout,
-    bodySmall = ChaekTextStyles.footnote,
-    labelLarge = ChaekTextStyles.headline,
-    labelMedium = ChaekTextStyles.footnote.copy(fontFamily = FontFamily.Monospace),
-    labelSmall = ChaekTextStyles.caption2.copy(fontFamily = FontFamily.Monospace),
+@Composable
+fun ChaekIconFontFamily(): FontFamily = FontFamily(
+    Font(Res.font.pretendard_regular, FontWeight.Normal),
+    Font(Res.font.pretendard_semibold, FontWeight.SemiBold),
 )
+
+@Composable
+private fun ChaekFontCandidate.fontFamily(): FontFamily = when (this) {
+    ChaekFontCandidate.Pretendard -> ChaekIconFontFamily()
+    ChaekFontCandidate.IbmPlexSansKr -> FontFamily(
+        Font(Res.font.ibm_plex_sans_kr_regular, FontWeight.Normal),
+        Font(Res.font.ibm_plex_sans_kr_semibold, FontWeight.SemiBold),
+    )
+    ChaekFontCandidate.GowunDodum -> FontFamily(Font(Res.font.gowun_dodum_regular, FontWeight.Normal))
+    ChaekFontCandidate.NanumGothic -> FontFamily(
+        Font(Res.font.nanum_gothic_regular, FontWeight.Normal),
+        Font(Res.font.nanum_gothic_bold, FontWeight.Bold),
+    )
+}
+
+private fun chaekTypography(fontFamily: FontFamily): Typography {
+    val largeTitle = TextStyle(fontFamily = fontFamily, fontSize = 34.sp, lineHeight = 41.sp)
+    val title1 = TextStyle(fontFamily = fontFamily, fontSize = 28.sp, lineHeight = 34.sp)
+    val title2 = TextStyle(fontFamily = fontFamily, fontSize = 22.sp, lineHeight = 28.sp)
+    val title3 = TextStyle(fontFamily = fontFamily, fontSize = 20.sp, lineHeight = 25.sp)
+    val headline = TextStyle(fontFamily = fontFamily, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, lineHeight = 22.sp)
+    val body = TextStyle(fontFamily = fontFamily, fontSize = 17.sp, lineHeight = 22.sp)
+    val callout = TextStyle(fontFamily = fontFamily, fontSize = 16.sp, lineHeight = 21.sp)
+    val footnote = TextStyle(fontFamily = fontFamily, fontSize = 13.sp, lineHeight = 18.sp)
+    val caption2 = TextStyle(fontFamily = fontFamily, fontSize = 11.sp, lineHeight = 13.sp)
+    return Typography(
+        displayLarge = largeTitle,
+        displayMedium = title1,
+        displaySmall = title2,
+        headlineLarge = largeTitle,
+        headlineMedium = title1,
+        headlineSmall = title2,
+        titleLarge = title2,
+        titleMedium = title3,
+        titleSmall = headline,
+        bodyLarge = body,
+        bodyMedium = callout,
+        bodySmall = footnote,
+        labelLarge = headline,
+        labelMedium = footnote,
+        labelSmall = caption2,
+    )
+}
 
 private val LightColorScheme = lightColorScheme(
     primary = LightChaekColors.ink,
@@ -169,14 +201,16 @@ private val ChaekShapes = Shapes(
 
 @Composable
 fun ChaekchaekTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
+    fontCandidate: ChaekFontCandidate = ChaekFontCandidate.GowunDodum,
     content: @Composable () -> Unit,
 ) {
     val colors = if (darkTheme) DarkChaekColors else LightChaekColors
+    val typography = chaekTypography(fontCandidate.fontFamily())
     CompositionLocalProvider(LocalChaekColors provides colors) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
-            typography = ChaekTypography,
+            typography = typography,
             shapes = ChaekShapes,
             content = content,
         )

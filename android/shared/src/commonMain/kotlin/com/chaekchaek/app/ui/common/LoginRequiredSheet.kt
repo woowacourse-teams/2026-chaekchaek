@@ -2,6 +2,9 @@ package com.chaekchaek.app.ui.common
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
+import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -32,22 +35,29 @@ internal fun LoginRequiredSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = ChaekSurface,
+        shape = ChaekOverlayTokens.sheetShape,
+        dragHandle = null,
     ) {
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                    .padding(ChaekOverlayTokens.contentPadding),
+            verticalArrangement = Arrangement.spacedBy(ChaekOverlayTokens.sectionSpacing),
         ) {
-            Text("로그인이 필요해요", style = MaterialTheme.typography.titleLarge)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("로그인이 필요해요", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+                ChaekCloseButton(onDismiss)
+            }
             Text(
                 "내 독서 기록을 남기고 감상에 참여하려면 로그인해 주세요.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = ChaekOverlayTokens.cardShape) {
+                    Text(it, Modifier.fillMaxWidth().padding(12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
             }
             if (appleSignInAvailable) {
                 Column(
@@ -82,6 +92,7 @@ internal fun LoginRequiredSheet(
                     )
                 }
             }
+            ChaekOverlayButton("닫기", onDismiss, secondary = true)
         }
     }
 }

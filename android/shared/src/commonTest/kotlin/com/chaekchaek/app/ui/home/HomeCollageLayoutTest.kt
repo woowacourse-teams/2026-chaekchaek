@@ -1,8 +1,8 @@
 package com.chaekchaek.app.ui.home
 
+import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class HomeCollageLayoutTest {
@@ -12,9 +12,18 @@ class HomeCollageLayoutTest {
         val layout = collagePlacements(ranking)
 
         assertEquals(layout, collagePlacements(ranking))
-        assertNotEquals(layout, collagePlacements(ranking.reversed()))
-        assertTrue(layout.zipWithNext().all { (higher, lower) -> higher.width > lower.width })
-        assertTrue(layout.all { it.x >= 0 && it.x + it.width <= 390 && it.y + it.height <= 181 })
+        assertEquals(
+            listOf(
+                CollagePlacement(141, 29, 108, 155, 0f),
+                CollagePlacement(225, 53, 79, 113, 13f),
+                CollagePlacement(63, 48, 79, 113, -15f),
+                CollagePlacement(271, 84, 65, 93, 24f),
+                CollagePlacement(23, 80, 65, 93, -23f),
+                CollagePlacement(172, 4, 80, 114, 10f),
+            ),
+            layout,
+        )
+        assertTrue(layout.all { it.x >= 0 && it.x + it.width <= 390 && it.y + it.height <= 218 })
     }
 
     @Test
@@ -25,9 +34,25 @@ class HomeCollageLayoutTest {
     }
 
     @Test
+    fun selectedCoverTransformKeepsTheApprovedCenterPlacement() {
+        val transform = collageTransform(
+            CollagePlacement(141, 29, 108, 155, 0f),
+            canvasScale = 1f,
+        )
+
+        assertEquals(CollageTransform(141f, 29f, 1f, 1f, 0f), transform)
+    }
+
+    @Test
     fun readingProgressIsClamped() {
         assertEquals(0.4125f, readingProgress(currentPage = 132, totalPages = 320))
         assertEquals(0f, readingProgress(currentPage = 10, totalPages = 0))
         assertEquals(1f, readingProgress(currentPage = 400, totalPages = 320))
+    }
+
+    @Test
+    fun recentReflectionCardFitsTheAvailableWidthWithoutGrowingPastTheFigmaWidth() {
+        assertEquals(272.dp, recentReflectionCardWidth(272.dp))
+        assertEquals(314.dp, recentReflectionCardWidth(342.dp))
     }
 }

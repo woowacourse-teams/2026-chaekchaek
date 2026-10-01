@@ -2,12 +2,10 @@ package com.chaekchaek.app.ui.bookdetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,7 +13,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,17 +20,12 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,27 +34,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chaekchaek.shared.generated.resources.Res
-import chaekchaek.shared.generated.resources.ic_close
 import chaekchaek.shared.generated.resources.ic_eye_off
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
+import com.chaekchaek.app.ui.common.ChaekOverlayButton
+import com.chaekchaek.app.ui.common.ChaekCloseButton
+import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.withStyle
 import com.chaekchaek.app.ui.theme.ChaekBorder
 import com.chaekchaek.app.ui.theme.ChaekDanger
 import com.chaekchaek.app.ui.theme.ChaekInk
+import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import com.chaekchaek.app.ui.theme.ChaekSurface
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
@@ -96,34 +92,26 @@ internal fun PageInputDialog(
                         placeholder = "0",
                         accessibilityLabel = "내가 읽은 쪽수",
                         modifier = Modifier.fillMaxWidth(),
-                        height = 44,
+                        height = 54,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         suffix = "쪽",
                         endText = totalPages.takeIf { it > 0 }?.let { "/ ${it}쪽" },
                         emphasized = true,
                     )
+                    if (value.isNotBlank() && page == null) {
+                        Text(if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.",
+                            color = ChaekDanger, style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (totalPages > 0) {
+                        Text("전체 ${totalPages}쪽", color = ChaekInkSecondary, style = MaterialTheme.typography.labelMedium)
+                        LinearProgressIndicator(progress = { ((page ?: 0).toFloat() / totalPages).coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth(), color = com.chaekchaek.app.ui.theme.ChaekAccent)
+                    }
                 }
             }
         },
-        dismissButton = {
-            OutlinedButton(onClick = onDismiss, modifier = Modifier.height(48.dp), shape = RoundedCornerShape(6.dp)) {
-                Text("취소", style = MaterialTheme.typography.labelLarge)
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { page?.let(onSave) },
-                enabled = BookDetailInputRules.canSubmitPage(page),
-                modifier = Modifier.height(48.dp),
-                shape = RoundedCornerShape(6.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = MaterialTheme.colorScheme.surface,
-                ),
-            ) {
-                Text("저장", style = MaterialTheme.typography.labelLarge)
-            }
-        },
+        dismissButton = { ChaekOverlayButton("취소", onDismiss, secondary = true) },
+        confirmButton = { ChaekOverlayButton("저장", { page?.let(onSave) }, enabled = BookDetailInputRules.canSubmitPage(page)) },
     )
 }
 
@@ -167,7 +155,7 @@ internal fun ReviewInputSheet(
         onDismissRequest = requestDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = ChaekSurface,
-        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+        shape = ChaekOverlayTokens.sheetShape,
         dragHandle = {
             Box(
                 Modifier.padding(top = 10.dp).width(40.dp).height(4.dp)
@@ -177,22 +165,26 @@ internal fun ReviewInputSheet(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding()
-                .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            SheetHeader(title = if (initialReview == null) "감상 남기기" else "감상 수정", titleSize = 20, onDismiss = requestDismiss)
+            SheetHeader(title = if (initialReview == null) "감상 남기기" else "감상 수정", onDismiss = requestDismiss)
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                FormLabel("느낀점", required = true)
+                FormLabel("감상", required = true)
                 ChaekTextInput(
                     value = content,
                     onValueChange = { content = it.take(BookDetailInputRules.MAX_CONTENT_LENGTH) },
                     placeholder = "이 구간을 읽으며 든 생각을 남겨보세요",
-                    accessibilityLabel = "느낀점",
+                    accessibilityLabel = "감상 (필수)",
                     modifier = Modifier.fillMaxWidth(),
-                    height = 132,
+                    height = 120,
+                    emphasized = true,
                 )
+                Text("감상은 반드시 입력해 주세요.", style = MaterialTheme.typography.bodySmall, color = ChaekInk)
+                Text("${content.length} / ${BookDetailInputRules.MAX_CONTENT_LENGTH}", modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.End, style = MaterialTheme.typography.labelMedium, color = ChaekInkSecondary)
                 Surface(
-                    modifier = Modifier.fillMaxWidth().height(40.dp)
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
                         .toggleable(value = isSpoiler, role = Role.Checkbox) { isSpoiler = it },
                     shape = RoundedCornerShape(6.dp),
                     color = ChaekSurfaceMuted,
@@ -203,7 +195,13 @@ internal fun ReviewInputSheet(
                                 .border(1.dp, ChaekBorder, RoundedCornerShape(4.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            if (isSpoiler) Text("✓", color = ChaekInk, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            if (isSpoiler) Text(
+                                "✓",
+                                color = ChaekInk,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = ChaekIconFontFamily(),
+                            )
                         }
                         Text(
                             "스포일러",
@@ -216,19 +214,19 @@ internal fun ReviewInputSheet(
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                FormLabel("인상 깊은 문구")
+                FormLabel("인상 깊은 문구 (선택)")
                 ChaekTextInput(
                     value = quote,
                     onValueChange = { quote = it.take(BookDetailInputRules.MAX_QUOTE_LENGTH) },
                     placeholder = "기억하고 싶은 문장을 옮겨 적어보세요",
                     accessibilityLabel = "인상 깊은 문구",
                     modifier = Modifier.fillMaxWidth(),
-                    height = 72,
+                    height = 54,
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 if (allowReadingProgress) {
-                    Column(modifier = Modifier.width(104.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         FormLabel("쪽수")
                         ChaekTextInput(
                             value = pageValue,
@@ -236,21 +234,25 @@ internal fun ReviewInputSheet(
                             placeholder = "80",
                             accessibilityLabel = "쪽수",
                             modifier = Modifier.fillMaxWidth(),
-                            height = 44,
+                            height = 54,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             suffix = "쪽",
                         )
+                        if (pageValue.isNotBlank() && page == null) {
+                            Text(if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.",
+                                color = ChaekDanger, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FormLabel("목차 / 챕터")
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FormLabel("목차 / 챕터 (선택)")
                     ChaekTextInput(
                         value = chapter,
                         onValueChange = { chapter = it.take(BookDetailInputRules.MAX_CHAPTER_LENGTH) },
                         placeholder = "Chapter 1",
                         accessibilityLabel = "목차 또는 챕터",
                         modifier = Modifier.fillMaxWidth(),
-                        height = 44,
+                        height = 54,
                         singleLine = true,
                     )
                 }
@@ -298,8 +300,8 @@ internal fun ReviewInputSheet(
             onDismissRequest = { showDiscardConfirmation = false },
             title = { Text(if (initialReview == null) "감상 작성을 그만둘까요?" else "감상 수정을 그만둘까요?") },
             text = { Text("작성한 내용은 저장되지 않아요.") },
-            confirmButton = { TextButton(onClick = onDismiss) { Text("작성 취소") } },
-            dismissButton = { TextButton(onClick = { showDiscardConfirmation = false }) { Text("계속 작성") } },
+            confirmButton = { ChaekOverlayButton("작성 취소", onDismiss) },
+            dismissButton = { ChaekOverlayButton("계속 작성", { showDiscardConfirmation = false }, secondary = true) },
         )
     }
 }
@@ -313,77 +315,42 @@ internal fun ReplyInputSheet(
 ) {
     var content by rememberSaveable(initialContent) { mutableStateOf(initialContent) }
     val canSubmit = ReplyInputRules.canSubmit(content)
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = ChaekSurface) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = ChaekSurface,
+        shape = ChaekOverlayTokens.sheetShape,
+    ) {
         Column(
-            modifier = Modifier.fillMaxWidth().imePadding().padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(if (initialContent.isEmpty()) "답글 작성" else "답글 수정", style = MaterialTheme.typography.titleLarge)
-            OutlinedTextField(
-                value = content,
-                onValueChange = { content = it.take(ReplyInputRules.MAX_LENGTH) },
-                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "답글" },
-                label = { Text("답글을 입력하세요") },
-                minLines = 3,
-            )
-            Surface(
-                onClick = { content.trim().takeIf(ReplyInputRules::canSubmit)?.let(onSave) },
-                enabled = canSubmit,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                color = if (canSubmit) ChaekInk else ChaekInkSecondary,
-            ) {
-                Text(
-                    if (initialContent.isEmpty()) "등록" else "수정 저장",
-                    modifier = Modifier.padding(vertical = 14.dp),
-                    color = ChaekSurface,
-                    textAlign = TextAlign.Center,
-                )
+            SheetHeader(if (initialContent.isEmpty()) "답글 작성" else "답글 수정", onDismiss)
+            FormLabel("답글")
+            ChaekTextInput(content, { content = it.take(ReplyInputRules.MAX_LENGTH) }, "답글을 입력하세요", "답글",
+                Modifier.fillMaxWidth(), 120)
+            Text("${content.length} / ${ReplyInputRules.MAX_LENGTH}", Modifier.fillMaxWidth(), color = ChaekInkSecondary,
+                textAlign = TextAlign.End, style = MaterialTheme.typography.labelMedium)
+            SheetPrimaryButton(if (initialContent.isEmpty()) "등록" else "수정 저장", canSubmit) {
+                content.trim().takeIf(ReplyInputRules::canSubmit)?.let(onSave)
             }
         }
     }
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 internal fun OwnedContentActionSheet(
     title: String,
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = ChaekSurface,
-        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                title,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-                color = ChaekInk,
-                fontFamily = FontFamily.Serif,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
-            ContentAction("수정", ChaekInk, onEdit)
-            ContentAction("삭제", ChaekDanger, onDelete)
-        }
-    }
-}
-
-@Composable
-private fun ContentAction(label: String, color: Color, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(56.dp),
-        color = Color.Transparent,
-    ) {
-        Row(modifier = Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(label, color = color, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+    @OptIn(ExperimentalMaterial3Api::class)
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = ChaekSurface, shape = ChaekOverlayTokens.sheetShape) {
+        Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SheetHeader(title, onDismiss)
+            ChaekOverlayButton("수정", onEdit, secondary = true)
+            ChaekOverlayButton("삭제", onDelete, secondary = true)
         }
     }
 }
@@ -398,47 +365,33 @@ internal fun DeleteContentConfirmation(
         onDismissRequest = onDismiss,
         title = { Text("${contentName}을 삭제할까요?") },
         text = { Text("삭제한 ${contentName}은 다시 복구할 수 없어요.") },
-        confirmButton = { TextButton(onClick = onConfirm) { Text("삭제", color = ChaekDanger) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } },
+        confirmButton = { ChaekOverlayButton("삭제", onConfirm) },
+        dismissButton = { ChaekOverlayButton("취소", onDismiss, secondary = true) },
     )
 }
 
 @Composable
-private fun SheetHeader(title: String, titleSize: Int, onDismiss: () -> Unit) {
+private fun SheetHeader(title: String, onDismiss: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(title, color = ChaekInk, fontFamily = FontFamily.Serif, fontSize = titleSize.sp, fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.weight(1f))
-        Box(
-            modifier = Modifier.size(48.dp).clickable(role = Role.Button, onClick = onDismiss),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painterResource(Res.drawable.ic_close),
-                contentDescription = "닫기",
-                modifier = Modifier.size(20.dp),
-                tint = ChaekInk,
-            )
-        }
+        Text(title, modifier = Modifier.weight(1f), color = ChaekInk, style = MaterialTheme.typography.titleMedium)
+        ChaekCloseButton(onDismiss)
     }
 }
 
 @Composable
 private fun FormLabel(label: String, required: Boolean = false) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, color = ChaekInk, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-        if (required) {
-            Surface(shape = RoundedCornerShape(8.dp), color = ChaekInk) {
-                Text(
-                    "필수",
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                    color = ChaekSurface,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
+    Text(
+        buildAnnotatedString {
+            append(label)
+            if (required) {
+                append(" (")
+                withStyle(SpanStyle(color = ChaekDanger)) { append("필수") }
+                append(")")
             }
-        }
-    }
+        },
+        color = ChaekInk,
+        style = if (required) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.labelMedium,
+    )
 }
 
 @Composable
@@ -455,15 +408,15 @@ private fun ChaekTextInput(
     endText: String? = null,
     emphasized: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(6.dp)
+    val shape = ChaekOverlayTokens.inputShape
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.height(height.dp).background(ChaekSurface, shape)
-            .border(if (emphasized) 1.5.dp else 1.dp, if (emphasized) ChaekInk else ChaekBorder, shape)
+        modifier = modifier.height(height.dp).background(ChaekSurfaceMuted, shape)
+            .then(if (emphasized) Modifier.border(1.dp, ChaekInk, shape) else Modifier)
             .semantics { contentDescription = accessibilityLabel }
             .padding(horizontal = 12.dp, vertical = if (singleLine || suffix != null || endText != null) 0.dp else 10.dp),
-        textStyle = TextStyle(color = ChaekInk, fontFamily = FontFamily.SansSerif, fontSize = 13.sp),
+        textStyle = MaterialTheme.typography.bodyMedium.copy(color = ChaekInk),
         keyboardOptions = keyboardOptions,
         singleLine = singleLine || suffix != null || endText != null,
         decorationBox = { innerTextField ->
@@ -479,7 +432,7 @@ private fun ChaekTextInput(
                             it,
                             modifier = Modifier.padding(start = 6.dp),
                             color = ChaekInkSecondary,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = MaterialTheme.typography.bodySmall.fontFamily,
                             fontSize = 11.sp,
                         )
                     }
@@ -495,21 +448,6 @@ private fun ChaekTextInput(
 }
 
 @Composable
-private fun SheetPrimaryButton(
-    label: String,
-    enabled: Boolean,
-    danger: Boolean = false,
-    onClick: () -> Unit,
-) {
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.fillMaxWidth().height(48.dp),
-        shape = RoundedCornerShape(4.dp),
-        color = if (!enabled) ChaekInkSecondary else if (danger) MaterialTheme.colorScheme.error else ChaekInk,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(label, color = ChaekSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-        }
-    }
+private fun SheetPrimaryButton(label: String, enabled: Boolean, onClick: () -> Unit) {
+    ChaekOverlayButton(label, onClick, enabled = enabled)
 }

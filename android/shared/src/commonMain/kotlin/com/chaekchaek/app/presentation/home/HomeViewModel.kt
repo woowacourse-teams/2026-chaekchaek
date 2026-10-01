@@ -99,7 +99,8 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
                 isbn13 = book.isbn13,
                 title = book.title,
                 coverId = book.coverId,
-                statsLabel = HomeLabels.trendingStats(book.noteCount, book.replyCount),
+                noteCountLabel = HomeLabels.trendingNoteCount(book.noteCount),
+                replyCountLabel = HomeLabels.trendingReplyCount(book.replyCount),
             )
         },
         moreLabel = HomeLabels.trendingMore(totalCount),
@@ -114,11 +115,8 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
                 isbn13 = card.isbn13,
                 bookTitle = card.bookTitle,
                 coverId = card.coverId,
-                authorLabel = HomeLabels.author(
-                    card.authorLabel,
-                    TimeLabels.relative(card.createdAt, now),
-                ),
                 authorName = card.authorLabel,
+                timeLabel = TimeLabels.relative(card.createdAt, now),
                 quoteText = card.quoteText,
                 replyLabel = HomeLabels.quoteReply(card.replyCount),
             )
@@ -133,11 +131,8 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
                 title = card.title,
                 coverId = card.coverId,
                 noteCountLabel = HomeLabels.noteCount(card.noteCount),
-                authorLabel = HomeLabels.author(
-                    card.authorLabel,
-                    TimeLabels.relative(card.createdAt, now),
-                ),
                 authorName = card.authorLabel,
+                timeLabel = TimeLabels.relative(card.createdAt, now),
                 excerpt = card.excerpt,
                 replyLabel = HomeLabels.overlappedReply(card.replyCount),
             )

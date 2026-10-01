@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "id": "chaekchaek-cover-loading",
+  "platforms": [
+    "android"
+  ],
+  "implementation_root": "..",
+  "implementation_inputs": [
+    "shared/src/**/*",
+    "app/src/**/*",
+    "gradle/**/*",
+    "*.kts",
+    "shared/*.kts",
+    "app/*.kts",
+    "gradle.properties"
+  ],
+  "sources": [
+    {
+      "id": "approved-loading",
+      "identity": "tn59Thk2GRcVLkzoO8k9Sr",
+      "path": "../build/design-guard/loading-source.json",
+      "roots": [
+        "867:2",
+        "867:176",
+        "867:313",
+        "867:462",
+        "867:652"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "home-image-loading-390",
+      "source": "approved-loading",
+      "root": "867:2",
+      "state": "image-loading",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/loading-home.png"
+    },
+    {
+      "id": "feed-image-loading-390",
+      "source": "approved-loading",
+      "root": "867:176",
+      "state": "image-loading",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/loading-feed.png"
+    },
+    {
+      "id": "discover-image-loading-390",
+      "source": "approved-loading",
+      "root": "867:313",
+      "state": "image-loading",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/loading-discover.png"
+    },
+    {
+      "id": "library-image-loading-390",
+      "source": "approved-loading",
+      "root": "867:462",
+      "state": "image-loading",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/loading-library.png"
+    },
+    {
+      "id": "detail-image-loading-390",
+      "source": "approved-loading",
+      "root": "867:652",
+      "state": "image-loading",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/loading-detail.png"
+    }
+  ],
+  "reviews": "../build/design-guard/cover-loading-reviews.json",
+  "output": "../build/design-guard/cover-loading-report.json",
+  "unresolved": []
+}

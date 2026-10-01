@@ -44,7 +44,7 @@ internal data class BookSearchItemDto(
 internal fun BookSearchItemDto.toSearchResult(): BookSearchResult =
     BookSearchResult(
         title = title,
-        creator = (authors + translators.map { "$it 옮김" }).joinToString(" · "),
+        creator = (authors + translators.map { "$it 옮김" }).joinToString("  "),
         publisher = publisher,
         year = publishedDate.take(4),
         coverUrl = coverImageUrl,
