@@ -10,6 +10,7 @@
 | --- | --- |
 | LMS 단계별 안내의 제목, 원문 경로, 핵심 내용 확인 | [LMS 단계 수집 목록](lms-page-catalog.md) |
 | 스프린트 1 제출 전 제출물과 필드를 확인 | [스프린트 1 제출 기준](sprint-1-submission.md) |
+| 안드로이드 정식 출시 수행 결과와 증빙 확인 | [Play Store 정식 출시 제출 문서](android-play-store-release.md) |
 
 ## 제출 순서
 
