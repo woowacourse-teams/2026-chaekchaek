@@ -2,6 +2,7 @@ package com.chaekchaek.app.ui.feed
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -293,8 +295,16 @@ private fun FeedReflectionArticle(
 
 @Composable
 private fun FeedAction(icon: DrawableResource, label: String, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
-        modifier = Modifier.clickable(role = Role.Button, onClick = onClick).padding(vertical = 8.dp),
+        modifier = Modifier
+            .heightIn(min = 44.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            ),
         horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
