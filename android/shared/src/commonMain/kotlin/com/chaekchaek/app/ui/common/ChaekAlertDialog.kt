@@ -30,8 +30,8 @@ import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
 
 @Composable
 internal fun ChaekOneActionDialog(
-    onDismissRequest: () -> Unit,
     confirmButton: @Composable () -> Unit,
+    onDismissRequest: (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
 ) = ChaekAlertDialog(onDismissRequest, confirmButton, title = title, text = text)
@@ -47,13 +47,21 @@ internal fun ChaekTwoActionDialog(
 
 @Composable
 private fun ChaekAlertDialog(
-    onDismissRequest: () -> Unit,
+    onDismissRequest: (() -> Unit)?,
     confirmButton: @Composable () -> Unit,
     dismissButton: @Composable (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
 ) {
-    Dialog(onDismissRequest, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    val canDismiss = onDismissRequest != null
+    Dialog(
+        onDismissRequest = { onDismissRequest?.invoke() },
+        properties = DialogProperties(
+            dismissOnBackPress = canDismiss,
+            dismissOnClickOutside = canDismiss,
+            usePlatformDefaultWidth = false,
+        ),
+    ) {
         Surface(
             modifier = Modifier.padding(horizontal = 16.dp).widthIn(max = 358.dp).fillMaxWidth(),
             shape = ChaekOverlayTokens.containerShape,
@@ -69,7 +77,7 @@ private fun ChaekAlertDialog(
                             title?.invoke()
                         }
                     }
-                    ChaekCloseButton(onDismissRequest)
+                    onDismissRequest?.let { ChaekCloseButton(it) }
                 }
                 CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodyMedium) { text?.invoke() }
                 Box(Modifier.fillMaxWidth().heightIn(min = ChaekOverlayTokens.buttonHeight), contentAlignment = Alignment.Center) { confirmButton() }
