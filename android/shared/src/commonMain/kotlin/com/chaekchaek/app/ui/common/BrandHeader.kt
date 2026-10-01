@@ -50,10 +50,10 @@ fun BrandHeader(
         Spacer(Modifier.weight(1f))
         Surface(
             onClick = onProfileClick,
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(44.dp),
             shape = CircleShape,
             color = MaterialTheme.colorScheme.background,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(

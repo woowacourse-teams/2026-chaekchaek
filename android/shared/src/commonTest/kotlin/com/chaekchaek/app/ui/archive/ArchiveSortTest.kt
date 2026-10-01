@@ -22,6 +22,7 @@ class ArchiveSortTest {
         publisher = "",
         category = "",
         coverUrl = "",
+        spineUrl = null,
         status = ReadingStatus.READING,
         currentPage = 0,
         totalPages = 0,

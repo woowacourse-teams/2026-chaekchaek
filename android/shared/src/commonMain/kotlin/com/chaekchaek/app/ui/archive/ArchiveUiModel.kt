@@ -12,6 +12,7 @@ data class ArchiveBookUiModel(
     val publisher: String,
     val category: String,
     val coverUrl: String,
+    val spineUrl: String?,
     val status: ReadingStatus,
     val currentPage: Int,
     val totalPages: Int,
@@ -52,9 +53,13 @@ internal fun RemoteLibraryBook.toArchiveBookUiModel(): ArchiveBookUiModel {
         publisher = publisher,
         category = category,
         coverUrl = coverImageUrl,
+        spineUrl = spineImageUrl,
         status = ReadingStatus.entries.firstOrNull { it.apiValue == status } ?: ReadingStatus.READING,
         currentPage = safeCurrentPage,
         totalPages = pages,
         lastRecordedAt = runCatching { Instant.parse(readingUpdatedAt).toEpochMilliseconds() }.getOrDefault(0L),
     )
 }
+
+internal fun booksWithAvailableSpines(items: List<ArchiveBookUiModel>): List<ArchiveBookUiModel> =
+    items.filter { !it.spineUrl.isNullOrBlank() }

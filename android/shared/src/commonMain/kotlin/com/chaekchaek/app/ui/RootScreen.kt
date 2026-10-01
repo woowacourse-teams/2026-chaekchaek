@@ -194,6 +194,9 @@ internal fun RootScreen(
                 bookCover = { book ->
                     RemoteBookImage(book.coverUrl, "${book.title} 표지", Modifier.fillMaxSize())
                 },
+                bookSpine = { book, imageModifier ->
+                    RemoteBookSpine(book.spineUrl.orEmpty(), "${book.title} 책등", imageModifier)
+                },
             )
         }
         if (showBottomBar) {
@@ -285,6 +288,20 @@ internal fun RootScreen(
             },
         )
     }
+}
+
+@Composable
+private fun RemoteBookSpine(
+    url: String,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+) {
+    AsyncImage(
+        model = url,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = ContentScale.Fit,
+    )
 }
 
 @Composable
