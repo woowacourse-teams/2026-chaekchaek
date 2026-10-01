@@ -35,7 +35,11 @@ val apiOverrides = Properties().apply {
 }
 val apiBaseUrls = listOf("android", "ios").associateWith { platform ->
     val key = "$platform.baseUrl"
-    val value = (apiOverrides.getProperty("$apiEnvironment.$key")
+    val overrideKey = "$apiEnvironment.$key"
+    require(apiEnvironment != "production" || !apiOverrides.containsKey(overrideKey)) {
+        "Production API origins cannot be overridden. Remove $overrideKey from config/overrides.properties."
+    }
+    val value = (apiOverrides.getProperty(overrideKey)
         ?: apiProperties.getProperty(key)).orEmpty().trim().trimEnd('/')
     val uri = runCatching { URI(value) }.getOrNull()
     require(uri != null && !uri.host.isNullOrBlank() && uri.scheme in setOf("https", "http") &&

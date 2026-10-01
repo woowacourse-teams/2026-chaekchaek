@@ -29,7 +29,7 @@ All six remote repositories use `ApiConfiguration.current`. Tests can inject `Ap
 
 ## Machine-specific addresses
 
-Copy `overrides.properties.example` to `overrides.properties`, then uncomment the needed settings. Keys are namespaced by environment, so a local override does not change production or development:
+Copy `overrides.properties.example` to `overrides.properties`, then uncomment the needed settings. Overrides are available for development and local environments. Production overrides are rejected during Gradle configuration so Android and iOS release artifacts always use the tracked values in `production.properties`. Keys are namespaced by environment, so a local override does not change development:
 
 ```properties
 local.android.baseUrl=http://192.168.0.10:9090
@@ -65,7 +65,8 @@ On 2026-10-01 both `/health` endpoints returned HTTP 200. The development URL ap
 - Android debug assembly and shared host tests passed in production, development and local environments.
 - The routing test exercised search, home, library, member, book detail and authentication repositories against four injected origins.
 - iOS simulator Kotlin compilation passed for production and development.
-- Local overrides regenerated the selected addresses without `clean`; removal restored defaults, and configuration cache reuse passed.
+- Development and local overrides regenerated the selected addresses without `clean`; removal restored defaults, and configuration cache reuse passed.
+- Production Android and iOS overrides were rejected before API environment source generation.
 - Unknown environments, nonlocal HTTP, malformed origins, development/local release selection and Xcode Release with development selection were rejected.
 - Android merged manifests enabled cleartext for local and disabled it for production.
 - Physical device connections, a running local backend and a full Xcode app build were not exercised.
