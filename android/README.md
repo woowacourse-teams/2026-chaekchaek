@@ -12,6 +12,8 @@ Android 빌드 환경, 릴리스 서명, Google Play 배포 절차는
 Google Play 프로덕션 심사 제출과 실제 사용자 관찰 과제의 수행 근거는
 [Android 정식 출시 심사 및 사용자 관찰](../docs/android-production-review-user-observation.md)에 기록한다.
 
+API 서버 환경 선택과 주소 변경은 [환경 설정 안내](../docs/android-api-environments.md)를 따른다.
+
 ## 개발 문서
 
 - [Android CI 운영 및 학습 기록](docs/android-ci.md) - 자동 검증 범위, 실행 방법, 실패 대응

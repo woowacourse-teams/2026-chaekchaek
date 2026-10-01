@@ -11,6 +11,8 @@ plugins {
   alias(libs.plugins.firebase.crashlytics) apply false
 }
 
+apply(from = "config/api-environment.gradle.kts")
+
 tasks.register<Exec>("testDesignUiHarness") {
   group = "verification"
   description = "누락, 낡은 캡처, 다른 화면을 거부하는 시각 완료 게이트 자체 테스트"

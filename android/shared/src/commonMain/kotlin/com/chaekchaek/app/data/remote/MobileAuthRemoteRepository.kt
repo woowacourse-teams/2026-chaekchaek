@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
 
 class MobileAuthRemoteRepository(
   private val client: HttpClient = createHttpClient(),
+  private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
 ) {
 
   suspend fun loginWithGoogle(idToken: String, guestToken: String? = null): MobileAuthTokens =
@@ -20,7 +21,7 @@ class MobileAuthRemoteRepository(
 
   suspend fun issueGuest(): GuestAuth =
     try {
-      client.post("$BASE_URL/api/v1/auth/guest-token")
+      client.post("${apiConfiguration.baseUrl}/api/v1/auth/guest-token")
         .body<GuestAuthResponse>()
         .toGuestAuth()
     } catch (error: ResponseException) {
@@ -40,7 +41,7 @@ class MobileAuthRemoteRepository(
 
   suspend fun logout(refreshToken: String) {
     try {
-      client.post("$BASE_URL/api/v1/auth/mobile/logout") {
+      client.post("${apiConfiguration.baseUrl}/api/v1/auth/mobile/logout") {
         contentType(ContentType.Application.Json)
         setBody(RefreshTokenRequest(refreshToken))
       }
@@ -55,7 +56,7 @@ class MobileAuthRemoteRepository(
     guestToken: String? = null,
   ): MobileAuthTokens =
     try {
-      client.post("$BASE_URL/api/v1/auth/mobile/$path") {
+      client.post("${apiConfiguration.baseUrl}/api/v1/auth/mobile/$path") {
         guestToken?.let { header(WriteCredential.GUEST_TOKEN_HEADER, it) }
         contentType(ContentType.Application.Json)
         setBody(body)
@@ -72,9 +73,6 @@ class MobileAuthRemoteRepository(
     return MobileLoginException(code, response.status.value)
   }
 
-  private companion object {
-    const val BASE_URL = "https://api.chaekchaek.com"
-  }
 }
 
 @Serializable

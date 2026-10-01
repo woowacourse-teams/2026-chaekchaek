@@ -108,7 +108,8 @@ class BookDetailRemoteRepositoryTest {
       }
     }
     val repository = BookDetailRemoteRepository(
-      HttpClient(engine) {
+      apiConfiguration = ApiConfiguration("https://api.chaekchaek.com"),
+      client = HttpClient(engine) {
         expectSuccess = true
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
       },
@@ -150,7 +151,8 @@ class BookDetailRemoteRepositoryTest {
       )
     }
     val repository = BookDetailRemoteRepository(
-      HttpClient(engine) {
+      apiConfiguration = ApiConfiguration("https://api.chaekchaek.com"),
+      client = HttpClient(engine) {
         expectSuccess = true
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
       },
@@ -177,7 +179,8 @@ class BookDetailRemoteRepositoryTest {
       )
     }
     val repository = BookDetailRemoteRepository(
-      HttpClient(engine) {
+      apiConfiguration = ApiConfiguration("https://api.chaekchaek.com"),
+      client = HttpClient(engine) {
         expectSuccess = true
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
       },
@@ -208,7 +211,8 @@ class BookDetailRemoteRepositoryTest {
       respond(content, headers = headersOf(HttpHeaders.ContentType, "application/json"))
     }
     val repository = BookDetailRemoteRepository(
-      HttpClient(engine) {
+      apiConfiguration = ApiConfiguration("https://api.chaekchaek.com"),
+      client = HttpClient(engine) {
         expectSuccess = true
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
       },
@@ -240,7 +244,7 @@ class BookDetailRemoteRepositoryTest {
         respond(content, headers = headersOf(HttpHeaders.ContentType, "application/json"))
       }
     }
-    val repository = BookDetailRemoteRepository(testClient(engine))
+    val repository = BookDetailRemoteRepository(testClient(engine), ApiConfiguration("https://api.chaekchaek.com"))
     val guest = WriteCredential.Guest("guest-token")
 
     repository.updateReview(

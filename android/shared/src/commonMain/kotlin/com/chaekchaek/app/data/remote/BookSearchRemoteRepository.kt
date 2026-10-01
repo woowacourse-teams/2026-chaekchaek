@@ -12,9 +12,10 @@ import kotlinx.serialization.Serializable
 
 class BookSearchRemoteRepository(
     private val client: HttpClient = createHttpClient(),
+    private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
 ) : BookSearchRepository {
     override suspend fun search(query: String, sort: BookSearchSort, page: Int): BookSearchPage =
-        client.get("https://api.chaekchaek.com/api/v1/books") {
+        client.get("${apiConfiguration.baseUrl}/api/v1/books") {
             parameter("query", query)
             parameter("sort", sort.name)
             parameter("page", page)

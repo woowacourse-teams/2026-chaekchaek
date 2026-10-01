@@ -12,24 +12,27 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 
-class MemberRemoteRepository(private val client: HttpClient = createHttpClient()) {
+class MemberRemoteRepository(
+    private val client: HttpClient = createHttpClient(),
+    private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
+) {
     suspend fun get(accessToken: String): RemoteMemberProfile =
-        client.get("$BASE_URL/api/v1/members/me") {
+        client.get("${apiConfiguration.baseUrl}/api/v1/members/me") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }.body<MemberResponseDto>().toRemoteMemberProfile()
 
     suspend fun updateNickname(nickname: String, accessToken: String): RemoteMemberProfile =
-        client.patch("$BASE_URL/api/v1/members/me/nickname") {
+        client.patch("${apiConfiguration.baseUrl}/api/v1/members/me/nickname") {
             authenticatedJson(accessToken, NicknameRequest(nickname))
         }.body<MemberResponseDto>().toRemoteMemberProfile()
 
     suspend fun updateAnonymity(displayAnonymous: Boolean, accessToken: String): RemoteMemberProfile =
-        client.patch("$BASE_URL/api/v1/members/me/anonymity") {
+        client.patch("${apiConfiguration.baseUrl}/api/v1/members/me/anonymity") {
             authenticatedJson(accessToken, AnonymityRequest(displayAnonymous))
         }.body<MemberResponseDto>().toRemoteMemberProfile()
 
     suspend fun withdraw(accessToken: String) {
-        client.delete("$BASE_URL/api/v1/members/me") {
+        client.delete("${apiConfiguration.baseUrl}/api/v1/members/me") {
             header(HttpHeaders.Authorization, "Bearer $accessToken")
         }
     }
@@ -40,9 +43,6 @@ class MemberRemoteRepository(private val client: HttpClient = createHttpClient()
         setBody(body)
     }
 
-    private companion object {
-        const val BASE_URL = "https://api.chaekchaek.com"
-    }
 }
 
 data class RemoteMemberProfile(

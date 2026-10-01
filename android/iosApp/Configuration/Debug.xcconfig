@@ -1,3 +1,6 @@
 #include? "Secrets.xcconfig"
 
 SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG
+
+CHAEKCHAEK_API_ENVIRONMENT = production
+#include? "../../config/ios.local.xcconfig"

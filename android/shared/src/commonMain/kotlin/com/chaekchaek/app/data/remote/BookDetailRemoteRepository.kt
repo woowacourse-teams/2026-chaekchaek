@@ -21,10 +21,11 @@ import kotlinx.serialization.json.put
 
 class BookDetailRemoteRepository(
   private val client: HttpClient = createHttpClient(),
+  private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
 ) {
 
   suspend fun detail(isbn13: String, credential: WriteCredential? = null): BookDetail =
-    client.get("$BASE_URL/api/v1/books/by-isbn/$isbn13") {
+    client.get("${apiConfiguration.baseUrl}/api/v1/books/by-isbn/$isbn13") {
       credential?.let { authenticate(it) }
     }.body<BookDetailDto>().toBookDetail()
 
@@ -35,7 +36,7 @@ class BookDetailRemoteRepository(
     credential: WriteCredential? = null,
     page: Int = FIRST_PAGE,
   ): ReviewPage =
-    client.get("$BASE_URL/api/v1/books/$bookId/reviews") {
+    client.get("${apiConfiguration.baseUrl}/api/v1/books/$bookId/reviews") {
       parameter("page", page)
       parameter("feed", scope.name)
       parameter("sort", sort.name)
@@ -43,34 +44,34 @@ class BookDetailRemoteRepository(
     }.body<ReviewPageDto>().toReviewPage()
 
   suspend fun addToLibrary(isbn13: String, totalPages: Int?, accessToken: String): LibraryRecord =
-    client.post("$BASE_URL/api/v1/library") {
+    client.post("${apiConfiguration.baseUrl}/api/v1/library") {
       authenticatedJson(accessToken, LibraryAddRequest(isbn13, "READING", totalPages))
     }.body<LibraryRecordDto>().toLibraryRecord()
 
   suspend fun updateReadingStatus(bookId: Long, status: String, accessToken: String): LibraryRecord =
-    client.patch("$BASE_URL/api/v1/library/$bookId") {
+    client.patch("${apiConfiguration.baseUrl}/api/v1/library/$bookId") {
       authenticatedJson(accessToken, LibraryUpdateRequest(status = status))
     }.body<LibraryRecordDto>().toLibraryRecord()
 
   suspend fun updateCurrentPage(bookId: Long, currentPage: Int, totalPages: Int?, accessToken: String): LibraryRecord =
-    client.patch("$BASE_URL/api/v1/library/$bookId") {
+    client.patch("${apiConfiguration.baseUrl}/api/v1/library/$bookId") {
       authenticatedJson(accessToken, LibraryUpdateRequest(currentPage = currentPage, totalPages = totalPages))
     }.body<LibraryRecordDto>().toLibraryRecord()
 
   suspend fun rate(bookId: Long, rating: Double, accessToken: String): LibraryRecord =
-    client.put("$BASE_URL/api/v1/library/$bookId/rating") {
+    client.put("${apiConfiguration.baseUrl}/api/v1/library/$bookId/rating") {
       authenticatedJson(accessToken, RatingRequest(rating))
     }.body<LibraryRecordDto>().toLibraryRecord()
 
   suspend fun ratingComparison(isbn13: String, criterion: Double, accessToken: String): RatingComparison =
-    client.get("$BASE_URL/api/v1/members/me/ratings/comparison") {
+    client.get("${apiConfiguration.baseUrl}/api/v1/members/me/ratings/comparison") {
       header(HttpHeaders.Authorization, "Bearer $accessToken")
       parameter("isbn13", isbn13)
       parameter("criterion", criterion)
     }.body<RatingComparisonDto>().toRatingComparison()
 
   suspend fun createReview(bookId: Long, request: ReviewCreateRequest, credential: WriteCredential): BookReview =
-    client.post("$BASE_URL/api/v1/books/$bookId/reviews") {
+    client.post("${apiConfiguration.baseUrl}/api/v1/books/$bookId/reviews") {
       authenticatedJson(
         credential,
         if (credential is WriteCredential.Guest) request.copy(currentPage = null, totalPages = null) else request,
@@ -82,14 +83,14 @@ class BookDetailRemoteRepository(
     request: ReviewCreateRequest,
     credential: WriteCredential,
   ): BookReview =
-    client.patch("$BASE_URL/api/v1/reviews/$reviewId") {
+    client.patch("${apiConfiguration.baseUrl}/api/v1/reviews/$reviewId") {
       authenticate(credential)
       contentType(ContentType.Application.Json)
       setBody(request.toUpdateBody(includeReadingProgress = credential is WriteCredential.Member))
     }.body<ReviewDto>().toBookReview()
 
   suspend fun deleteReview(reviewId: Long, credential: WriteCredential) {
-    client.delete("$BASE_URL/api/v1/reviews/$reviewId") {
+    client.delete("${apiConfiguration.baseUrl}/api/v1/reviews/$reviewId") {
       authenticate(credential)
     }
   }
@@ -99,45 +100,45 @@ class BookDetailRemoteRepository(
     credential: WriteCredential? = null,
     page: Int = FIRST_PAGE,
   ): ReplyPage =
-    client.get("$BASE_URL/api/v1/reviews/$reviewId/replies") {
+    client.get("${apiConfiguration.baseUrl}/api/v1/reviews/$reviewId/replies") {
       parameter("page", page)
       credential?.let { authenticate(it) }
     }.body<ReplyPageDto>().toReplyPage()
 
   suspend fun likeReview(reviewId: Long, credential: WriteCredential): ReactionResult =
-    client.post("$BASE_URL/api/v1/reviews/$reviewId/reactions") {
+    client.post("${apiConfiguration.baseUrl}/api/v1/reviews/$reviewId/reactions") {
       authenticate(credential)
     }.body<ReactionDto>().toReactionResult()
 
   suspend fun unlikeReview(reviewId: Long, credential: WriteCredential) {
-    client.delete("$BASE_URL/api/v1/reviews/$reviewId/reactions") {
+    client.delete("${apiConfiguration.baseUrl}/api/v1/reviews/$reviewId/reactions") {
       authenticate(credential)
     }
   }
 
   suspend fun createReply(reviewId: Long, content: String, credential: WriteCredential): ReviewReply =
-    client.post("$BASE_URL/api/v1/reviews/$reviewId/replies") {
+    client.post("${apiConfiguration.baseUrl}/api/v1/reviews/$reviewId/replies") {
       authenticatedJson(credential, ReplyCreateRequest(content))
     }.body<ReviewReplyDto>().toReviewReply()
 
   suspend fun updateReply(replyId: Long, content: String, credential: WriteCredential): ReviewReply =
-    client.patch("$BASE_URL/api/v1/replies/$replyId") {
+    client.patch("${apiConfiguration.baseUrl}/api/v1/replies/$replyId") {
       authenticatedJson(credential, ReplyCreateRequest(content))
     }.body<ReviewReplyDto>().toReviewReply()
 
   suspend fun deleteReply(replyId: Long, credential: WriteCredential) {
-    client.delete("$BASE_URL/api/v1/replies/$replyId") {
+    client.delete("${apiConfiguration.baseUrl}/api/v1/replies/$replyId") {
       authenticate(credential)
     }
   }
 
   suspend fun likeReply(replyId: Long, credential: WriteCredential): ReactionResult =
-    client.post("$BASE_URL/api/v1/replies/$replyId/reactions") {
+    client.post("${apiConfiguration.baseUrl}/api/v1/replies/$replyId/reactions") {
       authenticate(credential)
     }.body<ReactionDto>().toReactionResult()
 
   suspend fun unlikeReply(replyId: Long, credential: WriteCredential) {
-    client.delete("$BASE_URL/api/v1/replies/$replyId/reactions") {
+    client.delete("${apiConfiguration.baseUrl}/api/v1/replies/$replyId/reactions") {
       authenticate(credential)
     }
   }
@@ -162,7 +163,6 @@ class BookDetailRemoteRepository(
   }
 
   private companion object {
-    const val BASE_URL = "https://api.chaekchaek.com"
     const val FIRST_PAGE = 1
   }
 }

@@ -21,3 +21,7 @@ app/google-services.json
 iosApp/DerivedData/
 iosApp/*.xcodeproj/xcuserdata/
 iosApp/Configuration/Secrets.xcconfig
+
+/config/overrides.properties
+/config/ios.local.xcconfig
+!/config/local.properties

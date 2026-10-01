@@ -1,0 +1,2 @@
+// Copy to ios.local.xcconfig for Xcode Debug builds.
+CHAEKCHAEK_API_ENVIRONMENT = development
