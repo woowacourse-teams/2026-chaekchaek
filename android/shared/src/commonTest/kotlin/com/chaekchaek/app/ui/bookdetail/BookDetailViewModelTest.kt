@@ -473,6 +473,45 @@ class BookDetailViewModelTest {
   }
 
   @Test
+  fun `별점 기준을 바꾸는 동안 기존 비교 기록을 유지한다`() = runViewModelTest {
+    val secondComparisonStarted = CompletableDeferred<Unit>()
+    val finishSecondComparison = CompletableDeferred<Unit>()
+    val engine = MockEngine { request ->
+      when {
+        request.url.encodedPath == "/api/v1/members/me/ratings/comparison" &&
+          request.url.parameters["criterion"] == "4.0" -> respond(
+          """{"lower":null,"current":{"bookId":1,"title":"기존 작품","myRating":4.0,"ratingUpdatedAt":"2026-08-01T00:00:00Z"},"higher":null}""",
+          headers = jsonHeaders(),
+        )
+        request.url.encodedPath == "/api/v1/members/me/ratings/comparison" -> {
+          secondComparisonStarted.complete(Unit)
+          finishSecondComparison.await()
+          respond(
+            """{"lower":null,"current":{"bookId":2,"title":"새 작품","myRating":4.5,"ratingUpdatedAt":"2026-08-02T00:00:00Z"},"higher":null}""",
+            headers = jsonHeaders(),
+          )
+        }
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = "access-token")
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    viewModel.loadRatingComparison(Rating.ofScore(4.0f))
+    awaitReal { viewModel.uiState.first { it.ratingComparison.singleOrNull()?.title == "기존 작품" } }
+    viewModel.loadRatingComparison(Rating.ofScore(4.5f))
+    awaitReal { secondComparisonStarted.await() }
+
+    assertEquals(listOf("기존 작품"), viewModel.uiState.value.ratingComparison.map { it.title })
+
+    finishSecondComparison.complete(Unit)
+    awaitReal { viewModel.uiState.first { it.ratingComparison.singleOrNull()?.title == "새 작품" } }
+  }
+
+  @Test
   fun `감상 삭제 성공은 재조회 없이 목록에서 제거한다`() = runViewModelTest {
     var reviewGetCount = 0
     val engine = MockEngine { request ->
