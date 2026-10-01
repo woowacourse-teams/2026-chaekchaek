@@ -43,6 +43,7 @@ import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
 import com.chaekchaek.app.ui.RemoteBookImage
 import com.chaekchaek.app.ui.common.BrandHeader
+import com.chaekchaek.app.ui.common.HomeLoadErrorContent
 import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.theme.ChaekBorderSoft
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
@@ -59,30 +60,55 @@ fun FeedScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by homeViewModel.uiState.collectAsState()
-    val reflections = (state as? HomeUiState.Content)?.sections.orEmpty()
-        .filterIsInstance<FeedSectionUiModel.RecentQuotes>()
-        .flatMap { it.cards }
-
     Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         BrandHeader(onProfileClick)
-        when {
-            state is HomeUiState.Loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+        when (val current = state) {
+            HomeUiState.Loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
             }
-            reflections.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("아직 도착한 감상이 없어요.", style = MaterialTheme.typography.bodyMedium)
-            }
-            else -> LazyColumn(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = PaddingValues(start = 24.dp, top = 18.dp, end = 24.dp, bottom = 24.dp),
-            ) {
-                itemsIndexed(reflections, key = { _, item -> item.noteId.value }) { _, reflection ->
-                    HorizontalDivider(color = ChaekBorderSoft)
-                    FeedReflectionArticle(
-                        reflection = reflection,
-                        onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
-                    )
-                }
+            HomeUiState.Empty -> FeedEmptyContent(Modifier.weight(1f))
+            is HomeUiState.Failure -> HomeLoadErrorContent(
+                error = current.error,
+                retry = homeViewModel::retry,
+                modifier = Modifier.weight(1f),
+            )
+            is HomeUiState.Content -> FeedContent(
+                reflections = current.sections
+                    .filterIsInstance<FeedSectionUiModel.RecentQuotes>()
+                    .flatMap { it.cards },
+                onBookClick = onBookClick,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun FeedEmptyContent(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Text("아직 도착한 감상이 없어요.", style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun FeedContent(
+    reflections: List<QuoteCardUiModel>,
+    onBookClick: (BookDetailTarget) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (reflections.isEmpty()) {
+        FeedEmptyContent(modifier)
+    } else {
+        LazyColumn(
+            modifier = modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(start = 24.dp, top = 18.dp, end = 24.dp, bottom = 24.dp),
+        ) {
+            itemsIndexed(reflections, key = { _, item -> item.noteId.value }) { _, reflection ->
+                HorizontalDivider(color = ChaekBorderSoft)
+                FeedReflectionArticle(
+                    reflection = reflection,
+                    onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
+                )
             }
         }
     }
@@ -92,17 +118,22 @@ fun FeedScreen(
 private fun FeedReflectionArticle(reflection: QuoteCardUiModel, onOpenBook: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().heightIn(min = 330.dp)
-            .clickable(role = Role.Button, onClick = onOpenBook)
             .padding(top = 22.dp, bottom = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Box(modifier = Modifier.size(width = 64.dp, height = 110.dp).feedBookShadow().clip(RoundedCornerShape(2.dp))) {
+        Box(
+            modifier = Modifier.size(width = 64.dp, height = 110.dp)
+                .feedBookShadow()
+                .clip(RoundedCornerShape(2.dp))
+                .clickable(role = Role.Button, onClick = onOpenBook),
+        ) {
             RemoteBookImage(reflection.coverId, "${reflection.bookTitle} 표지", Modifier.fillMaxSize())
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 reflection.bookTitle,
+                modifier = Modifier.clickable(role = Role.Button, onClick = onOpenBook),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

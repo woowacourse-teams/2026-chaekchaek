@@ -75,6 +75,7 @@ import com.chaekchaek.app.ui.theme.discoverReflectionBookShadow
 import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.common.BrandHeader
+import com.chaekchaek.app.ui.common.HomeLoadErrorContent
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
 import com.chaekchaek.app.presentation.home.HomeUiState
 import com.chaekchaek.app.presentation.home.HomeViewModel
@@ -108,6 +109,7 @@ fun SearchRoute(
     onRegister = viewModel::register,
     onLoadMore = viewModel::loadMore,
     onSortSelect = viewModel::selectSort,
+    onHomeRetry = homeViewModel::retry,
     modifier = modifier,
     onBack = onBack,
     onProfileClick = onProfileClick,
@@ -128,6 +130,7 @@ fun SearchScreen(
   onRegister: (BookSearchResult) -> Unit,
   onLoadMore: () -> Unit,
   onSortSelect: (BookSearchSort) -> Unit,
+  onHomeRetry: () -> Unit = {},
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
   onProfileClick: () -> Unit = {},
@@ -161,7 +164,7 @@ fun SearchScreen(
     )
 
     when (val current = state) {
-      SearchUiState.Idle -> DiscoverLanding(homeState, onBookClick, Modifier.weight(1f))
+      SearchUiState.Idle -> DiscoverLanding(homeState, onBookClick, onHomeRetry, Modifier.weight(1f))
       SearchUiState.Loading -> SearchLoading(Modifier.weight(1f))
       SearchUiState.Empty ->
         Column(modifier = Modifier.weight(1f)) {
@@ -215,30 +218,29 @@ private fun SearchTopBar(
 private fun DiscoverLanding(
   homeState: HomeUiState,
   onBookClick: (BookDetailTarget) -> Unit,
+  onRetry: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val sections = (homeState as? HomeUiState.Content)?.sections.orEmpty()
+  when (homeState) {
+    HomeUiState.Loading -> SearchLoading(modifier)
+    HomeUiState.Empty -> DiscoverContent(emptyList(), onBookClick, modifier)
+    is HomeUiState.Failure -> HomeLoadErrorContent(homeState.error, onRetry, modifier)
+    is HomeUiState.Content -> DiscoverContent(homeState.sections, onBookClick, modifier)
+  }
+}
+
+@Composable
+private fun DiscoverContent(
+  sections: List<FeedSectionUiModel>,
+  onBookClick: (BookDetailTarget) -> Unit,
+  modifier: Modifier = Modifier,
+) {
   val popular = sections.filterIsInstance<FeedSectionUiModel.TrendingBooks>().firstOrNull()?.books.orEmpty()
   val recent = sections.filterIsInstance<FeedSectionUiModel.RecentQuotes>().flatMap { it.cards }
   LazyColumn(modifier = modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 20.dp)) {
     item {
       Row(
-        Modifier.fillMaxWidth().padding(start = 24.dp, top = 12.dp, end = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Text(
-          "최근 검색",
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
-        )
-        RecentSearchChip("이방인")
-        RecentSearchChip("가즈오 이시구로")
-      }
-    }
-    item {
-      Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 28.dp, end = 24.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 12.dp, end = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
       ) {
@@ -342,18 +344,6 @@ private fun DiscoverPopularBook(rank: Int, book: TrendingBookUiModel, onClick: (
         style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
       )
     }
-  }
-}
-
-@Composable
-private fun RecentSearchChip(label: String) {
-  Surface(shape = RoundedCornerShape(999.dp), color = Color(0xFFF0F0F2)) {
-    Text(
-      label,
-      modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-      color = MaterialTheme.colorScheme.onSurface,
-      style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-    )
   }
 }
 

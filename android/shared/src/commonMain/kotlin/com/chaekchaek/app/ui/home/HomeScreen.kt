@@ -72,8 +72,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.collectAsState
-import com.chaekchaek.app.presentation.common.AppError
-import com.chaekchaek.app.ui.common.ChaekOneActionDialog
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
 import com.chaekchaek.app.presentation.home.HomeUiState
 import com.chaekchaek.app.presentation.home.HomeViewModel
@@ -83,6 +81,7 @@ import com.chaekchaek.app.presentation.home.ReadingBookUiModel
 import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import com.chaekchaek.app.ui.common.avatarResource
 import com.chaekchaek.app.ui.common.BrandHeader
+import com.chaekchaek.app.ui.common.HomeLoadErrorContent
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.*
 import com.chaekchaek.app.ui.theme.ChaekBand
@@ -145,7 +144,7 @@ fun HomeScreen(
     when (val state = uiState) {
         HomeUiState.Loading -> LoadingContent(modifier)
         HomeUiState.Empty -> EmptyContent(modifier)
-        is HomeUiState.Failure -> ErrorContent(state.error, homeViewModel::retry, modifier)
+        is HomeUiState.Failure -> HomeLoadErrorContent(state.error, homeViewModel::retry, modifier)
         is HomeUiState.Content -> HomeContent(
             state,
             myDisplayName,
@@ -183,16 +182,6 @@ private fun EmptyContent(modifier: Modifier) {
     ) {
         Text("아직 도착한 책 이야기가 없어요.", style = MaterialTheme.typography.headlineSmall)
     }
-}
-
-@Composable
-private fun ErrorContent(error: AppError, retry: () -> Unit, modifier: Modifier) {
-    Box(modifier.fillMaxSize())
-    ChaekOneActionDialog(
-        title = { Text("홈을 불러오지 못했어요") },
-        text = { Text(error.message()) },
-        confirmButton = { TextButton(onClick = retry) { Text("다시 시도") } },
-    )
 }
 
 @Composable
@@ -1049,14 +1038,6 @@ private fun Cover(coverId: String, title: String, modifier: Modifier = Modifier)
 }
 
 internal fun String.isRemoteCoverUrl(): Boolean = startsWith("https://")
-
-private fun AppError.message(): String =
-    when (this) {
-        AppError.Network -> "네트워크 연결을 확인한 뒤 다시 시도해 주세요."
-        AppError.NotFound -> "홈 피드를 찾을 수 없어요."
-        AppError.Unauthorized -> "로그인이 필요한 요청이에요."
-        AppError.Unknown -> "잠시 후 다시 시도해 주세요."
-    }
 
 internal fun coverResource(coverId: String): DrawableResource =
     when (coverId) {
