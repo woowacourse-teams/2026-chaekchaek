@@ -94,6 +94,8 @@ class AladinBookClientTest {
         SoftAssertions.assertSoftly(softly -> {
             softly.assertThat(result.title()).isEqualTo("마션 (알라딘 리커버 특별판)");
             softly.assertThat(result.coverImageUrl()).isEqualTo("https://image.aladin.co.kr/martian.jpg");
+            softly.assertThat(result.spineImageUrl()).isNull();
+            softly.assertThat(result.backImageUrl()).isNull();
             softly.assertThat(result.description()).isEqualTo("책 설명");
             softly.assertThat(result.authors()).containsExactly("앤디 위어");
             softly.assertThat(result.translators()).containsExactly("박아람");

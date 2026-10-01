@@ -3,7 +3,7 @@ name: Assign Random Backend Reviewer
 on:
   pull_request:
     types: [opened, ready_for_review]
-    branches: [be]
+    branches: [be, be-dev]
     paths:
       - 'backend/**'
 

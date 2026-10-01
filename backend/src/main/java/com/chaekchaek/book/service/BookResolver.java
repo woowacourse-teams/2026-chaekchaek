@@ -59,6 +59,8 @@ public class BookResolver {
                 isbn13,
                 source.title(),
                 source.coverImageUrl(),
+                source.spineImageUrl(),
+                source.backImageUrl(),
                 htmlUnescape(source.description()),
                 source.authors(),
                 source.translators(),

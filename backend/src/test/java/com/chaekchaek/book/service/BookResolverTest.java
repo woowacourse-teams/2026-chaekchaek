@@ -66,6 +66,39 @@ class BookResolverTest {
     }
 
     @Test
+    @DisplayName("외부 상세 결과의 책등과 책뒷면 이미지 URL을 책에 전달한다")
+    void should_PreserveSpineAndBackImageUrls_When_LookingUpUnregisteredBook() {
+        // given
+        BookSearchClient client = mock(BookSearchClient.class);
+        BookRepository repository = mock(BookRepository.class);
+        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+        when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
+        when(client.findBookByIsbn13(ISBN13)).thenReturn(new BookDetailItem(
+                "마션",
+                "https://image.yes24.com/goods/118578901/xL",
+                "https://image.yes24.com/goods/118578901/side",
+                "https://image.yes24.com/goods/118578901/back",
+                "책 설명",
+                List.of("앤디 위어"),
+                List.of(),
+                LocalDate.of(2026, 1, 1),
+                ISBN13.value(),
+                "SF",
+                "알에이치코리아",
+                308
+        ));
+
+        // when
+        Book book = resolver.lookup(ISBN13);
+
+        // then
+        assertThat(book.getSpineImageUrl())
+                .isEqualTo("https://image.yes24.com/goods/118578901/side");
+        assertThat(book.getBackImageUrl())
+                .isEqualTo("https://image.yes24.com/goods/118578901/back");
+    }
+
+    @Test
     @DisplayName("외부 도서 설명에 HTML 엔티티가 있으면 디코딩해서 반환한다")
     void should_UnescapeHtmlEntities_When_DescriptionContainsHtmlEntities() {
         // given
@@ -106,7 +139,7 @@ class BookResolverTest {
 
     private BookDetailItem bookDetailItem(String description) {
         return new BookDetailItem(
-                "마션", "https://image.example/martian.jpg", description,
+                "마션", "https://image.example/martian.jpg", null, null, description,
                 List.of("앤디 위어"), List.of(), LocalDate.of(2026, 1, 1),
                 ISBN13.value(), "SF", "알에이치코리아", 308
         );

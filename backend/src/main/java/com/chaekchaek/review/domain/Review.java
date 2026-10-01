@@ -21,7 +21,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "review", indexes = {
         @Index(name = "idx_review_book_created", columnList = "book_id,created_at"),
         @Index(name = "idx_review_book_page", columnList = "book_id,current_page"),
-        @Index(name = "idx_review_actor_book", columnList = "actor_id,book_id")
+        @Index(name = "idx_review_actor_book", columnList = "actor_id,book_id"),
+        @Index(name = "idx_review_feed", columnList = "deleted_at,created_at,review_id")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Review {

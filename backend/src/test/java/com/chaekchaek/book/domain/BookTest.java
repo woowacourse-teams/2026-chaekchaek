@@ -23,6 +23,19 @@ class BookTest {
     }
 
     @Test
+    @DisplayName("책등과 책뒷면 이미지 URL을 보관한다")
+    void should_KeepSpineAndBackImageUrls_When_BookIsCreated() {
+        // given
+        Book book = bookWithoutTotalPages();
+
+        // when & then
+        assertThat(book.getSpineImageUrl())
+                .isEqualTo("https://image.example/martian.jpg/side");
+        assertThat(book.getBackImageUrl())
+                .isEqualTo("https://image.example/martian.jpg/back");
+    }
+
+    @Test
     @DisplayName("전체 페이지가 없던 책에 처음 입력한 값을 저장한다")
     void should_RecordTotalPages_When_BookDoesNotHaveTotalPages() {
         // given
@@ -62,7 +75,10 @@ class BookTest {
 
     private Book bookWithoutTotalPages() {
         return Book.create(
-                new Isbn13("9788925568683"), "마션", "https://image.example/martian.jpg",
+                new Isbn13("9788925568683"), "마션",
+                "https://image.example/martian.jpg",
+                "https://image.example/martian.jpg/side",
+                "https://image.example/martian.jpg/back",
                 null,
                 List.of("앤디 위어"), List.of("박아람"), "알에이치코리아", "SF",
                 LocalDate.of(2026, 1, 1), null
