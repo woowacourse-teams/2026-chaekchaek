@@ -28,6 +28,12 @@ data class ArchiveUiState(
     val errorMessage: String? = null,
 )
 
+internal fun booksForSpineShelf(
+    books: List<ArchiveBookUiModel>,
+    onlySpineImages: Boolean,
+): List<ArchiveBookUiModel> =
+    if (onlySpineImages) books.filter { !it.spineUrl.isNullOrBlank() } else books
+
 internal val ReadingStatus.label: String
     get() = when (this) {
         ReadingStatus.WANT_TO_READ -> "읽고 싶어요"

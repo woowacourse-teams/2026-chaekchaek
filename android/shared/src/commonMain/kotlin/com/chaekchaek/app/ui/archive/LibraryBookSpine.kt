@@ -28,10 +28,14 @@ import coil3.request.ImageRequest
 import org.jetbrains.compose.resources.Font
 
 @Composable
-internal fun LibraryBookSpine(book: ArchiveBookUiModel, modifier: Modifier = Modifier) {
+internal fun LibraryBookSpine(
+    book: ArchiveBookUiModel,
+    modifier: Modifier = Modifier,
+    showGeneratedSpine: Boolean = true,
+) {
     var imageFailed by remember(book.spineUrl) { mutableStateOf(false) }
     if (book.spineUrl.isNullOrBlank() || imageFailed) {
-        GeneratedBookSpine(book, modifier.width(30.dp))
+        if (showGeneratedSpine) GeneratedBookSpine(book, modifier.width(30.dp))
     } else {
         AsyncImage(
             model = book.spineUrl,

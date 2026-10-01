@@ -23,6 +23,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -80,7 +85,7 @@ fun ArchiveRoute(
     onBookClick: (ArchiveBookUiModel) -> Unit,
     modifier: Modifier = Modifier,
     bookCover: @Composable (ArchiveBookUiModel) -> Unit = { DefaultBookCover(it) },
-    bookSpine: @Composable (ArchiveBookUiModel, Modifier) -> Unit = { _, _ -> },
+    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean) -> Unit = { _, _, _ -> },
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
@@ -115,10 +120,11 @@ fun ArchiveScreen(
     onBookClick: (ArchiveBookUiModel) -> Unit,
     modifier: Modifier = Modifier,
     bookCover: @Composable (ArchiveBookUiModel) -> Unit = { DefaultBookCover(it) },
-    bookSpine: @Composable (ArchiveBookUiModel, Modifier) -> Unit = { _, _ -> },
+    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean) -> Unit = { _, _, _ -> },
 ) {
     var filter by rememberSaveable { mutableStateOf<ReadingStatus?>(null) }
     var sort by rememberSaveable { mutableStateOf(ArchiveSort.Recent) }
+    var onlySpineImages by rememberSaveable { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf(emptySet<String>()) }
     var pendingDeletionIds by remember { mutableStateOf(emptySet<String>()) }
     var showStatusDialog by remember { mutableStateOf(false) }
@@ -127,7 +133,7 @@ fun ArchiveScreen(
     val visibleItems = remember(uiState.items, filter, sort) {
         sortArchiveBooks(uiState.items.filter { filter == null || it.status == filter }, sort)
     }
-    val spineBooks = visibleItems
+    val spineBooks = booksForSpineShelf(visibleItems, onlySpineImages)
     val density = LocalDensity.current
     val scrollTopThresholdPx = remember(density) { with(density) { 240.dp.roundToPx() } }
     val showScrollTop by remember(scrollTopThresholdPx) {
@@ -171,8 +177,8 @@ fun ArchiveScreen(
                     onSelected = { filter = it },
                     onEdit = if (editing) null else ({ onEditingChange(true) }),
                 )
-                if (!editing && spineBooks.isNotEmpty()) {
-                    BookSpineShelf(spineBooks, bookSpine)
+                if (!editing && visibleItems.isNotEmpty()) {
+                    BookSpineShelf(spineBooks, onlySpineImages, { onlySpineImages = it }, bookSpine)
                 }
                 SortRow(
                     countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}",
@@ -309,7 +315,9 @@ private fun LibraryControls(
 @Composable
 private fun BookSpineShelf(
     books: List<ArchiveBookUiModel>,
-    bookSpine: @Composable (ArchiveBookUiModel, Modifier) -> Unit,
+    onlySpineImages: Boolean,
+    onOnlySpineImagesChange: (Boolean) -> Unit,
+    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = 27.dp)) {
         Row(
@@ -322,6 +330,7 @@ private fun BookSpineShelf(
                 bookSpine(
                     book,
                     Modifier.height(spineHeight(index)).widthIn(min = 6.dp, max = 34.dp),
+                    !onlySpineImages,
                 )
             }
         }
@@ -329,6 +338,32 @@ private fun BookSpineShelf(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(4.dp)
                 .background(Color(0xFFE5E3E0)),
         )
+        Row(
+            modifier = Modifier.align(Alignment.End).padding(end = 24.dp)
+                .toggleable(
+                    value = onlySpineImages,
+                    role = Role.Checkbox,
+                    onValueChange = onOnlySpineImagesChange,
+                )
+                .heightIn(min = 48.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(
+                checked = onlySpineImages,
+                onCheckedChange = null,
+                modifier = Modifier.size(24.dp).graphicsLayer { scaleX = .7f; scaleY = .7f },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    uncheckedColor = MaterialTheme.colorScheme.outline,
+                ),
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                "책등 이미지 있는 책만",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
