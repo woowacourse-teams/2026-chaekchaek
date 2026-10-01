@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "id": "library-gowun-fallback",
+  "implementation_root": "..",
+  "implementation_inputs": [
+    "shared/src/**/*",
+    "app/src/**/*",
+    "*.kts",
+    "shared/*.kts",
+    "app/*.kts"
+  ],
+  "sources": [
+    {
+      "id": "gowun",
+      "identity": "fonts.html#02-gowun",
+      "path": "../build/design-guard/gowun-source.json",
+      "roots": [
+        "gowun-0"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "library-generated-320",
+      "source": "gowun",
+      "root": "gowun-0",
+      "state": "generated-spines",
+      "platform": "android",
+      "viewport": {
+        "width": 320,
+        "unit": "dp"
+      },
+      "reference": "prototypes/spine-fallback/font-comparison.png"
+    },
+    {
+      "id": "library-generated-390",
+      "source": "gowun",
+      "root": "gowun-0",
+      "state": "generated-spines",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "prototypes/spine-fallback/font-comparison.png"
+    }
+  ],
+  "reviews": "../build/design-guard/gowun-reviews.json",
+  "output": "../build/design-guard/gowun-report.json",
+  "unresolved": [
+    {
+      "id": "full-property-review",
+      "reason": "실제 Android 캡처와 원본 전체 속성의 항목별 검토 및 iOS 렌더링 검증은 별도 필요"
+    }
+  ]
+}

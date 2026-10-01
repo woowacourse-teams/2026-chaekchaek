@@ -12,6 +12,7 @@ data class ArchiveBookUiModel(
     val publisher: String,
     val category: String,
     val coverUrl: String,
+    val spineUrl: String?,
     val status: ReadingStatus,
     val currentPage: Int,
     val totalPages: Int,
@@ -26,6 +27,19 @@ data class ArchiveUiState(
     val showLoading: Boolean = false,
     val errorMessage: String? = null,
 )
+
+internal fun booksForSpineShelf(
+    books: List<ArchiveBookUiModel>,
+    onlySpineImages: Boolean,
+    failedSpineUrls: Set<String> = emptySet(),
+): List<ArchiveBookUiModel> =
+    if (onlySpineImages) {
+        books.filter { book ->
+            !book.spineUrl.isNullOrBlank() && book.spineUrl !in failedSpineUrls
+        }
+    } else {
+        books
+    }
 
 internal val ReadingStatus.label: String
     get() = when (this) {
@@ -52,6 +66,7 @@ internal fun RemoteLibraryBook.toArchiveBookUiModel(): ArchiveBookUiModel {
         publisher = publisher,
         category = category,
         coverUrl = coverImageUrl,
+        spineUrl = spineImageUrl,
         status = ReadingStatus.entries.firstOrNull { it.apiValue == status } ?: ReadingStatus.READING,
         currentPage = safeCurrentPage,
         totalPages = pages,

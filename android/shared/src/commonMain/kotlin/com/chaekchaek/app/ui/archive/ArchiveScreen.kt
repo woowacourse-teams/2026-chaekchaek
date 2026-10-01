@@ -18,10 +18,18 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -55,6 +63,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chaekchaek.app.domain.shelf.ReadingStatus
@@ -77,6 +87,8 @@ fun ArchiveRoute(
     onBookClick: (ArchiveBookUiModel) -> Unit,
     modifier: Modifier = Modifier,
     bookCover: @Composable (ArchiveBookUiModel) -> Unit = { DefaultBookCover(it) },
+    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean, (String) -> Unit) -> Unit =
+        { _, _, _, _ -> },
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
@@ -93,6 +105,7 @@ fun ArchiveRoute(
         onBookClick = onBookClick,
         modifier = modifier,
         bookCover = bookCover,
+        bookSpine = bookSpine,
     )
 }
 
@@ -110,9 +123,13 @@ fun ArchiveScreen(
     onBookClick: (ArchiveBookUiModel) -> Unit,
     modifier: Modifier = Modifier,
     bookCover: @Composable (ArchiveBookUiModel) -> Unit = { DefaultBookCover(it) },
+    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean, (String) -> Unit) -> Unit =
+        { _, _, _, _ -> },
 ) {
     var filter by rememberSaveable { mutableStateOf<ReadingStatus?>(null) }
     var sort by rememberSaveable { mutableStateOf(ArchiveSort.Recent) }
+    var onlySpineImages by rememberSaveable { mutableStateOf(false) }
+    var failedSpineUrls by remember { mutableStateOf(emptySet<String>()) }
     var selectedIds by remember { mutableStateOf(emptySet<String>()) }
     var pendingDeletionIds by remember { mutableStateOf(emptySet<String>()) }
     var showStatusDialog by remember { mutableStateOf(false) }
@@ -121,6 +138,7 @@ fun ArchiveScreen(
     val visibleItems = remember(uiState.items, filter, sort) {
         sortArchiveBooks(uiState.items.filter { filter == null || it.status == filter }, sort)
     }
+    val spineBooks = booksForSpineShelf(visibleItems, onlySpineImages, failedSpineUrls)
     val density = LocalDensity.current
     val scrollTopThresholdPx = remember(density) { with(density) { 240.dp.roundToPx() } }
     val showScrollTop by remember(scrollTopThresholdPx) {
@@ -156,21 +174,25 @@ fun ArchiveScreen(
                             onEditingChange(false)
                         },
                     )
-                } else {
-                    LibraryTopBar(
-                        displayName = memberSettingsState.publicNickname,
-                        onProfileClick = onProfileClick,
-                        onEdit = { onEditingChange(true) },
-                    )
                 }
             }
             item {
                 LibraryControls(
                     selected = filter,
                     onSelected = { filter = it },
+                    onEdit = if (editing) null else ({ onEditingChange(true) }),
                 )
+                if (!editing && visibleItems.isNotEmpty()) {
+                    BookSpineShelf(
+                        books = spineBooks,
+                        onlySpineImages = onlySpineImages,
+                        onOnlySpineImagesChange = { onlySpineImages = it },
+                        onSpineImageLoadFailed = { failedUrl -> failedSpineUrls += failedUrl },
+                        bookSpine = bookSpine,
+                    )
+                }
                 SortRow(
-                    countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}권",
+                    countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}",
                     sort = sort,
                     onSortChange = { sort = it },
                 )
@@ -253,27 +275,6 @@ fun ArchiveScreen(
 }
 
 @Composable
-private fun LibraryTopBar(displayName: String, onProfileClick: () -> Unit, onEdit: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 22.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            "내 서재",
-            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontSize = 29.sp),
-        )
-        Spacer(Modifier.weight(1f))
-        TextButton(onClick = onEdit) {
-            Text(
-                "편집",
-                color = Color(0xFF555555),
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-            )
-        }
-    }
-}
-
-@Composable
 private fun EditTopBar(selectedCount: Int, onCancel: () -> Unit, onDone: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -285,20 +286,10 @@ private fun EditTopBar(selectedCount: Int, onCancel: () -> Unit, onDone: () -> U
 }
 
 @Composable
-private fun ProfileButton(displayName: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier.size(44.dp).clickable(onClickLabel = "마이페이지 열기", role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = "프로필" },
-        contentAlignment = Alignment.Center,
-    ) {
-        MemberAvatar(displayName, 32.dp)
-    }
-}
-
-@Composable
 private fun LibraryControls(
     selected: ReadingStatus?,
     onSelected: (ReadingStatus?) -> Unit,
+    onEdit: (() -> Unit)?,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 18.dp),
@@ -313,8 +304,100 @@ private fun LibraryControls(
                 StatusFilterChip(status.label, selected == status) { onSelected(status) }
             }
         }
+        if (onEdit != null) {
+            Box(
+                modifier = Modifier.size(44.dp).clickable(
+                    onClickLabel = "서재 편집",
+                    role = Role.Button,
+                    onClick = onEdit,
+                ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "편집",
+                    color = Color(0xFF555555),
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                )
+            }
+        }
     }
 }
+
+@Composable
+private fun BookSpineShelf(
+    books: List<ArchiveBookUiModel>,
+    onlySpineImages: Boolean,
+    onOnlySpineImagesChange: (Boolean) -> Unit,
+    onSpineImageLoadFailed: (String) -> Unit,
+    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean, (String) -> Unit) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 27.dp)) {
+        LazyRow(
+            modifier = Modifier.fillMaxWidth().height(194.dp)
+                .semantics { contentDescription = "책등 책장 ${books.size}권" },
+            contentPadding = PaddingValues(horizontal = 24.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            itemsIndexed(books, key = { _, book -> book.id }) { index, book ->
+                bookSpine(
+                    book,
+                    Modifier.height(spineHeight(index)).widthIn(min = 6.dp, max = 34.dp),
+                    !onlySpineImages,
+                    onSpineImageLoadFailed,
+                )
+            }
+        }
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(4.dp)
+                .background(Color(0xFFE5E3E0)),
+        )
+        Row(
+            modifier = Modifier.align(Alignment.End).padding(end = 24.dp)
+                .toggleable(
+                    value = onlySpineImages,
+                    role = Role.Checkbox,
+                    onValueChange = onOnlySpineImagesChange,
+                )
+                .heightIn(min = 48.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(
+                checked = onlySpineImages,
+                onCheckedChange = null,
+                modifier = Modifier.size(24.dp).graphicsLayer { scaleX = .7f; scaleY = .7f },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    uncheckedColor = MaterialTheme.colorScheme.outline,
+                ),
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                "책등 이미지 있는 책만",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private val SpineHeightPattern = listOf(
+    172.dp,
+    194.dp,
+    158.dp,
+    148.dp,
+    173.dp,
+    148.dp,
+    175.dp,
+    190.dp,
+    163.dp,
+    146.dp,
+    164.dp,
+    183.dp,
+    138.dp,
+    186.dp,
+)
+
+private fun spineHeight(index: Int): Dp = SpineHeightPattern[index % SpineHeightPattern.size]
 
 @Composable
 private fun StatusFilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
@@ -343,7 +426,7 @@ private fun SortRow(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 20.dp, end = 24.dp, bottom = 13.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 26.dp, end = 24.dp, bottom = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
