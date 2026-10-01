@@ -19,6 +19,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.defaultPopTransitionSpec
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.auth.AuthViewModel
@@ -126,6 +127,9 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage:
         NavDisplay(
             backStack = backStack,
             onBack = { backStack.removeLastOrNull() },
+            predictivePopTransitionSpec = { _ ->
+                defaultPopTransitionSpec<NavKey>().invoke(this)
+            },
             entryProvider = entryProvider {
                 entry<Root> {
                     RootScreen(
