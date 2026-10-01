@@ -55,6 +55,9 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 
 ## 문서 규칙
 
+- 레벨4 과제 제출에 필요한 LMS 안내와 제출 양식은
+  [레벨4 과제 제출 문서](docs/level4-submission/README.md)를 먼저 참고한다.
+
 - 책등 이미지, YES24 SIDE 이미지, 피드·서재의 표지 대체 표현을 다룰 때는
   [책등 이미지 활용 메모](docs/book-spine-images.md)를 먼저 읽는다. 과거 프론트 테스트는
   YES24 상품번호로 `/goods/{상품번호}/SIDE/XL` URL을 조합했다. 백엔드 API 구현이나
