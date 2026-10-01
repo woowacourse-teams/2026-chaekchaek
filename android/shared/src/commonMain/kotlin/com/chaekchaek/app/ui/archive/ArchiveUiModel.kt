@@ -31,8 +31,15 @@ data class ArchiveUiState(
 internal fun booksForSpineShelf(
     books: List<ArchiveBookUiModel>,
     onlySpineImages: Boolean,
+    failedSpineUrls: Set<String> = emptySet(),
 ): List<ArchiveBookUiModel> =
-    if (onlySpineImages) books.filter { !it.spineUrl.isNullOrBlank() } else books
+    if (onlySpineImages) {
+        books.filter { book ->
+            !book.spineUrl.isNullOrBlank() && book.spineUrl !in failedSpineUrls
+        }
+    } else {
+        books
+    }
 
 internal val ReadingStatus.label: String
     get() = when (this) {

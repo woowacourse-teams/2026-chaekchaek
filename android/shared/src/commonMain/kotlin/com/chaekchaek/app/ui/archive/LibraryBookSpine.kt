@@ -32,6 +32,7 @@ internal fun LibraryBookSpine(
     book: ArchiveBookUiModel,
     modifier: Modifier = Modifier,
     showGeneratedSpine: Boolean = true,
+    onSpineImageLoadFailed: (String) -> Unit = {},
 ) {
     var imageFailed by remember(book.spineUrl) { mutableStateOf(false) }
     if (book.spineUrl.isNullOrBlank() || imageFailed) {
@@ -42,7 +43,10 @@ internal fun LibraryBookSpine(
             contentDescription = "${book.title} 책등",
             modifier = modifier,
             contentScale = ContentScale.Fit,
-            onError = { imageFailed = true },
+            onError = {
+                imageFailed = true
+                onSpineImageLoadFailed(book.spineUrl)
+            },
         )
     }
 }

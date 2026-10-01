@@ -24,6 +24,18 @@ class ArchiveSpineFilterTest {
     }
 
     @Test
+    fun checkedExcludesUrlsThatFailedToLoad() {
+        val failedUrl = "https://example.com/missing-spine"
+        val failed = book("failed", failedUrl)
+        val available = book("available", "https://example.com/available-spine")
+
+        assertEquals(
+            listOf(available),
+            booksForSpineShelf(listOf(failed, available), true, setOf(failedUrl)),
+        )
+    }
+
+    @Test
     fun uncheckingRestoresBooksEvenWhenFilteredShelfWasEmpty() {
         val books = listOf(book("generated", null))
         assertEquals(emptyList(), booksForSpineShelf(books, true))

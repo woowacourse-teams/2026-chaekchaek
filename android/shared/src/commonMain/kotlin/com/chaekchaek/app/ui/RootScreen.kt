@@ -194,8 +194,13 @@ internal fun RootScreen(
                 bookCover = { book ->
                     RemoteBookImage(book.coverUrl, "${book.title} 표지", Modifier.fillMaxSize())
                 },
-                bookSpine = { book, imageModifier, showGeneratedSpine ->
-                    com.chaekchaek.app.ui.archive.LibraryBookSpine(book, imageModifier, showGeneratedSpine)
+                bookSpine = { book, imageModifier, showGeneratedSpine, onSpineImageLoadFailed ->
+                    com.chaekchaek.app.ui.archive.LibraryBookSpine(
+                        book = book,
+                        modifier = imageModifier,
+                        showGeneratedSpine = showGeneratedSpine,
+                        onSpineImageLoadFailed = onSpineImageLoadFailed,
+                    )
                 },
             )
         }

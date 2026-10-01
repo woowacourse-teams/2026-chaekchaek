@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
@@ -85,7 +87,8 @@ fun ArchiveRoute(
     onBookClick: (ArchiveBookUiModel) -> Unit,
     modifier: Modifier = Modifier,
     bookCover: @Composable (ArchiveBookUiModel) -> Unit = { DefaultBookCover(it) },
-    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean) -> Unit = { _, _, _ -> },
+    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean, (String) -> Unit) -> Unit =
+        { _, _, _, _ -> },
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
@@ -120,11 +123,13 @@ fun ArchiveScreen(
     onBookClick: (ArchiveBookUiModel) -> Unit,
     modifier: Modifier = Modifier,
     bookCover: @Composable (ArchiveBookUiModel) -> Unit = { DefaultBookCover(it) },
-    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean) -> Unit = { _, _, _ -> },
+    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean, (String) -> Unit) -> Unit =
+        { _, _, _, _ -> },
 ) {
     var filter by rememberSaveable { mutableStateOf<ReadingStatus?>(null) }
     var sort by rememberSaveable { mutableStateOf(ArchiveSort.Recent) }
     var onlySpineImages by rememberSaveable { mutableStateOf(false) }
+    var failedSpineUrls by remember { mutableStateOf(emptySet<String>()) }
     var selectedIds by remember { mutableStateOf(emptySet<String>()) }
     var pendingDeletionIds by remember { mutableStateOf(emptySet<String>()) }
     var showStatusDialog by remember { mutableStateOf(false) }
@@ -133,7 +138,7 @@ fun ArchiveScreen(
     val visibleItems = remember(uiState.items, filter, sort) {
         sortArchiveBooks(uiState.items.filter { filter == null || it.status == filter }, sort)
     }
-    val spineBooks = booksForSpineShelf(visibleItems, onlySpineImages)
+    val spineBooks = booksForSpineShelf(visibleItems, onlySpineImages, failedSpineUrls)
     val density = LocalDensity.current
     val scrollTopThresholdPx = remember(density) { with(density) { 240.dp.roundToPx() } }
     val showScrollTop by remember(scrollTopThresholdPx) {
@@ -178,7 +183,13 @@ fun ArchiveScreen(
                     onEdit = if (editing) null else ({ onEditingChange(true) }),
                 )
                 if (!editing && visibleItems.isNotEmpty()) {
-                    BookSpineShelf(spineBooks, onlySpineImages, { onlySpineImages = it }, bookSpine)
+                    BookSpineShelf(
+                        books = spineBooks,
+                        onlySpineImages = onlySpineImages,
+                        onOnlySpineImagesChange = { onlySpineImages = it },
+                        onSpineImageLoadFailed = { failedUrl -> failedSpineUrls += failedUrl },
+                        bookSpine = bookSpine,
+                    )
                 }
                 SortRow(
                     countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}",
@@ -317,20 +328,22 @@ private fun BookSpineShelf(
     books: List<ArchiveBookUiModel>,
     onlySpineImages: Boolean,
     onOnlySpineImagesChange: (Boolean) -> Unit,
-    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean) -> Unit,
+    onSpineImageLoadFailed: (String) -> Unit,
+    bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean, (String) -> Unit) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = 27.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().height(194.dp).padding(horizontal = 24.dp)
-                .horizontalScroll(rememberScrollState())
+        LazyRow(
+            modifier = Modifier.fillMaxWidth().height(194.dp)
                 .semantics { contentDescription = "책등 책장 ${books.size}권" },
+            contentPadding = PaddingValues(horizontal = 24.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
-            books.forEachIndexed { index, book ->
+            itemsIndexed(books, key = { _, book -> book.id }) { index, book ->
                 bookSpine(
                     book,
                     Modifier.height(spineHeight(index)).widthIn(min = 6.dp, max = 34.dp),
                     !onlySpineImages,
+                    onSpineImageLoadFailed,
                 )
             }
         }
