@@ -7,15 +7,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.ui.theme.ChaekchaekTheme
+import com.chaekchaek.app.ui.search.RecentSearchStorage
 
 @Composable
-fun App(authPlatform: AuthPlatformCallbacks, uiTestingMyPage: Boolean = false) {
+fun App(
+    authPlatform: AuthPlatformCallbacks,
+    recentSearchStorage: RecentSearchStorage = RecentSearchStorage(),
+    uiTestingMyPage: Boolean = false,
+) {
     ChaekchaekTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
         ) {
-            AppNavigation(authPlatform, uiTestingMyPage)
+            AppNavigation(authPlatform, recentSearchStorage, uiTestingMyPage)
         }
     }
 }

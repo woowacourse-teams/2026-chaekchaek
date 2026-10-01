@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.domain.feed.FeedSection
-import com.chaekchaek.app.domain.feed.FeedReviewActions
 import com.chaekchaek.app.presentation.common.TimeLabels
 import com.chaekchaek.app.presentation.common.toAppError
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
@@ -22,12 +21,10 @@ import kotlin.time.Instant
 class HomeViewModel(
     private val feedRepository: FeedRepository,
     private val clock: Clock,
-    private val reviewActions: FeedReviewActions? = null,
 ) : ViewModel() {
     private var accessToken: String? = null
     private var hasObservedAuthentication = false
     private var loadJob: Job? = null
-    private var mutationJob: Job? = null
     private val _uiState = MutableStateFlow<HomeUiState>(
         HomeUiState.Content(emptyList()),
     )
@@ -39,30 +36,6 @@ class HomeViewModel(
 
     fun retry() {
         load()
-    }
-
-    fun clearRequestError() {
-        updateContent { it.copy(requestError = null) }
-    }
-
-    fun toggleReviewLike(reviewId: Long?, likedByMe: Boolean) {
-        val id = reviewId ?: return showInteractionError()
-        mutateReview(onSuccess = {
-            updateCard(id) { card ->
-                card.copy(
-                    likedByMe = !likedByMe,
-                    likeCount = (card.likeCount + if (likedByMe) -1 else 1).coerceAtLeast(0),
-                )
-            }
-        }) { actions -> actions.toggleLike(id, likedByMe, accessToken) }
-    }
-
-    fun createReply(reviewId: Long?, content: String, onSuccess: () -> Unit = {}) {
-        val id = reviewId ?: return showInteractionError()
-        mutateReview(onSuccess = {
-            updateCard(id) { card -> card.copy(replyCount = card.replyCount + 1) }
-            onSuccess()
-        }) { actions -> actions.createReply(id, content, accessToken) }
     }
 
     fun authenticate(accessToken: String?) {
@@ -117,40 +90,6 @@ class HomeViewModel(
         }
     }
 
-    private fun mutateReview(
-        onSuccess: () -> Unit,
-        action: suspend (FeedReviewActions) -> Unit,
-    ) {
-        if (mutationJob?.isActive == true) return
-        val actions = reviewActions ?: return showInteractionError()
-        mutationJob = viewModelScope.launch {
-            runCatching { action(actions) }
-                .onSuccess { onSuccess() }
-                .onFailure { error ->
-                    if (error is CancellationException) throw error
-                    showInteractionError()
-                }
-        }
-    }
-
-    private fun updateCard(reviewId: Long, transform: (QuoteCardUiModel) -> QuoteCardUiModel) {
-        updateContent { content ->
-            content.copy(sections = content.sections.map { section ->
-                if (section !is FeedSectionUiModel.RecentQuotes) section
-                else section.copy(cards = section.cards.map { card ->
-                    if (card.reviewId == reviewId) transform(card) else card
-                })
-            })
-        }
-    }
-
-    private fun showInteractionError() {
-        updateContent { it.copy(requestError = "요청을 처리하지 못했어요. 다시 시도해 주세요.") }
-    }
-
-    private fun updateContent(transform: (HomeUiState.Content) -> HomeUiState.Content) {
-        (_uiState.value as? HomeUiState.Content)?.let { _uiState.value = transform(it) }
-    }
 }
 
 private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this) {
@@ -186,6 +125,7 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
                 likedByMe = card.likedByMe,
                 replyCount = card.replyCount,
                 replyLabel = HomeLabels.quoteReply(card.replyCount),
+                isSpoiler = card.isSpoiler,
             )
         },
     )

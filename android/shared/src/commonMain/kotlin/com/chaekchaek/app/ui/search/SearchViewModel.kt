@@ -30,6 +30,7 @@ class SearchViewModel(
     private val bookSearchRepository: BookSearchRepository,
     private val registerBook: suspend (BookSearchResult) -> Unit,
     private val isSignedIn: () -> Boolean,
+    private val recentSearchStorage: RecentSearchStorage = RecentSearchStorage(),
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -37,6 +38,10 @@ class SearchViewModel(
     val sort: StateFlow<BookSearchSort> = _sort.asStateFlow()
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
+    private val _recentSearches = MutableStateFlow(
+        recentSearchStorage.read().map(String::trim).filter(String::isNotEmpty).distinct().take(RECENT_SEARCH_LIMIT),
+    )
+    val recentSearches: StateFlow<List<String>> = _recentSearches.asStateFlow()
     private val _pendingRegistration = MutableStateFlow<BookSearchResult?>(null)
     val pendingRegistration: StateFlow<BookSearchResult?> = _pendingRegistration.asStateFlow()
     private var searchJob: Job? = null
@@ -56,6 +61,13 @@ class SearchViewModel(
     fun search(query: String) {
         val trimmed = query.trim()
         if (trimmed.isEmpty()) return
+        _query.value = trimmed
+        recordRecentSearch(trimmed)
+        executeSearch(trimmed)
+    }
+
+    private fun executeSearch(query: String) {
+        val trimmed = query.trim()
         currentQuery = trimmed
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
@@ -107,7 +119,7 @@ class SearchViewModel(
     fun selectSort(sort: BookSearchSort) {
         if (_sort.value == sort) return
         _sort.value = sort
-        if (currentQuery.isNotEmpty()) search(currentQuery)
+        if (currentQuery.isNotEmpty()) executeSearch(currentQuery)
     }
 
     fun register(book: BookSearchResult) {
@@ -135,7 +147,14 @@ class SearchViewModel(
         _pendingRegistration.value = null
     }
 
+    private fun recordRecentSearch(query: String) {
+        val updated = (listOf(query) + _recentSearches.value.filterNot { it == query }).take(RECENT_SEARCH_LIMIT)
+        _recentSearches.value = updated
+        recentSearchStorage.write(updated)
+    }
+
     private companion object {
         const val FIRST_PAGE = 1
+        const val RECENT_SEARCH_LIMIT = 10
     }
 }

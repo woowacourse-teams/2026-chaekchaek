@@ -9,8 +9,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.chamsae.chaekchaek.auth.RefreshTokenStore
 import com.chamsae.chaekchaek.auth.requestGoogleIdToken
+import com.chamsae.chaekchaek.search.RecentSearchPreferences
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.ui.App
+import com.chaekchaek.app.ui.search.RecentSearchStorage
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -22,6 +24,7 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
             val tokenStore = remember(context) { RefreshTokenStore(context) }
+            val recentSearchPreferences = remember(context) { RecentSearchPreferences(context) }
             val authPlatform = remember(context, scope, tokenStore) {
                 AuthPlatformCallbacks(
                     requestGoogleIdToken = { onResult ->
@@ -39,7 +42,13 @@ class MainActivity : ComponentActivity() {
                     clearGuest = tokenStore::clearGuest,
                 )
             }
-            App(authPlatform)
+            App(
+                authPlatform = authPlatform,
+                recentSearchStorage = RecentSearchStorage(
+                    read = recentSearchPreferences::read,
+                    write = recentSearchPreferences::write,
+                ),
+            )
         }
     }
 }

@@ -22,11 +22,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,83 +46,136 @@ import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.ic_comment
 import chaekchaek.shared.generated.resources.ic_heart_filled
 import chaekchaek.shared.generated.resources.ic_heart_outline
-import com.chaekchaek.app.presentation.home.FeedSectionUiModel
-import com.chaekchaek.app.presentation.home.HomeUiState
-import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
+import com.chaekchaek.app.presentation.common.AppError
 import com.chaekchaek.app.ui.RemoteBookImage
 import com.chaekchaek.app.ui.bookdetail.ReplyInputSheet
 import com.chaekchaek.app.ui.common.BrandHeader
+import com.chaekchaek.app.ui.common.ChaekOneActionDialog
 import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.theme.ChaekBorderSoft
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
+import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 import com.chaekchaek.app.ui.theme.feedBookShadow
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun FeedScreen(
-    homeViewModel: HomeViewModel,
+    viewModel: FeedViewModel,
     onBookClick: (BookDetailTarget) -> Unit,
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val state by homeViewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var replyTarget by remember { mutableStateOf<QuoteCardUiModel?>(null) }
-    val requestError = (state as? HomeUiState.Content)?.requestError
+    val revealedSpoilerReviewIds = remember { mutableStateListOf<Long>() }
+    val requestError = (state as? FeedUiState.Content)?.requestError
     LaunchedEffect(requestError) {
         requestError?.let {
             snackbarHostState.showSnackbar(it)
-            homeViewModel.clearRequestError()
+            viewModel.clearRequestError()
         }
     }
-    val reflections = (state as? HomeUiState.Content)?.sections.orEmpty()
-        .filterIsInstance<FeedSectionUiModel.RecentQuotes>()
-        .flatMap { it.cards }
 
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-    Column(Modifier.fillMaxSize()) {
-        BrandHeader(onProfileClick)
-        when {
-            state is HomeUiState.Loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
-            }
-            reflections.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("아직 도착한 감상이 없어요.", style = MaterialTheme.typography.bodyMedium)
-            }
-            else -> LazyColumn(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = PaddingValues(start = 24.dp, top = 18.dp, end = 24.dp, bottom = 24.dp),
-            ) {
-                itemsIndexed(reflections, key = { _, item -> item.noteId.value }) { _, reflection ->
-                    HorizontalDivider(color = ChaekBorderSoft)
-                    FeedReflectionArticle(
-                        reflection = reflection,
-                        onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
-                        onLike = { homeViewModel.toggleReviewLike(reflection.reviewId, reflection.likedByMe) },
-                        onReply = { replyTarget = reflection },
-                    )
+        Column(Modifier.fillMaxSize()) {
+            BrandHeader(onProfileClick)
+            when (val current = state) {
+                FeedUiState.Loading -> Box(
+                    Modifier.weight(1f).fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+                }
+                FeedUiState.Empty -> FeedEmptyContent(Modifier.weight(1f))
+                is FeedUiState.Failure -> FeedLoadErrorContent(
+                    error = current.error,
+                    retry = viewModel::retry,
+                    modifier = Modifier.weight(1f),
+                )
+                is FeedUiState.Content -> {
+                    if (current.reviews.isEmpty()) {
+                        FeedEmptyContent(Modifier.weight(1f))
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            contentPadding = PaddingValues(
+                                start = 24.dp,
+                                top = 18.dp,
+                                end = 24.dp,
+                                bottom = 24.dp,
+                            ),
+                        ) {
+                            itemsIndexed(current.reviews, key = { _, item -> item.noteId.value }) { _, reflection ->
+                                HorizontalDivider(color = ChaekBorderSoft)
+                                FeedReflectionArticle(
+                                    reflection = reflection,
+                                    spoilerRevealed = reflection.reviewId in revealedSpoilerReviewIds,
+                                    onRevealSpoiler = {
+                                        reflection.reviewId?.let(revealedSpoilerReviewIds::add)
+                                    },
+                                    onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
+                                    onLike = { viewModel.toggleReviewLike(reflection.reviewId, reflection.likedByMe) },
+                                    onReply = { replyTarget = reflection },
+                                )
+                            }
+                            current.nextPage?.let { nextPage ->
+                                item(key = "next-page-$nextPage") {
+                                    LaunchedEffect(nextPage) { viewModel.loadMore() }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
-    }
         SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
     }
     replyTarget?.let { reflection ->
         ReplyInputSheet(
             onDismiss = { replyTarget = null },
             onSave = { content ->
-                homeViewModel.createReply(reflection.reviewId, content) { replyTarget = null }
+                viewModel.createReply(reflection.reviewId, content) { replyTarget = null }
             },
         )
     }
 }
 
 @Composable
+private fun FeedEmptyContent(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Text("아직 도착한 감상이 없어요.", style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun FeedLoadErrorContent(error: AppError, retry: () -> Unit, modifier: Modifier) {
+    Box(modifier.fillMaxSize())
+    ChaekOneActionDialog(
+        onDismissRequest = {},
+        title = { Text("피드를 불러오지 못했어요") },
+        text = {
+            Text(
+                when (error) {
+                    AppError.Network -> "인터넷 연결을 확인해 주세요."
+                    AppError.NotFound -> "요청한 피드를 찾지 못했어요."
+                    AppError.Unauthorized -> "로그인이 필요한 요청이에요."
+                    AppError.Unknown -> "잠시 후 다시 시도해 주세요."
+                },
+            )
+        },
+        confirmButton = { TextButton(onClick = retry) { Text("다시 시도") } },
+    )
+}
+
+@Composable
 private fun FeedReflectionArticle(
     reflection: QuoteCardUiModel,
+    spoilerRevealed: Boolean,
+    onRevealSpoiler: () -> Unit,
     onOpenBook: () -> Unit,
     onLike: () -> Unit,
     onReply: () -> Unit,
@@ -173,28 +229,44 @@ private fun FeedReflectionArticle(
                     )
                 }
             }
-            Text(
-                reflection.quoteText,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp, lineHeight = 28.8.sp),
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
-            reflection.quote?.takeIf { it.isNotBlank() }?.let { quote ->
-                Row(verticalAlignment = Alignment.Top) {
+            if (reflection.isSpoiler && !spoilerRevealed) {
+                Surface(
+                    onClick = onRevealSpoiler,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = ChaekSurfaceMuted,
+                ) {
                     Text(
-                        "“",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 32.sp,
-                        lineHeight = 32.sp,
-                    )
-                    Text(
-                        quote,
-                        modifier = Modifier.padding(start = 8.dp, top = 5.dp),
+                        "스포일러가 포함된 감상이에요\n눌러서 내용을 확인하세요",
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 18.dp),
                         color = ChaekInkSecondary,
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp, lineHeight = 25.sp),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
                     )
+                }
+            } else {
+                Text(
+                    reflection.quoteText,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 16.sp, lineHeight = 28.8.sp),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                reflection.quote?.takeIf { it.isNotBlank() }?.let { quote ->
+                    Row(verticalAlignment = Alignment.Top) {
+                        Text(
+                            "“",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 32.sp,
+                            lineHeight = 32.sp,
+                        )
+                        Text(
+                            quote,
+                            modifier = Modifier.padding(start = 8.dp, top = 5.dp),
+                            color = ChaekInkSecondary,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp, lineHeight = 25.sp),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

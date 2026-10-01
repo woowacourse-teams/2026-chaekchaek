@@ -60,8 +60,17 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             writeGuest: { _ in },
             clearGuest: {}
         )
+        let recentSearchStorage = RecentSearchStorage(
+            read: {
+                UserDefaults.standard.stringArray(forKey: "recent_searches") ?? []
+            },
+            write: { queries in
+                UserDefaults.standard.set(queries, forKey: "recent_searches")
+            }
+        )
         return MainViewControllerKt.MainViewController(
             authPlatform: authPlatform,
+            recentSearchStorage: recentSearchStorage,
             createGoogleSignInButton: GoogleSignInControl.init,
             uiTestingMyPage: uiTestingMyPage
         )

@@ -44,6 +44,7 @@ data class QuoteCardUiModel(
     val likedByMe: Boolean,
     val replyCount: Int,
     val replyLabel: String,
+    val isSpoiler: Boolean = false,
 )
 
 data class OverlappedCardUiModel(

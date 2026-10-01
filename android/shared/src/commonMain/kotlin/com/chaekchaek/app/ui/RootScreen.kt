@@ -69,6 +69,7 @@ import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.home.HomeScreen
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.feed.FeedScreen
+import com.chaekchaek.app.ui.feed.FeedViewModel
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchRoute
 import com.chaekchaek.app.ui.search.SearchViewModel
@@ -90,6 +91,7 @@ private enum class RootTab(
 @Composable
 internal fun RootScreen(
     homeViewModel: HomeViewModel,
+    feedViewModel: FeedViewModel,
     searchViewModel: SearchViewModel,
     registrationViewModel: BookRegistrationViewModel,
     archiveViewModel: ArchiveViewModel,
@@ -162,7 +164,7 @@ internal fun RootScreen(
                 onBookClick = { onBookClick(it.toBookDetailArgs()) },
             )
             RootTab.Feed -> FeedScreen(
-                homeViewModel = homeViewModel,
+                viewModel = feedViewModel,
                 modifier = contentModifier,
                 onProfileClick = openProfile,
                 onBookClick = { onBookClick(it.toBookDetailArgs()) },

@@ -29,6 +29,7 @@ import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MemberRemoteRepository
 import com.chaekchaek.app.data.remote.PopularBooksRemoteRepository
 import com.chaekchaek.app.data.remote.RemoteFeedReviewActions
+import com.chaekchaek.app.data.remote.ReviewFeedRemoteRepository
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.ui.archive.ArchiveViewModel
 import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
@@ -38,9 +39,11 @@ import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
+import com.chaekchaek.app.ui.feed.FeedViewModel
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchViewModel
+import com.chaekchaek.app.ui.search.RecentSearchStorage
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -67,7 +70,11 @@ private val navigationConfig = SavedStateConfiguration {
 }
 
 @Composable
-internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage: Boolean = false) {
+internal fun AppNavigation(
+    authPlatform: AuthPlatformCallbacks,
+    recentSearchStorage: RecentSearchStorage,
+    uiTestingMyPage: Boolean = false,
+) {
     val safeContent = Modifier.windowInsetsPadding(
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     )
@@ -98,9 +105,12 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage:
     val authTokens by authViewModel.tokens.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
     val detailRepository = remember { BookDetailRemoteRepository() }
-    val homeViewModel = remember(authPlatform, detailRepository) {
-        HomeViewModel(
-            feedRepository = PopularBooksRemoteRepository(),
+    val homeViewModel = remember {
+        HomeViewModel(feedRepository = PopularBooksRemoteRepository(), clock = Clock.System)
+    }
+    val feedViewModel = remember(authPlatform, detailRepository) {
+        FeedViewModel(
+            repository = ReviewFeedRemoteRepository(),
             clock = Clock.System,
             reviewActions = RemoteFeedReviewActions(detailRepository, authPlatform),
         )
@@ -117,6 +127,7 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage:
             bookSearchRepository = BookSearchRemoteRepository(),
             registerBook = { registrationViewModel.register(it) },
             isSignedIn = { authViewModel.tokens.value != null },
+            recentSearchStorage = recentSearchStorage,
         )
     }
     LaunchedEffect(authTokens?.accessToken) {
@@ -124,6 +135,7 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage:
         registrationViewModel.authenticate(accessToken)
         archiveViewModel.authenticate(accessToken)
         memberSettingsViewModel.authenticate(accessToken)
+        feedViewModel.authenticate(accessToken)
     }
     val backStack = rememberNavBackStack(navigationConfig, Root)
     CompositionLocalProvider(
@@ -141,6 +153,7 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage:
                 entry<Root> {
                     RootScreen(
                         homeViewModel = homeViewModel,
+                        feedViewModel = feedViewModel,
                         searchViewModel = searchViewModel,
                         registrationViewModel = registrationViewModel,
                         archiveViewModel = archiveViewModel,
