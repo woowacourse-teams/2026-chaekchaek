@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,9 +41,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.semantics.Role
@@ -49,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.collectAsState
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -62,26 +68,40 @@ import com.chaekchaek.app.ui.theme.ChaekAccentInk
 import com.chaekchaek.app.ui.theme.ChaekBand
 import com.chaekchaek.app.ui.theme.ChaekBorder
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
+import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
+import com.chaekchaek.app.ui.theme.discoverPopularBookShadow
+import com.chaekchaek.app.ui.theme.discoverReflectionBookShadow
 import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
+import com.chaekchaek.app.ui.common.BrandHeader
+import com.chaekchaek.app.ui.common.HomeLoadErrorContent
+import com.chaekchaek.app.presentation.home.FeedSectionUiModel
+import com.chaekchaek.app.presentation.home.HomeUiState
+import com.chaekchaek.app.presentation.home.HomeViewModel
+import com.chaekchaek.app.presentation.home.QuoteCardUiModel
+import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import kotlinx.coroutines.delay
 
 @Composable
 fun SearchRoute(
   viewModel: SearchViewModel,
+  homeViewModel: HomeViewModel,
   registeredBookIds: Set<String>,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
+  onProfileClick: () -> Unit = {},
   onBookClick: (BookDetailTarget) -> Unit = {},
 ) {
   val state by viewModel.uiState.collectAsState()
   val sort by viewModel.sort.collectAsState()
   val query by viewModel.query.collectAsState()
+  val homeState by homeViewModel.uiState.collectAsState()
   SearchScreen(
     state = state,
     sort = sort,
     query = query,
+    homeState = homeState,
     registeredBookIds = registeredBookIds,
     onSearch = viewModel::search,
     onQueryChange = viewModel::updateQuery,
@@ -89,8 +109,10 @@ fun SearchRoute(
     onRegister = viewModel::register,
     onLoadMore = viewModel::loadMore,
     onSortSelect = viewModel::selectSort,
+    onHomeRetry = homeViewModel::retry,
     modifier = modifier,
     onBack = onBack,
+    onProfileClick = onProfileClick,
     onBookClick = onBookClick,
   )
 }
@@ -100,6 +122,7 @@ fun SearchScreen(
   state: SearchUiState,
   sort: BookSearchSort,
   query: String,
+  homeState: HomeUiState = HomeUiState.Content(emptyList()),
   registeredBookIds: Set<String>,
   onSearch: (String) -> Unit,
   onQueryChange: (String) -> Unit,
@@ -107,8 +130,10 @@ fun SearchScreen(
   onRegister: (BookSearchResult) -> Unit,
   onLoadMore: () -> Unit,
   onSortSelect: (BookSearchSort) -> Unit,
+  onHomeRetry: () -> Unit = {},
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
+  onProfileClick: () -> Unit = {},
   onBookClick: (BookDetailTarget) -> Unit = {},
 ) {
   val leaveSearch = {
@@ -123,6 +148,12 @@ fun SearchScreen(
   )
 
   Column(modifier = modifier.fillMaxSize()) {
+    BrandHeader(onProfileClick)
+    Text(
+      "발견",
+      modifier = Modifier.padding(start = 24.dp, top = 22.dp),
+      style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontSize = 29.sp, lineHeight = 34.8.sp),
+    )
     SearchTopBar(
       query = query,
       onQueryChange = {
@@ -130,16 +161,10 @@ fun SearchScreen(
         if (it.isEmpty()) onClear()
       },
       onSearch = { onSearch(query) },
-      onBack = leaveSearch,
     )
 
     when (val current = state) {
-      SearchUiState.Idle ->
-        SearchMessage(
-          title = "찾고 싶은 책을 검색해 보세요",
-          body = "책 제목이나 저자를 입력해 주세요.",
-          modifier = Modifier.weight(1f),
-        )
+      SearchUiState.Idle -> DiscoverLanding(homeState, onBookClick, onHomeRetry, Modifier.weight(1f))
       SearchUiState.Loading -> SearchLoading(Modifier.weight(1f))
       SearchUiState.Empty ->
         Column(modifier = Modifier.weight(1f)) {
@@ -178,22 +203,8 @@ private fun SearchTopBar(
   query: String,
   onQueryChange: (String) -> Unit,
   onSearch: () -> Unit,
-  onBack: () -> Unit,
 ) {
-  Row(
-    modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 4.dp),
-    verticalAlignment = Alignment.CenterVertically,
-  ) {
-    Box(
-      modifier = Modifier.size(48.dp).clickable(role = Role.Button, onClick = onBack),
-      contentAlignment = Alignment.Center,
-    ) {
-      Icon(
-        painter = painterResource(Res.drawable.ic_back),
-        contentDescription = "뒤로 가기",
-        modifier = Modifier.size(22.dp),
-      )
-    }
+  Row(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 16.dp, end = 24.dp)) {
     SearchField(
       query = query,
       onQueryChange = onQueryChange,
@@ -201,7 +212,190 @@ private fun SearchTopBar(
       modifier = Modifier.weight(1f),
     )
   }
-  HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+}
+
+@Composable
+private fun DiscoverLanding(
+  homeState: HomeUiState,
+  onBookClick: (BookDetailTarget) -> Unit,
+  onRetry: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  when (homeState) {
+    HomeUiState.Loading -> SearchLoading(modifier)
+    HomeUiState.Empty -> DiscoverContent(emptyList(), onBookClick, modifier)
+    is HomeUiState.Failure -> HomeLoadErrorContent(homeState.error, onRetry, modifier)
+    is HomeUiState.Content -> DiscoverContent(homeState.sections, onBookClick, modifier)
+  }
+}
+
+@Composable
+private fun DiscoverContent(
+  sections: List<FeedSectionUiModel>,
+  onBookClick: (BookDetailTarget) -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  val popular = sections.filterIsInstance<FeedSectionUiModel.TrendingBooks>().firstOrNull()?.books.orEmpty()
+  val recent = sections.filterIsInstance<FeedSectionUiModel.RecentQuotes>().flatMap { it.cards }
+  LazyColumn(modifier = modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 20.dp)) {
+    item {
+      Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 12.dp, end = 24.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(
+          "감상이 많은 책",
+          style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+        )
+        Text(
+          "전체 보기",
+          color = ChaekInkSecondary,
+          style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+        )
+      }
+      if (popular.isEmpty()) {
+        Text(
+          "인기 책 정보를 불러오면 표시돼요.",
+          modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          style = MaterialTheme.typography.bodySmall,
+        )
+      } else {
+        LazyRow(
+          modifier = Modifier.fillMaxWidth().height(228.dp),
+          contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 24.dp, top = 27.dp, end = 24.dp, bottom = 18.dp),
+          horizontalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+          itemsIndexed(popular, key = { _, it -> it.bookId.value }) { index, book ->
+            DiscoverPopularBook(index + 1, book, onClick = { onBookClick(book.toBookDetailTarget()) })
+          }
+        }
+        HorizontalDivider(
+          modifier = Modifier.padding(horizontal = 24.dp),
+          thickness = 3.dp,
+          color = Color(0xFFDDDDDD),
+        )
+      }
+    }
+    item {
+      Text(
+        "방금 기록된 감상",
+        modifier = Modifier.padding(start = 24.dp, top = 28.dp, bottom = 15.dp),
+        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+      )
+    }
+    if (recent.isEmpty()) {
+      item {
+        Text(
+          "아직 도착한 감상이 없어요.",
+          modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          style = MaterialTheme.typography.bodySmall,
+        )
+      }
+    } else {
+      items(recent.take(4), key = { it.noteId.value }) { card ->
+        DiscoverReflection(card, onClick = { onBookClick(card.toBookDetailTarget()) })
+      }
+    }
+  }
+}
+
+@Composable
+private fun DiscoverPopularBook(rank: Int, book: TrendingBookUiModel, onClick: () -> Unit) {
+  Column(
+    modifier = Modifier.width(105.dp).clickable(role = Role.Button, onClick = onClick),
+  ) {
+    Box(modifier = Modifier.fillMaxWidth().height(135.dp)) {
+      Box(
+        modifier = Modifier.padding(start = 4.dp).size(width = 92.dp, height = 131.dp)
+          .discoverPopularBookShadow().clip(RoundedCornerShape(2.dp)),
+      ) {
+        LocalRemoteBookCover.current(book.coverId, "${book.title} 표지", Modifier.fillMaxSize())
+      }
+      Box(
+        Modifier.align(Alignment.BottomStart).size(width = 22.dp, height = 25.dp)
+          .background(Color(0xFF191919), RoundedCornerShape(6.dp)),
+        contentAlignment = Alignment.Center,
+      ) {
+        Text(rank.toString(), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, lineHeight = 25.sp)
+      }
+    }
+    Text(
+      book.title,
+      modifier = Modifier.padding(top = 10.dp),
+      style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+      maxLines = 1,
+      overflow = TextOverflow.Ellipsis,
+    )
+    Row(
+      modifier = Modifier.padding(top = 4.dp),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+      Text(
+        book.noteCountLabel,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+      )
+      Text(
+        book.replyCountLabel,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+      )
+    }
+  }
+}
+
+@Composable
+private fun DiscoverReflection(card: QuoteCardUiModel, onClick: () -> Unit) {
+  Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+    HorizontalDivider(color = Color(0xFFE7E7E9))
+    Row(
+      modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(vertical = 14.dp),
+      horizontalArrangement = Arrangement.spacedBy(13.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Box(
+        modifier = Modifier.size(width = 52.dp, height = 74.dp)
+          .discoverReflectionBookShadow().clip(RoundedCornerShape(2.dp)),
+      ) {
+        LocalRemoteBookCover.current(card.coverId, "${card.bookTitle} 표지", Modifier.fillMaxSize())
+      }
+      Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text(
+          card.bookTitle,
+          style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+          card.quoteText,
+          style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 20.15.sp),
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          Text(
+            card.authorName,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+          Text(
+            card.timeLabel,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+            maxLines = 1,
+          )
+        }
+      }
+      Box(Modifier.size(width = 24.dp, height = 44.dp), contentAlignment = Alignment.Center) {
+        Text("›", fontSize = 17.sp, fontFamily = ChaekIconFontFamily())
+      }
+    }
+  }
 }
 
 @Composable
@@ -211,17 +405,16 @@ private fun SearchField(
   onSearch: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val shape = RoundedCornerShape(6.dp)
+  val shape = RoundedCornerShape(15.dp)
   BasicTextField(
     value = query,
     onValueChange = onQueryChange,
     modifier =
       modifier
-        .height(44.dp)
-        .background(MaterialTheme.colorScheme.surface, shape)
-        .border(1.dp, MaterialTheme.colorScheme.outline, shape)
-        .padding(start = 12.dp),
-    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+        .height(54.dp)
+        .background(Color(0xFFF3F3F5), shape)
+        .padding(start = 15.dp),
+    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp),
     singleLine = true,
     cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -231,15 +424,15 @@ private fun SearchField(
         Icon(
           painter = painterResource(Res.drawable.ic_search),
           contentDescription = null,
-          modifier = Modifier.size(16.dp),
+          modifier = Modifier.size(20.dp),
           tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(10.dp))
         Box(modifier = Modifier.weight(1f)) {
           if (query.isEmpty()) {
             Text(
-              "책 제목, 저자로 검색",
-              style = MaterialTheme.typography.bodyMedium,
+              "책 제목이나 작가를 검색해요",
+              style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
           }
@@ -255,6 +448,15 @@ private fun SearchField(
               contentDescription = "검색어 지우기",
               modifier = Modifier.size(18.dp),
               tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        } else {
+          Box(modifier = Modifier.size(42.dp), contentAlignment = Alignment.Center) {
+            Text(
+              "→",
+              style = MaterialTheme.typography.titleSmall,
+              color = MaterialTheme.colorScheme.onSurface,
+              fontFamily = ChaekIconFontFamily(),
             )
           }
         }
@@ -314,11 +516,18 @@ private fun SearchResultHeader(
     horizontalArrangement = Arrangement.SpaceBetween,
     verticalAlignment = Alignment.CenterVertically,
   ) {
-    Text(
-      "ARCHIVE SEARCH · 검색 결과 ${count}건",
-      style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-      color = ChaekAccentInk,
-    )
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+      Text(
+        "ARCHIVE SEARCH",
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+        color = ChaekAccentInk,
+      )
+      Text(
+        "검색 결과 ${count}건",
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+        color = ChaekAccentInk.copy(alpha = 0.7f),
+      )
+    }
     Box {
       Row(
         modifier = Modifier.clickable(enabled = count > 0, role = Role.Button) { expanded = true },
@@ -393,13 +602,17 @@ private fun SearchResultRow(
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
       )
-      Text(
-        listOf(book.publisher, book.year).filter(String::isNotBlank).joinToString(" · "),
-        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-      )
+      Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        listOf(book.publisher, book.year).filter(String::isNotBlank).forEachIndexed { index, metadata ->
+          Text(
+            metadata,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (index == 0) 1f else 0.7f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+        }
+      }
       Surface(
         modifier =
           Modifier
@@ -415,7 +628,11 @@ private fun SearchResultRow(
           horizontalArrangement = Arrangement.spacedBy(4.dp),
           verticalAlignment = Alignment.CenterVertically,
         ) {
-          if (!isReading) Text("+", style = MaterialTheme.typography.labelMedium)
+          if (!isReading) Text(
+            "+",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChaekIconFontFamily(),
+          )
           Text(
             if (isReading) "읽는 중" else "읽는 중 시작",
             style = MaterialTheme.typography.labelMedium,
@@ -488,4 +705,22 @@ private fun BookSearchResult.toBookDetailTarget() = BookDetailTarget(
   category = category,
   totalPages = totalPages,
   coverUrl = coverUrl,
+)
+
+private fun TrendingBookUiModel.toBookDetailTarget() = BookDetailTarget(
+  id = isbn13.ifBlank { bookId.value },
+  isbn13 = isbn13,
+  bookId = bookId.value.toLongOrNull(),
+  title = title,
+  coverId = coverId,
+  coverUrl = coverId.takeIf { it.startsWith("https://") }.orEmpty(),
+)
+
+private fun QuoteCardUiModel.toBookDetailTarget() = BookDetailTarget(
+  id = isbn13.ifBlank { bookId.value },
+  isbn13 = isbn13,
+  bookId = bookId.value.toLongOrNull(),
+  title = bookTitle,
+  coverId = coverId,
+  coverUrl = coverId.takeIf { it.startsWith("https://") }.orEmpty(),
 )

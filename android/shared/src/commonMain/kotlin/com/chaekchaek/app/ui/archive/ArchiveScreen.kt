@@ -54,7 +54,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
@@ -64,11 +66,16 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chaekchaek.app.domain.shelf.ReadingStatus
 import com.chaekchaek.app.domain.reader.Nickname
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
+import com.chaekchaek.app.ui.common.BrandHeader
+import com.chaekchaek.app.ui.theme.ChaekAccent
+import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
+import com.chaekchaek.app.ui.theme.libraryBookShadow
 import kotlinx.coroutines.launch
 
 @Composable
@@ -144,7 +151,7 @@ fun ArchiveScreen(
 
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(top = if (editing) 0.dp else 70.dp),
             state = listState,
             contentPadding = PaddingValues(bottom = if (editing) 88.dp else 12.dp),
         ) {
@@ -164,13 +171,16 @@ fun ArchiveScreen(
                 } else {
                     LibraryTopBar(
                         displayName = memberSettingsState.publicNickname,
-                        onEdit = { onEditingChange(true) },
                         onProfileClick = onProfileClick,
+                        onEdit = { onEditingChange(true) },
                     )
                 }
             }
             item {
-                StatusFilters(selected = filter, onSelected = { filter = it })
+                LibraryControls(
+                    selected = filter,
+                    onSelected = { filter = it },
+                )
                 SortRow(
                     countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}권",
                     sort = sort,
@@ -199,6 +209,10 @@ fun ArchiveScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                 }
             }
+        }
+
+        if (!editing) {
+            BrandHeader(onProfileClick)
         }
 
         if (showScrollTop) {
@@ -251,17 +265,23 @@ fun ArchiveScreen(
 }
 
 @Composable
-private fun LibraryTopBar(displayName: String, onEdit: () -> Unit, onProfileClick: () -> Unit) {
+private fun LibraryTopBar(displayName: String, onProfileClick: () -> Unit, onEdit: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 22.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("내 서재", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp))
+        Text(
+            "내 서재",
+            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontSize = 29.sp),
+        )
         Spacer(Modifier.weight(1f))
         TextButton(onClick = onEdit) {
-            Text("편집", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelLarge)
+            Text(
+                "편집",
+                color = Color(0xFF555555),
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+            )
         }
-        ProfileButton(displayName, onProfileClick)
     }
 }
 
@@ -295,15 +315,22 @@ private fun ProfileButton(displayName: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun StatusFilters(selected: ReadingStatus?, onSelected: (ReadingStatus?) -> Unit) {
+private fun LibraryControls(
+    selected: ReadingStatus?,
+    onSelected: (ReadingStatus?) -> Unit,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StatusFilterChip("전체", selected == null) { onSelected(null) }
-        ReadingStatus.entries.forEach { status ->
-            StatusFilterChip(status.label, selected == status) { onSelected(status) }
+        Row(
+            modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            StatusFilterChip("전체", selected == null) { onSelected(null) }
+            listOf(ReadingStatus.READING, ReadingStatus.FINISHED, ReadingStatus.WANT_TO_READ).forEach { status ->
+                StatusFilterChip(status.label, selected == status) { onSelected(status) }
+            }
         }
     }
 }
@@ -312,14 +339,17 @@ private fun StatusFilters(selected: ReadingStatus?, onSelected: (ReadingStatus?)
 private fun StatusFilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.height(28.dp),
-        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.height(34.dp),
+        shape = RoundedCornerShape(20.dp),
         color = if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.surface,
         contentColor = if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
-        border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.outline),
+        border = null,
     ) {
-        Box(modifier = Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
-            Text(label, style = MaterialTheme.typography.labelSmall)
+        Box(
+            modifier = Modifier.background(if (selected) Color.Transparent else Color(0xFFF3F3F5)).padding(horizontal = 13.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(label, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp))
         }
     }
 }
@@ -332,14 +362,23 @@ private fun SortRow(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 20.dp, end = 24.dp, bottom = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(countLabel, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+        Text(
+            countLabel,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+        )
         Spacer(Modifier.weight(1f))
         Box {
             Surface(onClick = { expanded = true }, color = Color.Transparent) {
-                Text("${sort.label}⌄", modifier = Modifier.padding(4.dp), style = MaterialTheme.typography.labelMedium)
+                Text(
+                    "${sort.label}⌄",
+                    modifier = Modifier.padding(4.dp),
+                    color = Color(0xFF555555),
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                )
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 ArchiveSort.entries.forEach { option ->
@@ -381,38 +420,67 @@ private fun LibraryBookRow(
         modifier = Modifier.fillMaxWidth()
             .background(if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else Color.Transparent)
             .clickable(role = Role.Button, onClick = if (editing) onSelect else onOpen)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = 24.dp, vertical = 21.dp),
+        horizontalArrangement = Arrangement.spacedBy(17.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (editing) SelectionBox(selected)
-        Surface(
-            modifier = Modifier.size(width = 56.dp, height = 80.dp).shadow(4.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        Box(
+            modifier = Modifier.size(width = 67.dp, height = 96.dp).libraryBookShadow().clip(RoundedCornerShape(2.dp)),
         ) {
             Box(contentAlignment = Alignment.Center) { bookCover(book) }
         }
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
             ReadingStatusTag(book.status)
-            Text(book.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                listOf(book.creator, book.category.ifBlank { book.publisher }).filter(String::isNotBlank).joinToString(" · "),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
+                book.title,
+                modifier = Modifier.padding(top = 6.dp),
+                style = MaterialTheme.typography.titleSmall.copy(fontSize = 17.sp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                if (book.totalPages > 0) "${book.currentPage}쪽 / ${book.totalPages}쪽" else "쪽수 정보 없음",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall,
-            )
-            Box(modifier = Modifier.width(116.dp).height(2.dp).background(MaterialTheme.colorScheme.surfaceVariant)) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(book.progressRatio.coerceIn(0f, 1f)).height(2.dp)
-                        .background(MaterialTheme.colorScheme.onSurface),
+            Row(
+                modifier = Modifier.padding(top = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                listOf(book.creator, book.category.ifBlank { book.publisher })
+                    .filter(String::isNotBlank)
+                    .forEachIndexed { index, metadata ->
+                        Text(
+                            metadata,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (index == 0) 1f else 0.7f),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+            }
+            Row(Modifier.fillMaxWidth().padding(top = 13.dp)) {
+                Text(
+                    if (book.totalPages > 0) "${book.currentPage} / ${book.totalPages}쪽" else "쪽수 정보 없음",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
                 )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "${(book.progressRatio.coerceIn(0f, 1f) * 100).toInt()}%",
+                    color = Color(0xFF555555),
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Medium),
+                )
+            }
+            Box(modifier = Modifier.fillMaxWidth().padding(top = 7.dp)) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(3.dp)
+                        .background(Color(0xFFECECEE), RoundedCornerShape(4.dp)),
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(book.progressRatio.coerceIn(0f, 1f)).height(3.dp)
+                            .background(
+                                if (book.status == ReadingStatus.READING) ChaekAccent else Color(0xFFB1B1B7),
+                                RoundedCornerShape(4.dp),
+                            ),
+                    )
+                }
             }
         }
         if (editing) {
@@ -424,10 +492,22 @@ private fun LibraryBookRow(
                 ),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("⌫", modifier = Modifier.clearAndSetSemantics {}, color = MaterialTheme.colorScheme.error, fontSize = 20.sp)
+                Text(
+                    "⌫",
+                    modifier = Modifier.clearAndSetSemantics {},
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 20.sp,
+                    fontFamily = ChaekIconFontFamily(),
+                )
             }
         } else {
-            Text("›", modifier = Modifier.clearAndSetSemantics {}, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 22.sp)
+            Text(
+                "›",
+                modifier = Modifier.clearAndSetSemantics {},
+                color = Color(0xFFAAAAAA),
+                fontSize = 22.sp,
+                fontFamily = ChaekIconFontFamily(),
+            )
         }
     }
 }
@@ -449,23 +529,37 @@ private fun SelectionBox(selected: Boolean) {
             .border(1.dp, if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp)),
         contentAlignment = Alignment.Center,
     ) {
-        if (selected) Text("✓", color = MaterialTheme.colorScheme.surface, fontSize = 12.sp)
+        if (selected) Text(
+            "✓",
+            color = MaterialTheme.colorScheme.surface,
+            fontSize = 12.sp,
+            fontFamily = ChaekIconFontFamily(),
+        )
     }
 }
 
 @Composable
 private fun ReadingStatusTag(status: ReadingStatus) {
-    val selected = status == ReadingStatus.READING
-    Surface(
-        shape = RoundedCornerShape(9.dp),
-        color = if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.outline),
-    ) {
+    if (status == ReadingStatus.READING) {
+        Row(
+            modifier = Modifier.height(20.dp).background(Color(0xFF242424), RoundedCornerShape(5.dp))
+                .padding(horizontal = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(5.dp).background(Color(0xFFFF9500), RoundedCornerShape(2.5.dp)))
+            Text(
+                status.label,
+                color = Color.White,
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp, lineHeight = 14.sp),
+            )
+        }
+    } else {
         Text(
             status.label,
-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
-            color = if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+            modifier = Modifier.height(20.dp),
+            color = Color(0xFF777777),
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp, lineHeight = 14.sp),
         )
     }
 }
@@ -504,7 +598,11 @@ private fun ScrollTopButton(onClick: () -> Unit, modifier: Modifier = Modifier) 
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text("⌃", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "⌃",
+                style = MaterialTheme.typography.titleSmall,
+                fontFamily = ChaekIconFontFamily(),
+            )
             Text(
                 "TOP",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
