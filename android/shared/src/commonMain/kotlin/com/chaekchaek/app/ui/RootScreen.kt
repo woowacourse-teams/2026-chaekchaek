@@ -322,7 +322,7 @@ internal fun RemoteBookImage(
             onLoading = { loading = true },
             onSuccess = { loading = false },
             onError = { loading = false },
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Fit,
         )
     }
 }

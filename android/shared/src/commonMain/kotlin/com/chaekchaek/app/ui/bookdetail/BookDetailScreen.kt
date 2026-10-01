@@ -629,7 +629,7 @@ private fun BookCover(book: BookDetailArgs, modifier: Modifier = Modifier) {
                 painter = painterResource(coverResource(book.coverId)),
                 contentDescription = "${book.title} 표지",
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.Fit,
             )
         }
     }
