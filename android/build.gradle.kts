@@ -10,3 +10,5 @@ plugins {
   alias(libs.plugins.google.services) apply false
   alias(libs.plugins.firebase.crashlytics) apply false
 }
+
+apply(from = "config/api-environment.gradle.kts")

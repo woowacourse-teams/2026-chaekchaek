@@ -27,7 +27,8 @@ class MobileAuthRemoteRepositoryTest {
       )
     }
     val repository = MobileAuthRemoteRepository(
-      HttpClient(engine) {
+      apiConfiguration = ApiConfiguration("https://api.chaekchaek.com"),
+      client = HttpClient(engine) {
         expectSuccess = true
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
       },
@@ -53,7 +54,8 @@ class MobileAuthRemoteRepositoryTest {
       )
     }
     val repository = MobileAuthRemoteRepository(
-      HttpClient(engine) {
+      apiConfiguration = ApiConfiguration("https://api.chaekchaek.com"),
+      client = HttpClient(engine) {
         expectSuccess = true
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
       },

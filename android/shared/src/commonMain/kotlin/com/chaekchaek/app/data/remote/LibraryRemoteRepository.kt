@@ -13,12 +13,15 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
 
-class LibraryRemoteRepository(private val client: HttpClient = createHttpClient()) {
+class LibraryRemoteRepository(
+  private val client: HttpClient = createHttpClient(),
+  private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
+) {
   suspend fun getAll(accessToken: String): List<RemoteLibraryBook> {
     val items = mutableListOf<RemoteLibraryBook>()
     var page: Int? = FIRST_PAGE
     while (page != null) {
-      val response = client.get("$BASE_URL/api/v1/library") {
+      val response = client.get("${apiConfiguration.baseUrl}/api/v1/library") {
         header(HttpHeaders.Authorization, "Bearer $accessToken")
         parameter("page", page)
       }.body<LibraryPageDto>()
@@ -29,14 +32,14 @@ class LibraryRemoteRepository(private val client: HttpClient = createHttpClient(
   }
 
   suspend fun add(isbn13: String, totalPages: Int?, accessToken: String) {
-    client.post("$BASE_URL/api/v1/library") {
+    client.post("${apiConfiguration.baseUrl}/api/v1/library") {
       authenticatedJson(accessToken, AddLibraryBookRequest(isbn13, "READING", totalPages))
     }
   }
 
   suspend fun bulkDelete(bookIds: List<Long>, accessToken: String) {
     chunkLibraryBookIds(bookIds).forEach { chunk ->
-      client.post("$BASE_URL/api/v1/library/bulk-delete") {
+      client.post("${apiConfiguration.baseUrl}/api/v1/library/bulk-delete") {
         authenticatedJson(accessToken, BulkDeleteRequest(chunk))
       }
     }
@@ -44,7 +47,7 @@ class LibraryRemoteRepository(private val client: HttpClient = createHttpClient(
 
   suspend fun bulkChangeStatus(bookIds: List<Long>, status: String, accessToken: String) {
     chunkLibraryBookIds(bookIds).forEach { chunk ->
-      client.patch("$BASE_URL/api/v1/library/bulk-status") {
+      client.patch("${apiConfiguration.baseUrl}/api/v1/library/bulk-status") {
         authenticatedJson(accessToken, BulkStatusRequest(chunk, status))
       }
     }
@@ -57,7 +60,6 @@ class LibraryRemoteRepository(private val client: HttpClient = createHttpClient(
   }
 
   private companion object {
-    const val BASE_URL = "https://api.chaekchaek.com"
     const val FIRST_PAGE = 1
   }
 }

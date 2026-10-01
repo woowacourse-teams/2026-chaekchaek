@@ -31,6 +31,7 @@ android {
     namespace = "com.chamsae.chaekchaek"
     compileSdk = 36
     defaultConfig {
+        manifestPlaceholders["apiUsesCleartextTraffic"] = rootProject.extra["apiEnvironment"] == "local"
         applicationId = "com.chamsae.chaekchaek"
         minSdk = 26
         targetSdk = 36
@@ -127,7 +128,9 @@ tasks.register("verifyReleaseSigning") {
 }
 
 tasks.configureEach {
-    if (name == "preReleaseBuild") dependsOn("verifyReleaseSigning")
+    if (name == "preReleaseBuild") {
+        dependsOn("verifyReleaseSigning", rootProject.tasks.named("verifyProductionApiEnvironment"))
+    }
 }
 
 kotlin {

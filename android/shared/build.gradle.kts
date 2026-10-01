@@ -1,3 +1,10 @@
+import org.gradle.api.DefaultTask
+import org.gradle.api.provider.Property
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
@@ -5,6 +12,37 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+}
+
+abstract class GenerateApiEnvironment : DefaultTask() {
+    @get:Input abstract val environment: Property<String>
+    @get:Input abstract val androidBaseUrl: Property<String>
+    @get:Input abstract val iosBaseUrl: Property<String>
+    @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        fun literal(value: String) = "\"" + value.replace("\\", "\\\\")
+            .replace("\"", "\\\"").replace("$", "\\$") + "\""
+        val output = outputDirectory.file("com/chaekchaek/app/data/remote/GeneratedApiEnvironment.kt").get().asFile
+        output.parentFile.mkdirs()
+        output.writeText("""
+            package com.chaekchaek.app.data.remote
+
+            internal object GeneratedApiEnvironment {
+                const val name = ${literal(environment.get())}
+                const val androidBaseUrl = ${literal(androidBaseUrl.get())}
+                const val iosBaseUrl = ${literal(iosBaseUrl.get())}
+            }
+        """.trimIndent() + "\n")
+    }
+}
+
+val generateApiEnvironment = tasks.register<GenerateApiEnvironment>("generateApiEnvironment") {
+    environment.set(rootProject.extra["apiEnvironment"] as String)
+    androidBaseUrl.set(rootProject.extra["apiAndroidBaseUrl"] as String)
+    iosBaseUrl.set(rootProject.extra["apiIosBaseUrl"] as String)
+    outputDirectory.set(layout.buildDirectory.dir("generated/apiEnvironment/kotlin"))
 }
 
 kotlin {
@@ -33,6 +71,7 @@ kotlin {
     }
 
     sourceSets {
+        commonMain { kotlin.srcDir(generateApiEnvironment.flatMap { it.outputDirectory }) }
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
@@ -79,4 +118,8 @@ tasks.configureEach {
     if (name == "generateAndroidHostTestLintModel" || name == "lintAnalyzeAndroidHostTest") {
         dependsOn("kspAndroidHostTest")
     }
+}
+
+tasks.configureEach {
+    if (name.startsWith("linkRelease")) dependsOn(rootProject.tasks.named("verifyProductionApiEnvironment"))
 }

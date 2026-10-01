@@ -18,14 +18,15 @@ import kotlin.time.Instant
 
 class PopularBooksRemoteRepository(
     private val client: HttpClient = createHttpClient(),
+    private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
 ) : FeedRepository {
     override suspend fun homeFeed(accessToken: String?): HomeFeed {
-        val popularBooks = client.get("$BASE_URL/api/v1/home/popular-books")
+        val popularBooks = client.get("${apiConfiguration.baseUrl}/api/v1/home/popular-books")
             .body<PopularBooksResponseDto>()
-        val latestReviews = client.get("$BASE_URL/api/v1/home/latest-reviews")
+        val latestReviews = client.get("${apiConfiguration.baseUrl}/api/v1/home/latest-reviews")
             .body<LatestReviewsResponseDto>()
         val readingBook = accessToken?.let { token ->
-            client.get("$BASE_URL/api/v1/library") {
+            client.get("${apiConfiguration.baseUrl}/api/v1/library") {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 url {
                     parameters.append("page", "1")
@@ -37,9 +38,6 @@ class PopularBooksRemoteRepository(
         return popularBooks.toHomeFeed(latestReviews, readingBook)
     }
 
-    private companion object {
-        const val BASE_URL = "https://api.chaekchaek.com"
-    }
 }
 
 @Serializable

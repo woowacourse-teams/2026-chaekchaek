@@ -1,1 +1,3 @@
 #include? "Secrets.xcconfig"
+
+CHAEKCHAEK_API_ENVIRONMENT = production
