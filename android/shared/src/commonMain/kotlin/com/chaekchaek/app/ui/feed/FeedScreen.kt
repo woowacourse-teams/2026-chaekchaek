@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.ic_comment
+import chaekchaek.shared.generated.resources.ic_heart_filled
 import chaekchaek.shared.generated.resources.ic_heart_outline
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
 import com.chaekchaek.app.presentation.home.HomeUiState
@@ -176,25 +177,31 @@ private fun FeedReflectionArticle(reflection: QuoteCardUiModel, onOpenBook: () -
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
-            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                Text(
-                    "“",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 35.sp,
-                    lineHeight = 35.sp,
-                )
-                Text(
-                    "인용문 정보가 연결되면 표시돼요.",
-                    color = ChaekInkSecondary,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 22.1.sp),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+            reflection.quote?.takeIf { it.isNotBlank() }?.let { quote ->
+                Row(verticalAlignment = Alignment.Top) {
+                    Text(
+                        "“",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 32.sp,
+                        lineHeight = 32.sp,
+                    )
+                    Text(
+                        quote,
+                        modifier = Modifier.padding(start = 8.dp, top = 5.dp),
+                        color = ChaekInkSecondary,
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp, lineHeight = 25.sp),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                PlaceholderAction(Res.drawable.ic_heart_outline, "-")
+                FeedAction(
+                    icon = if (reflection.likedByMe) Res.drawable.ic_heart_filled else Res.drawable.ic_heart_outline,
+                    label = "좋아요 ${reflection.likeCount}",
+                )
                 Spacer(Modifier.size(18.dp))
-                PlaceholderAction(Res.drawable.ic_comment, reflection.replyLabel)
+                FeedAction(Res.drawable.ic_comment, "답글 ${reflection.replyCount}")
                 Spacer(Modifier.weight(1f))
                 Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
                     Text(
@@ -210,7 +217,7 @@ private fun FeedReflectionArticle(reflection: QuoteCardUiModel, onOpenBook: () -
 }
 
 @Composable
-private fun PlaceholderAction(icon: DrawableResource, label: String) {
+private fun FeedAction(icon: DrawableResource, label: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(19.dp), tint = ChaekInkSecondary)
         Text(

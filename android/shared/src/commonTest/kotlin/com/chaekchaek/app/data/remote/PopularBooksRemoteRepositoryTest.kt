@@ -46,6 +46,9 @@ class PopularBooksRemoteRepositoryTest {
                         isbn13 = "9780000000007",
                         bookTitle = "역병",
                         bookCoverImageUrl = "cover-7",
+                        quote = "페스트균은 결코 죽거나 사라지지 않는다.",
+                        likeCount = 2,
+                        likedByMe = true,
                     ),
                 ),
             ),
@@ -66,6 +69,9 @@ class PopularBooksRemoteRepositoryTest {
         assertEquals("https://example.com/profile.jpg", review.authorProfileImageUrl)
         assertEquals(Instant.parse("2026-08-20T01:29:34Z"), review.createdAt)
         assertEquals("오래 멈춰 읽었다.", review.quoteText)
+        assertEquals("페스트균은 결코 죽거나 사라지지 않는다.", review.quote)
+        assertEquals(2, review.likeCount)
+        assertEquals(true, review.likedByMe)
         assertEquals("7", feed.readingBook?.bookId?.value)
         assertEquals(132, feed.readingBook?.currentPage)
     }

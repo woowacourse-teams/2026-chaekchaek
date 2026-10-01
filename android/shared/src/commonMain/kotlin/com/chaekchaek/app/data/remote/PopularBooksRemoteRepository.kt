@@ -70,6 +70,9 @@ internal data class LatestReviewDto(
     val isbn13: String = "",
     val bookTitle: String,
     val bookCoverImageUrl: String,
+    val quote: String? = null,
+    val likeCount: Int = 0,
+    val likedByMe: Boolean = false,
 )
 
 @Serializable
@@ -124,6 +127,9 @@ internal fun PopularBooksResponseDto.toHomeFeed(
                     createdAt = Instant.parse(review.createdAt),
                     quoteText = review.content,
                     replyCount = review.replyCount,
+                    quote = review.quote,
+                    likeCount = review.likeCount,
+                    likedByMe = review.likedByMe,
                 )
             },
         ),

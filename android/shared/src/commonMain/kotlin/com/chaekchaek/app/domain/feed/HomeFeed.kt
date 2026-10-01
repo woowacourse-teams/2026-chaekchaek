@@ -87,6 +87,9 @@ class QuoteCard(
     val createdAt: Instant,
     val quoteText: String,
     val replyCount: Int,
+    val quote: String? = null,
+    val likeCount: Int = 0,
+    val likedByMe: Boolean = false,
 )
 
 /** `밑줄이 겹친 책` 카드. */

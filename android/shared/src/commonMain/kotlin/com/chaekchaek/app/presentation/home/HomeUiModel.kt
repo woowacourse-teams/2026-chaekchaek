@@ -38,6 +38,10 @@ data class QuoteCardUiModel(
     val authorName: String,
     val timeLabel: String,
     val quoteText: String,
+    val quote: String?,
+    val likeCount: Int,
+    val likedByMe: Boolean,
+    val replyCount: Int,
     val replyLabel: String,
 )
 
