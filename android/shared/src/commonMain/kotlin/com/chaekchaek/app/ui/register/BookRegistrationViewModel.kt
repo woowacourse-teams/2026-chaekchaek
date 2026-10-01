@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.ui.archive.withDelayedLoading
+import io.ktor.client.plugins.ServerResponseException
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,7 +85,7 @@ class BookRegistrationViewModel internal constructor(
                 }
             }.onFailure { error ->
                 if (error is CancellationException) throw error
-                _uiState.value = _uiState.value.copy(errorMessage = "책을 등록하지 못했어요")
+                _uiState.value = _uiState.value.copy(errorMessage = error.registrationErrorMessage())
             }
             _uiState.value = _uiState.value.copy(isBusy = false)
         }
@@ -93,6 +95,14 @@ class BookRegistrationViewModel internal constructor(
         _uiState.value = _uiState.value.copy(showLoading = loading)
     }
 }
+
+internal fun registrationErrorMessage(status: HttpStatusCode?): String = when {
+    status?.value in 500..599 -> "도서 정보 서버에 문제가 있어 등록하지 못했어요. 잠시 후 다시 시도해 주세요"
+    else -> "책을 등록하지 못했어요"
+}
+
+private fun Throwable.registrationErrorMessage(): String =
+    registrationErrorMessage((this as? ServerResponseException)?.response?.status)
 
 internal fun BookSearchResult.registrationValidationError(): String? = when {
     isbn13.isBlank() -> "ISBN 정보가 없는 책은 등록할 수 없어요"

@@ -1,11 +1,21 @@
 package com.chaekchaek.app.ui.register
 
 import com.chaekchaek.app.domain.book.BookSearchResult
+import io.ktor.http.HttpStatusCode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class BookRegistrationValidationTest {
+    @Test
+    fun distinguishesServerRegistrationFailureFromGeneralRegistrationFailure() {
+        assertEquals(
+            "도서 정보 서버에 문제가 있어 등록하지 못했어요. 잠시 후 다시 시도해 주세요",
+            registrationErrorMessage(HttpStatusCode.InternalServerError),
+        )
+        assertEquals("책을 등록하지 못했어요", registrationErrorMessage(HttpStatusCode.Conflict))
+    }
+
     @Test
     fun requiresServerRegistrationFields() {
         val valid = BookSearchResult(

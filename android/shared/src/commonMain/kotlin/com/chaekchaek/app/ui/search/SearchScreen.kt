@@ -149,11 +149,6 @@ fun SearchScreen(
 
   Column(modifier = modifier.fillMaxSize()) {
     BrandHeader(onProfileClick)
-    Text(
-      "발견",
-      modifier = Modifier.padding(start = 24.dp, top = 22.dp),
-      style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold, fontSize = 29.sp, lineHeight = 34.8.sp),
-    )
     SearchTopBar(
       query = query,
       onQueryChange = {
