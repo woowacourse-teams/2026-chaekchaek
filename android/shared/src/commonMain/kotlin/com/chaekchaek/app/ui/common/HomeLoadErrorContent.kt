@@ -16,7 +16,6 @@ internal fun HomeLoadErrorContent(
 ) {
     Box(modifier.fillMaxSize())
     ChaekOneActionDialog(
-        onDismissRequest = {},
         title = { Text("홈을 불러오지 못했어요") },
         text = { Text(error.message()) },
         confirmButton = { TextButton(onClick = retry) { Text("다시 시도") } },
