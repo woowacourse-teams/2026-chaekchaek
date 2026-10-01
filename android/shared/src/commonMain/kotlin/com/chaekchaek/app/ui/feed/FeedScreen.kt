@@ -20,10 +20,16 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,8 +48,8 @@ import com.chaekchaek.app.presentation.home.HomeUiState
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
 import com.chaekchaek.app.ui.RemoteBookImage
+import com.chaekchaek.app.ui.bookdetail.ReplyInputSheet
 import com.chaekchaek.app.ui.common.BrandHeader
-import com.chaekchaek.app.ui.common.HomeLoadErrorContent
 import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.theme.ChaekBorderSoft
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
@@ -60,80 +66,77 @@ fun FeedScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by homeViewModel.uiState.collectAsState()
-    Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    var replyTarget by remember { mutableStateOf<QuoteCardUiModel?>(null) }
+    val requestError = (state as? HomeUiState.Content)?.requestError
+    LaunchedEffect(requestError) {
+        requestError?.let {
+            snackbarHostState.showSnackbar(it)
+            homeViewModel.clearRequestError()
+        }
+    }
+    val reflections = (state as? HomeUiState.Content)?.sections.orEmpty()
+        .filterIsInstance<FeedSectionUiModel.RecentQuotes>()
+        .flatMap { it.cards }
+
+    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Column(Modifier.fillMaxSize()) {
         BrandHeader(onProfileClick)
-        when (val current = state) {
-            HomeUiState.Loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+        when {
+            state is HomeUiState.Loading -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
             }
-            HomeUiState.Empty -> FeedEmptyContent(Modifier.weight(1f))
-            is HomeUiState.Failure -> HomeLoadErrorContent(
-                error = current.error,
-                retry = homeViewModel::retry,
-                modifier = Modifier.weight(1f),
-            )
-            is HomeUiState.Content -> FeedContent(
-                reflections = current.sections
-                    .filterIsInstance<FeedSectionUiModel.RecentQuotes>()
-                    .flatMap { it.cards },
-                onBookClick = onBookClick,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun FeedEmptyContent(modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        Text("아직 도착한 감상이 없어요.", style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-@Composable
-private fun FeedContent(
-    reflections: List<QuoteCardUiModel>,
-    onBookClick: (BookDetailTarget) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (reflections.isEmpty()) {
-        FeedEmptyContent(modifier)
-    } else {
-        LazyColumn(
-            modifier = modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(start = 24.dp, top = 18.dp, end = 24.dp, bottom = 24.dp),
-        ) {
-            itemsIndexed(reflections, key = { _, item -> item.noteId.value }) { _, reflection ->
-                HorizontalDivider(color = ChaekBorderSoft)
-                FeedReflectionArticle(
-                    reflection = reflection,
-                    onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
-                )
+            reflections.isEmpty() -> Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text("아직 도착한 감상이 없어요.", style = MaterialTheme.typography.bodyMedium)
+            }
+            else -> LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                contentPadding = PaddingValues(start = 24.dp, top = 18.dp, end = 24.dp, bottom = 24.dp),
+            ) {
+                itemsIndexed(reflections, key = { _, item -> item.noteId.value }) { _, reflection ->
+                    HorizontalDivider(color = ChaekBorderSoft)
+                    FeedReflectionArticle(
+                        reflection = reflection,
+                        onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
+                        onLike = { homeViewModel.toggleReviewLike(reflection.reviewId, reflection.likedByMe) },
+                        onReply = { replyTarget = reflection },
+                    )
+                }
             }
         }
     }
+        SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
+    }
+    replyTarget?.let { reflection ->
+        ReplyInputSheet(
+            onDismiss = { replyTarget = null },
+            onSave = { content ->
+                homeViewModel.createReply(reflection.reviewId, content) { replyTarget = null }
+            },
+        )
+    }
 }
 
 @Composable
-private fun FeedReflectionArticle(reflection: QuoteCardUiModel, onOpenBook: () -> Unit) {
+private fun FeedReflectionArticle(
+    reflection: QuoteCardUiModel,
+    onOpenBook: () -> Unit,
+    onLike: () -> Unit,
+    onReply: () -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onOpenBook)
             .padding(top = 22.dp, bottom = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Box(
-            modifier = Modifier.size(width = 64.dp, height = 110.dp)
-                .feedBookShadow()
-                .clip(RoundedCornerShape(2.dp))
-                .clickable(role = Role.Button, onClick = onOpenBook),
-        ) {
+        Box(modifier = Modifier.size(width = 64.dp, height = 110.dp).feedBookShadow().clip(RoundedCornerShape(2.dp))) {
             RemoteBookImage(reflection.coverId, "${reflection.bookTitle} 표지", Modifier.fillMaxSize())
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 reflection.bookTitle,
-                modifier = Modifier.clickable(role = Role.Button, onClick = onOpenBook),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -198,9 +201,10 @@ private fun FeedReflectionArticle(reflection: QuoteCardUiModel, onOpenBook: () -
                 FeedAction(
                     icon = if (reflection.likedByMe) Res.drawable.ic_heart_filled else Res.drawable.ic_heart_outline,
                     label = "좋아요 ${reflection.likeCount}",
+                    onClick = onLike,
                 )
                 Spacer(Modifier.size(18.dp))
-                FeedAction(Res.drawable.ic_comment, "답글 ${reflection.replyCount}")
+                FeedAction(Res.drawable.ic_comment, "답글 ${reflection.replyCount}", onReply)
                 Spacer(Modifier.weight(1f))
                 Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
                     Text(
@@ -216,8 +220,12 @@ private fun FeedReflectionArticle(reflection: QuoteCardUiModel, onOpenBook: () -
 }
 
 @Composable
-private fun FeedAction(icon: DrawableResource, label: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun FeedAction(icon: DrawableResource, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.clickable(role = Role.Button, onClick = onClick).padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(19.dp), tint = ChaekInkSecondary)
         Text(
             label,

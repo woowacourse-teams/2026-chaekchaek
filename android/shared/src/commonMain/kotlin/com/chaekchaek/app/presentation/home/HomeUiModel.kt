@@ -30,6 +30,7 @@ data class TrendingBookUiModel(
 )
 
 data class QuoteCardUiModel(
+    val reviewId: Long? = null,
     val noteId: NoteId,
     val bookId: BookId,
     val isbn13: String = "",

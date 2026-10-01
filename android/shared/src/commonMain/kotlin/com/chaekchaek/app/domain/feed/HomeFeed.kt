@@ -77,6 +77,7 @@ class TrendingBook(
  * 문자열로 저장하지 않는다.
  */
 class QuoteCard(
+    val reviewId: Long? = null,
     val noteId: NoteId,
     val bookId: BookId,
     val isbn13: String = "",

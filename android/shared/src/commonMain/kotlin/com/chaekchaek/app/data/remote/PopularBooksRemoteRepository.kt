@@ -93,6 +93,7 @@ internal data class LatestReviewsResponseDto(
 
 @Serializable
 internal data class LatestReviewDto(
+    val reviewId: Long? = null,
     val content: String,
     val createdAt: String,
     val author: LatestReviewAuthorDto,
@@ -124,6 +125,7 @@ internal fun LatestReviewsResponseDto.withReviewDetails(
             }
         detailedReview?.let { detail ->
             latestReview.copy(
+                reviewId = detail.reviewId,
                 quote = detail.quote,
                 likeCount = detail.likeCount,
                 likedByMe = detail.likedByMe,
@@ -169,6 +171,7 @@ internal fun PopularBooksResponseDto.toHomeFeed(
         FeedSection.RecentQuotes(
             cards = latestReviews.reviews.map { review ->
                 QuoteCard(
+                    reviewId = review.reviewId,
                     noteId = NoteId("${review.bookId}-${review.createdAt}"),
                     bookId = BookId(review.bookId.toString()),
                     isbn13 = review.isbn13,

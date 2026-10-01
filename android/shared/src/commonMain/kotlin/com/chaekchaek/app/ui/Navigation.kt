@@ -28,6 +28,7 @@ import com.chaekchaek.app.data.remote.BookSearchRemoteRepository
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MemberRemoteRepository
 import com.chaekchaek.app.data.remote.PopularBooksRemoteRepository
+import com.chaekchaek.app.data.remote.RemoteFeedReviewActions
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.ui.archive.ArchiveViewModel
 import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
@@ -96,7 +97,14 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage:
     DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     val authTokens by authViewModel.tokens.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
-    val homeViewModel = remember { HomeViewModel(PopularBooksRemoteRepository(), Clock.System) }
+    val detailRepository = remember { BookDetailRemoteRepository() }
+    val homeViewModel = remember(authPlatform, detailRepository) {
+        HomeViewModel(
+            feedRepository = PopularBooksRemoteRepository(),
+            clock = Clock.System,
+            reviewActions = RemoteFeedReviewActions(detailRepository, authPlatform),
+        )
+    }
     val libraryRepository = remember { LibraryRemoteRepository() }
     val memberRepository = remember { MemberRemoteRepository() }
     val registrationViewModel = remember { BookRegistrationViewModel(libraryRepository) }
@@ -117,7 +125,6 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage:
         archiveViewModel.authenticate(accessToken)
         memberSettingsViewModel.authenticate(accessToken)
     }
-    val detailRepository = remember { BookDetailRemoteRepository() }
     val backStack = rememberNavBackStack(navigationConfig, Root)
     CompositionLocalProvider(
         LocalRemoteBookCover provides { url, description, modifier ->
