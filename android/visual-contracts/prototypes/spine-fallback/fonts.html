@@ -1,0 +1,17 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>투톤 띠지형 - 글꼴 6안</title><style id="overrides">
+@font-face{font-family:StudyPretendard;src:url(assets/fonts/pretendard_regular.otf);font-weight:400}
+@font-face{font-family:StudyPretendard;src:url(assets/fonts/pretendard_semibold.otf);font-weight:600}
+@font-face{font-family:StudyGowun;src:url(assets/fonts/gowun_dodum_regular.ttf)}
+@font-face{font-family:StudyPlex;src:url(assets/fonts/ibm_plex_sans_kr_regular.ttf)}
+@font-face{font-family:StudyNanum;src:url(assets/fonts/nanum_gothic_regular.ttf)}
+@font-face{font-family:StudyMyungjo;src:local("AppleMyungjo")}
+main{max-width:1296px}.grid{row-gap:30px}.stage{height:302px;padding-bottom:22px}.stage:after{bottom:20px}.shelf{display:flex;align-items:flex-end;gap:2px;transform-origin:center bottom}.c .title{font-family:var(--font);font-weight:var(--weight);font-size:12px;line-height:1.1;font-synthesis:none}.c .author{font-family:var(--font);font-weight:400;font-synthesis:none}.sample{margin-top:14px}.sample-line{padding:13px 20px 16px;border-top:1px solid #eee;font-family:var(--font);font-weight:var(--weight);font-size:16px;letter-spacing:.8px}.label{font-size:11px;color:#888;margin-bottom:7px;display:block;letter-spacing:0;font-family:"Apple SD Gothic Neo",sans-serif}.tools{display:flex;gap:8px;margin-top:20px}button.active{background:#25251f;color:white}.actual .shelf{transform:scale(.72)}.actual .stage{height:225px}.note{margin-top:25px;font-size:12px}iframe{display:none}header{margin-bottom:24px}
+</style><body><main><header><div><h1>투톤 띠지형, 글꼴 6안</h1><p>제목 크기와 간격, 책등 색과 띠지는 같고 서체만 달라진답니다.</p><div class="tools"><button class="active" data-size="large">확대 비교</button><button data-size="actual">앱 크기 비교</button></div></div></header><div class="grid"></div><p class="note">01은 macOS의 Apple 명조를 사용한 시안이며, 나머지는 프로젝트에 있는 실제 글꼴 파일로 렌더링한답니다.</p></main><iframe src="v2.html" title="선택한 3번 디자인 원본"></iframe>
+<script>
+const variants=[["01","Apple 명조","StudyMyungjo",400,"명조 / 가는 획과 부리"],["02","고운돋움","StudyGowun",400,"둥근 획 / 부드러운 인상"],["03","프리텐다드 Regular","StudyPretendard",400,"고딕 / 간결한 기본형"],["04","프리텐다드 SemiBold","StudyPretendard",600,"고딕 / 또렷한 굵기"],["05","IBM Plex Sans KR","StudyPlex",400,"고딕 / 각진 골격"],["06","나눔고딕","StudyNanum",400,"고딕 / 열린 속공간"]];
+document.querySelector("iframe").onload=async function(){const doc=this.contentDocument;for(const s of doc.querySelectorAll("style")){const copy=s.cloneNode(true);document.head.insertBefore(copy,document.getElementById("overrides"))}
+const books=doc.querySelector(".c .stage").innerHTML;
+document.querySelector(".grid").innerHTML=variants.map(([n,name,font,weight,desc])=>'<section class="option c" style="--font:'+font+';--weight:'+weight+'"><h2>'+n+' '+name+'</h2><p>'+desc+'</p><div class="sample"><div class="stage"><div class="shelf">'+books+'</div></div><div class="sample-line"><span class="label">글자 모양 비교</span>새들이 전하는 짧은 철학</div></div></section>').join("");
+await Promise.all(variants.map(v=>document.fonts.load(v[3]+' 12px '+v[2],"책등")));await document.fonts.ready;window.designReady=true;window.loadedFonts=variants.map(v=>({name:v[1],loaded:document.fonts.check(v[3]+' 12px '+v[2],"책등")}));};
+document.querySelectorAll("button").forEach(b=>b.onclick=()=>{document.body.classList.toggle("actual",b.dataset.size==="actual");document.querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b))});
+</script></body></html>
