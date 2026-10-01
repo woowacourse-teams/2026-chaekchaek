@@ -60,6 +60,3 @@ internal fun RemoteLibraryBook.toArchiveBookUiModel(): ArchiveBookUiModel {
         lastRecordedAt = runCatching { Instant.parse(readingUpdatedAt).toEpochMilliseconds() }.getOrDefault(0L),
     )
 }
-
-internal fun booksWithAvailableSpines(items: List<ArchiveBookUiModel>): List<ArchiveBookUiModel> =
-    items.filter { !it.spineUrl.isNullOrBlank() }

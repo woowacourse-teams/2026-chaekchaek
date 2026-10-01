@@ -127,7 +127,7 @@ fun ArchiveScreen(
     val visibleItems = remember(uiState.items, filter, sort) {
         sortArchiveBooks(uiState.items.filter { filter == null || it.status == filter }, sort)
     }
-    val spineBooks = remember(visibleItems) { booksWithAvailableSpines(visibleItems) }
+    val spineBooks = visibleItems
     val density = LocalDensity.current
     val scrollTopThresholdPx = remember(density) { with(density) { 240.dp.roundToPx() } }
     val showScrollTop by remember(scrollTopThresholdPx) {
