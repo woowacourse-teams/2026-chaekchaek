@@ -68,6 +68,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chaekchaek.app.domain.shelf.ReadingStatus
+import com.chaekchaek.app.analytics.analyticsBookKey
+import com.chaekchaek.app.analytics.analyticsImpression
 import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.common.ChaekCloseButton
 import com.chaekchaek.app.ui.common.BrandHeader
@@ -204,7 +206,7 @@ fun ArchiveScreen(
                     else ArchiveError(uiState.errorMessage, onRetry)
                 }
             } else {
-                items(visibleItems, key = { it.id }) { book ->
+                itemsIndexed(visibleItems, key = { _, book -> book.id }) { index, book ->
                     LibraryBookRow(
                         book = book,
                         editing = editing,
@@ -215,6 +217,13 @@ fun ArchiveScreen(
                         onDelete = { pendingDeletionIds = setOf(book.id) },
                         onOpen = { onBookClick(book) },
                         bookCover = bookCover,
+                        modifier = Modifier.analyticsImpression(
+                            contentType = "book",
+                            contentId = analyticsBookKey(book.id, book.bookId.toString()) ?: book.id,
+                            bookKey = analyticsBookKey(book.id, book.bookId.toString()),
+                            listId = "library_books",
+                            position = index + 1,
+                        ),
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                 }
@@ -479,9 +488,10 @@ private fun LibraryBookRow(
     onDelete: () -> Unit,
     onOpen: () -> Unit,
     bookCover: @Composable (ArchiveBookUiModel) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
             .background(if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else Color.Transparent)
             .clickable(role = Role.Button, onClick = if (editing) onSelect else onOpen)
             .padding(horizontal = 24.dp, vertical = 21.dp),

@@ -2,6 +2,8 @@ package com.chaekchaek.app.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.domain.feed.FeedSection
 import com.chaekchaek.app.presentation.common.TimeLabels
@@ -21,6 +23,7 @@ import kotlin.time.Instant
 class HomeViewModel(
     private val feedRepository: FeedRepository,
     private val clock: Clock,
+    private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
     private var accessToken: String? = null
     private var hasObservedAuthentication = false
@@ -50,6 +53,7 @@ class HomeViewModel(
     private fun load() {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
+            val started = kotlin.time.TimeSource.Monotonic.markNow()
             val previousState = _uiState.value
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
@@ -64,8 +68,21 @@ class HomeViewModel(
                     val feed = feedRepository.homeFeed(accessToken)
                     val sections = feed.visibleSections()
                     if (feed.isEmpty()) {
+                        analytics.log(
+                            name = "cc_load_result",
+                            strings = mapOf("resource" to "home_feed", "outcome" to "empty"),
+                            longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
+                        )
                         HomeUiState.Empty
                     } else {
+                        analytics.log(
+                            name = "cc_load_result",
+                            strings = mapOf("resource" to "home_feed", "outcome" to "success"),
+                            longs = mapOf(
+                                "duration_ms" to started.elapsedNow().inWholeMilliseconds,
+                                "result_count" to sections.size.toLong(),
+                            ),
+                        )
                         val now = clock.now()
                         HomeUiState.Content(
                             sections = sections.map { it.toUiModel(now) },
@@ -84,6 +101,15 @@ class HomeViewModel(
                 } catch (error: CancellationException) {
                     throw error
                 } catch (error: Throwable) {
+                    analytics.log(
+                        name = "cc_load_result",
+                        strings = mapOf(
+                            "resource" to "home_feed",
+                            "outcome" to "failure",
+                            "error_category" to analyticsErrorCategory(error),
+                        ),
+                        longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
+                    )
                     HomeUiState.Failure(error.toAppError())
                 }
             }

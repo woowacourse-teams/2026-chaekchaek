@@ -54,6 +54,8 @@ import chaekchaek.shared.generated.resources.ic_nav_discover_inactive
 import chaekchaek.shared.generated.resources.ic_nav_library_active
 import chaekchaek.shared.generated.resources.ic_nav_library_inactive
 import coil3.compose.AsyncImage
+import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.analytics.analyticsBookKey
 import com.chaekchaek.app.auth.AuthViewModel
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.ui.archive.ArchiveBookUiModel
@@ -95,6 +97,7 @@ internal fun RootScreen(
     archiveViewModel: ArchiveViewModel,
     memberSettingsViewModel: MemberSettingsViewModel,
     authViewModel: AuthViewModel,
+    analytics: AnalyticsTracker,
     onBookClick: (BookDetailArgs) -> Unit,
     onMyPage: () -> Unit,
     modifier: Modifier = Modifier,
@@ -119,6 +122,15 @@ internal fun RootScreen(
             archiveLoginOpensMyPage = true
             showArchiveLoginSheet = true
         }
+    }
+    val openBook: (BookDetailArgs, String) -> Unit = { book, origin ->
+        analytics.startFlow(origin)
+        analytics.bookSelect(analyticsBookKey(book.isbn13, book.id))
+        onBookClick(book)
+    }
+
+    LaunchedEffect(selectedTab) {
+        analytics.screenView(selectedTab.analyticsScreenName)
     }
 
     LaunchedEffect(registrationState.completedRegistrationCount) {
@@ -159,13 +171,13 @@ internal fun RootScreen(
                 onSearchBook = { selectedTab = RootTab.Discover },
                 onOpenFeed = { selectedTab = RootTab.Feed },
                 onProfileClick = openProfile,
-                onBookClick = { onBookClick(it.toBookDetailArgs()) },
+                onBookClick = { openBook(it.toBookDetailArgs(), "home") },
             )
             RootTab.Feed -> FeedScreen(
                 homeViewModel = homeViewModel,
                 modifier = contentModifier,
                 onProfileClick = openProfile,
-                onBookClick = { onBookClick(it.toBookDetailArgs()) },
+                onBookClick = { openBook(it.toBookDetailArgs(), "feed") },
             )
             RootTab.Discover -> SearchRoute(
                 viewModel = searchViewModel,
@@ -174,7 +186,7 @@ internal fun RootScreen(
                 modifier = contentModifier,
                 onBack = { selectedTab = RootTab.Home },
                 onProfileClick = openProfile,
-                onBookClick = { onBookClick(it.toBookDetailArgs()) },
+                onBookClick = { openBook(it.toBookDetailArgs(), "search") },
             )
             RootTab.Shelf -> ArchiveRoute(
                 viewModel = archiveViewModel,
@@ -189,7 +201,7 @@ internal fun RootScreen(
                     }
                 },
                 onProfileClick = openProfile,
-                onBookClick = { onBookClick(it.toBookDetailArgs()) },
+                onBookClick = { openBook(it.toBookDetailArgs(), "library") },
                 modifier = contentModifier,
                 bookCover = { book ->
                     RemoteBookImage(book.coverUrl, "${book.title} 표지", Modifier.fillMaxSize())
@@ -234,6 +246,12 @@ internal fun RootScreen(
     }
 
     if (pendingRegistration != null) {
+        LaunchedEffect(pendingRegistration) {
+            analytics.log(
+                name = "cc_auth_prompt",
+                strings = mapOf("trigger_action" to "library_add", "surface" to "sheet"),
+            )
+        }
         LoginRequiredSheet(
             signingIn = authState.signingIn,
             error = authState.errorMessage,
@@ -243,18 +261,26 @@ internal fun RootScreen(
                     authViewModel.clearError()
                     authViewModel.cancelPendingAuthentication()
                     searchViewModel.cancelRegistration()
+                    analytics.log(
+                        name = "cc_auth_dismiss",
+                        strings = mapOf("trigger_action" to "library_add"),
+                    )
                 }
             },
             onAppleSignIn = {
+                analytics.log("cc_auth_start", strings = mapOf("method" to "apple", "trigger_action" to "library_add"))
                 authViewModel.clearError()
                 authViewModel.requireAppleAuthentication { token ->
+                    analytics.log("cc_auth_result", strings = mapOf("method" to "apple", "outcome" to "success"))
                     registrationViewModel.authenticate(token)
                     searchViewModel.resumeRegistration()
                 }
             },
             onGoogleSignIn = {
+                analytics.log("cc_auth_start", strings = mapOf("method" to "google", "trigger_action" to "library_add"))
                 authViewModel.clearError()
                 authViewModel.requireAuthentication { token ->
+                    analytics.log("cc_auth_result", strings = mapOf("method" to "google", "outcome" to "success"))
                     registrationViewModel.authenticate(token)
                     searchViewModel.resumeRegistration()
                 }
@@ -263,6 +289,15 @@ internal fun RootScreen(
     }
 
     if (showArchiveLoginSheet) {
+        LaunchedEffect(Unit) {
+            analytics.log(
+                name = "cc_auth_prompt",
+                strings = mapOf(
+                    "trigger_action" to if (archiveLoginOpensMyPage) "profile" else "library_edit",
+                    "surface" to "sheet",
+                ),
+            )
+        }
         LoginRequiredSheet(
             signingIn = authState.signingIn,
             error = authState.errorMessage,
@@ -273,19 +308,24 @@ internal fun RootScreen(
                     authViewModel.cancelPendingAuthentication()
                     showArchiveLoginSheet = false
                     archiveLoginOpensMyPage = false
+                    analytics.log("cc_auth_dismiss", strings = mapOf("trigger_action" to "library"))
                 }
             },
             onAppleSignIn = {
+                analytics.log("cc_auth_start", strings = mapOf("method" to "apple", "trigger_action" to "library"))
                 authViewModel.clearError()
                 authViewModel.requireAppleAuthentication {
+                    analytics.log("cc_auth_result", strings = mapOf("method" to "apple", "outcome" to "success"))
                     showArchiveLoginSheet = false
                     if (archiveLoginOpensMyPage) onMyPage() else archiveEditing = true
                     archiveLoginOpensMyPage = false
                 }
             },
             onGoogleSignIn = {
+                analytics.log("cc_auth_start", strings = mapOf("method" to "google", "trigger_action" to "library"))
                 authViewModel.clearError()
                 authViewModel.requireAuthentication {
+                    analytics.log("cc_auth_result", strings = mapOf("method" to "google", "outcome" to "success"))
                     showArchiveLoginSheet = false
                     if (archiveLoginOpensMyPage) onMyPage() else archiveEditing = true
                     archiveLoginOpensMyPage = false
@@ -294,6 +334,14 @@ internal fun RootScreen(
         )
     }
 }
+
+private val RootTab.analyticsScreenName: String
+    get() = when (this) {
+        RootTab.Home -> "home"
+        RootTab.Feed -> "feed"
+        RootTab.Discover -> "discover"
+        RootTab.Shelf -> "library"
+    }
 
 @Composable
 internal fun RemoteBookImage(

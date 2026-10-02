@@ -2,6 +2,10 @@ package com.chaekchaek.app.ui.register
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chaekchaek.app.analytics.AnalyticsAction
+import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.analytics.analyticsBookKey
+import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.ui.archive.withDelayedLoading
@@ -24,16 +28,25 @@ data class BookRegistrationUiState(
     val loginRequired: Boolean get() = pendingBook != null
 }
 
-class BookRegistrationViewModel internal constructor(
+class BookRegistrationViewModel private constructor(
     private val addBook: suspend (isbn13: String, totalPages: Int?, accessToken: String) -> Unit,
+    private val analytics: AnalyticsTracker,
 ) : ViewModel() {
-    constructor(repository: LibraryRemoteRepository = LibraryRemoteRepository()) : this(repository::add)
+    internal constructor(
+        addBook: suspend (isbn13: String, totalPages: Int?, accessToken: String) -> Unit,
+    ) : this(addBook, AnalyticsTracker.None)
+
+    constructor(
+        repository: LibraryRemoteRepository = LibraryRemoteRepository(),
+        analytics: AnalyticsTracker = AnalyticsTracker.None,
+    ) : this(repository::add, analytics)
 
     private val _uiState = MutableStateFlow(BookRegistrationUiState())
     val uiState: StateFlow<BookRegistrationUiState> = _uiState.asStateFlow()
 
     private var accessToken: String? = null
     private var registrationJob: Job? = null
+    private var pendingAction: AnalyticsAction? = null
 
     fun authenticate(accessToken: String?) {
         this.accessToken = accessToken
@@ -41,27 +54,40 @@ class BookRegistrationViewModel internal constructor(
     }
 
     fun register(book: BookSearchResult) {
+        val bookKey = analyticsBookKey(book.isbn13, null)
+        val action = analytics.startAction(
+            action = "library_add",
+            strings = buildMap { bookKey?.let { put("book_key", it) } },
+        )
         val validationError = book.registrationValidationError()
         if (validationError != null) {
+            analytics.finishAction(
+                action,
+                outcome = "blocked",
+                strings = mapOf("error_category" to "validation"),
+            )
             _uiState.value = _uiState.value.copy(errorMessage = validationError)
             return
         }
         val token = accessToken
         if (token == null) {
+            pendingAction = action
             _uiState.value = _uiState.value.copy(pendingBook = book, errorMessage = null)
             return
         }
-        performRegistration(book, token)
+        performRegistration(book, token, action)
     }
 
     fun resumeRegistration() {
         val book = _uiState.value.pendingBook ?: return
         val token = accessToken ?: return
-        performRegistration(book, token)
+        performRegistration(book, token, pendingAction ?: analytics.startAction("library_add"))
     }
 
     fun cancelRegistration() {
         if (_uiState.value.isBusy) return
+        pendingAction?.let { analytics.finishAction(it, "cancelled") }
+        pendingAction = null
         _uiState.value = _uiState.value.copy(pendingBook = null, errorMessage = null)
     }
 
@@ -69,7 +95,7 @@ class BookRegistrationViewModel internal constructor(
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 
-    private fun performRegistration(book: BookSearchResult, token: String) {
+    private fun performRegistration(book: BookSearchResult, token: String, action: AnalyticsAction) {
         if (_uiState.value.isBusy) return
         registrationJob?.cancel()
         _uiState.value = _uiState.value.copy(isBusy = true, errorMessage = null)
@@ -78,6 +104,8 @@ class BookRegistrationViewModel internal constructor(
                 addBook(book.isbn13, book.totalPages.takeIf { it > 0 }, token)
             }.onSuccess {
                 if (accessToken == token) {
+                    analytics.finishAction(action, "success", strings = mapOf("effect" to "created"))
+                    pendingAction = null
                     _uiState.value = _uiState.value.copy(
                         pendingBook = null,
                         completedRegistrationCount = _uiState.value.completedRegistrationCount + 1,
@@ -85,6 +113,12 @@ class BookRegistrationViewModel internal constructor(
                 }
             }.onFailure { error ->
                 if (error is CancellationException) throw error
+                analytics.finishAction(
+                    action,
+                    "failure",
+                    strings = mapOf("error_category" to analyticsErrorCategory(error)),
+                )
+                pendingAction = null
                 _uiState.value = _uiState.value.copy(errorMessage = error.registrationErrorMessage())
             }
             _uiState.value = _uiState.value.copy(isBusy = false)

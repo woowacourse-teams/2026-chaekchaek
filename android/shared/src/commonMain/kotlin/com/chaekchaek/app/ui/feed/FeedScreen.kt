@@ -38,6 +38,8 @@ import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.ic_comment
 import chaekchaek.shared.generated.resources.ic_heart_outline
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
+import com.chaekchaek.app.analytics.analyticsBookKey
+import com.chaekchaek.app.analytics.analyticsImpression
 import com.chaekchaek.app.presentation.home.HomeUiState
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
@@ -103,11 +105,19 @@ private fun FeedContent(
             modifier = modifier.fillMaxWidth(),
             contentPadding = PaddingValues(start = 24.dp, top = 18.dp, end = 24.dp, bottom = 24.dp),
         ) {
-            itemsIndexed(reflections, key = { _, item -> item.noteId.value }) { _, reflection ->
+            itemsIndexed(reflections, key = { _, item -> item.noteId.value }) { index, reflection ->
                 HorizontalDivider(color = ChaekBorderSoft)
                 FeedReflectionArticle(
                     reflection = reflection,
                     onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
+                    modifier = Modifier.analyticsImpression(
+                        contentType = "review",
+                        contentId = reflection.noteId.value,
+                        bookKey = analyticsBookKey(reflection.isbn13, reflection.bookId.value),
+                        listId = "feed_recent_reviews",
+                        position = index + 1,
+                        isOwn = false,
+                    ),
                 )
             }
         }
@@ -115,9 +125,13 @@ private fun FeedContent(
 }
 
 @Composable
-private fun FeedReflectionArticle(reflection: QuoteCardUiModel, onOpenBook: () -> Unit) {
+private fun FeedReflectionArticle(
+    reflection: QuoteCardUiModel,
+    onOpenBook: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 330.dp)
+        modifier = modifier.fillMaxWidth().heightIn(min = 330.dp)
             .padding(top = 22.dp, bottom = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.Top,
