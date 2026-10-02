@@ -51,15 +51,7 @@
 }
 
 .column-1 .ui-List-Item {
-  gap: 100px;
-}
-
-.column-2 .ui-List-Item {
-  gap: 60px;
-}
-
-.column-3 .ui-List-Item {
-  gap: 40px;
+  gap: 20px;
 }
 
 .ui-List-Item-Leading {

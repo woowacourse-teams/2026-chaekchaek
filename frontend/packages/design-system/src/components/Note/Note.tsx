@@ -15,7 +15,7 @@ export const Note = <T extends ElementType>(props: Props<T>) => {
     as = 'div',
     className,
     children,
-    variant = 'plain',
+    variant = 'default',
     title,
     sx,
     style,

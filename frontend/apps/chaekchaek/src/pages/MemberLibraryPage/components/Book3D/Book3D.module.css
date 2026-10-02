@@ -1,0 +1,140 @@
+.scene {  
+  --book-height: var(--book-preferred-height);
+  --book-thickness: 40px;
+  --book-depth: 205px;
+
+  position: relative;
+  display: inline-block;
+
+  width: calc(var(--book-thickness));
+  height: calc(var(--book-height));
+
+  background: transparent;
+  perspective: 1400px;
+
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+.scene:hover {
+  transform: translateZ(100deg);
+  z-index: 10;
+}
+
+.scene:hover .book {
+  transform: rotateX(0) rotateY(-90deg) scale(1.2);
+}
+
+.scene .book:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,.2);
+}
+
+.scene:hover .book:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,.3);
+}
+
+.scene .book .back:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0);
+  transition: 0.3s all;
+}
+
+.scene:hover .book .back:after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: -10%;
+  width: 120%;
+  height: 20%;
+  background-color: rgba(0,0,0,.2);
+  border-radius: 50%;
+
+  filter: blur(10px);
+}
+
+.book {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--book-thickness);
+  height: var(--book-height);
+  transform-style: preserve-3d;
+  transform: rotateX(-12deg) rotateY(-45deg);
+  transition: transform 650ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.book:hover {
+  transform: rotateX(-15deg) rotateY(-45deg);
+}
+
+.face {
+  position: absolute;
+  display: block;
+  backface-visibility: hidden;
+  background-color: #f4eedc;
+}
+
+.face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  user-select: none;
+}
+
+.front,
+.back {
+  inset: 0;
+}
+
+.front {
+  transform-origin: left center;
+  width: var(--book-depth);
+  height: var(--book-height);
+  /* transform: translateZ(calc(var(--book-depth) / 2)); */
+  transform: rotateY(90deg) translateZ(calc(var(--book-thickness)));
+}
+
+.back {
+  transform-origin: left center;
+  width: var(--book-depth);
+  height: var(--book-height);
+  margin-left: calc(var(--book-thickness) * -1);
+  transform: rotateY(90deg) translateZ(calc(var(--book-thickness)));
+}
+
+.spine {
+  top: 0;
+  left: 0;
+  width: var(--book-width);
+  height: var(--book-height);
+}
+
+.top {
+  top: 0;
+  left: 0;
+  width: var(--book-thickness);
+  height: var(--book-depth);
+  background: repeating-linear-gradient(0deg, #e0d8c4 0 1px, #faf6e9 1px 3px);
+  transform-origin: top center;
+  backface-visibility: visible;
+  transform: rotateX(-90deg) translateZ(1px);
+}

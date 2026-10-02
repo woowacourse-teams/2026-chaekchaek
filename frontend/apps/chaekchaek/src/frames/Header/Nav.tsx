@@ -11,7 +11,7 @@ import type { NavProps } from './Header.types';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 const navs = [
-  { link: ROUTES.HOME, text: '발견' },
+  { link: ROUTES.FEED, text: '발견' },
   { link: ROUTES.LIBRARY, text: '내 서재' },
   { link: ROUTES.HOME, text: '기록' },
 ];

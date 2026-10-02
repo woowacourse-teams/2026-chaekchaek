@@ -19,6 +19,14 @@ export const Example: Story = {
   },
 };
 
+export const WithDescription: Story = {
+  args: {
+    children: 'Title',
+    description: 'Description',
+    trailing: 'trailing',
+  },
+};
+
 export const LevelPage: Story = {
   args: {
     level: 'page',

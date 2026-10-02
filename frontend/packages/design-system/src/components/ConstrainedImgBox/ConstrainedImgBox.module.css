@@ -1,0 +1,9 @@
+.ui-ConstrainedImgBox {
+  overflow: hidden;
+  display: inline-block;
+  position: relative;
+}
+
+.ui-ConstrainedImgBox img {
+  object-fit: cover;
+}

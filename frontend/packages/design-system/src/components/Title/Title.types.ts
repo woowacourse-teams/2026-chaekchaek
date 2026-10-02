@@ -7,6 +7,7 @@ export type AS = 'div';
 export type OwnProps = {
   level?: 'page' | 'main' | 'caption';
   children?: ReactNode;
+  description?: ReactNode;
   trailing?: ReactNode;
   orientation?: 'horizontal' | 'vertical';
 };

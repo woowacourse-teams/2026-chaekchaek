@@ -1,7 +1,7 @@
 export type AnalyticsEventMap = {
   navigate: {
     destination: 'book_detail' | 'members_library';
-    source: 'intro_popular' | 'intro_latest_reviews' | 'search' | 'book_reviews';
+    source: 'intro_popular' | 'intro_latest_reviews' | 'search' | 'book_reviews' | 'book_feed';
   };
   rating_open: undefined;
   rating_submit: undefined;

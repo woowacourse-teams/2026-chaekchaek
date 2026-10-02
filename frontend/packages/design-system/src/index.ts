@@ -15,6 +15,12 @@ export type { Props as DataInfoProps } from './components/DataInfo';
 export { ImgBox } from './components/ImgBox';
 export type { Props as ImgBoxProps } from './components/ImgBox';
 
+export { ConstrainedImgBox } from './components/ConstrainedImgBox';
+export type { Props as ConstrainedImgBoxProps } from './components/ConstrainedImgBox';
+
+export { Media } from './components/Media';
+export type { Props as MediaProps } from './components/Media';
+
 export { List } from './components/List';
 export type { Props as ListProps } from './components/List';
 
@@ -33,6 +39,12 @@ export type { Props as OptionListProps } from './components/OptionList';
 export { Overview } from './components/Overview';
 export type { Props as OverviewProps } from './components/Overview';
 
+export { Partition } from './components/Partition';
+export type { Props as PartitionProps } from './components/Partition';
+
+export { Divider } from './components/Divider';
+export type { Props as DividerProps } from './components/Divider';
+
 export { ProgressBar } from './components/ProgressBar';
 export type { Props as ProgressBarProps } from './components/ProgressBar';
 
@@ -47,6 +59,9 @@ export type { Props as ShellProps } from './components/Shell';
 
 export { Split } from './components/Split';
 export type { Props as SplitProps } from './components/Split';
+
+export { ContentArea } from './components/ContentArea';
+export type { Props as ContentAreaProps } from './components/ContentArea';
 
 export { Surface } from './components/Surface';
 export type { Props as SurfaceProps } from './components/Surface';

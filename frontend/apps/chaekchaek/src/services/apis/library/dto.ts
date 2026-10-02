@@ -17,6 +17,8 @@ export type GetLibraryResponseDto = ResponseDto<{
     isbn13: string;
     title: string;
     coverImageUrl: string;
+    spineImageUrl: string;
+    backImageUrl: string;
     authors: string[];
     translators: string[];
     publisher: string;

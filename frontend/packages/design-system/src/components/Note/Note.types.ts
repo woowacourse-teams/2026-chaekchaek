@@ -6,7 +6,7 @@ export type AS = 'div';
 
 export type OwnProps = {
   children: ReactNode;
-  variant?: 'plain' | 'subtle';
+  variant?: 'default' | 'plain' | 'subtle';
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;

@@ -15,6 +15,7 @@ export const Title = <T extends ElementType>(props: Props<T>) => {
     as = 'div',
     className,
     children,
+    description,
     level = 'page',
     trailing,
     orientation = 'horizontal',
@@ -41,7 +42,10 @@ export const Title = <T extends ElementType>(props: Props<T>) => {
 
   return (
     <View as={as} className={classname} style={customStyles} {...restProps}>
-      <div className={styles.title}>{children}</div>
+      <div className={styles.title}>
+        {children}
+        {description && <div className={styles.description}>{description}</div>}
+      </div>
       {trailing && <div className={styles.trailing}>{trailing}</div>}
     </View>
   );

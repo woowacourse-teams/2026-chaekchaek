@@ -10,6 +10,11 @@
 }
 
 .ui-Entry-Main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
   border: 1px solid transparent;
   background: #FFFFFF;
 }
@@ -22,13 +27,20 @@
   padding: 32px;
 }
 
+.ui-Entry-Header {
+  width: 100%;
+}
+
 .ui-Entry-Body {
   white-space: pre-wrap;
+  width: 100%;
   gap: 12px;
+  flex: 1;
 }
 
 .ui-Entry-Footer {
   display: block;
+  width: 100%;
   text-align: right;
 }
 
@@ -41,6 +53,14 @@
 
 .variant-subtle .ui-Entry-Main {
   background: #F7F2EC;
+}
+
+.variant-bare .ui-Entry-Main {
+  background: transparent;
+}
+
+.line-none .ui-Entry-Main {
+  border-color: transparent;
 }
 
 .line-outline .ui-Entry-Main {

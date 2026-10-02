@@ -123,6 +123,22 @@ export const ExampleReview: Story = {
   },
 };
 
+export const VariantBare: Story = {
+  args: {
+    variant: 'bare',
+    children: (
+      <>
+        <Entry.Main>
+          <Entry.Header>Header</Entry.Header>
+          <Entry.Body>Body</Entry.Body>
+          <Entry.Footer>Footer</Entry.Footer>
+        </Entry.Main>
+        <Entry.Extension>Extension</Entry.Extension>
+      </>
+    ),
+  },
+};
+
 export const VariantSubtle: Story = {
   args: {
     variant: 'subtle',

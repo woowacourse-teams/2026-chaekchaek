@@ -1,0 +1,12 @@
+.bookShelf {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-end;
+  padding: 32px 0 0;
+  padding-right: 80px;
+  gap: 8px
+}
+
+.bookShelf .book {
+  filter: drop-shadow(1px 0 0 rgb(0 0 0 / 12%));
+}

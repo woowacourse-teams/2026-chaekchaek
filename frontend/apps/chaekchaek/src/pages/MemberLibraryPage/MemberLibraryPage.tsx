@@ -6,6 +6,7 @@ import {
   Icon,
   IconButton,
   ImgBox,
+  ConstrainedImgBox,
   List,
   Notice,
   OptionList,
@@ -26,6 +27,10 @@ import { getMembersMemberIdLibrary } from '@/services/apis/membersMemberIdLibrar
 import { useLoadData } from '@/services/core/useLoadData';
 
 import { ROUTES } from '@/constants/routes';
+
+import { Book3D } from './components/Book3D';
+
+import styles from './MemberLibraryPage.module.css';
 
 export const READING_STATUS = {
   ALL: 'ALL',
@@ -60,17 +65,6 @@ const READING_SORT_LABELS = {
   RATING: '별점순',
   TITLE: '제목순',
 } as const;
-
-const sideImgKeys = [
-  195042981, 195042980, 195042966, 195042923, 122426425, 117014613, 99308021, 23030284, 65067259,
-  139725917, 8759796, 35896136, 116859268, 140045398, 195042967,
-];
-
-const sideImgs = sideImgKeys
-  .map((sideImgKey) => {
-    return `https://image.yes24.com/goods/${sideImgKey}/SIDE/XL`;
-  })
-  .filter((_, index) => index < 10);
 
 export const MemberLibraryPage = () => {
   const { memberId: memberIdString } = useParams<{ memberId: string }>();
@@ -189,28 +183,6 @@ export const MemberLibraryPage = () => {
                       )}
                       onChange={handleChangeStatus}
                     />
-                    <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                      {sideImgs.map((sideImg, index) => {
-                        return (
-                          <img
-                            src={sideImg}
-                            style={{
-                              width: '20px',
-                              verticalAlign: 'bottom',
-                              transform:
-                                index < sideImgs.length - 1
-                                  ? 'rotate(5deg)'
-                                  : 'rotate(-5deg) translateX(20px)',
-                              transformOrigin: 'bottom center',
-                            }}
-                            onError={(event: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                              event.currentTarget.onerror = null;
-                              event.currentTarget.src = sideImgs[0] as string;
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
                   </>
                 }
               >
@@ -220,6 +192,7 @@ export const MemberLibraryPage = () => {
             <Split.Content>
               <Title
                 level="caption"
+                sx={{ mb: 10 }}
                 trailing={
                   <>
                     <Select
@@ -237,10 +210,27 @@ export const MemberLibraryPage = () => {
               >
                 독서 상태
               </Title>
+
+              <div className={styles.bookShelf}>
+                {libraryData?.items.map((item, index) => {
+                  return (
+                    <Link to={`/books/${item.isbn13}`}>
+                      <Book3D
+                        key={index}
+                        coverImageUrl={item.coverImageUrl}
+                        spineImageUrl={item.spineImageUrl ?? item.coverImageUrl}
+                        backImageUrl={item.backImageUrl ?? item.coverImageUrl}
+                      />
+                    </Link>
+                  );
+                })}
+              </div>
+
               {!libraryData?.items.length && (
                 <Notice height={500}>내 서재에 등록된 책이 없습니다.</Notice>
               )}
-              <List columns={2}>
+
+              <List columns={2} sx={{ mt: 4 }}>
                 {libraryData?.items.map((item) => {
                   return (
                     <List.Item key={item.bookId}>

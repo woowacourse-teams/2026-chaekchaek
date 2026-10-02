@@ -16,6 +16,7 @@ import { BooksPage } from '@/pages/BooksPage';
 import { BookDetailPage } from '@/pages/BookDetailPage';
 import { LibraryPage } from '@/pages/LibraryPage';
 import { MemberLibraryPage } from '@/pages/MemberLibraryPage';
+import { BookFeedPage } from '@/pages/BookFeedPage';
 
 interface Route {
   path: string;
@@ -74,6 +75,10 @@ const routes: Route[] = [
   {
     path: ROUTES.MEMBER_LIBRARY,
     element: <MemberLibraryPage />,
+  },
+  {
+    path: ROUTES.FEED,
+    element: <BookFeedPage />,
   },
 ];
 

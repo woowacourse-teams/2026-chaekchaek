@@ -9,4 +9,5 @@ export const ROUTES = {
   BOOK_DETAIL: '/books',
   LIBRARY: '/library',
   MEMBER_LIBRARY: '/members/:memberId/library',
+  FEED: '/feed',
 };

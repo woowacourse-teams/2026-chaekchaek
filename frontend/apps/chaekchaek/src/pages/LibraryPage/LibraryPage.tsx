@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   Button,
   Checkbox,
+  ConstrainedImgBox,
   Icon,
   IconButton,
   ImgBox,
@@ -32,6 +33,8 @@ import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
 import { DeleteBooksDialog } from './dialog/DeleteBooksDialog';
 import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
+import styles from './LiraryPage.module.css';
 
 export const READING_STATUS = {
   ALL: 'ALL',
@@ -66,6 +69,8 @@ const READING_SORT_LABELS = {
   RATING: '별점순',
   TITLE: '제목순',
 } as const;
+
+const booksHeight = [286, 304, 318, 312, 296, 282, 288, 306, 320, 298];
 
 export const LibraryPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -333,8 +338,25 @@ export const LibraryPage = () => {
               </Title>
             </Split.Side>
             <Split.Content>
+              <div className={styles.bookShelf}>
+                {libraryData?.items.map((item, index) => {
+                  return (
+                    <ConstrainedImgBox
+                      as={Link}
+                      to={`/books/${item.isbn13}`}
+                      className={styles.book}
+                      key={item.bookId}
+                      img={item.spineImageUrl ?? item.coverImageUrl}
+                      maxWidth="80px"
+                      height={`${booksHeight[index]}px`}
+                    />
+                  );
+                })}
+              </div>
+
               <Title
                 level="caption"
+                sx={{ mt: 8 }}
                 trailing={
                   <>
                     <Select
@@ -350,12 +372,13 @@ export const LibraryPage = () => {
                   </>
                 }
               >
-                독서 상태
+                총 {libraryData?.filteredCount}권
               </Title>
+
               {!libraryData?.items.length && (
                 <Notice height={500}>내 서재에 등록된 책이 없습니다.</Notice>
               )}
-              <List columns={2}>
+              <List columns={2} sx={{ mt: 4 }}>
                 {libraryData?.items.map((item) => {
                   const isIncluded = bookSelection.includes(item.bookId);
 

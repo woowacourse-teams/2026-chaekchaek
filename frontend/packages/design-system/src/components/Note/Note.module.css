@@ -5,7 +5,7 @@
   min-height: 68px;
   flex-direction: column;
   align-items: flex-start;
-  padding: 12px 14px 12px 16px;
+  padding: 14px 14px 14px 16px;
   border-left: 2px solid #1a1a1a;
   background-color: #fff4df;
   color: #000;
@@ -22,6 +22,16 @@
   font-weight: 700;
   color: #A05A27;
   padding-bottom: 4px;
+}
+
+.variant-default {
+  border-left-color: #a3a09c;
+  background-color: #efeeec;
+  color: #1a1a1a;
+  font-family: 'Noto Serif KR', serif;
+  font-size: 1.125rem; /* 18px */
+  font-weight: 600;
+  line-height: 1.6;
 }
 
 .variant-subtle {

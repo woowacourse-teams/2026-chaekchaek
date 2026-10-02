@@ -1,0 +1,49 @@
+.ui-ContentArea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+}
+
+.ui-ContentArea.spacing-none {
+  padding: 0;
+}
+
+.ui-ContentArea.spacing-medium {
+  padding: 36px 70px;
+}
+
+.ui-ContentArea.spacing-large {
+  padding: 48px 150px;
+}
+
+/* 축별 설정은 spacing보다 우선한다. */
+.ui-ContentArea.spacingX-none {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.ui-ContentArea.spacingX-medium {
+  padding-left: 70px;
+  padding-right: 70px;
+}
+
+.ui-ContentArea.spacingX-large {
+  padding-left: 150px;
+  padding-right: 150px;
+}
+
+.ui-ContentArea.spacingY-none {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.ui-ContentArea.spacingY-medium {
+  padding-top: 36px;
+  padding-bottom: 36px;
+}
+
+.ui-ContentArea.spacingY-large {
+  padding-top: 48px;
+  padding-bottom: 48px;
+}

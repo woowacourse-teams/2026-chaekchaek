@@ -1,0 +1,48 @@
+.ui-Media {
+  display: inline-flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-start;
+  padding-block: 26px;
+}
+
+.media {
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.13);
+}
+
+.media > :only-child,
+.media > :only-child > img {
+  display: block;
+  object-fit: cover;
+}
+
+.title,
+.description {
+  width: 116px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.title {
+  margin-top: 12px;
+  color: #1a1a1a;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.description {
+  margin-top: 3px;
+  color: #77736e;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
