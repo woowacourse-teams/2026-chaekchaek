@@ -26,8 +26,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -75,6 +73,7 @@ import com.chaekchaek.app.ui.theme.discoverReflectionBookShadow
 import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.common.BrandHeader
+import com.chaekchaek.app.ui.common.ChaekDropdown
 import com.chaekchaek.app.ui.common.HomeLoadErrorContent
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
 import com.chaekchaek.app.presentation.home.HomeUiState
@@ -505,7 +504,6 @@ private fun SearchResultHeader(
   sort: BookSearchSort,
   onSortSelect: (BookSearchSort) -> Unit,
 ) {
-  var expanded by remember { mutableStateOf(false) }
   Row(
     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
     horizontalArrangement = Arrangement.SpaceBetween,
@@ -523,30 +521,14 @@ private fun SearchResultHeader(
         color = ChaekAccentInk.copy(alpha = 0.7f),
       )
     }
-    Box {
-      Row(
-        modifier = Modifier.clickable(enabled = count > 0, role = Role.Button) { expanded = true },
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Text(sort.label, style = MaterialTheme.typography.bodySmall)
-        Icon(
-          painter = painterResource(Res.drawable.ic_chevron_down),
-          contentDescription = "검색 결과 정렬",
-          modifier = Modifier.size(20.dp),
-        )
-      }
-      DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-        BookSearchSort.entries.forEach { option ->
-          DropdownMenuItem(
-            text = { Text(option.label) },
-            onClick = {
-              expanded = false
-              onSortSelect(option)
-            },
-          )
-        }
-      }
-    }
+    ChaekDropdown(
+      selectedOption = sort,
+      options = BookSearchSort.entries,
+      optionLabel = { it.label },
+      onOptionSelected = onSortSelect,
+      contentDescription = "검색 결과 정렬",
+      enabled = count > 0,
+    )
   }
   HorizontalDivider(color = ChaekBand)
 }
