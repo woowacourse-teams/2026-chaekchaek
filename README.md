@@ -1,5 +1,6 @@
 # 첵췍
 
+- [모바일 사용자 이벤트 로깅 설계](docs/mobile-analytics-event-plan.md)
 - [책등 이미지 활용 메모](docs/book-spine-images.md)
 - [Figma 재디자인 앱 적용 핸드오프](docs/figma-redesign-implementation-handoff.md)
 
