@@ -21,7 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
+import com.chaekchaek.app.ui.common.ChaekSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -236,7 +236,7 @@ internal fun RootScreen(
     Box(modifier = modifier.fillMaxSize()) {
         val showBottomBar = !(selectedTab == RootTab.Shelf && archiveEditing)
         val contentModifier = Modifier.fillMaxSize().navigationBarsPadding()
-            .then(if (showBottomBar) Modifier.padding(bottom = 74.dp) else Modifier)
+            .then(if (showBottomBar) Modifier.padding(bottom = RootTabBarHeight) else Modifier)
         tabStateHolder.SaveableStateProvider(selectedTab.name) {
         when (selectedTab) {
             RootTab.Home -> HomeScreen(
@@ -326,7 +326,7 @@ internal fun RootScreen(
                 CircularProgressIndicator()
             }
         }
-        SnackbarHost(snackbarHost, Modifier.align(Alignment.BottomCenter))
+        ChaekSnackbarHost(snackbarHost, bottomContentHeight = if (showBottomBar) RootTabBarHeight else 0.dp)
     }
     }
 
@@ -423,6 +423,8 @@ internal fun RootScreen(
     }
 }
 
+private val RootTabBarHeight = 74.dp
+
 internal const val EXIT_CONFIRMATION_WINDOW_MILLIS = 2_000L
 internal const val EXIT_CONFIRMATION_MESSAGE = "한 번 더 누르면 종료됩니다"
 
@@ -493,14 +495,14 @@ private fun ChaekBottomBar(
     ) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Row(
-            modifier = Modifier.fillMaxWidth().height(74.dp).padding(horizontal = 12.dp).selectableGroup(),
+            modifier = Modifier.fillMaxWidth().height(RootTabBarHeight).padding(horizontal = 12.dp).selectableGroup(),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
         ) {
             RootTab.entries.forEach { tab ->
                 val selected = selectedTab == tab
                 Box(
-                    modifier = Modifier.weight(1f).height(74.dp).selectable(
+                    modifier = Modifier.weight(1f).height(RootTabBarHeight).selectable(
                         selected = selected,
                         onClick = { onTabSelected(tab) },
                         role = Role.Tab,

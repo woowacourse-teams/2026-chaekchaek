@@ -23,7 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
+import com.chaekchaek.app.ui.common.ChaekSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
@@ -154,7 +154,7 @@ fun FeedScreen(
                 }
             }
         }
-        SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
+        ChaekSnackbarHost(snackbarHostState)
     }
     val replyTarget = (state as? FeedUiState.Content)?.reviews
         ?.firstOrNull { it.noteId.value == replyTargetNoteId }
