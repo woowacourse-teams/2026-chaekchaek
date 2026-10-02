@@ -87,6 +87,7 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage:
             onAnonymousReviewsChange = { anonymous, nickname ->
                 previewState = previewState.copy(anonymousReviews = anonymous, nickname = nickname)
             },
+            onSignOut = {},
             onWithdraw = {},
             modifier = safeContent,
         )
@@ -149,6 +150,10 @@ internal fun AppNavigation(authPlatform: AuthPlatformCallbacks, uiTestingMyPage:
                         state = memberSettingsState,
                         onBack = { backStack.removeLastOrNull() },
                         onAnonymousReviewsChange = memberSettingsViewModel::setAnonymousReviews,
+                        onSignOut = {
+                            authViewModel.signOut()
+                            backStack.removeLastOrNull()
+                        },
                         onWithdraw = {
                             memberSettingsViewModel.withdraw {
                                 authViewModel.signOut()

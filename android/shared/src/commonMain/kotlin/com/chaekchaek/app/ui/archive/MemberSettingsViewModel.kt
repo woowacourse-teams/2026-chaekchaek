@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.data.remote.MemberRemoteRepository
 import com.chaekchaek.app.data.remote.RemoteMemberProfile
+import io.ktor.client.plugins.ResponseException
+import io.ktor.http.HttpStatusCode
+import kotlinx.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,8 +23,14 @@ data class MemberSettingsUiState(
     val showLoading: Boolean = false,
     val errorMessage: String? = null,
     val withdrawing: Boolean = false,
-    val withdrawalErrorMessage: String? = null,
+    val withdrawalFailure: WithdrawalFailure? = null,
 )
+
+sealed interface WithdrawalFailure {
+    data object AuthenticationExpired : WithdrawalFailure
+    data object NetworkUnavailable : WithdrawalFailure
+    data object ServerRejected : WithdrawalFailure
+}
 
 internal val MemberSettingsUiState.publicNickname: String
     get() = (if (anonymousReviews) anonymousNickname else nickname).ifBlank { "책책이" }
@@ -67,7 +76,7 @@ class MemberSettingsViewModel(
     fun withdraw(onSuccess: () -> Unit) {
         val token = accessToken ?: return
         requestJob?.cancel()
-        _uiState.value = _uiState.value.copy(withdrawalErrorMessage = null)
+        _uiState.value = _uiState.value.copy(withdrawalFailure = null)
         requestJob = viewModelScope.launch {
             withDelayedLoading(::setWithdrawing) { repository.withdraw(token) }
                 .onSuccess {
@@ -76,7 +85,7 @@ class MemberSettingsViewModel(
                 .onFailure { error ->
                     if (error is CancellationException) throw error
                     if (accessToken == token) {
-                        _uiState.value = _uiState.value.copy(withdrawalErrorMessage = "회원 탈퇴에 실패했어요")
+                        _uiState.value = _uiState.value.copy(withdrawalFailure = error.toWithdrawalFailure())
                     }
                 }
         }
@@ -135,6 +144,15 @@ class MemberSettingsViewModel(
         _uiState.value = _uiState.value.copy(withdrawing = withdrawing)
     }
 }
+
+private fun Throwable.toWithdrawalFailure(): WithdrawalFailure =
+    when {
+        this is ResponseException && response.status == HttpStatusCode.Unauthorized ->
+            WithdrawalFailure.AuthenticationExpired
+        this is ResponseException -> WithdrawalFailure.ServerRejected
+        this is IOException -> WithdrawalFailure.NetworkUnavailable
+        else -> WithdrawalFailure.ServerRejected
+    }
 
 private data class PendingMemberSettings(
     val anonymous: Boolean,
