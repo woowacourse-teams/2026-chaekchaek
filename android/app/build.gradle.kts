@@ -77,12 +77,6 @@ android {
         }
     }
     buildTypes {
-        create("integration") {
-            initWith(getByName("debug"))
-            applicationIdSuffix = ".integration"
-            versionNameSuffix = "-integration"
-            matchingFallbacks += listOf("debug")
-        }
         release {
             if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true

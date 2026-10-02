@@ -32,8 +32,8 @@ R8은 보안 경계가 아니다. APK에 들어간 문자열, `BuildConfig` 값,
 - Crashlytics Gradle plugin은 release mapping 파일을 자동 업로드한다.
 - `firebase_crashlytics_collection_enabled=true`로 release 앱의 자동 수집을 요청한다.
 - release용 실제 `android/app/google-services.json`은 Git에서 제외한다.
-- debug와 integration은 Firebase SDK를 포함하지 않으며, 빌드만 가능한 자리표시자
-  `google-services.json`을 각 소스 세트에 둔다.
+- debug는 Firebase SDK를 포함하지 않으며, 빌드만 가능한 자리표시자
+  `google-services.json`을 둔다.
 
 `google-services.json`의 실제 파일은 Firebase Console에서 내려받아
 `android/app/google-services.json`에만 둔다. 앱 패키지명과 파일의 Android 클라이언트
