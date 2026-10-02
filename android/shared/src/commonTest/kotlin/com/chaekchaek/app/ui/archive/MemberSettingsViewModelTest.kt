@@ -13,6 +13,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -84,15 +85,70 @@ class MemberSettingsViewModelTest {
             viewModel.uiState.first { it.nickname == "서버 이름" }
 
             viewModel.withdraw { error("Failure response must not complete withdrawal") }
-            viewModel.uiState.first { it.withdrawalErrorMessage != null }
+            viewModel.uiState.first { it.withdrawalFailure != null }
 
             assertEquals(true, viewModel.uiState.value.signedIn)
+            assertEquals(WithdrawalFailure.ServerRejected, viewModel.uiState.value.withdrawalFailure)
 
             viewModel.withdraw { withdrawalSucceeded.complete(Unit) }
             withdrawalSucceeded.await()
 
             assertEquals(2, withdrawalRequests)
-            assertEquals(null, viewModel.uiState.value.withdrawalErrorMessage)
+            assertEquals(null, viewModel.uiState.value.withdrawalFailure)
+        } finally {
+            client.close()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun withdrawalUnauthorizedExplainsExpiredAuthentication() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val client = testClient { request ->
+            if (request.method == io.ktor.http.HttpMethod.Delete) {
+                respondJson("""{"code":"UNAUTHORIZED"}""", HttpStatusCode.Unauthorized)
+            } else {
+                respondJson("""{"memberId":9,"nickname":"서버 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""")
+            }
+        }
+
+        try {
+            val viewModel = MemberSettingsViewModel(MemberRemoteRepository(client))
+            viewModel.authenticate("expired-access-token")
+            viewModel.uiState.first { it.nickname == "서버 이름" }
+
+            viewModel.withdraw { error("Unauthorized response must not complete withdrawal") }
+            viewModel.uiState.first { it.withdrawalFailure != null }
+
+            assertEquals(true, viewModel.uiState.value.signedIn)
+            assertEquals(WithdrawalFailure.AuthenticationExpired, viewModel.uiState.value.withdrawalFailure)
+        } finally {
+            client.close()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun withdrawalWithoutHttpResponseExplainsNetworkFailure() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val client = testClient { request ->
+            if (request.method == io.ktor.http.HttpMethod.Delete) {
+                throw IOException("network unavailable")
+            } else {
+                respondJson("""{"memberId":9,"nickname":"서버 이름","anonymousNickname":"우아한 달빛 참새","displayAnonymous":false}""")
+            }
+        }
+
+        try {
+            val viewModel = MemberSettingsViewModel(MemberRemoteRepository(client))
+            viewModel.authenticate("access-token")
+            viewModel.uiState.first { it.nickname == "서버 이름" }
+
+            viewModel.withdraw { error("Network failure must not complete withdrawal") }
+            viewModel.uiState.first { it.withdrawalFailure != null }
+
+            assertEquals(true, viewModel.uiState.value.signedIn)
+            assertEquals(WithdrawalFailure.NetworkUnavailable, viewModel.uiState.value.withdrawalFailure)
         } finally {
             client.close()
             Dispatchers.resetMain()

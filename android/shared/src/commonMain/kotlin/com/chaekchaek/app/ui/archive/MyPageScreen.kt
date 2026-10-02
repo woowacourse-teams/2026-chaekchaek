@@ -57,6 +57,7 @@ internal fun MyPageScreen(
     state: MemberSettingsUiState,
     onBack: () -> Unit,
     onAnonymousReviewsChange: (Boolean, String) -> Unit,
+    onSignOut: () -> Unit,
     onWithdraw: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -97,9 +98,10 @@ internal fun MyPageScreen(
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             SectionLabel("계정 관리")
-            if (state.withdrawalErrorMessage != null) {
+            ChaekOverlayButton("로그아웃", onSignOut, secondary = true)
+            if (state.withdrawalFailure != null) {
                 Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = ChaekOverlayTokens.cardShape) {
-                    Text(state.withdrawalErrorMessage, Modifier.fillMaxWidth().padding(12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    Text(state.withdrawalFailure.message(), Modifier.fillMaxWidth().padding(12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
                 ChaekOverlayButton("다시 시도", onWithdraw, enabled = !state.withdrawing)
             } else {
@@ -136,6 +138,13 @@ internal fun MyPageScreen(
         )
     }
 }
+
+private fun WithdrawalFailure.message(): String =
+    when (this) {
+        WithdrawalFailure.AuthenticationExpired -> "로그인이 만료됐어요. 로그아웃한 뒤 다시 로그인해 주세요."
+        WithdrawalFailure.NetworkUnavailable -> "네트워크 연결을 확인한 뒤 다시 시도해 주세요."
+        WithdrawalFailure.ServerRejected -> "회원 탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요."
+    }
 
 @Composable
 private fun MyPageTopBar(onBack: () -> Unit) {
