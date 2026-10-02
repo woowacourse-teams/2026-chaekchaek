@@ -176,6 +176,7 @@ internal fun AppNavigation(
                         analytics = analytics,
                         onBookClick = { backStack.add(BookDetailKey(it)) },
                         onMyPage = { backStack.add(MyPageKey) },
+                        onExitRequested = { backStack.removeLastOrNull() },
                         modifier = safeContent,
                     )
                 }

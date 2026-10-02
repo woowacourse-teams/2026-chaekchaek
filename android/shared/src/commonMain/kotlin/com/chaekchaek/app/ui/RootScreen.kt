@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -76,10 +77,15 @@ import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchRoute
 import com.chaekchaek.app.ui.search.SearchViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlin.time.Clock
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
-private enum class RootTab(
+internal enum class RootTab(
     val label: String,
     val selectedIcon: DrawableResource,
     val unselectedIcon: DrawableResource,
@@ -102,6 +108,7 @@ internal fun RootScreen(
     analytics: AnalyticsTracker,
     onBookClick: (BookDetailArgs) -> Unit,
     onMyPage: () -> Unit,
+    onExitRequested: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
@@ -117,6 +124,9 @@ internal fun RootScreen(
     val archiveState by archiveViewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     val snackbarHost = remember { SnackbarHostState() }
+    val backNavigationEventState = rememberNavigationEventState(NavigationEventInfo.None)
+    val backScope = rememberCoroutineScope()
+    var exitConfirmationDeadlineMillis by rememberSaveable { mutableStateOf<Long?>(null) }
     val accessToken = tokens?.accessToken
     val openProfile: () -> Unit = {
         if (accessToken != null) onMyPage()
@@ -130,6 +140,28 @@ internal fun RootScreen(
         analytics.bookSelect(analyticsBookKey(book.isbn13, book.id))
         onBookClick(book)
     }
+
+    NavigationBackHandler(
+        state = backNavigationEventState,
+        onBackCompleted = {
+            when (
+                val action = rootBackAction(
+                    selectedTab = selectedTab,
+                    exitConfirmationDeadlineMillis = exitConfirmationDeadlineMillis,
+                    nowMillis = Clock.System.now().toEpochMilliseconds(),
+                )
+            ) {
+                RootBackAction.ReturnToHome -> selectedTab = RootTab.Home
+                is RootBackAction.ConfirmExit -> {
+                    exitConfirmationDeadlineMillis = action.deadlineMillis
+                    backScope.launch {
+                        snackbarHost.showSnackbar("한 번 더 누르면 종료됩니다")
+                    }
+                }
+                RootBackAction.Exit -> onExitRequested()
+            }
+        },
+    )
 
     LaunchedEffect(selectedTab) {
         analytics.screenView(selectedTab.analyticsScreenName)
@@ -341,6 +373,24 @@ internal fun RootScreen(
             },
         )
     }
+}
+
+internal const val EXIT_CONFIRMATION_WINDOW_MILLIS = 2_000L
+
+internal sealed interface RootBackAction {
+    data object ReturnToHome : RootBackAction
+    data class ConfirmExit(val deadlineMillis: Long) : RootBackAction
+    data object Exit : RootBackAction
+}
+
+internal fun rootBackAction(
+    selectedTab: RootTab,
+    exitConfirmationDeadlineMillis: Long?,
+    nowMillis: Long,
+): RootBackAction = when {
+    selectedTab != RootTab.Home -> RootBackAction.ReturnToHome
+    exitConfirmationDeadlineMillis != null && nowMillis <= exitConfirmationDeadlineMillis -> RootBackAction.Exit
+    else -> RootBackAction.ConfirmExit(nowMillis + EXIT_CONFIRMATION_WINDOW_MILLIS)
 }
 
 private val RootTab.analyticsScreenName: String
