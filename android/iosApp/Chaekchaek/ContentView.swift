@@ -12,9 +12,11 @@ struct ContentView: View {
 private struct ComposeViewController: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
         let keychain = RefreshTokenKeychain()
+        let guestKeychain = GuestAuthKeychain()
 #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-uiTestingGuest") {
             keychain.clear()
+            guestKeychain.clear()
         }
 #endif
         let appleSignIn = AppleSignInProvider()
@@ -56,9 +58,9 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                     }
                 }
             },
-            readGuest: { nil },
-            writeGuest: { _ in },
-            clearGuest: {}
+            readGuest: guestKeychain.read,
+            writeGuest: guestKeychain.write,
+            clearGuest: guestKeychain.clear
         )
         let recentSearchStorage = RecentSearchStorage(
             read: {

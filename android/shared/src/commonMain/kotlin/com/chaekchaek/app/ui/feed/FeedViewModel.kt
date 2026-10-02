@@ -3,6 +3,7 @@ package com.chaekchaek.app.ui.feed
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.domain.feed.FeedReviewActions
+import com.chaekchaek.app.domain.feed.FeedViewer
 import com.chaekchaek.app.domain.feed.QuoteCard
 import com.chaekchaek.app.domain.feed.ReviewFeedRepository
 import com.chaekchaek.app.presentation.common.TimeLabels
@@ -22,8 +23,10 @@ class FeedViewModel(
     private val repository: ReviewFeedRepository,
     private val clock: Clock,
     private val reviewActions: FeedReviewActions,
+    private val readGuestToken: () -> String? = { null },
 ) : ViewModel() {
     private var accessToken: String? = null
+    private var authenticationRevision = 0L
     private var hasObservedAuthentication = false
     private var initialLoadJob: Job? = null
     private var loadMoreJob: Job? = null
@@ -46,6 +49,9 @@ class FeedViewModel(
             hasObservedAuthentication = true
             if (this.accessToken == accessToken) return
         }
+        if (this.accessToken == accessToken) return
+        authenticationRevision += 1
+        mutationJob?.cancel()
         this.accessToken = accessToken
         loadFirstPage()
     }
@@ -55,9 +61,12 @@ class FeedViewModel(
         val page = current.nextPage ?: return
         if (current.loadingMore || loadMoreJob?.isActive == true) return
         _uiState.value = current.copy(loadingMore = true, requestError = null)
+        val authenticationRevision = authenticationRevision
+        val viewer = currentViewer()
         loadMoreJob = viewModelScope.launch {
             try {
-                val next = repository.reviewFeed(page, accessToken)
+                val next = repository.reviewFeed(page, viewer)
+                if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@launch
                 val latest = _uiState.value as? FeedUiState.Content ?: return@launch
                 if (latest.nextPage != page) return@launch
                 _uiState.value = latest.copy(
@@ -70,10 +79,11 @@ class FeedViewModel(
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Throwable) {
+                if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@launch
                 updateContent {
                     it.copy(
                         loadingMore = false,
-                        requestError = "다음 감상을 불러오지 못했어요. 다시 시도해 주세요.",
+                        requestError = FeedRequestError.LoadMore,
                     )
                 }
             }
@@ -82,6 +92,12 @@ class FeedViewModel(
 
     fun clearRequestError() {
         updateContent { it.copy(requestError = null) }
+    }
+
+    fun retryLoadMore() {
+        val content = _uiState.value as? FeedUiState.Content ?: return
+        if (content.requestError != FeedRequestError.LoadMore) return
+        loadMore()
     }
 
     fun toggleReviewLike(reviewId: Long?, likedByMe: Boolean) {
@@ -93,7 +109,7 @@ class FeedViewModel(
                     likeCount = (review.likeCount + if (likedByMe) -1 else 1).coerceAtLeast(0),
                 )
             }
-        }) { actions -> actions.toggleLike(id, likedByMe, accessToken) }
+        }) { actions, accessToken -> actions.toggleLike(id, likedByMe, accessToken) }
     }
 
     fun createReply(reviewId: Long?, content: String, onSuccess: () -> Unit = {}) {
@@ -101,16 +117,19 @@ class FeedViewModel(
         mutateReview(onSuccess = {
             updateReview(id) { review -> review.copy(replyCount = review.replyCount + 1) }
             onSuccess()
-        }) { actions -> actions.createReply(id, content, accessToken) }
+        }) { actions, accessToken -> actions.createReply(id, content, accessToken) }
     }
 
     private fun loadFirstPage() {
         initialLoadJob?.cancel()
         loadMoreJob?.cancel()
+        val authenticationRevision = authenticationRevision
+        val viewer = currentViewer()
         initialLoadJob = viewModelScope.launch {
             val previousState = _uiState.value
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
+                    if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
                     if (loading) {
                         _uiState.value = FeedUiState.Loading
                     } else if (_uiState.value == FeedUiState.Loading) {
@@ -119,7 +138,8 @@ class FeedViewModel(
                 },
             ) {
                 _uiState.value = try {
-                    val page = repository.reviewFeed(FIRST_PAGE, accessToken)
+                    val page = repository.reviewFeed(FIRST_PAGE, viewer)
+                    if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
                     if (page.reviews.isEmpty()) {
                         FeedUiState.Empty
                     } else {
@@ -132,6 +152,9 @@ class FeedViewModel(
                 } catch (error: CancellationException) {
                     throw error
                 } catch (error: Throwable) {
+                    if (authenticationRevision != this@FeedViewModel.authenticationRevision) {
+                        return@withDelayedApiLoading
+                    }
                     FeedUiState.Failure(error.toAppError())
                 }
             }
@@ -140,18 +163,27 @@ class FeedViewModel(
 
     private fun mutateReview(
         onSuccess: () -> Unit,
-        action: suspend (FeedReviewActions) -> Unit,
+        action: suspend (FeedReviewActions, accessToken: String?) -> Unit,
     ) {
         if (mutationJob?.isActive == true) return
+        val authenticationRevision = authenticationRevision
+        val accessToken = accessToken
         mutationJob = viewModelScope.launch {
-            runCatching { action(reviewActions) }
-                .onSuccess { onSuccess() }
+            runCatching { action(reviewActions, accessToken) }
+                .onSuccess {
+                    if (authenticationRevision == this@FeedViewModel.authenticationRevision) onSuccess()
+                }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
-                    showInteractionError()
+                    if (authenticationRevision == this@FeedViewModel.authenticationRevision) showInteractionError()
                 }
         }
     }
+
+    private fun currentViewer(): FeedViewer = accessToken
+        ?.let(FeedViewer::Member)
+        ?: readGuestToken()?.let(FeedViewer::Guest)
+        ?: FeedViewer.Anonymous
 
     private fun updateReview(
         reviewId: Long,
@@ -167,7 +199,7 @@ class FeedViewModel(
     }
 
     private fun showInteractionError() {
-        updateContent { it.copy(requestError = "요청을 처리하지 못했어요. 다시 시도해 주세요.") }
+        updateContent { it.copy(requestError = FeedRequestError.Interaction) }
     }
 
     private fun updateContent(transform: (FeedUiState.Content) -> FeedUiState.Content) {

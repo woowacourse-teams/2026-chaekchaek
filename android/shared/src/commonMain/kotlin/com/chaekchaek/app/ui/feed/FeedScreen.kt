@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -76,8 +77,12 @@ fun FeedScreen(
     val revealedSpoilerReviewIds = remember { mutableStateListOf<Long>() }
     val requestError = (state as? FeedUiState.Content)?.requestError
     LaunchedEffect(requestError) {
-        requestError?.let {
-            snackbarHostState.showSnackbar(it)
+        requestError?.let { error ->
+            val result = snackbarHostState.showSnackbar(
+                message = error.message,
+                actionLabel = if (error == FeedRequestError.LoadMore) "다시 시도" else null,
+            )
+            if (result == SnackbarResult.ActionPerformed) viewModel.retryLoadMore()
             viewModel.clearRequestError()
         }
     }

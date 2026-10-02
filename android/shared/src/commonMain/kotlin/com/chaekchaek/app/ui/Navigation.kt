@@ -113,6 +113,7 @@ internal fun AppNavigation(
             repository = ReviewFeedRemoteRepository(),
             clock = Clock.System,
             reviewActions = RemoteFeedReviewActions(detailRepository, authPlatform),
+            readGuestToken = { authPlatform.readGuest()?.token },
         )
     }
     val libraryRepository = remember { LibraryRemoteRepository() }

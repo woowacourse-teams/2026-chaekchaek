@@ -2,6 +2,7 @@ package com.chaekchaek.app.data.remote
 
 import com.chaekchaek.app.domain.book.BookId
 import com.chaekchaek.app.domain.feed.QuoteCard
+import com.chaekchaek.app.domain.feed.FeedViewer
 import com.chaekchaek.app.domain.feed.ReviewFeedPage
 import com.chaekchaek.app.domain.feed.ReviewFeedRepository
 import com.chaekchaek.app.domain.note.NoteId
@@ -18,10 +19,14 @@ class ReviewFeedRemoteRepository(
     private val client: HttpClient = createHttpClient(),
     private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
 ) : ReviewFeedRepository {
-    override suspend fun reviewFeed(page: Int, accessToken: String?): ReviewFeedPage =
+    override suspend fun reviewFeed(page: Int, viewer: FeedViewer): ReviewFeedPage =
         client.get("${apiConfiguration.baseUrl}/api/v1/feed/reviews") {
             parameter("page", page)
-            accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+            when (viewer) {
+                FeedViewer.Anonymous -> Unit
+                is FeedViewer.Member -> header(HttpHeaders.Authorization, "Bearer ${viewer.accessToken}")
+                is FeedViewer.Guest -> header(WriteCredential.GUEST_TOKEN_HEADER, viewer.guestToken)
+            }
         }.body<ReviewFeedPageDto>().toReviewFeedPage()
 }
 

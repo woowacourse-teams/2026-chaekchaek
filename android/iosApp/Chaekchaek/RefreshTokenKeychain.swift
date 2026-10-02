@@ -1,9 +1,58 @@
 import Foundation
 import Security
+import Shared
 
 final class RefreshTokenKeychain {
+    private let store = KeychainStringStore(account: "refresh_token")
+
+    func read() -> String? {
+        store.read()
+    }
+
+    func write(_ refreshToken: String) {
+        store.write(refreshToken)
+    }
+
+    func clear() {
+        store.clear()
+    }
+}
+
+final class GuestAuthKeychain {
+    private let tokenStore = KeychainStringStore(account: "guest_token")
+    private let nicknameStore = KeychainStringStore(account: "guest_nickname")
+    private let expiresAtStore = KeychainStringStore(account: "guest_expires_at")
+
+    func read() -> GuestAuth? {
+        guard let token = tokenStore.read(),
+              let nickname = nicknameStore.read(),
+              let expiresAt = expiresAtStore.read() else {
+            clear()
+            return nil
+        }
+        return GuestAuth(token: token, nickname: nickname, expiresAt: expiresAt)
+    }
+
+    func write(_ guest: GuestAuth) {
+        tokenStore.write(guest.token)
+        nicknameStore.write(guest.nickname)
+        expiresAtStore.write(guest.expiresAt)
+    }
+
+    func clear() {
+        tokenStore.clear()
+        nicknameStore.clear()
+        expiresAtStore.clear()
+    }
+}
+
+private final class KeychainStringStore {
     private let service = Bundle.main.bundleIdentifier ?? "com.chamsae.chaekchaek"
-    private let account = "refresh_token"
+    private let account: String
+
+    init(account: String) {
+        self.account = account
+    }
 
     func read() -> String? {
         var query = baseQuery
@@ -18,8 +67,8 @@ final class RefreshTokenKeychain {
         return String(data: data, encoding: .utf8)
     }
 
-    func write(_ refreshToken: String) {
-        let data = Data(refreshToken.utf8)
+    func write(_ value: String) {
+        let data = Data(value.utf8)
         let attributes = [kSecValueData as String: data]
         let status = SecItemUpdate(baseQuery as CFDictionary, attributes as CFDictionary)
         if status == errSecItemNotFound {

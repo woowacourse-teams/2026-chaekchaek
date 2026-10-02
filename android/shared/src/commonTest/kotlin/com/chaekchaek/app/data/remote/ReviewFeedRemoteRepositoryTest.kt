@@ -1,5 +1,6 @@
 package com.chaekchaek.app.data.remote
 
+import com.chaekchaek.app.domain.feed.FeedViewer
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -47,7 +48,10 @@ class ReviewFeedRemoteRepositoryTest {
             install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
         }
 
-        val page = ReviewFeedRemoteRepository(client).reviewFeed(page = 2, accessToken = "member-token")
+        val page = ReviewFeedRemoteRepository(client).reviewFeed(
+            page = 2,
+            viewer = FeedViewer.Member("member-token"),
+        )
 
         assertEquals(41, page.totalCount)
         assertEquals(2, page.nextPage)
@@ -55,5 +59,27 @@ class ReviewFeedRemoteRepositoryTest {
         assertTrue(page.reviews.single().isSpoiler)
         assertEquals("2", request?.url?.parameters?.get("page"))
         assertEquals("Bearer member-token", request?.headers?.get(HttpHeaders.Authorization))
+    }
+
+    @Test
+    fun `게스트 피드 조회에 저장된 게스트 토큰을 전달한다`() = runTest {
+        var guestToken: String? = null
+        val client = HttpClient(MockEngine { request ->
+            guestToken = request.headers[WriteCredential.GUEST_TOKEN_HEADER]
+            respond(
+                content = """{"totalCount":0,"nextPage":null,"reviews":[]}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        }
+
+        ReviewFeedRemoteRepository(client).reviewFeed(
+            page = 1,
+            viewer = FeedViewer.Guest("guest-token"),
+        )
+
+        assertEquals("guest-token", guestToken)
     }
 }
