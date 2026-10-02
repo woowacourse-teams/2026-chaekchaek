@@ -172,6 +172,7 @@ fun SearchScreen(
       SearchUiState.Idle -> DiscoverLanding(
         homeState = homeState,
         onBookClick = onBookClick,
+        onRetry = onHomeRetry,
         modifier = Modifier.weight(1f),
       )
       SearchUiState.Loading -> SearchLoading(Modifier.weight(1f))

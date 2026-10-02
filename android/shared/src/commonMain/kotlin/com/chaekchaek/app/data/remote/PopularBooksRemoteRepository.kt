@@ -52,7 +52,7 @@ class PopularBooksRemoteRepository(
         latestReviews.reviews.map(LatestReviewDto::bookId).distinct().map { bookId ->
             async {
                 try {
-                    bookId to client.get("$BASE_URL/api/v1/books/$bookId/reviews") {
+                    bookId to client.get("${apiConfiguration.baseUrl}/api/v1/books/$bookId/reviews") {
                         url {
                             parameters.append("page", "1")
                             parameters.append("feed", "ALL")

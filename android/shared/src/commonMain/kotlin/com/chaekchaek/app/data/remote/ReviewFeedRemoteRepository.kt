@@ -16,16 +16,13 @@ import kotlin.time.Instant
 
 class ReviewFeedRemoteRepository(
     private val client: HttpClient = createHttpClient(),
+    private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
 ) : ReviewFeedRepository {
     override suspend fun reviewFeed(page: Int, accessToken: String?): ReviewFeedPage =
-        client.get("$BASE_URL/api/v1/feed/reviews") {
+        client.get("${apiConfiguration.baseUrl}/api/v1/feed/reviews") {
             parameter("page", page)
             accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
         }.body<ReviewFeedPageDto>().toReviewFeedPage()
-
-    private companion object {
-        const val BASE_URL = "https://api.chaekchaek.com"
-    }
 }
 
 @Serializable
