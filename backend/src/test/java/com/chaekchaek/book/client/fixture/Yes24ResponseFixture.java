@@ -28,7 +28,9 @@ public final class Yes24ResponseFixture {
                       "publisher": "민음사",
                       "isbn13": "9788937460449",
                       "publishDate": "20001220",
-                      "cover": "https://image.yes24.com/goods/101375809/L"
+                      "cover": "https://image.yes24.com/goods/101375809/L",
+                      "sideCover": "https://image.yes24.com/goods/101375809/SIDE/L",
+                      "backCover": "https://image.yes24.com/goods/101375809/BACK/L"
                     }],
                     "currentPage": %d,
                     "pageSize": %d,
@@ -59,6 +61,8 @@ public final class Yes24ResponseFixture {
                       "publishDate": "2000-12-20",
                       "pages": 240,
                       "cover": "https://image.yes24.com/goods/101375809/L",
+                      "sideCover": "https://image.yes24.com/goods/101375809/SIDE/L",
+                      "backCover": "https://image.yes24.com/goods/101375809/BACK/L",
                       "contentDetail": {
                         "bookIntroduction": "내면의 길을 찾아가는 성장 소설",
                         "bookSummary": null,
@@ -71,6 +75,12 @@ public final class Yes24ResponseFixture {
                   }
                 }
                 """;
+    }
+
+    public static String 데미안_상세_결과_책등_뒷면_없음() {
+        return 데미안_상세_결과()
+                .replaceAll("(?m)^\\s*\"sideCover\".*\\R", "")
+                .replaceAll("(?m)^\\s*\"backCover\".*\\R", "");
     }
 
     public static String 오류_응답(String errorCode, String message) {
