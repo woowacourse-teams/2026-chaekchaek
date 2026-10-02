@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,6 +64,7 @@ import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import com.chaekchaek.app.ui.theme.ChaekSurface
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 import org.jetbrains.compose.resources.painterResource
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun PageInputDialog(
@@ -141,6 +143,8 @@ internal fun ReviewInputSheet(
     var pageValue by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialPageValue) }
     var isSpoiler by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialSpoiler) }
     var showDiscardConfirmation by rememberSaveable { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coroutineScope = rememberCoroutineScope()
     val page = if (allowReadingProgress) BookDetailInputRules.validPage(pageValue, totalPages) else null
     val canSubmit = BookDetailInputRules.canSubmitReview(content, pageValue, totalPages)
     val hasDraft = if (initialReview == null) {
@@ -153,7 +157,8 @@ internal fun ReviewInputSheet(
 
     ModalBottomSheet(
         onDismissRequest = requestDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = sheetState,
+        sheetGesturesEnabled = false,
         containerColor = ChaekSurface,
         shape = ChaekOverlayTokens.sheetShape,
         dragHandle = {
@@ -301,7 +306,16 @@ internal fun ReviewInputSheet(
             title = { Text(if (initialReview == null) "감상 작성을 그만둘까요?" else "감상 수정을 그만둘까요?") },
             text = { Text("작성한 내용은 저장되지 않아요.") },
             confirmButton = { ChaekOverlayButton("작성 취소", onDismiss) },
-            dismissButton = { ChaekOverlayButton("계속 작성", { showDiscardConfirmation = false }, secondary = true) },
+            dismissButton = {
+                ChaekOverlayButton(
+                    "계속 작성",
+                    {
+                        showDiscardConfirmation = false
+                        coroutineScope.launch { sheetState.show() }
+                    },
+                    secondary = true,
+                )
+            },
         )
     }
 }
