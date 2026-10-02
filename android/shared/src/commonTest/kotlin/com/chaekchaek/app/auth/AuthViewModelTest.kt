@@ -133,6 +133,58 @@ class AuthViewModelTest {
   }
 
   @Test
+  fun `로그아웃은 서버 응답을 기다리지 않고 로컬 세션을 지운다`() = runTest {
+    val logoutStarted = CompletableDeferred<Unit>()
+    val finishLogout = CompletableDeferred<Unit>()
+    var storedRefreshToken: String? = null
+    val session = AuthSession(
+      readRefreshToken = { storedRefreshToken },
+      writeRefreshToken = { storedRefreshToken = it },
+      clearRefreshToken = { storedRefreshToken = null },
+      reissue = { error("예상하지 않은 재발급") },
+      logout = {
+        logoutStarted.complete(Unit)
+        finishLogout.await()
+      },
+      scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    session.signIn(tokens("signed-in"))
+    val localSessionCleared = CompletableDeferred<Unit>()
+
+    val signOut = launch { session.signOut { localSessionCleared.complete(Unit) } }
+    localSessionCleared.await()
+
+    assertNull(session.tokens.value)
+    assertNull(storedRefreshToken)
+    logoutStarted.await()
+    assertEquals(false, signOut.isCompleted)
+
+    finishLogout.complete(Unit)
+    signOut.join()
+  }
+
+  @Test
+  fun `원격 로그아웃 실패에도 로컬 세션은 로그아웃 상태를 유지한다`() = runTest {
+    var storedRefreshToken: String? = null
+    val session = AuthSession(
+      readRefreshToken = { storedRefreshToken },
+      writeRefreshToken = { storedRefreshToken = it },
+      clearRefreshToken = { storedRefreshToken = null },
+      reissue = { error("예상하지 않은 재발급") },
+      logout = { error("원격 로그아웃 실패") },
+      scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    session.signIn(tokens("signed-in"))
+
+    session.signOut()
+
+    assertNull(session.tokens.value)
+    assertNull(storedRefreshToken)
+  }
+
+  @Test
   fun `로그인 뒤 보류 작업을 새 Access Token으로 재개한다`() = runTest {
     var googleResult: ((String?, String?) -> Unit)? = null
     var storedRefreshToken: String? = null

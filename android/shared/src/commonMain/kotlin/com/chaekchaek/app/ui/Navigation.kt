@@ -187,13 +187,15 @@ internal fun AppNavigation(
                         onBack = { backStack.removeLastOrNull() },
                         onAnonymousReviewsChange = memberSettingsViewModel::setAnonymousReviews,
                         onSignOut = {
-                            authViewModel.signOut()
-                            backStack.removeLastOrNull()
+                            authViewModel.signOut {
+                                if (backStack.lastOrNull() == MyPageKey) backStack.removeLastOrNull()
+                            }
                         },
                         onWithdraw = {
                             memberSettingsViewModel.withdraw {
-                                authViewModel.signOut()
-                                backStack.removeLastOrNull()
+                                authViewModel.signOut {
+                                    if (backStack.lastOrNull() == MyPageKey) backStack.removeLastOrNull()
+                                }
                             }
                         },
                         modifier = safeContent,

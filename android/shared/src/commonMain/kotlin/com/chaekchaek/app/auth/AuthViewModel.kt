@@ -134,9 +134,9 @@ class AuthViewModel private constructor(
     _uiState.value = _uiState.value.copy(errorMessage = null)
   }
 
-  fun signOut() {
+  fun signOut(onLocalSessionCleared: () -> Unit = {}) {
     pendingAction = null
-    scope.launch { session.signOut() }
+    scope.launch { session.signOut(onLocalSessionCleared) }
   }
 
   fun close() {

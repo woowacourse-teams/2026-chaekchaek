@@ -2,6 +2,7 @@ package com.chaekchaek.app.auth
 
 import com.chaekchaek.app.data.remote.MobileAuthTokens
 import com.chaekchaek.app.data.remote.MobileLoginException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -39,15 +40,20 @@ internal class AuthSession(
     }
   }
 
-  suspend fun signOut() {
-    mutex.withLock {
+  suspend fun signOut(onLocalSessionCleared: () -> Unit = {}) {
+    val refreshToken = mutex.withLock {
       renewalJob?.cancel()
       val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
-      try {
-        if (refreshToken != null) logout(refreshToken)
-      } finally {
-        clear()
-      }
+      clear()
+      refreshToken
+    }
+    onLocalSessionCleared()
+    try {
+      if (refreshToken != null) logout(refreshToken)
+    } catch (error: CancellationException) {
+      throw error
+    } catch (_: Exception) {
+      // 로컬 로그아웃은 완료됐으므로 원격 토큰 폐기 실패로 세션을 복원하지 않는다.
     }
   }
 
