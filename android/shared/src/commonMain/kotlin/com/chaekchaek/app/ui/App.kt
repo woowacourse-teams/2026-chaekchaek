@@ -6,16 +6,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
+import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.analytics.LocalAnalyticsTracker
 import com.chaekchaek.app.ui.theme.ChaekchaekTheme
 
 @Composable
-fun App(authPlatform: AuthPlatformCallbacks, uiTestingMyPage: Boolean = false) {
+fun App(
+    authPlatform: AuthPlatformCallbacks,
+    analytics: AnalyticsTracker = AnalyticsTracker.None,
+    uiTestingMyPage: Boolean = false,
+) {
     ChaekchaekTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
         ) {
-            AppNavigation(authPlatform, uiTestingMyPage)
+            androidx.compose.runtime.CompositionLocalProvider(LocalAnalyticsTracker provides analytics) {
+                AppNavigation(authPlatform, analytics, uiTestingMyPage)
+            }
         }
     }
 }

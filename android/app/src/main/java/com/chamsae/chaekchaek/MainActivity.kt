@@ -9,8 +9,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.chamsae.chaekchaek.auth.RefreshTokenStore
 import com.chamsae.chaekchaek.auth.requestGoogleIdToken
+import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.ui.App
+import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -22,6 +24,13 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val scope = rememberCoroutineScope()
             val tokenStore = remember(context) { RefreshTokenStore(context) }
+            val analytics = remember(context) {
+                val logger = FirebaseAnalyticsEventLogger(FirebaseAnalytics.getInstance(context))
+                AnalyticsTracker(
+                    environment = if (BuildConfig.DEBUG) "test" else "production",
+                    sink = logger::log,
+                )
+            }
             val authPlatform = remember(context, scope, tokenStore) {
                 AuthPlatformCallbacks(
                     requestGoogleIdToken = { onResult ->
@@ -39,7 +48,7 @@ class MainActivity : ComponentActivity() {
                     clearGuest = tokenStore::clearGuest,
                 )
             }
-            App(authPlatform)
+            App(authPlatform, analytics)
         }
     }
 }

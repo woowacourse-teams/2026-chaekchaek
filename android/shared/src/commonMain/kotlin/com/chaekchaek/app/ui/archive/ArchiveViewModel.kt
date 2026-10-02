@@ -2,6 +2,8 @@ package com.chaekchaek.app.ui.archive
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.domain.shelf.ReadingStatus
 import kotlinx.coroutines.CancellationException
@@ -15,6 +17,7 @@ import kotlinx.coroutines.sync.withLock
 
 class ArchiveViewModel(
     private val repository: LibraryRemoteRepository,
+    private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ArchiveUiState())
     val uiState: StateFlow<ArchiveUiState> = _uiState.asStateFlow()
@@ -39,13 +42,15 @@ class ArchiveViewModel(
     fun remove(bookIds: Set<String>) {
         val serverBookIds = _uiState.value.items.filter { it.id in bookIds }.map(ArchiveBookUiModel::bookId)
         if (serverBookIds.isEmpty()) return
-        mutate { token -> repository.bulkDelete(serverBookIds, token) }
+        mutate("library_remove", serverBookIds.size) { token -> repository.bulkDelete(serverBookIds, token) }
     }
 
     fun changeStatus(bookIds: Set<String>, status: ReadingStatus) {
         val serverBookIds = _uiState.value.items.filter { it.id in bookIds }.map(ArchiveBookUiModel::bookId)
         if (serverBookIds.isEmpty()) return
-        mutate { token -> repository.bulkChangeStatus(serverBookIds, status.apiValue, token) }
+        mutate("reading_status_change", serverBookIds.size) { token ->
+            repository.bulkChangeStatus(serverBookIds, status.apiValue, token)
+        }
     }
 
     private fun load() {
@@ -54,8 +59,13 @@ class ArchiveViewModel(
         libraryJob = viewModelScope.launch { loadIntoState(token) }
     }
 
-    private fun mutate(action: suspend (String) -> Unit) {
+    private fun mutate(
+        actionName: String,
+        itemCount: Int,
+        action: suspend (String) -> Unit,
+    ) {
         val token = accessToken ?: return
+        val analyticsAction = analytics.startAction(actionName, longs = mapOf("item_count" to itemCount.toLong()))
         libraryJob?.cancel()
         libraryJob = viewModelScope.launch {
             mutationMutex.withLock {
@@ -63,20 +73,38 @@ class ArchiveViewModel(
                     action(token)
                     repository.getAll(token)
                 }.onSuccess { books ->
+                    analytics.finishAction(analyticsAction, "success")
                     if (accessToken == token) {
                         _uiState.value = _uiState.value.copy(
                             items = books.map { it.toArchiveBookUiModel() },
                             errorMessage = null,
                         )
                     }
-                }.onFailure(::handleFailure)
+                }.onFailure { error ->
+                    if (error is CancellationException) throw error
+                    analytics.finishAction(
+                        analyticsAction,
+                        "failure",
+                        strings = mapOf("error_category" to analyticsErrorCategory(error)),
+                    )
+                    handleFailure(error)
+                }
             }
         }
     }
 
     private suspend fun loadIntoState(token: String) {
+        val started = kotlin.time.TimeSource.Monotonic.markNow()
         withDelayedLoading(::setLoading) { repository.getAll(token) }
             .onSuccess { books ->
+                analytics.log(
+                    name = "cc_load_result",
+                    strings = mapOf("resource" to "library", "outcome" to if (books.isEmpty()) "empty" else "success"),
+                    longs = mapOf(
+                        "duration_ms" to started.elapsedNow().inWholeMilliseconds,
+                        "result_count" to books.size.toLong(),
+                    ),
+                )
                 if (accessToken == token) {
                     _uiState.value = _uiState.value.copy(
                         items = books.map { it.toArchiveBookUiModel() },
@@ -84,7 +112,19 @@ class ArchiveViewModel(
                     )
                 }
             }
-            .onFailure(::handleFailure)
+            .onFailure { error ->
+                if (error is CancellationException) throw error
+                analytics.log(
+                    name = "cc_load_result",
+                    strings = mapOf(
+                        "resource" to "library",
+                        "outcome" to "failure",
+                        "error_category" to analyticsErrorCategory(error),
+                    ),
+                    longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
+                )
+                handleFailure(error)
+            }
     }
 
     private fun handleFailure(error: Throwable) {

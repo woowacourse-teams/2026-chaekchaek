@@ -105,7 +105,7 @@ AAB SHA-256: <hash>
 
 - 프로덕션 `1.0 (2)`는 심사를 통과해 관리형 게시 대기 상태다.
 - 에이전트는 프로덕션 게시 버튼을 누르지 않는다. 게시 여부는 사용자가 직접 결정한다.
-- Play Console의 타겟 연령 만 6-17세는 의도한 설정이므로 임의로 변경하지 않는다.
+- Play Console의 타겟 연령은 16-17세와 만 18세 이상이며 임의로 변경하지 않는다.
 - 사용자 관찰 계획과 결과는
   [`../docs/android-production-review-user-observation.md`](../docs/android-production-review-user-observation.md)에
   기록한다.

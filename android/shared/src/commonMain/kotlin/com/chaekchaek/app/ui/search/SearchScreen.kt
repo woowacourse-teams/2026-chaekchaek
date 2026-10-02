@@ -61,6 +61,8 @@ import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.*
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
+import com.chaekchaek.app.analytics.analyticsBookKey
+import com.chaekchaek.app.analytics.analyticsImpression
 import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.theme.ChaekAccentInk
 import com.chaekchaek.app.ui.theme.ChaekBand
@@ -262,7 +264,18 @@ private fun DiscoverContent(
           horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
           itemsIndexed(popular, key = { _, it -> it.bookId.value }) { index, book ->
-            DiscoverPopularBook(index + 1, book, onClick = { onBookClick(book.toBookDetailTarget()) })
+            DiscoverPopularBook(
+              index + 1,
+              book,
+              onClick = { onBookClick(book.toBookDetailTarget()) },
+              modifier = Modifier.analyticsImpression(
+                contentType = "book",
+                contentId = analyticsBookKey(book.isbn13, book.bookId.value) ?: book.bookId.value,
+                bookKey = analyticsBookKey(book.isbn13, book.bookId.value),
+                listId = "discover_popular_books",
+                position = index + 1,
+              ),
+            )
           }
         }
         HorizontalDivider(
@@ -289,17 +302,33 @@ private fun DiscoverContent(
         )
       }
     } else {
-      items(recent.take(4), key = { it.noteId.value }) { card ->
-        DiscoverReflection(card, onClick = { onBookClick(card.toBookDetailTarget()) })
+      itemsIndexed(recent.take(4), key = { _, card -> card.noteId.value }) { index, card ->
+        DiscoverReflection(
+          card,
+          onClick = { onBookClick(card.toBookDetailTarget()) },
+          modifier = Modifier.analyticsImpression(
+            contentType = "review",
+            contentId = card.noteId.value,
+            bookKey = analyticsBookKey(card.isbn13, card.bookId.value),
+            listId = "discover_recent_reviews",
+            position = index + 1,
+            isOwn = false,
+          ),
+        )
       }
     }
   }
 }
 
 @Composable
-private fun DiscoverPopularBook(rank: Int, book: TrendingBookUiModel, onClick: () -> Unit) {
+private fun DiscoverPopularBook(
+  rank: Int,
+  book: TrendingBookUiModel,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
   Column(
-    modifier = Modifier.width(105.dp).clickable(role = Role.Button, onClick = onClick),
+    modifier = modifier.width(105.dp).clickable(role = Role.Button, onClick = onClick),
   ) {
     Box(modifier = Modifier.fillMaxWidth().height(135.dp)) {
       Box(
@@ -342,8 +371,12 @@ private fun DiscoverPopularBook(rank: Int, book: TrendingBookUiModel, onClick: (
 }
 
 @Composable
-private fun DiscoverReflection(card: QuoteCardUiModel, onClick: () -> Unit) {
-  Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+private fun DiscoverReflection(
+  card: QuoteCardUiModel,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  Column(modifier = modifier.padding(horizontal = 24.dp)) {
     HorizontalDivider(color = Color(0xFFE7E7E9))
     Row(
       modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(vertical = 14.dp),
@@ -480,12 +513,19 @@ private fun SearchResults(
   Column(modifier = modifier.fillMaxWidth()) {
     SearchResultHeader(totalCount, sort, onSortSelect)
     LazyColumn(modifier = Modifier.weight(1f), state = listState) {
-      items(results) { book ->
+      itemsIndexed(results) { index, book ->
         SearchResultRow(
           book = book,
           isReading = book.registrationId() in registeredBookIds,
           onRegister = { onRegister(book) },
           onClick = { onBookClick(book.toBookDetailTarget()) },
+          modifier = Modifier.analyticsImpression(
+            contentType = "book",
+            contentId = analyticsBookKey(book.isbn13, null) ?: "position:${index + 1}",
+            bookKey = analyticsBookKey(book.isbn13, null),
+            listId = "search_results",
+            position = index + 1,
+          ),
         )
         HorizontalDivider(color = ChaekBand)
       }
@@ -545,9 +585,11 @@ private fun SearchResultRow(
   isReading: Boolean,
   onRegister: () -> Unit,
   onClick: () -> Unit,
+  modifier: Modifier = Modifier,
 ) {
   Row(
-    modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
+    modifier = modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick)
+      .padding(horizontal = 16.dp, vertical = 14.dp),
     verticalAlignment = Alignment.Top,
   ) {
     Surface(
