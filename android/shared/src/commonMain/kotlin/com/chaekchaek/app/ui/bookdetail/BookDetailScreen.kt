@@ -92,7 +92,6 @@ import chaekchaek.shared.generated.resources.cover_19
 import chaekchaek.shared.generated.resources.cover_20
 import chaekchaek.shared.generated.resources.ic_back
 import chaekchaek.shared.generated.resources.ic_bookmark
-import chaekchaek.shared.generated.resources.ic_chevron_down
 import chaekchaek.shared.generated.resources.ic_comment
 import chaekchaek.shared.generated.resources.ic_heart_filled
 import chaekchaek.shared.generated.resources.ic_heart_outline
@@ -116,6 +115,8 @@ import com.chaekchaek.app.ui.theme.ChaekBorderSoft
 import com.chaekchaek.app.ui.theme.ChaekInk
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
+import com.chaekchaek.app.ui.common.ChaekDropdown
+import com.chaekchaek.app.ui.common.ChaekFilterChip
 import com.chaekchaek.app.ui.theme.ChaekSurface
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 import com.chaekchaek.app.ui.theme.detailBookShadow
@@ -876,29 +877,20 @@ private fun ReviewsSection(
                 lineHeight = 18.sp,
             )
             Spacer(Modifier.weight(1f))
-            Surface(
-                onClick = { onSortChange(if (sort == ReviewSort.LATEST) ReviewSort.PAGE else ReviewSort.LATEST) },
-                modifier = Modifier.height(44.dp),
-                color = Color.Transparent,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        if (sort == ReviewSort.LATEST) "최신순" else "페이지순",
-                        color = ChaekInk,
-                        fontSize = 12.sp,
-                        lineHeight = 16.sp,
-                    )
-                    Icon(painterResource(Res.drawable.ic_chevron_down), contentDescription = null, modifier = Modifier.size(11.dp), tint = ChaekInk)
-                }
-            }
+            ChaekDropdown(
+                selectedOption = sort,
+                options = listOf(ReviewSort.LATEST, ReviewSort.PAGE),
+                optionLabel = { option -> if (option == ReviewSort.LATEST) "최신순" else "페이지순" },
+                onOptionSelected = onSortChange,
+                contentDescription = "감상 정렬",
+            )
         }
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
-            FeedScopeChip("전체", scope == ReviewScope.ALL) { onScopeChange(ReviewScope.ALL) }
-            FeedScopeChip("내 감상", scope == ReviewScope.MINE) { onScopeChange(ReviewScope.MINE) }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            ChaekFilterChip("전체", scope == ReviewScope.ALL, onClick = { onScopeChange(ReviewScope.ALL) })
+            ChaekFilterChip("내 감상", scope == ReviewScope.MINE, onClick = { onScopeChange(ReviewScope.MINE) })
         }
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 24.dp),
@@ -942,20 +934,6 @@ private fun ReviewsSection(
                 replyTarget = null
             },
         )
-    }
-}
-
-@Composable
-private fun FeedScopeChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Column(
-        modifier = Modifier.height(36.dp).selectable(selected = selected, role = Role.Tab, onClick = onClick)
-            .padding(end = 20.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Bottom,
-    ) {
-        Text(label, color = if (selected) ChaekInk else ChaekInkSecondary, fontSize = 14.sp, lineHeight = 18.sp)
-        Spacer(Modifier.height(8.dp))
-        Box(Modifier.width(26.dp).height(2.dp).background(if (selected) ChaekInk else Color.Transparent))
     }
 }
 

@@ -34,8 +34,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -70,6 +68,8 @@ import androidx.compose.ui.unit.sp
 import com.chaekchaek.app.domain.shelf.ReadingStatus
 import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.common.ChaekCloseButton
+import com.chaekchaek.app.ui.common.ChaekDropdown
+import com.chaekchaek.app.ui.common.ChaekFilterChip
 import com.chaekchaek.app.ui.common.BrandHeader
 import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
@@ -299,9 +299,9 @@ private fun LibraryControls(
             modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            StatusFilterChip("전체", selected == null) { onSelected(null) }
+            ChaekFilterChip("전체", selected == null, onClick = { onSelected(null) })
             listOf(ReadingStatus.READING, ReadingStatus.FINISHED, ReadingStatus.WANT_TO_READ).forEach { status ->
-                StatusFilterChip(status.label, selected == status) { onSelected(status) }
+                ChaekFilterChip(status.label, selected == status, onClick = { onSelected(status) })
             }
         }
         if (onEdit != null) {
@@ -400,31 +400,11 @@ private val SpineHeightPattern = listOf(
 private fun spineHeight(index: Int): Dp = SpineHeightPattern[index % SpineHeightPattern.size]
 
 @Composable
-private fun StatusFilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.height(34.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = if (selected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.surface,
-        contentColor = if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
-        border = null,
-    ) {
-        Box(
-            modifier = Modifier.background(if (selected) Color.Transparent else Color(0xFFF3F3F5)).padding(horizontal = 13.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(label, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp))
-        }
-    }
-}
-
-@Composable
 private fun SortRow(
     countLabel: String,
     sort: ArchiveSort,
     onSortChange: (ArchiveSort) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 26.dp, end = 24.dp, bottom = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -435,27 +415,13 @@ private fun SortRow(
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
         )
         Spacer(Modifier.weight(1f))
-        Box {
-            Surface(onClick = { expanded = true }, color = Color.Transparent) {
-                Text(
-                    "${sort.label}⌄",
-                    modifier = Modifier.padding(4.dp),
-                    color = Color(0xFF555555),
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                )
-            }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                ArchiveSort.entries.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.label) },
-                        onClick = {
-                            onSortChange(option)
-                            expanded = false
-                        },
-                    )
-                }
-            }
-        }
+        ChaekDropdown(
+            selectedOption = sort,
+            options = ArchiveSort.entries,
+            optionLabel = ArchiveSort::label,
+            onOptionSelected = onSortChange,
+            contentDescription = "서재 정렬",
+        )
     }
 }
 

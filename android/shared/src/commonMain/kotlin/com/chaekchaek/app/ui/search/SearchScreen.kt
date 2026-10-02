@@ -2,7 +2,6 @@ package com.chaekchaek.app.ui.search
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,8 +25,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -76,6 +72,7 @@ import com.chaekchaek.app.ui.theme.discoverReflectionBookShadow
 import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.common.BrandHeader
+import com.chaekchaek.app.ui.common.ChaekDropdown
 import com.chaekchaek.app.ui.common.HomeLoadErrorContent
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
 import com.chaekchaek.app.presentation.home.HomeUiState
@@ -556,7 +553,6 @@ private fun SearchResultHeader(
   sort: BookSearchSort,
   onSortSelect: (BookSearchSort) -> Unit,
 ) {
-  var expanded by remember { mutableStateOf(false) }
   Row(
     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
     horizontalArrangement = Arrangement.SpaceBetween,
@@ -576,63 +572,14 @@ private fun SearchResultHeader(
         color = ChaekInkSecondary,
       )
     }
-    Box {
-      val sortButtonShape = RoundedCornerShape(999.dp)
-      Row(
-        modifier = Modifier
-          .heightIn(min = 44.dp)
-          .clip(sortButtonShape)
-          .border(1.dp, ChaekBorder, sortButtonShape)
-          .clickable(enabled = count > 0, role = Role.Button) { expanded = true }
-          .padding(start = 14.dp, end = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Text(
-          sort.label,
-          style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-          color = if (count > 0) MaterialTheme.colorScheme.onSurface else ChaekInkSecondary,
-        )
-        Icon(
-          painter = painterResource(Res.drawable.ic_chevron_down),
-          contentDescription = "검색 결과 정렬",
-          modifier = Modifier.size(18.dp),
-          tint = if (count > 0) MaterialTheme.colorScheme.onSurface else ChaekInkSecondary,
-        )
-      }
-      DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false },
-        shape = RoundedCornerShape(12.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-        shadowElevation = 8.dp,
-        border = BorderStroke(1.dp, ChaekBorder),
-      ) {
-        BookSearchSort.entries.forEach { option ->
-          val selected = option == sort
-          DropdownMenuItem(
-            modifier = Modifier
-              .padding(horizontal = 8.dp)
-              .clip(RoundedCornerShape(8.dp))
-              .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent),
-            text = {
-              Text(
-                option.label,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                  fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-              )
-            },
-            onClick = {
-              expanded = false
-              onSortSelect(option)
-            },
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp),
-          )
-        }
-      }
-    }
+    ChaekDropdown(
+      selectedOption = sort,
+      options = BookSearchSort.entries,
+      optionLabel = { it.label },
+      onOptionSelected = onSortSelect,
+      contentDescription = "검색 결과 정렬",
+      enabled = count > 0,
+    )
   }
   HorizontalDivider(color = ChaekBand)
 }
