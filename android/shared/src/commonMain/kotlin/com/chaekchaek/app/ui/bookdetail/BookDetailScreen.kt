@@ -144,6 +144,10 @@ fun BookDetailScreen(
     onRatingCriterionChange: (Rating) -> Unit = {},
     onRatingSave: (Rating, () -> Unit) -> Unit = { _, _ -> },
     onReviewOpen: (() -> Unit) -> Unit = { it() },
+    onReplyOpen: () -> Unit = {},
+    onReviewEditOpen: () -> Unit = {},
+    onReplyEditOpen: () -> Unit = {},
+    onComposerDismiss: () -> Unit = {},
     onReviewCreate: (ReviewCreateRequest) -> Unit = {},
     onReviewUpdate: (Long, ReviewCreateRequest) -> Unit = { _, _ -> },
     onReviewDelete: (Long) -> Unit = {},
@@ -274,6 +278,8 @@ fun BookDetailScreen(
                         }
                     },
                     onLoadReplies = onLoadReplies,
+                    onReplyOpen = onReplyOpen,
+                    onComposerDismiss = onComposerDismiss,
                     onReply = { reviewId, content ->
                         authorizeOrRun(BookDetailAuthenticatedAction.CreateReply(reviewId, content)) {
                             onReplyCreate(reviewId, content)
@@ -338,7 +344,10 @@ fun BookDetailScreen(
             anonymous = state.signedIn && anonymousReviews,
             nickname = nickname,
             allowReadingProgress = state.signedIn,
-            onDismiss = { showReviewSheet = false },
+            onDismiss = {
+                onComposerDismiss()
+                showReviewSheet = false
+            },
             onSave = { request ->
                 onReviewCreate(request)
                 showReviewSheet = false
@@ -351,6 +360,7 @@ fun BookDetailScreen(
             onDismiss = { reviewActionTarget = null },
             onEdit = {
                 reviewActionTarget = null
+                onReviewEditOpen()
                 editingReview = review
             },
             onDelete = {
@@ -365,6 +375,7 @@ fun BookDetailScreen(
             onDismiss = { replyActionTarget = null },
             onEdit = {
                 replyActionTarget = null
+                onReplyEditOpen()
                 editingReply = reply
             },
             onDelete = {
@@ -381,7 +392,10 @@ fun BookDetailScreen(
             nickname = nickname,
             initialReview = review,
             allowReadingProgress = state.signedIn,
-            onDismiss = { editingReview = null },
+            onDismiss = {
+                onComposerDismiss()
+                editingReview = null
+            },
             onSave = { request ->
                 authorizeOrRun(BookDetailAuthenticatedAction.EditReview(review.reviewId, request)) {
                     onReviewUpdate(review.reviewId, request)
@@ -393,7 +407,10 @@ fun BookDetailScreen(
     editingReply?.let { reply ->
         ReplyInputSheet(
             initialContent = reply.content,
-            onDismiss = { editingReply = null },
+            onDismiss = {
+                onComposerDismiss()
+                editingReply = null
+            },
             onSave = { content ->
                 authorizeOrRun(BookDetailAuthenticatedAction.EditReply(reply.replyId, content)) {
                     onReplyUpdate(reply.replyId, content)
@@ -854,6 +871,8 @@ private fun ReviewsSection(
     onRevealSpoiler: (Long) -> Unit,
     onLike: (Long, Boolean) -> Unit,
     onLoadReplies: (Long) -> Unit,
+    onReplyOpen: () -> Unit,
+    onComposerDismiss: () -> Unit,
     onReply: (Long, String) -> Unit,
     onReplyLike: (Long, Boolean) -> Unit,
     onManageReview: (BookReview) -> Unit,
@@ -915,7 +934,10 @@ private fun ReviewsSection(
                     onLike = onLike,
                     onLoadReplies = { onLoadReplies(review.reviewId) },
                     onReply = {
-                        if (locked) onRevealSpoiler(review.reviewId) else replyTarget = review
+                        if (locked) onRevealSpoiler(review.reviewId) else {
+                            onReplyOpen()
+                            replyTarget = review
+                        }
                     },
                     onReplyLike = onReplyLike,
                     onManage = { onManageReview(review) },
@@ -935,7 +957,10 @@ private fun ReviewsSection(
     }
     replyTarget?.let { review ->
         ReplyInputSheet(
-            onDismiss = { replyTarget = null },
+            onDismiss = {
+                onComposerDismiss()
+                replyTarget = null
+            },
             onSave = { content ->
                 onReply(review.reviewId, content)
                 replyTarget = null

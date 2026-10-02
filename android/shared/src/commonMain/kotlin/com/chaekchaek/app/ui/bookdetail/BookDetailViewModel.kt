@@ -2,6 +2,7 @@ package com.chaekchaek.app.ui.bookdetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chaekchaek.app.analytics.AnalyticsAction
 import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.analytics.analyticsBookKey
 import com.chaekchaek.app.analytics.analyticsErrorCategory
@@ -43,6 +44,8 @@ class BookDetailViewModel(
     private var mutationJob: Job? = null
     private var ratingComparisonJob: Job? = null
     private var requestGeneration = 0
+    private var detailReadyLogged = false
+    private var pendingAnalyticsAction: AnalyticsAction? = null
 
     fun open(book: BookDetailArgs, accessToken: String?) {
         invalidateRequests()
@@ -52,7 +55,8 @@ class BookDetailViewModel(
             signedIn = accessToken != null,
             guestNickname = accessToken?.let { null } ?: authPlatform.readGuest()?.nickname,
         )
-        analytics.startFlow("book_detail")
+        detailReadyLogged = false
+        analytics.ensureFlow("book_detail")
         reload()
     }
 
@@ -84,6 +88,15 @@ class BookDetailViewModel(
 
     fun requestAuthentication(action: BookDetailAuthenticatedAction): Boolean {
         if (accessToken != null || !action.requiresMember) return true
+        if (_uiState.value.pendingAction == null) {
+            pendingAnalyticsAction = analytics.startAction(
+                action.analyticsName,
+                strings = buildMap {
+                    val book = _uiState.value.displayBook
+                    analyticsBookKey(book?.isbn13, book?.id)?.let { put("book_key", it) }
+                },
+            )
+        }
         _uiState.value = _uiState.value.copy(pendingAction = action)
         analytics.log(
             name = "cc_auth_prompt",
@@ -96,6 +109,8 @@ class BookDetailViewModel(
         _uiState.value.pendingAction?.let { pending ->
             analytics.log("cc_auth_dismiss", strings = mapOf("trigger_action" to pending.analyticsName))
         }
+        pendingAnalyticsAction?.let { analytics.finishAction(it, "cancelled") }
+        pendingAnalyticsAction = null
         _uiState.value = _uiState.value.copy(pendingAction = null)
     }
 
@@ -214,29 +229,41 @@ class BookDetailViewModel(
         }
     }
 
-    fun createReview(request: ReviewCreateRequest) = mutate(actionName = "review_create") {
+    fun createReview(request: ReviewCreateRequest) = mutate(
+        actionName = "review_create",
+        closesComposer = true,
+    ) {
         publicWrite(retryUnauthorized = true) { repository.createReview(bookIdForPublicWrite(), request, it) }
     }
 
     fun openReviewComposer(onReady: () -> Unit) {
-        analytics.log(
-            name = "cc_composer_open",
-            strings = mapOf(
-                "composer_id" to analytics.newId("composer"),
-                "composer_type" to "review",
-            ),
-        )
         authPlatform.readGuest()?.let {
             _uiState.value = _uiState.value.copy(guestNickname = it.nickname)
         }
         if (accessToken != null || readCredential() != null) {
+            openComposer("review", "create")
             onReady()
             return
         }
-        mutate(actionName = "guest_session_create", onSuccess = { onReady() }, reloadAfterSuccess = false) {
+        mutate(
+            actionName = "guest_session_create",
+            onSuccess = {
+                openComposer("review", "create")
+                onReady()
+            },
+            reloadAfterSuccess = false,
+        ) {
             issueGuestCredential()
         }
     }
+
+    fun openReplyComposer() = openComposer("reply", "create")
+
+    fun openReviewEditor() = openComposer("review", "edit")
+
+    fun openReplyEditor() = openComposer("reply", "edit")
+
+    fun dismissComposer() = analytics.dismissComposer()
 
     fun updateReview(reviewId: Long, request: ReviewCreateRequest) = mutate(
         actionName = "review_update",
@@ -246,6 +273,7 @@ class BookDetailViewModel(
             )
         },
         reloadAfterSuccess = false,
+        closesComposer = true,
     ) {
         publicWrite(retryUnauthorized = false) { repository.updateReview(reviewId, request, it) }
     }
@@ -273,7 +301,10 @@ class BookDetailViewModel(
         }
     }
 
-    fun createReply(reviewId: Long, content: String) = mutate(actionName = "reply_create") {
+    fun createReply(reviewId: Long, content: String) = mutate(
+        actionName = "reply_create",
+        closesComposer = true,
+    ) {
         publicWrite(retryUnauthorized = true) { repository.createReply(reviewId, content, it) }
     }
 
@@ -289,6 +320,7 @@ class BookDetailViewModel(
             )
         },
         reloadAfterSuccess = false,
+        closesComposer = true,
     ) {
         publicWrite(retryUnauthorized = false) { repository.updateReply(replyId, content, it) }
     }
@@ -341,6 +373,8 @@ class BookDetailViewModel(
         val credential = readCredential()
         val reviewScope = _uiState.value.reviewScope
         val reviewSort = _uiState.value.reviewSort
+        val loadId = analytics.newId("load")
+        val loadTrigger = if (detailReadyLogged) "refresh" else "initial"
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             val started = kotlin.time.TimeSource.Monotonic.markNow()
@@ -374,6 +408,17 @@ class BookDetailViewModel(
                 )
                 val bookKey = analyticsBookKey(detail?.isbn13 ?: book.isbn13, detail?.bookId?.toString() ?: book.id)
                 analytics.log(
+                    name = "cc_load_result",
+                    strings = buildMap {
+                        put("load_id", loadId)
+                        put("resource", "book_detail")
+                        put("trigger", loadTrigger)
+                        bookKey?.let { put("book_key", it) }
+                        put("outcome", "success")
+                    },
+                    longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
+                )
+                if (!detailReadyLogged) analytics.log(
                     name = "cc_book_detail_ready",
                     strings = buildMap {
                         bookKey?.let { put("book_key", it) }
@@ -390,12 +435,16 @@ class BookDetailViewModel(
                     },
                     longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
                 )
+                detailReadyLogged = true
             }.onFailure { error ->
                 if (generation == requestGeneration || error is CancellationException) {
                     if (error !is CancellationException) {
                         analytics.log(
-                            name = "cc_book_detail_ready",
+                            name = "cc_load_result",
                             strings = mapOf(
+                                "load_id" to loadId,
+                                "resource" to "book_detail",
+                                "trigger" to loadTrigger,
                                 "outcome" to "failure",
                                 "error_category" to analyticsErrorCategory(error),
                             ),
@@ -440,13 +489,16 @@ class BookDetailViewModel(
         actionStrings: Map<String, String> = emptyMap(),
         onSuccess: (T) -> Unit = {},
         reloadAfterSuccess: Boolean = true,
+        closesComposer: Boolean = false,
         action: suspend () -> T,
     ) {
         if (mutationJob?.isActive == true) return
         val generation = requestGeneration
         val book = _uiState.value.displayBook
         val actionHandle = actionName?.let { name ->
-            analytics.startAction(
+            pendingAnalyticsAction?.takeIf { it.action == name }?.also {
+                pendingAnalyticsAction = null
+            } ?: analytics.startAction(
                 name,
                 strings = buildMap {
                     analyticsBookKey(book?.isbn13, book?.id)?.let { put("book_key", it) }
@@ -471,6 +523,7 @@ class BookDetailViewModel(
                 loadJob?.cancel()
                 onSuccess(result)
                 actionHandle?.let { analytics.finishAction(it, "success") }
+                if (closesComposer) analytics.completeComposer()
                 if (reloadAfterSuccess) reload()
             }.onFailure { error ->
                 actionHandle?.let {
@@ -482,9 +535,19 @@ class BookDetailViewModel(
                         },
                     )
                 }
+                if (closesComposer) analytics.completeComposer()
                 if (generation == requestGeneration || error is CancellationException) handleFailure(error)
             }
         }
+    }
+
+    private fun openComposer(contentType: String, mode: String) {
+        val book = _uiState.value.displayBook
+        analytics.openComposer(
+            contentType = contentType,
+            mode = mode,
+            bookKey = analyticsBookKey(book?.isbn13, book?.id),
+        )
     }
 
     private fun mutateLibraryRecord(
@@ -600,7 +663,7 @@ class BookDetailViewModel(
 
 private class GuestOwnershipLostException : RuntimeException()
 
-private val BookDetailAuthenticatedAction.analyticsName: String
+internal val BookDetailAuthenticatedAction.analyticsName: String
     get() = when (this) {
         BookDetailAuthenticatedAction.AddToLibrary -> "library_add"
         BookDetailAuthenticatedAction.OpenPageInput -> "reading_page_save"

@@ -37,6 +37,7 @@ import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
+import com.chaekchaek.app.ui.bookdetail.analyticsName
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
@@ -102,6 +103,9 @@ internal fun AppNavigation(
     DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     val authTokens by authViewModel.tokens.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
+    LaunchedEffect(authState.errorMessage) {
+        if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
+    }
     val homeViewModel = remember { HomeViewModel(PopularBooksRemoteRepository(), Clock.System, analytics) }
     val libraryRepository = remember { LibraryRemoteRepository() }
     val memberRepository = remember { MemberRemoteRepository() }
@@ -245,6 +249,10 @@ internal fun AppNavigation(
                         },
                         onReviewCreate = viewModel::createReview,
                         onReviewOpen = viewModel::openReviewComposer,
+                        onReplyOpen = viewModel::openReplyComposer,
+                        onReviewEditOpen = viewModel::openReviewEditor,
+                        onReplyEditOpen = viewModel::openReplyEditor,
+                        onComposerDismiss = viewModel::dismissComposer,
                         onReviewUpdate = viewModel::updateReview,
                         onReviewDelete = viewModel::deleteReview,
                         onReviewLike = viewModel::likeReview,
@@ -268,34 +276,23 @@ internal fun AppNavigation(
                                 if (!authState.signingIn) {
                                     authViewModel.clearError()
                                     authViewModel.cancelPendingAuthentication()
+                                    analytics.endAuthAttempt("cancelled")
                                     viewModel.dismissAuthentication()
                                 }
                             },
                             onAppleSignIn = {
-                                analytics.log(
-                                    "cc_auth_start",
-                                    strings = mapOf("method" to "apple", "trigger_action" to "book_action"),
-                                )
+                                analytics.beginAuthAttempt("apple", state.pendingAction?.analyticsName ?: "book_action")
                                 authViewModel.clearError()
                                 authViewModel.requireAppleAuthentication { token ->
-                                    analytics.log(
-                                        "cc_auth_result",
-                                        strings = mapOf("method" to "apple", "outcome" to "success"),
-                                    )
+                                    analytics.endAuthAttempt("success")
                                     resumedAction = viewModel.authenticate(token)
                                 }
                             },
                             onGoogleSignIn = {
-                                analytics.log(
-                                    "cc_auth_start",
-                                    strings = mapOf("method" to "google", "trigger_action" to "book_action"),
-                                )
+                                analytics.beginAuthAttempt("google", state.pendingAction?.analyticsName ?: "book_action")
                                 authViewModel.clearError()
                                 authViewModel.requireAuthentication { token ->
-                                    analytics.log(
-                                        "cc_auth_result",
-                                        strings = mapOf("method" to "google", "outcome" to "success"),
-                                    )
+                                    analytics.endAuthAttempt("success")
                                     resumedAction = viewModel.authenticate(token)
                                 }
                             },

@@ -68,6 +68,63 @@ class AnalyticsTrackerTest {
     }
 
     @Test
+    fun ensureFlowKeepsSearchCorrelationWhenBookDetailOpens() {
+        val tracker = AnalyticsTracker("test") {}
+        val searchFlow = tracker.startFlow("search")
+
+        val detailFlow = tracker.ensureFlow("book_detail")
+
+        assertEquals(searchFlow, detailFlow)
+        assertEquals(searchFlow, tracker.currentFlow())
+    }
+
+    @Test
+    fun newSearchRecordsTheSameBookImpressionAgain() {
+        val events = mutableListOf<AnalyticsEvent>()
+        val tracker = AnalyticsTracker("test", events::add)
+        tracker.screenView("discover")
+        tracker.startSearch()
+        tracker.contentImpression("book", "isbn13:123", "isbn13:123", "search_results", 0)
+
+        tracker.startSearch()
+        tracker.contentImpression("book", "isbn13:123", "isbn13:123", "search_results", 0)
+
+        assertEquals(2, events.count { it.name == "cc_content_impression" })
+    }
+
+    @Test
+    fun newScreenDoesNotReusePreviousBookPosition() {
+        val events = mutableListOf<AnalyticsEvent>()
+        val tracker = AnalyticsTracker("test", events::add)
+        tracker.screenView("home")
+        tracker.contentImpression("book", "isbn13:123", "isbn13:123", "popular_books", 4)
+
+        tracker.screenView("book_detail")
+        tracker.bookSelect("isbn13:123")
+
+        val selection = events.last()
+        assertFalse("list_id" in selection.stringParameters)
+        assertFalse("position" in selection.longParameters)
+    }
+
+    @Test
+    fun loginAttemptAndComposerKeepTheirCorrelationIds() {
+        val events = mutableListOf<AnalyticsEvent>()
+        val tracker = AnalyticsTracker("test", events::add)
+        val action = tracker.startAction("review_create")
+        val attemptId = tracker.beginAuthAttempt("google", "review_create")
+        tracker.endAuthAttempt("success")
+        val composerId = tracker.openComposer("review", "create")
+        tracker.finishAction(action, "success")
+
+        val attemptEvents = events.filter { it.name.startsWith("cc_auth_") }
+        assertEquals(2, attemptEvents.size)
+        assertTrue(attemptEvents.all { it.stringParameters["auth_attempt_id"] == attemptId })
+        assertTrue(attemptEvents.all { it.stringParameters["action_id"] == action.id })
+        assertEquals(composerId, events.last().stringParameters["composer_id"])
+    }
+
+    @Test
     fun normalizesBookKeysAndBucketsQueryLength() {
         assertEquals("isbn13:9781234567890", analyticsBookKey("978-1-234-56789-0", null))
         assertEquals("catalog:42", analyticsBookKey(null, "42"))

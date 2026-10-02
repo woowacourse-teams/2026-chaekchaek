@@ -124,7 +124,7 @@ internal fun RootScreen(
         }
     }
     val openBook: (BookDetailArgs, String) -> Unit = { book, origin ->
-        analytics.startFlow(origin)
+        if (origin == "search") analytics.ensureFlow(origin) else analytics.startFlow(origin)
         analytics.bookSelect(analyticsBookKey(book.isbn13, book.id))
         onBookClick(book)
     }
@@ -143,6 +143,9 @@ internal fun RootScreen(
             snackbarHost.showSnackbar(it)
             registrationViewModel.clearError()
         }
+    }
+    LaunchedEffect(authState.errorMessage) {
+        if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
     }
     LaunchedEffect(memberSettingsState.errorMessage) {
         memberSettingsState.errorMessage?.let { message ->
@@ -261,26 +264,28 @@ internal fun RootScreen(
                     authViewModel.clearError()
                     authViewModel.cancelPendingAuthentication()
                     searchViewModel.cancelRegistration()
+                    analytics.endAuthAttempt("cancelled")
                     analytics.log(
                         name = "cc_auth_dismiss",
                         strings = mapOf("trigger_action" to "library_add"),
                     )
+                    registrationViewModel.cancelRegistration()
                 }
             },
             onAppleSignIn = {
-                analytics.log("cc_auth_start", strings = mapOf("method" to "apple", "trigger_action" to "library_add"))
+                analytics.beginAuthAttempt("apple", "library_add")
                 authViewModel.clearError()
                 authViewModel.requireAppleAuthentication { token ->
-                    analytics.log("cc_auth_result", strings = mapOf("method" to "apple", "outcome" to "success"))
+                    analytics.endAuthAttempt("success")
                     registrationViewModel.authenticate(token)
                     searchViewModel.resumeRegistration()
                 }
             },
             onGoogleSignIn = {
-                analytics.log("cc_auth_start", strings = mapOf("method" to "google", "trigger_action" to "library_add"))
+                analytics.beginAuthAttempt("google", "library_add")
                 authViewModel.clearError()
                 authViewModel.requireAuthentication { token ->
-                    analytics.log("cc_auth_result", strings = mapOf("method" to "google", "outcome" to "success"))
+                    analytics.endAuthAttempt("success")
                     registrationViewModel.authenticate(token)
                     searchViewModel.resumeRegistration()
                 }
@@ -308,24 +313,25 @@ internal fun RootScreen(
                     authViewModel.cancelPendingAuthentication()
                     showArchiveLoginSheet = false
                     archiveLoginOpensMyPage = false
+                    analytics.endAuthAttempt("cancelled")
                     analytics.log("cc_auth_dismiss", strings = mapOf("trigger_action" to "library"))
                 }
             },
             onAppleSignIn = {
-                analytics.log("cc_auth_start", strings = mapOf("method" to "apple", "trigger_action" to "library"))
+                analytics.beginAuthAttempt("apple", if (archiveLoginOpensMyPage) "profile" else "library_edit")
                 authViewModel.clearError()
                 authViewModel.requireAppleAuthentication {
-                    analytics.log("cc_auth_result", strings = mapOf("method" to "apple", "outcome" to "success"))
+                    analytics.endAuthAttempt("success")
                     showArchiveLoginSheet = false
                     if (archiveLoginOpensMyPage) onMyPage() else archiveEditing = true
                     archiveLoginOpensMyPage = false
                 }
             },
             onGoogleSignIn = {
-                analytics.log("cc_auth_start", strings = mapOf("method" to "google", "trigger_action" to "library"))
+                analytics.beginAuthAttempt("google", if (archiveLoginOpensMyPage) "profile" else "library_edit")
                 authViewModel.clearError()
                 authViewModel.requireAuthentication {
-                    analytics.log("cc_auth_result", strings = mapOf("method" to "google", "outcome" to "success"))
+                    analytics.endAuthAttempt("success")
                     showArchiveLoginSheet = false
                     if (archiveLoginOpensMyPage) onMyPage() else archiveEditing = true
                     archiveLoginOpensMyPage = false

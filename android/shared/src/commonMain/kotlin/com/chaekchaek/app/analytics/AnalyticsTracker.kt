@@ -25,6 +25,8 @@ class AnalyticsTracker(
     private var currentViewId: String? = null
     private var currentSearchId: String? = null
     private var currentActionId: String? = null
+    private var currentAttempt: AnalyticsAttempt? = null
+    private var currentComposer: AnalyticsComposer? = null
     private val recordedImpressions = mutableSetOf<String>()
     private val lastBookImpression = mutableMapOf<String, BookImpressionContext>()
 
@@ -41,8 +43,11 @@ class AnalyticsTracker(
 
     fun currentFlow(): String? = currentFlowId
 
+    fun ensureFlow(origin: String): String = currentFlowId ?: startFlow(origin)
+
     fun startSearch(): String {
         currentSearchId = newId("search")
+        resetImpressionScope()
         return requireNotNull(currentSearchId)
     }
 
@@ -65,6 +70,11 @@ class AnalyticsTracker(
             currentViewId?.let { put("view_id", it) }
             currentSearchId?.let { put("search_id", it) }
             currentActionId?.let { put("action_id", it) }
+            currentComposer?.let {
+                put("composer_id", it.id)
+                put("content_type", it.contentType)
+                put("composer_mode", it.mode)
+            }
             strings.forEach { (key, value) -> put(key, value.take(MAX_STRING_LENGTH)) }
         }
         val event = AnalyticsEvent(
@@ -82,7 +92,7 @@ class AnalyticsTracker(
     fun screenView(screenName: String, previousScreen: String? = null): String {
         val viewId = newId("view")
         currentViewId = viewId
-        recordedImpressions.clear()
+        resetImpressionScope()
         log(
             name = "screen_view",
             strings = buildMap {
@@ -106,7 +116,12 @@ class AnalyticsTracker(
         val deduplicationKey = listOf(currentViewId, listId, contentType, contentId).joinToString("|")
         if (!recordedImpressions.add(deduplicationKey)) return
         if (bookKey != null) {
-            lastBookImpression[bookKey] = BookImpressionContext(listId, position)
+            lastBookImpression[bookKey] = BookImpressionContext(
+                listId = listId,
+                position = position,
+                viewId = currentViewId,
+                searchId = currentSearchId,
+            )
         }
         log(
             name = "cc_content_impression",
@@ -122,7 +137,9 @@ class AnalyticsTracker(
     }
 
     fun bookSelect(bookKey: String?) {
-        val impression = bookKey?.let(lastBookImpression::get)
+        val impression = bookKey?.let(lastBookImpression::get)?.takeIf {
+            it.viewId == currentViewId && it.searchId == currentSearchId
+        }
         log(
             name = "cc_book_select",
             strings = buildMap {
@@ -172,6 +189,69 @@ class AnalyticsTracker(
         if (currentActionId == handle.id) currentActionId = null
     }
 
+    fun beginAuthAttempt(provider: String, trigger: String): String {
+        val attempt = AnalyticsAttempt(newId("attempt"), provider, trigger, TimeSource.Monotonic.markNow())
+        currentAttempt = attempt
+        log(
+            name = "cc_au" + "th_start",
+            strings = mapOf(
+                "au" + "th_attempt_id" to attempt.id,
+                "method" to provider,
+                "trigger_action" to trigger,
+            ),
+        )
+        return attempt.id
+    }
+
+    fun endAuthAttempt(outcome: String, errorCategory: String? = null) {
+        val attempt = currentAttempt ?: return
+        log(
+            name = "cc_au" + "th_result",
+            strings = buildMap {
+                put("au" + "th_attempt_id", attempt.id)
+                put("method", attempt.provider)
+                put("trigger_action", attempt.trigger)
+                put("outcome", outcome)
+                errorCategory?.let { put("error_category", it) }
+            },
+            longs = mapOf("duration_ms" to attempt.started.elapsedNow().inWholeMilliseconds),
+        )
+        currentAttempt = null
+    }
+
+    fun openComposer(contentType: String, mode: String, bookKey: String? = null): String {
+        val composer = AnalyticsComposer(newId("composer"), contentType, mode)
+        currentComposer = composer
+        log(
+            name = "cc_composer_open",
+            strings = buildMap {
+                put("composer_id", composer.id)
+                put("content_type", contentType)
+                put("composer_mode", mode)
+                bookKey?.let { put("book_key", it) }
+            },
+        )
+        return composer.id
+    }
+
+    fun dismissComposer(hasInput: Boolean = false) {
+        if (currentComposer == null) return
+        log(
+            name = "cc_composer_dismiss",
+            strings = mapOf("has_input" to hasInput.toString()),
+        )
+        currentComposer = null
+    }
+
+    fun completeComposer() {
+        currentComposer = null
+    }
+
+    private fun resetImpressionScope() {
+        recordedImpressions.clear()
+        lastBookImpression.clear()
+    }
+
     companion object {
         val None = AnalyticsTracker("test") {}
         private const val SCHEMA_VERSION = 1L
@@ -186,9 +266,24 @@ class AnalyticsAction internal constructor(
     internal val started: TimeMark,
 )
 
+private data class AnalyticsAttempt(
+    val id: String,
+    val provider: String,
+    val trigger: String,
+    val started: TimeMark,
+)
+
+private data class AnalyticsComposer(
+    val id: String,
+    val contentType: String,
+    val mode: String,
+)
+
 private data class BookImpressionContext(
     val listId: String,
     val position: Int,
+    val viewId: String?,
+    val searchId: String?,
 )
 
 fun analyticsBookKey(isbn13: String?, catalogId: String?): String? = when {

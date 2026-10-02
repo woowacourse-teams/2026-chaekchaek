@@ -32,7 +32,7 @@ sealed interface SearchUiState {
 
 class SearchViewModel(
     private val bookSearchRepository: BookSearchRepository,
-    private val registerBook: suspend (BookSearchResult) -> Unit,
+    private val registerBook: (BookSearchResult) -> Unit,
     private val isSignedIn: () -> Boolean,
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
@@ -153,24 +153,16 @@ class SearchViewModel(
     }
 
     fun register(book: BookSearchResult) {
+        registerBook(book)
         if (!isSignedIn()) {
             _pendingRegistration.value = book
             return
         }
-        viewModelScope.launch {
-            try {
-                registerBook(book)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-            }
-        }
     }
 
     fun resumeRegistration() {
-        val book = _pendingRegistration.value ?: return
+        if (_pendingRegistration.value == null) return
         _pendingRegistration.value = null
-        register(book)
     }
 
     fun cancelRegistration() {

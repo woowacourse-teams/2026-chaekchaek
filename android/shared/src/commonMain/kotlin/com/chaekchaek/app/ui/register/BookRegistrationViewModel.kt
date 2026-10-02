@@ -54,6 +54,7 @@ class BookRegistrationViewModel private constructor(
     }
 
     fun register(book: BookSearchResult) {
+        if (_uiState.value.isBusy || _uiState.value.pendingBook != null) return
         val bookKey = analyticsBookKey(book.isbn13, null)
         val action = analytics.startAction(
             action = "library_add",
