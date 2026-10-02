@@ -77,6 +77,7 @@ class TrendingBook(
  * 문자열로 저장하지 않는다.
  */
 class QuoteCard(
+    val reviewId: Long? = null,
     val noteId: NoteId,
     val bookId: BookId,
     val isbn13: String = "",
@@ -87,6 +88,10 @@ class QuoteCard(
     val createdAt: Instant,
     val quoteText: String,
     val replyCount: Int,
+    val quote: String? = null,
+    val likeCount: Int = 0,
+    val likedByMe: Boolean = false,
+    val isSpoiler: Boolean = false,
 )
 
 /** `밑줄이 겹친 책` 카드. */

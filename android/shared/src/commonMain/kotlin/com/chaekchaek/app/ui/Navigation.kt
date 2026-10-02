@@ -29,6 +29,8 @@ import com.chaekchaek.app.data.remote.BookSearchRemoteRepository
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MemberRemoteRepository
 import com.chaekchaek.app.data.remote.PopularBooksRemoteRepository
+import com.chaekchaek.app.data.remote.RemoteFeedReviewActions
+import com.chaekchaek.app.data.remote.ReviewFeedRemoteRepository
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.ui.archive.ArchiveViewModel
 import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
@@ -39,9 +41,11 @@ import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
 import com.chaekchaek.app.ui.bookdetail.analyticsName
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
+import com.chaekchaek.app.ui.feed.FeedViewModel
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchViewModel
+import com.chaekchaek.app.ui.search.RecentSearchStorage
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -70,6 +74,7 @@ private val navigationConfig = SavedStateConfiguration {
 @Composable
 internal fun AppNavigation(
     authPlatform: AuthPlatformCallbacks,
+    recentSearchStorage: RecentSearchStorage,
     analytics: AnalyticsTracker,
     uiTestingMyPage: Boolean = false,
 ) {
@@ -106,7 +111,22 @@ internal fun AppNavigation(
     LaunchedEffect(authState.errorMessage) {
         if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
     }
-    val homeViewModel = remember { HomeViewModel(PopularBooksRemoteRepository(), Clock.System, analytics) }
+    val detailRepository = remember { BookDetailRemoteRepository() }
+    val homeViewModel = remember {
+        HomeViewModel(
+            feedRepository = PopularBooksRemoteRepository(),
+            clock = Clock.System,
+            analytics = analytics,
+        )
+    }
+    val feedViewModel = remember(authPlatform, detailRepository) {
+        FeedViewModel(
+            repository = ReviewFeedRemoteRepository(),
+            clock = Clock.System,
+            reviewActions = RemoteFeedReviewActions(detailRepository, authPlatform),
+            readGuestToken = { authPlatform.readGuest()?.token },
+        )
+    }
     val libraryRepository = remember { LibraryRemoteRepository() }
     val memberRepository = remember { MemberRemoteRepository() }
     val registrationViewModel = remember { BookRegistrationViewModel(libraryRepository, analytics) }
@@ -114,11 +134,12 @@ internal fun AppNavigation(
     val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository) }
     val archiveState by archiveViewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
-    val searchViewModel = remember(registrationViewModel, authViewModel) {
+    val searchViewModel = remember(registrationViewModel, authViewModel, recentSearchStorage, analytics) {
         SearchViewModel(
             bookSearchRepository = BookSearchRemoteRepository(),
             registerBook = { registrationViewModel.register(it) },
             isSignedIn = { authViewModel.tokens.value != null },
+            recentSearchStorage = recentSearchStorage,
             analytics = analytics,
         )
     }
@@ -128,8 +149,8 @@ internal fun AppNavigation(
         registrationViewModel.authenticate(accessToken)
         archiveViewModel.authenticate(accessToken)
         memberSettingsViewModel.authenticate(accessToken)
+        feedViewModel.authenticate(accessToken)
     }
-    val detailRepository = remember { BookDetailRemoteRepository() }
     val backStack = rememberNavBackStack(navigationConfig, Root)
     CompositionLocalProvider(
         LocalRemoteBookCover provides { url, description, modifier ->
@@ -146,6 +167,7 @@ internal fun AppNavigation(
                 entry<Root> {
                     RootScreen(
                         homeViewModel = homeViewModel,
+                        feedViewModel = feedViewModel,
                         searchViewModel = searchViewModel,
                         registrationViewModel = registrationViewModel,
                         archiveViewModel = archiveViewModel,

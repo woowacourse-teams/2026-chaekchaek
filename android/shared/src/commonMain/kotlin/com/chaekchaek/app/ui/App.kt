@@ -9,10 +9,12 @@ import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.analytics.LocalAnalyticsTracker
 import com.chaekchaek.app.ui.theme.ChaekchaekTheme
+import com.chaekchaek.app.ui.search.RecentSearchStorage
 
 @Composable
 fun App(
     authPlatform: AuthPlatformCallbacks,
+    recentSearchStorage: RecentSearchStorage = RecentSearchStorage(),
     analytics: AnalyticsTracker = AnalyticsTracker.None,
     uiTestingMyPage: Boolean = false,
 ) {
@@ -22,7 +24,7 @@ fun App(
             color = MaterialTheme.colorScheme.background,
         ) {
             androidx.compose.runtime.CompositionLocalProvider(LocalAnalyticsTracker provides analytics) {
-                AppNavigation(authPlatform, analytics, uiTestingMyPage)
+                AppNavigation(authPlatform, recentSearchStorage, analytics, uiTestingMyPage)
             }
         }
     }

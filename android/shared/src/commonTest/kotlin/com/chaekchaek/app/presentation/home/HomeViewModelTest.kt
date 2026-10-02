@@ -143,6 +143,9 @@ class HomeViewModelTest {
                                 createdAt = FIXED_NOW,
                                 quoteText = "오래 멈춰 읽었다.",
                                 replyCount = 2,
+                                quote = "어두움의 심장부에서 빛을 보았다.",
+                                likeCount = 3,
+                                likedByMe = true,
                             ),
                         ),
                     ),
@@ -156,6 +159,10 @@ class HomeViewModelTest {
         val section = viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
             .sections.single().shouldBeInstanceOf<FeedSectionUiModel.RecentQuotes>()
         section.cards.single().isbn13 shouldBe "9780000000007"
+        section.cards.single().quote shouldBe "어두움의 심장부에서 빛을 보았다."
+        section.cards.single().likeCount shouldBe 3
+        section.cards.single().likedByMe shouldBe true
+        section.cards.single().replyCount shouldBe 2
     }
 
     @Test

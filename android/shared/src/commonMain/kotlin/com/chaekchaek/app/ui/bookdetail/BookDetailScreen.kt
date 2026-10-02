@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -647,7 +648,7 @@ private fun BookCover(book: BookDetailArgs, modifier: Modifier = Modifier) {
                 painter = painterResource(coverResource(book.coverId)),
                 contentDescription = "${book.title} 표지",
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.Fit,
             )
         }
     }
@@ -1066,7 +1067,17 @@ private fun ReviewCard(
                     label = "좋아요 ${review.likeCount}",
                     description = if (review.likedByMe) "감상 좋아요 취소" else "감상 좋아요",
                 ) { onLike(review.reviewId, review.likedByMe) }
-                Row(modifier = Modifier.clickable(role = Role.Button, onClick = onReply), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier
+                        .heightIn(min = 44.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            role = Role.Button,
+                            onClick = onReply,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Icon(painterResource(Res.drawable.ic_comment), contentDescription = "감상에 답글 작성", modifier = Modifier.size(17.dp))
                     Text("답글 ${review.replyCount}", modifier = Modifier.padding(start = 4.dp), fontSize = 12.sp)
                 }
@@ -1161,9 +1172,24 @@ private fun AuthorAvatar(name: String, size: Int) {
 
 @Composable
 private fun ReviewAction(icon: DrawableResource, label: String, description: String, onClick: () -> Unit) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
-        modifier = Modifier.clickable(role = Role.Button, onClick = onClick)
-            .clearAndSetSemantics { contentDescription = description }.padding(vertical = 4.dp),
+        modifier = Modifier
+            .heightIn(min = 44.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            )
+            .clearAndSetSemantics {
+                contentDescription = description
+                role = Role.Button
+                onClick {
+                    onClick()
+                    true
+                }
+            },
         horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

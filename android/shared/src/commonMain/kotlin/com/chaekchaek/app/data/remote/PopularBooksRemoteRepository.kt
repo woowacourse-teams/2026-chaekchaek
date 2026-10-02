@@ -13,6 +13,10 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.supervisorScope
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
@@ -25,6 +29,9 @@ class PopularBooksRemoteRepository(
             .body<PopularBooksResponseDto>()
         val latestReviews = client.get("${apiConfiguration.baseUrl}/api/v1/home/latest-reviews")
             .body<LatestReviewsResponseDto>()
+        val detailedLatestReviews = latestReviews.withReviewDetails(
+            reviewDetailsByBook = loadLatestReviewDetails(latestReviews, accessToken),
+        )
         val readingBook = accessToken?.let { token ->
             client.get("${apiConfiguration.baseUrl}/api/v1/library") {
                 header(HttpHeaders.Authorization, "Bearer $token")
@@ -35,7 +42,31 @@ class PopularBooksRemoteRepository(
                 }
             }.body<LibraryResponseDto>().items.firstOrNull()
         }
-        return popularBooks.toHomeFeed(latestReviews, readingBook)
+        return popularBooks.toHomeFeed(detailedLatestReviews, readingBook)
+    }
+
+    private suspend fun loadLatestReviewDetails(
+        latestReviews: LatestReviewsResponseDto,
+        accessToken: String?,
+    ): Map<Long, List<ReviewDto>> = supervisorScope {
+        latestReviews.reviews.map(LatestReviewDto::bookId).distinct().map { bookId ->
+            async {
+                try {
+                    bookId to client.get("${apiConfiguration.baseUrl}/api/v1/books/$bookId/reviews") {
+                        url {
+                            parameters.append("page", "1")
+                            parameters.append("feed", "ALL")
+                            parameters.append("sort", "LATEST")
+                        }
+                        accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                    }.body<ReviewPageDto>().items
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (_: Throwable) {
+                    null
+                }
+            }
+        }.awaitAll().filterNotNull().toMap()
     }
 
 }
@@ -62,6 +93,7 @@ internal data class LatestReviewsResponseDto(
 
 @Serializable
 internal data class LatestReviewDto(
+    val reviewId: Long? = null,
     val content: String,
     val createdAt: String,
     val author: LatestReviewAuthorDto,
@@ -70,12 +102,37 @@ internal data class LatestReviewDto(
     val isbn13: String = "",
     val bookTitle: String,
     val bookCoverImageUrl: String,
+    val quote: String? = null,
+    val likeCount: Int = 0,
+    val likedByMe: Boolean = false,
 )
 
 @Serializable
 internal data class LatestReviewAuthorDto(
     val displayName: String,
     val profileImageUrl: String? = null,
+)
+
+internal fun LatestReviewsResponseDto.withReviewDetails(
+    reviewDetailsByBook: Map<Long, List<ReviewDto>>,
+): LatestReviewsResponseDto = copy(
+    reviews = reviews.map { latestReview ->
+        val detailedReview = reviewDetailsByBook[latestReview.bookId]
+            ?.singleOrNull { detail ->
+                detail.createdAt == latestReview.createdAt &&
+                    detail.content == latestReview.content &&
+                    detail.author.displayName == latestReview.author.displayName
+            }
+        detailedReview?.let { detail ->
+            latestReview.copy(
+                reviewId = detail.reviewId,
+                quote = detail.quote,
+                likeCount = detail.likeCount,
+                likedByMe = detail.likedByMe,
+                replyCount = detail.replyCount,
+            )
+        } ?: latestReview
+    },
 )
 
 @Serializable
@@ -114,6 +171,7 @@ internal fun PopularBooksResponseDto.toHomeFeed(
         FeedSection.RecentQuotes(
             cards = latestReviews.reviews.map { review ->
                 QuoteCard(
+                    reviewId = review.reviewId,
                     noteId = NoteId("${review.bookId}-${review.createdAt}"),
                     bookId = BookId(review.bookId.toString()),
                     isbn13 = review.isbn13,
@@ -124,6 +182,9 @@ internal fun PopularBooksResponseDto.toHomeFeed(
                     createdAt = Instant.parse(review.createdAt),
                     quoteText = review.content,
                     replyCount = review.replyCount,
+                    quote = review.quote,
+                    likeCount = review.likeCount,
+                    likedByMe = review.likedByMe,
                 )
             },
         ),

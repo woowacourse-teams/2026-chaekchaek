@@ -217,7 +217,6 @@ class BookDetailViewModel(
         val token = accessToken ?: return
         val isbn13 = _uiState.value.displayBook?.isbn13?.takeIf(String::isNotBlank) ?: return
         ratingComparisonJob?.cancel()
-        _uiState.value = _uiState.value.copy(ratingComparison = emptyList())
         ratingComparisonJob = viewModelScope.launch {
             runCatching {
                 repository.ratingComparison(isbn13, criterion.score.toDouble(), token)

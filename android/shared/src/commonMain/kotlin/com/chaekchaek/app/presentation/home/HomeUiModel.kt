@@ -30,6 +30,7 @@ data class TrendingBookUiModel(
 )
 
 data class QuoteCardUiModel(
+    val reviewId: Long? = null,
     val noteId: NoteId,
     val bookId: BookId,
     val isbn13: String = "",
@@ -38,7 +39,12 @@ data class QuoteCardUiModel(
     val authorName: String,
     val timeLabel: String,
     val quoteText: String,
+    val quote: String?,
+    val likeCount: Int,
+    val likedByMe: Boolean,
+    val replyCount: Int,
     val replyLabel: String,
+    val isSpoiler: Boolean = false,
 )
 
 data class OverlappedCardUiModel(

@@ -115,6 +115,7 @@ class HomeViewModel(
             }
         }
     }
+
 }
 
 private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this) {
@@ -136,6 +137,7 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
         title = HomeLabels.RECENT_QUOTES_TITLE,
         cards = cards.map { card ->
             QuoteCardUiModel(
+                reviewId = card.reviewId,
                 noteId = card.noteId,
                 bookId = card.bookId,
                 isbn13 = card.isbn13,
@@ -144,7 +146,12 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
                 authorName = card.authorLabel,
                 timeLabel = TimeLabels.relative(card.createdAt, now),
                 quoteText = card.quoteText,
+                quote = card.quote,
+                likeCount = card.likeCount,
+                likedByMe = card.likedByMe,
+                replyCount = card.replyCount,
                 replyLabel = HomeLabels.quoteReply(card.replyCount),
+                isSpoiler = card.isSpoiler,
             )
         },
     )

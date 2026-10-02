@@ -121,7 +121,7 @@ val LocalRemoteBookCover = staticCompositionLocalOf<RemoteBookCover> {
             painter = painterResource(Res.drawable.app_logo_square),
             contentDescription = description,
             modifier = modifier,
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Fit,
         )
     }
 }
@@ -1058,7 +1058,7 @@ private fun Cover(coverId: String, title: String, modifier: Modifier = Modifier)
             painter = painterResource(coverResource(coverId)),
             contentDescription = "$title 표지",
             modifier = coverModifier,
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Fit,
         )
     }
 }

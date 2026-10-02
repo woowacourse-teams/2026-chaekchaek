@@ -2,7 +2,6 @@ package com.chaekchaek.app.ui.search
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -97,11 +96,13 @@ fun SearchRoute(
   val state by viewModel.uiState.collectAsState()
   val sort by viewModel.sort.collectAsState()
   val query by viewModel.query.collectAsState()
+  val recentSearches by viewModel.recentSearches.collectAsState()
   val homeState by homeViewModel.uiState.collectAsState()
   SearchScreen(
     state = state,
     sort = sort,
     query = query,
+    recentSearches = recentSearches,
     homeState = homeState,
     registeredBookIds = registeredBookIds,
     onSearch = viewModel::search,
@@ -123,6 +124,7 @@ fun SearchScreen(
   state: SearchUiState,
   sort: BookSearchSort,
   query: String,
+  recentSearches: List<String>,
   homeState: HomeUiState = HomeUiState.Content(emptyList()),
   registeredBookIds: Set<String>,
   onSearch: (String) -> Unit,
@@ -158,9 +160,20 @@ fun SearchScreen(
       },
       onSearch = { onSearch(query) },
     )
+    if (recentSearches.isNotEmpty()) {
+      RecentSearches(
+        searches = recentSearches,
+        onSearch = onSearch,
+      )
+    }
 
     when (val current = state) {
-      SearchUiState.Idle -> DiscoverLanding(homeState, onBookClick, onHomeRetry, Modifier.weight(1f))
+      SearchUiState.Idle -> DiscoverLanding(
+        homeState = homeState,
+        onBookClick = onBookClick,
+        onRetry = onHomeRetry,
+        modifier = Modifier.weight(1f),
+      )
       SearchUiState.Loading -> SearchLoading(Modifier.weight(1f))
       SearchUiState.Empty ->
         Column(modifier = Modifier.weight(1f)) {
@@ -236,18 +249,12 @@ private fun DiscoverContent(
   LazyColumn(modifier = modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 20.dp)) {
     item {
       Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 12.dp, end = 24.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 28.dp, end = 24.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Text(
           "감상이 많은 책",
           style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
-        )
-        Text(
-          "전체 보기",
-          color = ChaekInkSecondary,
-          style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
         )
       }
       if (popular.isEmpty()) {
@@ -367,6 +374,48 @@ private fun DiscoverPopularBook(
         style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
       )
     }
+  }
+}
+
+@Composable
+private fun RecentSearches(
+  searches: List<String>,
+  onSearch: (String) -> Unit,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 12.dp, end = 24.dp),
+    horizontalArrangement = Arrangement.spacedBy(7.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Text(
+      "최근 검색",
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+    )
+    LazyRow(
+      modifier = Modifier.weight(1f),
+      horizontalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+      items(searches, key = { it }) { query ->
+        RecentSearchChip(query, onClick = { onSearch(query) })
+      }
+    }
+  }
+}
+
+@Composable
+private fun RecentSearchChip(label: String, onClick: () -> Unit) {
+  Surface(
+    modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
+    shape = RoundedCornerShape(999.dp),
+    color = Color(0xFFF0F0F2),
+  ) {
+    Text(
+      label,
+      modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+      color = MaterialTheme.colorScheme.onSurface,
+      style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+    )
   }
 }
 
@@ -545,20 +594,22 @@ private fun SearchResultHeader(
   onSortSelect: (BookSearchSort) -> Unit,
 ) {
   Row(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
     horizontalArrangement = Arrangement.SpaceBetween,
     verticalAlignment = Alignment.CenterVertically,
   ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    Row(
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
       Text(
-        "ARCHIVE SEARCH",
-        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-        color = ChaekAccentInk,
+        "검색 결과",
+        style = MaterialTheme.typography.titleSmall,
       )
       Text(
-        "검색 결과 ${count}건",
-        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
-        color = ChaekAccentInk.copy(alpha = 0.7f),
+        "${count}건",
+        style = MaterialTheme.typography.bodySmall,
+        color = ChaekInkSecondary,
       )
     }
     ChaekDropdown(
@@ -576,7 +627,7 @@ private fun SearchResultHeader(
 private val BookSearchSort.label: String
   get() = when (this) {
     BookSearchSort.LATEST -> "최신순"
-    BookSearchSort.COMMENT -> "감상 많은순"
+    BookSearchSort.COMMENT -> "감상 많은 순"
   }
 
 @Composable

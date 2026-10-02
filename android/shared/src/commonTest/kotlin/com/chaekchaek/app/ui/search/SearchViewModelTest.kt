@@ -173,6 +173,35 @@ class SearchViewModelTest {
         }
     }
 
+    @Test
+    fun recentSearchesPersistNewestTenAndMoveDuplicatesToFront() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            var persisted = listOf("기존 검색")
+            val viewModel = SearchViewModel(
+                BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) },
+                registerBook = {},
+                isSignedIn = { true },
+                recentSearchStorage = RecentSearchStorage(
+                    read = { persisted },
+                    write = { persisted = it },
+                ),
+            )
+
+            (1..11).forEach { viewModel.search("검색 $it") }
+            viewModel.search("검색 5")
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf("검색 5", "검색 11", "검색 10", "검색 9", "검색 8", "검색 7", "검색 6", "검색 4", "검색 3", "검색 2"),
+                viewModel.recentSearches.value,
+            )
+            assertEquals(viewModel.recentSearches.value, persisted)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
     private fun book(title: String, year: String) = BookSearchResult(
         title = title,
         creator = "저자",
