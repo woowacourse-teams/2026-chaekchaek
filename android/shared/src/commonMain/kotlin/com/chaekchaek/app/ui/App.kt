@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
+import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.analytics.LocalAnalyticsTracker
 import com.chaekchaek.app.ui.theme.ChaekchaekTheme
 import com.chaekchaek.app.ui.search.RecentSearchStorage
 
@@ -13,6 +15,7 @@ import com.chaekchaek.app.ui.search.RecentSearchStorage
 fun App(
     authPlatform: AuthPlatformCallbacks,
     recentSearchStorage: RecentSearchStorage = RecentSearchStorage(),
+    analytics: AnalyticsTracker = AnalyticsTracker.None,
     uiTestingMyPage: Boolean = false,
 ) {
     ChaekchaekTheme {
@@ -20,7 +23,9 @@ fun App(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
         ) {
-            AppNavigation(authPlatform, recentSearchStorage, uiTestingMyPage)
+            androidx.compose.runtime.CompositionLocalProvider(LocalAnalyticsTracker provides analytics) {
+                AppNavigation(authPlatform, recentSearchStorage, analytics, uiTestingMyPage)
+            }
         }
     }
 }

@@ -14,6 +14,8 @@
 		74D496A28AE8876E8F7BF668 /* ChaekchaekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E4ABD4BA4F5B4E8CA2294BE /* ChaekchaekTests.swift */; };
 		A10000000000000000000001 /* GoogleSignInProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* GoogleSignInProvider.swift */; };
 		A10000000000000000000003 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000005 /* GoogleSignIn */; };
+		D40000000000000000000001 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = D40000000000000000000004 /* FirebaseAnalytics */; };
+		D40000000000000000000002 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000003 /* GoogleService-Info.plist */; };
 		A10000000000000000000007 /* RefreshTokenKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* RefreshTokenKeychain.swift */; };
 		A20000000000000000000001 /* AppleSignInProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* AppleSignInProvider.swift */; };
 		B30000000000000000000001 /* LoginRequiredSheetUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000002 /* LoginRequiredSheetUITests.swift */; };
@@ -54,6 +56,7 @@
 		AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chaekchaek.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D55D6C97221F513AE0BCFAAB /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChaekchaekApp.swift; sourceTree = "<group>"; };
+		D40000000000000000000003 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		F6E70D11AEAFF647C18D3139 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -70,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D40000000000000000000001 /* FirebaseAnalytics in Frameworks */,
 				A10000000000000000000003 /* GoogleSignIn in Frameworks */,
 				6AD10E5BA60949CD51D966B4 /* Foundation.framework in Frameworks */,
 			);
@@ -116,6 +120,7 @@
 		576EECC31BAE32B83DFF5322 /* Chaekchaek */ = {
 			isa = PBXGroup;
 			children = (
+				D40000000000000000000003 /* GoogleService-Info.plist */,
 				D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */,
 				A20000000000000000000002 /* AppleSignInProvider.swift */,
 				A10000000000000000000002 /* GoogleSignInProvider.swift */,
@@ -182,6 +187,7 @@
 			name = Chaekchaek;
 			packageProductDependencies = (
 				A10000000000000000000005 /* GoogleSignIn */,
+				D40000000000000000000004 /* FirebaseAnalytics */,
 			);
 			productName = Chaekchaek;
 			productReference = AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */;
@@ -256,6 +262,7 @@
 			mainGroup = 467A3487449985D2D21CE9C8;
 			packageReferences = (
 				A10000000000000000000004 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				D40000000000000000000005 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			productRefGroup = 815571CF2752CE9DE2F6D3B2 /* Products */;
 			projectDirPath = "";
@@ -280,6 +287,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D40000000000000000000002 /* GoogleService-Info.plist in Resources */,
 				FF331168D03AF9252AA103AA /* Assets.xcassets in Resources */,
 				C1D48550D30C0BB273B37351 /* PrivacyInfo.xcprivacy in Resources */,
 			);
@@ -654,6 +662,14 @@
 				minimumVersion = 9.2.0;
 			};
 		};
+		D40000000000000000000005 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.19.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -661,6 +677,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A10000000000000000000004 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignIn;
+		};
+		D40000000000000000000004 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D40000000000000000000005 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

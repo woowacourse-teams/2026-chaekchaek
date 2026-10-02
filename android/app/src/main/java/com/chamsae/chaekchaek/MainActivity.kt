@@ -10,9 +10,11 @@ import androidx.compose.ui.platform.LocalContext
 import com.chamsae.chaekchaek.auth.RefreshTokenStore
 import com.chamsae.chaekchaek.auth.requestGoogleIdToken
 import com.chamsae.chaekchaek.search.RecentSearchPreferences
+import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.ui.App
 import com.chaekchaek.app.ui.search.RecentSearchStorage
+import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -25,6 +27,13 @@ class MainActivity : ComponentActivity() {
             val scope = rememberCoroutineScope()
             val tokenStore = remember(context) { RefreshTokenStore(context) }
             val recentSearchPreferences = remember(context) { RecentSearchPreferences(context) }
+            val analytics = remember(context) {
+                val logger = FirebaseAnalyticsEventLogger(FirebaseAnalytics.getInstance(context))
+                AnalyticsTracker(
+                    environment = if (BuildConfig.DEBUG) "test" else "production",
+                    sink = logger::log,
+                )
+            }
             val authPlatform = remember(context, scope, tokenStore) {
                 AuthPlatformCallbacks(
                     requestGoogleIdToken = { onResult ->
@@ -44,6 +53,7 @@ class MainActivity : ComponentActivity() {
             }
             App(
                 authPlatform = authPlatform,
+                analytics = analytics,
                 recentSearchStorage = RecentSearchStorage(
                     read = recentSearchPreferences::read,
                     write = recentSearchPreferences::write,

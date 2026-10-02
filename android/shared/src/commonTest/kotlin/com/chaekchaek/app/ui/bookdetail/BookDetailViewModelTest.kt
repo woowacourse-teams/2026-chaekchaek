@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.bookdetail
 
+import com.chaekchaek.app.analytics.AnalyticsEvent
+import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.auth.GuestAuth
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
@@ -27,7 +29,9 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
@@ -541,15 +545,44 @@ class BookDetailViewModelTest {
     assertEquals(1, reviewGetCount)
   }
 
+  @Test
+  fun `상세 준비 이벤트는 재시도와 새로고침에도 한 번만 기록한다`() = runViewModelTest {
+    val events = MutableStateFlow<List<AnalyticsEvent>>(emptyList())
+    val engine = MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else {
+        respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(
+      client,
+      client,
+      platform(readGuest = { null }),
+      AnalyticsTracker("test") { event -> events.update { it + event } },
+    )
+
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = null)
+    awaitReal { while (events.value.count { it.name == "cc_load_result" } < 1) kotlinx.coroutines.yield() }
+    viewModel.retry()
+    awaitReal { while (events.value.count { it.name == "cc_load_result" } < 2) kotlinx.coroutines.yield() }
+
+    assertEquals(1, events.value.count { it.name == "cc_book_detail_ready" })
+    assertEquals(2, events.value.count { it.name == "cc_load_result" })
+  }
+
   private fun viewModel(
     writeClient: HttpClient,
     authClient: HttpClient,
     callbacks: AuthPlatformCallbacks,
+    analytics: AnalyticsTracker = AnalyticsTracker.None,
   ) = BookDetailViewModel(
     repository = BookDetailRemoteRepository(writeClient),
     libraryRepository = LibraryRemoteRepository(writeClient),
     authPlatform = callbacks,
     authRepository = MobileAuthRemoteRepository(authClient),
+    analytics = analytics,
   )
 
   private fun platform(

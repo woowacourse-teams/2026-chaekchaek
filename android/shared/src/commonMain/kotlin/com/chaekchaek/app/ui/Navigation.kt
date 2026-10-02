@@ -23,6 +23,7 @@ import androidx.navigation3.ui.defaultPopTransitionSpec
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.auth.AuthViewModel
+import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.BookSearchRemoteRepository
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
@@ -38,6 +39,7 @@ import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
+import com.chaekchaek.app.ui.bookdetail.analyticsName
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
 import com.chaekchaek.app.ui.feed.FeedViewModel
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
@@ -73,6 +75,7 @@ private val navigationConfig = SavedStateConfiguration {
 internal fun AppNavigation(
     authPlatform: AuthPlatformCallbacks,
     recentSearchStorage: RecentSearchStorage,
+    analytics: AnalyticsTracker,
     uiTestingMyPage: Boolean = false,
 ) {
     val safeContent = Modifier.windowInsetsPadding(
@@ -105,9 +108,16 @@ internal fun AppNavigation(
     DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     val authTokens by authViewModel.tokens.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
+    LaunchedEffect(authState.errorMessage) {
+        if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
+    }
     val detailRepository = remember { BookDetailRemoteRepository() }
     val homeViewModel = remember {
-        HomeViewModel(feedRepository = PopularBooksRemoteRepository(), clock = Clock.System)
+        HomeViewModel(
+            feedRepository = PopularBooksRemoteRepository(),
+            clock = Clock.System,
+            analytics = analytics,
+        )
     }
     val feedViewModel = remember(authPlatform, detailRepository) {
         FeedViewModel(
@@ -119,21 +129,23 @@ internal fun AppNavigation(
     }
     val libraryRepository = remember { LibraryRemoteRepository() }
     val memberRepository = remember { MemberRemoteRepository() }
-    val registrationViewModel = remember { BookRegistrationViewModel(libraryRepository) }
-    val archiveViewModel = remember { ArchiveViewModel(libraryRepository) }
+    val registrationViewModel = remember { BookRegistrationViewModel(libraryRepository, analytics) }
+    val archiveViewModel = remember { ArchiveViewModel(libraryRepository, analytics) }
     val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository) }
     val archiveState by archiveViewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
-    val searchViewModel = remember(registrationViewModel, authViewModel) {
+    val searchViewModel = remember(registrationViewModel, authViewModel, recentSearchStorage, analytics) {
         SearchViewModel(
             bookSearchRepository = BookSearchRemoteRepository(),
             registerBook = { registrationViewModel.register(it) },
             isSignedIn = { authViewModel.tokens.value != null },
             recentSearchStorage = recentSearchStorage,
+            analytics = analytics,
         )
     }
     LaunchedEffect(authTokens?.accessToken) {
         val accessToken = authTokens?.accessToken
+        analytics.updateAuthentication(accessToken != null)
         registrationViewModel.authenticate(accessToken)
         archiveViewModel.authenticate(accessToken)
         memberSettingsViewModel.authenticate(accessToken)
@@ -161,12 +173,14 @@ internal fun AppNavigation(
                         archiveViewModel = archiveViewModel,
                         memberSettingsViewModel = memberSettingsViewModel,
                         authViewModel = authViewModel,
+                        analytics = analytics,
                         onBookClick = { backStack.add(BookDetailKey(it)) },
                         onMyPage = { backStack.add(MyPageKey) },
                         modifier = safeContent,
                     )
                 }
                 entry<MyPageKey> {
+                    LaunchedEffect(Unit) { analytics.screenView("my_page") }
                     MyPageScreen(
                         state = memberSettingsState,
                         onBack = { backStack.removeLastOrNull() },
@@ -186,7 +200,7 @@ internal fun AppNavigation(
                 }
                 entry<BookDetailKey> { key ->
                     val viewModel = remember(key.book) {
-                        BookDetailViewModel(detailRepository, libraryRepository, authPlatform)
+                        BookDetailViewModel(detailRepository, libraryRepository, authPlatform, analytics = analytics)
                     }
                     val state by viewModel.uiState.collectAsState()
                     val displayBook = state.displayBook ?: key.book
@@ -199,6 +213,7 @@ internal fun AppNavigation(
                         mutableStateOf<BookDetailAuthenticatedAction?>(null)
                     }
                     LaunchedEffect(key.book) {
+                        analytics.screenView("book_detail")
                         viewModel.open(key.book, authTokens?.accessToken)
                     }
                     LaunchedEffect(authTokens?.accessToken) {
@@ -256,6 +271,10 @@ internal fun AppNavigation(
                         },
                         onReviewCreate = viewModel::createReview,
                         onReviewOpen = viewModel::openReviewComposer,
+                        onReplyOpen = viewModel::openReplyComposer,
+                        onReviewEditOpen = viewModel::openReviewEditor,
+                        onReplyEditOpen = viewModel::openReplyEditor,
+                        onComposerDismiss = viewModel::dismissComposer,
                         onReviewUpdate = viewModel::updateReview,
                         onReviewDelete = viewModel::deleteReview,
                         onReviewLike = viewModel::likeReview,
@@ -279,18 +298,23 @@ internal fun AppNavigation(
                                 if (!authState.signingIn) {
                                     authViewModel.clearError()
                                     authViewModel.cancelPendingAuthentication()
+                                    analytics.endAuthAttempt("cancelled")
                                     viewModel.dismissAuthentication()
                                 }
                             },
                             onAppleSignIn = {
+                                analytics.beginAuthAttempt("apple", state.pendingAction?.analyticsName ?: "book_action")
                                 authViewModel.clearError()
                                 authViewModel.requireAppleAuthentication { token ->
+                                    analytics.endAuthAttempt("success")
                                     resumedAction = viewModel.authenticate(token)
                                 }
                             },
                             onGoogleSignIn = {
+                                analytics.beginAuthAttempt("google", state.pendingAction?.analyticsName ?: "book_action")
                                 authViewModel.clearError()
                                 authViewModel.requireAuthentication { token ->
+                                    analytics.endAuthAttempt("success")
                                     resumedAction = viewModel.authenticate(token)
                                 }
                             },

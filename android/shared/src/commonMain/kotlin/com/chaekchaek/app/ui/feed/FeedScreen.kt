@@ -49,6 +49,8 @@ import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.ic_comment
 import chaekchaek.shared.generated.resources.ic_heart_filled
 import chaekchaek.shared.generated.resources.ic_heart_outline
+import com.chaekchaek.app.analytics.analyticsBookKey
+import com.chaekchaek.app.analytics.analyticsImpression
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
 import com.chaekchaek.app.presentation.common.AppError
 import com.chaekchaek.app.ui.RemoteBookImage
@@ -116,7 +118,7 @@ fun FeedScreen(
                                 bottom = 24.dp,
                             ),
                         ) {
-                            itemsIndexed(current.reviews, key = { _, item -> item.noteId.value }) { _, reflection ->
+                            itemsIndexed(current.reviews, key = { _, item -> item.noteId.value }) { index, reflection ->
                                 HorizontalDivider(color = ChaekBorderSoft)
                                 FeedReflectionArticle(
                                     reflection = reflection,
@@ -127,6 +129,14 @@ fun FeedScreen(
                                     onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
                                     onLike = { viewModel.toggleReviewLike(reflection.reviewId, reflection.likedByMe) },
                                     onReply = { replyTarget = reflection },
+                                    modifier = Modifier.analyticsImpression(
+                                        contentType = "review",
+                                        contentId = reflection.noteId.value,
+                                        bookKey = analyticsBookKey(reflection.isbn13, reflection.bookId.value),
+                                        listId = "feed_recent_reviews",
+                                        position = index + 1,
+                                        isOwn = false,
+                                    ),
                                 )
                             }
                             current.nextPage?.let { nextPage ->
@@ -186,9 +196,10 @@ private fun FeedReflectionArticle(
     onOpenBook: () -> Unit,
     onLike: () -> Unit,
     onReply: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
             .clickable(role = Role.Button, onClick = onOpenBook)
             .padding(top = 22.dp, bottom = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),

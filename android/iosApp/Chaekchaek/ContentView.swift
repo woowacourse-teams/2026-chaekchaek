@@ -1,6 +1,7 @@
 import Shared
 import SwiftUI
 import GoogleSignIn
+import FirebaseAnalytics
 
 struct ContentView: View {
     var body: some View {
@@ -74,11 +75,37 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             authPlatform: authPlatform,
             recentSearchStorage: recentSearchStorage,
             createGoogleSignInButton: GoogleSignInControl.init,
+            analyticsEnvironment: analyticsEnvironment,
+            logAnalyticsEvent: FirebaseAnalyticsEventLogger.log,
             uiTestingMyPage: uiTestingMyPage
         )
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
+private var analyticsEnvironment: String {
+#if DEBUG
+    "test"
+#else
+    "production"
+#endif
+}
+
+private enum FirebaseAnalyticsEventLogger {
+    static func log(event: AnalyticsEvent) {
+        var parameters: [String: Any] = [:]
+        (event.stringParameters as NSDictionary).forEach { key, value in
+            if let key = key as? String { parameters[key] = value }
+        }
+        (event.longParameters as NSDictionary).forEach { key, value in
+            if let key = key as? String { parameters[key] = value }
+        }
+        (event.doubleParameters as NSDictionary).forEach { key, value in
+            if let key = key as? String { parameters[key] = value }
+        }
+        Analytics.logEvent(event.name, parameters: parameters)
+    }
 }
 
 private final class GoogleSignInControl: UIControl {

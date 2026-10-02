@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.selection.selectableGroup
@@ -73,6 +74,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.collectAsState
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
+import com.chaekchaek.app.analytics.analyticsBookKey
+import com.chaekchaek.app.analytics.analyticsImpression
 import com.chaekchaek.app.presentation.home.HomeUiState
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.presentation.home.OverlappedCardUiModel
@@ -636,7 +639,14 @@ private fun TrendingSection(
                     .height(44.dp)
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
-                    .zIndex(2f),
+                    .zIndex(2f)
+                    .analyticsImpression(
+                        contentType = "book",
+                        contentId = analyticsBookKey(book.isbn13, book.bookId.value) ?: book.bookId.value,
+                        bookKey = analyticsBookKey(book.isbn13, book.bookId.value),
+                        listId = "home_trending",
+                        position = selectedIndex + 1,
+                    ),
                 shape = RoundedCornerShape(0.dp),
                 color = Color.Transparent,
             ) {
@@ -819,7 +829,7 @@ private fun RecentReflectionsSection(
                     .height(211.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(quotes, key = { it.noteId.value }) { card ->
+                itemsIndexed(quotes, key = { _, card -> card.noteId.value }) { index, card ->
                     ReflectionCard(
                         title = card.bookTitle,
                         coverId = card.coverId,
@@ -829,9 +839,17 @@ private fun RecentReflectionsSection(
                         replyLabel = card.replyLabel,
                         width = cardWidth,
                         onClick = { onBookClick(card.toBookDetailTarget()) },
+                        modifier = Modifier.analyticsImpression(
+                            contentType = "review",
+                            contentId = card.noteId.value,
+                            bookKey = analyticsBookKey(card.isbn13, card.bookId.value),
+                            listId = "home_recent_reviews",
+                            position = index + 1,
+                            isOwn = false,
+                        ),
                     )
                 }
-                items(overlapped, key = { it.bookId.value }) { card ->
+                itemsIndexed(overlapped, key = { _, card -> card.bookId.value }) { index, card ->
                     ReflectionCard(
                         title = card.title,
                         coverId = card.coverId,
@@ -841,6 +859,13 @@ private fun RecentReflectionsSection(
                         replyLabel = card.replyLabel,
                         width = cardWidth,
                         onClick = { onBookClick(card.toBookDetailTarget()) },
+                        modifier = Modifier.analyticsImpression(
+                            contentType = "book",
+                            contentId = card.bookId.value,
+                            bookKey = analyticsBookKey(null, card.bookId.value),
+                            listId = "home_overlapped_books",
+                            position = index + 1,
+                        ),
                     )
                 }
             }
@@ -860,10 +885,11 @@ private fun ReflectionCard(
     replyLabel: String,
     width: Dp,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.size(width = width, height = 205.dp),
+        modifier = modifier.size(width = width, height = 205.dp),
         shape = RoundedCornerShape(22.dp),
         color = Color(0xFFF3F3F5),
     ) {

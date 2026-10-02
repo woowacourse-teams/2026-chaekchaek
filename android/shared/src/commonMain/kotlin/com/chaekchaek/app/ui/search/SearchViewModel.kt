@@ -2,6 +2,9 @@ package com.chaekchaek.app.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.analytics.analyticsErrorCategory
+import com.chaekchaek.app.analytics.analyticsQueryLengthBucket
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
@@ -12,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.TimeSource
 
 sealed interface SearchUiState {
     data object Idle : SearchUiState
@@ -28,9 +32,10 @@ sealed interface SearchUiState {
 
 class SearchViewModel(
     private val bookSearchRepository: BookSearchRepository,
-    private val registerBook: suspend (BookSearchResult) -> Unit,
+    private val registerBook: (BookSearchResult) -> Unit,
     private val isSignedIn: () -> Boolean,
     private val recentSearchStorage: RecentSearchStorage = RecentSearchStorage(),
+    private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -58,16 +63,27 @@ class SearchViewModel(
         _query.value = query
     }
 
-    fun search(query: String) {
+    fun search(query: String) = search(query, "submit")
+
+    private fun search(query: String, trigger: String) {
         val trimmed = query.trim()
         if (trimmed.isEmpty()) return
-        _query.value = trimmed
-        recordRecentSearch(trimmed)
-        executeSearch(trimmed)
-    }
-
-    private fun executeSearch(query: String) {
-        val trimmed = query.trim()
+        if (trigger == "submit") {
+            _query.value = trimmed
+            recordRecentSearch(trimmed)
+            analytics.startFlow("search")
+        }
+        val searchId = analytics.startSearch()
+        val searchStarted = TimeSource.Monotonic.markNow()
+        analytics.log(
+            name = "cc_search_submit",
+            strings = mapOf(
+                "search_id" to searchId,
+                "query_length_bucket" to analyticsQueryLengthBucket(trimmed.length),
+                "sort" to _sort.value.name.lowercase(),
+                "trigger" to trigger,
+            ),
+        )
         currentQuery = trimmed
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
@@ -79,11 +95,34 @@ class SearchViewModel(
                 ) {
                     bookSearchRepository.search(trimmed, _sort.value, FIRST_PAGE)
                 }
-                if (page.items.isEmpty()) SearchUiState.Empty
-                else SearchUiState.Success(page.items, page.totalCount, page.nextPage)
+                analytics.log(
+                    name = "cc_search_result",
+                    strings = mapOf(
+                        "search_id" to searchId,
+                        "outcome" to if (page.items.isEmpty()) "empty" else "success",
+                    ),
+                    longs = mapOf(
+                        "result_count" to page.totalCount.toLong(),
+                        "duration_ms" to searchStarted.elapsedNow().inWholeMilliseconds,
+                    ),
+                )
+                if (page.items.isEmpty()) SearchUiState.Empty else SearchUiState.Success(
+                    page.items,
+                    page.totalCount,
+                    page.nextPage,
+                )
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
+                analytics.log(
+                    name = "cc_search_result",
+                    strings = mapOf(
+                        "search_id" to searchId,
+                        "outcome" to "failure",
+                        "error_category" to analyticsErrorCategory(error),
+                    ),
+                    longs = mapOf("duration_ms" to searchStarted.elapsedNow().inWholeMilliseconds),
+                )
                 SearchUiState.Error(error.message ?: "검색 중 오류가 발생했습니다")
             }
         }
@@ -119,28 +158,20 @@ class SearchViewModel(
     fun selectSort(sort: BookSearchSort) {
         if (_sort.value == sort) return
         _sort.value = sort
-        if (currentQuery.isNotEmpty()) executeSearch(currentQuery)
+        if (currentQuery.isNotEmpty()) search(currentQuery, "sort_change")
     }
 
     fun register(book: BookSearchResult) {
+        registerBook(book)
         if (!isSignedIn()) {
             _pendingRegistration.value = book
             return
         }
-        viewModelScope.launch {
-            try {
-                registerBook(book)
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-            }
-        }
     }
 
     fun resumeRegistration() {
-        val book = _pendingRegistration.value ?: return
+        if (_pendingRegistration.value == null) return
         _pendingRegistration.value = null
-        register(book)
     }
 
     fun cancelRegistration() {
