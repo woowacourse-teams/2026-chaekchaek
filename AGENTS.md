@@ -55,6 +55,10 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 
 ## 문서 규칙
 
+- Google 로그인 조사, 패키지명/빌드 변형/OAuth 클라이언트/Play 앱 서명 키 변경 및
+  Android 로그인 배포 검증은 [Google 로그인 운영 가이드](docs/android-google-login.md)를 먼저 읽는다.
+  실제 Play 서명 지문 등록과 배포본 로그인 완료를 확인하기 전에는 해결 완료로 판단하지 않는다.
+
 - 레벨4 과제 제출에 필요한 LMS 안내와 제출 양식은
   [레벨4 과제 제출 문서](docs/level4-submission/README.md)를 먼저 참고한다.
 

@@ -14,6 +14,9 @@ Google Play 프로덕션 심사 제출과 실제 사용자 관찰 과제의 수�
 
 API 서버 환경 선택과 주소 변경은 [환경 설정 안내](../docs/android-api-environments.md)를 따른다.
 
+Google 로그인 설정, 패키지명 및 Play 서명 변경 점검과 오류 진단은
+[Android Google 로그인 운영 가이드](../docs/android-google-login.md)를 먼저 확인한다.
+
 ## 개발 문서
 
 - [Android CI 운영 및 학습 기록](docs/android-ci.md) - 자동 검증 범위, 실행 방법, 실패 대응

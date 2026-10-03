@@ -108,6 +108,9 @@ java -version
 
 Google Play에서는 **Play App Signing**을 쓴다.
 
+앱 서명 키를 변경하거나 배포본 Google 로그인을 검증할 때는
+[Google 로그인 운영 가이드](android-google-login.md)의 OAuth 지문 등록 점검을 함께 수행한다.
+
 - **업로드 키**: 팀이 AAB에 서명해 Play Console에 올릴 때 쓰는 키다.
 - **앱 서명 키**: Google Play가 보관하고 사용자 기기에 전달할 APK에 서명하는 키다.
 
