@@ -102,10 +102,14 @@ jobs:
           YES24_API_KEY: ${{ secrets.YES24_API_KEY }}
           AUTH_COOKIE_SECURE: "true"
           AUTH_COOKIE_SAME_SITE: "None"
+          LOGGING_STRUCTURED_FORMAT_CONSOLE: "logstash"
 
         run: |
           set -euo pipefail
           docker pull "$BACKEND_IMAGE"
+
+          docker network inspect chaekchaek-network >/dev/null 2>&1 \
+            || docker network create chaekchaek-network
 
           docker stop chaekchaek-backend 2>/dev/null || true
           docker rm chaekchaek-backend 2>/dev/null || true
@@ -113,6 +117,7 @@ jobs:
           docker run -d \
             --name chaekchaek-backend \
             --restart unless-stopped \
+            --network chaekchaek-network \
             -p 8080:8080 \
             --env-file <(
               printf '%s\n' \
@@ -133,7 +138,8 @@ jobs:
                 "ALADIN_TTB_KEY=$ALADIN_TTB_KEY" \
                 "YES24_API_KEY=$YES24_API_KEY" \
                 "AUTH_COOKIE_SECURE=$AUTH_COOKIE_SECURE" \
-                "AUTH_COOKIE_SAME_SITE=$AUTH_COOKIE_SAME_SITE"
+                "AUTH_COOKIE_SAME_SITE=$AUTH_COOKIE_SAME_SITE" \
+                "LOGGING_STRUCTURED_FORMAT_CONSOLE=$LOGGING_STRUCTURED_FORMAT_CONSOLE"
             ) \
             "$BACKEND_IMAGE"
 
