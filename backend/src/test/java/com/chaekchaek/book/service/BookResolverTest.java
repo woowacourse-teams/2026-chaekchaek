@@ -133,15 +133,42 @@ class BookResolverTest {
         assertThat(book.getDescription()).isEqualTo("화성에 홀로 남은 식물학자의 이야기");
     }
 
+    @Test
+    @DisplayName("외부 도서 설명이 없으면 설명 없이 책을 반환한다")
+    void should_ReturnBookWithoutDescription_When_ExternalDescriptionIsNull() {
+        // given
+        BookSearchClient client = mock(BookSearchClient.class);
+        BookRepository repository = mock(BookRepository.class);
+        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+        when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
+        when(client.findBookByIsbn13(ISBN13)).thenReturn(bookDetailItem(null));
+
+        // when
+        Book book = resolver.lookup(ISBN13);
+
+        // then
+        assertThat(book.getDescription()).isNull();
+        assertThat(book.getTitle()).isEqualTo("마션");
+    }
+
     private BookDetailItem bookDetailItem() {
         return bookDetailItem("책 설명");
     }
 
     private BookDetailItem bookDetailItem(String description) {
         return new BookDetailItem(
-                "마션", "https://image.example/martian.jpg", null, null, description,
-                List.of("앤디 위어"), List.of(), LocalDate.of(2026, 1, 1),
-                ISBN13.value(), "SF", "알에이치코리아", 308
+                "마션",
+                "https://image.example/martian.jpg",
+                null,
+                null,
+                description,
+                List.of("앤디 위어"),
+                List.of(),
+                LocalDate.of(2026, 1, 1),
+                ISBN13.value(),
+                "SF",
+                "알에이치코리아",
+                308
         );
     }
 }

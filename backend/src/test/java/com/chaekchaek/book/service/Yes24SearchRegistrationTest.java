@@ -71,4 +71,35 @@ class Yes24SearchRegistrationTest {
         assertThat(book.getTranslators()).containsExactly("전영애");
         assertThat(book.getTotalPages()).isEqualTo(240);
     }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @DisplayName("YES24에서 책 소개가 없는 싯다르타도 등록한다")
+    void should_RegisterBook_When_Yes24BookIntroductionIsNull() throws InterruptedException {
+        // given
+        String response = Yes24ResponseFixture.데미안_상세_결과()
+                .replace("9788937460449", "9788937460586")
+                .replace("데미안", "싯다르타")
+                .replace("\"내면의 길을 찾아가는 성장 소설\"", "null");
+        yes24Server.응답한다(200, response);
+        Yes24BookClient client = new Yes24BookClient(
+                RestClient.builder(),
+                yes24Server.baseUrl(),
+                yes24Server.apiKey()
+        );
+        BookResolver resolver = new BookResolver(client, bookRepository, transactionManager);
+        Isbn13 isbn13 = new Isbn13("9788937460586");
+
+        // when
+        Book book = resolver.findOrCreate(isbn13);
+
+        // then
+        yes24Server.상세_요청을_검증한다(isbn13.value());
+        assertThat(bookRepository.findByIsbn13(isbn13)).hasValueSatisfying(storedBook -> {
+            assertThat(storedBook.getId()).isEqualTo(book.getId());
+            assertThat(storedBook.getTitle()).isEqualTo("싯다르타");
+            assertThat(storedBook.getDescription()).isNull();
+        });
+    }
+
 }
