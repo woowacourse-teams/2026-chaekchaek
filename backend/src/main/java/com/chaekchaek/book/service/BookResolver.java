@@ -61,7 +61,7 @@ public class BookResolver {
                 source.coverImageUrl(),
                 source.spineImageUrl(),
                 source.backImageUrl(),
-                htmlUnescape(source.description()),
+                unescapeDescription(source.description()),
                 source.authors(),
                 source.translators(),
                 source.publisher(),
@@ -69,5 +69,12 @@ public class BookResolver {
                 source.publishedDate(),
                 source.totalPages()
         );
+    }
+
+    private String unescapeDescription(String description) {
+        if (description == null) {
+            return null;
+        }
+        return htmlUnescape(description);
     }
 }
