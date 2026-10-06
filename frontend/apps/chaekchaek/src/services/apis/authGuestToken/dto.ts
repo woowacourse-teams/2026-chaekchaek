@@ -1,6 +1,10 @@
 import type { ResponseDto } from '@/services/apis/api.types';
 
-export interface GetAuthGuestTokenRequestDto {}
+export interface GetAuthGuestTokenRequestDto {
+  headers: {
+    'X-Guest-Token': string;
+  };
+}
 
 export type GetAuthGuestTokenResponseDto = ResponseDto<{
   actorType: 'MEMBER' | 'GUEST';

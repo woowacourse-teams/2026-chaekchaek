@@ -6,10 +6,17 @@ import {
 
 import type { GetAuthGuestToken } from './repository.types';
 
-export const getAuthGuestToken: GetAuthGuestToken = async (model) => {
+export const getAuthGuestToken: GetAuthGuestToken = async (model, context) => {
   const authGuestTokenRequest = mapGetAuthGuestTokenModelToRequestDTO(model);
 
-  const responseDTO = await fetcher.getAuthGuestToken(authGuestTokenRequest);
+  const { guestToken } = context;
+
+  const responseDTO = await fetcher.getAuthGuestToken({
+    ...authGuestTokenRequest,
+    headers: {
+      'X-Guest-Token': guestToken,
+    },
+  });
 
   return mapGetAuthGuestTokenResponseDTOToModel(responseDTO);
 };
