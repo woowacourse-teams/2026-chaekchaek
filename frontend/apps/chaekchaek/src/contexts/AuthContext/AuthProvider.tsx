@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }: Props) => {
 
       if (guest) {
         if (canRenew(guest.expiresAt)) {
-          postAuthGuestTokenRefreshsMutate({}, { guestToken: 'ss' });
+          postAuthGuestTokenRefreshsMutate({}, { guestToken: guest.guestToken });
         }
       }
     }
