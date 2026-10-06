@@ -144,7 +144,13 @@ public class ReviewSummaryReader {
         );
     }
 
-    public record ReviewSummary(Review review, Book book, AuthorResponse author, long replyCount, long likeCount,
-                                boolean likedByMe) {
+    public record ReviewSummary(
+            Review review,
+            Book book,
+            AuthorResponse author,
+            long replyCount,
+            long likeCount,
+            boolean likedByMe
+    ) {
     }
 }

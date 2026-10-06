@@ -1,6 +1,8 @@
 package com.chaekchaek.book.domain;
 
-public record Isbn13(String value) {
+public record Isbn13(
+        String value
+) {
 
     private static final int ISBN13_LENGTH = 13;
 

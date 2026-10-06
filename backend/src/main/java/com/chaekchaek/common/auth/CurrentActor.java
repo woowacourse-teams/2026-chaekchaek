@@ -1,6 +1,10 @@
 package com.chaekchaek.common.auth;
 
-public record CurrentActor(long actorId, ActorType type, Long memberId) {
+public record CurrentActor(
+        long actorId,
+        ActorType type,
+        Long memberId
+) {
 
     public static CurrentActor member(long actorId, long memberId) {
         return new CurrentActor(actorId, ActorType.MEMBER, memberId);

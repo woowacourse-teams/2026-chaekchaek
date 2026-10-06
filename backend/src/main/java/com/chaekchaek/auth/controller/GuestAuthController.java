@@ -49,8 +49,13 @@ public class GuestAuthController {
                 token.value(), token.nickname(), token.expiresAt(), token.actorId(), token.actorType()));
     }
 
-    public record GuestTokenResponse(String guestToken, String nickname, LocalDateTime expiresAt,
-                                     long actorId, ActorType actorType) {
+    public record GuestTokenResponse(
+            String guestToken,
+            String nickname,
+            LocalDateTime expiresAt,
+            long actorId,
+            ActorType actorType
+    ) {
     }
 
     public record GuestInfoResponse(

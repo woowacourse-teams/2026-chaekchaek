@@ -7,7 +7,10 @@ public interface BookActivityCountReader {
 
     Map<Long, ActivityCounts> getActivityCounts(Collection<Long> bookIds);
 
-    record ActivityCounts(long reviewCount, long replyCount) {
+    record ActivityCounts(
+            long reviewCount,
+            long replyCount
+    ) {
 
         public static final ActivityCounts ZERO = new ActivityCounts(0L, 0L);
 
