@@ -169,14 +169,13 @@ public class Yes24BookClient implements BookSearchClient {
     }
 
     private BookDetailItem toBookDetailItem(Yes24BookItem source) {
-        Yes24ImageUrls imageUrls = Yes24ImageUrlGenerator.fromCoverUrl(source.cover());
         Contributors contributors = parseContributors(source.author());
 
         return new BookDetailItem(
                 source.title(),
                 source.cover(),
-                imageUrls.spineImageUrl(),
-                imageUrls.backImageUrl(),
+                source.sideCover(),
+                source.backCover(),
                 source.description(),
                 contributors.authors(),
                 contributors.translators(),

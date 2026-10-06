@@ -12,6 +12,8 @@ public record Yes24BookItem(
         String isbn13,
         String publishDate,
         String cover,
+        String sideCover,
+        String backCover,
         Integer pages,
         Yes24ContentDetail contentDetail
 ) {

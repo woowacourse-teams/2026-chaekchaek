@@ -87,9 +87,9 @@ class Yes24BookClientTest {
             softly.assertThat(result.coverImageUrl())
                     .isEqualTo("https://image.yes24.com/goods/101375809/L");
             softly.assertThat(result.spineImageUrl())
-                    .isEqualTo("https://image.yes24.com/goods/101375809/side");
+                    .isEqualTo("https://image.yes24.com/goods/101375809/SIDE/L");
             softly.assertThat(result.backImageUrl())
-                    .isEqualTo("https://image.yes24.com/goods/101375809/back");
+                    .isEqualTo("https://image.yes24.com/goods/101375809/BACK/L");
             softly.assertThat(result.description()).isEqualTo("내면의 길을 찾아가는 성장 소설");
             softly.assertThat(result.authors()).containsExactly("헤르만 헤세");
             softly.assertThat(result.translators()).containsExactly("전영애");
@@ -98,6 +98,22 @@ class Yes24BookClientTest {
             softly.assertThat(result.category()).isEqualTo("국내도서");
             softly.assertThat(result.publisher()).isEqualTo("민음사");
             softly.assertThat(result.totalPages()).isEqualTo(240);
+        });
+    }
+
+    @Test
+    @DisplayName("YES24 응답에 책등·뒷면 이미지가 없으면 null로 변환한다")
+    void should_ReturnNullImageUrls_When_Yes24DoesNotProvideBookImages() throws InterruptedException {
+        // given
+        yes24Server.응답한다(200, Yes24ResponseFixture.데미안_상세_결과_책등_뒷면_없음());
+
+        // when
+        BookDetailItem result = client.findBookByIsbn13(ISBN13);
+
+        // then
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(result.spineImageUrl()).isNull();
+            softly.assertThat(result.backImageUrl()).isNull();
         });
     }
 
