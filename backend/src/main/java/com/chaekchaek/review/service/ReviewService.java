@@ -361,7 +361,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         }
         boolean withdrawn = profile.accountStatus() == com.chaekchaek.member.domain.AccountStatus.WITHDRAWN;
         boolean available = profile.accountStatus() == com.chaekchaek.member.domain.AccountStatus.ACTIVE;
-        String displayName = withdrawn ? "탈퇴한 사용자" : profile.displayName();
+        String displayName = withdrawn ? profile.anonymousNickname() : profile.displayName();
         String profileImageUrl = withdrawn ? null : profile.profileImageUrl();
         AuthorProfileStatus profileStatus = available
                 ? AuthorProfileStatus.AVAILABLE : AuthorProfileStatus.UNAVAILABLE;
