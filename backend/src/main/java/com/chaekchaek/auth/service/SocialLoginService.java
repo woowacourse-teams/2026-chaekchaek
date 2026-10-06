@@ -175,7 +175,7 @@ public class SocialLoginService {
         if (guestActorId != null) {
             guestActorMigrationService.migrate(guestActorId, member);
         }
-        return member;
+        return logLogin(account.getProvider(), member);
     }
 
     @Transactional
