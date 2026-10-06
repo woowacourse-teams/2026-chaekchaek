@@ -44,18 +44,20 @@ export const AuthProvider = ({ children }: Props) => {
     setGuest(guestData);
   }, []);
 
-  const {
-    mutate: postAuthGuestTokenMutate,
-    status: { data: authGuestToken },
-  } = useExecute({
+  const { mutate: postAuthGuestTokenMutate } = useExecute({
     executeFn: postAuthGuestToken,
+    onSuccess: (authGuestToken: GuestData) => {
+      localStorage.setItem('guest', JSON.stringify(authGuestToken));
+      updateGuestAccount(authGuestToken);
+    },
   });
 
-  const {
-    mutate: postAuthGuestTokenRefreshMutate,
-    status: { data: authGuestTokenRefresh },
-  } = useExecute({
+  const { mutate: postAuthGuestTokenRefreshMutate } = useExecute({
     executeFn: postAuthGuestTokenRefresh,
+    onSuccess: (authGuestTokenRefresh: GuestData) => {
+      localStorage.setItem('guest', JSON.stringify(authGuestTokenRefresh));
+      updateGuestAccount(authGuestTokenRefresh);
+    },
   });
 
   const logoutGuest = () => {
@@ -86,20 +88,6 @@ export const AuthProvider = ({ children }: Props) => {
       }
     }
   }, [membersMeStatus]);
-
-  useEffect(() => {
-    if (authGuestToken) {
-      localStorage.setItem('guest', JSON.stringify(authGuestToken));
-      updateGuestAccount(authGuestToken);
-    }
-  }, [authGuestToken]);
-
-  useEffect(() => {
-    if (authGuestTokenRefresh) {
-      localStorage.setItem('guest', JSON.stringify(authGuestTokenRefresh));
-      updateGuestAccount(authGuestTokenRefresh);
-    }
-  }, [authGuestTokenRefresh]);
 
   const value = useMemo(
     () => ({ isAuthenticated, user, updateAccount, guest, updateGuestAccount }),
