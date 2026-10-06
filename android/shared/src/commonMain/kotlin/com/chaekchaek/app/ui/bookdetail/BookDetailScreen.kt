@@ -258,6 +258,7 @@ fun BookDetailScreen(
                 ReviewsSection(
                     reviews = state.reviews,
                     reviewCount = state.reviewCount,
+                    hasMoreReviews = state.nextReviewPage != null,
                     loading = state.isLoading,
                     loadingMore = state.isLoadingMore,
                     revealedSpoilerReviewIds = revealedSpoilerReviewIds,
@@ -863,6 +864,7 @@ private fun ReadingRecord(
 private fun ReviewsSection(
     reviews: List<BookReview>,
     reviewCount: Int,
+    hasMoreReviews: Boolean,
     loading: Boolean,
     loadingMore: Boolean,
     revealedSpoilerReviewIds: Set<Long>,
@@ -881,7 +883,7 @@ private fun ReviewsSection(
     onManageReply: (ReviewReply) -> Unit,
 ) {
     var replyTarget by remember { mutableStateOf<BookReview?>(null) }
-    val visibleReviews = visibleReviews(reviews)
+    val display = reviewDisplay(reviews, reviewCount, hasMoreReviews)
     Column(modifier = Modifier.fillMaxWidth()) {
         HorizontalDivider(color = ChaekBorderSoft)
         Row(
@@ -890,7 +892,7 @@ private fun ReviewsSection(
         ) {
             Text("감상", fontSize = 21.sp, lineHeight = 27.sp, fontWeight = FontWeight.Bold)
             Text(
-                reviewCount.toString(),
+                display.count.toString(),
                 modifier = Modifier.padding(start = 5.dp),
                 color = ChaekInkSecondary,
                 fontSize = 14.sp,
@@ -918,8 +920,8 @@ private fun ReviewsSection(
         )
         when {
             loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
-            visibleReviews.isEmpty() -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
-            else -> visibleReviews.forEach { review ->
+            display.showEmpty -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+            else -> display.reviews.forEach { review ->
                 val locked = shouldLockReview(review.reviewId, review.isSpoiler, revealedSpoilerReviewIds)
                 ReviewCard(
                     review = review,

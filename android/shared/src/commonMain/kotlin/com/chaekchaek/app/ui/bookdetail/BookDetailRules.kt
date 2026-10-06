@@ -83,6 +83,26 @@ internal fun canManageContent(writtenByMe: Boolean, deleted: Boolean): Boolean =
 
 internal fun visibleReviews(reviews: List<BookReview>): List<BookReview> = reviews.filterNot { it.deleted }
 
+internal data class ReviewDisplay(
+    val reviews: List<BookReview>,
+    val count: Int,
+    val showEmpty: Boolean,
+)
+
+internal fun reviewDisplay(
+    reviews: List<BookReview>,
+    totalCount: Int,
+    hasMore: Boolean,
+): ReviewDisplay {
+    val visibleReviews = visibleReviews(reviews)
+    val loadedDeletedCount = reviews.count { it.deleted }
+    return ReviewDisplay(
+        reviews = visibleReviews,
+        count = (totalCount - loadedDeletedCount).coerceAtLeast(visibleReviews.size),
+        showEmpty = visibleReviews.isEmpty() && !hasMore,
+    )
+}
+
 internal data class ReplyDisplay(val replies: List<ReviewReply>, val hasMore: Boolean)
 
 internal fun replyDisplay(replies: List<ReviewReply>, totalCount: Int): ReplyDisplay = ReplyDisplay(

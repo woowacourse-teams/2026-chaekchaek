@@ -12,6 +12,40 @@ import kotlin.test.assertTrue
 
 class DeletedContentDisplayTest {
     @Test
+    fun deletedReviewsAreExcludedFromCountWhenPaginationFinishes() {
+        val active = review(1)
+        val deleted = review(2).copy(deleted = true)
+
+        val display = reviewDisplay(listOf(deleted, active), totalCount = 2, hasMore = false)
+
+        assertEquals(listOf(active), display.reviews)
+        assertEquals(1, display.count)
+        assertFalse(display.showEmpty)
+    }
+
+    @Test
+    fun deletedOnlyPageDoesNotShowEmptyStateWhileNextPageRemains() {
+        val deleted = review(1).copy(deleted = true)
+
+        val display = reviewDisplay(listOf(deleted), totalCount = 2, hasMore = true)
+
+        assertTrue(display.reviews.isEmpty())
+        assertEquals(1, display.count)
+        assertFalse(display.showEmpty)
+    }
+
+    @Test
+    fun deletedOnlyResultShowsZeroCountAndEmptyStateAfterPaginationFinishes() {
+        val deleted = review(1).copy(deleted = true)
+
+        val display = reviewDisplay(listOf(deleted), totalCount = 1, hasMore = false)
+
+        assertTrue(display.reviews.isEmpty())
+        assertEquals(0, display.count)
+        assertTrue(display.showEmpty)
+    }
+
+    @Test
     fun deletedReviewsAndTheirRepliesStayHiddenAfterReloadWithoutChangingPagination() {
         val active = review(1)
         val deleted = review(2).copy(deleted = true, recentReplies = listOf(reply(3)))
