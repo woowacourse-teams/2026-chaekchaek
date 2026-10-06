@@ -96,11 +96,7 @@ class GoogleIdTokenVerifierTest {
         );
     }
 
-    private Jwt createJwt(
-            String subject,
-            String email,
-            String picture
-    ) {
+    private Jwt createJwt(String subject, String email, String picture) {
         Instant issuedAt = Instant.parse(
                 "2026-08-14T00:00:00Z"
         );

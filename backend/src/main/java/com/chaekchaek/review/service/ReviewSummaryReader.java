@@ -48,12 +48,16 @@ public class ReviewSummaryReader {
                 .toList();
         Map<Long, Long> replyCounts = replyRepository.countActiveByReviewIdInGroupByReviewId(reviewIds)
                 .stream()
-                .collect(Collectors.toMap(ReplyRepository.ReviewCount::getReviewId,
-                        ReplyRepository.ReviewCount::getCount));
+                .collect(Collectors.toMap(
+                        ReplyRepository.ReviewCount::getReviewId,
+                        ReplyRepository.ReviewCount::getCount
+                ));
         Map<Long, Long> likeCounts = reviewReactionRepository.countByReviewIdInGroupByReviewId(reviewIds)
                 .stream()
-                .collect(Collectors.toMap(ReviewReactionRepository.ReactionCount::getReviewId,
-                        ReviewReactionRepository.ReactionCount::getCount));
+                .collect(Collectors.toMap(
+                        ReviewReactionRepository.ReactionCount::getReviewId,
+                        ReviewReactionRepository.ReactionCount::getCount
+                ));
 
         List<Long> actorIds = reviews.stream()
                 .map(Review::getActorId)
@@ -67,8 +71,15 @@ public class ReviewSummaryReader {
         Set<Long> likedReviewIds = likedReviewIds(reviewIds, currentActorId);
 
         return reviews.stream()
-                .map(review -> toSummary(review, books, replyCounts, likeCounts, likedReviewIds, profiles,
-                        currentActorId))
+                .map(review -> toSummary(
+                        review,
+                        books,
+                        replyCounts,
+                        likeCounts,
+                        likedReviewIds,
+                        profiles,
+                        currentActorId
+                ))
                 .filter(Objects::nonNull)
                 .toList();
     }
@@ -79,7 +90,8 @@ public class ReviewSummaryReader {
             Map<Long, Long> replyCounts,
             Map<Long, Long> likeCounts,
             Set<Long> likedReviewIds,
-            Map<Long, ReviewMemberProfile> profiles, Long currentActorId
+            Map<Long, ReviewMemberProfile> profiles,
+            Long currentActorId
     ) {
         Book book = books.get(review.getBookId());
         if (book == null) {

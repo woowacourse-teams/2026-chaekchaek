@@ -57,7 +57,11 @@ class MobileAuthTokenServiceTest {
                 new IssuedRefreshToken(
                         "new-refresh-token",
                         LocalDateTime.of(
-                                2026, 8, 28, 0, 0
+                                2026,
+                                8,
+                                28,
+                                0,
+                                0
                         )
                 );
 

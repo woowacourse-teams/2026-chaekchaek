@@ -91,7 +91,8 @@ class FeedControllerTest {
                 .andExpect(jsonPath("$.reviews[0].author.displayName").value("독자"))
                 .andExpect(jsonPath("$.reviews[0].replyCount").value(3))
                 .andExpect(jsonPath("$.reviews[0].bookId").value(42))
-                .andDo(document("feed-reviews",
+                .andDo(document(
+                        "feed-reviews",
                         queryParameters(parameterWithName("page").description("1부터 시작하는 필수 페이지 번호")),
                         responseFields(feedResponseFields()),
                         resource(ResourceSnippetParameters.builder()
@@ -101,7 +102,8 @@ class FeedControllerTest {
                                 .queryParameters(ResourceDocumentation.parameterWithName("page")
                                         .type(SimpleType.INTEGER).description("1부터 시작하는 필수 페이지 번호"))
                                 .responseFields(feedResponseFields())
-                                .build())));
+                                .build())
+                ));
         verify(feedService).getReviews(1);
     }
 

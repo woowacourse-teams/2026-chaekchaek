@@ -21,10 +21,7 @@ public class AuthController {
     private final AuthTokenService authTokenService;
     private final AuthCookieProvider authCookieProvider;
 
-    public AuthController(
-            AuthTokenService authTokenService,
-            AuthCookieProvider authCookieProvider
-    ) {
+    public AuthController(AuthTokenService authTokenService, AuthCookieProvider authCookieProvider) {
         this.authTokenService = authTokenService;
         this.authCookieProvider = authCookieProvider;
     }

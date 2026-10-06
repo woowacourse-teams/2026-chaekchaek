@@ -22,7 +22,12 @@ class LibraryReadingRecordCoordinator implements ReadingRecordCoordinator {
     private final Clock clock;
 
     @Override
-    public void recordReview(long memberId, long bookId, Integer currentPage, Integer totalPages) {
+    public void recordReview(
+            long memberId,
+            long bookId,
+            Integer currentPage,
+            Integer totalPages
+    ) {
         Book book = lockedBook(bookId);
         rememberTotalPages(book, totalPages);
         if (currentPage != null && book.getTotalPages() == null) {

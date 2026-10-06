@@ -48,14 +48,24 @@ public class Reply {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    private Reply(long reviewId, long actorId, String content, boolean anonymous) {
+    private Reply(
+            long reviewId,
+            long actorId,
+            String content,
+            boolean anonymous
+    ) {
         this.reviewId = reviewId;
         this.actorId = actorId;
         this.content = content;
         this.anonymous = anonymous;
     }
 
-    public static Reply create(long reviewId, long actorId, String content, boolean anonymous) {
+    public static Reply create(
+            long reviewId,
+            long actorId,
+            String content,
+            boolean anonymous
+    ) {
         return new Reply(reviewId, actorId, content, anonymous);
     }
 

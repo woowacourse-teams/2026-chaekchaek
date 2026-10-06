@@ -110,7 +110,9 @@ public class GoogleOidcUserServiceTest {
                         "google-user-123",
                         "member@example.com",
                         "exUrl"
-                ), 7L))
+                ),
+                7L
+        ))
                 .thenReturn(member);
 
         googleOidcUserService.loadUser(userRequest);
@@ -120,7 +122,9 @@ public class GoogleOidcUserServiceTest {
                         "google-user-123",
                         "member@example.com",
                         "exUrl"
-                ), 7L);
+                ),
+                7L
+        );
         verify(guestContextService).clear(request);
     }
 }

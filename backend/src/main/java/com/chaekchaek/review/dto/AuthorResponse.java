@@ -12,8 +12,21 @@ public record AuthorResponse(
         AuthorProfileStatus profileStatus
 ) {
 
-    public AuthorResponse(String displayName, String profileImageUrl, boolean anonymous, boolean mine,
-                          ActorType actorType) {
-        this(null, displayName, profileImageUrl, anonymous, mine, actorType, AuthorProfileStatus.UNAVAILABLE);
+    public AuthorResponse(
+            String displayName,
+            String profileImageUrl,
+            boolean anonymous,
+            boolean mine,
+            ActorType actorType
+    ) {
+        this(
+                null,
+                displayName,
+                profileImageUrl,
+                anonymous,
+                mine,
+                actorType,
+                AuthorProfileStatus.UNAVAILABLE
+        );
     }
 }

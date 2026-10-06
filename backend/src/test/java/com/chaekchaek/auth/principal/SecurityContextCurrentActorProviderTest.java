@@ -46,15 +46,21 @@ class SecurityContextCurrentActorProviderTest {
     @Test
     void rejectsExpiredGuestToken() {
         Fixtures fixtures = new Fixtures();
-        Actor guest = Actor.guest("hash", "게스트", LocalDateTime.now(CLOCK).minusDays(2),
-                LocalDateTime.now(CLOCK).minusDays(1));
+        Actor guest = Actor.guest(
+                "hash",
+                "게스트",
+                LocalDateTime.now(CLOCK).minusDays(2),
+                LocalDateTime.now(CLOCK).minusDays(1)
+        );
         when(fixtures.request.getHeader(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER)).thenReturn("token");
         when(fixtures.hasher.hash("token")).thenReturn("hash");
         when(fixtures.repository.findByGuestTokenHash("hash")).thenReturn(Optional.of(guest));
 
         assertThatThrownBy(() -> fixtures.provider().findCurrentActor())
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.UNUSABLE_GUEST_TOKEN));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.UNUSABLE_GUEST_TOKEN)
+        );
     }
 
     @Test

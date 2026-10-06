@@ -62,7 +62,8 @@ class OAuth2GuestContextRestDocsTest {
         mockMvc.perform(post("/api/v1/auth/oauth2/guest-context")
                         .header("X-Guest-Token", "guest-token"))
                 .andExpect(status().isNoContent())
-                .andDo(document("oauth2-guest-context",
+                .andDo(document(
+                        "oauth2-guest-context",
                         requestHeaders(headerWithName("X-Guest-Token")
                                 .description("OAuth 로그인 후 기록 이전에 사용할 현재 게스트 토큰")),
                         resource(ResourceSnippetParameters.builder()
@@ -72,7 +73,8 @@ class OAuth2GuestContextRestDocsTest {
                                 .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token")
                                         .description("OAuth 로그인 후 기록 이전에 사용할 현재 게스트 토큰"))
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -84,7 +86,8 @@ class OAuth2GuestContextRestDocsTest {
         mockMvc.perform(post("/api/v1/auth/oauth2/guest-context")
                         .header("X-Guest-Token", "invalid-token"))
                 .andExpect(status().isUnauthorized())
-                .andDo(document("oauth2-guest-context-invalid-token",
+                .andDo(document(
+                        "oauth2-guest-context-invalid-token",
                         requestHeaders(headerWithName("X-Guest-Token")
                                 .description("검증할 게스트 토큰")),
                         responseFields(PROBLEM_DETAIL_FIELDS),
@@ -95,6 +98,7 @@ class OAuth2GuestContextRestDocsTest {
                                 .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("검증할 게스트 토큰"))
                                 .responseFields(PROBLEM_DETAIL_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 }

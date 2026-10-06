@@ -49,8 +49,12 @@ class ReplyRepositoryTest {
 
         // then
         assertThat(actual).extracting(Reply::getId).containsExactly(
-                firstReplies.get(1).getId(), firstReplies.get(2).getId(), firstReplies.get(3).getId(),
-                secondReplies.get(1).getId(), secondReplies.get(2).getId(), secondReplies.get(3).getId()
+                firstReplies.get(1).getId(),
+                firstReplies.get(2).getId(),
+                firstReplies.get(3).getId(),
+                secondReplies.get(1).getId(),
+                secondReplies.get(2).getId(),
+                secondReplies.get(3).getId()
         );
         assertThat(reviewRepository.countByBookIdInGroupByBookId(List.of(1L)))
                 .extracting(ReviewRepository.BookCommentCount::getCount)

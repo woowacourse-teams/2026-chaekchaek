@@ -39,12 +39,18 @@ class BookDetailAssemblerTest {
                 LibraryItemRepository.RatingStatistics.class);
         LibraryItem libraryItem = mock(LibraryItem.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
         when(activityCountReader.getActivityCounts(List.of(1L)))
-                .thenReturn(Map.of(1L, new ActivityCounts(
-                        2L,
-                        2L
-                )));
+                .thenReturn(Map.of(
+                        1L,
+                        new ActivityCounts(
+                                2L,
+                                2L
+                        )
+                ));
         when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L)))
                 .thenReturn(List.of(ratingStatistics));
         when(ratingStatistics.getAverageRating()).thenReturn(4.24);
@@ -79,12 +85,18 @@ class BookDetailAssemblerTest {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
         when(activityCountReader.getActivityCounts(List.of(1L)))
-                .thenReturn(Map.of(1L, new ActivityCounts(
-                        0L,
-                        0L
-                )));
+                .thenReturn(Map.of(
+                        1L,
+                        new ActivityCounts(
+                                0L,
+                                0L
+                        )
+                ));
         when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
         when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.empty());
@@ -105,12 +117,18 @@ class BookDetailAssemblerTest {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
         when(activityCountReader.getActivityCounts(List.of(1L)))
-                .thenReturn(Map.of(1L, new ActivityCounts(
-                        0L,
-                        0L
-                )));
+                .thenReturn(Map.of(
+                        1L,
+                        new ActivityCounts(
+                                0L,
+                                0L
+                        )
+                ));
         when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
 
@@ -131,7 +149,10 @@ class BookDetailAssemblerTest {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
 
         // when
         var response = assembler.assemble(book);
@@ -157,7 +178,10 @@ class BookDetailAssemblerTest {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
 
         // when
         var response = assembler.assemble(book);

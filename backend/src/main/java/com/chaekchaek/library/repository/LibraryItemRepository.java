@@ -57,13 +57,22 @@ public interface LibraryItemRepository extends JpaRepository<LibraryItem, Long> 
     long countByMemberIdAndStatus(long memberId, ReadingStatus status);
 
     Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
-            long memberId, long bookId, BigDecimal rating);
+            long memberId,
+            long bookId,
+            BigDecimal rating
+    );
 
     Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
-            long memberId, long bookId, BigDecimal rating);
+            long memberId,
+            long bookId,
+            BigDecimal rating
+    );
 
     Optional<LibraryItem> findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
-            long memberId, long bookId, BigDecimal rating);
+            long memberId,
+            long bookId,
+            BigDecimal rating
+    );
 
     interface RatingStatistics {
         long getBookId();

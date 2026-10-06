@@ -65,18 +65,29 @@ public class LibraryController {
 
     @PostMapping("/library")
     public ResponseEntity<LibraryItemResponse> add(@Valid @RequestBody AddLibraryItemRequest request) {
-        LibraryItemResponse response = libraryService.addByIsbn13(memberId(), new Isbn13(request.isbn13()),
-                request.status(), request.totalPages());
+        LibraryItemResponse response = libraryService.addByIsbn13(
+                memberId(),
+                new Isbn13(request.isbn13()),
+                request.status(),
+                request.totalPages()
+        );
         return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
                         .path("/{bookId}").buildAndExpand(response.bookId()).toUri())
                 .body(response);
     }
 
     @PatchMapping("/library/{bookId}")
-    public ResponseEntity<LibraryItemResponse> update(@PathVariable long bookId,
-                                                      @Valid @RequestBody UpdateLibraryItemRequest request) {
-        return ResponseEntity.ok(libraryService.update(memberId(), bookId, request.status(),
-                request.currentPage(), request.totalPages()));
+    public ResponseEntity<LibraryItemResponse> update(
+            @PathVariable long bookId,
+            @Valid @RequestBody UpdateLibraryItemRequest request
+    ) {
+        return ResponseEntity.ok(libraryService.update(
+                memberId(),
+                bookId,
+                request.status(),
+                request.currentPage(),
+                request.totalPages()
+        ));
     }
 
     @DeleteMapping("/library/{bookId}")
@@ -95,9 +106,7 @@ public class LibraryController {
     }
 
     @PatchMapping("/library/bulk-status")
-    public ResponseEntity<Void> bulkChangeStatus(
-            @Valid @RequestBody BulkUpdateLibraryStatusRequest request
-    ) {
+    public ResponseEntity<Void> bulkChangeStatus(@Valid @RequestBody BulkUpdateLibraryStatusRequest request) {
         if (request.hasDuplicateBookIds()) {
             throw new IllegalArgumentException("Book IDs must not be duplicated");
         }
@@ -106,8 +115,10 @@ public class LibraryController {
     }
 
     @PutMapping("/library/{bookId}/rating")
-    public ResponseEntity<LibraryItemResponse> rate(@PathVariable long bookId,
-                                                    @Valid @RequestBody RateBookRequest request) {
+    public ResponseEntity<LibraryItemResponse> rate(
+            @PathVariable long bookId,
+            @Valid @RequestBody RateBookRequest request
+    ) {
         return ResponseEntity.ok(libraryService.rate(memberId(), bookId, request.rating()));
     }
 

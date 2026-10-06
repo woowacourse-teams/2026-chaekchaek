@@ -57,9 +57,9 @@ public class SocialAccountRepositoryTest {
         // when
         SocialAccount foundAccount = socialAccountRepository
                 .findByProviderAndProviderUserId(
-                        Provider.GOOGLE,
-                        "google-member-123"
-                )
+                Provider.GOOGLE,
+                "google-member-123"
+        )
                 .orElseThrow();
 
         // then

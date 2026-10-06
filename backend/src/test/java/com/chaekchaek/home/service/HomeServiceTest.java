@@ -40,10 +40,14 @@ class HomeServiceTest {
         BookRepository bookRepository = mock(BookRepository.class);
         HomeService homeService = homeService(reviewRepository, replyRepository, bookRepository);
         List<ReviewRepository.PopularBookCount> popularBookCounts = List.of(
-                popularBookCount(3L, 2L, 8L), popularBookCount(2L, 5L, 5L), popularBookCount(1L, 8L, 1L)
+                popularBookCount(3L, 2L, 8L),
+                popularBookCount(2L, 5L, 5L),
+                popularBookCount(1L, 8L, 1L)
         );
         List<Book> books = List.of(
-                book(1L, "첫 번째 책"), book(2L, "두 번째 책"), book(3L, "세 번째 책")
+                book(1L, "첫 번째 책"),
+                book(2L, "두 번째 책"),
+                book(3L, "세 번째 책")
         );
         when(reviewRepository.findTop10PopularBookCounts()).thenReturn(popularBookCounts);
         when(bookRepository.findAllWithAuthorsByIdIn(List.of(3L, 2L, 1L))).thenReturn(books);
@@ -70,7 +74,8 @@ class HomeServiceTest {
         Review latestReview = review(101L, 2L, 2L, "최신 감상", Instant.parse("2026-08-18T14:00:00Z"));
         Review previousReview = review(100L, 1L, 1L, "이전 감상", Instant.parse("2026-08-18T13:00:00Z"));
         List<ReplyRepository.ReviewCount> replyCounts = List.of(
-                replyCount(101L, 12L), replyCount(100L, 3L)
+                replyCount(101L, 12L),
+                replyCount(100L, 3L)
         );
         List<Book> books = List.of(book(1L, "첫 번째 책"), book(2L, "두 번째 책"));
         when(reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc())
@@ -88,7 +93,8 @@ class HomeServiceTest {
         assertThat(result).extracting(LatestReviewResponse::replyCount).containsExactly(12L, 3L);
         assertThat(result).extracting(LatestReviewResponse::bookTitle).containsExactly("두 번째 책", "첫 번째 책");
         assertThat(result).extracting(LatestReviewResponse::author)
-                .containsExactly(new AuthorResponse(
+                .containsExactly(
+                new AuthorResponse(
                         null,
                         "다정한 참새",
                         null,
@@ -97,15 +103,16 @@ class HomeServiceTest {
                         ActorType.MEMBER,
                         AuthorProfileStatus.UNAVAILABLE
                 ),
-                        new AuthorResponse(
-                                101L,
-                                "책 읽는 사람",
-                                "https://example.com/profile-1.jpg",
-                                false,
-                                false,
-                                ActorType.MEMBER,
-                                AuthorProfileStatus.AVAILABLE
-                        ));
+                new AuthorResponse(
+                        101L,
+                        "책 읽는 사람",
+                        "https://example.com/profile-1.jpg",
+                        false,
+                        false,
+                        ActorType.MEMBER,
+                        AuthorProfileStatus.AVAILABLE
+                )
+        );
     }
 
     @Test
@@ -125,7 +132,8 @@ class HomeServiceTest {
         when(replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(100L))).thenReturn(List.of());
         when(bookRepository.findAllWithAuthorsByIdIn(List.of(1L))).thenReturn(List.of(book));
         when(reviewMemberReader.findByActorIds(List.of(1L))).thenReturn(Map.of(
-                1L, new ReviewMemberProfile(
+                1L,
+                new ReviewMemberProfile(
                         101L,
                         null,
                         null,
@@ -151,13 +159,17 @@ class HomeServiceTest {
         assertThat(author.profileStatus()).isEqualTo(AuthorProfileStatus.UNAVAILABLE);
     }
 
-    private static HomeService homeService(ReviewRepository reviewRepository, ReplyRepository replyRepository,
-                                           BookRepository bookRepository) {
+    private static HomeService homeService(
+            ReviewRepository reviewRepository,
+            ReplyRepository replyRepository,
+            BookRepository bookRepository
+    ) {
         CurrentActorProvider currentActorProvider = mock(CurrentActorProvider.class);
         ReviewMemberReader reviewMemberReader = mock(ReviewMemberReader.class);
         when(currentActorProvider.findCurrentActor()).thenReturn(Optional.empty());
         when(reviewMemberReader.findByActorIds(anyCollection())).thenReturn(Map.of(
-                1L, new ReviewMemberProfile(
+                1L,
+                new ReviewMemberProfile(
                         101L,
                         "책 읽는 사람",
                         "https://example.com/profile-1.jpg",
@@ -166,7 +178,8 @@ class HomeServiceTest {
                         AccountStatus.ACTIVE,
                         ActorType.MEMBER
                 ),
-                2L, new ReviewMemberProfile(
+                2L,
+                new ReviewMemberProfile(
                         102L,
                         "닉네임",
                         "https://example.com/profile.jpg",
@@ -220,7 +233,13 @@ class HomeServiceTest {
         return countProjection;
     }
 
-    private static Review review(long id, long bookId, long actorId, String content, Instant createdAt) {
+    private static Review review(
+            long id,
+            long bookId,
+            long actorId,
+            String content,
+            Instant createdAt
+    ) {
         Review review = mock(Review.class);
         when(review.getId()).thenReturn(id);
         when(review.getBookId()).thenReturn(bookId);

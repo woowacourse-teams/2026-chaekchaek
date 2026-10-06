@@ -49,8 +49,10 @@ class SecurityContextCurrentMemberIdProviderTest {
         // when & then
         assertThat(provider.findCurrentMemberId()).isEmpty();
         assertThatThrownBy(provider::getCurrentMemberId)
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED)
+        );
     }
 
     @Test
@@ -78,7 +80,9 @@ class SecurityContextCurrentMemberIdProviderTest {
         when(memberRepository.findById(42L)).thenReturn(Optional.of(member));
         authenticate("42");
         assertThatThrownBy(provider::getCurrentMemberId)
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED)
+        );
     }
 }

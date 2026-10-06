@@ -33,9 +33,7 @@ public class MemberController {
     private final AuthCookieProvider authCookieProvider;
 
     @GetMapping()
-    public ResponseEntity<MyInfoResponse> getMyInfo(
-            @AuthenticationPrincipal Jwt jwt
-    ) {
+    public ResponseEntity<MyInfoResponse> getMyInfo(@AuthenticationPrincipal Jwt jwt) {
         Long memberId = Long.valueOf(jwt.getSubject());
 
         return ResponseEntity.ok(memberService.getMyInfo(memberId));
@@ -52,12 +50,20 @@ public class MemberController {
                 ? "ACCESS_TOKEN_COOKIE"
                 : "AUTHORIZATION_HEADER";
         String userAgent = httpRequest.getHeader(HttpHeaders.USER_AGENT);
-        log.info("Nickname update requested: memberId={}, authSource={}, userAgent={}",
-                memberId, authSource, userAgent);
+        log.info(
+                "Nickname update requested: memberId={}, authSource={}, userAgent={}",
+                memberId,
+                authSource,
+                userAgent
+        );
 
         MemberResponse response = memberService.updateNickname(memberId, request.nickname());
-        log.info("Nickname update committed: memberId={}, authSource={}, userAgent={}",
-                memberId, authSource, userAgent);
+        log.info(
+                "Nickname update committed: memberId={}, authSource={}, userAgent={}",
+                memberId,
+                authSource,
+                userAgent
+        );
 
         return ResponseEntity.ok(response);
     }
@@ -74,9 +80,7 @@ public class MemberController {
     }
 
     @DeleteMapping()
-    public ResponseEntity<Void> withdraw(
-            @AuthenticationPrincipal Jwt jwt
-    ) {
+    public ResponseEntity<Void> withdraw(@AuthenticationPrincipal Jwt jwt) {
         Long memberId = Long.valueOf(jwt.getSubject());
         memberService.withdraw(memberId);
 

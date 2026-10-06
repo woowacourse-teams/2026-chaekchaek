@@ -43,11 +43,23 @@ class BookSearchResponseTest {
 
         // then
         assertThat(json.propertyNames()).containsExactlyInAnyOrder(
-                "totalCount", "nextPage", "items"
+                "totalCount",
+                "nextPage",
+                "items"
         );
         assertThat(json.at("/items/0").propertyNames()).containsExactlyInAnyOrder(
-                "bookId", "title", "coverImageUrl", "authors", "translators", "publishedDate",
-                "isbn13", "category", "publisher", "reviewCount", "replyCount", "isRegisteredInMyLibrary"
+                "bookId",
+                "title",
+                "coverImageUrl",
+                "authors",
+                "translators",
+                "publishedDate",
+                "isbn13",
+                "category",
+                "publisher",
+                "reviewCount",
+                "replyCount",
+                "isRegisteredInMyLibrary"
         );
         assertThat(json.at("/items/0/isRegisteredInMyLibrary").isNull()).isTrue();
     }

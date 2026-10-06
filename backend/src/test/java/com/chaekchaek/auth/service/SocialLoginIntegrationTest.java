@@ -70,16 +70,32 @@ public class SocialLoginIntegrationTest {
         long oldActorId = actorRepository.findByMemberId(oldMember.getId()).orElseThrow().getId();
         String oldAnonymousName = oldMember.getAnonymousNickname();
         var review = reviewRepository.save(Review.create(
-                1L, oldActorId, "기존 감상", null, null, null, false, false));
+                1L,
+                oldActorId,
+                "기존 감상",
+                null,
+                null,
+                null,
+                false,
+                false
+        ));
         authenticate(oldMember.getId());
-        var oldReply = reviewService.createReply(review.getId(),
-                new ReplyCreateRequest("기존 공개 답글"));
+        var oldReply = reviewService.createReply(
+                review.getId(),
+                new ReplyCreateRequest("기존 공개 답글")
+        );
         var deletedReply = replyRepository.save(Reply.create(
-                review.getId(), oldActorId, "삭제 답글", false));
+                review.getId(),
+                oldActorId,
+                "삭제 답글",
+                false
+        ));
         deletedReply.deleteBy(oldActorId);
         memberService.withdraw(oldMember.getId());
-        assertThatThrownBy(() -> reviewService.createReply(review.getId(),
-                new ReplyCreateRequest("탈퇴 토큰 답글")))
+        assertThatThrownBy(() -> reviewService.createReply(
+                review.getId(),
+                new ReplyCreateRequest("탈퇴 토큰 답글")
+        ))
                 .isInstanceOf(BusinessException.class);
         SecurityContextHolder.clearContext();
         entityManager.flush();
@@ -94,8 +110,10 @@ public class SocialLoginIntegrationTest {
         memberService.updateNickname(rejoined.getId(), "새 공개 이름");
         memberService.updateAnonymity(rejoined.getId(), false);
         authenticate(rejoined.getId());
-        var newReply = reviewService.createReply(review.getId(),
-                new ReplyCreateRequest("재가입 공개 답글"));
+        var newReply = reviewService.createReply(
+                review.getId(),
+                new ReplyCreateRequest("재가입 공개 답글")
+        );
         assertThat(newReply.author().displayName()).isEqualTo("새 공개 이름");
         assertThat(newReply.author().memberId()).isEqualTo(rejoined.getId());
         assertThat(newReply.author().profileStatus())
@@ -108,8 +126,10 @@ public class SocialLoginIntegrationTest {
         assertThat(replyRepository.findById(oldReply.replyId()).orElseThrow().getActorId()).isEqualTo(oldActorId);
         assertThat(reviewRepository.findById(review.getId()).orElseThrow().getActorId()).isEqualTo(oldActorId);
         assertThat(replyRepository.findById(deletedReply.getId()).orElseThrow().isDeleted()).isTrue();
-        assertThatThrownBy(() -> reviewService.updateReply(oldReply.replyId(),
-                new ReplyUpdateRequest("수정 시도")))
+        assertThatThrownBy(() -> reviewService.updateReply(
+                oldReply.replyId(),
+                new ReplyUpdateRequest("수정 시도")
+        ))
                 .isInstanceOf(BusinessException.class);
         entityManager.flush();
         entityManager.clear();
@@ -155,9 +175,9 @@ public class SocialLoginIntegrationTest {
         // then
         SocialAccount socialAccount = socialAccountRepository
                 .findByProviderAndProviderUserId(
-                        Provider.GOOGLE,
-                        profile.providerUserId()
-                )
+                Provider.GOOGLE,
+                profile.providerUserId()
+        )
                 .orElseThrow();
 
         assertAll(

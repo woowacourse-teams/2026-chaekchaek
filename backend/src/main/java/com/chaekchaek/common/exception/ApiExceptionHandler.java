@@ -30,8 +30,12 @@ public class ApiExceptionHandler {
             ConstraintViolationException.class
     })
     public ProblemDetail handleInvalidRequest(Exception exception, HttpServletRequest request) {
-        log.info("Invalid request: method={}, path={}, exception={}",
-                request.getMethod(), request.getRequestURI(), exception.getClass().getSimpleName());
+        log.info(
+                "Invalid request: method={}, path={}, exception={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception.getClass().getSimpleName()
+        );
         return createProblemDetail(ErrorCode.INVALID_REQUEST, HttpStatus.BAD_REQUEST);
     }
 
@@ -40,34 +44,54 @@ public class ApiExceptionHandler {
         ErrorCode errorCode = exception.getErrorCode();
         HttpStatus status = statusOf(errorCode);
         if (status.is5xxServerError()) {
-            log.warn("Business exception: method={}, path={}, code={}",
-                    request.getMethod(), request.getRequestURI(), errorCode.getCode(), exception);
+            log.warn(
+                    "Business exception: method={}, path={}, code={}",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    errorCode.getCode(),
+                    exception
+            );
         } else {
-            log.info("Business exception: method={}, path={}, code={}",
-                    request.getMethod(), request.getRequestURI(), errorCode.getCode());
+            log.info(
+                    "Business exception: method={}, path={}, code={}",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    errorCode.getCode()
+            );
         }
         return createProblemDetail(errorCode, status);
     }
 
     @ExceptionHandler(BookClientException.class)
     public ProblemDetail handleBookClientException(BookClientException exception, HttpServletRequest request) {
-        log.warn("Book API call failed: method={}, path={}",
-                request.getMethod(), request.getRequestURI(), exception);
+        log.warn(
+                "Book API call failed: method={}, path={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception
+        );
         return createProblemDetail(ErrorCode.EXTERNAL_API_ERROR, HttpStatus.BAD_GATEWAY);
     }
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpectedException(Exception exception, HttpServletRequest request) {
-        log.error("Unexpected server error: method={}, path={}",
-                request.getMethod(), request.getRequestURI(), exception);
+        log.error(
+                "Unexpected server error: method={}, path={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception
+        );
         return createProblemDetail(
                 ErrorCode.INTERNAL_SERVER_ERROR,
-                HttpStatus.INTERNAL_SERVER_ERROR);
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
     }
 
     private ProblemDetail createProblemDetail(ErrorCode errorCode, HttpStatus status) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                status, errorCode.getMessage());
+                status,
+                errorCode.getMessage()
+        );
         problemDetail.setType(URI.create("about:blank"));
         problemDetail.setProperty("code", errorCode.getCode());
         return problemDetail;

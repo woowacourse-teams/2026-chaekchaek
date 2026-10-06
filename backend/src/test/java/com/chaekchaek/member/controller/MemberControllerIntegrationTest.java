@@ -152,7 +152,8 @@ public class MemberControllerIntegrationTest {
                                 .tag(MEMBER_TAG)
                                 .responseSchema(Schema.schema("MyInfoResponse"))
                                 .responseFields(MY_INFO_RESPONSE_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -160,7 +161,10 @@ public class MemberControllerIntegrationTest {
     void should_GetMyInfo_When_AuthorizedWithBearerToken() throws Exception {
         // given
         Member member = memberRepository.save(Member.create(
-                "우아한 달빛 참새", null, LocalDateTime.of(2026, 8, 13, 12, 0)));
+                "우아한 달빛 참새",
+                null,
+                LocalDateTime.of(2026, 8, 13, 12, 0)
+        ));
         Actor actor = actorRepository.save(Actor.member(member, LocalDateTime.of(2026, 8, 13, 12, 0)));
         String accessToken = accessTokenProvider.issue(member);
 
@@ -189,7 +193,8 @@ public class MemberControllerIntegrationTest {
                                 .tag(MEMBER_TAG)
                                 .responseSchema(Schema.schema("ProblemDetail"))
                                 .responseFields(PROBLEM_DETAIL_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -209,7 +214,10 @@ public class MemberControllerIntegrationTest {
     @DisplayName("공개 닉네임을 설정한다")
     void should_UpdateNickname() throws Exception {
         Member member = memberRepository.save(Member.create(
-                "우아한 달빛 참새", "exUrl", LocalDateTime.now()));
+                "우아한 달빛 참새",
+                "exUrl",
+                LocalDateTime.now()
+        ));
         Cookie cookie = accessTokenCookie(member);
 
         mockMvc.perform(patch("/api/v1/members/me/nickname")
@@ -233,7 +241,8 @@ public class MemberControllerIntegrationTest {
                                 .requestFields(UPDATE_NICKNAME_REQUEST_FIELDS)
                                 .responseSchema(Schema.schema("MemberResponse"))
                                 .responseFields(MEMBER_RESPONSE_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -243,7 +252,10 @@ public class MemberControllerIntegrationTest {
         existingMember.updateNickname("책책이");
         memberRepository.save(existingMember);
         Member member = memberRepository.save(Member.create(
-                "우아한 달빛 참새", null, LocalDateTime.now()));
+                "우아한 달빛 참새",
+                null,
+                LocalDateTime.now()
+        ));
 
         mockMvc.perform(patch("/api/v1/members/me/nickname")
                         .with(csrf().asHeader())
@@ -253,15 +265,20 @@ public class MemberControllerIntegrationTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("NICKNAME_ALREADY_EXISTS"))
                 .andDo(problemDetailDocument(
-                        "member-nickname-update-conflict", "닉네임 설정",
-                        "이미 사용 중인 공개 닉네임이면 충돌 오류를 반환한다"));
+                        "member-nickname-update-conflict",
+                        "닉네임 설정",
+                        "이미 사용 중인 공개 닉네임이면 충돌 오류를 반환한다"
+                ));
     }
 
     @Test
     @DisplayName("공개 닉네임 없이 익명 상태 해제를 거부한다")
     void should_RejectDisableAnonymityWithoutNickname() throws Exception {
         Member member = memberRepository.save(Member.create(
-                "우아한 달빛 참새", null, LocalDateTime.now()));
+                "우아한 달빛 참새",
+                null,
+                LocalDateTime.now()
+        ));
 
         mockMvc.perform(patch("/api/v1/members/me/anonymity")
                         .with(csrf().asHeader())
@@ -271,8 +288,10 @@ public class MemberControllerIntegrationTest {
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.code").value("NICKNAME_REQUIRED"))
                 .andDo(problemDetailDocument(
-                        "member-anonymity-update-nickname-required", "익명 여부 수정",
-                        "공개 닉네임을 설정하지 않고 익명을 해제하면 처리 불가 오류를 반환한다"));
+                        "member-anonymity-update-nickname-required",
+                        "익명 여부 수정",
+                        "공개 닉네임을 설정하지 않고 익명을 해제하면 처리 불가 오류를 반환한다"
+                ));
     }
 
     @Test
@@ -302,14 +321,18 @@ public class MemberControllerIntegrationTest {
                                 .requestFields(UPDATE_ANONYMITY_REQUEST_FIELDS)
                                 .responseSchema(Schema.schema("MemberResponse"))
                                 .responseFields(MEMBER_RESPONSE_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
     @DisplayName("공백 닉네임 설정 요청을 거부한다")
     void should_RejectBlankNickname() throws Exception {
         Member member = memberRepository.save(Member.create(
-                "우아한 달빛 참새", null, LocalDateTime.now()));
+                "우아한 달빛 참새",
+                null,
+                LocalDateTime.now()
+        ));
 
         mockMvc.perform(patch("/api/v1/members/me/nickname")
                         .with(csrf().asHeader())
@@ -319,8 +342,10 @@ public class MemberControllerIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
                 .andDo(problemDetailDocument(
-                        "member-nickname-update-invalid", "닉네임 설정",
-                        "닉네임이 공백이거나 100자를 초과하면 잘못된 요청 오류를 반환한다"));
+                        "member-nickname-update-invalid",
+                        "닉네임 설정",
+                        "닉네임이 공백이거나 100자를 초과하면 잘못된 요청 오류를 반환한다"
+                ));
     }
 
     @Test
@@ -333,15 +358,20 @@ public class MemberControllerIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
                 .andDo(problemDetailDocument(
-                        "member-nickname-update-unauthorized", "닉네임 설정",
-                        "유효한 Access Token이 없으면 인증 오류를 반환한다"));
+                        "member-nickname-update-unauthorized",
+                        "닉네임 설정",
+                        "유효한 Access Token이 없으면 인증 오류를 반환한다"
+                ));
     }
 
     @Test
     @DisplayName("익명 여부가 없는 요청을 거부한다")
     void should_RejectMissingAnonymity() throws Exception {
         Member member = memberRepository.save(Member.create(
-                "우아한 달빛 참새", null, LocalDateTime.now()));
+                "우아한 달빛 참새",
+                null,
+                LocalDateTime.now()
+        ));
 
         mockMvc.perform(patch("/api/v1/members/me/anonymity")
                         .with(csrf().asHeader())
@@ -351,8 +381,10 @@ public class MemberControllerIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
                 .andDo(problemDetailDocument(
-                        "member-anonymity-update-invalid", "익명 여부 수정",
-                        "displayAnonymous가 없으면 잘못된 요청 오류를 반환한다"));
+                        "member-anonymity-update-invalid",
+                        "익명 여부 수정",
+                        "displayAnonymous가 없으면 잘못된 요청 오류를 반환한다"
+                ));
     }
 
     @Test
@@ -365,8 +397,10 @@ public class MemberControllerIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
                 .andDo(problemDetailDocument(
-                        "member-anonymity-update-unauthorized", "익명 여부 수정",
-                        "유효한 Access Token이 없으면 인증 오류를 반환한다"));
+                        "member-anonymity-update-unauthorized",
+                        "익명 여부 수정",
+                        "유효한 Access Token이 없으면 인증 오류를 반환한다"
+                ));
     }
 
     @Test
@@ -392,7 +426,8 @@ public class MemberControllerIntegrationTest {
                                 .responseHeaders(ResourceDocumentation
                                         .headerWithName(HttpHeaders.SET_COOKIE)
                                         .description("만료된 인증 쿠키"))
-                                .build())))
+                                .build())
+                ))
                 .andReturn();
 
         assertThat(result.getResponse().getHeaders("Set-Cookie"))
@@ -415,9 +450,7 @@ public class MemberControllerIntegrationTest {
         );
     }
 
-    private RestDocumentationResultHandler problemDetailDocument(
-            String identifier, String summary, String description
-    ) {
+    private RestDocumentationResultHandler problemDetailDocument(String identifier, String summary, String description) {
         return document(
                 identifier,
                 responseFields(PROBLEM_DETAIL_FIELDS),
@@ -439,7 +472,9 @@ public class MemberControllerIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
                 .andDo(problemDetailDocument(
-                        "member-withdraw-unauthorized", "회원 탈퇴",
-                        "유효한 Access Token이 없으면 인증 오류를 반환한다"));
+                        "member-withdraw-unauthorized",
+                        "회원 탈퇴",
+                        "유효한 Access Token이 없으면 인증 오류를 반환한다"
+                ));
     }
 }

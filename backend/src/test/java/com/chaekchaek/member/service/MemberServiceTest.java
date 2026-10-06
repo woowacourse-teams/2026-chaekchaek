@@ -115,10 +115,10 @@ class MemberServiceTest {
         // when & then
         assertThatThrownBy(() -> memberService.getMyInfo(999L))
                 .isInstanceOfSatisfying(
-                        MemberNotFoundException.class,
-                        exception -> assertThat(exception.getErrorCode())
+                MemberNotFoundException.class,
+                exception -> assertThat(exception.getErrorCode())
                                 .isEqualTo(ErrorCode.MEMBER_NOT_FOUND)
-                );
+        );
     }
 
     @Test

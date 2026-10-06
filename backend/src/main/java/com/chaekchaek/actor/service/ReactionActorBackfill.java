@@ -36,7 +36,9 @@ public class ReactionActorBackfill implements ApplicationRunner {
                     + "where actor_id is null");
         }
         Integer missingActorCount = jdbcTemplate.queryForObject(
-                "select count(*) from " + tableName + " where actor_id is null", Integer.class);
+                "select count(*) from " + tableName + " where actor_id is null",
+                Integer.class
+        );
         if (missingActorCount != null && missingActorCount > 0) {
             throw new IllegalStateException("Failed to backfill " + tableName + ".actor_id");
         }
@@ -66,16 +68,29 @@ public class ReactionActorBackfill implements ApplicationRunner {
     }
 
     private boolean isNullable(String tableName, String columnName) throws Exception {
-        return columnMetadata(tableName, columnName,
-                columns -> columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable, null);
+        return columnMetadata(
+                tableName,
+                columnName,
+                columns -> columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable,
+                null
+        );
     }
 
-    private <T> T columnMetadata(String tableName, String columnName, ResultSetReader<T> reader, T missing)
+    private <T> T columnMetadata(
+            String tableName,
+            String columnName,
+            ResultSetReader<T> reader,
+            T missing
+    )
             throws Exception {
         try (var connection = dataSource.getConnection()) {
             DatabaseMetaData metadata = connection.getMetaData();
-            try (ResultSet columns = metadata.getColumns(connection.getCatalog(), null,
-                    tableName.toUpperCase(), columnName.toUpperCase())) {
+            try (ResultSet columns = metadata.getColumns(
+                    connection.getCatalog(),
+                    null,
+                    tableName.toUpperCase(),
+                    columnName.toUpperCase()
+            )) {
                 if (columns.next()) return reader.read(columns);
             }
             try (ResultSet columns = metadata.getColumns(connection.getCatalog(), null, tableName, columnName)) {
@@ -96,7 +111,12 @@ public class ReactionActorBackfill implements ApplicationRunner {
         return columns;
     }
 
-    private void collectPrimaryKeys(DatabaseMetaData metadata, String catalog, String tableName, Set<String> columns)
+    private void collectPrimaryKeys(
+            DatabaseMetaData metadata,
+            String catalog,
+            String tableName,
+            Set<String> columns
+    )
             throws Exception {
         try (ResultSet keys = metadata.getPrimaryKeys(catalog, null, tableName)) {
             while (keys.next()) columns.add(keys.getString("COLUMN_NAME").toUpperCase());

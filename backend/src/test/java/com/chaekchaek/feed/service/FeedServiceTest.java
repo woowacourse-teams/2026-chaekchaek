@@ -56,7 +56,8 @@ class FeedServiceTest {
         when(books.findAllWithAuthorsByIdIn(List.of(42L))).thenReturn(List.of(book));
         when(currentActor.findCurrentActor()).thenReturn(Optional.empty());
         when(members.findByActorIds(List.of(7L))).thenReturn(Map.of(
-                7L, new ReviewMemberProfile(
+                7L,
+                new ReviewMemberProfile(
                         1L,
                         null,
                         null,
@@ -64,9 +65,15 @@ class FeedServiceTest {
                         true,
                         AccountStatus.WITHDRAWN,
                         ActorType.MEMBER
-                )));
-        ReviewSummaryReader reader = new ReviewSummaryReader(mock(ReplyRepository.class),
-                mock(ReviewReactionRepository.class), books, currentActor, members);
+                )
+        ));
+        ReviewSummaryReader reader = new ReviewSummaryReader(
+                mock(ReplyRepository.class),
+                mock(ReviewReactionRepository.class),
+                books,
+                currentActor,
+                members
+        );
 
         AuthorResponse author = new FeedService(reviews, reader).getReviews(1).reviews().getFirst().author();
 

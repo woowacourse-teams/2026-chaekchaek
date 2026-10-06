@@ -41,10 +41,18 @@ class GuestInteractionAuthorizationIntegrationTest {
         // given
         String guestToken = issueGuestToken();
         Book book = bookRepository.save(Book.create(
-                new Isbn13("9788925568683"), "마션", "https://example.com/martian.jpg",
-                "https://example.com/martian.jpg/side", "https://example.com/martian.jpg/back",
-                "책 설명", List.of("앤디 위어"), List.of(),
-                "알에이치코리아", "SF", LocalDate.of(2026, 1, 1), 308
+                new Isbn13("9788925568683"),
+                "마션",
+                "https://example.com/martian.jpg",
+                "https://example.com/martian.jpg/side",
+                "https://example.com/martian.jpg/back",
+                "책 설명",
+                List.of("앤디 위어"),
+                List.of(),
+                "알에이치코리아",
+                "SF",
+                LocalDate.of(2026, 1, 1),
+                308
         ));
 
         // when & then

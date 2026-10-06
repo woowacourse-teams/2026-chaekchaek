@@ -41,8 +41,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 @ExtendWith(MockitoExtension.class)
 class LibraryServiceTest {
 
-    private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-08-14T00:00:00Z"),
-            ZoneOffset.UTC);
+    private static final Clock CLOCK = Clock.fixed(
+            Instant.parse("2026-08-14T00:00:00Z"),
+            ZoneOffset.UTC
+    );
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
 
     @Mock
@@ -79,9 +81,11 @@ class LibraryServiceTest {
 
         // when & then
         assertThatThrownBy(() -> service.bulkChangeStatus(1L, List.of(2L, 3L), ReadingStatus.FINISHED))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.INVALID_READING_STATE));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.INVALID_READING_STATE)
+        );
         assertThat(knownItem.getStatus()).isEqualTo(ReadingStatus.READING);
         assertThat(unknownItem.getStatus()).isEqualTo(ReadingStatus.READING);
     }
@@ -118,11 +122,17 @@ class LibraryServiceTest {
         when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(targetBook));
         when(libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
-                        1L, 10L, new BigDecimal("4.5")))
+                1L,
+                10L,
+                new BigDecimal("4.5")
+        ))
                 .thenReturn(Optional.empty());
         when(libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
-                        1L, 10L, new BigDecimal("4.5")))
+                1L,
+                10L,
+                new BigDecimal("4.5")
+        ))
                 .thenReturn(Optional.empty());
         LibraryService service = service();
 
@@ -139,8 +149,13 @@ class LibraryServiceTest {
         // given
         Book targetBook = mock(Book.class);
         when(targetBook.getId()).thenReturn(10L);
-        LibraryItem sameRatedItem = LibraryItem.create(1L, 9L, ReadingStatus.READING, null,
-                CLOCK.instant());
+        LibraryItem sameRatedItem = LibraryItem.create(
+                1L,
+                9L,
+                ReadingStatus.READING,
+                null,
+                CLOCK.instant()
+        );
         sameRatedItem.rate(new BigDecimal("4.5"), CLOCK.instant().plusSeconds(10));
         Book sameRatedBook = mock(Book.class);
         when(sameRatedBook.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
@@ -150,7 +165,10 @@ class LibraryServiceTest {
         when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(targetBook));
         when(libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
-                        1L, 10L, new BigDecimal("4.5")))
+                1L,
+                10L,
+                new BigDecimal("4.5")
+        ))
                 .thenReturn(Optional.of(sameRatedItem));
         when(bookRepository.findById(9L)).thenReturn(Optional.of(sameRatedBook));
         LibraryService service = service();
@@ -163,13 +181,22 @@ class LibraryServiceTest {
                 .containsExactly(9L, new BigDecimal("4.5"), CLOCK.instant().plusSeconds(10));
         verify(libraryItemRepository)
                 .findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
-                        1L, 10L, new BigDecimal("4.5"));
+                1L,
+                10L,
+                new BigDecimal("4.5")
+        );
         verify(libraryItemRepository)
                 .findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
-                        1L, 10L, new BigDecimal("4.5"));
+                1L,
+                10L,
+                new BigDecimal("4.5")
+        );
         verify(libraryItemRepository)
                 .findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
-                        1L, 10L, new BigDecimal("4.5"));
+                1L,
+                10L,
+                new BigDecimal("4.5")
+        );
     }
 
     @Test
@@ -177,9 +204,19 @@ class LibraryServiceTest {
     void should_OrderByCommentCount_When_ListingLibraryWithCommentSort() {
         // given
         LibraryItem firstItem = LibraryItem.create(
-                1L, 2L, ReadingStatus.WANT_TO_READ, null, CLOCK.instant());
+                1L,
+                2L,
+                ReadingStatus.WANT_TO_READ,
+                null,
+                CLOCK.instant()
+        );
         LibraryItem secondItem = LibraryItem.create(
-                1L, 3L, ReadingStatus.WANT_TO_READ, null, CLOCK.instant());
+                1L,
+                3L,
+                ReadingStatus.WANT_TO_READ,
+                null,
+                CLOCK.instant()
+        );
         Book firstBook = mock(Book.class);
         Book secondBook = mock(Book.class);
         when(firstBook.getId()).thenReturn(2L);
@@ -238,19 +275,38 @@ class LibraryServiceTest {
 
     private void assertLibraryNotFound(long memberId) {
         assertThatThrownBy(() -> service().getPublicLibrary(memberId, 1, null, LibrarySort.RECENT))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND)
+        );
     }
 
     private LibraryService service() {
-        return new LibraryService(libraryItemRepository, bookRepository, bookResolver,
-                commentCountReader, memberRepository, CLOCK, transactionManager);
+        return new LibraryService(
+                libraryItemRepository,
+                bookRepository,
+                bookResolver,
+                commentCountReader,
+                memberRepository,
+                CLOCK,
+                transactionManager
+        );
     }
 
     private Book book(Integer totalPages) {
-        return Book.create(new Isbn13("9788925568683"), "마션", "https://example.com/cover.jpg",
-                "https://example.com/cover.jpg/side", "https://example.com/cover.jpg/back",
-                null, List.of("앤디 위어"),
-                List.of(), "알에이치코리아", "SF", null, totalPages);
+        return Book.create(
+                new Isbn13("9788925568683"),
+                "마션",
+                "https://example.com/cover.jpg",
+                "https://example.com/cover.jpg/side",
+                "https://example.com/cover.jpg/back",
+                null,
+                List.of("앤디 위어"),
+                List.of(),
+                "알에이치코리아",
+                "SF",
+                null,
+                totalPages
+        );
     }
 }

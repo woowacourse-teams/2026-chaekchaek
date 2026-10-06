@@ -221,10 +221,19 @@ class LibraryControllerTest {
     @DisplayName("서재 조회 페이지가 유효하지 않다면 문제 응답을 반환한다")
     void should_ReturnProblemDetail_When_LibraryListPageIsInvalid() throws Exception {
         // when & then
-        expectProblemDetail(mockMvc.perform(get("/api/v1/library").param("page", "0")),
-                HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST, "/api/v1/library")
-                .andDo(problemDetailDocument("library-list-invalid-request", LIBRARY_LIST_SUMMARY,
-                        LIBRARY_LIST_DESCRIPTION, noPathParameters(), libraryListResourceQueryParameters()));
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/library").param("page", "0")),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/library"
+        )
+                .andDo(problemDetailDocument(
+                        "library-list-invalid-request",
+                        LIBRARY_LIST_SUMMARY,
+                        LIBRARY_LIST_DESCRIPTION,
+                        noPathParameters(),
+                        libraryListResourceQueryParameters()
+                ));
     }
 
     @Test
@@ -314,14 +323,21 @@ class LibraryControllerTest {
         when(libraryService.getPublicLibrary(MEMBER_ID, 1, null, LibrarySort.RECENT))
                 .thenThrow(new BusinessException(ErrorCode.LIBRARY_NOT_FOUND));
 
-        expectProblemDetail(mockMvc.perform(get("/api/v1/members/{memberId}/library", MEMBER_ID)
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/members/{memberId}/library", MEMBER_ID)
                         .param("page", "1")),
-                HttpStatus.NOT_FOUND, ErrorCode.LIBRARY_NOT_FOUND,
-                "/api/v1/members/" + MEMBER_ID + "/library")
+                HttpStatus.NOT_FOUND,
+                ErrorCode.LIBRARY_NOT_FOUND,
+                "/api/v1/members/" + MEMBER_ID + "/library"
+        )
                 .andExpect(jsonPath("$.detail").value("공개된 회원의 서재만 접근 가능합니다."))
-                .andDo(problemDetailDocument("public-library-list-not-found",
-                        PUBLIC_LIBRARY_LIST_SUMMARY, PUBLIC_LIBRARY_LIST_DESCRIPTION,
-                        memberIdResourcePathParameters(), libraryListResourceQueryParameters()));
+                .andDo(problemDetailDocument(
+                        "public-library-list-not-found",
+                        PUBLIC_LIBRARY_LIST_SUMMARY,
+                        PUBLIC_LIBRARY_LIST_DESCRIPTION,
+                        memberIdResourcePathParameters(),
+                        libraryListResourceQueryParameters()
+                ));
     }
 
     @Test
@@ -339,8 +355,10 @@ class LibraryControllerTest {
                                 {"isbn13":"9788936433598","status":"READING","totalPages":368}
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(header().string(HttpHeaders.LOCATION,
-                        "http://localhost:8080/api/v1/library/" + BOOK_ID))
+                .andExpect(header().string(
+                        HttpHeaders.LOCATION,
+                        "http://localhost:8080/api/v1/library/" + BOOK_ID
+                ))
                 .andExpect(jsonPath("$.bookId").value(BOOK_ID))
                 .andDo(document(
                         "library-add",
@@ -463,8 +481,11 @@ class LibraryControllerTest {
                                 .build())
                 ));
 
-        verify(libraryService).bulkChangeStatus(MEMBER_ID, List.of(10L, 20L),
-                ReadingStatus.WANT_TO_READ);
+        verify(libraryService).bulkChangeStatus(
+                MEMBER_ID,
+                List.of(10L, 20L),
+                ReadingStatus.WANT_TO_READ
+        );
     }
 
     @Test
@@ -603,33 +624,73 @@ class LibraryControllerTest {
                 .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
 
         // when & then
-        documentProblemDetail(postLibraryItem(), HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
-                "/api/v1/library", "library-add-invalid-request", LIBRARY_ADD_SUMMARY,
-                LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
+        documentProblemDetail(
+                postLibraryItem(),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/library",
+                "library-add-invalid-request",
+                LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND)).when(libraryService)
                 .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
-        documentProblemDetail(postLibraryItem(), HttpStatus.NOT_FOUND, ErrorCode.BOOK_NOT_FOUND,
-                "/api/v1/library", "library-add-book-not-found", LIBRARY_ADD_SUMMARY,
-                LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
+        documentProblemDetail(
+                postLibraryItem(),
+                HttpStatus.NOT_FOUND,
+                ErrorCode.BOOK_NOT_FOUND,
+                "/api/v1/library",
+                "library-add-book-not-found",
+                LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS)).when(libraryService)
                 .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
-        documentProblemDetail(postLibraryItem(), HttpStatus.CONFLICT, ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS,
-                "/api/v1/library", "library-add-already-exists", LIBRARY_ADD_SUMMARY,
-                LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
+        documentProblemDetail(
+                postLibraryItem(),
+                HttpStatus.CONFLICT,
+                ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS,
+                "/api/v1/library",
+                "library-add-already-exists",
+                LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT)).when(libraryService)
                 .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
-        documentProblemDetail(postLibraryItem(), HttpStatus.CONFLICT, ErrorCode.TOTAL_PAGES_CONFLICT,
-                "/api/v1/library", "library-add-total-pages-conflict", LIBRARY_ADD_SUMMARY,
-                LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
+        documentProblemDetail(
+                postLibraryItem(),
+                HttpStatus.CONFLICT,
+                ErrorCode.TOTAL_PAGES_CONFLICT,
+                "/api/v1/library",
+                "library-add-total-pages-conflict",
+                LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.INVALID_READING_STATE)).when(libraryService)
                 .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
-        documentProblemDetail(postLibraryItem(), HttpStatus.UNPROCESSABLE_CONTENT,
-                ErrorCode.INVALID_READING_STATE, "/api/v1/library", "library-add-invalid-reading-state",
-                LIBRARY_ADD_SUMMARY, LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
+        documentProblemDetail(
+                postLibraryItem(),
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                ErrorCode.INVALID_READING_STATE,
+                "/api/v1/library",
+                "library-add-invalid-reading-state",
+                LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
 
     }
 
@@ -641,28 +702,59 @@ class LibraryControllerTest {
                 .update(MEMBER_ID, BOOK_ID, null, 150, 368);
 
         // when & then
-        documentProblemDetail(patchLibraryItem(), HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
-                "/api/v1/library/10", "library-update-invalid-request", LIBRARY_UPDATE_SUMMARY,
-                LIBRARY_UPDATE_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
+        documentProblemDetail(
+                patchLibraryItem(),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/library/10",
+                "library-update-invalid-request",
+                LIBRARY_UPDATE_SUMMARY,
+                LIBRARY_UPDATE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND)).when(libraryService)
                 .update(MEMBER_ID, BOOK_ID, null, 150, 368);
-        documentProblemDetail(patchLibraryItem(), HttpStatus.NOT_FOUND, ErrorCode.LIBRARY_ITEM_NOT_FOUND,
-                "/api/v1/library/10", "library-update-not-found", LIBRARY_UPDATE_SUMMARY,
-                LIBRARY_UPDATE_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
+        documentProblemDetail(
+                patchLibraryItem(),
+                HttpStatus.NOT_FOUND,
+                ErrorCode.LIBRARY_ITEM_NOT_FOUND,
+                "/api/v1/library/10",
+                "library-update-not-found",
+                LIBRARY_UPDATE_SUMMARY,
+                LIBRARY_UPDATE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT)).when(libraryService)
                 .update(MEMBER_ID, BOOK_ID, null, 150, 368);
-        documentProblemDetail(patchLibraryItem(), HttpStatus.CONFLICT, ErrorCode.TOTAL_PAGES_CONFLICT,
-                "/api/v1/library/10", "library-update-total-pages-conflict", LIBRARY_UPDATE_SUMMARY,
-                LIBRARY_UPDATE_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
+        documentProblemDetail(
+                patchLibraryItem(),
+                HttpStatus.CONFLICT,
+                ErrorCode.TOTAL_PAGES_CONFLICT,
+                "/api/v1/library/10",
+                "library-update-total-pages-conflict",
+                LIBRARY_UPDATE_SUMMARY,
+                LIBRARY_UPDATE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.INVALID_READING_STATE)).when(libraryService)
                 .update(MEMBER_ID, BOOK_ID, null, 150, 368);
-        documentProblemDetail(patchLibraryItem(), HttpStatus.UNPROCESSABLE_CONTENT,
-                ErrorCode.INVALID_READING_STATE, "/api/v1/library/10", "library-update-invalid-reading-state",
-                LIBRARY_UPDATE_SUMMARY, LIBRARY_UPDATE_DESCRIPTION, bookIdResourcePathParameters(),
-                noQueryParameters());
+        documentProblemDetail(
+                patchLibraryItem(),
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                ErrorCode.INVALID_READING_STATE,
+                "/api/v1/library/10",
+                "library-update-invalid-reading-state",
+                LIBRARY_UPDATE_SUMMARY,
+                LIBRARY_UPDATE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
     }
 
     @Test
@@ -672,45 +764,87 @@ class LibraryControllerTest {
         doThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND)).when(libraryService).delete(MEMBER_ID, BOOK_ID);
 
         // when & then
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/library/{bookId}", BOOK_ID)), HttpStatus.NOT_FOUND,
-                ErrorCode.BOOK_NOT_FOUND, "/api/v1/library/10", "library-delete-book-not-found",
-                LIBRARY_DELETE_SUMMARY, LIBRARY_DELETE_DESCRIPTION, bookIdResourcePathParameters(),
-                noQueryParameters());
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/library/{bookId}", BOOK_ID)),
+                HttpStatus.NOT_FOUND,
+                ErrorCode.BOOK_NOT_FOUND,
+                "/api/v1/library/10",
+                "library-delete-book-not-found",
+                LIBRARY_DELETE_SUMMARY,
+                LIBRARY_DELETE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.INVALID_REQUEST)).when(libraryService)
                 .bulkDelete(MEMBER_ID, List.of(10L, 20L));
-        documentProblemDetail(postBulkDelete(), HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
-                "/api/v1/library/bulk-delete", "library-bulk-delete-invalid-request",
-                LIBRARY_BULK_DELETE_SUMMARY, LIBRARY_BULK_DELETE_DESCRIPTION, noPathParameters(),
-                noQueryParameters());
+        documentProblemDetail(
+                postBulkDelete(),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/library/bulk-delete",
+                "library-bulk-delete-invalid-request",
+                LIBRARY_BULK_DELETE_SUMMARY,
+                LIBRARY_BULK_DELETE_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND)).when(libraryService)
                 .bulkDelete(MEMBER_ID, List.of(10L, 20L));
-        documentProblemDetail(postBulkDelete(), HttpStatus.NOT_FOUND, ErrorCode.LIBRARY_ITEM_NOT_FOUND,
-                "/api/v1/library/bulk-delete", "library-bulk-delete-not-found",
-                LIBRARY_BULK_DELETE_SUMMARY, LIBRARY_BULK_DELETE_DESCRIPTION, noPathParameters(),
-                noQueryParameters());
+        documentProblemDetail(
+                postBulkDelete(),
+                HttpStatus.NOT_FOUND,
+                ErrorCode.LIBRARY_ITEM_NOT_FOUND,
+                "/api/v1/library/bulk-delete",
+                "library-bulk-delete-not-found",
+                LIBRARY_BULK_DELETE_SUMMARY,
+                LIBRARY_BULK_DELETE_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.INVALID_REQUEST)).when(libraryService)
                 .bulkChangeStatus(MEMBER_ID, List.of(10L, 20L), ReadingStatus.WANT_TO_READ);
-        documentProblemDetail(patchBulkStatus(), HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
-                "/api/v1/library/bulk-status", "library-bulk-status-invalid-request",
-                LIBRARY_BULK_STATUS_SUMMARY, LIBRARY_BULK_STATUS_DESCRIPTION, noPathParameters(),
-                noQueryParameters());
+        documentProblemDetail(
+                patchBulkStatus(),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/library/bulk-status",
+                "library-bulk-status-invalid-request",
+                LIBRARY_BULK_STATUS_SUMMARY,
+                LIBRARY_BULK_STATUS_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND)).when(libraryService)
                 .bulkChangeStatus(MEMBER_ID, List.of(10L, 20L), ReadingStatus.WANT_TO_READ);
-        documentProblemDetail(patchBulkStatus(), HttpStatus.NOT_FOUND, ErrorCode.LIBRARY_ITEM_NOT_FOUND,
-                "/api/v1/library/bulk-status", "library-bulk-status-not-found",
-                LIBRARY_BULK_STATUS_SUMMARY, LIBRARY_BULK_STATUS_DESCRIPTION, noPathParameters(),
-                noQueryParameters());
+        documentProblemDetail(
+                patchBulkStatus(),
+                HttpStatus.NOT_FOUND,
+                ErrorCode.LIBRARY_ITEM_NOT_FOUND,
+                "/api/v1/library/bulk-status",
+                "library-bulk-status-not-found",
+                LIBRARY_BULK_STATUS_SUMMARY,
+                LIBRARY_BULK_STATUS_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.INVALID_READING_STATE)).when(libraryService)
                 .bulkChangeStatus(MEMBER_ID, List.of(10L, 20L), ReadingStatus.WANT_TO_READ);
-        documentProblemDetail(patchBulkStatus(), HttpStatus.UNPROCESSABLE_CONTENT,
-                ErrorCode.INVALID_READING_STATE, "/api/v1/library/bulk-status",
-                "library-bulk-status-invalid-reading-state", LIBRARY_BULK_STATUS_SUMMARY,
-                LIBRARY_BULK_STATUS_DESCRIPTION, noPathParameters(), noQueryParameters());
+        documentProblemDetail(
+                patchBulkStatus(),
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                ErrorCode.INVALID_READING_STATE,
+                "/api/v1/library/bulk-status",
+                "library-bulk-status-invalid-reading-state",
+                LIBRARY_BULK_STATUS_SUMMARY,
+                LIBRARY_BULK_STATUS_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
     }
 
     @Test
@@ -721,22 +855,45 @@ class LibraryControllerTest {
                 .rate(MEMBER_ID, BOOK_ID, new BigDecimal("4.5"));
 
         // when & then
-        documentProblemDetail(putRating(), HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
-                "/api/v1/library/10/rating", "library-rate-invalid-request", LIBRARY_RATE_SUMMARY,
-                LIBRARY_RATE_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
+        documentProblemDetail(
+                putRating(),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/library/10/rating",
+                "library-rate-invalid-request",
+                LIBRARY_RATE_SUMMARY,
+                LIBRARY_RATE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND)).when(libraryService)
                 .rate(MEMBER_ID, BOOK_ID, new BigDecimal("4.5"));
-        documentProblemDetail(putRating(), HttpStatus.NOT_FOUND, ErrorCode.BOOK_NOT_FOUND,
-                "/api/v1/library/10/rating", "library-rate-book-not-found", LIBRARY_RATE_SUMMARY,
-                LIBRARY_RATE_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
+        documentProblemDetail(
+                putRating(),
+                HttpStatus.NOT_FOUND,
+                ErrorCode.BOOK_NOT_FOUND,
+                "/api/v1/library/10/rating",
+                "library-rate-book-not-found",
+                LIBRARY_RATE_SUMMARY,
+                LIBRARY_RATE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND)).when(libraryService)
                 .removeRating(MEMBER_ID, BOOK_ID);
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/library/{bookId}/rating", BOOK_ID)),
-                HttpStatus.NOT_FOUND, ErrorCode.BOOK_NOT_FOUND, "/api/v1/library/10/rating",
-                "library-remove-rating-book-not-found", LIBRARY_REMOVE_RATING_SUMMARY,
-                LIBRARY_REMOVE_RATING_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/library/{bookId}/rating", BOOK_ID)),
+                HttpStatus.NOT_FOUND,
+                ErrorCode.BOOK_NOT_FOUND,
+                "/api/v1/library/10/rating",
+                "library-remove-rating-book-not-found",
+                LIBRARY_REMOVE_RATING_SUMMARY,
+                LIBRARY_REMOVE_RATING_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
     }
 
     @Test
@@ -747,17 +904,31 @@ class LibraryControllerTest {
                 .compareRatingsByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5"));
 
         // when & then
-        documentProblemDetail(getRatingComparison(), HttpStatus.BAD_REQUEST, ErrorCode.INVALID_REQUEST,
-                "/api/v1/members/me/ratings/comparison", "library-rating-comparison-invalid-request",
-                RATING_COMPARISON_SUMMARY, RATING_COMPARISON_DESCRIPTION, noPathParameters(),
-                ratingComparisonResourceQueryParameters());
+        documentProblemDetail(
+                getRatingComparison(),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/members/me/ratings/comparison",
+                "library-rating-comparison-invalid-request",
+                RATING_COMPARISON_SUMMARY,
+                RATING_COMPARISON_DESCRIPTION,
+                noPathParameters(),
+                ratingComparisonResourceQueryParameters()
+        );
 
         doThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND)).when(libraryService)
                 .compareRatingsByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5"));
-        documentProblemDetail(getRatingComparison(), HttpStatus.NOT_FOUND, ErrorCode.BOOK_NOT_FOUND,
-                "/api/v1/members/me/ratings/comparison", "library-rating-comparison-book-not-found",
-                RATING_COMPARISON_SUMMARY, RATING_COMPARISON_DESCRIPTION, noPathParameters(),
-                ratingComparisonResourceQueryParameters());
+        documentProblemDetail(
+                getRatingComparison(),
+                HttpStatus.NOT_FOUND,
+                ErrorCode.BOOK_NOT_FOUND,
+                "/api/v1/members/me/ratings/comparison",
+                "library-rating-comparison-book-not-found",
+                RATING_COMPARISON_SUMMARY,
+                RATING_COMPARISON_DESCRIPTION,
+                noPathParameters(),
+                ratingComparisonResourceQueryParameters()
+        );
     }
 
     @Test
@@ -767,43 +938,112 @@ class LibraryControllerTest {
         when(currentMemberIdProvider.getCurrentMemberId()).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
 
         // when & then
-        documentProblemDetail(mockMvc.perform(get("/api/v1/library").param("page", "1")),
-                HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "/api/v1/library",
-                "library-list-unauthorized", LIBRARY_LIST_SUMMARY, LIBRARY_LIST_DESCRIPTION,
-                noPathParameters(), libraryListResourceQueryParameters());
-        documentProblemDetail(postLibraryItem(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
-                "/api/v1/library", "library-add-unauthorized", LIBRARY_ADD_SUMMARY,
-                LIBRARY_ADD_DESCRIPTION, noPathParameters(), noQueryParameters());
-        documentProblemDetail(patchLibraryItem(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
-                "/api/v1/library/10", "library-update-unauthorized", LIBRARY_UPDATE_SUMMARY,
-                LIBRARY_UPDATE_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/library/{bookId}", BOOK_ID)),
-                HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "/api/v1/library/10",
-                "library-delete-unauthorized", LIBRARY_DELETE_SUMMARY, LIBRARY_DELETE_DESCRIPTION,
-                bookIdResourcePathParameters(), noQueryParameters());
-        documentProblemDetail(postBulkDelete(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
-                "/api/v1/library/bulk-delete", "library-bulk-delete-unauthorized",
-                LIBRARY_BULK_DELETE_SUMMARY, LIBRARY_BULK_DELETE_DESCRIPTION, noPathParameters(),
-                noQueryParameters());
-        documentProblemDetail(patchBulkStatus(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
-                "/api/v1/library/bulk-status", "library-bulk-status-unauthorized",
-                LIBRARY_BULK_STATUS_SUMMARY, LIBRARY_BULK_STATUS_DESCRIPTION, noPathParameters(),
-                noQueryParameters());
-        documentProblemDetail(putRating(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
-                "/api/v1/library/10/rating", "library-rate-unauthorized", LIBRARY_RATE_SUMMARY,
-                LIBRARY_RATE_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/library/{bookId}/rating", BOOK_ID)),
-                HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, "/api/v1/library/10/rating",
-                "library-remove-rating-unauthorized", LIBRARY_REMOVE_RATING_SUMMARY,
-                LIBRARY_REMOVE_RATING_DESCRIPTION, bookIdResourcePathParameters(), noQueryParameters());
-        documentProblemDetail(getRatingComparison(), HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED,
-                "/api/v1/members/me/ratings/comparison", "library-rating-comparison-unauthorized",
-                RATING_COMPARISON_SUMMARY, RATING_COMPARISON_DESCRIPTION, noPathParameters(),
-                ratingComparisonResourceQueryParameters());
+        documentProblemDetail(
+                mockMvc.perform(get("/api/v1/library").param("page", "1")),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/library",
+                "library-list-unauthorized",
+                LIBRARY_LIST_SUMMARY,
+                LIBRARY_LIST_DESCRIPTION,
+                noPathParameters(),
+                libraryListResourceQueryParameters()
+        );
+        documentProblemDetail(
+                postLibraryItem(),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/library",
+                "library-add-unauthorized",
+                LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                patchLibraryItem(),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/library/10",
+                "library-update-unauthorized",
+                LIBRARY_UPDATE_SUMMARY,
+                LIBRARY_UPDATE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/library/{bookId}", BOOK_ID)),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/library/10",
+                "library-delete-unauthorized",
+                LIBRARY_DELETE_SUMMARY,
+                LIBRARY_DELETE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                postBulkDelete(),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/library/bulk-delete",
+                "library-bulk-delete-unauthorized",
+                LIBRARY_BULK_DELETE_SUMMARY,
+                LIBRARY_BULK_DELETE_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                patchBulkStatus(),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/library/bulk-status",
+                "library-bulk-status-unauthorized",
+                LIBRARY_BULK_STATUS_SUMMARY,
+                LIBRARY_BULK_STATUS_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                putRating(),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/library/10/rating",
+                "library-rate-unauthorized",
+                LIBRARY_RATE_SUMMARY,
+                LIBRARY_RATE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/library/{bookId}/rating", BOOK_ID)),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/library/10/rating",
+                "library-remove-rating-unauthorized",
+                LIBRARY_REMOVE_RATING_SUMMARY,
+                LIBRARY_REMOVE_RATING_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                getRatingComparison(),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/members/me/ratings/comparison",
+                "library-rating-comparison-unauthorized",
+                RATING_COMPARISON_SUMMARY,
+                RATING_COMPARISON_DESCRIPTION,
+                noPathParameters(),
+                ratingComparisonResourceQueryParameters()
+        );
     }
 
     private ResultActions expectProblemDetail(
-            ResultActions result, HttpStatus status, ErrorCode errorCode, String instance
+            ResultActions result,
+            HttpStatus status,
+            ErrorCode errorCode,
+            String instance
     )
             throws Exception {
         return result
@@ -817,10 +1057,14 @@ class LibraryControllerTest {
     }
 
     private RestDocumentationResultHandler problemDetailDocument(
-            String identifier, String summary, String description,
-            ParameterDescriptorWithType[] pathParameters, ParameterDescriptorWithType[] queryParameters
+            String identifier,
+            String summary,
+            String description,
+            ParameterDescriptorWithType[] pathParameters,
+            ParameterDescriptorWithType[] queryParameters
     ) {
-        return document(identifier,
+        return document(
+                identifier,
                 responseFields(PROBLEM_DETAIL_FIELDS),
                 resource(ResourceSnippetParameters.builder()
                         .summary(summary)
@@ -830,13 +1074,20 @@ class LibraryControllerTest {
                         .queryParameters(queryParameters)
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_DETAIL_FIELDS)
-                        .build()));
+                        .build())
+        );
     }
 
     private void documentProblemDetail(
-            ResultActions result, HttpStatus status, ErrorCode errorCode, String instance,
-            String identifier, String summary, String description,
-            ParameterDescriptorWithType[] pathParameters, ParameterDescriptorWithType[] queryParameters
+            ResultActions result,
+            HttpStatus status,
+            ErrorCode errorCode,
+            String instance,
+            String identifier,
+            String summary,
+            String description,
+            ParameterDescriptorWithType[] pathParameters,
+            ParameterDescriptorWithType[] queryParameters
     ) throws Exception {
         expectProblemDetail(result, status, errorCode, instance)
                 .andDo(problemDetailDocument(identifier, summary, description, pathParameters, queryParameters));
@@ -1147,8 +1398,14 @@ class LibraryControllerTest {
         );
     }
 
-    private RatingComparisonBookResponse comparisonBook(Long bookId, String isbn13, String title, String author,
-                                                         String rating, Instant ratingUpdatedAt) {
+    private RatingComparisonBookResponse comparisonBook(
+            Long bookId,
+            String isbn13,
+            String title,
+            String author,
+            String rating,
+            Instant ratingUpdatedAt
+    ) {
         return new RatingComparisonBookResponse(
                 bookId,
                 isbn13,

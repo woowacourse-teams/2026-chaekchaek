@@ -197,7 +197,12 @@ class BookSearchServiceTest {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookSearchService service = new BookSearchService(
-                bookClient, bookRepository, activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                bookClient,
+                bookRepository,
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
         BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
         Book registeredBook = registeredBook(42L, searchedBook.isbn13());
         LibraryItem libraryItem = mock(LibraryItem.class);
@@ -319,7 +324,12 @@ class BookSearchServiceTest {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookSearchService service = new BookSearchService(
-                bookClient, bookRepository, activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                bookClient,
+                bookRepository,
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
         BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
         Book registeredBook = registeredBook(42L, searchedBook.isbn13());
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(

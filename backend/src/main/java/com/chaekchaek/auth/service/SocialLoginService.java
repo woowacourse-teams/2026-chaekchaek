@@ -77,16 +77,15 @@ public class SocialLoginService {
         );
     }
 
-    private Member loginOrSignUpFromCurrentActor(
-            Provider provider,
-            String providerUserId,
-            String profileImageUrl
-    ) {
+    private Member loginOrSignUpFromCurrentActor(Provider provider, String providerUserId, String profileImageUrl) {
         return socialAccountRepository
                 .findForLogin(provider, providerUserId)
-                .map(account -> loginExisting(account, profileImageUrl,
+                .map(account -> loginExisting(
+                        account,
+                        profileImageUrl,
                         account.getMember().getAccountStatus() == AccountStatus.WITHDRAWN
-                                ? currentGuestActorId() : null))
+                                ? currentGuestActorId() : null
+                ))
                 .orElseGet(() -> signUp(
                         provider,
                         providerUserId,
@@ -146,8 +145,12 @@ public class SocialLoginService {
         );
         socialAccountRepository.save(socialAccount);
 
-        log.info("Social sign up: provider={}, memberId={}, fromGuest={}",
-                provider, member.getId(), guestActor != null);
+        log.info(
+                "Social sign up: provider={}, memberId={}, fromGuest={}",
+                provider,
+                member.getId(),
+                guestActor != null
+        );
         return member;
     }
 
@@ -188,11 +191,7 @@ public class SocialLoginService {
     }
 
     @Transactional
-    public void updateProviderRefreshToken(
-            Provider provider,
-            String providerUserId,
-            String refreshToken
-    ) {
+    public void updateProviderRefreshToken(Provider provider, String providerUserId, String refreshToken) {
         socialAccountRepository.findByProviderAndProviderUserId(provider, providerUserId)
                 .orElseThrow(IllegalStateException::new)
                 .updateProviderRefreshToken(refreshToken);

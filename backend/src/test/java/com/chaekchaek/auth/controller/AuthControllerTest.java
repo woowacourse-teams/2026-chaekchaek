@@ -79,7 +79,8 @@ class AuthControllerTest {
                                 .description("refresh_token 쿠키를 사용해 새 access_token과 refresh_token 쿠키를 발급한다")
                                 .tag(AUTH_TAG)
                                 .responseHeaders(SET_COOKIE_HEADER)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -104,7 +105,8 @@ class AuthControllerTest {
                                 .description("refresh_token 쿠키를 폐기하고 access_token·refresh_token 쿠키를 삭제한다")
                                 .tag(AUTH_TAG)
                                 .responseHeaders(SET_COOKIE_HEADER)
-                                .build())));
+                                .build())
+                ));
 
         verify(authTokenService).logout("refresh-token");
     }

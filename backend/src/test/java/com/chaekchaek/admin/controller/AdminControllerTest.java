@@ -94,14 +94,16 @@ class AdminControllerTest {
                 .andExpect(jsonPath("$.books[0].isbn13").value(ISBN13))
                 .andExpect(jsonPath("$.books[0].title").value("마션"))
                 .andExpect(jsonPath("$.books[0].createdAt").value("2026-08-28T00:00:00Z"))
-                .andDo(document("admin-recommended-books",
+                .andDo(document(
+                        "admin-recommended-books",
                         responseFields(recommendedBookListResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary(LIST_SUMMARY)
                                 .description(LIST_DESCRIPTION)
                                 .tag(ADMIN_TAG)
                                 .responseFields(recommendedBookListResponseFields())
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -123,8 +125,12 @@ class AdminControllerTest {
         when(adminService.getRecommendedBooks()).thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
 
         // when & then
-        expectProblemDetail(mockMvc.perform(get("/api/v1/admin/recommended-books")), HttpStatus.FORBIDDEN,
-                ErrorCode.FORBIDDEN, "/api/v1/admin/recommended-books")
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/admin/recommended-books")),
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                "/api/v1/admin/recommended-books"
+        )
                 .andDo(problemDetailDocument("admin-recommended-books-forbidden", LIST_SUMMARY, LIST_DESCRIPTION));
     }
 
@@ -140,7 +146,8 @@ class AdminControllerTest {
                 .andExpect(header().string(HttpHeaders.LOCATION, "/api/v1/admin/recommended-books/" + BOOK_ID))
                 .andExpect(jsonPath("$.bookId").value(BOOK_ID))
                 .andExpect(jsonPath("$.isbn13").value(ISBN13))
-                .andDo(document("admin-recommended-book-add",
+                .andDo(document(
+                        "admin-recommended-book-add",
                         requestFields(addRecommendedBookRequestFields()),
                         responseFields(recommendedBookResponseFields()),
                         responseHeaders(headerWithName(HttpHeaders.LOCATION).description("등록된 추천 도서 URI")),
@@ -153,7 +160,8 @@ class AdminControllerTest {
                                 .responseFields(recommendedBookResponseFields())
                                 .responseHeaders(ResourceDocumentation.headerWithName(HttpHeaders.LOCATION)
                                         .type(SimpleType.STRING).description("등록된 추천 도서 URI"))
-                                .build())));
+                                .build())
+                ));
 
         verify(adminService).addRecommendedBookByIsbn13(new Isbn13(ISBN13));
     }
@@ -163,10 +171,17 @@ class AdminControllerTest {
     @DisplayName("ISBN13이 유효하지 않다면 문제 응답을 반환한다")
     void should_ReturnProblemDetail_When_Isbn13IsInvalid() throws Exception {
         // when & then
-        expectProblemDetail(postRecommendedBook("9788925568680"), HttpStatus.BAD_REQUEST,
-                ErrorCode.INVALID_REQUEST, "/api/v1/admin/recommended-books")
-                .andDo(problemDetailDocument("admin-recommended-book-add-invalid-request", ADD_SUMMARY,
-                        ADD_DESCRIPTION));
+        expectProblemDetail(
+                postRecommendedBook("9788925568680"),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/admin/recommended-books"
+        )
+                .andDo(problemDetailDocument(
+                        "admin-recommended-book-add-invalid-request",
+                        ADD_SUMMARY,
+                        ADD_DESCRIPTION
+                ));
     }
 
     @Test
@@ -177,10 +192,17 @@ class AdminControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.RECOMMENDED_BOOK_LIMIT_EXCEEDED));
 
         // when & then
-        expectProblemDetail(postRecommendedBook(ISBN13), HttpStatus.CONFLICT,
-                ErrorCode.RECOMMENDED_BOOK_LIMIT_EXCEEDED, "/api/v1/admin/recommended-books")
-                .andDo(problemDetailDocument("admin-recommended-book-add-limit-exceeded", ADD_SUMMARY,
-                        ADD_DESCRIPTION));
+        expectProblemDetail(
+                postRecommendedBook(ISBN13),
+                HttpStatus.CONFLICT,
+                ErrorCode.RECOMMENDED_BOOK_LIMIT_EXCEEDED,
+                "/api/v1/admin/recommended-books"
+        )
+                .andDo(problemDetailDocument(
+                        "admin-recommended-book-add-limit-exceeded",
+                        ADD_SUMMARY,
+                        ADD_DESCRIPTION
+                ));
     }
 
     @Test
@@ -189,14 +211,16 @@ class AdminControllerTest {
         // when & then
         mockMvc.perform(delete("/api/v1/admin/recommended-books/{bookId}", BOOK_ID))
                 .andExpect(status().isNoContent())
-                .andDo(document("admin-recommended-book-delete",
+                .andDo(document(
+                        "admin-recommended-book-delete",
                         pathParameters(parameterWithName("bookId").description(BOOK_ID_DESCRIPTION)),
                         resource(ResourceSnippetParameters.builder()
                                 .summary(DELETE_SUMMARY)
                                 .description(DELETE_DESCRIPTION)
                                 .tag(ADMIN_TAG)
                                 .pathParameters(bookIdResourcePathParameter())
-                                .build())));
+                                .build())
+                ));
 
         verify(adminService).deleteRecommendedBook(BOOK_ID);
     }
@@ -209,17 +233,28 @@ class AdminControllerTest {
                 .when(adminService).deleteRecommendedBook(BOOK_ID);
 
         // when & then
-        expectProblemDetail(mockMvc.perform(delete("/api/v1/admin/recommended-books/{bookId}", BOOK_ID)),
-                HttpStatus.NOT_FOUND, ErrorCode.RECOMMENDED_BOOK_NOT_FOUND,
-                "/api/v1/admin/recommended-books/" + BOOK_ID)
-                .andDo(problemDetailDocument("admin-recommended-book-delete-not-found", DELETE_SUMMARY,
-                        DELETE_DESCRIPTION, bookIdResourcePathParameter()));
+        expectProblemDetail(
+                mockMvc.perform(delete("/api/v1/admin/recommended-books/{bookId}", BOOK_ID)),
+                HttpStatus.NOT_FOUND,
+                ErrorCode.RECOMMENDED_BOOK_NOT_FOUND,
+                "/api/v1/admin/recommended-books/" + BOOK_ID
+        )
+                .andDo(problemDetailDocument(
+                        "admin-recommended-book-delete-not-found",
+                        DELETE_SUMMARY,
+                        DELETE_DESCRIPTION,
+                        bookIdResourcePathParameter()
+                ));
     }
 
     private RestDocumentationResultHandler problemDetailDocument(
-            String identifier, String summary, String description, ParameterDescriptorWithType... pathParameters
+            String identifier,
+            String summary,
+            String description,
+            ParameterDescriptorWithType... pathParameters
     ) {
-        return document(identifier,
+        return document(
+                identifier,
                 responseFields(PROBLEM_DETAIL_FIELDS),
                 resource(ResourceSnippetParameters.builder()
                         .summary(summary)
@@ -228,7 +263,8 @@ class AdminControllerTest {
                         .pathParameters(pathParameters)
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_DETAIL_FIELDS)
-                        .build()));
+                        .build())
+        );
     }
 
     private static ParameterDescriptorWithType bookIdResourcePathParameter() {
@@ -242,8 +278,12 @@ class AdminControllerTest {
                 .content("{\"isbn13\":\"" + isbn13 + "\"}"));
     }
 
-    private ResultActions expectProblemDetail(ResultActions result, HttpStatus status, ErrorCode errorCode,
-                                              String instance) throws Exception {
+    private ResultActions expectProblemDetail(
+            ResultActions result,
+            HttpStatus status,
+            ErrorCode errorCode,
+            String instance
+    ) throws Exception {
         return result
                 .andExpect(status().is(status.value()))
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))

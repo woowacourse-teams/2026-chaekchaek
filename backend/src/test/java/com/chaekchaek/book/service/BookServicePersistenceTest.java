@@ -59,27 +59,44 @@ class BookServicePersistenceTest {
     void should_ReturnDetailWithContributors_When_GettingStoredBookOutsideTransaction() {
         // given
         Book savedBook = bookRepository.saveAndFlush(Book.create(
-                new Isbn13("9788925568683"), "마션", "https://image.example/martian.jpg",
-                "https://example.com/cover.jpg/side", "https://example.com/cover.jpg/back",
+                new Isbn13("9788925568683"),
+                "마션",
+                "https://image.example/martian.jpg",
+                "https://example.com/cover.jpg/side",
+                "https://example.com/cover.jpg/back",
                 "책 설명",
-                List.of("앤디 위어", "공동 저자"), List.of("박아람", "공동 번역가"),
-                "알에이치코리아", "SF",
-                LocalDate.of(2026, 1, 1), 308
+                List.of("앤디 위어", "공동 저자"),
+                List.of("박아람", "공동 번역가"),
+                "알에이치코리아",
+                "SF",
+                LocalDate.of(2026, 1, 1),
+                308
         ));
         libraryItemRepository.saveAndFlush(ratedItem(1L, savedBook.getId(), "4.2"));
         libraryItemRepository.saveAndFlush(ratedItem(2L, savedBook.getId(), "4.4"));
         Book anotherBook = bookRepository.saveAndFlush(Book.create(
-                new Isbn13("9781234567897"), "별점 없는 책", "https://image.example/unrated.jpg",
-                "https://image.example/unrated.jpg/side", "https://image.example/unrated.jpg/back",
-                "책 설명", List.of("작가"), List.of(), "출판사", "소설",
-                LocalDate.of(2026, 1, 2), 100
+                new Isbn13("9781234567897"),
+                "별점 없는 책",
+                "https://image.example/unrated.jpg",
+                "https://image.example/unrated.jpg/side",
+                "https://image.example/unrated.jpg/back",
+                "책 설명",
+                List.of("작가"),
+                List.of(),
+                "출판사",
+                "소설",
+                LocalDate.of(2026, 1, 2),
+                100
         ));
         libraryItemRepository.saveAndFlush(unratedItem(1L, anotherBook.getId()));
         when(activityCountReader.getActivityCounts(List.of(savedBook.getId())))
-                .thenReturn(Map.of(savedBook.getId(), new ActivityCounts(
-                        0L,
-                        0L
-                )));
+                .thenReturn(Map.of(
+                        savedBook.getId(),
+                        new ActivityCounts(
+                                0L,
+                                0L
+                        )
+                ));
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
         when(bookResolver.lookup(savedBook.getIsbn13())).thenReturn(savedBook);
 
@@ -101,11 +118,18 @@ class BookServicePersistenceTest {
         // given
         Isbn13 isbn13 = new Isbn13("9788925568683");
         bookRepository.saveAndFlush(Book.create(
-                isbn13, "마션", "https://image.example/martian.jpg",
-                "https://image.example/martian.jpg/side", "https://image.example/martian.jpg/back",
+                isbn13,
+                "마션",
+                "https://image.example/martian.jpg",
+                "https://image.example/martian.jpg/side",
+                "https://image.example/martian.jpg/back",
                 "책 설명",
-                List.of("앤디 위어"), List.of(), "알에이치코리아", "SF",
-                LocalDate.of(2026, 1, 1), 308
+                List.of("앤디 위어"),
+                List.of(),
+                "알에이치코리아",
+                "SF",
+                LocalDate.of(2026, 1, 1),
+                308
         ));
         entityManager.clear();
 
@@ -123,13 +147,23 @@ class BookServicePersistenceTest {
 
     private LibraryItem ratedItem(long memberId, long bookId, String rating) {
         LibraryItem item = LibraryItem.create(
-                memberId, bookId, ReadingStatus.WANT_TO_READ, null, Instant.parse("2026-08-14T00:00:00Z"));
+                memberId,
+                bookId,
+                ReadingStatus.WANT_TO_READ,
+                null,
+                Instant.parse("2026-08-14T00:00:00Z")
+        );
         item.rate(new BigDecimal(rating), Instant.parse("2026-08-14T00:00:00Z"));
         return item;
     }
 
     private LibraryItem unratedItem(long memberId, long bookId) {
         return LibraryItem.create(
-                memberId, bookId, ReadingStatus.WANT_TO_READ, null, Instant.parse("2026-08-14T00:00:00Z"));
+                memberId,
+                bookId,
+                ReadingStatus.WANT_TO_READ,
+                null,
+                Instant.parse("2026-08-14T00:00:00Z")
+        );
     }
 }

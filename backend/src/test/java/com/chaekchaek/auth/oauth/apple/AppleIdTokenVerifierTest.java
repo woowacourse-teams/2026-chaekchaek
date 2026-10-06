@@ -48,7 +48,9 @@ class AppleIdTokenVerifierTest {
     private Jwt jwt(String subject, String nonce) {
         Instant now = Instant.now();
         return new Jwt(
-                "token", now, now.plusSeconds(300),
+                "token",
+                now,
+                now.plusSeconds(300),
                 Map.of("alg", "RS256"),
                 Map.of("sub", subject, "nonce", nonce)
         );

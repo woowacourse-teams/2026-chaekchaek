@@ -51,8 +51,13 @@ public class LibraryItem {
     protected LibraryItem() {
     }
 
-    private LibraryItem(long memberId, long bookId, ReadingStatus status, Integer totalPages,
-                        Instant now) {
+    private LibraryItem(
+            long memberId,
+            long bookId,
+            ReadingStatus status,
+            Integer totalPages,
+            Instant now
+    ) {
         this.memberId = memberId;
         this.bookId = bookId;
         this.status = status;
@@ -61,8 +66,13 @@ public class LibraryItem {
         this.readingUpdatedAt = now;
     }
 
-    public static LibraryItem create(long memberId, long bookId, ReadingStatus status,
-                                     Integer totalPages, Instant now) {
+    public static LibraryItem create(
+            long memberId,
+            long bookId,
+            ReadingStatus status,
+            Integer totalPages,
+            Instant now
+    ) {
         if (status == ReadingStatus.FINISHED && totalPages == null) {
             throw invalidReadingState();
         }

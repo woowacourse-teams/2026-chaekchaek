@@ -37,7 +37,10 @@ class MobileAppleLoginServiceTest {
     @BeforeEach
     void setUp() {
         service = new MobileAppleLoginService(
-                verifier, tokenClient, socialLoginService, authTokenService,
+                verifier,
+                tokenClient,
+                socialLoginService,
+                authTokenService,
                 new AccessTokenProperties(
                         "issuer",
                         "secret",
@@ -80,7 +83,9 @@ class MobileAppleLoginServiceTest {
 
         assertThat(response.accessToken()).isEqualTo("access");
         verify(socialLoginService).updateProviderRefreshToken(
-                Provider.APPLE, "apple-user", "apple-refresh"
+                Provider.APPLE,
+                "apple-user",
+                "apple-refresh"
         );
     }
 }

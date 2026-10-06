@@ -73,11 +73,7 @@ public class Member {
         this.withdrawnAt = withdrawnAt;
     }
 
-    public static Member create(
-            String anonymousNickname,
-            String profileImageUrl,
-            LocalDateTime createdAt
-    ) {
+    public static Member create(String anonymousNickname, String profileImageUrl, LocalDateTime createdAt) {
         validateAnonymousNickname(anonymousNickname);
 
         return new Member(

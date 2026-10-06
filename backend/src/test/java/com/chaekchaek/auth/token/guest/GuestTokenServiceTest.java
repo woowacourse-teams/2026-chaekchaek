@@ -52,9 +52,11 @@ class GuestTokenServiceTest {
 
         // when & then
         assertThatThrownBy(() -> fixture.service.findUsableActor("current-token"))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.UNUSABLE_GUEST_TOKEN));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.UNUSABLE_GUEST_TOKEN)
+        );
     }
 
     @Test
@@ -71,8 +73,14 @@ class GuestTokenServiceTest {
             return saved;
         });
         fillRandomBytes(secureRandom, (byte) 1);
-        GuestTokenService service = new GuestTokenService(actorRepository, hasher,
-                properties(), nicknameGenerator, secureRandom, clock);
+        GuestTokenService service = new GuestTokenService(
+                actorRepository,
+                hasher,
+                properties(),
+                nicknameGenerator,
+                secureRandom,
+                clock
+        );
 
         IssuedGuestToken issued = service.issue();
 
@@ -113,9 +121,11 @@ class GuestTokenServiceTest {
         Actor actor = fixture.actorExpiringAt(fixture.now.plusDays(15));
 
         assertThatThrownBy(() -> fixture.service.refresh("current-token"))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.GUEST_TOKEN_REFRESH_NOT_ALLOWED));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.GUEST_TOKEN_REFRESH_NOT_ALLOWED)
+        );
         assertThat(actor.getGuestTokenHash()).isEqualTo(fixture.hasher.hash("current-token"));
     }
 
@@ -125,9 +135,11 @@ class GuestTokenServiceTest {
         fixture.actorExpiringAt(fixture.now.minusSeconds(1));
 
         assertThatThrownBy(() -> fixture.service.refresh("current-token"))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.UNUSABLE_GUEST_TOKEN));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.UNUSABLE_GUEST_TOKEN)
+        );
     }
 
     @Test
@@ -137,9 +149,11 @@ class GuestTokenServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> fixture.service.refresh("unknown"))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.INVALID_GUEST_TOKEN));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.INVALID_GUEST_TOKEN)
+        );
     }
 
     private static GuestTokenProperties properties() {
@@ -168,13 +182,23 @@ class GuestTokenServiceTest {
         private TestFixture() {
             Clock clock = Clock.fixed(now.toInstant(ZoneOffset.UTC), ZoneOffset.UTC);
             fillRandomBytes(secureRandom, (byte) 2);
-            service = new GuestTokenService(actorRepository, hasher, properties(),
-                    nicknameGenerator, secureRandom, clock);
+            service = new GuestTokenService(
+                    actorRepository,
+                    hasher,
+                    properties(),
+                    nicknameGenerator,
+                    secureRandom,
+                    clock
+            );
         }
 
         private Actor actorExpiringAt(LocalDateTime expiresAt) {
-            Actor actor = Actor.guest(hasher.hash("current-token"), "다정한 파란 참새",
-                    now.minusDays(80), expiresAt);
+            Actor actor = Actor.guest(
+                    hasher.hash("current-token"),
+                    "다정한 파란 참새",
+                    now.minusDays(80),
+                    expiresAt
+            );
             ReflectionTestUtils.setField(actor, "id", 7L);
             when(actorRepository.findByGuestTokenHash(hasher.hash("current-token")))
                     .thenReturn(Optional.of(actor));

@@ -67,10 +67,12 @@ class BookResolveConcurrencyTest {
         try {
             // when
             CompletableFuture<Book> first = CompletableFuture.supplyAsync(
-                    () -> resolver.findOrCreate(ISBN13), executor
+                    () -> resolver.findOrCreate(ISBN13),
+                    executor
             );
             CompletableFuture<Book> second = CompletableFuture.supplyAsync(
-                    () -> resolver.findOrCreate(ISBN13), executor
+                    () -> resolver.findOrCreate(ISBN13),
+                    executor
             );
 
             Book firstResponse = first.get(10, TimeUnit.SECONDS);

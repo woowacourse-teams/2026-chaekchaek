@@ -94,10 +94,14 @@ class GuestActorMigrationIntegrationTest {
                 () -> assertThat(replyReactionRepository.countByReplyId(reply.getId()))
                         .isEqualTo(1),
                 () -> assertThat(reviewReactionRepository.findByReviewIdInAndActorId(
-                        List.of(conflictedReview.getId(), uniqueReview.getId()), guestActor.getId()))
+                        List.of(conflictedReview.getId(), uniqueReview.getId()),
+                        guestActor.getId()
+                ))
                         .hasSize(2),
                 () -> assertThat(replyReactionRepository.findByReplyIdInAndActorId(
-                        List.of(reply.getId()), guestActor.getId()))
+                        List.of(reply.getId()),
+                        guestActor.getId()
+                ))
                         .hasSize(1),
                 () -> assertThat(actorRepository.findById(guestActor.getId()).orElseThrow().getGuestTokenHash())
                         .isNull(),

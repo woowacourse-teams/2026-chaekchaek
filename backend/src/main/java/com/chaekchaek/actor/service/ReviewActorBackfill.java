@@ -37,7 +37,9 @@ public class ReviewActorBackfill implements ApplicationRunner {
             }
         }
         Integer missingActorCount = jdbcTemplate.queryForObject(
-                "select count(*) from " + tableName + " where actor_id is null", Integer.class);
+                "select count(*) from " + tableName + " where actor_id is null",
+                Integer.class
+        );
         if (missingActorCount != null && missingActorCount > 0) {
             throw new IllegalStateException("Failed to backfill " + tableName + ".actor_id");
         }
@@ -53,8 +55,12 @@ public class ReviewActorBackfill implements ApplicationRunner {
     private boolean hasColumn(String tableName, String columnName) throws Exception {
         try (var connection = dataSource.getConnection()) {
             DatabaseMetaData metadata = connection.getMetaData();
-            try (ResultSet columns = metadata.getColumns(connection.getCatalog(), null,
-                    tableName.toUpperCase(), columnName.toUpperCase())) {
+            try (ResultSet columns = metadata.getColumns(
+                    connection.getCatalog(),
+                    null,
+                    tableName.toUpperCase(),
+                    columnName.toUpperCase()
+            )) {
                 if (columns.next()) {
                     return true;
                 }
@@ -68,8 +74,12 @@ public class ReviewActorBackfill implements ApplicationRunner {
     private boolean isNullable(String tableName, String columnName) throws Exception {
         try (var connection = dataSource.getConnection()) {
             DatabaseMetaData metadata = connection.getMetaData();
-            try (ResultSet columns = metadata.getColumns(connection.getCatalog(), null,
-                    tableName.toUpperCase(), columnName.toUpperCase())) {
+            try (ResultSet columns = metadata.getColumns(
+                    connection.getCatalog(),
+                    null,
+                    tableName.toUpperCase(),
+                    columnName.toUpperCase()
+            )) {
                 if (columns.next()) {
                     return columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
                 }

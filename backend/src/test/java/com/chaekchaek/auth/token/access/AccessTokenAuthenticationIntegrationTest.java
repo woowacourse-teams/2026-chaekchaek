@@ -57,7 +57,10 @@ class AccessTokenAuthenticationIntegrationTest {
     @BeforeEach
     void createActiveMember() {
         memberId = memberRepository.save(Member.create(
-                "토큰 검증 회원", null, LocalDateTime.now())).getId();
+                "토큰 검증 회원",
+                null,
+                LocalDateTime.now()
+        )).getId();
     }
 
     @Autowired
@@ -120,9 +123,9 @@ class AccessTokenAuthenticationIntegrationTest {
         // when & then
         mockMvc.perform(get("/test/protected")
                         .header(
-                                HttpHeaders.AUTHORIZATION,
-                                "Bearer " + accessToken
-                        ))
+                HttpHeaders.AUTHORIZATION,
+                "Bearer " + accessToken
+        ))
                 .andExpect(status().isOk())
                 .andExpect(content().string(memberId.toString()));
     }
@@ -136,9 +139,9 @@ class AccessTokenAuthenticationIntegrationTest {
 
         mockMvc.perform(get("/test/protected")
                         .header(
-                                HttpHeaders.AUTHORIZATION,
-                                "Bearer " + tamperedToken
-                        ))
+                HttpHeaders.AUTHORIZATION,
+                "Bearer " + tamperedToken
+        ))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(
                         MediaType.APPLICATION_PROBLEM_JSON

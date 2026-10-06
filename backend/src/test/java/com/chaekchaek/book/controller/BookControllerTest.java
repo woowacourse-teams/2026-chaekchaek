@@ -261,8 +261,11 @@ class BookControllerTest {
                 "BOOK_NOT_FOUND",
                 "책을 찾을 수 없습니다.",
                 "/api/v1/books/by-isbn/9788925568683"
-        ).andDo(problemDetailDocument("book-detail-not-found", BOOK_DETAIL_SUMMARY,
-                "요청한 도서가 존재하지 않는다"));
+        ).andDo(problemDetailDocument(
+                "book-detail-not-found",
+                BOOK_DETAIL_SUMMARY,
+                "요청한 도서가 존재하지 않는다"
+        ));
     }
 
     @Disabled
@@ -451,11 +454,7 @@ class BookControllerTest {
         return problemDetailDocument(identifier, BOOK_SEARCH_SUMMARY, BOOK_SEARCH_DESCRIPTION);
     }
 
-    private RestDocumentationResultHandler problemDetailDocument(
-            String identifier,
-            String summary,
-            String description
-    ) {
+    private RestDocumentationResultHandler problemDetailDocument(String identifier, String summary, String description) {
         return document(
                 identifier,
                 responseFields(PROBLEM_DETAIL_FIELDS),

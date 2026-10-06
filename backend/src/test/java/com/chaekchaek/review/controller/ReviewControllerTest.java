@@ -145,23 +145,33 @@ class ReviewControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalCount").value(1))
                 .andExpect(jsonPath("$.items[0].reviewId").value(101))
-                .andDo(document("review-list",
+                .andDo(document(
+                        "review-list",
                         pathParameters(parameterWithName("bookId").description("도서 ID")),
-                        queryParameters(parameterWithName("page").description("1부터 시작하는 페이지 번호"),
+                        queryParameters(
+                                parameterWithName("page").description("1부터 시작하는 페이지 번호"),
                                 parameterWithName("feed").optional().description("피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL"),
-                                parameterWithName("sort").optional().description("정렬: PAGE, LATEST, OLDEST, POPULAR. 기본값 PAGE")),
+                                parameterWithName("sort").optional().description("정렬: PAGE, LATEST, OLDEST, POPULAR. 기본값 PAGE")
+                        ),
                         responseFields(pageReviewResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("감상 목록 조회")
                                 .description("도서의 감상을 페이지와 피드·정렬 조건으로 조회한다")
                                 .tag(REVIEW_TAG)
                                 .pathParameters(pathParameter("bookId", "도서 ID"))
-                                .queryParameters(queryParameter("page", SimpleType.INTEGER, "1부터 시작하는 페이지 번호"),
-                                        queryParameter("feed", SimpleType.STRING,
-                                                "피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL", true),
-                                        queryParameter("sort", SimpleType.STRING, "정렬 기준. 기본값 PAGE", true))
+                                .queryParameters(
+                                queryParameter("page", SimpleType.INTEGER, "1부터 시작하는 페이지 번호"),
+                                queryParameter(
+                                        "feed",
+                                        SimpleType.STRING,
+                                        "피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL",
+                                        true
+                                ),
+                                queryParameter("sort", SimpleType.STRING, "정렬 기준. 기본값 PAGE", true)
+                        )
                                 .responseFields(pageReviewResponseFields())
-                                .build())));
+                                .build())
+                ));
 
         verify(reviewService).findReviews(42L, 1, Feed.ALL, ReviewSort.PAGE);
     }
@@ -183,7 +193,8 @@ class ReviewControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/v1/reviews/101"))
                 .andExpect(jsonPath("$.reviewId").value(101))
-                .andDo(document("review-create",
+                .andDo(document(
+                        "review-create",
                         pathParameters(parameterWithName("bookId").description("도서 ID")),
                         requestFields(REVIEW_CREATE_REQUEST_FIELDS),
                         responseHeaders(LOCATION_HEADER),
@@ -196,10 +207,13 @@ class ReviewControllerTest {
                                 .requestFields(REVIEW_CREATE_REQUEST_FIELDS)
                                 .responseHeaders(LOCATION_HEADER)
                                 .responseFields(reviewResponseFields(""))
-                                .build())));
+                                .build())
+                ));
 
-        verify(reviewService).createReview(ArgumentMatchers.eq(42L),
-                ArgumentMatchers.any(ReviewCreateRequest.class));
+        verify(reviewService).createReview(
+                ArgumentMatchers.eq(42L),
+                ArgumentMatchers.any(ReviewCreateRequest.class)
+        );
     }
 
     @Test
@@ -222,7 +236,8 @@ class ReviewControllerTest {
                 .andExpect(header().string("Location", "/api/v1/reviews/101"))
                 .andExpect(jsonPath("$.bookId").value(42))
                 .andExpect(jsonPath("$.review.reviewId").value(101))
-                .andDo(document("review-create-by-isbn",
+                .andDo(document(
+                        "review-create-by-isbn",
                         pathParameters(parameterWithName("isbn13").description("ISBN-13")),
                         requestFields(REVIEW_CREATE_REQUEST_FIELDS),
                         responseHeaders(LOCATION_HEADER),
@@ -236,11 +251,13 @@ class ReviewControllerTest {
                                 .requestFields(REVIEW_CREATE_REQUEST_FIELDS)
                                 .responseHeaders(LOCATION_HEADER)
                                 .responseFields(reviewCreateByIsbnResponseFields())
-                                .build())));
+                                .build())
+                ));
 
         verify(reviewService).createReviewByIsbn13(
                 ArgumentMatchers.eq(new Isbn13("9788925568683")),
-                ArgumentMatchers.any(ReviewCreateRequest.class));
+                ArgumentMatchers.any(ReviewCreateRequest.class)
+        );
     }
 
     @Test
@@ -256,7 +273,8 @@ class ReviewControllerTest {
                         .content("{\"content\":\"수정한 감상\",\"isSpoiler\":true}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.reviewId").value(101))
-                .andDo(document("review-update",
+                .andDo(document(
+                        "review-update",
                         pathParameters(parameterWithName("reviewId").description("감상 ID")),
                         requestFields(REVIEW_UPDATE_REQUEST_FIELDS),
                         responseFields(reviewResponseFields("")),
@@ -267,7 +285,8 @@ class ReviewControllerTest {
                                 .pathParameters(pathParameter("reviewId", "감상 ID"))
                                 .requestFields(REVIEW_UPDATE_REQUEST_FIELDS)
                                 .responseFields(reviewResponseFields(""))
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -276,14 +295,16 @@ class ReviewControllerTest {
         // when & then
         mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 101L))
                 .andExpect(status().isNoContent())
-                .andDo(document("review-delete",
+                .andDo(document(
+                        "review-delete",
                         pathParameters(parameterWithName("reviewId").description("감상 ID")),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("감상 삭제")
                                 .description("작성자가 감상을 soft delete한다")
                                 .tag(REVIEW_TAG)
                                 .pathParameters(pathParameter("reviewId", "감상 ID"))
-                                .build())));
+                                .build())
+                ));
 
         verify(reviewService).deleteReview(101L);
     }
@@ -302,7 +323,8 @@ class ReviewControllerTest {
         mockMvc.perform(get("/api/v1/reviews/{reviewId}/replies", 101L).param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].replyId").value(201))
-                .andDo(document("reply-list",
+                .andDo(document(
+                        "reply-list",
                         pathParameters(parameterWithName("reviewId").description("감상 ID")),
                         queryParameters(parameterWithName("page").description("1부터 시작하는 페이지 번호")),
                         responseFields(pageReplyResponseFields()),
@@ -313,7 +335,8 @@ class ReviewControllerTest {
                                 .pathParameters(pathParameter("reviewId", "감상 ID"))
                                 .queryParameters(queryParameter("page", SimpleType.INTEGER, "1부터 시작하는 페이지 번호"))
                                 .responseFields(pageReplyResponseFields())
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -330,7 +353,8 @@ class ReviewControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/v1/replies/201"))
                 .andExpect(jsonPath("$.replyId").value(201))
-                .andDo(document("reply-create",
+                .andDo(document(
+                        "reply-create",
                         pathParameters(parameterWithName("reviewId").description("감상 ID")),
                         requestFields(REPLY_REQUEST_FIELDS),
                         responseHeaders(LOCATION_HEADER),
@@ -343,7 +367,8 @@ class ReviewControllerTest {
                                 .requestFields(REPLY_REQUEST_FIELDS)
                                 .responseHeaders(LOCATION_HEADER)
                                 .responseFields(replyResponseFields(""))
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -359,7 +384,8 @@ class ReviewControllerTest {
                         .content("{\"content\":\"수정한 답글\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.replyId").value(201))
-                .andDo(document("reply-update",
+                .andDo(document(
+                        "reply-update",
                         pathParameters(parameterWithName("replyId").description("답글 ID")),
                         requestFields(REPLY_REQUEST_FIELDS),
                         responseFields(replyResponseFields("")),
@@ -370,7 +396,8 @@ class ReviewControllerTest {
                                 .pathParameters(pathParameter("replyId", "답글 ID"))
                                 .requestFields(REPLY_REQUEST_FIELDS)
                                 .responseFields(replyResponseFields(""))
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -379,14 +406,16 @@ class ReviewControllerTest {
         // when & then
         mockMvc.perform(delete("/api/v1/replies/{replyId}", 201L))
                 .andExpect(status().isNoContent())
-                .andDo(document("reply-delete",
+                .andDo(document(
+                        "reply-delete",
                         pathParameters(parameterWithName("replyId").description("답글 ID")),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("답글 삭제")
                                 .description("작성자가 답글을 soft delete한다")
                                 .tag(REVIEW_TAG)
                                 .pathParameters(pathParameter("replyId", "답글 ID"))
-                                .build())));
+                                .build())
+                ));
 
         verify(reviewService).deleteReply(201L);
     }
@@ -449,10 +478,19 @@ class ReviewControllerTest {
     @DisplayName("감상 목록 페이지가 유효하지 않으면 ProblemDetail을 반환한다")
     void should_ReturnBadRequest_When_ReviewListPageIsInvalid() throws Exception {
         // when & then
-        expectProblemDetail(mockMvc.perform(get("/api/v1/books/{bookId}/reviews", 42L).param("page", "0")),
-                HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "/api/v1/books/42/reviews")
-                .andDo(problemDetailDocument("review-list-invalid-request", "감상 목록 조회",
-                        "도서의 감상을 페이지와 피드·정렬 조건으로 조회한다", "bookId", "도서 ID"));
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/books/{bookId}/reviews", 42L).param("page", "0")),
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "/api/v1/books/42/reviews"
+        )
+                .andDo(problemDetailDocument(
+                        "review-list-invalid-request",
+                        "감상 목록 조회",
+                        "도서의 감상을 페이지와 피드·정렬 조건으로 조회한다",
+                        "bookId",
+                        "도서 ID"
+                ));
 
         verifyNoInteractions(reviewService);
     }
@@ -465,11 +503,20 @@ class ReviewControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
 
         // when & then
-        expectProblemDetail(mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 42L)
+        expectProblemDetail(
+                mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 42L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/books/42/reviews")
-                .andDo(problemDetailDocument("review-create-unauthorized", "감상 작성",
-                        "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다", "bookId", "도서 ID"));
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/books/42/reviews"
+        )
+                .andDo(problemDetailDocument(
+                        "review-create-unauthorized",
+                        "감상 작성",
+                        "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                        "bookId",
+                        "도서 ID"
+                ));
     }
 
     @Test
@@ -480,11 +527,20 @@ class ReviewControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
 
         // when & then
-        expectProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 101L)
+        expectProblemDetail(
+                mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 101L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"수정\"}")),
-                HttpStatus.FORBIDDEN, "FORBIDDEN", "/api/v1/reviews/101")
-                .andDo(problemDetailDocument("review-update-forbidden", "감상 수정",
-                        "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID"));
+                HttpStatus.FORBIDDEN,
+                "FORBIDDEN",
+                "/api/v1/reviews/101"
+        )
+                .andDo(problemDetailDocument(
+                        "review-update-forbidden",
+                        "감상 수정",
+                        "작성자가 감상의 지정된 필드만 수정한다",
+                        "reviewId",
+                        "감상 ID"
+                ));
     }
 
     @Test
@@ -494,10 +550,19 @@ class ReviewControllerTest {
         when(reviewService.findReplies(101L, 1)).thenThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
 
         // when & then
-        expectProblemDetail(mockMvc.perform(get("/api/v1/reviews/{reviewId}/replies", 101L).param("page", "1")),
-                HttpStatus.NOT_FOUND, "REVIEW_NOT_FOUND", "/api/v1/reviews/101/replies")
-                .andDo(problemDetailDocument("reply-list-review-not-found", "답글 목록 조회",
-                        "감상의 답글을 작성일 오름차순으로 조회한다", "reviewId", "감상 ID"));
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v1/reviews/{reviewId}/replies", 101L).param("page", "1")),
+                HttpStatus.NOT_FOUND,
+                "REVIEW_NOT_FOUND",
+                "/api/v1/reviews/101/replies"
+        )
+                .andDo(problemDetailDocument(
+                        "reply-list-review-not-found",
+                        "답글 목록 조회",
+                        "감상의 답글을 작성일 오름차순으로 조회한다",
+                        "reviewId",
+                        "감상 ID"
+                ));
     }
 
     @Test
@@ -507,10 +572,19 @@ class ReviewControllerTest {
         when(reviewService.createReviewReaction(101L)).thenThrow(new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS));
 
         // when & then
-        expectProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 101L)),
-                HttpStatus.CONFLICT, "REACTION_ALREADY_EXISTS", "/api/v1/reviews/101/reactions")
-                .andDo(problemDetailDocument("review-reaction-create-conflict", "감상 좋아요", "감상에 좋아요를 남긴다",
-                        "reviewId", "감상 ID"));
+        expectProblemDetail(
+                mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 101L)),
+                HttpStatus.CONFLICT,
+                "REACTION_ALREADY_EXISTS",
+                "/api/v1/reviews/101/reactions"
+        )
+                .andDo(problemDetailDocument(
+                        "review-reaction-create-conflict",
+                        "감상 좋아요",
+                        "감상에 좋아요를 남긴다",
+                        "reviewId",
+                        "감상 ID"
+                ));
     }
 
     @Test
@@ -521,11 +595,18 @@ class ReviewControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
 
         // when & then
-        documentProblemDetail(mockMvc.perform(get("/api/v1/books/{bookId}/reviews", 42L)
+        documentProblemDetail(
+                mockMvc.perform(get("/api/v1/books/{bookId}/reviews", 42L)
                         .param("page", "1").param("feed", "MINE")),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/books/42/reviews",
-                "review-list-mine-unauthorized", "감상 목록 조회", "도서의 감상을 페이지와 피드·정렬 조건으로 조회한다",
-                "bookId", "도서 ID");
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/books/42/reviews",
+                "review-list-mine-unauthorized",
+                "감상 목록 조회",
+                "도서의 감상을 페이지와 피드·정렬 조건으로 조회한다",
+                "bookId",
+                "도서 ID"
+        );
     }
 
     @Test
@@ -540,74 +621,149 @@ class ReviewControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
 
         // when & then
-        documentProblemDetail(mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 42L)
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 42L)
                         .contentType(MediaType.APPLICATION_JSON).content("{}")),
-                HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "/api/v1/books/42/reviews",
-                "review-create-invalid-request", "감상 작성", "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
-                "bookId", "도서 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 404L)
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "/api/v1/books/42/reviews",
+                "review-create-invalid-request",
+                "감상 작성",
+                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                "bookId",
+                "도서 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 404L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.NOT_FOUND, "BOOK_NOT_FOUND", "/api/v1/books/404/reviews",
-                "review-create-book-not-found", "감상 작성", "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
-                "bookId", "도서 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 409L)
+                HttpStatus.NOT_FOUND,
+                "BOOK_NOT_FOUND",
+                "/api/v1/books/404/reviews",
+                "review-create-book-not-found",
+                "감상 작성",
+                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                "bookId",
+                "도서 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 409L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.CONFLICT, "TOTAL_PAGES_CONFLICT", "/api/v1/books/409/reviews",
-                "review-create-total-pages-conflict", "감상 작성", "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
-                "bookId", "도서 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 422L)
+                HttpStatus.CONFLICT,
+                "TOTAL_PAGES_CONFLICT",
+                "/api/v1/books/409/reviews",
+                "review-create-total-pages-conflict",
+                "감상 작성",
+                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                "bookId",
+                "도서 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/books/{bookId}/reviews", 422L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_READING_STATE", "/api/v1/books/422/reviews",
-                "review-create-invalid-reading-state", "감상 작성", "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
-                "bookId", "도서 ID");
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                "INVALID_READING_STATE",
+                "/api/v1/books/422/reviews",
+                "review-create-invalid-reading-state",
+                "감상 작성",
+                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                "bookId",
+                "도서 ID"
+        );
     }
 
     @Test
     @DisplayName("ISBN13 감상 작성의 입력, 인증, 도서, 페이지와 외부 API 오류를 문서화한다")
     void should_DocumentReviewCreateByIsbnErrors_When_RequestCannotBeProcessed() throws Exception {
         // given
-        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9788936433598")),
-                ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
-        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9788966260959")),
-                ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
-        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9781234567897")),
-                ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
-        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9780000000002")),
-                ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
-        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9780000000019")),
-                ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
-        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9780000000026")),
-                ArgumentMatchers.any())).thenThrow(new AladinClientException(1, "invalid secret key"));
+        when(reviewService.createReviewByIsbn13(
+                ArgumentMatchers.eq(new Isbn13("9788936433598")),
+                ArgumentMatchers.any()
+        )).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+        when(reviewService.createReviewByIsbn13(
+                ArgumentMatchers.eq(new Isbn13("9788966260959")),
+                ArgumentMatchers.any()
+        )).thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
+        when(reviewService.createReviewByIsbn13(
+                ArgumentMatchers.eq(new Isbn13("9781234567897")),
+                ArgumentMatchers.any()
+        )).thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
+        when(reviewService.createReviewByIsbn13(
+                ArgumentMatchers.eq(new Isbn13("9780000000002")),
+                ArgumentMatchers.any()
+        )).thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
+        when(reviewService.createReviewByIsbn13(
+                ArgumentMatchers.eq(new Isbn13("9780000000019")),
+                ArgumentMatchers.any()
+        )).thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
+        when(reviewService.createReviewByIsbn13(
+                ArgumentMatchers.eq(new Isbn13("9780000000026")),
+                ArgumentMatchers.any()
+        )).thenThrow(new AladinClientException(1, "invalid secret key"));
 
         // when & then
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568683")
-                        .contentType(MediaType.APPLICATION_JSON).content("{}")), HttpStatus.BAD_REQUEST,
-                "INVALID_REQUEST", "/api/v1/books/by-isbn/9788925568683/reviews",
-                "review-create-by-isbn-invalid-request", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788936433598")
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.UNAUTHORIZED,
-                "UNAUTHORIZED", "/api/v1/books/by-isbn/9788936433598/reviews",
-                "review-create-by-isbn-unauthorized", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788966260959")
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.FORBIDDEN,
-                "FORBIDDEN", "/api/v1/books/by-isbn/9788966260959/reviews",
-                "review-create-by-isbn-forbidden", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9781234567897")
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.NOT_FOUND,
-                "BOOK_NOT_FOUND", "/api/v1/books/by-isbn/9781234567897/reviews",
-                "review-create-by-isbn-book-not-found", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000002")
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.CONFLICT,
-                "TOTAL_PAGES_CONFLICT", "/api/v1/books/by-isbn/9780000000002/reviews",
-                "review-create-by-isbn-total-pages-conflict", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000019")
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.UNPROCESSABLE_CONTENT,
-                "INVALID_READING_STATE", "/api/v1/books/by-isbn/9780000000019/reviews",
-                "review-create-by-isbn-invalid-reading-state", "ISBN13으로 감상 작성");
-        documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000026")
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")), HttpStatus.BAD_GATEWAY,
-                "EXTERNAL_API_ERROR", "/api/v1/books/by-isbn/9780000000026/reviews",
-                "review-create-by-isbn-external-api-error", "ISBN13으로 감상 작성");
+        documentProblemDetailByIsbn(
+                mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568683")
+                        .contentType(MediaType.APPLICATION_JSON).content("{}")),
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "/api/v1/books/by-isbn/9788925568683/reviews",
+                "review-create-by-isbn-invalid-request",
+                "ISBN13으로 감상 작성"
+        );
+        documentProblemDetailByIsbn(
+                mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788936433598")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/books/by-isbn/9788936433598/reviews",
+                "review-create-by-isbn-unauthorized",
+                "ISBN13으로 감상 작성"
+        );
+        documentProblemDetailByIsbn(
+                mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788966260959")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.FORBIDDEN,
+                "FORBIDDEN",
+                "/api/v1/books/by-isbn/9788966260959/reviews",
+                "review-create-by-isbn-forbidden",
+                "ISBN13으로 감상 작성"
+        );
+        documentProblemDetailByIsbn(
+                mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9781234567897")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.NOT_FOUND,
+                "BOOK_NOT_FOUND",
+                "/api/v1/books/by-isbn/9781234567897/reviews",
+                "review-create-by-isbn-book-not-found",
+                "ISBN13으로 감상 작성"
+        );
+        documentProblemDetailByIsbn(
+                mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000002")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.CONFLICT,
+                "TOTAL_PAGES_CONFLICT",
+                "/api/v1/books/by-isbn/9780000000002/reviews",
+                "review-create-by-isbn-total-pages-conflict",
+                "ISBN13으로 감상 작성"
+        );
+        documentProblemDetailByIsbn(
+                mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000019")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                "INVALID_READING_STATE",
+                "/api/v1/books/by-isbn/9780000000019/reviews",
+                "review-create-by-isbn-invalid-reading-state",
+                "ISBN13으로 감상 작성"
+        );
+        documentProblemDetailByIsbn(
+                mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9780000000026")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
+                HttpStatus.BAD_GATEWAY,
+                "EXTERNAL_API_ERROR",
+                "/api/v1/books/by-isbn/9780000000026/reviews",
+                "review-create-by-isbn-external-api-error",
+                "ISBN13으로 감상 작성"
+        );
     }
 
     @Test
@@ -626,26 +782,66 @@ class ReviewControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
 
         // when & then
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 400L)
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 400L)
                         .contentType(MediaType.APPLICATION_JSON).content("{}")),
-                HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "/api/v1/reviews/400",
-                "review-update-invalid-request", "감상 수정", "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 404L)
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "/api/v1/reviews/400",
+                "review-update-invalid-request",
+                "감상 수정",
+                "작성자가 감상의 지정된 필드만 수정한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 404L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.NOT_FOUND, "REVIEW_NOT_FOUND", "/api/v1/reviews/404",
-                "review-update-not-found", "감상 수정", "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 409L)
+                HttpStatus.NOT_FOUND,
+                "REVIEW_NOT_FOUND",
+                "/api/v1/reviews/404",
+                "review-update-not-found",
+                "감상 수정",
+                "작성자가 감상의 지정된 필드만 수정한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 409L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"currentPage\":100}")),
-                HttpStatus.CONFLICT, "TOTAL_PAGES_CONFLICT", "/api/v1/reviews/409",
-                "review-update-total-pages-conflict", "감상 수정", "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 410L)
+                HttpStatus.CONFLICT,
+                "TOTAL_PAGES_CONFLICT",
+                "/api/v1/reviews/409",
+                "review-update-total-pages-conflict",
+                "감상 수정",
+                "작성자가 감상의 지정된 필드만 수정한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 410L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.CONFLICT, "DELETED_RESOURCE", "/api/v1/reviews/410",
-                "review-update-deleted-resource", "감상 수정", "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 422L)
+                HttpStatus.CONFLICT,
+                "DELETED_RESOURCE",
+                "/api/v1/reviews/410",
+                "review-update-deleted-resource",
+                "감상 수정",
+                "작성자가 감상의 지정된 필드만 수정한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 422L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"currentPage\":100}")),
-                HttpStatus.UNPROCESSABLE_CONTENT, "INVALID_READING_STATE", "/api/v1/reviews/422",
-                "review-update-invalid-reading-state", "감상 수정", "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                "INVALID_READING_STATE",
+                "/api/v1/reviews/422",
+                "review-update-invalid-reading-state",
+                "감상 수정",
+                "작성자가 감상의 지정된 필드만 수정한다",
+                "reviewId",
+                "감상 ID"
+        );
     }
 
     @Test
@@ -657,15 +853,39 @@ class ReviewControllerTest {
         Mockito.doThrow(new BusinessException(ErrorCode.DELETED_RESOURCE)).when(reviewService).deleteReview(409L);
 
         // when & then
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 403L)), HttpStatus.FORBIDDEN,
-                "FORBIDDEN", "/api/v1/reviews/403", "review-delete-forbidden", "감상 삭제",
-                "작성자가 감상을 soft delete한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 404L)), HttpStatus.NOT_FOUND,
-                "REVIEW_NOT_FOUND", "/api/v1/reviews/404", "review-delete-not-found", "감상 삭제",
-                "작성자가 감상을 soft delete한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 409L)), HttpStatus.CONFLICT,
-                "DELETED_RESOURCE", "/api/v1/reviews/409", "review-delete-deleted-resource", "감상 삭제",
-                "작성자가 감상을 soft delete한다", "reviewId", "감상 ID");
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 403L)),
+                HttpStatus.FORBIDDEN,
+                "FORBIDDEN",
+                "/api/v1/reviews/403",
+                "review-delete-forbidden",
+                "감상 삭제",
+                "작성자가 감상을 soft delete한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 404L)),
+                HttpStatus.NOT_FOUND,
+                "REVIEW_NOT_FOUND",
+                "/api/v1/reviews/404",
+                "review-delete-not-found",
+                "감상 삭제",
+                "작성자가 감상을 soft delete한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 409L)),
+                HttpStatus.CONFLICT,
+                "DELETED_RESOURCE",
+                "/api/v1/reviews/409",
+                "review-delete-deleted-resource",
+                "감상 삭제",
+                "작성자가 감상을 soft delete한다",
+                "reviewId",
+                "감상 ID"
+        );
     }
 
     @Test
@@ -678,18 +898,42 @@ class ReviewControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
 
         // when & then
-        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 101L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{}")), HttpStatus.BAD_REQUEST,
-                "INVALID_REQUEST", "/api/v1/reviews/101/replies", "reply-create-invalid-request", "답글 작성",
-                "감상에 답글을 작성한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 404L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")), HttpStatus.NOT_FOUND,
-                "REVIEW_NOT_FOUND", "/api/v1/reviews/404/replies", "reply-create-review-not-found", "답글 작성",
-                "감상에 답글을 작성한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 409L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")), HttpStatus.CONFLICT,
-                "DELETED_RESOURCE", "/api/v1/reviews/409/replies", "reply-create-deleted-resource", "답글 작성",
-                "감상에 답글을 작성한다", "reviewId", "감상 ID");
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 101L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{}")),
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "/api/v1/reviews/101/replies",
+                "reply-create-invalid-request",
+                "답글 작성",
+                "감상에 답글을 작성한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 404L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")),
+                HttpStatus.NOT_FOUND,
+                "REVIEW_NOT_FOUND",
+                "/api/v1/reviews/404/replies",
+                "reply-create-review-not-found",
+                "답글 작성",
+                "감상에 답글을 작성한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 409L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")),
+                HttpStatus.CONFLICT,
+                "DELETED_RESOURCE",
+                "/api/v1/reviews/409/replies",
+                "reply-create-deleted-resource",
+                "답글 작성",
+                "감상에 답글을 작성한다",
+                "reviewId",
+                "감상 ID"
+        );
     }
 
     @Test
@@ -709,31 +953,87 @@ class ReviewControllerTest {
         Mockito.doThrow(new BusinessException(ErrorCode.DELETED_RESOURCE)).when(reviewService).deleteReply(409L);
 
         // when & then
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 400L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{}")), HttpStatus.BAD_REQUEST,
-                "INVALID_REQUEST", "/api/v1/replies/400", "reply-update-invalid-request", "답글 수정",
-                "작성자가 답글 내용을 수정한다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 403L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")), HttpStatus.FORBIDDEN,
-                "FORBIDDEN", "/api/v1/replies/403", "reply-update-forbidden", "답글 수정",
-                "작성자가 답글 내용을 수정한다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 404L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")), HttpStatus.NOT_FOUND,
-                "REPLY_NOT_FOUND", "/api/v1/replies/404", "reply-update-not-found", "답글 수정",
-                "작성자가 답글 내용을 수정한다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 409L)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")), HttpStatus.CONFLICT,
-                "DELETED_RESOURCE", "/api/v1/replies/409", "reply-update-deleted-resource", "답글 수정",
-                "작성자가 답글 내용을 수정한다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}", 403L)), HttpStatus.FORBIDDEN,
-                "FORBIDDEN", "/api/v1/replies/403", "reply-delete-forbidden", "답글 삭제",
-                "작성자가 답글을 soft delete한다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}", 404L)), HttpStatus.NOT_FOUND,
-                "REPLY_NOT_FOUND", "/api/v1/replies/404", "reply-delete-not-found", "답글 삭제",
-                "작성자가 답글을 soft delete한다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}", 409L)), HttpStatus.CONFLICT,
-                "DELETED_RESOURCE", "/api/v1/replies/409", "reply-delete-deleted-resource", "답글 삭제",
-                "작성자가 답글을 soft delete한다", "replyId", "답글 ID");
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/replies/{replyId}", 400L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{}")),
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "/api/v1/replies/400",
+                "reply-update-invalid-request",
+                "답글 수정",
+                "작성자가 답글 내용을 수정한다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/replies/{replyId}", 403L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")),
+                HttpStatus.FORBIDDEN,
+                "FORBIDDEN",
+                "/api/v1/replies/403",
+                "reply-update-forbidden",
+                "답글 수정",
+                "작성자가 답글 내용을 수정한다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/replies/{replyId}", 404L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")),
+                HttpStatus.NOT_FOUND,
+                "REPLY_NOT_FOUND",
+                "/api/v1/replies/404",
+                "reply-update-not-found",
+                "답글 수정",
+                "작성자가 답글 내용을 수정한다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/replies/{replyId}", 409L)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")),
+                HttpStatus.CONFLICT,
+                "DELETED_RESOURCE",
+                "/api/v1/replies/409",
+                "reply-update-deleted-resource",
+                "답글 수정",
+                "작성자가 답글 내용을 수정한다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/replies/{replyId}", 403L)),
+                HttpStatus.FORBIDDEN,
+                "FORBIDDEN",
+                "/api/v1/replies/403",
+                "reply-delete-forbidden",
+                "답글 삭제",
+                "작성자가 답글을 soft delete한다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/replies/{replyId}", 404L)),
+                HttpStatus.NOT_FOUND,
+                "REPLY_NOT_FOUND",
+                "/api/v1/replies/404",
+                "reply-delete-not-found",
+                "답글 삭제",
+                "작성자가 답글을 soft delete한다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/replies/{replyId}", 409L)),
+                HttpStatus.CONFLICT,
+                "DELETED_RESOURCE",
+                "/api/v1/replies/409",
+                "reply-delete-deleted-resource",
+                "답글 삭제",
+                "작성자가 답글을 soft delete한다",
+                "replyId",
+                "답글 ID"
+        );
     }
 
     @Test
@@ -751,27 +1051,83 @@ class ReviewControllerTest {
                 .deleteReplyReaction(404L);
 
         // when & then
-        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 404L)), HttpStatus.NOT_FOUND,
-                "REVIEW_NOT_FOUND", "/api/v1/reviews/404/reactions", "review-reaction-create-not-found", "감상 좋아요",
-                "감상에 좋아요를 남긴다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 409L)), HttpStatus.CONFLICT,
-                "DELETED_RESOURCE", "/api/v1/reviews/409/reactions", "review-reaction-create-deleted-resource", "감상 좋아요",
-                "감상에 좋아요를 남긴다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}/reactions", 404L)), HttpStatus.NOT_FOUND,
-                "REVIEW_NOT_FOUND", "/api/v1/reviews/404/reactions", "review-reaction-delete-not-found", "감상 좋아요 취소",
-                "감상의 좋아요를 취소한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 404L)), HttpStatus.NOT_FOUND,
-                "REPLY_NOT_FOUND", "/api/v1/replies/404/reactions", "reply-reaction-create-not-found", "답글 좋아요",
-                "답글에 좋아요를 남긴다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 409L)), HttpStatus.CONFLICT,
-                "DELETED_RESOURCE", "/api/v1/replies/409/reactions", "reply-reaction-create-deleted-resource", "답글 좋아요",
-                "답글에 좋아요를 남긴다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 410L)), HttpStatus.CONFLICT,
-                "REACTION_ALREADY_EXISTS", "/api/v1/replies/410/reactions", "reply-reaction-create-conflict", "답글 좋아요",
-                "답글에 좋아요를 남긴다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}/reactions", 404L)), HttpStatus.NOT_FOUND,
-                "REPLY_NOT_FOUND", "/api/v1/replies/404/reactions", "reply-reaction-delete-not-found", "답글 좋아요 취소",
-                "답글의 좋아요를 취소한다", "replyId", "답글 ID");
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 404L)),
+                HttpStatus.NOT_FOUND,
+                "REVIEW_NOT_FOUND",
+                "/api/v1/reviews/404/reactions",
+                "review-reaction-create-not-found",
+                "감상 좋아요",
+                "감상에 좋아요를 남긴다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 409L)),
+                HttpStatus.CONFLICT,
+                "DELETED_RESOURCE",
+                "/api/v1/reviews/409/reactions",
+                "review-reaction-create-deleted-resource",
+                "감상 좋아요",
+                "감상에 좋아요를 남긴다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/reviews/{reviewId}/reactions", 404L)),
+                HttpStatus.NOT_FOUND,
+                "REVIEW_NOT_FOUND",
+                "/api/v1/reviews/404/reactions",
+                "review-reaction-delete-not-found",
+                "감상 좋아요 취소",
+                "감상의 좋아요를 취소한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 404L)),
+                HttpStatus.NOT_FOUND,
+                "REPLY_NOT_FOUND",
+                "/api/v1/replies/404/reactions",
+                "reply-reaction-create-not-found",
+                "답글 좋아요",
+                "답글에 좋아요를 남긴다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 409L)),
+                HttpStatus.CONFLICT,
+                "DELETED_RESOURCE",
+                "/api/v1/replies/409/reactions",
+                "reply-reaction-create-deleted-resource",
+                "답글 좋아요",
+                "답글에 좋아요를 남긴다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 410L)),
+                HttpStatus.CONFLICT,
+                "REACTION_ALREADY_EXISTS",
+                "/api/v1/replies/410/reactions",
+                "reply-reaction-create-conflict",
+                "답글 좋아요",
+                "답글에 좋아요를 남긴다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/replies/{replyId}/reactions", 404L)),
+                HttpStatus.NOT_FOUND,
+                "REPLY_NOT_FOUND",
+                "/api/v1/replies/404/reactions",
+                "reply-reaction-delete-not-found",
+                "답글 좋아요 취소",
+                "답글의 좋아요를 취소한다",
+                "replyId",
+                "답글 ID"
+        );
     }
 
     @Test
@@ -782,14 +1138,30 @@ class ReviewControllerTest {
                 .thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
 
         // when & then
-        documentProblemDetail(mockMvc.perform(get("/api/v1/books/{bookId}/reviews", 404L)
-                        .param("page", "1")), HttpStatus.NOT_FOUND, "BOOK_NOT_FOUND", "/api/v1/books/404/reviews",
-                "review-list-book-not-found", "감상 목록 조회", "도서의 감상을 페이지와 피드·정렬 조건으로 조회한다",
-                "bookId", "도서 ID");
-        documentProblemDetail(mockMvc.perform(get("/api/v1/reviews/{reviewId}/replies", 101L)
-                        .param("page", "0")), HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "/api/v1/reviews/101/replies",
-                "reply-list-invalid-request", "답글 목록 조회", "감상의 답글을 작성일 오름차순으로 조회한다",
-                "reviewId", "감상 ID");
+        documentProblemDetail(
+                mockMvc.perform(get("/api/v1/books/{bookId}/reviews", 404L)
+                        .param("page", "1")),
+                HttpStatus.NOT_FOUND,
+                "BOOK_NOT_FOUND",
+                "/api/v1/books/404/reviews",
+                "review-list-book-not-found",
+                "감상 목록 조회",
+                "도서의 감상을 페이지와 피드·정렬 조건으로 조회한다",
+                "bookId",
+                "도서 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(get("/api/v1/reviews/{reviewId}/replies", 101L)
+                        .param("page", "0")),
+                HttpStatus.BAD_REQUEST,
+                "INVALID_REQUEST",
+                "/api/v1/reviews/101/replies",
+                "reply-list-invalid-request",
+                "답글 목록 조회",
+                "감상의 답글을 작성일 오름차순으로 조회한다",
+                "reviewId",
+                "감상 ID"
+        );
     }
 
     @Test
@@ -812,36 +1184,108 @@ class ReviewControllerTest {
                 .deleteReplyReaction(201L);
 
         // when & then
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 101L)
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/reviews/{reviewId}", 101L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"감상\"}")),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/reviews/101", "review-update-unauthorized", "감상 수정",
-                "작성자가 감상의 지정된 필드만 수정한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 101L)),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/reviews/101", "review-delete-unauthorized", "감상 삭제",
-                "작성자가 감상을 soft delete한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 101L)
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/reviews/101",
+                "review-update-unauthorized",
+                "감상 수정",
+                "작성자가 감상의 지정된 필드만 수정한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 101L)),
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/reviews/101",
+                "review-delete-unauthorized",
+                "감상 삭제",
+                "작성자가 감상을 soft delete한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/reviews/{reviewId}/replies", 101L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/reviews/101/replies", "reply-create-unauthorized", "답글 작성",
-                "감상에 답글을 작성한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 201L)
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/reviews/101/replies",
+                "reply-create-unauthorized",
+                "답글 작성",
+                "감상에 답글을 작성한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(patch("/api/v1/replies/{replyId}", 201L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/replies/201", "reply-update-unauthorized", "답글 수정",
-                "작성자가 답글 내용을 수정한다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}", 201L)),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/replies/201", "reply-delete-unauthorized", "답글 삭제",
-                "작성자가 답글을 soft delete한다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 101L)),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/reviews/101/reactions",
-                "review-reaction-create-unauthorized", "감상 좋아요", "감상에 좋아요를 남긴다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}/reactions", 101L)),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/reviews/101/reactions",
-                "review-reaction-delete-unauthorized", "감상 좋아요 취소", "감상의 좋아요를 취소한다", "reviewId", "감상 ID");
-        documentProblemDetail(mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 201L)),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/replies/201/reactions",
-                "reply-reaction-create-unauthorized", "답글 좋아요", "답글에 좋아요를 남긴다", "replyId", "답글 ID");
-        documentProblemDetail(mockMvc.perform(delete("/api/v1/replies/{replyId}/reactions", 201L)),
-                HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "/api/v1/replies/201/reactions",
-                "reply-reaction-delete-unauthorized", "답글 좋아요 취소", "답글의 좋아요를 취소한다", "replyId", "답글 ID");
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/replies/201",
+                "reply-update-unauthorized",
+                "답글 수정",
+                "작성자가 답글 내용을 수정한다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/replies/{replyId}", 201L)),
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/replies/201",
+                "reply-delete-unauthorized",
+                "답글 삭제",
+                "작성자가 답글을 soft delete한다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 101L)),
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/reviews/101/reactions",
+                "review-reaction-create-unauthorized",
+                "감상 좋아요",
+                "감상에 좋아요를 남긴다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/reviews/{reviewId}/reactions", 101L)),
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/reviews/101/reactions",
+                "review-reaction-delete-unauthorized",
+                "감상 좋아요 취소",
+                "감상의 좋아요를 취소한다",
+                "reviewId",
+                "감상 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 201L)),
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/replies/201/reactions",
+                "reply-reaction-create-unauthorized",
+                "답글 좋아요",
+                "답글에 좋아요를 남긴다",
+                "replyId",
+                "답글 ID"
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/replies/{replyId}/reactions", 201L)),
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "/api/v1/replies/201/reactions",
+                "reply-reaction-delete-unauthorized",
+                "답글 좋아요 취소",
+                "답글의 좋아요를 취소한다",
+                "replyId",
+                "답글 ID"
+        );
     }
 
     private RestDocumentationResultHandler reactionDocument(
@@ -851,7 +1295,8 @@ class ReviewControllerTest {
             String pathName,
             String pathDescription
     ) {
-        return document(identifier,
+        return document(
+                identifier,
                 pathParameters(parameterWithName(pathName).description(pathDescription)),
                 responseFields(REACTION_RESPONSE_FIELDS),
                 resource(ResourceSnippetParameters.builder()
@@ -860,7 +1305,8 @@ class ReviewControllerTest {
                         .tag(REVIEW_TAG)
                         .pathParameters(pathParameter(pathName, pathDescription))
                         .responseFields(REACTION_RESPONSE_FIELDS)
-                        .build()));
+                        .build())
+        );
     }
 
     private RestDocumentationResultHandler noContentDocument(
@@ -870,14 +1316,16 @@ class ReviewControllerTest {
             String pathName,
             String pathDescription
     ) {
-        return document(identifier,
+        return document(
+                identifier,
                 pathParameters(parameterWithName(pathName).description(pathDescription)),
                 resource(ResourceSnippetParameters.builder()
                         .summary(summary)
                         .description(description)
                         .tag(REVIEW_TAG)
                         .pathParameters(pathParameter(pathName, pathDescription))
-                        .build()));
+                        .build())
+        );
     }
 
     private RestDocumentationResultHandler problemDetailDocument(
@@ -887,7 +1335,8 @@ class ReviewControllerTest {
             String pathName,
             String pathDescription
     ) {
-        return document(identifier,
+        return document(
+                identifier,
                 pathParameters(parameterWithName(pathName).description(pathDescription)),
                 responseFields(PROBLEM_DETAIL_FIELDS),
                 resource(ResourceSnippetParameters.builder()
@@ -897,14 +1346,13 @@ class ReviewControllerTest {
                         .pathParameters(pathParameter(pathName, pathDescription))
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_DETAIL_FIELDS)
-                        .build()));
+                        .build())
+        );
     }
 
-    private RestDocumentationResultHandler isbnProblemDetailDocument(
-            String identifier,
-            String summary
-    ) {
-        return document(identifier,
+    private RestDocumentationResultHandler isbnProblemDetailDocument(String identifier, String summary) {
+        return document(
+                identifier,
                 pathParameters(parameterWithName("isbn13").description("ISBN-13")),
                 responseFields(PROBLEM_DETAIL_FIELDS),
                 resource(ResourceSnippetParameters.builder()
@@ -914,10 +1362,16 @@ class ReviewControllerTest {
                         .pathParameters(isbn13PathParameter())
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_DETAIL_FIELDS)
-                        .build()));
+                        .build())
+        );
     }
 
-    private ResultActions expectProblemDetail(ResultActions result, HttpStatus expectedStatus, String code, String instance)
+    private ResultActions expectProblemDetail(
+            ResultActions result,
+            HttpStatus expectedStatus,
+            String code,
+            String instance
+    )
             throws Exception {
         return result
                 .andExpect(status().is(expectedStatus.value()))
@@ -999,8 +1453,12 @@ class ReviewControllerTest {
                 field(prefix, "author.anonymous", JsonFieldType.BOOLEAN, "익명 작성 여부"),
                 field(prefix, "author.mine", JsonFieldType.BOOLEAN, "내가 작성한 감상인지 여부"),
                 field(prefix, "author.actorType", JsonFieldType.STRING, "작성자 유형(MEMBER, GUEST)"),
-                field(prefix, "author.profileStatus", JsonFieldType.STRING,
-                        "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"),
+                field(
+                        prefix,
+                        "author.profileStatus",
+                        JsonFieldType.STRING,
+                        "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                ),
                 field(prefix, "likeCount", JsonFieldType.NUMBER, "좋아요 수"),
                 field(prefix, "likedByMe", JsonFieldType.BOOLEAN, "내가 좋아요를 눌렀는지 여부"),
                 field(prefix, "replyCount", JsonFieldType.NUMBER, "답글 수"),
@@ -1026,14 +1484,23 @@ class ReviewControllerTest {
                 field(prefix, "author.anonymous", JsonFieldType.BOOLEAN, "익명 작성 여부"),
                 field(prefix, "author.mine", JsonFieldType.BOOLEAN, "내가 작성한 답글인지 여부"),
                 field(prefix, "author.actorType", JsonFieldType.STRING, "작성자 유형(MEMBER, GUEST)"),
-                field(prefix, "author.profileStatus", JsonFieldType.STRING,
-                        "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"),
+                field(
+                        prefix,
+                        "author.profileStatus",
+                        JsonFieldType.STRING,
+                        "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                ),
                 field(prefix, "likeCount", JsonFieldType.NUMBER, "좋아요 수"),
                 field(prefix, "likedByMe", JsonFieldType.BOOLEAN, "내가 좋아요를 눌렀는지 여부")
         };
     }
 
-    private static FieldDescriptor field(String prefix, String name, JsonFieldType type, String description) {
+    private static FieldDescriptor field(
+            String prefix,
+            String name,
+            JsonFieldType type,
+            String description
+    ) {
         return fieldWithPath(path(prefix, name)).type(type).description(description);
     }
 
@@ -1049,11 +1516,7 @@ class ReviewControllerTest {
         return ResourceDocumentation.parameterWithName("isbn13").type(SimpleType.STRING).description("ISBN-13");
     }
 
-    private static ParameterDescriptorWithType queryParameter(
-            String name,
-            SimpleType type,
-            String description
-    ) {
+    private static ParameterDescriptorWithType queryParameter(String name, SimpleType type, String description) {
         return queryParameter(name, type, description, false);
     }
 

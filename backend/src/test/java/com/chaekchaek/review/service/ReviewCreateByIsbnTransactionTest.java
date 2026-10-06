@@ -79,14 +79,21 @@ class ReviewCreateByIsbnTransactionTest {
             throw new IllegalStateException("review write failed");
         });
         ReviewService reviewService = new ReviewService(
-                reviewRepository, mock(ReplyRepository.class), mock(ReviewReactionRepository.class),
-                mock(ReplyReactionRepository.class), () -> CurrentActor.guest(7L),
-                mock(ReadingRecordCoordinator.class), requireStoredBook(), guestProfileReader(),
-                bookResolver, transactionManager
+                reviewRepository,
+                mock(ReplyRepository.class),
+                mock(ReviewReactionRepository.class),
+                mock(ReplyReactionRepository.class),
+                () -> CurrentActor.guest(7L),
+                mock(ReadingRecordCoordinator.class),
+                requireStoredBook(),
+                guestProfileReader(),
+                bookResolver,
+                transactionManager
         );
 
         // when & then
-        assertThatThrownBy(() -> reviewService.createReviewByIsbn13(ISBN13,
+        assertThatThrownBy(() -> reviewService.createReviewByIsbn13(
+                ISBN13,
                 new ReviewCreateRequest(
                         "감상",
                         null,
@@ -94,7 +101,8 @@ class ReviewCreateByIsbnTransactionTest {
                         null,
                         null,
                         false
-                )))
+                )
+        ))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("review write failed");
         assertThat(externalCallInTransaction).isFalse();
@@ -111,7 +119,8 @@ class ReviewCreateByIsbnTransactionTest {
     }
 
     private ReviewMemberReader guestProfileReader() {
-        return actorIds -> Map.of(7L,
+        return actorIds -> Map.of(
+                7L,
                 new ReviewMemberProfile(
                         "게스트",
                         null,
@@ -119,6 +128,7 @@ class ReviewCreateByIsbnTransactionTest {
                         true,
                         false,
                         ActorType.GUEST
-                ));
+                )
+        );
     }
 }

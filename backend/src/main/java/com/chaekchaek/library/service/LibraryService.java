@@ -67,7 +67,12 @@ public class LibraryService {
     }
 
     @Transactional(readOnly = true)
-    public LibraryListResponse getLibrary(long memberId, int page, ReadingStatus status, LibrarySort sort) {
+    public LibraryListResponse getLibrary(
+            long memberId,
+            int page,
+            ReadingStatus status,
+            LibrarySort sort
+    ) {
         if (page < 1) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
@@ -92,8 +97,12 @@ public class LibraryService {
     }
 
     @Transactional(readOnly = true)
-    public PublicLibraryListResponse getPublicLibrary(long memberId, int page, ReadingStatus status,
-                                                      LibrarySort sort) {
+    public PublicLibraryListResponse getPublicLibrary(
+            long memberId,
+            int page,
+            ReadingStatus status,
+            LibrarySort sort
+    ) {
         Member member = memberRepository.findById(memberId)
                 .filter(candidate -> candidate.getAccountStatus() == AccountStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIBRARY_NOT_FOUND));
@@ -101,7 +110,12 @@ public class LibraryService {
     }
 
     @Transactional
-    public LibraryItemResponse add(long memberId, long bookId, ReadingStatus status, Integer totalPages) {
+    public LibraryItemResponse add(
+            long memberId,
+            long bookId,
+            ReadingStatus status,
+            Integer totalPages
+    ) {
         Book book = getBookForUpdate(bookId);
         rememberTotalPages(book, totalPages);
         if (libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId).isPresent()) {
@@ -110,16 +124,19 @@ public class LibraryService {
         return saveNewItem(memberId, book, status);
     }
 
-    public LibraryItemResponse addByIsbn13(long memberId, Isbn13 isbn13, ReadingStatus status,
-                                           Integer totalPages) {
+    public LibraryItemResponse addByIsbn13(
+            long memberId,
+            Isbn13 isbn13,
+            ReadingStatus status,
+            Integer totalPages
+    ) {
         Book book = bookResolver.findOrCreate(isbn13);
         return transactionTemplate.execute(statusTemplate ->
                 add(memberId, book.getId(), status, totalPages));
     }
 
     @Transactional(readOnly = true)
-    public RatingComparisonResponse compareRatingsByIsbn13(long memberId, Isbn13 isbn13,
-                                                           BigDecimal criterion) {
+    public RatingComparisonResponse compareRatingsByIsbn13(long memberId, Isbn13 isbn13, BigDecimal criterion) {
         validateRating(criterion);
         Book currentBook = bookRepository.findByIsbn13(isbn13)
                 .orElseGet(() -> bookResolver.lookup(isbn13));
@@ -127,8 +144,13 @@ public class LibraryService {
     }
 
     @Transactional
-    public LibraryItemResponse update(long memberId, long bookId, ReadingStatus status,
-                                      Integer currentPage, Integer totalPages) {
+    public LibraryItemResponse update(
+            long memberId,
+            long bookId,
+            ReadingStatus status,
+            Integer currentPage,
+            Integer totalPages
+    ) {
         if ((status == null) == (currentPage == null)) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
@@ -169,8 +191,11 @@ public class LibraryService {
             if (books.values().stream().anyMatch(book -> book.getTotalPages() == null)) {
                 throw new BusinessException(ErrorCode.INVALID_READING_STATE);
             }
-            items.forEach(item -> item.changeStatus(status,
-                    books.get(item.getBookId()).getTotalPages(), now()));
+            items.forEach(item -> item.changeStatus(
+                    status,
+                    books.get(item.getBookId()).getTotalPages(),
+                    now()
+            ));
             return;
         }
         List<LibraryItem> items = requireAllLibraryItemsForUpdate(memberId, bookIds);
@@ -196,8 +221,7 @@ public class LibraryService {
     }
 
     @Transactional(readOnly = true)
-    public RatingComparisonResponse compareRatings(long memberId, long currentBookId,
-                                                   BigDecimal criterion) {
+    public RatingComparisonResponse compareRatings(long memberId, long currentBookId, BigDecimal criterion) {
         validateRating(criterion);
         return comparison(memberId, getBook(currentBookId), criterion);
     }
@@ -206,17 +230,26 @@ public class LibraryService {
         long excludedBookId = currentBook.getId() == null ? -1L : currentBook.getId();
         RatingComparisonBookResponse lower = libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
-                        memberId, excludedBookId, criterion)
+                memberId,
+                excludedBookId,
+                criterion
+        )
                 .map(item -> RatingComparisonBookResponse.from(item, getBook(item.getBookId())))
                 .orElse(null);
         RatingComparisonBookResponse current = libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
-                        memberId, excludedBookId, criterion)
+                memberId,
+                excludedBookId,
+                criterion
+        )
                 .map(item -> RatingComparisonBookResponse.from(item, getBook(item.getBookId())))
                 .orElse(null);
         RatingComparisonBookResponse higher = libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
-                        memberId, excludedBookId, criterion)
+                memberId,
+                excludedBookId,
+                criterion
+        )
                 .map(item -> RatingComparisonBookResponse.from(item, getBook(item.getBookId())))
                 .orElse(null);
         return new RatingComparisonResponse(
@@ -228,8 +261,13 @@ public class LibraryService {
 
     private LibraryItemResponse saveNewItem(long memberId, Book book, ReadingStatus status) {
         try {
-            LibraryItem item = LibraryItem.create(memberId, book.getId(), status,
-                    book.getTotalPages(), now());
+            LibraryItem item = LibraryItem.create(
+                    memberId,
+                    book.getId(),
+                    status,
+                    book.getTotalPages(),
+                    now()
+            );
             return response(libraryItemRepository.saveAndFlush(item), book, Map.of());
         } catch (DataIntegrityViolationException exception) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
@@ -283,8 +321,7 @@ public class LibraryService {
         return items.subList(startIndex, Math.min(startIndex + PAGE_SIZE, items.size()));
     }
 
-    private Comparator<LibraryItem> comparator(LibrarySort sort, Map<Long, Book> books,
-                                               Map<Long, Long> commentCounts) {
+    private Comparator<LibraryItem> comparator(LibrarySort sort, Map<Long, Book> books, Map<Long, Long> commentCounts) {
         LibrarySort effectiveSort = sort == null ? LibrarySort.RECENT : sort;
         return switch (effectiveSort) {
             case RECENT -> Comparator.comparing(LibraryItem::getReadingUpdatedAt).reversed()
@@ -295,10 +332,14 @@ public class LibraryService {
                             commentCounts.getOrDefault(item.getBookId(), 0L)).reversed()
                     .thenComparing(LibraryItem::getReadingUpdatedAt, Comparator.reverseOrder())
                     .thenComparing(LibraryItem::getBookId, Comparator.reverseOrder());
-            case RATING -> Comparator.comparing(LibraryItem::getRating,
-                            Comparator.nullsLast(Comparator.reverseOrder()))
-                    .thenComparing(LibraryItem::getRatingUpdatedAt,
-                            Comparator.nullsLast(Comparator.reverseOrder()))
+            case RATING -> Comparator.comparing(
+                    LibraryItem::getRating,
+                    Comparator.nullsLast(Comparator.reverseOrder())
+            )
+                    .thenComparing(
+                    LibraryItem::getRatingUpdatedAt,
+                    Comparator.nullsLast(Comparator.reverseOrder())
+            )
                     .thenComparing(LibraryItem::getBookId, Comparator.reverseOrder());
             case TITLE -> Comparator.comparing((LibraryItem item) -> books.get(item.getBookId()).getTitle())
                     .thenComparing(LibraryItem::getBookId);

@@ -42,10 +42,7 @@ public class OAuth2LoginController {
     }
 
     @GetMapping("/google")
-    public ResponseEntity<Void> googleLogin(
-            @RequestParam String client,
-            HttpServletRequest request
-    ) {
+    public ResponseEntity<Void> googleLogin(@RequestParam String client, HttpServletRequest request) {
         OAuthFrontendClient frontendClient = OAuthFrontendClient.from(client)
                 .orElse(null);
 

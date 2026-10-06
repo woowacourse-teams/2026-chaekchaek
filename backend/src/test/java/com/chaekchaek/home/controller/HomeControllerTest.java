@@ -65,14 +65,16 @@ class HomeControllerTest {
                 .andExpect(jsonPath("$.books[0].isbn13").value("9788925568683"))
                 .andExpect(jsonPath("$.books[0].reviewCount").value(12))
                 .andExpect(jsonPath("$.books[0].replyCount").value(30))
-                .andDo(document("home-popular-books",
+                .andDo(document(
+                        "home-popular-books",
                         responseFields(popularBookResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("인기 책 목록 조회")
                                 .description("유효 감상과 답글 수의 합이 많은 책을 최대 10권 조회한다. 조회할 책이 없으면 빈 배열을 반환한다")
                                 .tag("홈")
                                 .responseFields(popularBookResponseFields())
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -124,14 +126,16 @@ class HomeControllerTest {
                 .andExpect(jsonPath("$.reviews[0].author.actorType").value("MEMBER"))
                 .andExpect(jsonPath("$.reviews[0].bookId").value(42))
                 .andExpect(jsonPath("$.reviews[0].isbn13").value("9788936433598"))
-                .andDo(document("home-latest-reviews",
+                .andDo(document(
+                        "home-latest-reviews",
                         responseFields(latestReviewResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("최신 감상 목록 조회")
                                 .description("삭제되지 않고 스포일러가 아닌 최신 감상을 최대 10개 조회한다. 조회할 감상이 없으면 빈 배열을 반환한다")
                                 .tag("홈")
                                 .responseFields(latestReviewResponseFields())
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test

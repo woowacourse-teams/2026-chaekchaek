@@ -13,10 +13,7 @@ public class AppleAccountService {
     private final SocialAccountRepository socialAccountRepository;
     private final AppleTokenClient appleTokenClient;
 
-    public AppleAccountService(
-            SocialAccountRepository socialAccountRepository,
-            AppleTokenClient appleTokenClient
-    ) {
+    public AppleAccountService(SocialAccountRepository socialAccountRepository, AppleTokenClient appleTokenClient) {
         this.socialAccountRepository = socialAccountRepository;
         this.appleTokenClient = appleTokenClient;
     }

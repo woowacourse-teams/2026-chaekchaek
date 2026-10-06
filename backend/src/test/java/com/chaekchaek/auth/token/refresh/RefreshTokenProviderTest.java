@@ -89,7 +89,6 @@ class RefreshTokenProviderTest {
         assertAll(
                 () -> assertThat(result.value()).isNotBlank(),
                 () -> assertThat(result.expiresAt()).isEqualTo(expectedIssuedAt.plusDays(14)),
-
                 () -> assertThat(savedToken.getMember()).isSameAs(member),
                 () -> assertThat(savedToken.getIssuedAt()).isEqualTo(expectedIssuedAt),
                 () -> assertThat(savedToken.getExpiresAt()).isEqualTo(expectedIssuedAt.plusDays(14)),

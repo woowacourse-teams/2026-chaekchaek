@@ -89,8 +89,12 @@ class GuestAuthControllerTest {
     @DisplayName("기존 게스트 토큰으로 Actor 정보를 조회한다")
     void should_ReturnGuestInfo_When_ExistingTokenIsUsable() throws Exception {
         // given
-        Actor actor = Actor.guest(new GuestTokenHasher().hash("existing-token"),
-                "다정한 파란 참새", TOKEN_ISSUED_AT, TOKEN_EXPIRES_AT);
+        Actor actor = Actor.guest(
+                new GuestTokenHasher().hash("existing-token"),
+                "다정한 파란 참새",
+                TOKEN_ISSUED_AT,
+                TOKEN_EXPIRES_AT
+        );
         ReflectionTestUtils.setField(actor, "id", 7L);
         when(guestTokenService.findUsableActor("existing-token")).thenReturn(actor);
 
@@ -103,7 +107,8 @@ class GuestAuthControllerTest {
                 .andExpect(jsonPath("$.nickname").value("다정한 파란 참새"))
                 .andExpect(jsonPath("$.expiresAt").value(TOKEN_EXPIRES_AT_RESPONSE))
                 .andExpect(jsonPath("$.guestToken").doesNotExist())
-                .andDo(document("guest-token-info",
+                .andDo(document(
+                        "guest-token-info",
                         requestHeaders(headerWithName("X-Guest-Token")
                                 .description("조회할 현재 게스트 토큰")),
                         responseFields(GUEST_INFO_RESPONSE_FIELDS),
@@ -114,7 +119,8 @@ class GuestAuthControllerTest {
                                 .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("조회할 현재 게스트 토큰"))
                                 .responseFields(GUEST_INFO_RESPONSE_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -161,7 +167,8 @@ class GuestAuthControllerTest {
                 .andExpect(jsonPath("$.actorType").value("GUEST"))
                 .andExpect(jsonPath("$.nickname").value("다정한 파란 참새"))
                 .andExpect(jsonPath("$.expiresAt").value(TOKEN_EXPIRES_AT_RESPONSE))
-                .andDo(document("guest-token-issue",
+                .andDo(document(
+                        "guest-token-issue",
                         responseFields(TOKEN_RESPONSE_FIELDS),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("게스트 토큰 발급")
@@ -169,7 +176,8 @@ class GuestAuthControllerTest {
                                         .formatted(TOKEN_EXPIRATION_DAYS))
                                 .tag("인증")
                                 .responseFields(TOKEN_RESPONSE_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -190,7 +198,8 @@ class GuestAuthControllerTest {
                 .andExpect(jsonPath("$.actorType").value("GUEST"))
                 .andExpect(jsonPath("$.nickname").value("다정한 파란 참새"))
                 .andExpect(jsonPath("$.expiresAt").value(TOKEN_EXPIRES_AT_RESPONSE))
-                .andDo(document("guest-token-refresh",
+                .andDo(document(
+                        "guest-token-refresh",
                         requestHeaders(headerWithName("X-Guest-Token")
                                 .description("교체할 현재 게스트 토큰")),
                         responseFields(TOKEN_RESPONSE_FIELDS),
@@ -202,7 +211,8 @@ class GuestAuthControllerTest {
                                 .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("교체할 현재 게스트 토큰"))
                                 .responseFields(TOKEN_RESPONSE_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -210,8 +220,13 @@ class GuestAuthControllerTest {
         doThrow(new BusinessException(ErrorCode.INVALID_GUEST_TOKEN))
                 .when(guestTokenService).refresh(anyString());
 
-        documentRefreshProblem("invalid-token", "guest-token-refresh-invalid", 401,
-                "INVALID_GUEST_TOKEN", "유효하지 않은 게스트 토큰이면 인증 오류를 반환한다");
+        documentRefreshProblem(
+                "invalid-token",
+                "guest-token-refresh-invalid",
+                401,
+                "INVALID_GUEST_TOKEN",
+                "유효하지 않은 게스트 토큰이면 인증 오류를 반환한다"
+        );
     }
 
     @Test
@@ -219,8 +234,13 @@ class GuestAuthControllerTest {
         doThrow(new BusinessException(ErrorCode.UNUSABLE_GUEST_TOKEN))
                 .when(guestTokenService).refresh(anyString());
 
-        documentRefreshProblem("expired-token", "guest-token-refresh-expired", 401,
-                "UNUSABLE_GUEST_TOKEN", "만료되거나 폐기된 게스트 토큰은 갱신할 수 없다");
+        documentRefreshProblem(
+                "expired-token",
+                "guest-token-refresh-expired",
+                401,
+                "UNUSABLE_GUEST_TOKEN",
+                "만료되거나 폐기된 게스트 토큰은 갱신할 수 없다"
+        );
     }
 
     @Test
@@ -228,18 +248,28 @@ class GuestAuthControllerTest {
         doThrow(new BusinessException(ErrorCode.GUEST_TOKEN_REFRESH_NOT_ALLOWED))
                 .when(guestTokenService).refresh(anyString());
 
-        documentRefreshProblem("early-token", "guest-token-refresh-not-allowed", 409,
+        documentRefreshProblem(
+                "early-token",
+                "guest-token-refresh-not-allowed",
+                409,
                 "GUEST_TOKEN_REFRESH_NOT_ALLOWED",
-                "만료까지 %d일보다 많이 남은 토큰은 갱신할 수 없다".formatted(REFRESH_WINDOW_DAYS));
+                "만료까지 %d일보다 많이 남은 토큰은 갱신할 수 없다".formatted(REFRESH_WINDOW_DAYS)
+        );
     }
 
-    private void documentRefreshProblem(String token, String identifier, int statusCode,
-                                        String code, String description) throws Exception {
+    private void documentRefreshProblem(
+            String token,
+            String identifier,
+            int statusCode,
+            String code,
+            String description
+    ) throws Exception {
         mockMvc.perform(post("/api/v1/auth/guest-token/refresh")
                         .header("X-Guest-Token", token))
                 .andExpect(status().is(statusCode))
                 .andExpect(jsonPath("$.code").value(code))
-                .andDo(document(identifier,
+                .andDo(document(
+                        identifier,
                         requestHeaders(headerWithName("X-Guest-Token").description("갱신할 현재 게스트 토큰")),
                         responseFields(PROBLEM_DETAIL_FIELDS),
                         resource(ResourceSnippetParameters.builder()
@@ -249,6 +279,7 @@ class GuestAuthControllerTest {
                                 .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("갱신할 현재 게스트 토큰"))
                                 .responseFields(PROBLEM_DETAIL_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 }

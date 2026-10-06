@@ -22,12 +22,18 @@ class BookServiceTest {
         BookDetailAssembler detailAssembler = mock(BookDetailAssembler.class);
         BookService service = new BookService(bookResolver, detailAssembler);
         Book detailBook = Book.create(
-                new Isbn13("9788925568683"), "마션", "https://image.example/martian.jpg",
+                new Isbn13("9788925568683"),
+                "마션",
+                "https://image.example/martian.jpg",
                 "https://image.example/martian.jpg/side",
                 "https://image.example/martian.jpg/back",
                 "책 설명",
-                List.of("앤디 위어"), List.of("박아람"), "알에이치코리아", "SF",
-                LocalDate.of(2026, 1, 1), 308
+                List.of("앤디 위어"),
+                List.of("박아람"),
+                "알에이치코리아",
+                "SF",
+                LocalDate.of(2026, 1, 1),
+                308
         );
         BookDetailResponse detailResponse = new BookDetailResponse(
                 1L,

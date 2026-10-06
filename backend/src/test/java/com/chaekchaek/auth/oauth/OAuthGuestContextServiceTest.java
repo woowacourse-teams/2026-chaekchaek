@@ -30,7 +30,8 @@ class OAuthGuestContextServiceTest {
                 "a".repeat(64),
                 "게스트 참새",
                 LocalDateTime.of(2026, 9, 1, 0, 0),
-                LocalDateTime.of(2026, 12, 1, 0, 0));
+                LocalDateTime.of(2026, 12, 1, 0, 0)
+        );
         ReflectionTestUtils.setField(actor, "id", 7L);
         when(guestTokenService.findUsableActor("guest-token")).thenReturn(actor);
 
@@ -49,7 +50,8 @@ class OAuthGuestContextServiceTest {
                 "a".repeat(64),
                 "게스트 참새",
                 LocalDateTime.of(2026, 9, 1, 0, 0),
-                LocalDateTime.of(2026, 12, 1, 0, 0));
+                LocalDateTime.of(2026, 12, 1, 0, 0)
+        );
         ReflectionTestUtils.setField(actor, "id", 7L);
         when(guestTokenService.findUsableActor("guest-token")).thenReturn(actor);
 

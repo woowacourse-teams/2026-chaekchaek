@@ -49,10 +49,17 @@ public class SocialLoginServiceTest {
     @DisplayName("정지 회원은 로그인이나 재가입 없이 거부한다")
     void rejectsSuspendedMember() {
         Member member = Member.create("익명 이름", null, LocalDateTime.now());
-        ReflectionTestUtils.setField(member, "accountStatus",
-                AccountStatus.SUSPENDED);
-        SocialAccount account = SocialAccount.connect(member, Provider.GOOGLE, "suspended-user",
-                LocalDateTime.now());
+        ReflectionTestUtils.setField(
+                member,
+                "accountStatus",
+                AccountStatus.SUSPENDED
+        );
+        SocialAccount account = SocialAccount.connect(
+                member,
+                Provider.GOOGLE,
+                "suspended-user",
+                LocalDateTime.now()
+        );
         when(socialAccountRepository.findForLogin(Provider.GOOGLE, "suspended-user"))
                 .thenReturn(Optional.of(account));
 
@@ -62,12 +69,18 @@ public class SocialLoginServiceTest {
                         "email",
                         null
                 )))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.UNAUTHORIZED));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.UNAUTHORIZED)
+        );
         assertThat(account.getMember()).isSameAs(member);
-        Mockito.verifyNoInteractions(memberRepository, actorRepository,
-                nicknameGenerator, guestActorMigrationService);
+        Mockito.verifyNoInteractions(
+                memberRepository,
+                actorRepository,
+                nicknameGenerator,
+                guestActorMigrationService
+        );
     }
 
     @ParameterizedTest
@@ -83,11 +96,14 @@ public class SocialLoginServiceTest {
             Member previous = account.getMember();
             previous.withdraw(LocalDateTime.now());
             Member result = provider == Provider.GOOGLE
-                    ? socialLoginService.loginOrSignUp(new GoogleProfile(
-                            "repeat-user",
-                            "email",
-                            null
-                    ), 7L)
+                    ? socialLoginService.loginOrSignUp(
+                            new GoogleProfile(
+                                    "repeat-user",
+                                    "email",
+                                    null
+                            ),
+                            7L
+                    )
                     : socialLoginService.loginOrSignUp(new AppleProfile("repeat-user"));
             assertThat(result).isNotSameAs(previous);
             assertThat(result.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
@@ -112,11 +128,17 @@ public class SocialLoginServiceTest {
         oldMember.disableAnonymousDisplay();
         oldMember.withdraw(LocalDateTime.now());
         Actor oldActor = Actor.member(oldMember, LocalDateTime.now());
-        SocialAccount account = SocialAccount.connect(oldMember, Provider.GOOGLE,
-                profile.providerUserId(), LocalDateTime.now());
+        SocialAccount account = SocialAccount.connect(
+                oldMember,
+                Provider.GOOGLE,
+                profile.providerUserId(),
+                LocalDateTime.now()
+        );
         account.updateProviderRefreshToken("old-provider-token");
-        when(socialAccountRepository.findForLogin(Provider.GOOGLE,
-                profile.providerUserId())).thenReturn(Optional.of(account));
+        when(socialAccountRepository.findForLogin(
+                Provider.GOOGLE,
+                profile.providerUserId()
+        )).thenReturn(Optional.of(account));
         when(nicknameGenerator.generate()).thenReturn("새 익명 이름");
 
         Member rejoined = socialLoginService.loginOrSignUp(profile);
@@ -246,7 +268,6 @@ public class SocialLoginServiceTest {
                 () -> assertThat(savedMember.isDisplayAnonymous()).isTrue(),
                 () -> assertThat(savedActor.getMember()).isSameAs(savedMember),
                 () -> assertThat(savedActor.getType()).isEqualTo(ActorType.MEMBER),
-
                 () -> assertThat(savedAccount.getMember()).isSameAs(savedMember),
                 () -> assertThat(savedAccount.getProvider()).isEqualTo(Provider.GOOGLE),
                 () -> assertThat(savedAccount.getProviderUserId()).isEqualTo("google-user-123"),
@@ -303,7 +324,11 @@ public class SocialLoginServiceTest {
         );
         Member existingMember = Member.create("책책-1234", "exUrl", LocalDateTime.of(2026, 8, 12, 12, 0));
         SocialAccount existingAccount = SocialAccount.connect(
-                existingMember, Provider.GOOGLE, googleProfile.providerUserId(), LocalDateTime.of(2026, 8, 12, 12, 0));
+                existingMember,
+                Provider.GOOGLE,
+                googleProfile.providerUserId(),
+                LocalDateTime.of(2026, 8, 12, 12, 0)
+        );
         when(socialAccountRepository.findForLogin(Provider.GOOGLE, googleProfile.providerUserId()))
                 .thenReturn(Optional.of(existingAccount));
 
