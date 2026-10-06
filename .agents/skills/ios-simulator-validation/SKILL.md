@@ -1,6 +1,6 @@
 ---
 name: ios-simulator-validation
-description: 첵췍 KMP iOS 앱을 iOS Simulator에서 빌드, 테스트, UI 조작, 스크린샷과 Apple HIG 기준으로 검증한다. iOS 화면 검증, Dynamic Type, 접근성 감사, Simulator 확인, Apple 로그인 UI 확인 요청에 사용하며 Android Emulator 검증에는 사용하지 않는다.
+description: 책췍 KMP iOS 앱을 iOS Simulator에서 빌드, 테스트, UI 조작, 스크린샷과 Apple HIG 기준으로 검증한다. iOS 화면 검증, Dynamic Type, 접근성 감사, Simulator 확인, Apple 로그인 UI 확인 요청에 사용하며 Android Emulator 검증에는 사용하지 않는다.
 ---
 
 # iOS Simulator 검증
