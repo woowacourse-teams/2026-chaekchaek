@@ -34,7 +34,8 @@ public class SecurityContextCurrentActorProvider implements CurrentActorProvider
 
     @Override
     public Optional<CurrentActor> findCurrentActor() {
-        Optional<CurrentActor> memberActor = currentMemberIdProvider.findCurrentMemberId().stream()
+        Optional<CurrentActor> memberActor = currentMemberIdProvider.findCurrentMemberId()
+                .stream()
                 .mapToObj(memberId -> actorRepository.findByMemberId(memberId)
                         .map(this::toMemberActor))
                 .findFirst()

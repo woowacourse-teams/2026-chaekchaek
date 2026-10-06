@@ -96,7 +96,8 @@ public class Yes24BookClient implements BookSearchClient {
         return new BookSearchResult(
                 data.totalCount(),
                 data.nextPage(),
-                data.items().stream()
+                data.items()
+                        .stream()
                         .map(this::toBookSearchItem)
                         .toList()
         );
@@ -132,7 +133,8 @@ public class Yes24BookClient implements BookSearchClient {
         }
 
         try {
-            return response.data().items().stream()
+            return response.data().items()
+                    .stream()
                     .filter(item -> item.matchesIsbn13(isbn13))
                     .findFirst()
                     .map(this::toBookDetailItem)

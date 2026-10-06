@@ -78,7 +78,9 @@ public class BookSearchService {
         if (memberId.isEmpty() || registeredBooks.isEmpty()) {
             return Set.of();
         }
-        List<Long> bookIds = registeredBooks.stream().map(Book::getId).toList();
+        List<Long> bookIds = registeredBooks.stream()
+                .map(Book::getId)
+                .toList();
         return libraryItemRepository.findAllByMemberIdAndBookIdIn(memberId.getAsLong(), bookIds)
                 .stream()
                 .map(LibraryItem::getBookId)

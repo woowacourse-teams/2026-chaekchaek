@@ -139,8 +139,12 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         List<Review> reviews = feed == Feed.MINE
                 ? reviewRepository.findByBookIdAndActorId(bookId, actorId)
                 : reviewRepository.findByBookId(bookId);
-        Map<Long, Long> replies = replyCounts(reviews.stream().map(Review::getId).toList());
-        Map<Long, Long> reactions = reviewReactionCounts(reviews.stream().map(Review::getId).toList());
+        Map<Long, Long> replies = replyCounts(reviews.stream()
+                .map(Review::getId)
+                .toList());
+        Map<Long, Long> reactions = reviewReactionCounts(reviews.stream()
+                .map(Review::getId)
+                .toList());
         return reviews.stream()
                 .sorted(Comparator.comparingLong((Review review) -> reactions.getOrDefault(review.getId(), 0L)
                         + replies.getOrDefault(review.getId(), 0L)).reversed()
@@ -385,26 +389,38 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private List<ReviewResponse> toReviewResponses(List<Review> reviews, Long actorId) {
-        List<Long> reviewIds = reviews.stream().map(Review::getId).toList();
+        List<Long> reviewIds = reviews.stream()
+                .map(Review::getId)
+                .toList();
         Map<Long, Long> replyCounts = replyCounts(reviewIds);
         Map<Long, Long> reactionCounts = reviewReactionCounts(reviewIds);
         List<Reply> replyList = reviewIds.isEmpty() ? List.of() : replyRepository.findRecentThreeByReviewIdIn(reviewIds);
-        Map<Long, List<Reply>> recentReplies = replyList.stream().collect(Collectors.groupingBy(Reply::getReviewId));
-        Map<Long, Long> replyReactionCounts = replyReactionCounts(replyList.stream().map(Reply::getId).toList());
+        Map<Long, List<Reply>> recentReplies = replyList.stream()
+                .collect(Collectors.groupingBy(Reply::getReviewId));
+        Map<Long, Long> replyReactionCounts = replyReactionCounts(replyList.stream()
+                .map(Reply::getId)
+                .toList());
         Set<Long> likedReviews = likedReviewIds(reviewIds, actorId);
-        Set<Long> likedReplies = likedReplyIds(replyList.stream().map(Reply::getId).toList(), actorId);
+        Set<Long> likedReplies = likedReplyIds(
+                replyList.stream()
+                        .map(Reply::getId)
+                        .toList(),
+                actorId
+        );
         Map<Long, ReviewMemberProfile> memberProfiles = memberProfilesOf(reviews, replyList);
-        return reviews.stream().map(review -> toReviewResponse(
-                review,
-                actorId,
-                replyCounts,
-                reactionCounts,
-                recentReplies,
-                replyReactionCounts,
-                likedReviews,
-                likedReplies,
-                memberProfiles
-        )).toList();
+        return reviews.stream()
+                .map(review -> toReviewResponse(
+                        review,
+                        actorId,
+                        replyCounts,
+                        reactionCounts,
+                        recentReplies,
+                        replyReactionCounts,
+                        likedReviews,
+                        likedReplies,
+                        memberProfiles
+                ))
+                .toList();
     }
 
     private ReviewResponse toReviewResponse(
@@ -418,7 +434,8 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
             Set<Long> likedReplies,
             Map<Long, ReviewMemberProfile> memberProfiles
     ) {
-        List<ReplyResponse> replies = recentReplies.getOrDefault(review.getId(), List.of()).stream()
+        List<ReplyResponse> replies = recentReplies.getOrDefault(review.getId(), List.of())
+                .stream()
                 .limit(RECENT_REPLY_LIMIT)
                 .sorted(Comparator.comparing(Reply::getCreatedAt).thenComparing(Reply::getId))
                 .map(reply -> toReplyResponse(
@@ -447,16 +464,25 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private List<ReplyResponse> toReplyResponses(List<Reply> replies, Long actorId) {
-        Map<Long, Long> reactions = replyReactionCounts(replies.stream().map(Reply::getId).toList());
-        Set<Long> liked = likedReplyIds(replies.stream().map(Reply::getId).toList(), actorId);
+        Map<Long, Long> reactions = replyReactionCounts(replies.stream()
+                .map(Reply::getId)
+                .toList());
+        Set<Long> liked = likedReplyIds(
+                replies.stream()
+                        .map(Reply::getId)
+                        .toList(),
+                actorId
+        );
         Map<Long, ReviewMemberProfile> memberProfiles = memberProfilesOf(List.of(), replies);
-        return replies.stream().map(reply -> toReplyResponse(
-                reply,
-                actorId,
-                reactions.getOrDefault(reply.getId(), 0L),
-                liked.contains(reply.getId()),
-                memberProfiles
-        )).toList();
+        return replies.stream()
+                .map(reply -> toReplyResponse(
+                        reply,
+                        actorId,
+                        reactions.getOrDefault(reply.getId(), 0L),
+                        liked.contains(reply.getId()),
+                        memberProfiles
+                ))
+                .toList();
     }
 
     private ReplyResponse toReplyResponse(
@@ -529,13 +555,15 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     private Map<Long, Long> replyCounts(Collection<Long> reviewIds) {
         if (reviewIds.isEmpty()) return Map.of();
-        return replyRepository.countByReviewIdInGroupByReviewId(reviewIds).stream()
+        return replyRepository.countByReviewIdInGroupByReviewId(reviewIds)
+                .stream()
                 .collect(Collectors.toMap(ReplyRepository.ReplyCount::getReviewId, ReplyRepository.ReplyCount::getCount));
     }
 
     private Map<Long, Long> reviewReactionCounts(Collection<Long> reviewIds) {
         if (reviewIds.isEmpty()) return Map.of();
-        return reviewReactionRepository.countByReviewIdInGroupByReviewId(reviewIds).stream()
+        return reviewReactionRepository.countByReviewIdInGroupByReviewId(reviewIds)
+                .stream()
                 .collect(Collectors.toMap(
                         ReviewReactionRepository.ReactionCount::getReviewId,
                         ReviewReactionRepository.ReactionCount::getCount
@@ -544,7 +572,8 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     private Map<Long, Long> replyReactionCounts(Collection<Long> replyIds) {
         if (replyIds.isEmpty()) return Map.of();
-        return replyReactionRepository.countByReplyIdInGroupByReplyId(replyIds).stream()
+        return replyReactionRepository.countByReplyIdInGroupByReplyId(replyIds)
+                .stream()
                 .collect(Collectors.toMap(
                         ReplyReactionRepository.ReactionCount::getReplyId,
                         ReplyReactionRepository.ReactionCount::getCount
@@ -553,14 +582,18 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     private Set<Long> likedReviewIds(List<Long> reviewIds, Long actorId) {
         if (actorId == null || reviewIds.isEmpty()) return Set.of();
-        return reviewReactionRepository.findByReviewIdInAndActorId(reviewIds, actorId).stream()
-                .map(ReviewReaction::getReviewId).collect(Collectors.toSet());
+        return reviewReactionRepository.findByReviewIdInAndActorId(reviewIds, actorId)
+                .stream()
+                .map(ReviewReaction::getReviewId)
+                .collect(Collectors.toSet());
     }
 
     private Set<Long> likedReplyIds(List<Long> replyIds, Long actorId) {
         if (actorId == null || replyIds.isEmpty()) return Set.of();
-        return replyReactionRepository.findByReplyIdInAndActorId(replyIds, actorId).stream()
-                .map(ReplyReaction::getReplyId).collect(Collectors.toSet());
+        return replyReactionRepository.findByReplyIdInAndActorId(replyIds, actorId)
+                .stream()
+                .map(ReplyReaction::getReplyId)
+                .collect(Collectors.toSet());
     }
 
     private Review getReview(long reviewId) {
@@ -614,8 +647,10 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     private Map<Long, ReviewMemberProfile> memberProfilesOf(List<Review> reviews, List<Reply> replies) {
         Set<Long> actorIds = Stream.concat(
-                reviews.stream().map(Review::getActorId),
-                replies.stream().map(Reply::getActorId)
+                reviews.stream()
+                        .map(Review::getActorId),
+                replies.stream()
+                        .map(Reply::getActorId)
         )
                 .collect(Collectors.toSet());
         return actorIds.isEmpty() ? Map.of() : reviewMemberReader.findByActorIds(actorIds);
@@ -624,7 +659,8 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     @Override
     @Transactional(readOnly = true)
     public Map<Long, Long> getCommentCounts(Collection<Long> bookIds) {
-        return getActivityCounts(bookIds).entrySet().stream()
+        return getActivityCounts(bookIds).entrySet()
+                .stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         entry -> entry.getValue().totalActivityCount()
@@ -643,13 +679,14 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 reviewCounts.merge(count.getBookId(), count.getCount(), Long::sum));
         replyRepository.countByReviewBookIdInGroupByBookId(bookIds).forEach(count ->
                 replyCounts.merge(count.getBookId(), count.getCount(), Long::sum));
-        return bookIds.stream().collect(Collectors.toMap(
-                bookId -> bookId,
-                bookId -> new ActivityCounts(
-                        reviewCounts.get(bookId),
-                        replyCounts.get(bookId)
-                )
-        ));
+        return bookIds.stream()
+                .collect(Collectors.toMap(
+                        bookId -> bookId,
+                        bookId -> new ActivityCounts(
+                                reviewCounts.get(bookId),
+                                replyCounts.get(bookId)
+                        )
+                ));
     }
 
     private ReviewReaction.ReviewReactionId reviewReactionId(long reviewId, long actorId) {

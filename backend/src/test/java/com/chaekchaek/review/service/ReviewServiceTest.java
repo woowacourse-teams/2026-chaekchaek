@@ -531,17 +531,18 @@ class ReviewServiceTest {
     }
 
     private ReviewMemberReader memberReader(boolean anonymousEnabled) {
-        return actorIds -> actorIds.stream().collect(Collectors.toMap(
-                actorId -> actorId,
-                actorId -> new ReviewMemberProfile(
-                        "닉네임",
-                        "profile",
-                        "참새-a1b2c3d4",
-                        anonymousEnabled,
-                        false,
-                        ActorType.MEMBER
-                )
-        ));
+        return actorIds -> actorIds.stream()
+                .collect(Collectors.toMap(
+                        actorId -> actorId,
+                        actorId -> new ReviewMemberProfile(
+                                "닉네임",
+                                "profile",
+                                "참새-a1b2c3d4",
+                                anonymousEnabled,
+                                false,
+                                ActorType.MEMBER
+                        )
+                ));
     }
 
     private CurrentActorProvider currentActorProvider() {

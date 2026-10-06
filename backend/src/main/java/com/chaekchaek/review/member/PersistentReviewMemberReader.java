@@ -18,7 +18,8 @@ class PersistentReviewMemberReader implements ReviewMemberReader {
 
     @Override
     public Map<Long, ReviewMemberProfile> findByActorIds(Collection<Long> actorIds) {
-        return actorRepository.findAllById(actorIds).stream()
+        return actorRepository.findAllById(actorIds)
+                .stream()
                 .collect(Collectors.toMap(Actor::getId, this::toProfile));
     }
 

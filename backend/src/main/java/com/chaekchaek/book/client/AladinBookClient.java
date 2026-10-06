@@ -35,7 +35,8 @@ public class AladinBookClient implements BookSearchClient {
         return new BookSearchResult(
                 response.totalResults(),
                 response.hasNextPage() ? response.startIndex() + 1 : null,
-                response.items().stream()
+                response.items()
+                        .stream()
                         .map(this::toBookSearchItem)
                         .toList()
         );
@@ -89,7 +90,8 @@ public class AladinBookClient implements BookSearchClient {
         if (response.hasError()) {
             throw new AladinClientException(response.errorCode(), response.errorMessage());
         }
-        return response.items().stream()
+        return response.items()
+                .stream()
                 .filter(item -> item.matchesIsbn13(isbn13))
                 .findFirst()
                 .map(this::toBookDetailItem)

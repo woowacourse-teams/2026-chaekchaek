@@ -118,8 +118,11 @@ public class SocialLoginIntegrationTest {
         assertThat(newReply.author().memberId()).isEqualTo(rejoined.getId());
         assertThat(newReply.author().profileStatus())
                 .isEqualTo(AuthorProfileStatus.AVAILABLE);
-        var oldResponse = reviewService.findReplies(review.getId(), 1).items().stream()
-                .filter(reply -> reply.replyId() == oldReply.replyId()).findFirst().orElseThrow();
+        var oldResponse = reviewService.findReplies(review.getId(), 1).items()
+                .stream()
+                .filter(reply -> reply.replyId() == oldReply.replyId())
+                .findFirst()
+                .orElseThrow();
         assertThat(oldResponse.author().displayName()).isEqualTo(oldAnonymousName);
         assertThat(oldResponse.author().memberId()).isNull();
         assertThat(oldResponse.author().mine()).isFalse();

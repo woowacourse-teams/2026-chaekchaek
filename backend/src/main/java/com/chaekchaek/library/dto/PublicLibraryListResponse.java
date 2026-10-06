@@ -16,7 +16,10 @@ public record PublicLibraryListResponse(
                 library.totalCount(),
                 library.filteredCount(),
                 library.nextPage(),
-                library.items().stream().map(PublicLibraryItemResponse::from).toList()
+                library.items()
+                        .stream()
+                        .map(PublicLibraryItemResponse::from)
+                        .toList()
         );
     }
 }

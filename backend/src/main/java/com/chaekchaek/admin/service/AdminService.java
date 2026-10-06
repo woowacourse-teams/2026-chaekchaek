@@ -56,7 +56,8 @@ public class AdminService {
         requireAdmin();
         List<RecommendedBook> recommendedBooks = recommendedBookRepository.findAllByOrderByCreatedAtDescIdDesc();
         Map<Long, Book> books = booksWithAuthorsById(recommendedBooks.stream()
-                .map(RecommendedBook::getBookId).toList());
+                .map(RecommendedBook::getBookId)
+                .toList());
         List<RecommendedBookResponse> responses = recommendedBooks.stream()
                 .map(recommendedBook -> toResponse(recommendedBook, books.get(recommendedBook.getBookId())))
                 .filter(Objects::nonNull)
@@ -108,7 +109,8 @@ public class AdminService {
         if (bookIds.isEmpty()) {
             return Map.of();
         }
-        return bookRepository.findAllWithAuthorsByIdIn(bookIds).stream()
+        return bookRepository.findAllWithAuthorsByIdIn(bookIds)
+                .stream()
                 .collect(Collectors.toMap(Book::getId, book -> book));
     }
 

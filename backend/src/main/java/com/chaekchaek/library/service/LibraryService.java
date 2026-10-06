@@ -188,7 +188,9 @@ public class LibraryService {
             validateAllLibraryItemsExist(memberId, bookIds);
             Map<Long, Book> books = booksByIdForUpdate(bookIds);
             List<LibraryItem> items = requireAllLibraryItemsForUpdate(memberId, bookIds);
-            if (books.values().stream().anyMatch(book -> book.getTotalPages() == null)) {
+            if (books.values()
+                    .stream()
+                    .anyMatch(book -> book.getTotalPages() == null)) {
                 throw new BusinessException(ErrorCode.INVALID_READING_STATE);
             }
             items.forEach(item -> item.changeStatus(
@@ -297,12 +299,16 @@ public class LibraryService {
     }
 
     private Map<Long, Book> booksById(Collection<LibraryItem> items) {
-        return bookRepository.findAllById(items.stream().map(LibraryItem::getBookId).toList()).stream()
+        return bookRepository.findAllById(items.stream()
+                .map(LibraryItem::getBookId)
+                .toList())
+                .stream()
                 .collect(Collectors.toMap(Book::getId, Function.identity()));
     }
 
     private Map<Long, Book> booksByIdForUpdate(Collection<Long> bookIds) {
-        return bookIds.stream().sorted()
+        return bookIds.stream()
+                .sorted()
                 .collect(Collectors.toMap(Function.identity(), this::getBookForUpdate));
     }
 
@@ -358,7 +364,8 @@ public class LibraryService {
 
     private void validateBulkBookIds(Collection<Long> bookIds) {
         if (bookIds == null || bookIds.isEmpty() || bookIds.size() > PAGE_SIZE
-                || bookIds.stream().anyMatch(bookId -> bookId == null)
+                || bookIds.stream()
+                        .anyMatch(bookId -> bookId == null)
                 || new HashSet<>(bookIds).size() != bookIds.size()) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }

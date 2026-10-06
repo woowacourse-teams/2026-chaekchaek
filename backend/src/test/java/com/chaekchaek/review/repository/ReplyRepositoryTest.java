@@ -114,6 +114,9 @@ class ReplyRepositoryTest {
 
         // then
         assertThat(actual).extracting(Review::getId)
-                .containsExactlyElementsOf(nonSpoilerReviews.reversed().stream().map(Review::getId).toList());
+                .containsExactlyElementsOf(nonSpoilerReviews.reversed()
+                        .stream()
+                        .map(Review::getId)
+                        .toList());
     }
 }
