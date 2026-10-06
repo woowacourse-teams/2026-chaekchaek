@@ -7,5 +7,5 @@ export type PostAuthGuestTokenResponseDto = ResponseDto<{
   nickname: string;
   expiresAt: string;
   actorId: number;
-  actorType: string;
+  actorType: 'MEMBER' | 'GUEST';
 }>;
