@@ -42,6 +42,20 @@ public class AladinBookClient implements BookSearchClient {
         );
     }
 
+    private BookSearchItem toBookSearchItem(AladinBookItem source) {
+        AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
+        return new BookSearchItem(
+                source.title(),
+                source.cover(),
+                contributors.authors(),
+                contributors.translators(),
+                source.publishedDate(),
+                source.isbn13(),
+                source.categoryName(),
+                source.publisher()
+        );
+    }
+
     public AladinSearchResponse searchBooks(String query, int page) {
         URI uri = new DefaultUriBuilderFactory().builder()
                 .path("/ttb/api/ItemSearch.aspx")
@@ -98,6 +112,14 @@ public class AladinBookClient implements BookSearchClient {
                 .orElseThrow(BookNotFoundException::new);
     }
 
+    private AladinSearchResponse requestBooks(URI uri) {
+        return restClient.get()
+                .uri(uri)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .requiredBody(AladinSearchResponse.class);
+    }
+
     private BookDetailItem toBookDetailItem(AladinBookItem source) {
         AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
         return new BookDetailItem(
@@ -113,28 +135,6 @@ public class AladinBookClient implements BookSearchClient {
                 source.categoryName(),
                 source.publisher(),
                 source.totalPages()
-        );
-    }
-
-    private AladinSearchResponse requestBooks(URI uri) {
-        return restClient.get()
-                .uri(uri)
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .requiredBody(AladinSearchResponse.class);
-    }
-
-    private BookSearchItem toBookSearchItem(AladinBookItem source) {
-        AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
-        return new BookSearchItem(
-                source.title(),
-                source.cover(),
-                contributors.authors(),
-                contributors.translators(),
-                source.publishedDate(),
-                source.isbn13(),
-                source.categoryName(),
-                source.publisher()
         );
     }
 }

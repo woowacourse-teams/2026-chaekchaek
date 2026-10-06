@@ -93,6 +93,28 @@ public class ReviewActorBackfill implements ApplicationRunner {
         throw new IllegalStateException("Column not found: " + tableName + "." + columnName);
     }
 
+    private void makeLegacyMemberIdNullable(String tableName) throws Exception {
+        if (isMySql()) {
+            jdbcTemplate.execute("alter table " + tableName + " modify member_id bigint null");
+        } else {
+            jdbcTemplate.execute("alter table " + tableName + " alter column member_id drop not null");
+        }
+    }
+
+    private boolean isMySql() throws Exception {
+        try (var connection = dataSource.getConnection()) {
+            return connection.getMetaData().getDatabaseProductName().toLowerCase().contains("mysql");
+        }
+    }
+
+    private void makeActorIdNotNull(String tableName) throws Exception {
+        if (isMySql()) {
+            jdbcTemplate.execute("alter table " + tableName + " modify actor_id bigint not null");
+        } else {
+            jdbcTemplate.execute("alter table " + tableName + " alter column actor_id set not null");
+        }
+    }
+
     private boolean hasActorForeignKey(String tableName) throws Exception {
         try (var connection = dataSource.getConnection()) {
             DatabaseMetaData metadata = connection.getMetaData();
@@ -111,28 +133,6 @@ public class ReviewActorBackfill implements ApplicationRunner {
                 }
             }
             return false;
-        }
-    }
-
-    private void makeLegacyMemberIdNullable(String tableName) throws Exception {
-        if (isMySql()) {
-            jdbcTemplate.execute("alter table " + tableName + " modify member_id bigint null");
-        } else {
-            jdbcTemplate.execute("alter table " + tableName + " alter column member_id drop not null");
-        }
-    }
-
-    private void makeActorIdNotNull(String tableName) throws Exception {
-        if (isMySql()) {
-            jdbcTemplate.execute("alter table " + tableName + " modify actor_id bigint not null");
-        } else {
-            jdbcTemplate.execute("alter table " + tableName + " alter column actor_id set not null");
-        }
-    }
-
-    private boolean isMySql() throws Exception {
-        try (var connection = dataSource.getConnection()) {
-            return connection.getMetaData().getDatabaseProductName().toLowerCase().contains("mysql");
         }
     }
 }

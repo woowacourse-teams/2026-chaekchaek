@@ -68,6 +68,18 @@ public class SocialLoginService {
         );
     }
 
+    private Member loginOrSignUp(
+            Provider provider,
+            String providerUserId,
+            String profileImageUrl,
+            Long guestActorId
+    ) {
+        return socialAccountRepository
+                .findForLogin(provider, providerUserId)
+                .map(account -> loginExisting(account, profileImageUrl, guestActorId))
+                .orElseGet(() -> signUp(provider, providerUserId, profileImageUrl, guestActorId));
+    }
+
     @Transactional
     public Member loginOrSignUp(AppleProfile memberInfo) {
         return loginOrSignUpFromCurrentActor(
@@ -94,23 +106,47 @@ public class SocialLoginService {
                 ));
     }
 
+    private Member loginExisting(SocialAccount account, String profileImageUrl, Long guestActorId) {
+        Member member = account.getMember();
+        validateLoginStatus(member);
+        if (member.getAccountStatus() == AccountStatus.WITHDRAWN) {
+            return rejoin(account, profileImageUrl, guestActorId);
+        }
+        if (guestActorId != null) {
+            guestActorMigrationService.migrate(guestActorId, member);
+        }
+        return logLogin(account.getProvider(), member);
+    }
+
+    private void validateLoginStatus(Member member) {
+        AccountStatus status = member.getAccountStatus();
+        if (status != AccountStatus.ACTIVE && status != AccountStatus.WITHDRAWN) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+    }
+
+    private Member rejoin(SocialAccount account, String profileImageUrl, Long guestActorId) {
+        LocalDateTime now = LocalDateTime.now();
+        Member newMember = Member.create(nicknameGenerator.generate(), profileImageUrl, now);
+        memberRepository.save(newMember);
+        actorRepository.save(Actor.member(newMember, now));
+        if (guestActorId != null) {
+            guestActorMigrationService.migrate(guestActorId, newMember);
+        }
+        account.reconnect(newMember, now);
+        return newMember;
+    }
+
+    private Member logLogin(Provider provider, Member member) {
+        log.info("Social login: provider={}, memberId={}", provider, member.getId());
+        return member;
+    }
+
     private Long currentGuestActorId() {
         return currentActorProvider.findCurrentActor()
                 .filter(CurrentActor::isGuest)
                 .map(CurrentActor::actorId)
                 .orElse(null);
-    }
-
-    private Member loginOrSignUp(
-            Provider provider,
-            String providerUserId,
-            String profileImageUrl,
-            Long guestActorId
-    ) {
-        return socialAccountRepository
-                .findForLogin(provider, providerUserId)
-                .map(account -> loginExisting(account, profileImageUrl, guestActorId))
-                .orElseGet(() -> signUp(provider, providerUserId, profileImageUrl, guestActorId));
     }
 
     private Member signUp(
@@ -152,42 +188,6 @@ public class SocialLoginService {
                 guestActor != null
         );
         return member;
-    }
-
-    private Member logLogin(Provider provider, Member member) {
-        log.info("Social login: provider={}, memberId={}", provider, member.getId());
-        return member;
-    }
-
-    private Member loginExisting(SocialAccount account, String profileImageUrl, Long guestActorId) {
-        Member member = account.getMember();
-        validateLoginStatus(member);
-        if (member.getAccountStatus() == AccountStatus.WITHDRAWN) {
-            return rejoin(account, profileImageUrl, guestActorId);
-        }
-        if (guestActorId != null) {
-            guestActorMigrationService.migrate(guestActorId, member);
-        }
-        return logLogin(account.getProvider(), member);
-    }
-
-    private void validateLoginStatus(Member member) {
-        AccountStatus status = member.getAccountStatus();
-        if (status != AccountStatus.ACTIVE && status != AccountStatus.WITHDRAWN) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
-        }
-    }
-
-    private Member rejoin(SocialAccount account, String profileImageUrl, Long guestActorId) {
-        LocalDateTime now = LocalDateTime.now();
-        Member newMember = Member.create(nicknameGenerator.generate(), profileImageUrl, now);
-        memberRepository.save(newMember);
-        actorRepository.save(Actor.member(newMember, now));
-        if (guestActorId != null) {
-            guestActorMigrationService.migrate(guestActorId, newMember);
-        }
-        account.reconnect(newMember, now);
-        return newMember;
     }
 
     @Transactional

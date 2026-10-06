@@ -67,15 +67,6 @@ public class ReactionActorBackfill implements ApplicationRunner {
         return columnMetadata(tableName, columnName, columns -> true, false);
     }
 
-    private boolean isNullable(String tableName, String columnName) throws Exception {
-        return columnMetadata(
-                tableName,
-                columnName,
-                columns -> columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable,
-                null
-        );
-    }
-
     private <T> T columnMetadata(
             String tableName,
             String columnName,
@@ -123,6 +114,37 @@ public class ReactionActorBackfill implements ApplicationRunner {
         }
     }
 
+    private boolean isNullable(String tableName, String columnName) throws Exception {
+        return columnMetadata(
+                tableName,
+                columnName,
+                columns -> columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable,
+                null
+        );
+    }
+
+    private void makeLegacyMemberIdNullable(String tableName) throws Exception {
+        if (isMySql()) {
+            jdbcTemplate.execute("alter table " + tableName + " modify member_id bigint null");
+        } else {
+            jdbcTemplate.execute("alter table " + tableName + " alter column member_id drop not null");
+        }
+    }
+
+    private boolean isMySql() throws Exception {
+        try (var connection = dataSource.getConnection()) {
+            return connection.getMetaData().getDatabaseProductName().toLowerCase().contains("mysql");
+        }
+    }
+
+    private void makeActorIdNotNull(String tableName) throws Exception {
+        if (isMySql()) {
+            jdbcTemplate.execute("alter table " + tableName + " modify actor_id bigint not null");
+        } else {
+            jdbcTemplate.execute("alter table " + tableName + " alter column actor_id set not null");
+        }
+    }
+
     private boolean hasActorForeignKey(String tableName) throws Exception {
         try (var connection = dataSource.getConnection()) {
             DatabaseMetaData metadata = connection.getMetaData();
@@ -138,28 +160,6 @@ public class ReactionActorBackfill implements ApplicationRunner {
                 if ("ACTOR_ID".equalsIgnoreCase(keys.getString("FKCOLUMN_NAME"))) return true;
             }
             return false;
-        }
-    }
-
-    private void makeLegacyMemberIdNullable(String tableName) throws Exception {
-        if (isMySql()) {
-            jdbcTemplate.execute("alter table " + tableName + " modify member_id bigint null");
-        } else {
-            jdbcTemplate.execute("alter table " + tableName + " alter column member_id drop not null");
-        }
-    }
-
-    private void makeActorIdNotNull(String tableName) throws Exception {
-        if (isMySql()) {
-            jdbcTemplate.execute("alter table " + tableName + " modify actor_id bigint not null");
-        } else {
-            jdbcTemplate.execute("alter table " + tableName + " alter column actor_id set not null");
-        }
-    }
-
-    private boolean isMySql() throws Exception {
-        try (var connection = dataSource.getConnection()) {
-            return connection.getMetaData().getDatabaseProductName().toLowerCase().contains("mysql");
         }
     }
 

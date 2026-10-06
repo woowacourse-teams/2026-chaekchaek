@@ -170,6 +170,14 @@ public class Yes24BookClient implements BookSearchClient {
         return new Yes24ClientException(exception);
     }
 
+    private Yes24SearchResponse readErrorResponse(RestClientResponseException exception) {
+        try {
+            return exception.getResponseBodyAs(Yes24SearchResponse.class);
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
     private boolean isBookNotFoundError(String errorCode) {
         return "GOODS_001".equals(errorCode) || "GOODS_002".equals(errorCode);
     }
@@ -191,14 +199,6 @@ public class Yes24BookClient implements BookSearchClient {
                 source.publisher(),
                 source.pages()
         );
-    }
-
-    private Yes24SearchResponse readErrorResponse(RestClientResponseException exception) {
-        try {
-            return exception.getResponseBodyAs(Yes24SearchResponse.class);
-        } catch (RuntimeException ignored) {
-            return null;
-        }
     }
 
     private Contributors parseContributors(String source) {

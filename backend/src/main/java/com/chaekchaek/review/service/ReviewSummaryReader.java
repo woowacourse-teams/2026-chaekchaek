@@ -84,6 +84,16 @@ public class ReviewSummaryReader {
                 .toList();
     }
 
+    private Set<Long> likedReviewIds(List<Long> reviewIds, Long currentActorId) {
+        if (currentActorId == null) {
+            return Set.of();
+        }
+        return reviewReactionRepository.findByReviewIdInAndActorId(reviewIds, currentActorId)
+                .stream()
+                .map(ReviewReaction::getReviewId)
+                .collect(Collectors.toSet());
+    }
+
     private ReviewSummary toSummary(
             Review review,
             Map<Long, Book> books,
@@ -105,16 +115,6 @@ public class ReviewSummaryReader {
                 likeCounts.getOrDefault(review.getId(), 0L),
                 likedReviewIds.contains(review.getId())
         );
-    }
-
-    private Set<Long> likedReviewIds(List<Long> reviewIds, Long currentActorId) {
-        if (currentActorId == null) {
-            return Set.of();
-        }
-        return reviewReactionRepository.findByReviewIdInAndActorId(reviewIds, currentActorId)
-                .stream()
-                .map(ReviewReaction::getReviewId)
-                .collect(Collectors.toSet());
     }
 
     private AuthorResponse authorOf(Review review, ReviewMemberProfile profile, Long currentActorId) {

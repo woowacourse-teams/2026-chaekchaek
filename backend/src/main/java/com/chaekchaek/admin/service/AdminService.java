@@ -65,6 +65,15 @@ public class AdminService {
         return new RecommendedBookListResponse(responses);
     }
 
+    private Map<Long, Book> booksWithAuthorsById(List<Long> bookIds) {
+        if (bookIds.isEmpty()) {
+            return Map.of();
+        }
+        return bookRepository.findAllWithAuthorsByIdIn(bookIds)
+                .stream()
+                .collect(Collectors.toMap(Book::getId, book -> book));
+    }
+
     public RecommendedBookResponse addRecommendedBookByIsbn13(Isbn13 isbn13) {
         requireAdmin();
         Book book = bookResolver.findOrCreate(isbn13);
@@ -83,37 +92,6 @@ public class AdminService {
         return toResponse(save(bookId), book);
     }
 
-    @Transactional
-    public void deleteRecommendedBook(long bookId) {
-        requireAdmin();
-        RecommendedBook recommendedBook = recommendedBookRepository.findByBookId(bookId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RECOMMENDED_BOOK_NOT_FOUND));
-        recommendedBookRepository.delete(recommendedBook);
-    }
-
-    private void requireAdmin() {
-        if (!currentActorProvider.getCurrentActor().isAdmin()) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
-        }
-    }
-
-    private RecommendedBook save(long bookId) {
-        try {
-            return recommendedBookRepository.saveAndFlush(RecommendedBook.create(bookId, clock.instant()));
-        } catch (DataIntegrityViolationException exception) {
-            throw new BusinessException(ErrorCode.RECOMMENDED_BOOK_ALREADY_EXISTS);
-        }
-    }
-
-    private Map<Long, Book> booksWithAuthorsById(List<Long> bookIds) {
-        if (bookIds.isEmpty()) {
-            return Map.of();
-        }
-        return bookRepository.findAllWithAuthorsByIdIn(bookIds)
-                .stream()
-                .collect(Collectors.toMap(Book::getId, book -> book));
-    }
-
     private RecommendedBookResponse toResponse(RecommendedBook recommendedBook, Book book) {
         if (book == null) {
             return null;
@@ -126,5 +104,27 @@ public class AdminService {
                 book.getAuthors(),
                 recommendedBook.getCreatedAt()
         );
+    }
+
+    private RecommendedBook save(long bookId) {
+        try {
+            return recommendedBookRepository.saveAndFlush(RecommendedBook.create(bookId, clock.instant()));
+        } catch (DataIntegrityViolationException exception) {
+            throw new BusinessException(ErrorCode.RECOMMENDED_BOOK_ALREADY_EXISTS);
+        }
+    }
+
+    @Transactional
+    public void deleteRecommendedBook(long bookId) {
+        requireAdmin();
+        RecommendedBook recommendedBook = recommendedBookRepository.findByBookId(bookId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RECOMMENDED_BOOK_NOT_FOUND));
+        recommendedBookRepository.delete(recommendedBook);
+    }
+
+    private void requireAdmin() {
+        if (!currentActorProvider.getCurrentActor().isAdmin()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
     }
 }
