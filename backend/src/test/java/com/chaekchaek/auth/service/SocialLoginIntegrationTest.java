@@ -1,20 +1,35 @@
 package com.chaekchaek.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.auth.oauth.google.GoogleProfile;
+import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
+import com.chaekchaek.member.service.MemberService;
+import com.chaekchaek.review.domain.Reply;
+import com.chaekchaek.review.domain.Review;
+import com.chaekchaek.review.dto.AuthorProfileStatus;
+import com.chaekchaek.review.dto.ReplyCreateRequest;
+import com.chaekchaek.review.dto.ReplyUpdateRequest;
+import com.chaekchaek.review.repository.ReplyRepository;
+import com.chaekchaek.review.repository.ReviewRepository;
+import com.chaekchaek.review.service.ReviewService;
 import com.chaekchaek.socialaccount.domain.Provider;
 import com.chaekchaek.socialaccount.domain.SocialAccount;
 import com.chaekchaek.socialaccount.repository.SocialAccountRepository;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +37,87 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @ActiveProfiles("test")
 public class SocialLoginIntegrationTest {
+
+    @Autowired
+    private MemberService memberService;
+
+    @Autowired
+    private ReviewService reviewService;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
+
+    @Autowired
+    private ReplyRepository replyRepository;
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("탈퇴와 재가입 후 공개 답글은 새 닉네임을 표시하고 기존 작성물과 소유권을 보존한다")
+    void withdrawalAndRejoinPreserveOldContentAndCreateNewPublicReply() {
+        GoogleProfile profile = new GoogleProfile("rejoining-user", "user@example.com", "image");
+        Member oldMember = socialLoginService.loginOrSignUp(profile);
+        memberService.updateNickname(oldMember.getId(), "이전 공개 이름");
+        memberService.updateAnonymity(oldMember.getId(), false);
+        long oldActorId = actorRepository.findByMemberId(oldMember.getId()).orElseThrow().getId();
+        String oldAnonymousName = oldMember.getAnonymousNickname();
+        var review = reviewRepository.save(Review.create(
+                1L, oldActorId, "기존 감상", null, null, null, false, false));
+        authenticate(oldMember.getId());
+        var oldReply = reviewService.createReply(review.getId(),
+                new ReplyCreateRequest("기존 공개 답글"));
+        var deletedReply = replyRepository.save(Reply.create(
+                review.getId(), oldActorId, "삭제 답글", false));
+        deletedReply.deleteBy(oldActorId);
+        memberService.withdraw(oldMember.getId());
+        assertThatThrownBy(() -> reviewService.createReply(review.getId(),
+                new ReplyCreateRequest("탈퇴 토큰 답글")))
+                .isInstanceOf(BusinessException.class);
+        SecurityContextHolder.clearContext();
+        entityManager.flush();
+        entityManager.clear();
+
+        Member rejoined = socialLoginService.loginOrSignUp(profile);
+        long newActorId = actorRepository.findByMemberId(rejoined.getId()).orElseThrow().getId();
+        assertThat(rejoined.getId()).isNotEqualTo(oldMember.getId());
+        assertThat(newActorId).isNotEqualTo(oldActorId);
+        assertThat(rejoined.isDisplayAnonymous()).isTrue();
+        assertThat(rejoined.getNickname()).isNull();
+        memberService.updateNickname(rejoined.getId(), "새 공개 이름");
+        memberService.updateAnonymity(rejoined.getId(), false);
+        authenticate(rejoined.getId());
+        var newReply = reviewService.createReply(review.getId(),
+                new ReplyCreateRequest("재가입 공개 답글"));
+        assertThat(newReply.author().displayName()).isEqualTo("새 공개 이름");
+        assertThat(newReply.author().memberId()).isEqualTo(rejoined.getId());
+        assertThat(newReply.author().profileStatus())
+                .isEqualTo(AuthorProfileStatus.AVAILABLE);
+        var oldResponse = reviewService.findReplies(review.getId(), 1).items().stream()
+                .filter(reply -> reply.replyId() == oldReply.replyId()).findFirst().orElseThrow();
+        assertThat(oldResponse.author().displayName()).isEqualTo(oldAnonymousName);
+        assertThat(oldResponse.author().memberId()).isNull();
+        assertThat(oldResponse.author().mine()).isFalse();
+        assertThat(replyRepository.findById(oldReply.replyId()).orElseThrow().getActorId()).isEqualTo(oldActorId);
+        assertThat(reviewRepository.findById(review.getId()).orElseThrow().getActorId()).isEqualTo(oldActorId);
+        assertThat(replyRepository.findById(deletedReply.getId()).orElseThrow().isDeleted()).isTrue();
+        assertThatThrownBy(() -> reviewService.updateReply(oldReply.replyId(),
+                new ReplyUpdateRequest("수정 시도")))
+                .isInstanceOf(BusinessException.class);
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(socialLoginService.loginOrSignUp(profile).getId()).isEqualTo(rejoined.getId());
+        assertThat(socialAccountRepository.count()).isEqualTo(1);
+    }
+
+    private void authenticate(Long memberId) {
+        var jwt = Jwt.withTokenValue("token")
+                .header("alg", "none").subject(memberId.toString()).build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new JwtAuthenticationToken(jwt, java.util.List.of()));
+    }
 
     @Autowired
     private SocialLoginService socialLoginService;

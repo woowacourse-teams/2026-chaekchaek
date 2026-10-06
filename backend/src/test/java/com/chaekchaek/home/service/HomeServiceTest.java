@@ -132,7 +132,7 @@ class HomeServiceTest {
 
         AuthorResponse author = homeService.getLatestReviews().reviews().getFirst().author();
 
-        assertThat(author.displayName()).isEqualTo("탈퇴한 사용자");
+        assertThat(author.displayName()).isEqualTo("익명 사용자 1");
         assertThat(author.memberId()).isNull();
         assertThat(author.profileStatus()).isEqualTo(AuthorProfileStatus.UNAVAILABLE);
     }
