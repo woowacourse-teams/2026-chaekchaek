@@ -1,4 +1,4 @@
-# 첵췍 도메인 모델
+# 책췍 도메인 모델
 
 Figma 시안 [node 36:3](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr/%EC%B1%85%EC%B7%8D?node-id=36-3)
 의 12개 화면에서 읽어낸 도메인 개념을 코드 객체로 옮긴 설계다. Android와 iOS가 공유하는

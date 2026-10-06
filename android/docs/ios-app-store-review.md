@@ -40,7 +40,7 @@ App Store 지원 URL은 `https://chaekchaek.com/intro`로 변경하고 재접속
 - 최신 iOS가 설치된 실제 iPhone에 심사 제출과 동일한 빌드를 설치한다.
 - 집중 모드를 켜고 알림 미리보기를 꺼서 개인 정보 노출을 막는다.
 - 최초 로그인과 마지막 회원 탈퇴에 사용할 촬영 전용 Apple 계정을 준비한다.
-- 해당 계정으로 이전 로그인 테스트를 했다면 녹화 전에 앱에서 회원 탈퇴해 첵췍 계정을 삭제한다.
+- 해당 계정으로 이전 로그인 테스트를 했다면 녹화 전에 앱에서 회원 탈퇴해 책췍 계정을 삭제한다.
 - 앱이 로그아웃된 것을 확인하고 완전히 종료한다.
 - `데미안` 검색 결과가 나타나는지 확인한 뒤 앱을 다시 완전히 종료한다.
 
@@ -60,7 +60,7 @@ App Store 지원 URL은 `https://chaekchaek.com/intro`로 변경하고 재접속
 2초 정도 멈춘다.
 
 1. iPhone 제어 센터에서 화면 녹화를 시작하고 홈 화면으로 돌아간다.
-2. 3초 카운트다운이 끝나면 첵췍 앱 아이콘을 눌러 앱을 실행한다.
+2. 3초 카운트다운이 끝나면 책췍 앱 아이콘을 눌러 앱을 실행한다.
 3. 홈 화면이 로드되면 인기 도서를 보여주고 아래로 한 번 스크롤해 최신 감상을 보여준다.
 4. 하단의 `발견`을 누른다.
 5. 검색창을 누르고 `데미안`을 입력한다.
@@ -101,7 +101,7 @@ Hello App Review Team,
 
 Thank you for your guidance. We addressed the requested information and tested iOS build 1.1.1 (5) through TestFlight. Please find all requested details below.
 
-App Review Information for ChaekChaek, iOS 1.1.1 (5)
+App Review Information for 책췍, iOS 1.1.1 (5)
 
 1. Screen recording
 A screen recording captured on a physical iPhone running the latest available iOS is attached to this review reply as `책췍심사영상-오디오제거.mp4`.
@@ -117,7 +117,7 @@ The app includes user-created reviews and replies. Authors can edit or delete th
 - iPhone 17 Pro Simulator, iOS 26.2
 
 3. App functions and target audience
-ChaekChaek is a Korean-language reading companion for readers who want to discover books, organize books by reading status, record reading progress and ratings, and share short reading impressions with other readers.
+책췍 is a Korean-language reading companion for readers who want to discover books, organize books by reading status, record reading progress and ratings, and share short reading impressions with other readers.
 
 4. Setup and access instructions, No sample files are required.
 
@@ -130,7 +130,7 @@ Basic browsing:
 Account-based features:
 1. Open My Library and tap the profile image, or attempt to add a book to My Library.
 2. On the login sheet, tap Continue with Apple.
-3. The reviewer may use their own Apple ID. The first successful sign-in automatically creates a ChaekChaek account, so no demo credentials are required.
+3. The reviewer may use their own Apple ID. The first successful sign-in automatically creates a 책췍 account, so no demo credentials are required.
 4. Google Sign-In is also available as an alternative.
 5. After signing in, the reviewer can add books, set reading status and progress, rate books, and manage My Library.
 
@@ -144,8 +144,8 @@ Account deletion:
 5. External services, tools, and platforms
 - Apple Authentication Services for Sign in with Apple
 - Google Sign-In SDK for optional Google authentication
-- ChaekChaek backend API at api.chaekchaek.com for authentication, book discovery, library records, ratings, reviews, replies, and account deletion
-- YES24 Open API, accessed only through the ChaekChaek backend, for book search results, bibliographic metadata, and book cover images
+- 책췍 backend API at api.chaekchaek.com for authentication, book discovery, library records, ratings, reviews, replies, and account deletion
+- YES24 Open API, accessed only through the 책췍 backend, for book search results, bibliographic metadata, and book cover images
 - Apple Keychain for storing the refresh token on the device
 
 The app does not use a payment processor, subscription service, advertising SDK, or AI service.
@@ -154,9 +154,9 @@ The app does not use a payment processor, subscription service, advertising SDK,
 The app is distributed only in South Korea and provides the same features throughout that region. The interface and primary content are Korean. There are no region-specific purchases, subscriptions, or restrictions.
 
 7. Regulated industry and protected third-party material
-ChaekChaek is a general book-discovery, reading-record, and community app. It does not provide medical, financial, gambling, legal, or other highly regulated services.
+책췍 is a general book-discovery, reading-record, and community app. It does not provide medical, financial, gambling, legal, or other highly regulated services.
 
-Book search results, metadata, and cover images are supplied through the YES24 Open API via the ChaekChaek backend. Its API key is stored only on the backend. The app does not provide full book text or paid reading content. Documentation: https://developers.yes24.com/, https://developers.yes24.com/api-doc/goods-item-list, and https://developers.yes24.com/api-doc/goods-item-detail. A redacted developer-account screenshot can be provided if requested.
+Book search results, metadata, and cover images are supplied through the YES24 Open API via the 책췍 backend. Its API key is stored only on the backend. The app does not provide full book text or paid reading content. Documentation: https://developers.yes24.com/, https://developers.yes24.com/api-doc/goods-item-list, and https://developers.yes24.com/api-doc/goods-item-detail. A redacted developer-account screenshot can be provided if requested.
 
 Thank you.
 ```

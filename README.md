@@ -1,4 +1,4 @@
-# 첵췍
+# 책췍
 
 - [모바일 사용자 이벤트 로깅 설계](docs/mobile-analytics-event-plan.md)
 - [책등 이미지 활용 메모](docs/book-spine-images.md)

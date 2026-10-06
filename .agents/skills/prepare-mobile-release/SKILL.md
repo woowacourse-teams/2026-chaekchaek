@@ -1,11 +1,11 @@
 ---
 name: prepare-mobile-release
-description: 첵췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준비하고 버전, 검증, 릴리즈 문서와 커밋을 일치시킨다. 사용자가 모바일 릴리즈 준비, 새 AAB와 TestFlight 배포, Android와 iOS 동시 버전 갱신을 요청할 때 사용한다.
+description: 책췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준비하고 버전, 검증, 릴리즈 문서와 커밋을 일치시킨다. 사용자가 모바일 릴리즈 준비, 새 AAB와 TestFlight 배포, Android와 iOS 동시 버전 갱신을 요청할 때 사용한다.
 ---
 
 # 모바일 릴리즈 준비
 
-대상 저장소는 첵췍이며 기준 브랜치는 `an-develop`이다.
+대상 저장소는 책췍이며 기준 브랜치는 `an-develop`이다.
 
 ## 작업 경계
 

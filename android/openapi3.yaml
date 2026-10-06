@@ -1,8 +1,8 @@
 openapi: 3.0.1
 info:
-  title: ChaekChaek API
+  title: 책췍 API
   description: |-
-    ChaekChaek 웹·모바일 클라이언트를 위한 REST API입니다.
+    책췍 웹·모바일 클라이언트를 위한 REST API입니다.
 
     ## Swagger 이용 안내
     - 운영 Swagger는 API 계약 확인을 위한 읽기 전용 문서입니다.

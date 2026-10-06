@@ -1,11 +1,11 @@
 ---
 name: chaekchaek-ui-direction
-description: Apply the approved ChaekChaek light-theme visual direction when creating or revising mobile app screen concepts, static HTML mockups, or design handoff guidance. Use for the current rebrand exploration, not the legacy ChaekChaek design system.
+description: Apply the approved 책췍 light-theme visual direction when creating or revising mobile app screen concepts, static HTML mockups, or design handoff guidance. Use for the current rebrand exploration, not the legacy 책췍 design system.
 ---
 
-# ChaekChaek UI Direction
+# 책췍 UI Direction
 
-Use this as the visual decision layer for ChaekChaek mobile UI work. It records choices the user has already accepted or rejected so later screens feel like the same app.
+Use this as the visual decision layer for 책췍 mobile UI work. It records choices the user has already accepted or rejected so later screens feel like the same app.
 
 Before designing, read [references/visual-direction.md](references/visual-direction.md). Also inspect the current approved mockup when it is available, because the latest accepted artifact takes precedence over this written summary.
 
