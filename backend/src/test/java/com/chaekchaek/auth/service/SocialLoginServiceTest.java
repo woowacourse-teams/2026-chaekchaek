@@ -47,7 +47,8 @@ public class SocialLoginServiceTest {
 
     @Test
     @DisplayName("정지 회원은 로그인이나 재가입 없이 거부한다")
-    void rejectsSuspendedMember() {
+    void should_RejectLogin_When_MemberIsSuspended() {
+        // given
         Member member = Member.create("익명 이름", null, LocalDateTime.now());
         ReflectionTestUtils.setField(
                 member,
@@ -63,6 +64,7 @@ public class SocialLoginServiceTest {
         when(socialAccountRepository.findForLogin(Provider.GOOGLE, "suspended-user"))
                 .thenReturn(Optional.of(account));
 
+        // when & then
         Assertions.assertThatThrownBy(() -> socialLoginService.loginOrSignUp(
                 new GoogleProfile(
                         "suspended-user",
@@ -86,12 +88,15 @@ public class SocialLoginServiceTest {
     @ParameterizedTest
     @EnumSource(value = Provider.class, names = {"GOOGLE", "APPLE"})
     @DisplayName("Google과 Apple 모두 반복 탈퇴 후 재가입 횟수를 제한하지 않는다")
-    void allowsRepeatedRejoinForEachProvider(Provider provider) {
+    void should_AllowRepeatedRejoin_When_MemberWithdrawsForEachProvider(Provider provider) {
+        // given
         Member member = Member.create("기존 익명", null, LocalDateTime.now());
         SocialAccount account = SocialAccount.connect(member, provider, "repeat-user", LocalDateTime.now());
         when(socialAccountRepository.findForLogin(provider, "repeat-user"))
                 .thenReturn(Optional.of(account));
         when(nicknameGenerator.generate()).thenReturn("새 익명");
+
+        // when & then
         for (int i = 0; i < 3; i++) {
             Member previous = account.getMember();
             previous.withdraw(LocalDateTime.now());
@@ -117,7 +122,8 @@ public class SocialLoginServiceTest {
 
     @Test
     @DisplayName("탈퇴 후 동일 소셜 계정 재가입은 새 회원과 Actor를 만들고 기존 회원을 보존한다")
-    void createsNewIdentityAfterWithdrawal() {
+    void should_CreateNewIdentity_When_WithdrawnMemberRejoins() {
+        // given
         GoogleProfile profile = new GoogleProfile(
                 "returning-user",
                 "member@example.com",
@@ -141,8 +147,10 @@ public class SocialLoginServiceTest {
         )).thenReturn(Optional.of(account));
         when(nicknameGenerator.generate()).thenReturn("새 익명 이름");
 
+        // when
         Member rejoined = socialLoginService.loginOrSignUp(profile);
 
+        // then
         assertThat(rejoined).isNotSameAs(oldMember);
         assertThat(account.getMember()).isSameAs(rejoined);
         assertThat(account.getProviderRefreshToken()).isNull();
@@ -279,6 +287,7 @@ public class SocialLoginServiceTest {
     @Test
     @DisplayName("게스트가 최초 소셜 로그인하면 기존 Actor와 닉네임을 회원에게 계승한다")
     void should_InheritGuestActorAndNickname_When_GuestSignsUp() {
+        // given
         GoogleProfile googleProfile = new GoogleProfile(
                 "google-user-123",
                 "member@example.com",
@@ -298,8 +307,10 @@ public class SocialLoginServiceTest {
             return null;
         }).when(guestActorMigrationService).migrate(eq(7L), any(Member.class));
 
+        // when
         Member result = socialLoginService.loginOrSignUp(googleProfile);
 
+        // then
         assertAll(
                 () -> assertThat(result.getAnonymousNickname()).isEqualTo("게스트 참새"),
                 () -> assertThat(guestActor.getType()).isEqualTo(ActorType.MEMBER),

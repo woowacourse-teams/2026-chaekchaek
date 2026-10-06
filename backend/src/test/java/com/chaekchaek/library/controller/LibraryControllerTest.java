@@ -320,9 +320,11 @@ class LibraryControllerTest {
     @Test
     @DisplayName("공개할 수 없는 회원의 서재는 찾을 수 없음 응답을 반환한다")
     void should_ReturnNotFound_When_PublicLibraryIsUnavailable() throws Exception {
+        // given
         when(libraryService.getPublicLibrary(MEMBER_ID, 1, null, LibrarySort.RECENT))
                 .thenThrow(new BusinessException(ErrorCode.LIBRARY_NOT_FOUND));
 
+        // when & then
         expectProblemDetail(
                 mockMvc.perform(get("/api/v1/members/{memberId}/library", MEMBER_ID)
                         .param("page", "1")),

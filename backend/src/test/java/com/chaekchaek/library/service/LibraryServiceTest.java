@@ -241,6 +241,7 @@ class LibraryServiceTest {
     @Test
     @DisplayName("활성 회원의 빈 공개 서재는 빈 목록을 반환한다")
     void should_ReturnEmptyPublicLibrary_When_ActiveMemberHasNoItems() {
+        // given
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(1L);
         when(member.getDisplayName()).thenReturn("책책이");
@@ -250,8 +251,10 @@ class LibraryServiceTest {
         when(libraryItemRepository.findAllByMemberId(1L)).thenReturn(List.of());
         when(commentCountReader.getCommentCounts(Set.of())).thenReturn(Map.of());
 
+        // when
         var response = service().getPublicLibrary(1L, 1, null, LibrarySort.RECENT);
 
+        // then
         assertThat(response.totalCount()).isZero();
         assertThat(response.filteredCount()).isZero();
         assertThat(response.items()).isEmpty();
@@ -262,7 +265,10 @@ class LibraryServiceTest {
     @Test
     @DisplayName("존재하지 않거나 비활성 상태인 회원의 공개 서재는 조회할 수 없다")
     void should_RejectPublicLibrary_When_MemberIsMissingOrInactive() {
+        // given
         when(memberRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // when & then
         assertLibraryNotFound(1L);
 
         for (AccountStatus status : List.of(AccountStatus.WITHDRAWN, AccountStatus.SUSPENDED)) {

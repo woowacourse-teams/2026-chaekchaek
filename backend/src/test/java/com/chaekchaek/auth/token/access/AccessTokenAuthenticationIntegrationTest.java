@@ -46,9 +46,12 @@ class AccessTokenAuthenticationIntegrationTest {
 
     @Test
     @DisplayName("탈퇴 전에 발급된 Bearer 토큰은 탈퇴 직후 거부한다")
-    void rejectsExistingTokenAfterWithdrawal() throws Exception {
+    void should_RejectExistingAccessToken_When_MemberWithdraws() throws Exception {
+        // given
         String token = issueAccessToken(memberId.toString());
         memberRepository.findById(memberId).orElseThrow().withdraw(LocalDateTime.now());
+
+        // when & then
         mockMvc.perform(get("/test/protected").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
@@ -71,9 +74,11 @@ class AccessTokenAuthenticationIntegrationTest {
 
     @Test
     @DisplayName("유효한 Access Token 쿠키로 보호 API에 접근한다")
-    void should_Access_ProtectedApi_With_ValidAccessTokenCookie() throws Exception {
+    void should_AccessProtectedApi_When_AccessTokenCookieIsValid() throws Exception {
+        // given
         String accessToken = issueAccessToken(memberId.toString());
 
+        // when & then
         mockMvc.perform(get("/test/protected")
                         .cookie(new Cookie(
                                 AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME,
@@ -85,7 +90,8 @@ class AccessTokenAuthenticationIntegrationTest {
 
     @Test
     @DisplayName("Access Token 쿠키가 없으면 보호 API 접근을 거부한다")
-    void should_Reject_ProtectedApi_Without_AccessTokenCookie() throws Exception {
+    void should_RejectProtectedApi_When_AccessTokenCookieIsMissing() throws Exception {
+        // when & then
         mockMvc.perform(get("/test/protected"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(
@@ -97,9 +103,11 @@ class AccessTokenAuthenticationIntegrationTest {
 
     @Test
     @DisplayName("변조된 Access Token 쿠키로 보호 API에 접근하면 거부한다")
-    void should_Reject_ProtectedApi_With_TamperedAccessTokenCookie() throws Exception {
+    void should_RejectProtectedApi_When_AccessTokenCookieIsTampered() throws Exception {
+        // given
         String tamperedToken = issueAccessToken("1") + "tampered";
 
+        // when & then
         mockMvc.perform(get("/test/protected")
                         .cookie(new Cookie(
                                 AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME,
@@ -134,9 +142,11 @@ class AccessTokenAuthenticationIntegrationTest {
     @DisplayName("변조된 Bearer Access Token으로 보호 API에 접근하면 거부한다")
     void should_RejectProtectedApi_When_BearerTokenIsTampered()
             throws Exception {
+        // given
         String tamperedToken =
                 issueAccessToken("1") + "tampered";
 
+        // when & then
         mockMvc.perform(get("/test/protected")
                         .header(
                 HttpHeaders.AUTHORIZATION,

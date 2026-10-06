@@ -65,6 +65,7 @@ class PersistentReviewMemberReaderTest {
     @Test
     @DisplayName("게스트 Actor의 닉네임으로 작성자 프로필을 조회한다")
     void should_ReturnGuestProfile_When_GuestActorExists() {
+        // given
         LocalDateTime now = LocalDateTime.of(2026, 8, 18, 12, 0);
         Actor actor = actorRepository.save(Actor.guest(
                 "a".repeat(64),
@@ -73,8 +74,10 @@ class PersistentReviewMemberReaderTest {
                 now.plusDays(30)
         ));
 
+        // when
         Map<Long, ReviewMemberProfile> profiles = reviewMemberReader.findByActorIds(List.of(actor.getId()));
 
+        // then
         assertThat(profiles).containsEntry(
                 actor.getId(),
                 new ReviewMemberProfile(

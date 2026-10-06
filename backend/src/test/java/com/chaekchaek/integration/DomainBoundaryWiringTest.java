@@ -27,6 +27,7 @@ class DomainBoundaryWiringTest {
     @DisplayName("도서·서재·감상 경계에는 실제 구현만 연결된다")
     void should_WireConcreteImplementations_When_ApplicationStarts() {
         // when
+        // given
         var commentCountReaders = applicationContext.getBeansOfType(BookCommentCountReader.class);
         BookSearchClient bookSearchClient = applicationContext.getBean(BookSearchClient.class);
         var currentMemberIdProviders = applicationContext.getBeansOfType(CurrentMemberIdProvider.class);

@@ -74,9 +74,10 @@ class ReviewCreateByIsbnTransactionTest {
         });
         BookResolver bookResolver = new BookResolver(bookClient, bookRepository, transactionManager);
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        IllegalStateException reviewWriteFailure = new IllegalStateException("review write failed");
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             reviewSaveInTransaction.set(TransactionSynchronizationManager.isActualTransactionActive());
-            throw new IllegalStateException("review write failed");
+            throw reviewWriteFailure;
         });
         ReviewService reviewService = new ReviewService(
                 reviewRepository,
@@ -104,7 +105,7 @@ class ReviewCreateByIsbnTransactionTest {
                 )
         ))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("review write failed");
+                .isSameAs(reviewWriteFailure);
         assertThat(externalCallInTransaction).isFalse();
         assertThat(reviewSaveInTransaction).isTrue();
         assertThat(bookRepository.findByIsbn13(ISBN13)).isPresent();

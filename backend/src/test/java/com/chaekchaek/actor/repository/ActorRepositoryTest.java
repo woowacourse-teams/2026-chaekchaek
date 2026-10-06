@@ -17,25 +17,30 @@ class ActorRepositoryTest {
     @Autowired MemberRepository memberRepository;
 
     @Test
-    void findsActorsByMemberAndGuestTokenHash() {
+    void should_FindActors_When_MemberOrGuestTokenHashMatches() {
+        // given
         LocalDateTime now = LocalDateTime.of(2026, 8, 26, 12, 0);
         Member member = memberRepository.save(Member.create("회원 참새", null, now));
         Actor memberActor = actorRepository.save(Actor.member(member, now));
         Actor guestActor = actorRepository.save(Actor.guest("b".repeat(64), "게스트 참새", now, now.plusDays(30)));
 
+        // when & then
         assertThat(actorRepository.findByMemberId(member.getId())).contains(memberActor);
         assertThat(actorRepository.findByGuestTokenHash("b".repeat(64))).contains(guestActor);
     }
 
     @Test
-    void backfillsOnlyMembersWithoutActor() {
+    void should_BackfillActors_When_MembersHaveNoActor() {
+        // given
         LocalDateTime now = LocalDateTime.of(2026, 8, 26, 12, 0);
         Member existing = memberRepository.save(Member.create("기존 참새", null, now));
         Member missing = memberRepository.save(Member.create("누락 참새", null, now));
         actorRepository.saveAndFlush(Actor.member(existing, now));
 
+        // when
         int inserted = actorRepository.backfillMissingMemberActors();
 
+        // then
         assertThat(inserted).isEqualTo(1);
         assertThat(actorRepository.findByMemberId(missing.getId())).isPresent();
         assertThat(actorRepository.count()).isEqualTo(2);

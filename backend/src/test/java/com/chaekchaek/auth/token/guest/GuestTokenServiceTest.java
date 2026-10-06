@@ -60,7 +60,8 @@ class GuestTokenServiceTest {
     }
 
     @Test
-    void issuesOpaqueTokenValidForNinetyDaysAndStoresOnlyItsHash() {
+    void should_IssueNinetyDayOpaqueTokenAndStoreOnlyHash_When_GuestTokenIsRequested() {
+        // given
         ActorRepository actorRepository = mock(ActorRepository.class);
         GuestTokenHasher hasher = new GuestTokenHasher();
         NicknameGenerator nicknameGenerator = mock(NicknameGenerator.class);
@@ -84,7 +85,10 @@ class GuestTokenServiceTest {
 
         IssuedGuestToken issued = service.issue();
 
+        // when
         ArgumentCaptor<Actor> actorCaptor = ArgumentCaptor.forClass(Actor.class);
+
+        // then
         verify(actorRepository).save(actorCaptor.capture());
         Actor actor = actorCaptor.getValue();
         assertThat(actor.getType()).isEqualTo(ActorType.GUEST);
@@ -98,12 +102,15 @@ class GuestTokenServiceTest {
     }
 
     @Test
-    void refreshesTokenForSameActorWithinRefreshWindow() {
+    void should_RefreshTokenForSameActor_When_TokenIsWithinRefreshWindow() {
+        // given
         TestFixture fixture = new TestFixture();
         Actor actor = fixture.actorExpiringAt(fixture.now.plusDays(10));
 
+        // when
         IssuedGuestToken refreshed = fixture.service.refresh("current-token");
 
+        // then
         assertThat(refreshed.value()).isNotEqualTo("current-token");
         assertThat(refreshed.nickname()).isEqualTo("다정한 파란 참새");
         assertThat(refreshed.actorId()).isEqualTo(actor.getId());
@@ -116,10 +123,12 @@ class GuestTokenServiceTest {
     }
 
     @Test
-    void rejectsRefreshBeforeRefreshWindow() {
+    void should_RejectRefresh_When_TokenIsBeforeRefreshWindow() {
+        // given
         TestFixture fixture = new TestFixture();
         Actor actor = fixture.actorExpiringAt(fixture.now.plusDays(15));
 
+        // when & then
         assertThatThrownBy(() -> fixture.service.refresh("current-token"))
                 .isInstanceOfSatisfying(
                 BusinessException.class,
@@ -130,10 +139,12 @@ class GuestTokenServiceTest {
     }
 
     @Test
-    void rejectsExpiredGuestTokenRefresh() {
+    void should_RejectRefresh_When_GuestTokenIsExpired() {
+        // given
         TestFixture fixture = new TestFixture();
         fixture.actorExpiringAt(fixture.now.minusSeconds(1));
 
+        // when & then
         assertThatThrownBy(() -> fixture.service.refresh("current-token"))
                 .isInstanceOfSatisfying(
                 BusinessException.class,
@@ -143,11 +154,13 @@ class GuestTokenServiceTest {
     }
 
     @Test
-    void rejectsUnknownGuestTokenRefresh() {
+    void should_RejectRefresh_When_GuestTokenIsUnknown() {
+        // given
         TestFixture fixture = new TestFixture();
         when(fixture.actorRepository.findByGuestTokenHash(fixture.hasher.hash("unknown")))
                 .thenReturn(Optional.empty());
 
+        // when & then
         assertThatThrownBy(() -> fixture.service.refresh("unknown"))
                 .isInstanceOfSatisfying(
                 BusinessException.class,

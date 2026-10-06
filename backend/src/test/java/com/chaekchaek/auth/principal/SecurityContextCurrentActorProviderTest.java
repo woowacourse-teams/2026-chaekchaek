@@ -30,7 +30,8 @@ class SecurityContextCurrentActorProviderTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-08-26T09:00:00Z"), ZoneOffset.UTC);
 
     @Test
-    void resolvesGuestActorFromHeader() {
+    void should_ResolveGuestActor_When_GuestTokenIsInHeader() {
+        // given
         Fixtures fixtures = new Fixtures();
         Actor guest = Actor.guest("hash", "게스트", LocalDateTime.now(CLOCK), LocalDateTime.now(CLOCK).plusDays(1));
         ReflectionTestUtils.setField(guest, "id", 7L);
@@ -38,13 +39,16 @@ class SecurityContextCurrentActorProviderTest {
         when(fixtures.hasher.hash("token")).thenReturn("hash");
         when(fixtures.repository.findByGuestTokenHash("hash")).thenReturn(Optional.of(guest));
 
+        // when
         Optional<CurrentActor> actor = fixtures.provider().findCurrentActor();
 
+        // then
         assertThat(actor).contains(CurrentActor.guest(7L));
     }
 
     @Test
-    void rejectsExpiredGuestToken() {
+    void should_RejectGuestToken_When_TokenIsExpired() {
+        // given
         Fixtures fixtures = new Fixtures();
         Actor guest = Actor.guest(
                 "hash",
@@ -56,6 +60,7 @@ class SecurityContextCurrentActorProviderTest {
         when(fixtures.hasher.hash("token")).thenReturn("hash");
         when(fixtures.repository.findByGuestTokenHash("hash")).thenReturn(Optional.of(guest));
 
+        // when & then
         assertThatThrownBy(() -> fixtures.provider().findCurrentActor())
                 .isInstanceOfSatisfying(
                 BusinessException.class,
@@ -64,7 +69,8 @@ class SecurityContextCurrentActorProviderTest {
     }
 
     @Test
-    void prefersLoggedInMemberOverGuestHeader() {
+    void should_PreferMemberActor_When_MemberAndGuestTokenAreProvided() {
+        // given
         Fixtures fixtures = new Fixtures();
         Member member = Member.create("회원", null, LocalDateTime.now(CLOCK));
         ReflectionTestUtils.setField(member, "id", 3L);
@@ -74,12 +80,14 @@ class SecurityContextCurrentActorProviderTest {
         when(fixtures.repository.findByMemberId(3L)).thenReturn(Optional.of(memberActor));
         when(fixtures.request.getHeader(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER)).thenReturn("token");
 
+        // when & then
         assertThat(fixtures.provider().findCurrentActor()).contains(CurrentActor.member(4L, 3L));
         verify(fixtures.repository, never()).findByGuestTokenHash(ArgumentMatchers.anyString());
     }
 
     @Test
-    void resolvesAdminActorForAdminMember() {
+    void should_ResolveAdminActor_When_MemberIsAdmin() {
+        // given
         Fixtures fixtures = new Fixtures();
         Member member = Member.create("관리자", null, LocalDateTime.now(CLOCK));
         ReflectionTestUtils.setField(member, "id", 3L);
@@ -89,6 +97,7 @@ class SecurityContextCurrentActorProviderTest {
         when(fixtures.memberProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(3L));
         when(fixtures.repository.findByMemberId(3L)).thenReturn(Optional.of(adminActor));
 
+        // when & then
         assertThat(fixtures.provider().findCurrentActor()).contains(CurrentActor.admin(4L, 3L));
     }
 

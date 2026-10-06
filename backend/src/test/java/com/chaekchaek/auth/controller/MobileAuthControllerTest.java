@@ -99,6 +99,7 @@ class MobileAuthControllerTest {
     @Test
     @DisplayName("유효한 Apple 인증 정보로 모바일 로그인한다")
     void should_ReturnTokens_When_AppleLoginSucceeds() throws Exception {
+        // given
         MobileTokenResponse response = new MobileTokenResponse(
                 "access-token",
                 "refresh-token",
@@ -108,6 +109,7 @@ class MobileAuthControllerTest {
         );
         when(mobileAppleLoginService.login(any())).thenReturn(response);
 
+        // when & then
         mockMvc.perform(post("/api/v1/auth/mobile/apple")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -137,6 +139,7 @@ class MobileAuthControllerTest {
     @Test
     @DisplayName("Apple 인증 정보가 비어 있으면 요청을 거부한다")
     void should_ReturnBadRequest_When_AppleAuthorizationIsBlank() throws Exception {
+        // when & then
         expectProblemDetail(
                 mockMvc.perform(post("/api/v1/auth/mobile/apple")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -215,6 +218,7 @@ class MobileAuthControllerTest {
     @DisplayName("Google ID Token이 비어 있으면 요청을 거부한다")
     void should_ReturnBadRequest_When_IdTokenIsBlank()
             throws Exception {
+        // when & then
         expectProblemDetail(
                 mockMvc.perform(post(
                         "/api/v1/auth/mobile/google"
@@ -287,6 +291,7 @@ class MobileAuthControllerTest {
     @DisplayName("Refresh Token이 비어 있으면 재발급 요청을 거부한다")
     void should_ReturnBadRequest_When_ReissueTokenIsBlank()
             throws Exception {
+        // when & then
         expectProblemDetail(
                 mockMvc.perform(post(
                         "/api/v1/auth/mobile/reissue"
@@ -312,6 +317,7 @@ class MobileAuthControllerTest {
     @DisplayName("Refresh Token으로 모바일 로그아웃한다")
     void should_ReturnNoContent_When_LogoutSucceeds()
             throws Exception {
+        // when & then
         mockMvc.perform(post(
                         "/api/v1/auth/mobile/logout"
                 )
@@ -341,6 +347,7 @@ class MobileAuthControllerTest {
     @DisplayName("Refresh Token이 비어 있으면 로그아웃 요청을 거부한다")
     void should_ReturnBadRequest_When_LogoutTokenIsBlank()
             throws Exception {
+        // when & then
         expectProblemDetail(
                 mockMvc.perform(post(
                         "/api/v1/auth/mobile/logout"

@@ -94,7 +94,8 @@ public class GoogleOidcUserServiceTest {
 
     @Test
     @DisplayName("OAuth 세션의 게스트 Actor를 소셜 로그인 서비스에 전달한다")
-    void should_PassGuestActorFromOAuthContext() {
+    void should_PassGuestActor_When_OAuthContextContainsGuestActor() {
+        // given
         when(userRequest.getClientRegistration()).thenReturn(clientRegistration);
         when(clientRegistration.getRegistrationId()).thenReturn("google");
         when(delegate.loadUser(userRequest)).thenReturn(oidcUser);
@@ -115,8 +116,10 @@ public class GoogleOidcUserServiceTest {
         ))
                 .thenReturn(member);
 
+        // when
         googleOidcUserService.loadUser(userRequest);
 
+        // then
         verify(socialLoginService).loginOrSignUp(
                 new GoogleProfile(
                         "google-user-123",

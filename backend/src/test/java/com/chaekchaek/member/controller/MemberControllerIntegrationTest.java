@@ -112,7 +112,7 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("AccessToken 쿠키로 내 정보를 조회한다")
-    void should_GetMyInfo() throws Exception {
+    void should_GetMyInfo_When_MemberIsAuthenticated() throws Exception {
         // given
         Member member = Member.create(
                 "우아한 달빛 참새",
@@ -131,6 +131,8 @@ public class MemberControllerIntegrationTest {
         );
 
         // when && then
+
+        // when & then
         mockMvc.perform(get("/api/v1/members/me")
                         .cookie(cookie))
                 .andExpect(status().isOk())
@@ -179,7 +181,8 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("AccessToken 쿠키가 없으면 내 정보 조회를 거부한다")
-    void should_RejectGetMyInfo_WithoutAccessToken() throws Exception {
+    void should_RejectGetMyInfo_When_AccessTokenIsMissing() throws Exception {
+        // when & then
         mockMvc.perform(get("/api/v1/members/me"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
@@ -199,12 +202,14 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("변조된 Access Token으로 내 정보를 조회를 요청하면 거부한다")
-    void should_RejectGetMyInfo_WithTamperedAccessToken() throws Exception {
+    void should_RejectGetMyInfo_When_AccessTokenIsTampered() throws Exception {
+        // given
         Cookie cookie = new Cookie(
                 AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME,
                 "invalid.access.token"
         );
 
+        // when & then
         mockMvc.perform(get("/api/v1/members/me")
                         .cookie(cookie))
                 .andExpect(status().isUnauthorized());
@@ -212,7 +217,8 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("공개 닉네임을 설정한다")
-    void should_UpdateNickname() throws Exception {
+    void should_UpdateNickname_When_NicknameIsAvailable() throws Exception {
+        // given
         Member member = memberRepository.save(Member.create(
                 "우아한 달빛 참새",
                 "exUrl",
@@ -220,6 +226,7 @@ public class MemberControllerIntegrationTest {
         ));
         Cookie cookie = accessTokenCookie(member);
 
+        // when & then
         mockMvc.perform(patch("/api/v1/members/me/nickname")
                         .with(csrf().asHeader())
                         .cookie(cookie)
@@ -247,7 +254,8 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("중복된 공개 닉네임 설정을 거부한다")
-    void should_RejectDuplicatedNickname() throws Exception {
+    void should_RejectNickname_When_NicknameIsDuplicated() throws Exception {
+        // given
         Member existingMember = Member.create("다정한 별빛 참새", null, LocalDateTime.now());
         existingMember.updateNickname("책책이");
         memberRepository.save(existingMember);
@@ -257,6 +265,7 @@ public class MemberControllerIntegrationTest {
                 LocalDateTime.now()
         ));
 
+        // when & then
         mockMvc.perform(patch("/api/v1/members/me/nickname")
                         .with(csrf().asHeader())
                         .cookie(accessTokenCookie(member))
@@ -273,13 +282,15 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("공개 닉네임 없이 익명 상태 해제를 거부한다")
-    void should_RejectDisableAnonymityWithoutNickname() throws Exception {
+    void should_RejectDisableAnonymity_When_NicknameIsMissing() throws Exception {
+        // given
         Member member = memberRepository.save(Member.create(
                 "우아한 달빛 참새",
                 null,
                 LocalDateTime.now()
         ));
 
+        // when & then
         mockMvc.perform(patch("/api/v1/members/me/anonymity")
                         .with(csrf().asHeader())
                         .cookie(accessTokenCookie(member))
@@ -296,11 +307,13 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("공개 닉네임 설정 후 익명 상태를 해제한다")
-    void should_DisableAnonymityAfterNicknameIsSet() throws Exception {
+    void should_DisableAnonymity_When_NicknameIsSet() throws Exception {
+        // given
         Member member = Member.create("우아한 달빛 참새", "exUrl", LocalDateTime.now());
         member.updateNickname("책책이");
         memberRepository.save(member);
 
+        // when & then
         mockMvc.perform(patch("/api/v1/members/me/anonymity")
                         .with(csrf().asHeader())
                         .cookie(accessTokenCookie(member))
@@ -327,13 +340,15 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("공백 닉네임 설정 요청을 거부한다")
-    void should_RejectBlankNickname() throws Exception {
+    void should_RejectNickname_When_NicknameIsBlank() throws Exception {
+        // given
         Member member = memberRepository.save(Member.create(
                 "우아한 달빛 참새",
                 null,
                 LocalDateTime.now()
         ));
 
+        // when & then
         mockMvc.perform(patch("/api/v1/members/me/nickname")
                         .with(csrf().asHeader())
                         .cookie(accessTokenCookie(member))
@@ -350,7 +365,8 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("인증 없이 닉네임 설정을 요청하면 거부한다")
-    void should_RejectUpdateNicknameWithoutAuthentication() throws Exception {
+    void should_RejectNicknameUpdate_When_MemberIsUnauthenticated() throws Exception {
+        // when & then
         mockMvc.perform(patch("/api/v1/members/me/nickname")
                         .with(csrf().asHeader())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -366,13 +382,15 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("익명 여부가 없는 요청을 거부한다")
-    void should_RejectMissingAnonymity() throws Exception {
+    void should_RejectAnonymityUpdate_When_AnonymityIsMissing() throws Exception {
+        // given
         Member member = memberRepository.save(Member.create(
                 "우아한 달빛 참새",
                 null,
                 LocalDateTime.now()
         ));
 
+        // when & then
         mockMvc.perform(patch("/api/v1/members/me/anonymity")
                         .with(csrf().asHeader())
                         .cookie(accessTokenCookie(member))
@@ -389,7 +407,8 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("인증 없이 익명 여부 수정을 요청하면 거부한다")
-    void should_RejectUpdateAnonymityWithoutAuthentication() throws Exception {
+    void should_RejectAnonymityUpdate_When_MemberIsUnauthenticated() throws Exception {
+        // when & then
         mockMvc.perform(patch("/api/v1/members/me/anonymity")
                         .with(csrf().asHeader())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -405,11 +424,13 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("회원을 탈퇴 처리하고 인증 쿠키를 삭제한다")
-    void should_WithdrawMember() throws Exception {
+    void should_WithdrawMember_When_WithdrawalIsRequested() throws Exception {
+        // given
         Member member = Member.create("우아한 달빛 참새", "profile", LocalDateTime.now());
         member.updateNickname("책책이");
         memberRepository.save(member);
 
+        // when & then
         var result = mockMvc.perform(delete("/api/v1/members/me")
                         .with(csrf().asHeader())
                         .cookie(accessTokenCookie(member)))
@@ -466,7 +487,8 @@ public class MemberControllerIntegrationTest {
 
     @Test
     @DisplayName("인증 없이 회원 탈퇴를 요청하면 거부한다")
-    void should_RejectWithdrawWithoutAuthentication() throws Exception {
+    void should_RejectWithdrawal_When_MemberIsUnauthenticated() throws Exception {
+        // when & then
         mockMvc.perform(delete("/api/v1/members/me")
                         .with(csrf().asHeader()))
                 .andExpect(status().isUnauthorized())

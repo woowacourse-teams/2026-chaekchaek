@@ -369,9 +369,11 @@ class BookControllerTest {
     @Test
     @DisplayName("예상하지 못한 오류가 발생하면 내부 정보를 숨긴 500 응답을 반환한다")
     void should_ReturnInternalServerError_When_UnexpectedExceptionOccurs() throws Exception {
+        // given
         when(bookSearchService.search("마션", 1))
                 .thenThrow(new RuntimeException("database password leaked"));
 
+        // when & then
         expectProblemDetail(
                 mockMvc.perform(get("/api/v1/books")
                         .param("query", "마션")

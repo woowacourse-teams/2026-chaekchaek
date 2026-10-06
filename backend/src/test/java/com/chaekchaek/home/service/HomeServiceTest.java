@@ -118,6 +118,7 @@ class HomeServiceTest {
     @Test
     @DisplayName("탈퇴 회원의 감상은 공개 프로필에 접근할 수 없다")
     void should_MarkProfileUnavailable_When_ReviewAuthorIsWithdrawn() {
+        // given
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
         ReplyRepository replyRepository = mock(ReplyRepository.class);
         BookRepository bookRepository = mock(BookRepository.class);
@@ -152,8 +153,10 @@ class HomeServiceTest {
         );
         HomeService homeService = new HomeService(reviewRepository, bookRepository, summaryReader);
 
+        // when
         AuthorResponse author = homeService.getLatestReviews().reviews().getFirst().author();
 
+        // then
         assertThat(author.displayName()).isEqualTo("익명 사용자 1");
         assertThat(author.memberId()).isNull();
         assertThat(author.profileStatus()).isEqualTo(AuthorProfileStatus.UNAVAILABLE);

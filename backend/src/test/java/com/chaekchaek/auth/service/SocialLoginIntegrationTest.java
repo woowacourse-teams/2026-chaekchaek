@@ -58,7 +58,8 @@ public class SocialLoginIntegrationTest {
 
     @Test
     @DisplayName("탈퇴와 재가입 후 공개 답글은 새 닉네임을 표시하고 기존 작성물과 소유권을 보존한다")
-    void withdrawalAndRejoinPreserveOldContentAndCreateNewPublicReply() {
+    void should_PreserveOldContentAndCreateNewPublicReply_When_WithdrawnMemberRejoins() {
+        // given
         GoogleProfile profile = new GoogleProfile(
                 "rejoining-user",
                 "user@example.com",
@@ -92,6 +93,8 @@ public class SocialLoginIntegrationTest {
         ));
         deletedReply.deleteBy(oldActorId);
         memberService.withdraw(oldMember.getId());
+
+        // when & then
         assertThatThrownBy(() -> reviewService.createReply(
                 review.getId(),
                 new ReplyCreateRequest("탈퇴 토큰 답글")

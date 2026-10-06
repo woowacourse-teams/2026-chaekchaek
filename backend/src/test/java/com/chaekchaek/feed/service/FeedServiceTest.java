@@ -40,6 +40,7 @@ class FeedServiceTest {
     @Test
     @DisplayName("전체 피드의 탈퇴 회원 공개 감상은 기존 익명 닉네임으로 표시한다")
     void should_DisplayAnonymousNickname_When_PublicReviewAuthorIsWithdrawn() {
+        // given
         ReviewRepository reviews = mock(ReviewRepository.class);
         BookRepository books = mock(BookRepository.class);
         CurrentActorProvider currentActor = mock(CurrentActorProvider.class);
@@ -75,8 +76,10 @@ class FeedServiceTest {
                 members
         );
 
+        // when
         AuthorResponse author = new FeedService(reviews, reader).getReviews(1).reviews().getFirst().author();
 
+        // then
         assertThat(author.displayName()).isEqualTo("탈퇴 전 익명 이름");
         assertThat(author.memberId()).isNull();
         assertThat(author.profileImageUrl()).isNull();

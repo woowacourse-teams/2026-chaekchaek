@@ -51,7 +51,8 @@ class MobileAppleLoginServiceTest {
     }
 
     @Test
-    void should_LoginAndStoreAppleRefreshToken() {
+    void should_LoginAndStoreAppleRefreshToken_When_AppleAuthorizationIsValid() {
+        // given
         MobileAppleLoginRequest request = new MobileAppleLoginRequest(
                 "id-token",
                 "code",
@@ -66,6 +67,8 @@ class MobileAppleLoginServiceTest {
                 "Bearer",
                 300L
         );
+
+        // when
         IssuedTokens issuedTokens = new IssuedTokens(
                 "access",
                 new IssuedRefreshToken(
@@ -73,6 +76,8 @@ class MobileAppleLoginServiceTest {
                         LocalDateTime.now().plusDays(14)
                 )
         );
+
+        // then
         when(verifier.verify("id-token", "nonce")).thenReturn(profile);
         when(tokenClient.exchange("code")).thenReturn(appleTokens);
         when(verifier.verify("apple-id", "nonce")).thenReturn(profile);

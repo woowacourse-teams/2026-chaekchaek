@@ -24,11 +24,13 @@ class AppleIdTokenVerifierTest {
     private JwtDecoder jwtDecoder;
 
     @Test
-    void should_VerifySubjectAndNonce() throws Exception {
+    void should_VerifySubjectAndNonce_When_AppleIdTokenIsValid() throws Exception {
+        // given
         String rawNonce = "raw-nonce";
         Jwt jwt = jwt("apple-user-id", sha256(rawNonce));
         when(jwtDecoder.decode("identity-token")).thenReturn(jwt);
 
+        // when & then
         AppleProfile profile = new AppleIdTokenVerifier(jwtDecoder)
                 .verify("identity-token", rawNonce);
 
@@ -36,10 +38,12 @@ class AppleIdTokenVerifierTest {
     }
 
     @Test
-    void should_RejectMismatchedNonce() {
+    void should_RejectAppleIdToken_When_NonceDoesNotMatch() {
+        // given
         when(jwtDecoder.decode("identity-token"))
                 .thenReturn(jwt("apple-user-id", "different-nonce"));
 
+        // when & then
         assertThatThrownBy(() -> new AppleIdTokenVerifier(jwtDecoder)
                 .verify("identity-token", "raw-nonce"))
                 .isInstanceOf(InvalidAppleAuthorizationException.class);

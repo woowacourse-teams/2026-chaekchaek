@@ -38,10 +38,13 @@ public class AuthTokenServiceTest {
 
     @Test
     @DisplayName("탈퇴 회원의 새 토큰 발급을 거부한다")
-    void rejectsIssuingTokensForWithdrawnMember() {
+    void should_RejectTokenIssue_When_MemberIsWithdrawn() {
+        // given
         Member member = Member.create("익명", null, LocalDateTime.now());
         member.withdraw(LocalDateTime.now());
         when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+
+        // when & then
         assertThatThrownBy(() -> authTokenService.issue(1L))
                 .isInstanceOf(BusinessException.class);
         verifyNoInteractions(accessTokenProvider, refreshTokenProvider);
@@ -49,7 +52,8 @@ public class AuthTokenServiceTest {
 
     @Test
     @DisplayName("탈퇴 회원은 남아 있는 유효 리프레시 토큰으로도 재발급할 수 없다")
-    void rejectsReissuingTokensForWithdrawnMember() {
+    void should_RejectTokenReissue_When_MemberIsWithdrawn() {
+        // given
         Instant now = Instant.parse("2026-08-13T00:00:00Z");
         Member member = Member.create("익명", null, LocalDateTime.now());
         member.withdraw(LocalDateTime.now());
@@ -59,6 +63,8 @@ public class AuthTokenServiceTest {
         when(refreshTokenRepository.findByTokenHash("hash")).thenReturn(Optional.of(token));
         when(token.isUsable(LocalDateTime.ofInstant(now, ZoneOffset.UTC))).thenReturn(true);
         when(token.getMember()).thenReturn(member);
+
+        // when & then
         assertThatThrownBy(() -> authTokenService.reissue("token"))
                 .isInstanceOf(BusinessException.class);
         verifyNoInteractions(accessTokenProvider, refreshTokenProvider);
@@ -168,11 +174,13 @@ public class AuthTokenServiceTest {
     @Test
     @DisplayName("존재하지 않는 Refresh Token 재발급은 거부한다")
     void should_ThrowException_When_RefreshTokenDoesNotExist() {
+        // given
         when(refreshTokenHasher.hash("invalid-token"))
                 .thenReturn("invalid-hash");
         when(refreshTokenRepository.findByTokenHash("invalid-hash"))
                 .thenReturn(Optional.empty());
 
+        // when & then
         assertThatThrownBy(
                 () -> authTokenService.reissue("invalid-token")
         ).isInstanceOf(InvalidRefreshTokenException.class);
@@ -186,6 +194,7 @@ public class AuthTokenServiceTest {
     @Test
     @DisplayName("폐기되거나 만료된 Refresh Token 재발급은 거부한다")
     void should_ThrowException_When_RefreshTokenIsUnusable() {
+        // given
         RefreshToken savedToken = mock(RefreshToken.class);
         Instant now = Instant.parse("2026-08-13T00:00:00Z");
         LocalDateTime nowDateTime =
@@ -198,6 +207,7 @@ public class AuthTokenServiceTest {
         when(clock.instant()).thenReturn(now);
         when(savedToken.isUsable(nowDateTime)).thenReturn(false);
 
+        // when & then
         assertThatThrownBy(
                 () -> authTokenService.reissue("expired-token")
         ).isInstanceOf(InvalidRefreshTokenException.class);
@@ -235,8 +245,10 @@ public class AuthTokenServiceTest {
     @Test
     @DisplayName("Refresh Token 없이 로그아웃해도 정상 처리한다")
     void should_CompleteLogout_When_RefreshTokenDoesNotExist() {
+        // when
         authTokenService.logout(null);
 
+        // then
         verifyNoInteractions(
                 refreshTokenHasher,
                 refreshTokenRepository
@@ -246,6 +258,7 @@ public class AuthTokenServiceTest {
     @Test
     @DisplayName("이미 폐기된 Refresh Token으로 로그아웃해도 다시 폐기하지 않는다")
     void should_NotRevokeAgain_When_RefreshTokenIsAlreadyRevoked() {
+        // given
         RefreshToken savedToken = mock(RefreshToken.class);
 
         when(refreshTokenHasher.hash("refresh-token"))
@@ -254,8 +267,10 @@ public class AuthTokenServiceTest {
                 .thenReturn(Optional.of(savedToken));
         when(savedToken.isRevoked()).thenReturn(true);
 
+        // when
         authTokenService.logout("refresh-token");
 
+        // then
         verify(savedToken, never()).revoke(any());
     }
 }

@@ -74,11 +74,14 @@ class SecurityContextCurrentMemberIdProviderTest {
     }
 
     @Test
-    void rejectsWithdrawnMemberWithExistingAccessToken() {
+    void should_RejectExistingAccessToken_When_MemberIsWithdrawn() {
+        // given
         Member member = Member.create("익명 참새", null, LocalDateTime.now());
         member.withdraw(LocalDateTime.now());
         when(memberRepository.findById(42L)).thenReturn(Optional.of(member));
         authenticate("42");
+
+        // when & then
         assertThatThrownBy(provider::getCurrentMemberId)
                 .isInstanceOfSatisfying(
                 BusinessException.class,

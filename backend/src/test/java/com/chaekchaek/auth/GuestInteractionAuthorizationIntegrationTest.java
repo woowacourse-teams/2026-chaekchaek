@@ -66,9 +66,11 @@ class GuestInteractionAuthorizationIntegrationTest {
     }
 
     @Test
-    void guestTokenPassesPublicInteractionSecurityButNotMemberOnlySecurity() throws Exception {
+    void should_AllowPublicInteractionsAndRejectMemberOnlyActions_When_GuestTokenIsProvided() throws Exception {
+        // given
         String guestToken = issueGuestToken();
 
+        // when & then
         mockMvc.perform(post("/api/v1/books/999/reviews")
                         .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -82,9 +84,11 @@ class GuestInteractionAuthorizationIntegrationTest {
     }
 
     @Test
-    void guestCannotMutateLibraryStatusPageOrRating() throws Exception {
+    void should_RejectLibraryMutations_When_ActorIsGuest() throws Exception {
+        // given
         String guestToken = issueGuestToken();
 
+        // when & then
         mockMvc.perform(post("/api/v1/library")
                         .with(csrf())
                         .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken)
@@ -120,7 +124,8 @@ class GuestInteractionAuthorizationIntegrationTest {
     }
 
     @Test
-    void publicInteractionStillRequiresAnActor() throws Exception {
+    void should_RejectPublicInteractions_When_ActorIsMissing() throws Exception {
+        // when & then
         mockMvc.perform(post("/api/v1/books/999/reviews")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"content\":\"식별자 없는 감상\"}"))

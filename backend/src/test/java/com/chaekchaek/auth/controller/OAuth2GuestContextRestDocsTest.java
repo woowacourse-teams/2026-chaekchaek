@@ -58,7 +58,8 @@ class OAuth2GuestContextRestDocsTest {
 
     @Test
     @DisplayName("웹 OAuth 로그인 전에 게스트 컨텍스트를 세션에 저장한다")
-    void should_RememberGuestContextBeforeWebOAuthLogin() throws Exception {
+    void should_RememberGuestContext_When_WebOAuthLoginIsPrepared() throws Exception {
+        // when & then
         mockMvc.perform(post("/api/v1/auth/oauth2/guest-context")
                         .header("X-Guest-Token", "guest-token"))
                 .andExpect(status().isNoContent())
@@ -80,9 +81,11 @@ class OAuth2GuestContextRestDocsTest {
     @Test
     @DisplayName("유효하지 않은 게스트 토큰이면 OAuth 컨텍스트 저장을 거부한다")
     void should_RejectGuestContext_When_GuestTokenIsInvalid() throws Exception {
+        // given
         doThrow(new BusinessException(ErrorCode.INVALID_GUEST_TOKEN))
                 .when(guestContextService).rememberGuestActor(any(), anyString());
 
+        // when & then
         mockMvc.perform(post("/api/v1/auth/oauth2/guest-context")
                         .header("X-Guest-Token", "invalid-token"))
                 .andExpect(status().isUnauthorized())

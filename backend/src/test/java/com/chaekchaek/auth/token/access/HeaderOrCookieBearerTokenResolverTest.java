@@ -18,8 +18,10 @@ public class HeaderOrCookieBearerTokenResolverTest {
     @Test
     @DisplayName("쿠키가 없으면 토큰을 반환하지 않는다")
     void should_ReturnNull_When_CookieDoesNotExist() {
+        // given
         MockHttpServletRequest request = new MockHttpServletRequest();
 
+        // when & then
         assertThat(resolver.resolve(request)).isNull();
     }
 
@@ -104,8 +106,10 @@ public class HeaderOrCookieBearerTokenResolverTest {
     @Test
     @DisplayName("Authorization Header와 쿠키가 없으면 토큰을 반환하지 않는다")
     void should_ReturnNull_When_HeaderAndCookieDoNotExist() {
+        // given
         MockHttpServletRequest request = new MockHttpServletRequest();
 
+        // when & then
         assertThat(resolver.resolve(request)).isNull();
     }
 

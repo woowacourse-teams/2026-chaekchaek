@@ -51,7 +51,8 @@ class ReviewServiceTest {
 
     @Test
     @DisplayName("게스트는 서재를 변경하지 않고 감상을 작성한다")
-    void should_CreateGuestReviewWithoutChangingLibrary() {
+    void should_CreateReviewWithoutChangingLibrary_When_ActorIsGuest() {
+        // given
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
         ReviewBookReader bookReader = mock(ReviewBookReader.class);
         ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
@@ -85,6 +86,7 @@ class ReviewServiceTest {
                 transactionManager()
         );
 
+        // when
         ReviewResponse response = service.createReview(
                 5L,
                 new ReviewCreateRequest(
@@ -97,6 +99,7 @@ class ReviewServiceTest {
                 )
         );
 
+        // then
         assertThat(response.author().displayName()).isEqualTo("다정한 참새");
         assertThat(response.author().profileImageUrl()).isNull();
         assertThat(response.author().anonymous()).isTrue();
@@ -115,6 +118,7 @@ class ReviewServiceTest {
     @Test
     @DisplayName("게스트는 감상에서 개인 독서 쪽수를 입력할 수 없다")
     void should_RejectReadingPage_When_GuestCreatesReview() {
+        // given
         ReviewService service = new ReviewService(
                 mock(ReviewRepository.class),
                 mock(ReplyRepository.class),
@@ -128,6 +132,7 @@ class ReviewServiceTest {
                 transactionManager()
         );
 
+        // when & then
         assertThatThrownBy(() -> service.createReview(
                 5L,
                 new ReviewCreateRequest(
@@ -148,6 +153,7 @@ class ReviewServiceTest {
     @Test
     @DisplayName("게스트는 기존 감상의 개인 독서 쪽수를 수정할 수 없다")
     void should_RejectReadingPage_When_GuestUpdatesReview() {
+        // given
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
         Review review = Review.create(5L, 7L, "게스트 감상", null, null, null, false, true);
         ReflectionTestUtils.setField(review, "id", 10L);
@@ -168,6 +174,7 @@ class ReviewServiceTest {
         request.setCurrentPage(10);
         request.setTotalPages(100);
 
+        // when & then
         assertThatThrownBy(() -> service.updateReview(10L, request))
                 .isInstanceOfSatisfying(
                 BusinessException.class,
@@ -177,7 +184,8 @@ class ReviewServiceTest {
 
     @Test
     @DisplayName("감상과 답글 좋아요는 현재 Actor에 귀속된다")
-    void should_AssignReactionsToCurrentActor() {
+    void should_AssignReactions_When_CurrentActorLikesReviewOrReply() {
+        // given
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
         ReplyRepository replyRepository = mock(ReplyRepository.class);
         ReviewReactionRepository reviewReactionRepository = mock(ReviewReactionRepository.class);
@@ -208,7 +216,11 @@ class ReviewServiceTest {
         service.createReplyReaction(20L);
 
         ArgumentCaptor<ReviewReaction> reviewReaction = ArgumentCaptor.forClass(ReviewReaction.class);
+
+        // when
         ArgumentCaptor<ReplyReaction> replyReaction = ArgumentCaptor.forClass(ReplyReaction.class);
+
+        // then
         verify(reviewReactionRepository).saveAndFlush(reviewReaction.capture());
         verify(replyReactionRepository).saveAndFlush(replyReaction.capture());
         assertThat(reviewReaction.getValue().getActorId()).isEqualTo(7L);

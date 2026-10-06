@@ -114,7 +114,7 @@ class BookServicePersistenceTest {
 
     @Test
     @DisplayName("ISBN13 값 객체로 단건 및 IN 조건 도서를 조회한다")
-    void should_FindBooksByIsbn13ValueObject() {
+    void should_FindBooks_When_Isbn13ValueObjectMatches() {
         // given
         Isbn13 isbn13 = new Isbn13("9788925568683");
         bookRepository.saveAndFlush(Book.create(

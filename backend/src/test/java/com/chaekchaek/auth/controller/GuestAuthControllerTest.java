@@ -151,7 +151,8 @@ class GuestAuthControllerTest {
     }
 
     @Test
-    void issuesGuestTokenWithoutLogin() throws Exception {
+    void should_IssueGuestToken_When_RequestIsUnauthenticated() throws Exception {
+        // given
         when(guestTokenService.issue()).thenReturn(new IssuedGuestToken(
                 "guest-token",
                 "다정한 파란 참새",
@@ -160,6 +161,7 @@ class GuestAuthControllerTest {
                 ActorType.GUEST
         ));
 
+        // when & then
         mockMvc.perform(post("/api/v1/auth/guest-token"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.guestToken").value("guest-token"))
@@ -181,7 +183,8 @@ class GuestAuthControllerTest {
     }
 
     @Test
-    void refreshesGuestTokenWithinRefreshWindow() throws Exception {
+    void should_RefreshGuestToken_When_TokenIsWithinRefreshWindow() throws Exception {
+        // given
         when(guestTokenService.refresh("current-token")).thenReturn(new IssuedGuestToken(
                 "new-token",
                 "다정한 파란 참새",
@@ -190,6 +193,7 @@ class GuestAuthControllerTest {
                 ActorType.GUEST
         ));
 
+        // when & then
         mockMvc.perform(post("/api/v1/auth/guest-token/refresh")
                         .header("X-Guest-Token", "current-token"))
                 .andExpect(status().isOk())
@@ -216,10 +220,12 @@ class GuestAuthControllerTest {
     }
 
     @Test
-    void documentsInvalidGuestTokenRefresh() throws Exception {
+    void should_DocumentRefreshError_When_GuestTokenIsInvalid() throws Exception {
+        // given
         doThrow(new BusinessException(ErrorCode.INVALID_GUEST_TOKEN))
                 .when(guestTokenService).refresh(anyString());
 
+        // when & then
         documentRefreshProblem(
                 "invalid-token",
                 "guest-token-refresh-invalid",
@@ -230,10 +236,12 @@ class GuestAuthControllerTest {
     }
 
     @Test
-    void documentsExpiredGuestTokenRefresh() throws Exception {
+    void should_DocumentRefreshError_When_GuestTokenIsExpired() throws Exception {
+        // given
         doThrow(new BusinessException(ErrorCode.UNUSABLE_GUEST_TOKEN))
                 .when(guestTokenService).refresh(anyString());
 
+        // when & then
         documentRefreshProblem(
                 "expired-token",
                 "guest-token-refresh-expired",
@@ -244,10 +252,12 @@ class GuestAuthControllerTest {
     }
 
     @Test
-    void documentsGuestTokenRefreshBeforeWindow() throws Exception {
+    void should_DocumentRefreshError_When_TokenIsBeforeRefreshWindow() throws Exception {
+        // given
         doThrow(new BusinessException(ErrorCode.GUEST_TOKEN_REFRESH_NOT_ALLOWED))
                 .when(guestTokenService).refresh(anyString());
 
+        // when & then
         documentRefreshProblem(
                 "early-token",
                 "guest-token-refresh-not-allowed",
