@@ -3,7 +3,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { getMembersMe } from '@/services/apis/membersMe/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { postAuthGuestToken } from '@/services/apis/authGuestToken/repository';
-import { postAuthGuestTokenRefreshs } from '@/services/apis/authGuestTokenRefreshs/repository';
+import { postAuthGuestTokenRefresh } from '@/services/apis/authGuestTokenRefresh/repository';
 import { useExecute } from '@/services/core/useExecute';
 import { RequestAjaxError } from '@/services/core/http/requestAjaxError';
 
@@ -52,10 +52,10 @@ export const AuthProvider = ({ children }: Props) => {
   });
 
   const {
-    mutate: postAuthGuestTokenRefreshsMutate,
-    status: { data: authGuestTokenRefreshs },
+    mutate: postAuthGuestTokenRefreshMutate,
+    status: { data: authGuestTokenRefresh },
   } = useExecute({
-    executeFn: postAuthGuestTokenRefreshs,
+    executeFn: postAuthGuestTokenRefresh,
   });
 
   const logoutGuest = () => {
@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }: Props) => {
 
       if (guest) {
         if (canRenew(guest.expiresAt)) {
-          postAuthGuestTokenRefreshsMutate({}, { guestToken: guest.guestToken });
+          postAuthGuestTokenRefreshMutate({}, { guestToken: guest.guestToken });
         }
       }
     }
@@ -95,11 +95,11 @@ export const AuthProvider = ({ children }: Props) => {
   }, [authGuestToken]);
 
   useEffect(() => {
-    if (authGuestTokenRefreshs) {
-      localStorage.setItem('guest', JSON.stringify(authGuestTokenRefreshs));
-      updateGuestAccount(authGuestTokenRefreshs);
+    if (authGuestTokenRefresh) {
+      localStorage.setItem('guest', JSON.stringify(authGuestTokenRefresh));
+      updateGuestAccount(authGuestTokenRefresh);
     }
-  }, [authGuestTokenRefreshs]);
+  }, [authGuestTokenRefresh]);
 
   const value = useMemo(
     () => ({ isAuthenticated, user, updateAccount, guest, updateGuestAccount }),
