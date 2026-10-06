@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 
 import { getMembersMe } from '@/services/apis/membersMe/repository';
 import { useLoadData } from '@/services/core/useLoadData';
-import { postAuthGuestToken } from '@/services/apis/authGuestToken/repository';
+import { postAuthGuestToken, getAuthGuestToken } from '@/services/apis/authGuestToken/repository';
 import { postAuthGuestTokenRefresh } from '@/services/apis/authGuestTokenRefresh/repository';
 import { useExecute } from '@/services/core/useExecute';
 import { RequestAjaxError } from '@/services/core/http/requestAjaxError';
@@ -66,27 +66,36 @@ export const AuthProvider = ({ children }: Props) => {
   };
 
   useEffect(() => {
-    if (membersMeStatus.data) {
-      updateAccount(membersMeStatus.data);
-      logoutGuest();
-      return;
-    }
-
-    if (
-      membersMeStatus.status === 'error' &&
-      membersMeStatus.error &&
-      membersMeStatus.error?.status === 401
-    ) {
-      if (guest === null) {
-        postAuthGuestTokenMutate({});
+    const initializeAuth = async () => {
+      if (membersMeStatus.data) {
+        updateAccount(membersMeStatus.data);
+        logoutGuest();
+        return;
       }
 
-      if (guest) {
-        if (canRenew(guest.expiresAt)) {
-          postAuthGuestTokenRefreshMutate({}, { guestToken: guest.guestToken });
+      if (
+        membersMeStatus.status === 'error' &&
+        membersMeStatus.error &&
+        membersMeStatus.error?.status === 401
+      ) {
+        if (guest === null) {
+          postAuthGuestTokenMutate({});
+        }
+
+        if (guest) {
+          const latestGuest = await getAuthGuestToken({}, { guestToken: guest.guestToken });
+
+          localStorage.setItem('guest', JSON.stringify(latestGuest));
+          updateGuestAccount(latestGuest);
+
+          if (canRenew(latestGuest.expiresAt)) {
+            postAuthGuestTokenRefreshMutate({}, { guestToken: guest.guestToken });
+          }
         }
       }
-    }
+    };
+
+    initializeAuth();
   }, [membersMeStatus]);
 
   const value = useMemo(
