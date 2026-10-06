@@ -69,7 +69,13 @@ class PersistentReviewMemberReaderTest {
         Map<Long, ReviewMemberProfile> profiles = reviewMemberReader.findByActorIds(List.of(actor.getId()));
 
         assertThat(profiles).containsEntry(actor.getId(), new ReviewMemberProfile(
-                "다정한 파란 참새", null, "다정한 파란 참새", true, false, ActorType.GUEST));
+                "다정한 파란 참새",
+                null,
+                "다정한 파란 참새",
+                true,
+                false,
+                ActorType.GUEST
+        ));
     }
 
     @Test
@@ -90,6 +96,13 @@ class PersistentReviewMemberReaderTest {
 
         // then
         assertThat(profiles).containsEntry(actor.getId(), new ReviewMemberProfile(
-                member.getId(), null, "exUrl", "책책 관리자", true, AccountStatus.ACTIVE, ActorType.MEMBER));
+                member.getId(),
+                null,
+                "exUrl",
+                "책책 관리자",
+                true,
+                AccountStatus.ACTIVE,
+                ActorType.MEMBER
+        ));
     }
 }

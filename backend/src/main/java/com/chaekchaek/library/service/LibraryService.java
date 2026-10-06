@@ -219,7 +219,11 @@ public class LibraryService {
                         memberId, excludedBookId, criterion)
                 .map(item -> RatingComparisonBookResponse.from(item, getBook(item.getBookId())))
                 .orElse(null);
-        return new RatingComparisonResponse(lower, current, higher);
+        return new RatingComparisonResponse(
+                lower,
+                current,
+                higher
+        );
     }
 
     private LibraryItemResponse saveNewItem(long memberId, Book book, ReadingStatus status) {

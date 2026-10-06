@@ -88,10 +88,24 @@ class HomeServiceTest {
         assertThat(result).extracting(LatestReviewResponse::replyCount).containsExactly(12L, 3L);
         assertThat(result).extracting(LatestReviewResponse::bookTitle).containsExactly("두 번째 책", "첫 번째 책");
         assertThat(result).extracting(LatestReviewResponse::author)
-                .containsExactly(new AuthorResponse(null, "다정한 참새", null, true, false, ActorType.MEMBER,
-                                AuthorProfileStatus.UNAVAILABLE),
-                        new AuthorResponse(101L, "책 읽는 사람", "https://example.com/profile-1.jpg", false,
-                                false, ActorType.MEMBER, AuthorProfileStatus.AVAILABLE));
+                .containsExactly(new AuthorResponse(
+                        null,
+                        "다정한 참새",
+                        null,
+                        true,
+                        false,
+                        ActorType.MEMBER,
+                        AuthorProfileStatus.UNAVAILABLE
+                ),
+                        new AuthorResponse(
+                                101L,
+                                "책 읽는 사람",
+                                "https://example.com/profile-1.jpg",
+                                false,
+                                false,
+                                ActorType.MEMBER,
+                                AuthorProfileStatus.AVAILABLE
+                        ));
     }
 
     @Test

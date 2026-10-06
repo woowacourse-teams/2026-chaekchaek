@@ -55,7 +55,10 @@ public class AuthTokenService {
         String accessToken = accessTokenProvider.issue(member);
         IssuedRefreshToken refreshToken = refreshTokenProvider.issue(member);
 
-        return new IssuedTokens(accessToken, refreshToken);
+        return new IssuedTokens(
+                accessToken,
+                refreshToken
+        );
     }
 
     @Transactional

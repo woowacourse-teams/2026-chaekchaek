@@ -57,7 +57,11 @@ public class SocialLoginServiceTest {
                 .thenReturn(Optional.of(account));
 
         Assertions.assertThatThrownBy(() -> socialLoginService.loginOrSignUp(
-                new GoogleProfile("suspended-user", "email", null)))
+                new GoogleProfile(
+                        "suspended-user",
+                        "email",
+                        null
+                )))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode())
                                 .isEqualTo(ErrorCode.UNAUTHORIZED));
@@ -79,7 +83,11 @@ public class SocialLoginServiceTest {
             Member previous = account.getMember();
             previous.withdraw(LocalDateTime.now());
             Member result = provider == Provider.GOOGLE
-                    ? socialLoginService.loginOrSignUp(new GoogleProfile("repeat-user", "email", null), 7L)
+                    ? socialLoginService.loginOrSignUp(new GoogleProfile(
+                            "repeat-user",
+                            "email",
+                            null
+                    ), 7L)
                     : socialLoginService.loginOrSignUp(new AppleProfile("repeat-user"));
             assertThat(result).isNotSameAs(previous);
             assertThat(result.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
@@ -94,7 +102,11 @@ public class SocialLoginServiceTest {
     @Test
     @DisplayName("탈퇴 후 동일 소셜 계정 재가입은 새 회원과 Actor를 만들고 기존 회원을 보존한다")
     void createsNewIdentityAfterWithdrawal() {
-        GoogleProfile profile = new GoogleProfile("returning-user", "member@example.com", "new-image");
+        GoogleProfile profile = new GoogleProfile(
+                "returning-user",
+                "member@example.com",
+                "new-image"
+        );
         Member oldMember = Member.create("기존 익명 이름", "old-image", LocalDateTime.now());
         oldMember.updateNickname("기존 공개 이름");
         oldMember.disableAnonymousDisplay();
@@ -284,7 +296,11 @@ public class SocialLoginServiceTest {
     @DisplayName("기존 회원이 소셜 로그인하면 제공자와 함께 로그인 로그를 남긴다")
     void should_LogLogin_When_SocialAccountExists(CapturedOutput output) {
         // given
-        GoogleProfile googleProfile = new GoogleProfile("google-user-123", "member@example.com", "exUrl");
+        GoogleProfile googleProfile = new GoogleProfile(
+                "google-user-123",
+                "member@example.com",
+                "exUrl"
+        );
         Member existingMember = Member.create("책책-1234", "exUrl", LocalDateTime.of(2026, 8, 12, 12, 0));
         SocialAccount existingAccount = SocialAccount.connect(
                 existingMember, Provider.GOOGLE, googleProfile.providerUserId(), LocalDateTime.of(2026, 8, 12, 12, 0));
@@ -306,7 +322,11 @@ public class SocialLoginServiceTest {
     @DisplayName("최초 소셜 로그인이면 가입 로그를 남긴다")
     void should_LogSignUp_When_FirstSocialLogin(CapturedOutput output) {
         // given
-        GoogleProfile googleProfile = new GoogleProfile("google-user-123", "member@example.com", "exUrl");
+        GoogleProfile googleProfile = new GoogleProfile(
+                "google-user-123",
+                "member@example.com",
+                "exUrl"
+        );
         when(socialAccountRepository.findForLogin(Provider.GOOGLE, googleProfile.providerUserId()))
                 .thenReturn(Optional.empty());
         when(nicknameGenerator.generate()).thenReturn("우아한 달빛 참새");

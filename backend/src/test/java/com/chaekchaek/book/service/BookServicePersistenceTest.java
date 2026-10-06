@@ -76,7 +76,10 @@ class BookServicePersistenceTest {
         ));
         libraryItemRepository.saveAndFlush(unratedItem(1L, anotherBook.getId()));
         when(activityCountReader.getActivityCounts(List.of(savedBook.getId())))
-                .thenReturn(Map.of(savedBook.getId(), new ActivityCounts(0L, 0L)));
+                .thenReturn(Map.of(savedBook.getId(), new ActivityCounts(
+                        0L,
+                        0L
+                )));
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
         when(bookResolver.lookup(savedBook.getIsbn13())).thenReturn(savedBook);
 

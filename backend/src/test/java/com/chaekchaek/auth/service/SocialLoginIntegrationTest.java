@@ -59,7 +59,11 @@ public class SocialLoginIntegrationTest {
     @Test
     @DisplayName("탈퇴와 재가입 후 공개 답글은 새 닉네임을 표시하고 기존 작성물과 소유권을 보존한다")
     void withdrawalAndRejoinPreserveOldContentAndCreateNewPublicReply() {
-        GoogleProfile profile = new GoogleProfile("rejoining-user", "user@example.com", "image");
+        GoogleProfile profile = new GoogleProfile(
+                "rejoining-user",
+                "user@example.com",
+                "image"
+        );
         Member oldMember = socialLoginService.loginOrSignUp(profile);
         memberService.updateNickname(oldMember.getId(), "이전 공개 이름");
         memberService.updateAnonymity(oldMember.getId(), false);

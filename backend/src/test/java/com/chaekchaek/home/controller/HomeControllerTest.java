@@ -47,8 +47,15 @@ class HomeControllerTest {
     void should_ReturnPopularBooks_When_FindingPopularBooks() throws Exception {
         // given
         when(homeService.getPopularBooks()).thenReturn(new PopularBookListResponse(List.of(
-                new PopularBookResponse(42L, "9788925568683", "마션", "https://example.com/martian.jpg",
-                        List.of("앤디 위어"), 12, 30)
+                new PopularBookResponse(
+                        42L,
+                        "9788925568683",
+                        "마션",
+                        "https://example.com/martian.jpg",
+                        List.of("앤디 위어"),
+                        12,
+                        30
+                )
         )));
 
         // when & then
@@ -85,11 +92,24 @@ class HomeControllerTest {
     void should_ReturnLatestReviews_When_FindingLatestReviews() throws Exception {
         // given
         when(homeService.getLatestReviews()).thenReturn(new LatestReviewListResponse(List.of(
-                new LatestReviewResponse("도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.",
+                new LatestReviewResponse(
+                        "도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.",
                         Instant.parse("2026-08-18T14:00:00Z"),
-                        new AuthorResponse(1L, "다정한 참새", "https://example.com/profile.jpg", false, false,
-                                ActorType.MEMBER, AuthorProfileStatus.AVAILABLE), 12L,
-                        42L, "9788936433598", "보이지 않는 도시", "https://example.com/invisible-cities.jpg")
+                        new AuthorResponse(
+                                1L,
+                                "다정한 참새",
+                                "https://example.com/profile.jpg",
+                                false,
+                                false,
+                                ActorType.MEMBER,
+                                AuthorProfileStatus.AVAILABLE
+                        ),
+                        12L,
+                        42L,
+                        "9788936433598",
+                        "보이지 않는 도시",
+                        "https://example.com/invisible-cities.jpg"
+                )
         )));
 
         // when & then

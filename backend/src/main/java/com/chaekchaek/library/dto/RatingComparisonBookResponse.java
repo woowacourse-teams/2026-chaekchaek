@@ -17,7 +17,14 @@ public record RatingComparisonBookResponse(
 ) {
 
     public static RatingComparisonBookResponse from(LibraryItem item, Book book) {
-        return new RatingComparisonBookResponse(item.getBookId(), book.getIsbn13().value(), book.getTitle(),
-                book.getCoverImageUrl(), book.getAuthors(), item.getRating(), item.getRatingUpdatedAt());
+        return new RatingComparisonBookResponse(
+                item.getBookId(),
+                book.getIsbn13().value(),
+                book.getTitle(),
+                book.getCoverImageUrl(),
+                book.getAuthors(),
+                item.getRating(),
+                item.getRatingUpdatedAt()
+        );
     }
 }

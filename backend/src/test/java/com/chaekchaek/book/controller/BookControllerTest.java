@@ -163,7 +163,11 @@ class BookControllerTest {
                 null,
                 null
         );
-        BookSearchResponse response = new BookSearchResponse(1, null, List.of(item));
+        BookSearchResponse response = new BookSearchResponse(
+                1,
+                null,
+                List.of(item)
+        );
         when(bookSearchService.search("마션", 1)).thenReturn(response);
 
         // when & then
@@ -435,7 +439,11 @@ class BookControllerTest {
                 new BigDecimal("4.3"),
                 21,
                 12,
-                new BookMyRecordResponse("READING", 120, new BigDecimal("4.2"))
+                new BookMyRecordResponse(
+                        "READING",
+                        120,
+                        new BigDecimal("4.2")
+                )
         );
     }
 

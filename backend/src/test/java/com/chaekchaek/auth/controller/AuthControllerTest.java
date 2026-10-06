@@ -55,7 +55,10 @@ class AuthControllerTest {
         // given
         IssuedTokens tokens = new IssuedTokens(
                 "new-access-token",
-                new IssuedRefreshToken("new-refresh-token", LocalDateTime.now().plusDays(14))
+                new IssuedRefreshToken(
+                        "new-refresh-token",
+                        LocalDateTime.now().plusDays(14)
+                )
         );
         when(authTokenService.reissue("refresh-token")).thenReturn(tokens);
         when(authCookieProvider.createAccessTokenCookie("new-access-token"))

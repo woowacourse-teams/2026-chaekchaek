@@ -74,8 +74,15 @@ import org.springframework.test.web.servlet.ResultActions;
 class ReviewControllerTest {
 
     private static final String REVIEW_TAG = "감상";
-    private static final AuthorResponse AUTHOR = new AuthorResponse(1L, "닉네임",
-            "https://example.com/profile.jpg", false, true, ActorType.MEMBER, AuthorProfileStatus.AVAILABLE);
+    private static final AuthorResponse AUTHOR = new AuthorResponse(
+            1L,
+            "닉네임",
+            "https://example.com/profile.jpg",
+            false,
+            true,
+            ActorType.MEMBER,
+            AuthorProfileStatus.AVAILABLE
+    );
     private static final HeaderDescriptor LOCATION_HEADER = headerWithName("Location")
             .description("생성된 리소스의 상대 경로");
 
@@ -125,7 +132,11 @@ class ReviewControllerTest {
     @DisplayName("감상 목록을 조회하고 문서화한다")
     void should_ReturnReviewPage_When_FindingReviews() throws Exception {
         // given
-        PageResponse<ReviewResponse> response = new PageResponse<>(1, null, List.of(reviewResponse()));
+        PageResponse<ReviewResponse> response = new PageResponse<>(
+                1,
+                null,
+                List.of(reviewResponse())
+        );
         when(reviewService.findReviews(42L, 1, Feed.ALL, ReviewSort.PAGE)).thenReturn(response);
 
         // when & then
@@ -198,7 +209,10 @@ class ReviewControllerTest {
         when(reviewService.createReviewByIsbn13(
                 ArgumentMatchers.eq(new Isbn13("9788925568683")),
                 ArgumentMatchers.any(ReviewCreateRequest.class)
-        )).thenReturn(new ReviewCreateByIsbnResponse(42L, reviewResponse()));
+        )).thenReturn(new ReviewCreateByIsbnResponse(
+                42L,
+                reviewResponse()
+        ));
 
         // when & then
         mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568683")
@@ -278,7 +292,11 @@ class ReviewControllerTest {
     @DisplayName("답글 목록을 조회한다")
     void should_ReturnReplyPage_When_FindingReplies() throws Exception {
         // given
-        when(reviewService.findReplies(101L, 1)).thenReturn(new PageResponse<>(1, null, List.of(replyResponse())));
+        when(reviewService.findReplies(101L, 1)).thenReturn(new PageResponse<>(
+                1,
+                null,
+                List.of(replyResponse())
+        ));
 
         // when & then
         mockMvc.perform(get("/api/v1/reviews/{reviewId}/replies", 101L).param("page", "1"))
@@ -377,7 +395,10 @@ class ReviewControllerTest {
     @DisplayName("감상 좋아요를 생성한다")
     void should_CreateReviewReaction_When_ReactionDoesNotExist() throws Exception {
         // given
-        when(reviewService.createReviewReaction(101L)).thenReturn(new ReactionResponse(13, true));
+        when(reviewService.createReviewReaction(101L)).thenReturn(new ReactionResponse(
+                13,
+                true
+        ));
 
         // when & then
         mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", 101L))
@@ -401,7 +422,10 @@ class ReviewControllerTest {
     @DisplayName("답글 좋아요를 생성한다")
     void should_CreateReplyReaction_When_ReactionDoesNotExist() throws Exception {
         // given
-        when(reviewService.createReplyReaction(201L)).thenReturn(new ReactionResponse(3, true));
+        when(reviewService.createReplyReaction(201L)).thenReturn(new ReactionResponse(
+                3,
+                true
+        ));
 
         // when & then
         mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", 201L))
@@ -1045,13 +1069,32 @@ class ReviewControllerTest {
     }
 
     private static ReviewResponse reviewResponse() {
-        return new ReviewResponse(101, "인상 깊었다.", "화성에서 살아남아야 한다.", "3장", 120,
-                false, false, Instant.parse("2026-08-13T15:00:00Z"), AUTHOR, 12, false, 1,
-                List.of(replyResponse()));
+        return new ReviewResponse(
+                101,
+                "인상 깊었다.",
+                "화성에서 살아남아야 한다.",
+                "3장",
+                120,
+                false,
+                false,
+                Instant.parse("2026-08-13T15:00:00Z"),
+                AUTHOR,
+                12,
+                false,
+                1,
+                List.of(replyResponse())
+        );
     }
 
     private static ReplyResponse replyResponse() {
-        return new ReplyResponse(201, "저도 그 부분이 좋았어요.", false, Instant.parse("2026-08-13T16:00:00Z"),
-                AUTHOR, 3, true);
+        return new ReplyResponse(
+                201,
+                "저도 그 부분이 좋았어요.",
+                false,
+                Instant.parse("2026-08-13T16:00:00Z"),
+                AUTHOR,
+                3,
+                true
+        );
     }
 }

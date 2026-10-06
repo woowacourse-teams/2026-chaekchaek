@@ -11,8 +11,12 @@ public record PublicLibraryListResponse(
         List<PublicLibraryItemResponse> items
 ) {
     public static PublicLibraryListResponse from(Member member, LibraryListResponse library) {
-        return new PublicLibraryListResponse(PublicMemberResponse.from(member), library.totalCount(),
-                library.filteredCount(), library.nextPage(),
-                library.items().stream().map(PublicLibraryItemResponse::from).toList());
+        return new PublicLibraryListResponse(
+                PublicMemberResponse.from(member),
+                library.totalCount(),
+                library.filteredCount(),
+                library.nextPage(),
+                library.items().stream().map(PublicLibraryItemResponse::from).toList()
+        );
     }
 }

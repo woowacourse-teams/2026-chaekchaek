@@ -106,13 +106,21 @@ public class GoogleOidcUserServiceTest {
         Member member = mock(Member.class);
         when(member.getId()).thenReturn(1L);
         when(socialLoginService.loginOrSignUp(
-                new GoogleProfile("google-user-123", "member@example.com", "exUrl"), 7L))
+                new GoogleProfile(
+                        "google-user-123",
+                        "member@example.com",
+                        "exUrl"
+                ), 7L))
                 .thenReturn(member);
 
         googleOidcUserService.loadUser(userRequest);
 
         verify(socialLoginService).loginOrSignUp(
-                new GoogleProfile("google-user-123", "member@example.com", "exUrl"), 7L);
+                new GoogleProfile(
+                        "google-user-123",
+                        "member@example.com",
+                        "exUrl"
+                ), 7L);
         verify(guestContextService).clear(request);
     }
 }

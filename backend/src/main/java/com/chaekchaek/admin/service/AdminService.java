@@ -116,7 +116,13 @@ public class AdminService {
         if (book == null) {
             return null;
         }
-        return new RecommendedBookResponse(book.getId(), book.getIsbn13().value(), book.getTitle(), book.getCoverImageUrl(),
-                book.getAuthors(), recommendedBook.getCreatedAt());
+        return new RecommendedBookResponse(
+                book.getId(),
+                book.getIsbn13().value(),
+                book.getTitle(),
+                book.getCoverImageUrl(),
+                book.getAuthors(),
+                recommendedBook.getCreatedAt()
+        );
     }
 }

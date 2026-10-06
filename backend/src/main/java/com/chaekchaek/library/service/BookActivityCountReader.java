@@ -12,7 +12,10 @@ public interface BookActivityCountReader {
             long replyCount
     ) {
 
-        public static final ActivityCounts ZERO = new ActivityCounts(0L, 0L);
+        public static final ActivityCounts ZERO = new ActivityCounts(
+                0L,
+                0L
+        );
 
         public long totalActivityCount() {
             return reviewCount + replyCount;

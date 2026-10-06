@@ -24,8 +24,15 @@ class PersistentReviewMemberReader implements ReviewMemberReader {
 
     private ReviewMemberProfile toProfile(Actor actor) {
         if (actor.getType() == ActorType.GUEST) {
-            return new ReviewMemberProfile(null, actor.getGuestNickname(), null, actor.getGuestNickname(), true, null,
-                    actor.getType());
+            return new ReviewMemberProfile(
+                    null,
+                    actor.getGuestNickname(),
+                    null,
+                    actor.getGuestNickname(),
+                    true,
+                    null,
+                    actor.getType()
+            );
         }
         Member member = actor.getMember();
         return new ReviewMemberProfile(

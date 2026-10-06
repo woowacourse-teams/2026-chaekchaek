@@ -56,8 +56,15 @@ class FeedServiceTest {
         when(books.findAllWithAuthorsByIdIn(List.of(42L))).thenReturn(List.of(book));
         when(currentActor.findCurrentActor()).thenReturn(Optional.empty());
         when(members.findByActorIds(List.of(7L))).thenReturn(Map.of(
-                7L, new ReviewMemberProfile(1L, null, null, "탈퇴 전 익명 이름",
-                        true, AccountStatus.WITHDRAWN, ActorType.MEMBER)));
+                7L, new ReviewMemberProfile(
+                        1L,
+                        null,
+                        null,
+                        "탈퇴 전 익명 이름",
+                        true,
+                        AccountStatus.WITHDRAWN,
+                        ActorType.MEMBER
+                )));
         ReviewSummaryReader reader = new ReviewSummaryReader(mock(ReplyRepository.class),
                 mock(ReviewReactionRepository.class), books, currentActor, members);
 
@@ -99,7 +106,14 @@ class FeedServiceTest {
         when(reviewRepository.findFeedReviews(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(review), PageRequest.of(0, 20), 21));
         when(summaryReader.read(List.of(review)))
-                .thenReturn(List.of(new ReviewSummary(review, book, author, 3, 0, false)));
+                .thenReturn(List.of(new ReviewSummary(
+                        review,
+                        book,
+                        author,
+                        3,
+                        0,
+                        false
+                )));
 
         // when
         FeedReviewListResponse result = service.getReviews(1);

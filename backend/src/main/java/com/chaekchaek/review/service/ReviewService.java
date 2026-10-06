@@ -104,8 +104,11 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 ? findPopularReviews(bookId, actorId, feed, page)
                 : findPagedReviews(bookId, actorId, feed, sort, page);
         long totalCount = countReviews(bookId, actorId, feed, sort);
-        return new PageResponse<>(totalCount, nextPage(totalCount, page),
-                toReviewResponses(reviews, actorId));
+        return new PageResponse<>(
+                totalCount,
+                nextPage(totalCount, page),
+                toReviewResponses(reviews, actorId)
+        );
     }
 
     private List<Review> findPagedReviews(long bookId, Long actorId, Feed feed, ReviewSort sort, int page) {
@@ -160,7 +163,10 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
             reviewBookReader.validateBookExists(bookId);
             return saveReview(bookId, request, actor);
         }));
-        return new ReviewCreateByIsbnResponse(bookId, review);
+        return new ReviewCreateByIsbnResponse(
+                bookId,
+                review
+        );
     }
 
     private void validateReviewCreation(CurrentActor actor, ReviewCreateRequest request) {
@@ -221,7 +227,11 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         Page<Reply> replies = replyRepository.findByReviewId(reviewId, PageRequest.of(page - 1, PAGE_SIZE,
                 Sort.by("createdAt").ascending().and(Sort.by("id").ascending())));
         List<ReplyResponse> items = toReplyResponses(replies.getContent(), actorId);
-        return new PageResponse<>(replies.getTotalElements(), nextPage(replies.getTotalElements(), page), items);
+        return new PageResponse<>(
+                replies.getTotalElements(),
+                nextPage(replies.getTotalElements(), page),
+                items
+        );
     }
 
     @Transactional
@@ -267,7 +277,10 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         } catch (DataIntegrityViolationException exception) {
             throw new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS);
         }
-        return new ReactionResponse(reviewReactionRepository.countByReviewId(reviewId), true);
+        return new ReactionResponse(
+                reviewReactionRepository.countByReviewId(reviewId),
+                true
+        );
     }
 
     @Transactional
@@ -293,7 +306,10 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         } catch (DataIntegrityViolationException exception) {
             throw new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS);
         }
-        return new ReactionResponse(replyReactionRepository.countByReplyId(replyId), true);
+        return new ReactionResponse(
+                replyReactionRepository.countByReplyId(replyId),
+                true
+        );
     }
 
     @Transactional
@@ -327,11 +343,21 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 .map(reply -> toReplyResponse(reply, actorId, replyReactionCounts.getOrDefault(reply.getId(), 0L),
                         likedReplies.contains(reply.getId()), memberProfiles))
                 .toList();
-        return new ReviewResponse(review.getId(), review.getContent(), review.getQuote(), review.getChapter(),
-                review.getCurrentPage(), review.isSpoiler(), review.isDeleted(), review.getCreatedAt(),
+        return new ReviewResponse(
+                review.getId(),
+                review.getContent(),
+                review.getQuote(),
+                review.getChapter(),
+                review.getCurrentPage(),
+                review.isSpoiler(),
+                review.isDeleted(),
+                review.getCreatedAt(),
                 authorOf(review.getActorId(), review.isAnonymous(), actorId, memberProfiles),
-                reactionCounts.getOrDefault(review.getId(), 0L), likedReviews.contains(review.getId()),
-                replyCounts.getOrDefault(review.getId(), 0L), replies);
+                reactionCounts.getOrDefault(review.getId(), 0L),
+                likedReviews.contains(review.getId()),
+                replyCounts.getOrDefault(review.getId(), 0L),
+                replies
+        );
     }
 
     private List<ReplyResponse> toReplyResponses(List<Reply> replies, Long actorId) {
@@ -349,17 +375,30 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     private ReplyResponse toReplyResponse(Reply reply, Long actorId, long likeCount, boolean likedByMe,
                                           Map<Long, ReviewMemberProfile> memberProfiles) {
-        return new ReplyResponse(reply.getId(), reply.getContent(), reply.isDeleted(), reply.getCreatedAt(),
-                authorOf(reply.getActorId(), reply.isAnonymous(), actorId, memberProfiles), likeCount, likedByMe);
+        return new ReplyResponse(
+                reply.getId(),
+                reply.getContent(),
+                reply.isDeleted(),
+                reply.getCreatedAt(),
+                authorOf(reply.getActorId(), reply.isAnonymous(), actorId, memberProfiles),
+                likeCount,
+                likedByMe
+        );
     }
 
     private AuthorResponse authorOf(long authorId, boolean anonymous, Long currentActorId,
                                     Map<Long, ReviewMemberProfile> memberProfiles) {
         ReviewMemberProfile profile = memberProfiles.get(authorId);
         if (anonymous) {
-            return new AuthorResponse(null, profile.anonymousNickname(), null, true,
-                    currentActorId != null && authorId == currentActorId, profile.actorType(),
-                    AuthorProfileStatus.UNAVAILABLE);
+            return new AuthorResponse(
+                    null,
+                    profile.anonymousNickname(),
+                    null,
+                    true,
+                    currentActorId != null && authorId == currentActorId,
+                    profile.actorType(),
+                    AuthorProfileStatus.UNAVAILABLE
+            );
         }
         boolean withdrawn = profile.accountStatus() == AccountStatus.WITHDRAWN;
         boolean available = profile.accountStatus() == AccountStatus.ACTIVE;
@@ -367,8 +406,15 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         String profileImageUrl = withdrawn ? null : profile.profileImageUrl();
         AuthorProfileStatus profileStatus = available
                 ? AuthorProfileStatus.AVAILABLE : AuthorProfileStatus.UNAVAILABLE;
-        return new AuthorResponse(available ? profile.memberId() : null, displayName, profileImageUrl, false,
-                currentActorId != null && authorId == currentActorId, profile.actorType(), profileStatus);
+        return new AuthorResponse(
+                available ? profile.memberId() : null,
+                displayName,
+                profileImageUrl,
+                false,
+                currentActorId != null && authorId == currentActorId,
+                profile.actorType(),
+                profileStatus
+        );
     }
 
     private Map<Long, Long> replyCounts(Collection<Long> reviewIds) {
@@ -481,7 +527,10 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 replyCounts.merge(count.getBookId(), count.getCount(), Long::sum));
         return bookIds.stream().collect(Collectors.toMap(
                 bookId -> bookId,
-                bookId -> new ActivityCounts(reviewCounts.get(bookId), replyCounts.get(bookId))));
+                bookId -> new ActivityCounts(
+                        reviewCounts.get(bookId),
+                        replyCounts.get(bookId)
+                )));
     }
 
     private ReviewReaction.ReviewReactionId reviewReactionId(long reviewId, long actorId) {

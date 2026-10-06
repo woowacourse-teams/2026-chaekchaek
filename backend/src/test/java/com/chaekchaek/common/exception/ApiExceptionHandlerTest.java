@@ -19,7 +19,10 @@ import org.springframework.mock.web.MockHttpServletRequest;
 class ApiExceptionHandlerTest {
 
     private final ApiExceptionHandler handler = new ApiExceptionHandler();
-    private final MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/members/me");
+    private final MockHttpServletRequest request = new MockHttpServletRequest(
+            "GET",
+            "/api/v1/members/me"
+    );
 
     @Test
     @DisplayName("도서 외부 API 예외에 게이트웨이 오류 응답을 반환한다")

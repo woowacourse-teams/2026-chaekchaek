@@ -37,7 +37,12 @@ public class GuestAuthController {
     public ResponseEntity<GuestTokenResponse> issue() {
         IssuedGuestToken token = guestTokenService.issue();
         return ResponseEntity.status(201).body(new GuestTokenResponse(
-                token.value(), token.nickname(), token.expiresAt(), token.actorId(), token.actorType()));
+                token.value(),
+                token.nickname(),
+                token.expiresAt(),
+                token.actorId(),
+                token.actorType()
+        ));
     }
 
     @PostMapping("/refresh")
@@ -46,7 +51,12 @@ public class GuestAuthController {
     ) {
         IssuedGuestToken token = guestTokenService.refresh(guestToken);
         return ResponseEntity.ok(new GuestTokenResponse(
-                token.value(), token.nickname(), token.expiresAt(), token.actorId(), token.actorType()));
+                token.value(),
+                token.nickname(),
+                token.expiresAt(),
+                token.actorId(),
+                token.actorType()
+        ));
     }
 
     public record GuestTokenResponse(

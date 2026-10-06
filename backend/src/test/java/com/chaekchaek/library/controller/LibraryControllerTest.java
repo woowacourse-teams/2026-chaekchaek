@@ -155,7 +155,12 @@ class LibraryControllerTest {
     @DisplayName("유효한 요청이라면 내 서재 목록을 반환한다")
     void should_ReturnLibraryList_When_RequestIsValid() throws Exception {
         // given
-        LibraryListResponse response = new LibraryListResponse(3, 2, 2, List.of(libraryItemResponse()));
+        LibraryListResponse response = new LibraryListResponse(
+                3,
+                2,
+                2,
+                List.of(libraryItemResponse())
+        );
         when(libraryService.getLibrary(MEMBER_ID, 1, ReadingStatus.READING, LibrarySort.RATING))
                 .thenReturn(response);
 
@@ -194,7 +199,11 @@ class LibraryControllerTest {
     void should_ReturnNullSpineAndBackImageUrls_When_ImagesAreMissing() throws Exception {
         // given
         LibraryListResponse response = new LibraryListResponse(
-                1, 1, null, List.of(libraryItemResponseWithoutImages()));
+                1,
+                1,
+                null,
+                List.of(libraryItemResponseWithoutImages())
+        );
         when(libraryService.getLibrary(MEMBER_ID, 1, ReadingStatus.READING, LibrarySort.RATING))
                 .thenReturn(response);
 
@@ -223,7 +232,11 @@ class LibraryControllerTest {
     void should_ReturnPublicLibrary_When_RequestIsValid() throws Exception {
         // given
         PublicLibraryListResponse response = new PublicLibraryListResponse(
-                new PublicMemberResponse(MEMBER_ID, "책책이", "https://example.com/profile.jpg"),
+                new PublicMemberResponse(
+                        MEMBER_ID,
+                        "책책이",
+                        "https://example.com/profile.jpg"
+                ),
                 1,
                 1,
                 null,
@@ -273,7 +286,11 @@ class LibraryControllerTest {
     void should_ReturnNullSpineAndBackImageUrls_When_PublicLibraryImagesAreMissing() throws Exception {
         // given
         PublicLibraryListResponse response = new PublicLibraryListResponse(
-                new PublicMemberResponse(MEMBER_ID, "책책이", null),
+                new PublicMemberResponse(
+                        MEMBER_ID,
+                        "책책이",
+                        null
+                ),
                 1,
                 1,
                 null,
@@ -511,7 +528,8 @@ class LibraryControllerTest {
         RatingComparisonResponse response = new RatingComparisonResponse(
                 comparisonBook(9L, "9788954699919", "파친코", "이민진", "4.0", Instant.parse("2026-08-01T00:00:00Z")),
                 comparisonBook(12L, "9788965746829", "아몬드", "손원평", "4.5", Instant.parse("2026-08-03T00:00:00Z")),
-                comparisonBook(11L, "9788956609959", "불편한 편의점", "김호연", "4.8", Instant.parse("2026-08-05T00:00:00Z")));
+                comparisonBook(11L, "9788956609959", "불편한 편의점", "김호연", "4.8", Instant.parse("2026-08-05T00:00:00Z"))
+        );
         when(libraryService.compareRatingsByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5")))
                 .thenReturn(response);
 
@@ -547,7 +565,11 @@ class LibraryControllerTest {
     @DisplayName("같은 별점을 준 책이 없다면 current가 null인 응답을 반환한다")
     void should_ReturnNullableRatingComparison_When_NoBookHasCriterionRating() throws Exception {
         // given
-        RatingComparisonResponse response = new RatingComparisonResponse(null, null, null);
+        RatingComparisonResponse response = new RatingComparisonResponse(
+                null,
+                null,
+                null
+        );
         when(libraryService.compareRatingsByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5")))
                 .thenReturn(response);
 
@@ -1127,9 +1149,15 @@ class LibraryControllerTest {
 
     private RatingComparisonBookResponse comparisonBook(Long bookId, String isbn13, String title, String author,
                                                          String rating, Instant ratingUpdatedAt) {
-        return new RatingComparisonBookResponse(bookId, isbn13, title,
-                "https://image.aladin.co.kr/cover/" + bookId + ".jpg", List.of(author), new BigDecimal(rating),
-                ratingUpdatedAt);
+        return new RatingComparisonBookResponse(
+                bookId,
+                isbn13,
+                title,
+                "https://image.aladin.co.kr/cover/" + bookId + ".jpg",
+                List.of(author),
+                new BigDecimal(rating),
+                ratingUpdatedAt
+        );
     }
 
 }

@@ -30,11 +30,24 @@ class BookServiceTest {
                 LocalDate.of(2026, 1, 1), 308
         );
         BookDetailResponse detailResponse = new BookDetailResponse(
-                1L, detailBook.getIsbn13().value(), detailBook.getTitle(), detailBook.getCoverImageUrl(),
+                1L,
+                detailBook.getIsbn13().value(),
+                detailBook.getTitle(),
+                detailBook.getCoverImageUrl(),
                 detailBook.getDescription(),
-                detailBook.getAuthors(), detailBook.getTranslators(), detailBook.getPublisher(),
-                detailBook.getCategory(), "2026-01-01", 308,
-                0, 0, null, 0, 0, null);
+                detailBook.getAuthors(),
+                detailBook.getTranslators(),
+                detailBook.getPublisher(),
+                detailBook.getCategory(),
+                "2026-01-01",
+                308,
+                0,
+                0,
+                null,
+                0,
+                0,
+                null
+        );
         Isbn13 isbn13 = new Isbn13("9788925568683");
         when(bookResolver.lookup(isbn13)).thenReturn(detailBook);
         when(detailAssembler.assemble(detailBook)).thenReturn(detailResponse);

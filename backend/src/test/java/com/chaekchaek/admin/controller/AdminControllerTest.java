@@ -255,8 +255,14 @@ class AdminControllerTest {
     }
 
     private static RecommendedBookResponse recommendedBookResponse() {
-        return new RecommendedBookResponse(BOOK_ID, ISBN13, "마션", "https://example.com/martian.jpg",
-                List.of("앤디 위어"), Instant.parse("2026-08-28T00:00:00Z"));
+        return new RecommendedBookResponse(
+                BOOK_ID,
+                ISBN13,
+                "마션",
+                "https://example.com/martian.jpg",
+                List.of("앤디 위어"),
+                Instant.parse("2026-08-28T00:00:00Z")
+        );
     }
 
     private static FieldDescriptor[] addRecommendedBookRequestFields() {

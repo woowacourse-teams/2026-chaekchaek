@@ -41,7 +41,10 @@ class BookDetailAssemblerTest {
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader, currentMemberIdProvider, libraryItemRepository);
         when(activityCountReader.getActivityCounts(List.of(1L)))
-                .thenReturn(Map.of(1L, new ActivityCounts(2L, 2L)));
+                .thenReturn(Map.of(1L, new ActivityCounts(
+                        2L,
+                        2L
+                )));
         when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L)))
                 .thenReturn(List.of(ratingStatistics));
         when(ratingStatistics.getAverageRating()).thenReturn(4.24);
@@ -78,7 +81,10 @@ class BookDetailAssemblerTest {
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader, currentMemberIdProvider, libraryItemRepository);
         when(activityCountReader.getActivityCounts(List.of(1L)))
-                .thenReturn(Map.of(1L, new ActivityCounts(0L, 0L)));
+                .thenReturn(Map.of(1L, new ActivityCounts(
+                        0L,
+                        0L
+                )));
         when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
         when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.empty());
@@ -101,7 +107,10 @@ class BookDetailAssemblerTest {
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader, currentMemberIdProvider, libraryItemRepository);
         when(activityCountReader.getActivityCounts(List.of(1L)))
-                .thenReturn(Map.of(1L, new ActivityCounts(0L, 0L)));
+                .thenReturn(Map.of(1L, new ActivityCounts(
+                        0L,
+                        0L
+                )));
         when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
 

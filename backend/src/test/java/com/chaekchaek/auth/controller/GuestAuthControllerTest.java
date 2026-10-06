@@ -147,7 +147,12 @@ class GuestAuthControllerTest {
     @Test
     void issuesGuestTokenWithoutLogin() throws Exception {
         when(guestTokenService.issue()).thenReturn(new IssuedGuestToken(
-                "guest-token", "다정한 파란 참새", TOKEN_EXPIRES_AT, 7L, ActorType.GUEST));
+                "guest-token",
+                "다정한 파란 참새",
+                TOKEN_EXPIRES_AT,
+                7L,
+                ActorType.GUEST
+        ));
 
         mockMvc.perform(post("/api/v1/auth/guest-token"))
                 .andExpect(status().isCreated())
@@ -170,7 +175,12 @@ class GuestAuthControllerTest {
     @Test
     void refreshesGuestTokenWithinRefreshWindow() throws Exception {
         when(guestTokenService.refresh("current-token")).thenReturn(new IssuedGuestToken(
-                "new-token", "다정한 파란 참새", TOKEN_EXPIRES_AT, 7L, ActorType.GUEST));
+                "new-token",
+                "다정한 파란 참새",
+                TOKEN_EXPIRES_AT,
+                7L,
+                ActorType.GUEST
+        ));
 
         mockMvc.perform(post("/api/v1/auth/guest-token/refresh")
                         .header("X-Guest-Token", "current-token"))

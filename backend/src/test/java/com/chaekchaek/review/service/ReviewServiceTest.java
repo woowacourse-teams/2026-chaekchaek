@@ -57,7 +57,14 @@ class ReviewServiceTest {
         ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
         ReviewMemberReader memberReader = mock(ReviewMemberReader.class);
         when(memberReader.findByActorIds(List.of(7L))).thenReturn(Map.of(
-                7L, new ReviewMemberProfile("게스트", null, "다정한 참새", true, false, ActorType.GUEST)));
+                7L, new ReviewMemberProfile(
+                        "게스트",
+                        null,
+                        "다정한 참새",
+                        true,
+                        false,
+                        ActorType.GUEST
+                )));
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             Review review = invocation.getArgument(0);
             ReflectionTestUtils.setField(review, "id", 10L);
@@ -69,7 +76,14 @@ class ReviewServiceTest {
                 mock(BookResolver.class), transactionManager());
 
         ReviewResponse response = service.createReview(5L,
-                new ReviewCreateRequest("게스트 감상", null, null, null, null, false));
+                new ReviewCreateRequest(
+                        "게스트 감상",
+                        null,
+                        null,
+                        null,
+                        null,
+                        false
+                ));
 
         assertThat(response.author().displayName()).isEqualTo("다정한 참새");
         assertThat(response.author().profileImageUrl()).isNull();
@@ -92,7 +106,14 @@ class ReviewServiceTest {
                 mock(ReviewBookReader.class), memberReader(true), mock(BookResolver.class), transactionManager());
 
         assertThatThrownBy(() -> service.createReview(5L,
-                new ReviewCreateRequest("게스트 감상", null, null, 10, 100, false)))
+                new ReviewCreateRequest(
+                        "게스트 감상",
+                        null,
+                        null,
+                        10,
+                        100,
+                        false
+                )))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
     }
@@ -158,7 +179,14 @@ class ReviewServiceTest {
         ReadingRecordCoordinator readingRecordCoordinator = mock(ReadingRecordCoordinator.class);
         ReviewMemberReader memberReader = mock(ReviewMemberReader.class);
         when(memberReader.findByActorIds(List.of(1L))).thenReturn(Map.of(
-                1L, new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", true, false, ActorType.MEMBER)
+                1L, new ReviewMemberProfile(
+                        "닉네임",
+                        "profile",
+                        "참새-a1b2c3d4",
+                        true,
+                        false,
+                        ActorType.MEMBER
+                )
         ));
         ReviewService reviewService = reviewService(reviewRepository, bookReader, readingRecordCoordinator, memberReader);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
@@ -169,7 +197,14 @@ class ReviewServiceTest {
 
         // when
         ReviewResponse actual = reviewService.createReview(5L,
-                new ReviewCreateRequest("감상", null, null, 10, 100, false));
+                new ReviewCreateRequest(
+                        "감상",
+                        null,
+                        null,
+                        10,
+                        100,
+                        false
+                ));
 
         // then
         verify(bookReader).validateBookExists(5L);
@@ -203,7 +238,14 @@ class ReviewServiceTest {
 
         // when
         ReviewCreateByIsbnResponse actual = reviewService.createReviewByIsbn13(isbn13,
-                new ReviewCreateRequest("감상", null, null, null, null, false));
+                new ReviewCreateRequest(
+                        "감상",
+                        null,
+                        null,
+                        null,
+                        null,
+                        false
+                ));
 
         // then
         assertThat(actual.bookId()).isEqualTo(5L);
@@ -226,7 +268,14 @@ class ReviewServiceTest {
 
         // when & then
         assertThatThrownBy(() -> reviewService.createReviewByIsbn13(new Isbn13("9788925568683"),
-                new ReviewCreateRequest("감상", null, null, 10, 100, false)))
+                new ReviewCreateRequest(
+                        "감상",
+                        null,
+                        null,
+                        10,
+                        100,
+                        false
+                )))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
         verify(bookResolver, never()).findOrCreate(any(Isbn13.class));
@@ -268,7 +317,14 @@ class ReviewServiceTest {
 
         // when & then
         assertThatThrownBy(() -> reviewService.createReview(5L,
-                new ReviewCreateRequest("감상", null, null, 101, 100, false)))
+                new ReviewCreateRequest(
+                        "감상",
+                        null,
+                        null,
+                        101,
+                        100,
+                        false
+                )))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode())
                                 .isEqualTo(ErrorCode.INVALID_READING_STATE));
@@ -331,8 +387,14 @@ class ReviewServiceTest {
         Map<Long, ActivityCounts> actual = reviewService.getActivityCounts(List.of(5L, 6L));
 
         // then
-        assertThat(actual).containsEntry(5L, new ActivityCounts(2L, 3L))
-                .containsEntry(6L, new ActivityCounts(0L, 0L));
+        assertThat(actual).containsEntry(5L, new ActivityCounts(
+                2L,
+                3L
+        ))
+                .containsEntry(6L, new ActivityCounts(
+                        0L,
+                        0L
+                ));
     }
 
     private ReviewService reviewService(ReviewRepository reviewRepository, ReviewBookReader bookReader,
@@ -359,8 +421,14 @@ class ReviewServiceTest {
     private ReviewMemberReader memberReader(boolean anonymousEnabled) {
         return actorIds -> actorIds.stream().collect(Collectors.toMap(
                 actorId -> actorId,
-                actorId -> new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", anonymousEnabled, false,
-                        ActorType.MEMBER)
+                actorId -> new ReviewMemberProfile(
+                        "닉네임",
+                        "profile",
+                        "참새-a1b2c3d4",
+                        anonymousEnabled,
+                        false,
+                        ActorType.MEMBER
+                )
         ));
     }
 

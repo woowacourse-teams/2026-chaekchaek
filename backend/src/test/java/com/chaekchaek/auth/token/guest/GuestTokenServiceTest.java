@@ -143,7 +143,10 @@ class GuestTokenServiceTest {
     }
 
     private static GuestTokenProperties properties() {
-        return new GuestTokenProperties(Duration.ofDays(90), Duration.ofDays(14));
+        return new GuestTokenProperties(
+                Duration.ofDays(90),
+                Duration.ofDays(14)
+        );
     }
 
     private static void fillRandomBytes(SecureRandom secureRandom, byte value) {

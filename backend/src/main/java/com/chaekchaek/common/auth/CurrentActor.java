@@ -7,15 +7,27 @@ public record CurrentActor(
 ) {
 
     public static CurrentActor member(long actorId, long memberId) {
-        return new CurrentActor(actorId, ActorType.MEMBER, memberId);
+        return new CurrentActor(
+                actorId,
+                ActorType.MEMBER,
+                memberId
+        );
     }
 
     public static CurrentActor admin(long actorId, long memberId) {
-        return new CurrentActor(actorId, ActorType.ADMIN, memberId);
+        return new CurrentActor(
+                actorId,
+                ActorType.ADMIN,
+                memberId
+        );
     }
 
     public static CurrentActor guest(long actorId) {
-        return new CurrentActor(actorId, ActorType.GUEST, null);
+        return new CurrentActor(
+                actorId,
+                ActorType.GUEST,
+                null
+        );
     }
 
     public boolean isMember() {

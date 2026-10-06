@@ -27,10 +27,23 @@ class BookDetailAssembler {
         Long bookId = book.getId();
         if (bookId == null) {
             return new BookDetailResponse(
-                    null, book.getIsbn13().value(), book.getTitle(), book.getCoverImageUrl(), book.getDescription(),
-                    book.getAuthors(), book.getTranslators(), book.getPublisher(), book.getCategory(),
+                    null,
+                    book.getIsbn13().value(),
+                    book.getTitle(),
+                    book.getCoverImageUrl(),
+                    book.getDescription(),
+                    book.getAuthors(),
+                    book.getTranslators(),
+                    book.getPublisher(),
+                    book.getCategory(),
                     book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
-                    book.getTotalPages(), null, null, null, null, null, null
+                    book.getTotalPages(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
             );
         }
         OptionalLong memberId = currentMemberIdProvider.findCurrentMemberId();
@@ -42,11 +55,23 @@ class BookDetailAssembler {
                 .findFirst()
                 .orElse(null);
         return new BookDetailResponse(
-                bookId, book.getIsbn13().value(), book.getTitle(), book.getCoverImageUrl(), book.getDescription(),
-                book.getAuthors(), book.getTranslators(), book.getPublisher(), book.getCategory(),
+                bookId,
+                book.getIsbn13().value(),
+                book.getTitle(),
+                book.getCoverImageUrl(),
+                book.getDescription(),
+                book.getAuthors(),
+                book.getTranslators(),
+                book.getPublisher(),
+                book.getCategory(),
                 book.getPublishedDate() == null ? null : book.getPublishedDate().toString(),
-                book.getTotalPages(), Math.toIntExact(counts.reviewCount()), Math.toIntExact(counts.replyCount()),
-                averageRating(ratings), ratingCount(ratings), myRatingCount(memberId), myRecord(bookId, memberId)
+                book.getTotalPages(),
+                Math.toIntExact(counts.reviewCount()),
+                Math.toIntExact(counts.replyCount()),
+                averageRating(ratings),
+                ratingCount(ratings),
+                myRatingCount(memberId),
+                myRecord(bookId, memberId)
         );
     }
 
@@ -74,7 +99,10 @@ class BookDetailAssembler {
         }
         return libraryItemRepository.findByMemberIdAndBookId(memberId.getAsLong(), bookId)
                 .map(item -> new BookMyRecordResponse(
-                        item.getStatus().name(), item.getCurrentPage(), item.getRating()))
+                        item.getStatus().name(),
+                        item.getCurrentPage(),
+                        item.getRating()
+                ))
                 .orElse(null);
     }
 }

@@ -58,9 +58,18 @@ class ReviewCreateByIsbnTransactionTest {
         when(bookClient.findBookByIsbn13(ISBN13)).thenAnswer(invocation -> {
             externalCallInTransaction.set(TransactionSynchronizationManager.isActualTransactionActive());
             return new BookDetailItem(
-                    "마션", "https://image.example/martian.jpg", null, null,
-                    "책 설명", List.of("앤디 위어"), List.of(), LocalDate.of(2026, 1, 1),
-                    ISBN13.value(), "SF", "알에이치코리아", 308
+                    "마션",
+                    "https://image.example/martian.jpg",
+                    null,
+                    null,
+                    "책 설명",
+                    List.of("앤디 위어"),
+                    List.of(),
+                    LocalDate.of(2026, 1, 1),
+                    ISBN13.value(),
+                    "SF",
+                    "알에이치코리아",
+                    308
             );
         });
         BookResolver bookResolver = new BookResolver(bookClient, bookRepository, transactionManager);
@@ -78,7 +87,14 @@ class ReviewCreateByIsbnTransactionTest {
 
         // when & then
         assertThatThrownBy(() -> reviewService.createReviewByIsbn13(ISBN13,
-                new ReviewCreateRequest("감상", null, null, null, null, false)))
+                new ReviewCreateRequest(
+                        "감상",
+                        null,
+                        null,
+                        null,
+                        null,
+                        false
+                )))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("review write failed");
         assertThat(externalCallInTransaction).isFalse();
@@ -96,6 +112,13 @@ class ReviewCreateByIsbnTransactionTest {
 
     private ReviewMemberReader guestProfileReader() {
         return actorIds -> Map.of(7L,
-                new ReviewMemberProfile("게스트", null, "다정한 참새", true, false, ActorType.GUEST));
+                new ReviewMemberProfile(
+                        "게스트",
+                        null,
+                        "다정한 참새",
+                        true,
+                        false,
+                        ActorType.GUEST
+                ));
     }
 }

@@ -74,7 +74,11 @@ class FeedControllerTest {
                 List.of("저자"),
                 "https://example.com/cover.jpg"
         );
-        when(feedService.getReviews(1)).thenReturn(new FeedReviewListResponse(41, 2, List.of(review)));
+        when(feedService.getReviews(1)).thenReturn(new FeedReviewListResponse(
+                41,
+                2,
+                List.of(review)
+        ));
 
         // when & then
         mockMvc.perform(get("/api/v1/feed/reviews").param("page", "1"))
@@ -105,7 +109,11 @@ class FeedControllerTest {
     @DisplayName("조회 대상이 없으면 빈 목록과 다음 페이지 없음으로 응답한다")
     void should_ReturnEmptyPage_When_NoReviewsExist() throws Exception {
         // given
-        when(feedService.getReviews(1)).thenReturn(new FeedReviewListResponse(0, null, List.of()));
+        when(feedService.getReviews(1)).thenReturn(new FeedReviewListResponse(
+                0,
+                null,
+                List.of()
+        ));
 
         // when & then
         mockMvc.perform(get("/api/v1/feed/reviews").param("page", "1"))

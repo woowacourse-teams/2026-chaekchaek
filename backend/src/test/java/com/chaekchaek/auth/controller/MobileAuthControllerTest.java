@@ -100,7 +100,11 @@ class MobileAuthControllerTest {
     @DisplayName("유효한 Apple 인증 정보로 모바일 로그인한다")
     void should_ReturnTokens_When_AppleLoginSucceeds() throws Exception {
         MobileTokenResponse response = new MobileTokenResponse(
-                "access-token", "refresh-token", "Bearer", 1_800, 1_209_600
+                "access-token",
+                "refresh-token",
+                "Bearer",
+                1_800,
+                1_209_600
         );
         when(mobileAppleLoginService.login(any())).thenReturn(response);
 
