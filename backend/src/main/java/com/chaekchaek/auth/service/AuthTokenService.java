@@ -8,8 +8,10 @@ import com.chaekchaek.auth.token.refresh.RefreshToken;
 import com.chaekchaek.auth.token.refresh.RefreshTokenHasher;
 import com.chaekchaek.auth.token.refresh.RefreshTokenProvider;
 import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
+import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.common.exception.MemberNotFoundException;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.Clock;
@@ -48,6 +50,7 @@ public class AuthTokenService {
     public IssuedTokens issue(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
+        requireActive(member);
 
         String accessToken = accessTokenProvider.issue(member);
         IssuedRefreshToken refreshToken = refreshTokenProvider.issue(member);
@@ -76,6 +79,7 @@ public class AuthTokenService {
         savedRefreshToken.revoke(now);
 
         Member member = savedRefreshToken.getMember();
+        requireActive(member);
 
         String newAccessToken = accessTokenProvider.issue(member);
         IssuedRefreshToken newRefreshToken =
@@ -105,5 +109,11 @@ public class AuthTokenService {
                 clock.instant(),
                 ZoneOffset.UTC
         );
+    }
+
+    private void requireActive(Member member) {
+        if (member.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
     }
 }

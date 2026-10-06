@@ -122,7 +122,7 @@ public class ReviewSummaryReader {
         String displayName = profile.displayName();
         String profileImageUrl = profile.profileImageUrl();
         if (profile.accountStatus() == AccountStatus.WITHDRAWN) {
-            displayName = "탈퇴한 사용자";
+            displayName = profile.anonymousNickname();
             profileImageUrl = null;
         }
 
