@@ -1,3 +1,12 @@
+export interface GetAuthGuestTokenParams {}
+
+export type GetAuthGuestToken = (params: GetAuthGuestTokenParams) => Promise<{
+  actorType: 'MEMBER' | 'GUEST';
+  actorId: number;
+  nickname: string;
+  expiresAt: string;
+}>;
+
 export interface PostAuthGuestTokenCommand {}
 
 export type PostAuthGuestToken = (command: PostAuthGuestTokenCommand) => Promise<{
