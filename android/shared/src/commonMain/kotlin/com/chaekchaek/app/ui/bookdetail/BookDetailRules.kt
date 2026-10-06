@@ -1,6 +1,7 @@
 package com.chaekchaek.app.ui.bookdetail
 
 import com.chaekchaek.app.domain.rating.Rating
+import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.ReplyPage
 import com.chaekchaek.app.data.remote.ReviewReply
 import kotlinx.coroutines.cancelAndJoin
@@ -79,6 +80,16 @@ internal fun shouldLockReview(
 ): Boolean = isSpoiler && reviewId !in revealedReviewIds
 
 internal fun canManageContent(writtenByMe: Boolean, deleted: Boolean): Boolean = writtenByMe && !deleted
+
+internal fun visibleReviews(reviews: List<BookReview>): List<BookReview> = reviews.filterNot { it.deleted }
+
+internal data class ReplyDisplay(val replies: List<ReviewReply>, val hasMore: Boolean)
+
+internal fun replyDisplay(replies: List<ReviewReply>, totalCount: Int): ReplyDisplay = ReplyDisplay(
+    replies = replies.filterNot { it.deleted },
+    // 서버의 전체 개수에는 삭제 항목도 포함되므로 원본 조회 개수로 비교한다.
+    hasMore = replies.size < totalCount,
+)
 
 internal suspend fun loadAllReplies(loadPage: suspend (Int) -> ReplyPage): List<ReviewReply> {
     val replies = mutableListOf<ReviewReply>()

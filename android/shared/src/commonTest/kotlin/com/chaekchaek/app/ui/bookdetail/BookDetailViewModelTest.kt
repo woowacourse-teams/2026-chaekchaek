@@ -44,6 +44,65 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
   @Test
+  fun `삭제 감상만 있는 첫 페이지 뒤의 정상 감상을 계속 표시한다`() = runViewModelTest {
+    val deletedReview = REVIEW_RESPONSE.replace("\"deleted\":false", "\"deleted\":true")
+    val activeReview = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":8")
+    val engine = MockEngine { request ->
+      val response = when {
+        request.url.encodedPath.contains("/by-isbn/") -> DETAIL_WITHOUT_RECORD
+        request.url.parameters["page"] == "2" ->
+          """{"totalCount":2,"nextPage":null,"items":[$activeReview]}"""
+        else -> """{"totalCount":2,"nextPage":2,"items":[$deletedReview]}"""
+      }
+      respond(response, headers = jsonHeaders())
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = null)
+    awaitReal { viewModel.uiState.first { it.nextReviewPage == 2 } }
+    assertTrue(visibleReviews(viewModel.uiState.value.reviews).isEmpty())
+
+    viewModel.loadMoreReviews()
+    awaitReal { viewModel.uiState.first { it.reviews.size == 2 } }
+
+    assertEquals(listOf(8L), visibleReviews(viewModel.uiState.value.reviews).map { it.reviewId })
+    assertEquals(2, viewModel.uiState.value.reviewCount)
+    assertNull(viewModel.uiState.value.nextReviewPage)
+  }
+
+  @Test
+  fun `삭제된 감상을 서버가 다시 반환해도 재조회 후 표시하지 않는다`() = runViewModelTest {
+    var deleted = false
+    val engine = MockEngine { request ->
+      if (request.method == HttpMethod.Delete) {
+        deleted = true
+        respond("", HttpStatusCode.NoContent)
+      } else {
+        val response = if (request.url.encodedPath.contains("/by-isbn/")) DETAIL_WITHOUT_RECORD else {
+          val review = REVIEW_RESPONSE.replace("\"deleted\":false", "\"deleted\":$deleted")
+          """{"totalCount":1,"nextPage":null,"items":[$review]}"""
+        }
+        respond(response, headers = jsonHeaders())
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { guest("test") }))
+
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = null)
+    awaitReal { viewModel.uiState.first { it.reviews.isNotEmpty() } }
+    assertEquals(1, visibleReviews(viewModel.uiState.value.reviews).size)
+
+    viewModel.deleteReview(7)
+    awaitReal { viewModel.uiState.first { it.reviews.isEmpty() } }
+    viewModel.retry()
+    awaitReal { viewModel.uiState.first { it.reviews.any { review -> review.deleted } } }
+
+    assertTrue(visibleReviews(viewModel.uiState.value.reviews).isEmpty())
+    assertTrue(viewModel.uiState.value.reviews.single().deleted)
+  }
+
+  @Test
   fun `회원 전용 액션만 로그인 보류 상태로 만든다`() = runViewModelTest {
     val client = testClient(MockEngine { error("네트워크를 호출하면 안 됨") })
     val viewModel = viewModel(client, client, platform(readGuest = { null }))
