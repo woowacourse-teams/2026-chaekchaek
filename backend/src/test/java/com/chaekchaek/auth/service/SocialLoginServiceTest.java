@@ -29,8 +29,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 public class SocialLoginServiceTest {
 
     @org.junit.jupiter.params.ParameterizedTest
@@ -245,5 +247,43 @@ public class SocialLoginServiceTest {
         verify(actorRepository, never()).save(any(Actor.class));
         verify(memberRepository).save(result);
         verify(socialAccountRepository).save(any(SocialAccount.class));
+    }
+
+    @Test
+    @DisplayName("기존 회원이 소셜 로그인하면 제공자와 함께 로그인 로그를 남긴다")
+    void should_LogLogin_When_SocialAccountExists(CapturedOutput output) {
+        // given
+        GoogleProfile googleProfile = new GoogleProfile("google-user-123", "member@example.com", "exUrl");
+        Member existingMember = Member.create("책책-1234", "exUrl", LocalDateTime.of(2026, 8, 12, 12, 0));
+        SocialAccount existingAccount = SocialAccount.connect(
+                existingMember, Provider.GOOGLE, googleProfile.providerUserId(), LocalDateTime.of(2026, 8, 12, 12, 0));
+        when(socialAccountRepository.findByProviderAndProviderUserId(Provider.GOOGLE, googleProfile.providerUserId()))
+                .thenReturn(Optional.of(existingAccount));
+
+        // when
+        socialLoginService.loginOrSignUp(googleProfile);
+
+        // then
+        assertAll(
+                () -> assertThat(output).contains("Social login: provider=GOOGLE"),
+                () -> assertThat(output).doesNotContain("google-user-123"),
+                () -> assertThat(output).doesNotContain("member@example.com")
+        );
+    }
+
+    @Test
+    @DisplayName("최초 소셜 로그인이면 가입 로그를 남긴다")
+    void should_LogSignUp_When_FirstSocialLogin(CapturedOutput output) {
+        // given
+        GoogleProfile googleProfile = new GoogleProfile("google-user-123", "member@example.com", "exUrl");
+        when(socialAccountRepository.findByProviderAndProviderUserId(Provider.GOOGLE, googleProfile.providerUserId()))
+                .thenReturn(Optional.empty());
+        when(nicknameGenerator.generate()).thenReturn("우아한 달빛 참새");
+
+        // when
+        socialLoginService.loginOrSignUp(googleProfile);
+
+        // then
+        assertThat(output).contains("Social sign up: provider=GOOGLE", "fromGuest=false");
     }
 }

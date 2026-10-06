@@ -86,6 +86,10 @@ class Yes24BookClientTest {
             softly.assertThat(result.title()).isEqualTo("데미안");
             softly.assertThat(result.coverImageUrl())
                     .isEqualTo("https://image.yes24.com/goods/101375809/L");
+            softly.assertThat(result.spineImageUrl())
+                    .isEqualTo("https://image.yes24.com/goods/101375809/side");
+            softly.assertThat(result.backImageUrl())
+                    .isEqualTo("https://image.yes24.com/goods/101375809/back");
             softly.assertThat(result.description()).isEqualTo("내면의 길을 찾아가는 성장 소설");
             softly.assertThat(result.authors()).containsExactly("헤르만 헤세");
             softly.assertThat(result.translators()).containsExactly("전영애");

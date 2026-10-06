@@ -16,11 +16,15 @@ import com.chaekchaek.socialaccount.domain.Provider;
 import com.chaekchaek.socialaccount.domain.SocialAccount;
 import com.chaekchaek.socialaccount.repository.SocialAccountRepository;
 import java.time.LocalDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SocialLoginService {
+
+    private static final Logger log = LoggerFactory.getLogger(SocialLoginService.class);
 
     private final MemberRepository memberRepository;
     private final SocialAccountRepository socialAccountRepository;
@@ -142,6 +146,13 @@ public class SocialLoginService {
         );
         socialAccountRepository.save(socialAccount);
 
+        log.info("Social sign up: provider={}, memberId={}, fromGuest={}",
+                provider, member.getId(), guestActor != null);
+        return member;
+    }
+
+    private Member logLogin(Provider provider, Member member) {
+        log.info("Social login: provider={}, memberId={}", provider, member.getId());
         return member;
     }
 

@@ -58,8 +58,8 @@ class ReviewCreateByIsbnTransactionTest {
         when(bookClient.findBookByIsbn13(ISBN13)).thenAnswer(invocation -> {
             externalCallInTransaction.set(TransactionSynchronizationManager.isActualTransactionActive());
             return new BookDetailItem(
-                    "마션", "https://image.example/martian.jpg", "책 설명",
-                    List.of("앤디 위어"), List.of(), LocalDate.of(2026, 1, 1),
+                    "마션", "https://image.example/martian.jpg", null, null,
+                    "책 설명", List.of("앤디 위어"), List.of(), LocalDate.of(2026, 1, 1),
                     ISBN13.value(), "SF", "알에이치코리아", 308
             );
         });
