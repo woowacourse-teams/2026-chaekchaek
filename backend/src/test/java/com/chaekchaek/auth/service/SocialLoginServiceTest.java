@@ -35,6 +35,27 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 @ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 public class SocialLoginServiceTest {
 
+    @Test
+    @DisplayName("정지 회원은 로그인이나 재가입 없이 거부한다")
+    void rejectsSuspendedMember() {
+        Member member = Member.create("익명 이름", null, LocalDateTime.now());
+        org.springframework.test.util.ReflectionTestUtils.setField(member, "accountStatus",
+                com.chaekchaek.member.domain.AccountStatus.SUSPENDED);
+        SocialAccount account = SocialAccount.connect(member, Provider.GOOGLE, "suspended-user",
+                LocalDateTime.now());
+        when(socialAccountRepository.findForLogin(Provider.GOOGLE, "suspended-user"))
+                .thenReturn(Optional.of(account));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> socialLoginService.loginOrSignUp(
+                new GoogleProfile("suspended-user", "email", null)))
+                .isInstanceOfSatisfying(com.chaekchaek.common.exception.BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(com.chaekchaek.common.exception.ErrorCode.UNAUTHORIZED));
+        assertThat(account.getMember()).isSameAs(member);
+        org.mockito.Mockito.verifyNoInteractions(memberRepository, actorRepository,
+                nicknameGenerator, guestActorMigrationService);
+    }
+
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.EnumSource(value = Provider.class, names = {"GOOGLE", "APPLE"})
     @DisplayName("Google과 Apple 모두 반복 탈퇴 후 재가입 횟수를 제한하지 않는다")
