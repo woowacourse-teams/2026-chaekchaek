@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
@@ -16,6 +16,7 @@ import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ class BookDetailAssemblerTest {
         when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(libraryItem));
         when(libraryItem.getStatus()).thenReturn(ReadingStatus.READING);
         when(libraryItem.getCurrentPage()).thenReturn(120);
-        when(libraryItem.getRating()).thenReturn(new java.math.BigDecimal("4.2"));
+        when(libraryItem.getRating()).thenReturn(new BigDecimal("4.2"));
 
         // when
         var response = assembler.assemble(book);
@@ -63,7 +64,7 @@ class BookDetailAssemblerTest {
         assertThat(response.ratingCount()).isEqualTo(3);
         assertThat(response.myRatingCount()).isEqualTo(12);
         assertThat(response.myRecord()).extracting("status", "currentPage", "myRating")
-                .containsExactly("READING", 120, new java.math.BigDecimal("4.2"));
+                .containsExactly("READING", 120, new BigDecimal("4.2"));
     }
 
     @Test

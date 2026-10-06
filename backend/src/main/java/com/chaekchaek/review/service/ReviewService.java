@@ -7,16 +7,17 @@ import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
-import com.chaekchaek.library.service.BookCommentCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
+import com.chaekchaek.library.service.BookCommentCountReader;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.review.book.ReviewBookReader;
 import com.chaekchaek.review.domain.Reply;
 import com.chaekchaek.review.domain.ReplyReaction;
 import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.domain.ReviewReaction;
-import com.chaekchaek.review.dto.AuthorResponse;
 import com.chaekchaek.review.dto.AuthorProfileStatus;
+import com.chaekchaek.review.dto.AuthorResponse;
 import com.chaekchaek.review.dto.PageResponse;
 import com.chaekchaek.review.dto.ReactionResponse;
 import com.chaekchaek.review.dto.ReplyCreateRequest;
@@ -40,6 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -359,8 +361,8 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                     currentActorId != null && authorId == currentActorId, profile.actorType(),
                     AuthorProfileStatus.UNAVAILABLE);
         }
-        boolean withdrawn = profile.accountStatus() == com.chaekchaek.member.domain.AccountStatus.WITHDRAWN;
-        boolean available = profile.accountStatus() == com.chaekchaek.member.domain.AccountStatus.ACTIVE;
+        boolean withdrawn = profile.accountStatus() == AccountStatus.WITHDRAWN;
+        boolean available = profile.accountStatus() == AccountStatus.ACTIVE;
         String displayName = withdrawn ? profile.anonymousNickname() : profile.displayName();
         String profileImageUrl = withdrawn ? null : profile.profileImageUrl();
         AuthorProfileStatus profileStatus = available
@@ -451,7 +453,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private Map<Long, ReviewMemberProfile> memberProfilesOf(List<Review> reviews, List<Reply> replies) {
-        Set<Long> actorIds = java.util.stream.Stream.concat(
+        Set<Long> actorIds = Stream.concat(
                         reviews.stream().map(Review::getActorId), replies.stream().map(Reply::getActorId))
                 .collect(Collectors.toSet());
         return actorIds.isEmpty() ? Map.of() : reviewMemberReader.findByActorIds(actorIds);

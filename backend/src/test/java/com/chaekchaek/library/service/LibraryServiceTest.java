@@ -28,6 +28,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,8 +73,8 @@ class LibraryServiceTest {
                 .thenReturn(List.of(knownItem, unknownItem));
         when(libraryItemRepository.findAllByMemberIdAndBookIdInForUpdate(1L, List.of(2L, 3L)))
                 .thenReturn(List.of(knownItem, unknownItem));
-        when(bookRepository.findByIdForUpdate(2L)).thenReturn(java.util.Optional.of(book(100)));
-        when(bookRepository.findByIdForUpdate(3L)).thenReturn(java.util.Optional.of(book(null)));
+        when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book(100)));
+        when(bookRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(book(null)));
         LibraryService service = service();
 
         // when & then
@@ -91,7 +93,7 @@ class LibraryServiceTest {
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, CLOCK.instant());
         when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(2L)))
                 .thenReturn(List.of(item));
-        when(bookRepository.findByIdForUpdate(2L)).thenReturn(java.util.Optional.of(book(100)));
+        when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book(100)));
         when(libraryItemRepository.findAllByMemberIdAndBookIdInForUpdate(1L, List.of(2L)))
                 .thenReturn(List.of(item));
         LibraryService service = service();
@@ -113,15 +115,15 @@ class LibraryServiceTest {
         // given
         Book targetBook = mock(Book.class);
         when(targetBook.getId()).thenReturn(10L);
-        when(bookRepository.findByIsbn13(ISBN13)).thenReturn(java.util.Optional.of(targetBook));
+        when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(targetBook));
         when(libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
                         1L, 10L, new BigDecimal("4.5")))
-                .thenReturn(java.util.Optional.empty());
+                .thenReturn(Optional.empty());
         when(libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingGreaterThanOrderByRatingAscRatingUpdatedAtDescBookIdDesc(
                         1L, 10L, new BigDecimal("4.5")))
-                .thenReturn(java.util.Optional.empty());
+                .thenReturn(Optional.empty());
         LibraryService service = service();
 
         // when
@@ -145,12 +147,12 @@ class LibraryServiceTest {
         when(sameRatedBook.getTitle()).thenReturn("같은 별점 도서");
         when(sameRatedBook.getCoverImageUrl()).thenReturn("https://example.com/cover.jpg");
         when(sameRatedBook.getAuthors()).thenReturn(List.of("작가"));
-        when(bookRepository.findByIsbn13(ISBN13)).thenReturn(java.util.Optional.of(targetBook));
+        when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(targetBook));
         when(libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
                         1L, 10L, new BigDecimal("4.5")))
-                .thenReturn(java.util.Optional.of(sameRatedItem));
-        when(bookRepository.findById(9L)).thenReturn(java.util.Optional.of(sameRatedBook));
+                .thenReturn(Optional.of(sameRatedItem));
+        when(bookRepository.findById(9L)).thenReturn(Optional.of(sameRatedBook));
         LibraryService service = service();
 
         // when
@@ -207,9 +209,9 @@ class LibraryServiceTest {
         when(member.getDisplayName()).thenReturn("책책이");
         when(member.getProfileImageUrl()).thenReturn("https://example.com/profile.jpg");
         when(member.getAccountStatus()).thenReturn(AccountStatus.ACTIVE);
-        when(memberRepository.findById(1L)).thenReturn(java.util.Optional.of(member));
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
         when(libraryItemRepository.findAllByMemberId(1L)).thenReturn(List.of());
-        when(commentCountReader.getCommentCounts(java.util.Set.of())).thenReturn(Map.of());
+        when(commentCountReader.getCommentCounts(Set.of())).thenReturn(Map.of());
 
         var response = service().getPublicLibrary(1L, 1, null, LibrarySort.RECENT);
 
@@ -223,13 +225,13 @@ class LibraryServiceTest {
     @Test
     @DisplayName("존재하지 않거나 비활성 상태인 회원의 공개 서재는 조회할 수 없다")
     void should_RejectPublicLibrary_When_MemberIsMissingOrInactive() {
-        when(memberRepository.findById(1L)).thenReturn(java.util.Optional.empty());
+        when(memberRepository.findById(1L)).thenReturn(Optional.empty());
         assertLibraryNotFound(1L);
 
         for (AccountStatus status : List.of(AccountStatus.WITHDRAWN, AccountStatus.SUSPENDED)) {
             Member member = mock(Member.class);
             when(member.getAccountStatus()).thenReturn(status);
-            when(memberRepository.findById(1L)).thenReturn(java.util.Optional.of(member));
+            when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
             assertLibraryNotFound(1L);
         }
     }

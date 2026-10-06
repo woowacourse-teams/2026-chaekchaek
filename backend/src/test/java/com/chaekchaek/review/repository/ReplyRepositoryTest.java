@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.chaekchaek.review.domain.Reply;
 import com.chaekchaek.review.domain.Review;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -93,7 +94,7 @@ class ReplyRepositoryTest {
     @DisplayName("삭제와 스포일러 감상을 제외한 최신 감상 열 개를 반환한다")
     void should_ReturnTopTenNonSpoilerReviewsInLatestOrder_When_FindingLatestReviews() {
         // given
-        List<Review> nonSpoilerReviews = new java.util.ArrayList<>();
+        List<Review> nonSpoilerReviews = new ArrayList<>();
         for (int index = 0; index < 10; index++) {
             nonSpoilerReviews.add(reviewRepository.save(
                     Review.create(1L, 1L, "감상 " + index, null, null, null, false, false)

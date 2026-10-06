@@ -5,11 +5,11 @@ import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
+import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
-import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
@@ -24,11 +24,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.chaekchaek.book.client.AladinClientException;
 import com.chaekchaek.book.domain.Isbn13;
-import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.auth.ActorType;
+import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
-import com.chaekchaek.review.dto.AuthorResponse;
 import com.chaekchaek.review.dto.AuthorProfileStatus;
+import com.chaekchaek.review.dto.AuthorResponse;
 import com.chaekchaek.review.dto.PageResponse;
 import com.chaekchaek.review.dto.ReactionResponse;
 import com.chaekchaek.review.dto.ReplyCreateRequest;
@@ -41,6 +41,7 @@ import com.chaekchaek.review.dto.ReviewUpdateRequest;
 import com.chaekchaek.review.service.ReviewService;
 import com.chaekchaek.review.service.ReviewService.Feed;
 import com.chaekchaek.review.service.ReviewService.ReviewSort;
+import com.epages.restdocs.apispec.ParameterDescriptorWithType;
 import com.epages.restdocs.apispec.ResourceDocumentation;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.epages.restdocs.apispec.Schema;
@@ -49,16 +50,18 @@ import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
 import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.restdocs.payload.FieldDescriptor;
-import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.restdocs.headers.HeaderDescriptor;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
+import org.springframework.restdocs.payload.FieldDescriptor;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -156,7 +159,7 @@ class ReviewControllerTest {
     @DisplayName("감상을 작성하고 Location을 반환한다")
     void should_CreateReviewWithLocation_When_RequestIsValid() throws Exception {
         // given
-        when(reviewService.createReview(org.mockito.ArgumentMatchers.eq(42L), org.mockito.ArgumentMatchers.any(ReviewCreateRequest.class)))
+        when(reviewService.createReview(ArgumentMatchers.eq(42L), ArgumentMatchers.any(ReviewCreateRequest.class)))
                 .thenReturn(reviewResponse());
 
         // when & then
@@ -184,8 +187,8 @@ class ReviewControllerTest {
                                 .responseFields(reviewResponseFields(""))
                                 .build())));
 
-        verify(reviewService).createReview(org.mockito.ArgumentMatchers.eq(42L),
-                org.mockito.ArgumentMatchers.any(ReviewCreateRequest.class));
+        verify(reviewService).createReview(ArgumentMatchers.eq(42L),
+                ArgumentMatchers.any(ReviewCreateRequest.class));
     }
 
     @Test
@@ -193,8 +196,8 @@ class ReviewControllerTest {
     void should_ReturnBookIdAndReview_When_CreatingReviewByIsbn13() throws Exception {
         // given
         when(reviewService.createReviewByIsbn13(
-                org.mockito.ArgumentMatchers.eq(new Isbn13("9788925568683")),
-                org.mockito.ArgumentMatchers.any(ReviewCreateRequest.class)
+                ArgumentMatchers.eq(new Isbn13("9788925568683")),
+                ArgumentMatchers.any(ReviewCreateRequest.class)
         )).thenReturn(new ReviewCreateByIsbnResponse(42L, reviewResponse()));
 
         // when & then
@@ -222,15 +225,15 @@ class ReviewControllerTest {
                                 .build())));
 
         verify(reviewService).createReviewByIsbn13(
-                org.mockito.ArgumentMatchers.eq(new Isbn13("9788925568683")),
-                org.mockito.ArgumentMatchers.any(ReviewCreateRequest.class));
+                ArgumentMatchers.eq(new Isbn13("9788925568683")),
+                ArgumentMatchers.any(ReviewCreateRequest.class));
     }
 
     @Test
     @DisplayName("감상을 수정한다")
     void should_ReturnUpdatedReview_When_UpdatingReview() throws Exception {
         // given
-        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(101L), org.mockito.ArgumentMatchers.any(ReviewUpdateRequest.class)))
+        when(reviewService.updateReview(ArgumentMatchers.eq(101L), ArgumentMatchers.any(ReviewUpdateRequest.class)))
                 .thenReturn(reviewResponse());
 
         // when & then
@@ -299,7 +302,7 @@ class ReviewControllerTest {
     @DisplayName("답글을 작성하고 Location을 반환한다")
     void should_CreateReplyWithLocation_When_RequestIsValid() throws Exception {
         // given
-        when(reviewService.createReply(org.mockito.ArgumentMatchers.eq(101L), org.mockito.ArgumentMatchers.any(ReplyCreateRequest.class)))
+        when(reviewService.createReply(ArgumentMatchers.eq(101L), ArgumentMatchers.any(ReplyCreateRequest.class)))
                 .thenReturn(replyResponse());
 
         // when & then
@@ -329,7 +332,7 @@ class ReviewControllerTest {
     @DisplayName("답글을 수정한다")
     void should_ReturnUpdatedReply_When_UpdatingReply() throws Exception {
         // given
-        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(201L), org.mockito.ArgumentMatchers.any(ReplyUpdateRequest.class)))
+        when(reviewService.updateReply(ArgumentMatchers.eq(201L), ArgumentMatchers.any(ReplyUpdateRequest.class)))
                 .thenReturn(replyResponse());
 
         // when & then
@@ -434,7 +437,7 @@ class ReviewControllerTest {
     @DisplayName("인증 없이 감상을 작성하면 ProblemDetail을 반환한다")
     void should_ReturnUnauthorized_When_CreatingReviewWithoutAuthentication() throws Exception {
         // given
-        when(reviewService.createReview(org.mockito.ArgumentMatchers.eq(42L), org.mockito.ArgumentMatchers.any(ReviewCreateRequest.class)))
+        when(reviewService.createReview(ArgumentMatchers.eq(42L), ArgumentMatchers.any(ReviewCreateRequest.class)))
                 .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
 
         // when & then
@@ -449,7 +452,7 @@ class ReviewControllerTest {
     @DisplayName("다른 회원의 감상을 수정하면 ProblemDetail을 반환한다")
     void should_ReturnForbidden_When_UpdatingAnotherMembersReview() throws Exception {
         // given
-        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(101L), org.mockito.ArgumentMatchers.any(ReviewUpdateRequest.class)))
+        when(reviewService.updateReview(ArgumentMatchers.eq(101L), ArgumentMatchers.any(ReviewUpdateRequest.class)))
                 .thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
 
         // when & then
@@ -505,11 +508,11 @@ class ReviewControllerTest {
     @DisplayName("감상 작성의 입력과 도서 및 페이지 오류를 문서화한다")
     void should_DocumentReviewCreateErrors_When_RequestCannotBeProcessed() throws Exception {
         // given
-        when(reviewService.createReview(org.mockito.ArgumentMatchers.eq(404L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.createReview(ArgumentMatchers.eq(404L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
-        when(reviewService.createReview(org.mockito.ArgumentMatchers.eq(409L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.createReview(ArgumentMatchers.eq(409L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
-        when(reviewService.createReview(org.mockito.ArgumentMatchers.eq(422L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.createReview(ArgumentMatchers.eq(422L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
 
         // when & then
@@ -539,18 +542,18 @@ class ReviewControllerTest {
     @DisplayName("ISBN13 감상 작성의 입력, 인증, 도서, 페이지와 외부 API 오류를 문서화한다")
     void should_DocumentReviewCreateByIsbnErrors_When_RequestCannotBeProcessed() throws Exception {
         // given
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9788936433598")),
-                org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9788966260959")),
-                org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9781234567897")),
-                org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9780000000002")),
-                org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9780000000019")),
-                org.mockito.ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
-        when(reviewService.createReviewByIsbn13(org.mockito.ArgumentMatchers.eq(new Isbn13("9780000000026")),
-                org.mockito.ArgumentMatchers.any())).thenThrow(new AladinClientException(1, "invalid secret key"));
+        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9788936433598")),
+                ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9788966260959")),
+                ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
+        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9781234567897")),
+                ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
+        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9780000000002")),
+                ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
+        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9780000000019")),
+                ArgumentMatchers.any())).thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
+        when(reviewService.createReviewByIsbn13(ArgumentMatchers.eq(new Isbn13("9780000000026")),
+                ArgumentMatchers.any())).thenThrow(new AladinClientException(1, "invalid secret key"));
 
         // when & then
         documentProblemDetailByIsbn(mockMvc.perform(post("/api/v1/books/by-isbn/{isbn13}/reviews", "9788925568683")
@@ -587,15 +590,15 @@ class ReviewControllerTest {
     @DisplayName("감상 수정의 입력과 리소스 및 페이지 오류를 문서화한다")
     void should_DocumentReviewUpdateErrors_When_RequestCannotBeProcessed() throws Exception {
         // given
-        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(400L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReview(ArgumentMatchers.eq(400L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.INVALID_REQUEST));
-        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(404L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReview(ArgumentMatchers.eq(404L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
-        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(409L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReview(ArgumentMatchers.eq(409L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT));
-        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(410L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReview(ArgumentMatchers.eq(410L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
-        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(422L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReview(ArgumentMatchers.eq(422L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.INVALID_READING_STATE));
 
         // when & then
@@ -625,9 +628,9 @@ class ReviewControllerTest {
     @DisplayName("감상 삭제의 권한과 리소스 오류를 문서화한다")
     void should_DocumentReviewDeleteErrors_When_RequestCannotBeProcessed() throws Exception {
         // given
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.FORBIDDEN)).when(reviewService).deleteReview(403L);
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND)).when(reviewService).deleteReview(404L);
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.DELETED_RESOURCE)).when(reviewService).deleteReview(409L);
+        Mockito.doThrow(new BusinessException(ErrorCode.FORBIDDEN)).when(reviewService).deleteReview(403L);
+        Mockito.doThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND)).when(reviewService).deleteReview(404L);
+        Mockito.doThrow(new BusinessException(ErrorCode.DELETED_RESOURCE)).when(reviewService).deleteReview(409L);
 
         // when & then
         documentProblemDetail(mockMvc.perform(delete("/api/v1/reviews/{reviewId}", 403L)), HttpStatus.FORBIDDEN,
@@ -645,9 +648,9 @@ class ReviewControllerTest {
     @DisplayName("답글 작성의 입력과 부모 감상 오류를 문서화한다")
     void should_DocumentReplyCreateErrors_When_RequestCannotBeProcessed() throws Exception {
         // given
-        when(reviewService.createReply(org.mockito.ArgumentMatchers.eq(404L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.createReply(ArgumentMatchers.eq(404L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
-        when(reviewService.createReply(org.mockito.ArgumentMatchers.eq(409L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.createReply(ArgumentMatchers.eq(409L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
 
         // when & then
@@ -669,17 +672,17 @@ class ReviewControllerTest {
     @DisplayName("답글 수정과 삭제의 리소스 오류를 문서화한다")
     void should_DocumentReplyMutationErrors_When_RequestCannotBeProcessed() throws Exception {
         // given
-        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(400L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReply(ArgumentMatchers.eq(400L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.INVALID_REQUEST));
-        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(403L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReply(ArgumentMatchers.eq(403L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
-        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(404L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReply(ArgumentMatchers.eq(404L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND));
-        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(409L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReply(ArgumentMatchers.eq(409L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.FORBIDDEN)).when(reviewService).deleteReply(403L);
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND)).when(reviewService).deleteReply(404L);
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.DELETED_RESOURCE)).when(reviewService).deleteReply(409L);
+        Mockito.doThrow(new BusinessException(ErrorCode.FORBIDDEN)).when(reviewService).deleteReply(403L);
+        Mockito.doThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND)).when(reviewService).deleteReply(404L);
+        Mockito.doThrow(new BusinessException(ErrorCode.DELETED_RESOURCE)).when(reviewService).deleteReply(409L);
 
         // when & then
         documentProblemDetail(mockMvc.perform(patch("/api/v1/replies/{replyId}", 400L)
@@ -715,12 +718,12 @@ class ReviewControllerTest {
         // given
         when(reviewService.createReviewReaction(404L)).thenThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
         when(reviewService.createReviewReaction(409L)).thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND)).when(reviewService)
+        Mockito.doThrow(new BusinessException(ErrorCode.REVIEW_NOT_FOUND)).when(reviewService)
                 .deleteReviewReaction(404L);
         when(reviewService.createReplyReaction(404L)).thenThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND));
         when(reviewService.createReplyReaction(409L)).thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
         when(reviewService.createReplyReaction(410L)).thenThrow(new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS));
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND)).when(reviewService)
+        Mockito.doThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND)).when(reviewService)
                 .deleteReplyReaction(404L);
 
         // when & then
@@ -769,19 +772,19 @@ class ReviewControllerTest {
     @DisplayName("인증 필수 감상과 답글 작업의 401 응답을 문서화한다")
     void should_DocumentUnauthorizedForAuthenticatedOperations_When_NotAuthenticated() throws Exception {
         // given
-        when(reviewService.updateReview(org.mockito.ArgumentMatchers.eq(101L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReview(ArgumentMatchers.eq(101L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService).deleteReview(101L);
-        when(reviewService.createReply(org.mockito.ArgumentMatchers.eq(101L), org.mockito.ArgumentMatchers.any()))
+        Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService).deleteReview(101L);
+        when(reviewService.createReply(ArgumentMatchers.eq(101L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
-        when(reviewService.updateReply(org.mockito.ArgumentMatchers.eq(201L), org.mockito.ArgumentMatchers.any()))
+        when(reviewService.updateReply(ArgumentMatchers.eq(201L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService).deleteReply(201L);
+        Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService).deleteReply(201L);
         when(reviewService.createReviewReaction(101L)).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService)
+        Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService)
                 .deleteReviewReaction(101L);
         when(reviewService.createReplyReaction(201L)).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
-        org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService)
+        Mockito.doThrow(new BusinessException(ErrorCode.UNAUTHORIZED)).when(reviewService)
                 .deleteReplyReaction(201L);
 
         // when & then
@@ -1014,15 +1017,15 @@ class ReviewControllerTest {
         return prefix.isEmpty() ? name : prefix + "." + name;
     }
 
-    private static com.epages.restdocs.apispec.ParameterDescriptorWithType pathParameter(String name, String description) {
+    private static ParameterDescriptorWithType pathParameter(String name, String description) {
         return ResourceDocumentation.parameterWithName(name).type(SimpleType.INTEGER).description(description);
     }
 
-    private static com.epages.restdocs.apispec.ParameterDescriptorWithType isbn13PathParameter() {
+    private static ParameterDescriptorWithType isbn13PathParameter() {
         return ResourceDocumentation.parameterWithName("isbn13").type(SimpleType.STRING).description("ISBN-13");
     }
 
-    private static com.epages.restdocs.apispec.ParameterDescriptorWithType queryParameter(
+    private static ParameterDescriptorWithType queryParameter(
             String name,
             SimpleType type,
             String description
@@ -1030,13 +1033,13 @@ class ReviewControllerTest {
         return queryParameter(name, type, description, false);
     }
 
-    private static com.epages.restdocs.apispec.ParameterDescriptorWithType queryParameter(
+    private static ParameterDescriptorWithType queryParameter(
             String name,
             SimpleType type,
             String description,
             boolean optional
     ) {
-        com.epages.restdocs.apispec.ParameterDescriptorWithType parameter = ResourceDocumentation.parameterWithName(name)
+        ParameterDescriptorWithType parameter = ResourceDocumentation.parameterWithName(name)
                 .type(type).description(description);
         return optional ? parameter.optional() : parameter;
     }

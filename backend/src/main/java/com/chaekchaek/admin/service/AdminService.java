@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -108,7 +109,7 @@ public class AdminService {
             return Map.of();
         }
         return bookRepository.findAllWithAuthorsByIdIn(bookIds).stream()
-                .collect(java.util.stream.Collectors.toMap(Book::getId, book -> book));
+                .collect(Collectors.toMap(Book::getId, book -> book));
     }
 
     private RecommendedBookResponse toResponse(RecommendedBook recommendedBook, Book book) {

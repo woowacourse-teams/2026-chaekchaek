@@ -11,9 +11,14 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.actor.domain.Actor;
 import com.chaekchaek.actor.repository.ActorRepository;
+import com.chaekchaek.auth.oauth.apple.AppleProfile;
 import com.chaekchaek.auth.oauth.google.GoogleProfile;
+import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.chaekchaek.member.service.NicknameGenerator;
@@ -22,15 +27,20 @@ import com.chaekchaek.socialaccount.domain.SocialAccount;
 import com.chaekchaek.socialaccount.repository.SocialAccountRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 public class SocialLoginServiceTest {
@@ -39,25 +49,25 @@ public class SocialLoginServiceTest {
     @DisplayName("정지 회원은 로그인이나 재가입 없이 거부한다")
     void rejectsSuspendedMember() {
         Member member = Member.create("익명 이름", null, LocalDateTime.now());
-        org.springframework.test.util.ReflectionTestUtils.setField(member, "accountStatus",
-                com.chaekchaek.member.domain.AccountStatus.SUSPENDED);
+        ReflectionTestUtils.setField(member, "accountStatus",
+                AccountStatus.SUSPENDED);
         SocialAccount account = SocialAccount.connect(member, Provider.GOOGLE, "suspended-user",
                 LocalDateTime.now());
         when(socialAccountRepository.findForLogin(Provider.GOOGLE, "suspended-user"))
                 .thenReturn(Optional.of(account));
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> socialLoginService.loginOrSignUp(
+        Assertions.assertThatThrownBy(() -> socialLoginService.loginOrSignUp(
                 new GoogleProfile("suspended-user", "email", null)))
-                .isInstanceOfSatisfying(com.chaekchaek.common.exception.BusinessException.class,
+                .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(com.chaekchaek.common.exception.ErrorCode.UNAUTHORIZED));
+                                .isEqualTo(ErrorCode.UNAUTHORIZED));
         assertThat(account.getMember()).isSameAs(member);
-        org.mockito.Mockito.verifyNoInteractions(memberRepository, actorRepository,
+        Mockito.verifyNoInteractions(memberRepository, actorRepository,
                 nicknameGenerator, guestActorMigrationService);
     }
 
-    @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.EnumSource(value = Provider.class, names = {"GOOGLE", "APPLE"})
+    @ParameterizedTest
+    @EnumSource(value = Provider.class, names = {"GOOGLE", "APPLE"})
     @DisplayName("Google과 Apple 모두 반복 탈퇴 후 재가입 횟수를 제한하지 않는다")
     void allowsRepeatedRejoinForEachProvider(Provider provider) {
         Member member = Member.create("기존 익명", null, LocalDateTime.now());
@@ -70,15 +80,15 @@ public class SocialLoginServiceTest {
             previous.withdraw(LocalDateTime.now());
             Member result = provider == Provider.GOOGLE
                     ? socialLoginService.loginOrSignUp(new GoogleProfile("repeat-user", "email", null), 7L)
-                    : socialLoginService.loginOrSignUp(new com.chaekchaek.auth.oauth.apple.AppleProfile("repeat-user"));
+                    : socialLoginService.loginOrSignUp(new AppleProfile("repeat-user"));
             assertThat(result).isNotSameAs(previous);
-            assertThat(result.getAccountStatus()).isEqualTo(com.chaekchaek.member.domain.AccountStatus.ACTIVE);
+            assertThat(result.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
             assertThat(account.getMember()).isSameAs(result);
             if (provider == Provider.GOOGLE) {
                 verify(guestActorMigrationService).migrate(7L, result);
             }
         }
-        verify(actorRepository, org.mockito.Mockito.times(3)).save(any(Actor.class));
+        verify(actorRepository, Mockito.times(3)).save(any(Actor.class));
     }
 
     @Test
@@ -103,9 +113,9 @@ public class SocialLoginServiceTest {
         assertThat(account.getMember()).isSameAs(rejoined);
         assertThat(account.getProviderRefreshToken()).isNull();
         assertThat(oldActor.getMember()).isSameAs(oldMember);
-        assertThat(oldMember.getAccountStatus()).isEqualTo(com.chaekchaek.member.domain.AccountStatus.WITHDRAWN);
+        assertThat(oldMember.getAccountStatus()).isEqualTo(AccountStatus.WITHDRAWN);
         assertThat(oldMember.getAnonymousNickname()).isEqualTo("기존 익명 이름");
-        assertThat(rejoined.getAccountStatus()).isEqualTo(com.chaekchaek.member.domain.AccountStatus.ACTIVE);
+        assertThat(rejoined.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
         assertThat(rejoined.getAnonymousNickname()).isEqualTo("새 익명 이름");
         assertThat(rejoined.getNickname()).isNull();
         assertThat(rejoined.isDisplayAnonymous()).isTrue();
@@ -223,7 +233,7 @@ public class SocialLoginServiceTest {
                 () -> assertThat(savedMember.getAnonymousNickname()).isEqualTo("우아한 달빛 참새"),
                 () -> assertThat(savedMember.isDisplayAnonymous()).isTrue(),
                 () -> assertThat(savedActor.getMember()).isSameAs(savedMember),
-                () -> assertThat(savedActor.getType()).isEqualTo(com.chaekchaek.common.auth.ActorType.MEMBER),
+                () -> assertThat(savedActor.getType()).isEqualTo(ActorType.MEMBER),
 
                 () -> assertThat(savedAccount.getMember()).isSameAs(savedMember),
                 () -> assertThat(savedAccount.getProvider()).isEqualTo(Provider.GOOGLE),
@@ -259,7 +269,7 @@ public class SocialLoginServiceTest {
 
         assertAll(
                 () -> assertThat(result.getAnonymousNickname()).isEqualTo("게스트 참새"),
-                () -> assertThat(guestActor.getType()).isEqualTo(com.chaekchaek.common.auth.ActorType.MEMBER),
+                () -> assertThat(guestActor.getType()).isEqualTo(ActorType.MEMBER),
                 () -> assertThat(guestActor.getMember()).isSameAs(result),
                 () -> assertThat(guestActor.getGuestTokenHash()).isNull(),
                 () -> assertThat(guestActor.getGuestNickname()).isNull()

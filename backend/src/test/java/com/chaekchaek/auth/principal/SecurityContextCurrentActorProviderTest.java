@@ -22,6 +22,7 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.OptionalLong;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class SecurityContextCurrentActorProviderTest {
@@ -68,7 +69,7 @@ class SecurityContextCurrentActorProviderTest {
         when(fixtures.request.getHeader(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER)).thenReturn("token");
 
         assertThat(fixtures.provider().findCurrentActor()).contains(CurrentActor.member(4L, 3L));
-        verify(fixtures.repository, never()).findByGuestTokenHash(org.mockito.ArgumentMatchers.anyString());
+        verify(fixtures.repository, never()).findByGuestTokenHash(ArgumentMatchers.anyString());
     }
 
     @Test

@@ -10,15 +10,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.chaekchaek.home.dto.LatestReviewListResponse;
 import com.chaekchaek.common.auth.ActorType;
+import com.chaekchaek.home.dto.LatestReviewListResponse;
 import com.chaekchaek.home.dto.LatestReviewResponse;
 import com.chaekchaek.home.dto.PopularBookListResponse;
 import com.chaekchaek.home.dto.PopularBookResponse;
-import com.chaekchaek.review.dto.AuthorResponse;
-import com.chaekchaek.review.dto.AuthorProfileStatus;
 import com.chaekchaek.home.service.HomeService;
+import com.chaekchaek.review.dto.AuthorProfileStatus;
+import com.chaekchaek.review.dto.AuthorResponse;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -85,7 +86,7 @@ class HomeControllerTest {
         // given
         when(homeService.getLatestReviews()).thenReturn(new LatestReviewListResponse(List.of(
                 new LatestReviewResponse("도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.",
-                        java.time.Instant.parse("2026-08-18T14:00:00Z"),
+                        Instant.parse("2026-08-18T14:00:00Z"),
                         new AuthorResponse(1L, "다정한 참새", "https://example.com/profile.jpg", false, false,
                                 ActorType.MEMBER, AuthorProfileStatus.AVAILABLE), 12L,
                         42L, "9788936433598", "보이지 않는 도시", "https://example.com/invisible-cities.jpg")

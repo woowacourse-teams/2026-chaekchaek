@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.OptionalLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 
 class BookSearchServiceTest {
 
@@ -37,9 +38,9 @@ class BookSearchServiceTest {
         BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
         BookSearchResult searchResult = new BookSearchResult(21, 2, List.of());
         when(bookClient.search("마션", 1)).thenReturn(searchResult);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -59,9 +60,9 @@ class BookSearchServiceTest {
         BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
         BookSearchResult searchResult = new BookSearchResult(21, null, List.of());
         when(bookClient.search("마션", 1)).thenReturn(searchResult);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -91,9 +92,9 @@ class BookSearchServiceTest {
         );
         BookSearchResult searchResult = new BookSearchResult(1, null, List.of(searchedBook));
         when(bookClient.search("클린 코드", 1)).thenReturn(searchResult);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -266,9 +267,9 @@ class BookSearchServiceTest {
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         when(bookClient.search("책", 1)).thenReturn(response);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of(registeredBooks));
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(activityCounts);
         return guestService(bookClient, bookRepository, activityCountReader);
     }

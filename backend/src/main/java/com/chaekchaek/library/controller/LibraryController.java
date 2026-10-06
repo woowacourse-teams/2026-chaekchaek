@@ -1,5 +1,6 @@
 package com.chaekchaek.library.controller;
 
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
@@ -12,7 +13,6 @@ import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RateBookRequest;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.dto.UpdateLibraryItemRequest;
-import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.library.service.LibraryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -21,6 +21,7 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -120,7 +121,7 @@ public class LibraryController {
     public ResponseEntity<RatingComparisonResponse> compareRatings(
             @RequestParam @NotBlank String isbn13,
             @RequestParam @NotNull @DecimalMin("0.1") @DecimalMax("5.0") @Digits(integer = 1, fraction = 1)
-            java.math.BigDecimal criterion
+            BigDecimal criterion
     ) {
         return ResponseEntity.ok(libraryService.compareRatingsByIsbn13(memberId(), new Isbn13(isbn13), criterion));
     }

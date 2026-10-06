@@ -22,6 +22,7 @@ import com.chaekchaek.socialaccount.domain.Provider;
 import com.chaekchaek.socialaccount.domain.SocialAccount;
 import com.chaekchaek.socialaccount.repository.SocialAccountRepository;
 import jakarta.persistence.EntityManager;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -116,7 +117,7 @@ public class SocialLoginIntegrationTest {
         var jwt = Jwt.withTokenValue("token")
                 .header("alg", "none").subject(memberId.toString()).build();
         SecurityContextHolder.getContext().setAuthentication(
-                new JwtAuthenticationToken(jwt, java.util.List.of()));
+                new JwtAuthenticationToken(jwt, List.of()));
     }
 
     @Autowired

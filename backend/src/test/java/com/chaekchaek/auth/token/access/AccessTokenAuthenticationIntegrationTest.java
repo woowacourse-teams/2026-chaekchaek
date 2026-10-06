@@ -7,8 +7,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.repository.MemberRepository;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +28,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,11 +36,11 @@ import org.springframework.web.bind.annotation.RestController;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(AccessTokenAuthenticationIntegrationTest.ProtectedTestController.class)
-@org.springframework.transaction.annotation.Transactional
+@Transactional
 class AccessTokenAuthenticationIntegrationTest {
 
     @Autowired
-    private com.chaekchaek.member.repository.MemberRepository memberRepository;
+    private MemberRepository memberRepository;
 
     private Long memberId;
 
@@ -43,16 +48,16 @@ class AccessTokenAuthenticationIntegrationTest {
     @DisplayName("탈퇴 전에 발급된 Bearer 토큰은 탈퇴 직후 거부한다")
     void rejectsExistingTokenAfterWithdrawal() throws Exception {
         String token = issueAccessToken(memberId.toString());
-        memberRepository.findById(memberId).orElseThrow().withdraw(java.time.LocalDateTime.now());
+        memberRepository.findById(memberId).orElseThrow().withdraw(LocalDateTime.now());
         mockMvc.perform(get("/test/protected").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
-    @org.junit.jupiter.api.BeforeEach
+    @BeforeEach
     void createActiveMember() {
-        memberId = memberRepository.save(com.chaekchaek.member.domain.Member.create(
-                "토큰 검증 회원", null, java.time.LocalDateTime.now())).getId();
+        memberId = memberRepository.save(Member.create(
+                "토큰 검증 회원", null, LocalDateTime.now())).getId();
     }
 
     @Autowired

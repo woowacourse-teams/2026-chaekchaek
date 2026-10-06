@@ -25,8 +25,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.LibrarySort;
@@ -39,15 +39,16 @@ import com.chaekchaek.library.dto.PublicMemberResponse;
 import com.chaekchaek.library.dto.RatingComparisonBookResponse;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.service.LibraryService;
+import com.epages.restdocs.apispec.ParameterDescriptorWithType;
 import com.epages.restdocs.apispec.ResourceDocumentation;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.epages.restdocs.apispec.Schema;
 import com.epages.restdocs.apispec.SimpleType;
-import com.epages.restdocs.apispec.ParameterDescriptorWithType;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,12 +56,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
 import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.restdocs.request.ParameterDescriptor;
+import org.springframework.restdocs.request.RequestDocumentation;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -553,9 +556,9 @@ class LibraryControllerTest {
                         .param("isbn13", ISBN13)
                         .param("criterion", "4.5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.lower").value(org.hamcrest.Matchers.nullValue()))
-                .andExpect(jsonPath("$.current").value(org.hamcrest.Matchers.nullValue()))
-                .andExpect(jsonPath("$.higher").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.lower").value(Matchers.nullValue()))
+                .andExpect(jsonPath("$.current").value(Matchers.nullValue()))
+                .andExpect(jsonPath("$.higher").value(Matchers.nullValue()))
                 .andDo(document(
                         "library-rating-comparison-null-boundary",
                         queryParameters(ratingComparisonQueryParameters()),
@@ -791,7 +794,7 @@ class LibraryControllerTest {
                 .andExpect(jsonPath("$.instance").value(instance));
     }
 
-    private org.springframework.restdocs.mockmvc.RestDocumentationResultHandler problemDetailDocument(
+    private RestDocumentationResultHandler problemDetailDocument(
             String identifier, String summary, String description,
             ParameterDescriptorWithType[] pathParameters, ParameterDescriptorWithType[] queryParameters
     ) {
@@ -1061,12 +1064,12 @@ class LibraryControllerTest {
     }
 
     private ParameterDescriptor bookIdPathParameter() {
-        return org.springframework.restdocs.request.RequestDocumentation.parameterWithName("bookId")
+        return RequestDocumentation.parameterWithName("bookId")
                 .description("도서 ID");
     }
 
     private ParameterDescriptor memberIdPathParameter() {
-        return org.springframework.restdocs.request.RequestDocumentation.parameterWithName("memberId")
+        return RequestDocumentation.parameterWithName("memberId")
                 .description("공개 서재를 조회할 회원 ID");
     }
 

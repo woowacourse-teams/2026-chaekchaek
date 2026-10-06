@@ -21,14 +21,15 @@ import com.chaekchaek.auth.token.guest.IssuedGuestToken;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.epages.restdocs.apispec.ResourceDocumentation;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
+import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
@@ -110,7 +111,7 @@ class GuestAuthControllerTest {
                                 .summary("게스트 정보 조회")
                                 .description("기존 게스트 토큰으로 연결된 Actor 정보와 만료 시각을 조회한다")
                                 .tag("인증")
-                                .requestHeaders(com.epages.restdocs.apispec.ResourceDocumentation
+                                .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("조회할 현재 게스트 토큰"))
                                 .responseFields(GUEST_INFO_RESPONSE_FIELDS)
                                 .build())));
@@ -188,7 +189,7 @@ class GuestAuthControllerTest {
                                 .description("만료까지 %d일 이하로 남은 유효한 토큰을 같은 Actor의 새 %d일 토큰으로 교체한다. 기존 토큰은 즉시 무효화된다"
                                         .formatted(REFRESH_WINDOW_DAYS, TOKEN_EXPIRATION_DAYS))
                                 .tag("인증")
-                                .requestHeaders(com.epages.restdocs.apispec.ResourceDocumentation
+                                .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("교체할 현재 게스트 토큰"))
                                 .responseFields(TOKEN_RESPONSE_FIELDS)
                                 .build())));
@@ -235,7 +236,7 @@ class GuestAuthControllerTest {
                                 .summary("게스트 토큰 갱신")
                                 .description(description)
                                 .tag("인증")
-                                .requestHeaders(com.epages.restdocs.apispec.ResourceDocumentation
+                                .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("갱신할 현재 게스트 토큰"))
                                 .responseFields(PROBLEM_DETAIL_FIELDS)
                                 .build())));

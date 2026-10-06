@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.member.domain.Member;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +57,7 @@ class ActorTest {
         LocalDateTime now = LocalDateTime.of(2026, 8, 26, 12, 0);
         Actor actor = Actor.guest("a".repeat(64), "다정한 참새", now.minusDays(80), now.plusDays(10));
 
-        assertThat(actor.isRefreshableGuestAt(now, java.time.Duration.ofDays(14))).isTrue();
+        assertThat(actor.isRefreshableGuestAt(now, Duration.ofDays(14))).isTrue();
 
         actor.refreshGuestToken("b".repeat(64), now, now.plusDays(90));
 
@@ -71,8 +72,8 @@ class ActorTest {
         Actor early = Actor.guest("a".repeat(64), "다정한 참새", now, now.plusDays(15));
         Actor expired = Actor.guest("b".repeat(64), "다정한 참새", now.minusDays(91), now.minusDays(1));
 
-        assertThat(early.isRefreshableGuestAt(now, java.time.Duration.ofDays(14))).isFalse();
-        assertThat(expired.isRefreshableGuestAt(now, java.time.Duration.ofDays(14))).isFalse();
+        assertThat(early.isRefreshableGuestAt(now, Duration.ofDays(14))).isFalse();
+        assertThat(expired.isRefreshableGuestAt(now, Duration.ofDays(14))).isFalse();
     }
 
     @Test

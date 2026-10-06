@@ -4,10 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 import com.chaekchaek.auth.oauth.OAuthFrontendClient;
-import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
+import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -15,9 +16,9 @@ import org.springframework.mock.web.MockHttpServletRequest;
 class OAuth2LoginControllerTest {
 
     private final OAuthFrontendRedirectResolver redirectResolver =
-            org.mockito.Mockito.mock(OAuthFrontendRedirectResolver.class);
+            Mockito.mock(OAuthFrontendRedirectResolver.class);
     private final OAuthGuestContextService guestContextService =
-            org.mockito.Mockito.mock(OAuthGuestContextService.class);
+            Mockito.mock(OAuthGuestContextService.class);
     private final OAuth2LoginController controller =
             new OAuth2LoginController(redirectResolver, guestContextService);
 

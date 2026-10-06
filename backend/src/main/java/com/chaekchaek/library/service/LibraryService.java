@@ -12,9 +12,9 @@ import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
+import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RatingComparisonBookResponse;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
-import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -255,12 +256,12 @@ public class LibraryService {
 
     private Map<Long, Book> booksById(Collection<LibraryItem> items) {
         return bookRepository.findAllById(items.stream().map(LibraryItem::getBookId).toList()).stream()
-                .collect(java.util.stream.Collectors.toMap(Book::getId, Function.identity()));
+                .collect(Collectors.toMap(Book::getId, Function.identity()));
     }
 
     private Map<Long, Book> booksByIdForUpdate(Collection<Long> bookIds) {
         return bookIds.stream().sorted()
-                .collect(java.util.stream.Collectors.toMap(Function.identity(), this::getBookForUpdate));
+                .collect(Collectors.toMap(Function.identity(), this::getBookForUpdate));
     }
 
     private void validateAllLibraryItemsExist(long memberId, Collection<Long> bookIds) {

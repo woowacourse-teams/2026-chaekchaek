@@ -10,17 +10,14 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.requestHe
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
-import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
 import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.epages.restdocs.apispec.ResourceDocumentation;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,7 +27,6 @@ import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2Clien
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
-
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -73,7 +69,7 @@ class OAuth2GuestContextRestDocsTest {
                                 .summary("웹 OAuth 게스트 컨텍스트 저장")
                                 .description("브라우저가 OAuth 링크로 이동하기 전에 게스트 토큰을 검증하고 로그인 세션에 게스트 Actor를 임시 저장한다")
                                 .tag(AUTH_TAG)
-                                .requestHeaders(com.epages.restdocs.apispec.ResourceDocumentation
+                                .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token")
                                         .description("OAuth 로그인 후 기록 이전에 사용할 현재 게스트 토큰"))
                                 .build())));
@@ -96,7 +92,7 @@ class OAuth2GuestContextRestDocsTest {
                                 .summary("웹 OAuth 게스트 컨텍스트 저장 실패")
                                 .description("유효하지 않거나 만료된 게스트 토큰은 OAuth 로그인 컨텍스트로 저장하지 않는다")
                                 .tag(AUTH_TAG)
-                                .requestHeaders(com.epages.restdocs.apispec.ResourceDocumentation
+                                .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("검증할 게스트 토큰"))
                                 .responseFields(PROBLEM_DETAIL_FIELDS)
                                 .build())));

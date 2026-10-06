@@ -17,6 +17,8 @@ import com.chaekchaek.auth.token.refresh.RefreshToken;
 import com.chaekchaek.auth.token.refresh.RefreshTokenHasher;
 import com.chaekchaek.auth.token.refresh.RefreshTokenProvider;
 import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.Clock;
@@ -41,7 +43,7 @@ public class AuthTokenServiceTest {
         member.withdraw(LocalDateTime.now());
         when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
         assertThatThrownBy(() -> authTokenService.issue(1L))
-                .isInstanceOf(com.chaekchaek.common.exception.BusinessException.class);
+                .isInstanceOf(BusinessException.class);
         verifyNoInteractions(accessTokenProvider, refreshTokenProvider);
     }
 
@@ -58,7 +60,7 @@ public class AuthTokenServiceTest {
         when(token.isUsable(LocalDateTime.ofInstant(now, ZoneOffset.UTC))).thenReturn(true);
         when(token.getMember()).thenReturn(member);
         assertThatThrownBy(() -> authTokenService.reissue("token"))
-                .isInstanceOf(com.chaekchaek.common.exception.BusinessException.class);
+                .isInstanceOf(BusinessException.class);
         verifyNoInteractions(accessTokenProvider, refreshTokenProvider);
     }
 
@@ -88,7 +90,7 @@ public class AuthTokenServiceTest {
     void should_IssueTokens_When_MemberExists() {
         // given
         Member member = mock(Member.class);
-        when(member.getAccountStatus()).thenReturn(com.chaekchaek.member.domain.AccountStatus.ACTIVE);
+        when(member.getAccountStatus()).thenReturn(AccountStatus.ACTIVE);
 
         when(memberRepository.findById(1L))
                 .thenReturn(Optional.of(member));
@@ -123,7 +125,7 @@ public class AuthTokenServiceTest {
         String oldTokenHash = "old-refresh-token-hash";
 
         Member member = mock(Member.class);
-        when(member.getAccountStatus()).thenReturn(com.chaekchaek.member.domain.AccountStatus.ACTIVE);
+        when(member.getAccountStatus()).thenReturn(AccountStatus.ACTIVE);
         RefreshToken savedToken = mock(RefreshToken.class);
 
         Instant now = Instant.parse("2026-08-13T00:00:00Z");

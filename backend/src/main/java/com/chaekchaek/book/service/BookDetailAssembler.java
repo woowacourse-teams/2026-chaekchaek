@@ -9,6 +9,7 @@ import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
 import lombok.RequiredArgsConstructor;
@@ -33,10 +34,10 @@ class BookDetailAssembler {
             );
         }
         OptionalLong memberId = currentMemberIdProvider.findCurrentMemberId();
-        Map<Long, ActivityCounts> activityCounts = activityCountReader.getActivityCounts(java.util.List.of(bookId));
+        Map<Long, ActivityCounts> activityCounts = activityCountReader.getActivityCounts(List.of(bookId));
         ActivityCounts counts = activityCounts.getOrDefault(bookId, ActivityCounts.ZERO);
         LibraryItemRepository.RatingStatistics ratings = libraryItemRepository
-                .findRatingStatisticsByBookIdIn(java.util.List.of(bookId))
+                .findRatingStatisticsByBookIdIn(List.of(bookId))
                 .stream()
                 .findFirst()
                 .orElse(null);

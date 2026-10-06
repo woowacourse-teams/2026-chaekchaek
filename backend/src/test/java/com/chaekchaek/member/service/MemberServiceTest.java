@@ -22,6 +22,7 @@ import com.chaekchaek.member.dto.MemberResponse;
 import com.chaekchaek.member.dto.MyInfoResponse;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -175,7 +176,7 @@ class MemberServiceTest {
         member.updateNickname("책책이");
         given(memberRepository.findById(1L)).willReturn(Optional.of(member));
         given(refreshTokenRepository.findAllByMemberIdAndRevokedAtIsNull(1L))
-                .willReturn(java.util.List.of(refreshToken));
+                .willReturn(List.of(refreshToken));
 
         memberService.withdraw(1L);
 

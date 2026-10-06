@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -148,7 +149,7 @@ class GuestTokenServiceTest {
     private static void fillRandomBytes(SecureRandom secureRandom, byte value) {
         doAnswer(invocation -> {
             byte[] bytes = invocation.getArgument(0);
-            java.util.Arrays.fill(bytes, value);
+            Arrays.fill(bytes, value);
             return null;
         }).when(secureRandom).nextBytes(any(byte[].class));
     }

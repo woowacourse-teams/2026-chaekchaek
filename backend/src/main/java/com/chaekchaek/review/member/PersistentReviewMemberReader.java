@@ -3,7 +3,6 @@ package com.chaekchaek.review.member;
 import com.chaekchaek.actor.domain.Actor;
 import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.common.auth.ActorType;
-import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import java.util.Collection;
 import java.util.Map;

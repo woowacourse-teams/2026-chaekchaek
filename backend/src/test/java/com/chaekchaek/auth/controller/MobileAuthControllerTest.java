@@ -2,9 +2,9 @@ package com.chaekchaek.auth.controller;
 
 import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.document;
 import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -14,8 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.auth.dto.MobileTokenResponse;
-import com.chaekchaek.auth.service.MobileAuthTokenService;
 import com.chaekchaek.auth.service.MobileAppleLoginService;
+import com.chaekchaek.auth.service.MobileAuthTokenService;
 import com.chaekchaek.auth.service.MobileGoogleLoginService;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.epages.restdocs.apispec.Schema;
@@ -31,6 +31,7 @@ import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.ResultHandler;
 
 @WebMvcTest(
         value = MobileAuthController.class,
@@ -351,7 +352,7 @@ class MobileAuthControllerTest {
                 .andExpect(jsonPath("$.code").value(code));
     }
 
-    private org.springframework.test.web.servlet.ResultHandler problemDetailDocument(
+    private ResultHandler problemDetailDocument(
             String identifier,
             String summary,
             String description,

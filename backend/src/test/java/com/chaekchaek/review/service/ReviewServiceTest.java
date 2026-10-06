@@ -5,29 +5,29 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.service.BookResolver;
+import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
-import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import com.chaekchaek.review.book.ReviewBookReader;
-import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.domain.Reply;
-import com.chaekchaek.review.domain.ReviewReaction;
 import com.chaekchaek.review.domain.ReplyReaction;
+import com.chaekchaek.review.domain.Review;
+import com.chaekchaek.review.domain.ReviewReaction;
+import com.chaekchaek.review.dto.AuthorProfileStatus;
 import com.chaekchaek.review.dto.ReviewCreateByIsbnResponse;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
-import com.chaekchaek.review.dto.AuthorProfileStatus;
 import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
@@ -38,11 +38,13 @@ import com.chaekchaek.review.repository.ReviewRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.transaction.PlatformTransactionManager;
+import org.mockito.ArgumentMatchers;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
 class ReviewServiceTest {
@@ -77,8 +79,8 @@ class ReviewServiceTest {
         assertThat(response.author().memberId()).isNull();
         assertThat(response.author().profileStatus()).isEqualTo(AuthorProfileStatus.UNAVAILABLE);
         verify(readingRecordCoordinator, never()).recordReview(
-                org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong(),
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+                ArgumentMatchers.anyLong(), ArgumentMatchers.anyLong(),
+                ArgumentMatchers.any(), ArgumentMatchers.any());
     }
 
     @Test
@@ -355,7 +357,7 @@ class ReviewServiceTest {
     }
 
     private ReviewMemberReader memberReader(boolean anonymousEnabled) {
-        return actorIds -> actorIds.stream().collect(java.util.stream.Collectors.toMap(
+        return actorIds -> actorIds.stream().collect(Collectors.toMap(
                 actorId -> actorId,
                 actorId -> new ReviewMemberProfile("닉네임", "profile", "참새-a1b2c3d4", anonymousEnabled, false,
                         ActorType.MEMBER)
