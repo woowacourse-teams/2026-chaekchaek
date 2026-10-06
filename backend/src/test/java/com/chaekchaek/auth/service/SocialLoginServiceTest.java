@@ -257,7 +257,7 @@ public class SocialLoginServiceTest {
         Member existingMember = Member.create("책책-1234", "exUrl", LocalDateTime.of(2026, 8, 12, 12, 0));
         SocialAccount existingAccount = SocialAccount.connect(
                 existingMember, Provider.GOOGLE, googleProfile.providerUserId(), LocalDateTime.of(2026, 8, 12, 12, 0));
-        when(socialAccountRepository.findByProviderAndProviderUserId(Provider.GOOGLE, googleProfile.providerUserId()))
+        when(socialAccountRepository.findForLogin(Provider.GOOGLE, googleProfile.providerUserId()))
                 .thenReturn(Optional.of(existingAccount));
 
         // when
@@ -276,7 +276,7 @@ public class SocialLoginServiceTest {
     void should_LogSignUp_When_FirstSocialLogin(CapturedOutput output) {
         // given
         GoogleProfile googleProfile = new GoogleProfile("google-user-123", "member@example.com", "exUrl");
-        when(socialAccountRepository.findByProviderAndProviderUserId(Provider.GOOGLE, googleProfile.providerUserId()))
+        when(socialAccountRepository.findForLogin(Provider.GOOGLE, googleProfile.providerUserId()))
                 .thenReturn(Optional.empty());
         when(nicknameGenerator.generate()).thenReturn("우아한 달빛 참새");
 
