@@ -17,16 +17,16 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     Optional<Book> findByIsbn13(Isbn13 isbn13);
 
     @EntityGraph(attributePaths = {"authors", "translators"})
-    @Query("select book from Book book where book.id = :bookId")
+    @Query("select b from Book b where b.id = :bookId")
     Optional<Book> findDetailById(@Param("bookId") long bookId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select book from Book book where book.id = :bookId")
+    @Query("select b from Book b where b.id = :bookId")
     Optional<Book> findByIdForUpdate(@Param("bookId") long bookId);
 
     List<Book> findAllByIsbn13In(Collection<Isbn13> isbn13s);
 
     @EntityGraph(attributePaths = "authors")
-    @Query("select book from Book book where book.id in :bookIds")
+    @Query("select b from Book b where b.id in :bookIds")
     List<Book> findAllWithAuthorsByIdIn(@Param("bookIds") Collection<Long> bookIds);
 }
