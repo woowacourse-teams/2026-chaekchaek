@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1540" height="830" viewBox="0 0 1540 830" font-family='"Noto Sans CJK KR","Malgun Gothic","Apple SD Gothic Neo","WenQuanYi Zen Hei",sans-serif' font-size="12">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#374151"/></marker></defs>
+<rect width="1540" height="830" fill="#ffffff"/>
+<rect x="40" y="40" width="150" height="56" rx="28.0" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+<text x="115.0" y="72.2" text-anchor="middle" fill="#111827" font-weight="700">개발자</text>
+<rect x="40" y="157" width="150" height="56" rx="10" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+<text x="115.0" y="189.2" text-anchor="middle" fill="#111827" font-weight="700">feature 브랜치</text>
+<rect x="40" y="342" width="150" height="56" rx="10" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+<text x="115.0" y="365.7" text-anchor="middle" fill="#111827" font-weight="700">be-dev</text>
+<text x="115.0" y="382.7" text-anchor="middle" fill="#111827">(dev 배포 브랜치)</text>
+<rect x="40" y="582" width="150" height="56" rx="10" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+<text x="115.0" y="605.7" text-anchor="middle" fill="#111827" font-weight="700">be</text>
+<text x="115.0" y="622.7" text-anchor="middle" fill="#111827">(운영 배포 브랜치)</text>
+<rect x="40" y="725" width="150" height="64" rx="10" fill="#F3F4F6" stroke="#6B7280" stroke-width="1.5"/>
+<text x="115.0" y="752.7" text-anchor="middle" fill="#111827" font-weight="700">main</text>
+<text x="115.0" y="769.7" text-anchor="middle" fill="#111827">병합 시 배포 없음</text>
+<rect x="300" y="100" width="930" height="140" rx="10" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>
+<text x="312" y="120" fill="#111827" font-weight="700" font-size="13">PR 검사 · GitHub Actions</text>
+<rect x="320" y="140" width="280" height="90" rx="10" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="460.0" y="163.7" text-anchor="middle" fill="#111827" font-weight="700">Backend CI</text>
+<text x="460.0" y="180.7" text-anchor="middle" fill="#111827">대상 be-dev·be·main · backend/**</text>
+<text x="460.0" y="197.7" text-anchor="middle" fill="#111827">./gradlew clean build</text>
+<text x="460.0" y="214.7" text-anchor="middle" fill="#111827">테스트 리포트 업로드</text>
+<rect x="620" y="140" width="260" height="90" rx="10" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="750.0" y="172.2" text-anchor="middle" fill="#111827" font-weight="700">커밋 메시지 검사</text>
+<text x="750.0" y="189.2" text-anchor="middle" fill="#111827">모든 PR 대상</text>
+<text x="750.0" y="206.2" text-anchor="middle" fill="#111827">[BE|FE|AN|ALL] type(scope): 설명</text>
+<rect x="900" y="140" width="310" height="90" rx="10" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="1055.0" y="172.2" text-anchor="middle" fill="#111827" font-weight="700">리뷰어 자동 배정</text>
+<text x="1055.0" y="189.2" text-anchor="middle" fill="#111827">대상 be-dev·be · backend/** · draft 제외</text>
+<text x="1055.0" y="206.2" text-anchor="middle" fill="#111827">작성자를 뺀 3명 중 랜덤 1명</text>
+<rect x="300" y="280" width="930" height="160" rx="10" fill="#F0FDF4" stroke="#22C55E" stroke-width="1.5"/>
+<text x="312" y="300" fill="#111827" font-weight="700" font-size="13">Backend CD · Development (backend-cd-dev.yml)</text>
+<rect x="330" y="320" width="230" height="100" rx="10" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5"/>
+<text x="445.0" y="348.7" text-anchor="middle" fill="#111827" font-weight="700">build · ubuntu-latest</text>
+<text x="445.0" y="365.7" text-anchor="middle" fill="#111827">gradlew clean bootJar</text>
+<text x="445.0" y="382.7" text-anchor="middle" fill="#111827">(테스트·RestDocs 포함)</text>
+<text x="445.0" y="399.7" text-anchor="middle" fill="#111827">arm64 Docker 이미지 빌드</text>
+<rect x="940" y="320" width="230" height="100" rx="10" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5"/>
+<text x="1055.0" y="348.7" text-anchor="middle" fill="#111827" font-weight="700">deploy · self-hosted</text>
+<text x="1055.0" y="365.7" text-anchor="middle" fill="#111827">runner 라벨: dev-backend</text>
+<text x="1055.0" y="382.7" text-anchor="middle" fill="#111827">environment: development</text>
+<text x="1055.0" y="399.7" text-anchor="middle" fill="#111827">기존 컨테이너 교체 + 헬스체크</text>
+<rect x="1290" y="320" width="210" height="100" rx="10" fill="#E5E7EB" stroke="#374151" stroke-width="1.5"/>
+<text x="1395.0" y="357.2" text-anchor="middle" fill="#111827" font-weight="700">dev 서버 · Docker</text>
+<text x="1395.0" y="374.2" text-anchor="middle" fill="#111827">chaekchaek-dev-backend</text>
+<text x="1395.0" y="391.2" text-anchor="middle" fill="#111827">dev-api.chaekchaek.com/health</text>
+<rect x="300" y="520" width="930" height="160" rx="10" fill="#F0FDF4" stroke="#22C55E" stroke-width="1.5"/>
+<text x="312" y="540" fill="#111827" font-weight="700" font-size="13">Backend CD · Production (backend-cd.yml)</text>
+<rect x="330" y="560" width="230" height="100" rx="10" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5"/>
+<text x="445.0" y="588.7" text-anchor="middle" fill="#111827" font-weight="700">build · ubuntu-latest</text>
+<text x="445.0" y="605.7" text-anchor="middle" fill="#111827">gradlew clean bootJar</text>
+<text x="445.0" y="622.7" text-anchor="middle" fill="#111827">(테스트·RestDocs 포함)</text>
+<text x="445.0" y="639.7" text-anchor="middle" fill="#111827">arm64 Docker 이미지 빌드</text>
+<rect x="940" y="560" width="230" height="100" rx="10" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5"/>
+<text x="1055.0" y="588.7" text-anchor="middle" fill="#111827" font-weight="700">deploy · self-hosted</text>
+<text x="1055.0" y="605.7" text-anchor="middle" fill="#111827">runner 라벨: prod-backend</text>
+<text x="1055.0" y="622.7" text-anchor="middle" fill="#111827">environment: production</text>
+<text x="1055.0" y="639.7" text-anchor="middle" fill="#111827">기존 컨테이너 교체 + 헬스체크</text>
+<rect x="1290" y="560" width="210" height="100" rx="10" fill="#E5E7EB" stroke="#374151" stroke-width="1.5"/>
+<text x="1395.0" y="597.2" text-anchor="middle" fill="#111827" font-weight="700">prod 서버 · Docker</text>
+<text x="1395.0" y="614.2" text-anchor="middle" fill="#111827">chaekchaek-backend</text>
+<text x="1395.0" y="631.2" text-anchor="middle" fill="#111827">api.chaekchaek.com/health</text>
+<rect x="675" y="320" width="150" height="340" rx="10" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+<text x="750.0" y="460.2" text-anchor="middle" fill="#111827" font-weight="700">GHCR</text>
+<text x="750.0" y="477.2" text-anchor="middle" fill="#111827">chaekchaek-backend</text>
+<text x="750.0" y="494.2" text-anchor="middle" fill="#111827"></text>
+<text x="750.0" y="511.2" text-anchor="middle" fill="#111827">dev-&lt;sha&gt;</text>
+<text x="750.0" y="528.2" text-anchor="middle" fill="#111827">prod-&lt;sha&gt;</text>
+<rect x="940" y="455" width="230" height="50" rx="10" fill="#FCE7F3" stroke="#DB2777" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="1055.0" y="475.7" text-anchor="middle" fill="#111827" font-weight="700">GitHub Secrets</text>
+<text x="1055.0" y="492.7" text-anchor="middle" fill="#111827">deploy에서 환경변수로 주입</text>
+<rect x="300" y="740" width="22" height="16" rx="10" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.5"/>
+<rect x="500" y="740" width="22" height="16" rx="10" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5"/>
+<rect x="700" y="740" width="22" height="16" rx="10" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+<rect x="900" y="740" width="22" height="16" rx="10" fill="#E5E7EB" stroke="#374151" stroke-width="1.5"/>
+<rect x="1100" y="740" width="22" height="16" rx="10" fill="#FCE7F3" stroke="#DB2777" stroke-width="1.5"/>
+<line x1="115.0" y1="96.0" x2="115.0" y2="157.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="190.0" y1="185.0" x2="300.0" y2="185.0" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<line x1="115.0" y1="213.0" x2="115.0" y2="342.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="115.0" y1="398.0" x2="115.0" y2="582.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="115.0" y1="638.0" x2="115.0" y2="725.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="190.0" y1="370.0" x2="330.0" y2="370.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="190.0" y1="610.0" x2="330.0" y2="610.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="560.0" y1="370.0" x2="675.0" y2="370.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="560.0" y1="610.0" x2="675.0" y2="610.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="825.0" y1="370.0" x2="940.0" y2="370.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="825.0" y1="610.0" x2="940.0" y2="610.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="1170.0" y1="370.0" x2="1290.0" y2="370.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="1170.0" y1="610.0" x2="1290.0" y2="610.0" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+<line x1="1055.0" y1="455.0" x2="1055.0" y2="420.0" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<line x1="1055.0" y1="505.0" x2="1055.0" y2="560.0" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="97.2" y="117.5" width="35.5" height="18" fill="#ffffff"/>
+<text x="115.0" y="130.5" text-anchor="middle" font-size="11" fill="#111827">push</text>
+<rect x="213.9" y="176.0" width="62.1" height="18" fill="#ffffff"/>
+<text x="245.0" y="189.0" text-anchor="middle" font-size="11" fill="#111827">PR 이벤트</text>
+<rect x="103.6" y="268.5" width="22.8" height="18" fill="#ffffff"/>
+<text x="115.0" y="281.5" text-anchor="middle" font-size="11" fill="#111827">PR</text>
+<rect x="66.5" y="481.0" width="96.9" height="18" fill="#ffffff"/>
+<text x="115.0" y="494.0" text-anchor="middle" font-size="11" fill="#111827">PR · 운영 배포</text>
+<rect x="103.6" y="672.5" width="22.8" height="18" fill="#ffffff"/>
+<text x="115.0" y="685.5" text-anchor="middle" font-size="11" fill="#111827">PR</text>
+<rect x="198.5" y="361.0" width="123.1" height="18" fill="#ffffff"/>
+<text x="260.0" y="374.0" text-anchor="middle" font-size="11" fill="#111827">push · backend/**</text>
+<rect x="198.5" y="601.0" width="123.1" height="18" fill="#ffffff"/>
+<text x="260.0" y="614.0" text-anchor="middle" font-size="11" fill="#111827">push · backend/**</text>
+<rect x="576.0" y="361.0" width="83.0" height="18" fill="#ffffff"/>
+<text x="617.5" y="374.0" text-anchor="middle" font-size="11" fill="#111827">dev-sha 푸시</text>
+<rect x="572.8" y="601.0" width="89.4" height="18" fill="#ffffff"/>
+<text x="617.5" y="614.0" text-anchor="middle" font-size="11" fill="#111827">prod-sha 푸시</text>
+<rect x="864.7" y="361.0" width="35.5" height="18" fill="#ffffff"/>
+<text x="882.5" y="374.0" text-anchor="middle" font-size="11" fill="#111827">pull</text>
+<rect x="864.7" y="601.0" width="35.5" height="18" fill="#ffffff"/>
+<text x="882.5" y="614.0" text-anchor="middle" font-size="11" fill="#111827">pull</text>
+<rect x="1193.1" y="361.0" width="73.8" height="18" fill="#ffffff"/>
+<text x="1230.0" y="374.0" text-anchor="middle" font-size="11" fill="#111827">docker run</text>
+<rect x="1193.1" y="601.0" width="73.8" height="18" fill="#ffffff"/>
+<text x="1230.0" y="614.0" text-anchor="middle" font-size="11" fill="#111827">docker run</text>
+<text x="300" y="46" font-size="20" font-weight="700" fill="#111827">책췍 백엔드 CI/CD 파이프라인</text>
+<text x="300" y="68" font-size="12" fill="#4B5563">근거: be, be-dev 브랜치의 .github/workflows</text>
+<text x="330" y="752.0" text-anchor="start" font-size="12" fill="#374151">PR 검사</text>
+<text x="530" y="752.0" text-anchor="start" font-size="12" fill="#374151">CD (build · deploy)</text>
+<text x="730" y="752.0" text-anchor="start" font-size="12" fill="#374151">컨테이너 레지스트리</text>
+<text x="930" y="752.0" text-anchor="start" font-size="12" fill="#374151">서버 · Docker 컨테이너</text>
+<text x="1130" y="752.0" text-anchor="start" font-size="12" fill="#374151">GitHub Secrets</text>
+<text x="300" y="797.0" text-anchor="start" font-size="12" fill="#374151">점선 = 이벤트 연결 · 값 주입.  운영 DB, 앞단 프록시 등 저장소에서 확인되지 않은 인프라는 그리지 않았음.</text>
+</svg>
