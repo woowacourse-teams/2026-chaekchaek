@@ -2,7 +2,6 @@ package com.chaekchaek.book.controller;
 
 import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.dto.BookSearchResponse;
-import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.service.BookService;
 import com.chaekchaek.book.service.BookSearchService;
@@ -25,10 +24,9 @@ public class BookController {
     @GetMapping("/api/v1/books")
     public ResponseEntity<BookSearchResponse> search(
             @RequestParam @NotBlank String query,
-            @RequestParam @Positive int page,
-            @RequestParam(defaultValue = "LATEST") BookSearchSort sort
+            @RequestParam @Positive int page
     ) {
-        return ResponseEntity.ok(bookSearchService.search(query, page, sort));
+        return ResponseEntity.ok(bookSearchService.search(query, page));
     }
 
     @GetMapping("/api/v1/books/by-isbn/{isbn13}")
