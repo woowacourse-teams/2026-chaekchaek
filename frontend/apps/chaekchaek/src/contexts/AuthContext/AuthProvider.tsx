@@ -83,15 +83,19 @@ export const AuthProvider = ({ children }: Props) => {
         }
 
         if (guest) {
-          const latestGuest = await getAuthGuestToken({}, { guestToken: guest.guestToken });
+          try {
+            const latestGuest = await getAuthGuestToken({}, { guestToken: guest.guestToken });
 
-          const newGuestData = { ...latestGuest, guestToken: guest.guestToken };
+            const newGuestData = { ...latestGuest, guestToken: guest.guestToken };
 
-          localStorage.setItem('guest', JSON.stringify(newGuestData));
-          updateGuestAccount(newGuestData);
+            localStorage.setItem('guest', JSON.stringify(newGuestData));
+            updateGuestAccount(newGuestData);
 
-          if (canRenew(latestGuest.expiresAt)) {
-            postAuthGuestTokenRefreshMutate({}, { guestToken: guest.guestToken });
+            if (canRenew(latestGuest.expiresAt)) {
+              postAuthGuestTokenRefreshMutate({}, { guestToken: guest.guestToken });
+            }
+          } catch {
+            postAuthGuestTokenMutate({});
           }
         }
       }
