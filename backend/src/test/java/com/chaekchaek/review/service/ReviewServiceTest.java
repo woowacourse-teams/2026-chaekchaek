@@ -212,13 +212,12 @@ class ReviewServiceTest {
                 transactionManager()
         );
 
-        service.createReviewReaction(10L);
-        service.createReplyReaction(20L);
-
         ArgumentCaptor<ReviewReaction> reviewReaction = ArgumentCaptor.forClass(ReviewReaction.class);
+        ArgumentCaptor<ReplyReaction> replyReaction = ArgumentCaptor.forClass(ReplyReaction.class);
 
         // when
-        ArgumentCaptor<ReplyReaction> replyReaction = ArgumentCaptor.forClass(ReplyReaction.class);
+        service.createReviewReaction(10L);
+        service.createReplyReaction(20L);
 
         // then
         verify(reviewReactionRepository).saveAndFlush(reviewReaction.capture());
