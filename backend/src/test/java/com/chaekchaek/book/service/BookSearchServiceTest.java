@@ -232,18 +232,9 @@ class BookSearchServiceTest {
                         List.of(unregistered, oldest, newest, middle)
                 ),
                 Map.of(
-                        42L, new ActivityCounts(
-                                2L,
-                                7L
-                        ),
-                        7L, new ActivityCounts(
-                                8L,
-                                1L
-                        ),
-                        99L, new ActivityCounts(
-                                1L,
-                                0L
-                        )
+                        42L, new ActivityCounts(2L, 7L),
+                        7L, new ActivityCounts(8L, 1L),
+                        99L, new ActivityCounts(1L, 0L)
                 ),
                 registeredBook(99L, middle.isbn13()),
                 registeredBook(7L, newest.isbn13()),
