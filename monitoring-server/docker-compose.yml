@@ -1,0 +1,52 @@
+name: chaekchaek-monitoring-server
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    container_name: chaekchaek-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
+      - --web.enable-remote-write-receiver
+    ports:
+      - "9090:9090"
+    labels:
+      com.chaekchaek.prometheus-config-hash: ${PROMETHEUS_CONFIG_HASH:-none}
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+
+  loki:
+    image: grafana/loki:3.7.8
+    container_name: chaekchaek-loki
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/config.yaml
+    ports:
+      - "3100:3100"
+    labels:
+      com.chaekchaek.loki-config-hash: ${LOKI_CONFIG_HASH:-none}
+    volumes:
+      - ./loki:/etc/loki:ro
+      - loki-data:/loki
+
+  grafana:
+    image: grafana/grafana:13.2.3
+    container_name: chaekchaek-grafana
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+    labels:
+      com.chaekchaek.grafana-config-hash: ${GRAFANA_CONFIG_HASH:-none}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  prometheus-data:
+  loki-data:
+  grafana-data:
