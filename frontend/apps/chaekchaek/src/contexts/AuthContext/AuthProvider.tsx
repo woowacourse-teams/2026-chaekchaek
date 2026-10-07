@@ -85,8 +85,10 @@ export const AuthProvider = ({ children }: Props) => {
         if (guest) {
           const latestGuest = await getAuthGuestToken({}, { guestToken: guest.guestToken });
 
-          localStorage.setItem('guest', JSON.stringify(latestGuest));
-          updateGuestAccount(latestGuest);
+          const newGuestData = { ...latestGuest, guestToken: guest.guestToken };
+
+          localStorage.setItem('guest', JSON.stringify(newGuestData));
+          updateGuestAccount(newGuestData);
 
           if (canRenew(latestGuest.expiresAt)) {
             postAuthGuestTokenRefreshMutate({}, { guestToken: guest.guestToken });
