@@ -2,8 +2,8 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 
 import { getMembersMe } from '@/services/apis/membersMe/repository';
 import { useLoadData } from '@/services/core/useLoadData';
-import { postAuthGuestToken } from '@/services/apis/authGuestToken/repository';
-import { postAuthGuestTokenRefreshs } from '@/services/apis/authGuestTokenRefreshs/repository';
+import { postAuthGuestToken, getAuthGuestToken } from '@/services/apis/authGuestToken/repository';
+import { postAuthGuestTokenRefresh } from '@/services/apis/authGuestTokenRefresh/repository';
 import { useExecute } from '@/services/core/useExecute';
 import { RequestAjaxError } from '@/services/core/http/requestAjaxError';
 
@@ -44,18 +44,20 @@ export const AuthProvider = ({ children }: Props) => {
     setGuest(guestData);
   }, []);
 
-  const {
-    mutate: postAuthGuestTokenMutate,
-    status: { data: authGuestToken },
-  } = useExecute({
+  const { mutate: postAuthGuestTokenMutate } = useExecute({
     executeFn: postAuthGuestToken,
+    onSuccess: (authGuestToken: GuestData) => {
+      localStorage.setItem('guest', JSON.stringify(authGuestToken));
+      updateGuestAccount(authGuestToken);
+    },
   });
 
-  const {
-    mutate: postAuthGuestTokenRefreshsMutate,
-    status: { data: authGuestTokenRefreshs },
-  } = useExecute({
-    executeFn: postAuthGuestTokenRefreshs,
+  const { mutate: postAuthGuestTokenRefreshMutate } = useExecute({
+    executeFn: postAuthGuestTokenRefresh,
+    onSuccess: (authGuestTokenRefresh: GuestData) => {
+      localStorage.setItem('guest', JSON.stringify(authGuestTokenRefresh));
+      updateGuestAccount(authGuestTokenRefresh);
+    },
   });
 
   const logoutGuest = () => {
@@ -64,42 +66,41 @@ export const AuthProvider = ({ children }: Props) => {
   };
 
   useEffect(() => {
-    if (membersMeStatus.data) {
-      updateAccount(membersMeStatus.data);
-      logoutGuest();
-      return;
-    }
-
-    if (
-      membersMeStatus.status === 'error' &&
-      membersMeStatus.error &&
-      membersMeStatus.error?.status === 401
-    ) {
-      if (guest === null) {
-        postAuthGuestTokenMutate({});
+    const initializeAuth = async () => {
+      if (membersMeStatus.data) {
+        updateAccount(membersMeStatus.data);
+        logoutGuest();
+        return;
       }
 
-      if (guest) {
-        if (canRenew(guest.expiresAt)) {
-          postAuthGuestTokenRefreshsMutate({}, { guestToken: 'ss' });
+      if (
+        membersMeStatus.status === 'error' &&
+        membersMeStatus.error &&
+        membersMeStatus.error?.status === 401
+      ) {
+        if (guest === null) {
+          return postAuthGuestTokenMutate({});
+        }
+
+        try {
+          const latestGuest = await getAuthGuestToken({}, { guestToken: guest.guestToken });
+
+          const newGuestData = { ...latestGuest, guestToken: guest.guestToken };
+
+          localStorage.setItem('guest', JSON.stringify(newGuestData));
+          updateGuestAccount(newGuestData);
+
+          if (canRenew(latestGuest.expiresAt)) {
+            postAuthGuestTokenRefreshMutate({}, { guestToken: guest.guestToken });
+          }
+        } catch {
+          postAuthGuestTokenMutate({});
         }
       }
-    }
+    };
+
+    initializeAuth();
   }, [membersMeStatus]);
-
-  useEffect(() => {
-    if (authGuestToken) {
-      localStorage.setItem('guest', JSON.stringify(authGuestToken));
-      updateGuestAccount(authGuestToken);
-    }
-  }, [authGuestToken]);
-
-  useEffect(() => {
-    if (authGuestTokenRefreshs) {
-      localStorage.setItem('guest', JSON.stringify(authGuestTokenRefreshs));
-      updateGuestAccount(authGuestTokenRefreshs);
-    }
-  }, [authGuestTokenRefreshs]);
 
   const value = useMemo(
     () => ({ isAuthenticated, user, updateAccount, guest, updateGuestAccount }),

@@ -1,5 +1,18 @@
 import type { ResponseDto } from '@/services/apis/api.types';
 
+export interface GetAuthGuestTokenRequestDto {
+  headers: {
+    'X-Guest-Token': string;
+  };
+}
+
+export type GetAuthGuestTokenResponseDto = ResponseDto<{
+  actorType: 'MEMBER' | 'GUEST';
+  actorId: number;
+  nickname: string;
+  expiresAt: string;
+}>;
+
 export interface PostAuthGuestTokenRequestDto {}
 
 export type PostAuthGuestTokenResponseDto = ResponseDto<{
@@ -7,5 +20,5 @@ export type PostAuthGuestTokenResponseDto = ResponseDto<{
   nickname: string;
   expiresAt: string;
   actorId: number;
-  actorType: string;
+  actorType: 'MEMBER' | 'GUEST';
 }>;

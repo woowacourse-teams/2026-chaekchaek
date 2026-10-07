@@ -8,7 +8,7 @@ export type GetMembersMe = (params: GetMembersMeParams) => Promise<{
   anonymousNickname: string;
   memberId: number;
   actorId: number;
-  actorType: string;
+  actorType: 'MEMBER' | 'GUEST';
 }>;
 export interface DeleteMembersMeParams {}
 
