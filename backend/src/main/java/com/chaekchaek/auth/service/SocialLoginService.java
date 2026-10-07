@@ -8,6 +8,7 @@ import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.chaekchaek.member.service.NicknameGenerator;
@@ -82,9 +83,10 @@ public class SocialLoginService {
             String profileImageUrl
     ) {
         return socialAccountRepository
-                .findByProviderAndProviderUserId(provider, providerUserId)
-                .map(SocialAccount::getMember)
-                .map(member -> logLogin(provider, member))
+                .findForLogin(provider, providerUserId)
+                .map(account -> loginExisting(account, profileImageUrl,
+                        account.getMember().getAccountStatus() == AccountStatus.WITHDRAWN
+                                ? currentGuestActorId() : null))
                 .orElseGet(() -> signUp(
                         provider,
                         providerUserId,
@@ -107,12 +109,8 @@ public class SocialLoginService {
             Long guestActorId
     ) {
         return socialAccountRepository
-                .findByProviderAndProviderUserId(provider, providerUserId)
-                .map(SocialAccount::getMember)
-                .map(member -> {
-                    guestActorMigrationService.migrate(guestActorId, member);
-                    return logLogin(provider, member);
-                })
+                .findForLogin(provider, providerUserId)
+                .map(account -> loginExisting(account, profileImageUrl, guestActorId))
                 .orElseGet(() -> signUp(provider, providerUserId, profileImageUrl, guestActorId));
     }
 
@@ -156,6 +154,37 @@ public class SocialLoginService {
     private Member logLogin(Provider provider, Member member) {
         log.info("Social login: provider={}, memberId={}", provider, member.getId());
         return member;
+    }
+
+    private Member loginExisting(SocialAccount account, String profileImageUrl, Long guestActorId) {
+        Member member = account.getMember();
+        validateLoginStatus(member);
+        if (member.getAccountStatus() == AccountStatus.WITHDRAWN) {
+            return rejoin(account, profileImageUrl, guestActorId);
+        }
+        if (guestActorId != null) {
+            guestActorMigrationService.migrate(guestActorId, member);
+        }
+        return logLogin(account.getProvider(), member);
+    }
+
+    private void validateLoginStatus(Member member) {
+        AccountStatus status = member.getAccountStatus();
+        if (status != AccountStatus.ACTIVE && status != AccountStatus.WITHDRAWN) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+    }
+
+    private Member rejoin(SocialAccount account, String profileImageUrl, Long guestActorId) {
+        LocalDateTime now = LocalDateTime.now();
+        Member newMember = Member.create(nicknameGenerator.generate(), profileImageUrl, now);
+        memberRepository.save(newMember);
+        actorRepository.save(Actor.member(newMember, now));
+        if (guestActorId != null) {
+            guestActorMigrationService.migrate(guestActorId, newMember);
+        }
+        account.reconnect(newMember, now);
+        return newMember;
     }
 
     @Transactional

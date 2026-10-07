@@ -34,6 +34,34 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class AuthTokenServiceTest {
 
+    @Test
+    @DisplayName("탈퇴 회원의 새 토큰 발급을 거부한다")
+    void rejectsIssuingTokensForWithdrawnMember() {
+        Member member = Member.create("익명", null, LocalDateTime.now());
+        member.withdraw(LocalDateTime.now());
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+        assertThatThrownBy(() -> authTokenService.issue(1L))
+                .isInstanceOf(com.chaekchaek.common.exception.BusinessException.class);
+        verifyNoInteractions(accessTokenProvider, refreshTokenProvider);
+    }
+
+    @Test
+    @DisplayName("탈퇴 회원은 남아 있는 유효 리프레시 토큰으로도 재발급할 수 없다")
+    void rejectsReissuingTokensForWithdrawnMember() {
+        Instant now = Instant.parse("2026-08-13T00:00:00Z");
+        Member member = Member.create("익명", null, LocalDateTime.now());
+        member.withdraw(LocalDateTime.now());
+        RefreshToken token = mock(RefreshToken.class);
+        when(clock.instant()).thenReturn(now);
+        when(refreshTokenHasher.hash("token")).thenReturn("hash");
+        when(refreshTokenRepository.findByTokenHash("hash")).thenReturn(Optional.of(token));
+        when(token.isUsable(LocalDateTime.ofInstant(now, ZoneOffset.UTC))).thenReturn(true);
+        when(token.getMember()).thenReturn(member);
+        assertThatThrownBy(() -> authTokenService.reissue("token"))
+                .isInstanceOf(com.chaekchaek.common.exception.BusinessException.class);
+        verifyNoInteractions(accessTokenProvider, refreshTokenProvider);
+    }
+
     @Mock
     private MemberRepository memberRepository;
 
@@ -60,6 +88,7 @@ public class AuthTokenServiceTest {
     void should_IssueTokens_When_MemberExists() {
         // given
         Member member = mock(Member.class);
+        when(member.getAccountStatus()).thenReturn(com.chaekchaek.member.domain.AccountStatus.ACTIVE);
 
         when(memberRepository.findById(1L))
                 .thenReturn(Optional.of(member));
@@ -94,6 +123,7 @@ public class AuthTokenServiceTest {
         String oldTokenHash = "old-refresh-token-hash";
 
         Member member = mock(Member.class);
+        when(member.getAccountStatus()).thenReturn(com.chaekchaek.member.domain.AccountStatus.ACTIVE);
         RefreshToken savedToken = mock(RefreshToken.class);
 
         Instant now = Instant.parse("2026-08-13T00:00:00Z");

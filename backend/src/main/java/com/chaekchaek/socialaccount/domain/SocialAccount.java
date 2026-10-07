@@ -81,4 +81,10 @@ public class SocialAccount {
     public void updateProviderRefreshToken(String providerRefreshToken) {
         this.providerRefreshToken = providerRefreshToken;
     }
+
+    public void reconnect(Member member, LocalDateTime connectedAt) {
+        this.member = member;
+        this.connectedAt = connectedAt;
+        this.providerRefreshToken = null;
+    }
 }

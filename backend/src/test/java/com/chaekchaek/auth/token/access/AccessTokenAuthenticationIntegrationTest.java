@@ -31,7 +31,29 @@ import org.springframework.web.bind.annotation.RestController;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(AccessTokenAuthenticationIntegrationTest.ProtectedTestController.class)
+@org.springframework.transaction.annotation.Transactional
 class AccessTokenAuthenticationIntegrationTest {
+
+    @Autowired
+    private com.chaekchaek.member.repository.MemberRepository memberRepository;
+
+    private Long memberId;
+
+    @Test
+    @DisplayName("탈퇴 전에 발급된 Bearer 토큰은 탈퇴 직후 거부한다")
+    void rejectsExistingTokenAfterWithdrawal() throws Exception {
+        String token = issueAccessToken(memberId.toString());
+        memberRepository.findById(memberId).orElseThrow().withdraw(java.time.LocalDateTime.now());
+        mockMvc.perform(get("/test/protected").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @org.junit.jupiter.api.BeforeEach
+    void createActiveMember() {
+        memberId = memberRepository.save(com.chaekchaek.member.domain.Member.create(
+                "토큰 검증 회원", null, java.time.LocalDateTime.now())).getId();
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -42,7 +64,7 @@ class AccessTokenAuthenticationIntegrationTest {
     @Test
     @DisplayName("유효한 Access Token 쿠키로 보호 API에 접근한다")
     void should_Access_ProtectedApi_With_ValidAccessTokenCookie() throws Exception {
-        String accessToken = issueAccessToken("1");
+        String accessToken = issueAccessToken(memberId.toString());
 
         mockMvc.perform(get("/test/protected")
                         .cookie(new Cookie(
@@ -50,7 +72,7 @@ class AccessTokenAuthenticationIntegrationTest {
                                 accessToken
                         )))
                 .andExpect(status().isOk())
-                .andExpect(content().string("1"));
+                .andExpect(content().string(memberId.toString()));
     }
 
     @Test
@@ -88,7 +110,7 @@ class AccessTokenAuthenticationIntegrationTest {
     void should_AccessProtectedApi_When_BearerTokenIsValid()
             throws Exception {
         // given
-        String accessToken = issueAccessToken("1");
+        String accessToken = issueAccessToken(memberId.toString());
 
         // when & then
         mockMvc.perform(get("/test/protected")
@@ -97,7 +119,7 @@ class AccessTokenAuthenticationIntegrationTest {
                                 "Bearer " + accessToken
                         ))
                 .andExpect(status().isOk())
-                .andExpect(content().string("1"));
+                .andExpect(content().string(memberId.toString()));
     }
 
     @Test
