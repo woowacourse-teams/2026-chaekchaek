@@ -28,11 +28,7 @@ public class AccessLogFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         long startedAt = System.nanoTime();
         try {
             filterChain.doFilter(request, response);
@@ -45,7 +41,12 @@ public class AccessLogFilter extends OncePerRequestFilter {
 
     private void logAccess(HttpServletRequest request, int status, long startedAt) {
         long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
-        log.info("HTTP request completed: method={}, path={}, status={}, durationMs={}",
-                request.getMethod(), request.getRequestURI(), status, durationMs);
+        log.info(
+                "HTTP request completed: method={}, path={}, status={}, durationMs={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                status,
+                durationMs
+        );
     }
 }

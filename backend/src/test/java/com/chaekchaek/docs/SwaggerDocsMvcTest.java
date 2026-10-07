@@ -32,7 +32,8 @@ class SwaggerDocsMvcTest {
 
     @Test
     @DisplayName("Swagger UI 링크를 제공한다")
-    void should_ServeSwaggerUi() throws Exception {
+    void should_ServeSwaggerUi_When_DocumentationIsRequested() throws Exception {
+        // when & then
         mockMvc.perform(get("/docs/swagger-ui.html"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
@@ -47,7 +48,8 @@ class SwaggerDocsMvcTest {
 
     @Test
     @DisplayName("Swagger UI에서 GET 요청만 실행하고 외부 설정 및 자격 증명을 차단한다")
-    void should_ApplyReadOnlySwaggerUiSecuritySettings() throws Exception {
+    void should_ApplyReadOnlySecuritySettings_When_SwaggerUiIsRequested() throws Exception {
+        // when & then
         mockMvc.perform(get("/docs/swagger-ui.html"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("supportedSubmitMethods: ['get']")))
@@ -59,7 +61,8 @@ class SwaggerDocsMvcTest {
 
     @Test
     @DisplayName("Swagger UI가 읽을 OpenAPI 명세 링크를 제공한다")
-    void should_ServeOpenApiSpecification() throws Exception {
+    void should_ServeOpenApiSpecification_When_SpecificationIsRequested() throws Exception {
+        // when & then
         MvcResult result = mockMvc.perform(get("/docs/openapi3.yaml"))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -72,8 +75,10 @@ class SwaggerDocsMvcTest {
     @Test
     @DisplayName("비루트 컨텍스트에서 Swagger UI와 상대 참조 명세를 제공한다")
     void should_ServeSwaggerDocsWithRelativeReferences_When_ContextPathIsNotRoot() throws Exception {
+        // given
         URI swaggerUiUri = URI.create("http://localhost/context/docs/swagger-ui.html");
 
+        // when & then
         MvcResult swaggerUiResult = mockMvc.perform(get(swaggerUiUri.getPath())
                         .contextPath("/context"))
                 .andExpect(status().isOk())
@@ -98,7 +103,8 @@ class SwaggerDocsMvcTest {
 
     @Test
     @DisplayName("Swagger UI JavaScript 자산을 제공한다")
-    void should_ServeSwaggerUiWebJarAsset() throws Exception {
+    void should_ServeSwaggerUiWebJarAsset_When_AssetIsRequested() throws Exception {
+        // when & then
         mockMvc.perform(get("/webjars/swagger-ui/5.32.11/swagger-ui-bundle.js"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(not(emptyString())));

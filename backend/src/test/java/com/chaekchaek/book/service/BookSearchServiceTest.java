@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.OptionalLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 
 class BookSearchServiceTest {
 
@@ -35,11 +36,15 @@ class BookSearchServiceTest {
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
-        BookSearchResult searchResult = new BookSearchResult(21, 2, List.of());
+        BookSearchResult searchResult = new BookSearchResult(
+                21,
+                2,
+                List.of()
+        );
         when(bookClient.search("마션", 1)).thenReturn(searchResult);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -57,11 +62,15 @@ class BookSearchServiceTest {
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
-        BookSearchResult searchResult = new BookSearchResult(21, null, List.of());
+        BookSearchResult searchResult = new BookSearchResult(
+                21,
+                null,
+                List.of()
+        );
         when(bookClient.search("마션", 1)).thenReturn(searchResult);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -89,11 +98,15 @@ class BookSearchServiceTest {
                 "국내도서>컴퓨터/모바일>프로그래밍",
                 "인사이트"
         );
-        BookSearchResult searchResult = new BookSearchResult(1, null, List.of(searchedBook));
+        BookSearchResult searchResult = new BookSearchResult(
+                1,
+                null,
+                List.of(searchedBook)
+        );
         when(bookClient.search("클린 코드", 1)).thenReturn(searchResult);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -133,7 +146,10 @@ class BookSearchServiceTest {
         when(registeredBook.getId()).thenReturn(42L);
         when(registeredBook.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(
-                1, null, List.of(searchedBook)));
+                1,
+                null,
+                List.of(searchedBook)
+        ));
         when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683"))))
                 .thenReturn(List.of(registeredBook));
         when(activityCountReader.getActivityCounts(List.of(42L)))
@@ -154,7 +170,11 @@ class BookSearchServiceTest {
         // given
         BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
         BookSearchService service = serviceWith(
-                new BookSearchResult(1, null, List.of(searchedBook)),
+                new BookSearchResult(
+                        1,
+                        null,
+                        List.of(searchedBook)
+                ),
                 Map.of(),
                 registeredBook(42L, searchedBook.isbn13())
         );
@@ -177,13 +197,21 @@ class BookSearchServiceTest {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookSearchService service = new BookSearchService(
-                bookClient, bookRepository, activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                bookClient,
+                bookRepository,
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
         BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
         Book registeredBook = registeredBook(42L, searchedBook.isbn13());
         LibraryItem libraryItem = mock(LibraryItem.class);
         when(libraryItem.getBookId()).thenReturn(42L);
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(
-                1, null, List.of(searchedBook)));
+                1,
+                null,
+                List.of(searchedBook)
+        ));
         when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(List.of(registeredBook));
         when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
@@ -266,9 +294,9 @@ class BookSearchServiceTest {
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         when(bookClient.search("책", 1)).thenReturn(response);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of(registeredBooks));
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(activityCounts);
         return guestService(bookClient, bookRepository, activityCountReader);
     }
@@ -296,11 +324,19 @@ class BookSearchServiceTest {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookSearchService service = new BookSearchService(
-                bookClient, bookRepository, activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                bookClient,
+                bookRepository,
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
         BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
         Book registeredBook = registeredBook(42L, searchedBook.isbn13());
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(
-                1, null, List.of(searchedBook)));
+                1,
+                null,
+                List.of(searchedBook)
+        ));
         when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(List.of(registeredBook));
         when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(memberId);

@@ -83,7 +83,11 @@ public class Yes24BookClient implements BookSearchClient {
         if (exception.getStatusCode().value() == 404
                 && errorResponse != null
                 && "SEARCH_001".equals(errorResponse.errorCode())) {
-            return new BookSearchResult(0, null, List.of());
+            return new BookSearchResult(
+                    0,
+                    null,
+                    List.of()
+            );
         }
         throw new Yes24ClientException(exception);
     }
@@ -92,7 +96,8 @@ public class Yes24BookClient implements BookSearchClient {
         return new BookSearchResult(
                 data.totalCount(),
                 data.nextPage(),
-                data.items().stream()
+                data.items()
+                        .stream()
                         .map(this::toBookSearchItem)
                         .toList()
         );
@@ -128,7 +133,8 @@ public class Yes24BookClient implements BookSearchClient {
         }
 
         try {
-            return response.data().items().stream()
+            return response.data().items()
+                    .stream()
                     .filter(item -> item.matchesIsbn13(isbn13))
                     .findFirst()
                     .map(this::toBookDetailItem)
@@ -164,6 +170,14 @@ public class Yes24BookClient implements BookSearchClient {
         return new Yes24ClientException(exception);
     }
 
+    private Yes24SearchResponse readErrorResponse(RestClientResponseException exception) {
+        try {
+            return exception.getResponseBodyAs(Yes24SearchResponse.class);
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
     private boolean isBookNotFoundError(String errorCode) {
         return "GOODS_001".equals(errorCode) || "GOODS_002".equals(errorCode);
     }
@@ -187,17 +201,12 @@ public class Yes24BookClient implements BookSearchClient {
         );
     }
 
-    private Yes24SearchResponse readErrorResponse(RestClientResponseException exception) {
-        try {
-            return exception.getResponseBodyAs(Yes24SearchResponse.class);
-        } catch (RuntimeException ignored) {
-            return null;
-        }
-    }
-
     private Contributors parseContributors(String source) {
         if (source == null || source.isBlank()) {
-            return new Contributors(List.of(), List.of());
+            return new Contributors(
+                    List.of(),
+                    List.of()
+            );
         }
 
         List<String> authors = new ArrayList<>();
@@ -214,7 +223,10 @@ public class Yes24BookClient implements BookSearchClient {
         if (authors.isEmpty() && translators.isEmpty()) {
             authors.add(source.trim());
         }
-        return new Contributors(authors, translators);
+        return new Contributors(
+                authors,
+                translators
+        );
     }
 
     private record Contributors(

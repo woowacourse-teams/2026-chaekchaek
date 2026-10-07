@@ -55,7 +55,10 @@ public class AuthTokenService {
         String accessToken = accessTokenProvider.issue(member);
         IssuedRefreshToken refreshToken = refreshTokenProvider.issue(member);
 
-        return new IssuedTokens(accessToken, refreshToken);
+        return new IssuedTokens(
+                accessToken,
+                refreshToken
+        );
     }
 
     @Transactional
@@ -91,6 +94,12 @@ public class AuthTokenService {
         );
     }
 
+    private void requireActive(Member member) {
+        if (member.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+    }
+
     @Transactional
     public void logout(String refreshTokenValue) {
         if (refreshTokenValue == null || refreshTokenValue.isBlank()) {
@@ -109,11 +118,5 @@ public class AuthTokenService {
                 clock.instant(),
                 ZoneOffset.UTC
         );
-    }
-
-    private void requireActive(Member member) {
-        if (member.getAccountStatus() != AccountStatus.ACTIVE) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
-        }
     }
 }

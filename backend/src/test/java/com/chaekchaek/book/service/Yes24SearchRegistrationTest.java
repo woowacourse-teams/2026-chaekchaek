@@ -50,7 +50,9 @@ class Yes24SearchRegistrationTest {
         yes24Server.응답한다(200, Yes24ResponseFixture.헤르만_헤세_검색_결과());
         yes24Server.응답한다(200, Yes24ResponseFixture.데미안_상세_결과());
         Yes24BookClient client = new Yes24BookClient(
-                RestClient.builder(), yes24Server.baseUrl(), yes24Server.apiKey()
+                RestClient.builder(),
+                yes24Server.baseUrl(),
+                yes24Server.apiKey()
         );
         BookResolver resolver = new BookResolver(client, bookRepository, transactionManager);
 

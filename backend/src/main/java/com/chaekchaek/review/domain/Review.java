@@ -65,8 +65,16 @@ public class Review {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    private Review(long bookId, long actorId, String content, String quote, String chapter,
-                   Integer currentPage, boolean spoiler, boolean anonymous) {
+    private Review(
+            long bookId,
+            long actorId,
+            String content,
+            String quote,
+            String chapter,
+            Integer currentPage,
+            boolean spoiler,
+            boolean anonymous
+    ) {
         this.bookId = bookId;
         this.actorId = actorId;
         this.content = content;
@@ -77,12 +85,26 @@ public class Review {
         this.anonymous = anonymous;
     }
 
-    public static Review create(long bookId, long actorId, String content, String quote, String chapter,
-                                Integer currentPage, boolean spoiler, boolean anonymous) {
+    public static Review create(
+            long bookId,
+            long actorId,
+            String content,
+            String quote,
+            String chapter,
+            Integer currentPage,
+            boolean spoiler,
+            boolean anonymous
+    ) {
         return new Review(bookId, actorId, content, quote, chapter, currentPage, spoiler, anonymous);
     }
 
-    public void update(String content, String quote, String chapter, Integer currentPage, boolean spoiler) {
+    public void update(
+            String content,
+            String quote,
+            String chapter,
+            Integer currentPage,
+            boolean spoiler
+    ) {
         this.content = content;
         this.quote = quote;
         this.chapter = chapter;

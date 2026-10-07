@@ -42,7 +42,10 @@ class LibraryReadingRecordCoordinatorTest {
         when(libraryItemRepository.save(any(LibraryItem.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
-                bookRepository, libraryItemRepository, CLOCK);
+                bookRepository,
+                libraryItemRepository,
+                CLOCK
+        );
 
         // when
         coordinator.recordReview(1L, 2L, 120, 308);
@@ -69,7 +72,10 @@ class LibraryReadingRecordCoordinatorTest {
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
                 .thenReturn(Optional.of(item));
         LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
-                bookRepository, libraryItemRepository, CLOCK);
+                bookRepository,
+                libraryItemRepository,
+                CLOCK
+        );
 
         // when
         coordinator.recordReview(1L, 2L, 120, 308);
@@ -87,19 +93,34 @@ class LibraryReadingRecordCoordinatorTest {
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book(308)));
         LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
-                bookRepository, libraryItemRepository, CLOCK);
+                bookRepository,
+                libraryItemRepository,
+                CLOCK
+        );
 
         // when & then
         assertThatThrownBy(() -> coordinator.validateReviewPage(2L, 309, 308))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.INVALID_READING_STATE));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.INVALID_READING_STATE)
+        );
     }
 
     private Book book(Integer totalPages) {
-        return Book.create(new Isbn13("9788925568683"), "마션", "https://example.com/cover.jpg",
-                "https://example.com/cover.jpg/side", "https://example.com/cover.jpg/back",
-                null, List.of("앤디 위어"), List.of(),
-                "알에이치코리아", "SF", null, totalPages);
+        return Book.create(
+                new Isbn13("9788925568683"),
+                "마션",
+                "https://example.com/cover.jpg",
+                "https://example.com/cover.jpg/side",
+                "https://example.com/cover.jpg/back",
+                null,
+                List.of("앤디 위어"),
+                List.of(),
+                "알에이치코리아",
+                "SF",
+                null,
+                totalPages
+        );
     }
 }

@@ -47,9 +47,18 @@ class BookResolveConcurrencyTest {
         when(client.findBookByIsbn13(ISBN13)).thenAnswer(invocation -> {
             fetchedByBothRequests.await(5, TimeUnit.SECONDS);
             return new BookDetailItem(
-                    "마션", "https://image.example/martian.jpg", null, null,
-                    "책 설명", List.of("앤디 위어"), List.of(), LocalDate.of(2026, 1, 1),
-                    ISBN13.value(), "SF", "알에이치코리아", 308
+                    "마션",
+                    "https://image.example/martian.jpg",
+                    null,
+                    null,
+                    "책 설명",
+                    List.of("앤디 위어"),
+                    List.of(),
+                    LocalDate.of(2026, 1, 1),
+                    ISBN13.value(),
+                    "SF",
+                    "알에이치코리아",
+                    308
             );
         });
         BookResolver resolver = new BookResolver(client, bookRepository, transactionManager);
@@ -58,10 +67,12 @@ class BookResolveConcurrencyTest {
         try {
             // when
             CompletableFuture<Book> first = CompletableFuture.supplyAsync(
-                    () -> resolver.findOrCreate(ISBN13), executor
+                    () -> resolver.findOrCreate(ISBN13),
+                    executor
             );
             CompletableFuture<Book> second = CompletableFuture.supplyAsync(
-                    () -> resolver.findOrCreate(ISBN13), executor
+                    () -> resolver.findOrCreate(ISBN13),
+                    executor
             );
 
             Book firstResponse = first.get(10, TimeUnit.SECONDS);

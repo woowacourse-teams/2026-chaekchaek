@@ -11,9 +11,14 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.actor.domain.Actor;
 import com.chaekchaek.actor.repository.ActorRepository;
+import com.chaekchaek.auth.oauth.apple.AppleProfile;
 import com.chaekchaek.auth.oauth.google.GoogleProfile;
+import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.chaekchaek.member.service.NicknameGenerator;
@@ -22,90 +27,137 @@ import com.chaekchaek.socialaccount.domain.SocialAccount;
 import com.chaekchaek.socialaccount.repository.SocialAccountRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 public class SocialLoginServiceTest {
 
     @Test
     @DisplayName("정지 회원은 로그인이나 재가입 없이 거부한다")
-    void rejectsSuspendedMember() {
+    void should_RejectLogin_When_MemberIsSuspended() {
+        // given
         Member member = Member.create("익명 이름", null, LocalDateTime.now());
-        org.springframework.test.util.ReflectionTestUtils.setField(member, "accountStatus",
-                com.chaekchaek.member.domain.AccountStatus.SUSPENDED);
-        SocialAccount account = SocialAccount.connect(member, Provider.GOOGLE, "suspended-user",
-                LocalDateTime.now());
+        ReflectionTestUtils.setField(
+                member,
+                "accountStatus",
+                AccountStatus.SUSPENDED
+        );
+        SocialAccount account = SocialAccount.connect(
+                member,
+                Provider.GOOGLE,
+                "suspended-user",
+                LocalDateTime.now()
+        );
         when(socialAccountRepository.findForLogin(Provider.GOOGLE, "suspended-user"))
                 .thenReturn(Optional.of(account));
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> socialLoginService.loginOrSignUp(
-                new GoogleProfile("suspended-user", "email", null)))
-                .isInstanceOfSatisfying(com.chaekchaek.common.exception.BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(com.chaekchaek.common.exception.ErrorCode.UNAUTHORIZED));
+        // when & then
+        Assertions.assertThatThrownBy(() -> socialLoginService.loginOrSignUp(
+                new GoogleProfile(
+                        "suspended-user",
+                        "email",
+                        null
+                )))
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.UNAUTHORIZED)
+        );
         assertThat(account.getMember()).isSameAs(member);
-        org.mockito.Mockito.verifyNoInteractions(memberRepository, actorRepository,
-                nicknameGenerator, guestActorMigrationService);
+        Mockito.verifyNoInteractions(
+                memberRepository,
+                actorRepository,
+                nicknameGenerator,
+                guestActorMigrationService
+        );
     }
 
-    @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.EnumSource(value = Provider.class, names = {"GOOGLE", "APPLE"})
+    @ParameterizedTest
+    @EnumSource(value = Provider.class, names = {"GOOGLE", "APPLE"})
     @DisplayName("Google과 Apple 모두 반복 탈퇴 후 재가입 횟수를 제한하지 않는다")
-    void allowsRepeatedRejoinForEachProvider(Provider provider) {
+    void should_AllowRepeatedRejoin_When_MemberWithdrawsForEachProvider(Provider provider) {
+        // given
         Member member = Member.create("기존 익명", null, LocalDateTime.now());
         SocialAccount account = SocialAccount.connect(member, provider, "repeat-user", LocalDateTime.now());
         when(socialAccountRepository.findForLogin(provider, "repeat-user"))
                 .thenReturn(Optional.of(account));
         when(nicknameGenerator.generate()).thenReturn("새 익명");
+
+        // when & then
         for (int i = 0; i < 3; i++) {
             Member previous = account.getMember();
             previous.withdraw(LocalDateTime.now());
             Member result = provider == Provider.GOOGLE
-                    ? socialLoginService.loginOrSignUp(new GoogleProfile("repeat-user", "email", null), 7L)
-                    : socialLoginService.loginOrSignUp(new com.chaekchaek.auth.oauth.apple.AppleProfile("repeat-user"));
+                    ? socialLoginService.loginOrSignUp(
+                            new GoogleProfile(
+                                    "repeat-user",
+                                    "email",
+                                    null
+                            ),
+                            7L
+                    )
+                    : socialLoginService.loginOrSignUp(new AppleProfile("repeat-user"));
             assertThat(result).isNotSameAs(previous);
-            assertThat(result.getAccountStatus()).isEqualTo(com.chaekchaek.member.domain.AccountStatus.ACTIVE);
+            assertThat(result.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
             assertThat(account.getMember()).isSameAs(result);
             if (provider == Provider.GOOGLE) {
                 verify(guestActorMigrationService).migrate(7L, result);
             }
         }
-        verify(actorRepository, org.mockito.Mockito.times(3)).save(any(Actor.class));
+        verify(actorRepository, Mockito.times(3)).save(any(Actor.class));
     }
 
     @Test
     @DisplayName("탈퇴 후 동일 소셜 계정 재가입은 새 회원과 Actor를 만들고 기존 회원을 보존한다")
-    void createsNewIdentityAfterWithdrawal() {
-        GoogleProfile profile = new GoogleProfile("returning-user", "member@example.com", "new-image");
+    void should_CreateNewIdentity_When_WithdrawnMemberRejoins() {
+        // given
+        GoogleProfile profile = new GoogleProfile(
+                "returning-user",
+                "member@example.com",
+                "new-image"
+        );
         Member oldMember = Member.create("기존 익명 이름", "old-image", LocalDateTime.now());
         oldMember.updateNickname("기존 공개 이름");
         oldMember.disableAnonymousDisplay();
         oldMember.withdraw(LocalDateTime.now());
         Actor oldActor = Actor.member(oldMember, LocalDateTime.now());
-        SocialAccount account = SocialAccount.connect(oldMember, Provider.GOOGLE,
-                profile.providerUserId(), LocalDateTime.now());
+        SocialAccount account = SocialAccount.connect(
+                oldMember,
+                Provider.GOOGLE,
+                profile.providerUserId(),
+                LocalDateTime.now()
+        );
         account.updateProviderRefreshToken("old-provider-token");
-        when(socialAccountRepository.findForLogin(Provider.GOOGLE,
-                profile.providerUserId())).thenReturn(Optional.of(account));
+        when(socialAccountRepository.findForLogin(
+                Provider.GOOGLE,
+                profile.providerUserId()
+        )).thenReturn(Optional.of(account));
         when(nicknameGenerator.generate()).thenReturn("새 익명 이름");
 
+        // when
         Member rejoined = socialLoginService.loginOrSignUp(profile);
 
+        // then
         assertThat(rejoined).isNotSameAs(oldMember);
         assertThat(account.getMember()).isSameAs(rejoined);
         assertThat(account.getProviderRefreshToken()).isNull();
         assertThat(oldActor.getMember()).isSameAs(oldMember);
-        assertThat(oldMember.getAccountStatus()).isEqualTo(com.chaekchaek.member.domain.AccountStatus.WITHDRAWN);
+        assertThat(oldMember.getAccountStatus()).isEqualTo(AccountStatus.WITHDRAWN);
         assertThat(oldMember.getAnonymousNickname()).isEqualTo("기존 익명 이름");
-        assertThat(rejoined.getAccountStatus()).isEqualTo(com.chaekchaek.member.domain.AccountStatus.ACTIVE);
+        assertThat(rejoined.getAccountStatus()).isEqualTo(AccountStatus.ACTIVE);
         assertThat(rejoined.getAnonymousNickname()).isEqualTo("새 익명 이름");
         assertThat(rejoined.getNickname()).isNull();
         assertThat(rejoined.isDisplayAnonymous()).isTrue();
@@ -223,8 +275,7 @@ public class SocialLoginServiceTest {
                 () -> assertThat(savedMember.getAnonymousNickname()).isEqualTo("우아한 달빛 참새"),
                 () -> assertThat(savedMember.isDisplayAnonymous()).isTrue(),
                 () -> assertThat(savedActor.getMember()).isSameAs(savedMember),
-                () -> assertThat(savedActor.getType()).isEqualTo(com.chaekchaek.common.auth.ActorType.MEMBER),
-
+                () -> assertThat(savedActor.getType()).isEqualTo(ActorType.MEMBER),
                 () -> assertThat(savedAccount.getMember()).isSameAs(savedMember),
                 () -> assertThat(savedAccount.getProvider()).isEqualTo(Provider.GOOGLE),
                 () -> assertThat(savedAccount.getProviderUserId()).isEqualTo("google-user-123"),
@@ -236,6 +287,7 @@ public class SocialLoginServiceTest {
     @Test
     @DisplayName("게스트가 최초 소셜 로그인하면 기존 Actor와 닉네임을 회원에게 계승한다")
     void should_InheritGuestActorAndNickname_When_GuestSignsUp() {
+        // given
         GoogleProfile googleProfile = new GoogleProfile(
                 "google-user-123",
                 "member@example.com",
@@ -255,11 +307,13 @@ public class SocialLoginServiceTest {
             return null;
         }).when(guestActorMigrationService).migrate(eq(7L), any(Member.class));
 
+        // when
         Member result = socialLoginService.loginOrSignUp(googleProfile);
 
+        // then
         assertAll(
                 () -> assertThat(result.getAnonymousNickname()).isEqualTo("게스트 참새"),
-                () -> assertThat(guestActor.getType()).isEqualTo(com.chaekchaek.common.auth.ActorType.MEMBER),
+                () -> assertThat(guestActor.getType()).isEqualTo(ActorType.MEMBER),
                 () -> assertThat(guestActor.getMember()).isSameAs(result),
                 () -> assertThat(guestActor.getGuestTokenHash()).isNull(),
                 () -> assertThat(guestActor.getGuestNickname()).isNull()
@@ -274,10 +328,18 @@ public class SocialLoginServiceTest {
     @DisplayName("기존 회원이 소셜 로그인하면 제공자와 함께 로그인 로그를 남긴다")
     void should_LogLogin_When_SocialAccountExists(CapturedOutput output) {
         // given
-        GoogleProfile googleProfile = new GoogleProfile("google-user-123", "member@example.com", "exUrl");
+        GoogleProfile googleProfile = new GoogleProfile(
+                "google-user-123",
+                "member@example.com",
+                "exUrl"
+        );
         Member existingMember = Member.create("책책-1234", "exUrl", LocalDateTime.of(2026, 8, 12, 12, 0));
         SocialAccount existingAccount = SocialAccount.connect(
-                existingMember, Provider.GOOGLE, googleProfile.providerUserId(), LocalDateTime.of(2026, 8, 12, 12, 0));
+                existingMember,
+                Provider.GOOGLE,
+                googleProfile.providerUserId(),
+                LocalDateTime.of(2026, 8, 12, 12, 0)
+        );
         when(socialAccountRepository.findForLogin(Provider.GOOGLE, googleProfile.providerUserId()))
                 .thenReturn(Optional.of(existingAccount));
 
@@ -296,7 +358,11 @@ public class SocialLoginServiceTest {
     @DisplayName("최초 소셜 로그인이면 가입 로그를 남긴다")
     void should_LogSignUp_When_FirstSocialLogin(CapturedOutput output) {
         // given
-        GoogleProfile googleProfile = new GoogleProfile("google-user-123", "member@example.com", "exUrl");
+        GoogleProfile googleProfile = new GoogleProfile(
+                "google-user-123",
+                "member@example.com",
+                "exUrl"
+        );
         when(socialAccountRepository.findForLogin(Provider.GOOGLE, googleProfile.providerUserId()))
                 .thenReturn(Optional.empty());
         when(nicknameGenerator.generate()).thenReturn("우아한 달빛 참새");

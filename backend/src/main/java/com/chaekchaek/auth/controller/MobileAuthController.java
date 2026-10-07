@@ -33,9 +33,7 @@ public class MobileAuthController {
     }
 
     @PostMapping("/apple")
-    public ResponseEntity<MobileTokenResponse> appleLogin(
-            @Valid @RequestBody MobileAppleLoginRequest request
-    ) {
+    public ResponseEntity<MobileTokenResponse> appleLogin(@Valid @RequestBody MobileAppleLoginRequest request) {
         return ResponseEntity.ok(mobileAppleLoginService.login(request));
     }
 

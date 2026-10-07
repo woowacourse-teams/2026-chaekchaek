@@ -31,21 +31,26 @@ public class NicknameUpdateAccessLogFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authSource = authenticationSource(request);
         String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
-        log.info("Nickname update request entered: method={}, path={}, authSource={}, userAgent={}",
-                request.getMethod(), request.getRequestURI(), authSource, userAgent);
+        log.info(
+                "Nickname update request entered: method={}, path={}, authSource={}, userAgent={}",
+                request.getMethod(),
+                request.getRequestURI(),
+                authSource,
+                userAgent
+        );
 
         try {
             filterChain.doFilter(request, response);
         } finally {
-            log.info("Nickname update request exited: status={}, authSource={}, userAgent={}",
-                    response.getStatus(), authSource, userAgent);
+            log.info(
+                    "Nickname update request exited: status={}, authSource={}, userAgent={}",
+                    response.getStatus(),
+                    authSource,
+                    userAgent
+            );
         }
     }
 

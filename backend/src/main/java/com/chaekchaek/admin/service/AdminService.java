@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -55,12 +56,22 @@ public class AdminService {
         requireAdmin();
         List<RecommendedBook> recommendedBooks = recommendedBookRepository.findAllByOrderByCreatedAtDescIdDesc();
         Map<Long, Book> books = booksWithAuthorsById(recommendedBooks.stream()
-                .map(RecommendedBook::getBookId).toList());
+                .map(RecommendedBook::getBookId)
+                .toList());
         List<RecommendedBookResponse> responses = recommendedBooks.stream()
                 .map(recommendedBook -> toResponse(recommendedBook, books.get(recommendedBook.getBookId())))
                 .filter(Objects::nonNull)
                 .toList();
         return new RecommendedBookListResponse(responses);
+    }
+
+    private Map<Long, Book> booksWithAuthorsById(List<Long> bookIds) {
+        if (bookIds.isEmpty()) {
+            return Map.of();
+        }
+        return bookRepository.findAllWithAuthorsByIdIn(bookIds)
+                .stream()
+                .collect(Collectors.toMap(Book::getId, book -> book));
     }
 
     public RecommendedBookResponse addRecommendedBookByIsbn13(Isbn13 isbn13) {
@@ -81,6 +92,28 @@ public class AdminService {
         return toResponse(save(bookId), book);
     }
 
+    private RecommendedBookResponse toResponse(RecommendedBook recommendedBook, Book book) {
+        if (book == null) {
+            return null;
+        }
+        return new RecommendedBookResponse(
+                book.getId(),
+                book.getIsbn13().value(),
+                book.getTitle(),
+                book.getCoverImageUrl(),
+                book.getAuthors(),
+                recommendedBook.getCreatedAt()
+        );
+    }
+
+    private RecommendedBook save(long bookId) {
+        try {
+            return recommendedBookRepository.saveAndFlush(RecommendedBook.create(bookId, clock.instant()));
+        } catch (DataIntegrityViolationException exception) {
+            throw new BusinessException(ErrorCode.RECOMMENDED_BOOK_ALREADY_EXISTS);
+        }
+    }
+
     @Transactional
     public void deleteRecommendedBook(long bookId) {
         requireAdmin();
@@ -93,29 +126,5 @@ public class AdminService {
         if (!currentActorProvider.getCurrentActor().isAdmin()) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
-    }
-
-    private RecommendedBook save(long bookId) {
-        try {
-            return recommendedBookRepository.saveAndFlush(RecommendedBook.create(bookId, clock.instant()));
-        } catch (DataIntegrityViolationException exception) {
-            throw new BusinessException(ErrorCode.RECOMMENDED_BOOK_ALREADY_EXISTS);
-        }
-    }
-
-    private Map<Long, Book> booksWithAuthorsById(List<Long> bookIds) {
-        if (bookIds.isEmpty()) {
-            return Map.of();
-        }
-        return bookRepository.findAllWithAuthorsByIdIn(bookIds).stream()
-                .collect(java.util.stream.Collectors.toMap(Book::getId, book -> book));
-    }
-
-    private RecommendedBookResponse toResponse(RecommendedBook recommendedBook, Book book) {
-        if (book == null) {
-            return null;
-        }
-        return new RecommendedBookResponse(book.getId(), book.getIsbn13().value(), book.getTitle(), book.getCoverImageUrl(),
-                book.getAuthors(), recommendedBook.getCreatedAt());
     }
 }

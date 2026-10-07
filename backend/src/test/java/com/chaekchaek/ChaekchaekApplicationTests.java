@@ -9,7 +9,7 @@ import org.springframework.test.context.ActiveProfiles;
 class ChaekchaekApplicationTests {
 
 	@Test
-	void contextLoads() {
+	void should_LoadApplicationContext_When_ApplicationStarts() {
 	}
 
 }

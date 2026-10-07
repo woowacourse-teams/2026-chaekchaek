@@ -77,9 +77,11 @@ class LibraryItemTest {
 
         // when & then
         assertThatThrownBy(() -> item.rate(new BigDecimal("4.25"), NOW))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.INVALID_REQUEST));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.INVALID_REQUEST)
+        );
     }
 
     @Test
@@ -90,8 +92,10 @@ class LibraryItemTest {
 
         // when & then
         assertThatThrownBy(() -> item.changeStatus(ReadingStatus.FINISHED, null, NOW))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.INVALID_READING_STATE));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.INVALID_READING_STATE)
+        );
     }
 }

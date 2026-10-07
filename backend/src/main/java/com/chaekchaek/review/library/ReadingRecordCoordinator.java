@@ -3,7 +3,12 @@ package com.chaekchaek.review.library;
 /** Coordinates the Library-side automatic record creation and progress advance. */
 public interface ReadingRecordCoordinator {
 
-    void recordReview(long memberId, long bookId, Integer currentPage, Integer totalPages);
+    void recordReview(
+            long memberId,
+            long bookId,
+            Integer currentPage,
+            Integer totalPages
+    );
 
     /**
      * Validates a review page using the book's stored total-pages value and, when supplied, the

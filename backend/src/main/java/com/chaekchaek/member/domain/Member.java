@@ -73,11 +73,7 @@ public class Member {
         this.withdrawnAt = withdrawnAt;
     }
 
-    public static Member create(
-            String anonymousNickname,
-            String profileImageUrl,
-            LocalDateTime createdAt
-    ) {
+    public static Member create(String anonymousNickname, String profileImageUrl, LocalDateTime createdAt) {
         validateAnonymousNickname(anonymousNickname);
 
         return new Member(
@@ -91,9 +87,28 @@ public class Member {
         );
     }
 
+    private static void validateAnonymousNickname(String anonymousNickname) {
+        if (anonymousNickname == null || anonymousNickname.isBlank()) {
+            throw new IllegalArgumentException(ANONYMOUS_NICKNAME_MUST_EXIST_ERROR_MESSAGE);
+        }
+        if (anonymousNickname.length() > 100) {
+            throw new IllegalArgumentException(ANONYMOUS_NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE);
+        }
+    }
+
     public void updateNickname(String nickname) {
         validateNickname(nickname);
         this.nickname = nickname;
+    }
+
+    private static void validateNickname(String nickname) {
+        if (nickname == null || nickname.isBlank()) {
+            throw new IllegalArgumentException("[ERROR] 닉네임이 존재해야 합니다");
+        }
+
+        if (nickname.length() > 100) {
+            throw new IllegalArgumentException(NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE);
+        }
     }
 
     public void changeAnonymousDisplay(boolean displayAnonymous) {
@@ -121,25 +136,6 @@ public class Member {
         this.displayAnonymous = true;
         this.accountStatus = AccountStatus.WITHDRAWN;
         this.withdrawnAt = withdrawnAt;
-    }
-
-    private static void validateAnonymousNickname(String anonymousNickname) {
-        if (anonymousNickname == null || anonymousNickname.isBlank()) {
-            throw new IllegalArgumentException(ANONYMOUS_NICKNAME_MUST_EXIST_ERROR_MESSAGE);
-        }
-        if (anonymousNickname.length() > 100) {
-            throw new IllegalArgumentException(ANONYMOUS_NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE);
-        }
-    }
-
-    private static void validateNickname(String nickname) {
-        if (nickname == null || nickname.isBlank()) {
-            throw new IllegalArgumentException("[ERROR] 닉네임이 존재해야 합니다");
-        }
-
-        if (nickname.length() > 100) {
-            throw new IllegalArgumentException(NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE);
-        }
     }
 
     private static String normalizeProfileImageUrl(String profileImageUrl) {

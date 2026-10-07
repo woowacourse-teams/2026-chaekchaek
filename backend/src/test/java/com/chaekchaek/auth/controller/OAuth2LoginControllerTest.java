@@ -4,10 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 import com.chaekchaek.auth.oauth.OAuthFrontendClient;
-import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
+import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -15,19 +16,22 @@ import org.springframework.mock.web.MockHttpServletRequest;
 class OAuth2LoginControllerTest {
 
     private final OAuthFrontendRedirectResolver redirectResolver =
-            org.mockito.Mockito.mock(OAuthFrontendRedirectResolver.class);
+            Mockito.mock(OAuthFrontendRedirectResolver.class);
     private final OAuthGuestContextService guestContextService =
-            org.mockito.Mockito.mock(OAuthGuestContextService.class);
+            Mockito.mock(OAuthGuestContextService.class);
     private final OAuth2LoginController controller =
             new OAuth2LoginController(redirectResolver, guestContextService);
 
     @Test
     @DisplayName("허용된 프론트 클라이언트를 저장하고 Google 로그인을 시작한다")
     void should_RememberClientAndRedirect_When_ClientIsAllowed() {
+        // given
         MockHttpServletRequest request = new MockHttpServletRequest();
 
+        // when
         ResponseEntity<Void> response = controller.googleLogin("local", request);
 
+        // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
         assertThat(response.getHeaders().getLocation())
                 .hasToString("/oauth2/authorization/google");
@@ -37,10 +41,13 @@ class OAuth2LoginControllerTest {
     @Test
     @DisplayName("운영 프론트 클라이언트를 저장하고 Google 로그인을 시작한다")
     void should_RememberProductionClientAndRedirect_When_ClientIsProduction() {
+        // given
         MockHttpServletRequest request = new MockHttpServletRequest();
 
+        // when
         ResponseEntity<Void> response = controller.googleLogin("prod", request);
 
+        // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
         assertThat(response.getHeaders().getLocation())
                 .hasToString("/oauth2/authorization/google");
@@ -50,10 +57,13 @@ class OAuth2LoginControllerTest {
     @Test
     @DisplayName("허용되지 않은 프론트 클라이언트는 거부한다")
     void should_RejectLogin_When_ClientIsNotAllowed() {
+        // given
         MockHttpServletRequest request = new MockHttpServletRequest();
 
+        // when
         ResponseEntity<Void> response = controller.googleLogin("attacker", request);
 
+        // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 }

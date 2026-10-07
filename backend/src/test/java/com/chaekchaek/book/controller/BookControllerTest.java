@@ -8,11 +8,11 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.restdocs.snippet.Attributes.key;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import static org.springframework.restdocs.snippet.Attributes.key;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -20,8 +20,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.chaekchaek.book.client.AladinClientException;
 import com.chaekchaek.book.domain.Isbn13;
-import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookDetailResponse;
+import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookMyRecordResponse;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.exception.BookNotFoundException;
@@ -33,6 +33,7 @@ import com.epages.restdocs.apispec.ResourceDocumentation;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.epages.restdocs.apispec.Schema;
 import com.epages.restdocs.apispec.SimpleType;
+import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -43,11 +44,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
 import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
-import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -162,7 +163,11 @@ class BookControllerTest {
                 null,
                 null
         );
-        BookSearchResponse response = new BookSearchResponse(1, null, List.of(item));
+        BookSearchResponse response = new BookSearchResponse(
+                1,
+                null,
+                List.of(item)
+        );
         when(bookSearchService.search("마션", 1)).thenReturn(response);
 
         // when & then
@@ -256,8 +261,11 @@ class BookControllerTest {
                 "BOOK_NOT_FOUND",
                 "책을 찾을 수 없습니다.",
                 "/api/v1/books/by-isbn/9788925568683"
-        ).andDo(problemDetailDocument("book-detail-not-found", BOOK_DETAIL_SUMMARY,
-                "요청한 도서가 존재하지 않는다"));
+        ).andDo(problemDetailDocument(
+                "book-detail-not-found",
+                BOOK_DETAIL_SUMMARY,
+                "요청한 도서가 존재하지 않는다"
+        ));
     }
 
     @Disabled
@@ -361,9 +369,11 @@ class BookControllerTest {
     @Test
     @DisplayName("예상하지 못한 오류가 발생하면 내부 정보를 숨긴 500 응답을 반환한다")
     void should_ReturnInternalServerError_When_UnexpectedExceptionOccurs() throws Exception {
+        // given
         when(bookSearchService.search("마션", 1))
                 .thenThrow(new RuntimeException("database password leaked"));
 
+        // when & then
         expectProblemDetail(
                 mockMvc.perform(get("/api/v1/books")
                         .param("query", "마션")
@@ -431,10 +441,14 @@ class BookControllerTest {
                 308,
                 22,
                 24,
-                new java.math.BigDecimal("4.3"),
+                new BigDecimal("4.3"),
                 21,
                 12,
-                new BookMyRecordResponse("READING", 120, new java.math.BigDecimal("4.2"))
+                new BookMyRecordResponse(
+                        "READING",
+                        120,
+                        new BigDecimal("4.2")
+                )
         );
     }
 
@@ -442,11 +456,7 @@ class BookControllerTest {
         return problemDetailDocument(identifier, BOOK_SEARCH_SUMMARY, BOOK_SEARCH_DESCRIPTION);
     }
 
-    private RestDocumentationResultHandler problemDetailDocument(
-            String identifier,
-            String summary,
-            String description
-    ) {
+    private RestDocumentationResultHandler problemDetailDocument(String identifier, String summary, String description) {
         return document(
                 identifier,
                 responseFields(PROBLEM_DETAIL_FIELDS),

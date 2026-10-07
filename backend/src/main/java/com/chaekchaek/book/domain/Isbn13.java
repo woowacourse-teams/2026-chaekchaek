@@ -1,9 +1,8 @@
 package com.chaekchaek.book.domain;
 
-import com.chaekchaek.common.exception.BusinessException;
-import com.chaekchaek.common.exception.ErrorCode;
-
-public record Isbn13(String value) {
+public record Isbn13(
+        String value
+) {
 
     private static final int ISBN13_LENGTH = 13;
 

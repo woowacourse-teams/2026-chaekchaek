@@ -75,56 +75,60 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
-                                "/api/v1/auth/**",
-                                "/api/v1/admin/**",
-                                "/api/v1/books/*/reviews",
-                                "/api/v1/books/by-isbn/*/reviews",
-                                "/api/v1/reviews/*",
-                                "/api/v1/reviews/*/replies",
-                                "/api/v1/reviews/*/reactions",
-                                "/api/v1/replies/*",
-                                "/api/v1/replies/*/reactions"
-                        ))
+                        "/api/v1/auth/**",
+                        "/api/v1/admin/**",
+                        "/api/v1/books/*/reviews",
+                        "/api/v1/books/by-isbn/*/reviews",
+                        "/api/v1/reviews/*",
+                        "/api/v1/reviews/*/replies",
+                        "/api/v1/reviews/*/reactions",
+                        "/api/v1/replies/*",
+                        "/api/v1/replies/*/reactions"
+                ))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                HttpMethod.GET, "/health"
-                        ).permitAll()
+                        HttpMethod.GET,
+                        "/health"
+                ).permitAll()
                         .requestMatchers(
-                                "/oauth2/**",
-                                "/login/oauth2/**",
-                                "/api/v1/auth/**"
-                        ).permitAll()
+                        "/oauth2/**",
+                        "/login/oauth2/**",
+                        "/api/v1/auth/**"
+                ).permitAll()
                         .requestMatchers(
-                                HttpMethod.GET,
-                                "/docs/**",
-                                "/webjars/swagger-ui/**"
-                        ).permitAll()
+                        HttpMethod.GET,
+                        "/docs/**",
+                        "/webjars/swagger-ui/**"
+                ).permitAll()
                         .requestMatchers(
-                                HttpMethod.GET,
-                                PublicEndpointPaths.GET_ENDPOINTS
-                        ).permitAll()
+                        HttpMethod.GET,
+                        PublicEndpointPaths.GET_ENDPOINTS
+                ).permitAll()
                         .requestMatchers(
-                                "/api/v1/admin/**",
-                                "/api/v1/library/**",
-                                "/api/v1/members/me/ratings/**"
-                        ).authenticated()
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/v1/books/*/reviews",
-                                "/api/v1/books/by-isbn/*/reviews",
-                                "/api/v1/reviews/*/replies",
-                                "/api/v1/reviews/*/reactions",
-                                "/api/v1/replies/*/reactions"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.PATCH,
-                                "/api/v1/reviews/*",
-                                "/api/v1/replies/*"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.DELETE,
-                                "/api/v1/reviews/*",
-                                "/api/v1/replies/*",
-                                "/api/v1/reviews/*/reactions",
-                                "/api/v1/replies/*/reactions"
-                        ).permitAll()
+                        "/api/v1/admin/**",
+                        "/api/v1/library/**",
+                        "/api/v1/members/me/ratings/**"
+                ).authenticated()
+                        .requestMatchers(
+                        HttpMethod.POST,
+                        "/api/v1/books/*/reviews",
+                        "/api/v1/books/by-isbn/*/reviews",
+                        "/api/v1/reviews/*/replies",
+                        "/api/v1/reviews/*/reactions",
+                        "/api/v1/replies/*/reactions"
+                ).permitAll()
+                        .requestMatchers(
+                        HttpMethod.PATCH,
+                        "/api/v1/reviews/*",
+                        "/api/v1/replies/*"
+                ).permitAll()
+                        .requestMatchers(
+                        HttpMethod.DELETE,
+                        "/api/v1/reviews/*",
+                        "/api/v1/replies/*",
+                        "/api/v1/reviews/*/reactions",
+                        "/api/v1/replies/*/reactions"
+                ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

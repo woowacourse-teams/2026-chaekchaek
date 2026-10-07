@@ -16,7 +16,10 @@ public final class AladinContributorParser {
 
     public static Contributors parse(String source) {
         if (source == null || source.isBlank()) {
-            return new Contributors(List.of(), List.of());
+            return new Contributors(
+                    List.of(),
+                    List.of()
+            );
         }
 
         List<String> authors = new ArrayList<>();
@@ -40,7 +43,10 @@ public final class AladinContributorParser {
         if (!hasRole) {
             addNames(authors, source);
         }
-        return new Contributors(authors, translators);
+        return new Contributors(
+                authors,
+                translators
+        );
     }
 
     private static void addNames(List<String> target, String names) {

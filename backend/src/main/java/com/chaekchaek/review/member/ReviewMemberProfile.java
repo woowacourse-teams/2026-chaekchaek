@@ -13,11 +13,23 @@ public record ReviewMemberProfile(
         AccountStatus accountStatus,
         ActorType actorType
 ) {
-    public ReviewMemberProfile(String displayName, String profileImageUrl, String anonymousNickname,
-                               boolean anonymousEnabled, boolean withdrawn, ActorType actorType) {
-        this(null, displayName, profileImageUrl, anonymousNickname, anonymousEnabled,
+    public ReviewMemberProfile(
+            String displayName,
+            String profileImageUrl,
+            String anonymousNickname,
+            boolean anonymousEnabled,
+            boolean withdrawn,
+            ActorType actorType
+    ) {
+        this(
+                null,
+                displayName,
+                profileImageUrl,
+                anonymousNickname,
+                anonymousEnabled,
                 actorType == ActorType.GUEST ? null
                         : withdrawn ? AccountStatus.WITHDRAWN : AccountStatus.ACTIVE,
-                actorType);
+                actorType
+        );
     }
 }

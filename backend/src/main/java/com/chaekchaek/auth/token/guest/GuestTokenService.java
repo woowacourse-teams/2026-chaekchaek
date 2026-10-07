@@ -34,7 +34,13 @@ public class GuestTokenService {
         LocalDateTime issuedAt = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
         LocalDateTime expiresAt = issuedAt.plus(properties.expiration());
         Actor actor = actorRepository.save(Actor.guest(tokenHasher.hash(token), nickname, issuedAt, expiresAt));
-        return new IssuedGuestToken(token, nickname, expiresAt, actor.getId(), actor.getType());
+        return new IssuedGuestToken(
+                token,
+                nickname,
+                expiresAt,
+                actor.getId(),
+                actor.getType()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -77,8 +83,13 @@ public class GuestTokenService {
         String newToken = generateToken();
         LocalDateTime expiresAt = now.plus(properties.expiration());
         actor.refreshGuestToken(tokenHasher.hash(newToken), now, expiresAt);
-        return new IssuedGuestToken(newToken, actor.getGuestNickname(), expiresAt,
-                actor.getId(), actor.getType());
+        return new IssuedGuestToken(
+                newToken,
+                actor.getGuestNickname(),
+                expiresAt,
+                actor.getId(),
+                actor.getType()
+        );
     }
 
     private String generateToken() {

@@ -44,7 +44,8 @@ class AdminServiceTest {
         BookRepository bookRepository = mock(BookRepository.class);
         AdminService adminService = adminService(recommendedBookRepository, bookRepository, mock(BookResolver.class));
         List<RecommendedBook> recommendedBooks = List.of(
-                recommendedBook(3L, "2026-08-28T00:00:00Z"), recommendedBook(1L, "2026-08-27T00:00:00Z")
+                recommendedBook(3L, "2026-08-28T00:00:00Z"),
+                recommendedBook(1L, "2026-08-27T00:00:00Z")
         );
         List<Book> books = List.of(book(1L, "첫 번째 책"), book(3L, "세 번째 책"));
         when(recommendedBookRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(recommendedBooks);
@@ -120,9 +121,11 @@ class AdminServiceTest {
 
         // when & then
         assertThatThrownBy(() -> adminService.addRecommendedBookByIsbn13(ISBN13))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.RECOMMENDED_BOOK_ALREADY_EXISTS));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.RECOMMENDED_BOOK_ALREADY_EXISTS)
+        );
         verify(recommendedBookRepository, never()).saveAndFlush(any(RecommendedBook.class));
     }
 
@@ -142,9 +145,11 @@ class AdminServiceTest {
 
         // when & then
         assertThatThrownBy(() -> adminService.addRecommendedBookByIsbn13(ISBN13))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.RECOMMENDED_BOOK_LIMIT_EXCEEDED));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.RECOMMENDED_BOOK_LIMIT_EXCEEDED)
+        );
         verify(recommendedBookRepository, never()).saveAndFlush(any(RecommendedBook.class));
     }
 
@@ -171,8 +176,11 @@ class AdminServiceTest {
     void should_DeleteRecommendedBook_When_BookIsRecommended() {
         // given
         RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        AdminService adminService = adminService(recommendedBookRepository, mock(BookRepository.class),
-                mock(BookResolver.class));
+        AdminService adminService = adminService(
+                recommendedBookRepository,
+                mock(BookRepository.class),
+                mock(BookResolver.class)
+        );
         RecommendedBook recommendedBook = recommendedBook(3L, "2026-08-28T00:00:00Z");
         when(recommendedBookRepository.findByBookId(3L)).thenReturn(Optional.of(recommendedBook));
 
@@ -188,15 +196,20 @@ class AdminServiceTest {
     void should_NotDeleteRecommendedBook_When_BookIsNotRecommended() {
         // given
         RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        AdminService adminService = adminService(recommendedBookRepository, mock(BookRepository.class),
-                mock(BookResolver.class));
+        AdminService adminService = adminService(
+                recommendedBookRepository,
+                mock(BookRepository.class),
+                mock(BookResolver.class)
+        );
         when(recommendedBookRepository.findByBookId(3L)).thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> adminService.deleteRecommendedBook(3L))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode())
-                                .isEqualTo(ErrorCode.RECOMMENDED_BOOK_NOT_FOUND));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.RECOMMENDED_BOOK_NOT_FOUND)
+        );
         verify(recommendedBookRepository, never()).delete(any(RecommendedBook.class));
     }
 
@@ -205,13 +218,19 @@ class AdminServiceTest {
     void should_NotReturnRecommendedBooks_When_ActorIsNotAdmin() {
         // given
         RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        AdminService adminService = adminService(recommendedBookRepository, mock(BookRepository.class),
-                mock(BookResolver.class), actorProvider(MEMBER_ACTOR));
+        AdminService adminService = adminService(
+                recommendedBookRepository,
+                mock(BookRepository.class),
+                mock(BookResolver.class),
+                actorProvider(MEMBER_ACTOR)
+        );
 
         // when & then
         assertThatThrownBy(adminService::getRecommendedBooks)
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
+        );
         verify(recommendedBookRepository, never()).findAllByOrderByCreatedAtDescIdDesc();
     }
 
@@ -221,13 +240,19 @@ class AdminServiceTest {
         // given
         RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
         BookResolver bookResolver = mock(BookResolver.class);
-        AdminService adminService = adminService(recommendedBookRepository, mock(BookRepository.class),
-                bookResolver, actorProvider(MEMBER_ACTOR));
+        AdminService adminService = adminService(
+                recommendedBookRepository,
+                mock(BookRepository.class),
+                bookResolver,
+                actorProvider(MEMBER_ACTOR)
+        );
 
         // when & then
         assertThatThrownBy(() -> adminService.addRecommendedBookByIsbn13(ISBN13))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
+        );
         verify(bookResolver, never()).findOrCreate(ISBN13);
         verify(recommendedBookRepository, never()).saveAndFlush(any(RecommendedBook.class));
     }
@@ -237,26 +262,44 @@ class AdminServiceTest {
     void should_NotDeleteRecommendedBook_When_ActorIsNotAdmin() {
         // given
         RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        AdminService adminService = adminService(recommendedBookRepository, mock(BookRepository.class),
-                mock(BookResolver.class), actorProvider(MEMBER_ACTOR));
+        AdminService adminService = adminService(
+                recommendedBookRepository,
+                mock(BookRepository.class),
+                mock(BookResolver.class),
+                actorProvider(MEMBER_ACTOR)
+        );
 
         // when & then
         assertThatThrownBy(() -> adminService.deleteRecommendedBook(3L))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
+                .isInstanceOfSatisfying(
+                BusinessException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
+        );
         verify(recommendedBookRepository, never()).delete(any(RecommendedBook.class));
     }
 
-    private static AdminService adminService(RecommendedBookRepository recommendedBookRepository,
-                                             BookRepository bookRepository, BookResolver bookResolver) {
+    private static AdminService adminService(
+            RecommendedBookRepository recommendedBookRepository,
+            BookRepository bookRepository,
+            BookResolver bookResolver
+    ) {
         return adminService(recommendedBookRepository, bookRepository, bookResolver, actorProvider(ADMIN_ACTOR));
     }
 
-    private static AdminService adminService(RecommendedBookRepository recommendedBookRepository,
-                                             BookRepository bookRepository, BookResolver bookResolver,
-                                             CurrentActorProvider currentActorProvider) {
-        return new AdminService(recommendedBookRepository, bookRepository, bookResolver, currentActorProvider, CLOCK,
-                mock(PlatformTransactionManager.class));
+    private static AdminService adminService(
+            RecommendedBookRepository recommendedBookRepository,
+            BookRepository bookRepository,
+            BookResolver bookResolver,
+            CurrentActorProvider currentActorProvider
+    ) {
+        return new AdminService(
+                recommendedBookRepository,
+                bookRepository,
+                bookResolver,
+                currentActorProvider,
+                CLOCK,
+                mock(PlatformTransactionManager.class)
+        );
     }
 
     private static CurrentActorProvider actorProvider(CurrentActor actor) {

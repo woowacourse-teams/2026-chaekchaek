@@ -8,6 +8,8 @@ public class AladinClientException extends BookClientException {
 
     public AladinClientException(int aladinErrorCode, String aladinErrorMessage) {
         super("Aladin API error: code=%d, message=%s".formatted(
-                aladinErrorCode, aladinErrorMessage));
+                aladinErrorCode,
+                aladinErrorMessage
+        ));
     }
 }

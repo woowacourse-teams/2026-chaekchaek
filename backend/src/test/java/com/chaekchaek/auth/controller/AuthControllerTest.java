@@ -55,7 +55,10 @@ class AuthControllerTest {
         // given
         IssuedTokens tokens = new IssuedTokens(
                 "new-access-token",
-                new IssuedRefreshToken("new-refresh-token", LocalDateTime.now().plusDays(14))
+                new IssuedRefreshToken(
+                        "new-refresh-token",
+                        LocalDateTime.now().plusDays(14)
+                )
         );
         when(authTokenService.reissue("refresh-token")).thenReturn(tokens);
         when(authCookieProvider.createAccessTokenCookie("new-access-token"))
@@ -76,7 +79,8 @@ class AuthControllerTest {
                                 .description("refresh_token 쿠키를 사용해 새 access_token과 refresh_token 쿠키를 발급한다")
                                 .tag(AUTH_TAG)
                                 .responseHeaders(SET_COOKIE_HEADER)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -101,7 +105,8 @@ class AuthControllerTest {
                                 .description("refresh_token 쿠키를 폐기하고 access_token·refresh_token 쿠키를 삭제한다")
                                 .tag(AUTH_TAG)
                                 .responseHeaders(SET_COOKIE_HEADER)
-                                .build())));
+                                .build())
+                ));
 
         verify(authTokenService).logout("refresh-token");
     }

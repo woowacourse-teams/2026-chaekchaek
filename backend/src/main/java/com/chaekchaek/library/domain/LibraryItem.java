@@ -51,8 +51,13 @@ public class LibraryItem {
     protected LibraryItem() {
     }
 
-    private LibraryItem(long memberId, long bookId, ReadingStatus status, Integer totalPages,
-                        Instant now) {
+    private LibraryItem(
+            long memberId,
+            long bookId,
+            ReadingStatus status,
+            Integer totalPages,
+            Instant now
+    ) {
         this.memberId = memberId;
         this.bookId = bookId;
         this.status = status;
@@ -61,8 +66,13 @@ public class LibraryItem {
         this.readingUpdatedAt = now;
     }
 
-    public static LibraryItem create(long memberId, long bookId, ReadingStatus status,
-                                     Integer totalPages, Instant now) {
+    public static LibraryItem create(
+            long memberId,
+            long bookId,
+            ReadingStatus status,
+            Integer totalPages,
+            Instant now
+    ) {
         if (status == ReadingStatus.FINISHED && totalPages == null) {
             throw invalidReadingState();
         }
@@ -91,15 +101,14 @@ public class LibraryItem {
         updateReadingTimeWhenChanged(changed, now);
     }
 
-    public void rate(BigDecimal rating, Instant now) {
-        validateRating(rating);
-        this.rating = rating;
-        this.ratingUpdatedAt = now;
+    private static void validatePage(int currentPage, Integer totalPages) {
+        if (currentPage < 0 || (totalPages != null && currentPage > totalPages)) {
+            throw invalidReadingState();
+        }
     }
 
-    public void removeRating() {
-        this.rating = null;
-        this.ratingUpdatedAt = null;
+    private static BusinessException invalidReadingState() {
+        return new BusinessException(ErrorCode.INVALID_READING_STATE);
     }
 
     private static int initialPage(ReadingStatus status, Integer totalPages) {
@@ -124,10 +133,10 @@ public class LibraryItem {
         }
     }
 
-    private static void validatePage(int currentPage, Integer totalPages) {
-        if (currentPage < 0 || (totalPages != null && currentPage > totalPages)) {
-            throw invalidReadingState();
-        }
+    public void rate(BigDecimal rating, Instant now) {
+        validateRating(rating);
+        this.rating = rating;
+        this.ratingUpdatedAt = now;
     }
 
     private static void validateRating(BigDecimal rating) {
@@ -137,8 +146,9 @@ public class LibraryItem {
         }
     }
 
-    private static BusinessException invalidReadingState() {
-        return new BusinessException(ErrorCode.INVALID_READING_STATE);
+    public void removeRating() {
+        this.rating = null;
+        this.ratingUpdatedAt = null;
     }
 
     public Long getId() { return id; }

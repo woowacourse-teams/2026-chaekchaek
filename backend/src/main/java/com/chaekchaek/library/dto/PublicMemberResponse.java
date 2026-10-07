@@ -8,6 +8,10 @@ public record PublicMemberResponse(
         String profileImageUrl
 ) {
     public static PublicMemberResponse from(Member member) {
-        return new PublicMemberResponse(member.getId(), member.getDisplayName(), member.getProfileImageUrl());
+        return new PublicMemberResponse(
+                member.getId(),
+                member.getDisplayName(),
+                member.getProfileImageUrl()
+        );
     }
 }

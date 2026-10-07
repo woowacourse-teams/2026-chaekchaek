@@ -57,7 +57,8 @@ class GuestActorMigrationIntegrationTest {
 
     @Test
     @DisplayName("기존 회원 로그인 시 게스트의 공개 상호작용을 회원 Actor로 이전한다")
-    void should_ReassignGuestInteractionsToExistingMemberActor() {
+    void should_ReassignGuestInteractions_When_MemberActorAlreadyExists() {
+        // given
         LocalDateTime now = LocalDateTime.of(2026, 9, 2, 12, 0);
         Member member = memberRepository.save(Member.create("회원 익명 닉네임", null, now));
         Actor memberActor = actorRepository.save(Actor.member(member, now));
@@ -80,6 +81,7 @@ class GuestActorMigrationIntegrationTest {
         entityManager.flush();
         entityManager.clear();
 
+        // when & then
         assertAll(
                 () -> assertThat(reviewRepository.findByBookIdAndActorId(1L, memberActor.getId()))
                         .extracting(Review::getContent).containsExactly("게스트 감상 1"),
@@ -94,10 +96,14 @@ class GuestActorMigrationIntegrationTest {
                 () -> assertThat(replyReactionRepository.countByReplyId(reply.getId()))
                         .isEqualTo(1),
                 () -> assertThat(reviewReactionRepository.findByReviewIdInAndActorId(
-                        List.of(conflictedReview.getId(), uniqueReview.getId()), guestActor.getId()))
+                        List.of(conflictedReview.getId(), uniqueReview.getId()),
+                        guestActor.getId()
+                ))
                         .hasSize(2),
                 () -> assertThat(replyReactionRepository.findByReplyIdInAndActorId(
-                        List.of(reply.getId()), guestActor.getId()))
+                        List.of(reply.getId()),
+                        guestActor.getId()
+                ))
                         .hasSize(1),
                 () -> assertThat(actorRepository.findById(guestActor.getId()).orElseThrow().getGuestTokenHash())
                         .isNull(),

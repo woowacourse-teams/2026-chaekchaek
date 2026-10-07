@@ -21,14 +21,15 @@ import com.chaekchaek.auth.token.guest.IssuedGuestToken;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.epages.restdocs.apispec.ResourceDocumentation;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
+import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
@@ -88,8 +89,12 @@ class GuestAuthControllerTest {
     @DisplayName("기존 게스트 토큰으로 Actor 정보를 조회한다")
     void should_ReturnGuestInfo_When_ExistingTokenIsUsable() throws Exception {
         // given
-        Actor actor = Actor.guest(new GuestTokenHasher().hash("existing-token"),
-                "다정한 파란 참새", TOKEN_ISSUED_AT, TOKEN_EXPIRES_AT);
+        Actor actor = Actor.guest(
+                new GuestTokenHasher().hash("existing-token"),
+                "다정한 파란 참새",
+                TOKEN_ISSUED_AT,
+                TOKEN_EXPIRES_AT
+        );
         ReflectionTestUtils.setField(actor, "id", 7L);
         when(guestTokenService.findUsableActor("existing-token")).thenReturn(actor);
 
@@ -102,7 +107,8 @@ class GuestAuthControllerTest {
                 .andExpect(jsonPath("$.nickname").value("다정한 파란 참새"))
                 .andExpect(jsonPath("$.expiresAt").value(TOKEN_EXPIRES_AT_RESPONSE))
                 .andExpect(jsonPath("$.guestToken").doesNotExist())
-                .andDo(document("guest-token-info",
+                .andDo(document(
+                        "guest-token-info",
                         requestHeaders(headerWithName("X-Guest-Token")
                                 .description("조회할 현재 게스트 토큰")),
                         responseFields(GUEST_INFO_RESPONSE_FIELDS),
@@ -110,10 +116,11 @@ class GuestAuthControllerTest {
                                 .summary("게스트 정보 조회")
                                 .description("기존 게스트 토큰으로 연결된 Actor 정보와 만료 시각을 조회한다")
                                 .tag("인증")
-                                .requestHeaders(com.epages.restdocs.apispec.ResourceDocumentation
+                                .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("조회할 현재 게스트 토큰"))
                                 .responseFields(GUEST_INFO_RESPONSE_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -144,10 +151,17 @@ class GuestAuthControllerTest {
     }
 
     @Test
-    void issuesGuestTokenWithoutLogin() throws Exception {
+    void should_IssueGuestToken_When_RequestIsUnauthenticated() throws Exception {
+        // given
         when(guestTokenService.issue()).thenReturn(new IssuedGuestToken(
-                "guest-token", "다정한 파란 참새", TOKEN_EXPIRES_AT, 7L, ActorType.GUEST));
+                "guest-token",
+                "다정한 파란 참새",
+                TOKEN_EXPIRES_AT,
+                7L,
+                ActorType.GUEST
+        ));
 
+        // when & then
         mockMvc.perform(post("/api/v1/auth/guest-token"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.guestToken").value("guest-token"))
@@ -155,7 +169,8 @@ class GuestAuthControllerTest {
                 .andExpect(jsonPath("$.actorType").value("GUEST"))
                 .andExpect(jsonPath("$.nickname").value("다정한 파란 참새"))
                 .andExpect(jsonPath("$.expiresAt").value(TOKEN_EXPIRES_AT_RESPONSE))
-                .andDo(document("guest-token-issue",
+                .andDo(document(
+                        "guest-token-issue",
                         responseFields(TOKEN_RESPONSE_FIELDS),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("게스트 토큰 발급")
@@ -163,14 +178,22 @@ class GuestAuthControllerTest {
                                         .formatted(TOKEN_EXPIRATION_DAYS))
                                 .tag("인증")
                                 .responseFields(TOKEN_RESPONSE_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
-    void refreshesGuestTokenWithinRefreshWindow() throws Exception {
+    void should_RefreshGuestToken_When_TokenIsWithinRefreshWindow() throws Exception {
+        // given
         when(guestTokenService.refresh("current-token")).thenReturn(new IssuedGuestToken(
-                "new-token", "다정한 파란 참새", TOKEN_EXPIRES_AT, 7L, ActorType.GUEST));
+                "new-token",
+                "다정한 파란 참새",
+                TOKEN_EXPIRES_AT,
+                7L,
+                ActorType.GUEST
+        ));
 
+        // when & then
         mockMvc.perform(post("/api/v1/auth/guest-token/refresh")
                         .header("X-Guest-Token", "current-token"))
                 .andExpect(status().isOk())
@@ -179,7 +202,8 @@ class GuestAuthControllerTest {
                 .andExpect(jsonPath("$.actorType").value("GUEST"))
                 .andExpect(jsonPath("$.nickname").value("다정한 파란 참새"))
                 .andExpect(jsonPath("$.expiresAt").value(TOKEN_EXPIRES_AT_RESPONSE))
-                .andDo(document("guest-token-refresh",
+                .andDo(document(
+                        "guest-token-refresh",
                         requestHeaders(headerWithName("X-Guest-Token")
                                 .description("교체할 현재 게스트 토큰")),
                         responseFields(TOKEN_RESPONSE_FIELDS),
@@ -188,56 +212,84 @@ class GuestAuthControllerTest {
                                 .description("만료까지 %d일 이하로 남은 유효한 토큰을 같은 Actor의 새 %d일 토큰으로 교체한다. 기존 토큰은 즉시 무효화된다"
                                         .formatted(REFRESH_WINDOW_DAYS, TOKEN_EXPIRATION_DAYS))
                                 .tag("인증")
-                                .requestHeaders(com.epages.restdocs.apispec.ResourceDocumentation
+                                .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("교체할 현재 게스트 토큰"))
                                 .responseFields(TOKEN_RESPONSE_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
-    void documentsInvalidGuestTokenRefresh() throws Exception {
+    void should_DocumentRefreshError_When_GuestTokenIsInvalid() throws Exception {
+        // given
         doThrow(new BusinessException(ErrorCode.INVALID_GUEST_TOKEN))
                 .when(guestTokenService).refresh(anyString());
 
-        documentRefreshProblem("invalid-token", "guest-token-refresh-invalid", 401,
-                "INVALID_GUEST_TOKEN", "유효하지 않은 게스트 토큰이면 인증 오류를 반환한다");
+        // when & then
+        documentRefreshProblem(
+                "invalid-token",
+                "guest-token-refresh-invalid",
+                401,
+                "INVALID_GUEST_TOKEN",
+                "유효하지 않은 게스트 토큰이면 인증 오류를 반환한다"
+        );
     }
 
     @Test
-    void documentsExpiredGuestTokenRefresh() throws Exception {
+    void should_DocumentRefreshError_When_GuestTokenIsExpired() throws Exception {
+        // given
         doThrow(new BusinessException(ErrorCode.UNUSABLE_GUEST_TOKEN))
                 .when(guestTokenService).refresh(anyString());
 
-        documentRefreshProblem("expired-token", "guest-token-refresh-expired", 401,
-                "UNUSABLE_GUEST_TOKEN", "만료되거나 폐기된 게스트 토큰은 갱신할 수 없다");
+        // when & then
+        documentRefreshProblem(
+                "expired-token",
+                "guest-token-refresh-expired",
+                401,
+                "UNUSABLE_GUEST_TOKEN",
+                "만료되거나 폐기된 게스트 토큰은 갱신할 수 없다"
+        );
     }
 
     @Test
-    void documentsGuestTokenRefreshBeforeWindow() throws Exception {
+    void should_DocumentRefreshError_When_TokenIsBeforeRefreshWindow() throws Exception {
+        // given
         doThrow(new BusinessException(ErrorCode.GUEST_TOKEN_REFRESH_NOT_ALLOWED))
                 .when(guestTokenService).refresh(anyString());
 
-        documentRefreshProblem("early-token", "guest-token-refresh-not-allowed", 409,
+        // when & then
+        documentRefreshProblem(
+                "early-token",
+                "guest-token-refresh-not-allowed",
+                409,
                 "GUEST_TOKEN_REFRESH_NOT_ALLOWED",
-                "만료까지 %d일보다 많이 남은 토큰은 갱신할 수 없다".formatted(REFRESH_WINDOW_DAYS));
+                "만료까지 %d일보다 많이 남은 토큰은 갱신할 수 없다".formatted(REFRESH_WINDOW_DAYS)
+        );
     }
 
-    private void documentRefreshProblem(String token, String identifier, int statusCode,
-                                        String code, String description) throws Exception {
+    private void documentRefreshProblem(
+            String token,
+            String identifier,
+            int statusCode,
+            String code,
+            String description
+    ) throws Exception {
         mockMvc.perform(post("/api/v1/auth/guest-token/refresh")
                         .header("X-Guest-Token", token))
                 .andExpect(status().is(statusCode))
                 .andExpect(jsonPath("$.code").value(code))
-                .andDo(document(identifier,
+                .andDo(document(
+                        identifier,
                         requestHeaders(headerWithName("X-Guest-Token").description("갱신할 현재 게스트 토큰")),
                         responseFields(PROBLEM_DETAIL_FIELDS),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("게스트 토큰 갱신")
                                 .description(description)
                                 .tag("인증")
-                                .requestHeaders(com.epages.restdocs.apispec.ResourceDocumentation
+                                .requestHeaders(ResourceDocumentation
                                         .headerWithName("X-Guest-Token").description("갱신할 현재 게스트 토큰"))
                                 .responseFields(PROBLEM_DETAIL_FIELDS)
-                                .build())));
+                                .build())
+                ));
     }
 }

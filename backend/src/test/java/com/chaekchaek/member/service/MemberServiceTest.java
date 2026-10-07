@@ -22,6 +22,7 @@ import com.chaekchaek.member.dto.MemberResponse;
 import com.chaekchaek.member.dto.MyInfoResponse;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -114,21 +115,24 @@ class MemberServiceTest {
         // when & then
         assertThatThrownBy(() -> memberService.getMyInfo(999L))
                 .isInstanceOfSatisfying(
-                        MemberNotFoundException.class,
-                        exception -> assertThat(exception.getErrorCode())
+                MemberNotFoundException.class,
+                exception -> assertThat(exception.getErrorCode())
                                 .isEqualTo(ErrorCode.MEMBER_NOT_FOUND)
-                );
+        );
     }
 
     @Test
     @DisplayName("공개 닉네임을 설정한다")
-    void should_UpdateNickname() {
+    void should_UpdateNickname_When_NicknameIsAvailable() {
+        // given
         Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
         given(memberRepository.findById(1L)).willReturn(Optional.of(member));
         given(memberRepository.existsByNicknameAndIdNot("책책이", 1L)).willReturn(false);
 
+        // when
         MemberResponse response = memberService.updateNickname(1L, "책책이");
 
+        // then
         assertAll(
                 () -> assertThat(response.nickname()).isEqualTo("책책이"),
                 () -> assertThat(response.displayAnonymous()).isTrue()
@@ -137,48 +141,58 @@ class MemberServiceTest {
 
     @Test
     @DisplayName("이미 사용 중인 공개 닉네임은 설정할 수 없다")
-    void should_RejectDuplicatedNickname() {
+    void should_RejectNickname_When_NicknameIsDuplicated() {
+        // given
         Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
         given(memberRepository.findById(1L)).willReturn(Optional.of(member));
         given(memberRepository.existsByNicknameAndIdNot("책책이", 1L)).willReturn(true);
 
+        // when & then
         assertThatThrownBy(() -> memberService.updateNickname(1L, "책책이"))
                 .isInstanceOf(NicknameAlreadyExistsException.class);
     }
 
     @Test
     @DisplayName("공개 닉네임 없이 익명 상태를 해제할 수 없다")
-    void should_RejectDisableAnonymityWithoutNickname() {
+    void should_RejectDisableAnonymity_When_NicknameIsMissing() {
+        // given
         Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
         given(memberRepository.findById(1L)).willReturn(Optional.of(member));
 
+        // when & then
         assertThatThrownBy(() -> memberService.updateAnonymity(1L, false))
                 .isInstanceOf(NicknameRequiredException.class);
     }
 
     @Test
     @DisplayName("공개 닉네임 설정 후 익명 상태를 해제한다")
-    void should_DisableAnonymityAfterNicknameIsSet() {
+    void should_DisableAnonymity_When_NicknameIsSet() {
+        // given
         Member member = Member.create("우아한 달빛 참새", null, LocalDateTime.now());
         member.updateNickname("책책이");
         given(memberRepository.findById(1L)).willReturn(Optional.of(member));
 
+        // when
         MemberResponse response = memberService.updateAnonymity(1L, false);
 
+        // then
         assertThat(response.displayAnonymous()).isFalse();
     }
 
     @Test
     @DisplayName("회원을 탈퇴 처리한다")
-    void should_WithdrawMember() {
+    void should_WithdrawMember_When_WithdrawalIsRequested() {
+        // given
         Member member = Member.create("우아한 달빛 참새", "profile", LocalDateTime.now());
         member.updateNickname("책책이");
         given(memberRepository.findById(1L)).willReturn(Optional.of(member));
         given(refreshTokenRepository.findAllByMemberIdAndRevokedAtIsNull(1L))
-                .willReturn(java.util.List.of(refreshToken));
+                .willReturn(List.of(refreshToken));
 
+        // when
         memberService.withdraw(1L);
 
+        // then
         assertAll(
                 () -> assertThat(member.getAccountStatus().name()).isEqualTo("WITHDRAWN"),
                 () -> assertThat(member.getWithdrawnAt()).isNotNull(),

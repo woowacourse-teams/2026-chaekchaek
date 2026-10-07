@@ -37,11 +37,6 @@ public class BookResolver {
                 .orElseGet(() -> registerBookFetchedOutsideTransaction(isbn13));
     }
 
-    public Book lookup(Isbn13 isbn13) {
-        return bookRepository.findByIsbn13(isbn13)
-                .orElseGet(() -> toBook(isbn13, bookClient.findBookByIsbn13(isbn13)));
-    }
-
     private Book registerBookFetchedOutsideTransaction(Isbn13 isbn13) {
         BookDetailItem source = bookClient.findBookByIsbn13(isbn13);
         try {
@@ -52,6 +47,11 @@ public class BookResolver {
             return bookRepository.findByIsbn13(isbn13)
                     .orElseThrow(() -> exception);
         }
+    }
+
+    public Book lookup(Isbn13 isbn13) {
+        return bookRepository.findByIsbn13(isbn13)
+                .orElseGet(() -> toBook(isbn13, bookClient.findBookByIsbn13(isbn13)));
     }
 
     private Book toBook(Isbn13 isbn13, BookDetailItem source) {
