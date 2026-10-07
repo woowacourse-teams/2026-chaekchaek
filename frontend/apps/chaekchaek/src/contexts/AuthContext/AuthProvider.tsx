@@ -79,24 +79,22 @@ export const AuthProvider = ({ children }: Props) => {
         membersMeStatus.error?.status === 401
       ) {
         if (guest === null) {
-          postAuthGuestTokenMutate({});
+          return postAuthGuestTokenMutate({});
         }
 
-        if (guest) {
-          try {
-            const latestGuest = await getAuthGuestToken({}, { guestToken: guest.guestToken });
+        try {
+          const latestGuest = await getAuthGuestToken({}, { guestToken: guest.guestToken });
 
-            const newGuestData = { ...latestGuest, guestToken: guest.guestToken };
+          const newGuestData = { ...latestGuest, guestToken: guest.guestToken };
 
-            localStorage.setItem('guest', JSON.stringify(newGuestData));
-            updateGuestAccount(newGuestData);
+          localStorage.setItem('guest', JSON.stringify(newGuestData));
+          updateGuestAccount(newGuestData);
 
-            if (canRenew(latestGuest.expiresAt)) {
-              postAuthGuestTokenRefreshMutate({}, { guestToken: guest.guestToken });
-            }
-          } catch {
-            postAuthGuestTokenMutate({});
+          if (canRenew(latestGuest.expiresAt)) {
+            postAuthGuestTokenRefreshMutate({}, { guestToken: guest.guestToken });
           }
+        } catch {
+          postAuthGuestTokenMutate({});
         }
       }
     };
