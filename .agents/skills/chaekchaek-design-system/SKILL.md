@@ -1,13 +1,13 @@
 ---
 name: chaekchaek-design-system
-description: "Enforce design-first UI work with the existing Chaekchaek design system. Use for Pencil designs.pen work, Node ID or screen edits, Android and iOS-reachable Compose UI, native iOS UI, frontend UI, colors, typography, spacing, layout, and component changes. Use Apple HIG semantic text roles for user-facing typography. Never implement UI directly from prose: inspect SxMn5, create or reuse a design draft, screenshot the target, then implement with existing tokens and components."
+description: "책췍 UI 디자인 생성과 코드 적용 전에 Figma 화면, 공통 컴포넌트, 레퍼런스를 확인한다. 누락된 화면과 상태, 재사용 컴포넌트 및 레퍼런스 인스턴스를 먼저 등록하고 검증한다. Android, iOS, frontend UI와 기존 구현의 Figma 역반영에 사용한다."
 ---
 
 # Chaekchaek Design System
 
-Use the `designs.pen` frame named `책췍 디자인 시스템` (Node ID: `SxMn5`) as the canonical design source.
+원본은 [책췍 Figma](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr)이며 공통 컴포넌트와 변수는 [책췍 디자인 시스템](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=901-300)에 있다. 이번 작업에서 사용자가 지정한 최신 승인 화면을 우선한다. Pencil과 `designs.pen`은 과거 이력이며 현재 원본 또는 구현 게이트가 아니다.
 
-When communicating with the user, refer to Pencil nodes by their visible names. Include a Node ID in parentheses only when it is needed for identification or an operation; never use the ID alone when a visible name is available.
+노드는 보이는 이름과 Figma 링크로 식별한다. 공통 컨트롤 레퍼런스는 [02 Controls](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=905-153)이다. 확인 방법과 기존 선택 컨트롤 매핑은 [Figma 등록 확인](references/figma-registration.md)을 읽는다.
 
 ## 현재 승인 시각 기준
 
@@ -31,9 +31,9 @@ When communicating with the user, refer to Pencil nodes by their visible names. 
 
 ## 글로벌 타이포그래피 기준
 
-`designs.pen`, Android, iOS, frontend에서 앱이 소유한 모든 사용자 표시 텍스트는 같은 의미 기반 역할을 사용한다. 플랫폼별 렌더링과 접근성 동작은 각 플랫폼 규칙을 따른다.
+Figma, Android, iOS, frontend에서 앱이 소유한 모든 사용자 표시 텍스트는 같은 의미 기반 역할을 사용한다. 플랫폼별 렌더링과 접근성 동작은 각 플랫폼 규칙을 따른다.
 
-공식 기준은 2026-08-29에 확인했다.
+최신 승인 Figma의 기존 스타일을 먼저 확인하고 아래 과거 수치와 다르면 임의로 덮어쓰지 않는다. 아래 공식 기준은 2026-08-29에 확인한 기록이다.
 
 - [Apple Human Interface Guidelines](https://developer.apple.com/kr/design/human-interface-guidelines)
 - [Typography](https://developer.apple.com/kr/design/human-interface-guidelines/typography)
@@ -46,18 +46,16 @@ Apple 또는 Google 등 공급업체가 소유한 네이티브 로그인 컨트�
 
 ## Workflow
 
-1. Restate the requested UI change and identify its scope.
-2. Inspect `SxMn5` and the target with the Pencil tools before editing a `.pen` file. Never read or edit `.pen` files through shell tools.
-   Before inserting a new top-level screen or component, inspect the document order and bounds of its same-kind peers. Append it immediately to the right of the last peer using the sequence's existing gap. Never place it at an arbitrary empty canvas position; only start the next aligned row when the right side would overlap existing content.
-3. Find a matching target design in `designs.pen`. If none exists, create the smallest complete design draft before touching Android or frontend implementation files.
-4. Reuse an existing component or instance first, then existing tokens. Do not recreate an equivalent component or introduce a visual value already covered by the system.
-   For user-facing text, reuse one of the 11 semantic typography roles; do not reuse legacy S/M/L typography tokens or add a raw size outside those roles.
-5. If the system has no matching value and the choice changes the result, ask the user before adding it. Add an approved reusable value to the design system before using it elsewhere.
-6. Verify the smallest meaningful target with a screenshot in the same task turn before implementation. A screenshot of only `SxMn5` or the whole document does not count as a target draft.
-7. Only after that screenshot, implement the UI by mapping the draft to existing project theme and components. Never create or modify UI directly from prose alone.
-8. For an iOS surface, verify the default Dynamic Type size and AX5 with `$ios-simulator-validation`. Include `performAccessibilityAudit()` for the reached screen when the test environment supports it.
-9. Modify only the requested scope. Keep a modified root frame in placeholder mode until the work is complete. Check alignment, spacing, contrast, clipping, hit targets, and requested default states.
+1. 해결할 문제, 대상 화면과 상태, 생성 또는 적용할 UI를 짧게 알린다. 결과를 바꿀 미확정 사항은 먼저 확인한다.
+2. 전용 Figma MCP와 해당 도구의 필수 스킬을 사용해 최신 대상 화면 및 `901:300` 디자인 시스템을 조회한다. 원본 조회 없이 코드나 과거 캡처만 보고 새 UI를 적용하지 않는다.
+3. 화면 또는 필요한 상태가 없으면 먼저 Figma에 생성한다. 현재 구현을 역반영하는 요청은 지정된 코드와 실행 캡처를 기준으로 하되, 플랫폼 렌더링 차이는 명시한다.
+4. 공통 요소마다 메인 컴포넌트/컴포넌트 세트와 공통 레퍼런스를 별도로 확인한다. 라이브러리 검색에 없더라도 디자인 시스템 페이지의 로컬 노드를 확인한다. 기존 요소가 있으면 재사용하며, 누락된 상태는 기존 세트에 추가한다.
+5. 없는 공통 요소는 변수, 텍스트 스타일, 기존 아이콘을 재사용해 메인 컴포넌트로 만든다. 공통 레퍼런스에도 연결된 인스턴스로 상태별 예시를 등록한다. 화면 속 단순 프레임이나 전체 UI 이미지는 컴포넌트 등록으로 인정하지 않는다.
+6. 대상 화면과 공통 레퍼런스를 캡처하고 인스턴스의 메인 컴포넌트 연결, 상태, 변수/스타일, 글꼴, 잘림과 겹침을 확인한다. 영향을 받지 않은 영역까지 다시 만드는 작업은 하지 않는다.
+7. 화면, 메인 컴포넌트, 레퍼런스의 링크와 검증 결과를 확보한 뒤에만 코드를 적용한다. 접근 또는 등록 실패 시 해당 UI 적용을 멈추고 미완료 항목과 원인을 알린다.
+8. iOS 구현 검증에는 `$ios-simulator-validation`으로 기본 Dynamic Type과 AX5를 확인한다. 지원 환경에서는 `performAccessibilityAudit()`도 실행한다. Figma 등록만 요청받았다면 앱 빌드나 배포를 완료 범위에 추가하지 않는다.
+9. 변경한 placeholder는 완료 시 해제한다. Figma 등록, 코드 적용, 디바이스 검증, 팀 라이브러리 게시를 각각 구분해 보고한다.
 
-The automatic design screenshot guard was retired at the user's request. Review applicable designs and screenshots without a hook-based implementation gate. If an approved new color or font is required, update SxMn5.
+자동 디자인 스크린샷 훅은 폐기된 상태를 유지한다. 위 절차는 에이전트의 필수 작업 규칙이며 도구 호출을 자동 차단하는 훅이 아니다. 승인된 새 토큰이 필요하면 Figma 디자인 시스템에 먼저 등록한다.
 
 Do not claim HIG compliance when the required Simulator state, screenshot, or accessibility audit could not be completed. Report the affected check as unverified and include the blocking reason.

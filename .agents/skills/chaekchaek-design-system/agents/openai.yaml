@@ -1,6 +1,6 @@
 interface:
   display_name: "첵췍 디자인 시스템"
-  short_description: "UI 구현 전 디자인 시안과 HIG 의미 기반 글자 체계를 강제"
-  default_prompt: "Use $chaekchaek-design-system to verify a designs.pen draft and apply the 11 Apple HIG semantic text roles before implementing this UI change."
+  short_description: "UI 적용 전 Figma 원본과 공통 컴포넌트 및 레퍼런스 등록 검증"
+  default_prompt: "Use $chaekchaek-design-system to inspect the Figma screen, register missing shared components and reference instances, and verify them before applying this UI change."
 policy:
   allow_implicit_invocation: true
