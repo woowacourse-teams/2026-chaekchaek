@@ -1,5 +1,6 @@
 package com.chaekchaek.library.controller;
 
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
@@ -12,7 +13,6 @@ import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RateBookRequest;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.dto.UpdateLibraryItemRequest;
-import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.library.service.LibraryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -21,6 +21,7 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -64,18 +65,29 @@ public class LibraryController {
 
     @PostMapping("/library")
     public ResponseEntity<LibraryItemResponse> add(@Valid @RequestBody AddLibraryItemRequest request) {
-        LibraryItemResponse response = libraryService.addByIsbn13(memberId(), new Isbn13(request.isbn13()),
-                request.status(), request.totalPages());
+        LibraryItemResponse response = libraryService.addByIsbn13(
+                memberId(),
+                new Isbn13(request.isbn13()),
+                request.status(),
+                request.totalPages()
+        );
         return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
                         .path("/{bookId}").buildAndExpand(response.bookId()).toUri())
                 .body(response);
     }
 
     @PatchMapping("/library/{bookId}")
-    public ResponseEntity<LibraryItemResponse> update(@PathVariable long bookId,
-                                                      @Valid @RequestBody UpdateLibraryItemRequest request) {
-        return ResponseEntity.ok(libraryService.update(memberId(), bookId, request.status(),
-                request.currentPage(), request.totalPages()));
+    public ResponseEntity<LibraryItemResponse> update(
+            @PathVariable long bookId,
+            @Valid @RequestBody UpdateLibraryItemRequest request
+    ) {
+        return ResponseEntity.ok(libraryService.update(
+                memberId(),
+                bookId,
+                request.status(),
+                request.currentPage(),
+                request.totalPages()
+        ));
     }
 
     @DeleteMapping("/library/{bookId}")
@@ -94,9 +106,7 @@ public class LibraryController {
     }
 
     @PatchMapping("/library/bulk-status")
-    public ResponseEntity<Void> bulkChangeStatus(
-            @Valid @RequestBody BulkUpdateLibraryStatusRequest request
-    ) {
+    public ResponseEntity<Void> bulkChangeStatus(@Valid @RequestBody BulkUpdateLibraryStatusRequest request) {
         if (request.hasDuplicateBookIds()) {
             throw new IllegalArgumentException("Book IDs must not be duplicated");
         }
@@ -105,8 +115,10 @@ public class LibraryController {
     }
 
     @PutMapping("/library/{bookId}/rating")
-    public ResponseEntity<LibraryItemResponse> rate(@PathVariable long bookId,
-                                                    @Valid @RequestBody RateBookRequest request) {
+    public ResponseEntity<LibraryItemResponse> rate(
+            @PathVariable long bookId,
+            @Valid @RequestBody RateBookRequest request
+    ) {
         return ResponseEntity.ok(libraryService.rate(memberId(), bookId, request.rating()));
     }
 
@@ -120,7 +132,7 @@ public class LibraryController {
     public ResponseEntity<RatingComparisonResponse> compareRatings(
             @RequestParam @NotBlank String isbn13,
             @RequestParam @NotNull @DecimalMin("0.1") @DecimalMax("5.0") @Digits(integer = 1, fraction = 1)
-            java.math.BigDecimal criterion
+            BigDecimal criterion
     ) {
         return ResponseEntity.ok(libraryService.compareRatingsByIsbn13(memberId(), new Isbn13(isbn13), criterion));
     }

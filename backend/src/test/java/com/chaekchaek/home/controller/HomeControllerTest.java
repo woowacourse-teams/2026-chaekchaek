@@ -10,15 +10,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.chaekchaek.home.dto.LatestReviewListResponse;
 import com.chaekchaek.common.auth.ActorType;
+import com.chaekchaek.home.dto.LatestReviewListResponse;
 import com.chaekchaek.home.dto.LatestReviewResponse;
 import com.chaekchaek.home.dto.PopularBookListResponse;
 import com.chaekchaek.home.dto.PopularBookResponse;
-import com.chaekchaek.review.dto.AuthorResponse;
-import com.chaekchaek.review.dto.AuthorProfileStatus;
 import com.chaekchaek.home.service.HomeService;
+import com.chaekchaek.review.dto.AuthorProfileStatus;
+import com.chaekchaek.review.dto.AuthorResponse;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,8 +47,15 @@ class HomeControllerTest {
     void should_ReturnPopularBooks_When_FindingPopularBooks() throws Exception {
         // given
         when(homeService.getPopularBooks()).thenReturn(new PopularBookListResponse(List.of(
-                new PopularBookResponse(42L, "9788925568683", "마션", "https://example.com/martian.jpg",
-                        List.of("앤디 위어"), 12, 30)
+                new PopularBookResponse(
+                        42L,
+                        "9788925568683",
+                        "마션",
+                        "https://example.com/martian.jpg",
+                        List.of("앤디 위어"),
+                        12,
+                        30
+                )
         )));
 
         // when & then
@@ -57,14 +65,16 @@ class HomeControllerTest {
                 .andExpect(jsonPath("$.books[0].isbn13").value("9788925568683"))
                 .andExpect(jsonPath("$.books[0].reviewCount").value(12))
                 .andExpect(jsonPath("$.books[0].replyCount").value(30))
-                .andDo(document("home-popular-books",
+                .andDo(document(
+                        "home-popular-books",
                         responseFields(popularBookResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("인기 책 목록 조회")
                                 .description("유효 감상과 답글 수의 합이 많은 책을 최대 10권 조회한다. 조회할 책이 없으면 빈 배열을 반환한다")
                                 .tag("홈")
                                 .responseFields(popularBookResponseFields())
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test
@@ -84,11 +94,24 @@ class HomeControllerTest {
     void should_ReturnLatestReviews_When_FindingLatestReviews() throws Exception {
         // given
         when(homeService.getLatestReviews()).thenReturn(new LatestReviewListResponse(List.of(
-                new LatestReviewResponse("도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.",
-                        java.time.Instant.parse("2026-08-18T14:00:00Z"),
-                        new AuthorResponse(1L, "다정한 참새", "https://example.com/profile.jpg", false, false,
-                                ActorType.MEMBER, AuthorProfileStatus.AVAILABLE), 12L,
-                        42L, "9788936433598", "보이지 않는 도시", "https://example.com/invisible-cities.jpg")
+                new LatestReviewResponse(
+                        "도시는 기억으로 만들어진다는 문장에서 오래 멈췄다.",
+                        Instant.parse("2026-08-18T14:00:00Z"),
+                        new AuthorResponse(
+                                1L,
+                                "다정한 참새",
+                                "https://example.com/profile.jpg",
+                                false,
+                                false,
+                                ActorType.MEMBER,
+                                AuthorProfileStatus.AVAILABLE
+                        ),
+                        12L,
+                        42L,
+                        "9788936433598",
+                        "보이지 않는 도시",
+                        "https://example.com/invisible-cities.jpg"
+                )
         )));
 
         // when & then
@@ -103,14 +126,16 @@ class HomeControllerTest {
                 .andExpect(jsonPath("$.reviews[0].author.actorType").value("MEMBER"))
                 .andExpect(jsonPath("$.reviews[0].bookId").value(42))
                 .andExpect(jsonPath("$.reviews[0].isbn13").value("9788936433598"))
-                .andDo(document("home-latest-reviews",
+                .andDo(document(
+                        "home-latest-reviews",
                         responseFields(latestReviewResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("최신 감상 목록 조회")
                                 .description("삭제되지 않고 스포일러가 아닌 최신 감상을 최대 10개 조회한다. 조회할 감상이 없으면 빈 배열을 반환한다")
                                 .tag("홈")
                                 .responseFields(latestReviewResponseFields())
-                                .build())));
+                                .build())
+                ));
     }
 
     @Test

@@ -22,6 +22,7 @@ import com.chaekchaek.socialaccount.domain.Provider;
 import com.chaekchaek.socialaccount.domain.SocialAccount;
 import com.chaekchaek.socialaccount.repository.SocialAccountRepository;
 import jakarta.persistence.EntityManager;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,24 +58,47 @@ public class SocialLoginIntegrationTest {
 
     @Test
     @DisplayName("탈퇴와 재가입 후 공개 답글은 새 닉네임을 표시하고 기존 작성물과 소유권을 보존한다")
-    void withdrawalAndRejoinPreserveOldContentAndCreateNewPublicReply() {
-        GoogleProfile profile = new GoogleProfile("rejoining-user", "user@example.com", "image");
+    void should_PreserveOldContentAndCreateNewPublicReply_When_WithdrawnMemberRejoins() {
+        // given
+        GoogleProfile profile = new GoogleProfile(
+                "rejoining-user",
+                "user@example.com",
+                "image"
+        );
         Member oldMember = socialLoginService.loginOrSignUp(profile);
         memberService.updateNickname(oldMember.getId(), "이전 공개 이름");
         memberService.updateAnonymity(oldMember.getId(), false);
         long oldActorId = actorRepository.findByMemberId(oldMember.getId()).orElseThrow().getId();
         String oldAnonymousName = oldMember.getAnonymousNickname();
         var review = reviewRepository.save(Review.create(
-                1L, oldActorId, "기존 감상", null, null, null, false, false));
+                1L,
+                oldActorId,
+                "기존 감상",
+                null,
+                null,
+                null,
+                false,
+                false
+        ));
         authenticate(oldMember.getId());
-        var oldReply = reviewService.createReply(review.getId(),
-                new ReplyCreateRequest("기존 공개 답글"));
+        var oldReply = reviewService.createReply(
+                review.getId(),
+                new ReplyCreateRequest("기존 공개 답글")
+        );
         var deletedReply = replyRepository.save(Reply.create(
-                review.getId(), oldActorId, "삭제 답글", false));
+                review.getId(),
+                oldActorId,
+                "삭제 답글",
+                false
+        ));
         deletedReply.deleteBy(oldActorId);
         memberService.withdraw(oldMember.getId());
-        assertThatThrownBy(() -> reviewService.createReply(review.getId(),
-                new ReplyCreateRequest("탈퇴 토큰 답글")))
+
+        // when & then
+        assertThatThrownBy(() -> reviewService.createReply(
+                review.getId(),
+                new ReplyCreateRequest("탈퇴 토큰 답글")
+        ))
                 .isInstanceOf(BusinessException.class);
         SecurityContextHolder.clearContext();
         entityManager.flush();
@@ -89,22 +113,29 @@ public class SocialLoginIntegrationTest {
         memberService.updateNickname(rejoined.getId(), "새 공개 이름");
         memberService.updateAnonymity(rejoined.getId(), false);
         authenticate(rejoined.getId());
-        var newReply = reviewService.createReply(review.getId(),
-                new ReplyCreateRequest("재가입 공개 답글"));
+        var newReply = reviewService.createReply(
+                review.getId(),
+                new ReplyCreateRequest("재가입 공개 답글")
+        );
         assertThat(newReply.author().displayName()).isEqualTo("새 공개 이름");
         assertThat(newReply.author().memberId()).isEqualTo(rejoined.getId());
         assertThat(newReply.author().profileStatus())
                 .isEqualTo(AuthorProfileStatus.AVAILABLE);
-        var oldResponse = reviewService.findReplies(review.getId(), 1).items().stream()
-                .filter(reply -> reply.replyId() == oldReply.replyId()).findFirst().orElseThrow();
+        var oldResponse = reviewService.findReplies(review.getId(), 1).items()
+                .stream()
+                .filter(reply -> reply.replyId() == oldReply.replyId())
+                .findFirst()
+                .orElseThrow();
         assertThat(oldResponse.author().displayName()).isEqualTo(oldAnonymousName);
         assertThat(oldResponse.author().memberId()).isNull();
         assertThat(oldResponse.author().mine()).isFalse();
         assertThat(replyRepository.findById(oldReply.replyId()).orElseThrow().getActorId()).isEqualTo(oldActorId);
         assertThat(reviewRepository.findById(review.getId()).orElseThrow().getActorId()).isEqualTo(oldActorId);
         assertThat(replyRepository.findById(deletedReply.getId()).orElseThrow().isDeleted()).isTrue();
-        assertThatThrownBy(() -> reviewService.updateReply(oldReply.replyId(),
-                new ReplyUpdateRequest("수정 시도")))
+        assertThatThrownBy(() -> reviewService.updateReply(
+                oldReply.replyId(),
+                new ReplyUpdateRequest("수정 시도")
+        ))
                 .isInstanceOf(BusinessException.class);
         entityManager.flush();
         entityManager.clear();
@@ -116,7 +147,7 @@ public class SocialLoginIntegrationTest {
         var jwt = Jwt.withTokenValue("token")
                 .header("alg", "none").subject(memberId.toString()).build();
         SecurityContextHolder.getContext().setAuthentication(
-                new JwtAuthenticationToken(jwt, java.util.List.of()));
+                new JwtAuthenticationToken(jwt, List.of()));
     }
 
     @Autowired
@@ -150,9 +181,9 @@ public class SocialLoginIntegrationTest {
         // then
         SocialAccount socialAccount = socialAccountRepository
                 .findByProviderAndProviderUserId(
-                        Provider.GOOGLE,
-                        profile.providerUserId()
-                )
+                Provider.GOOGLE,
+                profile.providerUserId()
+        )
                 .orElseThrow();
 
         assertAll(

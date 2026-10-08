@@ -5,7 +5,6 @@ import com.chaekchaek.book.client.BookSearchItem;
 import com.chaekchaek.book.client.BookSearchResult;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
-import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
@@ -16,7 +15,6 @@ import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
@@ -38,7 +36,7 @@ public class BookSearchService {
     private final CurrentMemberIdProvider currentMemberIdProvider;
     private final LibraryItemRepository libraryItemRepository;
 
-    public BookSearchResponse search(String query, int page, BookSearchSort sort) {
+    public BookSearchResponse search(String query, int page) {
         BookSearchResult source = bookClient.search(query, page);
         List<BookSearchItem> searchedBooks = source.items();
         List<Isbn13> searchResultIsbn13s = searchedBooks.stream()
@@ -68,7 +66,6 @@ public class BookSearchService {
 
             items.add(toBookItem(searchedBook, registeredBook, activityCounts, memberId, libraryBookIds));
         }
-        items.sort(comparator(sort));
 
         return new BookSearchResponse(
                 source.totalCount(),
@@ -81,28 +78,13 @@ public class BookSearchService {
         if (memberId.isEmpty() || registeredBooks.isEmpty()) {
             return Set.of();
         }
-        List<Long> bookIds = registeredBooks.stream().map(Book::getId).toList();
+        List<Long> bookIds = registeredBooks.stream()
+                .map(Book::getId)
+                .toList();
         return libraryItemRepository.findAllByMemberIdAndBookIdIn(memberId.getAsLong(), bookIds)
                 .stream()
                 .map(LibraryItem::getBookId)
                 .collect(Collectors.toSet());
-    }
-
-    private Comparator<BookItem> comparator(BookSearchSort sort) {
-        return switch (sort) {
-            case TITLE_ASC -> Comparator.comparing(BookItem::title,
-                    Comparator.nullsLast(Comparator.naturalOrder()));
-            case TITLE_DESC -> Comparator.comparing(BookItem::title,
-                    Comparator.nullsLast(Comparator.reverseOrder()));
-            case OLDEST -> Comparator.comparing(BookItem::publishedDate,
-                    Comparator.nullsLast(Comparator.naturalOrder()));
-            case LATEST -> Comparator.comparing(BookItem::publishedDate,
-                    Comparator.nullsLast(Comparator.reverseOrder()));
-            case REVIEW -> Comparator.comparing(BookItem::reviewCount,
-                    Comparator.nullsLast(Comparator.reverseOrder()));
-            case COMMENT -> Comparator.comparing(this::totalActivityCount,
-                    Comparator.nullsLast(Comparator.reverseOrder()));
-        };
     }
 
     private BookItem toBookItem(
@@ -139,12 +121,5 @@ public class BookSearchService {
             return null;
         }
         return registeredBook != null && libraryBookIds.contains(registeredBook.getId());
-    }
-
-    private Long totalActivityCount(BookItem item) {
-        if (item.reviewCount() == null || item.replyCount() == null) {
-            return null;
-        }
-        return (long) item.reviewCount() + item.replyCount();
     }
 }

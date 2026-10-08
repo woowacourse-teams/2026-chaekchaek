@@ -60,8 +60,15 @@ public class Actor {
     @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
 
-    private Actor(Member member, ActorType type, String guestTokenHash, String guestNickname,
-                  LocalDateTime createdAt, LocalDateTime guestTokenIssuedAt, LocalDateTime expiresAt) {
+    private Actor(
+            Member member,
+            ActorType type,
+            String guestTokenHash,
+            String guestNickname,
+            LocalDateTime createdAt,
+            LocalDateTime guestTokenIssuedAt,
+            LocalDateTime expiresAt
+    ) {
         this.member = member;
         this.type = type;
         this.guestTokenHash = guestTokenHash;
@@ -78,7 +85,12 @@ public class Actor {
         return new Actor(member, ActorType.MEMBER, null, null, createdAt, null, null);
     }
 
-    public static Actor guest(String tokenHash, String nickname, LocalDateTime createdAt, LocalDateTime expiresAt) {
+    public static Actor guest(
+            String tokenHash,
+            String nickname,
+            LocalDateTime createdAt,
+            LocalDateTime expiresAt
+    ) {
         if (tokenHash == null || tokenHash.isBlank() || tokenHash.length() > 64) {
             throw new IllegalArgumentException("Guest actor requires a valid token hash");
         }

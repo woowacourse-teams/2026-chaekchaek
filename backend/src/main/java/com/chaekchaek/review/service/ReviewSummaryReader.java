@@ -48,12 +48,16 @@ public class ReviewSummaryReader {
                 .toList();
         Map<Long, Long> replyCounts = replyRepository.countActiveByReviewIdInGroupByReviewId(reviewIds)
                 .stream()
-                .collect(Collectors.toMap(ReplyRepository.ReviewCount::getReviewId,
-                        ReplyRepository.ReviewCount::getCount));
+                .collect(Collectors.toMap(
+                        ReplyRepository.ReviewCount::getReviewId,
+                        ReplyRepository.ReviewCount::getCount
+                ));
         Map<Long, Long> likeCounts = reviewReactionRepository.countByReviewIdInGroupByReviewId(reviewIds)
                 .stream()
-                .collect(Collectors.toMap(ReviewReactionRepository.ReactionCount::getReviewId,
-                        ReviewReactionRepository.ReactionCount::getCount));
+                .collect(Collectors.toMap(
+                        ReviewReactionRepository.ReactionCount::getReviewId,
+                        ReviewReactionRepository.ReactionCount::getCount
+                ));
 
         List<Long> actorIds = reviews.stream()
                 .map(Review::getActorId)
@@ -67,10 +71,27 @@ public class ReviewSummaryReader {
         Set<Long> likedReviewIds = likedReviewIds(reviewIds, currentActorId);
 
         return reviews.stream()
-                .map(review -> toSummary(review, books, replyCounts, likeCounts, likedReviewIds, profiles,
-                        currentActorId))
+                .map(review -> toSummary(
+                        review,
+                        books,
+                        replyCounts,
+                        likeCounts,
+                        likedReviewIds,
+                        profiles,
+                        currentActorId
+                ))
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    private Set<Long> likedReviewIds(List<Long> reviewIds, Long currentActorId) {
+        if (currentActorId == null) {
+            return Set.of();
+        }
+        return reviewReactionRepository.findByReviewIdInAndActorId(reviewIds, currentActorId)
+                .stream()
+                .map(ReviewReaction::getReviewId)
+                .collect(Collectors.toSet());
     }
 
     private ReviewSummary toSummary(
@@ -79,7 +100,8 @@ public class ReviewSummaryReader {
             Map<Long, Long> replyCounts,
             Map<Long, Long> likeCounts,
             Set<Long> likedReviewIds,
-            Map<Long, ReviewMemberProfile> profiles, Long currentActorId
+            Map<Long, ReviewMemberProfile> profiles,
+            Long currentActorId
     ) {
         Book book = books.get(review.getBookId());
         if (book == null) {
@@ -93,16 +115,6 @@ public class ReviewSummaryReader {
                 likeCounts.getOrDefault(review.getId(), 0L),
                 likedReviewIds.contains(review.getId())
         );
-    }
-
-    private Set<Long> likedReviewIds(List<Long> reviewIds, Long currentActorId) {
-        if (currentActorId == null) {
-            return Set.of();
-        }
-        return reviewReactionRepository.findByReviewIdInAndActorId(reviewIds, currentActorId)
-                .stream()
-                .map(ReviewReaction::getReviewId)
-                .collect(Collectors.toSet());
     }
 
     private AuthorResponse authorOf(Review review, ReviewMemberProfile profile, Long currentActorId) {
@@ -144,7 +156,13 @@ public class ReviewSummaryReader {
         );
     }
 
-    public record ReviewSummary(Review review, Book book, AuthorResponse author, long replyCount, long likeCount,
-                                boolean likedByMe) {
+    public record ReviewSummary(
+            Review review,
+            Book book,
+            AuthorResponse author,
+            long replyCount,
+            long likeCount,
+            boolean likedByMe
+    ) {
     }
 }

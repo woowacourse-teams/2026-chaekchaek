@@ -14,9 +14,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 public class GoogleIdTokenConfig {
 
     @Bean
-    GoogleIdTokenVerifier googleIdTokenVerifier(
-            GoogleIdTokenProperties properties
-    ) {
+    GoogleIdTokenVerifier googleIdTokenVerifier(GoogleIdTokenProperties properties) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder
                 .withJwkSetUri(properties.jwkSetUri())
                 .build();

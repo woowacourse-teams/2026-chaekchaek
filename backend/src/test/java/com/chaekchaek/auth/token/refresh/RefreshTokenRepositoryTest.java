@@ -30,7 +30,7 @@ class RefreshTokenRepositoryTest {
 
     @Test
     @DisplayName("Refresh Token을 저장하고 해시로 조회한다")
-    void should_SaveAndFindByTokenHash() {
+    void should_SaveAndFindRefreshToken_When_TokenHashMatches() {
         // given
         LocalDateTime issuedAt =
                 LocalDateTime.of(2026, 8, 12, 12, 0);
@@ -73,7 +73,7 @@ class RefreshTokenRepositoryTest {
 
     @Test
     @DisplayName("동일한 Refresh Token 해시 중복 저장은 거부된다")
-    void should_Reject_DuplicateTokenHash() {
+    void should_RejectRefreshToken_When_TokenHashIsDuplicated() {
         // given
         LocalDateTime issuedAt =
                 LocalDateTime.of(2026, 8, 12, 12, 0);
@@ -112,7 +112,7 @@ class RefreshTokenRepositoryTest {
 
     @Test
     @DisplayName("폐기 시각 변경을 저장한다")
-    void should_SaveRevocation() {
+    void should_SaveRevocation_When_RefreshTokenIsRevoked() {
         // given
         LocalDateTime issuedAt =
                 LocalDateTime.of(2026, 8, 12, 12, 0);

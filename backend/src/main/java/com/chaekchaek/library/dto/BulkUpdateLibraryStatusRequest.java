@@ -12,6 +12,8 @@ public record BulkUpdateLibraryStatusRequest(
 ) {
 
     public boolean hasDuplicateBookIds() {
-        return bookIds.stream().distinct().count() != bookIds.size();
+        return bookIds.stream()
+                .distinct()
+                .count() != bookIds.size();
     }
 }

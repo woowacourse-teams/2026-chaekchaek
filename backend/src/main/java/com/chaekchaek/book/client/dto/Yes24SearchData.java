@@ -14,6 +14,10 @@ public record Yes24SearchData(
     }
 
     public Integer nextPage() {
-        return (long) currentPage * pageSize < totalCount ? currentPage + 1 : null;
+        Integer nextPage = null;
+        if ((long) currentPage * pageSize < totalCount) {
+            nextPage = currentPage + 1;
+        }
+        return nextPage;
     }
 }

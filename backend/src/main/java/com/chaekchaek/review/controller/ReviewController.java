@@ -36,16 +36,20 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @GetMapping("/books/{bookId}/reviews")
-    public ResponseEntity<PageResponse<ReviewResponse>> findReviews(@PathVariable long bookId,
-                                                                      @RequestParam @Positive int page,
-                                                                      @RequestParam(defaultValue = "ALL") Feed feed,
-                                                                      @RequestParam(defaultValue = "PAGE") ReviewSort sort) {
+    public ResponseEntity<PageResponse<ReviewResponse>> findReviews(
+            @PathVariable long bookId,
+            @RequestParam @Positive int page,
+            @RequestParam(defaultValue = "ALL") Feed feed,
+            @RequestParam(defaultValue = "PAGE") ReviewSort sort
+    ) {
         return ResponseEntity.ok(reviewService.findReviews(bookId, page, feed, sort));
     }
 
     @PostMapping("/books/{bookId}/reviews")
-    public ResponseEntity<ReviewResponse> createReview(@PathVariable long bookId,
-                                                        @Valid @RequestBody ReviewCreateRequest request) {
+    public ResponseEntity<ReviewResponse> createReview(
+            @PathVariable long bookId,
+            @Valid @RequestBody ReviewCreateRequest request
+    ) {
         ReviewResponse response = reviewService.createReview(bookId, request);
         return ResponseEntity.created(URI.create("/api/v1/reviews/" + response.reviewId())).body(response);
     }
@@ -60,8 +64,10 @@ public class ReviewController {
     }
 
     @PatchMapping("/reviews/{reviewId}")
-    public ResponseEntity<ReviewResponse> updateReview(@PathVariable long reviewId,
-                                                        @RequestBody ReviewUpdateRequest request) {
+    public ResponseEntity<ReviewResponse> updateReview(
+            @PathVariable long reviewId,
+            @RequestBody ReviewUpdateRequest request
+    ) {
         return ResponseEntity.ok(reviewService.updateReview(reviewId, request));
     }
 
@@ -72,21 +78,27 @@ public class ReviewController {
     }
 
     @GetMapping("/reviews/{reviewId}/replies")
-    public ResponseEntity<PageResponse<ReplyResponse>> findReplies(@PathVariable long reviewId,
-                                                                     @RequestParam @Positive int page) {
+    public ResponseEntity<PageResponse<ReplyResponse>> findReplies(
+            @PathVariable long reviewId,
+            @RequestParam @Positive int page
+    ) {
         return ResponseEntity.ok(reviewService.findReplies(reviewId, page));
     }
 
     @PostMapping("/reviews/{reviewId}/replies")
-    public ResponseEntity<ReplyResponse> createReply(@PathVariable long reviewId,
-                                                      @Valid @RequestBody ReplyCreateRequest request) {
+    public ResponseEntity<ReplyResponse> createReply(
+            @PathVariable long reviewId,
+            @Valid @RequestBody ReplyCreateRequest request
+    ) {
         ReplyResponse response = reviewService.createReply(reviewId, request);
         return ResponseEntity.created(URI.create("/api/v1/replies/" + response.replyId())).body(response);
     }
 
     @PatchMapping("/replies/{replyId}")
-    public ResponseEntity<ReplyResponse> updateReply(@PathVariable long replyId,
-                                                      @Valid @RequestBody ReplyUpdateRequest request) {
+    public ResponseEntity<ReplyResponse> updateReply(
+            @PathVariable long replyId,
+            @Valid @RequestBody ReplyUpdateRequest request
+    ) {
         return ResponseEntity.ok(reviewService.updateReply(replyId, request));
     }
 

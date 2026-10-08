@@ -116,9 +116,20 @@ public class Book {
             Integer totalPages
     ) {
         validateTotalPages(totalPages);
-        return new Book(isbn13, title, coverImageUrl, spineImageUrl, backImageUrl,
-                description, authors, translators, publisher, category,
-                publishedDate, totalPages);
+        return new Book(
+                isbn13,
+                title,
+                coverImageUrl,
+                spineImageUrl,
+                backImageUrl,
+                description,
+                authors,
+                translators,
+                publisher,
+                category,
+                publishedDate,
+                totalPages
+        );
     }
 
     public void rememberTotalPages(Integer requestedTotalPages) {

@@ -77,7 +77,11 @@ class MobileGoogleLoginServiceTest {
                 new IssuedRefreshToken(
                         "refresh-token",
                         LocalDateTime.of(
-                                2026, 8, 28, 0, 0
+                                2026,
+                                8,
+                                28,
+                                0,
+                                0
                         )
                 );
 

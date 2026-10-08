@@ -58,29 +58,54 @@ class ReviewCreateByIsbnTransactionTest {
         when(bookClient.findBookByIsbn13(ISBN13)).thenAnswer(invocation -> {
             externalCallInTransaction.set(TransactionSynchronizationManager.isActualTransactionActive());
             return new BookDetailItem(
-                    "마션", "https://image.example/martian.jpg", null, null,
-                    "책 설명", List.of("앤디 위어"), List.of(), LocalDate.of(2026, 1, 1),
-                    ISBN13.value(), "SF", "알에이치코리아", 308
+                    "마션",
+                    "https://image.example/martian.jpg",
+                    null,
+                    null,
+                    "책 설명",
+                    List.of("앤디 위어"),
+                    List.of(),
+                    LocalDate.of(2026, 1, 1),
+                    ISBN13.value(),
+                    "SF",
+                    "알에이치코리아",
+                    308
             );
         });
         BookResolver bookResolver = new BookResolver(bookClient, bookRepository, transactionManager);
         ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        IllegalStateException reviewWriteFailure = new IllegalStateException("review write failed");
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
             reviewSaveInTransaction.set(TransactionSynchronizationManager.isActualTransactionActive());
-            throw new IllegalStateException("review write failed");
+            throw reviewWriteFailure;
         });
         ReviewService reviewService = new ReviewService(
-                reviewRepository, mock(ReplyRepository.class), mock(ReviewReactionRepository.class),
-                mock(ReplyReactionRepository.class), () -> CurrentActor.guest(7L),
-                mock(ReadingRecordCoordinator.class), requireStoredBook(), guestProfileReader(),
-                bookResolver, transactionManager
+                reviewRepository,
+                mock(ReplyRepository.class),
+                mock(ReviewReactionRepository.class),
+                mock(ReplyReactionRepository.class),
+                () -> CurrentActor.guest(7L),
+                mock(ReadingRecordCoordinator.class),
+                requireStoredBook(),
+                guestProfileReader(),
+                bookResolver,
+                transactionManager
         );
 
         // when & then
-        assertThatThrownBy(() -> reviewService.createReviewByIsbn13(ISBN13,
-                new ReviewCreateRequest("감상", null, null, null, null, false)))
+        assertThatThrownBy(() -> reviewService.createReviewByIsbn13(
+                ISBN13,
+                new ReviewCreateRequest(
+                        "감상",
+                        null,
+                        null,
+                        null,
+                        null,
+                        false
+                )
+        ))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("review write failed");
+                .isSameAs(reviewWriteFailure);
         assertThat(externalCallInTransaction).isFalse();
         assertThat(reviewSaveInTransaction).isTrue();
         assertThat(bookRepository.findByIsbn13(ISBN13)).isPresent();
@@ -95,7 +120,16 @@ class ReviewCreateByIsbnTransactionTest {
     }
 
     private ReviewMemberReader guestProfileReader() {
-        return actorIds -> Map.of(7L,
-                new ReviewMemberProfile("게스트", null, "다정한 참새", true, false, ActorType.GUEST));
+        return actorIds -> Map.of(
+                7L,
+                new ReviewMemberProfile(
+                        "게스트",
+                        null,
+                        "다정한 참새",
+                        true,
+                        false,
+                        ActorType.GUEST
+                )
+        );
     }
 }

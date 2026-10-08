@@ -30,10 +30,7 @@ public class AppleAuthConfig {
     }
 
     @Bean
-    AppleClientSecretProvider appleClientSecretProvider(
-            AppleAuthProperties properties,
-            Clock clock
-    ) {
+    AppleClientSecretProvider appleClientSecretProvider(AppleAuthProperties properties, Clock clock) {
         return new AppleClientSecretProvider(properties, clock);
     }
 

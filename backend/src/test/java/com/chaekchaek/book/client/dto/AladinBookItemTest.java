@@ -45,7 +45,15 @@ class AladinBookItemTest {
     void should_ReturnTrue_When_Isbn13Matches() {
         // given
         AladinBookItem item = new AladinBookItem(
-                null, null, null, null, null, "9788925568683", null, null, null
+                null,
+                null,
+                null,
+                null,
+                null,
+                "9788925568683",
+                null,
+                null,
+                null
         );
 
         // when
@@ -60,7 +68,15 @@ class AladinBookItemTest {
     void should_ReturnFalse_When_Isbn13Differs() {
         // given
         AladinBookItem item = new AladinBookItem(
-                null, null, null, null, null, "9788925568683", null, null, null
+                null,
+                null,
+                null,
+                null,
+                null,
+                "9788925568683",
+                null,
+                null,
+                null
         );
 
         // when

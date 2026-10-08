@@ -103,8 +103,12 @@ class ReviewFeedRepositoryTest {
         Review second = reviewRepository.save(review(bookId, "둘째 감상", false));
         reviewRepository.flush();
         Timestamp sameTime = Timestamp.from(Instant.parse("2026-09-28T10:00:00Z"));
-        jdbcTemplate.update("update review set created_at = ? where review_id in (?, ?)",
-                sameTime, first.getId(), second.getId());
+        jdbcTemplate.update(
+                "update review set created_at = ? where review_id in (?, ?)",
+                sameTime,
+                first.getId(),
+                second.getId()
+        );
         entityManager.clear();
 
         // when

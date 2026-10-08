@@ -23,11 +23,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     }
 
     @Override
-    public void commence(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AuthenticationException exception
-    ) throws IOException {
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException {
         ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
         HttpStatus status = HttpStatus.UNAUTHORIZED;
 

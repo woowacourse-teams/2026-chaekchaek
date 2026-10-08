@@ -39,7 +39,8 @@ public class AppleIdTokenVerifier {
         String expectedNonce = sha256(rawNonce);
         if (tokenNonce == null || !MessageDigest.isEqual(
                 tokenNonce.getBytes(StandardCharsets.US_ASCII),
-                expectedNonce.getBytes(StandardCharsets.US_ASCII))) {
+                expectedNonce.getBytes(StandardCharsets.US_ASCII)
+        )) {
             throw new InvalidAppleAuthorizationException();
         }
     }

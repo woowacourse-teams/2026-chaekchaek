@@ -1,6 +1,7 @@
 package com.chaekchaek.book.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -9,7 +10,6 @@ import com.chaekchaek.book.client.BookSearchItem;
 import com.chaekchaek.book.client.BookSearchResult;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
-import com.chaekchaek.book.domain.BookSearchSort;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.OptionalLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 
 class BookSearchServiceTest {
 
@@ -35,15 +36,19 @@ class BookSearchServiceTest {
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
-        BookSearchResult searchResult = new BookSearchResult(21, 2, List.of());
+        BookSearchResult searchResult = new BookSearchResult(
+                21,
+                2,
+                List.of()
+        );
         when(bookClient.search("마션", 1)).thenReturn(searchResult);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
-        BookSearchResponse response = service.search("마션", 1, BookSearchSort.LATEST);
+        BookSearchResponse response = service.search("마션", 1);
 
         // then
         assertThat(response.nextPage()).isEqualTo(2);
@@ -57,15 +62,19 @@ class BookSearchServiceTest {
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
-        BookSearchResult searchResult = new BookSearchResult(21, null, List.of());
+        BookSearchResult searchResult = new BookSearchResult(
+                21,
+                null,
+                List.of()
+        );
         when(bookClient.search("마션", 1)).thenReturn(searchResult);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
-        BookSearchResponse response = service.search("마션", 1, BookSearchSort.LATEST);
+        BookSearchResponse response = service.search("마션", 1);
 
         // then
         assertThat(response.totalCount()).isEqualTo(21);
@@ -89,15 +98,19 @@ class BookSearchServiceTest {
                 "국내도서>컴퓨터/모바일>프로그래밍",
                 "인사이트"
         );
-        BookSearchResult searchResult = new BookSearchResult(1, null, List.of(searchedBook));
+        BookSearchResult searchResult = new BookSearchResult(
+                1,
+                null,
+                List.of(searchedBook)
+        );
         when(bookClient.search("클린 코드", 1)).thenReturn(searchResult);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
-        BookSearchResponse response = service.search("클린 코드", 1, BookSearchSort.LATEST);
+        BookSearchResponse response = service.search("클린 코드", 1);
 
         // then
         BookItem item = response.items().getFirst();
@@ -133,14 +146,17 @@ class BookSearchServiceTest {
         when(registeredBook.getId()).thenReturn(42L);
         when(registeredBook.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(
-                1, null, List.of(searchedBook)));
+                1,
+                null,
+                List.of(searchedBook)
+        ));
         when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683"))))
                 .thenReturn(List.of(registeredBook));
         when(activityCountReader.getActivityCounts(List.of(42L)))
                 .thenReturn(Map.of(42L, new ActivityCounts(2L, 5L)));
 
         // when
-        BookItem item = service.search("마션", 1, BookSearchSort.LATEST).items().getFirst();
+        BookItem item = service.search("마션", 1).items().getFirst();
 
         // then
         assertThat(item.bookId()).isEqualTo(42L);
@@ -154,13 +170,17 @@ class BookSearchServiceTest {
         // given
         BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
         BookSearchService service = serviceWith(
-                new BookSearchResult(1, null, List.of(searchedBook)),
+                new BookSearchResult(
+                        1,
+                        null,
+                        List.of(searchedBook)
+                ),
                 Map.of(),
                 registeredBook(42L, searchedBook.isbn13())
         );
 
         // when
-        BookItem item = service.search("책", 1, BookSearchSort.LATEST).items().getFirst();
+        BookItem item = service.search("책", 1).items().getFirst();
 
         // then
         assertThat(item.reviewCount()).isZero();
@@ -177,13 +197,21 @@ class BookSearchServiceTest {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookSearchService service = new BookSearchService(
-                bookClient, bookRepository, activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                bookClient,
+                bookRepository,
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
         BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
         Book registeredBook = registeredBook(42L, searchedBook.isbn13());
         LibraryItem libraryItem = mock(LibraryItem.class);
         when(libraryItem.getBookId()).thenReturn(42L);
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(
-                1, null, List.of(searchedBook)));
+                1,
+                null,
+                List.of(searchedBook)
+        ));
         when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(List.of(registeredBook));
         when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
@@ -191,7 +219,7 @@ class BookSearchServiceTest {
                 .thenReturn(List.of(libraryItem));
 
         // when
-        BookItem item = service.search("마션", 1, BookSearchSort.LATEST).items().getFirst();
+        BookItem item = service.search("마션", 1).items().getFirst();
 
         // then
         assertThat(item.isRegisteredInMyLibrary()).isTrue();
@@ -218,136 +246,43 @@ class BookSearchServiceTest {
     }
 
     @Test
-    @DisplayName("이름 오름차순으로 검색하면 이름이 빠른 도서부터 반환한다")
-    void should_SortByTitleAscending_When_SortIsTitleAsc() {
+    @DisplayName("검색 결과에 도서와 활동 정보를 결합해도 입력 순서를 유지한다")
+    void should_PreserveInputOrder_When_EnrichingSearchResults() {
         // given
-        BookSearchService service = serviceWithBooks(
-                searchedBook("클린 아키텍처", "2024-01-01", "9780000000002"),
-                searchedBook("가상 면접 사례로 배우는 대규모 시스템 설계 기초", "2026-01-01", "9780000000019"),
-                searchedBook("리팩터링", "2021-01-01", "9780000000026")
-        );
-
-        // when
-        BookSearchResponse response = service.search("책", 1, BookSearchSort.TITLE_ASC);
-
-        // then
-        assertThat(response.items()).extracting(BookItem::title)
-                .containsExactly("가상 면접 사례로 배우는 대규모 시스템 설계 기초", "리팩터링", "클린 아키텍처");
-    }
-
-    @Test
-    @DisplayName("이름 내림차순으로 검색하면 이름이 늦은 도서부터 반환한다")
-    void should_SortByTitleDescending_When_SortIsTitleDesc() {
-        // given
-        BookSearchService service = serviceWithBooks(
-                searchedBook("클린 아키텍처", "2024-01-01", "9780000000002"),
-                searchedBook("가상 면접 사례로 배우는 대규모 시스템 설계 기초", "2026-01-01", "9780000000019"),
-                searchedBook("리팩터링", "2021-01-01", "9780000000026")
-        );
-
-        // when
-        BookSearchResponse response = service.search("책", 1, BookSearchSort.TITLE_DESC);
-
-        // then
-        assertThat(response.items()).extracting(BookItem::title)
-                .containsExactly("클린 아키텍처", "리팩터링", "가상 면접 사례로 배우는 대규모 시스템 설계 기초");
-    }
-
-    @Test
-    @DisplayName("오래된순으로 검색하면 출판일이 오래된 도서부터 반환한다")
-    void should_SortByPublishedDateAscending_When_SortIsOldest() {
-        // given
-        BookSearchService service = serviceWithBooks(
-                searchedBook("중간 책", "2024-01-01", "9780000000002"),
-                searchedBook("최신 책", "2026-01-01", "9780000000019"),
-                searchedBook("오래된 책", "2021-01-01", "9780000000026")
-        );
-
-        // when
-        BookSearchResponse response = service.search("책", 1, BookSearchSort.OLDEST);
-
-        // then
-        assertThat(response.items()).extracting(BookItem::title)
-                .containsExactly("오래된 책", "중간 책", "최신 책");
-    }
-
-    @Test
-    @DisplayName("최신순으로 검색하면 출판일이 최신인 도서부터 반환한다")
-    void should_SortByPublishedDateDescending_When_SortIsLatest() {
-        // given
+        BookSearchItem unregistered = searchedBook("나 도서", "2023-01-01", "9780000000002");
+        BookSearchItem oldest = searchedBook("다 도서", "2021-01-01", "9780000000019");
+        BookSearchItem newest = searchedBook("가 도서", "2026-01-01", "9780000000026");
+        BookSearchItem middle = searchedBook("라 도서", "2024-01-01", "9780000000033");
         BookSearchService service = serviceWith(
                 new BookSearchResult(
-                        3,
-                        null,
-                        List.of(
-                                searchedBook("오래된 책", "2021-01-01", "9780000000002"),
-                                searchedBook("최신 책", "2026-01-01", "9780000000019"),
-                                searchedBook("중간 책", "2024-01-01", "9780000000026")
-                        )
+                        14,
+                        2,
+                        List.of(unregistered, oldest, newest, middle)
                 ),
-                Map.of()
+                Map.of(
+                        42L, new ActivityCounts(2L, 7L),
+                        7L, new ActivityCounts(8L, 1L),
+                        99L, new ActivityCounts(1L, 0L)
+                ),
+                registeredBook(99L, middle.isbn13()),
+                registeredBook(7L, newest.isbn13()),
+                registeredBook(42L, oldest.isbn13())
         );
 
         // when
-        BookSearchResponse response = service.search("책", 1, BookSearchSort.LATEST);
+        BookSearchResponse response = service.search("책", 1);
 
         // then
-        assertThat(response.items()).extracting(BookItem::title)
-                .containsExactly("최신 책", "중간 책", "오래된 책");
-    }
-
-    @Test
-    @DisplayName("감상 많은 순으로 검색하면 답글 수와 관계없이 감상 수가 많은 도서부터 반환한다")
-    void should_SortByReviewCountDescending_When_SortIsReview() {
-        // given
-        BookSearchItem fewReviews = searchedBook("감상 적은 책", "2021-01-01", "9780000000002");
-        BookSearchItem mostReviews = searchedBook("감상 많은 책", "2024-01-01", "9780000000019");
-        BookSearchItem middleReviews = searchedBook("감상 중간 책", "2026-01-01", "9780000000026");
-        BookSearchItem unregisteredBook = searchedBook("미등록 책", "2025-01-01", "9780000000033");
-        BookSearchService service = serviceWith(
-                new BookSearchResult(4, null,
-                        List.of(fewReviews, mostReviews, middleReviews, unregisteredBook)),
-                Map.of(1L, new ActivityCounts(1L, 100L),
-                        2L, new ActivityCounts(6L, 0L),
-                        3L, new ActivityCounts(2L, 3L)),
-                registeredBook(1L, fewReviews.isbn13()),
-                registeredBook(2L, mostReviews.isbn13()),
-                registeredBook(3L, middleReviews.isbn13())
-        );
-
-        // when
-        BookSearchResponse response = service.search("책", 1, BookSearchSort.REVIEW);
-
-        // then
-        assertThat(response.items()).extracting(BookItem::title)
-                .containsExactly("감상 많은 책", "감상 중간 책", "감상 적은 책", "미등록 책");
-    }
-
-    @Test
-    @DisplayName("댓글순으로 검색하면 댓글 수가 많은 도서부터 반환한다")
-    void should_SortByCommentCountDescending_When_SortIsComment() {
-        // given
-        BookSearchItem oldestBook = searchedBook("댓글 적은 책", "2021-01-01", "9780000000002");
-        BookSearchItem mostCommentedBook = searchedBook("댓글 많은 책", "2024-01-01", "9780000000019");
-        BookSearchItem middleBook = searchedBook("댓글 중간 책", "2026-01-01", "9780000000026");
-        BookSearchItem unregisteredBook = searchedBook("미등록 책", "2025-01-01", "9780000000033");
-        BookSearchService service = serviceWith(
-                new BookSearchResult(4, null,
-                        List.of(oldestBook, mostCommentedBook, middleBook, unregisteredBook)),
-                Map.of(1L, new ActivityCounts(1L, 0L),
-                        2L, new ActivityCounts(6L, 4L),
-                        3L, new ActivityCounts(2L, 3L)),
-                registeredBook(1L, oldestBook.isbn13()),
-                registeredBook(2L, mostCommentedBook.isbn13()),
-                registeredBook(3L, middleBook.isbn13())
-        );
-
-        // when
-        BookSearchResponse response = service.search("책", 1, BookSearchSort.COMMENT);
-
-        // then
-        assertThat(response.items()).extracting(BookItem::title)
-                .containsExactly("댓글 많은 책", "댓글 중간 책", "댓글 적은 책", "미등록 책");
+        assertThat(response.items())
+                .extracting(BookItem::isbn13, BookItem::bookId, BookItem::reviewCount, BookItem::replyCount)
+                .containsExactly(
+                        tuple(unregistered.isbn13(), null, null, null),
+                        tuple(oldest.isbn13(), 42L, 2, 7),
+                        tuple(newest.isbn13(), 7L, 8, 1),
+                        tuple(middle.isbn13(), 99L, 1, 0)
+                );
+        assertThat(response.totalCount()).isEqualTo(14);
+        assertThat(response.nextPage()).isEqualTo(2);
     }
 
     private BookSearchService serviceWith(
@@ -359,15 +294,11 @@ class BookSearchServiceTest {
         BookRepository bookRepository = mock(BookRepository.class);
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         when(bookClient.search("책", 1)).thenReturn(response);
-        when(bookRepository.findAllByIsbn13In(org.mockito.ArgumentMatchers.anyCollection()))
+        when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of(registeredBooks));
-        when(activityCountReader.getActivityCounts(org.mockito.ArgumentMatchers.anyCollection()))
+        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(activityCounts);
         return guestService(bookClient, bookRepository, activityCountReader);
-    }
-
-    private BookSearchService serviceWithBooks(BookSearchItem... books) {
-        return serviceWith(new BookSearchResult(books.length, null, List.of(books)), Map.of());
     }
 
     private BookSearchService guestService(
@@ -393,11 +324,19 @@ class BookSearchServiceTest {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         BookSearchService service = new BookSearchService(
-                bookClient, bookRepository, activityCountReader, currentMemberIdProvider, libraryItemRepository);
+                bookClient,
+                bookRepository,
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
         BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
         Book registeredBook = registeredBook(42L, searchedBook.isbn13());
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(
-                1, null, List.of(searchedBook)));
+                1,
+                null,
+                List.of(searchedBook)
+        ));
         when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(List.of(registeredBook));
         when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(memberId);
@@ -406,7 +345,7 @@ class BookSearchServiceTest {
                     .thenReturn(libraryItems);
         }
 
-        return service.search("마션", 1, BookSearchSort.LATEST).items().getFirst();
+        return service.search("마션", 1).items().getFirst();
     }
 
     private BookSearchItem searchedBook(String title, String publishedDate, String isbn13) {

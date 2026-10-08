@@ -36,17 +36,17 @@ public interface ReplyRepository extends JpaRepository<Reply, Long> {
 
     @Query("""
             select r.reviewId as reviewId, count(r) as count
-            from Reply r join Review review on review.id = r.reviewId
-            where r.reviewId in :reviewIds and r.deletedAt is null and review.deletedAt is null
+            from Reply r join Review re on re.id = r.reviewId
+            where r.reviewId in :reviewIds and r.deletedAt is null and re.deletedAt is null
             group by r.reviewId
             """)
     List<ReviewCount> countActiveByReviewIdInGroupByReviewId(Collection<Long> reviewIds);
 
     @Query("""
-            select review.bookId as bookId, count(reply) as count
-            from Reply reply join Review review on review.id = reply.reviewId
-            where review.bookId in :bookIds
-            group by review.bookId
+            select re.bookId as bookId, count(r) as count
+            from Reply r join Review re on re.id = r.reviewId
+            where re.bookId in :bookIds
+            group by re.bookId
             """)
     List<BookCommentCount> countByReviewBookIdInGroupByBookId(Collection<Long> bookIds);
 

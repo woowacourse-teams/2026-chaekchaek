@@ -48,8 +48,10 @@ class RefreshTokenTest {
     @Test
     @DisplayName("만료 시각이 발급 시각과 같으면 발급이 거부된다")
     void should_ThrowException_When_ExpirationEqualsIssuedAt() {
+        // given
         Member member = mock(Member.class);
 
+        // when & then
         assertThatThrownBy(() -> RefreshToken.issue(
                 member,
                 TOKEN_HASH,
@@ -61,8 +63,10 @@ class RefreshTokenTest {
     @Test
     @DisplayName("만료 시각이 발급 시각보다 이전이면 발급할 수 없다")
     void should_ThrowException_When_ExpirationIsBeforeIssuedAt() {
+        // given
         Member member = mock(Member.class);
 
+        // when & then
         assertThatThrownBy(() -> RefreshToken.issue(
                 member,
                 TOKEN_HASH,
@@ -74,6 +78,7 @@ class RefreshTokenTest {
     @Test
     @DisplayName("만료 전이고 폐기되지 않은 Refresh Token은 사용할 수 있다")
     void should_ReturnUsable_When_TokenIsNotExpiredOrRevoked() {
+        // given
         Member member = mock(Member.class);
 
         RefreshToken refreshToken = RefreshToken.issue(
@@ -83,6 +88,7 @@ class RefreshTokenTest {
                 EXPIRES_AT
         );
 
+        // when & then
         assertThat(refreshToken.isUsable(
                 EXPIRES_AT.minusSeconds(1)
         )).isTrue();
@@ -91,6 +97,7 @@ class RefreshTokenTest {
     @Test
     @DisplayName("만료 시각부터 Refresh Token을 사용할 수 없다")
     void should_ReturnUnusable_When_CurrentTimeEqualsExpiration() {
+        // given
         Member member = mock(Member.class);
 
         RefreshToken refreshToken = RefreshToken.issue(
@@ -100,6 +107,7 @@ class RefreshTokenTest {
                 EXPIRES_AT
         );
 
+        // when & then
         assertThat(refreshToken.isExpired(EXPIRES_AT)).isTrue();
         assertThat(refreshToken.isUsable(EXPIRES_AT)).isFalse();
     }
@@ -107,6 +115,7 @@ class RefreshTokenTest {
     @Test
     @DisplayName("폐기한 Refresh Token은 사용할 수 없다")
     void should_ReturnUnusable_When_TokenIsRevoked() {
+        // given
         Member member = mock(Member.class);
 
         RefreshToken refreshToken = RefreshToken.issue(
@@ -118,8 +127,10 @@ class RefreshTokenTest {
 
         LocalDateTime revokedAt = ISSUED_AT.plusDays(1);
 
+        // when
         refreshToken.revoke(revokedAt);
 
+        // then
         assertThat(refreshToken.isRevoked()).isTrue();
         assertThat(refreshToken.getRevokedAt()).isEqualTo(revokedAt);
         assertThat(refreshToken.isUsable(revokedAt)).isFalse();
@@ -128,6 +139,7 @@ class RefreshTokenTest {
     @Test
     @DisplayName("이미 폐기된 Refresh Token을 다시 폐기할 수 없다")
     void should_ThrowException_When_TokenIsAlreadyRevoked() {
+        // given
         Member member = mock(Member.class);
 
         RefreshToken refreshToken = RefreshToken.issue(
@@ -139,6 +151,7 @@ class RefreshTokenTest {
 
         refreshToken.revoke(ISSUED_AT.plusDays(1));
 
+        // when & then
         assertThatThrownBy(() ->
                 refreshToken.revoke(ISSUED_AT.plusDays(2))
         ).isInstanceOf(IllegalStateException.class);

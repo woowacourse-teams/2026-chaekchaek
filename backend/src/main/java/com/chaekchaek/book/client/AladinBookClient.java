@@ -35,9 +35,24 @@ public class AladinBookClient implements BookSearchClient {
         return new BookSearchResult(
                 response.totalResults(),
                 response.hasNextPage() ? response.startIndex() + 1 : null,
-                response.items().stream()
+                response.items()
+                        .stream()
                         .map(this::toBookSearchItem)
                         .toList()
+        );
+    }
+
+    private BookSearchItem toBookSearchItem(AladinBookItem source) {
+        AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
+        return new BookSearchItem(
+                source.title(),
+                source.cover(),
+                contributors.authors(),
+                contributors.translators(),
+                source.publishedDate(),
+                source.isbn13(),
+                source.categoryName(),
+                source.publisher()
         );
     }
 
@@ -89,11 +104,20 @@ public class AladinBookClient implements BookSearchClient {
         if (response.hasError()) {
             throw new AladinClientException(response.errorCode(), response.errorMessage());
         }
-        return response.items().stream()
+        return response.items()
+                .stream()
                 .filter(item -> item.matchesIsbn13(isbn13))
                 .findFirst()
                 .map(this::toBookDetailItem)
                 .orElseThrow(BookNotFoundException::new);
+    }
+
+    private AladinSearchResponse requestBooks(URI uri) {
+        return restClient.get()
+                .uri(uri)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .requiredBody(AladinSearchResponse.class);
     }
 
     private BookDetailItem toBookDetailItem(AladinBookItem source) {
@@ -111,28 +135,6 @@ public class AladinBookClient implements BookSearchClient {
                 source.categoryName(),
                 source.publisher(),
                 source.totalPages()
-        );
-    }
-
-    private AladinSearchResponse requestBooks(URI uri) {
-        return restClient.get()
-                .uri(uri)
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .requiredBody(AladinSearchResponse.class);
-    }
-
-    private BookSearchItem toBookSearchItem(AladinBookItem source) {
-        AladinContributorParser.Contributors contributors = AladinContributorParser.parse(source.author());
-        return new BookSearchItem(
-                source.title(),
-                source.cover(),
-                contributors.authors(),
-                contributors.translators(),
-                source.publishedDate(),
-                source.isbn13(),
-                source.categoryName(),
-                source.publisher()
         );
     }
 }

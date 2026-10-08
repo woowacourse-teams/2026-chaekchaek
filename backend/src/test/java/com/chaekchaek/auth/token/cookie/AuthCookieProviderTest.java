@@ -25,7 +25,10 @@ public class AuthCookieProviderTest {
                 new RefreshTokenProperties(
                         Duration.ofDays(14)
                 ),
-                new AuthCookieProperties(false, "Lax")
+                new AuthCookieProperties(
+                        false,
+                        "Lax"
+                )
         );
 
         // when
@@ -56,7 +59,10 @@ public class AuthCookieProviderTest {
                 new RefreshTokenProperties(
                         Duration.ofDays(14)
                 ),
-                new AuthCookieProperties(false, "Lax")
+                new AuthCookieProperties(
+                        false,
+                        "Lax"
+                )
         );
 
         // when
@@ -85,7 +91,10 @@ public class AuthCookieProviderTest {
                 new RefreshTokenProperties(
                         Duration.ofDays(14)
                 ),
-                new AuthCookieProperties(false, "Lax")
+                new AuthCookieProperties(
+                        false,
+                        "Lax"
+                )
         );
 
         // when

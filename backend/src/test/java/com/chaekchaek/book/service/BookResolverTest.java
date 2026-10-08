@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.transaction.PlatformTransactionManager;
 
 class BookResolverTest {
@@ -61,8 +62,8 @@ class BookResolverTest {
         assertThat(book.getDescription()).isEqualTo("책 설명");
         verify(client).findBookByIsbn13(ISBN13);
         verify(repository).findByIsbn13(ISBN13);
-        verify(repository, never()).save(org.mockito.ArgumentMatchers.any(Book.class));
-        verify(repository, never()).saveAndFlush(org.mockito.ArgumentMatchers.any(Book.class));
+        verify(repository, never()).save(ArgumentMatchers.any(Book.class));
+        verify(repository, never()).saveAndFlush(ArgumentMatchers.any(Book.class));
     }
 
     @Test

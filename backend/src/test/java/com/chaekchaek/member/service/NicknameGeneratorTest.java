@@ -12,7 +12,8 @@ class NicknameGeneratorTest {
 
     @Test
     @DisplayName("형용사와 색상으로 참새 닉네임을 생성한다")
-    void should_GenerateNickname_WithAdjectiveAndColor() {
+    void should_GenerateNicknameWithAdjectiveAndColor_When_NicknameIsRequested() {
+        // when & then
         IntStream.range(0, 100)
                 .mapToObj(ignored -> nicknameGenerator.generate())
                 .forEach(nickname -> assertThat(nickname)

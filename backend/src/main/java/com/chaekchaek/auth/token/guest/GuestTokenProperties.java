@@ -4,7 +4,10 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "app.auth.guest-token")
-public record GuestTokenProperties(Duration expiration, Duration refreshWindow) {
+public record GuestTokenProperties(
+        Duration expiration,
+        Duration refreshWindow
+) {
 
     public GuestTokenProperties {
         if (expiration == null || expiration.isZero() || expiration.isNegative()) {

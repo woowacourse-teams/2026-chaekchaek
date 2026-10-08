@@ -157,13 +157,13 @@ class AladinBookClientTest {
         // when & then
         assertThatThrownBy(() -> client.searchBooks("마션", 1))
                 .isInstanceOfSatisfying(
-                        AladinClientException.class,
-                        exception -> SoftAssertions.assertSoftly(softly -> {
+                AladinClientException.class,
+                exception -> SoftAssertions.assertSoftly(softly -> {
                             softly.assertThat(exception.getMessage()).contains("code=1");
                             softly.assertThat(exception.getMessage())
                                     .contains("message=잘못된 인증키입니다.");
                         })
-                );
+        );
     }
 
     @Test
@@ -175,12 +175,12 @@ class AladinBookClientTest {
         // when & then
         assertThatThrownBy(() -> client.searchBooks("마션", 1))
                 .isInstanceOfSatisfying(
-                        AladinClientException.class,
-                        exception -> SoftAssertions.assertSoftly(softly -> {
+                AladinClientException.class,
+                exception -> SoftAssertions.assertSoftly(softly -> {
                             softly.assertThat(exception.getCause())
                                     .isInstanceOf(IllegalStateException.class);
                         })
-                );
+        );
     }
 
     @Test
@@ -192,12 +192,12 @@ class AladinBookClientTest {
         // when & then
         assertThatThrownBy(() -> client.searchBooks("마션", 1))
                 .isInstanceOfSatisfying(
-                        AladinClientException.class,
-                        exception -> SoftAssertions.assertSoftly(softly -> {
+                AladinClientException.class,
+                exception -> SoftAssertions.assertSoftly(softly -> {
                             softly.assertThat(exception.getCause())
                                     .isInstanceOf(IllegalStateException.class);
                         })
-                );
+        );
     }
 
     @Test
@@ -209,12 +209,12 @@ class AladinBookClientTest {
         // when & then
         assertThatThrownBy(() -> client.searchBooks("마션", 1))
                 .isInstanceOfSatisfying(
-                        AladinClientException.class,
-                        exception -> SoftAssertions.assertSoftly(softly -> {
+                AladinClientException.class,
+                exception -> SoftAssertions.assertSoftly(softly -> {
                             softly.assertThat(exception.getCause())
                                     .isInstanceOf(RestClientException.class);
                         })
-                );
+        );
     }
 
     @Test
@@ -226,11 +226,11 @@ class AladinBookClientTest {
         // when & then
         assertThatThrownBy(() -> client.searchBooks("마션", 1))
                 .isInstanceOfSatisfying(
-                        AladinClientException.class,
-                        exception -> SoftAssertions.assertSoftly(softly -> {
+                AladinClientException.class,
+                exception -> SoftAssertions.assertSoftly(softly -> {
                             softly.assertThat(exception.getCause())
                                     .isInstanceOf(RestClientException.class);
                         })
-                );
+        );
     }
 }

@@ -166,7 +166,11 @@ class Yes24BookClientTest {
         BookSearchResult result = client.search("없는책", 1);
 
         // then
-        assertThat(result).isEqualTo(new BookSearchResult(0, null, List.of()));
+        assertThat(result).isEqualTo(new BookSearchResult(
+                0,
+                null,
+                List.of()
+        ));
     }
 
     @Test
