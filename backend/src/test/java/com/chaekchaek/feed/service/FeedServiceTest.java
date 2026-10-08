@@ -11,6 +11,7 @@ import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActorProvider;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.feed.dto.FeedReviewListResponse;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.review.domain.Review;
