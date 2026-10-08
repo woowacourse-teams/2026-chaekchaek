@@ -258,6 +258,7 @@ fun BookDetailScreen(
                 ReviewsSection(
                     reviews = state.reviews,
                     reviewCount = state.reviewCount,
+                    hasMoreReviews = state.nextReviewPage != null,
                     loading = state.isLoading,
                     loadingMore = state.isLoadingMore,
                     revealedSpoilerReviewIds = revealedSpoilerReviewIds,
@@ -863,6 +864,7 @@ private fun ReadingRecord(
 private fun ReviewsSection(
     reviews: List<BookReview>,
     reviewCount: Int,
+    hasMoreReviews: Boolean,
     loading: Boolean,
     loadingMore: Boolean,
     revealedSpoilerReviewIds: Set<Long>,
@@ -881,6 +883,7 @@ private fun ReviewsSection(
     onManageReply: (ReviewReply) -> Unit,
 ) {
     var replyTarget by remember { mutableStateOf<BookReview?>(null) }
+    val display = reviewDisplay(reviews, reviewCount, hasMoreReviews)
     Column(modifier = Modifier.fillMaxWidth()) {
         HorizontalDivider(color = ChaekBorderSoft)
         Row(
@@ -889,7 +892,7 @@ private fun ReviewsSection(
         ) {
             Text("감상", fontSize = 21.sp, lineHeight = 27.sp, fontWeight = FontWeight.Bold)
             Text(
-                reviewCount.toString(),
+                display.count.toString(),
                 modifier = Modifier.padding(start = 5.dp),
                 color = ChaekInkSecondary,
                 fontSize = 14.sp,
@@ -917,8 +920,8 @@ private fun ReviewsSection(
         )
         when {
             loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
-            reviews.isEmpty() -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
-            else -> reviews.forEach { review ->
+            display.showEmpty -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+            else -> display.reviews.forEach { review ->
                 val locked = shouldLockReview(review.reviewId, review.isSpoiler, revealedSpoilerReviewIds)
                 ReviewCard(
                     review = review,
@@ -1108,12 +1111,15 @@ private fun Replies(
     onLike: (Long, Boolean) -> Unit,
     onManage: (ReviewReply) -> Unit,
 ) {
+    val display = replyDisplay(replies, totalCount)
+    if (display.replies.isEmpty() && !display.hasMore) return
+
     Column(
         modifier = Modifier.fillMaxWidth().background(ChaekSurfaceMuted)
             .padding(start = 48.dp, top = 12.dp, end = 16.dp, bottom = 14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        replies.forEach { reply ->
+        display.replies.forEach { reply ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                 AuthorAvatar(reply.authorName, 24)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -1151,7 +1157,7 @@ private fun Replies(
                 }
             }
         }
-        if (replies.size < totalCount) {
+        if (display.hasMore) {
             Text(
                 "답글 ${totalCount}개 모두 보기",
                 modifier = Modifier.clickable(role = Role.Button, onClick = if (locked) onOpenLockedReview else onLoadAll)
