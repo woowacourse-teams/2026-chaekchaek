@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.chaekchaek.book.client.AladinClientException;
+import com.chaekchaek.book.client.Yes24ClientException;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.BusinessException;
@@ -150,8 +150,10 @@ class ReviewControllerTest {
                         pathParameters(parameterWithName("bookId").description("도서 ID")),
                         queryParameters(
                                 parameterWithName("page").description("1부터 시작하는 페이지 번호"),
-                                parameterWithName("feed").optional().description("피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL"),
-                                parameterWithName("sort").optional().description("정렬: PAGE, LATEST, OLDEST, POPULAR. 기본값 PAGE")
+                                parameterWithName("feed").optional()
+                                        .description("피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL"),
+                                parameterWithName("sort").optional()
+                                        .description("정렬: PAGE, LATEST, OLDEST, POPULAR. 기본값 PAGE")
                         ),
                         responseFields(pageReviewResponseFields()),
                         resource(ResourceSnippetParameters.builder()
@@ -160,15 +162,15 @@ class ReviewControllerTest {
                                 .tag(REVIEW_TAG)
                                 .pathParameters(pathParameter("bookId", "도서 ID"))
                                 .queryParameters(
-                                queryParameter("page", SimpleType.INTEGER, "1부터 시작하는 페이지 번호"),
-                                queryParameter(
-                                        "feed",
-                                        SimpleType.STRING,
-                                        "피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL",
-                                        true
-                                ),
-                                queryParameter("sort", SimpleType.STRING, "정렬 기준. 기본값 PAGE", true)
-                        )
+                                        queryParameter("page", SimpleType.INTEGER, "1부터 시작하는 페이지 번호"),
+                                        queryParameter(
+                                                "feed",
+                                                SimpleType.STRING,
+                                                "피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL",
+                                                true
+                                        ),
+                                        queryParameter("sort", SimpleType.STRING, "정렬 기준. 기본값 PAGE", true)
+                                )
                                 .responseFields(pageReviewResponseFields())
                                 .build())
                 ));
@@ -569,7 +571,8 @@ class ReviewControllerTest {
     @DisplayName("중복 감상 좋아요는 ProblemDetail을 반환한다")
     void should_ReturnConflict_When_CreatingDuplicateReviewReaction() throws Exception {
         // given
-        when(reviewService.createReviewReaction(101L)).thenThrow(new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS));
+        when(reviewService.createReviewReaction(101L)).thenThrow(
+                new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS));
 
         // when & then
         expectProblemDetail(
@@ -698,7 +701,7 @@ class ReviewControllerTest {
         when(reviewService.createReviewByIsbn13(
                 ArgumentMatchers.eq(new Isbn13("9780000000026")),
                 ArgumentMatchers.any()
-        )).thenThrow(new AladinClientException(1, "invalid secret key"));
+        )).thenThrow(new Yes24ClientException(new RuntimeException("invalid secret key")));
 
         // when & then
         documentProblemDetailByIsbn(
@@ -1046,7 +1049,8 @@ class ReviewControllerTest {
                 .deleteReviewReaction(404L);
         when(reviewService.createReplyReaction(404L)).thenThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND));
         when(reviewService.createReplyReaction(409L)).thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
-        when(reviewService.createReplyReaction(410L)).thenThrow(new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS));
+        when(reviewService.createReplyReaction(410L)).thenThrow(
+                new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS));
         Mockito.doThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND)).when(reviewService)
                 .deleteReplyReaction(404L);
 
@@ -1430,7 +1434,8 @@ class ReviewControllerTest {
     private static FieldDescriptor[] prependPageFields(FieldDescriptor[] itemFields) {
         FieldDescriptor[] fields = new FieldDescriptor[itemFields.length + 3];
         fields[0] = fieldWithPath("totalCount").type(JsonFieldType.NUMBER).description("전체 항목 수");
-        fields[1] = fieldWithPath("nextPage").type(JsonFieldType.NUMBER).description("다음 페이지 번호. 마지막 페이지면 null").optional();
+        fields[1] = fieldWithPath("nextPage").type(JsonFieldType.NUMBER).description("다음 페이지 번호. 마지막 페이지면 null")
+                .optional();
         fields[2] = fieldWithPath("items").type(JsonFieldType.ARRAY).description("페이지 항목 목록");
         System.arraycopy(itemFields, 0, fields, 3, itemFields.length);
         return fields;

@@ -28,7 +28,7 @@ class RatingComparisonBookResponseTest {
         Book book = mock(Book.class);
         when(book.getIsbn13()).thenReturn(new Isbn13("9788936433598"));
         when(book.getTitle()).thenReturn("채식주의자");
-        when(book.getCoverImageUrl()).thenReturn("https://image.aladin.co.kr/cover.jpg");
+        when(book.getCoverImageUrl()).thenReturn("https://example.com/books/cover.jpg");
         when(book.getAuthors()).thenReturn(List.of("한강"));
 
         // when

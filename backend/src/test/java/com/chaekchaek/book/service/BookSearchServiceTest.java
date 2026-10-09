@@ -90,7 +90,7 @@ class BookSearchServiceTest {
         BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
         BookSearchItem searchedBook = new BookSearchItem(
                 "클린 코드",
-                "https://image.aladin.co.kr/cover.jpg",
+                "https://example.com/books/cover.jpg",
                 List.of("로버트 C. 마틴"),
                 List.of("박산호"),
                 LocalDate.of(2008, 8, 1),
@@ -115,7 +115,7 @@ class BookSearchServiceTest {
         // then
         BookItem item = response.items().getFirst();
         assertThat(item.title()).isEqualTo("클린 코드");
-        assertThat(item.coverImageUrl()).isEqualTo("https://image.aladin.co.kr/cover.jpg");
+        assertThat(item.coverImageUrl()).isEqualTo("https://example.com/books/cover.jpg");
         assertThat(item.authors()).containsExactly("로버트 C. 마틴");
         assertThat(item.translators()).containsExactly("박산호");
         assertThat(item.publishedDate()).isEqualTo("2008-08-01");
