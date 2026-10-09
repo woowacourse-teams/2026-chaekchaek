@@ -63,9 +63,9 @@ class ApiExceptionHandlerTest {
                         ),
                 () -> assertThat(response.getProperties())
                         .containsEntry(
-                                "code",
-                                ErrorCode.MEMBER_NOT_FOUND.getCode()
-                        )
+                        "code",
+                        ErrorCode.MEMBER_NOT_FOUND.getCode()
+                )
         );
     }
 
@@ -124,9 +124,9 @@ class ApiExceptionHandlerTest {
                         .doesNotContain("internal detail"),
                 () -> assertThat(response.getProperties())
                         .containsEntry(
-                                "code",
-                                ErrorCode.INTERNAL_SERVER_ERROR.getCode()
-                        )
+                        "code",
+                        ErrorCode.INTERNAL_SERVER_ERROR.getCode()
+                )
         );
     }
 
