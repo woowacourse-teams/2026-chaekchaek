@@ -44,8 +44,8 @@ class Yes24SearchRegistrationTest {
 
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    @DisplayName("YES24 검색 결과의 ISBN13으로 알라딘 없이 도서를 등록한다")
-    void should_RegisterBookWithoutAladin_When_ResolvingYes24SearchResult() throws InterruptedException {
+    @DisplayName("YES24 검색 결과의 ISBN13으로 도서를 등록한다")
+    void should_RegisterBook_When_ResolvingYes24SearchResult() throws InterruptedException {
         // given
         yes24Server.응답한다(200, Yes24ResponseFixture.헤르만_헤세_검색_결과());
         yes24Server.응답한다(200, Yes24ResponseFixture.데미안_상세_결과());

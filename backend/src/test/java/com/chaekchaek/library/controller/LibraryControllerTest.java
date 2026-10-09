@@ -1412,7 +1412,7 @@ class LibraryControllerTest {
                 bookId,
                 isbn13,
                 title,
-                "https://image.aladin.co.kr/cover/" + bookId + ".jpg",
+                "https://example.com/books/" + bookId + ".jpg",
                 List.of(author),
                 new BigDecimal(rating),
                 ratingUpdatedAt

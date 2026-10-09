@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.chaekchaek.auth.exception.AppleAuthServerException;
-import com.chaekchaek.book.client.AladinClientException;
 import com.chaekchaek.book.client.BookClientException;
+import com.chaekchaek.book.client.Yes24ClientException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +28,7 @@ class ApiExceptionHandlerTest {
     @DisplayName("도서 외부 API 예외에 게이트웨이 오류 응답을 반환한다")
     void should_ReturnBadGateway_When_BookClientExceptionOccurs() {
         // given
-        BookClientException exception = new AladinClientException(new RuntimeException("internal detail"));
+        BookClientException exception = new Yes24ClientException(new RuntimeException("internal detail"));
 
         // when
         ProblemDetail response = handler.handleBookClientException(exception, request);

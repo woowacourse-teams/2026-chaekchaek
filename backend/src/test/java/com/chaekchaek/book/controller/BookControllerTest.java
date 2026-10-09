@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.chaekchaek.book.client.AladinClientException;
+import com.chaekchaek.book.client.Yes24ClientException;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.dto.BookItem;
@@ -152,7 +152,7 @@ class BookControllerTest {
         BookItem item = new BookItem(
                 null,
                 "마션",
-                "https://image.aladin.co.kr/martian.jpg",
+                "https://example.com/books/cover.jpg",
                 List.of("앤디 위어"),
                 List.of("박아람"),
                 "2026-07-01",
@@ -181,7 +181,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].title").value("마션"))
                 .andExpect(jsonPath("$.items[0].coverImageUrl")
-                        .value("https://image.aladin.co.kr/martian.jpg"))
+                        .value("https://example.com/books/cover.jpg"))
                 .andExpect(jsonPath("$.items[0].authors.length()").value(1))
                 .andExpect(jsonPath("$.items[0].authors[0]").value("앤디 위어"))
                 .andExpect(jsonPath("$.items[0].translators.length()").value(1))
@@ -388,11 +388,11 @@ class BookControllerTest {
     }
 
     @Test
-    @DisplayName("알라딘 API 오류가 발생하면 진단 정보를 숨긴 502 응답을 반환한다")
-    void should_ReturnBadGateway_When_AladinClientExceptionOccurs() throws Exception {
+    @DisplayName("YES24 API 오류가 발생하면 진단 정보를 숨긴 502 응답을 반환한다")
+    void should_ReturnBadGateway_When_Yes24ClientExceptionOccurs() throws Exception {
         // given
         when(bookSearchService.search("마션", 1))
-                .thenThrow(new AladinClientException(1, "invalid secret key"));
+                .thenThrow(new Yes24ClientException(new RuntimeException("invalid secret key")));
 
         // when & then
         expectProblemDetail(
@@ -431,7 +431,7 @@ class BookControllerTest {
                 42L,
                 "9788925568683",
                 "마션",
-                "https://image.aladin.co.kr/martian.jpg",
+                "https://example.com/books/cover.jpg",
                 "책 설명",
                 List.of("앤디 위어"),
                 List.of("박아람"),
@@ -456,7 +456,8 @@ class BookControllerTest {
         return problemDetailDocument(identifier, BOOK_SEARCH_SUMMARY, BOOK_SEARCH_DESCRIPTION);
     }
 
-    private RestDocumentationResultHandler problemDetailDocument(String identifier, String summary, String description) {
+    private RestDocumentationResultHandler problemDetailDocument(String identifier, String summary,
+                                                                 String description) {
         return document(
                 identifier,
                 responseFields(PROBLEM_DETAIL_FIELDS),
