@@ -21,7 +21,7 @@ class BookSearchResponseTest {
         BookItem book = new BookItem(
                 null,
                 "마션",
-                "https://image.aladin.co.kr/martian.jpg",
+                "https://example.com/books/cover.jpg",
                 List.of("앤디 위어"),
                 List.of("박아람"),
                 "2026-07-01",
