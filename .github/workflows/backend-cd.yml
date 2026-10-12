@@ -102,6 +102,8 @@ jobs:
           AUTH_COOKIE_SECURE: "true"
           AUTH_COOKIE_SAME_SITE: "None"
           LOGGING_STRUCTURED_FORMAT_CONSOLE: "logstash"
+          APP_ENV: "prod"
+          APP_VERSION: ${{ github.sha }}
 
         run: |
           set -euo pipefail
@@ -137,7 +139,9 @@ jobs:
                 "YES24_API_KEY=$YES24_API_KEY" \
                 "AUTH_COOKIE_SECURE=$AUTH_COOKIE_SECURE" \
                 "AUTH_COOKIE_SAME_SITE=$AUTH_COOKIE_SAME_SITE" \
-                "LOGGING_STRUCTURED_FORMAT_CONSOLE=$LOGGING_STRUCTURED_FORMAT_CONSOLE"
+                "LOGGING_STRUCTURED_FORMAT_CONSOLE=$LOGGING_STRUCTURED_FORMAT_CONSOLE" \
+                "APP_ENV=$APP_ENV" \
+                "APP_VERSION=${APP_VERSION::7}"
             ) \
             "$BACKEND_IMAGE"
 
