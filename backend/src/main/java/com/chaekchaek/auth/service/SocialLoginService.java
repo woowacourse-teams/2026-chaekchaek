@@ -139,6 +139,8 @@ public class SocialLoginService {
 
     private Member logLogin(Provider provider, Member member) {
         log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "social_login")
                 .addKeyValue("provider", provider.name())
                 .addKeyValue("memberId", member.getId())
                 .log("Social login");
@@ -185,6 +187,8 @@ public class SocialLoginService {
         socialAccountRepository.save(socialAccount);
 
         log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "social_signup")
                 .addKeyValue("provider", provider.name())
                 .addKeyValue("memberId", member.getId())
                 .addKeyValue("fromGuest", guestActor != null)

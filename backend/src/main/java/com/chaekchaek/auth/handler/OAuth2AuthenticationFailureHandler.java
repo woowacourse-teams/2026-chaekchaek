@@ -36,9 +36,11 @@ public class OAuth2AuthenticationFailureHandler implements AuthenticationFailure
     ) throws IOException, ServletException {
 
         log.atWarn()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "oauth2_login_failed")
                 .addKeyValue("exception", authenticationException.getClass().getSimpleName())
                 .addKeyValue("reason", authenticationException.getMessage())
-                .log("OAuth2 login failed");
+                .log("OAuth2 로그인 실패");
         guestContextService.clear(request);
         response.sendRedirect(redirectResolver.resolveFailureUrl(request));
     }

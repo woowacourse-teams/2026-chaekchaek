@@ -17,11 +17,15 @@ import com.chaekchaek.member.repository.MemberRepository;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthTokenService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthTokenService.class);
 
     private final MemberRepository memberRepository;
     private final AccessTokenProvider accessTokenProvider;
@@ -88,6 +92,11 @@ public class AuthTokenService {
         IssuedRefreshToken newRefreshToken =
                 refreshTokenProvider.issue(member);
 
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "token_reissued")
+                .addKeyValue("memberId", member.getId())
+                .log("Token reissued");
         return new IssuedTokens(
                 newAccessToken,
                 newRefreshToken
@@ -110,7 +119,14 @@ public class AuthTokenService {
 
         refreshTokenRepository.findByTokenHash(tokenHash)
                 .filter(refreshToken -> !refreshToken.isRevoked())
-                .ifPresent(refreshToken -> refreshToken.revoke(now()));
+                .ifPresent(refreshToken -> {
+                    refreshToken.revoke(now());
+                    log.atInfo()
+                            .addKeyValue("type", "event")
+                            .addKeyValue("event", "logout")
+                            .addKeyValue("memberId", refreshToken.getMember().getId())
+                            .log("Logout");
+                });
     }
 
     private LocalDateTime now() {
