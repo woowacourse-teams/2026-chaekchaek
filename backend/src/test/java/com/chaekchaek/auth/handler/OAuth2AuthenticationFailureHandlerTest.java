@@ -87,10 +87,12 @@ class OAuth2AuthenticationFailureHandlerTest {
         ILoggingEvent event = appender.list.getFirst();
         assertAll(
                 () -> assertThat(event.getLevel()).isEqualTo(Level.WARN),
-                () -> assertThat(event.getFormattedMessage()).isEqualTo("OAuth2 login failed"),
+                () -> assertThat(event.getFormattedMessage()).isEqualTo("OAuth2 로그인 실패"),
                 () -> assertThat(event.getKeyValuePairs())
                         .extracting(pair -> pair.key, pair -> pair.value)
                         .containsExactly(
+                                tuple("type", "event"),
+                                tuple("event", "oauth2_login_failed"),
                                 tuple("exception", "OAuth2AuthenticationException"),
                                 tuple("reason", "id token expired")
                         )

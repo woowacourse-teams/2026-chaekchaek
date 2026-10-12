@@ -362,7 +362,11 @@ public class SocialLoginServiceTest {
                 () -> assertThat(event.getFormattedMessage()).isEqualTo("Social login"),
                 () -> assertThat(event.getKeyValuePairs())
                         .extracting(pair -> pair.key, pair -> pair.value)
-                        .contains(tuple("provider", "GOOGLE")),
+                        .contains(
+                                tuple("type", "event"),
+                                tuple("event", "social_login"),
+                                tuple("provider", "GOOGLE")
+                        ),
                 () -> assertThat(event.getKeyValuePairs())
                         .extracting(pair -> String.valueOf(pair.value))
                         .doesNotContain("google-user-123", "member@example.com")
@@ -399,6 +403,8 @@ public class SocialLoginServiceTest {
                 () -> assertThat(event.getKeyValuePairs())
                         .extracting(pair -> pair.key, pair -> pair.value)
                         .contains(
+                                tuple("type", "event"),
+                                tuple("event", "social_signup"),
                                 tuple("provider", "GOOGLE"),
                                 tuple("fromGuest", false)
                         )
