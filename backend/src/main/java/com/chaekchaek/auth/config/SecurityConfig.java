@@ -4,6 +4,7 @@ import com.chaekchaek.auth.oauth.google.GoogleOidcUserService;
 import com.chaekchaek.auth.handler.OAuth2AuthenticationFailureHandler;
 import com.chaekchaek.auth.handler.OAuth2AuthenticationSuccessHandler;
 import com.chaekchaek.auth.handler.RestAuthenticationEntryPoint;
+import com.chaekchaek.auth.principal.AuthenticatedMemberLogFilter;
 import com.chaekchaek.auth.token.access.HeaderOrCookieBearerTokenResolver;
 import java.util.Arrays;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -142,6 +144,7 @@ public class SecurityConfig {
                         .bearerTokenResolver(bearerTokenResolver)
                         .authenticationEntryPoint(restAuthenticationEntryPoint)
                         .jwt(Customizer.withDefaults()))
+                .addFilterAfter(new AuthenticatedMemberLogFilter(), BearerTokenAuthenticationFilter.class)
                 .build();
     }
 
