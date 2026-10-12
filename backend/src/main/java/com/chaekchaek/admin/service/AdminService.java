@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -26,6 +28,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class AdminService {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminService.class);
     private static final int MAX_RECOMMENDED_BOOKS = 10;
 
     private final RecommendedBookRepository recommendedBookRepository;
@@ -89,7 +92,13 @@ public class AdminService {
         if (recommendedBookRepository.count() >= MAX_RECOMMENDED_BOOKS) {
             throw new BusinessException(ErrorCode.RECOMMENDED_BOOK_LIMIT_EXCEEDED);
         }
-        return toResponse(save(bookId), book);
+        RecommendedBook recommendedBook = save(bookId);
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "recommended_book_added")
+                .addKeyValue("bookId", bookId)
+                .log("Recommended book added");
+        return toResponse(recommendedBook, book);
     }
 
     private RecommendedBookResponse toResponse(RecommendedBook recommendedBook, Book book) {
@@ -120,6 +129,11 @@ public class AdminService {
         RecommendedBook recommendedBook = recommendedBookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RECOMMENDED_BOOK_NOT_FOUND));
         recommendedBookRepository.delete(recommendedBook);
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "recommended_book_deleted")
+                .addKeyValue("bookId", bookId)
+                .log("Recommended book deleted");
     }
 
     private void requireAdmin() {
