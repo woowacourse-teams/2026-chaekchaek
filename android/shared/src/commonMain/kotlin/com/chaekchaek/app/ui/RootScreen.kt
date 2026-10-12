@@ -151,7 +151,10 @@ internal fun RootScreen(
                     nowMillis = Clock.System.now().toEpochMilliseconds(),
                 )
             ) {
-                RootBackAction.ReturnToHome -> selectedTab = RootTab.Home
+                RootBackAction.ReturnToHome -> {
+                    exitConfirmationDeadlineMillis = null
+                    selectedTab = RootTab.Home
+                }
                 is RootBackAction.ConfirmExit -> {
                     exitConfirmationDeadlineMillis = action.deadlineMillis
                     backScope.launch {
@@ -164,6 +167,7 @@ internal fun RootScreen(
     )
 
     LaunchedEffect(selectedTab) {
+        if (selectedTab != RootTab.Home) exitConfirmationDeadlineMillis = null
         analytics.screenView(selectedTab.analyticsScreenName)
     }
 
