@@ -1,6 +1,7 @@
 package com.chaekchaek.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -9,6 +10,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.chaekchaek.actor.domain.Actor;
 import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.auth.oauth.apple.AppleProfile;
@@ -38,11 +42,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
+@ExtendWith(MockitoExtension.class)
 public class SocialLoginServiceTest {
 
     @Test
@@ -326,7 +329,7 @@ public class SocialLoginServiceTest {
 
     @Test
     @DisplayName("기존 회원이 소셜 로그인하면 제공자와 함께 로그인 로그를 남긴다")
-    void should_LogLogin_When_SocialAccountExists(CapturedOutput output) {
+    void should_LogLogin_When_SocialAccountExists() {
         // given
         GoogleProfile googleProfile = new GoogleProfile(
                 "google-user-123",
@@ -343,20 +346,32 @@ public class SocialLoginServiceTest {
         when(socialAccountRepository.findForLogin(Provider.GOOGLE, googleProfile.providerUserId()))
                 .thenReturn(Optional.of(existingAccount));
 
+        Logger logger = (Logger) LoggerFactory.getLogger(SocialLoginService.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
         // when
         socialLoginService.loginOrSignUp(googleProfile);
+        logger.detachAppender(appender);
 
         // then
+        assertThat(appender.list).hasSize(1);
+        ILoggingEvent event = appender.list.getFirst();
         assertAll(
-                () -> assertThat(output).contains("Social login: provider=GOOGLE"),
-                () -> assertThat(output).doesNotContain("google-user-123"),
-                () -> assertThat(output).doesNotContain("member@example.com")
+                () -> assertThat(event.getFormattedMessage()).isEqualTo("Social login"),
+                () -> assertThat(event.getKeyValuePairs())
+                        .extracting(pair -> pair.key, pair -> pair.value)
+                        .contains(tuple("provider", "GOOGLE")),
+                () -> assertThat(event.getKeyValuePairs())
+                        .extracting(pair -> String.valueOf(pair.value))
+                        .doesNotContain("google-user-123", "member@example.com")
         );
     }
 
     @Test
     @DisplayName("최초 소셜 로그인이면 가입 로그를 남긴다")
-    void should_LogSignUp_When_FirstSocialLogin(CapturedOutput output) {
+    void should_LogSignUp_When_FirstSocialLogin() {
         // given
         GoogleProfile googleProfile = new GoogleProfile(
                 "google-user-123",
@@ -367,10 +382,26 @@ public class SocialLoginServiceTest {
                 .thenReturn(Optional.empty());
         when(nicknameGenerator.generate()).thenReturn("우아한 달빛 참새");
 
+        Logger logger = (Logger) LoggerFactory.getLogger(SocialLoginService.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
         // when
         socialLoginService.loginOrSignUp(googleProfile);
+        logger.detachAppender(appender);
 
         // then
-        assertThat(output).contains("Social sign up: provider=GOOGLE", "fromGuest=false");
+        assertThat(appender.list).hasSize(1);
+        ILoggingEvent event = appender.list.getFirst();
+        assertAll(
+                () -> assertThat(event.getFormattedMessage()).isEqualTo("Social sign up"),
+                () -> assertThat(event.getKeyValuePairs())
+                        .extracting(pair -> pair.key, pair -> pair.value)
+                        .contains(
+                                tuple("provider", "GOOGLE"),
+                                tuple("fromGuest", false)
+                        )
+        );
     }
 }

@@ -1,23 +1,26 @@
 package com.chaekchaek.auth.handler;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.chaekchaek.auth.oauth.OAuthFrontendRedirectResolver;
 import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 
-@ExtendWith(OutputCaptureExtension.class)
 class OAuth2AuthenticationFailureHandlerTest {
 
     @Test
@@ -54,7 +57,7 @@ class OAuth2AuthenticationFailureHandlerTest {
 
     @Test
     @DisplayName("OAuth2 로그인에 실패하면 실패 원인을 경고로 기록한다")
-    void should_LogFailureReason_When_OAuth2LoginFails(CapturedOutput output)
+    void should_LogFailureReason_When_OAuth2LoginFails()
             throws Exception {
         // given
         OAuthFrontendRedirectResolver redirectResolver =
@@ -70,11 +73,27 @@ class OAuth2AuthenticationFailureHandlerTest {
         when(redirectResolver.resolveFailureUrl(request))
                 .thenReturn("http://localhost:3000/login?error=OAUTH_LOGIN_FAILED");
 
+        Logger logger = (Logger) LoggerFactory.getLogger(OAuth2AuthenticationFailureHandler.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+
         // when
         handler.onAuthenticationFailure(request, new MockHttpServletResponse(), exception);
+        logger.detachAppender(appender);
 
         // then
-        assertThat(output)
-                .contains("OAuth2 login failed: exception=OAuth2AuthenticationException, message=id token expired");
+        assertThat(appender.list).hasSize(1);
+        ILoggingEvent event = appender.list.getFirst();
+        assertAll(
+                () -> assertThat(event.getLevel()).isEqualTo(Level.WARN),
+                () -> assertThat(event.getFormattedMessage()).isEqualTo("OAuth2 login failed"),
+                () -> assertThat(event.getKeyValuePairs())
+                        .extracting(pair -> pair.key, pair -> pair.value)
+                        .containsExactly(
+                                tuple("exception", "OAuth2AuthenticationException"),
+                                tuple("reason", "id token expired")
+                        )
+        );
     }
 }
