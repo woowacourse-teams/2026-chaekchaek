@@ -1,6 +1,7 @@
 package com.chaekchaek.app.ui.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -207,7 +208,11 @@ fun ChaekchaekTheme(
 ) {
     val colors = if (darkTheme) DarkChaekColors else LightChaekColors
     val typography = chaekTypography(fontCandidate.fontFamily())
-    CompositionLocalProvider(LocalChaekColors provides colors) {
+    CompositionLocalProvider(
+        LocalChaekColors provides colors,
+        // 기본 클릭 영역과 Material 컨트롤의 입력·접근성은 유지하고 리플만 제거한다.
+        LocalRippleConfiguration provides null,
+    ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
             typography = typography,
