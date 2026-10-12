@@ -11,6 +11,7 @@ import ch.qos.logback.core.read.ListAppender;
 import com.chaekchaek.auth.exception.AppleAuthServerException;
 import com.chaekchaek.book.client.BookClientException;
 import com.chaekchaek.book.client.Yes24ClientException;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 class ApiExceptionHandlerTest {
 
@@ -100,15 +102,47 @@ class ApiExceptionHandlerTest {
         ILoggingEvent event = appender.list.getFirst();
         assertAll(
                 () -> assertThat(event.getLevel()).isEqualTo(Level.INFO),
-                () -> assertThat(event.getFormattedMessage()).isEqualTo("Business exception"),
+                () -> assertThat(event.getFormattedMessage()).isEqualTo("비즈니스 예외"),
                 () -> assertThat(event.getKeyValuePairs())
                         .extracting(pair -> pair.key, pair -> pair.value)
                         .containsExactly(
+                                tuple("type", "error"),
+                                tuple("errorCode", ErrorCode.MEMBER_NOT_FOUND.getCode()),
+                                tuple("status", 404),
                                 tuple("method", "GET"),
-                                tuple("path", "/api/v1/members/me"),
-                                tuple("code", ErrorCode.MEMBER_NOT_FOUND.getCode())
+                                tuple("path", "/api/v1/members/me")
                         ),
                 () -> assertThat(event.getThrowableProxy()).isNull()
+        );
+    }
+
+    @Test
+    @DisplayName("잘못된 요청은 어떤 값이 잘못됐는지 이름만 기록한다")
+    void should_LogInvalidFieldNames_When_InvalidRequestOccurs() {
+        // given
+        Exception exception = new MissingServletRequestParameterException("page", "int");
+
+        // when
+        ProblemDetail response = handler.handleInvalidRequest(exception, request);
+
+        // then
+        assertThat(appender.list).hasSize(1);
+        ILoggingEvent event = appender.list.getFirst();
+        assertAll(
+                () -> assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value()),
+                () -> assertThat(event.getLevel()).isEqualTo(Level.INFO),
+                () -> assertThat(event.getFormattedMessage()).isEqualTo("잘못된 요청"),
+                () -> assertThat(event.getKeyValuePairs())
+                        .extracting(pair -> pair.key, pair -> pair.value)
+                        .containsExactly(
+                                tuple("type", "error"),
+                                tuple("errorCode", ErrorCode.INVALID_REQUEST.getCode()),
+                                tuple("status", 400),
+                                tuple("method", "GET"),
+                                tuple("path", "/api/v1/members/me"),
+                                tuple("exception", "MissingServletRequestParameterException"),
+                                tuple("invalidFields", List.of("page"))
+                        )
         );
     }
 
@@ -129,7 +163,11 @@ class ApiExceptionHandlerTest {
                 () -> assertThat(event.getLevel()).isEqualTo(Level.WARN),
                 () -> assertThat(event.getKeyValuePairs())
                         .extracting(pair -> pair.key, pair -> pair.value)
-                        .contains(tuple("code", ErrorCode.APPLE_AUTH_SERVER_ERROR.getCode())),
+                        .contains(
+                                tuple("type", "error"),
+                                tuple("errorCode", ErrorCode.APPLE_AUTH_SERVER_ERROR.getCode()),
+                                tuple("status", 502)
+                        ),
                 () -> assertThat(event.getThrowableProxy().getCause().getMessage()).isEqualTo("apple timeout")
         );
     }
@@ -174,12 +212,16 @@ class ApiExceptionHandlerTest {
         ILoggingEvent event = appender.list.getFirst();
         assertAll(
                 () -> assertThat(event.getLevel()).isEqualTo(Level.ERROR),
-                () -> assertThat(event.getFormattedMessage()).isEqualTo("Unexpected server error"),
+                () -> assertThat(event.getFormattedMessage()).isEqualTo("예상하지 못한 서버 오류"),
                 () -> assertThat(event.getKeyValuePairs())
                         .extracting(pair -> pair.key, pair -> pair.value)
                         .containsExactly(
+                                tuple("type", "error"),
+                                tuple("errorCode", ErrorCode.INTERNAL_SERVER_ERROR.getCode()),
+                                tuple("status", 500),
                                 tuple("method", "GET"),
-                                tuple("path", "/api/v1/members/me")
+                                tuple("path", "/api/v1/members/me"),
+                                tuple("exception", "RuntimeException")
                         ),
                 () -> assertThat(event.getThrowableProxy().getMessage()).isEqualTo("internal detail")
         );
