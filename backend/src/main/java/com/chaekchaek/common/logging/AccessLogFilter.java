@@ -41,12 +41,11 @@ public class AccessLogFilter extends OncePerRequestFilter {
 
     private void logAccess(HttpServletRequest request, int status, long startedAt) {
         long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
-        log.info(
-                "HTTP request completed: method={}, path={}, status={}, durationMs={}",
-                request.getMethod(),
-                request.getRequestURI(),
-                status,
-                durationMs
-        );
+        log.atInfo()
+                .addKeyValue("method", request.getMethod())
+                .addKeyValue("path", request.getRequestURI())
+                .addKeyValue("status", status)
+                .addKeyValue("durationMs", durationMs)
+                .log("HTTP request completed");
     }
 }
