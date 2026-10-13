@@ -6,6 +6,7 @@ import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.common.logging.RequestLogAttributes;
 import com.chaekchaek.auth.token.guest.GuestTokenHasher;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
@@ -41,6 +42,7 @@ public class SecurityContextCurrentActorProvider implements CurrentActorProvider
                 .findFirst()
                 .flatMap(actor -> actor);
         if (memberActor.isPresent()) {
+            RequestLogAttributes.recordActor(request, memberActor.get());
             return memberActor;
         }
         String guestToken = request.getHeader(GUEST_TOKEN_HEADER);
@@ -53,7 +55,9 @@ public class SecurityContextCurrentActorProvider implements CurrentActorProvider
         if (!actor.isUsableGuestAt(now)) {
             throw new BusinessException(ErrorCode.UNUSABLE_GUEST_TOKEN);
         }
-        return Optional.of(CurrentActor.guest(actor.getId()));
+        CurrentActor guestActor = CurrentActor.guest(actor.getId());
+        RequestLogAttributes.recordActor(request, guestActor);
+        return Optional.of(guestActor);
     }
 
     private CurrentActor toMemberActor(Actor actor) {

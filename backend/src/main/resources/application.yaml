@@ -12,6 +12,15 @@ management:
     tags:
       application: ${spring.application.name}
 
+logging:
+  structured:
+    json:
+      add:
+        service: chaekchaek-backend
+        env: ${APP_ENV:local}
+        version: ${APP_VERSION:local}
+      exclude: "@version,level_value"
+
 spring:
   application:
     name: chaekchaek

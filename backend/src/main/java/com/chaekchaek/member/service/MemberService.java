@@ -13,6 +13,8 @@ import com.chaekchaek.member.dto.MyInfoResponse;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MemberService {
+
+    private static final Logger log = LoggerFactory.getLogger(MemberService.class);
 
     private final MemberRepository memberRepository;
     private final ActorRepository actorRepository;
@@ -42,6 +46,11 @@ public class MemberService {
         }
 
         member.updateNickname(nickname);
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "nickname_updated")
+                .addKeyValue("memberId", memberId)
+                .log("Nickname updated");
         return MemberResponse.from(member);
     }
 
@@ -53,6 +62,12 @@ public class MemberService {
         }
 
         member.changeAnonymousDisplay(displayAnonymous);
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "anonymity_updated")
+                .addKeyValue("memberId", memberId)
+                .addKeyValue("displayAnonymous", displayAnonymous)
+                .log("Anonymity updated");
         return MemberResponse.from(member);
     }
 
@@ -65,6 +80,11 @@ public class MemberService {
         member.withdraw(withdrawnAt);
         refreshTokenRepository.findAllByMemberIdAndRevokedAtIsNull(memberId)
                 .forEach(refreshToken -> refreshToken.revoke(withdrawnAt));
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "member_withdrawn")
+                .addKeyValue("memberId", memberId)
+                .log("Member withdrawn");
     }
 
     private Member getMember(Long memberId) {

@@ -42,6 +42,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -55,6 +57,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class ReviewService implements BookCommentCountReader, BookActivityCountReader {
 
+    private static final Logger log = LoggerFactory.getLogger(ReviewService.class);
     private static final int PAGE_SIZE = 10;
     private static final int RECENT_REPLY_LIMIT = 3;
 
@@ -291,6 +294,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 request.spoiler(),
                 memberProfile.anonymousEnabled()
         ));
+        logEvent("review_created", "Review created", "reviewId", review.getId(), actor.actorId());
         return toReviewResponse(
                 review,
                 actor.actorId(),
@@ -331,6 +335,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 request.isCurrentPagePresent() ? request.getCurrentPage() : review.getCurrentPage(),
                 request.isSpoilerPresent() ? request.getIsSpoiler() : review.isSpoiler()
         );
+        logEvent("review_updated", "Review updated", "reviewId", reviewId, actorId);
         return toReviewResponse(
                 review,
                 actorId,
@@ -404,7 +409,18 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     @Transactional
     public void deleteReview(long reviewId) {
-        getReview(reviewId).deleteBy(currentActorProvider.getCurrentActor().actorId());
+        long actorId = currentActorProvider.getCurrentActor().actorId();
+        getReview(reviewId).deleteBy(actorId);
+        logEvent("review_deleted", "Review deleted", "reviewId", reviewId, actorId);
+    }
+
+    private void logEvent(String event, String message, String targetKey, Long targetId, long actorId) {
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", event)
+                .addKeyValue(targetKey, targetId)
+                .addKeyValue("actorId", actorId)
+                .log(message);
     }
 
     @Transactional(readOnly = true)
@@ -504,6 +520,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 request.content(),
                 memberProfile.anonymousEnabled()
         ));
+        logEvent("reply_created", "Reply created", "replyId", reply.getId(), actor.actorId());
         return toReplyResponse(reply, actor.actorId(), 0, false, Map.of(actor.actorId(), memberProfile));
     }
 
@@ -512,6 +529,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         long actorId = currentActorProvider.getCurrentActor().actorId();
         Reply reply = getReply(replyId);
         reply.updateBy(actorId, request.content());
+        logEvent("reply_updated", "Reply updated", "replyId", replyId, actorId);
         return toReplyResponse(reply, actorId, replyReactionRepository.countByReplyId(replyId), false);
     }
 
@@ -589,7 +607,9 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     @Transactional
     public void deleteReply(long replyId) {
-        getReply(replyId).deleteBy(currentActorProvider.getCurrentActor().actorId());
+        long actorId = currentActorProvider.getCurrentActor().actorId();
+        getReply(replyId).deleteBy(actorId);
+        logEvent("reply_deleted", "Reply deleted", "replyId", replyId, actorId);
     }
 
     @Transactional
@@ -608,6 +628,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         } catch (DataIntegrityViolationException exception) {
             throw new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS);
         }
+        logEvent("review_reaction_created", "Review reaction created", "reviewId", reviewId, actorId);
         return new ReactionResponse(
                 reviewReactionRepository.countByReviewId(reviewId),
                 true
@@ -619,6 +640,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         getReview(reviewId);
         long actorId = currentActorProvider.getCurrentActor().actorId();
         reviewReactionRepository.deleteById(reviewReactionId(reviewId, actorId));
+        logEvent("review_reaction_deleted", "Review reaction deleted", "reviewId", reviewId, actorId);
     }
 
     private ReviewReaction.ReviewReactionId reviewReactionId(long reviewId, long actorId) {
@@ -641,6 +663,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         } catch (DataIntegrityViolationException exception) {
             throw new BusinessException(ErrorCode.REACTION_ALREADY_EXISTS);
         }
+        logEvent("reply_reaction_created", "Reply reaction created", "replyId", replyId, actorId);
         return new ReactionResponse(
                 replyReactionRepository.countByReplyId(replyId),
                 true
@@ -657,6 +680,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         getReply(replyId);
         long actorId = currentActorProvider.getCurrentActor().actorId();
         replyReactionRepository.deleteById(replyReactionId(replyId, actorId));
+        logEvent("reply_reaction_deleted", "Reply reaction deleted", "replyId", replyId, actorId);
     }
 
     private Reply getReply(long replyId) {

@@ -138,7 +138,12 @@ public class SocialLoginService {
     }
 
     private Member logLogin(Provider provider, Member member) {
-        log.info("Social login: provider={}, memberId={}", provider, member.getId());
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "social_login")
+                .addKeyValue("provider", provider.name())
+                .addKeyValue("memberId", member.getId())
+                .log("Social login");
         return member;
     }
 
@@ -181,12 +186,13 @@ public class SocialLoginService {
         );
         socialAccountRepository.save(socialAccount);
 
-        log.info(
-                "Social sign up: provider={}, memberId={}, fromGuest={}",
-                provider,
-                member.getId(),
-                guestActor != null
-        );
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "social_signup")
+                .addKeyValue("provider", provider.name())
+                .addKeyValue("memberId", member.getId())
+                .addKeyValue("fromGuest", guestActor != null)
+                .log("Social sign up");
         return member;
     }
 
