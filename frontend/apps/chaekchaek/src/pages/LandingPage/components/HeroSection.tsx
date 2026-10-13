@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom';
-
+import { LandingCtaLink } from './LandingCtaLink';
 import { LandingHeader } from './LandingHeader';
 
 import { landingImages } from '../imgs';
@@ -20,6 +19,6 @@ const Spines = ({ start, end, right = false }: { start: number; end: number; rig
 
 export const HeroSection = () => <section className={styles.hero}>
   <LandingHeader />
-  <div className={styles.heroCopy}><p className={styles.eyebrow}>READ · RECORD · DISCOVER</p><h1>같은 책, 다른 시선</h1><p>같은 책을 읽어도, 우리는 서로 다른 생각을 합니다.<br />책췍에서 다른 사람의 생각을 발견하고, 나의 감상을 나눠보세요.</p><Link className={styles.outlineButton} to="/login">책췍 시작하기　→</Link></div>
-  <div className={styles.heroBooks}><Spines start={0} end={6} /><div className={styles.selectedBook}><span>SELECTED　12</span><img src={landingImages.stranger} alt="알베르 카뮈의 이방인" /></div><Link className={styles.heroNote} to="/books/9791190818490"><b>독서 감상 04</b><p>“타인의 시선이 만든 현실에서<br />한 번 벗어나 세상을 바라보기.”</p><small>다른 독자의 감상 이어보기 ↗</small></Link><Spines start={6} end={12} right /></div>
+  <div className={styles.heroCopy}><p className={styles.eyebrow}>READ · RECORD · DISCOVER</p><h1>같은 책, 다른 시선</h1><p>같은 책을 읽어도, 우리는 서로 다른 생각을 합니다.<br />책췍에서 다른 사람의 생각을 발견하고, 나의 감상을 나눠보세요.</p><LandingCtaLink className={styles.outlineButton} to="/login">책췍 시작하기　→</LandingCtaLink></div>
+  <div className={styles.heroBooks}><Spines start={0} end={6} /><div className={styles.selectedBook}><span>SELECTED　12</span><img src={landingImages.stranger} alt="알베르 카뮈의 이방인" /></div><LandingCtaLink className={styles.heroNote} to="/books/9791190818490"><b>독서 감상 04</b><p>“타인의 시선이 만든 현실에서<br />한 번 벗어나 세상을 바라보기.”</p><small>다른 독자의 감상 이어보기 ↗</small></LandingCtaLink><Spines start={6} end={12} right /></div>
 </section>;
