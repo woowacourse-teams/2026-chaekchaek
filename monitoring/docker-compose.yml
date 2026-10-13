@@ -17,6 +17,7 @@ services:
       BACKEND_CONTAINER: ${BACKEND_CONTAINER:?BACKEND_CONTAINER is required}
       MONITORING_PROM_URL: ${MONITORING_PROM_URL:?MONITORING_PROM_URL is required}
       MONITORING_LOKI_URL: ${MONITORING_LOKI_URL:?MONITORING_LOKI_URL is required}
+      MYSQL_EXPORTER_DSN: ${MYSQL_EXPORTER_DSN:?MYSQL_EXPORTER_DSN is required}
     labels:
       com.chaekchaek.alloy-config-hash: ${ALLOY_CONFIG_HASH:-none}
     volumes:

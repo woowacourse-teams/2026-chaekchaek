@@ -26,6 +26,17 @@ prometheus.scrape "host" {
   forward_to      = [prometheus.remote_write.monitoring.receiver]
 }
 
+prometheus.exporter.mysql "db" {
+  data_source_name = sys.env("MYSQL_EXPORTER_DSN")
+}
+
+prometheus.scrape "db" {
+  targets         = prometheus.exporter.mysql.db.targets
+  scrape_interval = "15s"
+  job_name        = "mysql"
+  forward_to      = [prometheus.remote_write.monitoring.receiver]
+}
+
 prometheus.remote_write "monitoring" {
   external_labels = {"env" = sys.env("APP_ENV")}
 
