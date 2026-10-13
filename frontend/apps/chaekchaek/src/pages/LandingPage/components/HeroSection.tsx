@@ -1,6 +1,8 @@
 import { LandingCtaLink } from './LandingCtaLink';
 import { LandingHeader } from './LandingHeader';
 
+import type { CSSProperties } from 'react';
+
 import { landingImages } from '../imgs';
 import styles from '../LandingPage.module.css';
 
@@ -11,9 +13,48 @@ const books = [
   ['채식주의자', '한강', '#f1eee3', 315, 48], ['데미안', '헤르만 헤세', '#171d3c', 425, 62], ['긴긴밤', '루리', '#f36a1d', 325, 64],
 ] as const;
 
+const spineMotions = [
+  { tilt: -1.4, sway: 0.7, lift: 4, duration: 11.8, delay: -7.2, gap: 3 },
+  { tilt: 1.8, sway: -0.5, lift: 5, duration: 13.4, delay: -10.1, gap: 1 },
+  { tilt: -0.4, sway: 0.9, lift: 3, duration: 12.9, delay: -3.8, gap: 4 },
+  { tilt: 2.2, sway: -0.8, lift: 5, duration: 15.2, delay: -11.4, gap: 2 },
+  { tilt: -1.1, sway: 0.6, lift: 4, duration: 13.6, delay: -9.7, gap: 5 },
+  { tilt: 0.7, sway: -0.7, lift: 5, duration: 14.1, delay: -5.1, gap: 1 },
+] as const;
+
+type SpineMotionStyle = CSSProperties & {
+  '--spine-tilt': string;
+  '--spine-sway': string;
+  '--spine-sway-mid': string;
+  '--spine-lift': string;
+  '--spine-lift-mid': string;
+  '--spine-duration': string;
+  '--spine-delay': string;
+  '--spine-gap': string;
+};
+
 const Spines = ({ start, end, right = false }: { start: number; end: number; right?: boolean }) => (
   <div className={`${styles.spines} ${right ? styles.rightSpines : ''}`}>
-    {books.slice(start, end).map(([title, author, color, height, width], index) => <div className={styles.spine} style={{ background: color, height, width }} key={title}><small>{String(index + start + 1).padStart(2, '0')}</small><span>{title}</span><small>{author}</small></div>)}
+    <div className={styles.spineTrack}>
+      {books.slice(start, end).map(([title, author, color, height, width], index) => {
+        const motion = spineMotions[(index + (right ? 3 : 0)) % spineMotions.length]!;
+        const style: SpineMotionStyle = {
+          '--spine-tilt': `${right ? -motion.tilt : motion.tilt}deg`,
+          '--spine-sway': `${motion.sway}deg`,
+          '--spine-sway-mid': `${motion.sway * 0.45}deg`,
+          '--spine-lift': `${motion.lift * -1}px`,
+          '--spine-lift-mid': `${motion.lift * -0.35}px`,
+          '--spine-duration': `${motion.duration}s`,
+          '--spine-delay': `${motion.delay}s`,
+          '--spine-gap': `${motion.gap}px`,
+          background: color,
+          height,
+          width,
+        };
+
+        return <div className={styles.spine} style={style} key={title}><small>{String(index + start + 1).padStart(2, '0')}</small><span>{title}</span><small>{author}</small></div>;
+      })}
+    </div>
   </div>
 );
 
