@@ -47,6 +47,47 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun queryInputAndDirectSearchAreLimitedToOneHundredCharacters() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val requestedQueries = mutableListOf<String>()
+            val viewModel = SearchViewModel(
+                BookSearchRepository { query, _, _ ->
+                    requestedQueries += query
+                    BookSearchPage(0, null, emptyList())
+                },
+                registerBook = {},
+                isSignedIn = { true },
+            )
+            val pastedQuery = "책".repeat(SearchInputRules.MAX_QUERY_LENGTH + 50)
+
+            viewModel.updateQuery(pastedQuery)
+            viewModel.search(pastedQuery)
+            advanceUntilIdle()
+
+            assertEquals(SearchInputRules.MAX_QUERY_LENGTH, viewModel.query.value.length)
+            assertEquals(listOf("책".repeat(SearchInputRules.MAX_QUERY_LENGTH)), requestedQueries)
+            assertEquals(listOf("책".repeat(SearchInputRules.MAX_QUERY_LENGTH)), viewModel.recentSearches.value)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun restoredRecentSearchesAreLimitedBeforeDisplay() {
+        val pastedQuery = "📚".repeat(SearchInputRules.MAX_QUERY_LENGTH)
+
+        val viewModel = SearchViewModel(
+            BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) },
+            registerBook = {},
+            isSignedIn = { true },
+            recentSearchStorage = RecentSearchStorage(read = { listOf(pastedQuery) }),
+        )
+
+        assertEquals(SearchInputRules.MAX_QUERY_LENGTH, viewModel.recentSearches.value.single().length)
+    }
+
+    @Test
     fun searchUsesServerOrderAndExposesEmpty() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {

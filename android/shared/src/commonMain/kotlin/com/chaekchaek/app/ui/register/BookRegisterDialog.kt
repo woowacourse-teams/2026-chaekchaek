@@ -26,10 +26,10 @@ fun BookRegisterDialog(
     onDismiss: () -> Unit,
     onRegister: (title: String, creator: String, publisher: String, year: String, note: String) -> Unit,
 ) {
-    var title by remember(book) { mutableStateOf(book.title) }
-    var creator by remember(book) { mutableStateOf(book.creator) }
-    var publisher by remember(book) { mutableStateOf(book.publisher) }
-    var year by remember(book) { mutableStateOf(book.year) }
+    var title by remember(book) { mutableStateOf(BookRegisterInputRules.limitTitle(book.title)) }
+    var creator by remember(book) { mutableStateOf(BookRegisterInputRules.limitCreator(book.creator)) }
+    var publisher by remember(book) { mutableStateOf(BookRegisterInputRules.limitPublisher(book.publisher)) }
+    var year by remember(book) { mutableStateOf(BookRegisterInputRules.limitYear(book.year)) }
     var note by remember(book) { mutableStateOf("") }
     val editedBook = book.copy(title = title.trim(), creator = creator.trim(), publisher = publisher.trim(), year = year.trim())
 
@@ -46,11 +46,11 @@ fun BookRegisterDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                BookField(title, { title = it }, "제목")
-                BookField(creator, { creator = it }, "저자")
-                BookField(publisher, { publisher = it }, "출판사")
-                BookField(year, { year = it }, "연도")
-                BookField(note, { note = it }, "한줄평 - 선택")
+                BookField(title, { title = BookRegisterInputRules.limitTitle(it) }, "제목")
+                BookField(creator, { creator = BookRegisterInputRules.limitCreator(it) }, "저자")
+                BookField(publisher, { publisher = BookRegisterInputRules.limitPublisher(it) }, "출판사")
+                BookField(year, { year = BookRegisterInputRules.limitYear(it) }, "연도")
+                BookField(note, { note = BookRegisterInputRules.limitNote(it) }, "한줄평 - 선택")
             }
         },
         confirmButton = {
@@ -63,6 +63,24 @@ fun BookRegisterDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } },
     )
+}
+
+internal object BookRegisterInputRules {
+    const val MAX_TITLE_LENGTH = 300
+    const val MAX_CREATOR_LENGTH = 100
+    const val MAX_PUBLISHER_LENGTH = 100
+    const val MAX_YEAR_LENGTH = 4
+    const val MAX_NOTE_LENGTH = 1000
+
+    fun limitTitle(value: String): String = value.take(MAX_TITLE_LENGTH)
+
+    fun limitCreator(value: String): String = value.take(MAX_CREATOR_LENGTH)
+
+    fun limitPublisher(value: String): String = value.take(MAX_PUBLISHER_LENGTH)
+
+    fun limitYear(value: String): String = value.filter(Char::isDigit).take(MAX_YEAR_LENGTH)
+
+    fun limitNote(value: String): String = value.take(MAX_NOTE_LENGTH)
 }
 
 @Composable
