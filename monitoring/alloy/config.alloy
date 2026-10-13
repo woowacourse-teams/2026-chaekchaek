@@ -13,6 +13,19 @@ prometheus.scrape "backend" {
   forward_to      = [prometheus.remote_write.monitoring.receiver]
 }
 
+prometheus.exporter.unix "host" {
+  procfs_path = "/host/proc"
+  sysfs_path  = "/host/sys"
+  rootfs_path = "/host/root"
+}
+
+prometheus.scrape "host" {
+  targets         = prometheus.exporter.unix.host.targets
+  scrape_interval = "15s"
+  job_name        = "host"
+  forward_to      = [prometheus.remote_write.monitoring.receiver]
+}
+
 prometheus.remote_write "monitoring" {
   external_labels = {"env" = sys.env("APP_ENV")}
 
