@@ -10,6 +10,7 @@ import { OauthPage } from '@/pages/OauthPage';
 import { LoginPage } from '@/pages/LoginPage';
 
 import { DownloadPage } from '@/pages/DownloadPage';
+import { LandingPage } from '@/pages/LandingPage';
 
 import { IntroPage } from '@/pages/IntroPage';
 import { BooksPage } from '@/pages/BooksPage';
@@ -43,6 +44,10 @@ const routes: Route[] = [
         <LoginPage />
       </GuestRoute>
     ),
+  },
+  {
+    path: ROUTES.LANDING,
+    element: <LandingPage />,
   },
   {
     path: ROUTES.OAUTH_CALLBACK,
