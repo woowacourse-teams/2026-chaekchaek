@@ -17,6 +17,7 @@ fun App(
     recentSearchStorage: RecentSearchStorage = RecentSearchStorage(),
     analytics: AnalyticsTracker = AnalyticsTracker.None,
     uiTestingMyPage: Boolean = false,
+    onExitRequested: () -> Unit = {},
 ) {
     ChaekchaekTheme {
         Surface(
@@ -24,7 +25,13 @@ fun App(
             color = MaterialTheme.colorScheme.background,
         ) {
             androidx.compose.runtime.CompositionLocalProvider(LocalAnalyticsTracker provides analytics) {
-                AppNavigation(authPlatform, recentSearchStorage, analytics, uiTestingMyPage)
+                AppNavigation(
+                    authPlatform = authPlatform,
+                    recentSearchStorage = recentSearchStorage,
+                    analytics = analytics,
+                    uiTestingMyPage = uiTestingMyPage,
+                    onExitRequested = onExitRequested,
+                )
             }
         }
     }

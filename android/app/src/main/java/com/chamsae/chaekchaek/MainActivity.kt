@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
             App(
                 authPlatform = authPlatform,
                 analytics = analytics,
+                onExitRequested = { finish() },
                 recentSearchStorage = RecentSearchStorage(
                     read = recentSearchPreferences::read,
                     write = recentSearchPreferences::write,
