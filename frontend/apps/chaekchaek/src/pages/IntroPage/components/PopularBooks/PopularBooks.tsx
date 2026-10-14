@@ -50,7 +50,7 @@ export const PopularBooks = () => {
                   <img
                     src={book.coverImageUrl}
                     alt=""
-                    {...(index === 0 && { fetchPriority: 'high' })}
+                    fetchPriority={[1, 3, 8].includes(index) ? 'high' : undefined}
                   />
                 </a>
               </div>
