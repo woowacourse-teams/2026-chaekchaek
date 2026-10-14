@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const [path, key] = process.argv.slice(2);
@@ -18,6 +18,8 @@ const RUN_COUNT = 3;
 const OUTPUT_PATH = fileURLToPath(
   new URL('../.performance/lighthouse-results.json', import.meta.url),
 );
+
+const OUTPUT_DIR = fileURLToPath(new URL('../.performance/', import.meta.url));
 
 const options = [
   url,
@@ -46,18 +48,31 @@ for (let i = 0; i < RUN_COUNT; i++) {
 
   const report = JSON.parse(output);
 
+  const getAuditValue = (id) => {
+    const value = report.audits[id]?.numericValue;
+
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new Error(`Lighthouse 지표를 가져올 수 없습니다: ${id}`);
+    }
+
+    return value;
+  };
+
   results.push({
     performance: report.categories.performance.score * 100,
-    fcp: report.audits['first-contentful-paint'].numericValue / 1000,
-    lcp: report.audits['largest-contentful-paint'].numericValue / 1000,
-    ttfb: report.audits['server-response-time'].numericValue / 1000,
+    fcp: getAuditValue('first-contentful-paint') / 1000,
+    lcp: getAuditValue('largest-contentful-paint') / 1000,
+    cls: getAuditValue('cumulative-layout-shift'),
+    tbt: getAuditValue('total-blocking-time'),
+    speedIndex: getAuditValue('speed-index') / 1000,
+    ttfb: getAuditValue('server-response-time') / 1000,
   });
 }
 
-const average = (metric) => {
+const average = (metric, digits = 2) => {
   const sum = results.reduce((acc, result) => acc + result[metric], 0);
 
-  return Number((sum / RUN_COUNT).toFixed(2));
+  return Number((sum / RUN_COUNT).toFixed(digits));
 };
 
 const measurement = {
@@ -65,8 +80,13 @@ const measurement = {
   performance: average('performance'),
   fcp: average('fcp'),
   lcp: average('lcp'),
+  cls: average('cls', 3),
+  tbt: average('tbt'),
+  speedIndex: average('speedIndex'),
   ttfb: average('ttfb'),
 };
+
+mkdirSync(OUTPUT_DIR, { recursive: true });
 
 const savedResults = existsSync(OUTPUT_PATH) ? JSON.parse(readFileSync(OUTPUT_PATH, 'utf8')) : {};
 
