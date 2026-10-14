@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
+import com.chaekchaek.app.ui.input.TextInputLimit
 
 @Composable
 fun BookRegisterDialog(
@@ -46,11 +47,11 @@ fun BookRegisterDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                BookField(title, { title = BookRegisterInputRules.limitTitle(it) }, "제목")
-                BookField(creator, { creator = BookRegisterInputRules.limitCreator(it) }, "저자")
-                BookField(publisher, { publisher = BookRegisterInputRules.limitPublisher(it) }, "출판사")
-                BookField(year, { year = BookRegisterInputRules.limitYear(it) }, "연도")
-                BookField(note, { note = BookRegisterInputRules.limitNote(it) }, "한줄평 - 선택")
+                BookField(title, { title = BookRegisterInputRules.changeTitle(title, it) }, "제목")
+                BookField(creator, { creator = BookRegisterInputRules.changeCreator(creator, it) }, "저자")
+                BookField(publisher, { publisher = BookRegisterInputRules.changePublisher(publisher, it) }, "출판사")
+                BookField(year, { year = BookRegisterInputRules.changeYear(year, it) }, "연도")
+                BookField(note, { note = BookRegisterInputRules.changeNote(note, it) }, "한줄평 - 선택")
             }
         },
         confirmButton = {
@@ -72,15 +73,30 @@ internal object BookRegisterInputRules {
     const val MAX_YEAR_LENGTH = 4
     const val MAX_NOTE_LENGTH = 1000
 
-    fun limitTitle(value: String): String = value.take(MAX_TITLE_LENGTH)
+    fun limitTitle(value: String): String = TextInputLimit.takeCodePoints(value, MAX_TITLE_LENGTH)
 
-    fun limitCreator(value: String): String = value.take(MAX_CREATOR_LENGTH)
+    fun changeTitle(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed, MAX_TITLE_LENGTH)
 
-    fun limitPublisher(value: String): String = value.take(MAX_PUBLISHER_LENGTH)
+    fun limitCreator(value: String): String = TextInputLimit.takeCodePoints(value, MAX_CREATOR_LENGTH)
 
-    fun limitYear(value: String): String = value.filter(Char::isDigit).take(MAX_YEAR_LENGTH)
+    fun changeCreator(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed, MAX_CREATOR_LENGTH)
 
-    fun limitNote(value: String): String = value.take(MAX_NOTE_LENGTH)
+    fun limitPublisher(value: String): String = TextInputLimit.takeCodePoints(value, MAX_PUBLISHER_LENGTH)
+
+    fun changePublisher(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed, MAX_PUBLISHER_LENGTH)
+
+    fun limitYear(value: String): String = TextInputLimit.takeCodePoints(value.filter(Char::isDigit), MAX_YEAR_LENGTH)
+
+    fun changeYear(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed.filter(Char::isDigit), MAX_YEAR_LENGTH)
+
+    fun limitNote(value: String): String = TextInputLimit.takeCodePoints(value, MAX_NOTE_LENGTH)
+
+    fun changeNote(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed, MAX_NOTE_LENGTH)
 }
 
 @Composable

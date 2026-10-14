@@ -84,7 +84,71 @@ class SearchViewModelTest {
             recentSearchStorage = RecentSearchStorage(read = { listOf(pastedQuery) }),
         )
 
-        assertEquals(SearchInputRules.MAX_QUERY_LENGTH, viewModel.recentSearches.value.single().length)
+        assertEquals(
+            "📚".repeat(SearchInputRules.MAX_QUERY_LENGTH),
+            viewModel.recentSearches.value.single(),
+        )
+    }
+
+    @Test
+    fun queryLimitDoesNotSplitEmojiAfterBmpCharacters() {
+        val viewModel = SearchViewModel(
+            BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) },
+            registerBook = {},
+            isSignedIn = { true },
+        )
+
+        viewModel.updateQuery("책".repeat(SearchInputRules.MAX_QUERY_LENGTH - 1) + "📚" + "잘림")
+
+        assertEquals(
+            "책".repeat(SearchInputRules.MAX_QUERY_LENGTH - 1) + "📚",
+            viewModel.query.value,
+        )
+    }
+
+    @Test
+    fun middlePasteAcceptsOnlyAvailableCharactersAndPreservesExistingSuffix() {
+        val viewModel = SearchViewModel(
+            BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) },
+            registerBook = {},
+            isSignedIn = { true },
+        )
+        val current = "책".repeat(SearchInputRules.MAX_QUERY_LENGTH - 5)
+        val insertionIndex = 40
+        viewModel.updateQuery(current)
+
+        viewModel.updateQuery(
+            current.substring(0, insertionIndex) + "📚".repeat(10) + current.substring(insertionIndex),
+        )
+
+        assertEquals(
+            current.substring(0, insertionIndex) + "📚".repeat(5) + current.substring(insertionIndex),
+            viewModel.query.value,
+        )
+    }
+
+    @Test
+    fun directSearchTrimsWhitespaceBeforeApplyingLimit() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val requestedQueries = mutableListOf<String>()
+            val viewModel = SearchViewModel(
+                BookSearchRepository { query, _, _ ->
+                    requestedQueries += query
+                    BookSearchPage(0, null, emptyList())
+                },
+                registerBook = {},
+                isSignedIn = { true },
+            )
+
+            viewModel.search("   " + "책".repeat(SearchInputRules.MAX_QUERY_LENGTH))
+            advanceUntilIdle()
+
+            assertEquals(listOf("책".repeat(SearchInputRules.MAX_QUERY_LENGTH)), requestedQueries)
+            assertEquals("책".repeat(SearchInputRules.MAX_QUERY_LENGTH), viewModel.query.value)
+        } finally {
+            Dispatchers.resetMain()
+        }
     }
 
     @Test

@@ -8,6 +8,7 @@ import com.chaekchaek.app.analytics.analyticsQueryLengthBucket
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
+import com.chaekchaek.app.ui.input.TextInputLimit
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,8 +46,8 @@ class SearchViewModel(
     val query: StateFlow<String> = _query.asStateFlow()
     private val _recentSearches = MutableStateFlow(
         recentSearchStorage.read()
-            .map(SearchInputRules::limit)
             .map(String::trim)
+            .map(SearchInputRules::limit)
             .filter(String::isNotEmpty)
             .distinct()
             .take(RECENT_SEARCH_LIMIT),
@@ -65,13 +66,13 @@ class SearchViewModel(
     }
 
     fun updateQuery(query: String) {
-        _query.value = SearchInputRules.limit(query)
+        _query.value = SearchInputRules.applyChange(_query.value, query)
     }
 
     fun search(query: String) = search(query, "submit")
 
     private fun search(query: String, trigger: String) {
-        val trimmed = SearchInputRules.limit(query).trim()
+        val trimmed = SearchInputRules.limit(query.trim())
         if (trimmed.isEmpty()) return
         if (trigger == "submit") {
             _query.value = trimmed
@@ -198,5 +199,8 @@ class SearchViewModel(
 internal object SearchInputRules {
     const val MAX_QUERY_LENGTH = 100
 
-    fun limit(value: String): String = value.take(MAX_QUERY_LENGTH)
+    fun limit(value: String): String = TextInputLimit.takeCodePoints(value, MAX_QUERY_LENGTH)
+
+    fun applyChange(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed, MAX_QUERY_LENGTH)
 }
