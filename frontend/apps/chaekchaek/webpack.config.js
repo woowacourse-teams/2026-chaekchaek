@@ -34,7 +34,6 @@ export default (_, argv) => {
     );
 
   return {
-    mode: 'development',
     entry: path.resolve(__dirname, 'src/main.tsx'),
     output: {
       path: path.resolve(__dirname, 'dist'),
