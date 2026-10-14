@@ -1,0 +1,9 @@
+{
+  "intro-before": {
+    "url": "https://dev.chaekchaek.com/intro",
+    "performance": 84.33,
+    "fcp": 0.22,
+    "lcp": 2.81,
+    "ttfb": 0.01
+  }
+}
