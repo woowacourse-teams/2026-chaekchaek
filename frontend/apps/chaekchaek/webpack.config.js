@@ -5,6 +5,9 @@ import webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
+import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import CssMinimizerWebpackPlugin from 'css-minimizer-webpack-plugin';
+
 import { sentryWebpackPlugin } from '@sentry/webpack-plugin';
 import dotenv from 'dotenv';
 
@@ -80,8 +83,7 @@ export default (_, argv) => {
           test: /\.module\.css$/i,
 
           use: [
-            'style-loader',
-
+            MiniCssExtractPlugin.loader,
             {
               loader: 'css-loader',
               options: {
@@ -98,7 +100,7 @@ export default (_, argv) => {
         {
           test: /\.css$/i,
           exclude: /\.module\.css$/i,
-          use: ['style-loader', 'css-loader'],
+          use: [MiniCssExtractPlugin.loader, 'css-loader'],
         },
         {
           test: /\.(png|jpe?g|gif|webp|avif)$/i,
@@ -144,6 +146,10 @@ export default (_, argv) => {
         template: path.resolve(__dirname, 'public/index.html'),
       }),
       isDevelopment && new ReactRefreshWebpackPlugin(),
+      new MiniCssExtractPlugin({
+        filename: '[name].[contenthash].css',
+        chunkFilename: '[name].[contenthash].css',
+      }),
       new CopyWebpackPlugin({
         patterns: [
           {
@@ -166,7 +172,10 @@ export default (_, argv) => {
         authToken: process.env.SENTRY_AUTH_TOKEN,
       }),
     ].filter(Boolean),
-    devtool: 'source-map',
+    optimization: {
+      minimizer: ['...', new CssMinimizerWebpackPlugin()],
+    },
+    devtool: isDevelopment ? 'eval-cheap-module-source-map' : false,
     devServer: {
       port: 3000,
       open: true,
