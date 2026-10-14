@@ -51,13 +51,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
-@WebMvcTest(value = AdminController.class, excludeAutoConfiguration = OAuth2ClientAutoConfiguration.class)
+@WebMvcTest(value = RecommendedBookController.class, excludeAutoConfiguration = OAuth2ClientAutoConfiguration.class)
 @AutoConfigureRestDocs
-class AdminControllerTest {
+class RecommendedBookControllerTest {
 
     private static final long BOOK_ID = 42L;
     private static final String ISBN13 = "9788925568683";
-    private static final String ADMIN_TAG = "관리자";
+    private static final String RECOMMENDED_BOOK_TAG = "추천 도서";
     private static final String LIST_SUMMARY = "추천 도서 목록 조회";
     private static final String LIST_DESCRIPTION = "인증 없이 추천 도서를 최근에 추천한 순서로 조회한다. 회원·게스트 토큰이 필요하지 않으며 추천한 책이 없으면 빈 배열을 반환한다";
     private static final String ADD_SUMMARY = "추천 도서 추가";
@@ -88,19 +88,19 @@ class AdminControllerTest {
                 .thenReturn(new RecommendedBookListResponse(List.of(recommendedBookResponse())));
 
         // when & then
-        mockMvc.perform(get("/api/v1/admin/recommended-books"))
+        mockMvc.perform(get("/api/v1/recommended-books"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.books[0].bookId").value(BOOK_ID))
                 .andExpect(jsonPath("$.books[0].isbn13").value(ISBN13))
                 .andExpect(jsonPath("$.books[0].title").value("마션"))
                 .andExpect(jsonPath("$.books[0].createdAt").value("2026-08-28T00:00:00Z"))
                 .andDo(document(
-                        "admin-recommended-books",
+                        "recommended-books",
                         responseFields(recommendedBookListResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary(LIST_SUMMARY)
                                 .description(LIST_DESCRIPTION)
-                                .tag(ADMIN_TAG)
+                                .tag(RECOMMENDED_BOOK_TAG)
                                 .responseFields(recommendedBookListResponseFields())
                                 .build())
                 ));
@@ -113,7 +113,7 @@ class AdminControllerTest {
         when(adminService.getRecommendedBooks()).thenReturn(new RecommendedBookListResponse(List.of()));
 
         // when & then
-        mockMvc.perform(get("/api/v1/admin/recommended-books"))
+        mockMvc.perform(get("/api/v1/recommended-books"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.books").isEmpty());
     }
@@ -130,9 +130,9 @@ class AdminControllerTest {
                 postRecommendedBook(ISBN13),
                 HttpStatus.FORBIDDEN,
                 ErrorCode.FORBIDDEN,
-                "/api/v1/admin/recommended-books"
+                "/api/v1/recommended-books"
         )
-                .andDo(problemDetailDocument("admin-recommended-book-add-forbidden", ADD_SUMMARY, ADD_DESCRIPTION));
+                .andDo(problemDetailDocument("recommended-book-add-forbidden", ADD_SUMMARY, ADD_DESCRIPTION));
     }
 
     @Test
@@ -143,13 +143,13 @@ class AdminControllerTest {
 
         // when & then
         expectProblemDetail(
-                mockMvc.perform(delete("/api/v1/admin/recommended-books/{bookId}", BOOK_ID)),
+                mockMvc.perform(delete("/api/v1/recommended-books/{bookId}", BOOK_ID)),
                 HttpStatus.FORBIDDEN,
                 ErrorCode.FORBIDDEN,
-                "/api/v1/admin/recommended-books/" + BOOK_ID
+                "/api/v1/recommended-books/" + BOOK_ID
         )
                 .andDo(problemDetailDocument(
-                        "admin-recommended-book-delete-forbidden",
+                        "recommended-book-delete-forbidden",
                         DELETE_SUMMARY,
                         DELETE_DESCRIPTION,
                         bookIdResourcePathParameter()
@@ -165,18 +165,18 @@ class AdminControllerTest {
         // when & then
         postRecommendedBook(ISBN13)
                 .andExpect(status().isCreated())
-                .andExpect(header().string(HttpHeaders.LOCATION, "/api/v1/admin/recommended-books/" + BOOK_ID))
+                .andExpect(header().string(HttpHeaders.LOCATION, "/api/v1/recommended-books/" + BOOK_ID))
                 .andExpect(jsonPath("$.bookId").value(BOOK_ID))
                 .andExpect(jsonPath("$.isbn13").value(ISBN13))
                 .andDo(document(
-                        "admin-recommended-book-add",
+                        "recommended-book-add",
                         requestFields(addRecommendedBookRequestFields()),
                         responseFields(recommendedBookResponseFields()),
                         responseHeaders(headerWithName(HttpHeaders.LOCATION).description("등록된 추천 도서 URI")),
                         resource(ResourceSnippetParameters.builder()
                                 .summary(ADD_SUMMARY)
                                 .description(ADD_DESCRIPTION)
-                                .tag(ADMIN_TAG)
+                                .tag(RECOMMENDED_BOOK_TAG)
                                 .requestSchema(Schema.schema("AddRecommendedBookRequest"))
                                 .requestFields(addRecommendedBookRequestFields())
                                 .responseFields(recommendedBookResponseFields())
@@ -197,10 +197,10 @@ class AdminControllerTest {
                 postRecommendedBook("9788925568680"),
                 HttpStatus.BAD_REQUEST,
                 ErrorCode.INVALID_REQUEST,
-                "/api/v1/admin/recommended-books"
+                "/api/v1/recommended-books"
         )
                 .andDo(problemDetailDocument(
-                        "admin-recommended-book-add-invalid-request",
+                        "recommended-book-add-invalid-request",
                         ADD_SUMMARY,
                         ADD_DESCRIPTION
                 ));
@@ -218,10 +218,10 @@ class AdminControllerTest {
                 postRecommendedBook(ISBN13),
                 HttpStatus.CONFLICT,
                 ErrorCode.RECOMMENDED_BOOK_LIMIT_EXCEEDED,
-                "/api/v1/admin/recommended-books"
+                "/api/v1/recommended-books"
         )
                 .andDo(problemDetailDocument(
-                        "admin-recommended-book-add-limit-exceeded",
+                        "recommended-book-add-limit-exceeded",
                         ADD_SUMMARY,
                         ADD_DESCRIPTION
                 ));
@@ -231,15 +231,15 @@ class AdminControllerTest {
     @DisplayName("유효한 요청이라면 추천 도서를 삭제한다")
     void should_DeleteRecommendedBook_When_RequestIsValid() throws Exception {
         // when & then
-        mockMvc.perform(delete("/api/v1/admin/recommended-books/{bookId}", BOOK_ID))
+        mockMvc.perform(delete("/api/v1/recommended-books/{bookId}", BOOK_ID))
                 .andExpect(status().isNoContent())
                 .andDo(document(
-                        "admin-recommended-book-delete",
+                        "recommended-book-delete",
                         pathParameters(parameterWithName("bookId").description(BOOK_ID_DESCRIPTION)),
                         resource(ResourceSnippetParameters.builder()
                                 .summary(DELETE_SUMMARY)
                                 .description(DELETE_DESCRIPTION)
-                                .tag(ADMIN_TAG)
+                                .tag(RECOMMENDED_BOOK_TAG)
                                 .pathParameters(bookIdResourcePathParameter())
                                 .build())
                 ));
@@ -256,13 +256,13 @@ class AdminControllerTest {
 
         // when & then
         expectProblemDetail(
-                mockMvc.perform(delete("/api/v1/admin/recommended-books/{bookId}", BOOK_ID)),
+                mockMvc.perform(delete("/api/v1/recommended-books/{bookId}", BOOK_ID)),
                 HttpStatus.NOT_FOUND,
                 ErrorCode.RECOMMENDED_BOOK_NOT_FOUND,
-                "/api/v1/admin/recommended-books/" + BOOK_ID
+                "/api/v1/recommended-books/" + BOOK_ID
         )
                 .andDo(problemDetailDocument(
-                        "admin-recommended-book-delete-not-found",
+                        "recommended-book-delete-not-found",
                         DELETE_SUMMARY,
                         DELETE_DESCRIPTION,
                         bookIdResourcePathParameter()
@@ -281,7 +281,7 @@ class AdminControllerTest {
                 resource(ResourceSnippetParameters.builder()
                         .summary(summary)
                         .description(description)
-                        .tag(ADMIN_TAG)
+                        .tag(RECOMMENDED_BOOK_TAG)
                         .pathParameters(pathParameters)
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_DETAIL_FIELDS)
@@ -295,7 +295,7 @@ class AdminControllerTest {
     }
 
     private ResultActions postRecommendedBook(String isbn13) throws Exception {
-        return mockMvc.perform(post("/api/v1/admin/recommended-books")
+        return mockMvc.perform(post("/api/v1/recommended-books")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"isbn13\":\"" + isbn13 + "\"}"));
     }

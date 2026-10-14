@@ -45,7 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class RecommendedBookAuthorizationIntegrationTest {
 
-    private static final String RECOMMENDED_BOOKS_PATH = "/api/v1/admin/recommended-books";
+    private static final String RECOMMENDED_BOOKS_PATH = "/api/v1/recommended-books";
     private static final String ISBN13 = "9788925568683";
 
     @Autowired
