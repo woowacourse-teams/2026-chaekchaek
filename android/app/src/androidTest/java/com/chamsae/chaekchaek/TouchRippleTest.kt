@@ -2,6 +2,8 @@ package com.chamsae.chaekchaek
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.FocusInteraction
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
@@ -41,6 +43,7 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -71,6 +74,31 @@ class TouchRippleTest {
             }
         }
         assertTrue("기본 Material 리플을 감지해야 비교 검증이 유효하다", pressedPixelChanges("default") > 0)
+    }
+
+    @Test
+    fun keyboardFocusAndPointerHoverStateLayersRemainVisible() {
+        lateinit var focusInteractions: MutableInteractionSource
+        compose.setContent {
+            ChaekchaekTheme {
+                focusInteractions = remember { MutableInteractionSource() }
+                Column {
+                    Surface(
+                        onClick = {},
+                        modifier = Modifier.size(120.dp, 48.dp).testTag("focus"),
+                        interactionSource = focusInteractions,
+                    ) {
+                        Text("Focus")
+                    }
+                    Surface(onClick = {}, modifier = Modifier.size(120.dp, 48.dp).testTag("hover")) {
+                        Text("Hover")
+                    }
+                }
+            }
+        }
+
+        assertTrue("키보드 포커스 상태층은 보여야 한다", focusedPixelChanges("focus", focusInteractions) > 0)
+        assertTrue("포인터 hover 상태층은 보여야 한다", hoveredPixelChanges("hover") > 0)
     }
 
     @Test
@@ -136,6 +164,24 @@ class TouchRippleTest {
     }
 
     private fun pressedPixelChanges(tag: String): Int = pressedPixelChanges(compose.onNodeWithTag(tag))
+
+    private fun focusedPixelChanges(tag: String, interactions: MutableInteractionSource): Int {
+        val node = compose.onNodeWithTag(tag)
+        val before = node.captureToImage()
+        compose.runOnIdle { interactions.tryEmit(FocusInteraction.Focus()) }
+        Thread.sleep(180)
+        return differentPixels(before, node.captureToImage())
+    }
+
+    private fun hoveredPixelChanges(tag: String): Int {
+        val node = compose.onNodeWithTag(tag)
+        val before = node.captureToImage()
+        node.performMouseInput { enter(center) }
+        Thread.sleep(180)
+        val hovered = node.captureToImage()
+        node.performMouseInput { exit(center) }
+        return differentPixels(before, hovered)
+    }
 
     private fun pressedPixelChanges(node: SemanticsNodeInteraction): Int {
         val before = node.captureToImage()
