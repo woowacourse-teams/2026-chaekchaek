@@ -44,6 +44,113 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
   @Test
+  fun `빠른 추가 조회 실패는 자동 반복하지 않고 명시적 재시도로 복구한다`() =
+    verifyFailedPageRetry(showDelayedLoader = false)
+
+  @Test
+  fun `로더 표시 후 추가 조회 실패도 명시적 재시도로 복구한다`() =
+    verifyFailedPageRetry(showDelayedLoader = true)
+
+  private fun verifyFailedPageRetry(showDelayedLoader: Boolean) = runViewModelTest {
+    val deleted = REVIEW_RESPONSE.replace("\"deleted\":false", "\"deleted\":true")
+    val active = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":8")
+    val firstStarted = CompletableDeferred<Unit>()
+    val failFirst = CompletableDeferred<Unit>()
+    val retryStarted = CompletableDeferred<Unit>()
+    val completeRetry = CompletableDeferred<Unit>()
+    var pageRequests = 0
+    val engine = MockEngine { request ->
+      when {
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        request.url.parameters["page"] == "2" -> {
+          pageRequests += 1
+          if (pageRequests == 1) {
+            firstStarted.complete(Unit)
+            failFirst.await()
+            error("페이지 조회 실패")
+          }
+          retryStarted.complete(Unit)
+          completeRetry.await()
+          respond("""{"totalCount":2,"nextPage":null,"items":[$active]}""", headers = jsonHeaders())
+        }
+        else -> respond("""{"totalCount":2,"nextPage":2,"items":[$deleted]}""", headers = jsonHeaders())
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = null)
+    awaitReal { viewModel.uiState.first { it.nextReviewPage == 2 } }
+    viewModel.loadMoreReviews()
+    awaitReal { firstStarted.await() }
+    if (showDelayedLoader) {
+      advanceTimeBy(API_LOADING_DELAY_MILLIS)
+      runCurrent()
+      assertTrue(viewModel.uiState.value.isLoadingMore)
+    }
+    failFirst.complete(Unit)
+    awaitReal { viewModel.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.Failed } }
+    assertFalse(viewModel.uiState.value.isLoadingMore)
+    assertNull(viewModel.uiState.value.requestError)
+    assertTrue(visibleReviews(viewModel.uiState.value.reviews).isEmpty())
+    repeat(3) { viewModel.loadMoreReviews() }
+    runCurrent()
+    assertEquals(1, pageRequests)
+
+    viewModel.retryLoadMoreReviews()
+    awaitReal { retryStarted.await() }
+    assertEquals(ReviewPageLoadState.Retrying, viewModel.uiState.value.reviewPageLoadState)
+    viewModel.retryLoadMoreReviews()
+    viewModel.loadMoreReviews()
+    runCurrent()
+    assertEquals(2, pageRequests)
+    completeRetry.complete(Unit)
+    awaitReal { viewModel.uiState.first { it.nextReviewPage == null } }
+    assertEquals(ReviewPageLoadState.Idle, viewModel.uiState.value.reviewPageLoadState)
+    assertEquals(listOf(8L), visibleReviews(viewModel.uiState.value.reviews).map { it.reviewId })
+    assertEquals(2, viewModel.uiState.value.reviews.size)
+  }
+
+  @Test
+  fun `정렬 변경은 이전 페이지 실패 상태와 다음 페이지를 초기화한다`() = runViewModelTest {
+    val firstPage = """{"totalCount":2,"nextPage":2,"items":[$REVIEW_RESPONSE]}"""
+    val newSortStarted = CompletableDeferred<Unit>()
+    val finishNewSort = CompletableDeferred<Unit>()
+    var pageRequests = 0
+    val engine = MockEngine { request ->
+      when {
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        request.url.parameters["sort"] == "OLDEST" -> {
+          newSortStarted.complete(Unit)
+          finishNewSort.await()
+          respond(EMPTY_REVIEWS, headers = jsonHeaders())
+        }
+        request.url.parameters["page"] == "2" -> {
+          pageRequests += 1
+          error("페이지 조회 실패")
+        }
+        else -> respond(firstPage, headers = jsonHeaders())
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { null }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = null)
+    awaitReal { viewModel.uiState.first { it.nextReviewPage == 2 } }
+    viewModel.loadMoreReviews()
+    awaitReal { viewModel.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.Failed } }
+    viewModel.changeReviewSort(com.chaekchaek.app.data.remote.ReviewSort.OLDEST)
+    awaitReal { newSortStarted.await() }
+    assertEquals(ReviewPageLoadState.Idle, viewModel.uiState.value.reviewPageLoadState)
+    assertNull(viewModel.uiState.value.nextReviewPage)
+    viewModel.retryLoadMoreReviews()
+    viewModel.loadMoreReviews()
+    runCurrent()
+    assertEquals(1, pageRequests)
+    finishNewSort.complete(Unit)
+    awaitReal { viewModel.uiState.first { it.reviews.isEmpty() } }
+    assertEquals(ReviewPageLoadState.Idle, viewModel.uiState.value.reviewPageLoadState)
+  }
+
+  @Test
   fun `삭제 감상만 있는 첫 페이지 뒤의 정상 감상을 계속 표시한다`() = runViewModelTest {
     val deletedReview = REVIEW_RESPONSE.replace("\"deleted\":false", "\"deleted\":true")
     val activeReview = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":8")

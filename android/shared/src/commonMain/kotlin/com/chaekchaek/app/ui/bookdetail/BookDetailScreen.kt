@@ -38,6 +38,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -162,6 +163,7 @@ fun BookDetailScreen(
     onReviewScopeChange: (ReviewScope) -> Unit = {},
     onReviewSortChange: (ReviewSort) -> Unit = {},
     onLoadMoreReviews: () -> Unit = {},
+    onRetryMoreReviews: () -> Unit = {},
     onRequestErrorShown: () -> Unit = {},
 ) {
     val book = state.displayBook ?: return
@@ -190,8 +192,10 @@ fun BookDetailScreen(
         if (!action.requiresMember || state.signedIn) onAuthorized() else onLoginRequired(action)
     }
 
-    LaunchedEffect(reachedBottom, state.nextReviewPage, state.reviewScope, state.reviewSort) {
-        if (reachedBottom && state.nextReviewPage != null) onLoadMoreReviews()
+    LaunchedEffect(reachedBottom, state.nextReviewPage, state.reviewScope, state.reviewSort, state.reviewPageLoadState) {
+        if (reachedBottom && state.nextReviewPage != null && state.reviewPageLoadState == ReviewPageLoadState.Idle) {
+            onLoadMoreReviews()
+        }
     }
     LaunchedEffect(state.requestError) {
         state.requestError?.let {
@@ -261,6 +265,8 @@ fun BookDetailScreen(
                     hasMoreReviews = state.nextReviewPage != null,
                     loading = state.isLoading,
                     loadingMore = state.isLoadingMore,
+                    pageLoadState = state.reviewPageLoadState,
+                    onRetryMoreReviews = onRetryMoreReviews,
                     revealedSpoilerReviewIds = revealedSpoilerReviewIds,
                     scope = state.reviewScope,
                     sort = state.reviewSort,
@@ -867,6 +873,8 @@ private fun ReviewsSection(
     hasMoreReviews: Boolean,
     loading: Boolean,
     loadingMore: Boolean,
+    pageLoadState: ReviewPageLoadState,
+    onRetryMoreReviews: () -> Unit,
     revealedSpoilerReviewIds: Set<Long>,
     scope: ReviewScope,
     sort: ReviewSort,
@@ -938,6 +946,23 @@ private fun ReviewsSection(
                     onReplyLike = onReplyLike,
                     onManage = { onManageReview(review) },
                     onManageReply = onManageReply,
+                )
+            }
+        }
+        if (pageLoadState == ReviewPageLoadState.Failed || pageLoadState == ReviewPageLoadState.Retrying) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                Text(
+                    "다음 감상을 불러오지 못했어요",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                ChaekOverlayButton(
+                    "다시 시도",
+                    onRetryMoreReviews,
+                    enabled = pageLoadState == ReviewPageLoadState.Failed,
                 )
             }
         }

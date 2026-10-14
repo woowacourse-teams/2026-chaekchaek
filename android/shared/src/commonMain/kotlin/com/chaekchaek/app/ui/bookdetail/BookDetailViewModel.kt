@@ -43,6 +43,7 @@ class BookDetailViewModel(
     private var repliesJob: Job? = null
     private var mutationJob: Job? = null
     private var ratingComparisonJob: Job? = null
+    private var reviewPageGeneration = 0
     private var requestGeneration = 0
     private var detailReadyLogged = false
     private var pendingAnalyticsAction: AnalyticsAction? = null
@@ -135,32 +136,60 @@ class BookDetailViewModel(
         reloadReviews()
     }
 
-    fun loadMoreReviews() {
+    fun loadMoreReviews() = requestNextReviewPage(retryAfterFailure = false)
+
+    fun retryLoadMoreReviews() = requestNextReviewPage(retryAfterFailure = true)
+
+    private fun requestNextReviewPage(retryAfterFailure: Boolean) {
         val state = _uiState.value
         val bookId = state.detail?.bookId ?: return
         val page = state.nextReviewPage ?: return
-        if (loadMoreJob?.isActive == true) return
+        val expectedState = if (retryAfterFailure) ReviewPageLoadState.Failed else ReviewPageLoadState.Idle
+        if (state.reviewPageLoadState != expectedState || loadMoreJob?.isActive == true) return
+        val generation = reviewPageGeneration
         val requestedScope = state.reviewScope
         val requestedSort = state.reviewSort
+        _uiState.value = state.copy(
+            reviewPageLoadState = if (retryAfterFailure) ReviewPageLoadState.Retrying else ReviewPageLoadState.Loading,
+        )
         loadMoreJob = viewModelScope.launch {
             runCatching {
                 withDelayedLoading(
                     onLoadingChanged = { loading ->
-                        _uiState.value = _uiState.value.copy(isLoadingMore = loading)
+                        if (generation == reviewPageGeneration) {
+                            _uiState.value = _uiState.value.copy(isLoadingMore = loading)
+                        }
                     },
                 ) {
                     repository.reviews(bookId, requestedScope, requestedSort, readCredential(), page)
                 }
             }.onSuccess { result ->
+                if (generation != reviewPageGeneration) return@onSuccess
                 val current = _uiState.value
                 if (current.reviewScope != requestedScope || current.reviewSort != requestedSort) return@onSuccess
                 _uiState.value = current.copy(
                     reviews = (current.reviews + result.items).distinctBy(BookReview::reviewId),
                     reviewCount = result.totalCount,
                     nextReviewPage = result.nextPage,
+                    reviewPageLoadState = ReviewPageLoadState.Idle,
                 )
-            }.onFailure(::handleFailure)
+            }.onFailure { error ->
+                if (error is CancellationException) throw error
+                if (generation == reviewPageGeneration) {
+                    _uiState.value = _uiState.value.copy(reviewPageLoadState = ReviewPageLoadState.Failed)
+                }
+            }
         }
+    }
+
+    private fun resetReviewPagination() {
+        reviewPageGeneration += 1
+        loadMoreJob?.cancel()
+        _uiState.value = _uiState.value.copy(
+            nextReviewPage = null,
+            isLoadingMore = false,
+            reviewPageLoadState = ReviewPageLoadState.Idle,
+        )
     }
 
     fun toggleLibrary(savedBookId: Long?, onSuccess: () -> Unit = {}) = mutate(
@@ -368,6 +397,7 @@ class BookDetailViewModel(
 
     private fun reload() {
         val book = _uiState.value.book ?: return
+        resetReviewPagination()
         val generation = requestGeneration
         val credential = readCredential()
         val reviewScope = _uiState.value.reviewScope
@@ -458,6 +488,7 @@ class BookDetailViewModel(
 
     private fun reloadReviews() {
         val bookId = _uiState.value.detail?.bookId ?: return
+        resetReviewPagination()
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             runCatching {
@@ -603,6 +634,7 @@ class BookDetailViewModel(
 
     private fun invalidateRequests() {
         requestGeneration += 1
+        resetReviewPagination()
         loadJob?.cancel()
         loadMoreJob?.cancel()
         repliesJob?.cancel()
