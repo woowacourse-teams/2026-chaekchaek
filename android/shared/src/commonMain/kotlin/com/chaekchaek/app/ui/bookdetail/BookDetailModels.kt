@@ -75,6 +75,14 @@ enum class ReviewPageLoadState {
     Loading,
     Failed,
     Retrying,
+    RefreshFailed,
+    RefreshRetrying;
+
+    val showsRetry: Boolean
+        get() = this == Failed || this == Retrying || this == RefreshFailed || this == RefreshRetrying
+
+    val canRetry: Boolean
+        get() = this == Failed || this == RefreshFailed
 }
 
 data class BookDetailUiState(

@@ -96,10 +96,10 @@ class BookDetailViewModelTest {
     runCurrent()
     assertEquals(1, pageRequests)
 
-    viewModel.retryLoadMoreReviews()
+    viewModel.retryReviews()
     awaitReal { retryStarted.await() }
     assertEquals(ReviewPageLoadState.Retrying, viewModel.uiState.value.reviewPageLoadState)
-    viewModel.retryLoadMoreReviews()
+    viewModel.retryReviews()
     viewModel.loadMoreReviews()
     runCurrent()
     assertEquals(2, pageRequests)
@@ -139,15 +139,95 @@ class BookDetailViewModelTest {
     awaitReal { viewModel.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.Failed } }
     viewModel.changeReviewSort(com.chaekchaek.app.data.remote.ReviewSort.OLDEST)
     awaitReal { newSortStarted.await() }
-    assertEquals(ReviewPageLoadState.Idle, viewModel.uiState.value.reviewPageLoadState)
+    assertEquals(ReviewPageLoadState.Loading, viewModel.uiState.value.reviewPageLoadState)
     assertNull(viewModel.uiState.value.nextReviewPage)
-    viewModel.retryLoadMoreReviews()
+    viewModel.retryReviews()
     viewModel.loadMoreReviews()
     runCurrent()
     assertEquals(1, pageRequests)
     finishNewSort.complete(Unit)
     awaitReal { viewModel.uiState.first { it.reviews.isEmpty() } }
     assertEquals(ReviewPageLoadState.Idle, viewModel.uiState.value.reviewPageLoadState)
+  }
+
+  @Test
+  fun `좋아요 후 첫 페이지 새로고침 실패는 재시도로 목록과 다음 페이지를 복구한다`() =
+    verifyRefreshFailureRetry(changeSort = false)
+
+  @Test
+  fun `정렬 첫 페이지 실패는 새 정렬로 재시도하고 이전 목록과 섞지 않는다`() =
+    verifyRefreshFailureRetry(changeSort = true)
+
+  private fun verifyRefreshFailureRetry(changeSort: Boolean) = runViewModelTest {
+    val active = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":8")
+    val next = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":9")
+    val retryStarted = CompletableDeferred<Unit>()
+    val finishRetry = CompletableDeferred<Unit>()
+    var firstPageRequests = 0
+    var nextPageRequests = 0
+    var likes = 0
+    val requestedSorts = mutableListOf<String?>()
+    val engine = MockEngine { request ->
+      when {
+        request.method == HttpMethod.Post -> {
+          likes += 1
+          respond("""{"likeCount":1,"likedByMe":true}""", headers = jsonHeaders())
+        }
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        request.url.parameters["page"] == "2" -> {
+          nextPageRequests += 1
+          respond("""{"totalCount":2,"nextPage":null,"items":[$next]}""", headers = jsonHeaders())
+        }
+        else -> {
+          firstPageRequests += 1
+          requestedSorts += request.url.parameters["sort"]
+          when (firstPageRequests) {
+            1 -> respond("""{"totalCount":2,"nextPage":2,"items":[$REVIEW_RESPONSE]}""", headers = jsonHeaders())
+            2 -> error("첫 페이지 새로고침 실패")
+            else -> {
+              retryStarted.complete(Unit)
+              finishRetry.await()
+              respond("""{"totalCount":2,"nextPage":2,"items":[$active]}""", headers = jsonHeaders())
+            }
+          }
+        }
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { guest("test") }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = null)
+    awaitReal { viewModel.uiState.first { it.nextReviewPage == 2 } }
+    if (changeSort) viewModel.changeReviewSort(com.chaekchaek.app.data.remote.ReviewSort.OLDEST)
+    else viewModel.likeReview(reviewId = 7, likedByMe = false)
+    awaitReal { viewModel.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.RefreshFailed } }
+    assertEquals(listOf(7L), viewModel.uiState.value.reviews.map { it.reviewId })
+    assertNull(viewModel.uiState.value.nextReviewPage)
+    repeat(3) { viewModel.loadMoreReviews() }
+    runCurrent()
+    assertEquals(0, nextPageRequests)
+    assertEquals(2, firstPageRequests)
+
+    viewModel.retryReviews()
+    awaitReal { retryStarted.await() }
+    assertEquals(ReviewPageLoadState.RefreshRetrying, viewModel.uiState.value.reviewPageLoadState)
+    viewModel.retryReviews()
+    runCurrent()
+    assertEquals(3, firstPageRequests)
+    advanceTimeBy(API_LOADING_DELAY_MILLIS)
+    runCurrent()
+    assertTrue(viewModel.uiState.value.isLoading)
+    finishRetry.complete(Unit)
+    awaitReal { viewModel.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.Idle } }
+    assertEquals(listOf(8L), viewModel.uiState.value.reviews.map { it.reviewId })
+    assertEquals(2, viewModel.uiState.value.nextReviewPage)
+    assertFalse(viewModel.uiState.value.isLoading)
+    assertEquals(if (changeSort) "OLDEST" else "LATEST", requestedSorts.last())
+    assertEquals(if (changeSort) 0 else 1, likes)
+
+    viewModel.loadMoreReviews()
+    awaitReal { viewModel.uiState.first { it.nextReviewPage == null } }
+    assertEquals(listOf(8L, 9L), viewModel.uiState.value.reviews.map { it.reviewId })
+    assertEquals(1, nextPageRequests)
   }
 
   @Test

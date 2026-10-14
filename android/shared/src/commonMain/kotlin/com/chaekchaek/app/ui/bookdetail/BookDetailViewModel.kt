@@ -138,7 +138,13 @@ class BookDetailViewModel(
 
     fun loadMoreReviews() = requestNextReviewPage(retryAfterFailure = false)
 
-    fun retryLoadMoreReviews() = requestNextReviewPage(retryAfterFailure = true)
+    fun retryReviews() {
+        when (_uiState.value.reviewPageLoadState) {
+            ReviewPageLoadState.Failed -> requestNextReviewPage(retryAfterFailure = true)
+            ReviewPageLoadState.RefreshFailed -> reload(retryingReviews = true)
+            else -> Unit
+        }
+    }
 
     private fun requestNextReviewPage(retryAfterFailure: Boolean) {
         val state = _uiState.value
@@ -187,6 +193,7 @@ class BookDetailViewModel(
         loadMoreJob?.cancel()
         _uiState.value = _uiState.value.copy(
             nextReviewPage = null,
+            isLoading = false,
             isLoadingMore = false,
             reviewPageLoadState = ReviewPageLoadState.Idle,
         )
@@ -395,9 +402,14 @@ class BookDetailViewModel(
         }
     }
 
-    private fun reload() {
+    private fun reload(retryingReviews: Boolean = false) {
         val book = _uiState.value.book ?: return
         resetReviewPagination()
+        _uiState.value = _uiState.value.copy(
+            reviewPageLoadState = if (retryingReviews) ReviewPageLoadState.RefreshRetrying else ReviewPageLoadState.Loading,
+            requestError = null,
+        )
+        val reviewGeneration = reviewPageGeneration
         val generation = requestGeneration
         val credential = readCredential()
         val reviewScope = _uiState.value.reviewScope
@@ -410,7 +422,7 @@ class BookDetailViewModel(
             runCatching {
                 withDelayedLoading(
                     onLoadingChanged = { loading ->
-                        if (generation == requestGeneration) {
+                        if (generation == requestGeneration && reviewGeneration == reviewPageGeneration) {
                             _uiState.value = _uiState.value.copy(isLoading = loading)
                         }
                     },
@@ -428,12 +440,13 @@ class BookDetailViewModel(
                     detail to reviews
                 }
             }.onSuccess { (detail, reviews) ->
-                if (generation != requestGeneration) return@onSuccess
+                if (generation != requestGeneration || reviewGeneration != reviewPageGeneration) return@onSuccess
                 _uiState.value = _uiState.value.copy(
                     detail = detail,
                     reviews = reviews?.items.orEmpty(),
                     reviewCount = reviews?.totalCount ?: 0,
                     nextReviewPage = reviews?.nextPage,
+                    reviewPageLoadState = ReviewPageLoadState.Idle,
                 )
                 val bookKey = analyticsBookKey(detail?.isbn13 ?: book.isbn13, detail?.bookId?.toString() ?: book.id)
                 analytics.log(
@@ -466,21 +479,20 @@ class BookDetailViewModel(
                 )
                 detailReadyLogged = true
             }.onFailure { error ->
-                if (generation == requestGeneration || error is CancellationException) {
-                    if (error !is CancellationException) {
-                        analytics.log(
-                            name = "cc_load_result",
-                            strings = mapOf(
-                                "load_id" to loadId,
-                                "resource" to "book_detail",
-                                "trigger" to loadTrigger,
-                                "outcome" to "failure",
-                                "error_category" to analyticsErrorCategory(error),
-                            ),
-                            longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
-                        )
-                    }
-                    handleFailure(error)
+                if (error is CancellationException) throw error
+                if (generation == requestGeneration && reviewGeneration == reviewPageGeneration) {
+                    _uiState.value = _uiState.value.copy(reviewPageLoadState = ReviewPageLoadState.RefreshFailed)
+                    analytics.log(
+                        name = "cc_load_result",
+                        strings = mapOf(
+                            "load_id" to loadId,
+                            "resource" to "book_detail",
+                            "trigger" to loadTrigger,
+                            "outcome" to "failure",
+                            "error_category" to analyticsErrorCategory(error),
+                        ),
+                        longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
+                    )
                 }
             }
         }
@@ -489,28 +501,41 @@ class BookDetailViewModel(
     private fun reloadReviews() {
         val bookId = _uiState.value.detail?.bookId ?: return
         resetReviewPagination()
+        val generation = reviewPageGeneration
+        val scope = _uiState.value.reviewScope
+        val sort = _uiState.value.reviewSort
+        _uiState.value = _uiState.value.copy(reviewPageLoadState = ReviewPageLoadState.Loading, requestError = null)
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             runCatching {
                 withDelayedLoading(
                     onLoadingChanged = { loading ->
-                        _uiState.value = _uiState.value.copy(isLoading = loading)
+                        if (generation == reviewPageGeneration) {
+                            _uiState.value = _uiState.value.copy(isLoading = loading)
+                        }
                     },
                 ) {
                     repository.reviews(
                         bookId,
-                        _uiState.value.reviewScope,
-                        _uiState.value.reviewSort,
+                        scope,
+                        sort,
                         readCredential(),
                     )
                 }
             }.onSuccess { reviews ->
+                if (generation != reviewPageGeneration) return@onSuccess
                 _uiState.value = _uiState.value.copy(
                     reviews = reviews.items,
                     reviewCount = reviews.totalCount,
                     nextReviewPage = reviews.nextPage,
+                    reviewPageLoadState = ReviewPageLoadState.Idle,
                 )
-            }.onFailure(::handleFailure)
+            }.onFailure { error ->
+                if (error is CancellationException) throw error
+                if (generation == reviewPageGeneration) {
+                    _uiState.value = _uiState.value.copy(reviewPageLoadState = ReviewPageLoadState.RefreshFailed)
+                }
+            }
         }
     }
 

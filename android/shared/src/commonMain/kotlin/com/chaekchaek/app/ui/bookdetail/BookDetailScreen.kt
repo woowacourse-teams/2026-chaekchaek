@@ -163,7 +163,7 @@ fun BookDetailScreen(
     onReviewScopeChange: (ReviewScope) -> Unit = {},
     onReviewSortChange: (ReviewSort) -> Unit = {},
     onLoadMoreReviews: () -> Unit = {},
-    onRetryMoreReviews: () -> Unit = {},
+    onRetryReviews: () -> Unit = {},
     onRequestErrorShown: () -> Unit = {},
 ) {
     val book = state.displayBook ?: return
@@ -266,7 +266,7 @@ fun BookDetailScreen(
                     loading = state.isLoading,
                     loadingMore = state.isLoadingMore,
                     pageLoadState = state.reviewPageLoadState,
-                    onRetryMoreReviews = onRetryMoreReviews,
+                    onRetryReviews = onRetryReviews,
                     revealedSpoilerReviewIds = revealedSpoilerReviewIds,
                     scope = state.reviewScope,
                     sort = state.reviewSort,
@@ -874,7 +874,7 @@ private fun ReviewsSection(
     loading: Boolean,
     loadingMore: Boolean,
     pageLoadState: ReviewPageLoadState,
-    onRetryMoreReviews: () -> Unit,
+    onRetryReviews: () -> Unit,
     revealedSpoilerReviewIds: Set<Long>,
     scope: ReviewScope,
     sort: ReviewSort,
@@ -927,8 +927,8 @@ private fun ReviewsSection(
             color = ChaekBorderSoft,
         )
         when {
-            loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
-            display.showEmpty -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+            loading && !pageLoadState.showsRetry -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+            display.showEmpty && pageLoadState == ReviewPageLoadState.Idle -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
             else -> display.reviews.forEach { review ->
                 val locked = shouldLockReview(review.reviewId, review.isSpoiler, revealedSpoilerReviewIds)
                 ReviewCard(
@@ -949,24 +949,38 @@ private fun ReviewsSection(
                 )
             }
         }
-        if (pageLoadState == ReviewPageLoadState.Failed || pageLoadState == ReviewPageLoadState.Retrying) {
+        if (pageLoadState.showsRetry) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                Text(
-                    "다음 감상을 불러오지 못했어요",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                Row(
+                    modifier = Modifier.height(30.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val showRetryLoader = loadingMore || loading
+                    if (showRetryLoader) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp).semantics { contentDescription = "감상 불러오는 중" },
+                            color = ChaekAccent,
+                            strokeWidth = 2.dp,
+                        )
+                    }
+                    Text(
+                        if (showRetryLoader) "감상을 불러오는 중이에요" else "감상을 불러오지 못했어요",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
                 ChaekOverlayButton(
                     "다시 시도",
-                    onRetryMoreReviews,
-                    enabled = pageLoadState == ReviewPageLoadState.Failed,
+                    onRetryReviews,
+                    enabled = pageLoadState.canRetry,
                 )
             }
         }
-        if (loadingMore) {
+        if (loadingMore && !pageLoadState.showsRetry) {
             Box(modifier = Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp).semantics { contentDescription = "감상 더 불러오는 중" },
