@@ -61,9 +61,9 @@ class AdminControllerTest {
     private static final String LIST_SUMMARY = "추천 도서 목록 조회";
     private static final String LIST_DESCRIPTION = "인증 없이 추천 도서를 최근에 추천한 순서로 조회한다. 회원·게스트 토큰이 필요하지 않으며 추천한 책이 없으면 빈 배열을 반환한다";
     private static final String ADD_SUMMARY = "추천 도서 추가";
-    private static final String ADD_DESCRIPTION = "관리자가 ISBN-13으로 도서를 조회해 추천 도서로 등록한다. 추천 도서는 최대 10권까지 등록할 수 있다";
+    private static final String ADD_DESCRIPTION = "access_token 쿠키 또는 Authorization Bearer 헤더로 인증한 관리자가 ISBN-13으로 도서를 조회해 추천 도서로 등록한다. 추천 도서는 최대 10권까지 등록할 수 있다";
     private static final String DELETE_SUMMARY = "추천 도서 삭제";
-    private static final String DELETE_DESCRIPTION = "관리자가 추천 도서에서 도서를 삭제한다";
+    private static final String DELETE_DESCRIPTION = "access_token 쿠키 또는 Authorization Bearer 헤더로 인증한 관리자가 추천 도서에서 도서를 삭제한다";
     private static final String BOOK_ID_DESCRIPTION = "추천 도서에서 삭제할 도서 ID";
     private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
             fieldWithPath("type").type(JsonFieldType.STRING).description("문제 유형 URI"),
@@ -116,6 +116,44 @@ class AdminControllerTest {
         mockMvc.perform(get("/api/v1/admin/recommended-books"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.books").isEmpty());
+    }
+
+    @Test
+    @DisplayName("관리자가 아니라면 추천 도서 추가를 거절한다")
+    void should_ReturnProblemDetail_When_NonAdminAddsRecommendedBook() throws Exception {
+        // given
+        when(adminService.addRecommendedBookByIsbn13(new Isbn13(ISBN13)))
+                .thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
+
+        // when & then
+        expectProblemDetail(
+                postRecommendedBook(ISBN13),
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                "/api/v1/admin/recommended-books"
+        )
+                .andDo(problemDetailDocument("admin-recommended-book-add-forbidden", ADD_SUMMARY, ADD_DESCRIPTION));
+    }
+
+    @Test
+    @DisplayName("관리자가 아니라면 추천 도서 삭제를 거절한다")
+    void should_ReturnProblemDetail_When_NonAdminDeletesRecommendedBook() throws Exception {
+        // given
+        doThrow(new BusinessException(ErrorCode.FORBIDDEN)).when(adminService).deleteRecommendedBook(BOOK_ID);
+
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(delete("/api/v1/admin/recommended-books/{bookId}", BOOK_ID)),
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                "/api/v1/admin/recommended-books/" + BOOK_ID
+        )
+                .andDo(problemDetailDocument(
+                        "admin-recommended-book-delete-forbidden",
+                        DELETE_SUMMARY,
+                        DELETE_DESCRIPTION,
+                        bookIdResourcePathParameter()
+                ));
     }
 
     @Test
