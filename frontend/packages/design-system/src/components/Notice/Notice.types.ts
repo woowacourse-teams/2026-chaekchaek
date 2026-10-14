@@ -6,6 +6,7 @@ export type AS = 'div';
 
 export type OwnProps = {
   children: ReactNode;
+  surface?: 'default' | 'filled';
   height?: CSSProperties['height'];
 };
 

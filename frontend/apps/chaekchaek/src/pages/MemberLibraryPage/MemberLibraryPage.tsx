@@ -3,10 +3,10 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import {
   Avatar,
+  Badge,
   Icon,
   IconButton,
   ImgBox,
-  ConstrainedImgBox,
   List,
   Notice,
   OptionList,
@@ -148,10 +148,10 @@ export const MemberLibraryPage = () => {
       <Main>
         <Container>
           <Split>
-            <Split.Top sx={{ mb: 10 }}>
+            <Split.Top sx={{ mb: 14 }}>
               <Title level="page">
                 {libraryData?.member.profileImageUrl && (
-                  <Avatar img={libraryData?.member.profileImageUrl} />
+                  <Avatar sx={{ mt: 2, mr: 2 }} img={libraryData?.member.profileImageUrl} />
                 )}
                 '{libraryData?.member.displayName}' 서재
                 <IconButton shape="link" size="large" onClick={handleCopyLink}>
@@ -196,6 +196,7 @@ export const MemberLibraryPage = () => {
                 trailing={
                   <>
                     <Select
+                      size="small"
                       value={sort}
                       options={Object.entries(READING_SORT_LABELS).map(([labelKey, labelValue]) => {
                         return {
@@ -244,14 +245,18 @@ export const MemberLibraryPage = () => {
                         to={`/books/${item.isbn13}`}
                         title={
                           <>
-                            <Tag
+                            <Badge
                               sx={{ mb: 2 }}
                               variant={
-                                item.status === READING_STATUS.READING ? 'primary' : 'subtle'
+                                item.status === READING_STATUS.READING
+                                  ? 'primary'
+                                  : item.status === READING_STATUS.WANT_TO_READ
+                                    ? 'subtle'
+                                    : 'soft'
                               }
                             >
                               {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
-                            </Tag>
+                            </Badge>
                             <br />
                             {item.title}
                           </>
@@ -260,7 +265,11 @@ export const MemberLibraryPage = () => {
                         description={
                           <>
                             {item.totalPages > 0 && (
-                              <ProgressBar value={item.currentPage} max={item.totalPages} />
+                              <ProgressBar
+                                variant={item.currentPage !== item.totalPages ? 'accent' : 'subtle'}
+                                value={item.currentPage}
+                                max={item.totalPages}
+                              />
                             )}
                           </>
                         }

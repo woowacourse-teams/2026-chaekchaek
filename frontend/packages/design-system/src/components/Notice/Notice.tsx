@@ -11,9 +11,20 @@ import type { Props } from './';
 const classnameDefault = 'ui-Notice';
 
 export const Notice = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, children, height = 200, sx, style, ...restProps } = props;
+  const {
+    as = 'div',
+    className,
+    children,
+    surface = 'default',
+    height = 200,
+    sx,
+    style,
+    ...restProps
+  } = props;
 
-  const modifiers = {};
+  const modifiers = {
+    surface: surface && styles[`surface-${surface}`],
+  };
 
   const classname = createClassName({
     styles,

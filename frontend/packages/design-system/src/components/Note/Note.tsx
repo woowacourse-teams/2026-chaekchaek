@@ -11,20 +11,9 @@ import type { Props } from './';
 const classnameDefault = 'ui-Note';
 
 export const Note = <T extends ElementType>(props: Props<T>) => {
-  const {
-    as = 'div',
-    className,
-    children,
-    variant = 'default',
-    title,
-    sx,
-    style,
-    ...restProps
-  } = props;
+  const { as = 'div', className, children, sx, style, ...restProps } = props;
 
-  const modifiers = {
-    variant: variant && styles[`variant-${variant}`],
-  };
+  const modifiers = {};
 
   const classname = createClassName({
     styles,
@@ -39,7 +28,6 @@ export const Note = <T extends ElementType>(props: Props<T>) => {
 
   return (
     <View as={as} className={classname} style={customStyles} {...restProps}>
-      {title && <p className={styles.title}>{title}</p>}
       {children}
     </View>
   );

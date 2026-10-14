@@ -2,18 +2,21 @@
   box-sizing: border-box;
   display: flex;
   width: 100%;
-  min-height: 39px;
-  align-items: center;
-  gap: 7px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   margin: 0;
-  padding: 0 12px;
-  border-radius: 4px;
-  background-color: #f6f2ec;
+  padding: 12px;
+  border-radius: 12px;
+  background-color: var(--chaek-color-surface-subtle);
   color: #1a1a1a;
-  font-size: 0.875rem; /* 14px */
+  font-family: var(--chaek-font-family-gowun-dodum);
+  font-size: 0.8125rem; /* 13px */
   font-weight: 400;
-  line-height: normal;
-  overflow-wrap: anywhere;
+  line-height: 19.5px;
+  letter-spacing: -0.4262px;
+  overflow: hidden;
+  word-break: break-word;
 }
 
 .leading {

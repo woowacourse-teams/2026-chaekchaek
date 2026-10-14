@@ -16,6 +16,7 @@ export const Button = <T extends ElementType>(props: Props<T>) => {
     shape = 'default',
     variant = 'default',
     size = 'medium',
+    align = 'center',
     block,
     children,
     leading,
@@ -30,6 +31,7 @@ export const Button = <T extends ElementType>(props: Props<T>) => {
     shape: shape && styles?.[`shape-${shape}`],
     variant: variant && styles?.[`variant-${variant}`],
     size: size && styles?.[`size-${size}`],
+    align: align && styles?.[`align-${align}`],
     block: block && styles?.[`is-block`],
   };
 

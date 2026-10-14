@@ -5,6 +5,8 @@ import type { PolymorphicProps } from '#internal/components/View';
 export type AS = 'div';
 
 export type OwnProps = {
+  size?: 'medium' | 'large';
+  variant?: 'default' | 'accent' | 'subtle';
   value: number;
   max: number;
   title?: ReactNode;

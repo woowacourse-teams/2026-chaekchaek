@@ -1,4 +1,5 @@
 import type { ElementType } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import { View } from '@chaekchaek/design-system';
 import { createClassName } from '@chaekchaek/design-system';
@@ -19,7 +20,7 @@ const navs = [
 const classnameDefault = 'frame-Header-Nav';
 
 export const Nav = <T extends ElementType>(props: NavProps<T>) => {
-  const { as = 'div', className, ...restProps } = props;
+  const { as = 'nav', className, ...restProps } = props;
 
   const modifiers = {};
 
@@ -31,6 +32,7 @@ export const Nav = <T extends ElementType>(props: NavProps<T>) => {
   });
 
   const { isAuthenticated } = useAuthContext();
+  const { pathname } = useLocation();
 
   return (
     <View as={as} className={classname} {...restProps}>
@@ -38,7 +40,9 @@ export const Nav = <T extends ElementType>(props: NavProps<T>) => {
         return (
           <a
             href={isAuthenticated ? nav.link : ROUTES.LOGIN}
-            // className={styles[`is-active`]}
+            key={nav.link}
+            className={pathname === nav.link ? styles['is-active'] : undefined}
+            aria-current={pathname === nav.link ? 'page' : undefined}
           >
             {nav.text}
           </a>

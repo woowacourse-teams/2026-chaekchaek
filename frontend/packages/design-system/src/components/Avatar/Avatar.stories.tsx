@@ -19,13 +19,6 @@ export const Default: Story = {
   },
 };
 
-export const XSmall: Story = {
-  args: {
-    size: 'x-small',
-    img: DummyImg,
-  },
-};
-
 export const Small: Story = {
   args: {
     size: 'small',
@@ -37,6 +30,22 @@ export const Medium: Story = {
   args: {
     size: 'medium',
     img: DummyImg,
+  },
+};
+
+export const InitialMedium: Story = {
+  args: {
+    size: 'medium',
+    img: null,
+    initial: '다',
+  },
+};
+
+export const InitialSmall: Story = {
+  args: {
+    size: 'small',
+    img: null,
+    initial: '다',
   },
 };
 

@@ -24,12 +24,12 @@ export const DeleteBooksDialog = ({ bookIds, onBooksDeleted, onClose }: DeleteBo
         </Dialog.Header>
 
         <Dialog.Footer>
-          <ButtonStack>
-            <Button type="button" variant="ghost" size="large" block onClick={onClose}>
-              취소
-            </Button>
+          <ButtonStack direction="vertical">
             <Button type="button" variant="primary" size="large" block onClick={handleDeleteBooks}>
               삭제
+            </Button>
+            <Button type="button" variant="ghost" size="large" block onClick={onClose}>
+              취소
             </Button>
           </ButtonStack>
         </Dialog.Footer>

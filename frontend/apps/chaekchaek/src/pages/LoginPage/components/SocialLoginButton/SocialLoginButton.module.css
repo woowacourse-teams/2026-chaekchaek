@@ -16,8 +16,7 @@
   --button-background: #fff;
   --button-border-color: #fff;
   --button-color: #000;
-
-  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+ 
   font-weight: 600;
 }
 .root.apple.reverse {
@@ -34,7 +33,6 @@
   --button-color: #e3e3e3;
 
   padding-inline: 12px;
-  font-family: Roboto, Arial, sans-serif;
   font-size: 14px;
   font-weight: 500;
   line-height: 20px;

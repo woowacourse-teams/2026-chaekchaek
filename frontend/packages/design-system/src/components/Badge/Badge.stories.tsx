@@ -19,7 +19,7 @@ const meta = {
     },
     variant: {
       control: 'inline-radio',
-      options: ['default', 'ghost', 'soft', 'subtle'],
+      options: ['default', 'primary', 'ghost', 'subtle', 'soft', 'tinted', 'secondary'],
     },
   },
 } satisfies Meta<typeof Badge>;
@@ -29,6 +29,12 @@ type Story = StoryObj<typeof meta>;
 
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
 export const Default: Story = {};
+
+export const Primary: Story = {
+  args: {
+    variant: 'primary',
+  },
+};
 
 export const SmallSize: Story = {
   args: {
@@ -83,10 +89,23 @@ export const Soft: Story = {
   },
 };
 
+export const Tinted: Story = {
+  args: {
+    children: 'p.80까지',
+    size: 'small',
+    variant: 'tinted',
+  },
+};
+
 export const Subtle: Story = {
   args: {
-    children: '댓글 46',
-    size: 'small',
+    children: 'Subtle',
     variant: 'subtle',
+  },
+};
+
+export const Secondary: Story = {
+  args: {
+    variant: 'secondary',
   },
 };

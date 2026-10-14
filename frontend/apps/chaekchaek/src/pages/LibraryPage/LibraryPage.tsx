@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import {
+  Badge,
   Button,
   Checkbox,
   ConstrainedImgBox,
@@ -15,7 +16,6 @@ import {
   ProgressBar,
   Select,
   Split,
-  Tag,
   Title,
 } from '@chaekchaek/design-system';
 
@@ -252,17 +252,18 @@ export const LibraryPage = () => {
       <Main>
         <Container>
           <Split>
-            <Split.Top sx={{ mb: 10 }}>
+            <Split.Top sx={{ mb: 14 }}>
               <Title
                 level="page"
                 trailing={
                   <>
-                    {(user !== null || true) && (
+                    {user !== null && (
                       <>
                         {user?.displayAnonymous && (
                           <Button
                             leading={<Icon.CheckboxOnIcon color="secondary" />}
                             variant="ghost"
+                            size="small"
                             disabled={anonymityStatus.status === 'loading'}
                             onClick={handleToggleAnonymous}
                           >
@@ -273,6 +274,7 @@ export const LibraryPage = () => {
                           <Button
                             leading={<Icon.CheckboxOffIcon color="secondary" />}
                             variant="ghost"
+                            size="small"
                             disabled={anonymityStatus.status === 'loading'}
                             onClick={handleToggleAnonymous}
                           >
@@ -285,6 +287,7 @@ export const LibraryPage = () => {
                       <>
                         <Button
                           variant="ghost"
+                          size="small"
                           disabled={!isAbleUpdateStatus}
                           onClick={() => handleOpenDialog('UpdateBookStatusDialog')}
                         >
@@ -293,6 +296,7 @@ export const LibraryPage = () => {
                         <Button
                           leading={<Icon.TrashIcon color="error" />}
                           variant="danger-weak"
+                          size="small"
                           disabled={!isAbleDeleteStatus}
                           onClick={() => handleOpenDialog('DeleteBooksDialog')}
                         >
@@ -300,7 +304,7 @@ export const LibraryPage = () => {
                         </Button>
                       </>
                     )}
-                    <Button variant="primary" onClick={handleClickToggleEdit}>
+                    <Button variant="primary" size="small" onClick={handleClickToggleEdit}>
                       {!isEditing ? '서재 편집' : '편집 종료'}
                     </Button>
                   </>
@@ -360,6 +364,7 @@ export const LibraryPage = () => {
                 trailing={
                   <>
                     <Select
+                      size="small"
                       value={sort}
                       options={Object.entries(READING_SORT_LABELS).map(([labelKey, labelValue]) => {
                         return {
@@ -387,6 +392,8 @@ export const LibraryPage = () => {
                       <List.Item.Leading>
                         {isEditing && (
                           <Checkbox
+                            size="large"
+                            sx={{ mr: 4 }}
                             checked={isIncluded}
                             onChange={() => {
                               handleChangeBookSelection(item.bookId);
@@ -402,14 +409,18 @@ export const LibraryPage = () => {
                         to={`/books/${item.isbn13}`}
                         title={
                           <>
-                            <Tag
-                              sx={{ mb: 2 }}
+                            <Badge
+                              sx={{ mb: 1 }}
                               variant={
-                                item.status === READING_STATUS.READING ? 'primary' : 'subtle'
+                                item.status === READING_STATUS.READING
+                                  ? 'primary'
+                                  : item.status === READING_STATUS.WANT_TO_READ
+                                    ? 'subtle'
+                                    : 'soft'
                               }
                             >
                               {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
-                            </Tag>
+                            </Badge>
                             <br />
                             {item.title}
                           </>
@@ -418,7 +429,11 @@ export const LibraryPage = () => {
                         description={
                           <>
                             {item.totalPages > 0 && (
-                              <ProgressBar value={item.currentPage} max={item.totalPages} />
+                              <ProgressBar
+                                variant={item.currentPage !== item.totalPages ? 'accent' : 'subtle'}
+                                value={item.currentPage}
+                                max={item.totalPages}
+                              />
                             )}
                           </>
                         }

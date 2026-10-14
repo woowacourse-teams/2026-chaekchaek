@@ -1,0 +1,15 @@
+/*
+ * ChaekChaek design tokens
+ * Generated from Figma token JSON exports.
+ * Do not edit generated values manually; update the source tokens instead.
+ */
+
+:root {
+  /* Loading */
+  --color-skeleton-base: #E7E5E0;
+  --color-skeleton-highlight: #F9F8F6;
+  --radius-skeleton-line: 7px;
+  --radius-skeleton-soft: 12px;
+  --radius-skeleton-cover: 6px;
+  --radius-skeleton-round: 999px;
+}

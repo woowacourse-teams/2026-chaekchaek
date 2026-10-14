@@ -18,6 +18,7 @@ export const Shell = <T extends ElementType>(props: Props<T>) => {
   const {
     as = 'div',
     className,
+    size = 'medium',
     reverse,
     verticalAlign = 'center',
     sx,
@@ -26,6 +27,7 @@ export const Shell = <T extends ElementType>(props: Props<T>) => {
   } = props;
 
   const modifiers = {
+    size: size && styles[`size-${size}`],
     reverse: reverse && styles[`is-reverse`],
     verticalAlign: styles[`vertical-align-${verticalAlign}`],
   };

@@ -20,7 +20,6 @@ export const Example: Story = {
     children: (
       <>
         <Overview.Content
-          leading="leading"
           title="Title"
           content="content"
           description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur, voluptatum possimus

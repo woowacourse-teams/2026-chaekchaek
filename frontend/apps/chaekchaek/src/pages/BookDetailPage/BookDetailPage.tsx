@@ -194,18 +194,6 @@ export const BookDetailPage = () => {
     <Layout>
       <Header />
       <Main>
-        <BookOverview
-          category={data?.category}
-          publishedDate={data?.publishedDate}
-          title={data?.title}
-          authors={data?.authors}
-          publisher={data?.publisher}
-          description={data?.description}
-          averageRating={data?.averageRating}
-          reviewCount={data?.reviewCount}
-          replyCount={data?.replyCount}
-          coverImageUrl={data?.coverImageUrl}
-        />
         <Container>
           <Split>
             <Split.Side>
@@ -232,6 +220,18 @@ export const BookDetailPage = () => {
               />
             </Split.Side>
             <Split.Content>
+              <BookOverview
+                category={data?.category}
+                publishedDate={data?.publishedDate}
+                title={data?.title}
+                authors={data?.authors}
+                publisher={data?.publisher}
+                description={data?.description}
+                averageRating={data?.averageRating}
+                reviewCount={data?.reviewCount}
+                replyCount={data?.replyCount}
+                coverImageUrl={data?.coverImageUrl}
+              />
               {data?.bookId && (
                 <BookReviews
                   isbn={isbn}

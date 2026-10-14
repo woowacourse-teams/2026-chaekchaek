@@ -51,8 +51,8 @@ export type { Props as ProgressBarProps } from './components/ProgressBar';
 export { Slider } from './components/Slider';
 export type { Props as SliderProps } from './components/Slider';
 
-export { Rating } from './components/Rating';
-export type { Props as RatingProps } from './components/Rating';
+export { Rating, RatingStar } from './components/Rating';
+export type { Props as RatingProps, RatingStarProps } from './components/Rating';
 
 export { Shell } from './components/Shell';
 export type { Props as ShellProps } from './components/Shell';
@@ -128,6 +128,12 @@ export type { Props as IconButtonProps } from './components/IconButton';
 
 export { Text } from './components/Text';
 export type { Props as TextProps } from './components/Text';
+
+export { Choice } from './components/Choice';
+export type { Props as ChoiceProps } from './components/Choice';
+
+export { InfoMessage } from './components/InfoMessage';
+export type { Props as InfoMessageProps } from './components/InfoMessage';
 
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';

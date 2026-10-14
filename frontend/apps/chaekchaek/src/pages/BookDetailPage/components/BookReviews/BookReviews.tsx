@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
-import { Button, Field, Input, SegmentedControl, Select, Title } from '@chaekchaek/design-system';
+import { Button, Choice, Field, Input, Select, Text, Title } from '@chaekchaek/design-system';
 
 import { track } from '@/analytics/track';
 
@@ -67,6 +67,7 @@ export const BookReviews = ({
         trailing={
           <>
             <Select
+              size="small"
               value={sort}
               options={[
                 { value: 'LATEST', text: '최신순' },
@@ -76,29 +77,38 @@ export const BookReviews = ({
               ]}
               onChange={onSortChange}
             />
-            <SegmentedControl
-              value={feed}
-              options={[
-                { value: 'ALL', text: '전체 피드' },
-                { value: 'MINE', text: '내 피드' },
-              ]}
-              onChange={onFeedChange}
-            />
           </>
         }
       >
         이 책에 남긴 감상 {count}
       </Title>
-      <Field sx={{ mt: 4, mb: 6 }}>
-        <Field.Content
-          onClick={() => {
-            handleOpenDialog('WriteReviewDialog');
-          }}
-        >
-          <Input />
-          <Button variant="primary">남기기</Button>
-        </Field.Content>
-      </Field>
+      <Choice
+        distribution="content"
+        sx={{ mt: 4, mb: 4 }}
+        value={feed}
+        options={[
+          { value: 'ALL', text: '전체 피드' },
+          { value: 'MINE', text: '내 피드' },
+        ]}
+        onChange={onFeedChange}
+      />
+
+      <Button
+        variant="primary"
+        block
+        align="left"
+        sx={{ mb: 4 }}
+        leading="✎"
+        onClick={() => {
+          handleOpenDialog('WriteReviewDialog');
+        }}
+      >
+        이 순간의 감상 남기기{' '}
+        <Text color="accent" sx={{ ml: 2 }}>
+          ↗
+        </Text>
+      </Button>
+
       {reviews
         ?.filter((review) => !review.deleted)
         .map((review) => {
@@ -111,16 +121,7 @@ export const BookReviews = ({
             />
           );
         })}
-      <Field sx={{ mt: 4, mb: 6 }}>
-        <Field.Content
-          onClick={() => {
-            handleOpenDialog('WriteReviewDialog');
-          }}
-        >
-          <Input />
-          <Button variant="primary">남기기</Button>
-        </Field.Content>
-      </Field>
+
       {dialogElement}
     </>
   );

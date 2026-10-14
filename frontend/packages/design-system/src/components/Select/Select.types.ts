@@ -13,7 +13,9 @@ export type OwnProps = {
   options: Option[];
   value: any;
   onChange?: (value: any) => void;
-  size?: 'small' | 'medium';
+  size?: 'small' | 'medium' | 'large';
+  placeholder?: ReactNode;
+  disabled?: boolean;
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;

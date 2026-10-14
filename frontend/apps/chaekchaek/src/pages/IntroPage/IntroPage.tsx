@@ -10,7 +10,7 @@ import styles from './IntroPage.module.css';
 export const IntroPage = () => {
   return (
     <Layout className={styles[`intro-page`]}>
-      <Header />
+      <Header reverse />
       <Main className={styles.wrap}>
         <PopularBooks />
         <LatestReviews />

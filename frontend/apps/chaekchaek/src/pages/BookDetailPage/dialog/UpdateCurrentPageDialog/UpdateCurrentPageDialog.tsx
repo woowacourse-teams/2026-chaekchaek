@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 
-import { Dialog } from '@chaekchaek/design-system';
+import { Dialog, Text } from '@chaekchaek/design-system';
 import { Field } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
@@ -52,7 +52,16 @@ export const UpdateCurrentPageDialog = ({
           어디까지 읽으셨나요?
         </Dialog.Header>
         <Dialog.Body>
-          <Field.Label>내가 읽은 쪽수</Field.Label>
+          <Field.Label>
+            읽은 쪽수
+            <Text as="span">
+              (
+              <Text as="span" color="error">
+                필수
+              </Text>
+              )
+            </Text>
+          </Field.Label>
           <Field.Content>
             <Input
               block
@@ -66,7 +75,10 @@ export const UpdateCurrentPageDialog = ({
         </Dialog.Body>
         <Dialog.Footer>
           <Button variant="primary" block onClick={handleSubmit}>
-            입력한 쪽수까지 보기
+            저장
+          </Button>
+          <Button variant="ghost" block onClick={handleSubmit}>
+            취소
           </Button>
         </Dialog.Footer>
       </Dialog.Container>

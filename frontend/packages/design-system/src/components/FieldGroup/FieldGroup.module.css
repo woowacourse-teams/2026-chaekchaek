@@ -2,7 +2,7 @@
   box-sizing: border-box;
   display: flex;
   width: 100%;
-  gap: 13px;
+  gap: 22px;
 }
 
 .orientation-horizontal {

@@ -18,6 +18,7 @@ export const BookOverview = ({
 
   return (
     <Overview>
+      <Overview.Media>{coverImageUrl && <ImgBox img={coverImageUrl} />}</Overview.Media>
       <Overview.Content
         leading={`ARCHIVE / ${formattedCategory} / ${publishedDate}`}
         title={title}
@@ -25,16 +26,13 @@ export const BookOverview = ({
         description={description}
         meta={
           <>
-            <Badge variant="ghost" reverse>
-              ★ {averageRating || 0}
-            </Badge>
-            <Badge variant="ghost" reverse>
+            <Badge variant="ghost">★ {averageRating || 0}</Badge>
+            <Badge variant="ghost">
               감상 {reviewCount || 0} · 답글: {replyCount}
             </Badge>
           </>
         }
       />
-      <Overview.Media>{coverImageUrl && <ImgBox img={coverImageUrl} />}</Overview.Media>
     </Overview>
   );
 };

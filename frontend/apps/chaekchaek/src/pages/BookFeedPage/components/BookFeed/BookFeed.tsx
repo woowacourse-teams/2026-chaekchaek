@@ -125,7 +125,7 @@ export const BookFeed = (props: BookFeedProps) => {
     <>
       <Divider />
       <Partition key={review.reviewId}>
-        <Partition.Item>
+        <Partition.Item style={{ width: '150px' }}>
           <Link to={`/books/${review.isbn13}`} onClick={handleClickBook}>
             <Media
               media={<ImgBox size="large" img={review.bookCoverImageUrl} />}
@@ -135,7 +135,7 @@ export const BookFeed = (props: BookFeedProps) => {
           </Link>
         </Partition.Item>
         <Partition.Item>
-          <Entry line="none" variant="bare">
+          <Entry variant="bare">
             <Entry.Main>
               <Entry.Header>
                 <Shell>
@@ -181,7 +181,7 @@ export const BookFeed = (props: BookFeedProps) => {
                     </>
                   )}
                   {review.quote && (
-                    <Note variant="default" sx={{ mt: 4 }}>
+                    <Note variant="default" sx={{ mt: 2 }}>
                       {showSpoilerVisible ? (
                         review.quote
                       ) : (
@@ -192,14 +192,16 @@ export const BookFeed = (props: BookFeedProps) => {
                 </Link>
               </Entry.Body>
               <Entry.Footer>
+                <Divider />
                 <Button
                   shape="link"
                   variant="ghost"
+                  size="small"
                   leading={
                     review.likedByMe ? (
-                      <Icon.HeartOnIcon color="secondary" />
+                      <Icon.HeartOnIcon size="small" color="secondary" />
                     ) : (
-                      <Icon.HeartOffIcon color="secondary" />
+                      <Icon.HeartOffIcon size="small" color="secondary" />
                     )
                   }
                   disabled={!isAuthenticated}
@@ -210,7 +212,8 @@ export const BookFeed = (props: BookFeedProps) => {
                 <Button
                   shape="link"
                   variant="ghost"
-                  leading={<Icon.CommentIcon color="secondary" />}
+                  size="small"
+                  leading={<Icon.CommentIcon size="small" color="secondary" />}
                   readOnly
                 >
                   답글 {review.replyCount}
