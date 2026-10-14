@@ -59,7 +59,7 @@ class AdminControllerTest {
     private static final String ISBN13 = "9788925568683";
     private static final String ADMIN_TAG = "관리자";
     private static final String LIST_SUMMARY = "추천 도서 목록 조회";
-    private static final String LIST_DESCRIPTION = "관리자가 지정한 추천 도서를 최근에 추천한 순서로 조회한다. 추천한 책이 없으면 빈 배열을 반환한다";
+    private static final String LIST_DESCRIPTION = "인증 없이 추천 도서를 최근에 추천한 순서로 조회한다. 회원·게스트 토큰이 필요하지 않으며 추천한 책이 없으면 빈 배열을 반환한다";
     private static final String ADD_SUMMARY = "추천 도서 추가";
     private static final String ADD_DESCRIPTION = "관리자가 ISBN-13으로 도서를 조회해 추천 도서로 등록한다. 추천 도서는 최대 10권까지 등록할 수 있다";
     private static final String DELETE_SUMMARY = "추천 도서 삭제";
@@ -116,22 +116,6 @@ class AdminControllerTest {
         mockMvc.perform(get("/api/v1/admin/recommended-books"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.books").isEmpty());
-    }
-
-    @Test
-    @DisplayName("관리자가 아니라면 문제 응답을 반환한다")
-    void should_ReturnProblemDetail_When_ActorIsNotAdmin() throws Exception {
-        // given
-        when(adminService.getRecommendedBooks()).thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
-
-        // when & then
-        expectProblemDetail(
-                mockMvc.perform(get("/api/v1/admin/recommended-books")),
-                HttpStatus.FORBIDDEN,
-                ErrorCode.FORBIDDEN,
-                "/api/v1/admin/recommended-books"
-        )
-                .andDo(problemDetailDocument("admin-recommended-books-forbidden", LIST_SUMMARY, LIST_DESCRIPTION));
     }
 
     @Test
