@@ -2,11 +2,6 @@
   "request": {
     "method": "GET",
     "urlPath": "/v1/goods/itemDetail",
-    "headers": {
-      "X-Api-Key": {
-        "equalTo": "load-test-key"
-      }
-    },
     "queryParameters": {
       "searchType": {
         "equalTo": "ISBN13"

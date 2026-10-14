@@ -2,11 +2,6 @@
   "request": {
     "method": "GET",
     "urlPath": "/v1/goods/itemList",
-    "headers": {
-      "X-Api-Key": {
-        "equalTo": "load-test-key"
-      }
-    },
     "queryParameters": {
       "category": {
         "equalTo": "BOOK"
