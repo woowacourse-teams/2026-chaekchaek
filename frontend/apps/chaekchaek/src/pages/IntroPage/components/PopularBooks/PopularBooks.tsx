@@ -35,7 +35,7 @@ export const PopularBooks = () => {
     <div className="scene">
       <div className="popular-books-title">지금 책책에서 인기 있는 책</div>
       <div className="popular-books">
-        {data?.books.map((book) => {
+        {data?.books.map((book, index) => {
           return (
             <div className="book" key={book.isbn13}>
               <div className="book-entry">
@@ -47,7 +47,11 @@ export const PopularBooks = () => {
                     handleClickMoveDetail(book.isbn13);
                   }}
                 >
-                  <img src={book.coverImageUrl} alt="" />
+                  <img
+                    src={book.coverImageUrl}
+                    alt=""
+                    {...(index === 0 && { fetchPriority: 'high' })}
+                  />
                 </a>
               </div>
             </div>
