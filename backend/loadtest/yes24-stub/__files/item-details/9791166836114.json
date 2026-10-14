@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "errorCode": null,
+  "data": {
+    "items": [
+      {
+        "title": "당신이 가장 위험한 곳, 집",
+        "author": "전건우 저/정명섭 저/정보라 저/정해연 저",
+        "goodsSortNm": "국내도서-소설/시/희곡",
+        "publisher": "앤드",
+        "isbn13": "9791166836114",
+        "publishDate": "20230725",
+        "cover": "https://image.yes24.com/goods/120259828/L",
+        "pages": 232,
+        "contentDetail": {
+          "bookIntroduction": "네 작가가 집이라는 공간에서 벌어지는 사건과 공포를 각기 다른 이야기로 풀어낸 앤솔러지다."
+        }
+      }
+    ],
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalCount": 1
+  }
+}

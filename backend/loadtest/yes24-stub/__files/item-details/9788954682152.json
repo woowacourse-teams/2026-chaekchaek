@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "errorCode": null,
+  "data": {
+    "items": [
+      {
+        "title": "작별하지 않는다",
+        "author": "한강 저",
+        "goodsSortNm": "국내도서-소설/시/희곡",
+        "publisher": "문학동네",
+        "isbn13": "9788954682152",
+        "publishDate": "20210909",
+        "cover": "https://image.yes24.com/goods/103495056/L",
+        "pages": 332,
+        "contentDetail": {
+          "bookIntroduction": "제주 4·3의 기억을 배경으로 친구를 찾아 제주로 향한 경하가 인선 가족의 역사를 마주하는 소설이다."
+        }
+      }
+    ],
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalCount": 1
+  }
+}

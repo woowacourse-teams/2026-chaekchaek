@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "errorCode": null,
+  "data": {
+    "items": [
+      {
+        "title": "남편의 아름다움",
+        "author": "앤 카슨 저/민승남 역",
+        "goodsSortNm": "국내도서-소설/시/희곡",
+        "publisher": "한겨레출판",
+        "isbn13": "9791172131791",
+        "publishDate": "20241125",
+        "cover": "https://image.yes24.com/goods/139855099/L",
+        "pages": 204,
+        "contentDetail": {
+          "bookIntroduction": "키츠의 시와 삶에서 영감을 얻은 작품으로, 한 여성의 사랑과 결혼, 배신과 이별을 탱고 형식으로 따라간다."
+        }
+      }
+    ],
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalCount": 1
+  }
+}

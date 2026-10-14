@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/v1/goods/itemDetail",
+    "headers": {
+      "X-Api-Key": {
+        "equalTo": "load-test-key"
+      }
+    },
+    "queryParameters": {
+      "searchType": {
+        "equalTo": "ISBN13"
+      },
+      "query": {
+        "matches": "^(9791172131791|9791196214784|9791162203620|9791161571379|9788954681179|9788930001106|9788937473197|9791166836114|9791141988494|9788954682152)$"
+      },
+      "detail": {
+        "equalTo": "Y"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "item-details/{{request.query.query}}.json",
+    "fixedDelayMilliseconds": 200,
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

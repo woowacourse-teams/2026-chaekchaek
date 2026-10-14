@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "errorCode": null,
+  "data": {
+    "items": [
+      {
+        "title": "그 해 여름은 소중함이 부서져도 어떻게든 살아가야 했다",
+        "author": "이수향 저",
+        "goodsSortNm": "국내도서-소설/시/희곡",
+        "publisher": "BOOKK(부크크)",
+        "isbn13": "9791141988494",
+        "publishDate": "20250217",
+        "cover": "https://image.yes24.com/goods/143248806/L",
+        "pages": 62,
+        "contentDetail": {
+          "bookIntroduction": "한 소녀가 사랑을 깨닫고 감정을 숨기려다 상처를 겪는 여름을 그린 단편소설이다."
+        }
+      }
+    ],
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalCount": 1
+  }
+}

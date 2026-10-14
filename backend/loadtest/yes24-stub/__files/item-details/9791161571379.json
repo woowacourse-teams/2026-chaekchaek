@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "errorCode": null,
+  "data": {
+    "items": [
+      {
+        "title": "불편한 편의점 2",
+        "author": "김호연 저",
+        "goodsSortNm": "국내도서-소설/시/희곡",
+        "publisher": "나무옆의자",
+        "isbn13": "9791161571379",
+        "publishDate": "20220810",
+        "cover": "https://image.yes24.com/goods/111088149/L",
+        "pages": 320,
+        "contentDetail": {
+          "bookIntroduction": "청파동 편의점을 무대로 새로운 점원과 손님들이 서로의 사연을 나누며 일상의 위로를 주고받는 이야기다."
+        }
+      }
+    ],
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalCount": 1
+  }
+}

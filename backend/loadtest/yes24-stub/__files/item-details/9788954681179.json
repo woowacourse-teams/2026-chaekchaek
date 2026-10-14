@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "errorCode": null,
+  "data": {
+    "items": [
+      {
+        "title": "밝은 밤",
+        "author": "최은영 저",
+        "goodsSortNm": "국내도서-소설/시/희곡",
+        "publisher": "문학동네",
+        "isbn13": "9788954681179",
+        "publishDate": "20210727",
+        "cover": "https://image.yes24.com/goods/102687133/L",
+        "pages": 344,
+        "contentDetail": {
+          "bookIntroduction": "증조할머니부터 현재의 주인공까지 이어지는 여성 네 세대의 삶을 교차해 가족의 기억과 사랑을 그린 장편소설이다."
+        }
+      }
+    ],
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalCount": 1
+  }
+}

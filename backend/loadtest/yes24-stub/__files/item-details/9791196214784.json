@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "errorCode": null,
+  "data": {
+    "items": [
+      {
+        "title": "별을 스치는 바람",
+        "author": "이정명 저",
+        "goodsSortNm": "국내도서-소설/시/희곡",
+        "publisher": "은행나무",
+        "isbn13": "9791196214784",
+        "publishDate": "20180320",
+        "cover": "https://image.yes24.com/goods/59411476/L",
+        "pages": 400,
+        "contentDetail": {
+          "bookIntroduction": "윤동주가 수감된 후쿠오카 형무소를 배경으로, 시인과 간수의 관계를 통해 문학과 음악이 어두운 시대를 견디게 하는 힘을 그린다."
+        }
+      }
+    ],
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalCount": 1
+  }
+}

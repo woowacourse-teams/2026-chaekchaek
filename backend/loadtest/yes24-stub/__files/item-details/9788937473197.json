@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "errorCode": null,
+  "data": {
+    "items": [
+      {
+        "title": "네 이웃의 식탁",
+        "author": "구병모 저",
+        "goodsSortNm": "국내도서-소설/시/희곡",
+        "publisher": "민음사",
+        "isbn13": "9788937473197",
+        "publishDate": "20180615",
+        "cover": "https://image.yes24.com/goods/61410024/L",
+        "pages": 192,
+        "contentDetail": {
+          "bookIntroduction": "공동주택에 모인 이웃들의 생활을 통해 공동체의 허위와 돌봄 노동의 현실을 비추는 장편소설이다."
+        }
+      }
+    ],
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalCount": 1
+  }
+}

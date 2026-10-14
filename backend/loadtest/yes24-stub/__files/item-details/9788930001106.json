@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "errorCode": null,
+  "data": {
+    "items": [
+      {
+        "title": "자객열전",
+        "author": "이외수 저",
+        "goodsSortNm": "국내도서-소설/시/희곡",
+        "publisher": "나남",
+        "isbn13": "9788930001106",
+        "publishDate": "19830331",
+        "cover": "https://image.yes24.com/goods/22397/L",
+        "pages": 385,
+        "contentDetail": {
+          "bookIntroduction": "춘추전국시대 자객들의 삶을 통해 의리와 보은의 의미를 그린 이외수의 소설이다."
+        }
+      }
+    ],
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalCount": 1
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "errorCode": null,
+  "data": {
+    "items": [
+      {
+        "title": "파과 (리커버)",
+        "author": "구병모 저",
+        "goodsSortNm": "국내도서-소설/시/희곡",
+        "publisher": "위즈덤하우스",
+        "isbn13": "9791162203620",
+        "publishDate": "20180416",
+        "cover": "https://image.yes24.com/goods/125761518/L",
+        "pages": 344,
+        "contentDetail": {
+          "bookIntroduction": "노년의 여성 킬러 조각이 쇠잔과 상실을 마주하며 타인에 대한 연민과 지키고 싶은 마음을 발견해 가는 소설이다."
+        }
+      }
+    ],
+    "currentPage": 1,
+    "pageSize": 1,
+    "totalCount": 1
+  }
+}
