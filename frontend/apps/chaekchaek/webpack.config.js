@@ -175,7 +175,7 @@ export default (_, argv) => {
     optimization: {
       minimizer: ['...', new CssMinimizerWebpackPlugin()],
     },
-    devtool: 'source-map',
+    devtool: isDevelopment ? 'eval-cheap-module-source-map' : false,
     devServer: {
       port: 3000,
       open: true,
