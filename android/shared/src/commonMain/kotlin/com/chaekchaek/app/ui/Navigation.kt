@@ -177,7 +177,10 @@ internal fun AppNavigation(
                         analytics = analytics,
                         onBookClick = { backStack.navigateFromCurrent(Root, BookDetailKey(it)) },
                         onMyPage = { backStack.navigateFromCurrent(Root, MyPageKey) },
-                        onExitRequested = onExitRequested,
+                        rootBackEnabled = backStack.isCurrentDestination(Root),
+                        onExitRequested = {
+                            if (backStack.prepareRootExit(Root)) onExitRequested()
+                        },
                         modifier = safeContent,
                     )
                 }

@@ -22,3 +22,13 @@ internal fun <T : Any> MutableList<T>.popDestinationIfCurrent(destination: T): B
 
     return popTopDestination()
 }
+
+internal fun <T : Any> List<T>.isCurrentDestination(destination: T): Boolean =
+    lastOrNull() == destination
+
+internal fun <T : Any> MutableList<T>.prepareRootExit(root: T): Boolean {
+    if (isCurrentDestination(root)) return true
+
+    popTopDestination()
+    return false
+}

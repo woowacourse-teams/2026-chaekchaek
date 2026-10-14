@@ -39,4 +39,31 @@ class NavigationBackStackTest {
         assertFalse(backStack.navigateFromCurrent("root", "detail"))
         assertEquals(listOf("root", "detail"), backStack)
     }
+
+    @Test
+    fun rootBackHandlerIsEnabledOnlyWhileRootIsCurrent() {
+        val backStack = mutableListOf("root")
+
+        assertTrue(backStack.isCurrentDestination("root"))
+
+        backStack.add("detail")
+
+        assertFalse(backStack.isCurrentDestination("root"))
+    }
+
+    @Test
+    fun staleRootExitRequestPopsCurrentDestinationInsteadOfExiting() {
+        val backStack = mutableListOf("root", "detail")
+
+        assertFalse(backStack.prepareRootExit("root"))
+        assertEquals(listOf("root"), backStack)
+    }
+
+    @Test
+    fun rootExitRequestExitsOnlyWhileRootIsCurrent() {
+        val backStack = mutableListOf("root")
+
+        assertTrue(backStack.prepareRootExit("root"))
+        assertEquals(listOf("root"), backStack)
+    }
 }

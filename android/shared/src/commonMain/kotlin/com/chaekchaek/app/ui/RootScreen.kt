@@ -76,6 +76,7 @@ import com.chaekchaek.app.ui.feed.FeedViewModel
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchRoute
 import com.chaekchaek.app.ui.search.SearchViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.navigationevent.NavigationEventInfo
@@ -108,6 +109,7 @@ internal fun RootScreen(
     analytics: AnalyticsTracker,
     onBookClick: (BookDetailArgs) -> Unit,
     onMyPage: () -> Unit,
+    rootBackEnabled: Boolean,
     onExitRequested: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -126,9 +128,19 @@ internal fun RootScreen(
     val snackbarHost = remember { SnackbarHostState() }
     val backNavigationEventState = rememberNavigationEventState(NavigationEventInfo.None)
     val backScope = rememberCoroutineScope()
+    var exitConfirmationSnackbarJob by remember { mutableStateOf<Job?>(null) }
     var exitConfirmationDeadlineMillis by rememberSaveable { mutableStateOf<Long?>(null) }
     val accessToken = tokens?.accessToken
+    val clearExitConfirmation: () -> Unit = {
+        exitConfirmationDeadlineMillis = null
+        exitConfirmationSnackbarJob?.cancel()
+        exitConfirmationSnackbarJob = null
+        snackbarHost.currentSnackbarData
+            ?.takeIf { it.visuals.message == EXIT_CONFIRMATION_MESSAGE }
+            ?.dismiss()
+    }
     val openProfile: () -> Unit = {
+        clearExitConfirmation()
         if (accessToken != null) onMyPage()
         else {
             archiveLoginOpensMyPage = true
@@ -138,11 +150,13 @@ internal fun RootScreen(
     val openBook: (BookDetailArgs, String) -> Unit = { book, origin ->
         if (origin == "search") analytics.ensureFlow(origin) else analytics.startFlow(origin)
         analytics.bookSelect(analyticsBookKey(book.isbn13, book.id))
+        clearExitConfirmation()
         onBookClick(book)
     }
 
     NavigationBackHandler(
         state = backNavigationEventState,
+        isBackEnabled = rootBackEnabled,
         onBackCompleted = {
             when (
                 val action = rootBackAction(
@@ -157,8 +171,8 @@ internal fun RootScreen(
                 }
                 is RootBackAction.ConfirmExit -> {
                     exitConfirmationDeadlineMillis = action.deadlineMillis
-                    backScope.launch {
-                        snackbarHost.showSnackbar("한 번 더 누르면 종료됩니다")
+                    exitConfirmationSnackbarJob = backScope.launch {
+                        snackbarHost.showSnackbar(EXIT_CONFIRMATION_MESSAGE)
                     }
                 }
                 RootBackAction.Exit -> onExitRequested()
@@ -167,7 +181,7 @@ internal fun RootScreen(
     )
 
     LaunchedEffect(selectedTab) {
-        if (selectedTab != RootTab.Home) exitConfirmationDeadlineMillis = null
+        if (selectedTab != RootTab.Home) clearExitConfirmation()
         analytics.screenView(selectedTab.analyticsScreenName)
     }
 
@@ -237,6 +251,7 @@ internal fun RootScreen(
                 onEditingChange = { editing ->
                     if (!editing || accessToken != null) archiveEditing = editing
                     else {
+                        clearExitConfirmation()
                         archiveLoginOpensMyPage = false
                         showArchiveLoginSheet = true
                     }
@@ -380,6 +395,7 @@ internal fun RootScreen(
 }
 
 internal const val EXIT_CONFIRMATION_WINDOW_MILLIS = 2_000L
+internal const val EXIT_CONFIRMATION_MESSAGE = "한 번 더 누르면 종료됩니다"
 
 internal sealed interface RootBackAction {
     data object ReturnToHome : RootBackAction
