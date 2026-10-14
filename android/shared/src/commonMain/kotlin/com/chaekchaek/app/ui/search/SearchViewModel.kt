@@ -8,6 +8,7 @@ import com.chaekchaek.app.analytics.analyticsQueryLengthBucket
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
+import com.chaekchaek.app.ui.input.TextInputLimit
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +45,12 @@ class SearchViewModel(
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
     private val _recentSearches = MutableStateFlow(
-        recentSearchStorage.read().map(String::trim).filter(String::isNotEmpty).distinct().take(RECENT_SEARCH_LIMIT),
+        recentSearchStorage.read()
+            .map(String::trim)
+            .map(SearchInputRules::limit)
+            .filter(String::isNotEmpty)
+            .distinct()
+            .take(RECENT_SEARCH_LIMIT),
     )
     val recentSearches: StateFlow<List<String>> = _recentSearches.asStateFlow()
     private val _pendingRegistration = MutableStateFlow<BookSearchResult?>(null)
@@ -60,13 +66,13 @@ class SearchViewModel(
     }
 
     fun updateQuery(query: String) {
-        _query.value = query
+        _query.value = SearchInputRules.applyChange(_query.value, query)
     }
 
     fun search(query: String) = search(query, "submit")
 
     private fun search(query: String, trigger: String) {
-        val trimmed = query.trim()
+        val trimmed = SearchInputRules.limit(query.trim())
         if (trimmed.isEmpty()) return
         if (trigger == "submit") {
             _query.value = trimmed
@@ -188,4 +194,13 @@ class SearchViewModel(
         const val FIRST_PAGE = 1
         const val RECENT_SEARCH_LIMIT = 10
     }
+}
+
+internal object SearchInputRules {
+    const val MAX_QUERY_LENGTH = 100
+
+    fun limit(value: String): String = TextInputLimit.takeCodePoints(value, MAX_QUERY_LENGTH)
+
+    fun applyChange(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed, MAX_QUERY_LENGTH)
 }

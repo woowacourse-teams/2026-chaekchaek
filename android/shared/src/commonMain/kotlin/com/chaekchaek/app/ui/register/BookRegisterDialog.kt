@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
+import com.chaekchaek.app.ui.input.TextInputLimit
 
 @Composable
 fun BookRegisterDialog(
@@ -26,10 +27,10 @@ fun BookRegisterDialog(
     onDismiss: () -> Unit,
     onRegister: (title: String, creator: String, publisher: String, year: String, note: String) -> Unit,
 ) {
-    var title by remember(book) { mutableStateOf(book.title) }
-    var creator by remember(book) { mutableStateOf(book.creator) }
-    var publisher by remember(book) { mutableStateOf(book.publisher) }
-    var year by remember(book) { mutableStateOf(book.year) }
+    var title by remember(book) { mutableStateOf(BookRegisterInputRules.limitTitle(book.title)) }
+    var creator by remember(book) { mutableStateOf(BookRegisterInputRules.limitCreator(book.creator)) }
+    var publisher by remember(book) { mutableStateOf(BookRegisterInputRules.limitPublisher(book.publisher)) }
+    var year by remember(book) { mutableStateOf(BookRegisterInputRules.limitYear(book.year)) }
     var note by remember(book) { mutableStateOf("") }
     val editedBook = book.copy(title = title.trim(), creator = creator.trim(), publisher = publisher.trim(), year = year.trim())
 
@@ -46,11 +47,11 @@ fun BookRegisterDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                BookField(title, { title = it }, "제목")
-                BookField(creator, { creator = it }, "저자")
-                BookField(publisher, { publisher = it }, "출판사")
-                BookField(year, { year = it }, "연도")
-                BookField(note, { note = it }, "한줄평 - 선택")
+                BookField(title, { title = BookRegisterInputRules.changeTitle(title, it) }, "제목")
+                BookField(creator, { creator = BookRegisterInputRules.changeCreator(creator, it) }, "저자")
+                BookField(publisher, { publisher = BookRegisterInputRules.changePublisher(publisher, it) }, "출판사")
+                BookField(year, { year = BookRegisterInputRules.changeYear(year, it) }, "연도")
+                BookField(note, { note = BookRegisterInputRules.changeNote(note, it) }, "한줄평 - 선택")
             }
         },
         confirmButton = {
@@ -63,6 +64,39 @@ fun BookRegisterDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } },
     )
+}
+
+internal object BookRegisterInputRules {
+    const val MAX_TITLE_LENGTH = 300
+    const val MAX_CREATOR_LENGTH = 100
+    const val MAX_PUBLISHER_LENGTH = 100
+    const val MAX_YEAR_LENGTH = 4
+    const val MAX_NOTE_LENGTH = 1000
+
+    fun limitTitle(value: String): String = TextInputLimit.takeCodePoints(value, MAX_TITLE_LENGTH)
+
+    fun changeTitle(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed, MAX_TITLE_LENGTH)
+
+    fun limitCreator(value: String): String = TextInputLimit.takeCodePoints(value, MAX_CREATOR_LENGTH)
+
+    fun changeCreator(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed, MAX_CREATOR_LENGTH)
+
+    fun limitPublisher(value: String): String = TextInputLimit.takeCodePoints(value, MAX_PUBLISHER_LENGTH)
+
+    fun changePublisher(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed, MAX_PUBLISHER_LENGTH)
+
+    fun limitYear(value: String): String = TextInputLimit.takeCodePoints(value.filter(Char::isDigit), MAX_YEAR_LENGTH)
+
+    fun changeYear(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed.filter(Char::isDigit), MAX_YEAR_LENGTH)
+
+    fun limitNote(value: String): String = TextInputLimit.takeCodePoints(value, MAX_NOTE_LENGTH)
+
+    fun changeNote(current: String, proposed: String): String =
+        TextInputLimit.applyChange(current, proposed, MAX_NOTE_LENGTH)
 }
 
 @Composable
