@@ -270,7 +270,7 @@ sealed interface ShelfActionUiModel {
 
 검색 전 빈 화면, 결과 0건, 오류, 500ms 지연 로딩과 하단 탭을 구현했다.
 
-검색은 `BookSearchRepository.search(query, sort)`를 통해 Chaekchaek API `GET /api/v1/books`를 호출한다.
+검색은 `BookSearchRepository.search(query, sort)`를 통해 책췍 API `GET /api/v1/books`를 호출한다.
 `sort` 값은 `LATEST`, `COMMENT`만 사용한다.
 
 ---

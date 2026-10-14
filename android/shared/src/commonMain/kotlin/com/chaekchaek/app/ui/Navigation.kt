@@ -77,6 +77,7 @@ internal fun AppNavigation(
     recentSearchStorage: RecentSearchStorage,
     analytics: AnalyticsTracker,
     uiTestingMyPage: Boolean = false,
+    onExitRequested: () -> Unit = {},
 ) {
     val safeContent = Modifier.windowInsetsPadding(
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
@@ -159,7 +160,7 @@ internal fun AppNavigation(
     ) {
         NavDisplay(
             backStack = backStack,
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { backStack.popTopDestination() },
             predictivePopTransitionSpec = { _ ->
                 defaultPopTransitionSpec<NavKey>().invoke(this)
             },
@@ -174,9 +175,12 @@ internal fun AppNavigation(
                         memberSettingsViewModel = memberSettingsViewModel,
                         authViewModel = authViewModel,
                         analytics = analytics,
-                        onBookClick = { backStack.add(BookDetailKey(it)) },
-                        onMyPage = { backStack.add(MyPageKey) },
-                        onExitRequested = { backStack.removeLastOrNull() },
+                        onBookClick = { backStack.navigateFromCurrent(Root, BookDetailKey(it)) },
+                        onMyPage = { backStack.navigateFromCurrent(Root, MyPageKey) },
+                        rootBackEnabled = backStack.isCurrentDestination(Root),
+                        onExitRequested = {
+                            if (backStack.prepareRootExit(Root)) onExitRequested()
+                        },
                         modifier = safeContent,
                     )
                 }
@@ -184,17 +188,17 @@ internal fun AppNavigation(
                     LaunchedEffect(Unit) { analytics.screenView("my_page") }
                     MyPageScreen(
                         state = memberSettingsState,
-                        onBack = { backStack.removeLastOrNull() },
+                        onBack = { backStack.popDestinationIfCurrent(MyPageKey) },
                         onAnonymousReviewsChange = memberSettingsViewModel::setAnonymousReviews,
                         onSignOut = {
                             authViewModel.signOut {
-                                if (backStack.lastOrNull() == MyPageKey) backStack.removeLastOrNull()
+                                backStack.popDestinationIfCurrent(MyPageKey)
                             }
                         },
                         onWithdraw = {
                             memberSettingsViewModel.withdraw {
                                 authViewModel.signOut {
-                                    if (backStack.lastOrNull() == MyPageKey) backStack.removeLastOrNull()
+                                    backStack.popDestinationIfCurrent(MyPageKey)
                                 }
                             }
                         },
@@ -228,7 +232,7 @@ internal fun AppNavigation(
 
                     BookDetailScreen(
                         state = state,
-                        onBack = { backStack.removeLastOrNull() },
+                        onBack = { backStack.popDestinationIfCurrent(key) },
                         modifier = safeContent,
                         savedToLibrary = savedBookId != null,
                         anonymousReviews = memberSettingsState.anonymousReviews,

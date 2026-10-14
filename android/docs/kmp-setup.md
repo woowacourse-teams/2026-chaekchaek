@@ -216,7 +216,7 @@ Android는 `viewModelScope`가 `ViewModel.onCleared()`에서 자동으로 취소
 
 ### 4.1 네트워크 엔진
 
-도서 검색은 `BookSearchRemoteRepository`가 공개 Chaekchaek API를 호출한다. 공통 코드는
+도서 검색은 `BookSearchRemoteRepository`가 공개 책췍 API를 호출한다. 공통 코드는
 `commonMain`에 두고 Ktor 엔진만 `androidMain`의 OkHttp와 `iosMain`의 Darwin으로 나눈다.
 외부 도서 API 키는 앱에 주입하지 않는다.
 

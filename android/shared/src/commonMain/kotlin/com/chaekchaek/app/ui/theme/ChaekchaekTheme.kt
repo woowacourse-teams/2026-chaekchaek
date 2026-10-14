@@ -1,7 +1,11 @@
 package com.chaekchaek.app.ui.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ripple.RippleAlpha
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RippleConfiguration
+import androidx.compose.material3.RippleDefaults
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -199,6 +203,17 @@ private val ChaekShapes = Shapes(
     extraLarge = RoundedCornerShape(28.dp),
 )
 
+private val NoTouchPressRippleConfiguration = RippleConfiguration(
+    rippleAlpha = RippleDefaults.RippleAlpha.let { defaultAlpha ->
+        RippleAlpha(
+            draggedAlpha = defaultAlpha.draggedAlpha,
+            focusedAlpha = defaultAlpha.focusedAlpha,
+            hoveredAlpha = defaultAlpha.hoveredAlpha,
+            pressedAlpha = 0f,
+        )
+    },
+)
+
 @Composable
 fun ChaekchaekTheme(
     darkTheme: Boolean = false,
@@ -207,7 +222,11 @@ fun ChaekchaekTheme(
 ) {
     val colors = if (darkTheme) DarkChaekColors else LightChaekColors
     val typography = chaekTypography(fontCandidate.fontFamily())
-    CompositionLocalProvider(LocalChaekColors provides colors) {
+    CompositionLocalProvider(
+        LocalChaekColors provides colors,
+        // 터치 press 리플만 숨기고 키보드 focus, 포인터 hover, drag 상태층은 유지한다.
+        LocalRippleConfiguration provides NoTouchPressRippleConfiguration,
+    ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
             typography = typography,
