@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Base64;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class GuestTokenService {
 
+    private static final Logger log = LoggerFactory.getLogger(GuestTokenService.class);
     private static final int TOKEN_BYTES = 32;
 
     private final ActorRepository actorRepository;
@@ -34,6 +37,11 @@ public class GuestTokenService {
         LocalDateTime issuedAt = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
         LocalDateTime expiresAt = issuedAt.plus(properties.expiration());
         Actor actor = actorRepository.save(Actor.guest(tokenHasher.hash(token), nickname, issuedAt, expiresAt));
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "guest_token_issued")
+                .addKeyValue("actorId", actor.getId())
+                .log("Guest token issued");
         return new IssuedGuestToken(
                 token,
                 nickname,
@@ -83,6 +91,11 @@ public class GuestTokenService {
         String newToken = generateToken();
         LocalDateTime expiresAt = now.plus(properties.expiration());
         actor.refreshGuestToken(tokenHasher.hash(newToken), now, expiresAt);
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "guest_token_refreshed")
+                .addKeyValue("actorId", actor.getId())
+                .log("Guest token refreshed");
         return new IssuedGuestToken(
                 newToken,
                 actor.getGuestNickname(),

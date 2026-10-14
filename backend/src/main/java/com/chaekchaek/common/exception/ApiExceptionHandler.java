@@ -4,11 +4,15 @@ import com.chaekchaek.book.client.BookClientException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
+import java.util.List;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,13 +34,35 @@ public class ApiExceptionHandler {
             ConstraintViolationException.class
     })
     public ProblemDetail handleInvalidRequest(Exception exception, HttpServletRequest request) {
-        log.info(
-                "Invalid request: method={}, path={}, exception={}",
-                request.getMethod(),
-                request.getRequestURI(),
-                exception.getClass().getSimpleName()
-        );
+        LoggingEventBuilder event = errorEvent(log.atInfo(), request, ErrorCode.INVALID_REQUEST, HttpStatus.BAD_REQUEST)
+                .addKeyValue("exception", exception.getClass().getSimpleName());
+        List<String> invalidFields = invalidFields(exception);
+        if (!invalidFields.isEmpty()) {
+            event = event.addKeyValue("invalidFields", invalidFields);
+        }
+        event.log("잘못된 요청");
         return createProblemDetail(ErrorCode.INVALID_REQUEST, HttpStatus.BAD_REQUEST);
+    }
+
+    private List<String> invalidFields(Exception exception) {
+        return switch (exception) {
+            case MethodArgumentNotValidException invalid -> invalid.getBindingResult().getFieldErrors().stream()
+                    .map(FieldError::getField)
+                    .distinct()
+                    .toList();
+            case ConstraintViolationException invalid -> invalid.getConstraintViolations().stream()
+                    .map(violation -> violation.getPropertyPath().toString())
+                    .distinct()
+                    .toList();
+            case HandlerMethodValidationException invalid -> invalid.getParameterValidationResults().stream()
+                    .map(result -> result.getMethodParameter().getParameterName())
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+            case MissingServletRequestParameterException invalid -> List.of(invalid.getParameterName());
+            case MethodArgumentTypeMismatchException invalid -> List.of(invalid.getName());
+            default -> List.of();
+        };
     }
 
     @ExceptionHandler(BusinessException.class)
@@ -44,20 +70,12 @@ public class ApiExceptionHandler {
         ErrorCode errorCode = exception.getErrorCode();
         HttpStatus status = statusOf(errorCode);
         if (status.is5xxServerError()) {
-            log.warn(
-                    "Business exception: method={}, path={}, code={}",
-                    request.getMethod(),
-                    request.getRequestURI(),
-                    errorCode.getCode(),
-                    exception
-            );
+            errorEvent(log.atWarn(), request, errorCode, status)
+                    .setCause(exception)
+                    .log("비즈니스 예외");
         } else {
-            log.info(
-                    "Business exception: method={}, path={}, code={}",
-                    request.getMethod(),
-                    request.getRequestURI(),
-                    errorCode.getCode()
-            );
+            errorEvent(log.atInfo(), request, errorCode, status)
+                    .log("비즈니스 예외");
         }
         return createProblemDetail(errorCode, status);
     }
@@ -84,27 +102,36 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(BookClientException.class)
     public ProblemDetail handleBookClientException(BookClientException exception, HttpServletRequest request) {
-        log.warn(
-                "Book API call failed: method={}, path={}",
-                request.getMethod(),
-                request.getRequestURI(),
-                exception
-        );
+        errorEvent(log.atWarn(), request, ErrorCode.EXTERNAL_API_ERROR, HttpStatus.BAD_GATEWAY)
+                .setCause(exception)
+                .log("도서 API 호출 실패");
         return createProblemDetail(ErrorCode.EXTERNAL_API_ERROR, HttpStatus.BAD_GATEWAY);
     }
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpectedException(Exception exception, HttpServletRequest request) {
-        log.error(
-                "Unexpected server error: method={}, path={}",
-                request.getMethod(),
-                request.getRequestURI(),
-                exception
-        );
+        errorEvent(log.atError(), request, ErrorCode.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR)
+                .addKeyValue("exception", exception.getClass().getSimpleName())
+                .setCause(exception)
+                .log("예상하지 못한 서버 오류");
         return createProblemDetail(
                 ErrorCode.INTERNAL_SERVER_ERROR,
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
+    }
+
+    private LoggingEventBuilder errorEvent(
+            LoggingEventBuilder event,
+            HttpServletRequest request,
+            ErrorCode errorCode,
+            HttpStatus status
+    ) {
+        return event
+                .addKeyValue("type", "error")
+                .addKeyValue("errorCode", errorCode.getCode())
+                .addKeyValue("status", status.value())
+                .addKeyValue("method", request.getMethod())
+                .addKeyValue("path", request.getRequestURI());
     }
 
     private ProblemDetail createProblemDetail(ErrorCode errorCode, HttpStatus status) {

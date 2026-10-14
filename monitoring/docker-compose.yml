@@ -17,12 +17,16 @@ services:
       BACKEND_CONTAINER: ${BACKEND_CONTAINER:?BACKEND_CONTAINER is required}
       MONITORING_PROM_URL: ${MONITORING_PROM_URL:?MONITORING_PROM_URL is required}
       MONITORING_LOKI_URL: ${MONITORING_LOKI_URL:?MONITORING_LOKI_URL is required}
+      MYSQL_EXPORTER_DSN: ${MYSQL_EXPORTER_DSN:?MYSQL_EXPORTER_DSN is required}
     labels:
       com.chaekchaek.alloy-config-hash: ${ALLOY_CONFIG_HASH:-none}
     volumes:
       - ./alloy:/etc/alloy:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - alloy-data:/var/lib/alloy/data
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro
     networks:
       - backend
 

@@ -30,6 +30,7 @@ jobs:
           BACKEND_NETWORK: chaekchaek-network
           MONITORING_PROM_URL: ${{ secrets.MONITORING_PROM_URL }}
           MONITORING_LOKI_URL: ${{ secrets.MONITORING_LOKI_URL }}
+          MYSQL_EXPORTER_DSN: ${{ secrets.MYSQL_EXPORTER_DSN }}
         run: |
           set -euo pipefail
           monitoring_dir="$HOME/chaekchaek-monitoring"

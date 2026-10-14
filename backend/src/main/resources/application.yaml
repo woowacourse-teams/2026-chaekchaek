@@ -1,5 +1,8 @@
 server:
   forward-headers-strategy: framework
+  tomcat:
+    mbeanregistry:
+      enabled: true
 
 management:
   server:
@@ -11,6 +14,18 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+logging:
+  structured:
+    json:
+      add:
+        service: chaekchaek-backend
+        env: ${APP_ENV:local}
+        version: ${APP_VERSION:local}
+      exclude: "@version,level_value"
 
 spring:
   application:
@@ -19,6 +34,15 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 10
+      connection-timeout: 30000
+      validation-timeout: 5000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      keepalive-time: 120000
+      auto-commit: true
   jpa:
     hibernate:
       ddl-auto: update

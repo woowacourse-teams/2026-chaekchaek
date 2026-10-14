@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -38,6 +40,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class LibraryService {
 
+    private static final Logger log = LoggerFactory.getLogger(LibraryService.class);
     private static final int PAGE_SIZE = 10;
 
     private final LibraryItemRepository libraryItemRepository;
@@ -166,7 +169,27 @@ public class LibraryService {
         if (libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId).isPresent()) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
         }
-        return saveNewItem(memberId, book, status);
+        LibraryItemResponse response = saveNewItem(memberId, book, status);
+        logItemEvent("library_item_added", "Library item added", memberId, bookId);
+        return response;
+    }
+
+    private void logItemEvent(String event, String message, long memberId, long bookId) {
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", event)
+                .addKeyValue("memberId", memberId)
+                .addKeyValue("bookId", bookId)
+                .log(message);
+    }
+
+    private void logBulkEvent(String event, String message, long memberId, int itemCount) {
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", event)
+                .addKeyValue("memberId", memberId)
+                .addKeyValue("itemCount", itemCount)
+                .log(message);
     }
 
     private LibraryItemResponse saveNewItem(long memberId, Book book, ReadingStatus status) {
@@ -225,6 +248,7 @@ public class LibraryService {
         } else {
             item.changeCurrentPage(currentPage, book.getTotalPages(), now());
         }
+        logItemEvent("library_item_updated", "Library item updated", memberId, bookId);
         return response(item, book, Map.of());
     }
 
@@ -238,13 +262,17 @@ public class LibraryService {
     public void delete(long memberId, long bookId) {
         getBook(bookId);
         libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
-                .ifPresent(libraryItemRepository::delete);
+                .ifPresent(item -> {
+                    libraryItemRepository.delete(item);
+                    logItemEvent("library_item_deleted", "Library item deleted", memberId, bookId);
+                });
     }
 
     @Transactional
     public void bulkDelete(long memberId, Collection<Long> bookIds) {
         validateBulkBookIds(bookIds);
         libraryItemRepository.deleteAll(requireAllLibraryItemsForUpdate(memberId, bookIds));
+        logBulkEvent("library_items_deleted", "Library items deleted", memberId, bookIds.size());
     }
 
     @Transactional
@@ -264,11 +292,13 @@ public class LibraryService {
                     books.get(item.getBookId()).getTotalPages(),
                     now()
             ));
+            logBulkEvent("library_items_status_changed", "Library items status changed", memberId, items.size());
             return;
         }
         List<LibraryItem> items = requireAllLibraryItemsForUpdate(memberId, bookIds);
         Instant now = now();
         items.forEach(item -> item.changeStatus(status, null, now));
+        logBulkEvent("library_items_status_changed", "Library items status changed", memberId, items.size());
     }
 
     private void validateBulkBookIds(Collection<Long> bookIds) {
@@ -311,6 +341,7 @@ public class LibraryService {
         LibraryItem item = libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
                 .orElseGet(() -> createForRating(memberId, book));
         item.rate(rating, now());
+        logItemEvent("library_item_rated", "Library item rated", memberId, bookId);
         return response(item, book, Map.of());
     }
 
@@ -340,7 +371,10 @@ public class LibraryService {
     public void removeRating(long memberId, long bookId) {
         getBook(bookId);
         libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
-                .ifPresent(LibraryItem::removeRating);
+                .ifPresent(item -> {
+                    item.removeRating();
+                    logItemEvent("library_item_rating_removed", "Library item rating removed", memberId, bookId);
+                });
     }
 
     @Transactional(readOnly = true)
