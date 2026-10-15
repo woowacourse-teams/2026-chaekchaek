@@ -3,11 +3,11 @@ package com.chaekchaek.review.repository;
 import com.chaekchaek.review.domain.Review;
 import java.util.Collection;
 import java.util.List;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
@@ -18,6 +18,61 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByBookId(long bookId);
 
     List<Review> findByBookIdAndActorId(long bookId, long actorId);
+
+    long countByBookId(long bookId);
+
+    long countByBookIdAndActorId(long bookId, long actorId);
+
+    @Query(value = """
+            select r.*
+            from review r
+            left join (
+                select rc.review_id, count(*) as cnt
+                from reaction rc
+                join review br on br.review_id = rc.review_id
+                where br.book_id = :bookId
+                group by rc.review_id
+            ) reaction_counts on reaction_counts.review_id = r.review_id
+            left join (
+                select rp.review_id, count(*) as cnt
+                from reply rp
+                join review br on br.review_id = rp.review_id
+                where br.book_id = :bookId
+                group by rp.review_id
+            ) reply_counts on reply_counts.review_id = r.review_id
+            where r.book_id = :bookId
+            order by coalesce(reaction_counts.cnt, 0) + coalesce(reply_counts.cnt, 0) desc, r.review_id desc
+            limit :limit offset :offset
+            """, nativeQuery = true)
+    List<Review> findPopularByBookId(long bookId, int limit, long offset);
+
+    @Query(value = """
+            select r.*
+            from review r
+            left join (
+                select rc.review_id, count(*) as cnt
+                from reaction rc
+                join review br on br.review_id = rc.review_id
+                where br.book_id = :bookId and br.actor_id = :actorId
+                group by rc.review_id
+            ) reaction_counts on reaction_counts.review_id = r.review_id
+            left join (
+                select rp.review_id, count(*) as cnt
+                from reply rp
+                join review br on br.review_id = rp.review_id
+                where br.book_id = :bookId and br.actor_id = :actorId
+                group by rp.review_id
+            ) reply_counts on reply_counts.review_id = r.review_id
+            where r.book_id = :bookId and r.actor_id = :actorId
+            order by coalesce(reaction_counts.cnt, 0) + coalesce(reply_counts.cnt, 0) desc, r.review_id desc
+            limit :limit offset :offset
+            """, nativeQuery = true)
+    List<Review> findPopularByBookIdAndActorId(
+            long bookId,
+            long actorId,
+            int limit,
+            long offset
+    );
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Review r set r.actorId = :targetActorId where r.actorId = :sourceActorId")

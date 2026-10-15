@@ -125,22 +125,10 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
             Feed feed,
             int page
     ) {
-        List<Review> reviews = feed == Feed.MINE
-                ? reviewRepository.findByBookIdAndActorId(bookId, actorId)
-                : reviewRepository.findByBookId(bookId);
-        Map<Long, Long> replies = replyCounts(reviews.stream()
-                .map(Review::getId)
-                .toList());
-        Map<Long, Long> reactions = reviewReactionCounts(reviews.stream()
-                .map(Review::getId)
-                .toList());
-        return reviews.stream()
-                .sorted(Comparator.comparingLong((Review review) -> reactions.getOrDefault(review.getId(), 0L)
-                        + replies.getOrDefault(review.getId(), 0L)).reversed()
-                        .thenComparing(Review::getId, Comparator.reverseOrder()))
-                .skip((long) (page - 1) * PAGE_SIZE)
-                .limit(PAGE_SIZE)
-                .toList();
+        long offset = (long) (page - 1) * PAGE_SIZE;
+        return feed == Feed.MINE
+                ? reviewRepository.findPopularByBookIdAndActorId(bookId, actorId, PAGE_SIZE, offset)
+                : reviewRepository.findPopularByBookId(bookId, PAGE_SIZE, offset);
     }
 
     private Map<Long, Long> replyCounts(Collection<Long> reviewIds) {
@@ -182,8 +170,8 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     ) {
         if (sort == ReviewSort.POPULAR) {
             return feed == Feed.MINE
-                    ? reviewRepository.findByBookIdAndActorId(bookId, actorId).size()
-                    : reviewRepository.findByBookId(bookId).size();
+                    ? reviewRepository.countByBookIdAndActorId(bookId, actorId)
+                    : reviewRepository.countByBookId(bookId);
         }
         Pageable oneItem = PageRequest.of(0, 1);
         return feed == Feed.MINE
