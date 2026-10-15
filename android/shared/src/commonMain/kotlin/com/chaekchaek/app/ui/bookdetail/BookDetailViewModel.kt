@@ -65,7 +65,10 @@ class BookDetailViewModel(
     }
 
     fun open(book: BookDetailArgs, accessToken: String?) {
-        if (_uiState.value.book == book && this.accessToken == accessToken) return
+        if (_uiState.value.book == book) {
+            syncAuthentication(accessToken)
+            return
+        }
         invalidateRequests()
         this.accessToken = accessToken
         val reviewScope = restoredReviewScope.takeIf { it != ReviewScope.MINE || accessToken != null }
@@ -99,9 +102,10 @@ class BookDetailViewModel(
         val previousAccessToken = this.accessToken
         this.accessToken = accessToken
         val pending = _uiState.value.pendingAction.takeIf { accessToken != null }
-        savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = 1
+        val renewingMemberSession = previousAccessToken != null && accessToken != null
+        if (!renewingMemberSession) savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = 1
         val reviewScope = _uiState.value.reviewScope.takeIf {
-            it != ReviewScope.MINE || previousAccessToken == null && accessToken != null
+            it != ReviewScope.MINE || accessToken != null
         } ?: ReviewScope.ALL.also { savedStateHandle[BookDetailSavedStateKeys.ReviewScope] = it.name }
         _uiState.value = _uiState.value.copy(
             signedIn = accessToken != null,

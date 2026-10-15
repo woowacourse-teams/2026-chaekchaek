@@ -47,6 +47,45 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
   @Test
+  fun `같은 회원의 토큰 갱신과 상세 재연결은 내 감상 조건과 페이지를 유지한다`() = runViewModelTest {
+    val requestedPages = mutableListOf<Int>()
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else {
+        val page = request.url.parameters["page"]!!.toInt()
+        requestedPages += page
+        val review = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":$page")
+        respond("""{"totalCount":2,"nextPage":${if (page == 1) "2" else "null"},"items":[$review]}""",
+          headers = jsonHeaders())
+      }
+    })
+    val savedState = SavedStateHandle(mapOf(
+      BookDetailSavedStateKeys.Opened to true,
+      BookDetailSavedStateKeys.LoadedPage to 2,
+      BookDetailSavedStateKeys.ReviewScope to ReviewScope.MINE.name,
+      BookDetailSavedStateKeys.ReviewSort to ReviewSort.PAGE.name,
+    ))
+    val viewModel = viewModel(client, client, platform({ null }), savedStateHandle = savedState)
+    val target = book().copy(isbn13 = "9780000000042")
+    viewModel.open(target, "member-before-renewal")
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    viewModel.syncAuthentication("member-after-renewal")
+    assertEquals(ReviewScope.MINE, viewModel.uiState.value.reviewScope)
+    assertEquals(2, savedState.get<Int>(BookDetailSavedStateKeys.LoadedPage))
+    awaitReal { while (requestedPages.size < 4) kotlinx.coroutines.yield() }
+    viewModel.open(target, "member-after-recreation")
+    assertEquals(ReviewScope.MINE, viewModel.uiState.value.reviewScope)
+    assertEquals(ReviewSort.PAGE, viewModel.uiState.value.reviewSort)
+    assertEquals(2, savedState.get<Int>(BookDetailSavedStateKeys.LoadedPage))
+
+    viewModel.signOut()
+    assertEquals(ReviewScope.ALL, viewModel.uiState.value.reviewScope)
+    assertEquals(1, savedState.get<Int>(BookDetailSavedStateKeys.LoadedPage))
+  }
+
+  @Test
   fun `복원 조회 실패는 대기를 해제하고 기존 다시 시도로 복구한다`() = runViewModelTest {
     var fails = true
     val client = testClient(MockEngine { request ->

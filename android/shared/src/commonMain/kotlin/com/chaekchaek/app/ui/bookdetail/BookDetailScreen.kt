@@ -573,7 +573,7 @@ private fun BookMetadataRow(items: List<String>, secondary: Boolean = false) {
 }
 
 @Composable
-private fun RequestLoadingOverlay(modifier: Modifier = Modifier) {
+internal fun RequestLoadingOverlay(modifier: Modifier = Modifier) {
     val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier.background(ChaekInk.copy(alpha = 0.15f))

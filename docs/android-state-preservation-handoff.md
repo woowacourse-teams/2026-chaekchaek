@@ -109,6 +109,21 @@ Saved State에는 검색어, enum 이름, 페이지 번호, ID, offset, 제한�
 
 조회 시점의 서버 항목 추가·삭제·정렬 변화까지 과거 화면을 그대로 재현하지는 않는다. 목록은 재조회한 순서에 index·offset을 적용하므로 대상이 사라졌으면 확보된 목록 범위로 보정된다. 스포일러·대상 ID도 서버에 없는 항목을 복구하거나 쓰기를 재실행하지 않는다.
 
+## PR 리뷰 후 인증과 평점 복원 보완
+
+2026-10-15 독립 리뷰에서 발견한 인증 복원과 토큰 갱신 경계를 수정했다.
+
+- 저장된 갱신 토큰으로 회원 인증을 복원하는 동안의 `null`을 확정된 비회원으로 처리하지 않는다. 피드의 최초 조회와 쓰기, 상세의 최초 조회와 편집 UI는 인증 복원 결과를 기다린다. 401이면 비회원으로 전환하며 일시적인 서버 오류는 기존 재시도 정책으로 기다린다.
+- 같은 회원의 액세스 토큰 갱신은 상세의 MINE 조건과 상세·피드의 받은 페이지 번호를 유지한다. 로그아웃은 페이지와 회원 전용 조건을 초기화한다. 토큰에는 별도의 회원 식별자가 없으며 계정 교체는 앱의 로그아웃 후 로그인 경로를 전제로 한다.
+- 피드는 토큰 갱신 조회 중 기존 목록을 유지해 답글 창과 초안을 제거하지 않는다. 갱신 조회 중 중복 페이지 요청을 막고, 취소된 페이지 요청의 로딩 상태를 해제한다.
+- 별점 창은 사용자가 편집하지 않았다면 늦게 도착한 기존 평점을 반영한다. 사용자가 조절했거나 저장 상태에서 복원한 편집값은 서버 응답으로 덮어쓰지 않는다.
+
+추가 회귀 테스트는 수정 전 토큰 갱신 시 페이지와 MINE 조건이 초기화되는 실패를 확인했다. 별점 UI 검증은 전용 AVD `chaekchaek_state_509`, `emulator-5582`에서 `BookRatingRestorationTest` 3개가 통과했다. 늦은 기존 평점 반영, 사용자 편집 보존, `StateRestorationTester`로 복원한 편집 보존을 확인했다. 이 검증은 주입한 상세 응답과 Compose 저장 상태 복원이며 실제 회원 계정의 서버 요청이나 OS 프로세스 종료 검증이 아니다. 초기 UI 테스트의 Double/Float 비교 오류를 수정한 뒤 세 경우를 다시 실행했다.
+
+보완 후 전체 `:shared:testAndroidHostTest` 233개(실패·오류 0), `:app:assembleDebug`, `:app:lintDebug`, `:shared:compileKotlinIosSimulatorArm64`가 통과했다. 로그는 `/tmp/chaekchaek-an-review-build-final.log`, 별점 UI 테스트 로그는 `/tmp/chaekchaek-an-review-rating-tests.log`다.
+
+인증 복원 대기 표시에는 기존 Loading/Inline progress 컴포넌트(`1058:411`)와 공통 컨트롤 레퍼런스 인스턴스(`1058:413`)를 확인하고 기존 앱 로딩 표시를 재사용했다. 실제 회원 로그인 후 OS 프로세스 복귀·네트워크 장애·쪽수 편집과 iOS UI는 여전히 기기에서 미검증이다.
+
 ## 참고
 
 - [Save UI states](https://developer.android.com/topic/libraries/architecture/saving-states)

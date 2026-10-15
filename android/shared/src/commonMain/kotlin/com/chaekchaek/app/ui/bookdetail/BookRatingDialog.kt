@@ -67,6 +67,14 @@ internal fun BookRatingDialog(
     var selectedHalfStars by rememberSaveable {
         mutableStateOf(initialRating?.halfStars ?: 8)
     }
+    var editedByUser by rememberSaveable { mutableStateOf(false) }
+    var receivedInitialRating by rememberSaveable { mutableStateOf(initialRating != null) }
+    LaunchedEffect(initialRating) {
+        if (initialRating != null && !receivedInitialRating) {
+            if (!editedByUser) selectedHalfStars = initialRating.halfStars
+            receivedInitialRating = true
+        }
+    }
     val selected = Rating.ofHalfStars(selectedHalfStars)
     LaunchedEffect(selected) { onCriterionChange(selected) }
     ChaekTwoActionDialog(
@@ -76,9 +84,13 @@ internal fun BookRatingDialog(
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("별을 누르거나 +, - 버튼으로 0.5점씩 조절해 보세요.", color = ChaekInkSecondary, style = MaterialTheme.typography.bodySmall)
                 Text(if (initialRating == null) "새 별점" else "별점 수정", style = MaterialTheme.typography.labelMedium)
-                RatingSelector(selected = selected, onSelect = { selectedHalfStars = it.halfStars })
+                RatingSelector(selected = selected, onSelect = {
+                    editedByUser = true
+                    selectedHalfStars = it.halfStars
+                })
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     RatingStepButton("-", "0.5점 낮추기", selected.halfStars > 1) {
+                        editedByUser = true
                         selectedHalfStars -= 1
                     }
                     Text(
@@ -88,6 +100,7 @@ internal fun BookRatingDialog(
                         textAlign = TextAlign.Center,
                     )
                     RatingStepButton("+", "0.5점 높이기", selected.halfStars < 10) {
+                        editedByUser = true
                         selectedHalfStars += 1
                     }
                 }

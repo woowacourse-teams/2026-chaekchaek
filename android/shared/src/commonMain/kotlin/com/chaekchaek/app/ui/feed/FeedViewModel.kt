@@ -12,6 +12,7 @@ import com.chaekchaek.app.presentation.common.toAppError
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import com.chaekchaek.app.presentation.home.HomeLabels
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,12 +27,14 @@ class FeedViewModel(
     reviewActions: FeedReviewActions,
     readGuestToken: () -> String? = { null },
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    initialAccessToken: String? = null,
+    deferInitialLoad: Boolean = false,
 ) : ViewModel() {
     private var reviewActions = reviewActions
     private var readGuestToken = readGuestToken
-    private var accessToken: String? = null
+    private var accessToken: String? = initialAccessToken
+    private var awaitingInitialAuthentication = deferInitialLoad
     private var authenticationRevision = 0L
-    private var hasObservedAuthentication = false
     private var initialLoadJob: Job? = null
     private var loadMoreJob: Job? = null
     private var mutationJob: Job? = null
@@ -41,7 +44,13 @@ class FeedViewModel(
     val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
 
     init {
-        loadFirstPage()
+        if (deferInitialLoad) {
+            initialLoadJob = viewModelScope.launch {
+                withDelayedApiLoading(onLoadingChanged = { loading ->
+                    if (loading) _uiState.value = FeedUiState.Loading
+                }) { awaitCancellation() }
+            }
+        } else loadFirstPage()
     }
 
     fun retry() {
@@ -57,22 +66,25 @@ class FeedViewModel(
     }
 
     fun authenticate(accessToken: String?) {
-        if (!hasObservedAuthentication) {
-            hasObservedAuthentication = true
-            if (this.accessToken == accessToken) return
+        if (awaitingInitialAuthentication) {
+            awaitingInitialAuthentication = false
+            this.accessToken = accessToken
+            loadFirstPage()
+            return
         }
         if (this.accessToken == accessToken) return
+        val renewingMemberSession = this.accessToken != null && accessToken != null
         authenticationRevision += 1
         mutationJob?.cancel()
         this.accessToken = accessToken
-        savedStateHandle[FeedSavedStateKeys.LoadedPage] = FIRST_PAGE
-        loadFirstPage()
+        if (!renewingMemberSession) savedStateHandle[FeedSavedStateKeys.LoadedPage] = FIRST_PAGE
+        loadFirstPage(retainContent = renewingMemberSession)
     }
 
     fun loadMore() {
         val current = _uiState.value as? FeedUiState.Content ?: return
         val page = current.nextPage ?: return
-        if (current.loadingMore || loadMoreJob?.isActive == true) return
+        if (current.loadingMore || initialLoadJob?.isActive == true || loadMoreJob?.isActive == true) return
         _uiState.value = current.copy(loadingMore = true, requestError = null)
         val authenticationRevision = authenticationRevision
         val viewer = currentViewer()
@@ -134,9 +146,11 @@ class FeedViewModel(
         }) { actions, accessToken -> actions.createReply(id, content, accessToken) }
     }
 
-    private fun loadFirstPage() {
+    private fun loadFirstPage(retainContent: Boolean = false) {
+        if (awaitingInitialAuthentication) return
         initialLoadJob?.cancel()
         loadMoreJob?.cancel()
+        if (retainContent) updateContent { it.copy(loadingMore = false) }
         val authenticationRevision = authenticationRevision
         val viewer = currentViewer()
         initialLoadJob = viewModelScope.launch {
@@ -144,7 +158,7 @@ class FeedViewModel(
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
                     if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
-                    if (loading) {
+                    if (loading && !(retainContent && previousState is FeedUiState.Content)) {
                         _uiState.value = FeedUiState.Loading
                     } else if (_uiState.value == FeedUiState.Loading) {
                         _uiState.value = previousState
@@ -179,7 +193,8 @@ class FeedViewModel(
                     if (authenticationRevision != this@FeedViewModel.authenticationRevision) {
                         return@withDelayedApiLoading
                     }
-                    FeedUiState.Failure(error.toAppError())
+                    if (retainContent && previousState is FeedUiState.Content) previousState
+                    else FeedUiState.Failure(error.toAppError())
                 }
             }
         }
@@ -189,7 +204,7 @@ class FeedViewModel(
         onSuccess: () -> Unit,
         action: suspend (FeedReviewActions, accessToken: String?) -> Unit,
     ) {
-        if (mutationJob?.isActive == true) return
+        if (awaitingInitialAuthentication || mutationJob?.isActive == true) return
         val authenticationRevision = authenticationRevision
         val accessToken = accessToken
         mutationJob = viewModelScope.launch {

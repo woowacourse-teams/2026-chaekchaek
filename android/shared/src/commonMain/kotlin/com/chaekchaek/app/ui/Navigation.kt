@@ -2,6 +2,7 @@ package com.chaekchaek.app.ui
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -112,6 +113,7 @@ internal fun AppNavigation(
     val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform) }
     DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     val authTokens by authViewModel.tokens.collectAsState()
+    val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
     LaunchedEffect(authState.errorMessage) {
         if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
@@ -166,6 +168,8 @@ internal fun AppNavigation(
                             reviewActions = reviewActions,
                             readGuestToken = { authPlatform.readGuest()?.token },
                             savedStateHandle = createSavedStateHandle(),
+                            initialAccessToken = authTokens?.accessToken,
+                            deferInitialLoad = restoringAuthentication,
                         )
                     }
                     feedViewModel.attachActions(
@@ -186,8 +190,8 @@ internal fun AppNavigation(
                         registerBook = registrationViewModel::register,
                         isSignedIn = { authViewModel.tokens.value != null },
                     )
-                    LaunchedEffect(authTokens?.accessToken) {
-                        feedViewModel.authenticate(authTokens?.accessToken)
+                    LaunchedEffect(authTokens?.accessToken, restoringAuthentication) {
+                        if (!restoringAuthentication) feedViewModel.authenticate(authTokens?.accessToken)
                     }
                     RootScreen(
                         homeViewModel = homeViewModel,
@@ -249,18 +253,23 @@ internal fun AppNavigation(
                     var resumedAction by remember(key.book) {
                         mutableStateOf<BookDetailAuthenticatedAction?>(null)
                     }
-                    LaunchedEffect(key.book) {
-                        analytics.screenView("book_detail")
-                        viewModel.open(key.book, authTokens?.accessToken)
+                    LaunchedEffect(key.book, restoringAuthentication) {
+                        if (!restoringAuthentication) {
+                            analytics.screenView("book_detail")
+                            viewModel.open(key.book, authTokens?.accessToken)
+                        }
                     }
-                    LaunchedEffect(authTokens?.accessToken) {
+                    LaunchedEffect(authTokens?.accessToken, restoringAuthentication) {
+                        if (restoringAuthentication) return@LaunchedEffect
                         val token = authTokens?.accessToken
                         val pendingAction = viewModel.syncAuthentication(token)
                         if (token == null) resumedAction = null
                         else if (pendingAction != null) resumedAction = pendingAction
                     }
 
-                    BookDetailScreen(
+                    if (restoringAuthentication) {
+                        AuthenticationRestorationContent(safeContent)
+                    } else BookDetailScreen(
                         state = state,
                         onBack = { backStack.popDestinationIfCurrent(key) },
                         modifier = safeContent,
@@ -327,7 +336,7 @@ internal fun AppNavigation(
                         onRequestErrorShown = viewModel::clearRequestError,
                     )
 
-                    if (state.pendingAction != null) {
+                    if (!restoringAuthentication && state.pendingAction != null) {
                         LoginRequiredSheet(
                             signingIn = authState.signingIn,
                             error = authState.errorMessage,
@@ -361,5 +370,17 @@ internal fun AppNavigation(
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun AuthenticationRestorationContent(modifier: Modifier) {
+    var showLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(500)
+        showLoading = true
+    }
+    if (showLoading) {
+        com.chaekchaek.app.ui.bookdetail.RequestLoadingOverlay(modifier.fillMaxSize())
     }
 }

@@ -25,6 +25,8 @@ internal class AuthSession(
 ) {
   private val _tokens = MutableStateFlow<MobileAuthTokens?>(null)
   val tokens: StateFlow<MobileAuthTokens?> = _tokens.asStateFlow()
+  private val _isRestoring = MutableStateFlow(readRefreshToken() != null)
+  val isRestoring: StateFlow<Boolean> = _isRestoring.asStateFlow()
   private val mutex = Mutex()
   private var accessTokenExpiresAtMillis = 0L
   private var renewalJob: Job? = null
@@ -74,7 +76,11 @@ internal class AuthSession(
   }
 
   private suspend fun renewTokens(): Boolean = mutex.withLock {
-    val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken() ?: return@withLock false
+    val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
+    if (refreshToken == null) {
+      _isRestoring.value = false
+      return@withLock false
+    }
     try {
       updateTokens(reissue(refreshToken))
       true
@@ -87,12 +93,14 @@ internal class AuthSession(
 
   private fun updateTokens(tokens: MobileAuthTokens) {
     _tokens.value = tokens
+    _isRestoring.value = false
     accessTokenExpiresAtMillis = currentTimeMillis() + tokens.accessTokenExpiresIn * MILLIS_PER_SECOND
     writeRefreshToken(tokens.refreshToken)
   }
 
   private fun clear() {
     _tokens.value = null
+    _isRestoring.value = false
     accessTokenExpiresAtMillis = 0L
     clearRefreshToken()
   }
