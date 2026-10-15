@@ -293,6 +293,7 @@ internal fun AppNavigation(
                         onReviewScopeChange = viewModel::changeReviewScope,
                         onReviewSortChange = viewModel::changeReviewSort,
                         onLoadMoreReviews = viewModel::loadMoreReviews,
+                        onRetryReviews = viewModel::retryReviews,
                         onRequestErrorShown = viewModel::clearRequestError,
                     )
 

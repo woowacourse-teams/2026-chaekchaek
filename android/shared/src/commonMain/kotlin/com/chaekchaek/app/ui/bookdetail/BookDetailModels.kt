@@ -70,6 +70,21 @@ sealed interface BookDetailAuthenticatedAction {
     }
 }
 
+enum class ReviewPageLoadState {
+    Idle,
+    Loading,
+    Failed,
+    Retrying,
+    RefreshFailed,
+    RefreshRetrying;
+
+    val showsRetry: Boolean
+        get() = this == Failed || this == Retrying || this == RefreshFailed || this == RefreshRetrying
+
+    val canRetry: Boolean
+        get() = this == Failed || this == RefreshFailed
+}
+
 data class BookDetailUiState(
     val book: BookDetailArgs? = null,
     val detail: BookDetail? = null,
@@ -80,6 +95,7 @@ data class BookDetailUiState(
     val nextReviewPage: Int? = null,
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
+    val reviewPageLoadState: ReviewPageLoadState = ReviewPageLoadState.Idle,
     val isSubmitting: Boolean = false,
     val ratingComparison: List<RatingComparisonBookUiModel> = emptyList(),
     val signedIn: Boolean = false,
