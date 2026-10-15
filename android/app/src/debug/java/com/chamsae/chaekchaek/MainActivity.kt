@@ -33,7 +33,7 @@ class MainActivity : ChaekchaekActivity() {
 }
 
 @Composable
-private fun DeveloperToolsEntryButton(onClick: () -> Unit) {
+internal fun DeveloperToolsEntryButton(onClick: () -> Unit) {
     val label = stringResource(R.string.developer_tools_entry_label)
     Surface(
         onClick = onClick,

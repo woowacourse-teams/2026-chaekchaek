@@ -146,8 +146,18 @@ fun HomeScreen(
     }
 
     when (val state = uiState) {
-        HomeUiState.Loading -> LoadingContent(modifier)
-        HomeUiState.Empty -> EmptyContent(modifier)
+        HomeUiState.Loading -> HomeStaticStateContent(
+            onProfileClick = onProfileClick,
+            homeHeaderAction = homeHeaderAction,
+            modifier = modifier,
+            content = { LoadingContent(it) },
+        )
+        HomeUiState.Empty -> HomeStaticStateContent(
+            onProfileClick = onProfileClick,
+            homeHeaderAction = homeHeaderAction,
+            modifier = modifier,
+            content = { EmptyContent(it) },
+        )
         is HomeUiState.Failure -> HomeLoadErrorContent(state.error, homeViewModel::retry, modifier)
         is HomeUiState.Content -> HomeContent(
             state,
@@ -160,6 +170,19 @@ fun HomeScreen(
             scrollTopRequest,
             modifier,
         )
+    }
+}
+
+@Composable
+private fun HomeStaticStateContent(
+    onProfileClick: () -> Unit,
+    homeHeaderAction: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable (Modifier) -> Unit,
+) {
+    Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        BrandHeader(onProfileClick, additionalAction = homeHeaderAction)
+        content(Modifier.fillMaxWidth().weight(1f))
     }
 }
 
