@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.feed
 
+import androidx.lifecycle.SavedStateHandle
 import com.chaekchaek.app.domain.book.BookId
 import com.chaekchaek.app.domain.feed.FeedReviewActions
 import com.chaekchaek.app.domain.feed.FeedViewer
@@ -97,6 +98,45 @@ private fun runFeedViewModelTest(block: suspend TestScope.() -> Unit) = runTest 
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedViewModelTest {
+    @Test
+    fun `복원은 첫 페이지부터 읽던 페이지까지 다시 조회하고 중복 감상을 제거한다`() = runFeedViewModelTest {
+        val repository = TestReviewFeedRepository(mapOf(
+            1 to ReviewFeedPage(listOf(review(1)), 2, 2),
+            2 to ReviewFeedPage(listOf(review(1), review(2)), 2, null),
+        ))
+        val savedState = SavedStateHandle(mapOf(FeedSavedStateKeys.LoadedPage to 2))
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, savedStateHandle = savedState)
+        advanceUntilIdle()
+
+        repository.requestedPages shouldBe listOf(1, 2)
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>()
+            .reviews.map { it.reviewId } shouldBe listOf(1L, 2L)
+
+        viewModel.authenticate("different-member")
+        advanceUntilIdle()
+        repository.requestedPages shouldBe listOf(1, 2, 1)
+        savedState.get<Int>(FeedSavedStateKeys.LoadedPage) shouldBe 1
+    }
+
+    @Test
+    fun `복원 조회 실패는 자동 반복하지 않고 명시적 재시도로 복구한다`() = runFeedViewModelTest {
+        val repository = TestReviewFeedRepository(mapOf(
+            1 to ReviewFeedPage(listOf(review(1)), 2, 2),
+            2 to ReviewFeedPage(listOf(review(2)), 2, null),
+        )).apply { failurePage = 2 }
+        val savedState = SavedStateHandle(mapOf(FeedSavedStateKeys.LoadedPage to 2))
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, savedStateHandle = savedState)
+        advanceUntilIdle()
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Failure>()
+        repository.requestedPages shouldBe listOf(1, 2)
+
+        repository.failurePage = null
+        viewModel.retry()
+        advanceUntilIdle()
+        repository.requestedPages shouldBe listOf(1, 2, 1, 2)
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.size shouldBe 2
+    }
+
     @Test
     fun `목록 끝에서 다음 페이지를 기존 감상 아래에 이어 붙인다`() = runFeedViewModelTest {
         val repository = TestReviewFeedRepository(

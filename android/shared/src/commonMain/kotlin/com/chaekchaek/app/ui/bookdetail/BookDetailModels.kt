@@ -79,6 +79,7 @@ data class BookDetailUiState(
     val reviewSort: ReviewSort = ReviewSort.LATEST,
     val nextReviewPage: Int? = null,
     val isLoading: Boolean = false,
+    val isRestoring: Boolean = false,
     val isLoadingMore: Boolean = false,
     val isSubmitting: Boolean = false,
     val ratingComparison: List<RatingComparisonBookUiModel> = emptyList(),

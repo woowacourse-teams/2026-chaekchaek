@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.feed
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.domain.feed.FeedReviewActions
@@ -22,9 +23,12 @@ import kotlin.time.Clock
 class FeedViewModel(
     private val repository: ReviewFeedRepository,
     private val clock: Clock,
-    private val reviewActions: FeedReviewActions,
-    private val readGuestToken: () -> String? = { null },
+    reviewActions: FeedReviewActions,
+    readGuestToken: () -> String? = { null },
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
+    private var reviewActions = reviewActions
+    private var readGuestToken = readGuestToken
     private var accessToken: String? = null
     private var authenticationRevision = 0L
     private var hasObservedAuthentication = false
@@ -44,6 +48,14 @@ class FeedViewModel(
         loadFirstPage()
     }
 
+    fun attachActions(
+        reviewActions: FeedReviewActions,
+        readGuestToken: () -> String?,
+    ) {
+        this.reviewActions = reviewActions
+        this.readGuestToken = readGuestToken
+    }
+
     fun authenticate(accessToken: String?) {
         if (!hasObservedAuthentication) {
             hasObservedAuthentication = true
@@ -53,6 +65,7 @@ class FeedViewModel(
         authenticationRevision += 1
         mutationJob?.cancel()
         this.accessToken = accessToken
+        savedStateHandle[FeedSavedStateKeys.LoadedPage] = FIRST_PAGE
         loadFirstPage()
     }
 
@@ -69,6 +82,7 @@ class FeedViewModel(
                 if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@launch
                 val latest = _uiState.value as? FeedUiState.Content ?: return@launch
                 if (latest.nextPage != page) return@launch
+                savedStateHandle[FeedSavedStateKeys.LoadedPage] = page
                 _uiState.value = latest.copy(
                     reviews = (latest.reviews + next.reviews.map { it.toUiModel() })
                         .distinctBy { it.noteId.value },
@@ -138,8 +152,18 @@ class FeedViewModel(
                 },
             ) {
                 _uiState.value = try {
-                    val page = repository.reviewFeed(FIRST_PAGE, viewer)
+                    val restoreThroughPage = savedStateHandle.get<Int>(FeedSavedStateKeys.LoadedPage) ?: FIRST_PAGE
+                    var page = repository.reviewFeed(FIRST_PAGE, viewer)
+                    var loadedPage = FIRST_PAGE
+                    while (true) {
+                        val nextPage = page.nextPage?.takeIf { it > loadedPage && it <= restoreThroughPage }
+                            ?: break
+                        val next = repository.reviewFeed(nextPage, viewer)
+                        page = next.copy(reviews = (page.reviews + next.reviews).distinctBy { it.noteId.value })
+                        loadedPage = nextPage
+                    }
                     if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
+                    savedStateHandle[FeedSavedStateKeys.LoadedPage] = loadedPage
                     if (page.reviews.isEmpty()) {
                         FeedUiState.Empty
                     } else {
@@ -227,4 +251,8 @@ class FeedViewModel(
     private companion object {
         const val FIRST_PAGE = 1
     }
+}
+
+internal object FeedSavedStateKeys {
+    const val LoadedPage = "feed.loaded_page"
 }

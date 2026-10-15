@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.bookdetail
 
+import androidx.lifecycle.SavedStateHandle
 import com.chaekchaek.app.analytics.AnalyticsEvent
 import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
@@ -8,6 +9,8 @@ import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
+import com.chaekchaek.app.data.remote.ReviewScope
+import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.data.remote.WriteCredential
 import com.chaekchaek.app.domain.rating.Rating
 import io.ktor.client.HttpClient
@@ -43,6 +46,57 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
+  @Test
+  fun `상세 복원은 읽던 감상 페이지까지 재조회하고 복원 대기를 해제한다`() = runViewModelTest {
+    val requestedPages = mutableListOf<Int>()
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else {
+        val page = request.url.parameters["page"]!!.toInt()
+        requestedPages += page
+        val review = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":$page")
+        respond("""{"totalCount":2,"nextPage":${if (page == 1) "2" else "null"},"items":[$review]}""",
+          headers = jsonHeaders())
+      }
+    })
+    val savedState = SavedStateHandle(mapOf(
+      BookDetailSavedStateKeys.Opened to true,
+      BookDetailSavedStateKeys.LoadedPage to 2,
+    ))
+    val viewModel = viewModel(client, client, platform({ null }), savedStateHandle = savedState)
+    viewModel.open(book().copy(isbn13 = "9780000000042"), null)
+    assertTrue(viewModel.uiState.value.isRestoring)
+
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    assertEquals(listOf(1, 2), requestedPages)
+    assertEquals(listOf(1L, 2L), viewModel.uiState.value.reviews.map { it.reviewId })
+    assertFalse(viewModel.uiState.value.isRestoring)
+  }
+
+  @Test
+  fun `상세 복원은 필터와 정렬만 유지하고 대기 중 액션은 재생하지 않는다`() = runViewModelTest {
+    val client = testClient(MockEngine { error("네트워크를 호출하면 안 됨") })
+    val savedStateHandle = SavedStateHandle(
+      mapOf(
+        BookDetailSavedStateKeys.ReviewScope to ReviewScope.MINE.name,
+        BookDetailSavedStateKeys.ReviewSort to ReviewSort.PAGE.name,
+      ),
+    )
+    val first = viewModel(client, client, platform(readGuest = { null }), savedStateHandle = savedStateHandle)
+
+    assertEquals(ReviewScope.MINE, first.uiState.value.reviewScope)
+    assertEquals(ReviewSort.PAGE, first.uiState.value.reviewSort)
+    assertFalse(first.requestAuthentication(BookDetailAuthenticatedAction.AddToLibrary))
+
+    val restored = viewModel(client, client, platform(readGuest = { null }), savedStateHandle = savedStateHandle)
+
+    assertEquals(ReviewScope.MINE, restored.uiState.value.reviewScope)
+    assertEquals(ReviewSort.PAGE, restored.uiState.value.reviewSort)
+    assertNull(restored.uiState.value.pendingAction)
+  }
+
   @Test
   fun `회원 전용 액션만 로그인 보류 상태로 만든다`() = runViewModelTest {
     val client = testClient(MockEngine { error("네트워크를 호출하면 안 됨") })
@@ -577,12 +631,14 @@ class BookDetailViewModelTest {
     authClient: HttpClient,
     callbacks: AuthPlatformCallbacks,
     analytics: AnalyticsTracker = AnalyticsTracker.None,
+    savedStateHandle: SavedStateHandle = SavedStateHandle(),
   ) = BookDetailViewModel(
     repository = BookDetailRemoteRepository(writeClient),
     libraryRepository = LibraryRemoteRepository(writeClient),
     authPlatform = callbacks,
     authRepository = MobileAuthRemoteRepository(authClient),
     analytics = analytics,
+    savedStateHandle = savedStateHandle,
   )
 
   private fun platform(

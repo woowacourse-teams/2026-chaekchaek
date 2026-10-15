@@ -20,7 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,7 +64,10 @@ internal fun BookRatingDialog(
     onDismiss: () -> Unit,
     onSave: (Rating) -> Unit,
 ) {
-    var selected by remember(initialRating) { mutableStateOf(initialRating ?: Rating.ofHalfStars(8)) }
+    var selectedHalfStars by rememberSaveable {
+        mutableStateOf(initialRating?.halfStars ?: 8)
+    }
+    val selected = Rating.ofHalfStars(selectedHalfStars)
     LaunchedEffect(selected) { onCriterionChange(selected) }
     ChaekTwoActionDialog(
         onDismissRequest = onDismiss,
@@ -73,10 +76,10 @@ internal fun BookRatingDialog(
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("별을 누르거나 +, - 버튼으로 0.5점씩 조절해 보세요.", color = ChaekInkSecondary, style = MaterialTheme.typography.bodySmall)
                 Text(if (initialRating == null) "새 별점" else "별점 수정", style = MaterialTheme.typography.labelMedium)
-                RatingSelector(selected = selected, onSelect = { selected = it })
+                RatingSelector(selected = selected, onSelect = { selectedHalfStars = it.halfStars })
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     RatingStepButton("-", "0.5점 낮추기", selected.halfStars > 1) {
-                        selected = Rating.ofHalfStars(selected.halfStars - 1)
+                        selectedHalfStars -= 1
                     }
                     Text(
                         selected.score.toString(),
@@ -85,7 +88,7 @@ internal fun BookRatingDialog(
                         textAlign = TextAlign.Center,
                     )
                     RatingStepButton("+", "0.5점 높이기", selected.halfStars < 10) {
-                        selected = Rating.ofHalfStars(selected.halfStars + 1)
+                        selectedHalfStars += 1
                     }
                 }
                 HorizontalDivider(color = ChaekBorderSoft)

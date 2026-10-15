@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.bookdetail
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.analytics.AnalyticsAction
@@ -16,6 +17,7 @@ import com.chaekchaek.app.data.remote.RatingComparison
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
+import com.chaekchaek.app.data.remote.ReviewPage
 import com.chaekchaek.app.data.remote.WriteCredential
 import com.chaekchaek.app.domain.rating.Rating
 import kotlinx.coroutines.Job
@@ -30,13 +32,23 @@ import kotlin.coroutines.cancellation.CancellationException
 class BookDetailViewModel(
     private val repository: BookDetailRemoteRepository,
     private val libraryRepository: LibraryRemoteRepository,
-    private val authPlatform: AuthPlatformCallbacks,
+    authPlatform: AuthPlatformCallbacks,
     private val authRepository: MobileAuthRemoteRepository = MobileAuthRemoteRepository(),
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(BookDetailUiState())
+    private val restoredReviewScope = ReviewScope.entries
+        .firstOrNull { it.name == savedStateHandle[BookDetailSavedStateKeys.ReviewScope] }
+        ?: ReviewScope.ALL
+    private val restoredReviewSort = ReviewSort.entries
+        .firstOrNull { it.name == savedStateHandle[BookDetailSavedStateKeys.ReviewSort] }
+        ?: ReviewSort.LATEST
+    private val _uiState = MutableStateFlow(
+        BookDetailUiState(reviewScope = restoredReviewScope, reviewSort = restoredReviewSort),
+    )
     val uiState: StateFlow<BookDetailUiState> = _uiState.asStateFlow()
 
+    private var authPlatform = authPlatform
     private var accessToken: String? = null
     private var loadJob: Job? = null
     private var loadMoreJob: Job? = null
@@ -47,12 +59,24 @@ class BookDetailViewModel(
     private var detailReadyLogged = false
     private var pendingAnalyticsAction: AnalyticsAction? = null
 
+    fun attachAuthPlatform(authPlatform: AuthPlatformCallbacks) {
+        this.authPlatform = authPlatform
+    }
+
     fun open(book: BookDetailArgs, accessToken: String?) {
+        if (_uiState.value.book == book && this.accessToken == accessToken) return
         invalidateRequests()
         this.accessToken = accessToken
+        val reviewScope = restoredReviewScope.takeIf { it != ReviewScope.MINE || accessToken != null }
+            ?: ReviewScope.ALL.also { savedStateHandle[BookDetailSavedStateKeys.ReviewScope] = it.name }
+        val restoring = savedStateHandle.get<Boolean>(BookDetailSavedStateKeys.Opened) == true
+        savedStateHandle[BookDetailSavedStateKeys.Opened] = true
         _uiState.value = BookDetailUiState(
             book = book,
+            reviewScope = reviewScope,
+            reviewSort = restoredReviewSort,
             signedIn = accessToken != null,
+            isRestoring = restoring,
             guestNickname = accessToken?.let { null } ?: authPlatform.readGuest()?.nickname,
         )
         detailReadyLogged = false
@@ -71,10 +95,16 @@ class BookDetailViewModel(
     fun syncAuthentication(accessToken: String?): BookDetailAuthenticatedAction? {
         if (this.accessToken == accessToken) return null
         invalidateRequests()
+        val previousAccessToken = this.accessToken
         this.accessToken = accessToken
         val pending = _uiState.value.pendingAction.takeIf { accessToken != null }
+        savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = 1
+        val reviewScope = _uiState.value.reviewScope.takeIf {
+            it != ReviewScope.MINE || previousAccessToken == null && accessToken != null
+        } ?: ReviewScope.ALL.also { savedStateHandle[BookDetailSavedStateKeys.ReviewScope] = it.name }
         _uiState.value = _uiState.value.copy(
             signedIn = accessToken != null,
+            reviewScope = reviewScope,
             pendingAction = null,
             guestNickname = accessToken?.let { null } ?: authPlatform.readGuest()?.nickname,
             ratingComparison = emptyList(),
@@ -126,12 +156,16 @@ class BookDetailViewModel(
         ) return
         if (_uiState.value.reviewScope == scope) return
         _uiState.value = _uiState.value.copy(reviewScope = scope)
+        savedStateHandle[BookDetailSavedStateKeys.ReviewScope] = scope.name
+        savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = 1
         reloadReviews()
     }
 
     fun changeReviewSort(sort: ReviewSort) {
         if (_uiState.value.reviewSort == sort) return
         _uiState.value = _uiState.value.copy(reviewSort = sort)
+        savedStateHandle[BookDetailSavedStateKeys.ReviewSort] = sort.name
+        savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = 1
         reloadReviews()
     }
 
@@ -154,6 +188,7 @@ class BookDetailViewModel(
             }.onSuccess { result ->
                 val current = _uiState.value
                 if (current.reviewScope != requestedScope || current.reviewSort != requestedSort) return@onSuccess
+                savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = page
                 _uiState.value = current.copy(
                     reviews = (current.reviews + result.items).distinctBy(BookReview::reviewId),
                     reviewCount = result.totalCount,
@@ -388,7 +423,7 @@ class BookDetailViewModel(
                     val detail = book.isbn13.takeIf(String::isNotBlank)
                         ?.let { repository.detail(it, credential) }
                     val reviews = detail?.bookId?.let { bookId ->
-                        repository.reviews(
+                        restoreReviewPages(
                             bookId,
                             reviewScope,
                             reviewSort,
@@ -404,6 +439,7 @@ class BookDetailViewModel(
                     reviews = reviews?.items.orEmpty(),
                     reviewCount = reviews?.totalCount ?: 0,
                     nextReviewPage = reviews?.nextPage,
+                    isRestoring = false,
                 )
                 val bookKey = analyticsBookKey(detail?.isbn13 ?: book.isbn13, detail?.bookId?.toString() ?: book.id)
                 analytics.log(
@@ -466,7 +502,7 @@ class BookDetailViewModel(
                         _uiState.value = _uiState.value.copy(isLoading = loading)
                     },
                 ) {
-                    repository.reviews(
+                    restoreReviewPages(
                         bookId,
                         _uiState.value.reviewScope,
                         _uiState.value.reviewSort,
@@ -481,6 +517,25 @@ class BookDetailViewModel(
                 )
             }.onFailure(::handleFailure)
         }
+    }
+
+    private suspend fun restoreReviewPages(
+        bookId: Long,
+        scope: ReviewScope,
+        sort: ReviewSort,
+        credential: WriteCredential?,
+    ): ReviewPage {
+        val restoreThroughPage = savedStateHandle.get<Int>(BookDetailSavedStateKeys.LoadedPage) ?: 1
+        var page = repository.reviews(bookId, scope, sort, credential)
+        var loadedPage = 1
+        while (true) {
+            val nextPage = page.nextPage?.takeIf { it > loadedPage && it <= restoreThroughPage } ?: break
+            val next = repository.reviews(bookId, scope, sort, credential, nextPage)
+            page = next.copy(items = (page.items + next.items).distinctBy(BookReview::reviewId))
+            loadedPage = nextPage
+        }
+        savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = loadedPage
+        return page
     }
 
     private fun <T> mutate(
@@ -651,6 +706,7 @@ class BookDetailViewModel(
     private fun handleFailure(error: Throwable) {
         if (error is CancellationException) throw error
         _uiState.value = _uiState.value.copy(
+            isRestoring = false,
             requestError = if (error is GuestOwnershipLostException) {
                 "이 기기에서는 더 이상 수정할 수 없습니다."
             } else {
@@ -658,6 +714,14 @@ class BookDetailViewModel(
             },
         )
     }
+
+}
+
+internal object BookDetailSavedStateKeys {
+    const val Opened = "book_detail.opened"
+    const val LoadedPage = "book_detail.loaded_page"
+    const val ReviewScope = "book_detail.review_scope"
+    const val ReviewSort = "book_detail.review_sort"
 }
 
 private class GuestOwnershipLostException : RuntimeException()

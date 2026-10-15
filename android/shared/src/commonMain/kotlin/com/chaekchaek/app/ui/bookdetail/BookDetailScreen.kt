@@ -178,13 +178,16 @@ fun BookDetailScreen(
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
     var showPageDialog by rememberSaveable { mutableStateOf(false) }
     var showReviewSheet by rememberSaveable { mutableStateOf(false) }
-    var reviewActionTarget by remember { mutableStateOf<BookReview?>(null) }
-    var replyActionTarget by remember { mutableStateOf<ReviewReply?>(null) }
-    var editingReview by remember { mutableStateOf<BookReview?>(null) }
-    var editingReply by remember { mutableStateOf<ReviewReply?>(null) }
-    var deletingReview by remember { mutableStateOf<BookReview?>(null) }
-    var deletingReply by remember { mutableStateOf<ReviewReply?>(null) }
-    var revealedSpoilerReviewIds by remember(book.id) { mutableStateOf(emptySet<Long>()) }
+    var reviewActionTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var replyActionTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var editingReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var editingReplyId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var deletingReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var deletingReplyId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var revealedSpoilerReviewIds by rememberSaveable(book.id) { mutableStateOf(emptyList<Long>()) }
+    val replyById = remember(state.reviews) {
+        state.reviews.flatMap(BookReview::recentReplies).associateBy(ReviewReply::replyId)
+    }
 
     fun authorizeOrRun(action: BookDetailAuthenticatedAction, onAuthorized: () -> Unit) {
         if (!action.requiresMember || state.signedIn) onAuthorized() else onLoginRequired(action)
@@ -220,7 +223,8 @@ fun BookDetailScreen(
     }
 
     Box(modifier = modifier.fillMaxSize().background(ChaekBackground).navigationBarsPadding()) {
-        LazyColumn(
+        // 복원 데이터를 받기 전에 짧은 임시 목록으로 저장된 offset을 덮어쓰지 않는다.
+        if (!state.isRestoring) LazyColumn(
             modifier = Modifier.fillMaxSize(),
             state = listState,
             contentPadding = PaddingValues(bottom = 100.dp),
@@ -260,7 +264,7 @@ fun BookDetailScreen(
                     reviewCount = state.reviewCount,
                     loading = state.isLoading,
                     loadingMore = state.isLoadingMore,
-                    revealedSpoilerReviewIds = revealedSpoilerReviewIds,
+                    revealedSpoilerReviewIds = revealedSpoilerReviewIds.toSet(),
                     scope = state.reviewScope,
                     sort = state.reviewSort,
                     onScopeChange = { requested ->
@@ -272,7 +276,7 @@ fun BookDetailScreen(
                     },
                     onSortChange = onReviewSortChange,
                     onRevealSpoiler = { reviewId ->
-                        revealedSpoilerReviewIds += reviewId
+                        revealedSpoilerReviewIds = (revealedSpoilerReviewIds + reviewId).distinct()
                     },
                     onLike = { reviewId, likedByMe ->
                         authorizeOrRun(BookDetailAuthenticatedAction.LikeReview(reviewId, likedByMe)) {
@@ -292,8 +296,8 @@ fun BookDetailScreen(
                             onReplyLike(replyId, likedByMe)
                         }
                     },
-                    onManageReview = { reviewActionTarget = it },
-                    onManageReply = { replyActionTarget = it },
+                    onManageReview = { reviewActionTargetId = it.reviewId },
+                    onManageReply = { replyActionTargetId = it.replyId },
                 )
             }
         }
@@ -313,7 +317,7 @@ fun BookDetailScreen(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
             )
         }
-        if (state.isSubmitting) RequestLoadingOverlay(Modifier.fillMaxSize())
+        if (state.isSubmitting || state.isRestoring && state.isLoading) RequestLoadingOverlay(Modifier.fillMaxSize())
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 
@@ -356,37 +360,37 @@ fun BookDetailScreen(
             },
         )
     }
-    reviewActionTarget?.let { review ->
+    state.reviews.firstOrNull { it.reviewId == reviewActionTargetId }?.let { review ->
         OwnedContentActionSheet(
             title = "내 감상 관리",
-            onDismiss = { reviewActionTarget = null },
+            onDismiss = { reviewActionTargetId = null },
             onEdit = {
-                reviewActionTarget = null
+                reviewActionTargetId = null
                 onReviewEditOpen()
-                editingReview = review
+                editingReviewId = review.reviewId
             },
             onDelete = {
-                reviewActionTarget = null
-                deletingReview = review
+                reviewActionTargetId = null
+                deletingReviewId = review.reviewId
             },
         )
     }
-    replyActionTarget?.let { reply ->
+    replyById[replyActionTargetId]?.let { reply ->
         OwnedContentActionSheet(
             title = "내 답글 관리",
-            onDismiss = { replyActionTarget = null },
+            onDismiss = { replyActionTargetId = null },
             onEdit = {
-                replyActionTarget = null
+                replyActionTargetId = null
                 onReplyEditOpen()
-                editingReply = reply
+                editingReplyId = reply.replyId
             },
             onDelete = {
-                replyActionTarget = null
-                deletingReply = reply
+                replyActionTargetId = null
+                deletingReplyId = reply.replyId
             },
         )
     }
-    editingReview?.let { review ->
+    state.reviews.firstOrNull { it.reviewId == editingReviewId }?.let { review ->
         ReviewInputSheet(
             initialPage = currentPage,
             totalPages = book.totalPages,
@@ -396,52 +400,52 @@ fun BookDetailScreen(
             allowReadingProgress = state.signedIn,
             onDismiss = {
                 onComposerDismiss()
-                editingReview = null
+                editingReviewId = null
             },
             onSave = { request ->
                 authorizeOrRun(BookDetailAuthenticatedAction.EditReview(review.reviewId, request)) {
                     onReviewUpdate(review.reviewId, request)
                 }
-                editingReview = null
+                editingReviewId = null
             },
         )
     }
-    editingReply?.let { reply ->
+    replyById[editingReplyId]?.let { reply ->
         ReplyInputSheet(
             initialContent = reply.content,
             onDismiss = {
                 onComposerDismiss()
-                editingReply = null
+                editingReplyId = null
             },
             onSave = { content ->
                 authorizeOrRun(BookDetailAuthenticatedAction.EditReply(reply.replyId, content)) {
                     onReplyUpdate(reply.replyId, content)
                 }
-                editingReply = null
+                editingReplyId = null
             },
         )
     }
-    deletingReview?.let { review ->
+    state.reviews.firstOrNull { it.reviewId == deletingReviewId }?.let { review ->
         DeleteContentConfirmation(
             contentName = "감상",
-            onDismiss = { deletingReview = null },
+            onDismiss = { deletingReviewId = null },
             onConfirm = {
                 authorizeOrRun(BookDetailAuthenticatedAction.DeleteReview(review.reviewId)) {
                     onReviewDelete(review.reviewId)
                 }
-                deletingReview = null
+                deletingReviewId = null
             },
         )
     }
-    deletingReply?.let { reply ->
+    replyById[deletingReplyId]?.let { reply ->
         DeleteContentConfirmation(
             contentName = "답글",
-            onDismiss = { deletingReply = null },
+            onDismiss = { deletingReplyId = null },
             onConfirm = {
                 authorizeOrRun(BookDetailAuthenticatedAction.DeleteReply(reply.replyId)) {
                     onReplyDelete(reply.replyId)
                 }
-                deletingReply = null
+                deletingReplyId = null
             },
         )
     }
@@ -880,7 +884,7 @@ private fun ReviewsSection(
     onManageReview: (BookReview) -> Unit,
     onManageReply: (ReviewReply) -> Unit,
 ) {
-    var replyTarget by remember { mutableStateOf<BookReview?>(null) }
+    var replyTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
     Column(modifier = Modifier.fillMaxWidth()) {
         HorizontalDivider(color = ChaekBorderSoft)
         Row(
@@ -929,7 +933,7 @@ private fun ReviewsSection(
                     onReply = {
                         if (locked) onRevealSpoiler(review.reviewId) else {
                             onReplyOpen()
-                            replyTarget = review
+                            replyTargetId = review.reviewId
                         }
                     },
                     onReplyLike = onReplyLike,
@@ -948,15 +952,15 @@ private fun ReviewsSection(
             }
         }
     }
-    replyTarget?.let { review ->
+    reviews.firstOrNull { it.reviewId == replyTargetId }?.let { review ->
         ReplyInputSheet(
             onDismiss = {
                 onComposerDismiss()
-                replyTarget = null
+                replyTargetId = null
             },
             onSave = { content ->
                 onReply(review.reviewId, content)
-                replyTarget = null
+                replyTargetId = null
             },
         )
     }
