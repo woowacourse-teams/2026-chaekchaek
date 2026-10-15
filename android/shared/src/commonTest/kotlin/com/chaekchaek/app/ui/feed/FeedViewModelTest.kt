@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.feed
 
+import androidx.lifecycle.SavedStateHandle
 import com.chaekchaek.app.domain.book.BookId
 import com.chaekchaek.app.domain.feed.FeedReviewActions
 import com.chaekchaek.app.domain.feed.FeedViewer
@@ -10,6 +11,7 @@ import com.chaekchaek.app.domain.note.NoteId
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -97,6 +99,129 @@ private fun runFeedViewModelTest(block: suspend TestScope.() -> Unit) = runTest 
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedViewModelTest {
+    @Test
+    fun `토큰 갱신 중에는 목록을 유지하고 갱신 실패 후에도 다음 페이지를 읽을 수 있다`() = runFeedViewModelTest {
+        val refresh = CompletableDeferred<ReviewFeedPage>()
+        val pagination = CompletableDeferred<ReviewFeedPage>()
+        var calls = 0
+        val repository = object : ReviewFeedRepository {
+            override suspend fun reviewFeed(page: Int, viewer: FeedViewer): ReviewFeedPage {
+                calls++
+                if (page == 2 && viewer == FeedViewer.Member("before")) return pagination.await()
+                if (page == 1 && viewer == FeedViewer.Member("after")) return refresh.await()
+                return ReviewFeedPage(listOf(review(page.toLong())), 2, if (page == 1) 2 else null)
+            }
+        }
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, initialAccessToken = "before")
+        advanceUntilIdle()
+        viewModel.loadMore()
+        runCurrent()
+        viewModel.authenticate("after")
+        advanceUntilIdle()
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().loadingMore shouldBe false
+        viewModel.loadMore()
+        runCurrent()
+        calls shouldBe 3
+        refresh.completeExceptionally(IllegalStateException("refresh failed"))
+        advanceUntilIdle()
+        viewModel.loadMore()
+        advanceUntilIdle()
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.size shouldBe 2
+    }
+
+    @Test
+    fun `초기 회원 인증을 기다리는 피드는 조회와 쓰기를 보류하고 저장 페이지를 복원한다`() = runFeedViewModelTest {
+        val repository = TestReviewFeedRepository(mapOf(
+            1 to ReviewFeedPage(listOf(review(1)), 2, 2),
+            2 to ReviewFeedPage(listOf(review(2)), 2, null),
+        ))
+        var writes = 0
+        val actions = object : FeedReviewActions {
+            override suspend fun toggleLike(reviewId: Long, likedByMe: Boolean, accessToken: String?) { writes++ }
+            override suspend fun createReply(reviewId: Long, content: String, accessToken: String?) { writes++ }
+        }
+        val savedState = SavedStateHandle(mapOf(FeedSavedStateKeys.LoadedPage to 2))
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, actions,
+            savedStateHandle = savedState, deferInitialLoad = true)
+        runCurrent()
+        viewModel.createReply(1, "회원 초안")
+        viewModel.toggleReviewLike(1, false)
+        runCurrent()
+        writes shouldBe 0
+        repository.requestedPages shouldBe emptyList()
+        savedState.get<Int>(FeedSavedStateKeys.LoadedPage) shouldBe 2
+
+        viewModel.authenticate("restored-member")
+        advanceUntilIdle()
+        repository.requestedPages shouldBe listOf(1, 2)
+        repository.requestedViewers.distinct() shouldBe listOf(FeedViewer.Member("restored-member"))
+        savedState.get<Int>(FeedSavedStateKeys.LoadedPage) shouldBe 2
+    }
+
+    @Test
+    fun `같은 회원의 토큰 갱신은 읽던 페이지를 유지하고 로그아웃은 초기화한다`() = runFeedViewModelTest {
+        val repository = TestReviewFeedRepository(mapOf(
+            1 to ReviewFeedPage(listOf(review(1)), 2, 2),
+            2 to ReviewFeedPage(listOf(review(2)), 2, null),
+        ))
+        val savedState = SavedStateHandle()
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, savedStateHandle = savedState)
+        viewModel.authenticate("member-before-renewal")
+        advanceUntilIdle()
+        viewModel.loadMore()
+        advanceUntilIdle()
+
+        viewModel.authenticate("member-after-renewal")
+        advanceUntilIdle()
+
+        savedState.get<Int>(FeedSavedStateKeys.LoadedPage) shouldBe 2
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.size shouldBe 2
+        repository.requestedViewers.last() shouldBe FeedViewer.Member("member-after-renewal")
+
+        viewModel.authenticate(null)
+        advanceUntilIdle()
+        savedState.get<Int>(FeedSavedStateKeys.LoadedPage) shouldBe 1
+    }
+
+    @Test
+    fun `복원은 첫 페이지부터 읽던 페이지까지 다시 조회하고 중복 감상을 제거한다`() = runFeedViewModelTest {
+        val repository = TestReviewFeedRepository(mapOf(
+            1 to ReviewFeedPage(listOf(review(1)), 2, 2),
+            2 to ReviewFeedPage(listOf(review(1), review(2)), 2, null),
+        ))
+        val savedState = SavedStateHandle(mapOf(FeedSavedStateKeys.LoadedPage to 2))
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, savedStateHandle = savedState)
+        advanceUntilIdle()
+
+        repository.requestedPages shouldBe listOf(1, 2)
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>()
+            .reviews.map { it.reviewId } shouldBe listOf(1L, 2L)
+
+        viewModel.authenticate("different-member")
+        advanceUntilIdle()
+        repository.requestedPages shouldBe listOf(1, 2, 1)
+        savedState.get<Int>(FeedSavedStateKeys.LoadedPage) shouldBe 1
+    }
+
+    @Test
+    fun `복원 조회 실패는 자동 반복하지 않고 명시적 재시도로 복구한다`() = runFeedViewModelTest {
+        val repository = TestReviewFeedRepository(mapOf(
+            1 to ReviewFeedPage(listOf(review(1)), 2, 2),
+            2 to ReviewFeedPage(listOf(review(2)), 2, null),
+        )).apply { failurePage = 2 }
+        val savedState = SavedStateHandle(mapOf(FeedSavedStateKeys.LoadedPage to 2))
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, savedStateHandle = savedState)
+        advanceUntilIdle()
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Failure>()
+        repository.requestedPages shouldBe listOf(1, 2)
+
+        repository.failurePage = null
+        viewModel.retry()
+        advanceUntilIdle()
+        repository.requestedPages shouldBe listOf(1, 2, 1, 2)
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.size shouldBe 2
+    }
+
     @Test
     fun `목록 끝에서 다음 페이지를 기존 감상 아래에 이어 붙인다`() = runFeedViewModelTest {
         val repository = TestReviewFeedRepository(

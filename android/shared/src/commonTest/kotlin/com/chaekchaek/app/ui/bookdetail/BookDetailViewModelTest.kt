@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.bookdetail
 
+import androidx.lifecycle.SavedStateHandle
 import com.chaekchaek.app.analytics.AnalyticsEvent
 import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
@@ -8,6 +9,8 @@ import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
+import com.chaekchaek.app.data.remote.ReviewScope
+import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.data.remote.WriteCredential
 import com.chaekchaek.app.domain.rating.Rating
 import io.ktor.client.HttpClient
@@ -43,6 +46,144 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
+  @Test
+  fun `회원 복원이 실패해 내 감상이 해제되면 전체 감상 첫 페이지만 읽는다`() = runViewModelTest {
+    val requestedPages = mutableListOf<Int>()
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else {
+        val page = request.url.parameters["page"]!!.toInt()
+        requestedPages += page
+        respond("""{"totalCount":2,"nextPage":${if (page == 1) "2" else "null"},"items":[$REVIEW_RESPONSE]}""",
+          headers = jsonHeaders())
+      }
+    })
+    val savedState = SavedStateHandle(mapOf(
+      BookDetailSavedStateKeys.Opened to true,
+      BookDetailSavedStateKeys.LoadedPage to 2,
+      BookDetailSavedStateKeys.ReviewScope to ReviewScope.MINE.name,
+    ))
+    val viewModel = viewModel(client, client, platform({ null }), savedStateHandle = savedState)
+    viewModel.open(book().copy(isbn13 = "9780000000042"), null)
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+    assertEquals(ReviewScope.ALL, viewModel.uiState.value.reviewScope)
+    assertEquals(1, savedState.get<Int>(BookDetailSavedStateKeys.LoadedPage))
+    assertEquals(listOf(1), requestedPages)
+  }
+
+  @Test
+  fun `같은 회원의 토큰 갱신과 상세 재연결은 내 감상 조건과 페이지를 유지한다`() = runViewModelTest {
+    val requestedPages = mutableListOf<Int>()
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else {
+        val page = request.url.parameters["page"]!!.toInt()
+        requestedPages += page
+        val review = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":$page")
+        respond("""{"totalCount":2,"nextPage":${if (page == 1) "2" else "null"},"items":[$review]}""",
+          headers = jsonHeaders())
+      }
+    })
+    val savedState = SavedStateHandle(mapOf(
+      BookDetailSavedStateKeys.Opened to true,
+      BookDetailSavedStateKeys.LoadedPage to 2,
+      BookDetailSavedStateKeys.ReviewScope to ReviewScope.MINE.name,
+      BookDetailSavedStateKeys.ReviewSort to ReviewSort.PAGE.name,
+    ))
+    val viewModel = viewModel(client, client, platform({ null }), savedStateHandle = savedState)
+    val target = book().copy(isbn13 = "9780000000042")
+    viewModel.open(target, "member-before-renewal")
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    viewModel.syncAuthentication("member-after-renewal")
+    assertEquals(ReviewScope.MINE, viewModel.uiState.value.reviewScope)
+    assertEquals(2, savedState.get<Int>(BookDetailSavedStateKeys.LoadedPage))
+    awaitReal { while (requestedPages.size < 4) kotlinx.coroutines.yield() }
+    viewModel.open(target, "member-after-recreation")
+    assertEquals(ReviewScope.MINE, viewModel.uiState.value.reviewScope)
+    assertEquals(ReviewSort.PAGE, viewModel.uiState.value.reviewSort)
+    assertEquals(2, savedState.get<Int>(BookDetailSavedStateKeys.LoadedPage))
+
+    viewModel.signOut()
+    assertEquals(ReviewScope.ALL, viewModel.uiState.value.reviewScope)
+    assertEquals(1, savedState.get<Int>(BookDetailSavedStateKeys.LoadedPage))
+  }
+
+  @Test
+  fun `복원 조회 실패는 대기를 해제하고 기존 다시 시도로 복구한다`() = runViewModelTest {
+    var fails = true
+    val client = testClient(MockEngine { request ->
+      when {
+        fails -> respond("", HttpStatusCode.InternalServerError)
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    })
+    val state = SavedStateHandle(mapOf(BookDetailSavedStateKeys.Opened to true))
+    val viewModel = viewModel(client, client, platform({ null }), savedStateHandle = state)
+    viewModel.open(book().copy(isbn13 = "9780000000042"), null)
+    awaitReal { viewModel.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.RefreshFailed } }
+    assertFalse(viewModel.uiState.value.isRestoring)
+
+    fails = false
+    viewModel.retryReviews()
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+    assertEquals(ReviewPageLoadState.Idle, viewModel.uiState.value.reviewPageLoadState)
+  }
+
+  @Test
+  fun `상세 복원은 읽던 감상 페이지까지 재조회하고 복원 대기를 해제한다`() = runViewModelTest {
+    val requestedPages = mutableListOf<Int>()
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else {
+        val page = request.url.parameters["page"]!!.toInt()
+        requestedPages += page
+        val review = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":$page")
+        respond("""{"totalCount":2,"nextPage":${if (page == 1) "2" else "null"},"items":[$review]}""",
+          headers = jsonHeaders())
+      }
+    })
+    val savedState = SavedStateHandle(mapOf(
+      BookDetailSavedStateKeys.Opened to true,
+      BookDetailSavedStateKeys.LoadedPage to 2,
+    ))
+    val viewModel = viewModel(client, client, platform({ null }), savedStateHandle = savedState)
+    viewModel.open(book().copy(isbn13 = "9780000000042"), null)
+    assertTrue(viewModel.uiState.value.isRestoring)
+
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    assertEquals(listOf(1, 2), requestedPages)
+    assertEquals(listOf(1L, 2L), viewModel.uiState.value.reviews.map { it.reviewId })
+    assertFalse(viewModel.uiState.value.isRestoring)
+  }
+
+  @Test
+  fun `상세 복원은 필터와 정렬만 유지하고 대기 중 액션은 재생하지 않는다`() = runViewModelTest {
+    val client = testClient(MockEngine { error("네트워크를 호출하면 안 됨") })
+    val savedStateHandle = SavedStateHandle(
+      mapOf(
+        BookDetailSavedStateKeys.ReviewScope to ReviewScope.MINE.name,
+        BookDetailSavedStateKeys.ReviewSort to ReviewSort.PAGE.name,
+      ),
+    )
+    val first = viewModel(client, client, platform(readGuest = { null }), savedStateHandle = savedStateHandle)
+
+    assertEquals(ReviewScope.MINE, first.uiState.value.reviewScope)
+    assertEquals(ReviewSort.PAGE, first.uiState.value.reviewSort)
+    assertFalse(first.requestAuthentication(BookDetailAuthenticatedAction.AddToLibrary))
+
+    val restored = viewModel(client, client, platform(readGuest = { null }), savedStateHandle = savedStateHandle)
+
+    assertEquals(ReviewScope.MINE, restored.uiState.value.reviewScope)
+    assertEquals(ReviewSort.PAGE, restored.uiState.value.reviewSort)
+    assertNull(restored.uiState.value.pendingAction)
+  }
+
   @Test
   fun `빠른 추가 조회 실패는 자동 반복하지 않고 명시적 재시도로 복구한다`() =
     verifyFailedPageRetry(showDelayedLoader = false)
@@ -351,6 +492,158 @@ class BookDetailViewModelTest {
     assertEquals(2, issueCount)
     assertEquals("guest-2", guest?.token)
     assertNull(viewModel.uiState.value.requestError)
+  }
+
+  @Test
+  fun `ISBN 감상 작성은 지연 중인 상세 조회와 nullable bookId를 기다리지 않는다`() = runViewModelTest {
+    val firstDetailStarted = CompletableDeferred<Unit>()
+    val keepFirstDetailPending = CompletableDeferred<Unit>()
+    val reviewWriteStarted = CompletableDeferred<Unit>()
+    val keepReviewWritePending = CompletableDeferred<Unit>()
+    val events = MutableStateFlow<List<AnalyticsEvent>>(emptyList())
+    var detailRequestCount = 0
+    val engine = MockEngine { request ->
+      when {
+        request.method == HttpMethod.Get && request.url.encodedPath.endsWith("/by-isbn/9780000000042") -> {
+          detailRequestCount += 1
+          if (detailRequestCount == 1) {
+            firstDetailStarted.complete(Unit)
+            keepFirstDetailPending.await()
+          }
+          respond(
+            """{"bookId":${if (detailRequestCount == 1) "null" else "42"},"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":""}""",
+            headers = jsonHeaders(),
+          )
+        }
+        request.method == HttpMethod.Post && request.url.encodedPath.endsWith("/by-isbn/9780000000042/reviews") -> {
+          reviewWriteStarted.complete(Unit)
+          keepReviewWritePending.await()
+          respond(
+            """{"bookId":42,"review":$REVIEW_RESPONSE}""",
+            status = HttpStatusCode.Created,
+            headers = jsonHeaders(),
+          )
+        }
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(
+      client,
+      client,
+      platform(readGuest = { guest("old") }),
+      AnalyticsTracker("test") { event -> events.update { it + event } },
+    )
+    viewModel.open(
+      book().copy(id = "9780000000042", isbn13 = "9780000000042", bookId = null),
+      accessToken = null,
+    )
+    awaitReal { firstDetailStarted.await() }
+
+    viewModel.createReview(ReviewCreateRequest("감상"))
+
+    awaitReal { reviewWriteStarted.await() }
+    keepFirstDetailPending.complete(Unit)
+    awaitReal { events.first { logged -> logged.any { it.name == "cc_load_result" } } }
+    assertFalse(
+      "action_id" in events.value.last { it.name == "cc_load_result" }.stringParameters,
+    )
+    keepReviewWritePending.complete(Unit)
+    awaitReal { viewModel.uiState.first { it.detail?.bookId == 42L } }
+    assertNull(viewModel.uiState.value.requestError)
+  }
+
+  @Test
+  fun `ISBN이 없는 감상 작성은 숫자 도서 ID 경로를 유지한다`() = runViewModelTest {
+    var reviewWritePath = ""
+    val reviewWriteStarted = CompletableDeferred<Unit>()
+    val finishReviewWrite = CompletableDeferred<Unit>()
+    val engine = MockEngine { request ->
+      reviewWritePath = request.url.encodedPath
+      reviewWriteStarted.complete(Unit)
+      finishReviewWrite.await()
+      respond(REVIEW_RESPONSE, status = HttpStatusCode.Created, headers = jsonHeaders())
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { guest("old") }))
+    viewModel.open(book().copy(isbn13 = ""), accessToken = null)
+    advanceUntilIdle()
+
+    viewModel.createReview(ReviewCreateRequest("감상"))
+    awaitReal { reviewWriteStarted.await() }
+    advanceTimeBy(API_LOADING_DELAY_MILLIS)
+    runCurrent()
+    assertTrue(viewModel.uiState.value.isSubmitting)
+    finishReviewWrite.complete(Unit)
+    awaitReal { viewModel.uiState.first { !it.isSubmitting } }
+    advanceUntilIdle()
+
+    assertEquals("/api/v1/books/42/reviews", reviewWritePath)
+    assertNull(viewModel.uiState.value.requestError)
+  }
+
+  @Test
+  fun `감상 작성 실패는 요청 경로와 실패 단계와 HTTP 상태를 기록한다`() = runViewModelTest {
+    val events = MutableStateFlow<List<AnalyticsEvent>>(emptyList())
+    val engine = MockEngine { request ->
+      if (request.method == HttpMethod.Post) {
+        respond("", HttpStatusCode.InternalServerError)
+      } else {
+        respond(
+          """{"bookId":null,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":""}""",
+          headers = jsonHeaders(),
+        )
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(
+      client,
+      client,
+      platform(readGuest = { guest("old") }),
+      AnalyticsTracker("test") { event -> events.update { it + event } },
+    )
+    viewModel.open(
+      book().copy(id = "9780000000042", isbn13 = "9780000000042", bookId = null),
+      accessToken = null,
+    )
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    viewModel.createReview(ReviewCreateRequest("감상"))
+    awaitReal { events.first { logged -> logged.any { it.name == "cc_action_result" } } }
+
+    val result = events.value.last { it.name == "cc_action_result" }
+    assertEquals("failure", result.stringParameters["outcome"])
+    assertEquals("by_isbn", result.stringParameters["request_route"])
+    assertEquals("missing", result.stringParameters["book_id_state"])
+    assertEquals("request", result.stringParameters["failure_stage"])
+    assertEquals(500L, result.longParameters["http_status"])
+  }
+
+  @Test
+  fun `감상 작성 대상을 해석하지 못하면 서버 요청 전 실패로 기록한다`() = runViewModelTest {
+    val events = MutableStateFlow<List<AnalyticsEvent>>(emptyList())
+    var requestCount = 0
+    val client = testClient(MockEngine {
+      requestCount += 1
+      respond("", HttpStatusCode.InternalServerError)
+    })
+    val viewModel = viewModel(
+      client,
+      client,
+      platform(readGuest = { guest("old") }),
+      AnalyticsTracker("test") { event -> events.update { it + event } },
+    )
+    viewModel.open(BookDetailArgs(id = "unknown", title = "책"), accessToken = null)
+    advanceUntilIdle()
+
+    viewModel.createReview(ReviewCreateRequest("감상"))
+    awaitReal { events.first { logged -> logged.any { it.name == "cc_action_result" } } }
+
+    val result = events.value.last { it.name == "cc_action_result" }
+    assertEquals(0, requestCount)
+    assertEquals("unresolved", result.stringParameters["request_route"])
+    assertEquals("target_resolution", result.stringParameters["failure_stage"])
+    assertNull(result.longParameters["http_status"])
   }
 
   @Test
@@ -823,12 +1116,14 @@ class BookDetailViewModelTest {
     authClient: HttpClient,
     callbacks: AuthPlatformCallbacks,
     analytics: AnalyticsTracker = AnalyticsTracker.None,
+    savedStateHandle: SavedStateHandle = SavedStateHandle(),
   ) = BookDetailViewModel(
     repository = BookDetailRemoteRepository(writeClient),
     libraryRepository = LibraryRemoteRepository(writeClient),
     authPlatform = callbacks,
     authRepository = MobileAuthRemoteRepository(authClient),
     analytics = analytics,
+    savedStateHandle = savedStateHandle,
   )
 
   private fun platform(

@@ -14,13 +14,14 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
+import com.chaekchaek.app.ui.common.ChaekSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,7 +78,6 @@ import com.chaekchaek.app.ui.feed.FeedViewModel
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchRoute
 import com.chaekchaek.app.ui.search.SearchViewModel
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -111,6 +112,7 @@ internal fun RootScreen(
     onBookClick: (BookDetailArgs) -> Unit,
     onMyPage: () -> Unit,
     rootBackEnabled: Boolean,
+    homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -131,6 +133,10 @@ internal fun RootScreen(
     val rootScope = rememberCoroutineScope()
     var exitConfirmationSnackbarJob by remember { mutableStateOf<Job?>(null) }
     var exitConfirmationDeadlineMillis by rememberSaveable { mutableStateOf<Long?>(null) }
+    val tabStateHolder = rememberSaveableStateHolder()
+    val feedListState = rememberLazyListState()
+    val searchResultsListState = rememberLazyListState()
+    var tabStateToClear by remember { mutableStateOf<RootTab?>(null) }
     val accessToken = tokens?.accessToken
     val clearExitConfirmation: () -> Unit = {
         exitConfirmationDeadlineMillis = null
@@ -168,6 +174,9 @@ internal fun RootScreen(
             ) {
                 RootBackAction.ReturnToHome -> {
                     exitConfirmationDeadlineMillis = null
+                    if (selectedTab == RootTab.Feed || selectedTab == RootTab.Discover) {
+                        tabStateToClear = selectedTab
+                    }
                     selectedTab = RootTab.Home
                 }
                 is RootBackAction.ConfirmExit -> {
@@ -184,6 +193,17 @@ internal fun RootScreen(
     LaunchedEffect(selectedTab) {
         if (selectedTab != RootTab.Home) clearExitConfirmation()
         analytics.screenView(selectedTab.analyticsScreenName)
+    }
+    LaunchedEffect(selectedTab, tabStateToClear) {
+        tabStateToClear?.takeIf { it != selectedTab }?.let {
+            tabStateHolder.removeState(it.name)
+            when (it) {
+                RootTab.Feed -> feedListState.scrollToItem(0)
+                RootTab.Discover -> searchResultsListState.scrollToItem(0)
+                else -> Unit
+            }
+            tabStateToClear = null
+        }
     }
 
     LaunchedEffect(registrationState.completedRegistrationCount) {
@@ -209,17 +229,11 @@ internal fun RootScreen(
     }
     val retryHome: () -> Unit = {
         rootScope.launch {
-            try {
-                val previousAccessToken = authViewModel.tokens.value?.accessToken
-                val refreshedAccessToken = authViewModel.refreshAccessTokenForRetry()
-                if (previousAccessToken == refreshedAccessToken) {
-                    homeViewModel.retry(refreshedAccessToken)
-                }
-            } catch (error: CancellationException) {
-                throw error
-            } catch (_: Exception) {
-                // 일시적인 갱신 실패는 세션을 유지하고 다음 다시 시도에서 재발급한다.
-            }
+            retryHomeWithSessionRecovery(
+                currentAccessToken = { authViewModel.tokens.value?.accessToken },
+                refreshAccessToken = authViewModel::refreshAccessTokenForRetry,
+                retryHome = homeViewModel::retry,
+            )
         }
     }
 
@@ -231,7 +245,8 @@ internal fun RootScreen(
     Box(modifier = modifier.fillMaxSize()) {
         val showBottomBar = !(selectedTab == RootTab.Shelf && archiveEditing)
         val contentModifier = Modifier.fillMaxSize().navigationBarsPadding()
-            .then(if (showBottomBar) Modifier.padding(bottom = 74.dp) else Modifier)
+            .then(if (showBottomBar) Modifier.padding(bottom = RootTabBarHeight) else Modifier)
+        tabStateHolder.SaveableStateProvider(selectedTab.name) {
         when (selectedTab) {
             RootTab.Home -> HomeScreen(
                 homeViewModel = homeViewModel,
@@ -241,11 +256,13 @@ internal fun RootScreen(
                 onSearchBook = { selectedTab = RootTab.Discover },
                 onOpenFeed = { selectedTab = RootTab.Feed },
                 onProfileClick = openProfile,
+                homeHeaderAction = homeHeaderAction,
                 onBookClick = { openBook(it.toBookDetailArgs(), "home") },
                 onRetry = retryHome,
             )
             RootTab.Feed -> FeedScreen(
                 viewModel = feedViewModel,
+                listState = feedListState,
                 modifier = contentModifier,
                 onProfileClick = openProfile,
                 onBookClick = { openBook(it.toBookDetailArgs(), "feed") },
@@ -253,10 +270,14 @@ internal fun RootScreen(
             RootTab.Discover -> SearchRoute(
                 viewModel = searchViewModel,
                 homeViewModel = homeViewModel,
+                searchResultsListState = searchResultsListState,
                 registeredBookIds = archiveState.items.mapTo(mutableSetOf()) { it.id },
                 modifier = contentModifier,
                 onHomeRetry = retryHome,
-                onBack = { selectedTab = RootTab.Home },
+                onBack = {
+                    tabStateToClear = RootTab.Discover
+                    selectedTab = RootTab.Home
+                },
                 onProfileClick = openProfile,
                 onBookClick = { openBook(it.toBookDetailArgs(), "search") },
             )
@@ -289,6 +310,7 @@ internal fun RootScreen(
                 },
             )
         }
+        }
         if (showBottomBar) {
             ChaekBottomBar(
                 selectedTab = selectedTab,
@@ -314,7 +336,7 @@ internal fun RootScreen(
                 CircularProgressIndicator()
             }
         }
-        SnackbarHost(snackbarHost, Modifier.align(Alignment.BottomCenter))
+        ChaekSnackbarHost(snackbarHost, bottomContentHeight = if (showBottomBar) RootTabBarHeight else 0.dp)
     }
     }
 
@@ -411,6 +433,8 @@ internal fun RootScreen(
     }
 }
 
+private val RootTabBarHeight = 74.dp
+
 internal const val EXIT_CONFIRMATION_WINDOW_MILLIS = 2_000L
 internal const val EXIT_CONFIRMATION_MESSAGE = "한 번 더 누르면 종료됩니다"
 
@@ -481,14 +505,14 @@ private fun ChaekBottomBar(
     ) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Row(
-            modifier = Modifier.fillMaxWidth().height(74.dp).padding(horizontal = 12.dp).selectableGroup(),
+            modifier = Modifier.fillMaxWidth().height(RootTabBarHeight).padding(horizontal = 12.dp).selectableGroup(),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top,
         ) {
             RootTab.entries.forEach { tab ->
                 val selected = selectedTab == tab
                 Box(
-                    modifier = Modifier.weight(1f).height(74.dp).selectable(
+                    modifier = Modifier.weight(1f).height(RootTabBarHeight).selectable(
                         selected = selected,
                         onClick = { onTabSelected(tab) },
                         role = Role.Tab,

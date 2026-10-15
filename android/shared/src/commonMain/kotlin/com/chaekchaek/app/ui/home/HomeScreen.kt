@@ -84,7 +84,7 @@ import com.chaekchaek.app.presentation.home.ReadingBookUiModel
 import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import com.chaekchaek.app.ui.common.avatarResource
 import com.chaekchaek.app.ui.common.BrandHeader
-import com.chaekchaek.app.ui.common.HomeLoadErrorContent
+import com.chaekchaek.app.ui.common.HomeLoadErrorPanel
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.*
 import com.chaekchaek.app.ui.theme.ChaekBand
@@ -135,25 +135,55 @@ fun HomeScreen(
     onSearchBook: () -> Unit = {},
     onOpenFeed: () -> Unit = {},
     onProfileClick: () -> Unit = {},
+    homeHeaderAction: @Composable () -> Unit = {},
     onBookClick: (BookDetailTarget) -> Unit = {},
     onRetry: () -> Unit = homeViewModel::retry,
 ) {
     val uiState by homeViewModel.uiState.collectAsState()
 
     when (val state = uiState) {
-        HomeUiState.Loading -> LoadingContent(modifier)
-        HomeUiState.Empty -> EmptyContent(modifier)
-        is HomeUiState.Failure -> HomeLoadErrorContent(state.error, onRetry, modifier)
+        HomeUiState.Loading -> HomeStaticStateContent(
+            onProfileClick = onProfileClick,
+            homeHeaderAction = homeHeaderAction,
+            modifier = modifier,
+            content = { LoadingContent(it) },
+        )
+        HomeUiState.Empty -> HomeStaticStateContent(
+            onProfileClick = onProfileClick,
+            homeHeaderAction = homeHeaderAction,
+            modifier = modifier,
+            content = { EmptyContent(it) },
+        )
+        is HomeUiState.Failure -> HomeStaticStateContent(
+            onProfileClick = onProfileClick,
+            homeHeaderAction = homeHeaderAction,
+            modifier = modifier,
+            content = { HomeLoadErrorPanel(state.error, onRetry, it) },
+        )
         is HomeUiState.Content -> HomeContent(
             state,
             myDisplayName,
             onSearchBook,
             onOpenFeed,
             onProfileClick,
+            homeHeaderAction,
             onBookClick,
             scrollTopRequest,
             modifier,
         )
+    }
+}
+
+@Composable
+private fun HomeStaticStateContent(
+    onProfileClick: () -> Unit,
+    homeHeaderAction: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable (Modifier) -> Unit,
+) {
+    Column(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        BrandHeader(onProfileClick, additionalAction = homeHeaderAction)
+        content(Modifier.fillMaxWidth().weight(1f))
     }
 }
 
@@ -190,6 +220,7 @@ private fun HomeContent(
     onSearchBook: () -> Unit,
     onOpenFeed: () -> Unit,
     onProfileClick: () -> Unit,
+    homeHeaderAction: @Composable () -> Unit,
     onBookClick: (BookDetailTarget) -> Unit,
     scrollTopRequest: Int,
     modifier: Modifier,
@@ -204,7 +235,7 @@ private fun HomeContent(
             state = listState,
             contentPadding = PaddingValues(bottom = 76.dp),
         ) {
-            item { BrandHeader(onProfileClick) }
+            item { BrandHeader(onProfileClick, additionalAction = homeHeaderAction) }
             items(state.sections) { section ->
                 when (section) {
                     is FeedSectionUiModel.TrendingBooks -> TrendingSection(section, onBookClick)

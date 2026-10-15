@@ -15,14 +15,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -35,6 +39,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +51,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -87,6 +99,7 @@ import kotlinx.coroutines.delay
 fun SearchRoute(
   viewModel: SearchViewModel,
   homeViewModel: HomeViewModel,
+  searchResultsListState: LazyListState,
   registeredBookIds: Set<String>,
   modifier: Modifier = Modifier,
   onHomeRetry: () -> Unit = homeViewModel::retry,
@@ -106,12 +119,22 @@ fun SearchRoute(
     recentSearches = recentSearches,
     homeState = homeState,
     registeredBookIds = registeredBookIds,
-    onSearch = viewModel::search,
+    searchResultsListState = searchResultsListState,
+    onSearch = {
+      searchResultsListState.requestScrollToItem(0)
+      viewModel.search(it)
+    },
     onQueryChange = viewModel::updateQuery,
-    onClear = viewModel::clear,
+    onClear = {
+      searchResultsListState.requestScrollToItem(0)
+      viewModel.clear()
+    },
     onRegister = viewModel::register,
     onLoadMore = viewModel::loadMore,
-    onSortSelect = viewModel::selectSort,
+    onSortSelect = {
+      if (it != sort) searchResultsListState.requestScrollToItem(0)
+      viewModel.selectSort(it)
+    },
     onHomeRetry = onHomeRetry,
     modifier = modifier,
     onBack = onBack,
@@ -128,6 +151,7 @@ fun SearchScreen(
   recentSearches: List<String>,
   homeState: HomeUiState = HomeUiState.Content(emptyList()),
   registeredBookIds: Set<String>,
+  searchResultsListState: LazyListState,
   onSearch: (String) -> Unit,
   onQueryChange: (String) -> Unit,
   onClear: () -> Unit,
@@ -140,6 +164,11 @@ fun SearchScreen(
   onProfileClick: () -> Unit = {},
   onBookClick: (BookDetailTarget) -> Unit = {},
 ) {
+  val focusManager = LocalFocusManager.current
+  val submitSearch: (String) -> Unit = {
+    focusManager.clearFocus()
+    onSearch(it)
+  }
   val leaveSearch = {
     onClear()
     onBack()
@@ -159,7 +188,7 @@ fun SearchScreen(
         onQueryChange(it)
         if (it.isEmpty()) onClear()
       },
-      onSearch = { onSearch(query) },
+      onSearch = submitSearch,
     )
     if (recentSearches.isNotEmpty()) {
       RecentSearches(
@@ -168,51 +197,73 @@ fun SearchScreen(
       )
     }
 
-    when (val current = state) {
-      SearchUiState.Idle -> DiscoverLanding(
-        homeState = homeState,
-        onBookClick = onBookClick,
-        onRetry = onHomeRetry,
-        modifier = Modifier.weight(1f),
-      )
-      SearchUiState.Loading -> SearchLoading(Modifier.weight(1f))
-      SearchUiState.Empty ->
-        Column(modifier = Modifier.weight(1f)) {
-          SearchResultHeader(count = 0, sort = sort, onSortSelect = onSortSelect)
-          SearchMessage(
-            title = "검색 결과가 없어요",
-            body = "다른 검색어로 다시 찾아보세요.",
-            modifier = Modifier.weight(1f),
-          )
-        }
-      is SearchUiState.Error ->
-        SearchMessage(
-          title = "검색 결과를 불러오지 못했어요",
-          body = "잠시 후 다시 검색해 주세요.",
-          modifier = Modifier.weight(1f),
-        )
-      is SearchUiState.Success ->
-        SearchResults(
-          results = current.results,
-          totalCount = current.totalCount,
-          nextPage = current.nextPage,
-          sort = sort,
-          registeredBookIds = registeredBookIds,
-          onRegister = onRegister,
-          onLoadMore = onLoadMore,
-          onSortSelect = onSortSelect,
+    Box(
+      modifier = Modifier.weight(1f).fillMaxWidth()
+        .testTag("search-content")
+        .clearFocusOnTouch(focusManager),
+    ) {
+      when (val current = state) {
+        SearchUiState.Idle -> DiscoverLanding(
+          homeState = homeState,
           onBookClick = onBookClick,
-          modifier = Modifier.weight(1f),
+          onRetry = onHomeRetry,
+          modifier = Modifier.fillMaxSize(),
         )
+        SearchUiState.Loading -> SearchLoading(Modifier.fillMaxSize())
+        SearchUiState.Empty ->
+          Column(modifier = Modifier.fillMaxSize()) {
+            SearchResultHeader(count = 0, sort = sort, onSortSelect = onSortSelect)
+            SearchMessage(
+              title = "검색 결과가 없어요",
+              body = "다른 검색어로 다시 찾아보세요.",
+              modifier = Modifier.weight(1f),
+            )
+          }
+        is SearchUiState.Error ->
+          SearchMessage(
+            title = "검색 결과를 불러오지 못했어요",
+            body = "잠시 후 다시 검색해 주세요.",
+            modifier = Modifier.fillMaxSize(),
+          )
+        is SearchUiState.Success ->
+          SearchResults(
+            results = current.results,
+            totalCount = current.totalCount,
+            nextPage = current.nextPage,
+            sort = sort,
+            registeredBookIds = registeredBookIds,
+            onRegister = onRegister,
+            onLoadMore = onLoadMore,
+            onSortSelect = onSortSelect,
+            onBookClick = onBookClick,
+            listState = searchResultsListState,
+            modifier = Modifier.fillMaxSize(),
+          )
+      }
     }
   }
 }
+
+private fun Modifier.clearFocusOnTouch(focusManager: FocusManager): Modifier =
+  pointerInput(focusManager) {
+    awaitEachGesture {
+      awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+      while (true) {
+        val event = awaitPointerEvent(PointerEventPass.Final)
+        if (event.changes.all { it.changedToUpIgnoreConsumed() }) {
+          focusManager.clearFocus()
+          break
+        }
+        if (event.changes.none { it.pressed }) break
+      }
+    }
+  }
 
 @Composable
 private fun SearchTopBar(
   query: String,
   onQueryChange: (String) -> Unit,
-  onSearch: () -> Unit,
+  onSearch: (String) -> Unit,
 ) {
   Row(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 16.dp, end = 24.dp)) {
     SearchField(
@@ -479,24 +530,38 @@ private fun DiscoverReflection(
 private fun SearchField(
   query: String,
   onQueryChange: (String) -> Unit,
-  onSearch: () -> Unit,
+  onSearch: (String) -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val input = rememberLimitedTextFieldState(SearchInputRules.Policy, query)
+  val currentQuery by rememberUpdatedState(query)
+  val notifyQueryChange by rememberUpdatedState(onQueryChange)
+  LaunchedEffect(query) {
+    val accepted = SearchInputRules.limit(query)
+    input.syncExternalQuery(accepted)
+  }
+  LaunchedEffect(input) {
+    snapshotFlow { input.text.toString() }.collect { accepted ->
+      if (accepted != currentQuery) notifyQueryChange(accepted)
+    }
+  }
+  val displayedQuery = input.text.toString()
   val shape = RoundedCornerShape(15.dp)
   BasicTextField(
-    value = query,
-    onValueChange = onQueryChange,
+    state = input,
+    inputTransformation = SearchInputRules.Policy.inputTransformation,
     modifier =
       modifier
+        .testTag("search-query-field")
         .height(54.dp)
         .background(Color(0xFFF3F3F5), shape)
         .padding(start = 15.dp),
     textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp),
-    singleLine = true,
+    lineLimits = TextFieldLineLimits.SingleLine,
     cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-    keyboardActions = KeyboardActions(onSearch = { onSearch() }),
-    decorationBox = { field ->
+    onKeyboardAction = { onSearch(input.text.toString()) },
+    decorator = { field ->
       Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(
           painter = painterResource(Res.drawable.ic_search),
@@ -506,7 +571,7 @@ private fun SearchField(
         )
         Spacer(Modifier.width(10.dp))
         Box(modifier = Modifier.weight(1f)) {
-          if (query.isEmpty()) {
+          if (displayedQuery.isEmpty()) {
             Text(
               "책 제목이나 작가를 검색해요",
               style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
@@ -515,9 +580,9 @@ private fun SearchField(
           }
           field()
         }
-        if (query.isNotEmpty()) {
+        if (displayedQuery.isNotEmpty()) {
           Box(
-            modifier = Modifier.size(44.dp).clickable(role = Role.Button) { onQueryChange("") },
+            modifier = Modifier.size(44.dp).clickable(role = Role.Button) { input.setTextAndPlaceCursorAtEnd("") },
             contentAlignment = Alignment.Center,
           ) {
             Icon(
@@ -542,6 +607,10 @@ private fun SearchField(
   )
 }
 
+internal fun TextFieldState.syncExternalQuery(query: String) {
+  if (text.toString() != query) setTextAndPlaceCursorAtEnd(query)
+}
+
 @Composable
 private fun SearchResults(
   results: List<BookSearchResult>,
@@ -553,9 +622,9 @@ private fun SearchResults(
   onLoadMore: () -> Unit,
   onSortSelect: (BookSearchSort) -> Unit,
   onBookClick: (BookDetailTarget) -> Unit,
+  listState: LazyListState,
   modifier: Modifier = Modifier,
 ) {
-  val listState = rememberLazyListState()
   val focusManager = LocalFocusManager.current
   LaunchedEffect(listState.isScrollInProgress) {
     if (listState.isScrollInProgress) focusManager.clearFocus()

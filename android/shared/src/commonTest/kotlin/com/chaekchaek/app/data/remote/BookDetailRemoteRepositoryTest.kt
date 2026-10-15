@@ -197,6 +197,35 @@ class BookDetailRemoteRepositoryTest {
   }
 
   @Test
+  fun `ISBN 감상 작성은 미등록 도서 등록 결과의 감상을 반환한다`() = runTest {
+    var requestedPath = ""
+    val engine = MockEngine { request ->
+      requestedPath = request.url.encodedPath
+      respond(
+        content = """{"bookId":42,"review":{"reviewId":7,"content":"감상","createdAt":"2026-08-27T00:00:00Z","author":{"displayName":"회원","anonymous":false,"mine":true,"actorType":"MEMBER"},"replyCount":0,"likeCount":0,"deleted":false}}""",
+        status = HttpStatusCode.Created,
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+      )
+    }
+    val repository = BookDetailRemoteRepository(
+      apiConfiguration = ApiConfiguration("https://api.chaekchaek.com"),
+      client = HttpClient(engine) {
+        expectSuccess = true
+        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+      },
+    )
+
+    val review = repository.createReviewByIsbn(
+      isbn13 = "9780000000042",
+      request = ReviewCreateRequest("감상"),
+      credential = WriteCredential.Member("member"),
+    )
+
+    assertEquals("/api/v1/books/by-isbn/9780000000042/reviews", requestedPath)
+    assertEquals(7, review.reviewId)
+  }
+
+  @Test
   fun `상세와 감상 답글 조회에 게스트 토큰을 보낸다`() = runTest {
     val sentGuestTokens = mutableListOf<String?>()
     val engine = MockEngine { request ->

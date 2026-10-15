@@ -18,6 +18,48 @@ import kotlin.test.assertNull
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthViewModelTest {
   @Test
+  fun `재발급 중의 null은 인증 복원 중이며 확정 로그아웃과 구분한다`() = runTest {
+    val restored = CompletableDeferred<MobileAuthTokens>()
+    val session = AuthSession(
+      readRefreshToken = { "stored" },
+      writeRefreshToken = {},
+      clearRefreshToken = {},
+      reissue = { restored.await() },
+      logout = {},
+      scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    runCurrent()
+    assertNull(session.tokens.value)
+    assertEquals(true, session.isRestoring.value)
+
+    restored.complete(tokens("restored"))
+    runCurrent()
+    assertEquals(false, session.isRestoring.value)
+    assertEquals("restored", session.tokens.value?.refreshToken)
+
+    session.signOut()
+    assertEquals(false, session.isRestoring.value)
+    assertNull(session.tokens.value)
+  }
+
+  @Test
+  fun `영구 인증 실패는 복원을 종료하고 비회원 상태를 확정한다`() = runTest {
+    val session = AuthSession(
+      readRefreshToken = { "expired" },
+      writeRefreshToken = {},
+      clearRefreshToken = {},
+      reissue = { throw MobileLoginException("INVALID_REFRESH_TOKEN", 401) },
+      logout = {},
+      scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    runCurrent()
+    assertEquals(false, session.isRestoring.value)
+    assertNull(session.tokens.value)
+  }
+
+  @Test
   fun `Access Token은 만료 30초 전에 재발급한다`() {
     assertEquals(1L, AuthSession.renewalDelayMillis(expiresAtMillis = 100_000L, currentTimeMillis = 69_999L))
     assertEquals(0L, AuthSession.renewalDelayMillis(expiresAtMillis = 100_000L, currentTimeMillis = 70_000L))
@@ -163,6 +205,7 @@ class AuthViewModelTest {
     runCurrent()
     assertEquals("stored", backend.storedRefreshToken)
     assertEquals(0, backend.clearCount)
+    assertEquals(true, session.isRestoring.value)
 
     advanceTimeBy(RETRY_DELAY_MILLIS)
     runCurrent()
@@ -181,6 +224,7 @@ class AuthViewModelTest {
     runCurrent()
     assertEquals("stored", backend.storedRefreshToken)
     assertEquals(0, backend.clearCount)
+    assertEquals(true, session.isRestoring.value)
 
     advanceTimeBy(RETRY_DELAY_MILLIS)
     runCurrent()

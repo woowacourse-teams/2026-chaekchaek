@@ -27,6 +27,8 @@ internal class AuthSession(
 ) {
   private val _tokens = MutableStateFlow<MobileAuthTokens?>(null)
   val tokens: StateFlow<MobileAuthTokens?> = _tokens.asStateFlow()
+  private val _isRestoring = MutableStateFlow(readRefreshToken() != null)
+  val isRestoring: StateFlow<Boolean> = _isRestoring.asStateFlow()
   private val mutex = Mutex()
   private val renewalRequestMutex = Mutex()
   private var accessTokenExpiresAtMillis = 0L
@@ -101,7 +103,11 @@ internal class AuthSession(
   }
 
   private suspend fun renewTokensLocked(): MobileAuthTokens? = mutex.withLock {
-    val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken() ?: return@withLock null
+    val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
+    if (refreshToken == null) {
+      _isRestoring.value = false
+      return@withLock null
+    }
     try {
       reissue(refreshToken).also(::updateTokens)
     } catch (error: MobileLoginException) {
@@ -113,12 +119,14 @@ internal class AuthSession(
 
   private fun updateTokens(tokens: MobileAuthTokens) {
     _tokens.value = tokens
+    _isRestoring.value = false
     accessTokenExpiresAtMillis = currentTimeMillis() + tokens.accessTokenExpiresIn * MILLIS_PER_SECOND
     writeRefreshToken(tokens.refreshToken)
   }
 
   private fun clear() {
     _tokens.value = null
+    _isRestoring.value = false
     accessTokenExpiresAtMillis = 0L
     clearRefreshToken()
   }

@@ -71,6 +71,7 @@ class AuthViewModel private constructor(
     currentTimeMillis = currentTimeMillis,
   )
   val tokens: StateFlow<MobileAuthTokens?> = session.tokens
+  val isRestoringSession: StateFlow<Boolean> = session.isRestoring
   val appleSignInAvailable: Boolean = callbacks.requestAppleCredential != null
 
   private val _uiState = MutableStateFlow(AuthUiState())

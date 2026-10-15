@@ -24,7 +24,7 @@ Google 로그인 설정, 패키지명 및 Play 서명 변경 점검과 오류 �
 
 ## 설계·구현 문서
 
-발견, 내 서재, 피드의 스프린트 상태 보존 작업은 [상태 보존 구현 핸드오프](../docs/android-state-preservation-handoff.md)를 따른다.
+발견, 피드, 도서 상세의 상태 정책과 검증 결과는 [상태 보존 구현 기록](../docs/android-state-preservation-handoff.md)을 참고한다.
 
 작업을 이어받는다면 [구현 인수인계](docs/implementation-handoff.md)부터 읽는다. 현재 진행
 상태와 다음에 할 일이 정리되어 있다.
