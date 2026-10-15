@@ -5,6 +5,8 @@ import com.chaekchaek.app.data.remote.MobileLoginException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -188,7 +190,7 @@ class AuthViewModelTest {
     runCurrent()
     signIn.join()
 
-    assertEquals(1, backend.clearCount)
+    assertEquals(0, backend.clearCount)
     assertEquals("account-b", session.tokens.value?.refreshToken)
     assertEquals("account-b", backend.storedRefreshToken)
   }
@@ -398,6 +400,53 @@ class AuthViewModelTest {
     assertEquals(false, resumed)
     assertEquals("로그인을 취소했어요.", viewModel.uiState.value.errorMessage)
     assertNull(viewModel.tokens.value)
+  }
+
+  @Test
+  fun `재발급 응답을 기다리지 않고 로그아웃하고 늦은 응답은 폐기한다`() = runTest {
+    val response = CompletableDeferred<MobileAuthTokens>()
+    var stored: String? = null
+    var localCleared = false
+    val session = AuthSession(
+      readRefreshToken = { stored }, writeRefreshToken = { stored = it },
+      clearRefreshToken = { stored = null },
+      reissue = { withContext(NonCancellable) { response.await() } },
+      logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    runCurrent()
+    session.signIn(tokens("signed-in"))
+    backgroundScope.launch { session.refreshAccessTokenForRetry() }
+    runCurrent()
+    backgroundScope.launch { session.signOut { localCleared = true } }
+    runCurrent()
+    assertEquals(true, localCleared)
+    assertNull(session.tokens.value)
+    assertNull(stored)
+    response.complete(tokens("late"))
+    runCurrent()
+    assertNull(session.tokens.value)
+    assertNull(stored)
+  }
+
+  @Test
+  fun `한 호출자의 취소는 공유 재발급을 분리하지 않는다`() = runTest {
+    val response = CompletableDeferred<MobileAuthTokens>()
+    val backend = FakeAuthBackend { response.await() }
+    val session = authSession(backend)
+    runCurrent()
+    session.signIn(tokens("signed-in"))
+    val canceled = backgroundScope.launch { session.refreshAccessTokenForRetry() }
+    runCurrent()
+    canceled.cancel()
+    runCurrent()
+    var received: String? = null
+    backgroundScope.launch { received = session.refreshAccessTokenForRetry() }
+    runCurrent()
+    assertEquals(1, backend.reissueRequests.size)
+    response.complete(tokens("renewed"))
+    runCurrent()
+    assertEquals("access-renewed", received)
   }
 
   private fun TestScope.authSession(backend: FakeAuthBackend): AuthSession = AuthSession(

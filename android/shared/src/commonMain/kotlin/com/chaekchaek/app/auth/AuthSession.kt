@@ -33,6 +33,7 @@ internal class AuthSession(
   private val renewalRequestMutex = Mutex()
   private var accessTokenExpiresAtMillis = 0L
   private var renewalJob: Job? = null
+  private var sessionGeneration = 0L
   private var renewalRequest: Deferred<Result<MobileAuthTokens?>>? = null
 
   init {
@@ -47,6 +48,11 @@ internal class AuthSession(
   }
 
   suspend fun signOut(onLocalSessionCleared: () -> Unit = {}) {
+    renewalJob?.cancel()
+    renewalRequestMutex.withLock {
+      renewalRequest?.cancel()
+      renewalRequest = null
+    }
     val refreshToken = mutex.withLock {
       renewalJob?.cancel()
       val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
@@ -85,7 +91,7 @@ internal class AuthSession(
     val request = renewalRequestMutex.withLock {
       renewalRequest ?: scope.async {
         try {
-          Result.success(renewTokensLocked())
+          Result.success(renewCurrentSessionTokens())
         } catch (error: CancellationException) {
           throw error
         } catch (error: Throwable) {
@@ -97,27 +103,38 @@ internal class AuthSession(
       request.await().getOrThrow()
     } finally {
       renewalRequestMutex.withLock {
-        if (renewalRequest === request) renewalRequest = null
+        if (renewalRequest === request && request.isCompleted) renewalRequest = null
       }
     }
   }
 
-  private suspend fun renewTokensLocked(): MobileAuthTokens? = mutex.withLock {
-    val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
-    if (refreshToken == null) {
-      _isRestoring.value = false
-      return@withLock null
+  private suspend fun renewCurrentSessionTokens(): MobileAuthTokens? {
+    val snapshot = mutex.withLock {
+      val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
+      if (refreshToken == null) {
+        _isRestoring.value = false
+        return null
+      }
+      refreshToken to sessionGeneration
     }
-    try {
-      reissue(refreshToken).also(::updateTokens)
+    return try {
+      val renewed = reissue(snapshot.first)
+      mutex.withLock {
+        if (sessionGeneration == snapshot.second) updateTokens(renewed)
+        _tokens.value
+      }
     } catch (error: MobileLoginException) {
-      if (error.statusCode != PERMANENT_AUTH_FAILURE_STATUS) throw error
-      clear()
-      null
+      mutex.withLock {
+        if (sessionGeneration != snapshot.second) return@withLock _tokens.value
+        if (error.statusCode != PERMANENT_AUTH_FAILURE_STATUS) throw error
+        clear()
+        null
+      }
     }
   }
 
   private fun updateTokens(tokens: MobileAuthTokens) {
+    sessionGeneration += 1
     _tokens.value = tokens
     _isRestoring.value = false
     accessTokenExpiresAtMillis = currentTimeMillis() + tokens.accessTokenExpiresIn * MILLIS_PER_SECOND
@@ -125,6 +142,7 @@ internal class AuthSession(
   }
 
   private fun clear() {
+    sessionGeneration += 1
     _tokens.value = null
     _isRestoring.value = false
     accessTokenExpiresAtMillis = 0L
