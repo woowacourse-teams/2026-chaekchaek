@@ -3,12 +3,13 @@ import type { ElementType } from 'react';
 import { View } from '@chaekchaek/design-system';
 import { createClassName } from '@chaekchaek/design-system';
 
+import { ROUTES } from '@/constants/routes';
+
 import styles from './Header.module.css';
 
 import LogoImg from './imgs/logo-img.png';
 
 import type { LogoProps } from './Header.types';
-
 const classnameDefault = 'frame-Header-Logo';
 
 export const Logo = <T extends ElementType>(props: LogoProps<T>) => {
@@ -25,7 +26,7 @@ export const Logo = <T extends ElementType>(props: LogoProps<T>) => {
 
   return (
     <View as={as} className={classname} {...restProps}>
-      <a href="/">
+      <a href={ROUTES.INTRO}>
         <span className={styles.img}>
           <img src={LogoImg} alt="" />
         </span>

@@ -25,6 +25,7 @@ const OauthPage = lazy(
       default: module.OauthPage,
     })),
 );
+
 const LoginPage = lazy(
   async () =>
     await import('@/pages/LoginPage').then((module) => ({
@@ -36,6 +37,20 @@ const DownloadPage = lazy(
   async () =>
     await import('@/pages/DownloadPage').then((module) => ({
       default: module.DownloadPage,
+    })),
+);
+
+const LandingPage = lazy(
+  async () =>
+    await import('@/pages/LandingPage').then((module) => ({
+      default: module.LandingPage,
+    })),
+);
+
+const LandingHomePage = lazy(
+  async () =>
+    await import('@/pages/LandingPage').then((module) => ({
+      default: module.LandingHomePage,
     })),
 );
 
@@ -97,12 +112,16 @@ const routes: Route[] = [
     ),
   },
   {
+    path: ROUTES.LANDING,
+    element: <LandingPage />,
+  },
+  {
     path: ROUTES.OAUTH_CALLBACK,
     element: <OauthPage />,
   },
   {
     path: ROUTES.HOME,
-    element: <Navigate to={ROUTES.INTRO} replace />,
+    element: <LandingHomePage />,
   },
   {
     path: ROUTES.INTRO,
