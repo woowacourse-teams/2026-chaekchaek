@@ -16,7 +16,7 @@ const GuestRoute = ({ children }: Props) => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(ROUTES.HOME, {
+      navigate(ROUTES.INTRO, {
         replace: true,
       });
     }
