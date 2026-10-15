@@ -53,7 +53,7 @@
 | 정식 출시 심사 근거와 실제 사용자 관찰 기록 확인 | [심사와 사용자 관찰](android-production-review-user-observation.md) | 제출, 게시, 사용자 관찰을 각각 확인한다. |
 | 웹 읽기 실험 실행, 집계 해석, 다음 실험 설계 | [웹 시작 안내](../frontend/README.md), [읽기 실험 핸드오프](../handoff.md) | 노출 시간과 실제 독해, 제출 수와 감상의 질을 구분한다. [날짜별 핸드오프](../handoff/handoff_260929_1538.md)는 이력이며 확인 시점에 루트 핸드오프와 내용이 같았다. |
 | 텍스트 작품 협업 후보와 연락 초안 검토 | [작가 연락 후보](author-contact-prospects.md) | 공개 계정, 현재 활동, 본문 사용 권한은 별도 확인한다. 문서에 연락 초안이 있다는 사실은 발송 승인이 아니다. |
-| 레벨4 LMS 안내, 제출 필드와 출시 증빙 확인 | [레벨4 제출 인덱스](level4-submission/README.md) | 인덱스에서 [LMS 목록](level4-submission/lms-page-catalog.md), [스프린트 1 기준](level4-submission/sprint-1-submission.md), [출시 제출 문서](level4-submission/android-play-store-release.md)로 이동한다. 마감과 제출 상태는 LMS에서 확인한다. |
+| 레벨4 LMS 안내, 제출 필드와 Android 요구사항 증빙 확인 | [레벨4 제출 인덱스](level4-submission/README.md) | 인덱스에서 [LMS 목록](level4-submission/lms-page-catalog.md), [스프린트 1 기준](level4-submission/sprint-1-submission.md), [출시 제출 문서](level4-submission/android-play-store-release.md), [개발자 도구와 상태 보존 제출 문서](level4-submission/android-developer-tools-state-preservation.md)로 이동한다. 마감과 제출 상태는 LMS에서 확인한다. |
 
 ## 관리 범위
 
