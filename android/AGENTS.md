@@ -32,6 +32,8 @@
 
 ## 관련 문서
 
+- 발견, 피드, 도서 상세의 상태 보존·복원 정책을 변경할 때는 [상태 보존 구현 기록](../docs/android-state-preservation-handoff.md)을 먼저 읽는다.
+
 - 이 요구 사항의 팀 운영 절차와 설정 설명은 [`../docs/android-build-signing.md`](../docs/android-build-signing.md)에 둔다.
 - `android/README.md`에는 이 문서로 가는 짧은 링크만 유지한다.
 

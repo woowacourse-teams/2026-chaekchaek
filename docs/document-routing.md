@@ -14,7 +14,7 @@
 | API 설계 배경이나 앱 도메인 매핑 확인 | [API 계약 초안](api-contract.md) | 서버 구현 전 초안이다. 실제 연동에는 최신 서버 OpenAPI를 확인하고 로컬 `android/openapi3.yaml`과 대조한다. |
 | 비로그인 감상, 답글, 좋아요, 토큰, 로그인 시 기록 계승 변경 | [게스트 쓰기 권한 계획](../android/docs/plans/guest-write-permissions.md) | 서재, 별점, 독서 상태의 로그인 경계와 미결을 확인한다. 계획 자체는 구현 완료 증거가 아니다. |
 | 첫 진입, 책 선택, 로그인 후 서재 저장, 로그인 버튼 변경 | [첫 책 선택 온보딩](first-library-onboarding.md) | 확정 흐름, 시안, 공급업체 버튼 제약과 검증 범위를 확인한다. |
-| 발견, 서재, 피드의 회전, 탭 왕복, 상세 왕복, 프로세스 복원 변경 | [상태 보존 핸드오프](android-state-preservation-handoff.md) | 저장 수명과 복원 기준을 읽는다. 작성 당시 구현 전 계획이다. |
+| 발견, 피드, 도서 상세의 회전, 탭 왕복, 상세 왕복, 프로세스 복원 변경 | [상태 보존 구현 기록](android-state-preservation-handoff.md) | 상태 목록표, 저장 수명과 원본, 구현 이유, 자동·기기 검증 및 미검증 범위를 읽는다. |
 
 <a id="design"></a>
 ## 디자인과 검증

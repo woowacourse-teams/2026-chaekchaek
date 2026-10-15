@@ -84,6 +84,8 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.jetbrains.navigation3.ui)
             implementation(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.androidx.lifecycle.viewmodel.navigation3)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.kotlin.inject.runtime)
             implementation(libs.ktor.client.core)

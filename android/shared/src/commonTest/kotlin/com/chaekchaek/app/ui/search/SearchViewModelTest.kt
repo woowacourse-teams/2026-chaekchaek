@@ -1,5 +1,8 @@
 package com.chaekchaek.app.ui.search
 
+import androidx.lifecycle.SavedStateHandle
+import com.chaekchaek.app.analytics.AnalyticsEvent
+import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchPage
 import com.chaekchaek.app.domain.book.BookSearchResult
@@ -16,9 +19,107 @@ import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModelTest {
+    @Test
+    fun restorationReloadsThroughThePreviouslyLoadedPageAndDeduplicatesResults() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val requests = mutableListOf<Int>()
+            val savedState = SavedStateHandle(mapOf(
+                SearchSavedStateKeys.SubmittedQuery to "책",
+                SearchSavedStateKeys.LoadedPage to 3,
+            ))
+            val viewModel = SearchViewModel(
+                bookSearchRepository = BookSearchRepository { _, _, page ->
+                    requests += page
+                    BookSearchPage(3, (page + 1).takeIf { page < 3 },
+                        listOf(book("책 1", "2026").copy(isbn13 = "isbn1"),
+                            book("책 $page", "2026").copy(isbn13 = "isbn$page")))
+                },
+                registerBook = {},
+                isSignedIn = { false },
+                savedStateHandle = savedState,
+            )
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2, 3), requests)
+            assertEquals(3, (viewModel.uiState.value as SearchUiState.Success).results.size)
+            viewModel.search("새 검색")
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2, 3, 1), requests)
+            assertEquals(1, savedState.get<Int>(SearchSavedStateKeys.LoadedPage))
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun restoredInputAndSubmittedQueryStaySeparateWithoutRecordingAnotherSubmission() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val requestedQueries = mutableListOf<Pair<String, BookSearchSort>>()
+            val recentSearchWrites = mutableListOf<List<String>>()
+            val analyticsEvents = mutableListOf<AnalyticsEvent>()
+            val savedStateHandle = SavedStateHandle(
+                mapOf(
+                    SearchSavedStateKeys.InputQuery to "아직 검색하지 않은 입력",
+                    SearchSavedStateKeys.SubmittedQuery to "마지막 검색",
+                    SearchSavedStateKeys.Sort to BookSearchSort.COMMENT.name,
+                ),
+            )
+
+            val viewModel = SearchViewModel(
+                bookSearchRepository = BookSearchRepository { query, sort, _ ->
+                    requestedQueries += query to sort
+                    BookSearchPage(1, null, listOf(book("복원 결과", "2026")))
+                },
+                registerBook = {},
+                isSignedIn = { true },
+                recentSearchStorage = RecentSearchStorage(write = recentSearchWrites::add),
+                analytics = AnalyticsTracker("test", analyticsEvents::add),
+                savedStateHandle = savedStateHandle,
+            )
+            advanceUntilIdle()
+
+            assertEquals("아직 검색하지 않은 입력", viewModel.query.value)
+            assertEquals(BookSearchSort.COMMENT, viewModel.sort.value)
+            assertEquals(listOf("마지막 검색" to BookSearchSort.COMMENT), requestedQueries)
+            assertEquals("복원 결과", (viewModel.uiState.value as SearchUiState.Success).results.single().title)
+            assertTrue(recentSearchWrites.isEmpty())
+            assertTrue(analyticsEvents.isEmpty())
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun clearRemovesSubmittedQueryFromSavedState() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val savedStateHandle = SavedStateHandle()
+            var requestCount = 0
+            val repository = BookSearchRepository { _, _, _ ->
+                requestCount += 1
+                BookSearchPage(0, null, emptyList())
+            }
+            val viewModel = SearchViewModel(repository, {}, { true }, savedStateHandle = savedStateHandle)
+            viewModel.search("지울 검색")
+            advanceUntilIdle()
+
+            viewModel.clear()
+            SearchViewModel(repository, {}, { true }, savedStateHandle = savedStateHandle)
+            advanceUntilIdle()
+
+            assertEquals(1, requestCount)
+            assertEquals("", savedStateHandle[SearchSavedStateKeys.InputQuery])
+            assertEquals("", savedStateHandle[SearchSavedStateKeys.SubmittedQuery])
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
     @Test
     fun queryAndResultsClearTogether() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))

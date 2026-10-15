@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,9 +33,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,14 +70,15 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun FeedScreen(
     viewModel: FeedViewModel,
+    listState: LazyListState,
     onBookClick: (BookDetailTarget) -> Unit,
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var replyTarget by remember { mutableStateOf<QuoteCardUiModel?>(null) }
-    val revealedSpoilerReviewIds = remember { mutableStateListOf<Long>() }
+    var replyTargetNoteId by rememberSaveable { mutableStateOf<String?>(null) }
+    var revealedSpoilerReviewIds by rememberSaveable { mutableStateOf(emptyList<Long>()) }
     val requestError = (state as? FeedUiState.Content)?.requestError
     LaunchedEffect(requestError) {
         requestError?.let { error ->
@@ -111,6 +113,7 @@ fun FeedScreen(
                     } else {
                         LazyColumn(
                             modifier = Modifier.weight(1f).fillMaxWidth(),
+                            state = listState,
                             contentPadding = PaddingValues(
                                 start = 24.dp,
                                 top = 18.dp,
@@ -124,11 +127,13 @@ fun FeedScreen(
                                     reflection = reflection,
                                     spoilerRevealed = reflection.reviewId in revealedSpoilerReviewIds,
                                     onRevealSpoiler = {
-                                        reflection.reviewId?.let(revealedSpoilerReviewIds::add)
+                                        reflection.reviewId?.let { reviewId ->
+                                            revealedSpoilerReviewIds = (revealedSpoilerReviewIds + reviewId).distinct()
+                                        }
                                     },
                                     onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
                                     onLike = { viewModel.toggleReviewLike(reflection.reviewId, reflection.likedByMe) },
-                                    onReply = { replyTarget = reflection },
+                                    onReply = { replyTargetNoteId = reflection.noteId.value },
                                     modifier = Modifier.analyticsImpression(
                                         contentType = "review",
                                         contentId = reflection.noteId.value,
@@ -151,11 +156,13 @@ fun FeedScreen(
         }
         SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
     }
+    val replyTarget = (state as? FeedUiState.Content)?.reviews
+        ?.firstOrNull { it.noteId.value == replyTargetNoteId }
     replyTarget?.let { reflection ->
         ReplyInputSheet(
-            onDismiss = { replyTarget = null },
+            onDismiss = { replyTargetNoteId = null },
             onSave = { content ->
-                viewModel.createReply(reflection.reviewId, content) { replyTarget = null }
+                viewModel.createReply(reflection.reviewId, content) { replyTargetNoteId = null }
             },
         )
     }
