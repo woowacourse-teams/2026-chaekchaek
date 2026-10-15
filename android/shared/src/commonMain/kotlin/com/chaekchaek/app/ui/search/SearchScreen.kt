@@ -189,7 +189,7 @@ fun SearchScreen(
     if (recentSearches.isNotEmpty()) {
       RecentSearches(
         searches = recentSearches,
-        onSearch = submitSearch,
+        onSearch = onSearch,
       )
     }
 

@@ -37,7 +37,7 @@ class SearchInteractionTest {
     @get:Rule val compose = createComposeRule()
 
     @Test
-    fun recentSearchClearsFocusAndPlacesCursorAtTheEnd() {
+    fun recentSearchKeepsFocusAndPlacesCursorAtTheEnd() {
         val recentQuery = "훨씬 긴 최근 검색어"
         compose.setContent {
             var query by remember { mutableStateOf("책") }
@@ -66,7 +66,7 @@ class SearchInteractionTest {
         compose.onNodeWithText(recentQuery).performClick()
 
         field.assertTextEquals(recentQuery)
-            .assertIsNotFocused()
+            .assertIsFocused()
             .assert(
                 SemanticsMatcher.expectValue(
                     SemanticsProperties.TextSelectionRange,
