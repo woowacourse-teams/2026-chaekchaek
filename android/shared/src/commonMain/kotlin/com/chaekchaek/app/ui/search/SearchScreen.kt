@@ -24,7 +24,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -37,6 +39,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,10 +59,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -184,7 +187,7 @@ fun SearchScreen(
         onQueryChange(it)
         if (it.isEmpty()) onClear()
       },
-      onSearch = { submitSearch(query) },
+      onSearch = submitSearch,
     )
     if (recentSearches.isNotEmpty()) {
       RecentSearches(
@@ -259,7 +262,7 @@ private fun Modifier.clearFocusOnTouch(focusManager: FocusManager): Modifier =
 private fun SearchTopBar(
   query: String,
   onQueryChange: (String) -> Unit,
-  onSearch: () -> Unit,
+  onSearch: (String) -> Unit,
 ) {
   Row(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 16.dp, end = 24.dp)) {
     SearchField(
@@ -526,22 +529,26 @@ private fun DiscoverReflection(
 private fun SearchField(
   query: String,
   onQueryChange: (String) -> Unit,
-  onSearch: () -> Unit,
+  onSearch: (String) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val shape = RoundedCornerShape(15.dp)
-  var fieldValue by remember {
-    mutableStateOf(TextFieldValue(text = query, selection = TextRange(query.length)))
-  }
+  val input = rememberLimitedTextFieldState(SearchInputRules.Policy, query)
+  val currentQuery by rememberUpdatedState(query)
+  val notifyQueryChange by rememberUpdatedState(onQueryChange)
   LaunchedEffect(query) {
-    fieldValue = fieldValue.syncExternalQuery(query)
+    val accepted = SearchInputRules.limit(query)
+    input.syncExternalQuery(accepted)
   }
+  LaunchedEffect(input) {
+    snapshotFlow { input.text.toString() }.collect { accepted ->
+      if (accepted != currentQuery) notifyQueryChange(accepted)
+    }
+  }
+  val displayedQuery = input.text.toString()
+  val shape = RoundedCornerShape(15.dp)
   BasicTextField(
-    value = fieldValue,
-    onValueChange = {
-      fieldValue = it
-      onQueryChange(it.text)
-    },
+    state = input,
+    inputTransformation = SearchInputRules.Policy.inputTransformation,
     modifier =
       modifier
         .testTag("search-query-field")
@@ -549,11 +556,11 @@ private fun SearchField(
         .background(Color(0xFFF3F3F5), shape)
         .padding(start = 15.dp),
     textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp),
-    singleLine = true,
+    lineLimits = TextFieldLineLimits.SingleLine,
     cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-    keyboardActions = KeyboardActions(onSearch = { onSearch() }),
-    decorationBox = { field ->
+    onKeyboardAction = { onSearch(input.text.toString()) },
+    decorator = { field ->
       Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(
           painter = painterResource(Res.drawable.ic_search),
@@ -563,7 +570,7 @@ private fun SearchField(
         )
         Spacer(Modifier.width(10.dp))
         Box(modifier = Modifier.weight(1f)) {
-          if (fieldValue.text.isEmpty()) {
+          if (displayedQuery.isEmpty()) {
             Text(
               "책 제목이나 작가를 검색해요",
               style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
@@ -572,9 +579,9 @@ private fun SearchField(
           }
           field()
         }
-        if (fieldValue.text.isNotEmpty()) {
+        if (displayedQuery.isNotEmpty()) {
           Box(
-            modifier = Modifier.size(44.dp).clickable(role = Role.Button) { onQueryChange("") },
+            modifier = Modifier.size(44.dp).clickable(role = Role.Button) { input.setTextAndPlaceCursorAtEnd("") },
             contentAlignment = Alignment.Center,
           ) {
             Icon(
@@ -599,8 +606,9 @@ private fun SearchField(
   )
 }
 
-internal fun TextFieldValue.syncExternalQuery(query: String): TextFieldValue =
-  if (text == query) this else TextFieldValue(text = query, selection = TextRange(query.length))
+internal fun TextFieldState.syncExternalQuery(query: String) {
+  if (text.toString() != query) setTextAndPlaceCursorAtEnd(query)
+}
 
 @Composable
 private fun SearchResults(

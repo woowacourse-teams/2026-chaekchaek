@@ -34,7 +34,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHost
+import com.chaekchaek.app.ui.common.ChaekSnackbarHost
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -178,6 +179,7 @@ fun BookDetailScreen(
     val reachedBottom by remember(listState) { derivedStateOf { !listState.canScrollForward } }
     val currentPage = state.detail?.myRecord?.currentPage ?: localCurrentPage
     val snackbarHostState = remember { SnackbarHostState() }
+    var composeBarHeight by remember { mutableStateOf(0.dp) }
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
     var showPageDialog by rememberSaveable { mutableStateOf(false) }
     var showReviewSheet by rememberSaveable { mutableStateOf(false) }
@@ -318,7 +320,9 @@ fun BookDetailScreen(
                     onReviewOpen { showReviewSheet = true }
                 }
             },
-            modifier = Modifier.align(Alignment.BottomCenter).padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 16.dp),
+            modifier = Modifier.align(Alignment.BottomCenter)
+                .onSizeChanged { composeBarHeight = with(density) { it.height.toDp() } }
+                .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 16.dp),
         )
 
         if (showScrollTop) {
@@ -328,7 +332,7 @@ fun BookDetailScreen(
             )
         }
         if (state.isSubmitting || state.isRestoring && state.isLoading) RequestLoadingOverlay(Modifier.fillMaxSize())
-        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+        ChaekSnackbarHost(snackbarHostState, bottomContentHeight = composeBarHeight)
     }
 
     if (showRatingDialog) {

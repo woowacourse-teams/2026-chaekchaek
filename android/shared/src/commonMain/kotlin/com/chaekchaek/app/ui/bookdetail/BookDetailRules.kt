@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.bookdetail
 
+import com.chaekchaek.app.ui.input.TextInputPolicy
 import com.chaekchaek.app.domain.rating.Rating
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.ReplyPage
@@ -31,6 +32,11 @@ internal object BookDetailInputRules {
     const val MAX_QUOTE_LENGTH = 500
     const val MAX_CHAPTER_LENGTH = 255
 
+    val ContentPolicy = TextInputPolicy(MAX_CONTENT_LENGTH, utf16 = true)
+    val QuotePolicy = TextInputPolicy(MAX_QUOTE_LENGTH, utf16 = true)
+    val ChapterPolicy = TextInputPolicy(MAX_CHAPTER_LENGTH, utf16 = true)
+    val PagePolicy = TextInputPolicy(7, digitsOnly = true)
+
     fun validPage(value: String, totalPages: Int): Int? =
         value.toIntOrNull()?.takeIf { it >= 0 && (totalPages <= 0 || it <= totalPages) }
 
@@ -54,6 +60,7 @@ internal object BookDetailInputRules {
 
 internal object ReplyInputRules {
     const val MAX_LENGTH = 200
+    val Policy = TextInputPolicy(MAX_LENGTH, utf16 = true)
 
     fun canSubmit(value: String): Boolean = value.isNotBlank() && value.length <= MAX_LENGTH
 }

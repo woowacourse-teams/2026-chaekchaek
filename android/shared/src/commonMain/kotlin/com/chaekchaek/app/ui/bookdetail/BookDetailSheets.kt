@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import com.chaekchaek.app.ui.input.TextInputPolicy
+import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -73,7 +77,8 @@ internal fun PageInputDialog(
     onDismiss: () -> Unit,
     onSave: (Int) -> Unit,
 ) {
-    var value by rememberSaveable { mutableStateOf(initialPage.toString()) }
+    val pageState = rememberLimitedTextFieldState(BookDetailInputRules.PagePolicy, initialPage.toString())
+    val value = pageState.text.toString()
     val page = BookDetailInputRules.validPage(value, totalPages)
     ChaekTwoActionDialog(
         onDismissRequest = onDismiss,
@@ -89,8 +94,8 @@ internal fun PageInputDialog(
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     FormLabel("내가 읽은 쪽수")
                     ChaekTextInput(
-                        value = value,
-                        onValueChange = { value = it.filter(Char::isDigit).take(7) },
+                        state = pageState,
+                        policy = BookDetailInputRules.PagePolicy,
                         placeholder = "0",
                         accessibilityLabel = "내가 읽은 쪽수",
                         modifier = Modifier.fillMaxWidth(),
@@ -137,10 +142,14 @@ internal fun ReviewInputSheet(
     val initialSpoiler = initialReview?.isSpoiler == true
     val displayedAnonymously = initialReview?.anonymous ?: anonymous
     val displayedNickname = initialReview?.authorName ?: nickname
-    var content by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialContent) }
-    var quote by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialQuote) }
-    var chapter by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialChapter) }
-    var pageValue by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialPageValue) }
+    val contentState = rememberLimitedTextFieldState(BookDetailInputRules.ContentPolicy, initialContent, initialReview?.reviewId)
+    val content = contentState.text.toString()
+    val quoteState = rememberLimitedTextFieldState(BookDetailInputRules.QuotePolicy, initialQuote, initialReview?.reviewId)
+    val quote = quoteState.text.toString()
+    val chapterState = rememberLimitedTextFieldState(BookDetailInputRules.ChapterPolicy, initialChapter, initialReview?.reviewId)
+    val chapter = chapterState.text.toString()
+    val pageValueState = rememberLimitedTextFieldState(BookDetailInputRules.PagePolicy, initialPageValue, initialReview?.reviewId)
+    val pageValue = pageValueState.text.toString()
     var isSpoiler by rememberSaveable(initialReview?.reviewId) { mutableStateOf(initialSpoiler) }
     var showDiscardConfirmation by rememberSaveable { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -177,8 +186,8 @@ internal fun ReviewInputSheet(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 FormLabel("감상", required = true)
                 ChaekTextInput(
-                    value = content,
-                    onValueChange = { content = it.take(BookDetailInputRules.MAX_CONTENT_LENGTH) },
+                    state = contentState,
+                    policy = BookDetailInputRules.ContentPolicy,
                     placeholder = "이 구간을 읽으며 든 생각을 남겨보세요",
                     accessibilityLabel = "감상 (필수)",
                     modifier = Modifier.fillMaxWidth(),
@@ -221,8 +230,8 @@ internal fun ReviewInputSheet(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 FormLabel("인상 깊은 문구 (선택)")
                 ChaekTextInput(
-                    value = quote,
-                    onValueChange = { quote = it.take(BookDetailInputRules.MAX_QUOTE_LENGTH) },
+                    state = quoteState,
+                    policy = BookDetailInputRules.QuotePolicy,
                     placeholder = "기억하고 싶은 문장을 옮겨 적어보세요",
                     accessibilityLabel = "인상 깊은 문구",
                     modifier = Modifier.fillMaxWidth(),
@@ -234,8 +243,8 @@ internal fun ReviewInputSheet(
                     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         FormLabel("쪽수")
                         ChaekTextInput(
-                            value = pageValue,
-                            onValueChange = { pageValue = it.filter(Char::isDigit).take(7) },
+                            state = pageValueState,
+                            policy = BookDetailInputRules.PagePolicy,
                             placeholder = "80",
                             accessibilityLabel = "쪽수",
                             modifier = Modifier.fillMaxWidth(),
@@ -252,8 +261,8 @@ internal fun ReviewInputSheet(
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     FormLabel("목차 / 챕터 (선택)")
                     ChaekTextInput(
-                        value = chapter,
-                        onValueChange = { chapter = it.take(BookDetailInputRules.MAX_CHAPTER_LENGTH) },
+                        state = chapterState,
+                        policy = BookDetailInputRules.ChapterPolicy,
                         placeholder = "Chapter 1",
                         accessibilityLabel = "목차 또는 챕터",
                         modifier = Modifier.fillMaxWidth(),
@@ -327,7 +336,8 @@ internal fun ReplyInputSheet(
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
 ) {
-    var content by rememberSaveable(initialContent) { mutableStateOf(initialContent) }
+    val contentState = rememberLimitedTextFieldState(ReplyInputRules.Policy, initialContent, initialContent)
+    val content = contentState.text.toString()
     val canSubmit = ReplyInputRules.canSubmit(content)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -341,7 +351,7 @@ internal fun ReplyInputSheet(
         ) {
             SheetHeader(if (initialContent.isEmpty()) "답글 작성" else "답글 수정", onDismiss)
             FormLabel("답글")
-            ChaekTextInput(content, { content = it.take(ReplyInputRules.MAX_LENGTH) }, "답글을 입력하세요", "답글",
+            ChaekTextInput(contentState, ReplyInputRules.Policy, "답글을 입력하세요", "답글",
                 Modifier.fillMaxWidth(), 120)
             Text("${content.length} / ${ReplyInputRules.MAX_LENGTH}", Modifier.fillMaxWidth(), color = ChaekInkSecondary,
                 textAlign = TextAlign.End, style = MaterialTheme.typography.labelMedium)
@@ -410,8 +420,8 @@ private fun FormLabel(label: String, required: Boolean = false) {
 
 @Composable
 private fun ChaekTextInput(
-    value: String,
-    onValueChange: (String) -> Unit,
+    state: TextFieldState,
+    policy: TextInputPolicy,
     placeholder: String,
     accessibilityLabel: String,
     modifier: Modifier,
@@ -423,17 +433,18 @@ private fun ChaekTextInput(
     emphasized: Boolean = false,
 ) {
     val shape = ChaekOverlayTokens.inputShape
+    val value = state.text.toString()
     BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
+        state = state,
+        inputTransformation = policy.inputTransformation,
         modifier = modifier.height(height.dp).background(ChaekSurfaceMuted, shape)
             .then(if (emphasized) Modifier.border(1.dp, ChaekInk, shape) else Modifier)
             .semantics { contentDescription = accessibilityLabel }
             .padding(horizontal = 12.dp, vertical = if (singleLine || suffix != null || endText != null) 0.dp else 10.dp),
         textStyle = MaterialTheme.typography.bodyMedium.copy(color = ChaekInk),
         keyboardOptions = keyboardOptions,
-        singleLine = singleLine || suffix != null || endText != null,
-        decorationBox = { innerTextField ->
+        lineLimits = if (singleLine || suffix != null || endText != null) TextFieldLineLimits.SingleLine else TextFieldLineLimits.MultiLine(),
+        decorator = { innerTextField ->
             if (singleLine || suffix != null || endText != null) {
                 Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.weight(1f)) {
