@@ -9,7 +9,7 @@ import com.chaekchaek.app.analytics.analyticsQueryLengthBucket
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
-import com.chaekchaek.app.ui.input.TextInputLimit
+import com.chaekchaek.app.ui.input.TextInputPolicy
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -70,6 +70,8 @@ class SearchViewModel(
     private var isSignedIn = isSignedIn
 
     init {
+        savedStateHandle[SearchSavedStateKeys.InputQuery] = _query.value
+        savedStateHandle[SearchSavedStateKeys.SubmittedQuery] = currentQuery
         if (currentQuery.isNotEmpty()) search(currentQuery, trigger = "restore", trackAnalytics = false)
     }
 
@@ -257,8 +259,10 @@ internal object SearchSavedStateKeys {
 internal object SearchInputRules {
     const val MAX_QUERY_LENGTH = 100
 
-    fun limit(value: String): String = TextInputLimit.takeCodePoints(value, MAX_QUERY_LENGTH)
+    val Policy = TextInputPolicy(MAX_QUERY_LENGTH)
+
+    fun limit(value: String): String = Policy.limit(value)
 
     fun applyChange(current: String, proposed: String): String =
-        TextInputLimit.applyChange(current, proposed, MAX_QUERY_LENGTH)
+        Policy.applyChange(current, proposed)
 }

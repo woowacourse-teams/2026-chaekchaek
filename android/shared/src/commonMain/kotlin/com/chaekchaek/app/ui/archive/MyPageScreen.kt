@@ -14,7 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.input.rememberTextFieldState
+import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.Button
@@ -61,12 +62,12 @@ internal fun MyPageScreen(
     onWithdraw: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showNicknameDialog by remember { mutableStateOf(false) }
+    var showNicknameDialog by rememberSaveable { mutableStateOf(false) }
     var showWithdrawalDialog by remember { mutableStateOf(false) }
-    val nicknameState = rememberTextFieldState()
+    val nicknameState = rememberLimitedTextFieldState(NicknameInputPolicy, state.nickname)
 
     LaunchedEffect(state.nickname) {
-        nicknameState.setTextAndPlaceCursorAtEnd(state.nickname)
+        if (!showNicknameDialog) nicknameState.setTextAndPlaceCursorAtEnd(NicknameInputPolicy.limit(state.nickname))
     }
 
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
