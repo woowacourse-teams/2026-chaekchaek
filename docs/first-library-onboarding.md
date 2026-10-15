@@ -156,8 +156,10 @@ Apple과 Google 버튼은 앱 공통 버튼으로 다시 그리지 않고 각 �
 
 - 공통 ViewModel 단위 테스트에서 선택 조건, 로그인 실패 후 선택 유지, 저장 실패 재시도, 부분 성공 도서 중복 저장 방지, 저장 중 건너뛰기 취소를 확인했다.
 - Android 전체 host test와 debug APK 빌드가 통과했다.
-- iPhone 17 Pro Simulator의 기본 글자 크기와 AX5에서 UI 테스트 각 4개가 통과했다. 온보딩 첫 화면의 접근성 감사, 건너뛰기, 앱 재실행 후 미노출을 확인했다.
+- iPhone 17 Pro Simulator의 기본 글자 크기와 AX5에서 UI 테스트 각 6개가 통과했다. 온보딩 첫 화면과 검색 화면의 접근성 감사, 이전 화면 복귀, 기존 설치 미노출, 건너뛰기와 앱 재실행 후 미노출을 확인했다.
 - iOS 기본 글자 크기 캡처에서 안전 영역, 하단 버튼, 텍스트 잘림과 겹침이 없는 것을 확인했다.
+- 검색 입력의 대량 붙여넣기와 중간 삽입 커서를 검증하는 Android UI 테스트를 추가했다. 실행 제한으로 실제 IME 조합과 붙여넣기는 확인하지 못했다.
+- 공통 기반 MemberSettingsViewModelTest에서 Main dispatcher 정리 시 간헐 실패를 관찰했으며 재실행에서는 통과했다.
 - Android 에뮬레이터는 세션 임대 후 실행 단계에서 임대 확인 훅이 현재 세션을 인식하지 못해 실제 기기 화면 검증을 수행하지 못했다.
 - 실제 Google 또는 Apple 계정 인증과 운영 서버 서재 저장은 자동 테스트에서 실행하지 않았다. 인증 이후 저장 전환과 실패 복구는 공통 상태 로직 테스트로 검증했다.
 
@@ -167,7 +169,7 @@ Figma 시안 검증은 팀 라이브러리 게시의 증거가 아니다.
 ### 독립 리뷰 후 보완 (2026-10-15)
 
 - 시스템 뒤로가기와 상단 버튼을 같은 단계 전이로 연결하고 이전 진입의 콜백은 폐기한다.
-- 현재 온보딩 표시는 저장 가능한 상태로, 검색·선택·저장 진행은 ViewModelStore 소유로 보존한다. 최종 소유자 해제와 건너뛰기는 진행 작업을 취소한다.
-- 검색어 제한은 공통 Unicode 및 편집 구간 보존 규칙을 재사용한다. 검색·저장 인디케이터는 500ms 이후에만 표시한다.
+- 현재 온보딩 표시와 검색·선택·저장 진행은 ViewModelStore 소유로 보존한다. 새 프로세스는 로컬 노출 이력을 다시 읽어 이미 본 온보딩을 복원하지 않는다. 최종 소유자 해제와 건너뛰기는 진행 작업을 취소한다.
+- 검색어 제한은 공통 TextFieldState와 InputTransformation의 Unicode 및 편집 구간 보존 규칙을 재사용한다. 검색·저장 인디케이터는 500ms 이후에만 표시한다.
 - 책 선택 행은 Checkbox 역할과 체크 상태를 노출한다. 저장 재시도는 현재 세션 토큰을 전달하며, 건너뛰기 뒤 인증 응답은 세대 검사로 폐기한다.
 - 설치 판별 근거: [Android PackageInfo](https://developer.android.com/reference/android/content/pm/PackageInfo), [Apple originalAppVersion](https://developer.apple.com/documentation/storekit/apptransaction/originalappversion). iOS App Store production 다운로드 판별은 Simulator UI 테스트로 검증할 수 없다.

@@ -26,15 +26,23 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
+import com.chaekchaek.app.ui.search.SearchInputRules
+import com.chaekchaek.app.ui.search.syncExternalQuery
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -159,12 +167,28 @@ private fun IntroContent() {
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun SearchContent(
     state: FirstLibraryOnboardingState,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onToggleBook: (BookSearchResult) -> Unit,
 ) {
+    val input = rememberLimitedTextFieldState(SearchInputRules.Policy, state.query)
+    val currentQuery by rememberUpdatedState(state.query)
+    val notifyQueryChange by rememberUpdatedState(onQueryChange)
+    LaunchedEffect(state.query) {
+        input.syncExternalQuery(SearchInputRules.limit(state.query))
+    }
+    LaunchedEffect(input) {
+        snapshotFlow { input.text.toString() }.collect { accepted ->
+            if (accepted != currentQuery) notifyQueryChange(accepted)
+        }
+    }
+    val submitSearch = {
+        onQueryChange(input.text.toString())
+        onSearch()
+    }
     Column(Modifier.fillMaxSize()) {
         Text(
             if (state.results.isEmpty()) "어떤 책을 읽고 있나요?" else "첫 책을 선택해 주세요",
@@ -173,16 +197,16 @@ private fun SearchContent(
         )
         Text("책 제목이나 작가로 찾아보세요.", Modifier.padding(top = 6.dp), color = ChaekInkSecondary)
         OutlinedTextField(
-            value = state.query,
-            onValueChange = onQueryChange,
+            state = input,
+            inputTransformation = SearchInputRules.Policy.inputTransformation,
             modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
             placeholder = { Text("책 제목이나 작가를 검색해요") },
-            singleLine = true,
+            lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+            onKeyboardAction = { submitSearch() },
             shape = RoundedCornerShape(14.dp),
             trailingIcon = {
-                Text("검색", Modifier.clickable(onClick = onSearch).padding(10.dp), color = ChaekInk)
+                Text("검색", Modifier.clickable(onClick = submitSearch).padding(10.dp), color = ChaekInk)
             },
         )
         when {

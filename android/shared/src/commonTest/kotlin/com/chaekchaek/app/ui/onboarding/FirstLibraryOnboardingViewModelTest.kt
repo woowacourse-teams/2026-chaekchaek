@@ -281,6 +281,24 @@ class FirstLibraryOnboardingViewModelTest {
         }
     }
 
+    @Test
+    fun activeSessionSurvivesTheShownMarkerButANewSessionDoesNot() {
+        var shown = false
+        val storage = OnboardingStorage(hasBeenShown = { shown }, markShown = { shown = true })
+        val active = FirstLibraryOnboardingViewModel(initiallyVisible = shouldShowFirstLibraryOnboarding(storage))
+        storage.markShown()
+        active.startSearch()
+        active.toggle(book("1", "첫 책"))
+        assertTrue(active.state.value.visible)
+        assertEquals(OnboardingStep.SEARCH, active.state.value.step)
+        assertEquals(1, active.state.value.selectedBooks.size)
+
+        val restarted = FirstLibraryOnboardingViewModel(initiallyVisible = shouldShowFirstLibraryOnboarding(storage))
+        assertFalse(restarted.state.value.visible)
+        active.finish()
+        assertFalse(active.state.value.visible)
+    }
+
     private fun book(isbn: String, title: String) = BookSearchResult(
         title = title,
         creator = "작가",

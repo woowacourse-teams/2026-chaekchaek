@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 enum class OnboardingStep { INTRO, SEARCH, CHOICE, LOGIN_ERROR, SAVING, SAVE_ERROR }
 
 data class FirstLibraryOnboardingState(
+    val visible: Boolean = true,
     val step: OnboardingStep = OnboardingStep.INTRO,
     val stepRevision: Int = 0,
     val query: String = "",
@@ -39,18 +40,21 @@ data class FirstLibraryOnboardingState(
 class FirstLibraryOnboardingViewModel internal constructor(
     private val searchRepository: BookSearchRepository,
     private val addBook: suspend (BookSearchResult, String) -> Unit,
+    initiallyVisible: Boolean = true,
 ) : ViewModel() {
     constructor(
         searchRepository: BookSearchRepository = BookSearchRemoteRepository(),
         libraryRepository: LibraryRemoteRepository = LibraryRemoteRepository(),
+        initiallyVisible: Boolean = true,
     ) : this(
         searchRepository = searchRepository,
+        initiallyVisible = initiallyVisible,
         addBook = { book, token ->
             libraryRepository.add(book.isbn13, book.totalPages.takeIf { it > 0 }, token)
         },
     )
 
-    private val _state = MutableStateFlow(FirstLibraryOnboardingState())
+    private val _state = MutableStateFlow(FirstLibraryOnboardingState(visible = initiallyVisible))
     val state: StateFlow<FirstLibraryOnboardingState> = _state.asStateFlow()
     private var job: Job? = null
     private val savedBookIsbn13 = mutableSetOf<String>()
@@ -155,6 +159,10 @@ class FirstLibraryOnboardingViewModel internal constructor(
 
     fun retrySave(accessToken: String) {
         save(accessToken)
+    }
+
+    fun finish() {
+        _state.value = _state.value.copy(visible = false)
     }
 
     fun cancelPendingWork() {

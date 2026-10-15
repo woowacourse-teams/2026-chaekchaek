@@ -14,7 +14,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.createSavedStateHandle
@@ -126,11 +125,11 @@ internal fun AppNavigation(
     val authTokens by authViewModel.tokens.collectAsState()
     val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
-    var showOnboarding by rememberSaveable {
-        mutableStateOf(shouldShowFirstLibraryOnboarding(onboardingStorage))
+    val onboardingViewModel: FirstLibraryOnboardingViewModel = viewModel {
+        FirstLibraryOnboardingViewModel(initiallyVisible = shouldShowFirstLibraryOnboarding(onboardingStorage))
     }
-    val onboardingViewModel: FirstLibraryOnboardingViewModel = viewModel { FirstLibraryOnboardingViewModel() }
     val onboardingState by onboardingViewModel.state.collectAsState()
+    val showOnboarding = onboardingState.visible
     var showOnboardingLogin by remember { mutableStateOf(false) }
     LaunchedEffect(showOnboarding) {
         if (showOnboarding) onboardingStorage.markShown()
@@ -141,7 +140,7 @@ internal fun AppNavigation(
     if (showOnboarding && !uiTestingMyPage) {
         val completeOnboarding = {
             showOnboardingLogin = false
-            showOnboarding = false
+            onboardingViewModel.finish()
         }
         val skipOnboarding = {
             authViewModel.clearError()

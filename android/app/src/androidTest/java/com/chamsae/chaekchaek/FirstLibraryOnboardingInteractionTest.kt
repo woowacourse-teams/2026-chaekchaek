@@ -1,12 +1,22 @@
 package com.chamsae.chaekchaek
 
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ClipboardManager
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
@@ -54,6 +64,34 @@ class FirstLibraryOnboardingInteractionTest {
         compose.onNodeWithText("책 찾기").performClick()
         compose.onNodeWithContentDescription("이전").performClick()
         compose.onNodeWithText("내 서재의 첫 책을\n골라볼까요?").assertIsDisplayed()
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun searchLimitsRealEditsAndPreservesTheCursorAtThePasteBoundary() {
+        var query by mutableStateOf("")
+        lateinit var clipboard: ClipboardManager
+        compose.setContent {
+            val manager = LocalClipboardManager.current
+            SideEffect { clipboard = manager }
+            ChaekchaekTheme {
+                FirstLibraryOnboardingScreen(
+                    state = FirstLibraryOnboardingState(step = OnboardingStep.SEARCH, query = query),
+                    onStartSearch = {}, onBack = {}, onQueryChange = { query = it }, onSearch = {},
+                    onToggleBook = {}, onReviewSelection = {}, onLogin = {}, onRetrySave = {}, onSkip = {},
+                )
+            }
+        }
+        val field = compose.onNode(hasSetTextAction())
+        field.performTextReplacement("가".repeat(99) + "📚초과")
+        field.assertTextEquals("가".repeat(99) + "📚")
+        val fullQuery = "가".repeat(50) + "나".repeat(50)
+        field.performTextReplacement(fullQuery)
+        field.performSemanticsAction(SemanticsActions.SetSelection) { it(50, 50, false) }
+        compose.runOnIdle { clipboard.setText(AnnotatedString("📚".repeat(10_000))) }
+        field.performSemanticsAction(SemanticsActions.PasteText) { it() }
+        field.assertTextEquals(fullQuery)
+        field.assert(SemanticsMatcher.expectValue(SemanticsProperties.TextSelectionRange, TextRange(50)))
     }
 
     @Test
