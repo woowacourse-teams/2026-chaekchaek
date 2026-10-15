@@ -46,6 +46,10 @@ import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchViewModel
 import com.chaekchaek.app.ui.search.RecentSearchStorage
+import com.chaekchaek.app.ui.onboarding.FirstLibraryOnboardingScreen
+import com.chaekchaek.app.ui.onboarding.FirstLibraryOnboardingViewModel
+import com.chaekchaek.app.ui.onboarding.OnboardingStorage
+import com.chaekchaek.app.ui.onboarding.shouldShowFirstLibraryOnboarding
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -75,6 +79,7 @@ private val navigationConfig = SavedStateConfiguration {
 internal fun AppNavigation(
     authPlatform: AuthPlatformCallbacks,
     recentSearchStorage: RecentSearchStorage,
+    onboardingStorage: OnboardingStorage,
     analytics: AnalyticsTracker,
     uiTestingMyPage: Boolean = false,
     onExitRequested: () -> Unit = {},
@@ -109,8 +114,70 @@ internal fun AppNavigation(
     DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     val authTokens by authViewModel.tokens.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
+    var showOnboarding by remember(onboardingStorage) {
+        mutableStateOf(shouldShowFirstLibraryOnboarding(onboardingStorage))
+    }
+    val onboardingViewModel = remember { FirstLibraryOnboardingViewModel() }
+    val onboardingState by onboardingViewModel.state.collectAsState()
+    var showOnboardingLogin by remember { mutableStateOf(false) }
+    LaunchedEffect(showOnboarding) {
+        if (showOnboarding) onboardingStorage.markShown()
+    }
     LaunchedEffect(authState.errorMessage) {
         if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
+    }
+    if (showOnboarding && !uiTestingMyPage) {
+        val finishOnboarding = {
+            showOnboardingLogin = false
+            showOnboarding = false
+        }
+        FirstLibraryOnboardingScreen(
+            state = onboardingState,
+            onStartSearch = onboardingViewModel::startSearch,
+            onQueryChange = onboardingViewModel::updateQuery,
+            onSearch = onboardingViewModel::search,
+            onToggleBook = onboardingViewModel::toggle,
+            onReviewSelection = onboardingViewModel::reviewSelection,
+            onLogin = {
+                val token = authTokens?.accessToken
+                if (token != null) onboardingViewModel.save(token, finishOnboarding)
+                else showOnboardingLogin = true
+            },
+            onRetrySave = { onboardingViewModel.retrySave(finishOnboarding) },
+            onSkip = finishOnboarding,
+            modifier = safeContent,
+        )
+        if (showOnboardingLogin) {
+            LoginRequiredSheet(
+                signingIn = authState.signingIn,
+                error = authState.errorMessage,
+                appleSignInAvailable = authViewModel.appleSignInAvailable,
+                onDismiss = {
+                    if (!authState.signingIn) {
+                        authViewModel.clearError()
+                        authViewModel.cancelPendingAuthentication()
+                        showOnboardingLogin = false
+                    }
+                },
+                onAppleSignIn = {
+                    authViewModel.clearError()
+                    authViewModel.requireAppleAuthentication { token ->
+                        showOnboardingLogin = false
+                        onboardingViewModel.save(token, finishOnboarding)
+                    }
+                },
+                onGoogleSignIn = {
+                    authViewModel.clearError()
+                    authViewModel.requireAuthentication { token ->
+                        showOnboardingLogin = false
+                        onboardingViewModel.save(token, finishOnboarding)
+                    }
+                },
+                skipLabel = "건너뛰기",
+                onSkip = finishOnboarding,
+            )
+        }
+        return
     }
     val detailRepository = remember { BookDetailRemoteRepository() }
     val homeViewModel = remember {

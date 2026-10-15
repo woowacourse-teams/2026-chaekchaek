@@ -71,9 +71,18 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                 UserDefaults.standard.set(queries, forKey: "recent_searches")
             }
         )
+        let onboardingStorage = OnboardingStorage(
+            hasBeenShown: {
+                UserDefaults.standard.bool(forKey: "first_library_onboarding_shown")
+            },
+            markShown: {
+                UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown")
+            }
+        )
         return MainViewControllerKt.MainViewController(
             authPlatform: authPlatform,
             recentSearchStorage: recentSearchStorage,
+            onboardingStorage: onboardingStorage,
             createGoogleSignInButton: GoogleSignInControl.init,
             analyticsEnvironment: analyticsEnvironment,
             logAnalyticsEvent: FirebaseAnalyticsEventLogger.log,

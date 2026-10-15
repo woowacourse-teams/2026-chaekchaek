@@ -1,0 +1,231 @@
+package com.chaekchaek.app.ui.onboarding
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.chaekchaek.app.domain.book.BookSearchResult
+import com.chaekchaek.app.ui.RemoteBookImage
+import com.chaekchaek.app.ui.theme.ChaekAccent
+import com.chaekchaek.app.ui.theme.ChaekAccentSoft
+import com.chaekchaek.app.ui.theme.ChaekBorder
+import com.chaekchaek.app.ui.theme.ChaekInk
+import com.chaekchaek.app.ui.theme.ChaekInkSecondary
+import com.chaekchaek.app.ui.theme.ChaekSurface
+import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
+
+@Composable
+fun FirstLibraryOnboardingScreen(
+    state: FirstLibraryOnboardingState,
+    onStartSearch: () -> Unit,
+    onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    onToggleBook: (BookSearchResult) -> Unit,
+    onReviewSelection: () -> Unit,
+    onLogin: () -> Unit,
+    onRetrySave: () -> Unit,
+    onSkip: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxSize().background(ChaekSurface)) {
+        Column(
+            Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp, vertical = 24.dp),
+        ) {
+            Text("첫 책 고르기", style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
+            Spacer(Modifier.height(28.dp))
+            when (state.step) {
+                OnboardingStep.INTRO -> IntroContent()
+                OnboardingStep.SEARCH -> SearchContent(state, onQueryChange, onSearch, onToggleBook)
+                OnboardingStep.CHOICE -> ChoiceContent(state.selectedBooks)
+                OnboardingStep.SAVING -> StatusContent("내 서재에\n책을 담고 있어요", "조금만 기다려 주세요.", loading = true)
+                OnboardingStep.SAVE_ERROR -> StatusContent(
+                    "책을 담지 못했어요",
+                    state.saveError ?: "연결 상태를 확인하고 다시 시도해 주세요.",
+                    loading = false,
+                )
+            }
+        }
+        BottomActions(
+            state = state,
+            onPrimary = when (state.step) {
+                OnboardingStep.INTRO -> onStartSearch
+                OnboardingStep.SEARCH -> onReviewSelection
+                OnboardingStep.CHOICE -> onLogin
+                OnboardingStep.SAVING -> ({})
+                OnboardingStep.SAVE_ERROR -> onRetrySave
+            },
+            onSkip = onSkip,
+        )
+    }
+}
+
+@Composable
+private fun IntroContent() {
+    Text("내 서재의 첫 책을\n골라볼까요?", style = MaterialTheme.typography.headlineMedium, color = ChaekInk)
+    Text("읽고 있는 책 한 권으로\n나만의 서재를 시작해 보세요.", Modifier.padding(top = 10.dp), color = ChaekInkSecondary)
+    Surface(
+        Modifier.fillMaxWidth().padding(top = 28.dp),
+        color = ChaekSurfaceMuted,
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("내 서재 미리보기", Modifier.fillMaxWidth(), style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
+            Spacer(Modifier.height(36.dp))
+            Box(Modifier.size(width = 58.dp, height = 88.dp).background(ChaekSurface), contentAlignment = Alignment.Center) {
+                Text("첫 책", style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
+            }
+            Spacer(Modifier.height(28.dp))
+            Text("어떤 책으로 시작할까요?", color = ChaekInk)
+            Text("지금 읽는 책을 찾아보세요", style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
+        }
+    }
+}
+
+@Composable
+private fun SearchContent(
+    state: FirstLibraryOnboardingState,
+    onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    onToggleBook: (BookSearchResult) -> Unit,
+) {
+    Text("첫 책을 찾아볼까요?", style = MaterialTheme.typography.headlineMedium, color = ChaekInk)
+    Text("책 제목이나 작가로 검색해 주세요.", Modifier.padding(top = 6.dp), color = ChaekInkSecondary)
+    OutlinedTextField(
+        value = state.query,
+        onValueChange = onQueryChange,
+        modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+        placeholder = { Text("책 제목이나 작가를 검색해요") },
+        singleLine = true,
+        shape = RoundedCornerShape(14.dp),
+        trailingIcon = {
+            Text("검색", Modifier.clickable(onClick = onSearch).padding(10.dp), color = ChaekInk)
+        },
+    )
+    when {
+        state.searching -> Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = ChaekAccent)
+        }
+        state.searchError != null -> MessageCard(state.searchError)
+        state.searchAttempted && state.results.isEmpty() -> MessageCard("검색 결과가 없어요")
+        state.results.isEmpty() -> MessageCard("책을 찾아주세요\n한 권 이상 선택하면 다음으로 갈 수 있어요.")
+        else -> LazyColumn(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(state.results, key = { it.isbn13.ifBlank { "${it.title}-${it.creator}" } }) { book ->
+                BookRow(book, state.selectedBooks.any { it.isbn13 == book.isbn13 }, onToggleBook)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessageCard(message: String) {
+    Surface(Modifier.fillMaxWidth().padding(top = 16.dp), color = ChaekSurfaceMuted, shape = RoundedCornerShape(14.dp)) {
+        Text(message, Modifier.padding(16.dp), color = ChaekInkSecondary)
+    }
+}
+
+@Composable
+private fun BookRow(book: BookSearchResult, selected: Boolean, onToggle: (BookSearchResult) -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clickable { onToggle(book) },
+        shape = RoundedCornerShape(14.dp),
+        color = if (selected) ChaekAccentSoft else ChaekSurface,
+        border = BorderStroke(1.dp, if (selected) ChaekAccent else ChaekBorder),
+    ) {
+        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            RemoteBookImage(book.coverUrl, "${book.title} 표지", Modifier.size(width = 48.dp, height = 70.dp))
+            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                Text(book.title, maxLines = 2, overflow = TextOverflow.Ellipsis, color = ChaekInk)
+                Text(book.creator, style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
+            }
+            Text(if (selected) "✓" else "+", style = MaterialTheme.typography.titleMedium, color = ChaekInk)
+        }
+    }
+}
+
+@Composable
+private fun ChoiceContent(books: List<BookSearchResult>) {
+    Text("첫 책을 골랐어요", style = MaterialTheme.typography.headlineMedium, color = ChaekInk)
+    Text("로그인하면 선택한 책이\n내 서재에 바로 담겨요.", Modifier.padding(top = 6.dp), color = ChaekInkSecondary)
+    books.firstOrNull()?.let { book ->
+        Surface(Modifier.fillMaxWidth().padding(top = 24.dp), color = ChaekSurfaceMuted, shape = RoundedCornerShape(16.dp)) {
+            Column(Modifier.padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("내 서재 미리보기", Modifier.fillMaxWidth(), style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
+                RemoteBookImage(book.coverUrl, "${book.title} 표지", Modifier.padding(top = 18.dp).size(width = 88.dp, height = 128.dp))
+                Text(book.title, Modifier.padding(top = 14.dp), maxLines = 2, textAlign = TextAlign.Center, color = ChaekInk)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusContent(title: String, description: String, loading: Boolean) {
+    Text(title, style = MaterialTheme.typography.headlineMedium, color = ChaekInk)
+    Text(description, Modifier.padding(top = 8.dp), color = ChaekInkSecondary)
+    if (loading) CircularProgressIndicator(Modifier.padding(top = 32.dp), color = ChaekAccent)
+}
+
+@Composable
+private fun BottomActions(
+    state: FirstLibraryOnboardingState,
+    onPrimary: () -> Unit,
+    onSkip: () -> Unit,
+) {
+    val enabled = when (state.step) {
+        OnboardingStep.SEARCH -> state.selectedBooks.isNotEmpty()
+        OnboardingStep.SAVING -> false
+        else -> true
+    }
+    val primaryLabel = when (state.step) {
+        OnboardingStep.INTRO -> "책 찾기"
+        OnboardingStep.SEARCH -> if (enabled) "선택한 책으로 다음" else "책을 한 권 이상 선택해 주세요"
+        OnboardingStep.CHOICE -> "로그인하고 진행"
+        OnboardingStep.SAVING -> "저장 중"
+        OnboardingStep.SAVE_ERROR -> "저장 다시 시도"
+    }
+    Column(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (state.step == OnboardingStep.SEARCH) {
+            Text("선택한 책 ${state.selectedBooks.size}권", style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
+        }
+        ActionButton(primaryLabel, enabled, false, onPrimary)
+        ActionButton("건너뛰기", true, true, onSkip)
+    }
+}
+
+@Composable
+private fun ActionButton(label: String, enabled: Boolean, secondary: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth().height(50.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = if (secondary) ChaekSurface else if (enabled) ChaekInk else ChaekSurfaceMuted,
+        border = if (secondary) BorderStroke(1.dp, ChaekBorder) else null,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(label, color = if (secondary) ChaekInk else if (enabled) ChaekSurface else ChaekInkSecondary)
+        }
+    }
+}
