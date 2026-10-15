@@ -22,7 +22,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -35,6 +36,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -170,7 +174,7 @@ fun SearchScreen(
         onQueryChange(it)
         if (it.isEmpty()) onClear()
       },
-      onSearch = { onSearch(query) },
+      onSearch = onSearch,
     )
     if (recentSearches.isNotEmpty()) {
       RecentSearches(
@@ -224,7 +228,7 @@ fun SearchScreen(
 private fun SearchTopBar(
   query: String,
   onQueryChange: (String) -> Unit,
-  onSearch: () -> Unit,
+  onSearch: (String) -> Unit,
 ) {
   Row(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 16.dp, end = 24.dp)) {
     SearchField(
@@ -491,24 +495,37 @@ private fun DiscoverReflection(
 private fun SearchField(
   query: String,
   onQueryChange: (String) -> Unit,
-  onSearch: () -> Unit,
+  onSearch: (String) -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val input = rememberLimitedTextFieldState(SearchInputRules.Policy, query)
+  val currentQuery by rememberUpdatedState(query)
+  val notifyQueryChange by rememberUpdatedState(onQueryChange)
+  LaunchedEffect(query) {
+    val accepted = SearchInputRules.limit(query)
+    if (input.text.toString() != accepted) input.setTextAndPlaceCursorAtEnd(accepted)
+  }
+  LaunchedEffect(input) {
+    snapshotFlow { input.text.toString() }.collect { accepted ->
+      if (accepted != currentQuery) notifyQueryChange(accepted)
+    }
+  }
+  val displayedQuery = input.text.toString()
   val shape = RoundedCornerShape(15.dp)
   BasicTextField(
-    value = query,
-    onValueChange = onQueryChange,
+    state = input,
+    inputTransformation = SearchInputRules.Policy.inputTransformation,
     modifier =
       modifier
         .height(54.dp)
         .background(Color(0xFFF3F3F5), shape)
         .padding(start = 15.dp),
     textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp),
-    singleLine = true,
+    lineLimits = TextFieldLineLimits.SingleLine,
     cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-    keyboardActions = KeyboardActions(onSearch = { onSearch() }),
-    decorationBox = { field ->
+    onKeyboardAction = { onSearch(input.text.toString()) },
+    decorator = { field ->
       Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(
           painter = painterResource(Res.drawable.ic_search),
@@ -518,7 +535,7 @@ private fun SearchField(
         )
         Spacer(Modifier.width(10.dp))
         Box(modifier = Modifier.weight(1f)) {
-          if (query.isEmpty()) {
+          if (displayedQuery.isEmpty()) {
             Text(
               "책 제목이나 작가를 검색해요",
               style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
@@ -527,9 +544,9 @@ private fun SearchField(
           }
           field()
         }
-        if (query.isNotEmpty()) {
+        if (displayedQuery.isNotEmpty()) {
           Box(
-            modifier = Modifier.size(44.dp).clickable(role = Role.Button) { onQueryChange("") },
+            modifier = Modifier.size(44.dp).clickable(role = Role.Button) { input.setTextAndPlaceCursorAtEnd("") },
             contentAlignment = Alignment.Center,
           ) {
             Icon(
