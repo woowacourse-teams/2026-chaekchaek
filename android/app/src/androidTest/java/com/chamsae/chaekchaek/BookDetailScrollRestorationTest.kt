@@ -1,10 +1,12 @@
 package com.chamsae.chaekchaek
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.ReviewScope
@@ -28,10 +30,15 @@ class BookDetailScrollRestorationTest {
     @Test
     fun failedMemberRestorationStartsGuestListAtTop() = verifyPosition(restoredMember = false)
 
-    private fun verifyPosition(restoredMember: Boolean) {
+    @Test
+    fun signOutReconnectsScrollStateWithoutRecreatingComposition() =
+        verifyPosition(restoredMember = false, recreate = false)
+
+    private fun verifyPosition(restoredMember: Boolean, recreate: Boolean = true) {
         // 일반 변수는 복원 전 재구성을 일으키지 않아, 저장 당시 회원 상태와
         // 새 Composition의 인증 복원 결과를 따로 재현한다.
         var signedIn = true
+        val liveMembership = mutableStateOf(true)
         val reviews = (1L..12L).map { id ->
             BookReview(reviewId = id, content = "복원 감상 $id", quote = null, chapter = null,
                 currentPage = null, createdAt = "2026-10-15T00:00:00Z", authorName = "작성자",
@@ -39,12 +46,13 @@ class BookDetailScrollRestorationTest {
         }
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
+            val currentMembership = if (recreate) signedIn else liveMembership.value
             ChaekchaekTheme {
                 BookDetailScreen(
                     state = BookDetailUiState(
                         book = BookDetailArgs(id = "42", bookId = 42, title = "스크롤 복원 검증"),
-                        signedIn = signedIn, reviews = reviews, reviewCount = reviews.size,
-                        reviewScope = if (signedIn) ReviewScope.MINE else ReviewScope.ALL,
+                        signedIn = currentMembership, reviews = reviews, reviewCount = reviews.size,
+                        reviewScope = if (currentMembership) ReviewScope.MINE else ReviewScope.ALL,
                     ),
                     onBack = {},
                 )
@@ -52,10 +60,15 @@ class BookDetailScrollRestorationTest {
         }
         compose.onNode(hasScrollToIndexAction()).performScrollToIndex(3)
         assertTrue(scrollPosition() > 0f)
-        signedIn = restoredMember
-        restoration.emulateSavedInstanceStateRestore()
+        if (recreate) {
+            signedIn = restoredMember
+            restoration.emulateSavedInstanceStateRestore()
+        } else compose.runOnIdle { liveMembership.value = restoredMember }
         if (restoredMember) assertTrue(scrollPosition() > 0f)
-        else assertEquals(0f, scrollPosition(), 0f)
+        else {
+            assertEquals(0f, scrollPosition(), 0f)
+            compose.onNodeWithText("TOP").assertDoesNotExist()
+        }
     }
 
     private fun scrollPosition(): Float = compose.onNode(hasScrollToIndexAction())

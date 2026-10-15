@@ -128,6 +128,8 @@ Saved State에는 검색어, enum 이름, 페이지 번호, ID, offset, 제한�
 
 2차 보완 후 전체 host 테스트 234개, Android lint, iOS Simulator 컴파일이 통과했다. UI 테스트용 debug APK도 빌드됐다. 로그는 `/tmp/chaekchaek-an-round2-tests.log`와 `/tmp/chaekchaek-an-round2-final.log`다.
 
+최종 추가 검토에서 인증 전환으로 목록 상태 객체가 바뀔 때 TOP 표시와 하단 도달 판정이 이전 객체를 참조하는 문제를 보완했다. 두 `derivedStateOf`를 생성하는 `remember` 키에 `listState`를 포함했다. 같은 Composition에서 회원에서 비회원으로 전환해 목록 위치가 0이 되고 TOP이 사라지는 테스트를 추가했으며, `BookDetailScrollRestorationTest` 총 3개가 통과했다. 이 최종 테스트는 하단 요청 콜백 횟수를 직접 검증하지 않으며 두 파생 상태의 새 객체 연결은 코드 검토로 확인했다. 로그는 `/tmp/chaekchaek-an-final-derived-tests.log`다.
+
 ## 참고
 
 - [Save UI states](https://developer.android.com/topic/libraries/architecture/saving-states)

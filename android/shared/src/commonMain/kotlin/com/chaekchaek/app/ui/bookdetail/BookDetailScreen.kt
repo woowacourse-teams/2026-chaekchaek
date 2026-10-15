@@ -172,10 +172,10 @@ fun BookDetailScreen(
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val threshold = remember(density) { with(density) { 240.dp.roundToPx() } }
-    val showScrollTop by remember(threshold) {
+    val showScrollTop by remember(listState, threshold) {
         derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset >= threshold }
     }
-    val reachedBottom by remember { derivedStateOf { !listState.canScrollForward } }
+    val reachedBottom by remember(listState) { derivedStateOf { !listState.canScrollForward } }
     val currentPage = state.detail?.myRecord?.currentPage ?: localCurrentPage
     val snackbarHostState = remember { SnackbarHostState() }
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
