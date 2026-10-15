@@ -77,6 +77,7 @@ internal fun AppNavigation(
     recentSearchStorage: RecentSearchStorage,
     analytics: AnalyticsTracker,
     uiTestingMyPage: Boolean = false,
+    homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
 ) {
     val safeContent = Modifier.windowInsetsPadding(
@@ -178,6 +179,7 @@ internal fun AppNavigation(
                         onBookClick = { backStack.navigateFromCurrent(Root, BookDetailKey(it)) },
                         onMyPage = { backStack.navigateFromCurrent(Root, MyPageKey) },
                         rootBackEnabled = backStack.isCurrentDestination(Root),
+                        homeHeaderAction = homeHeaderAction,
                         onExitRequested = {
                             if (backStack.prepareRootExit(Root)) onExitRequested()
                         },

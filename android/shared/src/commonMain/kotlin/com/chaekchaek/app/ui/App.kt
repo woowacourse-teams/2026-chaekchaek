@@ -17,6 +17,7 @@ fun App(
     recentSearchStorage: RecentSearchStorage = RecentSearchStorage(),
     analytics: AnalyticsTracker = AnalyticsTracker.None,
     uiTestingMyPage: Boolean = false,
+    homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
 ) {
     ChaekchaekTheme {
@@ -30,6 +31,7 @@ fun App(
                     recentSearchStorage = recentSearchStorage,
                     analytics = analytics,
                     uiTestingMyPage = uiTestingMyPage,
+                    homeHeaderAction = homeHeaderAction,
                     onExitRequested = onExitRequested,
                 )
             }

@@ -30,6 +30,7 @@ import org.jetbrains.compose.resources.painterResource
 fun BrandHeader(
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier,
+    additionalAction: @Composable () -> Unit = {},
 ) {
     Row(
         modifier = modifier.fillMaxWidth().height(70.dp).padding(horizontal = 28.dp, vertical = 9.dp),
@@ -48,6 +49,7 @@ fun BrandHeader(
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
         )
         Spacer(Modifier.weight(1f))
+        additionalAction()
         Surface(
             onClick = onProfileClick,
             modifier = Modifier.size(44.dp),
