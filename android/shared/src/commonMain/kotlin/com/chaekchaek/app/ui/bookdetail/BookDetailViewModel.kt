@@ -306,11 +306,47 @@ class BookDetailViewModel(
         }
     }
 
-    fun createReview(request: ReviewCreateRequest) = mutate(
-        actionName = "review_create",
-        closesComposer = true,
-    ) {
-        publicWrite(retryUnauthorized = true) { repository.createReview(bookIdForPublicWrite(), request, it) }
+    fun createReview(request: ReviewCreateRequest) {
+        val state = _uiState.value
+        val target = reviewCreateTarget(state.displayBook)
+        val analyticsContext = mapOf(
+            "request_route" to (target?.analyticsRoute ?: "unresolved"),
+            "book_id_state" to if (state.displayBook?.resolvableBookId() != null) "present" else "missing",
+            "detail_load_state" to when {
+                state.detail != null -> "ready"
+                loadJob?.isActive == true -> "pending"
+                state.reviewPageLoadState.canRetry -> "failed"
+                else -> "not_started"
+            },
+        )
+        var failureStage = "target_resolution"
+        mutate(
+            actionName = "review_create",
+            actionStrings = analyticsContext,
+            actionResultStrings = analyticsContext,
+            failureActionStrings = { mapOf("failure_stage" to failureStage) },
+            failureActionLongs = { error ->
+                (error as? ResponseException)?.response?.status?.value?.toLong()
+                    ?.let { mapOf("http_status" to it) }
+                    .orEmpty()
+            },
+            awaitLoadBeforeAction = false,
+            closesComposer = true,
+        ) {
+            val resolvedTarget = target ?: throw ReviewCreateTargetUnavailableException()
+            publicWrite(
+                retryUnauthorized = true,
+                beforeAuth = { failureStage = "auth" },
+                beforeRequest = { failureStage = "request" },
+            ) {
+                when (resolvedTarget) {
+                    is ReviewCreateTarget.ByIsbn ->
+                        repository.createReviewByIsbn(resolvedTarget.isbn13, request, it)
+                    is ReviewCreateTarget.ByBookId ->
+                        repository.createReview(resolvedTarget.bookId, request, it)
+                }
+            }
+        }
     }
 
     fun openReviewComposer(onReady: () -> Unit) {
@@ -610,8 +646,12 @@ class BookDetailViewModel(
     private fun <T> mutate(
         actionName: String? = null,
         actionStrings: Map<String, String> = emptyMap(),
+        actionResultStrings: Map<String, String> = emptyMap(),
+        failureActionStrings: (Throwable) -> Map<String, String> = { emptyMap() },
+        failureActionLongs: (Throwable) -> Map<String, Long> = { emptyMap() },
         onSuccess: (T) -> Unit = {},
         reloadAfterSuccess: Boolean = true,
+        awaitLoadBeforeAction: Boolean = true,
         closesComposer: Boolean = false,
         action: suspend () -> T,
     ) {
@@ -638,14 +678,14 @@ class BookDetailViewModel(
                         }
                     },
                 ) {
-                    loadJob?.join()
+                    if (awaitLoadBeforeAction) loadJob?.join()
                     action()
                 }
             }.onSuccess { result ->
                 if (generation != requestGeneration) return@onSuccess
                 loadJob?.cancel()
                 onSuccess(result)
-                actionHandle?.let { analytics.finishAction(it, "success") }
+                actionHandle?.let { analytics.finishAction(it, "success", strings = actionResultStrings) }
                 if (closesComposer) analytics.completeComposer()
                 if (reloadAfterSuccess) reload()
             }.onFailure { error ->
@@ -654,8 +694,11 @@ class BookDetailViewModel(
                         it,
                         if (error is CancellationException) "cancelled" else "failure",
                         strings = if (error is CancellationException) emptyMap() else {
-                            mapOf("error_category" to analyticsErrorCategory(error))
+                            actionResultStrings +
+                                mapOf("error_category" to analyticsErrorCategory(error)) +
+                                failureActionStrings(error)
                         },
+                        longs = if (error is CancellationException) emptyMap() else failureActionLongs(error),
                     )
                 }
                 if (closesComposer) analytics.completeComposer()
@@ -746,10 +789,6 @@ class BookDetailViewModel(
         accessToken?.let { WriteCredential.Member(it) }
             ?: authPlatform.readGuest()?.token?.let { WriteCredential.Guest(it) }
 
-    private fun bookIdForPublicWrite(): Long = requireNotNull(
-        _uiState.value.detail?.bookId ?: _uiState.value.book?.bookId,
-    )
-
     private suspend fun writeCredential(): WriteCredential = readCredential() ?: issueGuestCredential()
 
     private suspend fun issueGuestCredential(): WriteCredential.Guest {
@@ -761,15 +800,22 @@ class BookDetailViewModel(
 
     private suspend fun <T> publicWrite(
         retryUnauthorized: Boolean,
+        beforeAuth: () -> Unit = {},
+        beforeRequest: () -> Unit = {},
         request: suspend (WriteCredential) -> T,
     ): T {
+        beforeAuth()
         val credential = writeCredential()
         return try {
+            beforeRequest()
             request(credential)
         } catch (error: Throwable) {
             if (credential !is WriteCredential.Guest || !error.isUnauthorized()) throw error
             if (!retryUnauthorized) throw GuestOwnershipLostException()
-            request(issueGuestCredential())
+            beforeAuth()
+            val renewedGuest = issueGuestCredential()
+            beforeRequest()
+            request(renewedGuest)
         }
     }
 
@@ -795,6 +841,27 @@ internal object BookDetailSavedStateKeys {
 }
 
 private class GuestOwnershipLostException : RuntimeException()
+
+private class ReviewCreateTargetUnavailableException : RuntimeException()
+
+private sealed interface ReviewCreateTarget {
+    val analyticsRoute: String
+
+    data class ByIsbn(val isbn13: String) : ReviewCreateTarget {
+        override val analyticsRoute = "by_isbn"
+    }
+
+    data class ByBookId(val bookId: Long) : ReviewCreateTarget {
+        override val analyticsRoute = "by_book_id"
+    }
+}
+
+private fun reviewCreateTarget(book: BookDetailArgs?): ReviewCreateTarget? =
+    book?.isbn13?.takeIf(String::isNotBlank)?.let(ReviewCreateTarget::ByIsbn)
+        ?: book?.resolvableBookId()?.let(ReviewCreateTarget::ByBookId)
+
+private fun BookDetailArgs.resolvableBookId(): Long? =
+    bookId ?: id.toLongOrNull()?.takeIf { isbn13.isBlank() }
 
 internal val BookDetailAuthenticatedAction.analyticsName: String
     get() = when (this) {
