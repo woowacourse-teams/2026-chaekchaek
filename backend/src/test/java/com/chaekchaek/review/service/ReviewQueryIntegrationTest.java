@@ -31,9 +31,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.hibernate.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -297,6 +300,26 @@ class ReviewQueryIntegrationTest {
         assertThat(response.nextPage()).isNull();
         assertThat(response.items()).extracting(ReviewResponse::reviewId)
                 .containsExactly(newerFirstPage.getId(), olderFirstPage.getId(), laterPage.getId(), nullPage.getId());
+    }
+
+    @ParameterizedTest
+    @EnumSource(Feed.class)
+    @DisplayName("인기순 감상이 많아도 요청한 페이지의 감상 열 개만 영속성 컨텍스트에 로딩한다")
+    void should_LoadOnlyRequestedPage_When_ManyPopularReviewsExist(Feed feed) {
+        // given
+        when(actorProvider.findCurrentActor()).thenReturn(Optional.of(CurrentActor.guest(ACTOR_ID)));
+        for (int index = 0; index < 25; index++) {
+            saveReview(BOOK_ID, ACTOR_ID, null);
+        }
+        flushAndClear();
+
+        // when
+        PageResponse<ReviewResponse> response = service.findReviews(BOOK_ID, 2, feed, ReviewSort.POPULAR);
+
+        // then
+        assertThat(response.totalCount()).isEqualTo(25);
+        assertThat(response.items()).hasSize(10);
+        assertThat(entityManager.unwrap(Session.class).getStatistics().getEntityCount()).isEqualTo(10);
     }
 
     private Review saveReview(long bookId, long actorId, Integer page) {
