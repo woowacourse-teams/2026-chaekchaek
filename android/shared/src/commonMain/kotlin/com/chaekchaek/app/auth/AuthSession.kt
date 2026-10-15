@@ -89,7 +89,7 @@ internal class AuthSession(
 
   private suspend fun renewTokensOnce(): MobileAuthTokens? {
     val request = renewalRequestMutex.withLock {
-      renewalRequest ?: scope.async {
+      renewalRequest?.takeUnless { it.isCompleted } ?: scope.async {
         try {
           Result.success(renewCurrentSessionTokens())
         } catch (error: CancellationException) {

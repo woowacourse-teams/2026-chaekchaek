@@ -449,6 +449,31 @@ class AuthViewModelTest {
     assertEquals("access-renewed", received)
   }
 
+  @Test
+  fun `유일한 호출자 취소 뒤 완료된 실패는 다음 재발급을 막지 않는다`() = runTest {
+    val response = CompletableDeferred<MobileAuthTokens>()
+    var attempts = 0
+    val backend = FakeAuthBackend {
+      attempts += 1
+      if (attempts == 1) response.await() else tokens("renewed")
+    }
+    val session = authSession(backend)
+    runCurrent()
+    session.signIn(tokens("signed-in"))
+    val canceled = backgroundScope.launch { session.refreshAccessTokenForRetry() }
+    runCurrent()
+    canceled.cancel()
+    runCurrent()
+    response.completeExceptionally(MobileLoginException("TEMPORARY", 500))
+    runCurrent()
+
+    var received: String? = null
+    backgroundScope.launch { received = session.refreshAccessTokenForRetry() }
+    runCurrent()
+    assertEquals(2, attempts)
+    assertEquals("access-renewed", received)
+  }
+
   private fun TestScope.authSession(backend: FakeAuthBackend): AuthSession = AuthSession(
     readRefreshToken = { backend.storedRefreshToken },
     writeRefreshToken = { backend.storedRefreshToken = it },
