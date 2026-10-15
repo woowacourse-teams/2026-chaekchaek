@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -110,6 +112,7 @@ internal fun RootScreen(
     onBookClick: (BookDetailArgs) -> Unit,
     onMyPage: () -> Unit,
     rootBackEnabled: Boolean,
+    homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -130,6 +133,10 @@ internal fun RootScreen(
     val backScope = rememberCoroutineScope()
     var exitConfirmationSnackbarJob by remember { mutableStateOf<Job?>(null) }
     var exitConfirmationDeadlineMillis by rememberSaveable { mutableStateOf<Long?>(null) }
+    val tabStateHolder = rememberSaveableStateHolder()
+    val feedListState = rememberLazyListState()
+    val searchResultsListState = rememberLazyListState()
+    var tabStateToClear by remember { mutableStateOf<RootTab?>(null) }
     val accessToken = tokens?.accessToken
     val clearExitConfirmation: () -> Unit = {
         exitConfirmationDeadlineMillis = null
@@ -167,6 +174,9 @@ internal fun RootScreen(
             ) {
                 RootBackAction.ReturnToHome -> {
                     exitConfirmationDeadlineMillis = null
+                    if (selectedTab == RootTab.Feed || selectedTab == RootTab.Discover) {
+                        tabStateToClear = selectedTab
+                    }
                     selectedTab = RootTab.Home
                 }
                 is RootBackAction.ConfirmExit -> {
@@ -183,6 +193,17 @@ internal fun RootScreen(
     LaunchedEffect(selectedTab) {
         if (selectedTab != RootTab.Home) clearExitConfirmation()
         analytics.screenView(selectedTab.analyticsScreenName)
+    }
+    LaunchedEffect(selectedTab, tabStateToClear) {
+        tabStateToClear?.takeIf { it != selectedTab }?.let {
+            tabStateHolder.removeState(it.name)
+            when (it) {
+                RootTab.Feed -> feedListState.scrollToItem(0)
+                RootTab.Discover -> searchResultsListState.scrollToItem(0)
+                else -> Unit
+            }
+            tabStateToClear = null
+        }
     }
 
     LaunchedEffect(registrationState.completedRegistrationCount) {
@@ -216,6 +237,7 @@ internal fun RootScreen(
         val showBottomBar = !(selectedTab == RootTab.Shelf && archiveEditing)
         val contentModifier = Modifier.fillMaxSize().navigationBarsPadding()
             .then(if (showBottomBar) Modifier.padding(bottom = 74.dp) else Modifier)
+        tabStateHolder.SaveableStateProvider(selectedTab.name) {
         when (selectedTab) {
             RootTab.Home -> HomeScreen(
                 homeViewModel = homeViewModel,
@@ -226,10 +248,12 @@ internal fun RootScreen(
                 onSearchBook = { selectedTab = RootTab.Discover },
                 onOpenFeed = { selectedTab = RootTab.Feed },
                 onProfileClick = openProfile,
+                homeHeaderAction = homeHeaderAction,
                 onBookClick = { openBook(it.toBookDetailArgs(), "home") },
             )
             RootTab.Feed -> FeedScreen(
                 viewModel = feedViewModel,
+                listState = feedListState,
                 modifier = contentModifier,
                 onProfileClick = openProfile,
                 onBookClick = { openBook(it.toBookDetailArgs(), "feed") },
@@ -237,9 +261,13 @@ internal fun RootScreen(
             RootTab.Discover -> SearchRoute(
                 viewModel = searchViewModel,
                 homeViewModel = homeViewModel,
+                searchResultsListState = searchResultsListState,
                 registeredBookIds = archiveState.items.mapTo(mutableSetOf()) { it.id },
                 modifier = contentModifier,
-                onBack = { selectedTab = RootTab.Home },
+                onBack = {
+                    tabStateToClear = RootTab.Discover
+                    selectedTab = RootTab.Home
+                },
                 onProfileClick = openProfile,
                 onBookClick = { openBook(it.toBookDetailArgs(), "search") },
             )
@@ -271,6 +299,7 @@ internal fun RootScreen(
                     )
                 },
             )
+        }
         }
         if (showBottomBar) {
             ChaekBottomBar(

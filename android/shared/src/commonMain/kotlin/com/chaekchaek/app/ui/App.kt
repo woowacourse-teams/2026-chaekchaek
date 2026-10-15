@@ -19,6 +19,7 @@ fun App(
     onboardingStorage: OnboardingStorage = OnboardingStorage(),
     analytics: AnalyticsTracker = AnalyticsTracker.None,
     uiTestingMyPage: Boolean = false,
+    homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
 ) {
     ChaekchaekTheme {
@@ -33,6 +34,7 @@ fun App(
                     onboardingStorage = onboardingStorage,
                     analytics = analytics,
                     uiTestingMyPage = uiTestingMyPage,
+                    homeHeaderAction = homeHeaderAction,
                     onExitRequested = onExitRequested,
                 )
             }

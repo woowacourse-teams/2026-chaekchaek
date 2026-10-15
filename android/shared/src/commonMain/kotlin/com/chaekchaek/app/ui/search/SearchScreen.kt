@@ -15,10 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -87,6 +87,7 @@ import kotlinx.coroutines.delay
 fun SearchRoute(
   viewModel: SearchViewModel,
   homeViewModel: HomeViewModel,
+  searchResultsListState: LazyListState,
   registeredBookIds: Set<String>,
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
@@ -105,12 +106,22 @@ fun SearchRoute(
     recentSearches = recentSearches,
     homeState = homeState,
     registeredBookIds = registeredBookIds,
-    onSearch = viewModel::search,
+    searchResultsListState = searchResultsListState,
+    onSearch = {
+      searchResultsListState.requestScrollToItem(0)
+      viewModel.search(it)
+    },
     onQueryChange = viewModel::updateQuery,
-    onClear = viewModel::clear,
+    onClear = {
+      searchResultsListState.requestScrollToItem(0)
+      viewModel.clear()
+    },
     onRegister = viewModel::register,
     onLoadMore = viewModel::loadMore,
-    onSortSelect = viewModel::selectSort,
+    onSortSelect = {
+      if (it != sort) searchResultsListState.requestScrollToItem(0)
+      viewModel.selectSort(it)
+    },
     onHomeRetry = homeViewModel::retry,
     modifier = modifier,
     onBack = onBack,
@@ -127,6 +138,7 @@ fun SearchScreen(
   recentSearches: List<String>,
   homeState: HomeUiState = HomeUiState.Content(emptyList()),
   registeredBookIds: Set<String>,
+  searchResultsListState: LazyListState,
   onSearch: (String) -> Unit,
   onQueryChange: (String) -> Unit,
   onClear: () -> Unit,
@@ -201,6 +213,7 @@ fun SearchScreen(
           onLoadMore = onLoadMore,
           onSortSelect = onSortSelect,
           onBookClick = onBookClick,
+          listState = searchResultsListState,
           modifier = Modifier.weight(1f),
         )
     }
@@ -552,9 +565,9 @@ private fun SearchResults(
   onLoadMore: () -> Unit,
   onSortSelect: (BookSearchSort) -> Unit,
   onBookClick: (BookDetailTarget) -> Unit,
+  listState: LazyListState,
   modifier: Modifier = Modifier,
 ) {
-  val listState = rememberLazyListState()
   val focusManager = LocalFocusManager.current
   LaunchedEffect(listState.isScrollInProgress) {
     if (listState.isScrollInProgress) focusManager.clearFocus()

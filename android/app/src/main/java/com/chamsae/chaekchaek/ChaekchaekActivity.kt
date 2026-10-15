@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
@@ -18,7 +19,12 @@ import com.chaekchaek.app.ui.onboarding.OnboardingStorage
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+abstract class ChaekchaekActivity : ComponentActivity() {
+    protected abstract val analyticsEnvironment: String
+
+    @Composable
+    protected open fun HomeHeaderAction() = Unit
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -31,10 +37,10 @@ class MainActivity : ComponentActivity() {
             val onboardingPreferences = remember(context) {
                 context.getSharedPreferences("onboarding", MODE_PRIVATE)
             }
-            val analytics = remember(context) {
+            val analytics = remember(context, analyticsEnvironment) {
                 val logger = FirebaseAnalyticsEventLogger(FirebaseAnalytics.getInstance(context))
                 AnalyticsTracker(
-                    environment = if (BuildConfig.DEBUG) "test" else "production",
+                    environment = analyticsEnvironment,
                     sink = logger::log,
                 )
             }
@@ -58,6 +64,7 @@ class MainActivity : ComponentActivity() {
             App(
                 authPlatform = authPlatform,
                 analytics = analytics,
+                homeHeaderAction = { HomeHeaderAction() },
                 onExitRequested = { finish() },
                 recentSearchStorage = RecentSearchStorage(
                     read = recentSearchPreferences::read,
