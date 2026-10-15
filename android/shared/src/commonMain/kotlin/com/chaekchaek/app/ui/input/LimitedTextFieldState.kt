@@ -1,11 +1,15 @@
 package com.chaekchaek.app.ui.input
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.maxTextLength
 import androidx.compose.ui.text.TextRange
 
 /** 입력, 초기값, 저장 및 복원이 같은 상한을 사용한다. 기존 서버 검증의 UTF-16 상한도 유지한다. */
@@ -22,21 +26,106 @@ internal data class TextInputPolicy(
         if (utf16) TextInputLimit.applyUtf16Change(current, proposed, maximum, digitsOnly)
         else TextInputLimit.applyChange(current, proposed, maximum, digitsOnly)
 
-    val inputTransformation: InputTransformation = InputTransformation {
-        val proposed = asCharSequence().toString()
-        val accepted = applyChange(originalText.toString(), proposed)
-        if (accepted != proposed) {
-            val previousSelection = selection
-            // 기존 접미부는 유지하고 삭제된 삽입분 뒤의 커서만 앞으로 당긴다.
-            var prefix = 0
-            while (prefix < accepted.length && prefix < proposed.length && accepted[prefix] == proposed[prefix]) prefix++
-            val removed = proposed.length - accepted.length
-            fun adjusted(offset: Int): Int =
-                (if (offset <= prefix) offset else (offset - removed).coerceAtLeast(prefix))
-                    .coerceIn(0, accepted.length)
-            replace(0, length, accepted)
-            selection = safeSelection(accepted, adjusted(previousSelection.start), adjusted(previousSelection.end))
+    val inputTransformation: InputTransformation = object : InputTransformation {
+        override fun SemanticsPropertyReceiver.applySemantics() {
+            maxTextLength = maximum
         }
+
+        override fun TextFieldBuffer.transformInput() {
+            limitUserEdit()
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    private fun TextFieldBuffer.limitUserEdit() {
+        val proposed = asCharSequence()
+        // changes는 버퍼 수정 시 함께 바뀌므로 실제 편집 범위를 먼저 고정한다.
+        val editedRanges = mutableListOf<TextRange>()
+        repeat(changes.changeCount) { index ->
+            val range = changes.getRange(index)
+            if (!range.collapsed) {
+                val start = codePointBoundary(proposed, range.min)
+                val end = if (codePointBoundary(proposed, range.max) != range.max) range.max + 1 else range.max
+                val previous = editedRanges.lastOrNull()
+                if (previous != null && start <= previous.end) {
+                    editedRanges[editedRanges.lastIndex] = TextRange(previous.start, maxOf(previous.end, end))
+                } else {
+                    editedRanges += TextRange(start, end)
+                }
+            }
+        }
+
+        fun nextEnd(index: Int, end: Int): Int =
+            if (index + 1 < end && proposed[index].isHighSurrogate() && proposed[index + 1].isLowSurrogate()) index + 2 else index + 1
+        fun valid(index: Int, end: Int): Boolean =
+            (end - index == 2 || !proposed[index].isSurrogate()) && (!digitsOnly || proposed[index].isDigit())
+        fun cost(start: Int, end: Int): Int = if (utf16) end - start else 1
+        fun unchangedCost(start: Int, end: Int): Int {
+            var index = start
+            var count = 0
+            while (index < end) {
+                val next = nextEnd(index, end)
+                if (valid(index, next)) count += cost(index, next)
+                index = next
+            }
+            return count
+        }
+
+        var untouchedStart = 0
+        var reserved = 0
+        editedRanges.forEach { range ->
+            reserved += unchangedCost(untouchedStart, range.start)
+            untouchedStart = range.end
+        }
+        reserved += unchangedCost(untouchedStart, length)
+        var remaining = (maximum - reserved).coerceAtLeast(0)
+        val rejectedRanges = mutableListOf<TextRange>()
+        fun reject(start: Int, end: Int) {
+            if (start == end) return
+            val previous = rejectedRanges.lastOrNull()
+            if (previous != null && previous.end == start) {
+                rejectedRanges[rejectedRanges.lastIndex] = TextRange(previous.start, end)
+            } else {
+                rejectedRanges += TextRange(start, end)
+            }
+        }
+        fun filter(start: Int, end: Int, inserted: Boolean) {
+            var index = start
+            while (index < end) {
+                // 허용량을 다 쓰면 나머지 붙여넣기를 복사하거나 순회하지 않는다.
+                if (inserted && remaining == 0) {
+                    reject(index, end)
+                    break
+                }
+                val next = nextEnd(index, end)
+                val units = cost(index, next)
+                if (!valid(index, next)) {
+                    reject(index, next)
+                } else if (inserted && units > remaining) {
+                    reject(index, end)
+                    break
+                } else if (inserted) {
+                    remaining -= units
+                }
+                index = next
+            }
+        }
+        untouchedStart = 0
+        editedRanges.forEach { range ->
+            filter(untouchedStart, range.start, inserted = false)
+            filter(range.start, range.end, inserted = true)
+            untouchedStart = range.end
+        }
+        filter(untouchedStart, length, inserted = false)
+
+        val previousSelection = selection
+        fun adjusted(offset: Int): Int = offset - rejectedRanges.sumOf { range ->
+            (offset - range.start).coerceIn(0, range.length)
+        }
+        val acceptedSelection = TextRange(adjusted(previousSelection.start), adjusted(previousSelection.end))
+        rejectedRanges.asReversed().forEach { replace(it.start, it.end, "") }
+        val boundedSelection = safeSelection(asCharSequence(), acceptedSelection.start, acceptedSelection.end)
+        if (selection != boundedSelection) selection = boundedSelection
     }
 
     // 이전 버전의 String 초안도 읽어 업데이트 후 복원에서 크기 제한을 우회하지 않는다.
@@ -60,12 +149,12 @@ internal data class TextInputPolicy(
         return TextFieldState(accepted, safeSelection(accepted, selectionStart, selectionEnd))
     }
 
-    private fun safeSelection(text: String, start: Int, end: Int): TextRange {
-        fun boundary(offset: Int): Int {
-            val bounded = offset.coerceIn(0, text.length)
-            return if (bounded > 0 && bounded < text.length && text[bounded].isLowSurrogate() && text[bounded - 1].isHighSurrogate()) bounded - 1 else bounded
-        }
-        return TextRange(boundary(start), boundary(end))
+    private fun safeSelection(text: CharSequence, start: Int, end: Int): TextRange =
+        TextRange(codePointBoundary(text, start), codePointBoundary(text, end))
+
+    private fun codePointBoundary(text: CharSequence, offset: Int): Int {
+        val bounded = offset.coerceIn(0, text.length)
+        return if (bounded > 0 && bounded < text.length && text[bounded].isLowSurrogate() && text[bounded - 1].isHighSurrogate()) bounded - 1 else bounded
     }
 }
 

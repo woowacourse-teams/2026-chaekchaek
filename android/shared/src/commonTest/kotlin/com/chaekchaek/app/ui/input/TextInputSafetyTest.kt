@@ -2,6 +2,8 @@ package com.chaekchaek.app.ui.input
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.saveable.SaverScope
+import androidx.compose.ui.semantics.SemanticsConfiguration
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.text.TextRange
 import com.chaekchaek.app.ui.archive.NicknameInputPolicy
 import com.chaekchaek.app.ui.bookdetail.BookDetailInputRules
@@ -81,6 +83,102 @@ class TextInputSafetyTest {
             val accepted = policy.applyChange("", "가📚\uD800".repeat(10_000))
             assertTrue(if (policy.utf16) accepted.length <= policy.maximum else accepted.length <= policy.maximum * 2)
             assertFalse(Regex("[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]").containsMatchIn(accepted))
+        }
+    }
+
+    @Test
+    fun repeatedPrefixPastePreservesExistingTextAndAcceptedCursor() {
+        val state = TextFieldState("aaaa", TextRange.Zero)
+        edit(state, TextInputPolicy(5), 0, 0, "aX", TextRange(2))
+        assertEquals("aaaaa", state.text.toString())
+        assertEquals(TextRange(1), state.selection)
+    }
+
+    @Test
+    fun fullyRejectedRepeatedPasteKeepsCursorAtInsertionPoint() {
+        val state = TextFieldState("1111", TextRange.Zero)
+        edit(state, TextInputPolicy(4), 0, 0, "111", TextRange(3))
+        assertEquals("1111", state.text.toString())
+        assertEquals(TextRange.Zero, state.selection)
+    }
+
+    @Test
+    fun selectionReplacementKeepsAcceptedTextEvenWhenSuffixRepeats() {
+        val state = TextFieldState("가".repeat(100), TextRange(0, 1))
+        edit(state, TextInputPolicy(100), 0, 1, "나가", TextRange(2))
+        assertEquals("나" + "가".repeat(99), state.text.toString())
+        assertEquals(TextRange(1), state.selection)
+    }
+
+    @Test
+    fun middlePasteMatchingExistingSuffixStaysAtActualInsertionPoint() {
+        val state = TextFieldState("abcd", TextRange(2))
+        edit(state, TextInputPolicy(5), 2, 2, "cdXYZ", TextRange(7))
+        assertEquals("abccd", state.text.toString())
+        assertEquals(TextRange(3), state.selection)
+    }
+
+    @Test
+    fun multipleEditsShareRemainingRoomAndPreserveReversedSelection() {
+        val state = TextFieldState("abcd")
+        state.edit {
+            replace(1, 1, "XX")
+            replace(5, 5, "YY")
+            selection = TextRange(8, 0)
+            with(TextInputPolicy(6).inputTransformation) { transformInput() }
+        }
+        assertEquals("aXXbcd", state.text.toString())
+        assertEquals(TextRange(6, 0), state.selection)
+    }
+
+    @Test
+    fun numericFilteringMapsBothSelectionEndpointsThroughRejectedCharacters() {
+        val state = TextFieldState("1234", TextRange(2))
+        edit(state, TextInputPolicy(5, digitsOnly = true), 2, 2, "a9bc", TextRange(6, 2))
+        assertEquals("12934", state.text.toString())
+        assertEquals(TextRange(3, 2), state.selection)
+    }
+
+    @Test
+    fun partialSurrogateDeletionCannotLeaveAnUnpairedCharacter() {
+        val state = TextFieldState("📚가", TextRange(1, 2))
+        edit(state, TextInputPolicy(3), 1, 2, "", TextRange(1))
+        assertEquals("가", state.text.toString())
+        assertEquals(TextRange.Zero, state.selection)
+    }
+
+    @Test
+    fun everyFieldTransformationBoundsLargePasteBeforeItEntersState() {
+        policies.forEach { policy ->
+            val text = (if (policy.digitsOnly) "1" else "한").repeat(100_000)
+            val state = TextFieldState()
+            edit(state, policy, 0, 0, text, TextRange(text.length))
+            assertEquals(policy.limit(text), state.text.toString())
+            assertEquals(TextRange(state.text.length), state.selection)
+        }
+    }
+
+    @Test
+    fun transformationsExposeMaximumLengthToAccessibility() {
+        policies.forEach { policy ->
+            val semantics = SemanticsConfiguration()
+            with(policy.inputTransformation) { semantics.applySemantics() }
+            assertEquals(policy.maximum, semantics[SemanticsProperties.MaxTextLength])
+        }
+    }
+
+    private fun edit(
+        state: TextFieldState,
+        policy: TextInputPolicy,
+        start: Int,
+        end: Int,
+        text: String,
+        selectionAfterEdit: TextRange,
+    ) {
+        state.edit {
+            replace(start, end, text)
+            selection = selectionAfterEdit
+            with(policy.inputTransformation) { transformInput() }
         }
     }
 }
