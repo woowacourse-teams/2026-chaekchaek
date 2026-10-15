@@ -97,6 +97,16 @@ flowchart TD
 - 선택 목록과 서재 미리보기는 저장 완료처럼 표현하지 않는다. 로그인 전에는 아직 저장되지 않았음을 안내한다.
 - 기본 시안은 기존 모바일 원본과 같은 390 너비이며, 별도 320 너비 시안으로 좁은 화면을 검토한다.
 
+### 공급업체 로그인 버튼 제약
+
+Apple과 Google 버튼은 앱 공통 버튼으로 다시 그리지 않고 각 공급업체 규격을 따른다. 두 버튼의 모서리 반경이 서로 달라야 한다는 규칙은 없으며, iOS 앱에서는 둘 다 8pt로 통일할 수 있다.
+
+- Apple: 실제 앱은 공식 `ASAuthorizationAppleIDButton`의 검정색 Continue 유형을 사용한다. Apple이 허용하는 외형 변경은 제공된 유형과 스타일 선택, `cornerRadius` 조정이며, 그 밖의 내부 로고, 문구, 색상, 글꼴은 변경하지 않는다. 현재 구현은 `cornerRadius = 8.0`과 Compose 외곽 `RoundedCornerShape(8.dp)`를 사용한다. Figma의 Apple 컴포넌트가 0으로 보이는 것은 공식 샘플 이미지를 그대로 배치한 시안 자산의 값이며, 공급업체가 강제한 모서리 값이 아니다. 근거: [Apple 공식 버튼 문서](https://developer.apple.com/documentation/authenticationservices/asauthorizationappleidbutton), `android/shared/src/iosMain/kotlin/com/chaekchaek/app/ui/common/AppleSignInButton.ios.kt`
+- Google: 공식 SDK 렌더 버튼 사용을 권장하지만, 공식 자산 또는 커스텀 버튼도 허용한다. 커스텀 버튼은 표준 색상의 G 로고, 허용 문구, 색상, 글꼴, 크기와 내부 여백 등 현재 브랜드 가이드를 따라야 한다. 현재 iOS 구현은 SDK 기본 버튼 화면을 그대로 쓰지 않고 `GoogleSignInControl`을 직접 그리며 모서리 반경을 8pt로 설정한다. 근거: [Google 로그인 브랜드 가이드](https://developers.google.com/identity/branding-guidelines), `android/iosApp/Chaekchaek/ContentView.swift`
+- 공통 적용: 버튼 높이와 너비, 화면 안의 외부 배치 및 8pt 모서리 통일은 가능하다. 공급업체가 소유한 내부 자산은 책췍 공통 버튼 스타일로 덮어쓰지 않는다.
+
+2026-10-15 확인 기준으로 현재 Google 커스텀 컨트롤은 `Roboto-Bold 17`을 사용한다. 최신 Google 브랜드 가이드와 배포 시점의 공식 자산을 다시 대조하기 전에는 이 구현이 최신 규격을 모두 충족한다고 판단하지 않는다.
+
 ## 구현 단계에서 확인할 항목
 
 아래는 새 사용자 요구가 아니라 확정 동작을 구현하기 위해 확인할 기술 사항이다.
