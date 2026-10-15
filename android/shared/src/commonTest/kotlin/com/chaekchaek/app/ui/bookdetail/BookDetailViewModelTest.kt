@@ -47,6 +47,32 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
   @Test
+  fun `회원 복원이 실패해 내 감상이 해제되면 전체 감상 첫 페이지만 읽는다`() = runViewModelTest {
+    val requestedPages = mutableListOf<Int>()
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else {
+        val page = request.url.parameters["page"]!!.toInt()
+        requestedPages += page
+        respond("""{"totalCount":2,"nextPage":${if (page == 1) "2" else "null"},"items":[$REVIEW_RESPONSE]}""",
+          headers = jsonHeaders())
+      }
+    })
+    val savedState = SavedStateHandle(mapOf(
+      BookDetailSavedStateKeys.Opened to true,
+      BookDetailSavedStateKeys.LoadedPage to 2,
+      BookDetailSavedStateKeys.ReviewScope to ReviewScope.MINE.name,
+    ))
+    val viewModel = viewModel(client, client, platform({ null }), savedStateHandle = savedState)
+    viewModel.open(book().copy(isbn13 = "9780000000042"), null)
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+    assertEquals(ReviewScope.ALL, viewModel.uiState.value.reviewScope)
+    assertEquals(1, savedState.get<Int>(BookDetailSavedStateKeys.LoadedPage))
+    assertEquals(listOf(1), requestedPages)
+  }
+
+  @Test
   fun `같은 회원의 토큰 갱신과 상세 재연결은 내 감상 조건과 페이지를 유지한다`() = runViewModelTest {
     val requestedPages = mutableListOf<Int>()
     val client = testClient(MockEngine { request ->

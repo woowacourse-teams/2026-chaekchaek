@@ -124,6 +124,10 @@ Saved State에는 검색어, enum 이름, 페이지 번호, ID, offset, 제한�
 
 인증 복원 대기 표시에는 기존 Loading/Inline progress 컴포넌트(`1058:411`)와 공통 컨트롤 레퍼런스 인스턴스(`1058:413`)를 확인하고 기존 앱 로딩 표시를 재사용했다. 실제 회원 로그인 후 OS 프로세스 복귀·네트워크 장애·쪽수 편집과 iOS UI는 여전히 기기에서 미검증이다.
 
+2차 독립 리뷰에서 인증 복원이 실패해 MINE을 ALL로 바꾸는 최초 조회도 페이지 단서를 초기화해야 함을 확인했다. 수정 전 회귀 테스트가 실패했으며, 해당 전환에서 페이지를 1로 초기화했다. 상세 목록 위치는 인증 여부를 Composition key로 구분한다. 같은 회원으로 복원되면 기존 위치를 소비하고, 확정된 비회원으로 복원되면 이전 회원 목록 위치를 적용하지 않는다. `BookDetailScrollRestorationTest` 2개가 같은 전용 AVD에서 통과했다. 성공·실패 인증 결과를 주입한 Compose 저장 상태 복원 검증이며 실제 서버 401이나 OS 종료를 재현한 것은 아니다. 상세 ViewModel 테스트 28개도 통과했다.
+
+2차 보완 후 전체 host 테스트 234개, Android lint, iOS Simulator 컴파일이 통과했다. UI 테스트용 debug APK도 빌드됐다. 로그는 `/tmp/chaekchaek-an-round2-tests.log`와 `/tmp/chaekchaek-an-round2-final.log`다.
+
 ## 참고
 
 - [Save UI states](https://developer.android.com/topic/libraries/architecture/saving-states)

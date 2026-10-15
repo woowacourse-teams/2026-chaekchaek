@@ -72,7 +72,10 @@ class BookDetailViewModel(
         invalidateRequests()
         this.accessToken = accessToken
         val reviewScope = restoredReviewScope.takeIf { it != ReviewScope.MINE || accessToken != null }
-            ?: ReviewScope.ALL.also { savedStateHandle[BookDetailSavedStateKeys.ReviewScope] = it.name }
+            ?: ReviewScope.ALL.also {
+                savedStateHandle[BookDetailSavedStateKeys.ReviewScope] = it.name
+                savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = 1
+            }
         val restoring = savedStateHandle.get<Boolean>(BookDetailSavedStateKeys.Opened) == true
         savedStateHandle[BookDetailSavedStateKeys.Opened] = true
         _uiState.value = BookDetailUiState(

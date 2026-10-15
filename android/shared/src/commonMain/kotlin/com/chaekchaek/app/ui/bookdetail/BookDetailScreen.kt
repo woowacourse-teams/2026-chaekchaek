@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -167,7 +168,7 @@ fun BookDetailScreen(
     onRequestErrorShown: () -> Unit = {},
 ) {
     val book = state.displayBook ?: return
-    val listState = rememberLazyListState()
+    val listState = key(state.signedIn) { rememberLazyListState() }
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val threshold = remember(density) { with(density) { 240.dp.roundToPx() } }
