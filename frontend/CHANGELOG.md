@@ -43,3 +43,16 @@
 
 #### 서재 책등 시각화 추가
 - 공유 서재와 내 서재에서 보유한 책의 책등 이미지를 시각화 [#426](https://github.com/woowacourse-teams/2026-chaekchaek/pull/426)
+
+## 1.2.0
+
+### Added
+
+#### 디자인 pivot
+- 새로운 디자인에 맞게 웹 디자인 변경 시안 적용 [#497](https://github.com/woowacourse-teams/2026-chaekchaek/pull/497)
+
+#### 랜딩 페이지 추가 
+- 책책 서비스 소개 페이지 [#516](https://github.com/woowacourse-teams/2026-chaekchaek/pull/516)
+
+#### 로딩 성능 개선 
+- intro 페이지에 대한 로딩 성능 개선 [#501][https://github.com/woowacourse-teams/2026-chaekchaek/pull/501), [#503][https://github.com/woowacourse-teams/2026-chaekchaek/pull/503), [#504][https://github.com/woowacourse-teams/2026-chaekchaek/pull/504), [#506][https://github.com/woowacourse-teams/2026-chaekchaek/pull/506)
