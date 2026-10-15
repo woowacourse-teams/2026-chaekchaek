@@ -65,6 +65,8 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 
 ## 문서 규칙
 
+- 첫 책 온보딩, 로그인 후 서재 저장, 공급업체 로그인 버튼의 디자인이나 구현을 변경할 때는 [첫 책 선택 온보딩](docs/first-library-onboarding.md)을 먼저 읽는다. 로그인 버튼은 문서의 공급업체 제약과 검증 상태를 확인한다.
+
 - Google 로그인 조사, 패키지명/빌드 변형/OAuth 클라이언트/Play 앱 서명 키 변경 및
   Android 로그인 배포 검증은 [Google 로그인 운영 가이드](docs/android-google-login.md)를 먼저 읽는다.
   실제 Play 서명 지문 등록과 배포본 로그인 완료를 확인하기 전에는 해결 완료로 판단하지 않는다.
