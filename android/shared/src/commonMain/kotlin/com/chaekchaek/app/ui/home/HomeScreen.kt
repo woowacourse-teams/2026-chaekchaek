@@ -84,7 +84,7 @@ import com.chaekchaek.app.presentation.home.ReadingBookUiModel
 import com.chaekchaek.app.presentation.home.TrendingBookUiModel
 import com.chaekchaek.app.ui.common.avatarResource
 import com.chaekchaek.app.ui.common.BrandHeader
-import com.chaekchaek.app.ui.common.HomeLoadErrorContent
+import com.chaekchaek.app.ui.common.HomeLoadErrorPanel
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.*
 import com.chaekchaek.app.ui.theme.ChaekBand
@@ -158,7 +158,12 @@ fun HomeScreen(
             modifier = modifier,
             content = { EmptyContent(it) },
         )
-        is HomeUiState.Failure -> HomeLoadErrorContent(state.error, homeViewModel::retry, modifier)
+        is HomeUiState.Failure -> HomeStaticStateContent(
+            onProfileClick = onProfileClick,
+            homeHeaderAction = homeHeaderAction,
+            modifier = modifier,
+            content = { HomeLoadErrorPanel(state.error, homeViewModel::retry, it) },
+        )
         is HomeUiState.Content -> HomeContent(
             state,
             myDisplayName,
