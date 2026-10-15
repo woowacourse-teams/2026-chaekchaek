@@ -16,7 +16,7 @@ export const BookshelfSection = () => (
         <br />
         책들이 하나둘 쌓이면 나만의 서재가 완성돼요.
       </p>
-      <LandingCtaLink className={styles.outlineButton} to="/library">
+      <LandingCtaLink className={styles.outlineButton} to="/login">
         나만의 서재 만들기　→
       </LandingCtaLink>
     </div>

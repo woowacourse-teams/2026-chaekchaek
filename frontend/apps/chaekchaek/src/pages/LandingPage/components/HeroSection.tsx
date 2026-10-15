@@ -15,7 +15,7 @@ export const HeroSection = () => (
         <br />
         책췍에서 다른 사람의 생각을 발견하고, 나의 감상을 나눠보세요.
       </p>
-      <LandingCtaLink className={styles.outlineButton} to="/login">
+      <LandingCtaLink className={styles.outlineButton} to="/intro">
         책췍 시작하기　→
       </LandingCtaLink>
     </div>
