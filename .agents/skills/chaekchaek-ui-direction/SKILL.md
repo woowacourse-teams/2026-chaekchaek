@@ -3,9 +3,9 @@ name: chaekchaek-ui-direction
 description: Apply the approved 책췍 light-theme visual direction to mobile screen concepts and handoffs after checking the current Figma source and shared components.
 ---
 
-# ChaekChaek UI Direction
+# 책췍 UI Direction
 
-Use this as the visual decision layer for ChaekChaek mobile UI work. It records choices the user has already accepted or rejected so later screens feel like the same app.
+Use this as the visual decision layer for 책췍 mobile UI work. It records choices the user has already accepted or rejected so later screens feel like the same app.
 
 Before designing, read [references/visual-direction.md](references/visual-direction.md) and [chaekchaek-design-system](../chaekchaek-design-system/SKILL.md). Inspect the current approved Figma screen and shared component reference. Register missing designs, shared components, and reference instances in Figma before code application.
 

@@ -1,6 +1,6 @@
 ---
 name: screen-specification
-description: /Users/ujeonghyeon/Downloads/designs.pen에서 첵췍 화면 기획서를 기준 노드 MvCYw와 같은 표 형식으로 작성하거나 템플릿을 제공한다. 사용자가 "화면 기획서 작성", "화면 기획서 템플릿", "화면 상세 기획서", 화면 데이터 명세, 동작 흐름 명세를 요청할 때 사용한다. 앱 UI 구현만 요청한 경우에는 사용하지 않는다.
+description: /Users/ujeonghyeon/Downloads/designs.pen에서 책췍 화면 기획서를 기준 노드 MvCYw와 같은 표 형식으로 작성하거나 템플릿을 제공한다. 사용자가 "화면 기획서 작성", "화면 기획서 템플릿", "화면 상세 기획서", 화면 데이터 명세, 동작 흐름 명세를 요청할 때 사용한다. 앱 UI 구현만 요청한 경우에는 사용하지 않는다.
 ---
 
 # 화면 기획서

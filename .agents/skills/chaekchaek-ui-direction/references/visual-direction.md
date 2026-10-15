@@ -2,7 +2,7 @@
 
 ## Product character
 
-ChaekChaek is a mobile reading app with a small white sparrow mascot. The interface should feel calm, literary, direct, and slightly playful. The mascot provides warmth while book covers and readers' words remain the main content.
+책췍 is a mobile reading app with a small white sparrow mascot. The interface should feel calm, literary, direct, and slightly playful. The mascot provides warmth while book covers and readers' words remain the main content.
 
 ## Foundation
 
