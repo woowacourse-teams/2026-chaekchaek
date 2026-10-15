@@ -50,6 +50,17 @@ class AnalyticsTrackerTest {
     }
 
     @Test
+    fun independentEventDoesNotInheritAnOverlappingActionId() {
+        val events = mutableListOf<AnalyticsEvent>()
+        val tracker = AnalyticsTracker("test", events::add)
+
+        tracker.startAction("review_create")
+        tracker.log("cc_load_result", includeActionContext = false)
+
+        assertFalse("action_id" in events.last().stringParameters)
+    }
+
+    @Test
     fun bookSelectionUsesLastVisibleListContextAndCurrentSearch() {
         val events = mutableListOf<AnalyticsEvent>()
         val tracker = AnalyticsTracker("test", events::add)
