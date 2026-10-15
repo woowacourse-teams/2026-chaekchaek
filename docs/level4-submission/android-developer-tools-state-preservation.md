@@ -116,6 +116,42 @@
 
 회원 계정의 실제 서버 401, 네트워크 실패 중 화면 왕복, 쪽수 편집과 iOS UI는 기기에서 확인하지 않았다. 서버에서 항목이 추가·삭제되거나 정렬이 바뀌면 재조회한 최신 목록을 따르므로 과거 픽셀 상태를 그대로 재현하지 않는다.
 
+## 공통 증빙: 실제 앱 화면
+
+아래 캡처는 2026-10-15에 Pixel 6a API 33 에뮬레이터에서 debug 빌드를 실행해 확인한 결과다. 상태 보존 화면의 `HarryDraft509`, `detail-draft-509` 같은 문자열은 복원 여부를 구분하기 위해 입력한 테스트 값이다.
+
+### 개발자 도구
+
+홈 상단의 `DEV` 버튼으로 진입했다. 개발자 도구 화면에서 앱 버전 `1.1.1 (5)`, 빌드 타입 `debug`, 서버 환경 `development`, API base URL `https://dev-api.chaekchaek.com`을 확인했다.
+
+<img src="./assets/android-sprint-2/developer-tools.png" alt="개발자 도구 화면에서 앱 버전, 빌드 타입, 서버 환경과 API base URL을 확인한 모습" width="360">
+
+### 상태 보존
+
+#### 구성 변경
+
+발견 화면에서 검색어와 검색 결과를 연 상태로 세로 화면에서 가로 화면으로 회전했다. 화면이 다시 만들어진 뒤에도 검색어 `HarryDraft509`, 최근 검색어 `Harry`, 검색 결과 수와 정렬 조건이 유지됐다.
+
+| 구성 변경 전 | 구성 변경 후 |
+| --- | --- |
+| <img src="./assets/android-sprint-2/search-before-configuration-change.png" alt="구성 변경 전 발견 화면" width="300"> | <img src="./assets/android-sprint-2/search-after-configuration-change.png" alt="구성 변경 후 검색어와 조건이 유지된 발견 화면" width="520"> |
+
+#### 프로세스 종료 후 복원
+
+피드의 중간 위치에서 앱을 백그라운드로 보낸 뒤 시스템 명령으로 프로세스가 사라진 것을 확인하고 기존 task를 다시 열었다. 새 프로세스에서 피드 화면과 같은 목록 위치가 복원됐다.
+
+| 프로세스 종료 전 | 새 프로세스에서 복원 후 |
+| --- | --- |
+| <img src="./assets/android-sprint-2/feed-before-process-death.png" alt="프로세스 종료 전 피드 목록 위치" width="300"> | <img src="./assets/android-sprint-2/feed-after-process-recreation.png" alt="새 프로세스에서 복원된 피드 목록 위치" width="300"> |
+
+#### 화면 닫기 후 재진입
+
+도서 상세에서 작성 중인 감상을 닫아 `작성 취소`로 폐기한 뒤 상세 화면과 작성 화면에 다시 들어갔다. 재진입한 작성 화면은 빈 입력 상태로 시작해, 명시적으로 닫은 화면의 임시 상태가 남지 않는 것을 확인했다.
+
+| 작성 화면 닫기 | 재진입 후 |
+| --- | --- |
+| <img src="./assets/android-sprint-2/detail-before-close.png" alt="작성 중인 감상을 닫으며 작성 취소를 선택하는 화면" width="300"> | <img src="./assets/android-sprint-2/detail-after-reopen.png" alt="재진입 후 빈 상태로 열린 감상 작성 화면" width="300"> |
+
 ## 설계상 남은 과제
 
 기존 `MainActivity`는 플랫폼 초기화, 인증 콜백, 저장소, 분석과 UI 조립을 함께 담당해 단일 책임 원칙을 위반하고 있었다. 개발자 도구 작업에서 공통 조립을 `ChaekchaekActivity`로 옮기고 빌드별 진입점을 분리해 변경 이유를 나눴다.
