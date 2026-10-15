@@ -5,10 +5,12 @@ import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.setMain
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -85,6 +87,78 @@ class FirstLibraryOnboardingViewModelTest {
             viewModel.retrySave {}
             advanceUntilIdle()
             assertEquals(2, attempts)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun retryDoesNotSaveBooksThatAlreadySucceededAgain() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val first = book("1", "첫 책")
+        val second = book("2", "둘째 책")
+        val attempts = mutableListOf<String>()
+        var secondAttempts = 0
+        val viewModel = FirstLibraryOnboardingViewModel(
+            searchRepository = BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) },
+            addBook = { book, _ ->
+                attempts += book.isbn13
+                if (book == second && secondAttempts++ == 0) error("offline")
+            },
+        )
+        try {
+            viewModel.startSearch()
+            viewModel.toggle(first)
+            viewModel.toggle(second)
+            viewModel.reviewSelection()
+            viewModel.save("token") {}
+            advanceUntilIdle()
+
+            viewModel.retrySave {}
+            advanceUntilIdle()
+
+            assertEquals(listOf("1", "2", "2"), attempts)
+        } finally {
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun loginFailureKeepsSelectionAndOffersLoginAgain() {
+        val selected = book("1", "첫 책")
+        val viewModel = FirstLibraryOnboardingViewModel(
+            searchRepository = BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) },
+        )
+
+        viewModel.startSearch()
+        viewModel.toggle(selected)
+        viewModel.reviewSelection()
+        viewModel.showLoginError("로그인 실패")
+
+        assertEquals(OnboardingStep.LOGIN_ERROR, viewModel.state.value.step)
+        assertEquals(listOf(selected), viewModel.state.value.selectedBooks)
+    }
+
+    @Test
+    fun skipCancelsInFlightSaveWithoutCompletingOnboarding() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val selected = book("1", "첫 책")
+        var completed = false
+        val viewModel = FirstLibraryOnboardingViewModel(
+            searchRepository = BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) },
+            addBook = { _, _ -> awaitCancellation() },
+        )
+        try {
+            viewModel.startSearch()
+            viewModel.toggle(selected)
+            viewModel.reviewSelection()
+            viewModel.save("token") { completed = true }
+            runCurrent()
+
+            viewModel.cancelPendingWork()
+            advanceUntilIdle()
+
+            assertFalse(completed)
         } finally {
             Dispatchers.resetMain()
         }

@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-enum class OnboardingStep { INTRO, SEARCH, CHOICE, SAVING, SAVE_ERROR }
+enum class OnboardingStep { INTRO, SEARCH, CHOICE, LOGIN_ERROR, SAVING, SAVE_ERROR }
 
 data class FirstLibraryOnboardingState(
     val step: OnboardingStep = OnboardingStep.INTRO,
@@ -26,19 +26,29 @@ data class FirstLibraryOnboardingState(
     val searching: Boolean = false,
     val searchAttempted: Boolean = false,
     val searchError: String? = null,
+    val loginError: String? = null,
     val saveError: String? = null,
 )
 
-class FirstLibraryOnboardingViewModel(
-    private val searchRepository: BookSearchRepository = BookSearchRemoteRepository(),
-    private val addBook: suspend (BookSearchResult, String) -> Unit = { book, token ->
-        LibraryRemoteRepository().add(book.isbn13, book.totalPages.takeIf { it > 0 }, token)
-    },
+class FirstLibraryOnboardingViewModel internal constructor(
+    private val searchRepository: BookSearchRepository,
+    private val addBook: suspend (BookSearchResult, String) -> Unit,
 ) : ViewModel() {
+    constructor(
+        searchRepository: BookSearchRepository = BookSearchRemoteRepository(),
+        libraryRepository: LibraryRemoteRepository = LibraryRemoteRepository(),
+    ) : this(
+        searchRepository = searchRepository,
+        addBook = { book, token ->
+            libraryRepository.add(book.isbn13, book.totalPages.takeIf { it > 0 }, token)
+        },
+    )
+
     private val _state = MutableStateFlow(FirstLibraryOnboardingState())
     val state: StateFlow<FirstLibraryOnboardingState> = _state.asStateFlow()
     private var job: Job? = null
     private var lastAccessToken: String? = null
+    private val savedBookIsbn13 = mutableSetOf<String>()
 
     fun startSearch() {
         _state.value = _state.value.copy(step = OnboardingStep.SEARCH)
@@ -81,6 +91,20 @@ class FirstLibraryOnboardingViewModel(
         }
     }
 
+    fun returnToPreviousStep() {
+        val previous = when (_state.value.step) {
+            OnboardingStep.SEARCH -> OnboardingStep.INTRO
+            OnboardingStep.CHOICE, OnboardingStep.LOGIN_ERROR -> OnboardingStep.SEARCH
+            OnboardingStep.SAVE_ERROR -> OnboardingStep.CHOICE
+            OnboardingStep.INTRO, OnboardingStep.SAVING -> return
+        }
+        _state.value = _state.value.copy(step = previous, loginError = null, saveError = null)
+    }
+
+    fun showLoginError(message: String) {
+        _state.value = _state.value.copy(step = OnboardingStep.LOGIN_ERROR, loginError = message)
+    }
+
     fun save(accessToken: String, onComplete: () -> Unit) {
         if (_state.value.selectedBooks.isEmpty() || _state.value.step == OnboardingStep.SAVING) return
         lastAccessToken = accessToken
@@ -88,12 +112,15 @@ class FirstLibraryOnboardingViewModel(
         job = viewModelScope.launch {
             _state.value = _state.value.copy(step = OnboardingStep.SAVING, saveError = null)
             try {
-                _state.value.selectedBooks.forEach { book ->
+                _state.value.selectedBooks
+                    .filterNot { it.isbn13 in savedBookIsbn13 }
+                    .forEach { book ->
                     try {
                         addBook(book, accessToken)
                     } catch (error: ClientRequestException) {
                         if (error.response.status != HttpStatusCode.Conflict) throw error
                     }
+                    savedBookIsbn13 += book.isbn13
                 }
                 onComplete()
             } catch (error: CancellationException) {
@@ -109,5 +136,11 @@ class FirstLibraryOnboardingViewModel(
 
     fun retrySave(onComplete: () -> Unit) {
         lastAccessToken?.let { save(it, onComplete) }
+    }
+
+    fun cancelPendingWork() {
+        job?.cancel()
+        job = null
+        lastAccessToken = null
     }
 }

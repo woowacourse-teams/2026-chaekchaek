@@ -134,24 +134,43 @@ internal fun AppNavigation(
         if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
     }
     if (showOnboarding && !uiTestingMyPage) {
-        val finishOnboarding = {
+        val completeOnboarding = {
             showOnboardingLogin = false
             showOnboarding = false
+        }
+        val skipOnboarding = {
+            authViewModel.clearError()
+            authViewModel.cancelPendingAuthentication()
+            onboardingViewModel.cancelPendingWork()
+            completeOnboarding()
+        }
+        LaunchedEffect(showOnboardingLogin, authState.errorMessage) {
+            val error = authState.errorMessage
+            if (showOnboardingLogin && error != null) {
+                authViewModel.cancelPendingAuthentication()
+                onboardingViewModel.showLoginError(error)
+                showOnboardingLogin = false
+                authViewModel.clearError()
+            }
         }
         FirstLibraryOnboardingScreen(
             state = onboardingState,
             onStartSearch = onboardingViewModel::startSearch,
+            onBack = onboardingViewModel::returnToPreviousStep,
             onQueryChange = onboardingViewModel::updateQuery,
             onSearch = onboardingViewModel::search,
             onToggleBook = onboardingViewModel::toggle,
             onReviewSelection = onboardingViewModel::reviewSelection,
             onLogin = {
                 val token = authTokens?.accessToken
-                if (token != null) onboardingViewModel.save(token, finishOnboarding)
-                else showOnboardingLogin = true
+                if (token != null) onboardingViewModel.save(token, completeOnboarding)
+                else {
+                    authViewModel.clearError()
+                    showOnboardingLogin = true
+                }
             },
-            onRetrySave = { onboardingViewModel.retrySave(finishOnboarding) },
-            onSkip = finishOnboarding,
+            onRetrySave = { onboardingViewModel.retrySave(completeOnboarding) },
+            onSkip = skipOnboarding,
             modifier = safeContent,
         )
         if (showOnboardingLogin) {
@@ -170,18 +189,18 @@ internal fun AppNavigation(
                     authViewModel.clearError()
                     authViewModel.requireAppleAuthentication { token ->
                         showOnboardingLogin = false
-                        onboardingViewModel.save(token, finishOnboarding)
+                        onboardingViewModel.save(token, completeOnboarding)
                     }
                 },
                 onGoogleSignIn = {
                     authViewModel.clearError()
                     authViewModel.requireAuthentication { token ->
                         showOnboardingLogin = false
-                        onboardingViewModel.save(token, finishOnboarding)
+                        onboardingViewModel.save(token, completeOnboarding)
                     }
                 },
                 skipLabel = "건너뛰기",
-                onSkip = finishOnboarding,
+                onSkip = skipOnboarding,
             )
         }
         return

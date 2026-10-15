@@ -15,7 +15,13 @@ private struct ComposeViewController: UIViewControllerRepresentable {
         let keychain = RefreshTokenKeychain()
         let guestKeychain = GuestAuthKeychain()
 #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-uiTestingGuest") {
+        let launchArguments = ProcessInfo.processInfo.arguments
+        if launchArguments.contains("-uiTestingResetOnboarding") {
+            UserDefaults.standard.removeObject(forKey: "first_library_onboarding_shown")
+        } else if launchArguments.contains("-uiTestingGuest") || launchArguments.contains("-uiTestingMyPage") {
+            UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown")
+        }
+        if launchArguments.contains("-uiTestingGuest") {
             keychain.clear()
             guestKeychain.clear()
         }
@@ -23,7 +29,7 @@ private struct ComposeViewController: UIViewControllerRepresentable {
         let appleSignIn = AppleSignInProvider()
         let uiTestingMyPage: Bool
 #if DEBUG
-        uiTestingMyPage = ProcessInfo.processInfo.arguments.contains("-uiTestingMyPage")
+        uiTestingMyPage = launchArguments.contains("-uiTestingMyPage")
 #else
         uiTestingMyPage = false
 #endif
@@ -73,7 +79,7 @@ private struct ComposeViewController: UIViewControllerRepresentable {
         )
         let onboardingStorage = OnboardingStorage(
             hasBeenShown: {
-                UserDefaults.standard.bool(forKey: "first_library_onboarding_shown")
+                KotlinBoolean(bool: UserDefaults.standard.bool(forKey: "first_library_onboarding_shown"))
             },
             markShown: {
                 UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown")
