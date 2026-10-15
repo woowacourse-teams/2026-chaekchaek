@@ -152,5 +152,6 @@ dependencies {
   androidTestImplementation(libs.androidx.compose.ui.test.junit4)
   androidTestImplementation(libs.compose.material3)
   debugImplementation(platform(libs.androidx.compose.bom))
+  debugImplementation(libs.compose.material3)
   debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

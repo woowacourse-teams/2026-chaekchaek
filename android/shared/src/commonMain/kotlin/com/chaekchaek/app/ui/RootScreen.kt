@@ -110,6 +110,7 @@ internal fun RootScreen(
     onBookClick: (BookDetailArgs) -> Unit,
     onMyPage: () -> Unit,
     rootBackEnabled: Boolean,
+    homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -226,6 +227,7 @@ internal fun RootScreen(
                 onSearchBook = { selectedTab = RootTab.Discover },
                 onOpenFeed = { selectedTab = RootTab.Feed },
                 onProfileClick = openProfile,
+                homeHeaderAction = homeHeaderAction,
                 onBookClick = { openBook(it.toBookDetailArgs(), "home") },
             )
             RootTab.Feed -> FeedScreen(

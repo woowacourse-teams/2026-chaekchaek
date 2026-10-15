@@ -136,6 +136,7 @@ fun HomeScreen(
     onSearchBook: () -> Unit = {},
     onOpenFeed: () -> Unit = {},
     onProfileClick: () -> Unit = {},
+    homeHeaderAction: @Composable () -> Unit = {},
     onBookClick: (BookDetailTarget) -> Unit = {},
 ) {
     val uiState by homeViewModel.uiState.collectAsState()
@@ -154,6 +155,7 @@ fun HomeScreen(
             onSearchBook,
             onOpenFeed,
             onProfileClick,
+            homeHeaderAction,
             onBookClick,
             scrollTopRequest,
             modifier,
@@ -194,6 +196,7 @@ private fun HomeContent(
     onSearchBook: () -> Unit,
     onOpenFeed: () -> Unit,
     onProfileClick: () -> Unit,
+    homeHeaderAction: @Composable () -> Unit,
     onBookClick: (BookDetailTarget) -> Unit,
     scrollTopRequest: Int,
     modifier: Modifier,
@@ -208,7 +211,7 @@ private fun HomeContent(
             state = listState,
             contentPadding = PaddingValues(bottom = 76.dp),
         ) {
-            item { BrandHeader(onProfileClick) }
+            item { BrandHeader(onProfileClick, additionalAction = homeHeaderAction) }
             items(state.sections) { section ->
                 when (section) {
                     is FeedSectionUiModel.TrendingBooks -> TrendingSection(section, onBookClick)
