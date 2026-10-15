@@ -1,6 +1,6 @@
 import { landingImages } from '../imgs';
 import styles from '../LandingPage.module.css';
-import { LandingCtaLink } from './LandingCtaLink';
+import { LandingCtaLink } from './LandingCtaLink/index';
 const thoughts = [
   '무심해 보였다는 클라마르 소녀에게서 나르게 바라는 물음은 없다고 생각하고, 그 사람만이 가진 철학을 이해하며 같이 살아가면 좋지 않을까 생각했다.',
   '뫼르소는 죽음의 순간엔 이미 “잘게 퍼붓듯한 적의”에, 마음이나 상황은 수동적이었으며 고독도 행동 자체는 결코 순수한 방향이 아닌 능동적인 공포의 성격을 띤다.',

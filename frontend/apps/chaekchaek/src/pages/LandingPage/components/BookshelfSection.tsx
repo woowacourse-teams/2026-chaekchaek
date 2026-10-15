@@ -1,6 +1,6 @@
 import { landingImages } from '../imgs';
 import styles from '../LandingPage.module.css';
-import { LandingCtaLink } from './LandingCtaLink';
+import { LandingCtaLink } from './LandingCtaLink/index';
 
 export const BookshelfSection = () => (
   <section className={styles.bookshelfSection}>

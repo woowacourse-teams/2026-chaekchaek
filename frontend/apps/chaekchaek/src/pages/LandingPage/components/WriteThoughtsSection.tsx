@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import { landingImages } from '../imgs';
 import styles from '../LandingPage.module.css';
-import { LandingCtaLink } from './LandingCtaLink';
+import { LandingCtaLink } from './LandingCtaLink/index';
 
 export const WriteThoughtsSection = () => {
   const videoRef = useRef<HTMLVideoElement>(null);

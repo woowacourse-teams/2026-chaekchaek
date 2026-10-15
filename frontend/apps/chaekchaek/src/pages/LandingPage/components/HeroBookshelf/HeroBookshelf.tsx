@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { LandingCtaLink } from '../LandingCtaLink';
+import { LandingCtaLink } from '../LandingCtaLink/index';
 import { landingImages } from '../../imgs';
 
 import {

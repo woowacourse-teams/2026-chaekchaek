@@ -1,5 +1,5 @@
 import { HeroBookshelf } from './HeroBookshelf/index';
-import { LandingCtaLink } from './LandingCtaLink';
+import { LandingCtaLink } from './LandingCtaLink/index';
 import { LandingHeader } from './LandingHeader';
 
 import styles from '../LandingPage.module.css';
