@@ -10,7 +10,7 @@ import { OauthPage } from '@/pages/OauthPage';
 import { LoginPage } from '@/pages/LoginPage';
 
 import { DownloadPage } from '@/pages/DownloadPage';
-import { LandingPage } from '@/pages/LandingPage';
+import { LandingPage, LandingHomePage } from '@/pages/LandingPage';
 
 import { IntroPage } from '@/pages/IntroPage';
 import { BooksPage } from '@/pages/BooksPage';
@@ -55,7 +55,7 @@ const routes: Route[] = [
   },
   {
     path: ROUTES.HOME,
-    element: <Navigate to={ROUTES.INTRO} replace />,
+    element: <LandingHomePage />,
   },
   {
     path: ROUTES.INTRO,
