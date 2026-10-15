@@ -7,6 +7,7 @@ export type AS = 'div';
 type VerticalAlign = 'top' | 'center' | 'bottom';
 
 export type OwnProps = {
+  size?: 'medium' | 'small';
   reverse?: boolean;
   verticalAlign?: VerticalAlign;
   children: ReactNode;

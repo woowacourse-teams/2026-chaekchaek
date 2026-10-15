@@ -8,11 +8,29 @@ import type { Props } from './Checkbox.types';
 const classnameDefault = 'ui-Checkbox';
 
 export const Checkbox = (props: Props) => {
-  const { children, className, disabled, sx, style, ...restProps } = props;
+  const {
+    children,
+    className,
+    disabled,
+    variant = 'default',
+    size = 'medium',
+    boxed = false,
+    block = false,
+    sx,
+    style,
+    ...restProps
+  } = props;
 
+  const modifiers = {
+    variant: variant && styles?.[`variant-${variant}`],
+    size: size && styles?.[`size-${size}`],
+    boxed: boxed && styles?.[`is-boxed`],
+    block: block && styles?.[`is-block`],
+  };
   const classname = createClassName({
     styles,
     baseName: classnameDefault,
+    modifiers,
     className,
   });
 

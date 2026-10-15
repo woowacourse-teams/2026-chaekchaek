@@ -1,6 +1,22 @@
 .root {
   box-sizing: border-box;
+}
+
+.variant-filled {
+  border-radius: 12px;
+  background-color: var(--chaek-color-surface-subtle);
+}
+
+.variant-outlined {
+  border: 1px solid var(--chaek-color-border-divider);
+  border-radius: 22px;
+  background-color: var(--chaek-color-surface-canvas);
+}
+
+.spacing-small {
   padding: 12px 14px;
-  border: 1px solid #f7f2ec;
-  background-color: #f7f2ec;
+}
+
+.spacing-medium {
+  padding: 18px;
 }

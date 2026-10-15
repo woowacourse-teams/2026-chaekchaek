@@ -192,7 +192,7 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
   const showSpoilerVisible = isSpoilerVisible || !review.isSpoiler;
 
   return (
-    <Entry variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
+    <Entry line="bottom">
       <Entry.Main>
         <Entry.Header>
           <Shell>
@@ -215,7 +215,7 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
                 <>
                   {review.author.displayName}{' '}
                   {review.currentPage && (
-                    <Badge variant="soft" size="small">
+                    <Badge variant="subtle" size="small">
                       P. {review.currentPage} 까지
                     </Badge>
                   )}

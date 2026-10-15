@@ -1,15 +1,13 @@
-import type { SubmitEvent } from 'react';
+import type { ChangeEvent, SubmitEvent } from 'react';
 
 import {
   Button,
-  Callout,
-  Checkbox,
   Dialog,
   Field,
   FieldGroup,
-  Icon,
   Input,
-  Tag,
+  Radio,
+  Text,
   Textarea,
 } from '@chaekchaek/design-system';
 
@@ -59,6 +57,15 @@ export const UpdateReviewDialog = ({
 
   const { mutate } = useExecute({ executeFn: patchReviewsReviewId });
 
+  const handleSpoilerClick = () => {
+    onChange({
+      target: {
+        id: 'isSpoiler',
+        value: !values.isSpoiler,
+      },
+    } as unknown as ChangeEvent<HTMLInputElement>);
+  };
+
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
@@ -90,9 +97,13 @@ export const UpdateReviewDialog = ({
             <Field>
               <Field.Label>
                 느낀 점{' '}
-                <Tag variant="primary" size="small">
-                  필수
-                </Tag>
+                <Text as="span">
+                  (
+                  <Text as="span" color="error">
+                    필수
+                  </Text>
+                  )
+                </Text>
               </Field.Label>
               <Field.Content>
                 <Textarea
@@ -110,14 +121,31 @@ export const UpdateReviewDialog = ({
 
             <Field>
               <Field.Content>
-                <Checkbox id="isSpoiler" checked={values.isSpoiler} onChange={onChange}>
+                <Radio
+                  id="isSpoiler"
+                  name="isSpoiler"
+                  variant="accent"
+                  boxed={true}
+                  checked={values.isSpoiler}
+                  readOnly
+                  onClick={handleSpoilerClick}
+                >
                   스포일러
-                </Checkbox>
+                </Radio>
               </Field.Content>
             </Field>
 
             <Field>
-              <Field.Label>인상 깊은 문구</Field.Label>
+              <Field.Label>
+                인상 깊은 문구{' '}
+                <Text as="span">
+                  (
+                  <Text as="span" color="muted">
+                    선택
+                  </Text>
+                  )
+                </Text>
+              </Field.Label>
               <Field.Content>
                 <Textarea
                   variant="soft"
@@ -131,7 +159,16 @@ export const UpdateReviewDialog = ({
 
             <FieldGroup sx={{ mt: 4 }}>
               <Field>
-                <Field.Label>쪽수</Field.Label>
+                <Field.Label>
+                  쪽수{' '}
+                  <Text as="span">
+                    (
+                    <Text as="span" color="muted">
+                      선택
+                    </Text>
+                    )
+                  </Text>
+                </Field.Label>
                 <Field.Content>
                   <Input
                     block
@@ -149,7 +186,16 @@ export const UpdateReviewDialog = ({
               </Field>
 
               <Field>
-                <Field.Label>목차 / 챕터</Field.Label>
+                <Field.Label>
+                  목차 / 챕터{' '}
+                  <Text as="span">
+                    (
+                    <Text as="span" color="muted">
+                      선택
+                    </Text>
+                    )
+                  </Text>
+                </Field.Label>
                 <Field.Content>
                   <Input
                     block
@@ -162,7 +208,7 @@ export const UpdateReviewDialog = ({
               </Field>
             </FieldGroup>
 
-            <Callout sx={{ mt: 4 }} leading={<Icon.InvisibleIcon />}>
+            <Text color="muted" sx={{ mt: 4 }}>
               {((isAuthenticated && user?.displayAnonymous) || !isAuthenticated) && (
                 <strong>익명 공개</strong>
               )}
@@ -175,7 +221,7 @@ export const UpdateReviewDialog = ({
                   : guest?.nickname}
                 ’로 표시돼요
               </span>
-            </Callout>
+            </Text>
           </Dialog.Body>
 
           <Dialog.Footer>

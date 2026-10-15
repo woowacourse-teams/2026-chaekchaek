@@ -1,5 +1,7 @@
 .root {
-  gap: 16px;
+  --entry-line-color: var(--chaek-color-border-divider);
+
+  gap: 14px;
   display: flex;
   flex-direction: column;
 }
@@ -13,17 +15,20 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 14px;
   justify-content: space-between;
   align-items: flex-start;
-  border: 1px solid transparent;
-  background: #FFFFFF;
 }
 
-.spacing-medium .ui-Entry-Main {
-  padding: 20px;
+.spacing-medium {
+  --entry-line-inset: 22px;
+
+  padding: 20px 22px;
 }
 
-.spacing-large .ui-Entry-Main {
+.spacing-large {
+  --entry-line-inset: 32px;
+
   padding: 32px;
 }
 
@@ -46,32 +51,49 @@
 
 .ui-Entry-Extension {
   display: flex;
-  gap: 4px;
-  margin-left: 20px;
+  flex-direction: column;
+  gap: 12px;
+  margin-left: 24px;
   /* background: #F7F2EC; */
 }
 
-.variant-subtle .ui-Entry-Main {
-  background: #F7F2EC;
+.line-top {
+  border-top: 1px solid var(--entry-line-color);
 }
 
-.variant-bare .ui-Entry-Main {
-  background: transparent;
+.line-top-inset {
+  position: relative;
 }
 
-.line-none .ui-Entry-Main {
-  border-color: transparent;
+.line-top-inset::before {
+  position: absolute;
+  top: 0;
+  right: var(--entry-line-inset);
+  left: var(--entry-line-inset);
+  border-top: 1px solid var(--entry-line-color);
+  content: '';
 }
 
-.line-outline .ui-Entry-Main {
-  border-color: #DDD7CE;
+.line-bottom {
+  border-bottom: 1px solid var(--entry-line-color);
 }
 
-.line-top .ui-Entry-Main {
-  border-top-color: #DDD7CE;
+.line-bottom-inset {
+  position: relative;
+}
+
+.line-bottom-inset::after {
+  position: absolute;
+  right: var(--entry-line-inset);
+  bottom: 0;
+  left: var(--entry-line-inset);
+  border-bottom: 1px solid var(--entry-line-color);
+  content: '';
 }
 
 .is-reverse {
+  --entry-line-color: rgba(255, 255, 255, 0.05);
+
   color: #ffffff;
 }
 
@@ -82,11 +104,3 @@
 .is-reverse .ui-Entry-Body {
   color: #E2E2E2
 } 
-
-.is-reverse.line-outline .ui-Entry-Main {
-  border-color: rgba(255, 255, 255, 0.05);
-}
-
-.is-reverse.line-top .ui-Entry-Main {
-  border-top-color: rgba(255, 255, 255, 0.05);
-}

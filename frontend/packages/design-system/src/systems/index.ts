@@ -8,6 +8,8 @@ export const space = {
   6: '24px',
   8: '32px',
   10: '40px',
+  12: '48px',
+  14: '56px',
 } as const;
 
 type SpaceType = keyof typeof space;

@@ -20,6 +20,19 @@ export const Example: Story = {
   },
 };
 
+export const Placeholder: Story = {
+  args: {
+    placeholder: '책 제목이나 작가를 검색해요',
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    disabled: true,
+    placeholder: '책 제목이나 작가를 검색해요',
+  },
+};
+
 export const Reverse: Story = {
   args: {
     reverse: true,

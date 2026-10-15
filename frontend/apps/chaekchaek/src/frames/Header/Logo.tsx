@@ -28,9 +28,9 @@ export const Logo = <T extends ElementType>(props: LogoProps<T>) => {
     <View as={as} className={classname} {...restProps}>
       <a href={ROUTES.INTRO}>
         <span className={styles.img}>
-          <img src={LogoImg} alt="책책" />
+          <img src={LogoImg} alt="" />
         </span>
-        <span className={styles.text}>책책</span>
+        <span className={styles.text}>책췍</span>
       </a>
     </View>
   );

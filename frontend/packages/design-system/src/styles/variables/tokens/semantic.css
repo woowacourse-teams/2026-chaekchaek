@@ -1,0 +1,47 @@
+/*
+ * ChaekChaek design tokens
+ * Generated from Figma token JSON exports.
+ * Do not edit generated values manually; update the source tokens instead.
+ */
+
+:root {
+  /* Semantic */
+  --chaek-color-surface-action: var(--chaek-color-1c1c1c);
+  --chaek-color-surface-subtle: var(--chaek-color-f3f3f5);
+  --chaek-color-surface-inverse: var(--chaek-color-191919);
+  --chaek-color-surface-progress-track-detail: var(--chaek-color-dddde1);
+  --chaek-color-surface-accent: var(--chaek-color-ff8500);
+  --chaek-color-surface-progress-track: var(--chaek-color-ececee);
+  --chaek-color-surface-progress-track-inverse: var(--chaek-color-4d4d4d);
+  --chaek-color-surface-avatar-home: var(--chaek-color-e1e1e5);
+  --chaek-color-surface-avatar-detail: var(--chaek-color-f0f0f3);
+  --chaek-color-surface-canvas: var(--chaek-color-ffffff);
+  --chaek-color-surface-source-f1f1f3: var(--chaek-color-f1f1f3);
+  --chaek-color-surface-source-e7e5e0: var(--chaek-color-e7e5e0);
+  --chaek-color-surface-action-pressed: var(--chaek-color-333333);
+  --chaek-color-text-inverse: var(--chaek-color-ffffff);
+  --chaek-color-text-accent-detail: var(--chaek-color-ff920f);
+  --chaek-color-text-placeholder: var(--chaek-color-8a8a8a);
+  --chaek-color-text-filter-inactive: var(--chaek-color-707070);
+  --chaek-color-text-muted: var(--chaek-color-777777);
+  --chaek-color-text-primary: var(--chaek-color-191919);
+  --chaek-color-text-avatar: var(--chaek-color-56565d);
+  --chaek-color-text-secondary: var(--chaek-color-666666);
+  --chaek-color-text-inactive: var(--chaek-color-858585);
+  --chaek-color-text-source-656565: var(--chaek-color-656565);
+  --chaek-color-text-source-797979: var(--chaek-color-797979);
+  --chaek-color-text-source-626262: var(--chaek-color-626262);
+  --chaek-color-text-source-333333: var(--chaek-color-333333);
+  --chaek-color-text-accent: var(--chaek-color-ff8500);
+  --chaek-color-text-source-bdbdbd: var(--chaek-color-bdbdbd);
+  --chaek-color-text-source-555555: var(--chaek-color-555555);
+  --chaek-color-text-accent-inverse: var(--chaek-color-ff9b33);
+  --chaek-color-text-primary-detail: var(--chaek-color-1b1b1b);
+  --chaek-color-border-strong: var(--chaek-color-191919);
+  --chaek-color-border-divider: var(--chaek-color-dddde1);
+  --chaek-color-border-navigation: var(--chaek-color-e7e7e9);
+  --chaek-color-border-source-858585: var(--chaek-color-858585);
+  --chaek-color-border-source-e0e0e3: var(--chaek-color-e0e0e3);
+  --chaek-color-border-source-626262: var(--chaek-color-626262);
+  --chaek-color-border-source-ffffff: var(--chaek-color-ffffff);
+}

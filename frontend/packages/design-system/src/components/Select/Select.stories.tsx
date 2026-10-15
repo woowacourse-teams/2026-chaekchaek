@@ -23,6 +23,41 @@ export const Example: Story = {
   },
 };
 
+export const Placeholder: Story = {
+  args: {
+    options: [
+      { value: 'a', text: 'A' },
+      { value: 'b', text: 'B' },
+    ],
+    value: undefined,
+    placeholder: '옵션을 선택해 주세요',
+  },
+};
+
+export const Focus: Story = {
+  args: {
+    options: [
+      { value: 'a', text: 'A' },
+      { value: 'b', text: 'B' },
+    ],
+    value: 'a',
+  },
+  play: async ({ canvasElement }) => {
+    canvasElement.querySelector<HTMLElement>('.ui-Select')?.focus();
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    disabled: true,
+    options: [
+      { value: 'a', text: 'A' },
+      { value: 'b', text: 'B' },
+    ],
+    value: 'a',
+  },
+};
+
 export const SizeMedium: Story = {
   args: {
     options: [
@@ -42,6 +77,17 @@ export const SizeSmall: Story = {
     ],
     value: 'a',
     size: 'small',
+  },
+};
+
+export const SizeLarge: Story = {
+  args: {
+    options: [
+      { value: 'a', text: 'A' },
+      { value: 'b', text: 'B' },
+    ],
+    value: 'a',
+    size: 'large',
   },
 };
 

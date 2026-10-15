@@ -1,9 +1,49 @@
 .root {
+  --radio-indicator-width: 22px;
+  --radio-indicator-height: 22px;
+  --radio-unchecked-size: 14px;
+  --radio-checked-size: 12px;
+  --radio-checked-color: var(--chaek-color-text-primary);
+
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #1a1a1a;
+  color: var(--chaek-color-text-primary);
   cursor: pointer;
+}
+
+.variant-accent {
+  --radio-checked-color: var(--chaek-color-text-accent);
+}
+
+.size-large {
+  --radio-unchecked-size: 22px;
+  --radio-checked-size: 22px;
+}
+
+.is-boxed {
+  --radio-indicator-width: 24px;
+  --radio-indicator-height: 30px;
+
+  box-sizing: border-box;
+  height: 50px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 15px;
+  background-color: var(--chaek-color-surface-subtle);
+  font-family: var(--chaek-font-family-gowun-dodum);
+  font-size: 14px;
+  line-height: 21px;
+  letter-spacing: -0.150390625px;
+}
+
+.is-boxed + .is-boxed {
+  margin-top: 16px;
+}
+
+.is-block {
+  display: flex;
 }
 
 .input {
@@ -23,30 +63,32 @@
   position: relative;
   box-sizing: border-box;
   display: inline-flex;
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
+  width: var(--radio-indicator-width);
+  height: var(--radio-indicator-height);
+  flex: 0 0 var(--radio-indicator-width);
   align-items: center;
   justify-content: center;
-  border: 1px solid #bdb7ae;
-  border-radius: 50%;
-  background-color: #fff;
 }
 
-.input:checked + .indicator {
-  border-color: #1a1a1a;
+.input:not(:checked) + .indicator::before {
+  box-sizing: border-box;
+  width: var(--radio-unchecked-size);
+  height: var(--radio-unchecked-size);
+  border: 1px solid var(--chaek-color-text-secondary);
+  border-radius: 50%;
+  content: '';
 }
 
-.input:checked + .indicator::after {
-  width: 12px;
-  height: 12px;
+.input:checked + .indicator::before {
+  width: var(--radio-checked-size);
+  height: var(--radio-checked-size);
   border-radius: 50%;
-  background-color: #1a1a1a;
+  background-color: var(--radio-checked-color);
   content: '';
 }
 
 .input:focus-visible + .indicator {
-  outline: 2px solid #1a1a1a;
+  outline: 2px solid var(--chaek-color-border-strong);
   outline-offset: 2px;
 }
 
@@ -56,5 +98,7 @@
 }
 
 .label {
+  min-width: 0;
+  flex: 1 1 auto;
   font: inherit;
 }

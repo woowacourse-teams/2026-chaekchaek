@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 
-import { Button, ButtonStack, Dialog, Field, SegmentedControl } from '@chaekchaek/design-system';
+import { Button, ButtonStack, Dialog, Field, Radio } from '@chaekchaek/design-system';
 
 import { track } from '@/analytics/track';
 
@@ -47,7 +47,13 @@ export const RegisterLibraryDialog = ({
     <Dialog size="medium" onClose={onClose}>
       <Dialog.Container>
         <form>
-          <Dialog.Header subTitle="지금의 독서 상태를 선택해 주세요. 내 서재에서 언제든 바꿀 수 있어요.">
+          <Dialog.Header
+            subTitle={
+              <>
+                지금의 독서 상태를 선택해 주세요. <br />내 서재에서 언제든 바꿀 수 있어요.
+              </>
+            }
+          >
             내 서재에 넣으시겠어요?
           </Dialog.Header>
 
@@ -55,21 +61,30 @@ export const RegisterLibraryDialog = ({
             <Field>
               <Field.Label>독서 상태</Field.Label>
               <Field.Content>
-                <SegmentedControl
-                  shape="normal"
-                  value={status}
-                  options={READING_STATUS_OPTIONS}
-                  onChange={handleChangeStatus}
-                />
+                <div>
+                  {READING_STATUS_OPTIONS.map((option) => {
+                    return (
+                      <Radio
+                        variant="accent"
+                        boxed={true}
+                        block
+                        name="RegisterLibraryDialog"
+                        value={option.value}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                          handleChangeStatus(e.target.value as ReadingStatus);
+                        }}
+                      >
+                        {option.text}
+                      </Radio>
+                    );
+                  })}
+                </div>
               </Field.Content>
             </Field>
           </Dialog.Body>
 
           <Dialog.Footer>
-            <ButtonStack>
-              <Button type="button" variant="ghost" size="large" block onClick={onClose}>
-                취소
-              </Button>
+            <ButtonStack direction="vertical">
               <Button
                 type="submit"
                 variant="primary"
@@ -78,6 +93,9 @@ export const RegisterLibraryDialog = ({
                 onClick={handleSubmitRegisterLibrary}
               >
                 내 서재에 넣기
+              </Button>
+              <Button type="button" variant="ghost" size="large" block onClick={onClose}>
+                취소
               </Button>
             </ButtonStack>
           </Dialog.Footer>

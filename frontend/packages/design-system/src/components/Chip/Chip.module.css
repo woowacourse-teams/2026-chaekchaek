@@ -14,19 +14,38 @@
 }
 
 .variant-default {
-  /* 기본 variant에는 별도의 시각 스타일을 지정하지 않는다. */
+  --chip-background: transparent;
+  --chip-border-color: transparent;
+}
+
+.variant-subtle {
+  --chip-background: var(--chaek-color-surface-subtle);
+  --chip-border-color: var(--chaek-color-surface-subtle);
+  --chip-color: var(--chaek-color-text-filter-inactive);
 }
 
 .variant-ghost {
-  --chip-background: #fff;
-  --chip-border-color: #c9c9c9;
-  --chip-color: #666;
+  --chip-background: var(--chaek-color-surface-subtle);
+  --chip-border-color: var(--chaek-color-border-divider);
+  --chip-color: var(--chaek-color-text-primary);
+}
+
+.variant-soft {
+  --chip-background: var(--chaek-color-surface-subtle);
+  --chip-border-color: var(--chaek-color-surface-subtle);
+  --chip-color: #ff8d28;
 }
 
 .variant-primary {
-  --chip-background: #1a1a1a;
-  --chip-border-color: #1a1a1a;
-  --chip-color: #fff;
+  --chip-background: var(--chaek-color-surface-inverse);
+  --chip-border-color: var(--chaek-color-surface-inverse);
+  --chip-color: var(--chaek-color-text-inverse);
+}
+
+.is-disabled {
+  --chip-background: var(--chaek-color-surface-subtle);
+  --chip-border-color: var(--chaek-color-surface-subtle);
+  --chip-color: var(--chaek-color-text-filter-inactive);
 }
 
 .is-selected {
@@ -36,20 +55,38 @@
 }
 
 .size-small {
-  height: 24px;
+  --chip-label-padding-bottom: 0;
+
+  height: 25px;
+  padding: 6px 10px;
+  border-radius: 999px;
   font-size: 0.6875rem; /* 11px */
+  font-weight: 400;
+  letter-spacing: 0.0645px;
 }
 
 .size-medium {
-  height: 28px;
+  --chip-label-padding-bottom: 0;
+
+  height: 34px;
+  padding-inline: 16px;
+  border-radius: 20px;
   font-size: 0.75rem; /* 12px */
+  font-weight: 400;
 }
 
 .size-large {
-  height: 32px;
+  --chip-label-padding-bottom: 0;
+
+  height: 44px;
+  padding-right: 10px;
+  padding-left: 14px;
+  border-radius: 999px;
   font-size: 0.8125rem; /* 13px */
+  font-weight: 400;
+  line-height: 18px;
 }
 
 .label {
-  padding-bottom: 1px;
+  padding-bottom: var(--chip-label-padding-bottom, 1px);
 }

@@ -75,12 +75,12 @@ export const UpdateNicknameDialog = ({ onClose }: UpdateNicknameDialogProps) => 
           </Dialog.Body>
 
           <Dialog.Footer>
-            <ButtonStack>
-              <Button type="button" variant="ghost" size="large" block onClick={onClose}>
-                취소
-              </Button>
+            <ButtonStack direction="vertical">
               <Button type="submit" variant="primary" size="large" block disabled={!isValid}>
                 확인
+              </Button>
+              <Button type="button" variant="ghost" size="large" block onClick={onClose}>
+                취소
               </Button>
             </ButtonStack>
           </Dialog.Footer>

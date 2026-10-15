@@ -11,6 +11,7 @@ const meta = {
     shape: 'default',
     variant: 'default',
     size: 'medium',
+    align: 'center',
   },
   argTypes: {
     shape: {
@@ -19,20 +20,15 @@ const meta = {
     },
     variant: {
       control: 'select',
-      options: [
-        'default',
-        'primary',
-        'secondary',
-        'accent',
-        'ghost',
-        'soft',
-        'danger',
-        'danger-weak',
-      ],
+      options: ['default', 'primary', 'secondary', 'accent', 'ghost', 'danger', 'danger-weak'],
     },
     size: {
       control: 'inline-radio',
-      options: ['small', 'medium', 'large'],
+      options: ['x-small', 'small', 'medium', 'large'],
+    },
+    align: {
+      control: 'inline-radio',
+      options: ['center', 'left', 'right'],
     },
   },
 } satisfies Meta<typeof Button>;
@@ -78,13 +74,6 @@ export const GhostVariant: Story = {
   },
 };
 
-export const SoftVariant: Story = {
-  args: {
-    children: '감상 익명 공개',
-    variant: 'soft',
-  },
-};
-
 export const DangerVariant: Story = {
   args: {
     children: 'danger',
@@ -94,8 +83,16 @@ export const DangerVariant: Story = {
 
 export const DangerWeakVariant: Story = {
   args: {
-    children: '2권 삭제',
+    children: 'danger-weak',
     variant: 'danger-weak',
+  },
+};
+
+export const XSmallSize: Story = {
+  args: {
+    children: 'x-small',
+    size: 'x-small',
+    variant: 'primary',
   },
 };
 
@@ -120,6 +117,22 @@ export const LargeSize: Story = {
     children: 'large',
     size: 'large',
     variant: 'primary',
+  },
+};
+
+export const LeftAlign: Story = {
+  args: {
+    align: 'left',
+    block: true,
+    children: 'Left aligned button',
+  },
+};
+
+export const RightAlign: Story = {
+  args: {
+    align: 'right',
+    block: true,
+    children: 'Right aligned button',
   },
 };
 

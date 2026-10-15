@@ -1,0 +1,55 @@
+/*
+ * ChaekChaek design tokens
+ * Generated from Figma token JSON exports.
+ * Do not edit generated values manually; update the source tokens instead.
+ */
+
+:root {
+  /* Layout */
+  --chaek-space-0: 0px;
+  --chaek-space-1: 1px;
+  --chaek-space-2: 2px;
+  --chaek-space-4: 4px;
+  --chaek-space-5: 5px;
+  --chaek-space-6: 6px;
+  --chaek-space-8: 8px;
+  --chaek-space-9: 9px;
+  --chaek-space-10: 10px;
+  --chaek-space-11: 11px;
+  --chaek-space-12: 12px;
+  --chaek-space-13: 13px;
+  --chaek-space-15: 15px;
+  --chaek-space-16: 16px;
+  --chaek-space-18: 18px;
+  --chaek-space-22: 22px;
+  --chaek-space-24: 24px;
+  --chaek-space-28: 28px;
+  --chaek-space-32: 32px;
+  --chaek-radius-0: 0px;
+  --chaek-radius-2: 2px;
+  --chaek-radius-3: 3px;
+  --chaek-radius-4: 4px;
+  --chaek-radius-6: 6px;
+  --chaek-radius-7: 7px;
+  --chaek-radius-8: 8px;
+  --chaek-radius-9: 9px;
+  --chaek-radius-12: 12px;
+  --chaek-radius-14: 14px;
+  --chaek-radius-15: 15px;
+  --chaek-radius-16: 16px;
+  --chaek-radius-18: 18px;
+  --chaek-radius-20: 20px;
+  --chaek-radius-22: 22px;
+  --chaek-radius-999: 999px;
+  --chaek-opacity-1: 1;
+  --chaek-opacity-0-12: 0.12;
+  --chaek-opacity-0-15: 0.15;
+  --chaek-opacity-0-96: 0.96;
+  --chaek-size-touch-min: 44px;
+  --chaek-size-button: 50px;
+  --chaek-size-search: 54px;
+  --chaek-size-navigation: 88px;
+  --chaek-size-page-compact: 320px;
+  --chaek-size-page-standard: 390px;
+
+}

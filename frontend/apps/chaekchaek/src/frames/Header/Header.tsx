@@ -17,9 +17,11 @@ import type { Props } from './';
 const classnameDefault = 'frame-Header';
 
 export const Header = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, ...restProps } = props;
+  const { as = 'div', className, reverse = false, ...restProps } = props;
 
-  const modifiers = {};
+  const modifiers = {
+    reverse: reverse && styles[`is-reverse`],
+  };
 
   const classname = createClassName({
     styles,
@@ -36,7 +38,7 @@ export const Header = <T extends ElementType>(props: Props<T>) => {
         <Logo />
         <Nav />
         <div className={styles.actions}>
-          <SearchBar />
+          <SearchBar reverse={reverse} />
           {!isAuthenticated && <ProfileButton />}
         </div>
       </div>

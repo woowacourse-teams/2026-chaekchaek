@@ -1,0 +1,40 @@
+/*
+ * ChaekChaek design tokens
+ * Generated from Figma token JSON exports.
+ * Do not edit generated values manually; update the source tokens instead.
+ */
+
+:root {
+  /* Primitive */
+  --chaek-color-191919: #191919;
+  --chaek-color-333333: #333333;
+  --chaek-color-555555: #555555;
+  --chaek-color-626262: #626262;
+  --chaek-color-656565: #656565;
+  --chaek-color-666666: #666666;
+  --chaek-color-707070: #707070;
+  --chaek-color-777777: #777777;
+  --chaek-color-797979: #797979;
+  --chaek-color-858585: #858585;
+  --chaek-color-1c1c1c: #1C1C1C;
+  --chaek-color-ffffff: #FFFFFF;
+  --chaek-color-ff920f: #FF920F;
+  --chaek-color-f3f3f5: #F3F3F5;
+  --chaek-color-8a8a8a: #8A8A8A;
+  --chaek-color-dddde1: #DDDDE1;
+  --chaek-color-ff8500: #FF8500;
+  --chaek-color-ececee: #ECECEE;
+  --chaek-color-4d4d4d: #4D4D4D;
+  --chaek-color-e1e1e5: #E1E1E5;
+  --chaek-color-56565d: #56565D;
+  --chaek-color-f0f0f3: #F0F0F3;
+  --chaek-color-e7e7e9: #E7E7E9;
+  --chaek-color-e0e0e3: #E0E0E3;
+  --chaek-color-bdbdbd: #BDBDBD;
+  --chaek-color-f1f1f3: #F1F1F3;
+  --chaek-color-ff9b33: #FF9B33;
+  --chaek-color-e7e5e0: #E7E5E0;
+  --chaek-color-1b1b1b: #1B1B1B;
+  --chaek-font-family-gowun-dodum: "Gowun Dodum";
+  --chaek-font-family-pretendard: Pretendard;
+}

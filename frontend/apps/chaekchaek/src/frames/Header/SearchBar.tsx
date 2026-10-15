@@ -13,7 +13,7 @@ import { ROUTES } from '@/constants/routes';
 const classnameDefault = 'frame-Header-SearchBar';
 
 export const SearchBar = <T extends ElementType>(props: SearchBarProps<T>) => {
-  const { as = 'div', className, ...restProps } = props;
+  const { as = 'div', className, reverse = false, ...restProps } = props;
 
   const modifiers = {};
 
@@ -27,7 +27,6 @@ export const SearchBar = <T extends ElementType>(props: SearchBarProps<T>) => {
   const navigation = useNavigate();
 
   const handleClickMoveBooks = () => {
-    console.log('handleClickMoveBooks');
     navigation(ROUTES.BOOK_SEARCH);
   };
 
@@ -37,7 +36,7 @@ export const SearchBar = <T extends ElementType>(props: SearchBarProps<T>) => {
         leading={<Icon.SearchIcon color="secondary" />}
         shape="default"
         size="medium"
-        reverse
+        reverse={reverse}
         readOnly
         placeholder="책, 작가, 감상 검색"
         style={{ width: '250px' }}

@@ -3,32 +3,30 @@
   position: relative;
   display: flex;
   width: 100%;
-  height: 132px;
+  height: 120px;
   align-items: flex-start;
-  padding: 10px 12px;
-  border-radius: 6px;
-  background-color: #fff;
-  color: #1a1a1a;
-  font-size: 0.875rem; /* 14px */
+  padding: 12px 16px;
+  border: 1px solid var(--chaek-color-surface-subtle);
+  border-radius: 15px;
+  outline: 0;
+  background-color: var(--chaek-color-surface-subtle);
+  color: var(--chaek-color-text-primary);
+  font-family: var(--chaek-font-family-gowun-dodum);
+  font-size: 1rem;
   font-weight: 400;
-  line-height: 1.5833;
+  line-height: 24px;
+  letter-spacing: -0.7625px;
+}
+
+.root:focus-within {
+  border-color: var(--chaek-color-border-strong);
+}
+
+.root:has(> textarea:disabled) {
+  opacity: 0.4;
 }
 
 .root > textarea::placeholder {
-  color: #999;
+  color: var(--chaek-color-text-placeholder);
   opacity: 1;
-}
-
-.variant-soft > textarea {
-  padding: 16px;
-  border: 1px solid #c9c3ba;
-  border-radius: 4px;
-  background-color: #fff4df;
-  color: #1a1a1a;
-  font-size: 0.9375rem; /* 15px */
-  line-height: normal;
-}
-
-.variant-soft > textarea::placeholder {
-  color: #888;
 }

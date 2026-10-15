@@ -11,7 +11,7 @@ const meta = {
   component: Media,
   args: {
     variant: 'default',
-    media: <ImgBox img={DummyLargeImg} size="x-large" />,
+    media: <ImgBox img={DummyLargeImg} size="large" />,
     title: '마션',
     description: '앤디 위어',
   },
