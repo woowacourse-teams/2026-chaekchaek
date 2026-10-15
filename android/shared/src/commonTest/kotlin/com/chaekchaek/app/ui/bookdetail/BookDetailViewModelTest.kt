@@ -499,6 +499,8 @@ class BookDetailViewModelTest {
     val firstDetailStarted = CompletableDeferred<Unit>()
     val keepFirstDetailPending = CompletableDeferred<Unit>()
     val reviewWriteStarted = CompletableDeferred<Unit>()
+    val keepReviewWritePending = CompletableDeferred<Unit>()
+    val events = MutableStateFlow<List<AnalyticsEvent>>(emptyList())
     var detailRequestCount = 0
     val engine = MockEngine { request ->
       when {
@@ -515,6 +517,7 @@ class BookDetailViewModelTest {
         }
         request.method == HttpMethod.Post && request.url.encodedPath.endsWith("/by-isbn/9780000000042/reviews") -> {
           reviewWriteStarted.complete(Unit)
+          keepReviewWritePending.await()
           respond(
             """{"bookId":42,"review":$REVIEW_RESPONSE}""",
             status = HttpStatusCode.Created,
@@ -525,7 +528,12 @@ class BookDetailViewModelTest {
       }
     }
     val client = testClient(engine)
-    val viewModel = viewModel(client, client, platform(readGuest = { guest("old") }))
+    val viewModel = viewModel(
+      client,
+      client,
+      platform(readGuest = { guest("old") }),
+      AnalyticsTracker("test") { event -> events.update { it + event } },
+    )
     viewModel.open(
       book().copy(id = "9780000000042", isbn13 = "9780000000042", bookId = null),
       accessToken = null,
@@ -536,6 +544,11 @@ class BookDetailViewModelTest {
 
     awaitReal { reviewWriteStarted.await() }
     keepFirstDetailPending.complete(Unit)
+    awaitReal { events.first { logged -> logged.any { it.name == "cc_load_result" } } }
+    assertFalse(
+      "action_id" in events.value.last { it.name == "cc_load_result" }.stringParameters,
+    )
+    keepReviewWritePending.complete(Unit)
     awaitReal { viewModel.uiState.first { it.detail?.bookId == 42L } }
     assertNull(viewModel.uiState.value.requestError)
   }

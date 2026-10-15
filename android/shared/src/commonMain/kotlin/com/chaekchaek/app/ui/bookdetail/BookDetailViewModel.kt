@@ -538,6 +538,7 @@ class BookDetailViewModel(
                         put("outcome", "success")
                     },
                     longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
+                    includeActionContext = false,
                 )
                 if (!detailReadyLogged) analytics.log(
                     name = "cc_book_detail_ready",
@@ -555,6 +556,7 @@ class BookDetailViewModel(
                         )
                     },
                     longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
+                    includeActionContext = false,
                 )
                 detailReadyLogged = true
             }.onFailure { error ->
@@ -574,6 +576,7 @@ class BookDetailViewModel(
                             "error_category" to analyticsErrorCategory(error),
                         ),
                         longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
+                        includeActionContext = false,
                     )
                 }
             }
