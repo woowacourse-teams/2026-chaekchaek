@@ -1,4 +1,4 @@
-# 첵췍 앱 아키텍처 (KMP)
+# 책췍 앱 아키텍처 (KMP)
 
 Android와 iOS가 Compose Multiplatform 화면을 공유하는 Kotlin Multiplatform 앱이다. 레이어 구조,
 모듈 경계, 플랫폼 브리지, 화면 상태 규칙, 테스트 전략을 정한다.

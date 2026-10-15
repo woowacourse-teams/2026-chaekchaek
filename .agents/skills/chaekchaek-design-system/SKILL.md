@@ -3,7 +3,7 @@ name: chaekchaek-design-system
 description: "책췍 UI 디자인 생성과 코드 적용 전에 Figma 화면, 공통 컴포넌트, 레퍼런스를 확인한다. 누락된 화면과 상태, 재사용 컴포넌트 및 레퍼런스 인스턴스를 먼저 등록하고 검증한다. Android, iOS, frontend UI와 기존 구현의 Figma 역반영에 사용한다."
 ---
 
-# Chaekchaek Design System
+# 책췍 Design System
 
 원본은 [책췍 Figma](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr)이며 공통 컴포넌트와 변수는 [책췍 디자인 시스템](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=901-300)에 있다. 이번 작업에서 사용자가 지정한 최신 승인 화면을 우선한다. Pencil과 `designs.pen`은 과거 이력이며 현재 원본 또는 구현 게이트가 아니다.
 

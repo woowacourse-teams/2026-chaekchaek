@@ -38,6 +38,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -162,6 +163,7 @@ fun BookDetailScreen(
     onReviewScopeChange: (ReviewScope) -> Unit = {},
     onReviewSortChange: (ReviewSort) -> Unit = {},
     onLoadMoreReviews: () -> Unit = {},
+    onRetryReviews: () -> Unit = {},
     onRequestErrorShown: () -> Unit = {},
 ) {
     val book = state.displayBook ?: return
@@ -185,16 +187,20 @@ fun BookDetailScreen(
     var deletingReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
     var deletingReplyId by rememberSaveable { mutableStateOf<Long?>(null) }
     var revealedSpoilerReviewIds by rememberSaveable(book.id) { mutableStateOf(emptyList<Long>()) }
+    val visibleBookReviews = remember(state.reviews) { visibleReviews(state.reviews) }
     val replyById = remember(state.reviews) {
-        state.reviews.flatMap(BookReview::recentReplies).associateBy(ReviewReply::replyId)
+        visibleBookReviews.flatMap(BookReview::recentReplies)
+            .filterNot(ReviewReply::deleted).associateBy(ReviewReply::replyId)
     }
 
     fun authorizeOrRun(action: BookDetailAuthenticatedAction, onAuthorized: () -> Unit) {
         if (!action.requiresMember || state.signedIn) onAuthorized() else onLoginRequired(action)
     }
 
-    LaunchedEffect(reachedBottom, state.nextReviewPage, state.reviewScope, state.reviewSort) {
-        if (reachedBottom && state.nextReviewPage != null) onLoadMoreReviews()
+    LaunchedEffect(reachedBottom, state.nextReviewPage, state.reviewScope, state.reviewSort, state.reviewPageLoadState) {
+        if (reachedBottom && state.nextReviewPage != null && state.reviewPageLoadState == ReviewPageLoadState.Idle) {
+            onLoadMoreReviews()
+        }
     }
     LaunchedEffect(state.requestError) {
         state.requestError?.let {
@@ -262,8 +268,11 @@ fun BookDetailScreen(
                 ReviewsSection(
                     reviews = state.reviews,
                     reviewCount = state.reviewCount,
+                    hasMoreReviews = state.nextReviewPage != null,
                     loading = state.isLoading,
                     loadingMore = state.isLoadingMore,
+                    pageLoadState = state.reviewPageLoadState,
+                    onRetryReviews = onRetryReviews,
                     revealedSpoilerReviewIds = revealedSpoilerReviewIds.toSet(),
                     scope = state.reviewScope,
                     sort = state.reviewSort,
@@ -360,7 +369,7 @@ fun BookDetailScreen(
             },
         )
     }
-    state.reviews.firstOrNull { it.reviewId == reviewActionTargetId }?.let { review ->
+    visibleBookReviews.firstOrNull { it.reviewId == reviewActionTargetId }?.let { review ->
         OwnedContentActionSheet(
             title = "내 감상 관리",
             onDismiss = { reviewActionTargetId = null },
@@ -390,7 +399,7 @@ fun BookDetailScreen(
             },
         )
     }
-    state.reviews.firstOrNull { it.reviewId == editingReviewId }?.let { review ->
+    visibleBookReviews.firstOrNull { it.reviewId == editingReviewId }?.let { review ->
         ReviewInputSheet(
             initialPage = currentPage,
             totalPages = book.totalPages,
@@ -425,7 +434,7 @@ fun BookDetailScreen(
             },
         )
     }
-    state.reviews.firstOrNull { it.reviewId == deletingReviewId }?.let { review ->
+    visibleBookReviews.firstOrNull { it.reviewId == deletingReviewId }?.let { review ->
         DeleteContentConfirmation(
             contentName = "감상",
             onDismiss = { deletingReviewId = null },
@@ -867,8 +876,11 @@ private fun ReadingRecord(
 private fun ReviewsSection(
     reviews: List<BookReview>,
     reviewCount: Int,
+    hasMoreReviews: Boolean,
     loading: Boolean,
     loadingMore: Boolean,
+    pageLoadState: ReviewPageLoadState,
+    onRetryReviews: () -> Unit,
     revealedSpoilerReviewIds: Set<Long>,
     scope: ReviewScope,
     sort: ReviewSort,
@@ -885,6 +897,7 @@ private fun ReviewsSection(
     onManageReply: (ReviewReply) -> Unit,
 ) {
     var replyTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val display = reviewDisplay(reviews, reviewCount, hasMoreReviews)
     Column(modifier = Modifier.fillMaxWidth()) {
         HorizontalDivider(color = ChaekBorderSoft)
         Row(
@@ -893,7 +906,7 @@ private fun ReviewsSection(
         ) {
             Text("감상", fontSize = 21.sp, lineHeight = 27.sp, fontWeight = FontWeight.Bold)
             Text(
-                reviewCount.toString(),
+                display.count.toString(),
                 modifier = Modifier.padding(start = 5.dp),
                 color = ChaekInkSecondary,
                 fontSize = 14.sp,
@@ -920,9 +933,9 @@ private fun ReviewsSection(
             color = ChaekBorderSoft,
         )
         when {
-            loading -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
-            reviews.isEmpty() -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
-            else -> reviews.forEach { review ->
+            loading && !pageLoadState.showsRetry -> Text("감상을 불러오는 중이에요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+            display.showEmpty && pageLoadState == ReviewPageLoadState.Idle -> Text("아직 등록된 감상이 없어요", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+            else -> display.reviews.forEach { review ->
                 val locked = shouldLockReview(review.reviewId, review.isSpoiler, revealedSpoilerReviewIds)
                 ReviewCard(
                     review = review,
@@ -942,7 +955,38 @@ private fun ReviewsSection(
                 )
             }
         }
-        if (loadingMore) {
+        if (pageLoadState.showsRetry) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                Row(
+                    modifier = Modifier.height(30.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val showRetryLoader = loadingMore || loading
+                    if (showRetryLoader) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp).semantics { contentDescription = "감상 불러오는 중" },
+                            color = ChaekAccent,
+                            strokeWidth = 2.dp,
+                        )
+                    }
+                    Text(
+                        if (showRetryLoader) "감상을 불러오는 중이에요" else "감상을 불러오지 못했어요",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                ChaekOverlayButton(
+                    "다시 시도",
+                    onRetryReviews,
+                    enabled = pageLoadState.canRetry,
+                )
+            }
+        }
+        if (loadingMore && !pageLoadState.showsRetry) {
             Box(modifier = Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp).semantics { contentDescription = "감상 더 불러오는 중" },
@@ -952,7 +996,7 @@ private fun ReviewsSection(
             }
         }
     }
-    reviews.firstOrNull { it.reviewId == replyTargetId }?.let { review ->
+    display.reviews.firstOrNull { it.reviewId == replyTargetId }?.let { review ->
         ReplyInputSheet(
             onDismiss = {
                 onComposerDismiss()
@@ -1112,12 +1156,15 @@ private fun Replies(
     onLike: (Long, Boolean) -> Unit,
     onManage: (ReviewReply) -> Unit,
 ) {
+    val display = replyDisplay(replies, totalCount)
+    if (display.replies.isEmpty() && !display.hasMore) return
+
     Column(
         modifier = Modifier.fillMaxWidth().background(ChaekSurfaceMuted)
             .padding(start = 48.dp, top = 12.dp, end = 16.dp, bottom = 14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        replies.forEach { reply ->
+        display.replies.forEach { reply ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                 AuthorAvatar(reply.authorName, 24)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -1155,7 +1202,7 @@ private fun Replies(
                 }
             }
         }
-        if (replies.size < totalCount) {
+        if (display.hasMore) {
             Text(
                 "답글 ${totalCount}개 모두 보기",
                 modifier = Modifier.clickable(role = Role.Button, onClick = if (locked) onOpenLockedReview else onLoadAll)
