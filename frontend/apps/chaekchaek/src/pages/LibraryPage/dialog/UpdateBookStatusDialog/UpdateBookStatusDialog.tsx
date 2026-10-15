@@ -43,29 +43,31 @@ export const UpdateBookStatusDialog = ({
           <Dialog.Body>
             <Field>
               <Field.Content>
-                {Object.entries(READING_STATUS_LABELS)
-                  .filter(([key]) => key !== READING_STATUS.ALL)
-                  .map(([key, value]) => {
-                    return (
-                      <Radio
-                        name="status"
-                        defaultChecked={status === key}
-                        value={key}
-                        onChange={handleChangeStatus}
-                      >
-                        {value}
-                      </Radio>
-                    );
-                  })}
+                <div>
+                  {Object.entries(READING_STATUS_LABELS)
+                    .filter(([key]) => key !== READING_STATUS.ALL)
+                    .map(([key, value]) => {
+                      return (
+                        <Radio
+                          variant="accent"
+                          boxed={true}
+                          block
+                          name="status"
+                          defaultChecked={status === key}
+                          value={key}
+                          onChange={handleChangeStatus}
+                        >
+                          {value}
+                        </Radio>
+                      );
+                    })}
+                </div>
               </Field.Content>
             </Field>
           </Dialog.Body>
 
           <Dialog.Footer>
-            <ButtonStack>
-              <Button type="button" variant="ghost" size="large" block onClick={onClose}>
-                취소
-              </Button>
+            <ButtonStack direction="vertical">
               <Button
                 type="button"
                 variant="primary"
@@ -74,6 +76,9 @@ export const UpdateBookStatusDialog = ({
                 onClick={handleSubmitUpdateBookStatus}
               >
                 변경
+              </Button>
+              <Button type="button" variant="ghost" size="large" block onClick={onClose}>
+                취소
               </Button>
             </ButtonStack>
           </Dialog.Footer>

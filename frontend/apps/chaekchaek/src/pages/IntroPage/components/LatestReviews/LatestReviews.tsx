@@ -1,7 +1,18 @@
 import { useCallback, useState } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 
-import { Avatar, Entry, Shell, ImgBox, Icon, Button, Dialog, scrollbar } from '@chaekchaek/design-system';
+import {
+  Avatar,
+  Entry,
+  Shell,
+  ImgBox,
+  Icon,
+  Button,
+  Dialog,
+  Partition,
+  scrollbar,
+  Media,
+} from '@chaekchaek/design-system';
 
 import { useLoadData } from '@/services/core/useLoadData';
 import { getHomeLatestReviews } from '@/services/apis/homeLatestReviews/repository';
@@ -74,66 +85,71 @@ export const LatestReviews = () => {
 
       {data?.reviews.map((review, index) => {
         return (
-          <Entry sx={{ mt: 0 }} reverse line="top" spacing="large" key={`${review.bookId}${index}`}>
-            <Entry.Main>
-              <Entry.Header>
-                <Shell reverse>
-                  <Shell.Leading>
-                    <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
-                      <ImgBox size="small" img={review.bookCoverImageUrl} />
-                    </Link>
-                  </Shell.Leading>
-                  <Shell.Content
-                    title={
-                      <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
-                        {review.bookTitle}
-                      </Link>
-                    }
-                    content={
-                      <>
-                        <Avatar
-                          size="x-small"
-                          img={review.author.profileImageUrl}
-                          as={review.author?.memberId ? Link : 'div'}
-                          {...(review.author?.memberId && {
-                            to: generatePath(ROUTES.MEMBER_LIBRARY, {
-                              memberId: review.author.memberId.toString(),
-                            }),
-                          })}
-                          onClick={() =>
-                            handleClickAvatar(review.author.profileStatus === 'AVAILABLE')
+          <>
+            <Partition>
+              <Partition.Item>
+                <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
+                  <Media
+                    media={<ImgBox size="medium" reverse img={review.bookCoverImageUrl} />}
+                    sx={{ ml: 8 }}
+                  />
+                </Link>
+              </Partition.Item>
+              <Partition.Item>
+                <Entry reverse line="top" spacing="large" key={`${review.bookId}${index}`}>
+                  <Entry.Main>
+                    <Entry.Header>
+                      <Shell reverse>
+                        <Shell.Content
+                          title={
+                            <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
+                              {review.bookTitle}
+                            </Link>
+                          }
+                          content={
+                            <>
+                              <Avatar
+                                size="small"
+                                img={review.author.profileImageUrl}
+                                as={review.author?.memberId ? Link : 'div'}
+                                {...(review.author?.memberId && {
+                                  to: generatePath(ROUTES.MEMBER_LIBRARY, {
+                                    memberId: review.author.memberId.toString(),
+                                  }),
+                                })}
+                                onClick={() =>
+                                  handleClickAvatar(review.author.profileStatus === 'AVAILABLE')
+                                }
+                              />
+                              {review.author.displayName ?? review.author.anonymous}
+                              {' · '}
+                              {new Date(review.createdAt).toLocaleDateString('ko-KR')}
+                            </>
                           }
                         />
-                        {
-                          <>
-                            {review.author.displayName ?? review.author.anonymous}
-                            {' · '}
-                            {new Date(review.createdAt).toLocaleDateString('ko-KR')}
-                          </>
-                        }
-                      </>
-                    }
-                  />
-                </Shell>
-              </Entry.Header>
-              <Entry.Body>
-                <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
-                  {review.content}
-                </Link>
-              </Entry.Body>
-              <Entry.Footer>
-                <Button
-                  shape="link"
-                  size="small"
-                  inverse
-                  leading={<Icon.CommentIcon color="inverse" />}
-                  disabled
-                >
-                  {review.replyCount}
-                </Button>
-              </Entry.Footer>
-            </Entry.Main>
-          </Entry>
+                      </Shell>
+                    </Entry.Header>
+                    <Entry.Body>
+                      <Link to={`/books/${review.isbn13}`} onClick={handleClickReview}>
+                        {review.content}
+                      </Link>
+                    </Entry.Body>
+                    <Entry.Footer>
+                      <Button
+                        shape="link"
+                        size="small"
+                        inverse
+                        leading={<Icon.CommentIcon color="inverse" />}
+                        disabled
+                      >
+                        {review.replyCount}
+                      </Button>
+                    </Entry.Footer>
+                  </Entry.Main>
+                </Entry>
+              </Partition.Item>
+            </Partition>
+          </>
         );
       })}
       {dialogElement}

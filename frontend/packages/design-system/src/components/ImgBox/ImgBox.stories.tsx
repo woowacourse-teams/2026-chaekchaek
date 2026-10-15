@@ -4,7 +4,6 @@ import { ImgBox } from './';
 
 import DummyImg from './imgs/dummy.png';
 
-// More on how to set up stories at: https://storybook.js.org/docs/writing-stories#default-export
 const meta = {
   title: 'ImgBox/ImgBox',
   component: ImgBox,
@@ -13,11 +12,10 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
-export const MediumSize: Story = {
+export const XSmallSize: Story = {
   args: {
     img: DummyImg,
-    size: 'medium',
+    size: 'x-small',
   },
 };
 
@@ -25,6 +23,13 @@ export const SmallSize: Story = {
   args: {
     img: DummyImg,
     size: 'small',
+  },
+};
+
+export const MediumSize: Story = {
+  args: {
+    img: DummyImg,
+    size: 'medium',
   },
 };
 
@@ -40,4 +45,19 @@ export const XLargeSize: Story = {
     img: DummyImg,
     size: 'x-large',
   },
+};
+
+export const Reverse: Story = {
+  args: {
+    img: DummyImg,
+    size: 'medium',
+    reverse: true,
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ padding: 16, backgroundColor: '#191919' }}>
+        <Story />
+      </div>
+    ),
+  ],
 };

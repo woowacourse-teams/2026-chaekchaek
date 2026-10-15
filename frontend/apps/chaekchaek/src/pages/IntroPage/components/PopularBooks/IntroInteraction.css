@@ -29,12 +29,6 @@
   box-shadow: 18px 24px 34px #000000d9, -3px -3px 10px #ffffff14;
   cursor: pointer;
   will-change: transform;
-  animation: var(--float-path) var(--float-duration) ease-in-out infinite;
-  animation-delay: calc(var(--enter-delay) + 700ms);
-}
-
-.book-float:hover {
-  animation-play-state: paused;
 }
 
 .book img {

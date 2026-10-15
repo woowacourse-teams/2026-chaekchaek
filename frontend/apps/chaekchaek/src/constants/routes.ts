@@ -4,6 +4,7 @@ export const ROUTES = {
   HOME: '/',
   QR: '/qr',
   DOWNLOAD: '/download',
+  LANDING: '/landing',
   INTRO: '/intro',
   BOOK_SEARCH: '/books',
   BOOK_DETAIL: '/books',

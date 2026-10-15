@@ -104,13 +104,7 @@ export const UpdateRatingDialog = ({
           >
             {!ratingsComparisonData?.length && <Notice height={80}>아직 남긴 평점이 없어요</Notice>}
             {ratingsComparisonData?.map((comparison) => {
-              return (
-                <CellList.Item
-                  headline={comparison.myRating}
-                  title={comparison.title}
-                  content={comparison?.ratingUpdatedAt}
-                />
-              );
+              return <CellList.Item headline={comparison.myRating} title={comparison.title} />;
             })}
           </CellList>
           <Slider

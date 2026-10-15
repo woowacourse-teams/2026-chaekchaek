@@ -7,7 +7,7 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
 
-import { Icon, Notice, Split } from '@chaekchaek/design-system';
+import { Chip, Icon, Notice, Split } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
 import { List } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
@@ -15,7 +15,6 @@ import { ImgBox } from '@chaekchaek/design-system';
 import { Button } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 import { Pagination } from '@chaekchaek/design-system';
-import { Badge } from '@chaekchaek/design-system';
 
 import { track } from '@/analytics/track';
 
@@ -158,7 +157,7 @@ export const BooksPage = () => {
               </Title>
             </Split.Side>
             <Split.Content>
-              <Title level="main" trailing={<></>}>
+              <Title level="main" trailing={<></>} sx={{ mb: 5 }}>
                 '{keywordQuery}' 검색 결과
               </Title>
               {data && !data?.items?.length && (
@@ -191,12 +190,13 @@ export const BooksPage = () => {
                         />
                         <List.Item.Trailing>
                           {(item.reviewCount || item.replyCount) && (
-                            <Badge variant="subtle" size="small">
+                            <Chip variant="ghost">
                               감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
-                            </Badge>
+                            </Chip>
                           )}
                           {!item.isRegisteredInMyLibrary && (
                             <Button
+                              size="x-small"
                               variant="primary"
                               onClick={() => {
                                 handleRegisterLibrary(item?.isbn13);

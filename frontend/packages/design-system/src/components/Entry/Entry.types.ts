@@ -6,9 +6,8 @@ export type AS = 'div';
 
 export type OwnProps = {
   reverse?: boolean;
-  line?: 'outline' | 'top' | 'top-inset' | 'none';
+  line?: 'top' | 'top-inset' | 'bottom' | 'bottom-inset';
   spacing?: 'medium' | 'large';
-  variant?: 'plain' | 'subtle' | 'bare';
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;

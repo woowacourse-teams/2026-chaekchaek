@@ -5,7 +5,6 @@ import type { PolymorphicProps } from '#internal/components/View';
 export type AS = 'textarea';
 
 export type OwnProps = {
-  variant?: 'soft';
   height?: CSSProperties['height'];
 };
 

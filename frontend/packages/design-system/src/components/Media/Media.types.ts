@@ -7,7 +7,7 @@ export type AS = 'div';
 export type OwnProps = {
   variant?: 'default';
   media: ReactNode;
-  title: ReactNode;
+  title?: ReactNode;
   description?: ReactNode;
 };
 

@@ -11,7 +11,6 @@ export type OwnProps = {
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;
 
 export type ContentOwnProps = {
-  leading?: ReactNode;
   title?: ReactNode;
   content?: ReactNode;
   description?: ReactNode;

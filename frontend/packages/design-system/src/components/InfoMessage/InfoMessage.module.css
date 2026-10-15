@@ -1,0 +1,34 @@
+.ui-InfoMessage {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px;
+  border-radius: 12px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.visual {
+  color: var(--chaek-color-text-secondary);
+  font-size: 22px;
+  line-height: normal;
+  letter-spacing: -0.26px;
+}
+
+.title {
+  color: var(--chaek-color-text-secondary);
+  font-size: 12px;
+  line-height: 19.2px;
+}
+
+.content {
+  color: var(--chaek-color-text-source-333333);
+  font-size: 10px;
+  line-height: normal;
+  letter-spacing: 0.1172px;
+}

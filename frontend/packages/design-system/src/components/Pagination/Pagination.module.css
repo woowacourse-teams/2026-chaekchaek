@@ -4,31 +4,33 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  padding: 16px 0 8px;
 }
 
 .ui-Pagination-Item {
   box-sizing: border-box;
   display: inline-flex;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 1px solid #c9c3ba;
-  border-radius: 4px;
-  background-color: #fcfaf7;
-  color: #666;
-  font-size: 0.8125rem; /* 13px */
-  font-weight: 700;
+  border: 1px solid var(--chaek-color-border-divider);
+  border-radius: 14px;
+  background-color: var(--chaek-color-surface-subtle);
+  color: var(--chaek-color-text-secondary);
+  font-family: var(--chaek-font-family-gowun-dodum);
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 400;
   line-height: normal;
   cursor: pointer;
 }
 
 .ui-Pagination-Item.is-active {
-  border-color: #1a1a1a;
-  background-color: #1a1a1a;
-  color: #fff;
+  border-color: var(--chaek-color-surface-accent);
+  background-color: var(--chaek-color-surface-accent);
+  color: var(--chaek-color-text-inverse);
 }
 
 .ui-Pagination-Item:focus-visible {

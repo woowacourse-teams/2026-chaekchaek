@@ -2,13 +2,9 @@
   box-sizing: border-box;
   display: flex;
   width: 100%;
-  min-height: 55px;
+  min-height: 38px;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 0 12px;
-  border-radius: 4px;
-  background-color: #fff4df;
 }
 
 .ui-Banner-Leading,
@@ -34,17 +30,19 @@
 }
 
 .title {
-  color: #1a1a1a;
+  color: var(--chaek-color-text-primary);
   font-size: 0.8125rem; /* 13px */
-  font-weight: 700;
-  line-height: normal;
+  font-weight: 400;
+  line-height: 1.21875rem; /* 19.5px */
+  letter-spacing: -0.026636rem; /* -0.4262px */
 }
 
 .content {
-  color: #777;
-  font-size: 0.6875rem; /* 11px */
+  color: var(--chaek-color-text-muted);
+  font-size: 0.625rem; /* 10px */
   font-weight: 400;
-  line-height: normal;
+  line-height: 1rem; /* 16px */
+  letter-spacing: -0.01455rem; /* -0.2328px */
 }
 
 .description {

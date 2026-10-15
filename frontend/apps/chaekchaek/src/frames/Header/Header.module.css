@@ -1,67 +1,88 @@
 .frame-Header {
-  background: #090A0C;
-  text-align: center;
+  background: var(--chaek-color-surface-canvas, #ffffff);
+  border-bottom: 1px solid var(--chaek-color-border-navigation, #e7e7e9);
   width: 100%;
   height: 76px;
 }
 
 .wrap {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: var(--layout-width);
-  padding-left: 44px;
-  padding-right: 44px;
+  height: 100%;
+  padding: 0 44px;
   margin: 0 auto;
-  text-align: left;
   box-sizing: border-box;
 }
 
 .frame-Header-Logo {
   display: inline-flex;
   align-items: center;
+  margin: 0;
 }
 
 .frame-Header-Logo a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
 }
 
 .frame-Header-Logo .img {
-  padding-right: 12px;
+  display: flex;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
 }
 
 .frame-Header-Logo .img img {
-  vertical-align: middle;
+  display: block;
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
 }
 
 .frame-Header-Logo .text {
-  font-size: 25px;
-  font-weight: 700;
-  color: #ffffff;
+  font-size: 22px;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -1.2578px;
+  color: var(--chaek-color-text-primary, #191919);
 }
 
 .frame-Header-Nav {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
+  align-items: center;
+  gap: 40px;
 }
 
 .frame-Header-Nav a {
   font-size: 14px;
-  font-weight: 600;
-  color: #BDBDBD;
-  padding-left: 21px;
-  padding-right: 21px;
+  font-weight: 400;
+  line-height: 21px;
+  letter-spacing: -0.1504px;
+  color: var(--chaek-color-text-inactive, #858585);
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
   text-decoration: none;
 }
 
-
 .frame-Header-Nav a.is-active {
-  color: #ffffff;
+  color: var(--chaek-color-text-primary, #191919);
+  border-bottom-color: var(--chaek-color-border-strong, #191919);
 }
 
 .actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: flex-end;
+  width: 250px;
+  flex-shrink: 0;
 }
 
 .frame-Header-ProfileButton {
@@ -69,17 +90,46 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
+  box-sizing: border-box;
   padding: 0;
-  border: 0;
-  border-radius: 50%;
+  border: 1px solid #000000;
+  border-radius: 20px;
   background: #ffffff;
   cursor: pointer;
+  margin-left: 16px;
 }
 
 .frame-Header-ProfileButton img {
   display: block;
-  width: 18px;
-  height: 18px;
+  width: 19px;
+  height: 23px;
+}
+
+.frame-Header.is-reverse {
+  background: #090a0c;
+  border-bottom-color: #333333;
+}
+
+.frame-Header.is-reverse .frame-Header-Logo .text {
+  color: var(--chaek-color-text-inverse, #ffffff);
+}
+
+.frame-Header.is-reverse .frame-Header-Nav a {
+  color: var(--chaek-color-text-source-bdbdbd, #bdbdbd);
+}
+
+.frame-Header.is-reverse .frame-Header-Nav a.is-active {
+  color: var(--chaek-color-text-inverse, #ffffff);
+  border-bottom-color: var(--chaek-color-border-source-ffffff, #ffffff);
+}
+
+.frame-Header.is-reverse .frame-Header-ProfileButton {
+  border-color: var(--chaek-color-border-source-ffffff, #ffffff);
+  background: transparent;
+}
+
+.frame-Header.is-reverse .frame-Header-ProfileButton img {
+  filter: invert(1);
 }

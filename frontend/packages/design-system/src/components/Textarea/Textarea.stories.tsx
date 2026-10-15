@@ -18,9 +18,22 @@ export const Example: Story = {
   },
 };
 
-export const Soft: Story = {
+export const Focus: Story = {
   args: {
-    variant: 'soft',
+    autoFocus: true,
+    placeholder: '기억하고 싶은 문장을 옮겨 적어보세요.',
+  },
+};
+
+export const Placeholder: Story = {
+  args: {
+    placeholder: '기억하고 싶은 문장을 옮겨 적어보세요.',
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    disabled: true,
     placeholder: '기억하고 싶은 문장을 옮겨 적어보세요.',
   },
 };

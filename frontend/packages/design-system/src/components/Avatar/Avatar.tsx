@@ -11,7 +11,7 @@ import type { Props } from './';
 const classnameDefault = 'ui-Avatar';
 
 export const Avatar = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, img, size = 'medium', sx, style, ...restProps } = props;
+  const { as = 'div', className, img, initial, size = 'medium', sx, style, ...restProps } = props;
 
   const modifiers = {
     size: size && styles?.[`size-${size}`],
@@ -30,7 +30,7 @@ export const Avatar = <T extends ElementType>(props: Props<T>) => {
 
   return (
     <View as={as} className={classname} style={customStyles} {...restProps}>
-      {img && <img src={img} />}
+      {img ? <img src={img} /> : initial ? <span className={styles.initial}>{initial}</span> : null}
     </View>
   );
 };

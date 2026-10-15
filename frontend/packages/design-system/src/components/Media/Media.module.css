@@ -1,5 +1,5 @@
 .ui-Media {
-  display: inline-flex;
+  display: flex;
   box-sizing: border-box;
   flex-direction: column;
   flex-shrink: 0;
@@ -10,10 +10,11 @@
 
 .media {
   position: relative;
+  box-sizing: border-box;
   flex: 0 0 auto;
   overflow: hidden;
-  border-radius: 2px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.13);
+  border: 1px solid #d6d0c7;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 14%);
 }
 
 .media > :only-child,
@@ -24,25 +25,25 @@
 
 .title,
 .description {
-  width: 116px;
   overflow: hidden;
+  font-family: var(--chaek-font-family-gowun-dodum);
+  font-weight: 400;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
+  /* white-space: nowrap; */
+  word-break: keep-all;
+  text-align: center;
 }
 
 .title {
   margin-top: 12px;
-  color: #1a1a1a;
-  font-size: 0.875rem;
-  font-weight: 700;
-  line-height: 1.35;
+  color: var(--chaek-color-text-primary);
+  font-size: 1rem;
+  line-height: 1.4;
 }
 
 .description {
   margin-top: 3px;
-  color: #77736e;
+  color: var(--chaek-color-text-muted);
   font-size: 0.75rem;
-  font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.5;
 }

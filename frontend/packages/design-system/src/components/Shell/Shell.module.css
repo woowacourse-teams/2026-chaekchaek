@@ -8,11 +8,33 @@
   width: 100%;
 }
 
+.size-medium {
+  --shell-leading-gap: 11px;
+  --shell-content-gap: 2px;
+  --shell-title-font-size: 13px;
+  --shell-title-line-height: 19.5px;
+  --shell-title-letter-spacing: -0.4262px;
+  --shell-content-color: var(--chaek-color-text-muted);
+  --shell-content-white-space: nowrap;
+  --shell-content-word-break: normal;
+}
+
+.size-small {
+  --shell-leading-gap: 10px;
+  --shell-content-gap: 1px;
+  --shell-title-font-size: 10px;
+  --shell-title-line-height: 16px;
+  --shell-title-letter-spacing: -0.2328px;
+  --shell-content-color: var(--chaek-color-text-secondary);
+  --shell-content-white-space: normal;
+  --shell-content-word-break: break-word;
+}
+
 .ui-Shell-Leading {
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  padding-right: 9px;
+  padding-right: var(--shell-leading-gap);
 }
 
 .ui-Shell-Content {
@@ -22,8 +44,8 @@
   align-items: flex-start;
   justify-content: center;
   min-width: 0;
-  min-height: 44px;
-  gap: 3px;
+  gap: var(--shell-content-gap);
+  word-break: var(--shell-content-word-break);
   white-space: pre-wrap;
 }
 
@@ -52,11 +74,12 @@
 }
 
 .title {
-  padding-bottom: 2px;
-  color: #000;
-  font-size: 0.875rem; /* 14px */
-  font-weight: 600;
-  line-height: normal;
+  color: var(--chaek-color-text-primary);
+  font-family: var(--chaek-font-family-gowun-dodum);
+  font-size: var(--shell-title-font-size);
+  font-weight: 400;
+  line-height: var(--shell-title-line-height);
+  letter-spacing: var(--shell-title-letter-spacing);
   white-space: nowrap;
 }
 
@@ -64,19 +87,32 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #666;
-  font-size: 0.75rem; /* 12px */
+  color: var(--shell-content-color);
+  font-family: var(--chaek-font-family-gowun-dodum);
+  font-size: 10px;
   font-weight: 400;
-  line-height: normal;
-  white-space: nowrap;
+  line-height: 16px;
+  letter-spacing: -0.2328px;
+  white-space: var(--shell-content-white-space);
 
   width: 100%;
 }
 
+.description {
+  color: var(--chaek-color-text-muted);
+  font-family: var(--chaek-font-family-gowun-dodum);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: -0.2328px;
+}
+
 .ui-Shell-Trailing {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  width: auto;
   text-align: right;
 }
 .is-reverse {

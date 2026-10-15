@@ -1,5 +1,7 @@
 .ui-ImgBox {
   flex-shrink: 0;
+  border: 1px solid var(--img-box-border-color, var(--chaek-color-border-divider));
+  box-shadow: var(--img-box-shadow, 0 2px 6px rgb(0 0 0 / 14%));
 }
 
 .ui-ImgBox > img {
@@ -8,16 +10,48 @@
   height: auto;
 }
 
-.size-small {
+.size-x-small,
+.size-small,
+.size-medium,
+.size-large,
+.size-x-large {
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.size-x-small > img,
+.size-small > img,
+.size-medium > img,
+.size-large > img,
+.size-x-large > img {
+  object-fit: cover;
+}
+
+.is-reverse {
+  --img-box-border-color: rgb(255 255 255 / 15%);
+  --img-box-shadow: 0 2px 6px rgb(255 255 255 / 14%);
+}
+
+.size-x-small,
+.size-small,
+.size-medium {
+  border-radius: 2px;
+}
+
+.size-x-small {
   width: 44px;
 }
 
-.size-medium {
+.size-small {
   width: 58px;
 }
 
+.size-medium {
+  width: 64px;
+}
+
 .size-large {
-  width: 100px;
+  width: 125px;
 }
 
 .size-x-large {

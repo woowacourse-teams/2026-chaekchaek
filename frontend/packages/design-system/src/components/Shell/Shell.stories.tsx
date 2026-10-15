@@ -29,6 +29,21 @@ export const Example: Story = {
   },
 };
 
+export const Small: Story = {
+  args: {
+    size: 'small',
+    children: (
+      <>
+        <Shell.Leading>Leading</Shell.Leading>
+        <Shell.Content
+          title="title"
+          content="This is a longer content line that can wrap when space is limited."
+        />
+      </>
+    ),
+  },
+};
+
 export const WithAvatar: Story = {
   args: {
     children: (
@@ -54,7 +69,7 @@ export const WithImgBox: Story = {
           title="title"
           content={
             <>
-              <Avatar size="x-small" img={DummyImgAvatar} />
+              <Avatar size="small" img={DummyImgAvatar} />
               Content
             </>
           }
@@ -135,7 +150,7 @@ export const Reverse: Story = {
           title="title"
           content={
             <>
-              <Avatar size="x-small" img={DummyImgAvatar} />
+              <Avatar size="small" img={DummyImgAvatar} />
               Content
             </>
           }
@@ -158,7 +173,7 @@ export const VerticalAlignTop: Story = {
           title="title"
           content={
             <>
-              <Avatar size="x-small" img={DummyImgAvatar} />
+              <Avatar size="small" img={DummyImgAvatar} />
               Content
             </>
           }

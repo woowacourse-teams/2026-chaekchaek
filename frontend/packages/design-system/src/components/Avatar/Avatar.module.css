@@ -6,13 +6,24 @@
   border-radius: 50%;
 }
 
-.ui-Avatar:not(:has(> img)) {
-  background-color: #fff4df;
+.ui-Avatar:empty {
   background-image: url(./imgs/default.png);
   background-repeat: no-repeat;
-  background-position: center top;
-  background-size: 115% auto;
-  box-shadow: inset 0 0 0 1px rgb(139 100 57 / 12%);
+  background-position: center;
+  background-size: contain;
+}
+
+.initial {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  background-color: var(--avatar-initial-background);
+  color: var(--avatar-initial-color);
+  font-size: var(--avatar-initial-font-size);
+  line-height: var(--avatar-initial-line-height);
+  letter-spacing: var(--avatar-initial-letter-spacing);
+  white-space: nowrap;
 }
 
 .ui-Avatar > img {
@@ -23,13 +34,25 @@
 }
 
 .size-medium {
-  width: 34px;
-  height: 34px;
+  --avatar-initial-background: var(--chaek-color-surface-avatar-detail);
+  --avatar-initial-color: var(--chaek-color-text-secondary);
+  --avatar-initial-font-size: 12px;
+  --avatar-initial-line-height: 18px;
+  --avatar-initial-letter-spacing: -0.35px;
+
+  width: 30px;
+  height: 30px;
 }
 
 .size-small {
-  width: 28px;
-  height: 28px;
+  --avatar-initial-background: var(--chaek-color-surface-avatar-home);
+  --avatar-initial-color: var(--chaek-color-text-avatar);
+  --avatar-initial-font-size: 10px;
+  --avatar-initial-line-height: 15px;
+  --avatar-initial-letter-spacing: -0.2328px;
+
+  width: 18px;
+  height: 18px;
 }
 
 .size-x-small {

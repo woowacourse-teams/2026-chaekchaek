@@ -10,7 +10,7 @@ import type { ContentProps } from './Overview.types';
 const classnameDefault = 'ui-Overview-Content';
 
 export const Content = <T extends ElementType>(props: ContentProps<T>) => {
-  const { as = 'div', className, leading, title, content, description, meta, ...restProps } = props;
+  const { as = 'div', className, title, content, description, meta, ...restProps } = props;
 
   const modifiers = {};
 
@@ -23,7 +23,6 @@ export const Content = <T extends ElementType>(props: ContentProps<T>) => {
 
   return (
     <View as={as} className={classname} {...restProps}>
-      {leading && <div className={styles.leading}>{leading}</div>}
       {title && <div className={styles.title}>{title}</div>}
       {content && <div className={styles.content}>{content}</div>}
       {description && <div className={styles.description}>{description}</div>}

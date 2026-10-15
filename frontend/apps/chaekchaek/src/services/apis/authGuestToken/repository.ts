@@ -1,5 +1,27 @@
 import * as fetcher from './fetcher';
 import {
+  mapGetAuthGuestTokenModelToRequestDTO,
+  mapGetAuthGuestTokenResponseDTOToModel,
+} from './mapper';
+
+import type { GetAuthGuestToken } from './repository.types';
+
+export const getAuthGuestToken: GetAuthGuestToken = async (model, context) => {
+  const authGuestTokenRequest = mapGetAuthGuestTokenModelToRequestDTO(model);
+
+  const { guestToken } = context;
+
+  const responseDTO = await fetcher.getAuthGuestToken({
+    ...authGuestTokenRequest,
+    headers: {
+      'X-Guest-Token': guestToken,
+    },
+  });
+
+  return mapGetAuthGuestTokenResponseDTOToModel(responseDTO);
+};
+
+import {
   mapPostAuthGuestTokenModelToRequestDTO,
   mapPostAuthGuestTokenResponseDTOToModel,
 } from './mapper';

@@ -1634,6 +1634,7 @@
                       "items": {
                         "required": [
                           "author",
+                          "bookAuthors",
                           "bookCoverImageUrl",
                           "bookId",
                           "bookTitle",
@@ -1641,22 +1642,32 @@
                           "createdAt",
                           "isSpoiler",
                           "isbn13",
+                          "likeCount",
+                          "likedByMe",
                           "replyCount",
                           "reviewId"
                         ],
                         "type": "object",
                         "properties": {
-                          "createdAt": {
-                            "type": "string",
-                            "description": "감상 작성 시각(UTC)"
-                          },
-                          "replyCount": {
-                            "type": "number",
-                            "description": "삭제되지 않은 답글 수"
-                          },
-                          "isSpoiler": {
-                            "type": "boolean",
-                            "description": "스포일러 여부"
+                          "bookAuthors": {
+                            "type": "array",
+                            "description": "도서 저자 목록",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "object"
+                                },
+                                {
+                                  "type": "boolean"
+                                },
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ]
+                            }
                           },
                           "author": {
                             "required": [
@@ -1701,29 +1712,59 @@
                             },
                             "description": "작성자 정보"
                           },
-                          "isbn13": {
-                            "type": "string",
-                            "description": "ISBN-13"
+                          "likeCount": {
+                            "type": "number",
+                            "description": "좋아요 수"
                           },
                           "bookCoverImageUrl": {
                             "type": "string",
                             "description": "도서 표지 이미지 URL"
                           },
-                          "reviewId": {
-                            "type": "number",
-                            "description": "감상 ID"
-                          },
                           "content": {
                             "type": "string",
                             "description": "감상 내용. 스포일러도 포함"
                           },
-                          "bookTitle": {
-                            "type": "string",
-                            "description": "도서 제목"
-                          },
                           "bookId": {
                             "type": "number",
                             "description": "도서 ID"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "description": "감상 작성 시각(UTC)"
+                          },
+                          "replyCount": {
+                            "type": "number",
+                            "description": "삭제되지 않은 답글 수"
+                          },
+                          "isSpoiler": {
+                            "type": "boolean",
+                            "description": "스포일러 여부"
+                          },
+                          "likedByMe": {
+                            "type": "boolean",
+                            "description": "내가 좋아요를 눌렀는지 여부. 비로그인 시 false"
+                          },
+                          "quote": {
+                            "type": "string",
+                            "description": "인용 문장",
+                            "nullable": true
+                          },
+                          "isbn13": {
+                            "type": "string",
+                            "description": "ISBN-13"
+                          },
+                          "currentPage": {
+                            "type": "number",
+                            "description": "감상 작성 시 읽은 페이지",
+                            "nullable": true
+                          },
+                          "reviewId": {
+                            "type": "number",
+                            "description": "감상 ID"
+                          },
+                          "bookTitle": {
+                            "type": "string",
+                            "description": "도서 제목"
                           }
                         }
                       }
@@ -1741,7 +1782,7 @@
                 },
                 "examples": {
                   "feed-reviews": {
-                    "value": "{\"totalCount\":41,\"nextPage\":2,\"reviews\":[{\"reviewId\":123,\"content\":\"감상 내용\",\"isSpoiler\":true,\"createdAt\":\"2026-09-28T10:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"독자\",\"profileImageUrl\":null,\"anonymous\":false,\"mine\":false,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"replyCount\":3,\"bookId\":42,\"isbn13\":\"9788936433598\",\"bookTitle\":\"도서 제목\",\"bookCoverImageUrl\":\"https://example.com/cover.jpg\"}]}"
+                    "value": "{\"totalCount\":41,\"nextPage\":2,\"reviews\":[{\"reviewId\":123,\"content\":\"감상 내용\",\"quote\":\"인용 문장\",\"currentPage\":120,\"isSpoiler\":true,\"createdAt\":\"2026-09-28T10:00:00Z\",\"author\":{\"memberId\":1,\"displayName\":\"독자\",\"profileImageUrl\":null,\"anonymous\":false,\"mine\":false,\"actorType\":\"MEMBER\",\"profileStatus\":\"AVAILABLE\"},\"likeCount\":7,\"likedByMe\":false,\"replyCount\":3,\"bookId\":42,\"isbn13\":\"9788936433598\",\"bookTitle\":\"도서 제목\",\"bookAuthors\":[\"저자\"],\"bookCoverImageUrl\":\"https://example.com/cover.jpg\"}]}"
                   }
                 }
               }
@@ -10641,6 +10682,165 @@
           }
         }
       },
+      "api-v1-feed-reviews1780686823": {
+        "required": [
+          "reviews",
+          "totalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "reviews": {
+            "type": "array",
+            "description": "감상 목록",
+            "items": {
+              "required": [
+                "author",
+                "bookAuthors",
+                "bookCoverImageUrl",
+                "bookId",
+                "bookTitle",
+                "content",
+                "createdAt",
+                "isSpoiler",
+                "isbn13",
+                "likeCount",
+                "likedByMe",
+                "replyCount",
+                "reviewId"
+              ],
+              "type": "object",
+              "properties": {
+                "bookAuthors": {
+                  "type": "array",
+                  "description": "도서 저자 목록",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                },
+                "author": {
+                  "required": [
+                    "actorType",
+                    "anonymous",
+                    "displayName",
+                    "mine",
+                    "profileStatus"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "mine": {
+                      "type": "boolean",
+                      "description": "내가 작성한 감상인지 여부"
+                    },
+                    "actorType": {
+                      "type": "string",
+                      "description": "작성자 유형(MEMBER, GUEST)"
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "description": "작성자 표시 이름"
+                    },
+                    "profileStatus": {
+                      "type": "string",
+                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
+                    },
+                    "anonymous": {
+                      "type": "boolean",
+                      "description": "익명 작성 여부"
+                    },
+                    "profileImageUrl": {
+                      "type": "string",
+                      "description": "작성자 프로필 이미지 URL",
+                      "nullable": true
+                    },
+                    "memberId": {
+                      "type": "number",
+                      "description": "공개 서재 조회용 회원 ID",
+                      "nullable": true
+                    }
+                  },
+                  "description": "작성자 정보"
+                },
+                "likeCount": {
+                  "type": "number",
+                  "description": "좋아요 수"
+                },
+                "bookCoverImageUrl": {
+                  "type": "string",
+                  "description": "도서 표지 이미지 URL"
+                },
+                "content": {
+                  "type": "string",
+                  "description": "감상 내용. 스포일러도 포함"
+                },
+                "bookId": {
+                  "type": "number",
+                  "description": "도서 ID"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "description": "감상 작성 시각(UTC)"
+                },
+                "replyCount": {
+                  "type": "number",
+                  "description": "삭제되지 않은 답글 수"
+                },
+                "isSpoiler": {
+                  "type": "boolean",
+                  "description": "스포일러 여부"
+                },
+                "likedByMe": {
+                  "type": "boolean",
+                  "description": "내가 좋아요를 눌렀는지 여부. 비로그인 시 false"
+                },
+                "quote": {
+                  "type": "string",
+                  "description": "인용 문장",
+                  "nullable": true
+                },
+                "isbn13": {
+                  "type": "string",
+                  "description": "ISBN-13"
+                },
+                "currentPage": {
+                  "type": "number",
+                  "description": "감상 작성 시 읽은 페이지",
+                  "nullable": true
+                },
+                "reviewId": {
+                  "type": "number",
+                  "description": "감상 ID"
+                },
+                "bookTitle": {
+                  "type": "string",
+                  "description": "도서 제목"
+                }
+              }
+            }
+          },
+          "nextPage": {
+            "type": "number",
+            "description": "다음 페이지 번호. 마지막 페이지면 null",
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "number",
+            "description": "삭제되지 않고 책이 있는 감상 전체 개수"
+          }
+        }
+      },
       "api-v1-replies-replyId1244238446": {
         "required": [
           "author",
@@ -11816,124 +12016,6 @@
             "type": "string",
             "description": "답글 내용. 공백 불가, 최대 200자",
             "maxLength": 200
-          }
-        }
-      },
-      "api-v1-feed-reviews-1476688155": {
-        "required": [
-          "reviews",
-          "totalCount"
-        ],
-        "type": "object",
-        "properties": {
-          "reviews": {
-            "type": "array",
-            "description": "감상 목록",
-            "items": {
-              "required": [
-                "author",
-                "bookCoverImageUrl",
-                "bookId",
-                "bookTitle",
-                "content",
-                "createdAt",
-                "isSpoiler",
-                "isbn13",
-                "replyCount",
-                "reviewId"
-              ],
-              "type": "object",
-              "properties": {
-                "createdAt": {
-                  "type": "string",
-                  "description": "감상 작성 시각(UTC)"
-                },
-                "replyCount": {
-                  "type": "number",
-                  "description": "삭제되지 않은 답글 수"
-                },
-                "isSpoiler": {
-                  "type": "boolean",
-                  "description": "스포일러 여부"
-                },
-                "author": {
-                  "required": [
-                    "actorType",
-                    "anonymous",
-                    "displayName",
-                    "mine",
-                    "profileStatus"
-                  ],
-                  "type": "object",
-                  "properties": {
-                    "mine": {
-                      "type": "boolean",
-                      "description": "내가 작성한 감상인지 여부"
-                    },
-                    "actorType": {
-                      "type": "string",
-                      "description": "작성자 유형(MEMBER, GUEST)"
-                    },
-                    "displayName": {
-                      "type": "string",
-                      "description": "작성자 표시 이름"
-                    },
-                    "profileStatus": {
-                      "type": "string",
-                      "description": "프로필 접근 상태. 일반 회원은 AVAILABLE, 익명·비회원·탈퇴 회원은 UNAVAILABLE"
-                    },
-                    "anonymous": {
-                      "type": "boolean",
-                      "description": "익명 작성 여부"
-                    },
-                    "profileImageUrl": {
-                      "type": "string",
-                      "description": "작성자 프로필 이미지 URL",
-                      "nullable": true
-                    },
-                    "memberId": {
-                      "type": "number",
-                      "description": "공개 서재 조회용 회원 ID",
-                      "nullable": true
-                    }
-                  },
-                  "description": "작성자 정보"
-                },
-                "isbn13": {
-                  "type": "string",
-                  "description": "ISBN-13"
-                },
-                "bookCoverImageUrl": {
-                  "type": "string",
-                  "description": "도서 표지 이미지 URL"
-                },
-                "reviewId": {
-                  "type": "number",
-                  "description": "감상 ID"
-                },
-                "content": {
-                  "type": "string",
-                  "description": "감상 내용. 스포일러도 포함"
-                },
-                "bookTitle": {
-                  "type": "string",
-                  "description": "도서 제목"
-                },
-                "bookId": {
-                  "type": "number",
-                  "description": "도서 ID"
-                }
-              }
-            }
-          },
-          "nextPage": {
-            "type": "number",
-            "description": "다음 페이지 번호. 마지막 페이지면 null",
-            "nullable": true
-          },
-          "totalCount": {
-            "type": "number",
-            "description": "삭제되지 않고 책이 있는 감상 전체 개수"
           }
         }
       },

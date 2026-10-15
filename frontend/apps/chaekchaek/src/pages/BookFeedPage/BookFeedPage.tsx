@@ -57,7 +57,7 @@ export const BookFeedPage = () => {
       <Main>
         <Container>
           <ContentArea spacing="large">
-            <Title level="main" description="독자들이 남긴 따끈따끈한 문장들" sx={{ mt: 4, mb: 8 }}>
+            <Title level="main" description="독자들이 남긴 따끈따끈한 문장들" sx={{ mb: 4 }}>
               전체 감상 피드
             </Title>
 

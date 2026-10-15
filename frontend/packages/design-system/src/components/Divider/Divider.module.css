@@ -1,5 +1,6 @@
 .ui-Divider {
   height: 1px;
-  background: #E4DFD8;
+  border: 0;
+  background: #E6E6E8;
   margin: 0;
 }

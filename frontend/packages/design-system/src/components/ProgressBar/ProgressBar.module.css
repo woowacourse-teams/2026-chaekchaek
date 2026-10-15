@@ -1,4 +1,7 @@
 .ui-ProgressBar {
+  --progress-bar-track-color: var(--chaek-color-surface-progress-track-detail);
+  --progress-bar-indicator-color: #1a1a1a;
+
   display: flex;
   width: 100%;
   flex-direction: column;
@@ -9,15 +12,29 @@
   width: 100%;
   height: 4px;
   overflow: hidden;
-  border-radius: 2px;
-  background-color: #eee;
+  border-radius: 4px;
+  background-color: var(--progress-bar-track-color);
 }
 
 .bar {
   width: 2px;
   height: 100%;
-  border-radius: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--progress-bar-indicator-color);
+}
+
+.variant-default {
+  --progress-bar-track-color: var(--chaek-color-surface-progress-track-detail);
+  --progress-bar-indicator-color: #1a1a1a;
+}
+
+.variant-accent {
+  --progress-bar-track-color: var(--chaek-color-surface-progress-track);
+  --progress-bar-indicator-color: var(--chaek-color-surface-accent);
+}
+
+.variant-subtle {
+  --progress-bar-track-color: var(--chaek-color-surface-progress-track);
+  --progress-bar-indicator-color: #b1b1b7;
 }
 
 .header {
@@ -38,12 +55,11 @@
 
 .ui-ProgressBar:has(.title) .box {
   height: 6px;
-  background-color: #e8e2d9;
 }
 
 .title {
   padding-bottom: 2px;
-  color: #1a1a1a;
+  color: var(--chaek-color-text-primary-detail);
   font-size: 1rem; /* 16px */
   font-weight: 600;
   line-height: 1.1429;
@@ -59,4 +75,10 @@
   white-space: nowrap;
   word-break: break-word;
   text-align: right;
+}
+
+.size-large .label {
+  color: var(--chaek-color-text-muted);
+  font-size: 0.6875rem; /* 11px */
+  letter-spacing: 0.064453125px;
 }

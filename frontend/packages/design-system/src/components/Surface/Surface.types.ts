@@ -4,6 +4,11 @@ import type { PolymorphicProps } from '#internal/components/View';
 
 export type AS = 'div';
 
-export type OwnProps = {};
+export type Variant = 'filled' | 'outlined';
+
+export type OwnProps = {
+  variant?: Variant;
+  spacing?: 'medium' | 'small';
+};
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;

@@ -11,9 +11,20 @@ import type { Props } from './';
 const classnameDefault = 'ui-Surface';
 
 export const Surface = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, sx, style, ...restProps } = props;
+  const {
+    as = 'div',
+    className,
+    variant = 'filled',
+    spacing = 'small',
+    sx,
+    style,
+    ...restProps
+  } = props;
 
-  const modifiers = {};
+  const modifiers = {
+    variant: variant && styles[`variant-${variant}`],
+    spacing: spacing && styles[`spacing-${spacing}`],
+  };
 
   const classname = createClassName({
     styles,
