@@ -58,6 +58,7 @@ class AnalyticsTracker(
         strings: Map<String, String> = emptyMap(),
         longs: Map<String, Long> = emptyMap(),
         doubles: Map<String, Double> = emptyMap(),
+        includeActionContext: Boolean = true,
     ) {
         eventSequence += 1
         val contextualStrings = buildMap {
@@ -69,7 +70,7 @@ class AnalyticsTracker(
             currentOrigin?.let { put("origin", it) }
             currentViewId?.let { put("view_id", it) }
             currentSearchId?.let { put("search_id", it) }
-            currentActionId?.let { put("action_id", it) }
+            if (includeActionContext) currentActionId?.let { put("action_id", it) }
             currentComposer?.let {
                 put("composer_id", it.id)
                 put("content_type", it.contentType)

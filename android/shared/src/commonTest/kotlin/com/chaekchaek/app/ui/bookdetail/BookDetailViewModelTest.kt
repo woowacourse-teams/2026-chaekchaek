@@ -495,6 +495,158 @@ class BookDetailViewModelTest {
   }
 
   @Test
+  fun `ISBN 감상 작성은 지연 중인 상세 조회와 nullable bookId를 기다리지 않는다`() = runViewModelTest {
+    val firstDetailStarted = CompletableDeferred<Unit>()
+    val keepFirstDetailPending = CompletableDeferred<Unit>()
+    val reviewWriteStarted = CompletableDeferred<Unit>()
+    val keepReviewWritePending = CompletableDeferred<Unit>()
+    val events = MutableStateFlow<List<AnalyticsEvent>>(emptyList())
+    var detailRequestCount = 0
+    val engine = MockEngine { request ->
+      when {
+        request.method == HttpMethod.Get && request.url.encodedPath.endsWith("/by-isbn/9780000000042") -> {
+          detailRequestCount += 1
+          if (detailRequestCount == 1) {
+            firstDetailStarted.complete(Unit)
+            keepFirstDetailPending.await()
+          }
+          respond(
+            """{"bookId":${if (detailRequestCount == 1) "null" else "42"},"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":""}""",
+            headers = jsonHeaders(),
+          )
+        }
+        request.method == HttpMethod.Post && request.url.encodedPath.endsWith("/by-isbn/9780000000042/reviews") -> {
+          reviewWriteStarted.complete(Unit)
+          keepReviewWritePending.await()
+          respond(
+            """{"bookId":42,"review":$REVIEW_RESPONSE}""",
+            status = HttpStatusCode.Created,
+            headers = jsonHeaders(),
+          )
+        }
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(
+      client,
+      client,
+      platform(readGuest = { guest("old") }),
+      AnalyticsTracker("test") { event -> events.update { it + event } },
+    )
+    viewModel.open(
+      book().copy(id = "9780000000042", isbn13 = "9780000000042", bookId = null),
+      accessToken = null,
+    )
+    awaitReal { firstDetailStarted.await() }
+
+    viewModel.createReview(ReviewCreateRequest("감상"))
+
+    awaitReal { reviewWriteStarted.await() }
+    keepFirstDetailPending.complete(Unit)
+    awaitReal { events.first { logged -> logged.any { it.name == "cc_load_result" } } }
+    assertFalse(
+      "action_id" in events.value.last { it.name == "cc_load_result" }.stringParameters,
+    )
+    keepReviewWritePending.complete(Unit)
+    awaitReal { viewModel.uiState.first { it.detail?.bookId == 42L } }
+    assertNull(viewModel.uiState.value.requestError)
+  }
+
+  @Test
+  fun `ISBN이 없는 감상 작성은 숫자 도서 ID 경로를 유지한다`() = runViewModelTest {
+    var reviewWritePath = ""
+    val reviewWriteStarted = CompletableDeferred<Unit>()
+    val finishReviewWrite = CompletableDeferred<Unit>()
+    val engine = MockEngine { request ->
+      reviewWritePath = request.url.encodedPath
+      reviewWriteStarted.complete(Unit)
+      finishReviewWrite.await()
+      respond(REVIEW_RESPONSE, status = HttpStatusCode.Created, headers = jsonHeaders())
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(client, client, platform(readGuest = { guest("old") }))
+    viewModel.open(book().copy(isbn13 = ""), accessToken = null)
+    advanceUntilIdle()
+
+    viewModel.createReview(ReviewCreateRequest("감상"))
+    awaitReal { reviewWriteStarted.await() }
+    advanceTimeBy(API_LOADING_DELAY_MILLIS)
+    runCurrent()
+    assertTrue(viewModel.uiState.value.isSubmitting)
+    finishReviewWrite.complete(Unit)
+    awaitReal { viewModel.uiState.first { !it.isSubmitting } }
+    advanceUntilIdle()
+
+    assertEquals("/api/v1/books/42/reviews", reviewWritePath)
+    assertNull(viewModel.uiState.value.requestError)
+  }
+
+  @Test
+  fun `감상 작성 실패는 요청 경로와 실패 단계와 HTTP 상태를 기록한다`() = runViewModelTest {
+    val events = MutableStateFlow<List<AnalyticsEvent>>(emptyList())
+    val engine = MockEngine { request ->
+      if (request.method == HttpMethod.Post) {
+        respond("", HttpStatusCode.InternalServerError)
+      } else {
+        respond(
+          """{"bookId":null,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":""}""",
+          headers = jsonHeaders(),
+        )
+      }
+    }
+    val client = testClient(engine)
+    val viewModel = viewModel(
+      client,
+      client,
+      platform(readGuest = { guest("old") }),
+      AnalyticsTracker("test") { event -> events.update { it + event } },
+    )
+    viewModel.open(
+      book().copy(id = "9780000000042", isbn13 = "9780000000042", bookId = null),
+      accessToken = null,
+    )
+    awaitReal { viewModel.uiState.first { it.detail != null } }
+
+    viewModel.createReview(ReviewCreateRequest("감상"))
+    awaitReal { events.first { logged -> logged.any { it.name == "cc_action_result" } } }
+
+    val result = events.value.last { it.name == "cc_action_result" }
+    assertEquals("failure", result.stringParameters["outcome"])
+    assertEquals("by_isbn", result.stringParameters["request_route"])
+    assertEquals("missing", result.stringParameters["book_id_state"])
+    assertEquals("request", result.stringParameters["failure_stage"])
+    assertEquals(500L, result.longParameters["http_status"])
+  }
+
+  @Test
+  fun `감상 작성 대상을 해석하지 못하면 서버 요청 전 실패로 기록한다`() = runViewModelTest {
+    val events = MutableStateFlow<List<AnalyticsEvent>>(emptyList())
+    var requestCount = 0
+    val client = testClient(MockEngine {
+      requestCount += 1
+      respond("", HttpStatusCode.InternalServerError)
+    })
+    val viewModel = viewModel(
+      client,
+      client,
+      platform(readGuest = { guest("old") }),
+      AnalyticsTracker("test") { event -> events.update { it + event } },
+    )
+    viewModel.open(BookDetailArgs(id = "unknown", title = "책"), accessToken = null)
+    advanceUntilIdle()
+
+    viewModel.createReview(ReviewCreateRequest("감상"))
+    awaitReal { events.first { logged -> logged.any { it.name == "cc_action_result" } } }
+
+    val result = events.value.last { it.name == "cc_action_result" }
+    assertEquals(0, requestCount)
+    assertEquals("unresolved", result.stringParameters["request_route"])
+    assertEquals("target_resolution", result.stringParameters["failure_stage"])
+    assertNull(result.longParameters["http_status"])
+  }
+
+  @Test
   fun `게스트 신규 작성 재시도도 401이면 실패로 끝난다`() = runViewModelTest {
     var guest: GuestAuth? = guest("old")
     var writeCount = 0

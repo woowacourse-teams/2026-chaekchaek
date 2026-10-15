@@ -35,7 +35,14 @@ abstract class ChaekchaekActivity : ComponentActivity() {
             val tokenStore = remember(context) { RefreshTokenStore(context) }
             val recentSearchPreferences = remember(context) { RecentSearchPreferences(context) }
             val onboardingPreferences = remember(context) {
-                context.getSharedPreferences("onboarding", MODE_PRIVATE)
+                context.getSharedPreferences("onboarding", MODE_PRIVATE).also { preferences ->
+                    if (!preferences.contains("first_library_shown")) {
+                        val info = context.packageManager.getPackageInfo(context.packageName, 0)
+                        if (info.firstInstallTime != info.lastUpdateTime) {
+                            preferences.edit().putBoolean("first_library_shown", true).apply()
+                        }
+                    }
+                }
             }
             val analytics = remember(context, analyticsEnvironment) {
                 val logger = FirebaseAnalyticsEventLogger(FirebaseAnalytics.getInstance(context))

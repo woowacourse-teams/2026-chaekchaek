@@ -1,36 +1,52 @@
 package com.chaekchaek.app.ui.input
 
 internal object TextInputLimit {
-    fun takeCodePoints(value: String, maximum: Int): String {
+    fun takeCodePoints(value: String, maximum: Int, digitsOnly: Boolean = false): String = take(value, maximum, false, digitsOnly)
+
+    fun takeUtf16(value: String, maximum: Int, digitsOnly: Boolean = false): String = take(value, maximum, true, digitsOnly)
+
+    private fun take(value: String, maximum: Int, utf16: Boolean, digitsOnly: Boolean, start: Int = 0, endExclusive: Int = value.length): String {
         require(maximum >= 0)
-        var end = 0
-        var count = 0
-        while (end < value.length && count < maximum) {
-            end = value.nextCodePointEnd(end)
-            count += 1
+        return buildString {
+            var index = start
+            var count = 0
+            while (index < endExclusive && count < maximum) {
+                val end = value.nextCodePointEnd(index)
+                val width = end - index
+                val valid = width == 2 || (!value[index].isHighSurrogate() && !value[index].isLowSurrogate())
+                val cost = if (utf16) width else 1
+                if (valid && (!digitsOnly || value[index].isDigit())) {
+                    if (count + cost > maximum) break
+                    append(value, index, end)
+                    count += cost
+                }
+                index = end
+            }
         }
-        return value.substring(0, end)
     }
 
-    fun applyChange(current: String, proposed: String, maximum: Int): String {
+    fun applyChange(current: String, proposed: String, maximum: Int, digitsOnly: Boolean = false): String =
+        applyChange(current, proposed, maximum, false, digitsOnly)
+
+    fun applyUtf16Change(current: String, proposed: String, maximum: Int, digitsOnly: Boolean = false): String =
+        applyChange(current, proposed, maximum, true, digitsOnly)
+
+    private fun applyChange(current: String, proposed: String, maximum: Int, utf16: Boolean, digitsOnly: Boolean): String {
         require(maximum >= 0)
-        if (proposed.codePointCount() <= maximum) return proposed
+        val boundedCurrent = take(current, maximum, utf16, digitsOnly)
+        val boundedProposed = take(proposed, maximum, utf16, digitsOnly)
+        if (boundedProposed == proposed) return proposed
 
-        val prefixEnd = commonPrefixEnd(current, proposed)
-        val suffixLengths = commonSuffixLengths(current, proposed, prefixEnd)
-        val unchangedCount =
-            current.substring(0, prefixEnd).codePointCount() +
-                current.substring(current.length - suffixLengths.current).codePointCount()
-        val acceptedInsertion = takeCodePoints(
-            proposed.substring(prefixEnd, proposed.length - suffixLengths.proposed),
-            (maximum - unchangedCount).coerceAtLeast(0),
+        val prefixEnd = commonPrefixEnd(boundedCurrent, proposed)
+        val suffixLengths = commonSuffixLengths(boundedCurrent, proposed, prefixEnd)
+        val unchangedPrefix = boundedCurrent.substring(0, prefixEnd)
+        val unchangedSuffix = boundedCurrent.substring(boundedCurrent.length - suffixLengths.current)
+        fun count(value: String): Int = if (utf16) value.length else value.codePointCount()
+        val remaining = (maximum - count(unchangedPrefix) - count(unchangedSuffix)).coerceAtLeast(0)
+        val acceptedInsertion = take(
+            proposed, remaining, utf16, digitsOnly, prefixEnd, proposed.length - suffixLengths.proposed,
         )
-
-        return buildString {
-            append(proposed, 0, prefixEnd)
-            append(acceptedInsertion)
-            append(proposed, proposed.length - suffixLengths.proposed, proposed.length)
-        }
+        return unchangedPrefix + acceptedInsertion + unchangedSuffix
     }
 
     private fun commonPrefixEnd(first: String, second: String): Int {

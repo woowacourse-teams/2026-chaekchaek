@@ -13,11 +13,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import com.chaekchaek.app.ui.input.TextInputPolicy
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -157,6 +156,8 @@ internal fun NicknameDialog(
     )
 }
 
+internal val NicknameInputPolicy = TextInputPolicy(Nickname.MAX_LENGTH, utf16 = true)
+
 @Composable
 private fun NicknameInput(nicknameState: TextFieldState) {
     val nickname = nicknameState.text.toString()
@@ -168,7 +169,7 @@ private fun NicknameInput(nicknameState: TextFieldState) {
         BasicTextField(
             state = nicknameState,
             modifier = Modifier.weight(1f),
-            inputTransformation = InputTransformation.maxLength(Nickname.MAX_LENGTH),
+            inputTransformation = NicknameInputPolicy.inputTransformation,
             lineLimits = TextFieldLineLimits.SingleLine,
             textStyle = MaterialTheme.typography.bodyMedium.copy(
                 color = MaterialTheme.colorScheme.onSurface,

@@ -78,6 +78,18 @@ class BookDetailRemoteRepository(
       )
     }.body<ReviewDto>().toBookReview()
 
+  suspend fun createReviewByIsbn(
+    isbn13: String,
+    request: ReviewCreateRequest,
+    credential: WriteCredential,
+  ): BookReview =
+    client.post("${apiConfiguration.baseUrl}/api/v1/books/by-isbn/$isbn13/reviews") {
+      authenticatedJson(
+        credential,
+        if (credential is WriteCredential.Guest) request.copy(currentPage = null, totalPages = null) else request,
+      )
+    }.body<ReviewCreateByIsbnDto>().review.toBookReview()
+
   suspend fun updateReview(
     reviewId: Long,
     request: ReviewCreateRequest,
@@ -335,6 +347,12 @@ internal data class ReviewPageDto(
   val totalCount: Int,
   val nextPage: Int? = null,
   val items: List<ReviewDto>,
+)
+
+@Serializable
+private data class ReviewCreateByIsbnDto(
+  val bookId: Long,
+  val review: ReviewDto,
 )
 
 @Serializable

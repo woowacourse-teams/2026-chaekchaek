@@ -14,11 +14,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -53,6 +57,7 @@ import com.chaekchaek.app.ui.search.SearchViewModel
 import com.chaekchaek.app.ui.search.RecentSearchStorage
 import com.chaekchaek.app.ui.onboarding.FirstLibraryOnboardingScreen
 import com.chaekchaek.app.ui.onboarding.FirstLibraryOnboardingViewModel
+import com.chaekchaek.app.ui.onboarding.OnboardingStep
 import com.chaekchaek.app.ui.onboarding.OnboardingStorage
 import com.chaekchaek.app.ui.onboarding.shouldShowFirstLibraryOnboarding
 import kotlinx.serialization.Serializable
@@ -121,10 +126,10 @@ internal fun AppNavigation(
     val authTokens by authViewModel.tokens.collectAsState()
     val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
-    var showOnboarding by remember(onboardingStorage) {
+    var showOnboarding by rememberSaveable {
         mutableStateOf(shouldShowFirstLibraryOnboarding(onboardingStorage))
     }
-    val onboardingViewModel = remember { FirstLibraryOnboardingViewModel() }
+    val onboardingViewModel: FirstLibraryOnboardingViewModel = viewModel { FirstLibraryOnboardingViewModel() }
     val onboardingState by onboardingViewModel.state.collectAsState()
     var showOnboardingLogin by remember { mutableStateOf(false) }
     LaunchedEffect(showOnboarding) {
@@ -153,23 +158,36 @@ internal fun AppNavigation(
                 authViewModel.clearError()
             }
         }
+        LaunchedEffect(onboardingState.saveCompleted) {
+            if (onboardingState.saveCompleted) completeOnboarding()
+        }
+        val saveSelectedBooks = {
+            val token = authTokens?.accessToken
+            if (token != null) onboardingViewModel.retrySave(token)
+            else {
+                authViewModel.clearError()
+                showOnboardingLogin = true
+            }
+        }
+        val backState = rememberNavigationEventState(NavigationEventInfo.None)
+        val returnToPreviousStep = {
+            onboardingViewModel.returnToPreviousStep(onboardingState.step, onboardingState.stepRevision)
+        }
+        NavigationBackHandler(
+            state = backState,
+            isBackEnabled = !showOnboardingLogin && onboardingState.step != OnboardingStep.INTRO,
+            onBackCompleted = returnToPreviousStep,
+        )
         FirstLibraryOnboardingScreen(
             state = onboardingState,
             onStartSearch = onboardingViewModel::startSearch,
-            onBack = onboardingViewModel::returnToPreviousStep,
+            onBack = returnToPreviousStep,
             onQueryChange = onboardingViewModel::updateQuery,
             onSearch = onboardingViewModel::search,
             onToggleBook = onboardingViewModel::toggle,
             onReviewSelection = onboardingViewModel::reviewSelection,
-            onLogin = {
-                val token = authTokens?.accessToken
-                if (token != null) onboardingViewModel.save(token, completeOnboarding)
-                else {
-                    authViewModel.clearError()
-                    showOnboardingLogin = true
-                }
-            },
-            onRetrySave = { onboardingViewModel.retrySave(completeOnboarding) },
+            onLogin = saveSelectedBooks,
+            onRetrySave = saveSelectedBooks,
             onSkip = skipOnboarding,
             modifier = safeContent,
         )
@@ -189,14 +207,14 @@ internal fun AppNavigation(
                     authViewModel.clearError()
                     authViewModel.requireAppleAuthentication { token ->
                         showOnboardingLogin = false
-                        onboardingViewModel.save(token, completeOnboarding)
+                        onboardingViewModel.save(token)
                     }
                 },
                 onGoogleSignIn = {
                     authViewModel.clearError()
                     authViewModel.requireAuthentication { token ->
                         showOnboardingLogin = false
-                        onboardingViewModel.save(token, completeOnboarding)
+                        onboardingViewModel.save(token)
                     }
                 },
                 skipLabel = "건너뛰기",

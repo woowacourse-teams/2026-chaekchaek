@@ -4,6 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -84,7 +89,7 @@ fun FirstLibraryOnboardingScreen(
                         "내 서재에\n책을 담고 있어요",
                         "조금만 기다려 주세요.",
                         state.selectedBooks.firstOrNull(),
-                        loading = true,
+                        loading = state.showSaveLoading,
                     )
                     OnboardingStep.SAVE_ERROR -> StatusContent(
                         "책을 담지 못했어요",
@@ -119,8 +124,8 @@ private fun OnboardingHeader(step: OnboardingStep, onBack: () -> Unit) {
         return
     }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(44.dp).clickable(onClick = onBack), contentAlignment = Alignment.Center) {
-            Text("‹", fontFamily = ChaekIconFontFamily(), style = MaterialTheme.typography.titleLarge, color = ChaekInk)
+        Box(Modifier.size(44.dp).semantics { contentDescription = "이전" }.clickable(role = Role.Button, onClick = onBack), contentAlignment = Alignment.Center) {
+            Text("‹", modifier = Modifier.clearAndSetSemantics {}, fontFamily = ChaekIconFontFamily(), style = MaterialTheme.typography.titleLarge, color = ChaekInk)
         }
         Text("첫 책 고르기", Modifier.weight(1f), textAlign = TextAlign.Center, color = ChaekInk)
         Text(
@@ -182,7 +187,7 @@ private fun SearchContent(
         )
         when {
             state.searching -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = ChaekAccent)
+                if (state.showSearchLoading) CircularProgressIndicator(color = ChaekAccent)
             }
             state.searchError != null -> MessageCard(state.searchError)
             state.searchAttempted && state.results.isEmpty() -> MessageCard("검색 결과가 없어요")
@@ -206,7 +211,7 @@ private fun MessageCard(message: String) {
 @Composable
 private fun BookRow(book: BookSearchResult, selected: Boolean, onToggle: (BookSearchResult) -> Unit) {
     Surface(
-        modifier = Modifier.fillMaxWidth().clickable { onToggle(book) },
+        modifier = Modifier.fillMaxWidth().toggleable(value = selected, role = Role.Checkbox, onValueChange = { onToggle(book) }),
         shape = RoundedCornerShape(14.dp),
         color = if (selected) ChaekAccentSoft else ChaekSurface,
         border = BorderStroke(1.dp, if (selected) ChaekAccent else ChaekBorder),

@@ -1,16 +1,64 @@
 import Shared
 import SwiftUI
+import StoreKit
 import GoogleSignIn
 import FirebaseAnalytics
 
 struct ContentView: View {
+    @State private var onboardingEligible: Bool?
+
     var body: some View {
-        ComposeViewController()
-            .ignoresSafeArea()
+        Group {
+            if let onboardingEligible {
+                ComposeViewController(onboardingEligible: onboardingEligible)
+            } else {
+                Color.white
+            }
+        }
+        .ignoresSafeArea()
+        .task {
+            if onboardingEligible == nil {
+                onboardingEligible = await FirstLibraryInstallationPolicy.isEligible()
+            }
+        }
+    }
+}
+
+private enum FirstLibraryInstallationPolicy {
+    static let shownKey = "first_library_onboarding_shown"
+    static let eligibleKey = "first_library_onboarding_eligible"
+
+    @MainActor
+    static func isEligible() async -> Bool {
+        let defaults = UserDefaults.standard
+#if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-uiTestingResetOnboarding") {
+            defaults.removeObject(forKey: shownKey)
+            defaults.removeObject(forKey: eligibleKey)
+            return true
+        }
+        if arguments.contains("-uiTestingExistingInstallation") { return false }
+#endif
+        if defaults.bool(forKey: shownKey) { return false }
+        if let eligible = defaults.object(forKey: eligibleKey) as? Bool { return eligible }
+        do {
+            guard case .verified(let transaction) = try await AppTransaction.shared,
+                  transaction.environment == .production,
+                  let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String,
+                  transaction.appVersion == build else { return false }
+            let eligible = transaction.originalAppVersion == transaction.appVersion
+            defaults.set(eligible, forKey: eligibleKey)
+            return eligible
+        } catch {
+            // 판별 불가 상태는 저장하지 않고 다음 실행에서 다시 확인한다.
+            return false
+        }
     }
 }
 
 private struct ComposeViewController: UIViewControllerRepresentable {
+    let onboardingEligible: Bool
     func makeUIViewController(context: Context) -> UIViewController {
         let keychain = RefreshTokenKeychain()
         let guestKeychain = GuestAuthKeychain()
@@ -79,7 +127,7 @@ private struct ComposeViewController: UIViewControllerRepresentable {
         )
         let onboardingStorage = OnboardingStorage(
             hasBeenShown: {
-                KotlinBoolean(bool: UserDefaults.standard.bool(forKey: "first_library_onboarding_shown"))
+                KotlinBoolean(bool: !onboardingEligible || UserDefaults.standard.bool(forKey: "first_library_onboarding_shown"))
             },
             markShown: {
                 UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown")
