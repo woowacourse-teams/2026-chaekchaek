@@ -76,6 +76,7 @@ import com.chaekchaek.app.ui.feed.FeedViewModel
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchRoute
 import com.chaekchaek.app.ui.search.SearchViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -127,7 +128,7 @@ internal fun RootScreen(
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     val snackbarHost = remember { SnackbarHostState() }
     val backNavigationEventState = rememberNavigationEventState(NavigationEventInfo.None)
-    val backScope = rememberCoroutineScope()
+    val rootScope = rememberCoroutineScope()
     var exitConfirmationSnackbarJob by remember { mutableStateOf<Job?>(null) }
     var exitConfirmationDeadlineMillis by rememberSaveable { mutableStateOf<Long?>(null) }
     val accessToken = tokens?.accessToken
@@ -171,7 +172,7 @@ internal fun RootScreen(
                 }
                 is RootBackAction.ConfirmExit -> {
                     exitConfirmationDeadlineMillis = action.deadlineMillis
-                    exitConfirmationSnackbarJob = backScope.launch {
+                    exitConfirmationSnackbarJob = rootScope.launch {
                         snackbarHost.showSnackbar(EXIT_CONFIRMATION_MESSAGE)
                     }
                 }
@@ -206,6 +207,21 @@ internal fun RootScreen(
             if (result == SnackbarResult.ActionPerformed) memberSettingsViewModel.retry()
         }
     }
+    val retryHome: () -> Unit = {
+        rootScope.launch {
+            try {
+                val previousAccessToken = authViewModel.tokens.value?.accessToken
+                val refreshedAccessToken = authViewModel.refreshAccessTokenForRetry()
+                if (previousAccessToken == refreshedAccessToken) {
+                    homeViewModel.retry(refreshedAccessToken)
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // 일시적인 갱신 실패는 세션을 유지하고 다음 다시 시도에서 재발급한다.
+            }
+        }
+    }
 
     CompositionLocalProvider(
         LocalRemoteBookCover provides { url, description, imageModifier ->
@@ -220,13 +236,13 @@ internal fun RootScreen(
             RootTab.Home -> HomeScreen(
                 homeViewModel = homeViewModel,
                 myDisplayName = memberSettingsState.publicNickname,
-                accessToken = accessToken,
                 scrollTopRequest = homeScrollTopRequest,
                 modifier = contentModifier,
                 onSearchBook = { selectedTab = RootTab.Discover },
                 onOpenFeed = { selectedTab = RootTab.Feed },
                 onProfileClick = openProfile,
                 onBookClick = { openBook(it.toBookDetailArgs(), "home") },
+                onRetry = retryHome,
             )
             RootTab.Feed -> FeedScreen(
                 viewModel = feedViewModel,
@@ -239,6 +255,7 @@ internal fun RootScreen(
                 homeViewModel = homeViewModel,
                 registeredBookIds = archiveState.items.mapTo(mutableSetOf()) { it.id },
                 modifier = contentModifier,
+                onHomeRetry = retryHome,
                 onBack = { selectedTab = RootTab.Home },
                 onProfileClick = openProfile,
                 onBookClick = { openBook(it.toBookDetailArgs(), "search") },

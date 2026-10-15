@@ -197,6 +197,20 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `인증 복구 후 재시도하면 새 Access Token으로 다시 로드한다`() = runViewModelTest {
+        val repository = TestFeedRepository(failure = IllegalStateException("failed"))
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        repository.failure = null
+
+        viewModel.retry("refreshed-access-token")
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null, "refreshed-access-token")
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
+    }
+
+    @Test
     fun `인증되면 읽는 중인 책을 다시 불러온다`() = runViewModelTest {
         val repository = TestFeedRepository(
             feed = HomeFeed(

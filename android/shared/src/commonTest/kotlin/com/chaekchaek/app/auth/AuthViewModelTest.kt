@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -56,6 +57,74 @@ class AuthViewModelTest {
     assertEquals(listOf("stored", "rotated-once"), backend.reissueRequests)
     assertEquals("rotated-twice", session.tokens.value?.refreshToken)
     assertEquals("rotated-twice", backend.storedRefreshToken)
+  }
+
+  @Test
+  fun `홈 재시도는 Access Token을 즉시 재발급한다`() = runTest {
+    val backend = FakeAuthBackend { tokens("refreshed") }
+    val session = authSession(backend)
+    session.signIn(tokens("expired"))
+
+    val accessToken = session.refreshAccessTokenForRetry()
+
+    assertEquals("access-refreshed", accessToken)
+    assertEquals(listOf("expired"), backend.reissueRequests)
+    assertEquals("refreshed", backend.storedRefreshToken)
+  }
+
+  @Test
+  fun `동시에 홈을 재시도하면 Token 재발급을 공유한다`() = runTest {
+    val reissueStarted = CompletableDeferred<Unit>()
+    val finishReissue = CompletableDeferred<Unit>()
+    val backend = FakeAuthBackend {
+      reissueStarted.complete(Unit)
+      finishReissue.await()
+      tokens("refreshed")
+    }
+    val session = authSession(backend)
+    session.signIn(tokens("expired"))
+
+    val first = launch { assertEquals("access-refreshed", session.refreshAccessTokenForRetry()) }
+    reissueStarted.await()
+    val second = launch { assertEquals("access-refreshed", session.refreshAccessTokenForRetry()) }
+    runCurrent()
+    assertEquals(listOf("expired"), backend.reissueRequests)
+
+    finishReissue.complete(Unit)
+    first.join()
+    second.join()
+    assertEquals(listOf("expired"), backend.reissueRequests)
+  }
+
+  @Test
+  fun `일시적인 재발급 실패 후 홈을 다시 시도할 수 있다`() = runTest {
+    var attempts = 0
+    val backend = FakeAuthBackend {
+      if (attempts++ == 0) throw MobileLoginException("INTERNAL_SERVER_ERROR", 500)
+      tokens("refreshed")
+    }
+    val session = authSession(backend)
+    session.signIn(tokens("expired"))
+
+    assertFailsWith<MobileLoginException> { session.refreshAccessTokenForRetry() }
+    assertEquals("expired", backend.storedRefreshToken)
+    assertEquals("access-refreshed", session.refreshAccessTokenForRetry())
+    assertEquals(listOf("expired", "expired"), backend.reissueRequests)
+  }
+
+  @Test
+  fun `만료된 Refresh Token은 홈 재시도에서 세션을 정리한다`() = runTest {
+    val backend = FakeAuthBackend {
+      throw MobileLoginException("INVALID_REFRESH_TOKEN", 401)
+    }
+    val session = authSession(backend)
+    session.signIn(tokens("expired"))
+
+    assertNull(session.refreshAccessTokenForRetry())
+
+    assertNull(session.tokens.value)
+    assertNull(backend.storedRefreshToken)
+    assertEquals(1, backend.clearCount)
   }
 
   @Test

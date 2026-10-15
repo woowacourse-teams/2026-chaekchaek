@@ -41,6 +41,11 @@ class HomeViewModel(
         load()
     }
 
+    fun retry(accessToken: String?) {
+        this.accessToken = accessToken
+        load()
+    }
+
     fun authenticate(accessToken: String?) {
         if (!hasObservedAuthentication) {
             hasObservedAuthentication = true

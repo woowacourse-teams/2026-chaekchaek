@@ -147,6 +147,7 @@ internal fun AppNavigation(
     LaunchedEffect(authTokens?.accessToken) {
         val accessToken = authTokens?.accessToken
         analytics.updateAuthentication(accessToken != null)
+        homeViewModel.authenticate(accessToken)
         registrationViewModel.authenticate(accessToken)
         archiveViewModel.authenticate(accessToken)
         memberSettingsViewModel.authenticate(accessToken)

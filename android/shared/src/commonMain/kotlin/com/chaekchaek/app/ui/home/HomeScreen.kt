@@ -130,24 +130,20 @@ val LocalRemoteBookCover = staticCompositionLocalOf<RemoteBookCover> {
 fun HomeScreen(
     homeViewModel: HomeViewModel,
     myDisplayName: String,
-    accessToken: String? = null,
     scrollTopRequest: Int = 0,
     modifier: Modifier = Modifier,
     onSearchBook: () -> Unit = {},
     onOpenFeed: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onBookClick: (BookDetailTarget) -> Unit = {},
+    onRetry: () -> Unit = homeViewModel::retry,
 ) {
     val uiState by homeViewModel.uiState.collectAsState()
-
-    LaunchedEffect(accessToken) {
-        homeViewModel.authenticate(accessToken)
-    }
 
     when (val state = uiState) {
         HomeUiState.Loading -> LoadingContent(modifier)
         HomeUiState.Empty -> EmptyContent(modifier)
-        is HomeUiState.Failure -> HomeLoadErrorContent(state.error, homeViewModel::retry, modifier)
+        is HomeUiState.Failure -> HomeLoadErrorContent(state.error, onRetry, modifier)
         is HomeUiState.Content -> HomeContent(
             state,
             myDisplayName,

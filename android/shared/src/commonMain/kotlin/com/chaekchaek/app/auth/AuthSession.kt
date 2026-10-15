@@ -4,7 +4,9 @@ import com.chaekchaek.app.data.remote.MobileAuthTokens
 import com.chaekchaek.app.data.remote.MobileLoginException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,8 +28,10 @@ internal class AuthSession(
   private val _tokens = MutableStateFlow<MobileAuthTokens?>(null)
   val tokens: StateFlow<MobileAuthTokens?> = _tokens.asStateFlow()
   private val mutex = Mutex()
+  private val renewalRequestMutex = Mutex()
   private var accessTokenExpiresAtMillis = 0L
   private var renewalJob: Job? = null
+  private var renewalRequest: Deferred<Result<MobileAuthTokens?>>? = null
 
   init {
     startRenewal()
@@ -57,13 +61,15 @@ internal class AuthSession(
     }
   }
 
+  suspend fun refreshAccessTokenForRetry(): String? = renewTokensOnce()?.accessToken
+
   private fun startRenewal() {
     renewalJob?.cancel()
     renewalJob = scope.launch {
       while (isActive) {
         delay(renewalDelayMillis(accessTokenExpiresAtMillis, currentTimeMillis()))
         try {
-          if (!renewTokens()) return@launch
+          if (renewTokensOnce() == null) return@launch
         } catch (_: MobileLoginException) {
           delay(RETRY_DELAY_MILLIS)
         } catch (_: Exception) {
@@ -73,15 +79,35 @@ internal class AuthSession(
     }
   }
 
-  private suspend fun renewTokens(): Boolean = mutex.withLock {
-    val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken() ?: return@withLock false
+  private suspend fun renewTokensOnce(): MobileAuthTokens? {
+    val request = renewalRequestMutex.withLock {
+      renewalRequest ?: scope.async {
+        try {
+          Result.success(renewTokensLocked())
+        } catch (error: CancellationException) {
+          throw error
+        } catch (error: Throwable) {
+          Result.failure(error)
+        }
+      }.also { renewalRequest = it }
+    }
+    return try {
+      request.await().getOrThrow()
+    } finally {
+      renewalRequestMutex.withLock {
+        if (renewalRequest === request) renewalRequest = null
+      }
+    }
+  }
+
+  private suspend fun renewTokensLocked(): MobileAuthTokens? = mutex.withLock {
+    val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken() ?: return@withLock null
     try {
-      updateTokens(reissue(refreshToken))
-      true
+      reissue(refreshToken).also(::updateTokens)
     } catch (error: MobileLoginException) {
       if (error.statusCode != PERMANENT_AUTH_FAILURE_STATUS) throw error
       clear()
-      false
+      null
     }
   }
 
