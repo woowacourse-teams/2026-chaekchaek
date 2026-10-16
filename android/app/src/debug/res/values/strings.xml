@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="developer_tools_entry_text">DEV</string>
+    <string name="developer_tools_entry_label">개발자 도구</string>
+    <string name="developer_tools_title">개발자 도구</string>
+    <string name="developer_tools_back">뒤로가기</string>
+    <string name="developer_tools_debug_only">DEBUG 전용</string>
+    <string name="developer_tools_description">현재 설치된 앱과 연결된 서버 정보를 확인합니다.</string>
+    <string name="developer_tools_app_version">앱 버전</string>
+    <string name="developer_tools_version_value">%1$s (%2$d)</string>
+    <string name="developer_tools_build_type">빌드 타입</string>
+    <string name="developer_tools_server_environment">서버 환경</string>
+    <string name="developer_tools_api_base_url">API base URL</string>
+</resources>

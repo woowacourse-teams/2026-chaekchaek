@@ -1,0 +1,68 @@
+{
+  "source_commit": "7ed45a38",
+  "apk_variant": "debug",
+  "apk_sha256": "daf332366f81b5e163beadad13cde7ab5733691f3b5f3381c3f35eb353a468ea",
+  "installed_apk_hash_verified": true,
+  "device": "Pixel_6a_API_33_2 / emulator-5554 / Android 13 API 33",
+  "width_dp": 360,
+  "physical_density": 420,
+  "override_density": 480,
+  "original_display_settings_preserved": true,
+  "capture_method": "adb exec-out screencap -p",
+  "navigation": "Existing session; real 4-tab navigation; book detail entered from populated library",
+  "states": {
+    "home": "reading",
+    "feed": "loaded",
+    "discover": "loaded",
+    "library": "populated, 15 books",
+    "detail": "loaded"
+  },
+  "privacy_review": "No email, tokens, or account settings visible; public review nicknames and public book metadata retained",
+  "limitations": [
+    "Screenshots establish actual app rendering and navigation only; Figma pixel matching has not been certified",
+    "iOS was excluded",
+    "320dp, keyboard, empty and failure states are not covered by these five screenshots"
+  ],
+  "screenshots": [
+    {
+      "file": "detail-loaded-360.png",
+      "sha256": "7b56e92fa6d6b526edac425fa4c1f465226f2dac89f7df57dbcdac260e83bfd7",
+      "pixels": [
+        1080,
+        2400
+      ]
+    },
+    {
+      "file": "discover-loaded-360.png",
+      "sha256": "62dc4508a8ff48830b53ac538982fc7902c73afb8ad06228d4571718f6efc311",
+      "pixels": [
+        1080,
+        2400
+      ]
+    },
+    {
+      "file": "feed-loaded-360.png",
+      "sha256": "9d2633bb40fe1eee8afae8aab1ab4a1af41cb04de85b5e91482f0295d675b7cd",
+      "pixels": [
+        1080,
+        2400
+      ]
+    },
+    {
+      "file": "home-reading-360.png",
+      "sha256": "6339527d5861e658bef1932974dfa433c9444da24f4f75fc1f944d43c37c4970",
+      "pixels": [
+        1080,
+        2400
+      ]
+    },
+    {
+      "file": "library-populated-360.png",
+      "sha256": "f9675a09dd086aa7fe336b8de1340aae3a361f63ed6625cac70980b8b1a64808",
+      "pixels": [
+        1080,
+        2400
+      ]
+    }
+  ]
+}

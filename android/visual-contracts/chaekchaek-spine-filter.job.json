@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "library-spine-filter",
+  "implementation_root": "..",
+  "implementation_inputs": ["shared/src/**/*", "app/src/**/*"],
+  "sources": [{
+    "id": "filter-approved",
+    "identity": "user-approved:subtle-bottom-right-checkbox",
+    "path": "../build/design-guard/spine-filter-source.json",
+    "roots": ["spine-filter"]
+  }],
+  "scenarios": [
+    {"id": "filter-off-390", "source": "filter-approved", "root": "spine-filter", "state": "unchecked", "platform": "android", "viewport": {"width": 390, "unit": "dp"}},
+    {"id": "filter-on-390", "source": "filter-approved", "root": "spine-filter", "state": "checked", "platform": "android", "viewport": {"width": 390, "unit": "dp"}},
+    {"id": "filter-on-320", "source": "filter-approved", "root": "spine-filter", "state": "checked", "platform": "android", "viewport": {"width": 320, "unit": "dp"}}
+  ],
+  "reviews": "../build/design-guard/spine-filter-reviews.json",
+  "output": "../build/design-guard/spine-filter-report.json",
+  "unresolved": [
+    {"id": "visual-source", "reason": "사용자가 동작과 배치를 승인했으나 체크박스의 시각 원본 트리는 미제공"},
+    {"id": "ios-runtime", "reason": "iOS 실행 시각 검증 미수행"}
+  ]
+}

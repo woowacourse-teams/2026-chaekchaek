@@ -1,0 +1,391 @@
+{
+  "file_key": "tn59Thk2GRcVLkzoO8k9Sr",
+  "widths": [
+    320,
+    390
+  ],
+  "screens": [
+    {
+      "id": "home",
+      "node": "805:2",
+      "reference": "visual-contracts/references/home.png",
+      "anchors": [
+        "책췍",
+        "최근"
+      ],
+      "states": [
+        "loaded",
+        "reading",
+        "empty",
+        "selected"
+      ],
+      "checks": [
+        {
+          "id": "home.collage.layers",
+          "node": "805:101",
+          "expected": "6권 위치·회전·겹침 순서, 중앙 표지108x155. 뒤 표지가 앞 표지를 가리지 않음",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "home.collage.shadows",
+          "node": "805:104",
+          "expected": "모든 표지에 검정13% 그림자 0/12/20 및 1/2/3, 반경2. 바깥 그림자가 잘리지 않음",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "home.carousel",
+          "node": "805:115",
+          "expected": "활성20x5와 비활성5x5 인디케이터, 중앙 정렬. 선택 변경 후 활성 표시 일치",
+          "states": [
+            "loaded",
+            "selected"
+          ]
+        },
+        {
+          "id": "home.recent.shadow",
+          "node": "805:35",
+          "expected": "최근 감상 표지64x92에 검정13% 그림자 x2 y5 blur9",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "home.recent.layout",
+          "node": "805:32",
+          "expected": "최근 감상 카드314x205 반경22 배경#F3F3F5. 제목과 작성자 정보를 4px 간격의 두 줄로 배치하고 본문3줄·하단 구분선·하단8px 여백 유지",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "home.reading.shadow",
+          "node": "805:169",
+          "expected": "이어서 읽기 카드 전체에 검정18% 그림자 x0 y12 blur15. 표지 자체에는 없음",
+          "states": [
+            "reading"
+          ]
+        },
+        {
+          "id": "home.reading.layout",
+          "node": "805:169",
+          "expected": "이어서 읽기 카드 반경20, 높이89, 배경#191919. 진행률과 문구, 내비 위 고정",
+          "states": [
+            "reading"
+          ]
+        },
+        {
+          "id": "home.empty",
+          "node": "805:2",
+          "expected": "읽는 책이 없을 때 실제 빈 상태와 검색 진입 표시",
+          "states": [
+            "empty"
+          ]
+        },
+        {
+          "id": "home.header",
+          "node": "805:2",
+          "expected": "마스코트·책췍 로고·프로필 아이콘과 크기·위치·색·상단 여백",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "home.navigation",
+          "node": "805:2",
+          "expected": "홈·피드·발견·내 서재 4개 아이콘과 라벨, 활성 주황점. 320/390 폭 모두 잘림 없음",
+          "states": [
+            "loaded"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "feed",
+      "node": "807:2",
+      "reference": "visual-contracts/references/feed.png",
+      "anchors": [
+        "책췍"
+      ],
+      "states": [
+        "loaded",
+        "scrolled"
+      ],
+      "checks": [
+        {
+          "id": "feed.rows",
+          "node": "807:2",
+          "expected": "표지·책 제목·작성자·감상·인용·하단 반응 표시 순서 및 구분선",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "feed.effects",
+          "node": "807:2",
+          "expected": "표지 그림자·둥근 모서리·구분선·모든 보이는 아이콘을 Figma와 개별 비교",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "feed.scroll",
+          "node": "807:2",
+          "expected": "스크롤 후 고정 헤더와 하단 내비 유지, 마지막 행 가림 없음",
+          "states": [
+            "scrolled"
+          ]
+        },
+        {
+          "id": "feed.header",
+          "node": "807:2",
+          "expected": "마스코트·책췍 로고·프로필 아이콘과 크기·위치·색·상단 여백",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "feed.navigation",
+          "node": "807:2",
+          "expected": "홈·피드·발견·내 서재 4개 아이콘과 라벨, 활성 주황점. 320/390 폭 모두 잘림 없음",
+          "states": [
+            "loaded"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "discover",
+      "node": "808:2",
+      "reference": "visual-contracts/references/discover.png",
+      "anchors": [
+        "발견",
+        "최근"
+      ],
+      "states": [
+        "loaded",
+        "scrolled"
+      ],
+      "checks": [
+        {
+          "id": "discover.search",
+          "node": "808:2",
+          "expected": "검색 영역 높이56, 배경·반경·아이콘·최근 검색어 칩",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "discover.ranking",
+          "node": "808:2",
+          "expected": "인기책 순위·표지 크기·열 간격·제목 줄바꿈·저자 표시",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "discover.recent",
+          "node": "808:2",
+          "expected": "최근 등록 표지·제목·저자·보조정보 순서, 목록 하단 잘림 없음",
+          "states": [
+            "scrolled"
+          ]
+        },
+        {
+          "id": "discover.effects",
+          "node": "808:2",
+          "expected": "표지와 검색 영역의 그림자 유무·색·모서리, 아이콘 개별 비교",
+          "states": [
+            "loaded",
+            "scrolled"
+          ]
+        },
+        {
+          "id": "discover.header",
+          "node": "808:2",
+          "expected": "마스코트·책췍 로고·프로필 아이콘과 크기·위치·색·상단 여백",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "discover.navigation",
+          "node": "808:2",
+          "expected": "홈·피드·발견·내 서재 4개 아이콘과 라벨, 활성 주황점. 320/390 폭 모두 잘림 없음",
+          "states": [
+            "loaded"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "library",
+      "node": "809:2",
+      "reference": "visual-contracts/references/library.png",
+      "anchors": [
+        "내 서재"
+      ],
+      "states": [
+        "populated",
+        "empty",
+        "scrolled"
+      ],
+      "checks": [
+        {
+          "id": "library.filters",
+          "node": "809:2",
+          "expected": "읽는 중·다 읽음·읽고 싶음 순서, 선택 상태·칩 배경·정렬",
+          "states": [
+            "populated"
+          ]
+        },
+        {
+          "id": "library.rows",
+          "node": "809:2",
+          "expected": "표지67x96, 좌우24, 책 제목·태그·읽기 진행률·보조정보 순서",
+          "states": [
+            "populated"
+          ]
+        },
+        {
+          "id": "library.effects",
+          "node": "809:2",
+          "expected": "표지·행·칩의 그림자 유무·배경·모서리를 원본과 개별 비교",
+          "states": [
+            "populated"
+          ]
+        },
+        {
+          "id": "library.empty",
+          "node": "809:2",
+          "expected": "빈 서재에서도 브랜드 헤더·내비 유지, 책이 있는 상태의 검증 대체 금지",
+          "states": [
+            "empty"
+          ]
+        },
+        {
+          "id": "library.scroll",
+          "node": "809:2",
+          "expected": "스크롤 후 헤더·내비 겹침 및 마지막 행 가림 없음",
+          "states": [
+            "scrolled"
+          ]
+        },
+        {
+          "id": "library.header",
+          "node": "809:2",
+          "expected": "마스코트·책췍 로고·프로필 아이콘과 크기·위치·색·상단 여백",
+          "states": [
+            "empty"
+          ]
+        },
+        {
+          "id": "library.navigation",
+          "node": "809:2",
+          "expected": "홈·피드·발견·내 서재 4개 아이콘과 라벨, 활성 주황점. 320/390 폭 모두 잘림 없음",
+          "states": [
+            "empty"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "detail",
+      "node": "803:2",
+      "reference": "visual-contracts/references/detail.png",
+      "anchors": [
+        "감상"
+      ],
+      "states": [
+        "loaded",
+        "scrolled",
+        "spoiler"
+      ],
+      "checks": [
+        {
+          "id": "detail.hero",
+          "node": "803:2",
+          "expected": "표지105x150, 좌우24, 책 정보·뒤로가기·더보기 위치",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "detail.reading",
+          "node": "803:2",
+          "expected": "읽기 상태·진행률·버튼의 정렬, 여백과 테두리",
+          "states": [
+            "loaded"
+          ]
+        },
+        {
+          "id": "detail.reviews",
+          "node": "803:2",
+          "expected": "감상 수·정렬·전체/내 감상 탭·행 간 구분선·인용·작성자",
+          "states": [
+            "scrolled"
+          ]
+        },
+        {
+          "id": "detail.spoiler",
+          "node": "803:2",
+          "expected": "스포일러 가림 높이·배경·아이콘·보기 동작 전후 상태",
+          "states": [
+            "spoiler"
+          ]
+        },
+        {
+          "id": "detail.composer",
+          "node": "803:2",
+          "expected": "하단 작성 버튼 높이50 반경16, 고정 위치와 콘텐츠 가림 없음",
+          "states": [
+            "loaded",
+            "scrolled"
+          ]
+        },
+        {
+          "id": "detail.effects",
+          "node": "803:2",
+          "expected": "표지·카드·팝업·버튼의 그림자/반경/테두리 및 아이콘 개별 비교",
+          "states": [
+            "loaded",
+            "scrolled"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "review-menu",
+      "node": "803:2",
+      "reference": "visual-contracts/references/detail.png",
+      "anchors": [
+        "수정",
+        "삭제"
+      ],
+      "states": [
+        "owned"
+      ],
+      "checks": [
+        {
+          "id": "review-menu.anchor",
+          "node": "803:2",
+          "expected": "감상 더보기 메뉴가 호출한 행에 맞게 배치. 폭188 반경12, 간격과 그림자 확인",
+          "states": [
+            "owned"
+          ]
+        },
+        {
+          "id": "review-menu.actions",
+          "node": "803:2",
+          "expected": "소유자 수정/삭제 메뉴, 취소 후 원래 스크롤 위치 유지",
+          "states": [
+            "owned"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+package com.chaekchaek.app.data.remote
+
+import com.chaekchaek.app.domain.book.BookId
+import com.chaekchaek.app.domain.feed.FeedRepository
+import com.chaekchaek.app.domain.feed.FeedSection
+import com.chaekchaek.app.domain.feed.HomeFeed
+import com.chaekchaek.app.domain.feed.QuoteCard
+import com.chaekchaek.app.domain.feed.ReadingBook
+import com.chaekchaek.app.domain.feed.TrendingBook
+import com.chaekchaek.app.domain.note.NoteId
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.supervisorScope
+import kotlinx.serialization.Serializable
+import kotlin.time.Instant
+
+class PopularBooksRemoteRepository(
+    private val client: HttpClient = createHttpClient(),
+    private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
+) : FeedRepository {
+    override suspend fun homeFeed(accessToken: String?): HomeFeed {
+        val popularBooks = client.get("${apiConfiguration.baseUrl}/api/v1/home/popular-books")
+            .body<PopularBooksResponseDto>()
+        val latestReviews = client.get("${apiConfiguration.baseUrl}/api/v1/home/latest-reviews")
+            .body<LatestReviewsResponseDto>()
+        val detailedLatestReviews = latestReviews.withReviewDetails(
+            reviewDetailsByBook = loadLatestReviewDetails(latestReviews, accessToken),
+        )
+        val readingBook = accessToken?.let { token ->
+            client.get("${apiConfiguration.baseUrl}/api/v1/library") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                url {
+                    parameters.append("page", "1")
+                    parameters.append("status", "READING")
+                    parameters.append("sort", "RECENT")
+                }
+            }.body<LibraryResponseDto>().items.firstOrNull()
+        }
+        return popularBooks.toHomeFeed(detailedLatestReviews, readingBook)
+    }
+
+    private suspend fun loadLatestReviewDetails(
+        latestReviews: LatestReviewsResponseDto,
+        accessToken: String?,
+    ): Map<Long, List<ReviewDto>> = supervisorScope {
+        latestReviews.reviews.map(LatestReviewDto::bookId).distinct().map { bookId ->
+            async {
+                try {
+                    bookId to client.get("${apiConfiguration.baseUrl}/api/v1/books/$bookId/reviews") {
+                        url {
+                            parameters.append("page", "1")
+                            parameters.append("feed", "ALL")
+                            parameters.append("sort", "LATEST")
+                        }
+                        accessToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                    }.body<ReviewPageDto>().items
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (_: Throwable) {
+                    null
+                }
+            }
+        }.awaitAll().filterNotNull().toMap()
+    }
+
+}
+
+@Serializable
+internal data class PopularBooksResponseDto(
+    val books: List<PopularBookDto>,
+)
+
+@Serializable
+internal data class PopularBookDto(
+    val bookId: Long,
+    val isbn13: String = "",
+    val title: String,
+    val coverImageUrl: String,
+    val reviewCount: Int,
+    val replyCount: Int,
+)
+
+@Serializable
+internal data class LatestReviewsResponseDto(
+    val reviews: List<LatestReviewDto>,
+)
+
+@Serializable
+internal data class LatestReviewDto(
+    val reviewId: Long? = null,
+    val content: String,
+    val createdAt: String,
+    val author: LatestReviewAuthorDto,
+    val replyCount: Int,
+    val bookId: Long,
+    val isbn13: String = "",
+    val bookTitle: String,
+    val bookCoverImageUrl: String,
+    val quote: String? = null,
+    val likeCount: Int = 0,
+    val likedByMe: Boolean = false,
+)
+
+@Serializable
+internal data class LatestReviewAuthorDto(
+    val displayName: String,
+    val profileImageUrl: String? = null,
+)
+
+internal fun LatestReviewsResponseDto.withReviewDetails(
+    reviewDetailsByBook: Map<Long, List<ReviewDto>>,
+): LatestReviewsResponseDto = copy(
+    reviews = reviews.map { latestReview ->
+        val detailedReview = reviewDetailsByBook[latestReview.bookId]
+            ?.singleOrNull { detail ->
+                detail.createdAt == latestReview.createdAt &&
+                    detail.content == latestReview.content &&
+                    detail.author.displayName == latestReview.author.displayName
+            }
+        detailedReview?.let { detail ->
+            latestReview.copy(
+                reviewId = detail.reviewId,
+                quote = detail.quote,
+                likeCount = detail.likeCount,
+                likedByMe = detail.likedByMe,
+                replyCount = detail.replyCount,
+            )
+        } ?: latestReview
+    },
+)
+
+@Serializable
+internal data class LibraryResponseDto(
+    val items: List<ReadingBookDto>,
+)
+
+@Serializable
+internal data class ReadingBookDto(
+    val bookId: Long,
+    val isbn13: String,
+    val title: String,
+    val coverImageUrl: String,
+    val totalPages: Int? = null,
+    val currentPage: Int,
+)
+
+internal fun PopularBooksResponseDto.toHomeFeed(
+    latestReviews: LatestReviewsResponseDto = LatestReviewsResponseDto(emptyList()),
+    readingBook: ReadingBookDto? = null,
+): HomeFeed = HomeFeed(
+    sections = listOf(
+        FeedSection.TrendingBooks(
+            books = books.map { book ->
+                TrendingBook(
+                    bookId = BookId(book.bookId.toString()),
+                    isbn13 = book.isbn13,
+                    title = book.title,
+                    coverId = book.coverImageUrl,
+                    noteCount = book.reviewCount,
+                    replyCount = book.replyCount,
+                )
+            },
+            totalCount = books.size,
+        ),
+        FeedSection.RecentQuotes(
+            cards = latestReviews.reviews.map { review ->
+                QuoteCard(
+                    reviewId = review.reviewId,
+                    noteId = NoteId("${review.bookId}-${review.createdAt}"),
+                    bookId = BookId(review.bookId.toString()),
+                    isbn13 = review.isbn13,
+                    bookTitle = review.bookTitle,
+                    coverId = review.bookCoverImageUrl,
+                    authorLabel = review.author.displayName,
+                    authorProfileImageUrl = review.author.profileImageUrl,
+                    createdAt = Instant.parse(review.createdAt),
+                    quoteText = review.content,
+                    replyCount = review.replyCount,
+                    quote = review.quote,
+                    likeCount = review.likeCount,
+                    likedByMe = review.likedByMe,
+                )
+            },
+        ),
+    ),
+    readingBook = readingBook?.let { book ->
+        ReadingBook(
+            bookId = BookId(book.bookId.toString()),
+            isbn13 = book.isbn13,
+            title = book.title,
+            coverId = book.coverImageUrl,
+            currentPage = book.currentPage,
+            totalPages = book.totalPages ?: 0,
+        )
+    },
+)
