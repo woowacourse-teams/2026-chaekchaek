@@ -197,6 +197,28 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
    배포 완료를 같은 상태로 취급하지 않는다.
 8. 배포 후 아래 규칙에 따라 release 커밋을 남긴다.
 
+## Google Play CLI 인증
+
+2026-10-16 확인 기준이다. Android 빌드는 이번 설정 작업에서 업로드하지 않는다.
+
+- Google Cloud 프로젝트: `chaekchaek`. 앱 Firebase 프로젝트 `chaekchaek-d2b85`와 구분하며 앱의 Firebase 설정은 변경하지 않는다.
+- Google Play Developer API `androidpublisher.googleapis.com` 활성화 완료.
+- 배포용 서비스 계정: `chaekchaek-play-release@chaekchaek.iam.gserviceaccount.com`.
+- 로컬 JSON 키: `~/.config/chaekchaek/google-play-service-account.json`. 저장소 밖에 보관하며 파일 권한은 `0600`이다. 키 내용은 문서, 로그와 Git에 남기지 않는다.
+- JSON의 프로젝트와 서비스 계정, 파일 권한 및 `androidpublisher` scope의 OAuth 토큰 발급 성공 확인.
+- Play 앱 접근 검증은 `403 PERMISSION_DENIED`다. 키 생성과 토큰 발급만으로 Play 앱 권한이 부여되지는 않는다.
+- Play Console에서 책췍 앱 `com.chamsae.chaekchaek`에 한정해 앱 정보 읽기, 이에 포함되는 앱 품질 정보 읽기와 테스트 트랙 출시 권한을 추가해야 한다. 테스트 트랙 권한은 내부, 비공개와 공개 테스트를 포함한다. 현재 초대 양식만 준비했으며 최종 권한 부여 전 사용자 확인을 기다린다. 프로덕션 출시, 관리자, 재무 권한은 선택하지 않았다.
+
+CLI 도구가 해당 환경변수를 지원하는지 확인한 뒤 호출 범위에서 키 경로를 참조한다. 다른 프로젝트의 기본 인증을 바꾸지 않도록 전역 shell 설정에 등록하지 않는다.
+
+```sh
+export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/chaekchaek/google-play-service-account.json"
+```
+
+권한 등록 후에는 앱 접근과 대상 트랙을 먼저 조회한다. 실제 AAB 전송과 트랙 배포는 사용자가 요청한 작업에서만 수행한다.
+
+근거: [Google Play Developer API 시작하기](https://developers.google.com/android-publisher/getting_started), [앱별 권한](https://developers.google.com/android-publisher/api-ref/rest/v3/grants).
+
 ## Release 커밋
 
 에이전트가 release 커밋을 만들 때는 `release-commit` 스킬을 사용한다. 스킬을 사용할 수 없는

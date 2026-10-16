@@ -43,7 +43,7 @@
 | GitHub Actions, Android 빌드, 테스트, Lint 실패 조사 | [Android CI](../android/docs/android-ci.md) | 실행과 실패 대응 절차 및 당시 관찰 기록을 확인한다. |
 | Google 로그인 실패, OAuth, 패키지명, Play 서명 변경 | [Google 로그인 운영](android-google-login.md) | 등록 정보와 실제 배포본 로그인 성공을 별도로 확인한다. |
 | R8, keep 규칙, 릴리스 크래시와 mapping 복원 | [릴리스 최적화와 Crashlytics](android-crashlytics.md) | 당시 검증과 현재 릴리스의 동작 확인을 구분한다. |
-| Android 버전, 트랙, 릴리스 기록과 복구 | [릴리스 관리](android-release-management.md) | 기록의 버전과 현재 Play Console 상태를 대조한다. |
+| Android 버전, 트랙, Play API 인증, 릴리스 기록과 복구 | [릴리스 관리](android-release-management.md) | 기록의 버전과 현재 Play Console 상태를 대조한다. CLI 인증 키의 로컬 경로와 Play 앱 권한 등록 상태를 구분한다. |
 | iOS 심사, TestFlight, 심사 회신과 녹화 준비 | [App Store 심사 준비](../android/docs/ios-app-store-review.md) | 과거 제출 ID와 빌드가 포함돼 있으므로 현재 App Store Connect 상태를 확인한다. |
 
 <a id="research"></a>
