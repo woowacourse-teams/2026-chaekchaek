@@ -3,6 +3,7 @@ package com.chaekchaek.app.ui.onboarding
 import com.chaekchaek.app.domain.book.BookSearchPage
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -226,6 +227,70 @@ class FirstLibraryOnboardingViewModelTest {
             saveResponse.complete(Unit)
             runCurrent()
             assertFalse(viewModel.state.value.showSaveLoading)
+        } finally {
+            viewModel.cancelPendingWork()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun replacementSearchRestartsLoadingDelayAndIgnoresTheCancelledResponse() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val firstResponse = CompletableDeferred<BookSearchPage>()
+        val secondResponse = CompletableDeferred<BookSearchPage>()
+        val firstBook = book("1", "이전 검색 결과")
+        val secondBook = book("2", "새 검색 결과")
+        val requestedQueries = mutableListOf<String>()
+        var firstSearchCancelled = false
+        val viewModel = FirstLibraryOnboardingViewModel(
+            searchRepository = BookSearchRepository { query, _, _ ->
+                requestedQueries += query
+                when (query) {
+                    "이전 검색" -> try {
+                        firstResponse.await()
+                    } catch (error: CancellationException) {
+                        firstSearchCancelled = true
+                        throw error
+                    }
+                    "새 검색" -> secondResponse.await()
+                    else -> error("예상하지 않은 검색어: $query")
+                }
+            },
+        )
+        try {
+            viewModel.startSearch()
+            viewModel.updateQuery("이전 검색")
+            viewModel.search()
+            runCurrent()
+            advanceTimeBy(500)
+            runCurrent()
+            assertTrue(viewModel.state.value.showSearchLoading)
+
+            viewModel.updateQuery("새 검색")
+            viewModel.search()
+            runCurrent()
+            assertTrue(firstSearchCancelled)
+            assertEquals(listOf("이전 검색", "새 검색"), requestedQueries)
+            assertTrue(viewModel.state.value.searching)
+            assertFalse(viewModel.state.value.showSearchLoading)
+            advanceTimeBy(499)
+            runCurrent()
+            assertFalse(viewModel.state.value.showSearchLoading)
+            advanceTimeBy(1)
+            runCurrent()
+            assertTrue(viewModel.state.value.showSearchLoading)
+
+            firstResponse.complete(BookSearchPage(1, null, listOf(firstBook)))
+            runCurrent()
+            assertTrue(viewModel.state.value.searching)
+            assertTrue(viewModel.state.value.showSearchLoading)
+            assertTrue(viewModel.state.value.results.isEmpty())
+
+            secondResponse.complete(BookSearchPage(1, null, listOf(secondBook)))
+            runCurrent()
+            assertEquals(listOf(secondBook), viewModel.state.value.results)
+            assertFalse(viewModel.state.value.searching)
+            assertFalse(viewModel.state.value.showSearchLoading)
         } finally {
             viewModel.cancelPendingWork()
             Dispatchers.resetMain()

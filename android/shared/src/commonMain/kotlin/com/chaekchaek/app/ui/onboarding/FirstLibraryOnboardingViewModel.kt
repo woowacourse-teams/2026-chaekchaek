@@ -57,6 +57,7 @@ class FirstLibraryOnboardingViewModel internal constructor(
     private val _state = MutableStateFlow(FirstLibraryOnboardingState(visible = initiallyVisible))
     val state: StateFlow<FirstLibraryOnboardingState> = _state.asStateFlow()
     private var job: Job? = null
+    private var searchGeneration = 0
     private val savedBookIsbn13 = mutableSetOf<String>()
 
     fun startSearch() {
@@ -68,21 +69,32 @@ class FirstLibraryOnboardingViewModel internal constructor(
     }
 
     fun search() {
-        if (_state.value.step != OnboardingStep.SEARCH) return
+        if (!_state.value.visible || _state.value.step != OnboardingStep.SEARCH) return
         val query = _state.value.query.trim()
         if (query.isEmpty()) return
+        val generation = ++searchGeneration
         job?.cancel()
+        _state.value = _state.value.copy(
+            searching = true, showSearchLoading = false, searchAttempted = true, searchError = null,
+        )
         job = viewModelScope.launch {
-            _state.value = _state.value.copy(searching = true, searchAttempted = true, searchError = null)
             try {
                 val page = withDelayedApiLoading(
-                    onLoadingChanged = { visible -> _state.value = _state.value.copy(showSearchLoading = visible) },
+                    onLoadingChanged = { visible ->
+                        if (generation == searchGeneration) {
+                            _state.value = _state.value.copy(showSearchLoading = visible)
+                        }
+                    },
                 ) { searchRepository.search(query, BookSearchSort.LATEST, 1) }
-                _state.value = _state.value.copy(results = page.items, searching = false)
+                if (generation == searchGeneration) {
+                    _state.value = _state.value.copy(results = page.items, searching = false)
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
-                _state.value = _state.value.copy(searching = false, searchError = "검색을 완료하지 못했어요")
+                if (generation == searchGeneration) {
+                    _state.value = _state.value.copy(searching = false, searchError = "검색을 완료하지 못했어요")
+                }
             }
         }
     }
@@ -123,6 +135,7 @@ class FirstLibraryOnboardingViewModel internal constructor(
 
     fun save(accessToken: String) {
         if (_state.value.selectedBooks.isEmpty() || _state.value.step == OnboardingStep.SAVING) return
+        searchGeneration += 1
         job?.cancel()
         _state.value = _state.value.copy(
             step = OnboardingStep.SAVING, stepRevision = _state.value.stepRevision + 1, saveError = null,
@@ -166,6 +179,7 @@ class FirstLibraryOnboardingViewModel internal constructor(
     }
 
     fun cancelPendingWork() {
+        searchGeneration += 1
         job?.cancel()
         job = null
         _state.value = _state.value.copy(searching = false, showSearchLoading = false, showSaveLoading = false)
