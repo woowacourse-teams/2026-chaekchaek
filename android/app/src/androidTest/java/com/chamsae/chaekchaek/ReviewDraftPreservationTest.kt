@@ -77,7 +77,11 @@ class ReviewDraftPreservationTest {
         }
         compose.onNodeWithText("스포일러").assertIsOn()
         compose.onNode(hasText("감상 남기기") and hasClickAction()).performScrollTo().performClick()
-        compose.runOnIdle { assertEquals(requests.first(), requests.last()) }
+        compose.runOnIdle {
+            assertEquals(2, requests.size)
+            assertEquals(ReviewSubmissionState.Submitting, state.value.reviewSubmissionState)
+            assertEquals(requests.first(), requests.last())
+        }
         restoration.emulateSavedInstanceStateRestore()
         compose.runOnIdle {
             state.value = state.value.copy(reviewSubmissionState = ReviewSubmissionState.Succeeded)
