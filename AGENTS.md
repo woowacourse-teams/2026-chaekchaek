@@ -70,6 +70,7 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 - 이벤트 계측, 사용자 관찰, 웹 읽기 실험, 작가 협업, 과제 제출은 [실험과 운영](docs/document-routing.md#research)의 해당 문서를 먼저 읽는다. 과거 핸드오프와 초안은 인덱스에 명시한 확인 범위로만 사용한다.
 
 - 첫 책 온보딩, 로그인 후 서재 저장, 공급업체 로그인 버튼의 디자인이나 구현을 변경할 때는 [첫 책 선택 온보딩](docs/first-library-onboarding.md)을 먼저 읽는다. 로그인 버튼은 문서의 공급업체 제약과 검증 상태를 확인한다.
+- 홈, 피드, 발견, 내 서재의 당겨서 새로고침, 추가 로딩, 목록 끝과 overscroll을 변경할 때는 [새로고침과 목록 끝 상태 설계](docs/pull-refresh-interaction-plan.md)를 먼저 읽는다. 기존 페이지네이션 유지 결정과 Figma 상태, 구현 전 미확정 항목을 확인한다.
 
 - Google 로그인 조사, 패키지명/빌드 변형/OAuth 클라이언트/Play 앱 서명 키 변경 및
   Android 로그인 배포 검증은 [Google 로그인 운영 가이드](docs/android-google-login.md)를 먼저 읽는다.
