@@ -1,6 +1,6 @@
 ---
 name: prepare-mobile-release
-description: 책췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준비하고 버전, 검증, 릴리즈 문서와 커밋을 일치시킨다. 사용자가 모바일 릴리즈 준비, 새 AAB와 TestFlight 배포, Android와 iOS 동시 버전 갱신을 요청할 때 사용한다.
+description: 책췍 Android 서명 AAB의 Google Play 내부 테스트 배포와 iOS TestFlight 업로드까지 수행하며 버전, 검증, 릴리즈 문서와 커밋을 일치시킨다. 사용자가 모바일 릴리즈 준비, 새 AAB와 TestFlight 배포, Android와 iOS 동시 버전 갱신을 요청할 때 사용한다.
 ---
 
 # 모바일 릴리즈 준비
@@ -11,7 +11,9 @@ description: 책췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준
 
 - 기본 GitHub 흐름은 프로젝트 `AGENTS.md`를 따른다.
 - 사용자가 이슈와 PR이 필요 없다고 명시하면 생성하지 않는다. 이는 원격 push 승인과 별개다.
-- TestFlight 업로드, Play Console 업로드와 프로덕션 게시는 각각 사용자가 명시한 범위에서만 수행한다.
+- iOS TestFlight 업로드는 이 스킬의 필수 완료 단계다. 모바일 배포 빌드 요청에는 Archive 생성과 App Store Connect 업로드까지 포함하며 업로드 여부를 매번 다시 묻지 않는다. 사용자가 이번 작업에서 업로드 제외를 명시하면 그 지시를 우선한다.
+- Android AAB의 Google Play 내부 테스트 업로드와 트랙 배포도 이 스킬의 필수 완료 단계다. 모바일 배포 빌드 요청에 포함하며 매번 다시 묻지 않는다. 사용자가 이번 작업에서 업로드 제외나 다른 트랙을 명시하면 그 지시를 우선한다. 프로덕션 게시는 별도로 명시한 범위에서만 수행한다.
+- 업로드는 기존 인증을 활용하는 CLI/API를 먼저 확인하고 사용한다. 인증이나 도구 제약으로 진행할 수 없을 때만 원인을 알리고 UI로 전환한다. 전용 MCP가 있으면 프로젝트의 MCP 우선 규칙을 따른다.
 - 같은 대화에서 받은 업로드 승인은 중단 후 재개해도 유효하다. 성공 여부부터 확인하고 이미 업로드한 빌드를 중복 전송하지 않는다.
 - 비밀값은 존재 여부만 확인하고 출력하거나 커밋하지 않는다.
 
@@ -28,13 +30,36 @@ description: 책췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준
 2. Android 버전 SSOT인 `android/app/build.gradle.kts`와 iOS 버전 SSOT인 `android/iosApp/iosApp.xcodeproj/project.pbxproj`를 읽는다.
 3. 저장소 릴리즈 기록과 각 스토어에서 사용한 가장 큰 빌드 번호를 확인한다. `versionName`은 같은 SemVer로 맞추고 Android `versionCode`와 iOS build는 사용된 최댓값보다 크게 정한다.
 4. `docs/android-release-management.md`와 `android/docs/ios-app-store-review.md`를 버전 변경과 같은 커밋에서 갱신한다.
-5. Android는 `build-signed-aab` 스킬로 AAB를 만들고 서명, manifest, 아이콘과 SHA-256을 검증한 뒤 고정 산출물 경로에 파일이 있는지 확인한다.
+5. Android는 `build-signed-aab` 스킬로 AAB를 만들고 서명, manifest, 아이콘과 SHA-256을 검증한 뒤 고정 산출물 경로에 파일이 있는지 확인한다. 아래 Play API 절차로 내부 테스트에 업로드하고 트랙 배포까지 확인한다. 파일 전송만으로 배포 완료라고 보고하지 않는다.
 6. iOS는 `ios-simulator-validation` 스킬로 테스트한다. KMP Release Archive 전에 `df -h /`로 이 프로젝트 기준 5GB 이상의 여유 공간을 확인하고, 부족하면 현재 작업에서 만든 빌드 산출물만 정확한 경로로 정리한다.
-7. `xcodebuild archive`의 `-archivePath`에 고정 iOS Archive 경로를 지정한다. 사용자가 업로드를 요청한 경우에만 그 Archive를 App Store Connect에 업로드한다.
-8. 실제 AAB 해시, TestFlight 상태, 소스 커밋을 릴리즈 문서에 반영하고 `release-commit` 스킬 형식으로 커밋한다.
+7. `xcodebuild archive`의 `-archivePath`에 고정 iOS Archive 경로를 지정하고 그 Archive를 App Store Connect에 업로드한다. Archive 생성만으로 릴리즈 준비를 완료했다고 보고하지 않는다. 업로드가 막히면 빌드 완료와 업로드 미완료를 구분하고 차단 원인을 기록한다.
+8. 실제 AAB 해시, Google Play 내부 테스트 트랙과 버전 코드 및 상태, TestFlight 상태, 소스 커밋을 릴리즈 문서에 반영하고 `release-commit` 스킬 형식으로 커밋한다.
 9. 직접 push가 승인된 작업이면 원격 `an-develop`이 예상 기준에서 움직이지 않았는지 확인한 뒤 fast-forward push한다.
 
 Google Play 프로덕션 게시와 App Store 심사 제출은 릴리즈 준비에 포함하지 않는다.
+
+## Android Play API 인증과 권한
+
+2026-10-16 설정 기준이다. Android 내부 테스트 배포에는 아래 기존 인증을 먼저 사용한다. 설정과 검증 이력은 [Google Play CLI 인증](../../../docs/android-release-management.md#google-play-cli-인증)을 참고한다.
+
+- Google Cloud 프로젝트: `chaekchaek`. 앱 Firebase 프로젝트 `chaekchaek-d2b85`와 구분하며 앱의 Firebase 설정은 변경하지 않는다. Google Play Developer API `androidpublisher.googleapis.com`을 사용한다.
+- 서비스 계정: `chaekchaek-play-release@chaekchaek.iam.gserviceaccount.com`.
+- JSON 키 경로: `~/.config/chaekchaek/google-play-service-account.json`. 저장소 밖에 보관하고 파일 권한 `0600`을 유지한다. 기존 키가 있으면 재사용하며 키 내용과 발급한 토큰을 출력하거나 Git에 넣지 않는다.
+- Play 권한은 책췍 앱 `com.chamsae.chaekchaek`에 한정한다. 등록된 권한은 `앱 정보 보기(읽기 전용)`, 이에 포함되는 `앱 품질 정보 보기(읽기 전용)`, `앱을 테스트 트랙으로 출시`다. 테스트 트랙 출시는 내부, 비공개와 공개 테스트를 포함한다. 프로덕션 출시, 관리자와 재무 권한은 부여하지 않았다.
+
+1. 업로드 전에 JSON 파일의 존재, 프로젝트와 서비스 계정 일치 여부 및 파일 권한을 확인한다. 인증 정보가 없거나 접근이 거부되면 원인을 알리고 필요한 설정을 확인한다. 다른 gcloud 기본 프로젝트나 일반 사용자 인증으로 임의 대체하지 않는다.
+2. 선택한 CLI가 지원하는 인증 옵션으로 JSON 경로만 전달한다. `GOOGLE_APPLICATION_CREDENTIALS`를 지원하는 도구라면 호출 범위에서 아래 값을 사용한다. 전역 shell 설정이나 gcloud 기본 프로젝트 및 ADC 설정을 덮어쓰지 않는다.
+
+   ```sh
+   GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/chaekchaek/google-play-service-account.json"
+   ```
+
+3. OAuth scope `https://www.googleapis.com/auth/androidpublisher`로 인증하고 앱 접근과 요청한 대상 트랙을 먼저 조회한다. 확인용 임시 edit을 만들었다면 검증 후 삭제하고 commit하지 않는다. 과거 접근 성공만으로 현재 권한을 단정하지 않는다.
+4. 기본 대상은 `internal` 트랙이다. 기존 트랙과 업로드된 버전 코드를 확인해 중복 전송을 피하고 검증한 AAB를 edit에 업로드한다. 응답의 `versionCode`와 `sha256`을 로컬 산출물과 대조한다. 전송이 끊기면 기존 edit과 번들 상태부터 확인하고 무조건 재업로드하지 않는다.
+5. 대상 트랙의 릴리스에 해당 버전 코드를 지정하고 내부 테스트 전체 배포는 `status=completed`로 설정한다. 기존 진행 중인 릴리스나 유지해야 할 버전이 있으면 변경 영향을 먼저 확인한다. 다른 트랙이나 테스터 목록은 변경하지 않는다. edit을 validate한 뒤 commit하며, 기존 심사를 취소하지 않도록 지원되는 API에서는 `changesInReviewBehavior=ERROR_IF_IN_REVIEW`를 사용한다. 심사나 정책 오류를 임의로 우회하지 않는다.
+6. commit 후 새 조회용 edit에서 `internal` 트랙의 버전 코드와 상태를 다시 읽고 조회용 edit을 삭제한다. 인증 설정, AAB 전송, 트랙 반영과 실제 테스터 설치는 구분해 기록한다. 조회 결과만으로 실제 기기 설치와 실행 성공을 주장하지 않는다.
+
+API 근거: [AAB 업로드](https://developers.google.com/android-publisher/api-ref/rest/v3/edits.bundles/upload), [트랙 설정](https://developers.google.com/android-publisher/api-ref/rest/v3/edits.tracks), [edit commit](https://developers.google.com/android-publisher/api-ref/rest/v3/edits/commit).
 
 ## Android manifest가 이전 버전으로 잡힐 때
 
@@ -49,11 +74,12 @@ Google Play 프로덕션 게시와 App Store 심사 제출은 릴리즈 준비�
 
 이 프로젝트에서는 2026-10-02 Xcode Organizer의 App Store Connect 경로로 `1.2.0 (6)` 업로드에 성공했다. 셸의 API 키 환경변수가 없고 로컬 코드 서명 목록에 개발용 인증서만 보여도 Xcode 업로드 불가로 단정하지 않는다. 계정 상태는 매 실행 때 확인한다.
 
-1. 고정 경로 Archive의 번들 ID, 버전, 빌드 번호와 서명을 확인한다. 이미 제공된 CLI 인증 설정이 있으면 사용할 수 있으나, 없으면 키체인 비밀값을 추출하거나 홈 디렉터리 전체에서 인증 정보를 검색하지 않는다. `security ... -g`처럼 암호를 출력하는 옵션도 사용하지 않는다.
-2. Xcode에서 해당 `.xcarchive`를 연다. Organizer가 기존 다른 앱을 선택할 수 있으므로 `Chaekchaek`, `com.chamsae.chaekchaek`, 요청 버전과 빌드 번호를 화면에서 대조한다. UI 조작에는 제공된 Computer Use 도구를 사용한다.
-3. `Distribute App`에서 `App Store Connect`를 선택하고 승인 범위 안에서 `Distribute`를 실행한다. 이 프로젝트의 재현된 성공 경로다. `TestFlight Internal Only`는 내부 전용 요청일 때만 선택한다. 로그인이나 계정 선택이 막히면 해당 단계에서 필요한 사용자 조작을 구체적으로 알린다.
-4. Preparing, Analyzing package, Uploading은 진행 상태다. `App upload complete`와 정확한 버전의 `uploaded` 표시를 확인하고, `Done` 후 Organizer의 `Uploaded to Apple`, 업로드 시각과 build 번호를 대조한다.
-5. 업로드 성공만 확인했다면 문서에 `App Store Connect 업로드 완료, TestFlight 처리 상태 미확인`으로 기록한다. App Store Connect에서 실제 상태를 읽지 않고 `처리 중`, `처리 대기`, `테스터 배포 가능`이라고 단정하지 않는다. 처리 완료까지 요청받았다면 해당 빌드의 TestFlight 상태를 추가 확인한다.
+1. 고정 경로 Archive의 번들 ID, 버전, 빌드 번호와 서명을 확인하고 기존 업로드 성공 기록과 진행 중인 전송부터 확인한다. CLI 인증 환경변수가 없다는 이유만으로 CLI가 불가능하다고 판단하지 않는다. Xcode에 로그인된 개발자 계정을 활용하는 `xcodebuild -exportArchive`도 확인한다. 키체인 비밀값을 추출하거나 홈 디렉터리 전체에서 인증 정보를 검색하지 않는다. `security ... -g`처럼 암호를 출력하는 옵션도 사용하지 않는다.
+2. 설치된 `xcodebuild -help`에서 export 옵션을 확인한 뒤 CLI 업로드를 우선 수행한다. `ExportOptions.plist`의 `method=app-store-connect`, `destination=upload`, `manageAppVersionAndBuildNumber=false`로 요청 버전과 빌드 번호를 유지한다. 기존 서명 구성에 맞춰 `signingStyle`과 `teamID`를 지정하고 필요하면 `-allowProvisioningUpdates`를 사용한다. 기존 App Store Connect API 키 설정이 제공됐다면 인증 인수로 참조할 수 있다. 배포용 IPA가 이미 있으면 `xcrun altool`도 사용할 수 있다. 비밀값을 인수나 로그에 평문으로 남기지 않는다. CLI 성공과 오류는 종료 코드 및 업로드 결과로 확인하며 진행 중이거나 성공한 전송을 UI에서 중복 실행하지 않는다.
+3. CLI 인증이나 도구 오류로 막히면 원인을 설명한 뒤 Xcode에서 해당 `.xcarchive`를 연다. Organizer가 기존 다른 앱을 선택할 수 있으므로 `Chaekchaek`, `com.chamsae.chaekchaek`, 요청 버전과 빌드 번호를 화면에서 대조한다. UI 조작에는 제공된 Computer Use 도구를 사용한다.
+4. `Distribute App`에서 `App Store Connect`를 선택하고 `Distribute`를 실행한다. 이 프로젝트의 재현된 성공 경로다. `TestFlight Internal Only`는 내부 전용 요청일 때만 선택한다. 로그인이나 계정 선택이 막히면 해당 단계에서 필요한 사용자 조작을 구체적으로 알린다.
+5. Preparing, Analyzing package, Uploading은 진행 상태다. `App upload complete`와 정확한 버전의 `uploaded` 표시를 확인하고, `Done` 후 Organizer의 `Uploaded to Apple`, 업로드 시각과 build 번호를 대조한다.
+6. 업로드 성공만 확인했다면 문서에 `App Store Connect 업로드 완료, TestFlight 처리 상태 미확인`으로 기록한다. App Store Connect에서 실제 상태를 읽지 않고 `처리 중`, `처리 대기`, `테스터 배포 가능`이라고 단정하지 않는다. 처리 완료까지 요청받았다면 해당 빌드의 TestFlight 상태를 추가 확인한다.
 
 ## 검증과 기록의 판정 기준
 
