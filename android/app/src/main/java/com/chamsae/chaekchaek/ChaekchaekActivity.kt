@@ -15,6 +15,7 @@ import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.ui.App
 import com.chaekchaek.app.ui.search.RecentSearchStorage
+import com.chaekchaek.app.ui.onboarding.OnboardingStorage
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.launch
 
@@ -33,6 +34,16 @@ abstract class ChaekchaekActivity : ComponentActivity() {
             val scope = rememberCoroutineScope()
             val tokenStore = remember(context) { RefreshTokenStore(context) }
             val recentSearchPreferences = remember(context) { RecentSearchPreferences(context) }
+            val onboardingPreferences = remember(context) {
+                context.getSharedPreferences("onboarding", MODE_PRIVATE).also { preferences ->
+                    if (!preferences.contains("first_library_shown")) {
+                        val info = context.packageManager.getPackageInfo(context.packageName, 0)
+                        if (info.firstInstallTime != info.lastUpdateTime) {
+                            preferences.edit().putBoolean("first_library_shown", true).apply()
+                        }
+                    }
+                }
+            }
             val analytics = remember(context, analyticsEnvironment) {
                 val logger = FirebaseAnalyticsEventLogger(FirebaseAnalytics.getInstance(context))
                 AnalyticsTracker(
@@ -65,6 +76,10 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                 recentSearchStorage = RecentSearchStorage(
                     read = recentSearchPreferences::read,
                     write = recentSearchPreferences::write,
+                ),
+                onboardingStorage = OnboardingStorage(
+                    hasBeenShown = { onboardingPreferences.getBoolean("first_library_shown", false) },
+                    markShown = { onboardingPreferences.edit().putBoolean("first_library_shown", true).apply() },
                 ),
             )
         }

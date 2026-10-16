@@ -31,6 +31,8 @@ internal fun LoginRequiredSheet(
     onDismiss: () -> Unit,
     onAppleSignIn: () -> Unit,
     onGoogleSignIn: () -> Unit,
+    skipLabel: String? = null,
+    onSkip: (() -> Unit)? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -92,7 +94,11 @@ internal fun LoginRequiredSheet(
                     )
                 }
             }
-            ChaekOverlayButton("닫기", onDismiss, secondary = true)
+            if (skipLabel != null && onSkip != null) {
+                ChaekOverlayButton(skipLabel, onSkip, secondary = true)
+            } else {
+                ChaekOverlayButton("닫기", onDismiss, secondary = true)
+            }
         }
     }
 }

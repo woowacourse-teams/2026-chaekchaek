@@ -5,6 +5,8 @@ import com.chaekchaek.app.data.remote.MobileLoginException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -329,6 +331,65 @@ class AuthViewModelTest {
     assertEquals(false, resumed)
     assertEquals("로그인을 취소했어요.", viewModel.uiState.value.errorMessage)
     assertNull(viewModel.tokens.value)
+  }
+
+  @Test
+  fun `건너뛰기 뒤 늦은 로그인 응답은 세션과 게스트를 변경하지 않는다`() = runTest {
+    var credentialResult: ((String?, String?) -> Unit)? = null
+    val response = CompletableDeferred<MobileAuthTokens>()
+    var stored: String? = null
+    var guestCleared = false
+    var resumed = false
+    val viewModel = AuthViewModel(
+      callbacks = AuthPlatformCallbacks(
+        requestGoogleIdToken = { credentialResult = it },
+        readRefreshToken = { stored },
+        writeRefreshToken = { stored = it },
+        clearRefreshToken = { stored = null },
+        clearGuest = { guestCleared = true },
+      ),
+      loginWithGoogle = { _, _ -> withContext(NonCancellable) { response.await() } },
+      reissue = { error("예상하지 않은 재발급") },
+      logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    viewModel.requireAuthentication { resumed = true }
+    credentialResult!!.invoke("credential", null)
+    runCurrent()
+    viewModel.cancelPendingAuthentication()
+    response.complete(tokens("late"))
+    runCurrent()
+    assertNull(viewModel.tokens.value)
+    assertNull(stored)
+    assertEquals(false, guestCleared)
+    assertEquals(false, resumed)
+    assertEquals(AuthUiState(), viewModel.uiState.value)
+  }
+
+  @Test
+  fun `이전 공급업체 응답이 새 로그인 요청을 변경하지 않는다`() = runTest {
+    val callbacks = mutableListOf<(String?, String?) -> Unit>()
+    var loginCalls = 0
+    val viewModel = AuthViewModel(
+      callbacks = AuthPlatformCallbacks(
+        requestGoogleIdToken = { callbacks += it }, readRefreshToken = { null },
+        writeRefreshToken = {}, clearRefreshToken = {},
+      ),
+      loginWithGoogle = { _, _ -> loginCalls++; tokens("new") },
+      reissue = { error("예상하지 않은 재발급") }, logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    viewModel.requireAuthentication {}
+    viewModel.cancelPendingAuthentication()
+    viewModel.requireAuthentication {}
+    callbacks[0]("old", null)
+    runCurrent()
+    assertEquals(0, loginCalls)
+    assertEquals(true, viewModel.uiState.value.signingIn)
+    callbacks[1]("new", null)
+    runCurrent()
+    assertEquals(1, loginCalls)
+    assertEquals("access-new", viewModel.tokens.value?.accessToken)
   }
 
   private fun TestScope.authSession(backend: FakeAuthBackend): AuthSession = AuthSession(
