@@ -6,6 +6,7 @@ import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.auth.GuestAuth
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
+import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
@@ -46,6 +47,54 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
+  @Test
+  fun `바로 담기 완료는 열린 상세의 기록 수정에서 중복 등록하지 않는다`() = runViewModelTest {
+    val writes = mutableListOf<String>()
+    val client = testClient(MockEngine { request ->
+      when {
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        request.method == HttpMethod.Patch -> {
+          writes += request.url.encodedPath
+          respond(LIBRARY_RECORD.replace("\"currentPage\":0", "\"currentPage\":18"), headers = jsonHeaders())
+        }
+        request.method == HttpMethod.Post -> error("저장된 책을 다시 등록하면 안 된다")
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val target = book().copy(isbn13 = "9780000000042")
+    vm.open(target, "member")
+    awaitReal { vm.uiState.first { it.detail != null } }
+    vm.acceptSavedLibraryRecord(target.isbn13, LibraryRecord("READING", 0, null, 73))
+    vm.savePage(18)
+    awaitReal { vm.uiState.first { it.detail?.myRecord?.currentPage == 18 } }
+    assertEquals(listOf("/api/v1/library/73"), writes)
+  }
+
+  @Test
+  fun `바로 담기보다 먼저 시작한 상세 응답은 저장 기록을 지우지 않는다`() = runViewModelTest {
+    val detailRequested = CompletableDeferred<Unit>()
+    val detailResponse = CompletableDeferred<Unit>()
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        detailRequested.complete(Unit)
+        detailResponse.await()
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else respond(EMPTY_REVIEWS, headers = jsonHeaders())
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val target = book().copy(isbn13 = "9780000000042")
+    vm.open(target, "member")
+    awaitReal { detailRequested.await() }
+    val record = LibraryRecord("READING", 0, null, 73)
+    vm.acceptSavedLibraryRecord(target.isbn13, record)
+    detailResponse.complete(Unit)
+    awaitReal { vm.uiState.first { it.detail != null } }
+    assertEquals(record, vm.uiState.value.detail?.myRecord)
+    vm.acceptSavedLibraryRecord("9780000000099", LibraryRecord("COMPLETED", 99, null, 99))
+    assertEquals(record, vm.uiState.value.detail?.myRecord)
+  }
+
   @Test
   fun `담기를 반복해도 삭제하지 않고 명시적 삭제만 서재를 지운다`() = runViewModelTest {
     val paths = mutableListOf<String>()

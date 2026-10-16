@@ -9,6 +9,7 @@ import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.domain.shelf.ReadingStatus
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,15 +27,25 @@ class ArchiveViewModel(
 
     private val mutationMutex = Mutex()
     private var accessToken: String? = null
-    private var libraryJob: Job? = null
+    private var readJob: Job? = null
+    private val mutationJobs = mutableSetOf<Job>()
+    private val loadingOperations = mutableSetOf<Int>()
+    private var nextOperationId = 0
+    private var sessionGeneration = 0
     private var requestGeneration = 0
 
     fun authenticate(accessToken: String?) {
         if (this.accessToken == accessToken) return
+        val renewingMemberSession = this.accessToken != null && accessToken != null
         this.accessToken = accessToken
-        requestGeneration += 1
-        libraryJob?.cancel()
-        _uiState.value = ArchiveUiState()
+        invalidateRead()
+        if (!renewingMemberSession) {
+            sessionGeneration += 1
+            mutationJobs.toList().forEach { it.cancel() }
+            mutationJobs.clear()
+            loadingOperations.clear()
+            _uiState.value = ArchiveUiState()
+        }
         if (accessToken != null) load()
     }
 
@@ -42,7 +53,6 @@ class ArchiveViewModel(
 
     fun acceptSavedBook(book: BookDetailArgs, record: LibraryRecord) {
         if (accessToken == null) return
-        libraryJob?.cancel()
         val bookId = record.bookId ?: book.bookId
         if (bookId != null) {
             val existing = _uiState.value.items.firstOrNull { it.id == book.isbn13 }
@@ -70,7 +80,6 @@ class ArchiveViewModel(
 
     fun acceptRemovedBook(isbn13: String) {
         if (accessToken == null) return
-        libraryJob?.cancel()
         _uiState.value = _uiState.value.copy(items = _uiState.value.items.filterNot { it.id == isbn13 })
         load()
     }
@@ -91,9 +100,22 @@ class ArchiveViewModel(
 
     private fun load() {
         val token = accessToken ?: return
-        val generation = ++requestGeneration
-        libraryJob?.cancel()
-        libraryJob = viewModelScope.launch { loadIntoState(token, generation) }
+        invalidateRead()
+        val generation = requestGeneration
+        val session = sessionGeneration
+        readJob = viewModelScope.launch {
+            mutationMutex.withLock {
+                if (session == sessionGeneration && generation == requestGeneration) {
+                    loadIntoState(token, generation, session)
+                }
+            }
+        }
+    }
+
+    private fun invalidateRead() {
+        requestGeneration += 1
+        readJob?.cancel()
+        readJob = null
     }
 
     private fun mutate(
@@ -101,23 +123,17 @@ class ArchiveViewModel(
         itemCount: Int,
         action: suspend (String) -> Unit,
     ) {
-        val token = accessToken ?: return
+        if (accessToken == null) return
         val analyticsAction = analytics.startAction(actionName, longs = mapOf("item_count" to itemCount.toLong()))
-        val generation = ++requestGeneration
-        libraryJob?.cancel()
-        libraryJob = viewModelScope.launch {
+        val session = sessionGeneration
+        invalidateRead()
+        val job = viewModelScope.launch(start = CoroutineStart.LAZY) {
             mutationMutex.withLock {
-                withDelayedLoading({ if (generation == requestGeneration) setLoading(it) }) {
-                    action(token)
-                    repository.getAll(token)
-                }.onSuccess { books ->
+                if (session != sessionGeneration) return@withLock
+                val token = accessToken ?: return@withLock
+                withArchiveLoading(session) { action(token) }.onSuccess {
                     analytics.finishAction(analyticsAction, "success")
-                    if (accessToken == token && generation == requestGeneration) {
-                        _uiState.value = _uiState.value.copy(
-                            items = books.map { it.toArchiveBookUiModel() },
-                            errorMessage = null,
-                        )
-                    }
+                    if (session == sessionGeneration) load()
                 }.onFailure { error ->
                     if (error is CancellationException) throw error
                     analytics.finishAction(
@@ -125,15 +141,18 @@ class ArchiveViewModel(
                         "failure",
                         strings = mapOf("error_category" to analyticsErrorCategory(error)),
                     )
-                    if (generation == requestGeneration) handleFailure(error)
+                    if (session == sessionGeneration) handleFailure(error)
                 }
             }
         }
+        mutationJobs += job
+        job.invokeOnCompletion { mutationJobs -= job }
+        job.start()
     }
 
-    private suspend fun loadIntoState(token: String, generation: Int) {
+    private suspend fun loadIntoState(token: String, generation: Int, session: Int) {
         val started = kotlin.time.TimeSource.Monotonic.markNow()
-        withDelayedLoading({ if (generation == requestGeneration) setLoading(it) }) { repository.getAll(token) }
+        withArchiveLoading(session) { repository.getAll(token) }
             .onSuccess { books ->
                 analytics.log(
                     name = "cc_load_result",
@@ -143,7 +162,7 @@ class ArchiveViewModel(
                         "result_count" to books.size.toLong(),
                     ),
                 )
-                if (accessToken == token && generation == requestGeneration) {
+                if (session == sessionGeneration && generation == requestGeneration) {
                     _uiState.value = _uiState.value.copy(
                         items = books.map { it.toArchiveBookUiModel() },
                         errorMessage = null,
@@ -161,7 +180,7 @@ class ArchiveViewModel(
                     ),
                     longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
                 )
-                if (generation == requestGeneration) handleFailure(error)
+                if (session == sessionGeneration && generation == requestGeneration) handleFailure(error)
             }
     }
 
@@ -170,7 +189,17 @@ class ArchiveViewModel(
         _uiState.value = _uiState.value.copy(errorMessage = "서재를 불러오지 못했어요")
     }
 
-    private fun setLoading(loading: Boolean) {
-        _uiState.value = _uiState.value.copy(showLoading = loading)
+    private suspend fun <T> withArchiveLoading(session: Int, action: suspend () -> T): Result<T> {
+        val operationId = ++nextOperationId
+        fun setLoading(loading: Boolean) {
+            if (session != sessionGeneration) return
+            if (loading) loadingOperations += operationId else loadingOperations -= operationId
+            _uiState.value = _uiState.value.copy(showLoading = loadingOperations.isNotEmpty())
+        }
+        return try {
+            withDelayedLoading(::setLoading, action)
+        } finally {
+            setLoading(false)
+        }
     }
 }

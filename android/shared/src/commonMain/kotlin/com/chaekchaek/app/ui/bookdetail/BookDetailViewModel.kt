@@ -59,6 +59,8 @@ class BookDetailViewModel(
     private var requestGeneration = 0
     private var detailReadyLogged = false
     private var pendingAnalyticsAction: AnalyticsAction? = null
+    private var externalLibrarySaveRevision = 0
+    private var externallySavedRecord: LibraryRecord? = null
 
     fun attachAuthPlatform(authPlatform: AuthPlatformCallbacks) {
         this.authPlatform = authPlatform
@@ -262,6 +264,14 @@ class BookDetailViewModel(
             val book = requireNotNull(state.displayBook)
             repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken())
         }
+    }
+
+    fun acceptSavedLibraryRecord(isbn13: String, record: LibraryRecord) {
+        if (accessToken == null || _uiState.value.displayBook?.isbn13 != isbn13) return
+        if (_uiState.value.detail?.myRecord != null) return
+        externalLibrarySaveRevision += 1
+        externallySavedRecord = record
+        updateMyRecord(record)
     }
 
     fun removeFromLibrary(savedBookId: Long, onSuccess: () -> Unit = {}) = mutate(
@@ -509,6 +519,7 @@ class BookDetailViewModel(
         val reviewGeneration = reviewPageGeneration
         val generation = requestGeneration
         val credential = readCredential()
+        val librarySaveRevision = externalLibrarySaveRevision
         val reviewScope = _uiState.value.reviewScope
         val reviewSort = _uiState.value.reviewSort
         val loadId = analytics.newId("load")
@@ -539,7 +550,9 @@ class BookDetailViewModel(
             }.onSuccess { (detail, reviews) ->
                 if (generation != requestGeneration || reviewGeneration != reviewPageGeneration) return@onSuccess
                 _uiState.value = _uiState.value.copy(
-                    detail = detail,
+                    detail = if (librarySaveRevision != externalLibrarySaveRevision) {
+                        detail?.copy(myRecord = _uiState.value.detail?.myRecord ?: externallySavedRecord)
+                    } else detail,
                     reviews = reviews?.items.orEmpty(),
                     reviewCount = reviews?.totalCount ?: 0,
                     nextReviewPage = reviews?.nextPage,
@@ -794,6 +807,7 @@ class BookDetailViewModel(
 
     private fun invalidateRequests() {
         requestGeneration += 1
+        externallySavedRecord = null
         resetReviewPagination()
         loadJob?.cancel()
         loadMoreJob?.cancel()

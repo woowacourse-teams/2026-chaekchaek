@@ -280,6 +280,11 @@ internal fun AppNavigation(
                         if (token == null) resumedAction = null
                         else if (pendingAction != null) resumedAction = pendingAction
                     }
+                    LaunchedEffect(librarySaveState.lastSavedBook, archivedBook?.bookId) {
+                        librarySaveState.lastSavedBook
+                            ?.takeIf { archivedBook != null && it.isbn13 == displayBook.isbn13 }
+                            ?.let { viewModel.acceptSavedLibraryRecord(it.isbn13, it.record) }
+                    }
 
                     if (restoringAuthentication) {
                         AuthenticationRestorationContent(safeContent)

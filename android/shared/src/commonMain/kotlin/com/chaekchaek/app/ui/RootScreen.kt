@@ -119,7 +119,7 @@ internal fun RootScreen(
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
-    var homeScrollTopRequest by remember { mutableIntStateOf(0) }
+    var homeScrollTopRequest by rememberSaveable { mutableIntStateOf(0) }
     var archiveScrollTopRequest by remember { mutableIntStateOf(0) }
     var archiveEditing by rememberSaveable { mutableStateOf(false) }
     var showArchiveLoginSheet by rememberSaveable { mutableStateOf(false) }

@@ -12,11 +12,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+data class SavedLibraryBook(val isbn13: String, val record: LibraryRecord)
+
 data class LibrarySaveUiState(
     val pendingBook: BookDetailArgs? = null,
     val savingIsbn: String? = null,
     val showLoading: Boolean = false,
     val savedCount: Int = 0,
+    val lastSavedBook: SavedLibraryBook? = null,
     val failedBook: BookDetailArgs? = null,
     val errorMessage: String? = null,
 )
@@ -37,6 +40,10 @@ class LibrarySaveViewModel(
 
     fun authenticate(token: String?) {
         if (accessToken == token) return
+        if (accessToken != null && token != null) {
+            accessToken = token
+            return
+        }
         val pending = state.value.pendingBook.takeIf { accessToken == null && token != null }
         generation += 1
         saveJob?.cancel()
@@ -84,7 +91,10 @@ class LibrarySaveViewModel(
                 ) { addBook(book.isbn13, book.totalPages.takeIf { it > 0 }, token) }.getOrThrow()
                 if (generation != requestGeneration) return@launch
                 onSaved(book, record)
-                state.value = state.value.copy(savedCount = state.value.savedCount + 1)
+                state.value = state.value.copy(
+                    savedCount = state.value.savedCount + 1,
+                    lastSavedBook = SavedLibraryBook(book.isbn13, record),
+                )
                 analytics.finishAction(action, "success")
             } catch (error: CancellationException) {
                 analytics.finishAction(action, "cancelled")
