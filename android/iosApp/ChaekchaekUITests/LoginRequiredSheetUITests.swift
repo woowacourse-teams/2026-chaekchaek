@@ -1,6 +1,115 @@
 import XCTest
 
 final class LoginRequiredSheetUITests: XCTestCase {
+    // CHAEKCHAEK_API_ENVIRONMENT=local 빌드와 실패 후 성공하는 로컬 fixture가 필요하다.
+    @MainActor
+    func testReviewDraftSurvivesFailureAndClosesAfterRetry() async throws {
+        let base = URL(string: "http://127.0.0.1:9090")!
+        guard let (data, _) = try? await URLSession.shared.data(from: base.appendingPathComponent("__review-draft-qa")),
+              String(data: data, encoding: .utf8)?.contains("review-draft") == true else {
+            throw XCTSkip("감상 보존 전용 로컬 fixture가 실행 중일 때만 검증한다")
+        }
+        var reset = URLRequest(url: base.appendingPathComponent("__review-draft-qa/reset"))
+        reset.httpMethod = "POST"
+        _ = try await URLSession.shared.data(for: reset)
+
+        let app = XCUIApplication()
+        app.launchArguments.append("-uiTestingGuest")
+        app.launch()
+        let book = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "감상 보존 검증")).firstMatch
+        guard book.waitForExistence(timeout: 15) else {
+            XCTFail("로컬 fixture 도서가 표시되지 않아 검증을 중단한다")
+            return
+        }
+        book.tap()
+        let open = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "이 순간의 감상 남기기")).firstMatch
+        XCTAssertTrue(open.waitForExistence(timeout: 10))
+        open.tap()
+        let content = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 (필수)")).firstMatch
+        guard content.waitForExistence(timeout: 10) else {
+            XCTFail("감상 입력란 접근 실패: \(app.debugDescription)")
+            return
+        }
+        // 아래 필드부터 채워 키보드가 펼쳐질 때 입력란을 가리는 영향을 줄인다.
+        let chapter = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "목차 또는 챕터")).firstMatch
+        revealReviewControl(chapter, in: app, scrollingUp: true)
+        chapter.tap()
+        chapter.typeText("chapter one")
+        let quote = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "인상 깊은 문구")).firstMatch
+        revealReviewControl(quote, in: app, scrollingUp: false)
+        quote.tap()
+        quote.typeText("saved quote")
+        revealReviewControl(content, in: app, scrollingUp: false)
+        content.tap()
+        content.typeText("draft must survive")
+        let spoiler = app.buttons["스포일러"]
+        revealReviewControl(spoiler, in: app, scrollingUp: true)
+        spoiler.tap()
+        let save = app.buttons["감상 남기기"]
+        revealReviewControl(save, in: app, scrollingUp: true)
+        try await Task.sleep(for: .milliseconds(500))
+        save.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.15)
+        // 첫 요청은 500으로 실패한다. 응답 뒤에도 같은 작성창과 입력이 남아야 한다.
+        try await Task.sleep(for: .seconds(2))
+        let (attemptData, _) = try await URLSession.shared.data(from: base.appendingPathComponent("__review-draft-qa/state"))
+        let attempts = try XCTUnwrap(JSONSerialization.jsonObject(with: attemptData) as? [String: [[String: Any]]])
+        guard attempts["requests"]?.count == 1 else {
+            attachScreenshot(named: "감상 저장 버튼 입력 확인")
+            XCTFail("첫 저장 요청이 전달되지 않았다: \(save.debugDescription)")
+            return
+        }
+        guard content.exists else {
+            attachScreenshot(named: "수정 전 저장 실패로 작성창이 닫힘")
+            XCTFail("저장 실패 뒤 작성창과 입력이 사라졌다")
+            return
+        }
+        revealReviewControl(content, in: app, scrollingUp: false)
+        XCTAssertEqual(content.value as? String, "draft must survive")
+        XCTAssertEqual(quote.value as? String, "saved quote")
+        XCTAssertEqual(chapter.value as? String, "chapter one")
+        attachScreenshot(named: "감상 저장 실패 후 입력 보존")
+        revealReviewControl(save, in: app, scrollingUp: true)
+        try await Task.sleep(for: .milliseconds(500))
+        save.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.15)
+        let closed = NSPredicate(format: "exists == false")
+        let closedExpectation = expectation(for: closed, evaluatedWith: content)
+        await fulfillment(of: [closedExpectation], timeout: 10)
+        let (savedData, _) = try await URLSession.shared.data(from: base.appendingPathComponent("__review-draft-qa/state"))
+        let saved = try XCTUnwrap(JSONSerialization.jsonObject(with: savedData) as? [String: [[String: Any]]])
+        XCTAssertEqual(saved["requests"]?.count, 2)
+        let submissions = try XCTUnwrap(saved["requests"])
+        XCTAssertEqual(submissions.first?["content"] as? String, "draft must survive")
+        XCTAssertEqual(submissions.last?["quote"] as? String, "saved quote")
+        XCTAssertEqual(submissions.last?["chapter"] as? String, "chapter one")
+        XCTAssertEqual(submissions.last?["isSpoiler"] as? Bool, true)
+        let first = try XCTUnwrap(submissions.first)
+        let last = try XCTUnwrap(submissions.last)
+        XCTAssertTrue(NSDictionary(dictionary: first).isEqual(to: last))
+        attachScreenshot(named: "재시도 성공 후 작성창 닫힘")
+        open.tap()
+        XCTAssertTrue(content.waitForExistence(timeout: 5))
+        XCTAssertTrue((content.value as? String ?? "").isEmpty)
+        attachScreenshot(named: "새 감상 작성창 초기화")
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
+    }
+
+    @MainActor
+    private func revealReviewControl(_ control: XCUIElement, in app: XCUIApplication, scrollingUp: Bool) {
+        for _ in 0..<5 {
+            let keyboard = app.keyboards.firstMatch
+            let bottom = keyboard.exists ? keyboard.frame.minY - 100 : app.frame.maxY - 34
+            if control.exists && control.isHittable && control.frame.height >= 40 && control.frame.maxY <= bottom {
+                return
+            }
+            // 텍스트 입력란과 키보드가 화면 스와이프를 소비하므로 시트의 빈 오른쪽 여백을 이용한다.
+            let top = max(160, bottom - 300)
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: scrollingUp ? bottom - 24 : top))
+            let end = origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: scrollingUp ? top : bottom - 24))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+    }
+
     override func setUpWithError() throws {
         continueAfterFailure = false
     }

@@ -119,6 +119,7 @@ class BookDetailViewModel(
             isLoading = false,
             isLoadingMore = false,
             isSubmitting = false,
+            reviewSubmissionState = ReviewSubmissionState.Idle,
         )
         reload()
         return pending
@@ -307,6 +308,11 @@ class BookDetailViewModel(
     }
 
     fun createReview(request: ReviewCreateRequest) {
+        if (mutationJob?.isActive == true) return
+        _uiState.value = _uiState.value.copy(
+            reviewSubmissionState = ReviewSubmissionState.Submitting,
+            requestError = null,
+        )
         val state = _uiState.value
         val target = reviewCreateTarget(state.displayBook)
         val analyticsContext = mapOf(
@@ -332,6 +338,13 @@ class BookDetailViewModel(
             },
             awaitLoadBeforeAction = false,
             closesComposer = true,
+            preservesComposerOnFailure = true,
+            onSuccess = { _: BookReview ->
+                _uiState.value = _uiState.value.copy(reviewSubmissionState = ReviewSubmissionState.Succeeded)
+            },
+            onFailure = {
+                _uiState.value = _uiState.value.copy(reviewSubmissionState = ReviewSubmissionState.Failed)
+            },
         ) {
             val resolvedTarget = target ?: throw ReviewCreateTargetUnavailableException()
             publicWrite(
@@ -350,6 +363,8 @@ class BookDetailViewModel(
     }
 
     fun openReviewComposer(onReady: () -> Unit) {
+        if (_uiState.value.reviewSubmissionState == ReviewSubmissionState.Submitting) return
+        _uiState.value = _uiState.value.copy(reviewSubmissionState = ReviewSubmissionState.Idle)
         authPlatform.readGuest()?.let {
             _uiState.value = _uiState.value.copy(guestNickname = it.nickname)
         }
@@ -653,9 +668,11 @@ class BookDetailViewModel(
         failureActionStrings: (Throwable) -> Map<String, String> = { emptyMap() },
         failureActionLongs: (Throwable) -> Map<String, Long> = { emptyMap() },
         onSuccess: (T) -> Unit = {},
+        onFailure: (Throwable) -> Unit = {},
         reloadAfterSuccess: Boolean = true,
         awaitLoadBeforeAction: Boolean = true,
         closesComposer: Boolean = false,
+        preservesComposerOnFailure: Boolean = false,
         action: suspend () -> T,
     ) {
         if (mutationJob?.isActive == true) return
@@ -704,7 +721,8 @@ class BookDetailViewModel(
                         longs = if (error is CancellationException) emptyMap() else failureActionLongs(error),
                     )
                 }
-                if (closesComposer) analytics.completeComposer()
+                if (closesComposer && !preservesComposerOnFailure) analytics.completeComposer()
+                if (generation == requestGeneration && error !is CancellationException) onFailure(error)
                 if (generation == requestGeneration || error is CancellationException) handleFailure(error)
             }
         }
