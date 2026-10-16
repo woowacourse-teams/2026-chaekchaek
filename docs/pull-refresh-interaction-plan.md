@@ -165,7 +165,7 @@ Android 자동 검사 명령은 `android/`에서 실행했다.
 - 전용 `Chaekchaek Refresh 529` Simulator, iPhone 17 Pro, iOS 26.2에서 검증했다. 다른 작업의 Simulator는 조작하지 않았다.
 - `xcodebuild build-for-testing`과 공통 iOS Simulator 프레임워크 빌드 통과.
 - 기본 크기 `large`: 홈 목록 끝 표시, 당김 후 탭과 기존 화면 유지, 빈 검색 결과 당김 후 제출 검색어 유지, 텍스트 잘림 감사 2개 UI 테스트 통과.
-- 최초 검색 테스트는 입력을 TextField로 찾다가 실패했다. 실제 접근성 트리의 `TextView(search-query-field)`로 수정해 재검증했다.
+- 최초 검색 테스트는 입력을 TextField로 찾다가 실패했다. 실제 접근성 트리의 `TextView(search-query-field)`로 수정해 재검증했다. 일반 Compose Row의 테스트 태그 대신 실제 당김 표시 문구의 소멸을 기다려 종료 상태를 확인하고, 홈 프로필 버튼의 터치 가능 상태도 검사한다.
 - 최초 `hitRegion` 감사는 시스템 홈 인디케이터에서 실패했다. 실패 캡처로 대상을 확인했으며 이 감사는 통과로 보고하지 않는다. 최종 흐름 테스트는 `textClipped`만 실행한다.
 - AX5 (`accessibility-extra-extra-extra-large`): 같은 2개 UI 테스트와 텍스트 잘림 감사 통과. 기본 크기와 AX5의 홈 목록 끝, 당김 후 화면, 빈 검색 결과 캡처를 직접 확인했다.
 - 자동 감사 통과와 별도로 AX5 캡처에서 기존 홈 콜라주의 제목과 감상 수 겹침, 읽는 중 바의 텍스트 잘림을 확인했다. 기존 고정 높이와 배치에서 생기며 이번 변경은 해당 내부 레이아웃을 수정하지 않았다. 새 목록 끝 문구와 빈 검색 결과는 표시된다. 전체 HIG 준수 판정은 하지 않는다.

@@ -124,7 +124,10 @@ final class LoginRequiredSheetUITests: XCTestCase {
 
     @MainActor
     private func waitForRefreshIndicatorToClose(in app: XCUIApplication) {
-        let indicator = app.descendants(matching: .any)["pull-refresh-indicator"]
+        let indicator = app.staticTexts.matching(NSPredicate(
+            format: "label CONTAINS %@ OR label CONTAINS %@ OR label CONTAINS %@ OR label CONTAINS %@",
+            "당겨서 새로고침", "놓으면 새로고침", "갱신 요청 중", "새로고침 중이에요"
+        )).firstMatch
         expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: indicator)
         waitForExpectations(timeout: 10)
     }
