@@ -2,6 +2,7 @@ package com.chaekchaek.app.data.remote
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ResponseException
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -10,13 +11,19 @@ import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 class BookDetailRemoteRepository(
@@ -44,9 +51,17 @@ class BookDetailRemoteRepository(
     }.body<ReviewPageDto>().toReviewPage()
 
   suspend fun addToLibrary(isbn13: String, totalPages: Int?, accessToken: String): LibraryRecord =
-    client.post("${apiConfiguration.baseUrl}/api/v1/library") {
-      authenticatedJson(accessToken, LibraryAddRequest(isbn13, "READING", totalPages))
-    }.body<LibraryRecordDto>().toLibraryRecord()
+    try {
+      client.post("${apiConfiguration.baseUrl}/api/v1/library") {
+        authenticatedJson(accessToken, LibraryAddRequest(isbn13, "READING", totalPages))
+      }.body<LibraryRecordDto>().toLibraryRecord()
+    } catch (error: ResponseException) {
+      if (!error.isAlreadySavedBookConflict()) throw error
+      val existingBook = detail(isbn13, WriteCredential.Member(accessToken))
+      val existingRecord = existingBook.myRecord ?: throw error
+      val bookId = existingRecord.bookId ?: existingBook.bookId ?: throw error
+      existingRecord.copy(bookId = bookId)
+    }
 
   suspend fun updateReadingStatus(bookId: Long, status: String, accessToken: String): LibraryRecord =
     client.patch("${apiConfiguration.baseUrl}/api/v1/library/$bookId") {
@@ -177,6 +192,15 @@ class BookDetailRemoteRepository(
   private companion object {
     const val FIRST_PAGE = 1
   }
+}
+
+private suspend fun ResponseException.isAlreadySavedBookConflict(): Boolean {
+  if (response.status != HttpStatusCode.Conflict) return false
+  val problem = response.bodyAsText()
+  return runCatching {
+    Json.parseToJsonElement(problem).jsonObject["code"]?.jsonPrimitive?.contentOrNull ==
+      "LIBRARY_ITEM_ALREADY_EXISTS"
+  }.getOrDefault(false)
 }
 
 private fun ReviewCreateRequest.toUpdateBody(includeReadingProgress: Boolean) = buildJsonObject {

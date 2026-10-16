@@ -14,6 +14,7 @@
 | API 설계 배경이나 앱 도메인 매핑 확인 | [API 계약 초안](api-contract.md) | 서버 구현 전 초안이다. 실제 연동에는 최신 서버 OpenAPI를 확인하고 로컬 `android/openapi3.yaml`과 대조한다. |
 | 비로그인 감상, 답글, 좋아요, 토큰, 로그인 시 기록 계승 변경 | [게스트 쓰기 권한 계획](../android/docs/plans/guest-write-permissions.md) | 서재, 별점, 독서 상태의 로그인 경계와 미결을 확인한다. 계획 자체는 구현 완료 증거가 아니다. |
 | 첫 진입, 책 선택, 로그인 후 서재 저장, 로그인 버튼 변경 | [첫 책 선택 온보딩](first-library-onboarding.md) | 확정 흐름, 시안, 공급업체 버튼 제약과 검증 범위를 확인한다. |
+| 홈·피드의 책 바로 담기, 저장 상태 표시와 저장·삭제 동작 변경 | [서재 저장 상호작용 계획](library-save-interaction-plan.md) | 합의한 흐름, Figma 컴포넌트, 구현과 플랫폼별 검증·미검증 상태를 확인한다. |
 | 발견, 피드, 도서 상세의 회전, 탭 왕복, 상세 왕복, 프로세스 복원 변경 | [상태 보존 구현 기록](android-state-preservation-handoff.md) | 상태 목록표, 저장 수명과 원본, 구현 이유, 자동·기기 검증 및 미검증 범위를 읽는다. |
 
 <a id="design"></a>
@@ -22,6 +23,7 @@
 | 읽을 때 | 문서 | 적용 범위와 주의점 |
 | --- | --- | --- |
 | Figma 재디자인을 앱에 적용하거나 적용 범위 확인 | [재디자인 핸드오프](figma-redesign-implementation-handoff.md) | 최신 Figma와 디자인 시스템을 다시 조회한다. 핸드오프의 작성만으로 앱 반영 완료를 뜻하지 않는다. |
+| 홈, 피드, 발견, 서재의 당김 새로고침, 추가 로딩, 목록 끝과 overscroll 변경 | [새로고침과 목록 끝 상태 설계](pull-refresh-interaction-plan.md) | Figma 상태와 공통 컴포넌트, 기존 페이지네이션 유지 결정, 요청 경쟁과 상태 보존 계획. 앱 구현과 기기 검증 전 설계안이다. |
 | 모바일 디자인 피드백의 배경 확인 | [모바일과 공통 피드백](design-feedback-mobile-common.md) | 개선 후보 기록이며 최신 승인 시안보다 우선하지 않는다. |
 | 화면별 초기 상태와 액션, 이전 구현 의도 추적 | [화면 명세](../android/docs/screen-specs.md), [구현 인수인계](../android/docs/implementation-handoff.md) | 과거 Pencil 기준과 브랜치 상태가 포함돼 있다. 현재 디자인 원본으로 사용하지 않는다. |
 | 디자인 원본 수집, 화면 대조, 검증 근거 작성 | [디자인 검증 시작점](../android/visual-contracts/README.md) | 작업별 원본, 상태, 플랫폼, 뷰포트를 지정한다. |
