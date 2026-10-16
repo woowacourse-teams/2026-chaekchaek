@@ -63,6 +63,7 @@ import com.chaekchaek.app.auth.AuthViewModel
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.ui.archive.ArchiveBookUiModel
 import com.chaekchaek.app.ui.archive.ArchiveRoute
+import com.chaekchaek.app.ui.archive.LibrarySaveViewModel
 import com.chaekchaek.app.ui.archive.ArchiveViewModel
 import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
 import com.chaekchaek.app.ui.archive.publicNickname
@@ -106,6 +107,7 @@ internal fun RootScreen(
     searchViewModel: SearchViewModel,
     registrationViewModel: BookRegistrationViewModel,
     archiveViewModel: ArchiveViewModel,
+    librarySaveViewModel: LibrarySaveViewModel,
     memberSettingsViewModel: MemberSettingsViewModel,
     authViewModel: AuthViewModel,
     analytics: AnalyticsTracker,
@@ -117,7 +119,7 @@ internal fun RootScreen(
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
-    var homeScrollTopRequest by remember { mutableIntStateOf(0) }
+    var homeScrollTopRequest by rememberSaveable { mutableIntStateOf(0) }
     var archiveScrollTopRequest by remember { mutableIntStateOf(0) }
     var archiveEditing by rememberSaveable { mutableStateOf(false) }
     var showArchiveLoginSheet by rememberSaveable { mutableStateOf(false) }
@@ -127,6 +129,8 @@ internal fun RootScreen(
     val pendingRegistration by searchViewModel.pendingRegistration.collectAsState()
     val registrationState by registrationViewModel.uiState.collectAsState()
     val archiveState by archiveViewModel.uiState.collectAsState()
+    val librarySaveState by librarySaveViewModel.uiState.collectAsState()
+    val savedIsbns = archiveState.items.mapTo(mutableSetOf()) { it.id }
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     val snackbarHost = remember { SnackbarHostState() }
     val backNavigationEventState = rememberNavigationEventState(NavigationEventInfo.None)
@@ -159,6 +163,10 @@ internal fun RootScreen(
         analytics.bookSelect(analyticsBookKey(book.isbn13, book.id))
         clearExitConfirmation()
         onBookClick(book)
+    }
+
+    val saveBook: (BookDetailTarget) -> Unit = { book ->
+        if (book.isbn13 !in savedIsbns) librarySaveViewModel.save(book.toBookDetailArgs())
     }
 
     NavigationBackHandler(
@@ -217,6 +225,19 @@ internal fun RootScreen(
             registrationViewModel.clearError()
         }
     }
+    LaunchedEffect(librarySaveState.savedCount) {
+        if (librarySaveViewModel.consumeSaveNotice()) snackbarHost.showSnackbar("내 서재에 담았어요")
+    }
+    LaunchedEffect(librarySaveState.errorMessage) {
+        librarySaveState.errorMessage?.let { message ->
+            val failedBook = librarySaveState.failedBook
+            val result = snackbarHost.showSnackbar(message, actionLabel = failedBook?.let { "다시 시도" })
+            librarySaveViewModel.clearError()
+            if (result == SnackbarResult.ActionPerformed && failedBook != null && archiveViewModel.uiState.value.items.none { it.id == failedBook.isbn13 }) {
+                librarySaveViewModel.save(failedBook)
+            }
+        }
+    }
     LaunchedEffect(authState.errorMessage) {
         if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
     }
@@ -250,6 +271,9 @@ internal fun RootScreen(
                 onProfileClick = openProfile,
                 homeHeaderAction = homeHeaderAction,
                 onBookClick = { openBook(it.toBookDetailArgs(), "home") },
+                savedIsbns = savedIsbns,
+                librarySaveState = librarySaveState,
+                onSaveBook = saveBook,
             )
             RootTab.Feed -> FeedScreen(
                 viewModel = feedViewModel,
@@ -257,6 +281,9 @@ internal fun RootScreen(
                 modifier = contentModifier,
                 onProfileClick = openProfile,
                 onBookClick = { openBook(it.toBookDetailArgs(), "feed") },
+                savedIsbns = savedIsbns,
+                librarySaveState = librarySaveState,
+                onSaveBook = saveBook,
             )
             RootTab.Discover -> SearchRoute(
                 viewModel = searchViewModel,
@@ -326,11 +353,15 @@ internal fun RootScreen(
                 CircularProgressIndicator()
             }
         }
-        ChaekSnackbarHost(snackbarHost, bottomContentHeight = if (showBottomBar) RootTabBarHeight else 0.dp)
+        ChaekSnackbarHost(
+            snackbarHost,
+            bottomContentHeight = (if (showBottomBar) RootTabBarHeight else 0.dp) +
+                (if (selectedTab == RootTab.Home) 96.dp else 0.dp),
+        )
     }
     }
 
-    if (pendingRegistration != null) {
+    if (pendingRegistration != null || librarySaveState.pendingBook != null) {
         LaunchedEffect(pendingRegistration) {
             analytics.log(
                 name = "cc_auth_prompt",
@@ -352,6 +383,7 @@ internal fun RootScreen(
                         strings = mapOf("trigger_action" to "library_add"),
                     )
                     registrationViewModel.cancelRegistration()
+                    librarySaveViewModel.cancelPendingSave()
                 }
             },
             onAppleSignIn = {
@@ -359,6 +391,8 @@ internal fun RootScreen(
                 authViewModel.clearError()
                 authViewModel.requireAppleAuthentication { token ->
                     analytics.endAuthAttempt("success")
+                    archiveViewModel.authenticate(token)
+                    librarySaveViewModel.authenticate(token)
                     registrationViewModel.authenticate(token)
                     searchViewModel.resumeRegistration()
                 }
@@ -368,6 +402,8 @@ internal fun RootScreen(
                 authViewModel.clearError()
                 authViewModel.requireAuthentication { token ->
                     analytics.endAuthAttempt("success")
+                    archiveViewModel.authenticate(token)
+                    librarySaveViewModel.authenticate(token)
                     registrationViewModel.authenticate(token)
                     searchViewModel.resumeRegistration()
                 }

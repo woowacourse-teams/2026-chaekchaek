@@ -7,6 +7,7 @@ import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.auth.GuestAuth
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
+import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
@@ -14,6 +15,7 @@ import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.data.remote.WriteCredential
 import com.chaekchaek.app.domain.rating.Rating
+import com.chaekchaek.app.ui.archive.LibrarySaveViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -26,6 +28,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -34,6 +37,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
@@ -47,6 +51,128 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
+  @Test
+  fun `바로 담기 후 새 상세는 과거 저장 이벤트 대신 최신 기록과 삭제 결과를 읽는다`() = runViewModelTest {
+    for (latestDetail in listOf(DETAIL_WITH_RECORD.replace("READING", "FINISHED"), DETAIL_WITHOUT_RECORD)) {
+      val target = book().copy(isbn13 = "9780000000042")
+      val saves = LibrarySaveViewModel(
+        addBook = { _, _, _ -> LibraryRecord("READING", 0, null, 42) },
+        onSaved = { _, _ -> },
+      )
+      saves.authenticate("member")
+      saves.save(target)
+      runCurrent()
+      assertEquals(1, saves.uiState.value.savedCount)
+
+      val detailRequested = CompletableDeferred<Unit>()
+      val detailResponse = CompletableDeferred<Unit>()
+      val client = testClient(MockEngine { request ->
+        if (request.url.encodedPath.contains("/by-isbn/")) {
+          detailRequested.complete(Unit)
+          detailResponse.await()
+          respond(latestDetail, headers = jsonHeaders())
+        } else respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      })
+      val detail = viewModel(client, client, platform({ null }))
+      detail.open(target, "member")
+      val observation = backgroundScope.launch {
+        saves.savesCompletedWhileObserving().collect { saved ->
+          detail.acceptSavedLibraryRecord(saved.isbn13, saved.record)
+        }
+      }
+      runCurrent()
+      awaitReal { detailRequested.await() }
+      detailResponse.complete(Unit)
+      awaitReal { detail.uiState.first { it.detail != null } }
+      if (latestDetail == DETAIL_WITHOUT_RECORD) {
+        assertNull(detail.uiState.value.detail?.myRecord)
+      } else {
+        assertEquals("FINISHED", detail.uiState.value.detail?.myRecord?.status)
+        assertEquals(12, detail.uiState.value.detail?.myRecord?.currentPage)
+        assertEquals(4.0, detail.uiState.value.detail?.myRecord?.rating)
+      }
+      observation.cancel()
+    }
+  }
+
+  @Test
+  fun `바로 담기 완료는 열린 상세의 기록 수정에서 중복 등록하지 않는다`() = runViewModelTest {
+    val writes = mutableListOf<String>()
+    val client = testClient(MockEngine { request ->
+      when {
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        request.method == HttpMethod.Patch -> {
+          writes += request.url.encodedPath
+          respond(LIBRARY_RECORD.replace("\"currentPage\":0", "\"currentPage\":18"), headers = jsonHeaders())
+        }
+        request.method == HttpMethod.Post -> error("저장된 책을 다시 등록하면 안 된다")
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val target = book().copy(isbn13 = "9780000000042")
+    vm.open(target, "member")
+    awaitReal { vm.uiState.first { it.detail != null } }
+    vm.acceptSavedLibraryRecord(target.isbn13, LibraryRecord("READING", 0, null, 73))
+    vm.savePage(18)
+    awaitReal { vm.uiState.first { it.detail?.myRecord?.currentPage == 18 } }
+    assertEquals(listOf("/api/v1/library/73"), writes)
+  }
+
+  @Test
+  fun `바로 담기보다 먼저 시작한 상세 응답은 저장 기록을 지우지 않는다`() = runViewModelTest {
+    val detailRequested = CompletableDeferred<Unit>()
+    val detailResponse = CompletableDeferred<Unit>()
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        detailRequested.complete(Unit)
+        detailResponse.await()
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else respond(EMPTY_REVIEWS, headers = jsonHeaders())
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val target = book().copy(isbn13 = "9780000000042")
+    vm.open(target, "member")
+    awaitReal { detailRequested.await() }
+    val record = LibraryRecord("READING", 0, null, 73)
+    vm.acceptSavedLibraryRecord(target.isbn13, record)
+    detailResponse.complete(Unit)
+    awaitReal { vm.uiState.first { it.detail != null } }
+    assertEquals(record, vm.uiState.value.detail?.myRecord)
+    vm.acceptSavedLibraryRecord("9780000000099", LibraryRecord("COMPLETED", 99, null, 99))
+    assertEquals(record, vm.uiState.value.detail?.myRecord)
+  }
+
+  @Test
+  fun `담기를 반복해도 삭제하지 않고 명시적 삭제만 서재를 지운다`() = runViewModelTest {
+    val paths = mutableListOf<String>()
+    val engine = MockEngine { request ->
+      paths += request.url.encodedPath
+      when {
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        request.url.encodedPath == "/api/v1/library" -> respond(LIBRARY_RECORD, headers = jsonHeaders())
+        request.url.encodedPath.endsWith("/bulk-delete") -> respond("", HttpStatusCode.NoContent)
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    }
+    val client = testClient(engine)
+    val vm = viewModel(client, client, platform({ null }))
+    vm.open(book().copy(isbn13 = "9780000000042"), "member")
+    awaitReal { vm.uiState.first { it.detail != null } }
+    vm.addToLibrary()
+    vm.addToLibrary()
+    awaitReal { vm.uiState.first { it.detail?.myRecord != null && !it.isSavingLibrary } }
+    vm.addToLibrary()
+    runCurrent()
+    assertEquals(1, paths.count { it == "/api/v1/library" })
+    assertFalse(paths.any { it.endsWith("/bulk-delete") })
+    assertEquals("내 서재에 담았어요", vm.uiState.value.libraryMessage)
+    vm.removeFromLibrary(73)
+    awaitReal { vm.uiState.first { it.libraryMessage == "서재에서 삭제했어요" } }
+    assertNull(vm.uiState.value.detail?.myRecord)
+    assertEquals(1, paths.count { it.endsWith("/bulk-delete") })
+  }
+
   @Test
   fun `읽는 중이 아닌 책도 실패 뒤 같은 감상을 재시도하고 성공할 때만 작성을 완료한다`() = runViewModelTest {
     for (status in listOf(null, "WANT_TO_READ", "FINISHED")) {

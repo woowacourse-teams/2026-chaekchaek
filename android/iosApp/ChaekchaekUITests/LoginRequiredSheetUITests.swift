@@ -186,6 +186,59 @@ final class LoginRequiredSheetUITests: XCTestCase {
     }
 
     @MainActor
+    func testHomeQuickSaveKeepsPositionAfterLoginCancellation() throws {
+        try verifyQuickSaveLoginCancellation(tab: nil)
+    }
+
+    @MainActor
+    func testFeedQuickSaveKeepsPositionAfterLoginCancellation() throws {
+        try verifyQuickSaveLoginCancellation(tab: "피드")
+    }
+
+    @MainActor
+    private func verifyQuickSaveLoginCancellation(tab: String?) throws {
+        let app = XCUIApplication()
+        app.launchArguments.append("-uiTestingGuest")
+        app.launch()
+        XCTAssertTrue(app.buttons["내 서재"].waitForExistence(timeout: 15))
+        if let tab {
+            app.buttons[tab].tap()
+        }
+        let save = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "서재에 담기")).firstMatch
+        XCTAssertTrue(save.waitForExistence(timeout: 20))
+        for _ in 0..<5 {
+            if save.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(save.isHittable)
+        XCTAssertGreaterThanOrEqual(save.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(save.frame.width, 44)
+        let originalY = save.frame.minY
+        save.tap()
+        XCTAssertTrue(app.staticTexts["로그인이 필요해요"].waitForExistence(timeout: 5))
+        app.buttons["닫기"].firstMatch.tap()
+        XCTAssertTrue(save.waitForExistence(timeout: 5))
+        XCTAssertEqual(save.frame.minY, originalY, accuracy: 3)
+        XCTAssertFalse(app.staticTexts["로그인이 필요해요"].exists)
+        attachScreenshot(named: "\(tab ?? "홈") 바로 담기 로그인 취소")
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion]) { issue in
+            // 기존 캐러셀 표시점의 작은 터치 영역만 기록 후 제외한다.
+            // 홈 전체 접근성 감사 실패와 재현 근거는 library-save-interaction-plan.md에 남긴다.
+            guard tab == nil,
+                  issue.compactDescription == "Hit area is too small",
+                  let label = issue.element?.label,
+                  label.range(of: "^[1-9][0-9]*번째 인기 책 보기$", options: .regularExpression) != nil else {
+                return false
+            }
+            let attachment = XCTAttachment(string: "\(label): \(issue.detailedDescription)")
+            attachment.name = "기존 홈 캐러셀 터치 영역 미통과"
+            attachment.lifetime = .keepAlways
+            self.add(attachment)
+            return true
+        }
+    }
+
+    @MainActor
     private func launchMyPage() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments.append("-uiTestingMyPage")

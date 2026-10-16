@@ -3,6 +3,7 @@ package com.chaekchaek.app.data.remote
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -14,8 +15,103 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class BookDetailRemoteRepositoryTest {
+  @Test
+  fun `이미 저장된 책의 추가 충돌은 회원 상세에서 기존 기록을 복원한다`() = runTest {
+    val requests = mutableListOf<Triple<HttpMethod, String, String?>>()
+    val client = testClient(MockEngine { request ->
+      requests += Triple(request.method, request.url.encodedPath, request.headers[HttpHeaders.Authorization])
+      when (request.method) {
+        HttpMethod.Post -> respond(
+          """{"status":409,"code":"LIBRARY_ITEM_ALREADY_EXISTS","detail":"이미 서재에 등록된 책입니다."}""",
+          HttpStatusCode.Conflict,
+          headersOf(HttpHeaders.ContentType, "application/problem+json"),
+        )
+        else -> respond(
+          """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":{"status":"FINISHED","currentPage":308,"myRating":4.5}}""",
+          headers = headersOf(HttpHeaders.ContentType, "application/json"),
+        )
+      }
+    })
+    try {
+      val repository = BookDetailRemoteRepository(client, ApiConfiguration("https://api.chaekchaek.com"))
+
+      val record = repository.addToLibrary("9780000000042", 308, "member")
+
+      assertEquals(LibraryRecord("FINISHED", 308, 4.5, 42), record)
+      assertEquals(
+        listOf<Triple<HttpMethod, String, String?>>(
+          Triple(HttpMethod.Post, "/api/v1/library", "Bearer member"),
+          Triple(HttpMethod.Get, "/api/v1/books/by-isbn/9780000000042", "Bearer member"),
+        ),
+        requests,
+      )
+    } finally {
+      client.close()
+    }
+  }
+
+  @Test
+  fun `다른 충돌과 확인할 수 없는 오류는 상세 조회 없이 실패로 전달한다`() = runTest {
+    val errors = listOf(
+      HttpStatusCode.Conflict to """{"code":"TOTAL_PAGES_CONFLICT"}""",
+      HttpStatusCode.Conflict to """{"code":"UNKNOWN_CONFLICT"}""",
+      HttpStatusCode.Conflict to """{"detail":"충돌"}""",
+      HttpStatusCode.Conflict to "not-json",
+      HttpStatusCode.BadRequest to """{"code":"LIBRARY_ITEM_ALREADY_EXISTS"}""",
+    )
+    for ((status, body) in errors) {
+      val requests = mutableListOf<HttpMethod>()
+      val client = testClient(MockEngine { request ->
+        requests += request.method
+        respond(body, status, headersOf(HttpHeaders.ContentType, "application/problem+json"))
+      })
+      try {
+        val repository = BookDetailRemoteRepository(client)
+
+        val error = assertFailsWith<ClientRequestException> {
+          repository.addToLibrary("9780000000042", 308, "member")
+        }
+
+        assertEquals(status, error.response.status)
+        assertEquals(listOf(HttpMethod.Post), requests)
+      } finally {
+        client.close()
+      }
+    }
+  }
+
+  @Test
+  fun `중복 충돌 후 상세에 저장 기록이 없으면 성공으로 확정하지 않는다`() = runTest {
+    val client = testClient(MockEngine { request ->
+      if (request.method == HttpMethod.Post) {
+        respond(
+          """{"code":"LIBRARY_ITEM_ALREADY_EXISTS"}""",
+          HttpStatusCode.Conflict,
+          headersOf(HttpHeaders.ContentType, "application/problem+json"),
+        )
+      } else {
+        respond(
+          """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":null}""",
+          headers = headersOf(HttpHeaders.ContentType, "application/json"),
+        )
+      }
+    })
+    try {
+      val repository = BookDetailRemoteRepository(client)
+
+      val error = assertFailsWith<ClientRequestException> {
+        repository.addToLibrary("9780000000042", 308, "member")
+      }
+
+      assertEquals(HttpStatusCode.Conflict, error.response.status)
+    } finally {
+      client.close()
+    }
+  }
+
   @Test
   fun `상세와 감상 응답을 화면 모델로 변환한다`() {
     val detail = BookDetailDto(

@@ -94,6 +94,8 @@ enum class ReviewSubmissionState {
 
 data class BookDetailUiState(
     val book: BookDetailArgs? = null,
+    val libraryMessage: String? = null,
+    val isSavingLibrary: Boolean = false,
     val detail: BookDetail? = null,
     val reviews: List<BookReview> = emptyList(),
     val reviewCount: Int = 0,
