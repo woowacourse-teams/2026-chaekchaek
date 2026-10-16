@@ -16,8 +16,12 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -37,6 +41,131 @@ import kotlin.test.assertTrue
 class LibrarySaveViewModelTest {
     private val book = BookDetailArgs(id = "42", bookId = 42, isbn13 = "9780000000042", title = "책")
     private val record = LibraryRecord("READING", 0, null, 42)
+
+    @Test
+    fun newDetailObserversReceiveOnlySavesCompletedAfterTheirOwnEntry() = runSaveTest {
+        val requestedIsbns = mutableListOf<String>()
+        val vm = LibrarySaveViewModel(
+            addBook = { isbn, _, _ -> requestedIsbns += isbn; record },
+            onSaved = { _, _ -> },
+        )
+        vm.authenticate("member")
+        vm.save(book)
+        advanceUntilIdle()
+        assertEquals(SavedLibraryBook(book.isbn13, record), vm.uiState.value.lastSavedBook)
+
+        val completionFlow = vm.savesCompletedWhileObserving()
+        val firstEntry = mutableListOf<SavedLibraryBook>()
+        val firstObserver = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            completionFlow.collect { firstEntry += it }
+        }
+        runCurrent()
+        assertTrue(firstEntry.isEmpty())
+
+        val anotherBook = book.copy(id = "99", isbn13 = "9780000000099")
+        vm.save(anotherBook)
+        advanceUntilIdle()
+        assertEquals(listOf(SavedLibraryBook(anotherBook.isbn13, record)), firstEntry)
+        firstObserver.cancelAndJoin()
+
+        val reopenedEntry = mutableListOf<SavedLibraryBook>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            completionFlow.collect { reopenedEntry += it }
+        }
+        runCurrent()
+        assertTrue(reopenedEntry.isEmpty())
+
+        vm.save(book)
+        advanceUntilIdle()
+        assertEquals(listOf(SavedLibraryBook(book.isbn13, record)), reopenedEntry)
+        assertEquals(listOf(book.isbn13, anotherBook.isbn13, book.isbn13), requestedIsbns)
+        assertEquals(1, firstEntry.size)
+    }
+
+    @Test
+    fun observingDetailReceivesEachSaveEvenWhenTheCompletedBookAndRecordAreIdentical() = runSaveTest {
+        var requests = 0
+        val vm = LibrarySaveViewModel(
+            addBook = { _, _, _ -> requests += 1; record },
+            onSaved = { _, _ -> },
+        )
+        vm.authenticate("member")
+        val completions = mutableListOf<SavedLibraryBook>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            vm.savesCompletedWhileObserving().collect { completions += it }
+        }
+        vm.save(book)
+        advanceUntilIdle()
+        // 상세에서 삭제한 뒤 같은 책을 다시 저장하면 서버가 같은 기록을 반환할 수 있다.
+        vm.save(book)
+        advanceUntilIdle()
+
+        assertEquals(2, requests)
+        assertEquals(2, vm.uiState.value.savedCount)
+        assertEquals(List(2) { SavedLibraryBook(book.isbn13, record) }, completions)
+    }
+
+    @Test
+    fun observingDetailReceivesSamePayloadAfterLogoutAndLoginResetTheSaveCount() = runSaveTest {
+        val requestTokens = mutableListOf<String>()
+        val vm = LibrarySaveViewModel(
+            addBook = { _, _, token -> requestTokens += token; record },
+            onSaved = { _, _ -> },
+        )
+        vm.authenticate("old-member")
+        val completions = mutableListOf<SavedLibraryBook>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            vm.savesCompletedWhileObserving().collect { completions += it }
+        }
+        vm.save(book)
+        advanceUntilIdle()
+        assertEquals(1, completions.size)
+        vm.authenticate("old-member-renewed-token")
+        runCurrent()
+        assertEquals(1, completions.size)
+
+        vm.authenticate(null)
+        runCurrent()
+        assertEquals(1, completions.size)
+        assertEquals(0, vm.uiState.value.savedCount)
+        vm.save(book)
+        assertEquals(book, vm.uiState.value.pendingBook)
+        vm.authenticate("new-member")
+        advanceUntilIdle()
+
+        assertEquals(listOf("old-member", "new-member"), requestTokens)
+        assertEquals(1, vm.uiState.value.savedCount)
+        assertEquals(List(2) { SavedLibraryBook(book.isbn13, record) }, completions)
+    }
+
+    @Test
+    fun immediateReloginAndSameBookSaveDoNotLoseCompletionWhenStateEndsWithTheSameValues() = runSaveTest {
+        val requestTokens = mutableListOf<String>()
+        val vm = LibrarySaveViewModel(
+            addBook = { _, _, token -> requestTokens += token; record },
+            onSaved = { _, _ -> },
+        )
+        vm.authenticate("old-member")
+        val completions = mutableListOf<SavedLibraryBook>()
+        backgroundScope.launch(StandardTestDispatcher(testScheduler)) {
+            vm.savesCompletedWhileObserving().collect { completions += it }
+        }
+        runCurrent()
+        vm.save(book)
+        runCurrent()
+        assertEquals(1, completions.size)
+        val firstCompletionState = vm.uiState.value
+
+        // 관찰자가 reset 상태를 처리할 차례를 기다리지 않고 새 계정의 같은 책 저장을 완료한다.
+        vm.authenticate(null)
+        vm.authenticate("new-member")
+        vm.save(book)
+        runCurrent()
+
+        assertEquals(firstCompletionState, vm.uiState.value)
+        assertEquals(listOf("old-member", "new-member"), requestTokens)
+        assertEquals(List(2) { SavedLibraryBook(book.isbn13, record) }, completions)
+    }
 
     @Test
     fun `로그인 후 이미 저장된 책을 담으면 기존 기록으로 저장 상태를 알린다`() = runSaveTest {

@@ -52,6 +52,7 @@ import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchViewModel
 import com.chaekchaek.app.ui.search.RecentSearchStorage
+import kotlinx.coroutines.flow.collect
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -280,10 +281,10 @@ internal fun AppNavigation(
                         if (token == null) resumedAction = null
                         else if (pendingAction != null) resumedAction = pendingAction
                     }
-                    LaunchedEffect(librarySaveState.lastSavedBook, archivedBook?.bookId) {
-                        librarySaveState.lastSavedBook
-                            ?.takeIf { archivedBook != null && it.isbn13 == displayBook.isbn13 }
-                            ?.let { viewModel.acceptSavedLibraryRecord(it.isbn13, it.record) }
+                    LaunchedEffect(viewModel) {
+                        librarySaveViewModel.savesCompletedWhileObserving().collect { savedBook ->
+                            viewModel.acceptSavedLibraryRecord(savedBook.isbn13, savedBook.record)
+                        }
                     }
 
                     if (restoringAuthentication) {

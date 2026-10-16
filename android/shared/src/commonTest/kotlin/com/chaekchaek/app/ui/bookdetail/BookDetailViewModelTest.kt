@@ -15,6 +15,7 @@ import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.data.remote.WriteCredential
 import com.chaekchaek.app.domain.rating.Rating
+import com.chaekchaek.app.ui.archive.LibrarySaveViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -27,6 +28,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -35,6 +37,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
@@ -48,6 +51,50 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
+  @Test
+  fun `바로 담기 후 새 상세는 과거 저장 이벤트 대신 최신 기록과 삭제 결과를 읽는다`() = runViewModelTest {
+    for (latestDetail in listOf(DETAIL_WITH_RECORD.replace("READING", "FINISHED"), DETAIL_WITHOUT_RECORD)) {
+      val target = book().copy(isbn13 = "9780000000042")
+      val saves = LibrarySaveViewModel(
+        addBook = { _, _, _ -> LibraryRecord("READING", 0, null, 42) },
+        onSaved = { _, _ -> },
+      )
+      saves.authenticate("member")
+      saves.save(target)
+      runCurrent()
+      assertEquals(1, saves.uiState.value.savedCount)
+
+      val detailRequested = CompletableDeferred<Unit>()
+      val detailResponse = CompletableDeferred<Unit>()
+      val client = testClient(MockEngine { request ->
+        if (request.url.encodedPath.contains("/by-isbn/")) {
+          detailRequested.complete(Unit)
+          detailResponse.await()
+          respond(latestDetail, headers = jsonHeaders())
+        } else respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      })
+      val detail = viewModel(client, client, platform({ null }))
+      detail.open(target, "member")
+      val observation = backgroundScope.launch {
+        saves.savesCompletedWhileObserving().collect { saved ->
+          detail.acceptSavedLibraryRecord(saved.isbn13, saved.record)
+        }
+      }
+      runCurrent()
+      awaitReal { detailRequested.await() }
+      detailResponse.complete(Unit)
+      awaitReal { detail.uiState.first { it.detail != null } }
+      if (latestDetail == DETAIL_WITHOUT_RECORD) {
+        assertNull(detail.uiState.value.detail?.myRecord)
+      } else {
+        assertEquals("FINISHED", detail.uiState.value.detail?.myRecord?.status)
+        assertEquals(12, detail.uiState.value.detail?.myRecord?.currentPage)
+        assertEquals(4.0, detail.uiState.value.detail?.myRecord?.rating)
+      }
+      observation.cancel()
+    }
+  }
+
   @Test
   fun `바로 담기 완료는 열린 상세의 기록 수정에서 중복 등록하지 않는다`() = runViewModelTest {
     val writes = mutableListOf<String>()

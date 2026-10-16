@@ -8,7 +8,10 @@ import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -33,10 +36,14 @@ class LibrarySaveViewModel(
 ) : ViewModel() {
     private val state = MutableStateFlow(LibrarySaveUiState())
     val uiState = state.asStateFlow()
+    private val completedSaves = MutableSharedFlow<SavedLibraryBook>(extraBufferCapacity = 1)
     private var accessToken: String? = null
     private var generation = 0
     private var acknowledgedSavedCount = 0
     private var saveJob: Job? = null
+
+    /** 각 관찰자가 구독한 뒤 완료된 저장만 전달하며 이전 화면의 완료 상태는 재생하지 않는다. */
+    fun savesCompletedWhileObserving(): Flow<SavedLibraryBook> = completedSaves.asSharedFlow()
 
     fun authenticate(token: String?) {
         if (accessToken == token) return
@@ -91,10 +98,12 @@ class LibrarySaveViewModel(
                 ) { addBook(book.isbn13, book.totalPages.takeIf { it > 0 }, token) }.getOrThrow()
                 if (generation != requestGeneration) return@launch
                 onSaved(book, record)
+                val savedBook = SavedLibraryBook(book.isbn13, record)
                 state.value = state.value.copy(
                     savedCount = state.value.savedCount + 1,
-                    lastSavedBook = SavedLibraryBook(book.isbn13, record),
+                    lastSavedBook = savedBook,
                 )
+                completedSaves.emit(savedBook)
                 analytics.finishAction(action, "success")
             } catch (error: CancellationException) {
                 analytics.finishAction(action, "cancelled")
