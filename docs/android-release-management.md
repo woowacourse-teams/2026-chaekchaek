@@ -6,13 +6,17 @@
 
 ## 현재 상태
 
-확인일: 2026-08-31
+확인일: 2026-10-16
 
 | 구분 | `versionName` | `versionCode` | Git 태그 | 상태 |
 | --- | --- | --- | --- | --- |
-| 프로덕션 배포 | 없음 | 없음 | 없음 | 아직 배포하지 않음 |
-| 최신 Play 심사 | `1.0` | `2` | 없음 | 심사 통과, 관리형 게시 대기 |
-| 현재 소스 | `1.1.1` | `5` | 없음 | 서명 AAB 생성, iOS TestFlight 업로드 |
+| 스토어 최신 사용 버전 | `1.2.2` | `8` | 미확인 | 사용자 확인. 현재 트랙과 공개 상태는 이번 작업에서 조회하지 않음 |
+| 현재 소스 | `1.3.0` | `9` | 없음 | Android AAB와 iOS Archive 생성과 검증 완료, 스토어 미업로드 |
+
+이번 작업의 기준은 `origin/an-develop`의 `6b3d02276516617d755445cf7579fb586f39e9c0`이다.
+Android와 iOS의 마지막 스토어 사용 버전 `1.2.2 (8)`은 사용자가 확인했다.
+첫 책 선택 온보딩 등 기능 추가를 포함해 minor 버전 `1.3.0 (9)`으로 준비한다.
+과거 기록의 버전과 배포 상태는 당시 확인 결과이며 현재 상태로 해석하지 않는다.
 
 QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 정보에서 `versionName`과
 `versionCode`를 함께 확인한다. `1.0 (2)`처럼 두 값을 함께 말해야 같은 이름의 다른 빌드를
@@ -58,6 +62,38 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
    큰 값이 있으면 그 값 다음 번호를 사용한다.
 
 ## 릴리스 기록
+
+### 1.3.0 (9)
+
+- 상태: Android 서명 AAB와 iOS Release Archive 생성과 검증 완료
+- 배포일: 미배포. 스토어 업로드와 심사 제출은 이번 작업에서 수행하지 않음
+- 기준 소스 커밋: `6b3d02276516617d755445cf7579fb586f39e9c0`
+- 버전 변경과 검증 기록 커밋: 이 항목을 포함한 릴리스 커밋
+- 관련 이슈와 PR: #531, #532
+- Android 산출물: `android/app/release/chaekchaek-1.3.0-code9.aab`
+- iOS 산출물: `android/iosApp/release/Chaekchaek-1.3.0-9.xcarchive`
+- AAB SHA-256: `9d7d0482d6deaf97c5afb00962c792380f0e3efa92ebee17533314310157c18d`
+- 변경 내역: 기준 브랜치에 통합된 첫 책 선택 온보딩, 서재 저장 피드백, 인증과 홈 재진입 복구를 포함
+- Android 검증:
+  - `:app:testDebugUnitTest :app:bundleRelease` 성공. 앱 모듈 단위 테스트는 `NO-SOURCE`로 실행 대상이 없음
+  - `:shared:testAndroidHostTest :app:lintDebug -PapiEnvironment=production` 성공. 공유 테스트 314개, 실패와 건너뜀 0개. 테스트 결과는 Gradle 캐시에서 재사용
+  - Lint 오류 0개, 경고 55개. release 빌드의 `lintVitalRelease` 통과
+  - 실제 AAB에 `jarsigner -verify` 성공. 업로드 키의 자체 서명과 timestamp 부재 경고는 남음
+  - bundletool 1.18.3으로 AAB 내부 manifest의 패키지 `com.chamsae.chaekchaek`, 버전 `1.3.0 (9)`, `@mipmap/ic_launcher` 참조와 아이콘 파일 12개 포함 확인
+  - 현재 빌드의 packaged manifest도 같은 버전으로 확인. 스킬 스크립트가 과거 중간 manifest에서 `1.1.0 (3)`을 읽어 만든 파일명은 검증 근거로 사용하지 않음
+- iOS 검증:
+  - iPhone 17 Pro, iOS 26.2에서 기본 글자 크기와 AX5 각각 UI 테스트 8개 통과, 1개 건너뜀, 실패 0개
+  - 건너뛴 항목은 로컬 fixture가 필요한 감상 저장 실패와 재시도 테스트. production 빌드에서는 해당 fixture를 실행하지 않음
+  - 홈 캐러셀 표시점의 작은 터치 영역은 기존 테스트의 접근성 예외로 기록됨. 테스트 성공을 앱 전체 HIG 준수로 해석하지 않음
+  - 기본 크기와 AX5 로그인 시트, AX5 마이페이지의 테스트 캡처를 직접 확인. AX5 시트 배경의 서재 필터 영역에는 기존 글자 겹침이 보이며 이번 버전 변경에서는 수정하지 않음
+  - 개인 scheme과 충돌을 피하기 위해 같은 커밋에 동일한 버전 변경을 적용한 임시 detached worktree의 공유 scheme으로 검증. 추적되는 공통 코드와 iOS 앱 소스의 바이트 일치 확인
+  - 테스트 전 글자 크기 복원과 이번 작업에서 부팅한 Simulator 종료 확인
+  - production 설정의 Release Archive 생성 성공. 앱과 Archive의 버전 `1.3.0 (9)`, 번들 ID와 Apple 로그인 entitlement 확인
+  - `codesign --verify --deep --strict` 성공. Apple Development 서명이며 App Store 배포용 export와 재서명은 수행하지 않음
+  - 앱 실행 파일과 dSYM UUID 일치: `148C8A6F-51E1-361C-9977-2C3633CD1BA3`
+  - iOS 앱 실행 파일 SHA-256: `8997f93046eaca6ff0c6bfbaf97948ba3b5b57b0afa6a42d359de317abaa0cfe`
+- 실기기에서 이번 release 산출물의 실행과 공급업체 로그인, 스토어 배포본의 동작은 미검증
+- 이전 스토어 사용 버전: Android와 iOS `1.2.2 (8)`, 사용자 확인
 
 ### 1.1.1 (5)
 

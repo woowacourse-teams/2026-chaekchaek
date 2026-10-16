@@ -1,5 +1,27 @@
 # iOS App Store 심사 준비
 
+## 2026-10-16 배포 빌드 준비
+
+- 준비 버전: `1.3.0 (9)`
+- 이전 스토어 사용 버전: `1.2.2 (8)`, 사용자 확인
+- 기준 소스 커밋: `6b3d02276516617d755445cf7579fb586f39e9c0`
+- 버전 변경과 검증 기록 커밋: 이 항목을 포함한 릴리스 커밋
+- Archive: `android/iosApp/release/Chaekchaek-1.3.0-9.xcarchive`
+- Simulator 검증: iPhone 17 Pro, iOS 26.2, 기본 글자 크기와 AX5에서 각각 8개 통과, 로컬 fixture 테스트 1개 건너뜀, 실패 0개
+- 접근성 검증 범위: 기존 홈 캐러셀 표시점의 작은 터치 영역은 테스트에 예외가 있음. 전체 HIG 준수 판정은 하지 않음
+- 캡처 확인: 기본 크기와 AX5 로그인 시트, AX5 마이페이지. AX5 시트 배경의 서재 필터 영역에 기존 글자 겹침이 보임
+- 검증 환경: 동일 소스와 버전 변경을 적용한 임시 detached worktree의 공유 scheme. 기존 개인 scheme은 변경하지 않음
+- Simulator 정리: 원래 글자 크기를 복원하고 이번 작업에서 부팅한 기기 종료 확인
+- Release Archive 검증: production 설정으로 생성 성공. 앱과 Archive의 버전 `1.3.0 (9)`, 번들 ID, Apple 로그인 entitlement와 깊은 코드 서명 검증 통과
+- 서명 유형: Apple Development. App Store 배포용 export와 재서명은 수행하지 않음
+- 앱 실행 파일 SHA-256: `8997f93046eaca6ff0c6bfbaf97948ba3b5b57b0afa6a42d359de317abaa0cfe`
+- 앱 실행 파일과 dSYM UUID 일치: `148C8A6F-51E1-361C-9977-2C3633CD1BA3`
+- 실기기 release 실행과 공급업체 로그인: 이번 작업에서는 미검증
+- App Store Connect 업로드와 심사 제출: 이번 작업 범위에서 제외
+- 관련 이슈와 PR: #531, #532
+
+아래 제출 ID, 심사 메모와 기기 검증 결과는 과거 제출 기록이다. 이번 버전의 검증이나 현재 심사 상태를 의미하지 않는다.
+
 ## 현재 제출 상태
 
 - 제출 ID: `7294cb83-ecee-4ec2-831a-a11ce59afd2a`
