@@ -237,6 +237,9 @@ fun BookDetailScreen(
             onLibraryMessageShown()
         }
     }
+    LaunchedEffect(state.reviewSubmissionState) {
+        if (state.reviewSubmissionState == ReviewSubmissionState.Succeeded) showReviewSheet = false
+    }
     LaunchedEffect(resumedAuthenticatedAction) {
         when (val action = resumedAuthenticatedAction ?: return@LaunchedEffect) {
             BookDetailAuthenticatedAction.AddToLibrary -> if (!savedToLibrary) onAddToLibrary()
@@ -362,7 +365,7 @@ fun BookDetailScreen(
             )
         }
         if (state.isSubmitting || state.isRestoring && state.isLoading) RequestLoadingOverlay(Modifier.fillMaxSize())
-        ChaekSnackbarHost(snackbarHostState, bottomContentHeight = composeBarHeight)
+        if (!showReviewSheet) ChaekSnackbarHost(snackbarHostState, bottomContentHeight = composeBarHeight)
     }
 
     if (showRatingDialog) {
@@ -394,14 +397,14 @@ fun BookDetailScreen(
             anonymous = state.signedIn && anonymousReviews,
             nickname = nickname,
             allowReadingProgress = state.signedIn,
+            isSaving = state.reviewSubmissionState == ReviewSubmissionState.Submitting,
+            showLoading = state.isSubmitting,
+            snackbarHostState = snackbarHostState,
             onDismiss = {
                 onComposerDismiss()
                 showReviewSheet = false
             },
-            onSave = { request ->
-                onReviewCreate(request)
-                showReviewSheet = false
-            },
+            onSave = onReviewCreate,
         )
     }
     visibleBookReviews.firstOrNull { it.reviewId == reviewActionTargetId }?.let { review ->

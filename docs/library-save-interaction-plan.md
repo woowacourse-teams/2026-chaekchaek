@@ -30,7 +30,7 @@
 
 ## 구현 순서와 기준
 
-1. [책췍 Figma](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr)의 홈·피드·책 상세와 [디자인 시스템](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=901-300)을 조회한다.
+1. [책췍 Figma](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr)의 홈·피드·책 상세와 [디자인 시스템](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1201-826)을 조회한다.
 2. 저장 전후, 요청 중, 실패 상태를 설계한다. 공통 컴포넌트와 [컨트롤 레퍼런스](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=905-153)의 인스턴스 연결과 캡처를 확인한 뒤 코드에 적용한다.
 3. 기존 등록·삭제, 인증과 화면별 저장 상태의 원본을 추적한다. 저장 의도와 삭제 의도를 분리하고 동일한 책의 요청 중복과 상태 동기화를 처리한다.
 4. 공유 코드와 플랫폼별 진입점을 확인하고 Android와 iOS에서 같은 시나리오를 검증한다.
@@ -77,7 +77,7 @@
 
 ### 자동 검증과 재현
 
-- 독립 리뷰 2개에서 중복을 제외한 5건을 확인해 수정했다. 수정본의 공유 단위 테스트는 Android host와 iOS Simulator ARM64에서 각각 278개 통과했다. 기존 266개에 토큰 갱신·로그아웃, 일괄 쓰기와 재조회 경합, 로그인 후 중복 충돌 복구, 상세 조회와 저장 완료 순서를 다루는 회귀 테스트 12개를 추가했다.
+- 독립 리뷰 2개에서 중복을 제외한 5건을 확인해 수정했다. 수정본의 공유 단위 테스트는 Android host와 iOS Simulator ARM64에서 각각 279개 통과했다. 최신 `an-develop`의 감상 작성 보존 테스트 1개와 기존 266개에 토큰 갱신·로그아웃, 일괄 쓰기와 재조회 경합, 로그인 후 중복 충돌 복구, 상세 조회와 저장 완료 순서를 다루는 회귀 테스트 12개를 추가했다.
 - Android debug 앱과 계측 테스트 APK 빌드 성공. 새 Compose 계측 테스트 3개는 작성·컴파일했고 기기에서 실행하지 못했다.
 - Android CI의 `:app:testDebugUnitTest :app:lintDebug` 작업도 성공했다. 앱 모듈 단위 테스트는 `NO-SOURCE`이며 실제 단위 테스트 수는 위 공유 모듈 결과다. lint 오류 0개, 경고 52개이며 변경한 UI·ViewModel과 새 저장 코드에는 경고가 없었다.
 - 아래 iOS XCUITest 실행 기록은 최초 구현 커밋 `d67c5915` 기준이다. 홈·피드 각각 담기 선택, 로그인 시트 표시, 취소, 원래 위치 복귀와 버튼의 44x44pt 이상 크기를 검사한다. 글자 확대·잘림 감사도 함께 실행한다. 독립 리뷰 수정본의 후속 UI 실행 결과는 PR 검증 기록에 남긴다.

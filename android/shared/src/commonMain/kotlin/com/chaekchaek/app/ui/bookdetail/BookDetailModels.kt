@@ -85,6 +85,13 @@ enum class ReviewPageLoadState {
         get() = this == Failed || this == RefreshFailed
 }
 
+enum class ReviewSubmissionState {
+    Idle,
+    Submitting,
+    Failed,
+    Succeeded,
+}
+
 data class BookDetailUiState(
     val book: BookDetailArgs? = null,
     val libraryMessage: String? = null,
@@ -100,6 +107,7 @@ data class BookDetailUiState(
     val isLoadingMore: Boolean = false,
     val reviewPageLoadState: ReviewPageLoadState = ReviewPageLoadState.Idle,
     val isSubmitting: Boolean = false,
+    val reviewSubmissionState: ReviewSubmissionState = ReviewSubmissionState.Idle,
     val ratingComparison: List<RatingComparisonBookUiModel> = emptyList(),
     val signedIn: Boolean = false,
     val pendingAction: BookDetailAuthenticatedAction? = null,

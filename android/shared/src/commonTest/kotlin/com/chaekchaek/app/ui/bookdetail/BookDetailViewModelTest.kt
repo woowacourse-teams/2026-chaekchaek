@@ -1,6 +1,7 @@
 package com.chaekchaek.app.ui.bookdetail
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelStore
 import com.chaekchaek.app.analytics.AnalyticsEvent
 import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
@@ -123,6 +124,72 @@ class BookDetailViewModelTest {
     awaitReal { vm.uiState.first { it.libraryMessage == "서재에서 삭제했어요" } }
     assertNull(vm.uiState.value.detail?.myRecord)
     assertEquals(1, paths.count { it.endsWith("/bulk-delete") })
+  }
+
+  @Test
+  fun `읽는 중이 아닌 책도 실패 뒤 같은 감상을 재시도하고 성공할 때만 작성을 완료한다`() = runViewModelTest {
+    for (status in listOf(null, "WANT_TO_READ", "FINISHED")) {
+      val firstStarted = CompletableDeferred<Unit>()
+      val firstResponse = CompletableDeferred<Unit>()
+      val retryStarted = CompletableDeferred<Unit>()
+      val retryResponse = CompletableDeferred<Unit>()
+      val submissions = mutableListOf<String>()
+      val events = MutableStateFlow<List<AnalyticsEvent>>(emptyList())
+      val detail = if (status == null) DETAIL_WITHOUT_RECORD else
+        DETAIL_WITH_RECORD.replace("READING", status)
+      val client = testClient(MockEngine { request ->
+        when {
+          request.method == HttpMethod.Post -> {
+            submissions += (request.body as io.ktor.http.content.TextContent).text
+            if (submissions.size == 1) {
+              firstStarted.complete(Unit)
+              firstResponse.await()
+              respond("", HttpStatusCode.InternalServerError)
+            } else {
+              retryStarted.complete(Unit)
+              retryResponse.await()
+              respond("""{"bookId":42,"review":$REVIEW_RESPONSE}""", HttpStatusCode.Created, jsonHeaders())
+            }
+          }
+          request.url.encodedPath.contains("/by-isbn/") -> respond(detail, headers = jsonHeaders())
+          else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+        }
+      })
+      val viewModel = viewModel(client, client, platform({ null }),
+        AnalyticsTracker("test") { event -> events.update { it + event } })
+      val store = ViewModelStore().also { it.put("review", viewModel) }
+      viewModel.open(book().copy(isbn13 = "9780000000042"), "fixture-member")
+      awaitReal { viewModel.uiState.first { it.detail != null } }
+      viewModel.openReviewComposer {}
+      val request = ReviewCreateRequest("보존할 감상", "문장", "첫 장", 80, 224, true)
+      viewModel.createReview(request)
+      assertEquals(ReviewSubmissionState.Submitting, viewModel.uiState.value.reviewSubmissionState)
+      viewModel.createReview(request)
+      awaitReal { firstStarted.await() }
+      assertEquals(1, submissions.size)
+      firstResponse.complete(Unit)
+      awaitReal { viewModel.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Failed } }
+      assertTrue(viewModel.uiState.value.requestError != null)
+      assertFalse(viewModel.uiState.value.isSubmitting)
+
+      viewModel.createReview(request)
+      awaitReal { retryStarted.await() }
+      assertEquals(ReviewSubmissionState.Submitting, viewModel.uiState.value.reviewSubmissionState)
+      assertNull(viewModel.uiState.value.requestError)
+      retryResponse.complete(Unit)
+      awaitReal { viewModel.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Succeeded } }
+      assertEquals(2, submissions.size)
+      assertEquals(submissions.first(), submissions.last())
+      val actions = events.value.filter { it.name == "cc_action_start" && it.stringParameters["action"] == "review_create" }
+      assertEquals(2, actions.size)
+      assertTrue(actions.first().stringParameters["composer_id"] != null)
+      assertEquals(actions.first().stringParameters["composer_id"], actions.last().stringParameters["composer_id"])
+      viewModel.openReviewComposer {}
+      assertEquals(ReviewSubmissionState.Idle, viewModel.uiState.value.reviewSubmissionState)
+      store.clear()
+      advanceUntilIdle()
+      client.close()
+    }
   }
 
   @Test
