@@ -1,4 +1,5 @@
 import XCTest
+import Network
 
 final class LoginRequiredSheetUITests: XCTestCase {
     // CHAEKCHAEK_API_ENVIRONMENT=local 빌드와 실패 후 성공하는 로컬 fixture가 필요하다.
@@ -186,6 +187,90 @@ final class LoginRequiredSheetUITests: XCTestCase {
     }
 
     @MainActor
+    func testHomePullRefreshAndListEndKeepNavigationVisible() throws {
+        let fixture = try RefreshFixtureServer()
+        defer { fixture.stop() }
+        let app = refreshApplication(fixture)
+        app.launch()
+        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 15))
+        let end = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "여기까지 모두 봤어요")).firstMatch
+        for _ in 0..<8 {
+            if end.exists && end.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(end.waitForExistence(timeout: 10))
+        attachScreenshot(named: "홈 목록 끝")
+        app.buttons["홈"].tap()
+        let requestsBeforePull = fixture.completedRequests(for: "/api/v1/home/latest-reviews")
+        XCTAssertGreaterThan(requestsBeforePull, 0)
+        app.swipeDown()
+        waitForNewResponse(fixture, path: "/api/v1/home/latest-reviews", after: requestsBeforePull)
+        waitForRefreshIndicatorToClose(in: app)
+        XCTAssertEqual(fixture.completedRequests(for: "/api/v1/home/latest-reviews"), requestsBeforePull + 1)
+        XCTAssertTrue(app.buttons["내 프로필"].isHittable)
+        XCTAssertTrue(app.buttons["발견"].exists)
+        XCTAssertTrue(app.buttons["내 서재"].exists)
+        attachScreenshot(named: "홈 당김 후 기존 화면")
+        // hitRegion은 시스템 홈 인디케이터에서도 실패해 별도 검증 기록으로 남긴다.
+        try app.performAccessibilityAudit(for: [.textClipped])
+    }
+
+    @MainActor
+    func testEmptySearchPullKeepsSubmittedInput() throws {
+        let fixture = try RefreshFixtureServer()
+        defer { fixture.stop() }
+        let app = refreshApplication(fixture)
+        app.launch()
+        XCTAssertTrue(app.buttons["발견"].waitForExistence(timeout: 15))
+        app.buttons["발견"].tap()
+        let field = app.textViews["search-query-field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("zzxqrefresh529nomatch\n")
+        let empty = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "검색 결과가 없어요")).firstMatch
+        XCTAssertTrue(empty.waitForExistence(timeout: 15))
+        let requestsBeforePull = fixture.completedRequests(for: "/api/v1/books")
+        XCTAssertEqual(requestsBeforePull, 1)
+        app.swipeDown()
+        waitForNewResponse(fixture, path: "/api/v1/books", after: requestsBeforePull)
+        waitForRefreshIndicatorToClose(in: app)
+        XCTAssertEqual(fixture.completedRequests(for: "/api/v1/books"), requestsBeforePull + 1)
+        XCTAssertTrue(empty.exists)
+        XCTAssertEqual(field.value as? String, "zzxqrefresh529nomatch")
+        attachScreenshot(named: "빈 검색 결과 당김 후 검색어 유지")
+        // hitRegion은 시스템 홈 인디케이터에서도 실패해 별도 검증 기록으로 남긴다.
+        try app.performAccessibilityAudit(for: [.textClipped])
+    }
+
+    @MainActor
+    private func refreshApplication(_ fixture: RefreshFixtureServer) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestingGuest", "-uiTestingRefresh"]
+        app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = fixture.baseURL
+        return app
+    }
+
+    @MainActor
+    private func waitForNewResponse(_ fixture: RefreshFixtureServer, path: String, after count: Int) {
+        // 응답이 한 프레임 안에 끝나도 누적 횟수는 남는다. 콜백이 끊기면 반드시 시간 초과된다.
+        let response = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            fixture.completedRequests(for: path) > count
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [response], timeout: 10), .completed,
+                       "당김 후 실제 API 응답이 완료되어야 합니다: \(path)")
+    }
+
+    @MainActor
+    private func waitForRefreshIndicatorToClose(in app: XCUIApplication) {
+        let indicator = app.staticTexts.matching(NSPredicate(
+            format: "label CONTAINS %@ OR label CONTAINS %@ OR label CONTAINS %@ OR label CONTAINS %@",
+            "당겨서 새로고침", "놓으면 새로고침", "갱신 요청 중", "새로고침 중이에요"
+        )).firstMatch
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: indicator)
+        waitForExpectations(timeout: 10)
+    }
+
+    @MainActor
     private func launchMyPage() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments.append("-uiTestingMyPage")
@@ -199,5 +284,85 @@ final class LoginRequiredSheetUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+}
+
+/// XCUITest 프로세스에서 응답과 횟수를 소유한다. 앱에는 화면용 진단 요소를 추가하지 않는다.
+private final class RefreshFixtureServer: @unchecked Sendable {
+    private let listener: NWListener
+    private let queue = DispatchQueue(label: "chaekchaek.refresh-ui-test-api")
+    private let lock = NSLock()
+    private var responses: [String: Int] = [:]
+
+    var baseURL: String { "http://127.0.0.1:\(listener.port!.rawValue)" }
+
+    init() throws {
+        listener = try NWListener(using: .tcp, on: .any)
+        let ready = XCTestExpectation(description: "로컬 API 서버 시작")
+        listener.stateUpdateHandler = { state in
+            if case .ready = state { ready.fulfill() }
+        }
+        listener.newConnectionHandler = { [weak self] connection in
+            guard let self else { return }
+            connection.start(queue: self.queue)
+            self.receive(connection)
+        }
+        listener.start(queue: queue)
+        guard XCTWaiter.wait(for: [ready], timeout: 5) == .completed else {
+            listener.cancel()
+            throw NSError(domain: "RefreshFixtureServer", code: 1)
+        }
+    }
+
+    func completedRequests(for path: String) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return responses[path, default: 0]
+    }
+
+    func stop() { listener.cancel() }
+
+    private func receive(_ connection: NWConnection, buffered: Data = Data()) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self] data, _, complete, error in
+            guard let self else { return }
+            let request = buffered + (data ?? Data())
+            guard String(data: request, encoding: .utf8)?.contains("\r\n\r\n") == true else {
+                if !complete && error == nil { self.receive(connection, buffered: request) }
+                else { connection.cancel() }
+                return
+            }
+            let target = String(data: request, encoding: .utf8)?.components(separatedBy: " ").dropFirst().first ?? ""
+            let path = URLComponents(string: "http://127.0.0.1\(target)")?.path ?? ""
+            let body = self.response(for: path)
+            let header = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(body.count)\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n"
+            connection.send(content: Data(header.utf8) + body, completion: .contentProcessed { error in
+                if error == nil {
+                    self.lock.lock()
+                    self.responses[path, default: 0] += 1
+                    self.lock.unlock()
+                }
+                connection.cancel()
+            })
+        }
+    }
+
+    private func response(for path: String) -> Data {
+        let body: String
+        switch path {
+        case "/api/v1/home/popular-books":
+            body = """
+            {"books":[{"bookId":1,"isbn13":"9780000000001","title":"새로고침 검증 도서","coverImageUrl":"","reviewCount":4,"replyCount":0}]}
+            """
+        case "/api/v1/home/latest-reviews":
+            let reviews = (1...4).map { index in
+                """
+                {"reviewId":\(index),"content":"목록의 마지막과 당김 후 기존 내용이 유지되는지 확인하는 감상입니다.","createdAt":"2026-10-01T08:00:0\(index)Z","author":{"displayName":"독자 \(index)"},"replyCount":0,"bookId":1,"isbn13":"9780000000001","bookTitle":"새로고침 검증 도서","bookCoverImageUrl":""}
+                """
+            }.joined(separator: ",")
+            body = "{\"reviews\":[\(reviews)]}"
+        default:
+            body = "{\"totalCount\":0,\"nextPage\":null,\"items\":[]}"
+        }
+        return Data(body.utf8)
     }
 }

@@ -6,6 +6,7 @@ import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.domain.feed.FeedSection
+import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.presentation.common.TimeLabels
 import com.chaekchaek.app.presentation.common.toAppError
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
@@ -28,6 +29,9 @@ class HomeViewModel(
     private var accessToken: String? = null
     private var hasObservedAuthentication = false
     private var loadJob: Job? = null
+    private var loadRevision = 0L
+    private val _refreshState = MutableStateFlow(RefreshUiState())
+    val refreshState: StateFlow<RefreshUiState> = _refreshState.asStateFlow()
     private val _uiState = MutableStateFlow<HomeUiState>(
         HomeUiState.Content(emptyList()),
     )
@@ -41,6 +45,19 @@ class HomeViewModel(
         load()
     }
 
+    fun refresh() {
+        if (loadJob?.isActive == true) return
+        load(retainContent = true)
+    }
+
+    fun refresh(accessToken: String?) {
+        if (this.accessToken != accessToken) {
+            authenticate(accessToken)
+            return
+        }
+        refresh()
+    }
+
     fun authenticate(accessToken: String?) {
         if (!hasObservedAuthentication) {
             hasObservedAuthentication = true
@@ -50,22 +67,28 @@ class HomeViewModel(
         load()
     }
 
-    private fun load() {
+    private fun load(retainContent: Boolean = false) {
+        val revision = ++loadRevision
+        val token = accessToken
         loadJob?.cancel()
+        _refreshState.value = RefreshUiState(isRefreshing = retainContent)
         loadJob = viewModelScope.launch {
             val started = kotlin.time.TimeSource.Monotonic.markNow()
             val previousState = _uiState.value
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
-                    if (loading) {
+                    if (revision != loadRevision) return@withDelayedApiLoading
+                    if (retainContent) {
+                        _refreshState.value = _refreshState.value.copy(showLoading = loading)
+                    } else if (loading) {
                         _uiState.value = HomeUiState.Loading
                     } else if (_uiState.value == HomeUiState.Loading) {
                         _uiState.value = previousState
                     }
                 },
             ) {
-                _uiState.value = try {
-                    val feed = feedRepository.homeFeed(accessToken)
+                val result = try {
+                    val feed = feedRepository.homeFeed(token)
                     val sections = feed.visibleSections()
                     if (feed.isEmpty()) {
                         analytics.log(
@@ -110,8 +133,17 @@ class HomeViewModel(
                         ),
                         longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
                     )
-                    HomeUiState.Failure(error.toAppError())
+                    if (retainContent) {
+                        if (revision == loadRevision) {
+                            _refreshState.value = _refreshState.value.copy(errorMessage = "새로고침하지 못했어요")
+                        }
+                        previousState
+                    } else HomeUiState.Failure(error.toAppError())
                 }
+                if (revision == loadRevision) _uiState.value = result
+            }
+            if (revision == loadRevision) {
+                _refreshState.value = _refreshState.value.copy(isRefreshing = false, showLoading = false)
             }
         }
     }

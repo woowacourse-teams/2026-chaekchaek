@@ -72,6 +72,9 @@ import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.common.ChaekCloseButton
 import com.chaekchaek.app.ui.common.ChaekDropdown
 import com.chaekchaek.app.ui.common.ChaekFilterChip
+import com.chaekchaek.app.presentation.common.RefreshUiState
+import com.chaekchaek.app.ui.common.ChaekRefreshLayout
+import com.chaekchaek.app.ui.common.ListBoundary
 import com.chaekchaek.app.ui.common.BrandHeader
 import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
@@ -93,9 +96,12 @@ fun ArchiveRoute(
         { _, _, _, _ -> },
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val refreshState by viewModel.refreshState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     ArchiveScreen(
         uiState = uiState,
+        refreshState = refreshState,
+        onRefresh = viewModel::refresh,
         memberSettingsState = memberSettingsState,
         editing = editing,
         scrollTopRequest = scrollTopRequest,
@@ -124,6 +130,8 @@ fun ArchiveScreen(
     onProfileClick: () -> Unit,
     onBookClick: (ArchiveBookUiModel) -> Unit,
     modifier: Modifier = Modifier,
+    refreshState: RefreshUiState = RefreshUiState(enabled = false),
+    onRefresh: () -> Unit = {},
     bookCover: @Composable (ArchiveBookUiModel) -> Unit = { DefaultBookCover(it) },
     bookSpine: @Composable (ArchiveBookUiModel, Modifier, Boolean, (String) -> Unit) -> Unit =
         { _, _, _, _ -> },
@@ -158,75 +166,83 @@ fun ArchiveScreen(
     }
 
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        LazyColumn(
+        ChaekRefreshLayout(
+            refreshState, onRefresh,
             modifier = Modifier.fillMaxSize().padding(top = if (editing) 0.dp else 70.dp),
-            state = listState,
-            contentPadding = PaddingValues(bottom = if (editing) 188.dp else 12.dp),
+            enabled = !editing && !uiState.showLoading,
+            bottomEnabled = visibleItems.isNotEmpty(),
         ) {
-            item {
-                if (editing) {
-                    EditTopBar(
-                        selectedCount = selectedIds.size,
-                        onCancel = {
-                            selectedIds = emptySet()
-                            onEditingChange(false)
-                        },
-                        onDone = {
-                            selectedIds = emptySet()
-                            onEditingChange(false)
-                        },
-                    )
-                }
-            }
-            item {
-                LibraryControls(
-                    selected = filter,
-                    onSelected = { filter = it },
-                    onEdit = if (editing) null else ({ onEditingChange(true) }),
-                )
-                if (!editing && visibleItems.isNotEmpty()) {
-                    BookSpineShelf(
-                        books = spineBooks,
-                        onlySpineImages = onlySpineImages,
-                        onOnlySpineImagesChange = { onlySpineImages = it },
-                        onSpineImageLoadFailed = { failedUrl -> failedSpineUrls += failedUrl },
-                        bookSpine = bookSpine,
-                    )
-                }
-                SortRow(
-                    countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}",
-                    sort = sort,
-                    onSortChange = { sort = it },
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
-            }
-            if (visibleItems.isEmpty()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(bottom = if (editing) 188.dp else 12.dp),
+            ) {
                 item {
-                    if (uiState.errorMessage == null) EmptyLibrary()
-                    else ArchiveError(uiState.errorMessage, onRetry)
+                    if (editing) {
+                        EditTopBar(
+                            selectedCount = selectedIds.size,
+                            onCancel = {
+                                selectedIds = emptySet()
+                                onEditingChange(false)
+                            },
+                            onDone = {
+                                selectedIds = emptySet()
+                                onEditingChange(false)
+                            },
+                        )
+                    }
                 }
-            } else {
-                itemsIndexed(visibleItems, key = { _, book -> book.id }) { index, book ->
-                    LibraryBookRow(
-                        book = book,
-                        editing = editing,
-                        selected = book.id in selectedIds,
-                        onSelect = {
-                            selectedIds = if (book.id in selectedIds) selectedIds - book.id else selectedIds + book.id
-                        },
-                        onDelete = { pendingDeletionIds = setOf(book.id) },
-                        onOpen = { onBookClick(book) },
-                        bookCover = bookCover,
-                        modifier = Modifier.analyticsImpression(
-                            contentType = "book",
-                            contentId = analyticsBookKey(book.id, book.bookId.toString()) ?: book.id,
-                            bookKey = analyticsBookKey(book.id, book.bookId.toString()),
-                            listId = "library_books",
-                            position = index + 1,
-                        ),
+                item {
+                    LibraryControls(
+                        selected = filter,
+                        onSelected = { filter = it },
+                        onEdit = if (editing) null else ({ onEditingChange(true) }),
+                    )
+                    if (!editing && visibleItems.isNotEmpty()) {
+                        BookSpineShelf(
+                            books = spineBooks,
+                            onlySpineImages = onlySpineImages,
+                            onOnlySpineImagesChange = { onlySpineImages = it },
+                            onSpineImageLoadFailed = { failedUrl -> failedSpineUrls += failedUrl },
+                            bookSpine = bookSpine,
+                        )
+                    }
+                    SortRow(
+                        countLabel = "${filter?.label ?: "전체"} ${visibleItems.size}",
+                        sort = sort,
+                        onSortChange = { sort = it },
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                 }
+                if (visibleItems.isEmpty()) {
+                    item {
+                        if (uiState.errorMessage == null) EmptyLibrary()
+                        else ArchiveError(uiState.errorMessage, onRetry)
+                    }
+                } else {
+                    itemsIndexed(visibleItems, key = { _, book -> book.id }) { index, book ->
+                        LibraryBookRow(
+                            book = book,
+                            editing = editing,
+                            selected = book.id in selectedIds,
+                            onSelect = {
+                                selectedIds = if (book.id in selectedIds) selectedIds - book.id else selectedIds + book.id
+                            },
+                            onDelete = { pendingDeletionIds = setOf(book.id) },
+                            onOpen = { onBookClick(book) },
+                            bookCover = bookCover,
+                            modifier = Modifier.analyticsImpression(
+                                contentType = "book",
+                                contentId = analyticsBookKey(book.id, book.bookId.toString()) ?: book.id,
+                                bookKey = analyticsBookKey(book.id, book.bookId.toString()),
+                                listId = "library_books",
+                                position = index + 1,
+                            ),
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+                    }
+                }
+                if (visibleItems.isNotEmpty() && !editing) item(key = "list-end") { ListBoundary() }
             }
         }
 

@@ -22,7 +22,7 @@
 | 읽을 때 | 문서 | 적용 범위와 주의점 |
 | --- | --- | --- |
 | Figma 재디자인을 앱에 적용하거나 적용 범위 확인 | [재디자인 핸드오프](figma-redesign-implementation-handoff.md) | 최신 Figma와 디자인 시스템을 다시 조회한다. 핸드오프의 작성만으로 앱 반영 완료를 뜻하지 않는다. |
-| 홈, 피드, 발견, 서재의 당김 새로고침, 추가 로딩, 목록 끝과 overscroll 변경 | [새로고침과 목록 끝 상태 설계](pull-refresh-interaction-plan.md) | Figma 상태와 공통 컴포넌트, 기존 페이지네이션 유지 결정, 요청 경쟁과 상태 보존 계획. 앱 구현과 기기 검증 전 설계안이다. |
+| 홈, 피드, 발견, 서재의 당김 새로고침, 추가 로딩, 목록 끝과 overscroll 변경 | [새로고침과 목록 끝 상태 설계](pull-refresh-interaction-plan.md) | Figma 상태와 공통 컴포넌트, 기존 페이지네이션 유지 결정, 요청 경쟁과 상태 보존 구현 및 플랫폼별 검증 범위. |
 | 모바일 디자인 피드백의 배경 확인 | [모바일과 공통 피드백](design-feedback-mobile-common.md) | 개선 후보 기록이며 최신 승인 시안보다 우선하지 않는다. |
 | 화면별 초기 상태와 액션, 이전 구현 의도 추적 | [화면 명세](../android/docs/screen-specs.md), [구현 인수인계](../android/docs/implementation-handoff.md) | 과거 Pencil 기준과 브랜치 상태가 포함돼 있다. 현재 디자인 원본으로 사용하지 않는다. |
 | 디자인 원본 수집, 화면 대조, 검증 근거 작성 | [디자인 검증 시작점](../android/visual-contracts/README.md) | 작업별 원본, 상태, 플랫폼, 뷰포트를 지정한다. |

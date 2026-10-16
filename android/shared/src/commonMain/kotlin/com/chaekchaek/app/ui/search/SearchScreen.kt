@@ -87,6 +87,10 @@ import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.common.BrandHeader
 import com.chaekchaek.app.ui.common.ChaekDropdown
+import com.chaekchaek.app.presentation.common.RefreshUiState
+import com.chaekchaek.app.ui.common.ChaekRefreshLayout
+import com.chaekchaek.app.ui.common.RefreshableEmptyContent
+import com.chaekchaek.app.ui.common.ListBoundary
 import com.chaekchaek.app.ui.common.HomeLoadErrorContent
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
 import com.chaekchaek.app.presentation.home.HomeUiState
@@ -99,6 +103,7 @@ import kotlinx.coroutines.delay
 fun SearchRoute(
   viewModel: SearchViewModel,
   homeViewModel: HomeViewModel,
+  accessToken: String?,
   searchResultsListState: LazyListState,
   registeredBookIds: Set<String>,
   modifier: Modifier = Modifier,
@@ -111,8 +116,15 @@ fun SearchRoute(
   val query by viewModel.query.collectAsState()
   val recentSearches by viewModel.recentSearches.collectAsState()
   val homeState by homeViewModel.uiState.collectAsState()
+  val searchRefresh by viewModel.refreshState.collectAsState()
+  val homeRefresh by homeViewModel.refreshState.collectAsState()
   SearchScreen(
     state = state,
+    refreshState = if (state == SearchUiState.Idle) homeRefresh else searchRefresh,
+    onRefresh = {
+      if (state == SearchUiState.Idle) homeViewModel.refresh(accessToken) else viewModel.refresh()
+    },
+    onRetryLoadMore = viewModel::retryLoadMore,
     sort = sort,
     query = query,
     recentSearches = recentSearches,
@@ -158,6 +170,9 @@ fun SearchScreen(
   onLoadMore: () -> Unit,
   onSortSelect: (BookSearchSort) -> Unit,
   onHomeRetry: () -> Unit = {},
+  refreshState: RefreshUiState = RefreshUiState(),
+  onRefresh: () -> Unit = {},
+  onRetryLoadMore: () -> Unit = {},
   modifier: Modifier = Modifier,
   onBack: () -> Unit = {},
   onProfileClick: () -> Unit = {},
@@ -196,7 +211,11 @@ fun SearchScreen(
       )
     }
 
-    Box(
+    ChaekRefreshLayout(
+      state = refreshState,
+      onRefresh = onRefresh,
+      enabled = state != SearchUiState.Loading && !(state == SearchUiState.Idle && homeState == HomeUiState.Loading),
+      bottomEnabled = state is SearchUiState.Success || (state == SearchUiState.Idle && homeState is HomeUiState.Content),
       modifier = Modifier.weight(1f).fillMaxWidth()
         .testTag("search-content")
         .clearFocusOnTouch(focusManager),
@@ -212,23 +231,23 @@ fun SearchScreen(
         SearchUiState.Empty ->
           Column(modifier = Modifier.fillMaxSize()) {
             SearchResultHeader(count = 0, sort = sort, onSortSelect = onSortSelect)
-            SearchMessage(
-              title = "검색 결과가 없어요",
-              body = "다른 검색어로 다시 찾아보세요.",
-              modifier = Modifier.weight(1f),
-            )
+            RefreshableEmptyContent(Modifier.weight(1f)) {
+              SearchMessage(title = "검색 결과가 없어요", body = "다른 검색어로 다시 찾아보세요.")
+            }
           }
-        is SearchUiState.Error ->
-          SearchMessage(
-            title = "검색 결과를 불러오지 못했어요",
-            body = "잠시 후 다시 검색해 주세요.",
-            modifier = Modifier.fillMaxSize(),
-          )
+        is SearchUiState.Error -> RefreshableEmptyContent {
+          SearchMessage(title = "검색 결과를 불러오지 못했어요", body = "잠시 후 다시 검색해 주세요.")
+        }
         is SearchUiState.Success ->
           SearchResults(
             results = current.results,
             totalCount = current.totalCount,
             nextPage = current.nextPage,
+            loadingMore = current.loadingMore,
+            showLoadingMore = current.showLoadingMore,
+            loadMoreFailed = current.loadMoreFailed,
+            refreshing = refreshState.isRefreshing,
+            onRetryLoadMore = onRetryLoadMore,
             sort = sort,
             registeredBookIds = registeredBookIds,
             onRegister = onRegister,
@@ -375,6 +394,7 @@ private fun DiscoverContent(
         )
       }
     }
+    if (sections.isNotEmpty()) item(key = "list-end") { ListBoundary() }
   }
 }
 
@@ -615,6 +635,11 @@ private fun SearchResults(
   results: List<BookSearchResult>,
   totalCount: Int,
   nextPage: Int?,
+  loadingMore: Boolean,
+  showLoadingMore: Boolean,
+  loadMoreFailed: Boolean,
+  refreshing: Boolean,
+  onRetryLoadMore: () -> Unit,
   sort: BookSearchSort,
   registeredBookIds: Set<String>,
   onRegister: (BookSearchResult) -> Unit,
@@ -647,9 +672,12 @@ private fun SearchResults(
         )
         HorizontalDivider(color = ChaekBand)
       }
+      item(key = "boundary") {
+        ListBoundary(nextPage != null, loadingMore, showLoadingMore, loadMoreFailed, onRetryLoadMore)
+      }
       if (nextPage != null) {
         item(key = "next-page-$nextPage") {
-          LaunchedEffect(nextPage) { onLoadMore() }
+          LaunchedEffect(nextPage, refreshing) { if (!refreshing) onLoadMore() }
         }
       }
     }

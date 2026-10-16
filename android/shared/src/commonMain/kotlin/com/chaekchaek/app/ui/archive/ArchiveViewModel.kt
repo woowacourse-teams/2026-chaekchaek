@@ -6,6 +6,7 @@ import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.domain.shelf.ReadingStatus
+import com.chaekchaek.app.presentation.common.RefreshUiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,13 +25,23 @@ class ArchiveViewModel(
 
     private val mutationMutex = Mutex()
     private var accessToken: String? = null
-    private var libraryJob: Job? = null
+    private var queryJob: Job? = null
+    private val mutationJobs = mutableSetOf<Job>()
+    private var authenticationRevision = 0L
+    private var queryRevision = 0L
+    private val _refreshState = MutableStateFlow(RefreshUiState(enabled = false))
+    val refreshState: StateFlow<RefreshUiState> = _refreshState.asStateFlow()
 
     fun authenticate(accessToken: String?) {
         if (this.accessToken == accessToken) return
         this.accessToken = accessToken
+        authenticationRevision += 1
+        mutationJobs.toList().forEach { it.cancel() }
+        mutationJobs.clear()
+        queryRevision += 1
+        queryJob?.cancel()
+        _refreshState.value = RefreshUiState(enabled = accessToken != null)
         if (accessToken == null) {
-            libraryJob?.cancel()
             _uiState.value = _uiState.value.copy(items = emptyList(), showLoading = false, errorMessage = null)
         } else {
             load()
@@ -53,10 +64,27 @@ class ArchiveViewModel(
         }
     }
 
-    private fun load() {
+    fun refresh() {
+        if (queryJob?.isActive == true) return
+        load(refreshing = true)
+    }
+
+    private fun load(refreshing: Boolean = false) {
         val token = accessToken ?: return
-        libraryJob?.cancel()
-        libraryJob = viewModelScope.launch { loadIntoState(token) }
+        val authentication = authenticationRevision
+        val revision = ++queryRevision
+        queryJob?.cancel()
+        _refreshState.value = RefreshUiState(isRefreshing = refreshing)
+        queryJob = viewModelScope.launch {
+            // 조회는 쓰기가 끝난 뒤 실행한다. 당김으로 쓰기 요청을 취소하지 않는다.
+            mutationMutex.withLock {
+                if (authentication != authenticationRevision || revision != queryRevision) return@withLock
+                loadIntoState(token, authentication, revision, refreshing)
+            }
+            if (revision == queryRevision && authentication == authenticationRevision) {
+                _refreshState.value = _refreshState.value.copy(isRefreshing = false, showLoading = false)
+            }
+        }
     }
 
     private fun mutate(
@@ -66,15 +94,21 @@ class ArchiveViewModel(
     ) {
         val token = accessToken ?: return
         val analyticsAction = analytics.startAction(actionName, longs = mapOf("item_count" to itemCount.toLong()))
-        libraryJob?.cancel()
-        libraryJob = viewModelScope.launch {
+        val authentication = authenticationRevision
+        queryRevision += 1
+        queryJob?.cancel()
+        _refreshState.value = RefreshUiState()
+        val job = viewModelScope.launch {
             mutationMutex.withLock {
-                withDelayedLoading(::setLoading) {
+                if (authentication != authenticationRevision) return@withLock
+                withDelayedLoading({ loading ->
+                    if (authentication == authenticationRevision) setLoading(loading)
+                }) {
                     action(token)
                     repository.getAll(token)
                 }.onSuccess { books ->
                     analytics.finishAction(analyticsAction, "success")
-                    if (accessToken == token) {
+                    if (authentication == authenticationRevision) {
                         _uiState.value = _uiState.value.copy(
                             items = books.map { it.toArchiveBookUiModel() },
                             errorMessage = null,
@@ -87,15 +121,22 @@ class ArchiveViewModel(
                         "failure",
                         strings = mapOf("error_category" to analyticsErrorCategory(error)),
                     )
-                    handleFailure(error)
+                    if (authentication == authenticationRevision) handleFailure(error)
                 }
             }
         }
+        mutationJobs += job
+        job.invokeOnCompletion { mutationJobs -= job }
     }
 
-    private suspend fun loadIntoState(token: String) {
+    private suspend fun loadIntoState(token: String, authentication: Long, revision: Long, refreshing: Boolean) {
         val started = kotlin.time.TimeSource.Monotonic.markNow()
-        withDelayedLoading(::setLoading) { repository.getAll(token) }
+        withDelayedLoading({ loading ->
+            if (authentication == authenticationRevision && revision == queryRevision) {
+                if (refreshing) _refreshState.value = _refreshState.value.copy(showLoading = loading)
+                else setLoading(loading)
+            }
+        }) { repository.getAll(token) }
             .onSuccess { books ->
                 analytics.log(
                     name = "cc_load_result",
@@ -105,7 +146,7 @@ class ArchiveViewModel(
                         "result_count" to books.size.toLong(),
                     ),
                 )
-                if (accessToken == token) {
+                if (authentication == authenticationRevision && revision == queryRevision) {
                     _uiState.value = _uiState.value.copy(
                         items = books.map { it.toArchiveBookUiModel() },
                         errorMessage = null,
@@ -123,7 +164,10 @@ class ArchiveViewModel(
                     ),
                     longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
                 )
-                handleFailure(error)
+                if (authentication == authenticationRevision && revision == queryRevision) {
+                    if (refreshing) _refreshState.value = _refreshState.value.copy(errorMessage = "새로고침하지 못했어요")
+                    else handleFailure(error)
+                }
             }
     }
 
