@@ -1,5 +1,8 @@
 package com.chaekchaek.app.ui.feed
 
+import com.chaekchaek.app.ui.common.LibrarySaveButton
+import com.chaekchaek.app.ui.archive.LibrarySaveUiState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -74,6 +77,9 @@ fun FeedScreen(
     onBookClick: (BookDetailTarget) -> Unit,
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    savedIsbns: Set<String> = emptySet(),
+    librarySaveState: LibrarySaveUiState = LibrarySaveUiState(),
+    onSaveBook: (BookDetailTarget) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -125,6 +131,11 @@ fun FeedScreen(
                                 HorizontalDivider(color = ChaekBorderSoft)
                                 FeedReflectionArticle(
                                     reflection = reflection,
+                                    saved = reflection.isbn13 in savedIsbns,
+                                    saving = reflection.isbn13 == librarySaveState.savingIsbn,
+                                    showSaveLoading = librarySaveState.showLoading,
+                                    saveEnabled = librarySaveState.savingIsbn == null,
+                                    onSaveBook = { onSaveBook(reflection.toBookDetailTarget()) },
                                     spoilerRevealed = reflection.reviewId in revealedSpoilerReviewIds,
                                     onRevealSpoiler = {
                                         reflection.reviewId?.let { reviewId ->
@@ -198,6 +209,11 @@ private fun FeedLoadErrorContent(error: AppError, retry: () -> Unit, modifier: M
 @Composable
 private fun FeedReflectionArticle(
     reflection: QuoteCardUiModel,
+    saved: Boolean,
+    saving: Boolean,
+    showSaveLoading: Boolean,
+    saveEnabled: Boolean,
+    onSaveBook: () -> Unit,
     spoilerRevealed: Boolean,
     onRevealSpoiler: () -> Unit,
     onOpenBook: () -> Unit,
@@ -221,6 +237,14 @@ private fun FeedReflectionArticle(
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+            LibrarySaveButton(
+                bookTitle = reflection.bookTitle,
+                saved = saved,
+                saving = saving,
+                showLoading = showSaveLoading,
+                enabled = saveEnabled,
+                onSave = onSaveBook,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(

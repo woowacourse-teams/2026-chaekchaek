@@ -119,6 +119,8 @@ class BookDetailViewModel(
             isLoading = false,
             isLoadingMore = false,
             isSubmitting = false,
+            isSavingLibrary = false,
+            libraryMessage = null,
         )
         reload()
         return pending
@@ -241,24 +243,41 @@ class BookDetailViewModel(
         )
     }
 
-    fun toggleLibrary(savedBookId: Long?, onSuccess: () -> Unit = {}) = mutate(
-        actionName = if (savedBookId == null) "library_add" else "library_remove",
-        onSuccess = { record: LibraryRecord? ->
-            updateMyRecord(record)
-            onSuccess()
-        },
-        reloadAfterSuccess = false,
-    ) {
-        val state = _uiState.value
-        if (savedBookId == null) {
+    fun addToLibrary(onSuccess: (LibraryRecord) -> Unit = {}) {
+        if (mutationJob?.isActive == true || _uiState.value.detail?.myRecord != null) return
+        _uiState.value = _uiState.value.copy(isSavingLibrary = true)
+        mutate(
+            actionName = "library_add",
+            onFinished = { _uiState.value = _uiState.value.copy(isSavingLibrary = false) },
+            onSuccess = { record: LibraryRecord ->
+                updateMyRecord(record)
+                _uiState.value = _uiState.value.copy(libraryMessage = "내 서재에 담았어요")
+                onSuccess(record)
+            },
+            reloadAfterSuccess = false,
+        ) {
+            val state = _uiState.value
             state.detail?.myRecord?.let { return@mutate it }
             requireNotNull(state.detail)
             val book = requireNotNull(state.displayBook)
             repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken())
-        } else {
-            libraryRepository.bulkDelete(listOf(savedBookId), requireToken())
-            null
         }
+    }
+
+    fun removeFromLibrary(savedBookId: Long, onSuccess: () -> Unit = {}) = mutate(
+        actionName = "library_remove",
+        onSuccess = { _: Unit ->
+            updateMyRecord(null)
+            _uiState.value = _uiState.value.copy(libraryMessage = "서재에서 삭제했어요")
+            onSuccess()
+        },
+        reloadAfterSuccess = false,
+    ) {
+        libraryRepository.bulkDelete(listOf(savedBookId), requireToken())
+    }
+
+    fun clearLibraryMessage() {
+        _uiState.value = _uiState.value.copy(libraryMessage = null)
     }
 
     fun updateStatus(
@@ -656,6 +675,7 @@ class BookDetailViewModel(
         reloadAfterSuccess: Boolean = true,
         awaitLoadBeforeAction: Boolean = true,
         closesComposer: Boolean = false,
+        onFinished: () -> Unit = {},
         action: suspend () -> T,
     ) {
         if (mutationJob?.isActive == true) return
@@ -707,6 +727,7 @@ class BookDetailViewModel(
                 if (closesComposer) analytics.completeComposer()
                 if (generation == requestGeneration || error is CancellationException) handleFailure(error)
             }
+            if (generation == requestGeneration) onFinished()
         }
     }
 

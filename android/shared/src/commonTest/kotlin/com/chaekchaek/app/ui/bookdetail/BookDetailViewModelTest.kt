@@ -47,6 +47,36 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
   @Test
+  fun `담기를 반복해도 삭제하지 않고 명시적 삭제만 서재를 지운다`() = runViewModelTest {
+    val paths = mutableListOf<String>()
+    val engine = MockEngine { request ->
+      paths += request.url.encodedPath
+      when {
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        request.url.encodedPath == "/api/v1/library" -> respond(LIBRARY_RECORD, headers = jsonHeaders())
+        request.url.encodedPath.endsWith("/bulk-delete") -> respond("", HttpStatusCode.NoContent)
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    }
+    val client = testClient(engine)
+    val vm = viewModel(client, client, platform({ null }))
+    vm.open(book().copy(isbn13 = "9780000000042"), "member")
+    awaitReal { vm.uiState.first { it.detail != null } }
+    vm.addToLibrary()
+    vm.addToLibrary()
+    awaitReal { vm.uiState.first { it.detail?.myRecord != null && !it.isSavingLibrary } }
+    vm.addToLibrary()
+    runCurrent()
+    assertEquals(1, paths.count { it == "/api/v1/library" })
+    assertFalse(paths.any { it.endsWith("/bulk-delete") })
+    assertEquals("내 서재에 담았어요", vm.uiState.value.libraryMessage)
+    vm.removeFromLibrary(73)
+    awaitReal { vm.uiState.first { it.libraryMessage == "서재에서 삭제했어요" } }
+    assertNull(vm.uiState.value.detail?.myRecord)
+    assertEquals(1, paths.count { it.endsWith("/bulk-delete") })
+  }
+
+  @Test
   fun `회원 복원이 실패해 내 감상이 해제되면 전체 감상 첫 페이지만 읽는다`() = runViewModelTest {
     val requestedPages = mutableListOf<Int>()
     val client = testClient(MockEngine { request ->

@@ -33,6 +33,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import com.chaekchaek.app.ui.common.LibrarySaveButton
+import com.chaekchaek.app.ui.archive.DeleteConfirmationDialog
 import androidx.compose.material3.MaterialTheme
 import com.chaekchaek.app.ui.common.ChaekSnackbarHost
 import androidx.compose.ui.layout.onSizeChanged
@@ -136,6 +140,8 @@ fun BookDetailScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     savedToLibrary: Boolean = state.detail?.myRecord != null,
+    externalLibrarySaving: Boolean = false,
+    externalLibraryLoading: Boolean = false,
     anonymousReviews: Boolean = true,
     nickname: String = "",
     localCurrentPage: Int = 0,
@@ -143,7 +149,9 @@ fun BookDetailScreen(
     resumedAuthenticatedAction: BookDetailAuthenticatedAction? = null,
     onAuthenticatedActionHandled: () -> Unit = {},
     onLoginRequired: (BookDetailAuthenticatedAction) -> Unit = {},
-    onToggleLibrary: () -> Unit = {},
+    onAddToLibrary: () -> Unit = {},
+    onRemoveFromLibrary: () -> Unit = {},
+    onLibraryMessageShown: () -> Unit = {},
     onStatusChange: (ReadingStatus) -> Unit = {},
     onPageSave: (Int) -> Unit = {},
     onRatingCriterionChange: (Rating) -> Unit = {},
@@ -180,6 +188,7 @@ fun BookDetailScreen(
     val currentPage = state.detail?.myRecord?.currentPage ?: localCurrentPage
     val snackbarHostState = remember { SnackbarHostState() }
     var composeBarHeight by remember { mutableStateOf(0.dp) }
+    var showLibraryDeleteConfirmation by rememberSaveable(book.id) { mutableStateOf(false) }
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
     var showPageDialog by rememberSaveable { mutableStateOf(false) }
     var showReviewSheet by rememberSaveable { mutableStateOf(false) }
@@ -194,6 +203,17 @@ fun BookDetailScreen(
     val replyById = remember(state.reviews) {
         visibleBookReviews.flatMap(BookReview::recentReplies)
             .filterNot(ReviewReply::deleted).associateBy(ReviewReply::replyId)
+    }
+
+    if (showLibraryDeleteConfirmation && savedToLibrary) {
+        DeleteConfirmationDialog(
+            selectedCount = 1,
+            onDismiss = { showLibraryDeleteConfirmation = false },
+            onConfirm = {
+                showLibraryDeleteConfirmation = false
+                onRemoveFromLibrary()
+            },
+        )
     }
 
     fun authorizeOrRun(action: BookDetailAuthenticatedAction, onAuthorized: () -> Unit) {
@@ -211,9 +231,15 @@ fun BookDetailScreen(
             onRequestErrorShown()
         }
     }
+    LaunchedEffect(state.libraryMessage) {
+        state.libraryMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            onLibraryMessageShown()
+        }
+    }
     LaunchedEffect(resumedAuthenticatedAction) {
         when (val action = resumedAuthenticatedAction ?: return@LaunchedEffect) {
-            BookDetailAuthenticatedAction.AddToLibrary -> onToggleLibrary()
+            BookDetailAuthenticatedAction.AddToLibrary -> if (!savedToLibrary) onAddToLibrary()
             BookDetailAuthenticatedAction.OpenPageInput -> showPageDialog = true
             BookDetailAuthenticatedAction.OpenRating -> showRatingDialog = true
             BookDetailAuthenticatedAction.OpenReview -> onReviewOpen { showReviewSheet = true }
@@ -243,9 +269,13 @@ fun BookDetailScreen(
                     book = book,
                     saved = savedToLibrary,
                     averageRating = state.detail?.averageRating,
+                    saving = state.isSavingLibrary || externalLibrarySaving,
+                    showSaveLoading = state.isSubmitting || (externalLibrarySaving && externalLibraryLoading),
+                    saveEnabled = !state.isLoading && state.detail != null,
+                    onRemoveFromLibrary = { showLibraryDeleteConfirmation = true },
                     onBack = onBack,
                     onLibraryClick = {
-                        authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onToggleLibrary)
+                        if (!savedToLibrary) authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onAddToLibrary)
                     },
                     coverContent = coverContent,
                 )
@@ -470,10 +500,15 @@ private fun BookHero(
     book: BookDetailArgs,
     saved: Boolean,
     averageRating: Double?,
+    saving: Boolean,
+    showSaveLoading: Boolean,
+    saveEnabled: Boolean,
+    onRemoveFromLibrary: () -> Unit,
     onBack: () -> Unit,
     onLibraryClick: () -> Unit,
     coverContent: (@Composable (BookDetailArgs, Modifier) -> Unit)?,
 ) {
+    var showMenu by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth().background(ChaekSurface)) {
         Row(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
@@ -500,17 +535,24 @@ private fun BookHero(
                 fontWeight = FontWeight.ExtraBold,
             )
             Spacer(Modifier.weight(1f))
-            Box(
-                modifier = Modifier.size(44.dp).clickable(role = Role.Button, onClick = onLibraryClick)
-                    .semantics { contentDescription = if (saved) "서재에서 삭제" else "서재에 추가" },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painterResource(Res.drawable.ic_bookmark),
-                    contentDescription = null,
-                    modifier = Modifier.size(21.dp),
-                    tint = if (saved) ChaekAccent else ChaekInk,
-                )
+            Box {
+                if (saved) {
+                    Box(
+                        modifier = Modifier.size(44.dp).clickable(
+                            enabled = !saving, role = Role.Button,
+                            interactionSource = remember { MutableInteractionSource() }, indication = null,
+                        ) { showMenu = true }.semantics { contentDescription = "서재 관리" },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("⋯", fontFamily = ChaekIconFontFamily(), fontSize = 24.sp)
+                    }
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text("서재에서 삭제") },
+                            onClick = { showMenu = false; onRemoveFromLibrary() },
+                        )
+                    }
+                } else Spacer(Modifier.size(44.dp))
             }
         }
         Row(
@@ -555,6 +597,15 @@ private fun BookHero(
                     )
                     Text("  평균 별점", color = ChaekInkSecondary, fontSize = 11.sp, lineHeight = 14.sp)
                 }
+                LibrarySaveButton(
+                    bookTitle = book.title,
+                    saved = saved,
+                    saving = saving,
+                    showLoading = showSaveLoading,
+                    enabled = saveEnabled,
+                    onSave = onLibraryClick,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
             }
         }
     }

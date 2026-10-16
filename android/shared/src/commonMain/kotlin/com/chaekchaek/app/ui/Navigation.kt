@@ -37,6 +37,7 @@ import com.chaekchaek.app.data.remote.PopularBooksRemoteRepository
 import com.chaekchaek.app.data.remote.RemoteFeedReviewActions
 import com.chaekchaek.app.data.remote.ReviewFeedRemoteRepository
 import com.chaekchaek.app.presentation.home.HomeViewModel
+import com.chaekchaek.app.ui.archive.LibrarySaveViewModel
 import com.chaekchaek.app.ui.archive.ArchiveViewModel
 import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
 import com.chaekchaek.app.ui.archive.MyPageScreen
@@ -131,14 +132,24 @@ internal fun AppNavigation(
     val memberRepository = remember { MemberRemoteRepository() }
     val registrationViewModel = remember { BookRegistrationViewModel(libraryRepository, analytics) }
     val archiveViewModel = remember { ArchiveViewModel(libraryRepository, analytics) }
+    val librarySaveViewModel = remember {
+        LibrarySaveViewModel(
+            addBook = detailRepository::addToLibrary,
+            onSaved = archiveViewModel::acceptSavedBook,
+            analytics = analytics,
+            isSaved = { isbn -> archiveViewModel.uiState.value.items.any { it.id == isbn } },
+        )
+    }
     val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository) }
     val archiveState by archiveViewModel.uiState.collectAsState()
+    val librarySaveState by librarySaveViewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     LaunchedEffect(authTokens?.accessToken) {
         val accessToken = authTokens?.accessToken
         analytics.updateAuthentication(accessToken != null)
         registrationViewModel.authenticate(accessToken)
         archiveViewModel.authenticate(accessToken)
+        librarySaveViewModel.authenticate(accessToken)
         memberSettingsViewModel.authenticate(accessToken)
     }
     val backStack = rememberNavBackStack(navigationConfig, Root)
@@ -200,6 +211,7 @@ internal fun AppNavigation(
                         searchViewModel = searchViewModel,
                         registrationViewModel = registrationViewModel,
                         archiveViewModel = archiveViewModel,
+                        librarySaveViewModel = librarySaveViewModel,
                         memberSettingsViewModel = memberSettingsViewModel,
                         authViewModel = authViewModel,
                         analytics = analytics,
@@ -251,7 +263,7 @@ internal fun AppNavigation(
                         it.id == displayBook.isbn13.ifBlank { displayBook.id }
                     }
                     val savedBookId = archivedBook?.bookId
-                        ?: state.detail?.takeIf { it.myRecord != null }?.bookId
+                        ?: state.detail?.myRecord?.let { it.bookId ?: state.detail?.bookId }
                     var resumedAction by remember(key.book) {
                         mutableStateOf<BookDetailAuthenticatedAction?>(null)
                     }
@@ -276,6 +288,8 @@ internal fun AppNavigation(
                         onBack = { backStack.popDestinationIfCurrent(key) },
                         modifier = safeContent,
                         savedToLibrary = savedBookId != null,
+                        externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
+                        externalLibraryLoading = librarySaveState.showLoading,
                         anonymousReviews = memberSettingsState.anonymousReviews,
                         nickname = if (state.signedIn) {
                             if (memberSettingsState.anonymousReviews) memberSettingsState.anonymousNickname
@@ -289,9 +303,19 @@ internal fun AppNavigation(
                         resumedAuthenticatedAction = resumedAction,
                         onAuthenticatedActionHandled = { resumedAction = null },
                         onLoginRequired = viewModel::requestAuthentication,
-                        onToggleLibrary = {
-                            viewModel.toggleLibrary(savedBookId, archiveViewModel::retry)
+                        onAddToLibrary = {
+                            if (savedBookId == null && librarySaveViewModel.uiState.value.savingIsbn != displayBook.isbn13) viewModel.addToLibrary { record ->
+                                archiveViewModel.acceptSavedBook(displayBook, record)
+                            }
                         },
+                        onRemoveFromLibrary = {
+                            savedBookId?.let { id ->
+                                viewModel.removeFromLibrary(id) {
+                                    archiveViewModel.acceptRemovedBook(displayBook.isbn13)
+                                }
+                            }
+                        },
+                        onLibraryMessageShown = viewModel::clearLibraryMessage,
                         onStatusChange = { status ->
                             viewModel.updateStatus(
                                 status,
