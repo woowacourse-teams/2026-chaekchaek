@@ -38,6 +38,25 @@ description: 책췍 Android 서명 AAB를 준비하고 iOS TestFlight 업로드�
 
 Google Play 프로덕션 게시와 App Store 심사 제출은 릴리즈 준비에 포함하지 않는다.
 
+## Android Play API 인증과 권한
+
+2026-10-16 설정 기준이다. Android 업로드 요청이 있으면 아래 기존 인증을 먼저 사용한다. 설정과 검증 이력은 [Google Play CLI 인증](../../../docs/android-release-management.md#google-play-cli-인증)을 참고한다.
+
+- Google Cloud 프로젝트: `chaekchaek`. 앱 Firebase 프로젝트 `chaekchaek-d2b85`와 구분하며 앱의 Firebase 설정은 변경하지 않는다. Google Play Developer API `androidpublisher.googleapis.com`을 사용한다.
+- 서비스 계정: `chaekchaek-play-release@chaekchaek.iam.gserviceaccount.com`.
+- JSON 키 경로: `~/.config/chaekchaek/google-play-service-account.json`. 저장소 밖에 보관하고 파일 권한 `0600`을 유지한다. 기존 키가 있으면 재사용하며 키 내용과 발급한 토큰을 출력하거나 Git에 넣지 않는다.
+- Play 권한은 책췍 앱 `com.chamsae.chaekchaek`에 한정한다. 등록된 권한은 `앱 정보 보기(읽기 전용)`, 이에 포함되는 `앱 품질 정보 보기(읽기 전용)`, `앱을 테스트 트랙으로 출시`다. 테스트 트랙 출시는 내부, 비공개와 공개 테스트를 포함한다. 프로덕션 출시, 관리자와 재무 권한은 부여하지 않았다.
+
+1. 업로드 전에 JSON 파일의 존재, 프로젝트와 서비스 계정 일치 여부 및 파일 권한을 확인한다. 인증 정보가 없거나 접근이 거부되면 원인을 알리고 필요한 설정을 확인한다. 다른 gcloud 기본 프로젝트나 일반 사용자 인증으로 임의 대체하지 않는다.
+2. 선택한 CLI가 지원하는 인증 옵션으로 JSON 경로만 전달한다. `GOOGLE_APPLICATION_CREDENTIALS`를 지원하는 도구라면 호출 범위에서 아래 값을 사용한다. 전역 shell 설정이나 gcloud 기본 프로젝트 및 ADC 설정을 덮어쓰지 않는다.
+
+   ```sh
+   GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/chaekchaek/google-play-service-account.json"
+   ```
+
+3. OAuth scope `https://www.googleapis.com/auth/androidpublisher`로 인증하고 앱 접근과 요청한 대상 트랙을 먼저 조회한다. 확인용 임시 edit을 만들었다면 검증 후 삭제하고 commit하지 않는다. 과거 접근 성공만으로 현재 권한을 단정하지 않는다.
+4. AAB 전송과 트랙 배포는 사용자가 요청한 범위에서만 수행한다. 인증 설정과 권한 등록 완료를 업로드 완료로 보고하지 않는다.
+
 ## Android manifest가 이전 버전으로 잡힐 때
 
 `build-signed-aab`의 빌드가 성공해도 스크립트가 과거 중간 산출물을 읽을 수 있다. 실제 사례에서는 `app/build/intermediates/bundle_manifest/release/processApplicationManifestReleaseForBundle/AndroidManifest.xml`이 이전 빌드 버전으로 남아 있었다. 이 경로의 존재만으로 최신 AAB의 버전을 판단하지 않는다.
