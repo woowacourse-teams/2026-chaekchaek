@@ -396,6 +396,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 				return false
 			}
 			return path.startsWith('/api/v1/home/')
+					|| path == '/api/v1/recommended-books'
 					|| path == '/api/v1/books'
 					|| path == '/api/v1/books/by-isbn/{isbn13}'
 					|| path == '/api/v1/books/{bookId}/reviews'
@@ -645,6 +646,7 @@ tasks.register('verifyOpenApi') {
 				return false
 			}
 			return path.toString().startsWith('/api/v1/home/')
+					|| path.toString() == '/api/v1/recommended-books'
 					|| path.toString() == '/api/v1/books'
 					|| path.toString() == '/api/v1/books/by-isbn/{isbn13}'
 					|| path.toString() == '/api/v1/books/{bookId}/reviews'

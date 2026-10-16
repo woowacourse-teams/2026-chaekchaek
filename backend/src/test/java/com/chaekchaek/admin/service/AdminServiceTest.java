@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.admin.domain.RecommendedBook;
@@ -214,24 +215,25 @@ class AdminServiceTest {
     }
 
     @Test
-    @DisplayName("관리자가 아니라면 추천 도서를 조회하지 않는다")
-    void should_NotReturnRecommendedBooks_When_ActorIsNotAdmin() {
+    @DisplayName("인증 없이 추천 도서를 조회한다")
+    void should_ReturnRecommendedBooks_When_ActorIsNotAuthenticated() {
         // given
         RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
+        CurrentActorProvider currentActorProvider = mock(CurrentActorProvider.class);
         AdminService adminService = adminService(
                 recommendedBookRepository,
                 mock(BookRepository.class),
                 mock(BookResolver.class),
-                actorProvider(MEMBER_ACTOR)
+                currentActorProvider
         );
+        when(recommendedBookRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(List.of());
 
-        // when & then
-        assertThatThrownBy(adminService::getRecommendedBooks)
-                .isInstanceOfSatisfying(
-                BusinessException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
-        );
-        verify(recommendedBookRepository, never()).findAllByOrderByCreatedAtDescIdDesc();
+        // when
+        List<RecommendedBookResponse> result = adminService.getRecommendedBooks().books();
+
+        // then
+        assertThat(result).isEmpty();
+        verifyNoInteractions(currentActorProvider);
     }
 
     @Test
