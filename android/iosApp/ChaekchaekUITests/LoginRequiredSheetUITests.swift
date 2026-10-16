@@ -78,19 +78,17 @@ final class LoginRequiredSheetUITests: XCTestCase {
     }
 
     @MainActor
-    func testHomePullRefreshAndListEndKeepNavigationVisible() throws {
+    func testHomePullRefreshHidesListEndAndKeepsNavigationVisible() throws {
         let fixture = try RefreshFixtureServer()
         defer { fixture.stop() }
         let app = refreshApplication(fixture)
         app.launch()
         XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 15))
         let end = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "여기까지 모두 봤어요")).firstMatch
-        for _ in 0..<8 {
-            if end.exists && end.isHittable { break }
-            app.swipeUp()
-        }
-        XCTAssertTrue(end.waitForExistence(timeout: 10))
-        attachScreenshot(named: "홈 목록 끝")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "새로고침 검증 도서")).firstMatch.waitForExistence(timeout: 15))
+        for _ in 0..<8 { app.swipeUp() }
+        XCTAssertFalse(end.exists)
+        attachScreenshot(named: "홈 하단 끝 안내 없음")
         app.buttons["홈"].tap()
         let requestsBeforePull = fixture.completedRequests(for: "/api/v1/home/latest-reviews")
         XCTAssertGreaterThan(requestsBeforePull, 0)

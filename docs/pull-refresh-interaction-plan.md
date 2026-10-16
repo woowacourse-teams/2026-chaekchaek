@@ -13,7 +13,7 @@
 
 - 맨 위에서 아래로 당겨 현재 화면의 데이터를 다시 조회한다. 기존 내용과 검색 입력, 제출 검색어, 정렬, 필터는 요청 중과 실패 후에도 유지한다.
 - 콘텐츠가 없거나 화면보다 짧아도 위쪽 당김이 가능하다.
-- 맨 아래에서는 콘텐츠가 살짝 당겨졌다 돌아오며 추가 로딩 또는 데이터 끝을 표시한다. 헤더, 탭 바, 홈의 읽는 중 바는 고정한다.
+- 맨 아래에서는 콘텐츠가 살짝 당겨졌다 돌아오며 기존 추가 조회의 대기, 로딩과 실패 시 재시도를 표시한다. 다음 페이지가 없으면 끝 안내와 전용 영역을 렌더하지 않는다. 헤더, 탭 바, 홈의 읽는 중 바는 고정한다.
 - 사용자가 기존 페이지네이션 유지를 선택했다. 새 페이지네이션은 추가하지 않는다.
 - 내 서재 편집 모드에서는 당겨서 새로고침을 비활성화한다. 편집을 끝내면 다시 사용할 수 있다.
 
@@ -55,7 +55,7 @@
 | --- | --- | --- |
 | Pending | 다음 내용을 요청하고 있어요 | 기존 추가 조회 조건이 충족되면 요청. 중복 호출 금지 |
 | Loading | 기존 Inline progress와 더 불러오는 중이에요 | 500ms 이후 마지막 항목 아래에서 표시 |
-| End | 여기까지 모두 봤어요 | 다음 페이지 요청 없음 |
+| End | 숨김, 전용 영역 없음 | 다음 페이지 요청 없음. 2026-10-16 기기 피드백으로 이전 끝 문구를 폐기했다. |
 | Error | 불러오지 못했어요와 다시 시도 | 기존 항목과 커서 유지. 사용자 재시도 전 자동 반복 금지 |
 
 하단 콘텐츠 이동은 시안값 최대 24pt, 놓은 뒤 복귀는 220ms Ease out이다. 헤더와 탭 바는 움직이지 않는다. Android 기본 overscroll과 별도 효과가 겹쳐 두 번 움직이지 않게 한다. 짧은 목록과 빈 화면에서는 상단 갱신을 지원하되 존재하지 않는 다음 페이지를 요청하지 않는다.
@@ -83,11 +83,11 @@
 
 | 화면 | 현재 조회 | 상단 갱신 | 하단 |
 | --- | --- | --- | --- |
-| 홈 | `HomeViewModel` -> `PopularBooksRemoteRepository.homeFeed()` | 홈 데이터 갱신. 읽는 중 바 유지 | 화면 페이지네이션이 없어 끝 표시 |
-| 피드 | `FeedViewModel` -> `ReviewFeedRemoteRepository.reviewFeed(page, viewer)` | 감상과 스포일러 공개 상태 유지 | `nextPage`가 있으면 기존 sentinel 자동 조회, 없으면 끝 |
-| 발견 기본 | `SearchRoute` Idle -> `DiscoverLanding` -> 공용 `HomeViewModel` | 추천 데이터 갱신. 입력과 최근 검색어 유지 | 화면 페이지네이션이 없어 끝 표시 |
-| 발견 검색 | `SearchViewModel` -> `BookSearchRemoteRepository.search(query, sort, page)` | 마지막 제출 검색어와 현재 정렬로 갱신. 미제출 입력 유지 | `nextPage`가 있으면 기존 sentinel 자동 조회, 없으면 끝 |
-| 내 서재 | `ArchiveViewModel` -> `LibraryRemoteRepository.getAll(token)` | 독서 상태 필터, 정렬, 책등 토글 유지 | repository가 모든 API 페이지를 읽으므로 화면은 끝 표시 |
+| 홈 | `HomeViewModel` -> `PopularBooksRemoteRepository.homeFeed()` | 홈 데이터 갱신. 읽는 중 바 유지 | 화면 페이지네이션이 없어 하단 안내 없음 |
+| 피드 | `FeedViewModel` -> `ReviewFeedRemoteRepository.reviewFeed(page, viewer)` | 감상과 스포일러 공개 상태 유지 | `nextPage`가 있으면 기존 sentinel 자동 조회, 없으면 하단 안내 없음 |
+| 발견 기본 | `SearchRoute` Idle -> `DiscoverLanding` -> 공용 `HomeViewModel` | 추천 데이터 갱신. 입력과 최근 검색어 유지 | 화면 페이지네이션이 없어 하단 안내 없음 |
+| 발견 검색 | `SearchViewModel` -> `BookSearchRemoteRepository.search(query, sort, page)` | 마지막 제출 검색어와 현재 정렬로 갱신. 미제출 입력 유지 | `nextPage`가 있으면 기존 sentinel 자동 조회, 없으면 하단 안내 없음 |
+| 내 서재 | `ArchiveViewModel` -> `LibraryRemoteRepository.getAll(token)` | 독서 상태 필터, 정렬, 책등 토글 유지 | repository가 모든 API 페이지를 읽으므로 화면은 하단 안내 없음 |
 
 검색 결과 없음과 서재 필터 결과 없음도 같은 조회 조건으로 갱신한다. 비로그인 서재는 현재 토큰이 없어 조회하지 않는다. 당김을 새 로그인 흐름으로 바꾸거나 서버 재조회 성공으로 표시하지 않는다. Figma의 빈 서재 예시는 로그인 후 항목이 없거나 필터 결과가 없는 경우다.
 
@@ -207,3 +207,25 @@ Android 자동 검사 명령은 `android/`에서 실행했다.
 - `presentation/common/DelayedApiLoading.kt:9-24`, `ui/archive/DelayedLoading.kt:8-23`, `android/AGENTS.md`: 500ms 이후 로딩 표시와 응답 직후 종료.
 
 객체지향 관점에서 `ArchiveViewModel.kt:7,18-20`은 구체 HTTP 저장소인 `LibraryRemoteRepository`에 직접 의존해 의존 역전 원칙(DIP)을 위반하는 경계다. 다른 화면처럼 인터페이스로 테스트 대역을 주입하기 어렵다. 새 공통 UI가 저장소를 직접 호출하게 만들지 않으며, 서재 저장소 전체 개편은 이번 상태 설계 범위로 확장하지 않는다.
+
+## 기기 피드백 후 끝 안내 제거
+
+2026-10-16 사용자가 추가 페이지가 없는 모든 화면에서 끝 안내를 숨기기로 확정했다. 홈, 발견 기본, 내 서재의 정적 끝 항목을 제거하고, 피드와 발견 검색의 마지막 페이지에서도 공통 하단 컨트롤을 렌더하지 않는다. 빈 상태만의 예외가 아니다. 추가 조회의 대기, 500ms 이후 로딩, 실패와 재시도 및 기존 페이지네이션은 유지한다.
+
+Figma의 기존 End 메인 `1184:435`와 인스턴스 6개를 숨기고 상태 보드와 레퍼런스 설명을 수정했다. 기존 연결과 ID는 유지했다. 홈 `1187:139`, 내 서재 `1187:532`, 검색 마지막 페이지 `1187:1262`, 공통 레퍼런스 `1184:442`를 캡처해 문구 제거와 유지되는 로딩 및 오류 상태를 확인했다.
+
+상단 당김은 현재 `ChaekRefreshLayout`의 직접 구현이다. 이번 요청에서는 대체 라이브러리 후보만 조사하며 교체는 적용하지 않는다.
+
+검증: `:app:assembleDebug`, `:app:assembleDebugAndroidTest`, `:shared:compileKotlinIosSimulatorArm64` 빌드가 통과했다. 변경한 iOS UI 테스트 파일의 Swift 구문 검사도 통과했다. Android와 iOS UI 테스트 기대값은 끝 안내가 존재하지 않는 것으로 변경했지만 이번 변경 후 기기에서 실행하지 않았다. 앞선 UI 테스트 통과 기록을 변경 후 실행 결과로 간주하지 않는다.
+
+### 상단 당김 대체 후보 조사
+
+2026-10-16 공식 문서와 각 저장소 소스를 확인했다. 후보 라이브러리를 현재 프로젝트에 추가하거나 실행한 결과는 아니다. 현재 공통 모듈은 Compose Multiplatform 1.10.3과 Material 3 1.10.0-alpha05를 사용한다.
+
+| 후보 | 확인한 지원 | 선택 시 고려할 점 |
+| --- | --- | --- |
+| [Material 3 PullToRefreshBox](https://kotlinlang.org/api/compose-multiplatform/material3/androidx.compose.material3.pulltorefresh/-pull-to-refresh-box.html) | 공통 스크롤 컨테이너, 당김 상태, 기본 인디케이터와 교체 슬롯. 현재 Material 3 의존성을 재사용할 수 있다. | 우선 추천. 상단 새로고침용이며 하단 추가 조회와 작은 당김은 별도 연결한다. |
+| [ComposeViews](https://github.com/ltttttttttttt/ComposeViews) | Android와 iOS. RefreshLayout, PullToRefresh, 상하단 VerticalRefreshableLayout. 비스크롤 콘텐츠와 콘텐츠 이동 설정. | 상하단을 함께 처리할 때 후보. 여러 UI 컴포넌트가 포함된 외부 의존성이고 프로젝트에서의 호환성과 감각은 미검증이다. |
+| [Materii pullrefresh](https://github.com/MateriiApps/pullrefresh) | Android와 iOS 타깃, Material 독립, 인디케이터 슬롯, 하단 반전 옵션. | `main` 마지막 커밋은 2024-12-27이고 Compose 1.6.11 기반이다. 현재 Compose 버전 호환성을 먼저 검증해야 한다. |
+
+상단 교체 시 조회 상태, 인증 경계, 검색 조건과 편집 비활성화는 기존 ViewModel 계약을 유지한다. 라이브러리 채택만으로 빈 화면, 접근성, 500ms 표시 정책과 하단 페이지네이션 동작이 모두 충족된 것으로 간주하지 않는다.

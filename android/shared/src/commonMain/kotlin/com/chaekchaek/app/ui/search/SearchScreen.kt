@@ -394,7 +394,6 @@ private fun DiscoverContent(
         )
       }
     }
-    if (sections.isNotEmpty()) item(key = "list-end") { ListBoundary() }
   }
 }
 

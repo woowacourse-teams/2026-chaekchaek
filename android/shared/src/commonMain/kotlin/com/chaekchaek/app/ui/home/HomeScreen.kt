@@ -90,7 +90,6 @@ import chaekchaek.shared.generated.resources.*
 import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.ui.common.ChaekRefreshLayout
 import com.chaekchaek.app.ui.common.RefreshableEmptyContent
-import com.chaekchaek.app.ui.common.ListBoundary
 import com.chaekchaek.app.ui.theme.ChaekBand
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.collageBookShadow
@@ -266,7 +265,6 @@ private fun HomeContent(
                         is FeedSectionUiModel.OverlappedBooks -> Unit
                     }
                 }
-                if (state.sections.isNotEmpty()) item(key = "list-end") { ListBoundary() }
             }
         }
         val readingBook = state.readingBook

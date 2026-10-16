@@ -219,6 +219,12 @@ fun ListBoundary(
     failed: Boolean = false,
     onRetry: () -> Unit = {},
 ) {
+    val label = when {
+        failed -> "불러오지 못했어요"
+        loading && showLoading -> "더 불러오는 중이에요"
+        hasNextPage || loading -> "다음 내용을 요청하고 있어요"
+        else -> return
+    }
     Row(
         Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 12.dp)
             .testTag("list-boundary").semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
@@ -227,12 +233,7 @@ fun ListBoundary(
     ) {
         if (loading && showLoading) RefreshSpinner()
         Text(
-            when {
-                failed -> "불러오지 못했어요"
-                loading && showLoading -> "더 불러오는 중이에요"
-                hasNextPage -> "다음 내용을 요청하고 있어요"
-                else -> "여기까지 모두 봤어요"
-            },
+            label,
             modifier = Modifier.weight(1f, fill = false),
             color = ChaekInkSecondary,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 19.5.sp),

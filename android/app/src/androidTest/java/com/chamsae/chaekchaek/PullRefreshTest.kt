@@ -80,7 +80,7 @@ class PullRefreshTest {
     }
 
     @Test
-    fun bottomPullKeepsEndVisibleAndDoesNotRefresh() {
+    fun bottomPullHidesEndAndDoesNotRefresh() {
         var requests = 0
         compose.setContent {
             ChaekchaekTheme {
@@ -95,7 +95,8 @@ class PullRefreshTest {
         compose.onNodeWithTag("refresh-body").performTouchInput {
             swipe(Offset(centerX, centerY), Offset(centerX, centerY - 180f), durationMillis = 500)
         }
-        compose.onNodeWithText("여기까지 모두 봤어요").assertIsDisplayed()
+        compose.onNodeWithText("여기까지 모두 봤어요").assertDoesNotExist()
+        compose.onNodeWithTag("list-boundary").assertDoesNotExist()
         compose.runOnIdle { assertEquals(0, requests) }
     }
 }

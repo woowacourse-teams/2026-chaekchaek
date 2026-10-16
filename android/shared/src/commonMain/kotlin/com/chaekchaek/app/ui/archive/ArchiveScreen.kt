@@ -74,7 +74,6 @@ import com.chaekchaek.app.ui.common.ChaekDropdown
 import com.chaekchaek.app.ui.common.ChaekFilterChip
 import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.ui.common.ChaekRefreshLayout
-import com.chaekchaek.app.ui.common.ListBoundary
 import com.chaekchaek.app.ui.common.BrandHeader
 import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
@@ -242,7 +241,6 @@ fun ArchiveScreen(
                         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
                     }
                 }
-                if (visibleItems.isNotEmpty() && !editing) item(key = "list-end") { ListBoundary() }
             }
         }
 
