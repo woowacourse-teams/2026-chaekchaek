@@ -233,6 +233,12 @@ class FeedViewModel(
         action: suspend (FeedReviewActions, accessToken: String?) -> Unit,
     ) {
         if (awaitingInitialAuthentication || mutationJob?.isActive == true) return
+        if (_refreshState.value.isRefreshing) {
+            // 사용자가 확정한 쓰기는 바로 실행하고, 늦은 갱신 응답이 결과를 덮지 못하게 한다.
+            loadRevision += 1
+            initialLoadJob?.cancel()
+            _refreshState.value = RefreshUiState()
+        }
         val authenticationRevision = authenticationRevision
         val accessToken = accessToken
         mutationJob = viewModelScope.launch {

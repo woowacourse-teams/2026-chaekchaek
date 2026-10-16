@@ -13,6 +13,8 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -99,6 +101,110 @@ private fun runFeedViewModelTest(block: suspend TestScope.() -> Unit) = runTest 
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedViewModelTest {
+    @Test
+    fun `갱신 중 성공한 좋아요는 늦은 갱신 성공에 덮이지 않는다`() = runFeedViewModelTest {
+        assertRefreshKeepsAcceptedWrite(reply = false, refreshFails = false)
+    }
+
+    @Test
+    fun `갱신 중 성공한 좋아요는 늦은 갱신 실패에 덮이지 않는다`() = runFeedViewModelTest {
+        assertRefreshKeepsAcceptedWrite(reply = false, refreshFails = true)
+    }
+
+    @Test
+    fun `갱신 중 제출한 답글과 완료 콜백은 늦은 갱신 성공 뒤에도 유지된다`() = runFeedViewModelTest {
+        assertRefreshKeepsAcceptedWrite(reply = true, refreshFails = false)
+    }
+
+    @Test
+    fun `갱신 중 제출한 답글과 완료 콜백은 늦은 갱신 실패 뒤에도 유지된다`() = runFeedViewModelTest {
+        assertRefreshKeepsAcceptedWrite(reply = true, refreshFails = true)
+    }
+
+    @Test
+    fun `갱신을 중단한 좋아요도 로그아웃 뒤의 피드 상태를 바꾸지 않는다`() = runFeedViewModelTest {
+        val pendingRefresh = CompletableDeferred<ReviewFeedPage>()
+        val original = ReviewFeedPage(listOf(review(1)), 1, null)
+        var requests = 0
+        val repository = object : ReviewFeedRepository {
+            override suspend fun reviewFeed(page: Int, viewer: FeedViewer): ReviewFeedPage {
+                requests++
+                return if (requests == 2) withContext(NonCancellable) { pendingRefresh.await() } else original
+            }
+        }
+        val actions = LateCompletingFeedReviewActions()
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, actions, initialAccessToken = "member-token")
+        advanceUntilIdle()
+        viewModel.refresh()
+        runCurrent()
+        viewModel.toggleReviewLike(1, false)
+        runCurrent()
+
+        viewModel.authenticate(null)
+        actions.completeToggle()
+        pendingRefresh.complete(original.copy(reviews = listOf(review(1, likedByMe = true, likeCount = 1))))
+        advanceUntilIdle()
+
+        val content = viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>()
+        content.reviews.single().likedByMe shouldBe false
+        content.reviews.single().likeCount shouldBe 0
+        requests shouldBe 3
+        viewModel.refreshState.value.isRefreshing shouldBe false
+    }
+
+    private suspend fun TestScope.assertRefreshKeepsAcceptedWrite(reply: Boolean, refreshFails: Boolean) {
+        val pendingRefresh = CompletableDeferred<ReviewFeedPage>()
+        val original = ReviewFeedPage(listOf(review(1), review(2)), 2, null)
+        var requests = 0
+        val repository = object : ReviewFeedRepository {
+            override suspend fun reviewFeed(page: Int, viewer: FeedViewer): ReviewFeedPage {
+                requests++
+                return if (requests == 1) original else withContext(NonCancellable) { pendingRefresh.await() }
+            }
+        }
+        val writes = mutableListOf<String>()
+        val actions = object : FeedReviewActions {
+            override suspend fun toggleLike(reviewId: Long, likedByMe: Boolean, accessToken: String?) {
+                writes += "like:$reviewId:$likedByMe"
+            }
+            override suspend fun createReply(reviewId: Long, content: String, accessToken: String?) {
+                writes += "reply:$reviewId:$content"
+            }
+        }
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, actions)
+        advanceUntilIdle()
+        viewModel.refresh()
+        runCurrent()
+        var savedReplies = 0
+        if (reply) viewModel.createReply(1, "작성한 답글") { savedReplies++ }
+        else viewModel.toggleReviewLike(1, false)
+        runCurrent()
+        writes shouldBe listOf(if (reply) "reply:1:작성한 답글" else "like:1:false")
+        val acceptedContent = viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>()
+        acceptedContent.reviews.first().let {
+            it.likedByMe shouldBe !reply
+            it.likeCount shouldBe if (reply) 0 else 1
+            it.replyCount shouldBe if (reply) 1 else 0
+        }
+
+        if (refreshFails) pendingRefresh.completeExceptionally(IllegalStateException("refresh failed"))
+        else pendingRefresh.complete(original)
+        advanceUntilIdle()
+
+        viewModel.uiState.value shouldBe acceptedContent
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.first().let {
+            it.likedByMe shouldBe !reply
+            it.likeCount shouldBe if (reply) 0 else 1
+            it.replyCount shouldBe if (reply) 1 else 0
+        }
+        writes.size shouldBe 1
+        savedReplies shouldBe if (reply) 1 else 0
+        requests shouldBe 2
+        viewModel.refreshState.value.isRefreshing shouldBe false
+        viewModel.refreshState.value.showLoading shouldBe false
+        viewModel.refreshState.value.errorMessage shouldBe null
+    }
+
     @Test
     fun `갱신은 읽은 구간을 재조회하고 실패하면 기존 페이지와 내용을 유지한다`() = runFeedViewModelTest {
         val repository = TestReviewFeedRepository(mapOf(
