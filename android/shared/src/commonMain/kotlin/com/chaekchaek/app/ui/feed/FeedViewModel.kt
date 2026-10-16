@@ -7,6 +7,7 @@ import com.chaekchaek.app.domain.feed.FeedReviewActions
 import com.chaekchaek.app.domain.feed.FeedViewer
 import com.chaekchaek.app.domain.feed.QuoteCard
 import com.chaekchaek.app.domain.feed.ReviewFeedRepository
+import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.presentation.common.TimeLabels
 import com.chaekchaek.app.presentation.common.toAppError
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
@@ -35,6 +36,9 @@ class FeedViewModel(
     private var accessToken: String? = initialAccessToken
     private var awaitingInitialAuthentication = deferInitialLoad
     private var authenticationRevision = 0L
+    private var loadRevision = 0L
+    private val _refreshState = MutableStateFlow(RefreshUiState())
+    val refreshState: StateFlow<RefreshUiState> = _refreshState.asStateFlow()
     private var initialLoadJob: Job? = null
     private var loadMoreJob: Job? = null
     private var mutationJob: Job? = null
@@ -55,6 +59,11 @@ class FeedViewModel(
 
     fun retry() {
         loadFirstPage()
+    }
+
+    fun refresh() {
+        if (awaitingInitialAuthentication || initialLoadJob?.isActive == true || mutationJob?.isActive == true) return
+        loadFirstPage(retainContent = true, refreshing = true)
     }
 
     fun attachActions(
@@ -84,14 +93,18 @@ class FeedViewModel(
     fun loadMore() {
         val current = _uiState.value as? FeedUiState.Content ?: return
         val page = current.nextPage ?: return
-        if (current.loadingMore || initialLoadJob?.isActive == true || loadMoreJob?.isActive == true) return
+        if (current.loadingMore || current.loadMoreFailed || current.requestError == FeedRequestError.LoadMore ||
+            initialLoadJob?.isActive == true || loadMoreJob?.isActive == true) return
         _uiState.value = current.copy(loadingMore = true, requestError = null)
         val authenticationRevision = authenticationRevision
+        val revision = loadRevision
         val viewer = currentViewer()
         loadMoreJob = viewModelScope.launch {
             try {
-                val next = repository.reviewFeed(page, viewer)
-                if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@launch
+                val next = withDelayedApiLoading(onLoadingChanged = { loading ->
+                    if (revision == loadRevision) updateContent { it.copy(showLoadingMore = loading) }
+                }) { repository.reviewFeed(page, viewer) }
+                if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@launch
                 val latest = _uiState.value as? FeedUiState.Content ?: return@launch
                 if (latest.nextPage != page) return@launch
                 savedStateHandle[FeedSavedStateKeys.LoadedPage] = page
@@ -101,15 +114,18 @@ class FeedViewModel(
                     totalCount = next.totalCount,
                     nextPage = next.nextPage,
                     loadingMore = false,
+                    showLoadingMore = false,
                 )
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Throwable) {
-                if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@launch
+                if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@launch
                 updateContent {
                     it.copy(
                         loadingMore = false,
+                        showLoadingMore = false,
                         requestError = FeedRequestError.LoadMore,
+                        loadMoreFailed = true,
                     )
                 }
             }
@@ -117,12 +133,13 @@ class FeedViewModel(
     }
 
     fun clearRequestError() {
-        updateContent { it.copy(requestError = null) }
+        updateContent { if (it.requestError == FeedRequestError.Interaction) it.copy(requestError = null) else it }
     }
 
     fun retryLoadMore() {
         val content = _uiState.value as? FeedUiState.Content ?: return
-        if (content.requestError != FeedRequestError.LoadMore) return
+        if (!content.loadMoreFailed && content.requestError != FeedRequestError.LoadMore) return
+        updateContent { it.copy(requestError = null, loadMoreFailed = false) }
         loadMore()
     }
 
@@ -146,26 +163,30 @@ class FeedViewModel(
         }) { actions, accessToken -> actions.createReply(id, content, accessToken) }
     }
 
-    private fun loadFirstPage(retainContent: Boolean = false) {
+    private fun loadFirstPage(retainContent: Boolean = false, refreshing: Boolean = false) {
         if (awaitingInitialAuthentication) return
+        val revision = ++loadRevision
         initialLoadJob?.cancel()
         loadMoreJob?.cancel()
-        if (retainContent) updateContent { it.copy(loadingMore = false) }
+        _refreshState.value = RefreshUiState(isRefreshing = refreshing)
+        if (retainContent) updateContent { it.copy(loadingMore = false, showLoadingMore = false) }
         val authenticationRevision = authenticationRevision
         val viewer = currentViewer()
         initialLoadJob = viewModelScope.launch {
             val previousState = _uiState.value
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
-                    if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
-                    if (loading && !(retainContent && previousState is FeedUiState.Content)) {
+                    if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
+                    if (refreshing) {
+                        _refreshState.value = _refreshState.value.copy(showLoading = loading)
+                    } else if (loading && !(retainContent && previousState is FeedUiState.Content)) {
                         _uiState.value = FeedUiState.Loading
                     } else if (_uiState.value == FeedUiState.Loading) {
                         _uiState.value = previousState
                     }
                 },
             ) {
-                _uiState.value = try {
+                val result = try {
                     val restoreThroughPage = savedStateHandle.get<Int>(FeedSavedStateKeys.LoadedPage) ?: FIRST_PAGE
                     var page = repository.reviewFeed(FIRST_PAGE, viewer)
                     var loadedPage = FIRST_PAGE
@@ -176,7 +197,7 @@ class FeedViewModel(
                         page = next.copy(reviews = (page.reviews + next.reviews).distinctBy { it.noteId.value })
                         loadedPage = nextPage
                     }
-                    if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
+                    if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
                     savedStateHandle[FeedSavedStateKeys.LoadedPage] = loadedPage
                     if (page.reviews.isEmpty()) {
                         FeedUiState.Empty
@@ -190,12 +211,19 @@ class FeedViewModel(
                 } catch (error: CancellationException) {
                     throw error
                 } catch (error: Throwable) {
-                    if (authenticationRevision != this@FeedViewModel.authenticationRevision) {
+                    if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) {
                         return@withDelayedApiLoading
                     }
-                    if (retainContent && previousState is FeedUiState.Content) previousState
+                    if (refreshing) {
+                        _refreshState.value = _refreshState.value.copy(errorMessage = "새로고침하지 못했어요")
+                        previousState
+                    } else if (retainContent && previousState is FeedUiState.Content) previousState
                     else FeedUiState.Failure(error.toAppError())
                 }
+                if (revision == loadRevision) _uiState.value = result
+            }
+            if (revision == loadRevision) {
+                _refreshState.value = _refreshState.value.copy(isRefreshing = false, showLoading = false)
             }
         }
     }

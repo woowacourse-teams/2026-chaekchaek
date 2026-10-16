@@ -7,6 +7,7 @@ import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchPage
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -23,6 +24,127 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModelTest {
+    @Test
+    fun refreshKeepsDraftSortPagesAndPreviousResultsOnFailure() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            var fail = false
+            val requests = mutableListOf<Triple<String, BookSearchSort, Int>>()
+            val writes = mutableListOf<List<String>>()
+            val saved = SavedStateHandle(mapOf(
+                SearchSavedStateKeys.SubmittedQuery to "제출",
+                SearchSavedStateKeys.InputQuery to "다른 초안",
+                SearchSavedStateKeys.Sort to BookSearchSort.COMMENT.name,
+                SearchSavedStateKeys.LoadedPage to 2,
+            ))
+            val viewModel = SearchViewModel(BookSearchRepository { query, sort, page ->
+                requests += Triple(query, sort, page)
+                if (fail) error("offline")
+                BookSearchPage(2, if (page == 1) 2 else null, listOf(book("책 $page", "2026").copy(isbn13 = "$page")))
+            }, {}, { true }, recentSearchStorage = RecentSearchStorage(write = writes::add), savedStateHandle = saved)
+            advanceUntilIdle()
+            val previous = viewModel.uiState.value
+            fail = true
+            viewModel.refresh()
+            advanceUntilIdle()
+            assertEquals(previous, viewModel.uiState.value)
+            assertEquals("다른 초안", viewModel.query.value)
+            assertEquals(BookSearchSort.COMMENT, viewModel.sort.value)
+            assertEquals(2, saved.get<Int>(SearchSavedStateKeys.LoadedPage))
+            assertEquals("새로고침하지 못했어요", viewModel.refreshState.value.errorMessage)
+            fail = false
+            viewModel.refresh()
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2, 1, 1, 2), requests.map { it.third })
+            assertTrue(requests.all { it.first == "제출" && it.second == BookSearchSort.COMMENT })
+            assertTrue(writes.isEmpty())
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test
+    fun paginationFailureWaitsForExplicitRetryAndKeepsCursor() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            var fail = true
+            val requests = mutableListOf<Int>()
+            val viewModel = SearchViewModel(BookSearchRepository { _, _, page ->
+                requests += page
+                if (page == 2 && fail) error("offline")
+                BookSearchPage(2, if (page == 1) 2 else null, listOf(book("책 $page", "2026").copy(isbn13 = "$page")))
+            }, {}, { true })
+            viewModel.search("책")
+            advanceUntilIdle()
+            viewModel.loadMore()
+            advanceUntilIdle()
+            viewModel.loadMore()
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2), requests)
+            assertTrue((viewModel.uiState.value as SearchUiState.Success).loadMoreFailed)
+            fail = false
+            viewModel.retryLoadMore()
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2, 2), requests)
+            assertEquals(2, (viewModel.uiState.value as SearchUiState.Success).results.size)
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test
+    fun clearingOrChangingSortDuringRefreshDoesNotRestoreTheOldRequest() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val pending = CompletableDeferred<BookSearchPage>()
+            var wait = false
+            val viewModel = SearchViewModel(BookSearchRepository { _, sort, _ ->
+                if (wait && sort == BookSearchSort.LATEST) pending.await()
+                else BookSearchPage(1, null, listOf(book(sort.name, "2026")))
+            }, {}, { true })
+            viewModel.search("책")
+            advanceUntilIdle()
+            wait = true
+            viewModel.refresh()
+            runCurrent()
+            viewModel.selectSort(BookSearchSort.COMMENT)
+            advanceUntilIdle()
+            pending.complete(BookSearchPage(0, null, emptyList()))
+            advanceUntilIdle()
+            assertEquals(BookSearchSort.COMMENT.name, (viewModel.uiState.value as SearchUiState.Success).results.single().title)
+            assertEquals(false, viewModel.refreshState.value.isRefreshing)
+            viewModel.clear()
+            assertEquals(SearchUiState.Idle, viewModel.uiState.value)
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test
+    fun paginationSpinnerStartsAfter500msAndStopsImmediately() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val pending = CompletableDeferred<BookSearchPage>()
+            var requests = 0
+            val viewModel = SearchViewModel(BookSearchRepository { _, _, page ->
+                requests++
+                if (page == 2) pending.await()
+                else BookSearchPage(2, 2, listOf(book("첫 책", "2026").copy(isbn13 = "1")))
+            }, {}, { true })
+            viewModel.search("책")
+            advanceUntilIdle()
+            viewModel.loadMore()
+            viewModel.loadMore()
+            runCurrent()
+            advanceTimeBy(499)
+            runCurrent()
+            assertEquals(false, (viewModel.uiState.value as SearchUiState.Success).showLoadingMore)
+            advanceTimeBy(1)
+            runCurrent()
+            assertTrue((viewModel.uiState.value as SearchUiState.Success).showLoadingMore)
+            pending.complete(BookSearchPage(2, null, listOf(book("둘째 책", "2026").copy(isbn13 = "2"))))
+            runCurrent()
+            val content = viewModel.uiState.value as SearchUiState.Success
+            assertEquals(false, content.loadingMore)
+            assertEquals(false, content.showLoadingMore)
+            assertEquals(2, requests)
+        } finally { Dispatchers.resetMain() }
+    }
+
     @Test
     fun restorationReloadsThroughThePreviouslyLoadedPageAndDeduplicatesResults() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))

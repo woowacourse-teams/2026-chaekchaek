@@ -77,6 +77,59 @@ final class LoginRequiredSheetUITests: XCTestCase {
     }
 
     @MainActor
+    func testHomePullRefreshAndListEndKeepNavigationVisible() throws {
+        let app = XCUIApplication()
+        app.launchArguments.append("-uiTestingGuest")
+        app.launch()
+        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 15))
+        let end = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "여기까지 모두 봤어요")).firstMatch
+        for _ in 0..<8 {
+            if end.exists && end.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(end.waitForExistence(timeout: 10))
+        attachScreenshot(named: "홈 목록 끝")
+        app.buttons["홈"].tap()
+        app.swipeDown()
+        waitForRefreshIndicatorToClose(in: app)
+        XCTAssertTrue(app.buttons["내 프로필"].isHittable)
+        XCTAssertTrue(app.buttons["발견"].exists)
+        XCTAssertTrue(app.buttons["내 서재"].exists)
+        attachScreenshot(named: "홈 당김 후 기존 화면")
+        // hitRegion은 시스템 홈 인디케이터에서도 실패해 별도 검증 기록으로 남긴다.
+        try app.performAccessibilityAudit(for: [.textClipped])
+    }
+
+    @MainActor
+    func testEmptySearchPullKeepsSubmittedInput() throws {
+        let app = XCUIApplication()
+        app.launchArguments.append("-uiTestingGuest")
+        app.launch()
+        XCTAssertTrue(app.buttons["발견"].waitForExistence(timeout: 15))
+        app.buttons["발견"].tap()
+        let field = app.textViews["search-query-field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("zzxqrefresh529nomatch\n")
+        let empty = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "검색 결과가 없어요")).firstMatch
+        XCTAssertTrue(empty.waitForExistence(timeout: 15))
+        app.swipeDown()
+        waitForRefreshIndicatorToClose(in: app)
+        XCTAssertTrue(empty.exists)
+        XCTAssertEqual(field.value as? String, "zzxqrefresh529nomatch")
+        attachScreenshot(named: "빈 검색 결과 당김 후 검색어 유지")
+        // hitRegion은 시스템 홈 인디케이터에서도 실패해 별도 검증 기록으로 남긴다.
+        try app.performAccessibilityAudit(for: [.textClipped])
+    }
+
+    @MainActor
+    private func waitForRefreshIndicatorToClose(in app: XCUIApplication) {
+        let indicator = app.descendants(matching: .any)["pull-refresh-indicator"]
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: indicator)
+        waitForExpectations(timeout: 10)
+    }
+
+    @MainActor
     private func launchMyPage() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments.append("-uiTestingMyPage")

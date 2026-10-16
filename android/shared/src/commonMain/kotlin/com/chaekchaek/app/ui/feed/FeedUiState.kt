@@ -13,6 +13,8 @@ sealed interface FeedUiState {
         val totalCount: Int,
         val nextPage: Int?,
         val loadingMore: Boolean = false,
+        val showLoadingMore: Boolean = false,
+        val loadMoreFailed: Boolean = false,
         val requestError: FeedRequestError? = null,
     ) : FeedUiState
 

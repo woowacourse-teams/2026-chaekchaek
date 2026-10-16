@@ -81,6 +81,59 @@ private fun runViewModelTest(block: suspend TestScope.() -> Unit) = runTest {
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
     @Test
+    fun `갱신은 내용을 유지하고 500ms 뒤에만 회전 상태를 표시한다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        val previous = viewModel.uiState.value
+        repository.responseDelayMillis = 700
+        viewModel.refresh()
+        viewModel.refresh()
+        runCurrent()
+        viewModel.uiState.value shouldBe previous
+        viewModel.refreshState.value.isRefreshing shouldBe true
+        advanceTimeBy(499)
+        runCurrent()
+        viewModel.refreshState.value.showLoading shouldBe false
+        advanceTimeBy(1)
+        runCurrent()
+        viewModel.refreshState.value.showLoading shouldBe true
+        viewModel.uiState.value shouldBe previous
+        advanceUntilIdle()
+        viewModel.refreshState.value.isRefreshing shouldBe false
+        viewModel.refreshState.value.showLoading shouldBe false
+        repository.callCount shouldBe 2
+    }
+
+    @Test
+    fun `갱신 실패는 기존 내용과 재시도를 유지한다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        val previous = viewModel.uiState.value
+        repository.failure = IllegalStateException("offline")
+        viewModel.refresh()
+        advanceUntilIdle()
+        viewModel.uiState.value shouldBe previous
+        viewModel.refreshState.value.errorMessage shouldBe "새로고침하지 못했어요"
+        repository.failure = null
+        viewModel.refresh()
+        advanceUntilIdle()
+        viewModel.refreshState.value.errorMessage shouldBe null
+    }
+
+    @Test
+    fun `빈 홈에서도 갱신해 새 내용을 받는다`() = runViewModelTest {
+        val repository = TestFeedRepository(feed = HomeFeed(emptyList()))
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        repository.feed = contentFeed()
+        viewModel.refresh()
+        advanceUntilIdle()
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
+    }
+
+    @Test
     fun `500ms가 지난 요청만 로딩을 표시하고 응답 즉시 종료한다`() = runViewModelTest {
         val viewModel = HomeViewModel(
             TestFeedRepository(responseDelayMillis = 501),

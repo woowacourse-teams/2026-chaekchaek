@@ -100,6 +100,59 @@ private fun runFeedViewModelTest(block: suspend TestScope.() -> Unit) = runTest 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedViewModelTest {
     @Test
+    fun `갱신은 읽은 구간을 재조회하고 실패하면 기존 페이지와 내용을 유지한다`() = runFeedViewModelTest {
+        val repository = TestReviewFeedRepository(mapOf(
+            1 to ReviewFeedPage(listOf(review(1)), 2, 2),
+            2 to ReviewFeedPage(listOf(review(2)), 2, null),
+        ))
+        val saved = SavedStateHandle()
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, savedStateHandle = saved)
+        advanceUntilIdle()
+        viewModel.loadMore()
+        advanceUntilIdle()
+        val previous = viewModel.uiState.value
+        repository.failurePage = 2
+        viewModel.refresh()
+        viewModel.refresh()
+        advanceUntilIdle()
+        viewModel.uiState.value shouldBe previous
+        viewModel.refreshState.value.errorMessage shouldBe "새로고침하지 못했어요"
+        saved.get<Int>(FeedSavedStateKeys.LoadedPage) shouldBe 2
+        repository.failurePage = null
+        viewModel.refresh()
+        advanceUntilIdle()
+        repository.requestedPages shouldBe listOf(1, 2, 1, 2, 1, 2)
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.size shouldBe 2
+    }
+
+    @Test
+    fun `추가 조회 실패는 자동 반복하지 않고 명시적으로 재시도한다`() = runFeedViewModelTest {
+        val repository = TestReviewFeedRepository(mapOf(
+            1 to ReviewFeedPage(listOf(review(1)), 2, 2),
+            2 to ReviewFeedPage(listOf(review(2)), 2, null),
+        ))
+        val viewModel = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions)
+        advanceUntilIdle()
+        repository.failurePage = 2
+        viewModel.loadMore()
+        advanceUntilIdle()
+        viewModel.loadMore()
+        advanceUntilIdle()
+        repository.requestedPages shouldBe listOf(1, 2)
+        viewModel.createReply(null, "요청")
+        viewModel.clearRequestError()
+        viewModel.loadMore()
+        advanceUntilIdle()
+        repository.requestedPages shouldBe listOf(1, 2)
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().loadMoreFailed shouldBe true
+        repository.failurePage = null
+        viewModel.retryLoadMore()
+        advanceUntilIdle()
+        repository.requestedPages shouldBe listOf(1, 2, 2)
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().nextPage shouldBe null
+    }
+
+    @Test
     fun `토큰 갱신 중에는 목록을 유지하고 갱신 실패 후에도 다음 페이지를 읽을 수 있다`() = runFeedViewModelTest {
         val refresh = CompletableDeferred<ReviewFeedPage>()
         val pagination = CompletableDeferred<ReviewFeedPage>()
