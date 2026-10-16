@@ -8,12 +8,14 @@ import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.ui.App
 import com.chaekchaek.app.ui.common.LocalGoogleSignInButtonFactory
 import com.chaekchaek.app.ui.search.RecentSearchStorage
+import com.chaekchaek.app.ui.onboarding.OnboardingStorage
 import platform.UIKit.UIControl
 import platform.UIKit.UIViewController
 
 fun MainViewController(
   authPlatform: AuthPlatformCallbacks,
   recentSearchStorage: RecentSearchStorage,
+  onboardingStorage: OnboardingStorage,
   createGoogleSignInButton: () -> UIControl,
   analyticsEnvironment: String = "production",
   logAnalyticsEvent: (AnalyticsEvent) -> Unit = {},
@@ -25,6 +27,7 @@ fun MainViewController(
       App(
         authPlatform = authPlatform,
         recentSearchStorage = recentSearchStorage,
+        onboardingStorage = onboardingStorage,
         analytics = analytics,
         uiTestingMyPage = uiTestingMyPage,
       )

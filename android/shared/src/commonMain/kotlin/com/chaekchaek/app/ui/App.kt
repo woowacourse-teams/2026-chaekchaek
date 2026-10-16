@@ -10,11 +10,13 @@ import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.analytics.LocalAnalyticsTracker
 import com.chaekchaek.app.ui.theme.ChaekchaekTheme
 import com.chaekchaek.app.ui.search.RecentSearchStorage
+import com.chaekchaek.app.ui.onboarding.OnboardingStorage
 
 @Composable
 fun App(
     authPlatform: AuthPlatformCallbacks,
     recentSearchStorage: RecentSearchStorage = RecentSearchStorage(),
+    onboardingStorage: OnboardingStorage = OnboardingStorage(),
     analytics: AnalyticsTracker = AnalyticsTracker.None,
     uiTestingMyPage: Boolean = false,
     homeHeaderAction: @Composable () -> Unit = {},
@@ -29,6 +31,7 @@ fun App(
                 AppNavigation(
                     authPlatform = authPlatform,
                     recentSearchStorage = recentSearchStorage,
+                    onboardingStorage = onboardingStorage,
                     analytics = analytics,
                     uiTestingMyPage = uiTestingMyPage,
                     homeHeaderAction = homeHeaderAction,

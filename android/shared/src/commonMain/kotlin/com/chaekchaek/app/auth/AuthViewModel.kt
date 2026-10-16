@@ -3,6 +3,8 @@ package com.chaekchaek.app.auth
 import androidx.lifecycle.ViewModel
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthTokens
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -76,6 +78,8 @@ class AuthViewModel private constructor(
 
   private val _uiState = MutableStateFlow(AuthUiState())
   val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+  private var authenticationGeneration = 0
+  private var authenticationJob: Job? = null
   private var pendingAction: (suspend (accessToken: String) -> Unit)? = null
 
   fun requireAuthentication(action: suspend (accessToken: String) -> Unit) {
@@ -104,31 +108,40 @@ class AuthViewModel private constructor(
 
     pendingAction = action
     if (_uiState.value.signingIn) return
+    val generation = ++authenticationGeneration
     _uiState.value = AuthUiState(signingIn = true)
     requestCredential { credential, platformError ->
+      if (generation != authenticationGeneration) return@requestCredential
       if (credential == null) {
         _uiState.value = AuthUiState(errorMessage = platformError ?: LOGIN_ERROR)
         return@requestCredential
       }
 
-      scope.launch {
+      authenticationJob = scope.launch {
         try {
           val tokens = login(credential)
+          if (generation != authenticationGeneration) return@launch
           session.signIn(tokens)
           callbacks.clearGuest()
           val actionToResume = pendingAction
           this@AuthViewModel.pendingAction = null
           actionToResume?.invoke(tokens.accessToken)
           _uiState.value = AuthUiState()
+        } catch (error: CancellationException) {
+          throw error
         } catch (_: Exception) {
-          _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
+          if (generation == authenticationGeneration) _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
         }
       }
     }
   }
 
   fun cancelPendingAuthentication() {
+    authenticationGeneration += 1
+    authenticationJob?.cancel()
+    authenticationJob = null
     pendingAction = null
+    _uiState.value = AuthUiState()
   }
 
   fun clearError() {
@@ -138,7 +151,7 @@ class AuthViewModel private constructor(
   suspend fun refreshAccessTokenForRetry(): String? = session.refreshAccessTokenForRetry()
 
   fun signOut(onLocalSessionCleared: () -> Unit = {}) {
-    pendingAction = null
+    cancelPendingAuthentication()
     scope.launch { session.signOut(onLocalSessionCleared) }
   }
 
