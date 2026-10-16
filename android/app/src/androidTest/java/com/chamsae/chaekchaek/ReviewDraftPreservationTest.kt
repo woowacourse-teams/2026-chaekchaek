@@ -1,6 +1,8 @@
 package com.chamsae.chaekchaek
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -68,7 +70,9 @@ class ReviewDraftPreservationTest {
         compose.onNodeWithContentDescription("감상 (필수)").assertTextEquals("사라지면 안 되는 감상")
         compose.onNodeWithContentDescription("인상 깊은 문구").assertTextEquals("기억할 문장")
         compose.onNodeWithContentDescription("목차 또는 챕터").assertTextEquals("첫 번째 장")
-        compose.onNodeWithContentDescription("쪽수").assertTextEquals("80")
+        compose.onNodeWithContentDescription("쪽수").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("80")),
+        )
         compose.runOnIdle {
             assertEquals(listOf(ReviewCreateRequest(
                 content = "사라지면 안 되는 감상", quote = "기억할 문장", chapter = "첫 번째 장",
@@ -76,6 +80,12 @@ class ReviewDraftPreservationTest {
             )), requests)
         }
         compose.onNodeWithText("스포일러").assertIsOn()
+        compose.onNode(hasText("감상 남기기") and hasClickAction()).assertIsEnabled()
+        // 하단 오류 안내가 버튼을 가리지 않는 시점에 실제 터치로 재시도한다.
+        compose.waitUntil(timeoutMillis = 10_000) {
+            compose.onAllNodesWithText("요청을 처리하지 못했어요. 다시 시도해 주세요.")
+                .fetchSemanticsNodes().isEmpty()
+        }
         compose.onNode(hasText("감상 남기기") and hasClickAction()).performScrollTo().performClick()
         compose.runOnIdle {
             assertEquals(2, requests.size)
@@ -88,6 +98,8 @@ class ReviewDraftPreservationTest {
         }
         compose.onNodeWithContentDescription("감상 (필수)").assertDoesNotExist()
         compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
-        compose.onNodeWithContentDescription("감상 (필수)").assertTextEquals("")
+        compose.onNodeWithContentDescription("감상 (필수)").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")),
+        )
     }
 }
