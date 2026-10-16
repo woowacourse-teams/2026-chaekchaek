@@ -59,6 +59,8 @@ class BookDetailViewModel(
     private var requestGeneration = 0
     private var detailReadyLogged = false
     private var pendingAnalyticsAction: AnalyticsAction? = null
+    private var externalLibrarySaveRevision = 0
+    private var externallySavedRecord: LibraryRecord? = null
 
     fun attachAuthPlatform(authPlatform: AuthPlatformCallbacks) {
         this.authPlatform = authPlatform
@@ -119,6 +121,9 @@ class BookDetailViewModel(
             isLoading = false,
             isLoadingMore = false,
             isSubmitting = false,
+            isSavingLibrary = false,
+            libraryMessage = null,
+            reviewSubmissionState = ReviewSubmissionState.Idle,
         )
         reload()
         return pending
@@ -241,24 +246,49 @@ class BookDetailViewModel(
         )
     }
 
-    fun toggleLibrary(savedBookId: Long?, onSuccess: () -> Unit = {}) = mutate(
-        actionName = if (savedBookId == null) "library_add" else "library_remove",
-        onSuccess = { record: LibraryRecord? ->
-            updateMyRecord(record)
-            onSuccess()
-        },
-        reloadAfterSuccess = false,
-    ) {
-        val state = _uiState.value
-        if (savedBookId == null) {
+    fun addToLibrary(onSuccess: (LibraryRecord) -> Unit = {}) {
+        if (mutationJob?.isActive == true || _uiState.value.detail?.myRecord != null) return
+        _uiState.value = _uiState.value.copy(isSavingLibrary = true)
+        mutate(
+            actionName = "library_add",
+            onFinished = { _uiState.value = _uiState.value.copy(isSavingLibrary = false) },
+            onSuccess = { record: LibraryRecord ->
+                updateMyRecord(record)
+                _uiState.value = _uiState.value.copy(libraryMessage = "내 서재에 담았어요")
+                onSuccess(record)
+            },
+            reloadAfterSuccess = false,
+        ) {
+            val state = _uiState.value
             state.detail?.myRecord?.let { return@mutate it }
             requireNotNull(state.detail)
             val book = requireNotNull(state.displayBook)
             repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken())
-        } else {
-            libraryRepository.bulkDelete(listOf(savedBookId), requireToken())
-            null
         }
+    }
+
+    fun acceptSavedLibraryRecord(isbn13: String, record: LibraryRecord) {
+        if (accessToken == null || _uiState.value.displayBook?.isbn13 != isbn13) return
+        if (_uiState.value.detail?.myRecord != null) return
+        externalLibrarySaveRevision += 1
+        externallySavedRecord = record
+        updateMyRecord(record)
+    }
+
+    fun removeFromLibrary(savedBookId: Long, onSuccess: () -> Unit = {}) = mutate(
+        actionName = "library_remove",
+        onSuccess = { _: Unit ->
+            updateMyRecord(null)
+            _uiState.value = _uiState.value.copy(libraryMessage = "서재에서 삭제했어요")
+            onSuccess()
+        },
+        reloadAfterSuccess = false,
+    ) {
+        libraryRepository.bulkDelete(listOf(savedBookId), requireToken())
+    }
+
+    fun clearLibraryMessage() {
+        _uiState.value = _uiState.value.copy(libraryMessage = null)
     }
 
     fun updateStatus(
@@ -307,6 +337,11 @@ class BookDetailViewModel(
     }
 
     fun createReview(request: ReviewCreateRequest) {
+        if (mutationJob?.isActive == true) return
+        _uiState.value = _uiState.value.copy(
+            reviewSubmissionState = ReviewSubmissionState.Submitting,
+            requestError = null,
+        )
         val state = _uiState.value
         val target = reviewCreateTarget(state.displayBook)
         val analyticsContext = mapOf(
@@ -332,6 +367,13 @@ class BookDetailViewModel(
             },
             awaitLoadBeforeAction = false,
             closesComposer = true,
+            preservesComposerOnFailure = true,
+            onSuccess = { _: BookReview ->
+                _uiState.value = _uiState.value.copy(reviewSubmissionState = ReviewSubmissionState.Succeeded)
+            },
+            onFailure = {
+                _uiState.value = _uiState.value.copy(reviewSubmissionState = ReviewSubmissionState.Failed)
+            },
         ) {
             val resolvedTarget = target ?: throw ReviewCreateTargetUnavailableException()
             publicWrite(
@@ -350,6 +392,8 @@ class BookDetailViewModel(
     }
 
     fun openReviewComposer(onReady: () -> Unit) {
+        if (_uiState.value.reviewSubmissionState == ReviewSubmissionState.Submitting) return
+        _uiState.value = _uiState.value.copy(reviewSubmissionState = ReviewSubmissionState.Idle)
         authPlatform.readGuest()?.let {
             _uiState.value = _uiState.value.copy(guestNickname = it.nickname)
         }
@@ -490,6 +534,7 @@ class BookDetailViewModel(
         val reviewGeneration = reviewPageGeneration
         val generation = requestGeneration
         val credential = readCredential()
+        val librarySaveRevision = externalLibrarySaveRevision
         val reviewScope = _uiState.value.reviewScope
         val reviewSort = _uiState.value.reviewSort
         val loadId = analytics.newId("load")
@@ -520,7 +565,9 @@ class BookDetailViewModel(
             }.onSuccess { (detail, reviews) ->
                 if (generation != requestGeneration || reviewGeneration != reviewPageGeneration) return@onSuccess
                 _uiState.value = _uiState.value.copy(
-                    detail = detail,
+                    detail = if (librarySaveRevision != externalLibrarySaveRevision) {
+                        detail?.copy(myRecord = _uiState.value.detail?.myRecord ?: externallySavedRecord)
+                    } else detail,
                     reviews = reviews?.items.orEmpty(),
                     reviewCount = reviews?.totalCount ?: 0,
                     nextReviewPage = reviews?.nextPage,
@@ -653,9 +700,12 @@ class BookDetailViewModel(
         failureActionStrings: (Throwable) -> Map<String, String> = { emptyMap() },
         failureActionLongs: (Throwable) -> Map<String, Long> = { emptyMap() },
         onSuccess: (T) -> Unit = {},
+        onFailure: (Throwable) -> Unit = {},
         reloadAfterSuccess: Boolean = true,
         awaitLoadBeforeAction: Boolean = true,
         closesComposer: Boolean = false,
+        onFinished: () -> Unit = {},
+        preservesComposerOnFailure: Boolean = false,
         action: suspend () -> T,
     ) {
         if (mutationJob?.isActive == true) return
@@ -704,9 +754,11 @@ class BookDetailViewModel(
                         longs = if (error is CancellationException) emptyMap() else failureActionLongs(error),
                     )
                 }
-                if (closesComposer) analytics.completeComposer()
+                if (closesComposer && !preservesComposerOnFailure) analytics.completeComposer()
+                if (generation == requestGeneration && error !is CancellationException) onFailure(error)
                 if (generation == requestGeneration || error is CancellationException) handleFailure(error)
             }
+            if (generation == requestGeneration) onFinished()
         }
     }
 
@@ -773,6 +825,7 @@ class BookDetailViewModel(
 
     private fun invalidateRequests() {
         requestGeneration += 1
+        externallySavedRecord = null
         resetReviewPagination()
         loadJob?.cancel()
         loadMoreJob?.cancel()

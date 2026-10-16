@@ -27,6 +27,7 @@ class HomeViewModel(
 ) : ViewModel() {
     private var accessToken: String? = null
     private var hasObservedAuthentication = false
+    private var reloadOnNextHomeEntry = false
     private var loadJob: Job? = null
     private val _uiState = MutableStateFlow<HomeUiState>(
         HomeUiState.Content(emptyList()),
@@ -44,6 +45,16 @@ class HomeViewModel(
     fun retry(accessToken: String?) {
         this.accessToken = accessToken
         load()
+    }
+
+    fun onHomeEntered() {
+        if (!reloadOnNextHomeEntry) return
+        reloadOnNextHomeEntry = false
+        load()
+    }
+
+    fun onHomeHidden() {
+        reloadOnNextHomeEntry = true
     }
 
     fun authenticate(accessToken: String?) {

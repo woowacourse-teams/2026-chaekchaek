@@ -283,4 +283,67 @@ class HomeViewModelTest {
 
         repository.accessTokens shouldBe listOf(null)
     }
+
+    @Test
+    fun `최초 홈 진입과 게스트 인증은 완료된 초기 피드를 중복 호출하지 않는다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+
+        viewModel.authenticate(null)
+        viewModel.onHomeEntered()
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null)
+    }
+
+    @Test
+    fun `같은 토큰으로 홈에 재진입하면 서재에서 삭제한 읽는 책을 제거한다`() = runViewModelTest {
+        val repository = TestFeedRepository(
+            feed = HomeFeed(
+                sections = contentFeed().visibleSections(),
+                readingBook = ReadingBook(
+                    bookId = BookId("42"),
+                    isbn13 = "9780000000042",
+                    title = "역병",
+                    coverId = "cover-42",
+                    currentPage = 132,
+                    totalPages = 320,
+                ),
+            ),
+        )
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        viewModel.authenticate("access-token")
+        viewModel.onHomeEntered()
+        advanceUntilIdle()
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>().readingBook?.title shouldBe "역병"
+
+        repository.feed = contentFeed()
+        val requestsBeforeReentry = repository.callCount
+        viewModel.onHomeHidden()
+        viewModel.onHomeEntered()
+        advanceUntilIdle()
+
+        repository.callCount shouldBe requestsBeforeReentry + 1
+        repository.accessToken shouldBe "access-token"
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>().readingBook shouldBe null
+    }
+
+    @Test
+    fun `비홈 탭으로 시작한 뒤 첫 홈 진입도 최신 피드를 불러온다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        viewModel.authenticate("access-token")
+        viewModel.onHomeHidden()
+        advanceUntilIdle()
+        val requestsBeforeEntry = repository.callCount
+        repository.feed = HomeFeed(emptyList())
+
+        viewModel.onHomeEntered()
+        advanceUntilIdle()
+
+        repository.callCount shouldBe requestsBeforeEntry + 1
+        repository.accessToken shouldBe "access-token"
+        viewModel.uiState.value shouldBe HomeUiState.Empty
+    }
 }

@@ -1,5 +1,9 @@
 package com.chaekchaek.app.ui.home
 
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import com.chaekchaek.app.ui.common.LibrarySaveButton
+import com.chaekchaek.app.ui.archive.LibrarySaveUiState
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -19,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -40,6 +45,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -138,8 +144,17 @@ fun HomeScreen(
     homeHeaderAction: @Composable () -> Unit = {},
     onBookClick: (BookDetailTarget) -> Unit = {},
     onRetry: () -> Unit = homeViewModel::retry,
+    savedIsbns: Set<String> = emptySet(),
+    librarySaveState: LibrarySaveUiState = LibrarySaveUiState(),
+    onSaveBook: (BookDetailTarget) -> Unit = {},
 ) {
     val uiState by homeViewModel.uiState.collectAsState()
+    val contentStateHolder = rememberSaveableStateHolder()
+
+    DisposableEffect(homeViewModel) {
+        homeViewModel.onHomeEntered()
+        onDispose { homeViewModel.onHomeHidden() }
+    }
 
     when (val state = uiState) {
         HomeUiState.Loading -> HomeStaticStateContent(
@@ -160,17 +175,22 @@ fun HomeScreen(
             modifier = modifier,
             content = { HomeLoadErrorPanel(state.error, onRetry, it) },
         )
-        is HomeUiState.Content -> HomeContent(
-            state,
-            myDisplayName,
-            onSearchBook,
-            onOpenFeed,
-            onProfileClick,
-            homeHeaderAction,
-            onBookClick,
-            scrollTopRequest,
-            modifier,
-        )
+        is HomeUiState.Content -> contentStateHolder.SaveableStateProvider("home_content") {
+            HomeContent(
+                state,
+                myDisplayName,
+                onSearchBook,
+                onOpenFeed,
+                onProfileClick,
+                homeHeaderAction,
+                onBookClick,
+                scrollTopRequest,
+                modifier,
+                savedIsbns,
+                librarySaveState,
+                onSaveBook,
+            )
+        }
     }
 }
 
@@ -224,10 +244,17 @@ private fun HomeContent(
     onBookClick: (BookDetailTarget) -> Unit,
     scrollTopRequest: Int,
     modifier: Modifier,
+    savedIsbns: Set<String>,
+    librarySaveState: LibrarySaveUiState,
+    onSaveBook: (BookDetailTarget) -> Unit,
 ) {
     val listState = rememberLazyListState()
+    var handledScrollTopRequest by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(scrollTopRequest) {
-        if (scrollTopRequest > 0) listState.animateScrollToItem(0)
+        if (scrollTopRequest > handledScrollTopRequest) {
+            handledScrollTopRequest = scrollTopRequest
+            listState.animateScrollToItem(0)
+        }
     }
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(
@@ -242,6 +269,9 @@ private fun HomeContent(
                     is FeedSectionUiModel.RecentQuotes -> RecentReflectionsSection(
                         title = section.title,
                         quotes = section.cards,
+                        savedIsbns = savedIsbns,
+                        librarySaveState = librarySaveState,
+                        onSaveBook = onSaveBook,
                         onOpenFeed = onOpenFeed,
                         onBookClick = onBookClick,
                     )
@@ -832,6 +862,9 @@ private fun RecentReflectionsSection(
     overlapped: List<OverlappedCardUiModel> = emptyList(),
     onOpenFeed: (() -> Unit)? = null,
     onBookClick: (BookDetailTarget) -> Unit = {},
+    savedIsbns: Set<String> = emptySet(),
+    librarySaveState: LibrarySaveUiState = LibrarySaveUiState(),
+    onSaveBook: (BookDetailTarget) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -852,13 +885,22 @@ private fun RecentReflectionsSection(
             val cardWidth = recentReflectionCardWidth(maxWidth)
             LazyRow(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(211.dp),
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 itemsIndexed(quotes, key = { _, card -> card.noteId.value }) { index, card ->
                     ReflectionCard(
                         title = card.bookTitle,
+                        saveButton = {
+                            LibrarySaveButton(
+                                bookTitle = card.bookTitle,
+                                saved = card.isbn13 in savedIsbns,
+                                saving = librarySaveState.savingIsbn == card.isbn13,
+                                showLoading = librarySaveState.showLoading,
+                                enabled = librarySaveState.savingIsbn == null,
+                                onSave = { onSaveBook(card.toBookDetailTarget()) },
+                            )
+                        },
                         coverId = card.coverId,
                         authorName = card.authorName,
                         timeLabel = card.timeLabel,
@@ -913,20 +955,21 @@ private fun ReflectionCard(
     width: Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    saveButton: (@Composable () -> Unit)? = null,
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.size(width = width, height = 205.dp),
+        modifier = modifier.width(width).heightIn(min = if (saveButton != null) 257.dp else 205.dp),
         shape = RoundedCornerShape(22.dp),
         color = Color(0xFFF3F3F5),
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(start = 18.dp, top = 18.dp, end = 18.dp, bottom = 8.dp),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().height(123.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = if (saveButton != null) 175.dp else 123.dp),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 ReflectionCover(
@@ -942,6 +985,10 @@ private fun ReflectionCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    saveButton?.let { button ->
+                        Spacer(Modifier.height(4.dp))
+                        button()
+                    }
                     Spacer(Modifier.height(4.dp))
                     AuthorLine(
                         authorName = authorName,
