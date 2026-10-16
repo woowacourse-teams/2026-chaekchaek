@@ -10,8 +10,8 @@
 
 | 구분 | `versionName` | `versionCode` | Git 태그 | 상태 |
 | --- | --- | --- | --- | --- |
-| 스토어 최신 사용 버전 | `1.2.2` | `8` | 미확인 | 사용자 확인. 현재 트랙과 공개 상태는 이번 작업에서 조회하지 않음 |
-| 현재 소스 | `1.3.0` | `9` | 없음 | Android AAB 검증 완료와 업로드 보류. iOS App Store Connect 업로드 완료, TestFlight 처리 상태 미확인 |
+| 직전 스토어 사용 버전(사용자 확인) | `1.2.2` | `8` | 미확인 | 사용자 확인값. 업로드 직전 Play API의 번들 최대 코드는 `7`로 조회됨 |
+| 현재 소스와 Android 내부 테스트 | `1.3.0` | `9` | 없음 | Android AAB 업로드와 내부 테스트 트랙 `completed` 확인. iOS App Store Connect 업로드 완료, TestFlight 처리 상태 미확인 |
 
 이번 작업의 기준은 `origin/an-develop`의 `6b3d02276516617d755445cf7579fb586f39e9c0`이다.
 Android와 iOS의 마지막 스토어 사용 버전 `1.2.2 (8)`은 사용자가 확인했다.
@@ -65,9 +65,11 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 
 ### 1.3.0 (9)
 
-- 상태: Android 서명 AAB 검증 완료와 업로드 보류. iOS App Store Connect 업로드 완료, TestFlight 처리 상태 미확인
-- 업로드 확인: 2026-10-16 14:01 KST, Xcode Organizer의 `Uploaded to Apple`과 `1.3.0 (9)` 확인
-- Android 업로드: 초기 Google ADC 인증은 Play API scope 부족으로 403. 이후 전용 서비스 계정과 Play 앱 권한을 설정해 CLI 앱·트랙 조회 성공. 사용자 지시로 AAB 업로드는 보류
+- 상태: Android AAB 업로드와 내부 테스트 트랙 `completed` 확인. iOS App Store Connect 업로드 완료, TestFlight 처리 상태 미확인
+- iOS 업로드 확인: 2026-10-16 14:01 KST, Xcode Organizer의 `Uploaded to Apple`과 `1.3.0 (9)` 확인
+- Android 업로드: 2026-10-16 14:39 KST, 전용 서비스 계정으로 Play API에 AAB를 전송하고 `internal` 트랙에 `1.3.0 (9)`, `status=completed`를 설정했다. edit validate와 commit 성공 후 새 조회용 edit에서도 버전 코드 `9`, `completed` 및 AAB SHA-256 일치를 확인하고 조회용 edit을 삭제했다
+- Android 업로드 전 조회: 내부 테스트 `1.2.0 (6)`, 프로덕션 `1.2.1 (7)`, 업로드된 번들 최대 코드 `7`. 업로드 후 프로덕션, 비공개와 공개 테스트 트랙이 변경되지 않은 것을 API로 대조했다. 테스터 목록은 변경하지 않았다
+- 초기 Google ADC 인증은 Play API scope 부족으로 403이었으나 전용 서비스 계정과 Play 앱 권한 설정 후 해결했다. 사용자의 보류 지시 이후 명시적인 내부 테스트 업로드 요청을 받아 수행했다
 - iOS 업로드 경고: FirebaseAnalytics, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleAppMeasurementIdentitySupport 프레임워크의 dSYM 누락 4건. 업로드 자체는 완료
 - App Store 심사 제출과 프로덕션 게시는 수행하지 않음
 - 기준 소스 커밋: `6b3d02276516617d755445cf7579fb586f39e9c0`
@@ -199,14 +201,14 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 
 ## Google Play CLI 인증
 
-2026-10-16 확인 기준이다. Android 빌드는 이번 설정 작업에서 업로드하지 않는다.
+2026-10-16 확인 기준이다. 인증 설정 후 사용자 요청에 따라 `1.3.0 (9)`을 내부 테스트에 업로드하고 트랙 반영을 확인했다.
 
 - Google Cloud 프로젝트: `chaekchaek`. 앱 Firebase 프로젝트 `chaekchaek-d2b85`와 구분하며 앱의 Firebase 설정은 변경하지 않는다.
 - Google Play Developer API `androidpublisher.googleapis.com` 활성화 완료.
 - 배포용 서비스 계정: `chaekchaek-play-release@chaekchaek.iam.gserviceaccount.com`.
 - 로컬 JSON 키: `~/.config/chaekchaek/google-play-service-account.json`. 저장소 밖에 보관하며 파일 권한은 `0600`이다. 키 내용은 문서, 로그와 Git에 남기지 않는다.
 - JSON의 프로젝트와 서비스 계정, 파일 권한 및 `androidpublisher` scope의 OAuth 토큰 발급 성공 확인.
-- Play 앱 접근은 권한 등록 전 `403 PERMISSION_DENIED`였으며, 등록 후 CLI에서 앱 `com.chamsae.chaekchaek`과 `production`, `beta`, `alpha`, `internal` 트랙 조회에 성공했다. 검증용 임시 edit은 삭제했고 AAB 업로드와 트랙 변경은 하지 않았다.
+- Play 앱 접근은 권한 등록 전 `403 PERMISSION_DENIED`였으며, 등록 후 CLI에서 앱 `com.chamsae.chaekchaek`과 `production`, `beta`, `alpha`, `internal` 트랙 조회에 성공했다. 인증 검증용 임시 edit은 삭제했다. 이후 별도 배포 edit으로 AAB 업로드와 내부 테스트 트랙 commit을 완료했으며 상세 근거는 위 릴리스 기록을 따른다.
 - Play Console에서 사용자 확인 후 책췍 앱에 한정해 앱 정보 읽기, 이에 포함되는 앱 품질 정보 읽기와 테스트 트랙 출시 권한을 등록했다. 계정이 `활성` 상태인 것을 확인했다. 테스트 트랙 권한은 내부, 비공개와 공개 테스트를 포함하며 프로덕션 출시, 관리자, 재무 권한은 부여하지 않았다.
 
 CLI 도구가 해당 환경변수를 지원하는지 확인한 뒤 호출 범위에서 키 경로를 참조한다. 다른 프로젝트의 기본 인증을 바꾸지 않도록 전역 shell 설정에 등록하지 않는다.
@@ -215,7 +217,7 @@ CLI 도구가 해당 환경변수를 지원하는지 확인한 뒤 호출 범위
 export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/chaekchaek/google-play-service-account.json"
 ```
 
-실제 AAB 전송 전에는 앱 접근과 대상 트랙을 먼저 조회한다. AAB 전송과 트랙 배포는 사용자가 요청한 작업에서만 수행한다.
+실제 AAB 전송 전에는 앱 접근과 대상 트랙을 먼저 조회한다. `prepare-mobile-release` 스킬은 Android 내부 테스트 업로드와 트랙 배포, iOS TestFlight 업로드를 기본 필수 단계로 수행한다. 사용자가 이번 작업에서 제외나 다른 트랙을 지정하면 그 지시를 우선하며 프로덕션 게시는 별도 요청 범위에서만 수행한다. 파일 전송, 트랙 반영과 실제 테스터 설치는 구분한다.
 
 근거: [Google Play Developer API 시작하기](https://developers.google.com/android-publisher/getting_started), [앱별 권한](https://developers.google.com/android-publisher/api-ref/rest/v3/grants).
 

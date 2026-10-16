@@ -1,6 +1,6 @@
 ---
 name: prepare-mobile-release
-description: 책췍 Android 서명 AAB를 준비하고 iOS TestFlight 업로드까지 수행하며 버전, 검증, 릴리즈 문서와 커밋을 일치시킨다. 사용자가 모바일 릴리즈 준비, 새 AAB와 TestFlight 배포, Android와 iOS 동시 버전 갱신을 요청할 때 사용한다.
+description: 책췍 Android 서명 AAB의 Google Play 내부 테스트 배포와 iOS TestFlight 업로드까지 수행하며 버전, 검증, 릴리즈 문서와 커밋을 일치시킨다. 사용자가 모바일 릴리즈 준비, 새 AAB와 TestFlight 배포, Android와 iOS 동시 버전 갱신을 요청할 때 사용한다.
 ---
 
 # 모바일 릴리즈 준비
@@ -12,7 +12,7 @@ description: 책췍 Android 서명 AAB를 준비하고 iOS TestFlight 업로드�
 - 기본 GitHub 흐름은 프로젝트 `AGENTS.md`를 따른다.
 - 사용자가 이슈와 PR이 필요 없다고 명시하면 생성하지 않는다. 이는 원격 push 승인과 별개다.
 - iOS TestFlight 업로드는 이 스킬의 필수 완료 단계다. 모바일 배포 빌드 요청에는 Archive 생성과 App Store Connect 업로드까지 포함하며 업로드 여부를 매번 다시 묻지 않는다. 사용자가 이번 작업에서 업로드 제외를 명시하면 그 지시를 우선한다.
-- Play Console 업로드와 프로덕션 게시는 각각 사용자가 명시한 범위에서만 수행한다.
+- Android AAB의 Google Play 내부 테스트 업로드와 트랙 배포도 이 스킬의 필수 완료 단계다. 모바일 배포 빌드 요청에 포함하며 매번 다시 묻지 않는다. 사용자가 이번 작업에서 업로드 제외나 다른 트랙을 명시하면 그 지시를 우선한다. 프로덕션 게시는 별도로 명시한 범위에서만 수행한다.
 - 업로드는 기존 인증을 활용하는 CLI/API를 먼저 확인하고 사용한다. 인증이나 도구 제약으로 진행할 수 없을 때만 원인을 알리고 UI로 전환한다. 전용 MCP가 있으면 프로젝트의 MCP 우선 규칙을 따른다.
 - 같은 대화에서 받은 업로드 승인은 중단 후 재개해도 유효하다. 성공 여부부터 확인하고 이미 업로드한 빌드를 중복 전송하지 않는다.
 - 비밀값은 존재 여부만 확인하고 출력하거나 커밋하지 않는다.
@@ -30,17 +30,17 @@ description: 책췍 Android 서명 AAB를 준비하고 iOS TestFlight 업로드�
 2. Android 버전 SSOT인 `android/app/build.gradle.kts`와 iOS 버전 SSOT인 `android/iosApp/iosApp.xcodeproj/project.pbxproj`를 읽는다.
 3. 저장소 릴리즈 기록과 각 스토어에서 사용한 가장 큰 빌드 번호를 확인한다. `versionName`은 같은 SemVer로 맞추고 Android `versionCode`와 iOS build는 사용된 최댓값보다 크게 정한다.
 4. `docs/android-release-management.md`와 `android/docs/ios-app-store-review.md`를 버전 변경과 같은 커밋에서 갱신한다.
-5. Android는 `build-signed-aab` 스킬로 AAB를 만들고 서명, manifest, 아이콘과 SHA-256을 검증한 뒤 고정 산출물 경로에 파일이 있는지 확인한다.
+5. Android는 `build-signed-aab` 스킬로 AAB를 만들고 서명, manifest, 아이콘과 SHA-256을 검증한 뒤 고정 산출물 경로에 파일이 있는지 확인한다. 아래 Play API 절차로 내부 테스트에 업로드하고 트랙 배포까지 확인한다. 파일 전송만으로 배포 완료라고 보고하지 않는다.
 6. iOS는 `ios-simulator-validation` 스킬로 테스트한다. KMP Release Archive 전에 `df -h /`로 이 프로젝트 기준 5GB 이상의 여유 공간을 확인하고, 부족하면 현재 작업에서 만든 빌드 산출물만 정확한 경로로 정리한다.
 7. `xcodebuild archive`의 `-archivePath`에 고정 iOS Archive 경로를 지정하고 그 Archive를 App Store Connect에 업로드한다. Archive 생성만으로 릴리즈 준비를 완료했다고 보고하지 않는다. 업로드가 막히면 빌드 완료와 업로드 미완료를 구분하고 차단 원인을 기록한다.
-8. 실제 AAB 해시, TestFlight 상태, 소스 커밋을 릴리즈 문서에 반영하고 `release-commit` 스킬 형식으로 커밋한다.
+8. 실제 AAB 해시, Google Play 내부 테스트 트랙과 버전 코드 및 상태, TestFlight 상태, 소스 커밋을 릴리즈 문서에 반영하고 `release-commit` 스킬 형식으로 커밋한다.
 9. 직접 push가 승인된 작업이면 원격 `an-develop`이 예상 기준에서 움직이지 않았는지 확인한 뒤 fast-forward push한다.
 
 Google Play 프로덕션 게시와 App Store 심사 제출은 릴리즈 준비에 포함하지 않는다.
 
 ## Android Play API 인증과 권한
 
-2026-10-16 설정 기준이다. Android 업로드 요청이 있으면 아래 기존 인증을 먼저 사용한다. 설정과 검증 이력은 [Google Play CLI 인증](../../../docs/android-release-management.md#google-play-cli-인증)을 참고한다.
+2026-10-16 설정 기준이다. Android 내부 테스트 배포에는 아래 기존 인증을 먼저 사용한다. 설정과 검증 이력은 [Google Play CLI 인증](../../../docs/android-release-management.md#google-play-cli-인증)을 참고한다.
 
 - Google Cloud 프로젝트: `chaekchaek`. 앱 Firebase 프로젝트 `chaekchaek-d2b85`와 구분하며 앱의 Firebase 설정은 변경하지 않는다. Google Play Developer API `androidpublisher.googleapis.com`을 사용한다.
 - 서비스 계정: `chaekchaek-play-release@chaekchaek.iam.gserviceaccount.com`.
@@ -55,7 +55,11 @@ Google Play 프로덕션 게시와 App Store 심사 제출은 릴리즈 준비�
    ```
 
 3. OAuth scope `https://www.googleapis.com/auth/androidpublisher`로 인증하고 앱 접근과 요청한 대상 트랙을 먼저 조회한다. 확인용 임시 edit을 만들었다면 검증 후 삭제하고 commit하지 않는다. 과거 접근 성공만으로 현재 권한을 단정하지 않는다.
-4. AAB 전송과 트랙 배포는 사용자가 요청한 범위에서만 수행한다. 인증 설정과 권한 등록 완료를 업로드 완료로 보고하지 않는다.
+4. 기본 대상은 `internal` 트랙이다. 기존 트랙과 업로드된 버전 코드를 확인해 중복 전송을 피하고 검증한 AAB를 edit에 업로드한다. 응답의 `versionCode`와 `sha256`을 로컬 산출물과 대조한다. 전송이 끊기면 기존 edit과 번들 상태부터 확인하고 무조건 재업로드하지 않는다.
+5. 대상 트랙의 릴리스에 해당 버전 코드를 지정하고 내부 테스트 전체 배포는 `status=completed`로 설정한다. 기존 진행 중인 릴리스나 유지해야 할 버전이 있으면 변경 영향을 먼저 확인한다. 다른 트랙이나 테스터 목록은 변경하지 않는다. edit을 validate한 뒤 commit하며, 기존 심사를 취소하지 않도록 지원되는 API에서는 `changesInReviewBehavior=ERROR_IF_IN_REVIEW`를 사용한다. 심사나 정책 오류를 임의로 우회하지 않는다.
+6. commit 후 새 조회용 edit에서 `internal` 트랙의 버전 코드와 상태를 다시 읽고 조회용 edit을 삭제한다. 인증 설정, AAB 전송, 트랙 반영과 실제 테스터 설치는 구분해 기록한다. 조회 결과만으로 실제 기기 설치와 실행 성공을 주장하지 않는다.
+
+API 근거: [AAB 업로드](https://developers.google.com/android-publisher/api-ref/rest/v3/edits.bundles/upload), [트랙 설정](https://developers.google.com/android-publisher/api-ref/rest/v3/edits.tracks), [edit commit](https://developers.google.com/android-publisher/api-ref/rest/v3/edits/commit).
 
 ## Android manifest가 이전 버전으로 잡힐 때
 
