@@ -1,6 +1,6 @@
 ---
 name: prepare-mobile-release
-description: 책췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준비하고 버전, 검증, 릴리즈 문서와 커밋을 일치시킨다. 사용자가 모바일 릴리즈 준비, 새 AAB와 TestFlight 배포, Android와 iOS 동시 버전 갱신을 요청할 때 사용한다.
+description: 책췍 Android 서명 AAB를 준비하고 iOS TestFlight 업로드까지 수행하며 버전, 검증, 릴리즈 문서와 커밋을 일치시킨다. 사용자가 모바일 릴리즈 준비, 새 AAB와 TestFlight 배포, Android와 iOS 동시 버전 갱신을 요청할 때 사용한다.
 ---
 
 # 모바일 릴리즈 준비
@@ -11,7 +11,9 @@ description: 책췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준
 
 - 기본 GitHub 흐름은 프로젝트 `AGENTS.md`를 따른다.
 - 사용자가 이슈와 PR이 필요 없다고 명시하면 생성하지 않는다. 이는 원격 push 승인과 별개다.
-- TestFlight 업로드, Play Console 업로드와 프로덕션 게시는 각각 사용자가 명시한 범위에서만 수행한다.
+- iOS TestFlight 업로드는 이 스킬의 필수 완료 단계다. 모바일 배포 빌드 요청에는 Archive 생성과 App Store Connect 업로드까지 포함하며 업로드 여부를 매번 다시 묻지 않는다. 사용자가 이번 작업에서 업로드 제외를 명시하면 그 지시를 우선한다.
+- Play Console 업로드와 프로덕션 게시는 각각 사용자가 명시한 범위에서만 수행한다.
+- 업로드는 기존 인증을 활용하는 CLI/API를 먼저 확인하고 사용한다. 인증이나 도구 제약으로 진행할 수 없을 때만 원인을 알리고 UI로 전환한다. 전용 MCP가 있으면 프로젝트의 MCP 우선 규칙을 따른다.
 - 같은 대화에서 받은 업로드 승인은 중단 후 재개해도 유효하다. 성공 여부부터 확인하고 이미 업로드한 빌드를 중복 전송하지 않는다.
 - 비밀값은 존재 여부만 확인하고 출력하거나 커밋하지 않는다.
 
@@ -30,7 +32,7 @@ description: 책췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준
 4. `docs/android-release-management.md`와 `android/docs/ios-app-store-review.md`를 버전 변경과 같은 커밋에서 갱신한다.
 5. Android는 `build-signed-aab` 스킬로 AAB를 만들고 서명, manifest, 아이콘과 SHA-256을 검증한 뒤 고정 산출물 경로에 파일이 있는지 확인한다.
 6. iOS는 `ios-simulator-validation` 스킬로 테스트한다. KMP Release Archive 전에 `df -h /`로 이 프로젝트 기준 5GB 이상의 여유 공간을 확인하고, 부족하면 현재 작업에서 만든 빌드 산출물만 정확한 경로로 정리한다.
-7. `xcodebuild archive`의 `-archivePath`에 고정 iOS Archive 경로를 지정한다. 사용자가 업로드를 요청한 경우에만 그 Archive를 App Store Connect에 업로드한다.
+7. `xcodebuild archive`의 `-archivePath`에 고정 iOS Archive 경로를 지정하고 그 Archive를 App Store Connect에 업로드한다. Archive 생성만으로 릴리즈 준비를 완료했다고 보고하지 않는다. 업로드가 막히면 빌드 완료와 업로드 미완료를 구분하고 차단 원인을 기록한다.
 8. 실제 AAB 해시, TestFlight 상태, 소스 커밋을 릴리즈 문서에 반영하고 `release-commit` 스킬 형식으로 커밋한다.
 9. 직접 push가 승인된 작업이면 원격 `an-develop`이 예상 기준에서 움직이지 않았는지 확인한 뒤 fast-forward push한다.
 
@@ -49,11 +51,12 @@ Google Play 프로덕션 게시와 App Store 심사 제출은 릴리즈 준비�
 
 이 프로젝트에서는 2026-10-02 Xcode Organizer의 App Store Connect 경로로 `1.2.0 (6)` 업로드에 성공했다. 셸의 API 키 환경변수가 없고 로컬 코드 서명 목록에 개발용 인증서만 보여도 Xcode 업로드 불가로 단정하지 않는다. 계정 상태는 매 실행 때 확인한다.
 
-1. 고정 경로 Archive의 번들 ID, 버전, 빌드 번호와 서명을 확인한다. 이미 제공된 CLI 인증 설정이 있으면 사용할 수 있으나, 없으면 키체인 비밀값을 추출하거나 홈 디렉터리 전체에서 인증 정보를 검색하지 않는다. `security ... -g`처럼 암호를 출력하는 옵션도 사용하지 않는다.
-2. Xcode에서 해당 `.xcarchive`를 연다. Organizer가 기존 다른 앱을 선택할 수 있으므로 `Chaekchaek`, `com.chamsae.chaekchaek`, 요청 버전과 빌드 번호를 화면에서 대조한다. UI 조작에는 제공된 Computer Use 도구를 사용한다.
-3. `Distribute App`에서 `App Store Connect`를 선택하고 승인 범위 안에서 `Distribute`를 실행한다. 이 프로젝트의 재현된 성공 경로다. `TestFlight Internal Only`는 내부 전용 요청일 때만 선택한다. 로그인이나 계정 선택이 막히면 해당 단계에서 필요한 사용자 조작을 구체적으로 알린다.
-4. Preparing, Analyzing package, Uploading은 진행 상태다. `App upload complete`와 정확한 버전의 `uploaded` 표시를 확인하고, `Done` 후 Organizer의 `Uploaded to Apple`, 업로드 시각과 build 번호를 대조한다.
-5. 업로드 성공만 확인했다면 문서에 `App Store Connect 업로드 완료, TestFlight 처리 상태 미확인`으로 기록한다. App Store Connect에서 실제 상태를 읽지 않고 `처리 중`, `처리 대기`, `테스터 배포 가능`이라고 단정하지 않는다. 처리 완료까지 요청받았다면 해당 빌드의 TestFlight 상태를 추가 확인한다.
+1. 고정 경로 Archive의 번들 ID, 버전, 빌드 번호와 서명을 확인하고 기존 업로드 성공 기록과 진행 중인 전송부터 확인한다. CLI 인증 환경변수가 없다는 이유만으로 CLI가 불가능하다고 판단하지 않는다. Xcode에 로그인된 개발자 계정을 활용하는 `xcodebuild -exportArchive`도 확인한다. 키체인 비밀값을 추출하거나 홈 디렉터리 전체에서 인증 정보를 검색하지 않는다. `security ... -g`처럼 암호를 출력하는 옵션도 사용하지 않는다.
+2. 설치된 `xcodebuild -help`에서 export 옵션을 확인한 뒤 CLI 업로드를 우선 수행한다. `ExportOptions.plist`의 `method=app-store-connect`, `destination=upload`, `manageAppVersionAndBuildNumber=false`로 요청 버전과 빌드 번호를 유지한다. 기존 서명 구성에 맞춰 `signingStyle`과 `teamID`를 지정하고 필요하면 `-allowProvisioningUpdates`를 사용한다. 기존 App Store Connect API 키 설정이 제공됐다면 인증 인수로 참조할 수 있다. 배포용 IPA가 이미 있으면 `xcrun altool`도 사용할 수 있다. 비밀값을 인수나 로그에 평문으로 남기지 않는다. CLI 성공과 오류는 종료 코드 및 업로드 결과로 확인하며 진행 중이거나 성공한 전송을 UI에서 중복 실행하지 않는다.
+3. CLI 인증이나 도구 오류로 막히면 원인을 설명한 뒤 Xcode에서 해당 `.xcarchive`를 연다. Organizer가 기존 다른 앱을 선택할 수 있으므로 `Chaekchaek`, `com.chamsae.chaekchaek`, 요청 버전과 빌드 번호를 화면에서 대조한다. UI 조작에는 제공된 Computer Use 도구를 사용한다.
+4. `Distribute App`에서 `App Store Connect`를 선택하고 `Distribute`를 실행한다. 이 프로젝트의 재현된 성공 경로다. `TestFlight Internal Only`는 내부 전용 요청일 때만 선택한다. 로그인이나 계정 선택이 막히면 해당 단계에서 필요한 사용자 조작을 구체적으로 알린다.
+5. Preparing, Analyzing package, Uploading은 진행 상태다. `App upload complete`와 정확한 버전의 `uploaded` 표시를 확인하고, `Done` 후 Organizer의 `Uploaded to Apple`, 업로드 시각과 build 번호를 대조한다.
+6. 업로드 성공만 확인했다면 문서에 `App Store Connect 업로드 완료, TestFlight 처리 상태 미확인`으로 기록한다. App Store Connect에서 실제 상태를 읽지 않고 `처리 중`, `처리 대기`, `테스터 배포 가능`이라고 단정하지 않는다. 처리 완료까지 요청받았다면 해당 빌드의 TestFlight 상태를 추가 확인한다.
 
 ## 검증과 기록의 판정 기준
 

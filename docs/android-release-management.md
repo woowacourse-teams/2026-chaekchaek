@@ -11,7 +11,7 @@
 | 구분 | `versionName` | `versionCode` | Git 태그 | 상태 |
 | --- | --- | --- | --- | --- |
 | 스토어 최신 사용 버전 | `1.2.2` | `8` | 미확인 | 사용자 확인. 현재 트랙과 공개 상태는 이번 작업에서 조회하지 않음 |
-| 현재 소스 | `1.3.0` | `9` | 없음 | Android AAB와 iOS Archive 생성과 검증 완료, 스토어 미업로드 |
+| 현재 소스 | `1.3.0` | `9` | 없음 | Android AAB 검증 완료와 업로드 보류. iOS App Store Connect 업로드 완료, TestFlight 처리 상태 미확인 |
 
 이번 작업의 기준은 `origin/an-develop`의 `6b3d02276516617d755445cf7579fb586f39e9c0`이다.
 Android와 iOS의 마지막 스토어 사용 버전 `1.2.2 (8)`은 사용자가 확인했다.
@@ -65,10 +65,13 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 
 ### 1.3.0 (9)
 
-- 상태: Android 서명 AAB와 iOS Release Archive 생성과 검증 완료
-- 배포일: 미배포. 스토어 업로드와 심사 제출은 이번 작업에서 수행하지 않음
+- 상태: Android 서명 AAB 검증 완료와 업로드 보류. iOS App Store Connect 업로드 완료, TestFlight 처리 상태 미확인
+- 업로드 확인: 2026-10-16 14:01 KST, Xcode Organizer의 `Uploaded to Apple`과 `1.3.0 (9)` 확인
+- Android 업로드: 기존 Google ADC 인증의 Play API scope 부족으로 403. 사용자 지시로 이번 업로드는 보류하고 API 인증을 별도 준비
+- iOS 업로드 경고: FirebaseAnalytics, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleAppMeasurementIdentitySupport 프레임워크의 dSYM 누락 4건. 업로드 자체는 완료
+- App Store 심사 제출과 프로덕션 게시는 수행하지 않음
 - 기준 소스 커밋: `6b3d02276516617d755445cf7579fb586f39e9c0`
-- 버전 변경과 검증 기록 커밋: 이 항목을 포함한 릴리스 커밋
+- 버전 변경과 검증 기록 커밋: `93b7de787c82490c03bd890d9023f6267d3edeb6`
 - 관련 이슈와 PR: #531, #532
 - Android 산출물: `android/app/release/chaekchaek-1.3.0-code9.aab`
 - iOS 산출물: `android/iosApp/release/Chaekchaek-1.3.0-9.xcarchive`
@@ -89,7 +92,7 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
   - 개인 scheme과 충돌을 피하기 위해 같은 커밋에 동일한 버전 변경을 적용한 임시 detached worktree의 공유 scheme으로 검증. 추적되는 공통 코드와 iOS 앱 소스의 바이트 일치 확인
   - 테스트 전 글자 크기 복원과 이번 작업에서 부팅한 Simulator 종료 확인
   - production 설정의 Release Archive 생성 성공. 앱과 Archive의 버전 `1.3.0 (9)`, 번들 ID와 Apple 로그인 entitlement 확인
-  - `codesign --verify --deep --strict` 성공. Apple Development 서명이며 App Store 배포용 export와 재서명은 수행하지 않음
+  - `codesign --verify --deep --strict` 성공. 로컬 Archive는 Apple Development 서명. 이후 Xcode Organizer의 App Store Connect 배포 경로로 업로드 완료
   - 앱 실행 파일과 dSYM UUID 일치: `148C8A6F-51E1-361C-9977-2C3633CD1BA3`
   - iOS 앱 실행 파일 SHA-256: `8997f93046eaca6ff0c6bfbaf97948ba3b5b57b0afa6a42d359de317abaa0cfe`
 - 실기기에서 이번 release 산출물의 실행과 공급업체 로그인, 스토어 배포본의 동작은 미검증
