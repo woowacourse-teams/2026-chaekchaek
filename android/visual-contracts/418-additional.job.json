@@ -1,0 +1,383 @@
+{
+  "schema": 1,
+  "id": "418-additional-figma-ui",
+  "implementation_root": "..",
+  "implementation_inputs": [
+    "shared/src/commonMain/kotlin/com/chaekchaek/app/ui/**/*.kt",
+    "shared/src/commonMain/composeResources/**/*",
+    "shared/src/androidMain/**/*"
+  ],
+  "sources": [
+    {
+      "id": "additional",
+      "identity": "tn59Thk2GRcVLkzoO8k9Sr",
+      "path": "../build/design-guard/418-additional/source.json",
+      "roots": [
+        "915:3",
+        "915:26",
+        "915:43",
+        "915:61",
+        "915:81",
+        "916:30",
+        "916:52",
+        "916:74",
+        "916:102",
+        "916:129",
+        "918:66",
+        "918:83",
+        "918:100",
+        "918:113",
+        "918:129",
+        "918:491",
+        "918:516",
+        "918:541",
+        "918:557",
+        "919:135",
+        "919:155",
+        "919:175",
+        "919:195",
+        "919:216",
+        "920:180",
+        "920:193"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "mypage-android",
+      "source": "additional",
+      "root": "915:3",
+      "state": "signed-in",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/mypage.png"
+    },
+    {
+      "id": "login-required-android",
+      "source": "additional",
+      "root": "915:26",
+      "state": "signed-out",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/login-required.png"
+    },
+    {
+      "id": "login-failure-android",
+      "source": "additional",
+      "root": "915:43",
+      "state": "failure",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/login-failure.png"
+    },
+    {
+      "id": "nickname-android",
+      "source": "additional",
+      "root": "915:61",
+      "state": "input",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/nickname.png"
+    },
+    {
+      "id": "withdrawal-android",
+      "source": "additional",
+      "root": "915:81",
+      "state": "confirmation",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/withdrawal.png"
+    },
+    {
+      "id": "rating-android",
+      "source": "additional",
+      "root": "916:30",
+      "state": "selected",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/rating.png"
+    },
+    {
+      "id": "page-input-android",
+      "source": "additional",
+      "root": "916:52",
+      "state": "input",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/page-input.png"
+    },
+    {
+      "id": "review-create-android",
+      "source": "additional",
+      "root": "916:74",
+      "state": "empty",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/review-create.png"
+    },
+    {
+      "id": "review-edit-android",
+      "source": "additional",
+      "root": "916:102",
+      "state": "existing",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/review-edit.png"
+    },
+    {
+      "id": "review-discard-android",
+      "source": "additional",
+      "root": "916:129",
+      "state": "confirmation",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/review-discard.png"
+    },
+    {
+      "id": "reply-create-android",
+      "source": "additional",
+      "root": "918:66",
+      "state": "empty",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/reply-create.png"
+    },
+    {
+      "id": "reply-edit-android",
+      "source": "additional",
+      "root": "918:83",
+      "state": "existing",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/reply-edit.png"
+    },
+    {
+      "id": "owned-actions-android",
+      "source": "additional",
+      "root": "918:100",
+      "state": "menu-open",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/owned-actions.png"
+    },
+    {
+      "id": "review-delete-android",
+      "source": "additional",
+      "root": "918:113",
+      "state": "confirmation",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/review-delete.png"
+    },
+    {
+      "id": "reply-delete-android",
+      "source": "additional",
+      "root": "918:129",
+      "state": "confirmation",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/reply-delete.png"
+    },
+    {
+      "id": "library-edit-android",
+      "source": "additional",
+      "root": "918:491",
+      "state": "selected",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/library-edit.png"
+    },
+    {
+      "id": "library-status-android",
+      "source": "additional",
+      "root": "918:516",
+      "state": "selection",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/library-status.png"
+    },
+    {
+      "id": "library-delete-android",
+      "source": "additional",
+      "root": "918:541",
+      "state": "confirmation",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/library-delete.png"
+    },
+    {
+      "id": "library-failure-android",
+      "source": "additional",
+      "root": "918:557",
+      "state": "failure",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/library-failure.png"
+    },
+    {
+      "id": "nickname-empty-android",
+      "source": "additional",
+      "root": "919:135",
+      "state": "empty",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/nickname-empty.png"
+    },
+    {
+      "id": "page-invalid-android",
+      "source": "additional",
+      "root": "919:155",
+      "state": "invalid",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/page-invalid.png"
+    },
+    {
+      "id": "rating-empty-android",
+      "source": "additional",
+      "root": "919:175",
+      "state": "empty",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/rating-empty.png"
+    },
+    {
+      "id": "withdrawal-failure-android",
+      "source": "additional",
+      "root": "919:195",
+      "state": "failure",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/withdrawal-failure.png"
+    },
+    {
+      "id": "request-failure-android",
+      "source": "additional",
+      "root": "919:216",
+      "state": "failure",
+      "platform": "android",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/request-failure.png"
+    },
+    {
+      "id": "nickname-small-android",
+      "source": "additional",
+      "root": "920:180",
+      "state": "input",
+      "platform": "android",
+      "viewport": {
+        "width": 320,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/nickname-small.png"
+    },
+    {
+      "id": "review-small-android",
+      "source": "additional",
+      "root": "920:193",
+      "state": "empty",
+      "platform": "android",
+      "viewport": {
+        "width": 320,
+        "unit": "dp"
+      },
+      "reference": "../build/design-guard/418-additional/references/review-small.png"
+    }
+  ],
+  "reviews": "../build/design-guard/418-additional/reviews.json",
+  "output": "../build/design-guard/418-additional/report.json",
+  "unresolved": [
+    {
+      "id": "full-property-source",
+      "reason": "최신 913:2 전체 659노드 수집은 첫 16000자만 확보했으므로 원본 JSON이 아직 없는 것이랍니다. 전체 수집 전 게이트 통과를 주장하지 않는답니다."
+    },
+    {
+      "id": "android-state-evidence",
+      "reason": "최종 stacked APK의 각 상태 실제 진입과 320/390 너비 캡처가 필요하답니다."
+    },
+    {
+      "id": "property-review",
+      "reason": "전체 원본의 속성별 구현과 캡처 대응 검토는 아직 미검증이랍니다."
+    },
+    {
+      "id": "provider-exception",
+      "reason": "공급업체 로그인 버튼은 기존 구현을 유지하는 사용자 예외랍니다. Android Google actual이 Unit이라 기존 fallback을 유지한답니다."
+    },
+    {
+      "id": "request-failure-flow",
+      "reason": "요청 실패는 기존 Snackbar와 상태 소비 콜백을 유지했답니다. 919:216 정적 샘플 카드와 픽셀 일치는 미검증이랍니다."
+    }
+  ]
+}

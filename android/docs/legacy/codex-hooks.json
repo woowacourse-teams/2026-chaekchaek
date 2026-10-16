@@ -1,0 +1,22 @@
+{
+  "description": "Chaekchaek local branch and PR guards.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^(?:Bash|exec_command|functions\\.exec)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"/Users/ujeonghyeon/Desktop/dev/myDev/2026-chaekchaek/.codex/hooks/chaekchaek-branch-name-guard.py\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "/usr/bin/python3 \"/Users/ujeonghyeon/Desktop/dev/myDev/2026-chaekchaek/.codex/hooks/chaekchaek-pr-title-guard.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

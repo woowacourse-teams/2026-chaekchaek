@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "id": "chaekchaek-library-spines",
+  "implementation_root": "..",
+  "implementation_inputs": [
+    "shared/src/**/*",
+    "app/src/**/*",
+    "gradle/**/*",
+    "*.kts",
+    "shared/*.kts",
+    "app/*.kts",
+    "gradle.properties"
+  ],
+  "sources": [
+    {
+      "id": "library-spines",
+      "identity": "tn59Thk2GRcVLkzoO8k9Sr",
+      "path": "../build/design-guard/library-spine-source.json",
+      "roots": [
+        "822:1225"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "library-populated-320",
+      "source": "library-spines",
+      "root": "822:1225",
+      "state": "populated",
+      "viewport": {
+        "width": 320,
+        "unit": "dp"
+      },
+      "reference": "references/library-spines.png"
+    },
+    {
+      "id": "library-populated-390",
+      "source": "library-spines",
+      "root": "822:1225",
+      "state": "populated",
+      "viewport": {
+        "width": 390,
+        "unit": "dp"
+      },
+      "reference": "references/library-spines.png"
+    }
+  ],
+  "reviews": "../build/design-guard/library-spines-reviews.json",
+  "output": "../build/design-guard/library-spines-report.json",
+  "unresolved": [
+    {
+      "id": "development-spine-capture",
+      "reason": "개발 API에는 책등 URL이 있지만 현재 운영 빌드의 실제 응답에는 없어, 책등이 채워진 실기기 화면 캡처가 남아 있음"
+    }
+  ]
+}
