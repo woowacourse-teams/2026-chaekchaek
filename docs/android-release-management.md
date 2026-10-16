@@ -67,7 +67,7 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 
 - 상태: Android 서명 AAB 검증 완료와 업로드 보류. iOS App Store Connect 업로드 완료, TestFlight 처리 상태 미확인
 - 업로드 확인: 2026-10-16 14:01 KST, Xcode Organizer의 `Uploaded to Apple`과 `1.3.0 (9)` 확인
-- Android 업로드: 기존 Google ADC 인증의 Play API scope 부족으로 403. 사용자 지시로 이번 업로드는 보류하고 API 인증을 별도 준비
+- Android 업로드: 초기 Google ADC 인증은 Play API scope 부족으로 403. 이후 전용 서비스 계정과 Play 앱 권한을 설정해 CLI 앱·트랙 조회 성공. 사용자 지시로 AAB 업로드는 보류
 - iOS 업로드 경고: FirebaseAnalytics, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleAppMeasurementIdentitySupport 프레임워크의 dSYM 누락 4건. 업로드 자체는 완료
 - App Store 심사 제출과 프로덕션 게시는 수행하지 않음
 - 기준 소스 커밋: `6b3d02276516617d755445cf7579fb586f39e9c0`
@@ -206,8 +206,8 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 - 배포용 서비스 계정: `chaekchaek-play-release@chaekchaek.iam.gserviceaccount.com`.
 - 로컬 JSON 키: `~/.config/chaekchaek/google-play-service-account.json`. 저장소 밖에 보관하며 파일 권한은 `0600`이다. 키 내용은 문서, 로그와 Git에 남기지 않는다.
 - JSON의 프로젝트와 서비스 계정, 파일 권한 및 `androidpublisher` scope의 OAuth 토큰 발급 성공 확인.
-- Play 앱 접근 검증은 `403 PERMISSION_DENIED`다. 키 생성과 토큰 발급만으로 Play 앱 권한이 부여되지는 않는다.
-- Play Console에서 책췍 앱 `com.chamsae.chaekchaek`에 한정해 앱 정보 읽기, 이에 포함되는 앱 품질 정보 읽기와 테스트 트랙 출시 권한을 추가해야 한다. 테스트 트랙 권한은 내부, 비공개와 공개 테스트를 포함한다. 현재 초대 양식만 준비했으며 최종 권한 부여 전 사용자 확인을 기다린다. 프로덕션 출시, 관리자, 재무 권한은 선택하지 않았다.
+- Play 앱 접근은 권한 등록 전 `403 PERMISSION_DENIED`였으며, 등록 후 CLI에서 앱 `com.chamsae.chaekchaek`과 `production`, `beta`, `alpha`, `internal` 트랙 조회에 성공했다. 검증용 임시 edit은 삭제했고 AAB 업로드와 트랙 변경은 하지 않았다.
+- Play Console에서 사용자 확인 후 책췍 앱에 한정해 앱 정보 읽기, 이에 포함되는 앱 품질 정보 읽기와 테스트 트랙 출시 권한을 등록했다. 계정이 `활성` 상태인 것을 확인했다. 테스트 트랙 권한은 내부, 비공개와 공개 테스트를 포함하며 프로덕션 출시, 관리자, 재무 권한은 부여하지 않았다.
 
 CLI 도구가 해당 환경변수를 지원하는지 확인한 뒤 호출 범위에서 키 경로를 참조한다. 다른 프로젝트의 기본 인증을 바꾸지 않도록 전역 shell 설정에 등록하지 않는다.
 
@@ -215,7 +215,7 @@ CLI 도구가 해당 환경변수를 지원하는지 확인한 뒤 호출 범위
 export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/chaekchaek/google-play-service-account.json"
 ```
 
-권한 등록 후에는 앱 접근과 대상 트랙을 먼저 조회한다. 실제 AAB 전송과 트랙 배포는 사용자가 요청한 작업에서만 수행한다.
+실제 AAB 전송 전에는 앱 접근과 대상 트랙을 먼저 조회한다. AAB 전송과 트랙 배포는 사용자가 요청한 작업에서만 수행한다.
 
 근거: [Google Play Developer API 시작하기](https://developers.google.com/android-publisher/getting_started), [앱별 권한](https://developers.google.com/android-publisher/api-ref/rest/v3/grants).
 
