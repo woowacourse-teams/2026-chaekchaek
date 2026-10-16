@@ -102,6 +102,7 @@ fun SearchRoute(
   searchResultsListState: LazyListState,
   registeredBookIds: Set<String>,
   modifier: Modifier = Modifier,
+  onHomeRetry: () -> Unit = homeViewModel::retry,
   onBack: () -> Unit = {},
   onProfileClick: () -> Unit = {},
   onBookClick: (BookDetailTarget) -> Unit = {},
@@ -134,7 +135,7 @@ fun SearchRoute(
       if (it != sort) searchResultsListState.requestScrollToItem(0)
       viewModel.selectSort(it)
     },
-    onHomeRetry = homeViewModel::retry,
+    onHomeRetry = onHomeRetry,
     modifier = modifier,
     onBack = onBack,
     onProfileClick = onProfileClick,

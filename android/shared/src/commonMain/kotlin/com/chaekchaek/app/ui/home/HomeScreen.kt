@@ -45,6 +45,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -135,7 +136,6 @@ val LocalRemoteBookCover = staticCompositionLocalOf<RemoteBookCover> {
 fun HomeScreen(
     homeViewModel: HomeViewModel,
     myDisplayName: String,
-    accessToken: String? = null,
     scrollTopRequest: Int = 0,
     modifier: Modifier = Modifier,
     onSearchBook: () -> Unit = {},
@@ -143,6 +143,7 @@ fun HomeScreen(
     onProfileClick: () -> Unit = {},
     homeHeaderAction: @Composable () -> Unit = {},
     onBookClick: (BookDetailTarget) -> Unit = {},
+    onRetry: () -> Unit = homeViewModel::retry,
     savedIsbns: Set<String> = emptySet(),
     librarySaveState: LibrarySaveUiState = LibrarySaveUiState(),
     onSaveBook: (BookDetailTarget) -> Unit = {},
@@ -150,8 +151,9 @@ fun HomeScreen(
     val uiState by homeViewModel.uiState.collectAsState()
     val contentStateHolder = rememberSaveableStateHolder()
 
-    LaunchedEffect(accessToken) {
-        homeViewModel.authenticate(accessToken)
+    DisposableEffect(homeViewModel) {
+        homeViewModel.onHomeEntered()
+        onDispose { homeViewModel.onHomeHidden() }
     }
 
     when (val state = uiState) {
@@ -171,7 +173,7 @@ fun HomeScreen(
             onProfileClick = onProfileClick,
             homeHeaderAction = homeHeaderAction,
             modifier = modifier,
-            content = { HomeLoadErrorPanel(state.error, homeViewModel::retry, it) },
+            content = { HomeLoadErrorPanel(state.error, onRetry, it) },
         )
         is HomeUiState.Content -> contentStateHolder.SaveableStateProvider("home_content") {
             HomeContent(

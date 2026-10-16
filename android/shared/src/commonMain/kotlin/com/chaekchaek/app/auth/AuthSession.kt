@@ -4,7 +4,9 @@ import com.chaekchaek.app.data.remote.MobileAuthTokens
 import com.chaekchaek.app.data.remote.MobileLoginException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,8 +30,11 @@ internal class AuthSession(
   private val _isRestoring = MutableStateFlow(readRefreshToken() != null)
   val isRestoring: StateFlow<Boolean> = _isRestoring.asStateFlow()
   private val mutex = Mutex()
+  private val renewalRequestMutex = Mutex()
   private var accessTokenExpiresAtMillis = 0L
   private var renewalJob: Job? = null
+  private var sessionGeneration = 0L
+  private var renewalRequest: Deferred<Result<MobileAuthTokens?>>? = null
 
   init {
     startRenewal()
@@ -43,6 +48,11 @@ internal class AuthSession(
   }
 
   suspend fun signOut(onLocalSessionCleared: () -> Unit = {}) {
+    renewalJob?.cancel()
+    renewalRequestMutex.withLock {
+      renewalRequest?.cancel()
+      renewalRequest = null
+    }
     val refreshToken = mutex.withLock {
       renewalJob?.cancel()
       val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
@@ -59,13 +69,15 @@ internal class AuthSession(
     }
   }
 
+  suspend fun refreshAccessTokenForRetry(): String? = renewTokensOnce()?.accessToken
+
   private fun startRenewal() {
     renewalJob?.cancel()
     renewalJob = scope.launch {
       while (isActive) {
         delay(renewalDelayMillis(accessTokenExpiresAtMillis, currentTimeMillis()))
         try {
-          if (!renewTokens()) return@launch
+          if (renewTokensOnce() == null) return@launch
         } catch (_: MobileLoginException) {
           delay(RETRY_DELAY_MILLIS)
         } catch (_: Exception) {
@@ -75,23 +87,54 @@ internal class AuthSession(
     }
   }
 
-  private suspend fun renewTokens(): Boolean = mutex.withLock {
-    val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
-    if (refreshToken == null) {
-      _isRestoring.value = false
-      return@withLock false
+  private suspend fun renewTokensOnce(): MobileAuthTokens? {
+    val request = renewalRequestMutex.withLock {
+      renewalRequest?.takeUnless { it.isCompleted } ?: scope.async {
+        try {
+          Result.success(renewCurrentSessionTokens())
+        } catch (error: CancellationException) {
+          throw error
+        } catch (error: Throwable) {
+          Result.failure(error)
+        }
+      }.also { renewalRequest = it }
     }
-    try {
-      updateTokens(reissue(refreshToken))
-      true
+    return try {
+      request.await().getOrThrow()
+    } finally {
+      renewalRequestMutex.withLock {
+        if (renewalRequest === request && request.isCompleted) renewalRequest = null
+      }
+    }
+  }
+
+  private suspend fun renewCurrentSessionTokens(): MobileAuthTokens? {
+    val snapshot = mutex.withLock {
+      val refreshToken = _tokens.value?.refreshToken ?: readRefreshToken()
+      if (refreshToken == null) {
+        _isRestoring.value = false
+        return null
+      }
+      refreshToken to sessionGeneration
+    }
+    return try {
+      val renewed = reissue(snapshot.first)
+      mutex.withLock {
+        if (sessionGeneration == snapshot.second) updateTokens(renewed)
+        _tokens.value
+      }
     } catch (error: MobileLoginException) {
-      if (error.statusCode != PERMANENT_AUTH_FAILURE_STATUS) throw error
-      clear()
-      false
+      mutex.withLock {
+        if (sessionGeneration != snapshot.second) return@withLock _tokens.value
+        if (error.statusCode != PERMANENT_AUTH_FAILURE_STATUS) throw error
+        clear()
+        null
+      }
     }
   }
 
   private fun updateTokens(tokens: MobileAuthTokens) {
+    sessionGeneration += 1
     _tokens.value = tokens
     _isRestoring.value = false
     accessTokenExpiresAtMillis = currentTimeMillis() + tokens.accessTokenExpiresIn * MILLIS_PER_SECOND
@@ -99,6 +142,7 @@ internal class AuthSession(
   }
 
   private fun clear() {
+    sessionGeneration += 1
     _tokens.value = null
     _isRestoring.value = false
     accessTokenExpiresAtMillis = 0L

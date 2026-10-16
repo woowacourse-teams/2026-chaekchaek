@@ -134,7 +134,7 @@ internal fun RootScreen(
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     val snackbarHost = remember { SnackbarHostState() }
     val backNavigationEventState = rememberNavigationEventState(NavigationEventInfo.None)
-    val backScope = rememberCoroutineScope()
+    val rootScope = rememberCoroutineScope()
     var exitConfirmationSnackbarJob by remember { mutableStateOf<Job?>(null) }
     var exitConfirmationDeadlineMillis by rememberSaveable { mutableStateOf<Long?>(null) }
     val tabStateHolder = rememberSaveableStateHolder()
@@ -189,7 +189,7 @@ internal fun RootScreen(
                 }
                 is RootBackAction.ConfirmExit -> {
                     exitConfirmationDeadlineMillis = action.deadlineMillis
-                    exitConfirmationSnackbarJob = backScope.launch {
+                    exitConfirmationSnackbarJob = rootScope.launch {
                         snackbarHost.showSnackbar(EXIT_CONFIRMATION_MESSAGE)
                     }
                 }
@@ -199,7 +199,10 @@ internal fun RootScreen(
     )
 
     LaunchedEffect(selectedTab) {
-        if (selectedTab != RootTab.Home) clearExitConfirmation()
+        if (selectedTab != RootTab.Home) {
+            clearExitConfirmation()
+            homeViewModel.onHomeHidden()
+        }
         analytics.screenView(selectedTab.analyticsScreenName)
     }
     LaunchedEffect(selectedTab, tabStateToClear) {
@@ -248,6 +251,15 @@ internal fun RootScreen(
             if (result == SnackbarResult.ActionPerformed) memberSettingsViewModel.retry()
         }
     }
+    val retryHome: () -> Unit = {
+        rootScope.launch {
+            retryHomeWithSessionRecovery(
+                currentAccessToken = { authViewModel.tokens.value?.accessToken },
+                refreshAccessToken = authViewModel::refreshAccessTokenForRetry,
+                retryHome = homeViewModel::retry,
+            )
+        }
+    }
 
     CompositionLocalProvider(
         LocalRemoteBookCover provides { url, description, imageModifier ->
@@ -263,7 +275,6 @@ internal fun RootScreen(
             RootTab.Home -> HomeScreen(
                 homeViewModel = homeViewModel,
                 myDisplayName = memberSettingsState.publicNickname,
-                accessToken = accessToken,
                 scrollTopRequest = homeScrollTopRequest,
                 modifier = contentModifier,
                 onSearchBook = { selectedTab = RootTab.Discover },
@@ -271,6 +282,7 @@ internal fun RootScreen(
                 onProfileClick = openProfile,
                 homeHeaderAction = homeHeaderAction,
                 onBookClick = { openBook(it.toBookDetailArgs(), "home") },
+                onRetry = retryHome,
                 savedIsbns = savedIsbns,
                 librarySaveState = librarySaveState,
                 onSaveBook = saveBook,
@@ -291,6 +303,7 @@ internal fun RootScreen(
                 searchResultsListState = searchResultsListState,
                 registeredBookIds = archiveState.items.mapTo(mutableSetOf()) { it.id },
                 modifier = contentModifier,
+                onHomeRetry = retryHome,
                 onBack = {
                     tabStateToClear = RootTab.Discover
                     selectedTab = RootTab.Home

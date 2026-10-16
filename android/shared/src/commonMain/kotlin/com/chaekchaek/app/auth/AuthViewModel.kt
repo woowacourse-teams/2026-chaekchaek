@@ -148,6 +148,8 @@ class AuthViewModel private constructor(
     _uiState.value = _uiState.value.copy(errorMessage = null)
   }
 
+  suspend fun refreshAccessTokenForRetry(): String? = session.refreshAccessTokenForRetry()
+
   fun signOut(onLocalSessionCleared: () -> Unit = {}) {
     cancelPendingAuthentication()
     scope.launch { session.signOut(onLocalSessionCleared) }
