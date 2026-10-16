@@ -14,8 +14,8 @@
 - 구현 대상은 `/android`의 Android 앱과 iOS에서 사용하는 Compose Multiplatform UI랍니다. 공통 UI는 `android/shared`, 플랫폼 전용 로그인 컨트롤은 각 플랫폼 소스를 확인한답니다.
 - 이번 인계에는 backend, frontend 변경, 배포, 스토어 제출, 새로운 기능 추가를 포함하지 않는답니다.
 - 파일 키는 `tn59Thk2GRcVLkzoO8k9Sr`이랍니다. [Figma 원본](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr)을 전용 MCP로 읽고, 해당 도구의 필수 스킬을 먼저 적용한답니다.
-- [디자인 시스템](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=901-300)의 변수, 스타일, 컴포넌트를 공통 구현 기준으로 삼는답니다.
-- [추가 화면 재디자인](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=913-2)은 현재 앱의 다이얼로그와 시트, 마이페이지, 실패 상태를 위한 승인 시안이랍니다.
+- [디자인 시스템](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1201-826)의 변수, 스타일, 컴포넌트를 공통 구현 기준으로 삼는답니다.
+- [추가 화면 재디자인](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1201-238)은 현재 앱의 다이얼로그와 시트, 마이페이지, 실패 상태를 위한 승인 시안이랍니다.
 - 아래 노드는 인계 시점의 링크이며, Figma는 편집 가능한 원본이므로 새 세션에서 최신 구조를 다시 확인한답니다. 스크린샷만으로 컴포넌트나 상태를 추정하지 않는답니다.
 
 ## 주요 화면 원본
