@@ -103,6 +103,7 @@ import kotlinx.coroutines.delay
 fun SearchRoute(
   viewModel: SearchViewModel,
   homeViewModel: HomeViewModel,
+  accessToken: String?,
   searchResultsListState: LazyListState,
   registeredBookIds: Set<String>,
   modifier: Modifier = Modifier,
@@ -120,7 +121,9 @@ fun SearchRoute(
   SearchScreen(
     state = state,
     refreshState = if (state == SearchUiState.Idle) homeRefresh else searchRefresh,
-    onRefresh = if (state == SearchUiState.Idle) homeViewModel::refresh else viewModel::refresh,
+    onRefresh = {
+      if (state == SearchUiState.Idle) homeViewModel.refresh(accessToken) else viewModel.refresh()
+    },
     onRetryLoadMore = viewModel::retryLoadMore,
     sort = sort,
     query = query,

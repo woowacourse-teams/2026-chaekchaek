@@ -50,6 +50,14 @@ class HomeViewModel(
         load(retainContent = true)
     }
 
+    fun refresh(accessToken: String?) {
+        if (this.accessToken != accessToken) {
+            authenticate(accessToken)
+            return
+        }
+        refresh()
+    }
+
     fun authenticate(accessToken: String?) {
         if (!hasObservedAuthentication) {
             hasObservedAuthentication = true
