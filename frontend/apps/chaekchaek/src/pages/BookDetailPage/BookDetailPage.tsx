@@ -232,25 +232,24 @@ export const BookDetailPage = () => {
                 replyCount={data?.replyCount}
                 coverImageUrl={data?.coverImageUrl}
               />
-              {data?.bookId && (
-                <BookReviews
-                  isbn={isbn}
-                  bookId={data.bookId}
-                  sort={reviewsRequestParams.sort}
-                  feed={reviewsRequestParams.feed}
-                  count={reviewsData?.totalCount}
-                  reviews={reviewsData?.items}
-                  onSortChange={(sort) => {
-                    handleChangeReviewRequestParams({ name: 'sort', value: sort });
-                  }}
-                  onFeedChange={(feed) => {
-                    handleChangeReviewRequestParams({ name: 'feed', value: feed });
-                  }}
-                  onReviewsRefresh={() => {
-                    refetchGetBooksIsbnLoadData();
-                  }}
-                />
-              )}
+
+              <BookReviews
+                isbn={isbn}
+                {...(data?.bookId && { bookId: data?.bookId })}
+                sort={reviewsRequestParams.sort}
+                feed={reviewsRequestParams.feed}
+                count={reviewsData?.totalCount}
+                reviews={reviewsData?.items}
+                onSortChange={(sort) => {
+                  handleChangeReviewRequestParams({ name: 'sort', value: sort });
+                }}
+                onFeedChange={(feed) => {
+                  handleChangeReviewRequestParams({ name: 'feed', value: feed });
+                }}
+                onReviewsRefresh={() => {
+                  refetchGetBooksIsbnLoadData();
+                }}
+              />
             </Split.Content>
           </Split>
         </Container>
