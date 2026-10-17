@@ -23,10 +23,6 @@ import { getReviewsReviewIdReplies } from '@/services/apis/reviewsReviewIdReplie
 import { useLoadData } from '@/services/core/useLoadData';
 
 import {
-  deleteRepliesReplyIdReactions,
-  postRepliesReplyIdReactions,
-} from '@/services/apis/repliesReplyIdReactions/repository';
-import {
   deleteReviewsReviewIdReactions,
   postReviewsReviewIdReactions,
 } from '@/services/apis/reviewsReviewIdReactions/repository';
@@ -41,9 +37,7 @@ import { WriteReply } from './WriteReply';
 import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
 
 import styles from './BookReview.module.css';
-
-const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
-const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
+import { BookReply } from './BookReply';
 
 export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) => {
   const { isAuthenticated, user, guest } = useAuthContext();
@@ -90,29 +84,6 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
     }
 
     await onReviewsRefresh();
-  };
-
-  const { mutate: postReplyReactionMutate } = useExecute({
-    executeFn: postRepliesReplyIdReactions,
-  });
-  const { mutate: deleteReplyReactionMutate } = useExecute({
-    executeFn: deleteRepliesReplyIdReactions,
-  });
-
-  const handleClickReplyReaction = async ({
-    replyId,
-    likedByMe,
-  }: {
-    replyId: number;
-    likedByMe: boolean;
-  }) => {
-    if (!likedByMe) {
-      await postReplyReactionMutate({ replyId });
-    } else {
-      await deleteReplyReactionMutate({ replyId });
-    }
-
-    await refetchGetReplies();
   };
 
   const [openWriteReply, setOpenWriteReply] = useState(false);
@@ -302,46 +273,14 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
           )}
           {repliesData?.items.map((reply) => {
             return (
-              <Surface key={reply.replyId}>
-                <Shell>
-                  <Shell.Leading>
-                    <Avatar
-                      img={reply.author.profileImageUrl}
-                      size="small"
-                      as={reply.author.memberId ? Link : 'div'}
-                      {...(reply.author.memberId && {
-                        to: generatePath(ROUTES.MEMBER_LIBRARY, {
-                          memberId: reply.author.memberId.toString(),
-                        }),
-                      })}
-                      onClick={() => {
-                        handleClickAvatar(reply.author.profileStatus !== 'AVAILABLE');
-                      }}
-                    />
-                  </Shell.Leading>
-                  <Shell.Content
-                    onClick={handleClickShowSpoiler}
-                    title={reply.author.displayName}
-                    description={showSpoilerVisible ? reply.content : SPOILER_PLACEHOLDER_REPLY}
-                  />
-                  <Shell.Trailing>
-                    <Button
-                      leading={reply.likedByMe ? <Icon.HeartOnIcon /> : <Icon.HeartOffIcon />}
-                      shape="link"
-                      variant="ghost"
-                      disabled={!isAuthenticated}
-                      onClick={() => {
-                        handleClickReplyReaction({
-                          replyId: reply.replyId,
-                          likedByMe: reply.likedByMe,
-                        });
-                      }}
-                    >
-                      {reply.likeCount}
-                    </Button>
-                  </Shell.Trailing>
-                </Shell>
-              </Surface>
+              <BookReply
+                key={reply.replyId}
+                reply={reply}
+                showSpoilerVisible={showSpoilerVisible}
+                onShowSpoiler={handleClickShowSpoiler}
+                onRefetchGetReplies={refetchGetReplies}
+                onClickAvatar={handleClickAvatar}
+              />
             );
           })}
         </Entry.Extension>
