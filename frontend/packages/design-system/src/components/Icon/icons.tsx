@@ -21,6 +21,9 @@ export const CloseIcon = createIcon(Close);
 import Comment from './imgs/comment.svg?component';
 export const CommentIcon = createIcon(Comment);
 
+import ExternalLink from './imgs/external-link.svg?component';
+export const ExternalLinkIcon = createIcon(ExternalLink);
+
 import HeartOff from './imgs/heart-off.svg?component';
 export const HeartOffIcon = createIcon(HeartOff);
 

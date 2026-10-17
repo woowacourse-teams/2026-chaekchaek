@@ -10,6 +10,7 @@ export {
   CheckboxOnIcon,
   CloseIcon,
   CommentIcon,
+  ExternalLinkIcon,
   HeartOffIcon,
   HeartOnIcon,
   InvisibleIcon,
