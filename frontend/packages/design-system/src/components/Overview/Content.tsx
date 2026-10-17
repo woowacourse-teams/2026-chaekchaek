@@ -1,4 +1,5 @@
 import type { ElementType } from 'react';
+import clsx from 'clsx';
 
 import { View } from '#internal/components/View';
 import { createClassName } from '#internal/utils/classname';
@@ -25,7 +26,9 @@ export const Content = <T extends ElementType>(props: ContentProps<T>) => {
     <View as={as} className={classname} {...restProps}>
       {title && <div className={styles.title}>{title}</div>}
       {content && <div className={styles.content}>{content}</div>}
-      {description && <div className={styles.description}>{description}</div>}
+      {description && (
+        <div className={clsx(styles.description, styles[`is-overflowing`])}>{description}</div>
+      )}
       {meta && <div className={styles.meta}>{meta}</div>}
     </View>
   );
