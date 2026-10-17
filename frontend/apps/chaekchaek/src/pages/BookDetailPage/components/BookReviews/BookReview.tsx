@@ -271,18 +271,20 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
               onReplyWritten={handleReplyWritten}
             />
           )}
-          {repliesData?.items.map((reply) => {
-            return (
-              <BookReply
-                key={reply.replyId}
-                reply={reply}
-                showSpoilerVisible={showSpoilerVisible}
-                onShowSpoiler={handleClickShowSpoiler}
-                onRefetchGetReplies={refetchGetReplies}
-                onClickAvatar={handleClickAvatar}
-              />
-            );
-          })}
+          {repliesData?.items
+            ?.filter((reply) => !reply.deleted)
+            .map((reply) => {
+              return (
+                <BookReply
+                  key={reply.replyId}
+                  reply={reply}
+                  showSpoilerVisible={showSpoilerVisible}
+                  onShowSpoiler={handleClickShowSpoiler}
+                  onRefetchGetReplies={refetchGetReplies}
+                  onClickAvatar={handleClickAvatar}
+                />
+              );
+            })}
         </Entry.Extension>
       )}
       {dialogElement}
