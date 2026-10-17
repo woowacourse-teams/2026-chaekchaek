@@ -14,7 +14,6 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 const navs = [
   { link: ROUTES.FEED, text: '발견' },
   { link: ROUTES.LIBRARY, text: '내 서재' },
-  { link: ROUTES.HOME, text: '기록' },
 ];
 
 const classnameDefault = 'frame-Header-Nav';
