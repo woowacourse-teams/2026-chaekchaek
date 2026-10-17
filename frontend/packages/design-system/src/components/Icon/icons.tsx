@@ -33,6 +33,9 @@ export const CommentIcon = createIcon(Comment);
 import ExternalLink from './imgs/external-link.svg?component';
 export const ExternalLinkIcon = createIcon(ExternalLink);
 
+import EyeOff from './imgs/eye-off.svg?component';
+export const EyeOffIcon = createIcon(EyeOff);
+
 import HeartOff from './imgs/heart-off.svg?component';
 export const HeartOffIcon = createIcon(HeartOff);
 

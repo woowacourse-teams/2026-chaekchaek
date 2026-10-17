@@ -14,6 +14,7 @@ export {
   CloseIcon,
   CommentIcon,
   ExternalLinkIcon,
+  EyeOffIcon,
   HeartOffIcon,
   HeartOnIcon,
   InvisibleIcon,
