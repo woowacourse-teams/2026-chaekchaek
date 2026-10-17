@@ -11,6 +11,8 @@ import {
   postRepliesReplyIdReactions,
 } from '@/services/apis/repliesReplyIdReactions/repository';
 
+import { deleteRepliesReplyId } from '@/services/apis/repliesReplyId/repository';
+
 import type { BookReplyProps } from './BookReply.types';
 
 const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
@@ -43,6 +45,16 @@ export const BookReply = (props: BookReplyProps) => {
     await onRefetchGetReplies();
   };
 
+  const { mutate: deleteReply } = useExecute({
+    executeFn: deleteRepliesReplyId,
+  });
+
+  const handleClickDeleteReply = async (replyId: number) => {
+    await deleteReply({ replyId });
+
+    await onRefetchGetReplies();
+  };
+
   return (
     <Surface key={reply.replyId}>
       <Shell>
@@ -67,6 +79,24 @@ export const BookReply = (props: BookReplyProps) => {
           description={showSpoilerVisible ? reply.content : SPOILER_PLACEHOLDER_REPLY}
         />
         <Shell.Trailing>
+          {reply.author.mine && (
+            <>
+              <Button shape="link" variant="ghost" size="x-small" onClick={() => {}}>
+                수정
+              </Button>
+              <Button
+                shape="link"
+                variant="ghost"
+                size="x-small"
+                onClick={() => {
+                  handleClickDeleteReply(reply.replyId);
+                }}
+              >
+                삭제
+              </Button>
+            </>
+          )}
+
           <Button
             leading={reply.likedByMe ? <Icon.HeartOnIcon /> : <Icon.HeartOffIcon />}
             shape="link"
