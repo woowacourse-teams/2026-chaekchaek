@@ -14,6 +14,7 @@ const meta = {
     color: 'default',
     size: 'medium',
     strong: false,
+    underline: false,
   },
   argTypes: {
     children: {
@@ -38,6 +39,10 @@ const meta = {
     strong: {
       control: 'boolean',
       description: '텍스트를 굵게 표시합니다. 기본 굵기는 400, 강조 굵기는 700입니다.',
+    },
+    underline: {
+      control: 'boolean',
+      description: '텍스트에 밑줄을 표시합니다.',
     },
   },
   decorators: [
@@ -102,6 +107,13 @@ export const Strong: Story = {
   args: {
     children: '오래 기억하고 싶은 문장을 강조해 보세요.',
     strong: true,
+  },
+};
+
+export const Underline: Story = {
+  args: {
+    children: '기억하고 싶은 문장에 밑줄을 그어 보세요.',
+    underline: true,
   },
 };
 
