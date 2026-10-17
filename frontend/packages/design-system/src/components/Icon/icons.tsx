@@ -1,7 +1,16 @@
 import { createIcon } from './createIcon';
 
+import ArrowUp from './imgs/arrow-up.svg?component';
+export const ArrowUpIcon = createIcon(ArrowUp);
+
 import ArrowRight from './imgs/arrow-right.svg?component';
 export const ArrowRightIcon = createIcon(ArrowRight);
+
+import ArrowDown from './imgs/arrow-down.svg?component';
+export const ArrowDownIcon = createIcon(ArrowDown);
+
+import ArrowLeft from './imgs/arrow-left.svg?component';
+export const ArrowLeftIcon = createIcon(ArrowLeft);
 
 import Check from './imgs/check.svg?component';
 export const CheckIcon = createIcon(Check);
