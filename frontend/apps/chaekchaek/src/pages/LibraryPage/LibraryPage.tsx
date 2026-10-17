@@ -400,13 +400,19 @@ export const LibraryPage = () => {
                             }}
                           />
                         )}
-                        <Link to={`/books/${item.isbn13}`}>
-                          <ImgBox img={item.coverImageUrl} size="small" />
-                        </Link>
+                        {!isEditing ? (
+                          <Link to={`/books/${item.isbn13}`}>
+                            <ImgBox img={item.coverImageUrl} size="small" />
+                          </Link>
+                        ) : (
+                          <div>
+                            <ImgBox img={item.coverImageUrl} size="small" />
+                          </div>
+                        )}
                       </List.Item.Leading>
                       <List.Item.Content
-                        as={Link}
-                        to={`/books/${item.isbn13}`}
+                        as={!isEditing ? Link : 'div'}
+                        {...(!isEditing && { to: `/books/${item.isbn13}` })}
                         title={
                           <>
                             <Badge
