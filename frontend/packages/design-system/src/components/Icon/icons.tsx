@@ -30,6 +30,9 @@ export const CloseIcon = createIcon(Close);
 import Comment from './imgs/comment.svg?component';
 export const CommentIcon = createIcon(Comment);
 
+import Ellipsis from './imgs/ellipsis.svg?component';
+export const EllipsisIcon = createIcon(Ellipsis);
+
 import ExternalLink from './imgs/external-link.svg?component';
 export const ExternalLinkIcon = createIcon(ExternalLink);
 

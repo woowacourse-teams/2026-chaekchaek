@@ -13,6 +13,7 @@ export {
   CheckboxOnIcon,
   CloseIcon,
   CommentIcon,
+  EllipsisIcon,
   ExternalLinkIcon,
   EyeOffIcon,
   HeartOffIcon,
