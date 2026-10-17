@@ -47,13 +47,14 @@
   line-height: 24px;
   letter-spacing: -0.7625px;
   overflow-wrap: anywhere;
-}
 
-.is-overflowing {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
   overflow: hidden;
+}
+
+.is-overflowing {
   position: relative;  
 }
 
@@ -65,6 +66,20 @@
   bottom: 0;
   height: 48px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.00) 0%, #FFF 100%);
+}
+
+.is-expanded {
+  overflow: auto; 
+  -webkit-line-clamp: none;
+}
+
+.is-expanded:after{
+  display: none;
+}
+
+.button-expand {
+  position: relative;
+  top: -100%
 }
 
 .meta {
