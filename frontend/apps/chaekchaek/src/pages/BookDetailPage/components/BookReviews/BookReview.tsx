@@ -8,6 +8,7 @@ import {
   Dialog,
   Entry,
   Icon,
+  InfoMessage,
   Note,
   Shell,
   Surface,
@@ -250,23 +251,18 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
           onClick={handleClickShowSpoiler}
         >
           {showSpoilerVisible ? (
-            review.content
-          ) : (
             <>
-              <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
-              <Text size="small" color="error">
-                (스포일러 · 눌러보기)
-              </Text>
+              {review.content}
+              {review.quote && <Note>{review.quote}</Note>}
             </>
-          )}
-          {review.quote && (
-            <Note variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
-              {showSpoilerVisible ? (
-                review.quote
-              ) : (
-                <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
-              )}
-            </Note>
+          ) : (
+            <Surface variant="filled">
+              <InfoMessage
+                visual={<Icon.EyeOffIcon />}
+                title="스포일러가 포함된 감상이에요"
+                content={<Text underline>감상과 인용 보기</Text>}
+              />
+            </Surface>
           )}
         </Entry.Body>
         <Entry.Footer>
@@ -326,13 +322,7 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
                   <Shell.Content
                     onClick={handleClickShowSpoiler}
                     title={reply.author.displayName}
-                    description={
-                      showSpoilerVisible ? (
-                        reply.content
-                      ) : (
-                        <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REPLY}</span>
-                      )
-                    }
+                    description={showSpoilerVisible ? reply.content : SPOILER_PLACEHOLDER_REPLY}
                   />
                   <Shell.Trailing>
                     <Button

@@ -10,10 +10,12 @@ import {
   Entry,
   Icon,
   ImgBox,
+  InfoMessage,
   Media,
   Note,
   Partition,
   Shell,
+  Surface,
   Text,
 } from '@chaekchaek/design-system';
 
@@ -171,23 +173,18 @@ export const BookFeed = (props: BookFeedProps) => {
               <Entry.Body>
                 <Link to={`/books/${review.isbn13}`} onClick={handleClickShowSpoiler}>
                   {showSpoilerVisible ? (
-                    review.content
-                  ) : (
                     <>
-                      <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
-                      <Text size="small" color="error">
-                        (스포일러 · 눌러보기)
-                      </Text>
+                      {review.content}
+                      {review.quote && <Note>{review.quote}</Note>}
                     </>
-                  )}
-                  {review.quote && (
-                    <Note variant="default" sx={{ mt: 2 }}>
-                      {showSpoilerVisible ? (
-                        review.quote
-                      ) : (
-                        <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
-                      )}
-                    </Note>
+                  ) : (
+                    <Surface variant="filled">
+                      <InfoMessage
+                        visual={<Icon.EyeOffIcon />}
+                        title="스포일러가 포함된 감상이에요"
+                        content={<Text underline>감상과 인용 보기</Text>}
+                      />
+                    </Surface>
                   )}
                 </Link>
               </Entry.Body>
