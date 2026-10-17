@@ -42,11 +42,15 @@
 }
 
 .description {
+  display: -webkit-box;
   color: var(--chaek-color-text-secondary);
   font-size: 1rem; /* 16px */
   line-height: 24px;
   letter-spacing: -0.7625px;
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
 }
 
 .meta {
