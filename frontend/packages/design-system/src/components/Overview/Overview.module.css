@@ -48,9 +48,9 @@
   letter-spacing: -0.7625px;
   overflow-wrap: anywhere;
 
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
+  interpolate-size: allow-keywords;
+  height: calc(4 * 24px);
+  transition: all 0.3s;
   overflow: hidden;
 }
 
@@ -66,15 +66,17 @@
   bottom: 0;
   height: 48px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.00) 0%, #FFF 100%);
+  transition: background 0.3s;
 }
 
 .is-expanded {
   overflow: auto; 
   -webkit-line-clamp: none;
+  height: auto;
 }
 
 .is-expanded:after{
-  display: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.00) 0%, #FFF 0%);
 }
 
 .button-expand {
