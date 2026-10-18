@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 
 import { Avatar, Button, Icon, Shell, Surface } from '@chaekchaek/design-system';
@@ -12,6 +13,8 @@ import {
 } from '@/services/apis/repliesReplyIdReactions/repository';
 
 import { deleteRepliesReplyId } from '@/services/apis/repliesReplyId/repository';
+
+import { UpdateReply } from './UpdateReply';
 
 import type { BookReplyProps } from './BookReply.types';
 
@@ -45,6 +48,11 @@ export const BookReply = (props: BookReplyProps) => {
     await onRefetchGetReplies();
   };
 
+  const [isEditing, setSetIsEditing] = useState(false);
+  const handleStartEdit = () => {
+    setSetIsEditing(true);
+  };
+
   const { mutate: deleteReply } = useExecute({
     executeFn: deleteRepliesReplyId,
   });
@@ -54,6 +62,8 @@ export const BookReply = (props: BookReplyProps) => {
 
     await onRefetchGetReplies();
   };
+
+  if (isEditing) return <UpdateReply reply={reply} onReplyUpdated={onRefetchGetReplies} />;
 
   return (
     <Surface key={reply.replyId}>
@@ -81,7 +91,7 @@ export const BookReply = (props: BookReplyProps) => {
         <Shell.Trailing>
           {reply.author.mine && (
             <>
-              <Button shape="link" variant="ghost" size="x-small" onClick={() => {}}>
+              <Button shape="link" variant="ghost" size="x-small" onClick={handleStartEdit}>
                 수정
               </Button>
               <Button
