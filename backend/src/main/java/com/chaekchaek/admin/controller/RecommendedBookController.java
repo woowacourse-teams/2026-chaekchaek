@@ -29,6 +29,7 @@ public class RecommendedBookController {
         return ResponseEntity.ok(adminService.getRecommendedBooks());
     }
 
+    /** 관리자 전용 API */
     @PostMapping
     public ResponseEntity<RecommendedBookResponse> addRecommendedBook(
             @Valid @RequestBody AddRecommendedBookRequest request
@@ -38,6 +39,7 @@ public class RecommendedBookController {
                 .body(response);
     }
 
+    /** 관리자 전용 API */
     @DeleteMapping("/{bookId}")
     public ResponseEntity<Void> deleteRecommendedBook(@PathVariable long bookId) {
         adminService.deleteRecommendedBook(bookId);
