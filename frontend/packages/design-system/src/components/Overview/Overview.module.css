@@ -47,6 +47,41 @@
   line-height: 24px;
   letter-spacing: -0.7625px;
   overflow-wrap: anywhere;
+
+  interpolate-size: allow-keywords;
+  height: calc(4 * 24px);
+  transition: all 0.3s;
+  overflow: hidden;
+}
+
+.is-overflowing {
+  position: relative;  
+}
+
+.is-overflowing:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  bottom: 0;
+  height: 48px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.00) 0%, #FFF 100%);
+  transition: background 0.3s;
+}
+
+.is-expanded {
+  overflow: auto; 
+  -webkit-line-clamp: none;
+  height: auto;
+}
+
+.is-expanded:after{
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.00) 0%, #FFF 0%);
+}
+
+.button-expand {
+  position: relative;
+  top: -100%
 }
 
 .meta {

@@ -219,7 +219,7 @@ export const UpdateReviewDialog = ({
                     ? user?.nickname
                     : user?.anonymousNickname
                   : guest?.nickname}
-                ’로 표시돼요
+                ’(으)로 표시돼요
               </span>
             </Text>
           </Dialog.Body>

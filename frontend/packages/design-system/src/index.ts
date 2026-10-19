@@ -108,6 +108,9 @@ export type { Props as FieldGroupProps } from './components/FieldGroup';
 export { Dialog } from './components/Dialog';
 export type { Props as DialogProps } from './components/Dialog';
 
+export { DropdownMenu } from './components/DropdownMenu';
+export type { Props as DropdownMenuProps } from './components/DropdownMenu';
+
 export { Pagination } from './components/Pagination';
 export type { Props as PaginationProps } from './components/Pagination';
 

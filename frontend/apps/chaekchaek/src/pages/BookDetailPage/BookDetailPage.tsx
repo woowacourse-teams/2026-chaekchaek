@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { Layout } from '@/frames';
@@ -29,6 +29,7 @@ import { BookReviews } from './components/BookReviews';
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
 import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
+import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
@@ -104,28 +105,65 @@ export const BookDetailPage = () => {
     }));
   };
 
-  const getBooksBookIdReviewsLoadData = useCallback(async () => {
-    if (!data?.bookId) return;
-    return await getBooksBookIdReviews(
-      {
-        page: reviewsRequestParams.page,
-        feed: reviewsRequestParams.feed,
-        sort: reviewsRequestParams.sort,
-        bookId: data?.bookId,
-      },
-      guest && guest?.guestToken
-        ? {
-            guestToken: guest.guestToken,
-          }
-        : undefined,
-    );
-  }, [data?.bookId, guest?.guestToken, isAuthenticated, reviewsRequestParams]);
+  const getBooksBookIdReviewsLoadData = useCallback(
+    async ({ pageParam }: { pageParam: number }) => {
+      if (!data?.bookId) return;
+      return await getBooksBookIdReviews(
+        {
+          page: pageParam,
+          feed: reviewsRequestParams.feed,
+          sort: reviewsRequestParams.sort,
+          bookId: data?.bookId,
+        },
+        guest && guest?.guestToken
+          ? {
+              guestToken: guest.guestToken,
+            }
+          : undefined,
+      );
+    },
+    [
+      data?.bookId,
+      guest?.guestToken,
+      isAuthenticated,
+      reviewsRequestParams.feed,
+      reviewsRequestParams.sort,
+    ],
+  );
 
   const {
-    status: { data: reviewsData },
-  } = useLoadData({
+    status: { data: reviewsDataAll },
+    fetchNextPage,
+  } = useInfiniteLoadData({
     queryFn: getBooksBookIdReviewsLoadData,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage?.nextPage || 1;
+    },
   });
+
+  const reviewsData = (reviewsDataAll?.pages ?? []).flatMap((page) => page?.items).filter(Boolean);
+  const totalCount = reviewsDataAll?.pages?.[0]?.totalCount || 0;
+
+  useEffect(() => {
+    const handleScroll = async () => {
+      const scrollTop = document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = document.documentElement.clientHeight;
+
+      if (clientHeight >= scrollHeight - scrollTop) {
+        if (reviewsDataAll?.pages?.[reviewsDataAll?.pages.length - 1]?.nextPage === null) {
+          return;
+        }
+        await fetchNextPage();
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [reviewsDataAll]);
 
   const [dialog, setDialog] = useState<
     'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null
@@ -232,25 +270,22 @@ export const BookDetailPage = () => {
                 replyCount={data?.replyCount}
                 coverImageUrl={data?.coverImageUrl}
               />
-              {data?.bookId && (
-                <BookReviews
-                  isbn={isbn}
-                  bookId={data.bookId}
-                  sort={reviewsRequestParams.sort}
-                  feed={reviewsRequestParams.feed}
-                  count={reviewsData?.totalCount}
-                  reviews={reviewsData?.items}
-                  onSortChange={(sort) => {
-                    handleChangeReviewRequestParams({ name: 'sort', value: sort });
-                  }}
-                  onFeedChange={(feed) => {
-                    handleChangeReviewRequestParams({ name: 'feed', value: feed });
-                  }}
-                  onReviewsRefresh={() => {
-                    refetchGetBooksIsbnLoadData();
-                  }}
-                />
-              )}
+
+              <BookReviews
+                isbn={isbn}
+                {...(data?.bookId && { bookId: data?.bookId })}
+                sort={reviewsRequestParams.sort}
+                feed={reviewsRequestParams.feed}
+                count={totalCount}
+                reviews={reviewsData}
+                onSortChange={(sort) => {
+                  handleChangeReviewRequestParams({ name: 'sort', value: sort });
+                }}
+                onFeedChange={(feed) => {
+                  handleChangeReviewRequestParams({ name: 'feed', value: feed });
+                }}
+                onReviewsRefresh={refetchGetBooksIsbnLoadData}
+              />
             </Split.Content>
           </Split>
         </Container>

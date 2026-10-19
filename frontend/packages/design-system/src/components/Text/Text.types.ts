@@ -10,6 +10,7 @@ export type OwnProps = {
   strong?: boolean;
   /** xx-small부터 순서대로 11, 12, 13, 14, 15, 16px에 대응하는 rem 크기. */
   size?: 'xx-small' | 'x-small' | 'small' | 'medium' | 'large' | 'x-large';
+  underline?: boolean;
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;
