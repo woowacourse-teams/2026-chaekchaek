@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 
-import { Avatar, Button, Icon, Shell, Surface } from '@chaekchaek/design-system';
+import {
+  Avatar,
+  Button,
+  DropdownMenu,
+  Icon,
+  IconButton,
+  Shell,
+  Surface,
+} from '@chaekchaek/design-system';
 
 import { ROUTES } from '@/constants/routes';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
@@ -90,21 +98,22 @@ export const BookReply = (props: BookReplyProps) => {
         />
         <Shell.Trailing>
           {reply.author.mine && (
-            <>
-              <Button shape="link" variant="ghost" size="x-small" onClick={handleStartEdit}>
-                수정
-              </Button>
-              <Button
-                shape="link"
-                variant="ghost"
-                size="x-small"
-                onClick={() => {
-                  handleClickDeleteReply(reply.replyId);
-                }}
-              >
-                삭제
-              </Button>
-            </>
+            <DropdownMenu
+              trigger={
+                <IconButton>
+                  <Icon.EllipsisIcon />
+                </IconButton>
+              }
+              items={[
+                { text: '수정', onClick: handleStartEdit },
+                {
+                  text: '삭제',
+                  onClick: () => {
+                    handleClickDeleteReply(reply.replyId);
+                  },
+                },
+              ]}
+            />
           )}
 
           <Button

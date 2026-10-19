@@ -6,8 +6,10 @@ import {
   Badge,
   Button,
   Dialog,
+  DropdownMenu,
   Entry,
   Icon,
+  IconButton,
   InfoMessage,
   Note,
   Shell,
@@ -197,22 +199,27 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
             />
             {review.author.mine && (
               <Shell.Trailing>
-                <Button
-                  shape="link"
-                  variant="ghost"
-                  onClick={() => {
-                    handleOpenDialog('UpdateReviewDialog');
-                  }}
-                >
-                  수정
-                </Button>
-                <Button
-                  shape="link"
-                  variant="ghost"
-                  onClick={() => handleClickDeleteReview(review.reviewId)}
-                >
-                  삭제
-                </Button>
+                <DropdownMenu
+                  trigger={
+                    <IconButton>
+                      <Icon.EllipsisIcon />
+                    </IconButton>
+                  }
+                  items={[
+                    {
+                      text: '수정',
+                      onClick: () => {
+                        handleOpenDialog('UpdateReviewDialog');
+                      },
+                    },
+                    {
+                      text: '식제',
+                      onClick: () => {
+                        handleClickDeleteReview(review.reviewId);
+                      },
+                    },
+                  ]}
+                />
               </Shell.Trailing>
             )}
           </Shell>
