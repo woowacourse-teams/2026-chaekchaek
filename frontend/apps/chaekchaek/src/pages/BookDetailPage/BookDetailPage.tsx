@@ -105,28 +105,31 @@ export const BookDetailPage = () => {
     }));
   };
 
-  const getBooksBookIdReviewsLoadData = useCallback(async () => {
-    if (!data?.bookId) return;
-    return await getBooksBookIdReviews(
-      {
-        page: reviewsRequestParams.page,
-        feed: reviewsRequestParams.feed,
-        sort: reviewsRequestParams.sort,
-        bookId: data?.bookId,
-      },
-      guest && guest?.guestToken
-        ? {
-            guestToken: guest.guestToken,
-          }
-        : undefined,
-    );
-  }, [
-    data?.bookId,
-    guest?.guestToken,
-    isAuthenticated,
-    reviewsRequestParams.feed,
-    reviewsRequestParams.sort,
-  ]);
+  const getBooksBookIdReviewsLoadData = useCallback(
+    async ({ pageParam }: { pageParam: number }) => {
+      if (!data?.bookId) return;
+      return await getBooksBookIdReviews(
+        {
+          page: pageParam,
+          feed: reviewsRequestParams.feed,
+          sort: reviewsRequestParams.sort,
+          bookId: data?.bookId,
+        },
+        guest && guest?.guestToken
+          ? {
+              guestToken: guest.guestToken,
+            }
+          : undefined,
+      );
+    },
+    [
+      data?.bookId,
+      guest?.guestToken,
+      isAuthenticated,
+      reviewsRequestParams.feed,
+      reviewsRequestParams.sort,
+    ],
+  );
 
   const {
     status: { data: reviewsDataAll },
@@ -281,9 +284,7 @@ export const BookDetailPage = () => {
                 onFeedChange={(feed) => {
                   handleChangeReviewRequestParams({ name: 'feed', value: feed });
                 }}
-                onReviewsRefresh={() => {
-                  refetchGetBooksIsbnLoadData();
-                }}
+                onReviewsRefresh={refetchGetBooksIsbnLoadData}
               />
             </Split.Content>
           </Split>
