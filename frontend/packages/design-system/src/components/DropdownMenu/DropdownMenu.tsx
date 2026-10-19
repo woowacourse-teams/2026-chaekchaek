@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ElementType } from 'react';
 
 import { Button } from '#internal/components/Button';
@@ -33,8 +33,21 @@ export const DropdownMenu = <T extends ElementType>(props: Props<T>) => {
     setIsOpen((open) => !open);
   };
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
   return (
-    <View as={as} className={classname} {...restProps}>
+    <View as={as} ref={rootRef} className={classname} {...restProps}>
       <div className={styles.trigger} onClick={handleToggleClick}>
         {trigger}
       </div>
