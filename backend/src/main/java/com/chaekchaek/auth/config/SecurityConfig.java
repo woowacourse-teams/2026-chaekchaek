@@ -79,6 +79,8 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                         "/api/v1/auth/**",
                         "/api/v1/admin/**",
+                        "/api/v1/recommended-books",
+                        "/api/v1/recommended-books/*",
                         "/api/v1/books/*/reviews",
                         "/api/v1/books/by-isbn/*/reviews",
                         "/api/v1/reviews/*",
@@ -108,6 +110,8 @@ public class SecurityConfig {
                 ).permitAll()
                         .requestMatchers(
                         "/api/v1/admin/**",
+                        "/api/v1/recommended-books",
+                        "/api/v1/recommended-books/*",
                         "/api/v1/library/**",
                         "/api/v1/members/me/ratings/**"
                 ).authenticated()
