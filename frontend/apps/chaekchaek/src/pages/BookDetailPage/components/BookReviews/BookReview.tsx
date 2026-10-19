@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 
 import {
@@ -40,6 +40,7 @@ import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
 
 import styles from './BookReview.module.css';
 import { BookReply } from './BookReply';
+import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
 export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) => {
   const { isAuthenticated, user, guest } = useAuthContext();
@@ -48,11 +49,40 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
   }, [review.reviewId]);
 
   const {
+    status: { data: repliesDataAll },
     refetch: refetchGetReplies,
-    status: { data: repliesData },
-  } = useLoadData({
+    fetchNextPage,
+  } = useInfiniteLoadData({
     queryFn: getReviewsReviewIdRepliesLoadData,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage?.nextPage || 1;
+    },
   });
+
+  const repliesData = (repliesDataAll?.pages ?? []).flatMap((page) => page?.items).filter(Boolean);
+
+  const extensionRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleScroll = async () => {
+      const scrollTop = document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = document.documentElement.clientHeight;
+
+      if (clientHeight >= scrollHeight - scrollTop) {
+        if (repliesDataAll?.pages?.[repliesDataAll?.pages.length - 1]?.nextPage === null) {
+          return;
+        }
+
+        await fetchNextPage();
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [repliesDataAll]);
 
   const { mutate: deleteReview } = useExecute({
     executeFn: deleteReviewsReviewId,
@@ -269,7 +299,7 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
           </Button>
         </Entry.Footer>
       </Entry.Main>
-      {(!!repliesData?.items.length || openWriteReply) && (
+      {(!!repliesData?.length || openWriteReply) && (
         <Entry.Extension>
           {openWriteReply && (
             <WriteReply
@@ -278,7 +308,7 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
               onReplyWritten={handleReplyWritten}
             />
           )}
-          {repliesData?.items
+          {repliesData
             ?.filter((reply) => !reply.deleted)
             .map((reply) => {
               return (
