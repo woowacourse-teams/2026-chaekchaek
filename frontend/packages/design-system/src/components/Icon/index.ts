@@ -26,4 +26,8 @@ export {
   SearchIcon,
   StartIcon,
   TrashIcon,
+  DragHandleIcon,
+  UploadIcon,
+  DownloadIcon,
+  PlusIcon,
 } from './icons';
