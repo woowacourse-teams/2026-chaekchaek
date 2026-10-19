@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 
 import {
@@ -22,7 +22,7 @@ import { ROUTES } from '@/constants/routes';
 import { track } from '@/analytics/track';
 
 import { getReviewsReviewIdReplies } from '@/services/apis/reviewsReviewIdReplies/repository';
-import { useLoadData } from '@/services/core/useLoadData';
+import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
 import {
   deleteReviewsReviewIdReactions,
@@ -40,13 +40,15 @@ import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
 
 import styles from './BookReview.module.css';
 import { BookReply } from './BookReply';
-import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
 export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) => {
   const { isAuthenticated, user, guest } = useAuthContext();
-  const getReviewsReviewIdRepliesLoadData = useCallback(() => {
-    return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
-  }, [review.reviewId]);
+  const getReviewsReviewIdRepliesLoadData = useCallback(
+    async ({ pageParam }: { pageParam: number }) => {
+      return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: pageParam });
+    },
+    [review.reviewId],
+  );
 
   const {
     status: { data: repliesDataAll },
@@ -65,11 +67,10 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
   const extensionRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handleScroll = async () => {
-      const scrollTop = document.documentElement.scrollTop;
-      const scrollHeight = document.documentElement.scrollHeight;
-      const clientHeight = document.documentElement.clientHeight;
+      if (!extensionRef.current) return;
+      const { bottom } = extensionRef.current.getBoundingClientRect();
 
-      if (clientHeight >= scrollHeight - scrollTop) {
+      if (bottom <= window.innerHeight) {
         if (repliesDataAll?.pages?.[repliesDataAll?.pages.length - 1]?.nextPage === null) {
           return;
         }
@@ -300,7 +301,7 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
         </Entry.Footer>
       </Entry.Main>
       {(!!repliesData?.length || openWriteReply) && (
-        <Entry.Extension>
+        <Entry.Extension ref={extensionRef}>
           {openWriteReply && (
             <WriteReply
               isbn={isbn}
