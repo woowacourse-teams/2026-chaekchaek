@@ -8,21 +8,22 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -32,12 +33,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -58,10 +59,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.ic_refresh_loader
-import chaekchaek.shared.generated.resources.ic_refresh_pull
-import chaekchaek.shared.generated.resources.ic_refresh_ready
 import com.chaekchaek.app.presentation.common.RefreshUiState
-import com.chaekchaek.app.ui.theme.ChaekInk
+import com.chaekchaek.app.ui.theme.ChaekSurface
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -82,26 +81,27 @@ fun ChaekRefreshLayout(
     val canPull = enabled && state.enabled
     val latestEnabled = rememberUpdatedState(canPull)
     val latestBottom = rememberUpdatedState(bottomEnabled)
-    val density = LocalDensity.current
-    val threshold = with(density) { 64.dp.toPx() }
-    val bottomLimit = with(density) { 24.dp.toPx() }
-    var offset by remember { mutableFloatStateOf(0f) }
+    val pullState = rememberPullToRefreshState()
+    val bottomLimit = with(LocalDensity.current) { 24.dp.toPx() }
+    var bottomOffset by remember { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
     var settling by remember { androidx.compose.runtime.mutableStateOf<Job?>(null) }
     val snackbar = remember { SnackbarHostState() }
+    val latestContent = rememberUpdatedState(content)
+    // 편집 모드에서 공식 Box를 제거해도 목록과 입력의 remember 상태를 유지한다.
+    val retainedContent = remember { movableContentOf { latestContent.value() } }
 
-    fun settle(target: Float) {
+    fun settleBottom() {
         settling?.cancel()
         settling = scope.launch {
-            animate(offset, target, animationSpec = tween(220, easing = LinearOutSlowInEasing)) { value, _ -> offset = value }
+            animate(bottomOffset, 0f, animationSpec = tween(220, easing = LinearOutSlowInEasing)) { value, _ ->
+                bottomOffset = value
+            }
         }
     }
 
-    LaunchedEffect(state.isRefreshing, canPull) {
-        if (canPull && state.isRefreshing) {
-            settling?.cancel()
-            offset = threshold
-        } else settle(0f)
+    LaunchedEffect(state.isRefreshing, canPull, bottomEnabled) {
+        if (state.isRefreshing || !canPull || !bottomEnabled) settleBottom()
     }
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
@@ -109,15 +109,14 @@ fun ChaekRefreshLayout(
                 latestEnabled.value && !latestState.value.isRefreshing) latestRefresh.value()
         }
     }
-    val connection = remember(threshold, bottomLimit) {
+    val bottomConnection = remember(bottomLimit, pullState) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (source != NestedScrollSource.UserInput || !latestEnabled.value || latestState.value.isRefreshing) return Offset.Zero
-                if ((offset > 0 && available.y < 0) || (offset < 0 && available.y > 0)) {
+                if (bottomOffset < 0f && available.y > 0f) {
                     settling?.cancel()
-                    val consumed = if (offset > 0) available.y.coerceAtLeast(-offset / 0.5f)
-                        else available.y.coerceAtMost(-offset / 0.5f)
-                    offset += consumed * 0.5f
+                    val consumed = available.y.coerceAtMost(-bottomOffset / 0.5f)
+                    bottomOffset += consumed * 0.5f
                     return Offset(0f, consumed)
                 }
                 return Offset.Zero
@@ -125,44 +124,56 @@ fun ChaekRefreshLayout(
 
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
                 if (source != NestedScrollSource.UserInput || !latestEnabled.value || latestState.value.isRefreshing) return Offset.Zero
-                if (available.y > 0 || (available.y < 0 && latestBottom.value)) {
+                // 아래로 당기는 양은 소비하지 않아 공식 상단 제스처에 전달한다.
+                if (available.y < 0f && latestBottom.value && pullState.distanceFraction == 0f) {
                     settling?.cancel()
-                    offset = (offset + available.y * 0.5f).coerceIn(-bottomLimit, threshold)
+                    bottomOffset = (bottomOffset + available.y * 0.5f).coerceIn(-bottomLimit, 0f)
                     return Offset(0f, available.y)
                 }
                 return Offset.Zero
             }
 
             override suspend fun onPreFling(available: Velocity): Velocity {
-                if (offset == 0f || latestState.value.isRefreshing) return Velocity.Zero
-                val refreshing = latestEnabled.value && offset >= threshold - 0.5f
-                if (refreshing) latestRefresh.value()
-                settling?.cancel()
-                settling = scope.launch {
-                    // 빠른 응답이 같은 프레임에서 끝나도 표시가 열린 채 남지 않는다.
-                    withFrameNanos { }
-                    if (latestState.value.isRefreshing && latestEnabled.value) offset = threshold
-                    else settle(0f)
-                }
+                if (bottomOffset == 0f) return Velocity.Zero
+                settleBottom()
                 return Velocity(0f, available.y)
             }
         }
     }
+    val bodyModifier = Modifier.fillMaxSize().nestedScroll(bottomConnection)
+        .graphicsLayer { translationY = bottomOffset }
     CompositionLocalProvider(LocalOverscrollFactory provides null) {
-        Box(modifier.fillMaxSize().clipToBounds().nestedScroll(connection).semantics {
+        Box(modifier.fillMaxSize().clipToBounds().semantics {
             if (canPull && !state.isRefreshing) {
                 customActions = listOf(CustomAccessibilityAction("새로고침") { onRefresh(); true })
             }
         }) {
-            if (offset > 0f) {
-                RefreshIndicator(
-                    state = state,
-                    ready = offset >= threshold - 0.5f,
-                    modifier = Modifier.fillMaxWidth().height(64.dp)
-                        .graphicsLayer { translationY = offset - threshold },
-                )
+            if (canPull) {
+                PullToRefreshBox(
+                    isRefreshing = state.isRefreshing,
+                    onRefresh = {
+                        if (latestEnabled.value && !latestState.value.isRefreshing) latestRefresh.value()
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                    state = pullState,
+                    indicator = {
+                        if (pullState.distanceFraction > 0f) {
+                            RefreshIndicator(
+                                state = state,
+                                ready = pullState.distanceFraction >= 1f,
+                                modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().heightIn(min = 64.dp).graphicsLayer {
+                                    translationY = (pullState.distanceFraction.coerceAtMost(1f) - 1f) * size.height
+                                },
+                            )
+                        }
+                    },
+                ) {
+                    Box(bodyModifier) { retainedContent() }
+                }
+            } else {
+                // Box에는 enabled 인수가 없어 편집 중에는 제스처 노드 자체를 분리한다.
+                Box(bodyModifier) { retainedContent() }
             }
-            Box(Modifier.fillMaxSize().graphicsLayer { translationY = offset }) { content() }
             ChaekSnackbarHost(snackbar)
         }
     }
@@ -188,27 +199,26 @@ private fun RefreshIndicator(state: RefreshUiState, ready: Boolean, modifier: Mo
         else -> "당겨서 새로고침"
     }
     Row(
-        modifier.testTag("pull-refresh-indicator").semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+        modifier.background(ChaekSurface).padding(horizontal = 12.dp).testTag("pull-refresh-indicator")
+            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (state.showLoading) RefreshSpinner()
-        else Image(
-            painterResource(if (ready || state.isRefreshing) Res.drawable.ic_refresh_ready else Res.drawable.ic_refresh_pull),
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
+        if (state.showLoading) RefreshSpinner(Modifier.testTag("pull-refresh-spinner"))
+        Text(
+            label,
+            color = ChaekInkSecondary,
+            style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 19.5.sp),
         )
-        Text(label, color = if (ready && !state.isRefreshing) ChaekInk else ChaekInkSecondary,
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 19.5.sp))
     }
 }
 
 @Composable
-private fun RefreshSpinner() {
+private fun RefreshSpinner(modifier: Modifier = Modifier) {
     val transition = rememberInfiniteTransition()
     val rotation by transition.animateFloat(0f, 360f, infiniteRepeatable(tween(900, easing = LinearEasing), RepeatMode.Restart))
     Image(painterResource(Res.drawable.ic_refresh_loader), contentDescription = null,
-        modifier = Modifier.size(20.dp).graphicsLayer { rotationZ = rotation })
+        modifier = modifier.size(20.dp).graphicsLayer { rotationZ = rotation })
 }
 
 @Composable

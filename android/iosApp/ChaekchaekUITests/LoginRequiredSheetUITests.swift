@@ -92,7 +92,18 @@ final class LoginRequiredSheetUITests: XCTestCase {
         app.buttons["홈"].tap()
         let requestsBeforePull = fixture.completedRequests(for: "/api/v1/home/latest-reviews")
         XCTAssertGreaterThan(requestsBeforePull, 0)
+        let shortPullStart = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+        let shortPullEnd = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.50))
+        shortPullStart.press(forDuration: 0.1, thenDragTo: shortPullEnd)
+        let unexpectedRefresh = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            fixture.completedRequests(for: "/api/v1/home/latest-reviews") > requestsBeforePull
+        }, object: nil)
+        unexpectedRefresh.isInverted = true
+        XCTAssertEqual(XCTWaiter.wait(for: [unexpectedRefresh], timeout: 1), .completed,
+                       "짧은 당김은 API를 다시 요청하지 않아야 합니다")
         app.swipeDown()
+        XCTAssertTrue(refreshLoadingLabel(in: app).waitForExistence(timeout: 3))
+        attachScreenshot(named: "홈 단순 로더와 안내 문구")
         waitForNewResponse(fixture, path: "/api/v1/home/latest-reviews", after: requestsBeforePull)
         waitForRefreshIndicatorToClose(in: app)
         XCTAssertEqual(fixture.completedRequests(for: "/api/v1/home/latest-reviews"), requestsBeforePull + 1)
@@ -121,6 +132,8 @@ final class LoginRequiredSheetUITests: XCTestCase {
         let requestsBeforePull = fixture.completedRequests(for: "/api/v1/books")
         XCTAssertEqual(requestsBeforePull, 1)
         app.swipeDown()
+        XCTAssertTrue(refreshLoadingLabel(in: app).waitForExistence(timeout: 3))
+        attachScreenshot(named: "빈 검색 단순 로더와 안내 문구")
         waitForNewResponse(fixture, path: "/api/v1/books", after: requestsBeforePull)
         waitForRefreshIndicatorToClose(in: app)
         XCTAssertEqual(fixture.completedRequests(for: "/api/v1/books"), requestsBeforePull + 1)
@@ -128,6 +141,35 @@ final class LoginRequiredSheetUITests: XCTestCase {
         XCTAssertEqual(field.value as? String, "zzxqrefresh529nomatch")
         attachScreenshot(named: "빈 검색 결과 당김 후 검색어 유지")
         // hitRegion은 시스템 홈 인디케이터에서도 실패해 별도 검증 기록으로 남긴다.
+        try app.performAccessibilityAudit(for: [.textClipped])
+    }
+
+    @MainActor
+    func testEmptyFeedPullRefreshesWithoutListEnd() throws {
+        let fixture = try RefreshFixtureServer()
+        defer { fixture.stop() }
+        let app = refreshApplication(fixture)
+        app.launch()
+        XCTAssertTrue(app.buttons["피드"].waitForExistence(timeout: 15))
+        app.buttons["피드"].tap()
+        let empty = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "아직 도착한 감상이 없어요")
+        ).firstMatch
+        XCTAssertTrue(empty.waitForExistence(timeout: 15))
+        let path = "/api/v1/feed/reviews"
+        let requestsBeforePull = fixture.completedRequests(for: path)
+        XCTAssertGreaterThan(requestsBeforePull, 0)
+        app.swipeDown()
+        XCTAssertTrue(refreshLoadingLabel(in: app).waitForExistence(timeout: 3))
+        attachScreenshot(named: "빈 피드 단순 로더와 안내 문구")
+        waitForNewResponse(fixture, path: path, after: requestsBeforePull)
+        waitForRefreshIndicatorToClose(in: app)
+        XCTAssertEqual(fixture.completedRequests(for: path), requestsBeforePull + 1)
+        XCTAssertTrue(empty.exists)
+        XCTAssertFalse(app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "여기까지 모두 봤어요")
+        ).firstMatch.exists)
+        attachScreenshot(named: "빈 피드 당김 후 기존 화면")
         try app.performAccessibilityAudit(for: [.textClipped])
     }
 
@@ -150,12 +192,23 @@ final class LoginRequiredSheetUITests: XCTestCase {
     }
 
     @MainActor
-    private func waitForRefreshIndicatorToClose(in app: XCUIApplication) {
-        let indicator = app.staticTexts.matching(NSPredicate(
-            format: "label CONTAINS %@ OR label CONTAINS %@ OR label CONTAINS %@ OR label CONTAINS %@",
-            "당겨서 새로고침", "놓으면 새로고침", "갱신 요청 중", "새로고침 중이에요"
+    private func refreshIndicator(in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(
+            format: "identifier == %@ OR label IN %@", "pull-refresh-indicator",
+            ["당겨서 새로고침", "놓으면 새로고침", "갱신 요청 중", "새로고침 중이에요"]
         )).firstMatch
-        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: indicator)
+    }
+
+    @MainActor
+    private func refreshLoadingLabel(in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(
+            format: "label == %@", "새로고침 중이에요"
+        )).firstMatch
+    }
+
+    @MainActor
+    private func waitForRefreshIndicatorToClose(in app: XCUIApplication) {
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: refreshIndicator(in: app))
         waitForExpectations(timeout: 10)
     }
 
@@ -224,14 +277,18 @@ private final class RefreshFixtureServer: @unchecked Sendable {
             let path = URLComponents(string: "http://127.0.0.1\(target)")?.path ?? ""
             let body = self.response(for: path)
             let header = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(body.count)\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n"
-            connection.send(content: Data(header.utf8) + body, completion: .contentProcessed { error in
-                if error == nil {
-                    self.lock.lock()
-                    self.responses[path, default: 0] += 1
-                    self.lock.unlock()
-                }
-                connection.cancel()
-            })
+            // 두 번째 조회부터 지연시켜 실제 표시와 응답 후 접힘을 검증한다.
+            let delay = self.completedRequests(for: path) > 0 ? 2.0 : 0.0
+            self.queue.asyncAfter(deadline: .now() + delay) {
+                connection.send(content: Data(header.utf8) + body, completion: .contentProcessed { error in
+                    if error == nil {
+                        self.lock.lock()
+                        self.responses[path, default: 0] += 1
+                        self.lock.unlock()
+                    }
+                    connection.cancel()
+                })
+            }
         }
     }
 
@@ -249,6 +306,8 @@ private final class RefreshFixtureServer: @unchecked Sendable {
                 """
             }.joined(separator: ",")
             body = "{\"reviews\":[\(reviews)]}"
+        case "/api/v1/feed/reviews":
+            body = "{\"reviews\":[],\"totalCount\":0,\"nextPage\":null}"
         default:
             body = "{\"totalCount\":0,\"nextPage\":null,\"items\":[]}"
         }
