@@ -4,7 +4,7 @@ import type { PolymorphicProps } from '#internal/components/View';
 
 export type AS = 'div';
 
-export type Variant = 'filled' | 'outlined';
+export type Variant = 'filled' | 'outlined' | 'dashed';
 
 export type OwnProps = {
   variant?: Variant;

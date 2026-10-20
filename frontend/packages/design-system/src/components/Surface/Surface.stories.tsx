@@ -21,26 +21,36 @@ const ExampleContent = () => (
   </div>
 );
 
-// More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
-export const Example: Story = {
+export const Filled: Story = {
+  args: {
+    children: <ExampleContent />,
+    variant: 'filled',
+  },
+};
+
+export const Outlined: Story = {
+  args: {
+    children: <ExampleContent />,
+    variant: 'outlined',
+  },
+};
+
+export const Dashed: Story = {
+  args: {
+    children: <ExampleContent />,
+    variant: 'dashed',
+  },
+};
+
+export const Spacing: Story = {
   render: () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', gap: 16 }}>
-        <Surface variant="filled">
-          <ExampleContent />
-        </Surface>
-        <Surface variant="outlined">
-          <ExampleContent />
-        </Surface>
-      </div>
-      <div style={{ display: 'flex', gap: 16 }}>
-        <Surface spacing="small">
-          <ExampleContent />
-        </Surface>
-        <Surface spacing="medium">
-          <ExampleContent />
-        </Surface>
-      </div>
+    <div style={{ display: 'flex', gap: 16 }}>
+      <Surface spacing="small">
+        <ExampleContent />
+      </Surface>
+      <Surface spacing="medium">
+        <ExampleContent />
+      </Surface>
     </div>
   ),
 };

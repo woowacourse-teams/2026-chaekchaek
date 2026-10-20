@@ -13,6 +13,11 @@
   background-color: var(--chaek-color-surface-canvas);
 }
 
+.variant-dashed {
+  border: 1px dashed var(--chaek-color-border-divider);
+  border-radius: 12px;
+}
+
 .spacing-small {
   padding: 12px 14px;
 }
