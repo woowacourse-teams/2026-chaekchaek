@@ -17,7 +17,8 @@
 
 ### 지금 사람들이 읽고 있는 책과 감상을 홈에서 만나보세요 🏠
 <p align="center">
-  <img src="TODO-홈-화면-이미지-URL" width="25%">
+  <img width="1431" height="924" alt="image" src="https://github.com/user-attachments/assets/3e2639a1-3a64-4c44-baac-5933fe230330" style="width: 50%" />
+
 </p>
 
 ***요즘 다들 무슨 책 읽지?***
@@ -30,7 +31,9 @@
 
 ### 책등이 꽂힌 나만의 서재를 꾸며보세요 📚
 <p align="center">
-  <img src="TODO-내-서재-화면-이미지-URL" width="25%">
+<img width="1454" height="592" alt="image" src="https://github.com/user-attachments/assets/f944092d-f90b-45fc-b2b6-ba36e91fc70a" style="width: 50%" />
+
+
 </p>
 
 ***한 권씩 꽂히는 독서 기록!***
@@ -43,7 +46,9 @@
 
 ### 책마다 감상을 남기고 다른 사람의 생각을 들어보세요 💬
 <p align="center">
-  <img src="TODO-책-상세-감상-화면-이미지-URL" width="25%">
+  <img width="1920" height="1970" alt="screencapture-chaekchaek-books-9788936456504-2026-10-20-19_48_31" src="https://github.com/user-attachments/assets/21eab1ac-9164-44e3-aab9-561ad60aa0f8" style="width: 50%" />
+
+
 </p>
 
 ***솔직한 생각은 익명으로!***
