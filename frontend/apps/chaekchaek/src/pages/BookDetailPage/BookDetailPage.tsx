@@ -245,6 +245,7 @@ export const BookDetailPage = () => {
                 isbn13={data?.isbn13}
                 authors={data?.authors}
                 translators={data?.translators}
+                purchaseUrl={data?.purchaseUrl}
                 onRegistryLibrary={() => {
                   handleOpenDialog('RegisterLibraryDialog');
                 }}
