@@ -413,7 +413,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     @Transactional(readOnly = true)
     public PageResponse<ReplyResponse> findReplies(long reviewId, int page) {
-        getReview(reviewId);
+        validateReviewExists(reviewId);
         Long actorId = currentActorIdOrNull();
         Page<Reply> replies = replyRepository.findByReviewId(
                 reviewId,
@@ -625,10 +625,16 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     @Transactional
     public void deleteReviewReaction(long reviewId) {
-        getReview(reviewId);
+        validateReviewExists(reviewId);
         long actorId = currentActorProvider.getCurrentActor().actorId();
         reviewReactionRepository.deleteById(reviewReactionId(reviewId, actorId));
         logEvent("review_reaction_deleted", "Review reaction deleted", "reviewId", reviewId, actorId);
+    }
+
+    private void validateReviewExists(long reviewId) {
+        if (!reviewRepository.existsById(reviewId)) {
+            throw new BusinessException(ErrorCode.REVIEW_NOT_FOUND);
+        }
     }
 
     private ReviewReaction.ReviewReactionId reviewReactionId(long reviewId, long actorId) {
