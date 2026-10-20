@@ -57,7 +57,6 @@ class AdminServiceAuthorizationTest {
                 recommendedBookRepository,
                 bookRepository,
                 bookResolver,
-                currentActorProvider,
                 CLOCK,
                 transactionManager
         );

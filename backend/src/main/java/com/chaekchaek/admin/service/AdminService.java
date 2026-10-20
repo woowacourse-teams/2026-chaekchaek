@@ -42,7 +42,6 @@ public class AdminService {
             RecommendedBookRepository recommendedBookRepository,
             BookRepository bookRepository,
             BookResolver bookResolver,
-            CurrentActorProvider currentActorProvider,
             Clock clock,
             PlatformTransactionManager transactionManager
     ) {

@@ -253,7 +253,6 @@ class AdminServiceTest {
                 recommendedBookRepository,
                 bookRepository,
                 bookResolver,
-                currentActorProvider,
                 CLOCK,
                 mock(PlatformTransactionManager.class)
         );
