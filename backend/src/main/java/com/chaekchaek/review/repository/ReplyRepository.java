@@ -24,7 +24,7 @@ public interface ReplyRepository extends JpaRepository<Reply, Long> {
                     partition by r.review_id order by r.created_at desc, r.reply_id desc
                 ) as reply_rank
                 from reply r
-                where r.review_id in (:reviewIds)
+                where r.review_id in (:reviewIds) and r.deleted_at is null
             ) recent_replies
             where recent_replies.reply_rank <= 3
             order by recent_replies.review_id, recent_replies.created_at asc, recent_replies.reply_id asc

@@ -141,7 +141,7 @@ class ReviewQueryIntegrationTest {
         assertThat(response.items().getFirst().replyCount()).isEqualTo(4);
         assertThat(response.items().getFirst().recentReplies()).hasSize(3);
         assertThat(response.items().getFirst().recentReplies())
-                .anyMatch(reply -> reply.deleted() && reply.replyId() == deletedReply.getId());
+                .noneMatch(reply -> reply.replyId() == deletedReply.getId());
         ReviewResponse mixedResponse = response.items().get(1);
         assertThat(mixedResponse.likeCount()).isEqualTo(2);
         assertThat(mixedResponse.replyCount()).isEqualTo(2);

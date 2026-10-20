@@ -65,6 +65,51 @@ class ReplyRepositoryTest {
     }
 
     @Test
+    @DisplayName("최신 답글에 삭제 답글이 섞여도 감상마다 정상 답글 세 개를 채운다")
+    void should_FillLatestThreeActiveRepliesPerReview_When_RecentRepliesIncludeDeletedOnes() {
+        // given
+        Review firstReview = reviewRepository.save(Review.create(1L, 1L, "첫 감상", null, null, null, false, false));
+        Review secondReview = reviewRepository.save(Review.create(1L, 2L, "둘째 감상", null, null, null, false, false));
+        List<Reply> firstReplies = new ArrayList<>();
+        List<Reply> secondReplies = new ArrayList<>();
+        for (int index = 0; index < 4; index++) {
+            firstReplies.add(replyRepository.save(Reply.create(firstReview.getId(), 1L, "첫 답글 " + index, false)));
+            replyRepository.save(Reply.create(firstReview.getId(), 1L, "삭제 답글", false)).deleteBy(1L);
+            secondReplies.add(replyRepository.save(Reply.create(secondReview.getId(), 2L, "둘째 답글 " + index, false)));
+        }
+        replyRepository.flush();
+
+        // when
+        List<Reply> actual = replyRepository.findRecentThreeByReviewIdIn(List.of(firstReview.getId(), secondReview.getId()));
+
+        // then
+        assertThat(actual).extracting(Reply::getId).containsExactly(
+                firstReplies.get(1).getId(),
+                firstReplies.get(2).getId(),
+                firstReplies.get(3).getId(),
+                secondReplies.get(1).getId(),
+                secondReplies.get(2).getId(),
+                secondReplies.get(3).getId()
+        );
+    }
+
+    @Test
+    @DisplayName("감상의 답글이 모두 삭제되면 최근 답글이 비어 있다")
+    void should_ReturnNoRecentReplies_When_AllRepliesAreDeleted() {
+        // given
+        Review review = reviewRepository.save(Review.create(1L, 1L, "감상", null, null, null, false, false));
+        replyRepository.save(Reply.create(review.getId(), 1L, "삭제 답글", false)).deleteBy(1L);
+        replyRepository.save(Reply.create(99L, 1L, "다른 감상의 답글", false));
+        replyRepository.flush();
+
+        // when
+        List<Reply> actual = replyRepository.findRecentThreeByReviewIdIn(List.of(review.getId()));
+
+        // then
+        assertThat(actual).isEmpty();
+    }
+
+    @Test
     @DisplayName("삭제되지 않은 감상과 답글만 책별로 집계한다")
     void should_ExcludeDeletedReviewsAndReplies_When_CountingActiveBookActivities() {
         // given
