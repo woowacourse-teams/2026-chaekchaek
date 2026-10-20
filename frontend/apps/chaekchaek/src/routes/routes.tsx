@@ -78,6 +78,30 @@ const LegacyMemberLibraryPage = lazy(
       default: module.MemberLibraryPage,
     })),
 );
+const LibrariesPage = lazy(
+  async () =>
+    await import('@/pages/LibrariesPage').then((module) => ({
+      default: module.LibrariesPage,
+    })),
+);
+const LibraryPage = lazy(
+  async () =>
+    await import('@/pages/LibraryPage').then((module) => ({
+      default: module.LibraryPage,
+    })),
+);
+const MemberLibrariesPage = lazy(
+  async () =>
+    await import('@/pages/MemberLibrariesPage').then((module) => ({
+      default: module.MemberLibrariesPage,
+    })),
+);
+const MemberLibraryPage = lazy(
+  async () =>
+    await import('@/pages/MemberLibraryPage').then((module) => ({
+      default: module.MemberLibraryPage,
+    })),
+);
 const BookFeedPage = lazy(
   async () =>
     await import('@/pages/BookFeedPage').then((module) => ({
@@ -146,6 +170,30 @@ const routes: Route[] = [
   {
     path: ROUTES.LEGACY_MEMBER_LIBRARY,
     element: <LegacyMemberLibraryPage />,
+  },
+  {
+    path: ROUTES.LIBRARIES,
+    element: (
+      <ProtectedRoute>
+        <LibrariesPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.LIBRARY,
+    element: (
+      <ProtectedRoute>
+        <LibraryPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.MEMBER_LIBRARIES,
+    element: <MemberLibrariesPage />,
+  },
+  {
+    path: ROUTES.MEMBER_LIBRARY,
+    element: <MemberLibraryPage />,
   },
   {
     path: ROUTES.FEED,

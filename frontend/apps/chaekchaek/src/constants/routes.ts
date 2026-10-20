@@ -10,5 +10,9 @@ export const ROUTES = {
   BOOK_DETAIL: '/books',
   LEGACY_LIBRARY: '/library',
   LEGACY_MEMBER_LIBRARY: '/members/:memberId/library',
+  LIBRARIES: '/libraries',
+  LIBRARY: '/libraries/:libraryId',
+  MEMBER_LIBRARIES: '/members/:memberId/libraries',
+  MEMBER_LIBRARY: '/members/:memberId/libraries/:libraryId',
   FEED: '/feed',
 };
