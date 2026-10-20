@@ -14,6 +14,7 @@ export type BookInfoProps = {
   isbn13: string | undefined;
   authors: readonly unknown[] | undefined;
   translators: readonly unknown[] | undefined;
+  purchaseUrl: string | null | undefined;
   onRegistryLibrary: () => void;
   onRatingCreate: () => void;
   onReadingStatusChange: (readingStatus: string) => void;

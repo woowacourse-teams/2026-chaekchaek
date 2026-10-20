@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 import {
   Banner,
   Button,
@@ -12,6 +14,8 @@ import {
 
 import { track } from '@/analytics/track';
 
+import Yes24LogoImg from './imgs/yes24.svg';
+
 import type { BookInfoProps } from './BookInfo.types';
 
 export const BookInfo = ({
@@ -24,6 +28,7 @@ export const BookInfo = ({
   isbn13,
   authors,
   translators,
+  purchaseUrl,
   onRegistryLibrary,
   onRatingCreate,
   onReadingStatusChange,
@@ -117,6 +122,12 @@ export const BookInfo = ({
         {!!authors?.length && <DataInfo.Item title="지은이" content={authors.join(' · ')} />}
         {!!translators?.length && <DataInfo.Item title="옮김" content={translators.join(' · ')} />}
       </DataInfo>
+      {purchaseUrl && (
+        <Button as={Link} variant="ghost" block sx={{ mt: 4 }} to={purchaseUrl} target="_blank">
+          <img src={Yes24LogoImg} alt="yes24" />
+          에서 보기
+        </Button>
+      )}
     </>
   );
 };
