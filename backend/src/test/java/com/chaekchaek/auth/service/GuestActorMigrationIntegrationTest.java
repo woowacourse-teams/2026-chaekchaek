@@ -88,6 +88,7 @@ class GuestActorMigrationIntegrationTest {
         assertThat(deletedAtBefore).isNotNull();
         assertThat(deletedState[1]).isEqualTo(deletedAtBefore);
         assertThat(deletedState[2]).isEqualTo("삭제 답글");
+        assertThat(replyRepository.findById(deletedReply.getId())).isEmpty();
         assertThat(replyRepository.findById(activeReply.getId()).orElseThrow().getActorId()).isEqualTo(memberActor.getId());
     }
 
