@@ -171,8 +171,11 @@ final class BookQuestionUITests: XCTestCase {
         revealInReview(save, app: app, upward: true)
         XCTAssertTrue(save.isEnabled)
         attachScreenshot(named: "감상 입력 보존과 실제 0점")
-        save.tap()
-        XCTAssertTrue(app.staticTexts["시안에서 입력을 확인했어요."].waitForExistence(timeout: 5))
+        // 기존 저장 실패 검사와 같은 단일 터치 조건으로 Compose 입력을 전달한다.
+        Thread.sleep(forTimeInterval: 0.5)
+        print("QUESTION_A_SAVE_BEFORE frame=\(save.frame) enabled=\(save.isEnabled) value=\(rating.value ?? "nil")")
+        save.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.15)
+        XCTAssertTrue(app.staticTexts["시안에서 입력을 확인했어요."].waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertFalse(content.exists)
         try audit(app, name: "시안 감상 제출 뒤 상세 복귀")
         print("QUESTION_A_FLOW_PASS testReviewDraftSurvivesContinueWritingAndSubmitsActualZero")
