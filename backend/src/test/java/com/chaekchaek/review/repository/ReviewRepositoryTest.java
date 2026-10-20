@@ -99,6 +99,15 @@ class ReviewRepositoryTest {
         assertThat(reviewRepository.existsVisibleById(Long.MAX_VALUE)).isFalse();
     }
 
+    @Test
+    @DisplayName("도서별 감상 수는 정상 감상과 정상 답글이 남은 삭제 감상만 센다")
+    void should_CountOnlyVisibleReviewsPerBook_When_CountingReviewsGroupedByBook() {
+        // when & then
+        assertThat(reviewRepository.countByBookIdInGroupByBookId(List.of(BOOK_ID)))
+                .extracting(ReviewRepository.BookCommentCount::getCount)
+                .containsExactly(3L);
+    }
+
     private Review saveReview(long actorId) {
         return reviewRepository.save(Review.create(BOOK_ID, actorId, "감상", null, null, null, false, false));
     }

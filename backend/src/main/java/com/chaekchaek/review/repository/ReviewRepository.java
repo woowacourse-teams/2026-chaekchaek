@@ -114,7 +114,14 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             """)
     Page<Review> findFeedReviews(Pageable pageable);
 
-    @Query("select r.bookId as bookId, count(r) as count from Review r where r.bookId in :bookIds group by r.bookId")
+    @Query("""
+            select r.bookId as bookId, count(r) as count
+            from Review r
+            where r.bookId in :bookIds
+              and (r.deletedAt is null
+                   or exists (select rp.id from Reply rp where rp.reviewId = r.id and rp.deletedAt is null))
+            group by r.bookId
+            """)
     List<BookCommentCount> countByBookIdInGroupByBookId(Collection<Long> bookIds);
 
     @Query(value = """
