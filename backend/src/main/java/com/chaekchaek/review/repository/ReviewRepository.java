@@ -57,6 +57,15 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             """)
     long countVisibleByBookIdAndActorId(long bookId, long actorId);
 
+    @Query("""
+            select case when count(r) > 0 then true else false end
+            from Review r
+            where r.id = :reviewId
+              and (r.deletedAt is null
+                   or exists (select rp.id from Reply rp where rp.reviewId = r.id and rp.deletedAt is null))
+            """)
+    boolean existsVisibleById(long reviewId);
+
     @Query(value = """
             select r.*
             from review r

@@ -88,6 +88,17 @@ class ReviewRepositoryTest {
                 .isEqualTo(2);
     }
 
+    @Test
+    @DisplayName("정상 감상과 정상 답글이 남은 삭제 감상만 보이는 감상으로 확인한다")
+    void should_ConfirmOnlyVisibleReviews_When_CheckingVisibleReviewById() {
+        // when & then
+        assertThat(reviewRepository.existsVisibleById(active.getId())).isTrue();
+        assertThat(reviewRepository.existsVisibleById(deletedWithActiveReply.getId())).isTrue();
+        assertThat(reviewRepository.existsVisibleById(deletedWithoutReply.getId())).isFalse();
+        assertThat(reviewRepository.existsVisibleById(deletedWithDeletedReply.getId())).isFalse();
+        assertThat(reviewRepository.existsVisibleById(Long.MAX_VALUE)).isFalse();
+    }
+
     private Review saveReview(long actorId) {
         return reviewRepository.save(Review.create(BOOK_ID, actorId, "감상", null, null, null, false, false));
     }

@@ -640,7 +640,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private void validateReviewExists(long reviewId) {
-        if (!reviewRepository.existsById(reviewId)) {
+        if (!reviewRepository.existsVisibleById(reviewId)) {
             throw new BusinessException(ErrorCode.REVIEW_NOT_FOUND);
         }
     }
@@ -673,8 +673,12 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private Review getReview(long reviewId) {
-        return reviewRepository.findById(reviewId)
+        Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
+        if (review.isDeleted() && !reviewRepository.existsVisibleById(reviewId)) {
+            throw new BusinessException(ErrorCode.REVIEW_NOT_FOUND);
+        }
+        return review;
     }
 
     @Transactional
