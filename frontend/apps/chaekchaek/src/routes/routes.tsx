@@ -136,7 +136,7 @@ const routes: Route[] = [
     element: <BookDetailPage />,
   },
   {
-    path: ROUTES.LIBRARY,
+    path: ROUTES.LEGACY_LIBRARY,
     element: (
       <ProtectedRoute>
         <LibraryPage />
@@ -144,7 +144,7 @@ const routes: Route[] = [
     ),
   },
   {
-    path: ROUTES.MEMBER_LIBRARY,
+    path: ROUTES.LEGACY_MEMBER_LIBRARY,
     element: <MemberLibraryPage />,
   },
   {

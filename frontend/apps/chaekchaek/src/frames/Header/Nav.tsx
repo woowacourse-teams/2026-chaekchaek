@@ -12,7 +12,7 @@ import type { NavProps } from './Header.types';
 
 const navs = [
   { link: ROUTES.FEED, text: '발견' },
-  { link: ROUTES.LIBRARY, text: '내 서재' },
+  { link: ROUTES.LEGACY_LIBRARY, text: '내 서재' },
 ];
 
 const classnameDefault = 'frame-Header-Nav';
