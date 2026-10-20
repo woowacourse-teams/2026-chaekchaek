@@ -142,3 +142,5 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 - main에 직접 push하거나 merge하지 않는다. 예외 없음.
 - 모든 변경은 별도 브랜치에서 작업한 뒤 PR(Pull Request)을 통해서만 main에 반영한다.
 - 작업 중인 도구가 Codex든 Claude Code든 이 규칙은 동일하게 지킨다.
+
+- 책 상세 질문, 줄거리·발췌 상단 오버레이, 감상 모달 변경을 구현할 때는 [확정안 A 핸드오프](handoff.md)를 먼저 읽는다. A/B 후보 B는 별도 실험 보존안이며 현재 적용 범위가 아니다.
