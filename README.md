@@ -46,9 +46,7 @@
 
 ### 책마다 감상을 남기고 다른 사람의 생각을 들어보세요 💬
 <p align="center">
-  <img width="1920" height="1970" alt="screencapture-chaekchaek-books-9788936456504-2026-10-20-19_48_31" src="https://github.com/user-attachments/assets/21eab1ac-9164-44e3-aab9-561ad60aa0f8" style="width: 50%" />
-
-
+  <img width="1034" height="806" alt="image" src="https://github.com/user-attachments/assets/8856523f-8c6d-4a2a-b4e0-b24c5d4dd7c8"  style="width: 50%" />
 </p>
 
 ***솔직한 생각은 익명으로!***
