@@ -66,15 +66,15 @@ const BookDetailPage = lazy(
       default: module.BookDetailPage,
     })),
 );
-const LibraryPage = lazy(
+const LegacyLibraryPage = lazy(
   async () =>
-    await import('@/pages/LibraryPage').then((module) => ({
+    await import('@/pages/LegacyLibraryPage').then((module) => ({
       default: module.LibraryPage,
     })),
 );
-const MemberLibraryPage = lazy(
+const LegacyMemberLibraryPage = lazy(
   async () =>
-    await import('@/pages/MemberLibraryPage').then((module) => ({
+    await import('@/pages/LegacyMemberLibraryPage').then((module) => ({
       default: module.MemberLibraryPage,
     })),
 );
@@ -139,13 +139,13 @@ const routes: Route[] = [
     path: ROUTES.LEGACY_LIBRARY,
     element: (
       <ProtectedRoute>
-        <LibraryPage />
+        <LegacyLibraryPage />
       </ProtectedRoute>
     ),
   },
   {
     path: ROUTES.LEGACY_MEMBER_LIBRARY,
-    element: <MemberLibraryPage />,
+    element: <LegacyMemberLibraryPage />,
   },
   {
     path: ROUTES.FEED,
