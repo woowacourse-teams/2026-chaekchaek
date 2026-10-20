@@ -546,7 +546,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         return new ReplyResponse(
                 reply.getId(),
                 reply.getContent(),
-                reply.isDeleted(),
                 reply.getCreatedAt(),
                 authorOf(reply.getActorId(), reply.isAnonymous(), actorId, memberProfiles),
                 likeCount,

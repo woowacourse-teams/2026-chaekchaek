@@ -1480,7 +1480,6 @@ class ReviewControllerTest {
         return new FieldDescriptor[]{
                 field(prefix, "replyId", JsonFieldType.NUMBER, "답글 ID"),
                 field(prefix, "content", JsonFieldType.STRING, "답글 내용"),
-                field(prefix, "deleted", JsonFieldType.BOOLEAN, "soft delete 여부"),
                 field(prefix, "createdAt", JsonFieldType.STRING, "작성 시각(UTC)"),
                 field(prefix, "author", JsonFieldType.OBJECT, "작성자 정보"),
                 field(prefix, "author.memberId", JsonFieldType.NUMBER, "공개 서재 조회용 회원 ID").optional(),
@@ -1558,7 +1557,6 @@ class ReviewControllerTest {
         return new ReplyResponse(
                 201,
                 "저도 그 부분이 좋았어요.",
-                false,
                 Instant.parse("2026-08-13T16:00:00Z"),
                 AUTHOR,
                 3,
