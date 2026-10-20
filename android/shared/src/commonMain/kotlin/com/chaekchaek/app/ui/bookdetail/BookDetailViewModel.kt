@@ -336,8 +336,16 @@ class BookDetailViewModel(
         }
     }
 
-    fun createReview(request: ReviewCreateRequest) {
+    fun createReview(request: ReviewCreateRequest) = createReviewWithRating(request, rating = null)
+
+    fun createReviewWithRating(
+        request: ReviewCreateRequest,
+        rating: Double?,
+        onLibraryAdded: () -> Unit = {},
+        onRatingSaved: () -> Unit = {},
+    ) {
         if (mutationJob?.isActive == true) return
+        val generation = requestGeneration
         _uiState.value = _uiState.value.copy(
             reviewSubmissionState = ReviewSubmissionState.Submitting,
             requestError = null,
@@ -376,6 +384,8 @@ class BookDetailViewModel(
             },
         ) {
             val resolvedTarget = target ?: throw ReviewCreateTargetUnavailableException()
+            failureStage = "personal_rating"
+            saveReviewRatingIfChanged(rating, generation, onLibraryAdded, onRatingSaved)
             publicWrite(
                 retryUnauthorized = true,
                 beforeAuth = { failureStage = "auth" },
@@ -416,23 +426,90 @@ class BookDetailViewModel(
 
     fun openReplyComposer() = openComposer("reply", "create")
 
-    fun openReviewEditor() = openComposer("review", "edit")
+    fun openReviewEditor() {
+        if (_uiState.value.reviewSubmissionState == ReviewSubmissionState.Submitting) return
+        _uiState.value = _uiState.value.copy(reviewSubmissionState = ReviewSubmissionState.Idle)
+        openComposer("review", "edit")
+    }
 
     fun openReplyEditor() = openComposer("reply", "edit")
 
     fun dismissComposer() = analytics.dismissComposer()
 
-    fun updateReview(reviewId: Long, request: ReviewCreateRequest) = mutate(
-        actionName = "review_update",
-        onSuccess = { updated ->
-            _uiState.value = _uiState.value.copy(
-                reviews = _uiState.value.reviews.map { if (it.reviewId == reviewId) updated else it },
-            )
-        },
-        reloadAfterSuccess = false,
-        closesComposer = true,
+    fun updateReview(reviewId: Long, request: ReviewCreateRequest) =
+        submitReviewUpdate(reviewId, request, rating = null, preserveReadingMetadata = false)
+
+    fun updateReviewWithRating(
+        reviewId: Long,
+        request: ReviewCreateRequest,
+        rating: Double?,
+        onLibraryAdded: () -> Unit = {},
+        onRatingSaved: () -> Unit = {},
+    ) = submitReviewUpdate(
+        reviewId, request, rating,
+        preserveReadingMetadata = true,
+        onLibraryAdded = onLibraryAdded,
+        onRatingSaved = onRatingSaved,
+    )
+
+    private fun submitReviewUpdate(
+        reviewId: Long,
+        request: ReviewCreateRequest,
+        rating: Double?,
+        preserveReadingMetadata: Boolean,
+        onLibraryAdded: () -> Unit = {},
+        onRatingSaved: () -> Unit = {},
     ) {
-        publicWrite(retryUnauthorized = false) { repository.updateReview(reviewId, request, it) }
+        if (mutationJob?.isActive == true) return
+        val generation = requestGeneration
+        _uiState.value = _uiState.value.copy(
+            reviewSubmissionState = ReviewSubmissionState.Submitting,
+            requestError = null,
+        )
+        mutate(
+            actionName = "review_update",
+            onSuccess = { updated: BookReview ->
+                _uiState.value = _uiState.value.copy(
+                    reviews = _uiState.value.reviews.map { if (it.reviewId == reviewId) updated else it },
+                    reviewSubmissionState = ReviewSubmissionState.Succeeded,
+                )
+            },
+            onFailure = {
+                _uiState.value = _uiState.value.copy(reviewSubmissionState = ReviewSubmissionState.Failed)
+            },
+            reloadAfterSuccess = false,
+            closesComposer = true,
+            preservesComposerOnFailure = true,
+        ) {
+            saveReviewRatingIfChanged(rating, generation, onLibraryAdded, onRatingSaved)
+            publicWrite(retryUnauthorized = false) { credential ->
+                if (preserveReadingMetadata) repository.updateReviewContent(reviewId, request, credential)
+                else repository.updateReview(reviewId, request, credential)
+            }
+        }
+    }
+
+    /** 개인 별점 저장과 감상 쓰기를 한 mutation 안에서 순서대로 실행한다. */
+    private suspend fun saveReviewRatingIfChanged(
+        rating: Double?,
+        generation: Int,
+        onLibraryAdded: () -> Unit,
+        onRatingSaved: () -> Unit,
+    ) {
+        if (rating == null) return
+        loadJob?.join()
+        // 과거 서버 값이 0.5 단위가 아니어도 변경하지 않은 값은 그대로 보존한다.
+        if (rating == _uiState.value.detail?.myRecord?.rating) return
+        require(rating in 0.5..5.0 && rating * 2 == (rating * 2).toInt().toDouble()) {
+            "개인 별점은 0.5점부터 5점까지 0.5점 단위로 저장할 수 있어요."
+        }
+        val token = requireToken()
+        val bookId = bookIdForWrite(token, generation, onLibraryAdded, "rating_save")
+        val record = repository.rate(bookId, rating, token)
+        if (generation != requestGeneration) throw CancellationException("인증 상태가 변경됨")
+        // 감상만 실패한 뒤 재시도해도 이미 저장한 별점은 중복 저장하지 않는다.
+        updateMyRecord(record)
+        onRatingSaved()
     }
 
     fun deleteReview(reviewId: Long) = mutate(
@@ -924,6 +1001,7 @@ internal val BookDetailAuthenticatedAction.analyticsName: String
         BookDetailAuthenticatedAction.AddToLibrary -> "library_add"
         BookDetailAuthenticatedAction.OpenPageInput -> "reading_page_save"
         BookDetailAuthenticatedAction.OpenRating -> "rating_save"
+        BookDetailAuthenticatedAction.OpenReviewRating -> "rating_save"
         BookDetailAuthenticatedAction.OpenReview -> "review_create"
         BookDetailAuthenticatedAction.OpenMineFeed -> "mine_feed"
         is BookDetailAuthenticatedAction.ChangeStatus -> "reading_status_change"

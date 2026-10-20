@@ -1,16 +1,23 @@
 package com.chamsae.chaekchaek
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.LibraryRecord
-import com.chaekchaek.app.domain.rating.Rating
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailUiState
@@ -33,26 +40,43 @@ class BookRatingRestorationTest {
     @Test
     fun restoredUserEditSurvivesLateExistingRating() = verifyRating(edited = true, restore = true)
 
-    private fun verifyRating(edited: Boolean, restore: Boolean) {
+    @Test
+    fun restoredUntouchedDraftAcceptsLateExistingFractionalRating() =
+        verifyRating(edited = false, restore = true, existingRating = 4.2)
+
+    private fun verifyRating(edited: Boolean, restore: Boolean, existingRating: Double = 2.0) {
         val state = mutableStateOf(
             BookDetailUiState(
                 book = BookDetailArgs(id = "42", bookId = 42, title = "별점 복원 검증"),
                 signedIn = true,
             ),
         )
-        var saved: Rating? = null
+        var saved: Double? = null
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
             ChaekchaekTheme {
-                BookDetailScreen(state = state.value, onBack = {}, onRatingSave = { rating, _ -> saved = rating })
+                BookDetailScreen(
+                    state = state.value,
+                    onBack = {},
+                    onQuestionAReviewCreate = { draft -> saved = draft.rating },
+                )
             }
         }
-        compose.onNodeWithText("별점 주기").performScrollTo().performClick()
-        if (edited) compose.onNodeWithContentDescription("0.5점 높이기").performClick()
+        compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
+        compose.onNodeWithContentDescription("감상 (필수)").performTextInput("별점 복원 검증 감상")
+        compose.onNodeWithContentDescription("별점 (선택)").performScrollTo().assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "미선택"),
+        )
+        if (edited) compose.onNodeWithContentDescription("별점 (선택)")
+            .performSemanticsAction(SemanticsActions.SetProgress) { it(4.5f) }
         if (restore) restoration.emulateSavedInstanceStateRestore()
-        compose.runOnIdle { state.value = state.value.copy(detail = detailWithRating(2.0)) }
-        compose.onNodeWithText("별점 저장").performClick()
-        compose.runOnIdle { assertEquals(if (edited) 4.5 else 2.0, saved?.score?.toDouble()) }
+        compose.runOnIdle { state.value = state.value.copy(detail = detailWithRating(existingRating)) }
+        val expected = if (edited) 4.5 else existingRating
+        compose.onNodeWithContentDescription("별점 (선택)").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "${expected}점"),
+        )
+        compose.onNode(hasText("감상 남기기") and hasClickAction()).performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(expected, saved) }
     }
 
     private fun detailWithRating(rating: Double) = BookDetail(

@@ -27,6 +27,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.chaekchaek.app.ui.bookdetail.BookQuestionAPreviewScreen
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -70,12 +76,15 @@ class DeveloperToolsActivity : ComponentActivity() {
                     ),
                 )
             }
+            var questionPreview by rememberSaveable { mutableStateOf(intent.getBooleanExtra("bookQuestionA", false)) }
             ChaekchaekTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    DeveloperToolsScreen(items = items, onBack = ::finish)
+                    if (questionPreview) Box(Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
+                        BookQuestionAPreviewScreen(onExit = { questionPreview = false })
+                    } else DeveloperToolsScreen(items = items, onBack = ::finish, onQuestionPreview = { questionPreview = true })
                 }
             }
         }
@@ -91,6 +100,7 @@ private data class DeveloperInfoItem(
 private fun DeveloperToolsScreen(
     items: List<DeveloperInfoItem>,
     onBack: () -> Unit,
+    onQuestionPreview: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -123,6 +133,7 @@ private fun DeveloperToolsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
             )
+            TextButton(onClick = onQuestionPreview) { Text("질문 A 개발 프리뷰") }
             DeveloperInfoCard(items)
         }
     }
