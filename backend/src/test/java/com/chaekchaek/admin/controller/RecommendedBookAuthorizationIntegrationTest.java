@@ -82,7 +82,9 @@ class RecommendedBookAuthorizationIntegrationTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2015, 7, 10),
-                308
+                308,
+                null,
+                null
         ));
     }
 

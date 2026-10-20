@@ -13,15 +13,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 class BookDetailAssembler {
 
+    private static final String DEFAULT_BOOK_SOURCE = "yes24";
+
     private final BookActivityCountReader activityCountReader;
     private final CurrentMemberIdProvider currentMemberIdProvider;
     private final LibraryItemRepository libraryItemRepository;
+
+    @Value("${app.book-source:yes24}")
+    private String defaultBookSource = DEFAULT_BOOK_SOURCE;
 
     BookDetailResponse assemble(Book book) {
         Long bookId = book.getId();
@@ -43,7 +49,9 @@ class BookDetailAssembler {
                     null,
                     null,
                     null,
-                    null
+                    null,
+                    book.getPurchaseUrl(),
+                    bookSource(book)
             );
         }
         OptionalLong memberId = currentMemberIdProvider.findCurrentMemberId();
@@ -71,8 +79,14 @@ class BookDetailAssembler {
                 averageRating(ratings),
                 ratingCount(ratings),
                 myRatingCount(memberId),
-                myRecord(bookId, memberId)
+                myRecord(bookId, memberId),
+                book.getPurchaseUrl(),
+                bookSource(book)
         );
+    }
+
+    private String bookSource(Book book) {
+        return book.getSource() == null ? defaultBookSource : book.getSource();
     }
 
     private BigDecimal averageRating(LibraryItemRepository.RatingStatistics ratings) {

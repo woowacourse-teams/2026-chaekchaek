@@ -63,6 +63,7 @@ public final class Yes24ResponseFixture {
                       "cover": "https://image.yes24.com/goods/101375809/L",
                       "sideCover": "https://image.yes24.com/goods/101375809/SIDE/L",
                       "backCover": "https://image.yes24.com/goods/101375809/BACK/L",
+                      "link": "https://www.yes24.com/product/goods/101375809",
                       "contentDetail": {
                         "bookIntroduction": "내면의 길을 찾아가는 성장 소설",
                         "bookSummary": null,

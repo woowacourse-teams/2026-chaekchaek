@@ -133,7 +133,9 @@ class BookControllerTest {
             fieldWithPath("myRecord").type(JsonFieldType.OBJECT).description("내 서재 기록").optional(),
             fieldWithPath("myRecord.status").type(JsonFieldType.STRING).description("읽기 상태").optional(),
             fieldWithPath("myRecord.currentPage").type(JsonFieldType.NUMBER).description("현재 페이지").optional(),
-            fieldWithPath("myRecord.myRating").type(JsonFieldType.NUMBER).description("내 별점").optional()
+            fieldWithPath("myRecord.myRating").type(JsonFieldType.NUMBER).description("내 별점").optional(),
+            fieldWithPath("purchaseUrl").type(JsonFieldType.STRING).description("구매 링크").optional(),
+            fieldWithPath("source").type(JsonFieldType.STRING).description("도서 정보 출처")
     };
 
     @Autowired
@@ -230,6 +232,8 @@ class BookControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.bookId").value(42))
                 .andExpect(jsonPath("$.description").value("책 설명"))
+                .andExpect(jsonPath("$.purchaseUrl").value("https://www.yes24.com/product/goods/101375809"))
+                .andExpect(jsonPath("$.source").value("yes24"))
                 .andExpect(jsonPath("$.reviewCount").value(22))
                 .andExpect(jsonPath("$.replyCount").value(24))
                 .andDo(document(
@@ -448,7 +452,9 @@ class BookControllerTest {
                         "READING",
                         120,
                         new BigDecimal("4.2")
-                )
+                ),
+                "https://www.yes24.com/product/goods/101375809",
+                "yes24"
         );
     }
 
