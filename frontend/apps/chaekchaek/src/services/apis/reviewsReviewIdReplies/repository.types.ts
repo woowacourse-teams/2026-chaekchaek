@@ -11,7 +11,6 @@ export type GetReviewsReviewIdReplies = (params: GetReviewsReviewIdRepliesParams
   items: {
     createdAt: string;
     likedByMe: boolean;
-    deleted: boolean;
     author: {
       mine: boolean;
       displayName: string;

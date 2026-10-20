@@ -309,20 +309,18 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
               onReplyWritten={handleReplyWritten}
             />
           )}
-          {repliesData
-            ?.filter((reply) => !reply.deleted)
-            .map((reply) => {
-              return (
-                <BookReply
-                  key={reply.replyId}
-                  reply={reply}
-                  showSpoilerVisible={showSpoilerVisible}
-                  onShowSpoiler={handleClickShowSpoiler}
-                  onRefetchGetReplies={refetchGetReplies}
-                  onClickAvatar={handleClickAvatar}
-                />
-              );
-            })}
+          {repliesData.map((reply) => {
+            return (
+              <BookReply
+                key={reply.replyId}
+                reply={reply}
+                showSpoilerVisible={showSpoilerVisible}
+                onShowSpoiler={handleClickShowSpoiler}
+                onRefetchGetReplies={refetchGetReplies}
+                onClickAvatar={handleClickAvatar}
+              />
+            );
+          })}
         </Entry.Extension>
       )}
       {dialogElement}

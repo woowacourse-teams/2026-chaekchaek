@@ -12,7 +12,6 @@ export type GetReviewsReviewIdRepliesResponseDto = ResponseDto<{
   items: {
     createdAt: string;
     likedByMe: boolean;
-    deleted: boolean;
     author: {
       mine: boolean;
       displayName: string;
