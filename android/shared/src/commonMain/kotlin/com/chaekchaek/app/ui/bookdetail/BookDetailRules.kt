@@ -4,6 +4,7 @@ import com.chaekchaek.app.ui.input.TextInputPolicy
 import com.chaekchaek.app.domain.rating.Rating
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.ReplyPage
+import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.ReviewReply
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -26,6 +27,21 @@ internal fun reviewMetadata(createdAt: String, currentPage: Int?): ReviewMetadat
         dateLabel = createdAt.take(10).replace('-', '.'),
         progressLabel = currentPage?.let { "p.${it}까지" },
     )
+
+/** 숨긴 읽기 메타데이터는 수정 시 보존하고, 별점 시안 값은 기존 감상 API로 전달하지 않는다. */
+internal fun buildReviewRequest(
+    draft: BookDetailReviewDraft,
+    initialReview: BookReview? = null,
+): ReviewCreateRequest {
+    require(draft.rating == null) { "별점이 포함된 초안은 기존 감상 API에 저장할 수 없습니다." }
+    return ReviewCreateRequest(
+        content = draft.content.trim(),
+        quote = draft.quote?.trim()?.ifEmpty { null },
+        chapter = initialReview?.chapter,
+        currentPage = initialReview?.currentPage,
+        isSpoiler = draft.isSpoiler,
+    )
+}
 
 internal object BookDetailInputRules {
     const val MAX_CONTENT_LENGTH = 1000

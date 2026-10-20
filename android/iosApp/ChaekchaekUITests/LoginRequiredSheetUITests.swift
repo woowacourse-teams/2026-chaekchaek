@@ -30,11 +30,9 @@ final class LoginRequiredSheetUITests: XCTestCase {
             XCTFail("감상 입력란 접근 실패: \(app.debugDescription)")
             return
         }
-        // 아래 필드부터 채워 키보드가 펼쳐질 때 입력란을 가리는 영향을 줄인다.
-        let chapter = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "목차 또는 챕터")).firstMatch
-        revealReviewControl(chapter, in: app, scrollingUp: true)
-        chapter.tap()
-        chapter.typeText("chapter one")
+        XCTAssertFalse(app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "목차 또는 챕터")).firstMatch.exists)
+        XCTAssertFalse(app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "쪽수")).firstMatch.exists)
+        XCTAssertFalse(app.sliders["별점 선택"].exists)
         let quote = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "인상 깊은 문구")).firstMatch
         revealReviewControl(quote, in: app, scrollingUp: false)
         quote.tap()
@@ -42,7 +40,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
         revealReviewControl(content, in: app, scrollingUp: false)
         content.tap()
         content.typeText("draft must survive")
-        let spoiler = app.buttons["스포일러"]
+        let spoiler = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "스포일러")).firstMatch
         revealReviewControl(spoiler, in: app, scrollingUp: true)
         spoiler.tap()
         let save = app.buttons["감상 남기기"]
@@ -66,7 +64,6 @@ final class LoginRequiredSheetUITests: XCTestCase {
         revealReviewControl(content, in: app, scrollingUp: false)
         XCTAssertEqual(content.value as? String, "draft must survive")
         XCTAssertEqual(quote.value as? String, "saved quote")
-        XCTAssertEqual(chapter.value as? String, "chapter one")
         attachScreenshot(named: "감상 저장 실패 후 입력 보존")
         revealReviewControl(save, in: app, scrollingUp: true)
         try await Task.sleep(for: .milliseconds(500))
@@ -80,7 +77,9 @@ final class LoginRequiredSheetUITests: XCTestCase {
         let submissions = try XCTUnwrap(saved["requests"])
         XCTAssertEqual(submissions.first?["content"] as? String, "draft must survive")
         XCTAssertEqual(submissions.last?["quote"] as? String, "saved quote")
-        XCTAssertEqual(submissions.last?["chapter"] as? String, "chapter one")
+        XCTAssertNil(submissions.last?["chapter"] as? String)
+        XCTAssertNil(submissions.last?["currentPage"] as? Int)
+        XCTAssertNil(submissions.last?["rating"] as? Double)
         XCTAssertEqual(submissions.last?["isSpoiler"] as? Bool, true)
         let first = try XCTUnwrap(submissions.first)
         let last = try XCTUnwrap(submissions.last)

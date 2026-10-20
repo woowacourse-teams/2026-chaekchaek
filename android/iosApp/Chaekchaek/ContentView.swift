@@ -76,10 +76,16 @@ private struct ComposeViewController: UIViewControllerRepresentable {
 #endif
         let appleSignIn = AppleSignInProvider()
         let uiTestingMyPage: Bool
+        let uiTestingBookQuestion: Bool
+        let uiTestingBookQuestionAbsent: Bool
 #if DEBUG
         uiTestingMyPage = launchArguments.contains("-uiTestingMyPage")
+        uiTestingBookQuestion = launchArguments.contains("-uiTestingBookQuestion")
+        uiTestingBookQuestionAbsent = launchArguments.contains("-uiTestingBookQuestionAbsent")
 #else
         uiTestingMyPage = false
+        uiTestingBookQuestion = false
+        uiTestingBookQuestionAbsent = false
 #endif
         let authPlatform = AuthPlatformCallbacks(
             requestGoogleIdToken: { onResult in
@@ -140,7 +146,9 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             createGoogleSignInButton: GoogleSignInControl.init,
             analyticsEnvironment: analyticsEnvironment,
             logAnalyticsEvent: FirebaseAnalyticsEventLogger.log,
-            uiTestingMyPage: uiTestingMyPage
+            uiTestingMyPage: uiTestingMyPage,
+            uiTestingBookQuestion: uiTestingBookQuestion,
+            uiTestingBookQuestionAbsent: uiTestingBookQuestionAbsent
         )
     }
 

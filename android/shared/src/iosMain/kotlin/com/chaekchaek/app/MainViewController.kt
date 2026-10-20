@@ -20,6 +20,8 @@ fun MainViewController(
   analyticsEnvironment: String = "production",
   logAnalyticsEvent: (AnalyticsEvent) -> Unit = {},
   uiTestingMyPage: Boolean = false,
+  uiTestingBookQuestion: Boolean = false,
+  uiTestingBookQuestionAbsent: Boolean = false,
 ): UIViewController {
   val analytics = AnalyticsTracker(analyticsEnvironment, logAnalyticsEvent)
   return ComposeUIViewController {
@@ -30,6 +32,8 @@ fun MainViewController(
         onboardingStorage = onboardingStorage,
         analytics = analytics,
         uiTestingMyPage = uiTestingMyPage,
+        uiTestingBookQuestion = uiTestingBookQuestion,
+        uiTestingBookQuestionAbsent = uiTestingBookQuestionAbsent,
       )
     }
   }

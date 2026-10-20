@@ -9,6 +9,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -63,6 +64,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.testTag
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -106,7 +112,6 @@ import chaekchaek.shared.generated.resources.ic_pencil
 import chaekchaek.shared.generated.resources.ic_star
 import chaekchaek.shared.generated.resources.mascot_outline_b
 import com.chaekchaek.app.data.remote.BookReview
-import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.ReviewReply
 import com.chaekchaek.app.data.remote.ReviewScope
@@ -175,8 +180,13 @@ fun BookDetailScreen(
     onLoadMoreReviews: () -> Unit = {},
     onRetryReviews: () -> Unit = {},
     onRequestErrorShown: () -> Unit = {},
+    questionContent: BookQuestionContent? = null,
+    questionReaction: BookQuestionReaction? = null,
+    onQuestionReaction: (BookQuestionReaction?) -> Unit = {},
+    onPreviewReviewSave: ((BookDetailReviewDraft) -> Unit)? = null,
 ) {
     val book = state.displayBook ?: return
+    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp().value }
     val listState = key(state.signedIn) { rememberLazyListState() }
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -192,6 +202,16 @@ fun BookDetailScreen(
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
     var showPageDialog by rememberSaveable { mutableStateOf(false) }
     var showReviewSheet by rememberSaveable { mutableStateOf(false) }
+    var showQuestionReference by rememberSaveable(book.id, questionContent?.id) { mutableStateOf(false) }
+    var referenceTabName by rememberSaveable(book.id, questionContent?.id) { mutableStateOf(BookQuestionReferenceTab.Plot.name) }
+    val referenceTab = questionContent?.selectedReferenceTab(
+        BookQuestionReferenceTab.entries.firstOrNull { it.name == referenceTabName },
+    )
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = showQuestionReference && !showReviewSheet,
+        onBackCompleted = { showQuestionReference = false },
+    )
     var reviewActionTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
     var replyActionTargetId by rememberSaveable { mutableStateOf<Long?>(null) }
     var editingReviewId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -260,10 +280,10 @@ fun BookDetailScreen(
         onAuthenticatedActionHandled()
     }
 
-    Box(modifier = modifier.fillMaxSize().background(ChaekBackground).navigationBarsPadding()) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize().background(ChaekBackground).navigationBarsPadding()) {
         // 복원 데이터를 받기 전에 짧은 임시 목록으로 저장된 offset을 덮어쓰지 않는다.
         if (!state.isRestoring) LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().testTag("book_detail_list"),
             state = listState,
             contentPadding = PaddingValues(bottom = 100.dp),
         ) {
@@ -283,21 +303,16 @@ fun BookDetailScreen(
                     coverContent = coverContent,
                 )
             }
-            item {
-                ReadingRecord(
-                    book = book,
-                    record = state.detail?.myRecord,
-                    currentPage = currentPage,
-                    onRate = {
-                        authorizeOrRun(BookDetailAuthenticatedAction.OpenRating) { showRatingDialog = true }
-                    },
-                    onStatusChange = { status ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.ChangeStatus(status)) { onStatusChange(status) }
-                    },
-                    onPageInput = {
-                        authorizeOrRun(BookDetailAuthenticatedAction.OpenPageInput) { showPageDialog = true }
-                    },
-                )
+            questionContent?.let { question ->
+                item(key = "question_${question.id}") {
+                    BookQuestionSection(
+                        content = question,
+                        reaction = questionReaction,
+                        onReferenceOpen = { showQuestionReference = true },
+                        onReviewOpen = { onReviewOpen { showReviewSheet = true } },
+                        onReaction = onQuestionReaction,
+                    )
+                }
             }
             item { Spacer(Modifier.height(23.dp)) }
             item {
@@ -364,6 +379,16 @@ fun BookDetailScreen(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
             )
         }
+        if (showQuestionReference && questionContent != null && referenceTab != null) {
+            BookQuestionOverlay(
+                content = questionContent,
+                selectedTab = referenceTab,
+                onTabSelect = { referenceTabName = it.name },
+                onClose = { showQuestionReference = false },
+                modifier = Modifier.align(Alignment.TopCenter).padding(12.dp)
+                    .fillMaxWidth().height(bookQuestionOverlayHeight(windowHeight).coerceAtMost((maxHeight.value - 24f).coerceAtLeast(0f)).dp),
+            )
+        }
         if (state.isSubmitting || state.isRestoring && state.isLoading) RequestLoadingOverlay(Modifier.fillMaxSize())
         if (!showReviewSheet) ChaekSnackbarHost(snackbarHostState, bottomContentHeight = composeBarHeight)
     }
@@ -392,11 +417,8 @@ fun BookDetailScreen(
     }
     if (showReviewSheet) {
         ReviewInputSheet(
-            initialPage = currentPage,
-            totalPages = book.totalPages,
             anonymous = state.signedIn && anonymousReviews,
             nickname = nickname,
-            allowReadingProgress = state.signedIn,
             isSaving = state.reviewSubmissionState == ReviewSubmissionState.Submitting,
             showLoading = state.isSubmitting,
             snackbarHostState = snackbarHostState,
@@ -404,6 +426,10 @@ fun BookDetailScreen(
                 onComposerDismiss()
                 showReviewSheet = false
             },
+            onPreviewSave = onPreviewReviewSave?.let { save -> { draft ->
+                save(draft)
+                showReviewSheet = false
+            } },
             onSave = onReviewCreate,
         )
     }
@@ -439,12 +465,13 @@ fun BookDetailScreen(
     }
     visibleBookReviews.firstOrNull { it.reviewId == editingReviewId }?.let { review ->
         ReviewInputSheet(
-            initialPage = currentPage,
-            totalPages = book.totalPages,
             anonymous = state.signedIn && anonymousReviews,
             nickname = nickname,
             initialReview = review,
-            allowReadingProgress = state.signedIn,
+            onPreviewSave = onPreviewReviewSave?.let { save -> { draft ->
+                save(draft)
+                editingReviewId = null
+            } },
             onDismiss = {
                 onComposerDismiss()
                 editingReviewId = null
@@ -831,103 +858,6 @@ private fun AverageRatingChip(averageRating: Double?) {
                 fontWeight = if (ratingTenths == null) FontWeight.Normal else FontWeight.Bold,
             )
         }
-    }
-}
-
-@Composable
-private fun ReadingRecord(
-    book: BookDetailArgs,
-    record: LibraryRecord?,
-    currentPage: Int,
-    onRate: () -> Unit,
-    onStatusChange: (ReadingStatus) -> Unit,
-    onPageInput: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-        shape = RoundedCornerShape(18.dp),
-        color = ChaekSurface,
-        border = BorderStroke(1.dp, Color(0xFFE5E5E8)),
-    ) {
-    Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 17.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("내 독서 기록", color = ChaekInk, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.weight(1f))
-            Surface(
-                onClick = onRate,
-                modifier = Modifier.height(32.dp),
-                color = Color.Transparent,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(painterResource(Res.drawable.ic_star), contentDescription = null, modifier = Modifier.size(12.dp), tint = ChaekInk)
-                    Text(
-                        record?.rating?.let { "별점 ${it} 수정" } ?: "별점 주기",
-                        color = ChaekInk,
-                        fontSize = 12.sp,
-                    )
-                }
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(39.dp)
-                .border(width = 0.dp, color = Color.Transparent),
-        ) {
-            ReadingStatus.entries.forEach { status ->
-                val selected = record?.status == status.apiValue
-                Column(
-                    modifier = Modifier.weight(1f).fillMaxHeight().selectable(
-                        selected = selected,
-                        role = Role.Tab,
-                        onClick = { onStatusChange(status) },
-                    ).semantics {
-                        contentDescription = "독서 상태 ${status.label}"
-                        this.selected = selected
-                    },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Bottom,
-                ) {
-                    Text(status.label, color = if (selected) ChaekInk else ChaekInkSecondary, fontSize = 12.sp)
-                    Spacer(Modifier.height(11.dp))
-                    Box(Modifier.fillMaxWidth().height(2.dp).background(if (selected) ChaekInk else Color.Transparent))
-                }
-            }
-        }
-        HorizontalDivider(color = Color(0xFFDDDDE1))
-        Row(
-            modifier = Modifier.fillMaxWidth().height(48.dp).clickable(role = Role.Button, onClick = onPageInput),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("$currentPage", color = ChaekInk, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-            Text(
-                if (book.totalPages > 0) " / ${book.totalPages}쪽" else " / 쪽수 미정",
-                color = ChaekInkSecondary,
-                fontSize = 12.sp,
-            )
-            Icon(
-                painterResource(Res.drawable.ic_pencil),
-                contentDescription = "현재 쪽수 입력",
-                modifier = Modifier.padding(start = 7.dp).size(13.dp),
-                tint = ChaekInkSecondary,
-            )
-            Spacer(Modifier.weight(1f))
-            Text(
-                if (book.totalPages > 0) "${(currentPage * 100 / book.totalPages).coerceIn(0, 100)}%" else "0%",
-                color = ChaekInkSecondary,
-                fontSize = 12.sp,
-            )
-        }
-        Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(999.dp)).background(Color(0xFFDDDDE1))) {
-            Box(
-                Modifier.fillMaxWidth(
-                    if (book.totalPages > 0) currentPage.toFloat().div(book.totalPages).coerceIn(0f, 1f) else 0f,
-                ).height(4.dp).background(ChaekAccent),
-            )
-        }
-    }
     }
 }
 

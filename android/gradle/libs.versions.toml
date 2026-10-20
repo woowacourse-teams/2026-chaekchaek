@@ -28,6 +28,7 @@ googleId = "1.2.0"
 firebaseBom = "34.18.0"
 googleServices = "4.5.0"
 crashlyticsPlugin = "3.0.8"
+markdown = "0.7.18"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
@@ -81,6 +82,7 @@ ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+jetbrains-markdown = { module = "org.jetbrains:markdown", version.ref = "markdown" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }

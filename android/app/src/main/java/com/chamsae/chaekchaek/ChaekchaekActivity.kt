@@ -71,6 +71,8 @@ abstract class ChaekchaekActivity : ComponentActivity() {
             App(
                 authPlatform = authPlatform,
                 analytics = analytics,
+                uiTestingBookQuestion = BuildConfig.DEBUG && intent.getBooleanExtra("uiTestingBookQuestion", false),
+                uiTestingBookQuestionAbsent = BuildConfig.DEBUG && intent.getBooleanExtra("uiTestingBookQuestionAbsent", false),
                 homeHeaderAction = { HomeHeaderAction() },
                 onExitRequested = { finish() },
                 recentSearchStorage = RecentSearchStorage(
