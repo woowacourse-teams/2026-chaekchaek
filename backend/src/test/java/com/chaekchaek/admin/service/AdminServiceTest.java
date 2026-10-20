@@ -34,7 +34,6 @@ class AdminServiceTest {
 
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-08-28T00:00:00Z"), ZoneOffset.UTC);
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
-    private static final CurrentActor ADMIN_ACTOR = CurrentActor.admin(1L, 1L);
 
     @Test
     @DisplayName("최근에 추천한 순서로 책 정보를 반환한다")
@@ -222,8 +221,7 @@ class AdminServiceTest {
         AdminService adminService = adminService(
                 recommendedBookRepository,
                 mock(BookRepository.class),
-                mock(BookResolver.class),
-                currentActorProvider
+                mock(BookResolver.class)
         );
         when(recommendedBookRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(List.of());
 
@@ -240,15 +238,6 @@ class AdminServiceTest {
             BookRepository bookRepository,
             BookResolver bookResolver
     ) {
-        return adminService(recommendedBookRepository, bookRepository, bookResolver, actorProvider(ADMIN_ACTOR));
-    }
-
-    private static AdminService adminService(
-            RecommendedBookRepository recommendedBookRepository,
-            BookRepository bookRepository,
-            BookResolver bookResolver,
-            CurrentActorProvider currentActorProvider
-    ) {
         return new AdminService(
                 recommendedBookRepository,
                 bookRepository,
@@ -256,12 +245,6 @@ class AdminServiceTest {
                 CLOCK,
                 mock(PlatformTransactionManager.class)
         );
-    }
-
-    private static CurrentActorProvider actorProvider(CurrentActor actor) {
-        CurrentActorProvider currentActorProvider = mock(CurrentActorProvider.class);
-        when(currentActorProvider.getCurrentActor()).thenReturn(actor);
-        return currentActorProvider;
     }
 
     private static RecommendedBook recommendedBook(long bookId, String createdAt) {
