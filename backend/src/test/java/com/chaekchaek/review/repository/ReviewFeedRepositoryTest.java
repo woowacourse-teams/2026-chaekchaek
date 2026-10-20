@@ -132,6 +132,8 @@ class ReviewFeedRepositoryTest {
                 "출판사",
                 "소설",
                 null,
+                null,
+                null,
                 null
         );
     }

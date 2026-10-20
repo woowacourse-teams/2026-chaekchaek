@@ -86,7 +86,9 @@ class BookTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2026, 1, 1),
-                null
+                null,
+                "https://www.yes24.com/product/goods/101375809",
+                "yes24"
         );
     }
 }

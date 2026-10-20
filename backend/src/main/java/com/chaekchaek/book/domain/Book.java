@@ -2,6 +2,7 @@ package com.chaekchaek.book.domain;
 
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -13,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -70,6 +72,13 @@ public class Book {
 
     private Integer totalPages;
 
+    @Column(length = 1_000)
+    private String purchaseUrl;
+
+    @Nullable
+    @Transient
+    private String source;
+
     protected Book() {
     }
 
@@ -85,7 +94,9 @@ public class Book {
             String publisher,
             String category,
             LocalDate publishedDate,
-            Integer totalPages
+            Integer totalPages,
+            String purchaseUrl,
+            String source
     ) {
         this.isbn13 = isbn13;
         this.title = title;
@@ -99,6 +110,8 @@ public class Book {
         this.category = category;
         this.publishedDate = publishedDate;
         this.totalPages = totalPages;
+        this.purchaseUrl = purchaseUrl;
+        this.source = source;
     }
 
     public static Book create(
@@ -113,7 +126,9 @@ public class Book {
             String publisher,
             String category,
             LocalDate publishedDate,
-            Integer totalPages
+            Integer totalPages,
+            String purchaseUrl,
+            String source
     ) {
         validateTotalPages(totalPages);
         return new Book(
@@ -128,7 +143,9 @@ public class Book {
                 publisher,
                 category,
                 publishedDate,
-                totalPages
+                totalPages,
+                purchaseUrl,
+                source
         );
     }
 
@@ -202,5 +219,13 @@ public class Book {
 
     public Integer getTotalPages() {
         return totalPages;
+    }
+
+    public String getPurchaseUrl() {
+        return purchaseUrl;
+    }
+
+    public String getSource() {
+        return source;
     }
 }

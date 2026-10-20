@@ -312,7 +312,9 @@ class LibraryServiceTest {
                 "알에이치코리아",
                 "SF",
                 null,
-                totalPages
+                totalPages,
+                null,
+                null
         );
     }
 }

@@ -15,7 +15,9 @@ public record BookDetailItem(
         String isbn13,
         String category,
         String publisher,
-        Integer totalPages
+        Integer totalPages,
+        String purchaseUrl,
+        String source
 ) {
 
     public BookDetailItem {

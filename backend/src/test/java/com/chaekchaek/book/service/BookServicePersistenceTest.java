@@ -70,7 +70,9 @@ class BookServicePersistenceTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2026, 1, 1),
-                308
+                308,
+                "https://www.yes24.com/product/goods/101375809",
+                "yes24"
         ));
         libraryItemRepository.saveAndFlush(ratedItem(1L, savedBook.getId(), "4.2"));
         libraryItemRepository.saveAndFlush(ratedItem(2L, savedBook.getId(), "4.4"));
@@ -86,7 +88,9 @@ class BookServicePersistenceTest {
                 "출판사",
                 "소설",
                 LocalDate.of(2026, 1, 2),
-                100
+                100,
+                null,
+                null
         ));
         libraryItemRepository.saveAndFlush(unratedItem(1L, anotherBook.getId()));
         when(activityCountReader.getActivityCounts(List.of(savedBook.getId())))
@@ -107,6 +111,8 @@ class BookServicePersistenceTest {
         assertThat(response.authors()).containsExactly("앤디 위어", "공동 저자");
         assertThat(response.translators()).containsExactly("박아람", "공동 번역가");
         assertThat(response.description()).isEqualTo("책 설명");
+        assertThat(response.purchaseUrl()).isEqualTo("https://www.yes24.com/product/goods/101375809");
+        assertThat(response.source()).isEqualTo("yes24");
         assertThat(response.averageRating()).isEqualByComparingTo("4.3");
         assertThat(response.ratingCount()).isEqualTo(2);
         assertThat(response.myRatingCount()).isEqualTo(1);
@@ -129,7 +135,9 @@ class BookServicePersistenceTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2026, 1, 1),
-                308
+                308,
+                "https://www.yes24.com/product/goods/101375809",
+                null
         ));
         entityManager.clear();
 
@@ -140,6 +148,9 @@ class BookServicePersistenceTest {
                 .isEqualTo("https://image.example/martian.jpg/side");
         assertThat(storedBook.getBackImageUrl())
                 .isEqualTo("https://image.example/martian.jpg/back");
+        assertThat(storedBook.getPurchaseUrl())
+                .isEqualTo("https://www.yes24.com/product/goods/101375809");
+        assertThat(storedBook.getSource()).isNull();
         assertThat(bookRepository.findAllByIsbn13In(List.of(isbn13)))
                 .extracting(Book::getIsbn13)
                 .containsExactly(isbn13);

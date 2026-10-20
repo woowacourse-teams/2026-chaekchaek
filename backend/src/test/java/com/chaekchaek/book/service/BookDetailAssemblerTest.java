@@ -69,6 +69,8 @@ class BookDetailAssemblerTest {
         assertThat(response.reviewCount()).isEqualTo(2);
         assertThat(response.replyCount()).isEqualTo(2);
         assertThat(response.description()).isEqualTo("책 설명");
+        assertThat(response.purchaseUrl()).isEqualTo("https://www.yes24.com/product/goods/101375809");
+        assertThat(response.source()).isEqualTo("yes24");
         assertThat(response.averageRating()).isEqualByComparingTo("4.2");
         assertThat(response.ratingCount()).isEqualTo(3);
         assertThat(response.myRatingCount()).isEqualTo(12);
@@ -106,6 +108,8 @@ class BookDetailAssemblerTest {
 
         // then
         assertThat(response.myRecord()).isNull();
+        assertThat(response.purchaseUrl()).isEqualTo("https://www.yes24.com/product/goods/101375809");
+        assertThat(response.source()).isEqualTo("yes24");
     }
 
     @Test
@@ -203,6 +207,7 @@ class BookDetailAssemblerTest {
         when(book.getCategory()).thenReturn("SF");
         when(book.getPublishedDate()).thenReturn(LocalDate.of(2026, 1, 1));
         when(book.getTotalPages()).thenReturn(308);
+        when(book.getPurchaseUrl()).thenReturn("https://www.yes24.com/product/goods/101375809");
         return book;
     }
 
