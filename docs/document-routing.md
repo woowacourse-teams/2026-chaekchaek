@@ -22,6 +22,7 @@
 
 | 읽을 때 | 문서 | 적용 범위와 주의점 |
 | --- | --- | --- |
+| A안 책장 목록, 상세, 편집, 이미지 저장과 단일 책장 공유 적용 | [책장 A안 적용 핸드오프](../handoff/handoff_261020_1019.md) | 승인된 로컬 HTML이 기준이다. 동기화 Figma 17개 상태, 구현 전 미결과 Android/iOS 검증 범위를 확인한다. |
 | Figma 재디자인을 앱에 적용하거나 적용 범위 확인 | [재디자인 핸드오프](figma-redesign-implementation-handoff.md) | 최신 Figma와 디자인 시스템을 다시 조회한다. 핸드오프의 작성만으로 앱 반영 완료를 뜻하지 않는다. |
 | 홈, 피드, 발견, 서재의 당김 새로고침, 추가 로딩, 목록 끝과 overscroll 변경 | [새로고침과 목록 끝 상태 설계](pull-refresh-interaction-plan.md) | Figma 상태와 공통 컴포넌트, 기존 페이지네이션 유지 결정, 요청 경쟁과 상태 보존 계획. 앱 구현과 기기 검증 전 설계안이다. |
 | 모바일 디자인 피드백의 배경 확인 | [모바일과 공통 피드백](design-feedback-mobile-common.md) | 개선 후보 기록이며 최신 승인 시안보다 우선하지 않는다. |
@@ -53,7 +54,7 @@
 | --- | --- | --- |
 | 모바일 이벤트 추가, 분석 지표와 계측 완료 판정 | [이벤트 로깅 설계](mobile-analytics-event-plan.md) | 이벤트 계약과 실제 수신 증거를 구분한다. SDK 구현은 콘솔 수신이나 BigQuery 연결 완료를 뜻하지 않는다. |
 | 정식 출시 심사 근거와 실제 사용자 관찰 기록 확인 | [심사와 사용자 관찰](android-production-review-user-observation.md) | 제출, 게시, 사용자 관찰을 각각 확인한다. |
-| 웹 읽기 실험 실행, 집계 해석, 다음 실험 설계 | [웹 시작 안내](../frontend/README.md), [읽기 실험 핸드오프](../handoff.md) | 노출 시간과 실제 독해, 제출 수와 감상의 질을 구분한다. [날짜별 핸드오프](../handoff/handoff_260929_1538.md)는 이력이며 확인 시점에 루트 핸드오프와 내용이 같았다. |
+| 웹 읽기 실험 실행, 집계 해석, 다음 실험 설계 | [웹 시작 안내](../frontend/README.md), [읽기 실험 핸드오프](../handoff/handoff_260929_1538.md) | 노출 시간과 실제 독해, 제출 수와 감상의 질을 구분한다. 2026-09-29 이력이며 현재 책장 핸드오프와 별개다. |
 | 텍스트 작품 협업 후보와 연락 초안 검토 | [작가 연락 후보](author-contact-prospects.md) | 공개 계정, 현재 활동, 본문 사용 권한은 별도 확인한다. 문서에 연락 초안이 있다는 사실은 발송 승인이 아니다. |
 | 레벨4 LMS 안내, 제출 필드와 Android 요구사항 증빙 확인 | [레벨4 제출 인덱스](level4-submission/README.md) | 인덱스에서 [LMS 목록](level4-submission/lms-page-catalog.md), [스프린트 1 기준](level4-submission/sprint-1-submission.md), [출시 제출 문서](level4-submission/android-play-store-release.md), [개발자 도구와 상태 보존 제출 문서](level4-submission/android-developer-tools-state-preservation.md)로 이동한다. 마감과 제출 상태는 LMS에서 확인한다. |
 

@@ -98,6 +98,8 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 
 ## 문서 규칙
 
+- A안 책장 목록·상세·편집·이미지 저장·단일 책장 공유를 앱에 적용할 때는 [책장 A안 적용 핸드오프](handoff/handoff_261020_1019.md)를 먼저 읽는다. 승인된 로컬 HTML과 동기화한 Figma, 확정 동작과 구현 전 미결을 구분한다.
+
 - 앱 구조, 도메인, API, 인증 권한, 상태 복원을 다룰 때는 [설계와 동작 문서 라우팅](docs/document-routing.md#architecture)을 먼저 확인하고 해당 작업의 원문을 읽는다.
 - 화면 디자인, UI 회귀 검증은 [디자인과 검증](docs/document-routing.md#design), 빌드, 서버 환경, CI, 스토어 심사는 [개발과 배포](docs/document-routing.md#delivery)의 해당 문서를 먼저 읽는다.
 - 이벤트 계측, 사용자 관찰, 웹 읽기 실험, 작가 협업, 과제 제출은 [실험과 운영](docs/document-routing.md#research)의 해당 문서를 먼저 읽는다. 과거 핸드오프와 초안은 인덱스에 명시한 확인 범위로만 사용한다.
