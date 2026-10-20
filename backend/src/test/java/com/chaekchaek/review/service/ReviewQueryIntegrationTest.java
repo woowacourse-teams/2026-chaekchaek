@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.hibernate.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -199,6 +200,33 @@ class ReviewQueryIntegrationTest {
         assertThat(response.totalCount()).isEqualTo(10);
         assertThat(response.items()).hasSize(10);
         assertThat(response.nextPage()).isNull();
+    }
+
+    @ParameterizedTest
+    @EnumSource(ReviewSort.class)
+    @DisplayName("답글 없는 삭제 감상은 페이지 항목, 전체 개수, 다음 페이지에서 제외한다")
+    void should_ExcludeHiddenDeletedReviewsFromPaging_When_HiddenReviewsAreMixed(ReviewSort sort) {
+        // given
+        List<Long> visibleIds = new ArrayList<>();
+        for (int index = 0; index < 11; index++) {
+            visibleIds.add(saveReview(BOOK_ID, ACTOR_ID, null).getId());
+            saveReview(BOOK_ID, ACTOR_ID, null).deleteBy(ACTOR_ID);
+        }
+        flushAndClear();
+
+        // when
+        PageResponse<ReviewResponse> first = service.findReviews(BOOK_ID, 1, Feed.ALL, sort);
+        PageResponse<ReviewResponse> second = service.findReviews(BOOK_ID, 2, Feed.ALL, sort);
+
+        // then
+        List<Long> pagedIds = Stream.concat(first.items().stream(), second.items().stream())
+                .map(ReviewResponse::reviewId)
+                .toList();
+        assertThat(first.items()).hasSize(10);
+        assertThat(second.items()).hasSize(1);
+        assertThat(first.totalCount()).isEqualTo(11);
+        assertThat(first.nextPage()).isEqualTo(2);
+        assertThat(pagedIds).containsExactlyInAnyOrderElementsOf(visibleIds);
     }
 
     @Test

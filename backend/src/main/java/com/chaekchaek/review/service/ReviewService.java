@@ -157,8 +157,8 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     ) {
         Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE, sort.toSpringSort());
         Page<Review> reviews = feed == Feed.MINE
-                ? reviewRepository.findByBookIdAndActorId(bookId, actorId, pageable)
-                : reviewRepository.findByBookId(bookId, pageable);
+                ? reviewRepository.findVisibleByBookIdAndActorId(bookId, actorId, pageable)
+                : reviewRepository.findVisibleByBookId(bookId, pageable);
         return reviews.getContent();
     }
 
@@ -170,13 +170,13 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     ) {
         if (sort == ReviewSort.POPULAR) {
             return feed == Feed.MINE
-                    ? reviewRepository.countByBookIdAndActorId(bookId, actorId)
-                    : reviewRepository.countByBookId(bookId);
+                    ? reviewRepository.countVisibleByBookIdAndActorId(bookId, actorId)
+                    : reviewRepository.countVisibleByBookId(bookId);
         }
         Pageable oneItem = PageRequest.of(0, 1);
         return feed == Feed.MINE
-                ? reviewRepository.findByBookIdAndActorId(bookId, actorId, oneItem).getTotalElements()
-                : reviewRepository.findByBookId(bookId, oneItem).getTotalElements();
+                ? reviewRepository.findVisibleByBookIdAndActorId(bookId, actorId, oneItem).getTotalElements()
+                : reviewRepository.findVisibleByBookId(bookId, oneItem).getTotalElements();
     }
 
     private List<ReviewResponse> toReviewResponses(List<Review> reviews, Long actorId) {
