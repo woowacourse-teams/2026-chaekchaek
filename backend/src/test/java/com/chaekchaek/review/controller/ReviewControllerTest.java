@@ -950,10 +950,10 @@ class ReviewControllerTest {
         when(reviewService.updateReply(ArgumentMatchers.eq(404L), ArgumentMatchers.any()))
                 .thenThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND));
         when(reviewService.updateReply(ArgumentMatchers.eq(409L), ArgumentMatchers.any()))
-                .thenThrow(new BusinessException(ErrorCode.DELETED_RESOURCE));
+                .thenThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND));
         Mockito.doThrow(new BusinessException(ErrorCode.FORBIDDEN)).when(reviewService).deleteReply(403L);
         Mockito.doThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND)).when(reviewService).deleteReply(404L);
-        Mockito.doThrow(new BusinessException(ErrorCode.DELETED_RESOURCE)).when(reviewService).deleteReply(409L);
+        Mockito.doThrow(new BusinessException(ErrorCode.REPLY_NOT_FOUND)).when(reviewService).deleteReply(409L);
 
         // when & then
         documentProblemDetail(
@@ -995,10 +995,10 @@ class ReviewControllerTest {
         documentProblemDetail(
                 mockMvc.perform(patch("/api/v1/replies/{replyId}", 409L)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"답글\"}")),
-                HttpStatus.CONFLICT,
-                "DELETED_RESOURCE",
+                HttpStatus.NOT_FOUND,
+                "REPLY_NOT_FOUND",
                 "/api/v1/replies/409",
-                "reply-update-deleted-resource",
+                "reply-update-deleted-reply",
                 "답글 수정",
                 "작성자가 답글 내용을 수정한다",
                 "replyId",
@@ -1028,10 +1028,10 @@ class ReviewControllerTest {
         );
         documentProblemDetail(
                 mockMvc.perform(delete("/api/v1/replies/{replyId}", 409L)),
-                HttpStatus.CONFLICT,
-                "DELETED_RESOURCE",
+                HttpStatus.NOT_FOUND,
+                "REPLY_NOT_FOUND",
                 "/api/v1/replies/409",
-                "reply-delete-deleted-resource",
+                "reply-delete-deleted-reply",
                 "답글 삭제",
                 "작성자가 답글을 soft delete한다",
                 "replyId",
@@ -1466,7 +1466,7 @@ class ReviewControllerTest {
                 ),
                 field(prefix, "likeCount", JsonFieldType.NUMBER, "좋아요 수"),
                 field(prefix, "likedByMe", JsonFieldType.BOOLEAN, "내가 좋아요를 눌렀는지 여부"),
-                field(prefix, "replyCount", JsonFieldType.NUMBER, "답글 수"),
+                field(prefix, "replyCount", JsonFieldType.NUMBER, "삭제되지 않은 답글 수"),
                 field(prefix, "recentReplies", JsonFieldType.ARRAY, "최근 답글 최대 3개")
         };
         FieldDescriptor[] recentReplyFields = replyResponseFields(path(prefix, "recentReplies[]"));

@@ -140,7 +140,7 @@ class ReviewQueryIntegrationTest {
                 );
         ReviewResponse deletedResponse = response.items().get(1);
         assertThat(deletedResponse.deleted()).isTrue();
-        assertThat(deletedResponse.replyCount()).isEqualTo(4);
+        assertThat(deletedResponse.replyCount()).isEqualTo(3);
         assertThat(deletedResponse.recentReplies()).hasSize(3);
         assertThat(deletedResponse.recentReplies())
                 .noneMatch(reply -> reply.replyId() == deletedReply.getId());
