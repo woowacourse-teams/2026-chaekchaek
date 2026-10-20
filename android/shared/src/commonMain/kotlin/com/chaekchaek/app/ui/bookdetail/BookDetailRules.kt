@@ -114,7 +114,7 @@ internal data class ReplyDisplay(val replies: List<ReviewReply>, val hasMore: Bo
 
 internal fun replyDisplay(replies: List<ReviewReply>, totalCount: Int): ReplyDisplay = ReplyDisplay(
     replies = replies.filterNot { it.deleted },
-    // 서버의 전체 개수에는 삭제 항목도 포함되므로 원본 조회 개수로 비교한다.
+    // 구 계약의 삭제 항목 포함 개수와 신 계약의 미삭제 개수 모두 원본 조회 개수로 비교한다.
     hasMore = replies.size < totalCount,
 )
 
