@@ -99,9 +99,10 @@ class ReviewQueryIntegrationTest {
         );
     }
 
-    @Test
-    @DisplayName("좋아요와 답글 합계로 인기순을 정렬하고 동점이면 감상 ID가 큰 순서로 조회한다")
-    void should_OrderByCombinedScoreThenId_When_PopularReviewsHaveMixedActivity() {
+    @ParameterizedTest
+    @EnumSource(Feed.class)
+    @DisplayName("삭제 답글을 제외한 좋아요와 답글 합계로 인기순을 정렬하고 동점이면 감상 ID가 큰 순서로 조회한다")
+    void should_OrderByCombinedScoreThenId_When_PopularReviewsHaveMixedActivity(Feed feed) {
         // given
         Review olderEmpty = saveReview(BOOK_ID, ACTOR_ID, null);
         Review likesOnly = saveReview(BOOK_ID, ACTOR_ID, null);
@@ -123,26 +124,27 @@ class ReviewQueryIntegrationTest {
         flushAndClear();
 
         // when
-        PageResponse<ReviewResponse> response = service.findReviews(BOOK_ID, 1, Feed.ALL, ReviewSort.POPULAR);
+        PageResponse<ReviewResponse> response = service.findReviews(BOOK_ID, 1, feed, ReviewSort.POPULAR);
 
         // then
         assertThat(response.totalCount()).isEqualTo(6);
         assertThat(response.nextPage()).isNull();
         assertThat(response.items()).extracting(ReviewResponse::reviewId)
                 .containsExactly(
-                        deleted.getId(),
                         mixed.getId(),
+                        deleted.getId(),
                         repliesOnly.getId(),
                         likesOnly.getId(),
                         newerEmpty.getId(),
                         olderEmpty.getId()
                 );
-        assertThat(response.items().getFirst().deleted()).isTrue();
-        assertThat(response.items().getFirst().replyCount()).isEqualTo(4);
-        assertThat(response.items().getFirst().recentReplies()).hasSize(3);
-        assertThat(response.items().getFirst().recentReplies())
+        ReviewResponse deletedResponse = response.items().get(1);
+        assertThat(deletedResponse.deleted()).isTrue();
+        assertThat(deletedResponse.replyCount()).isEqualTo(4);
+        assertThat(deletedResponse.recentReplies()).hasSize(3);
+        assertThat(deletedResponse.recentReplies())
                 .noneMatch(reply -> reply.replyId() == deletedReply.getId());
-        ReviewResponse mixedResponse = response.items().get(1);
+        ReviewResponse mixedResponse = response.items().getFirst();
         assertThat(mixedResponse.likeCount()).isEqualTo(2);
         assertThat(mixedResponse.replyCount()).isEqualTo(2);
         assertThat(mixedResponse.likedByMe()).isTrue();
