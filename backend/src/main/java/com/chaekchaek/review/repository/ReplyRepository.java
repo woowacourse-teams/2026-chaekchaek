@@ -14,7 +14,7 @@ public interface ReplyRepository extends JpaRepository<Reply, Long> {
     Page<Reply> findByReviewId(long reviewId, Pageable pageable);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update Reply r set r.actorId = :targetActorId where r.actorId = :sourceActorId")
+    @Query(value = "update reply set actor_id = :targetActorId where actor_id = :sourceActorId", nativeQuery = true)
     int reassignActorId(long sourceActorId, long targetActorId);
 
     @Query(value = """
