@@ -28,7 +28,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             from review r
             where r.book_id = :bookId
             order by (select count(*) from reaction rc where rc.review_id = r.review_id)
-                    + (select count(*) from reply rp where rp.review_id = r.review_id) desc,
+                    + (select count(*) from reply rp where rp.review_id = r.review_id and rp.deleted_at is null) desc,
                     r.review_id desc
             limit :limit offset :offset
             """, nativeQuery = true)
@@ -39,7 +39,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             from review r
             where r.book_id = :bookId and r.actor_id = :actorId
             order by (select count(*) from reaction rc where rc.review_id = r.review_id)
-                    + (select count(*) from reply rp where rp.review_id = r.review_id) desc,
+                    + (select count(*) from reply rp where rp.review_id = r.review_id and rp.deleted_at is null) desc,
                     r.review_id desc
             limit :limit offset :offset
             """, nativeQuery = true)
