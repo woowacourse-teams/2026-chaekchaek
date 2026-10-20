@@ -36,6 +36,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +47,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
@@ -174,12 +178,13 @@ internal fun ReviewInputSheet(
         confirmValueChange = { value -> value != SheetValue.Hidden || !saving },
     )
     val coroutineScope = rememberCoroutineScope()
+    var dismissRequested by remember { mutableStateOf(false) }
     val canSubmit = BookDetailInputRules.canSubmitReview(content, "", 0)
     val hasDraft = content != initialContent || quote != initialQuote || isSpoiler != initialSpoiler ||
         (onPreviewSave != null && previewRating != 0f)
     val requestDismiss = {
         if (!isSaving) {
-            if (hasDraft) showDiscardConfirmation = true else onDismiss()
+            dismissRequested = true
         }
     }
 
@@ -191,6 +196,18 @@ internal fun ReviewInputSheet(
         shape = ChaekOverlayTokens.sheetShape,
         dragHandle = null,
     ) {
+        // 모달은 별도 포커스 소유자이므로 모달 내부에서 입력 포커스를 해제한다.
+        val focusManager = LocalFocusManager.current
+        val keyboardController = LocalSoftwareKeyboardController.current
+        LaunchedEffect(dismissRequested) {
+            if (dismissRequested) {
+                focusManager.clearFocus(force = true)
+                keyboardController?.hide()
+                withFrameNanos { }
+                dismissRequested = false
+                if (hasDraft) showDiscardConfirmation = true else onDismiss()
+            }
+        }
         Box {
             Column(
                 modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(24.dp),

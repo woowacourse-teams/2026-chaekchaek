@@ -36,7 +36,7 @@ final class BookQuestionUITests: XCTestCase {
         let open = element("question_reference_open", in: app)
         revealInBook(open, app: app)
         let originalY = open.frame.minY
-        open.tap()
+        tapAfterScroll(open)
         let overlay = element("question_reference_overlay", in: app)
         XCTAssertTrue(overlay.waitForExistence(timeout: 5))
         XCTAssertEqual(open.frame.minY, originalY, accuracy: 3, "자료 열기가 뒤 목록을 이동시키면 안 된다")
@@ -96,7 +96,7 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertFalse(reaction.label.isEmpty)
         XCTAssertGreaterThanOrEqual(reaction.frame.width, 44)
         XCTAssertGreaterThanOrEqual(reaction.frame.height, 44)
-        reaction.tap()
+        tapAfterScroll(reaction)
         let picker = element("question_reaction_picker", in: app)
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
         for option in ["ThumbsUp", "Heart", "Thinking", "Relaxed", "Moved", "Sparkles"] {
@@ -134,7 +134,7 @@ final class BookQuestionUITests: XCTestCase {
         let app = launchPreview()
         let open = element("question_review_open", in: app)
         revealInBook(open, app: app)
-        open.tap()
+        tapAfterScroll(open)
         let content = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 (필수)")).firstMatch
         XCTAssertTrue(content.waitForExistence(timeout: 5))
         XCTAssertFalse(app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "쪽수")).firstMatch.exists)
@@ -148,7 +148,7 @@ final class BookQuestionUITests: XCTestCase {
         content.typeText("Time made this special")
         let close = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "닫기")).firstMatch
         revealInReview(close, app: app, upward: false)
-        close.tap()
+        tapAfterScroll(close)
         let keepWriting = app.buttons["계속 작성"]
         XCTAssertTrue(keepWriting.waitForExistence(timeout: 5))
         keepWriting.tap()
@@ -161,7 +161,8 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertTrue(rating.exists, app.debugDescription)
         XCTAssertTrue((rating.value as? String ?? "").hasPrefix("0"), "초기 별점은 실제 0점이어야 한다")
         // iOS에서는 별점이 Other로 노출되므로 실제 탭과 드래그 입력으로 검사한다.
-        rating.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        Thread.sleep(forTimeInterval: 0.5)
+        rating.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).press(forDuration: 0.15)
         XCTAssertFalse((rating.value as? String ?? "").hasPrefix("0"), "오른쪽 탭으로 실제 점수가 바뀌어야 한다")
         let ratingEnd = rating.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5))
         let ratingZero = rating.coordinate(withNormalizedOffset: CGVector(dx: -0.1, dy: 0.5))
@@ -201,11 +202,30 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertTrue(list.waitForExistence(timeout: 10))
         let footer = bookFooter(in: app)
         XCTAssertTrue(footer.waitForExistence(timeout: 5))
-        for _ in 0..<6 {
-            if control.exists && control.isHittable && control.frame.maxY < footer.frame.minY - 8 { return }
-            list.swipeUp()
+        let top = max(80, list.frame.minY + 40)
+        let bottom = footer.frame.minY - 16
+        let middle = (top + bottom) / 2
+        for _ in 0..<12 {
+            if control.exists && control.isHittable && control.frame.minY >= top && control.frame.maxY <= bottom {
+                return
+            }
+            // AX5에서 전체 화면 스와이프가 대상을 상단 밖으로 지나치지 않게 이동량을 제한한다.
+            let distance = control.exists && !control.frame.isEmpty ? control.frame.midY - middle : 160
+            let delta = min(160, max(-160, distance))
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: list.frame.minX + 8, dy: middle))
+            let end = origin.withOffset(CGVector(dx: list.frame.minX + 8, dy: middle - delta))
+            start.press(forDuration: 0.05, thenDragTo: end)
+            Thread.sleep(forTimeInterval: 0.5)
         }
-        XCTAssertTrue(control.isHittable, app.debugDescription)
+        XCTAssertTrue(control.isHittable && control.frame.minY >= top && control.frame.maxY <= bottom, app.debugDescription)
+    }
+
+    @MainActor
+    private func tapAfterScroll(_ control: XCUIElement) {
+        // 스크롤을 멈추는 첫 터치와 컨트롤 입력을 혼동하지 않도록 안정화 뒤 한 번 누른다.
+        Thread.sleep(forTimeInterval: 0.5)
+        control.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.15)
     }
 
     @MainActor
