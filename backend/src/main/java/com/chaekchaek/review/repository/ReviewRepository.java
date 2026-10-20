@@ -131,6 +131,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             from review r
             left join reply on reply.review_id = r.review_id and reply.deleted_at is null
             where r.deleted_at is null
+               or exists (select 1 from reply ar where ar.review_id = r.review_id and ar.deleted_at is null)
             group by r.book_id
             order by count(distinct r.review_id) + count(reply.reply_id) desc, r.book_id desc
             limit 10
