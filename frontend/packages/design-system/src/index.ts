@@ -138,6 +138,9 @@ export type { Props as ChoiceProps } from './components/Choice';
 export { InfoMessage } from './components/InfoMessage';
 export type { Props as InfoMessageProps } from './components/InfoMessage';
 
+export { Tabs } from './components/Tabs';
+export type { Props as TabsProps } from './components/Tabs';
+
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';
 
