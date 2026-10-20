@@ -3,8 +3,17 @@ import XCTest
 /// Debug 전용 시안이다. 서버 저장을 검증하지 않는다.
 /// 같은 suite를 기본 Dynamic Type와 AX5에서 각각 실행한다.
 final class BookQuestionUITests: XCTestCase {
+    private var accessibilityFailures: [String] = []
+
     override func setUpWithError() throws {
         continueAfterFailure = false
+        accessibilityFailures = []
+    }
+
+    override func tearDownWithError() throws {
+        if !accessibilityFailures.isEmpty {
+            XCTFail("기능 흐름과 별도로 수집한 접근성 감사 실패:\n" + accessibilityFailures.joined(separator: "\n"))
+        }
     }
 
     @MainActor
@@ -18,6 +27,7 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertTrue(compose.waitForExistence(timeout: 5))
         XCTAssertTrue(compose.isHittable)
         try audit(app, name: "질문 없는 책 상세")
+        print("QUESTION_A_FLOW_PASS testBookWithoutQuestionKeepsReviewEntry")
     }
 
     @MainActor
@@ -44,8 +54,8 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertEqual(overlay.frame.minY, overlayFrame.minY, accuracy: 1)
         element("question_tab_Plot", in: app).tap()
         XCTAssertTrue(body.waitForExistence(timeout: 5))
-        let plotHeading = app.staticTexts["어린 왕자와 여우"]
-        XCTAssertTrue(plotHeading.waitForExistence(timeout: 5))
+        let plotHeading = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "어린 왕자와 여우")).firstMatch
+        XCTAssertTrue(plotHeading.waitForExistence(timeout: 5), app.debugDescription)
         let headingY = plotHeading.frame.minY
         body.swipeUp()
         XCTAssertTrue(!plotHeading.exists || abs(plotHeading.frame.minY - headingY) > 10,
@@ -75,6 +85,7 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertTrue(restoredAnchor.exists)
         XCTAssertEqual(restoredAnchor.frame.minY, anchorY, accuracy: 3, "자료 닫기가 뒤 목록을 이동시키면 안 된다")
         attachScreenshot(named: "자료 닫기 뒤 감상 목록 위치")
+        print("QUESTION_A_FLOW_PASS testReferenceTabsAndBothScrollAreasKeepTheirOwnPosition")
     }
 
     @MainActor
@@ -115,6 +126,7 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertTrue(selected.waitForNonExistence(timeout: 5))
         XCTAssertTrue(reaction.exists)
         XCTAssertFalse(picker.exists)
+        print("QUESTION_A_FLOW_PASS testEmojiPickerSelectsReplacesAndCancelsReaction")
     }
 
     @MainActor
@@ -134,7 +146,7 @@ final class BookQuestionUITests: XCTestCase {
         revealInReview(content, app: app, upward: false)
         content.tap()
         content.typeText("Time made this special")
-        let close = app.buttons["닫기"].firstMatch
+        let close = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "닫기")).firstMatch
         revealInReview(close, app: app, upward: false)
         close.tap()
         let keepWriting = app.buttons["계속 작성"]
@@ -144,11 +156,16 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertEqual(content.value as? String, "Time made this special")
         XCTAssertEqual(quote.value as? String, "A remembered line")
 
-        let rating = app.sliders["별점 선택"]
+        let rating = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "별점 선택")).firstMatch
         revealInReview(rating, app: app, upward: true)
         XCTAssertTrue(rating.exists, app.debugDescription)
         XCTAssertTrue((rating.value as? String ?? "").hasPrefix("0"), "초기 별점은 실제 0점이어야 한다")
-        rating.adjust(toNormalizedSliderPosition: 0)
+        // iOS에서는 별점이 Other로 노출되므로 실제 탭과 드래그 입력으로 검사한다.
+        rating.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertFalse((rating.value as? String ?? "").hasPrefix("0"), "오른쪽 탭으로 실제 점수가 바뀌어야 한다")
+        let ratingEnd = rating.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5))
+        let ratingZero = rating.coordinate(withNormalizedOffset: CGVector(dx: -0.1, dy: 0.5))
+        ratingEnd.press(forDuration: 0.05, thenDragTo: ratingZero)
         XCTAssertTrue((rating.value as? String ?? "").hasPrefix("0"), "0점은 실제 조절 가능한 최솟값이어야 한다")
         let save = app.buttons["감상 남기기"]
         revealInReview(save, app: app, upward: true)
@@ -158,12 +175,13 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["시안에서 입력을 확인했어요."].waitForExistence(timeout: 5))
         XCTAssertFalse(content.exists)
         try audit(app, name: "시안 감상 제출 뒤 상세 복귀")
+        print("QUESTION_A_FLOW_PASS testReviewDraftSurvivesContinueWritingAndSubmitsActualZero")
     }
 
     @MainActor
     private func launchPreview(questionVisible: Bool = true) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestingBookQuestion"]
+        app.launchArguments = ["-uiTestingBookQuestion", "-uiTestingExistingInstallation"]
         if !questionVisible { app.launchArguments.append("-uiTestingBookQuestionAbsent") }
         app.launch()
         return app
@@ -211,7 +229,24 @@ final class BookQuestionUITests: XCTestCase {
     @MainActor
     private func audit(_ app: XCUIApplication, name: String) throws {
         attachScreenshot(named: name)
-        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
+        do {
+            try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion]) { issue in
+                let element = issue.element
+                let details = "\(name): \(issue.compactDescription) | \(issue.detailedDescription) | element=\(element?.debugDescription ?? "nil") | frame=\(String(describing: element?.frame))"
+                self.accessibilityFailures.append(details)
+                print("QUESTION_A_AUDIT \(details)")
+                let attachment = XCTAttachment(string: details)
+                attachment.name = "접근성 감사: \(name)"
+                attachment.lifetime = .keepAlways
+                self.add(attachment)
+                // 기능 왕복을 계속 검사하되 tearDown에서 감사를 실패로 보고한다.
+                return true
+            }
+        } catch {
+            let details = "\(name): 감사 실행 오류 \(error)"
+            accessibilityFailures.append(details)
+            print("QUESTION_A_AUDIT \(details)")
+        }
     }
 
     @MainActor

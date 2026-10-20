@@ -14,7 +14,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
         _ = try await URLSession.shared.data(for: reset)
 
         let app = XCUIApplication()
-        app.launchArguments.append("-uiTestingGuest")
+        app.launchArguments += ["-uiTestingGuest", "-uiTestingExistingInstallation"]
         app.launch()
         let book = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "감상 보존 검증")).firstMatch
         guard book.waitForExistence(timeout: 15) else {
