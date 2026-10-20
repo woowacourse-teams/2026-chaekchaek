@@ -35,7 +35,6 @@ class AdminServiceTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-08-28T00:00:00Z"), ZoneOffset.UTC);
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
     private static final CurrentActor ADMIN_ACTOR = CurrentActor.admin(1L, 1L);
-    private static final CurrentActor MEMBER_ACTOR = CurrentActor.member(2L, 2L);
 
     @Test
     @DisplayName("최근에 추천한 순서로 책 정보를 반환한다")
@@ -234,50 +233,6 @@ class AdminServiceTest {
         // then
         assertThat(result).isEmpty();
         verifyNoInteractions(currentActorProvider);
-    }
-
-    @Test
-    @DisplayName("관리자가 아니라면 도서를 조회하지 않고 추천 도서 등록을 거절한다")
-    void should_NotSaveRecommendedBook_When_ActorIsNotAdmin() {
-        // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        BookResolver bookResolver = mock(BookResolver.class);
-        AdminService adminService = adminService(
-                recommendedBookRepository,
-                mock(BookRepository.class),
-                bookResolver,
-                actorProvider(MEMBER_ACTOR)
-        );
-
-        // when & then
-        assertThatThrownBy(() -> adminService.addRecommendedBookByIsbn13(ISBN13))
-                .isInstanceOfSatisfying(
-                BusinessException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
-        );
-        verify(bookResolver, never()).findOrCreate(ISBN13);
-        verify(recommendedBookRepository, never()).saveAndFlush(any(RecommendedBook.class));
-    }
-
-    @Test
-    @DisplayName("관리자가 아니라면 추천 도서를 삭제하지 않는다")
-    void should_NotDeleteRecommendedBook_When_ActorIsNotAdmin() {
-        // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        AdminService adminService = adminService(
-                recommendedBookRepository,
-                mock(BookRepository.class),
-                mock(BookResolver.class),
-                actorProvider(MEMBER_ACTOR)
-        );
-
-        // when & then
-        assertThatThrownBy(() -> adminService.deleteRecommendedBook(3L))
-                .isInstanceOfSatisfying(
-                BusinessException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
-        );
-        verify(recommendedBookRepository, never()).delete(any(RecommendedBook.class));
     }
 
     private static AdminService adminService(

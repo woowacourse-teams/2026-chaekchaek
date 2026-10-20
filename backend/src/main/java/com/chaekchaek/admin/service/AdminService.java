@@ -1,5 +1,6 @@
 package com.chaekchaek.admin.service;
 
+import com.chaekchaek.admin.authorization.AdminOnly;
 import com.chaekchaek.admin.domain.RecommendedBook;
 import com.chaekchaek.admin.dto.RecommendedBookListResponse;
 import com.chaekchaek.admin.dto.RecommendedBookResponse;
@@ -34,7 +35,6 @@ public class AdminService {
     private final RecommendedBookRepository recommendedBookRepository;
     private final BookRepository bookRepository;
     private final BookResolver bookResolver;
-    private final CurrentActorProvider currentActorProvider;
     private final Clock clock;
     private final TransactionTemplate transactionTemplate;
 
@@ -49,7 +49,6 @@ public class AdminService {
         this.recommendedBookRepository = recommendedBookRepository;
         this.bookRepository = bookRepository;
         this.bookResolver = bookResolver;
-        this.currentActorProvider = currentActorProvider;
         this.clock = clock;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
@@ -76,12 +75,13 @@ public class AdminService {
                 .collect(Collectors.toMap(Book::getId, book -> book));
     }
 
+    @AdminOnly
     public RecommendedBookResponse addRecommendedBookByIsbn13(Isbn13 isbn13) {
-        requireAdmin();
         Book book = bookResolver.findOrCreate(isbn13);
         return transactionTemplate.execute(status -> addRecommendedBook(book.getId()));
     }
 
+    @AdminOnly
     @Transactional
     public RecommendedBookResponse addRecommendedBook(long bookId) {
         Book book = bookRepository.findDetailById(bookId).orElseThrow(BookNotFoundException::new);
@@ -123,8 +123,8 @@ public class AdminService {
     }
 
     @Transactional
+    @AdminOnly
     public void deleteRecommendedBook(long bookId) {
-        requireAdmin();
         RecommendedBook recommendedBook = recommendedBookRepository.findByBookId(bookId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RECOMMENDED_BOOK_NOT_FOUND));
         recommendedBookRepository.delete(recommendedBook);
@@ -133,11 +133,5 @@ public class AdminService {
                 .addKeyValue("event", "recommended_book_deleted")
                 .addKeyValue("bookId", bookId)
                 .log("Recommended book deleted");
-    }
-
-    private void requireAdmin() {
-        if (!currentActorProvider.getCurrentActor().isAdmin()) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
-        }
     }
 }
