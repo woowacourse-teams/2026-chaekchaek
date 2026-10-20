@@ -332,6 +332,32 @@ class ReviewQueryIntegrationTest {
                 .containsExactly(newerFirstPage.getId(), olderFirstPage.getId(), laterPage.getId(), nullPage.getId());
     }
 
+    @Test
+    @DisplayName("정상 답글이 남은 삭제 감상은 본문을 안내 문구로 바꾸고 인용문과 챕터를 비운다")
+    void should_HideOriginalText_When_DeletedReviewHasActiveReply() {
+        // given
+        Review deleted = reviewRepository.save(Review.create(BOOK_ID, ACTOR_ID, "삭제할 감상", "인용문", "3장", 30, true, false));
+        deleted.deleteBy(ACTOR_ID);
+        addReplies(deleted, 1);
+        saveReview(BOOK_ID, ACTOR_ID, null);
+        flushAndClear();
+
+        // when
+        PageResponse<ReviewResponse> response = service.findReviews(BOOK_ID, 1, Feed.ALL, ReviewSort.LATEST);
+
+        // then
+        ReviewResponse deletedResponse = response.items().getLast();
+        assertThat(deletedResponse.reviewId()).isEqualTo(deleted.getId());
+        assertThat(deletedResponse.content()).isEqualTo("삭제된 감상입니다.");
+        assertThat(deletedResponse.quote()).isNull();
+        assertThat(deletedResponse.chapter()).isNull();
+        assertThat(deletedResponse.currentPage()).isEqualTo(30);
+        assertThat(deletedResponse.isSpoiler()).isTrue();
+        assertThat(deletedResponse.deleted()).isTrue();
+        assertThat(deletedResponse.replyCount()).isEqualTo(1);
+        assertThat(response.items().getFirst().content()).isEqualTo("감상");
+    }
+
     @ParameterizedTest
     @EnumSource(Feed.class)
     @DisplayName("인기순 감상이 많아도 요청한 페이지의 감상 열 개만 영속성 컨텍스트에 로딩한다")

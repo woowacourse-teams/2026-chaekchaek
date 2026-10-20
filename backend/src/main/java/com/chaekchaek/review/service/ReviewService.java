@@ -60,6 +60,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     private static final Logger log = LoggerFactory.getLogger(ReviewService.class);
     private static final int PAGE_SIZE = 10;
     private static final int RECENT_REPLY_LIMIT = 3;
+    private static final String DELETED_REVIEW_CONTENT = "삭제된 감상입니다.";
 
     private final ReviewRepository reviewRepository;
     private final ReplyRepository replyRepository;
@@ -378,11 +379,19 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                         memberProfiles
                 ))
                 .toList();
+        String content = review.getContent();
+        String quote = review.getQuote();
+        String chapter = review.getChapter();
+        if (review.isDeleted()) {
+            content = DELETED_REVIEW_CONTENT;
+            quote = null;
+            chapter = null;
+        }
         return new ReviewResponse(
                 review.getId(),
-                review.getContent(),
-                review.getQuote(),
-                review.getChapter(),
+                content,
+                quote,
+                chapter,
                 review.getCurrentPage(),
                 review.isSpoiler(),
                 review.isDeleted(),
