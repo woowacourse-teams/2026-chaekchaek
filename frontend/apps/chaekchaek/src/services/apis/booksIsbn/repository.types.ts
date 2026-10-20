@@ -24,4 +24,6 @@ export type GetBooksIsbn = (params: GetBooksIsbnParams) => Promise<{
   reviewCount: number;
   replyCount: number;
   myRatingCount: number;
+  purchaseUrl: string | null;
+  source: string;
 }>;
