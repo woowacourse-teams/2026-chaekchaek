@@ -45,6 +45,14 @@
   color: var(--chaek-color-text-primary);
 }
 
+.level-content .title {
+  font-size: 1rem; /* 16px */
+}
+
+.level-detail .title {
+  font-size: 0.875rem; /* 14px */
+}
+
 .level-caption .title {
   font-family: var(--chaek-font-family-gowun-dodum);
   font-size:  0.625rem; /* 10px */
