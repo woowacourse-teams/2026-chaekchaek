@@ -1,30 +1,48 @@
+import { useCallback, useEffect, useState } from 'react';
+import type { ChangeEvent } from 'react';
+
 import { ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
 
-import ImgBoxDummyImg1 from '../../../../../../../../../packages/design-system/src/components/ImgBox/imgs/dummy.png';
-import { Link } from 'react-router-dom';
+import { getBooks } from '@/services/apis/books/repository';
+import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
 export const SearchPanel = () => {
+  const [query, setQuery] = useState('');
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+  };
+
+  const getBooksLoadData = useCallback(
+    async ({ pageParam }: { pageParam: number }) => {
+      return await getBooks({ page: pageParam, query });
+    },
+    [query],
+  );
+
+  const {
+    status: { data: booksDataAll },
+    fetchNextPage,
+  } = useInfiniteLoadData({
+    queryFn: getBooksLoadData,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage?.nextPage || 1;
+    },
+  });
+
+  const booksData = (booksDataAll?.pages ?? []).flatMap((page) => page?.items).filter(Boolean);
+
   return (
     <>
-      <Input sx={{ mt: 2, mb: 4 }} size="small" />
+      <Input sx={{ mt: 2, mb: 4 }} size="small" value={query} onChange={handleChange} />
 
       <ScrollArea height="320px">
         <List>
-          {Array.from({ length: 10 }).map(() => {
-            const item = {
-              bookId: 1,
-              isbn13: '',
-              coverImageUrl: ImgBoxDummyImg1,
-              title: 'Title Title Title Title Title Title',
-              authors: ['author1', 'author2'],
-            };
-
+          {booksData?.map((item) => {
             return (
-              <List.Item key={item.bookId}>
+              <List.Item key={item.isbn13}>
                 <List.Item.Leading>
-                  <Link to={`/books/${item.isbn13}`}>
-                    <ImgBox img={item.coverImageUrl} size="x-small" />
-                  </Link>
+                  <ImgBox img={item.coverImageUrl} size="x-small" />
                 </List.Item.Leading>
                 <List.Item.Content
                   ellipsis
