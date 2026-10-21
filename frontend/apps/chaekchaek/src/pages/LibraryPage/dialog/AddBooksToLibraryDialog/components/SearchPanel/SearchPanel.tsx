@@ -56,6 +56,10 @@ export const SearchPanel = () => {
     };
   }, [booksDataAll]);
 
+  useEffect(() => {
+    scrollAreaRef.current?.scrollTo({ top: 0 });
+  }, [query]);
+
   return (
     <>
       <Input sx={{ mt: 2, mb: 4 }} size="small" value={query} onChange={handleChange} />
