@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import {
   Button,
@@ -22,13 +22,14 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
 import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
 import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
 import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
 import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 export type LibraryPageDialogType =
   | 'AddBooksToLibraryDialog'
@@ -40,6 +41,27 @@ export type LibraryPageDialogType =
 const booksHeight = [286, 304, 318, 312, 296, 282, 288, 306, 320, 298];
 
 export const LibraryPage = () => {
+  const { user } = useAuthContext();
+
+  const { libraryId } = useParams<{ libraryId: string }>();
+
+  const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    const TIME_OUT = 1500;
+    if (isCopied)
+      setTimeout(() => {
+        setIsCopied(false);
+      }, TIME_OUT);
+  }, [isCopied]);
+
+  const handleCopyLink = async () => {
+    const memberLibraryLink = `${window.location.origin}/members/${user?.memberId}/libraries/${libraryId}`;
+    await navigator.clipboard.writeText(memberLibraryLink);
+
+    setIsCopied(true);
+  };
+
   const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
   const handleOpenDialog = (dialog: LibraryPageDialogType) => {
     setDialog(dialog);
@@ -123,8 +145,12 @@ export const LibraryPage = () => {
               >
                 <Icon.PlusIcon color="inverse" />책 담기
               </Button>
-              <IconButton variant="ghost" size="large" sx={{ mr: 2 }}>
-                <Icon.UploadIcon size="large" />
+              <IconButton variant="ghost" size="large" sx={{ mr: 2 }} onClick={handleCopyLink}>
+                {isCopied ? (
+                  <Icon.CheckAnimatedIcon size="large" />
+                ) : (
+                  <Icon.UploadIcon size="large" />
+                )}
               </IconButton>
               <IconButton
                 variant="ghost"
