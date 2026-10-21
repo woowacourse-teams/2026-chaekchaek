@@ -25,3 +25,29 @@
 .spacing-medium {
   padding: 18px;
 }
+
+.align-left {
+  justify-content: flex-start;
+}
+
+.align-center {
+  justify-content: center;
+}
+
+.align-right {
+  justify-content: flex-end;
+}
+
+.vertical-align-top {
+  align-items: flex-start;
+}
+
+.vertical-align-center {
+
+  display: flex;
+  align-items: center;
+}
+
+.vertical-align-bottom {
+  align-items: flex-end;
+}

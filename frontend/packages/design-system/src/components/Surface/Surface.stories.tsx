@@ -54,3 +54,37 @@ export const Spacing: Story = {
     </div>
   ),
 };
+
+export const Align: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 16 }}>
+      {(['left', 'center', 'right'] as const).map((align) => (
+        <Surface
+          align={align}
+          key={align}
+          style={{ display: 'flex', flex: 1, height: 120 }}
+          variant="outlined"
+        >
+          {align}
+        </Surface>
+      ))}
+    </div>
+  ),
+};
+
+export const VerticalAlign: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 16 }}>
+      {(['top', 'center', 'bottom'] as const).map((verticalAlign) => (
+        <Surface
+          key={verticalAlign}
+          style={{ display: 'flex', flex: 1, height: 120 }}
+          variant="outlined"
+          verticalAlign={verticalAlign}
+        >
+          {verticalAlign}
+        </Surface>
+      ))}
+    </div>
+  ),
+};
