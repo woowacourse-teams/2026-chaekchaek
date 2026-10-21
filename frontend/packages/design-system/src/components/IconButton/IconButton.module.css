@@ -75,18 +75,32 @@
 }
 
 .size-small {
+  --icon-button-edge-offset: 8.5px;
+
   width: 32px;
   height: 32px;
 }
 
 .size-medium {
+  --icon-button-edge-offset: 12.5px;
+
   width: 40px;
   height: 40px;
 }
 
 .size-large {
+  --icon-button-edge-offset: 16.5px;
+
   width: 48px;
   height: 48px;
+}
+
+.edge-start {
+  margin-inline-start: calc(var(--icon-button-edge-offset) * -1);
+}
+
+.edge-end {
+  margin-inline-end: calc(var(--icon-button-edge-offset) * -1);
 }
 
 .root:disabled,
