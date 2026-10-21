@@ -156,9 +156,8 @@ fun FeedScreen(
     replyTarget?.let { reflection ->
         ReplyInputSheet(
             onDismiss = { replyTargetNoteId = null },
-            onSave = { content ->
-                viewModel.createReply(reflection.reviewId, content) { replyTargetNoteId = null }
-            },
+            onSave = { content, onSaved -> viewModel.createReply(reflection.reviewId, content, onSaved) },
+            onSaved = { replyTargetNoteId = null },
         )
     }
 }

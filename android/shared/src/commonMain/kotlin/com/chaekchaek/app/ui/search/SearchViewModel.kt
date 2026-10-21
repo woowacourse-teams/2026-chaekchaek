@@ -191,7 +191,7 @@ class SearchViewModel(
                         longs = mapOf("duration_ms" to searchStarted.elapsedNow().inWholeMilliseconds),
                     )
                 }
-                errors.report(error, ErrorOperation.Search) { search(trimmed, "retry", trackAnalytics = false) }
+                errors.report(error, ErrorOperation.Search) { search(trimmed, if (trigger == "restore") "restore" else "retry", trackAnalytics = false) }
                 if (previousLoadedPage != null) savedStateHandle[SearchSavedStateKeys.LoadedPage] = previousLoadedPage
                 previousState.takeIf { it is SearchUiState.Success } ?: SearchUiState.Error("검색을 완료하지 못했어요")
             }

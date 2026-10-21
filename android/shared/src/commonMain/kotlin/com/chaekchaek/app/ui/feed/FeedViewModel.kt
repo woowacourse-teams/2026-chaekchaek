@@ -164,7 +164,7 @@ class FeedViewModel(
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
                     if (authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
-                    if (loading && previousState !is FeedUiState.Content) {
+                    if (loading && (previousState !is FeedUiState.Content || previousState.reviews.isEmpty())) {
                         _uiState.value = FeedUiState.Loading
                     } else if (_uiState.value == FeedUiState.Loading) {
                         _uiState.value = previousState

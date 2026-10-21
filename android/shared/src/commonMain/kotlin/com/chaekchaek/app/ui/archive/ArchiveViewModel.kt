@@ -9,6 +9,7 @@ import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
+import com.chaekchaek.app.data.remote.chunkLibraryBookIds
 import com.chaekchaek.app.domain.shelf.ReadingStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
@@ -90,14 +91,24 @@ class ArchiveViewModel(
     fun remove(bookIds: Set<String>) {
         val serverBookIds = _uiState.value.items.filter { it.id in bookIds }.map(ArchiveBookUiModel::bookId)
         if (serverBookIds.isEmpty()) return
-        mutate("library_remove", serverBookIds.size) { token -> repository.bulkDelete(serverBookIds, token) }
+        val remaining = chunkLibraryBookIds(serverBookIds).toMutableList()
+        mutate("library_remove", serverBookIds.size) { token ->
+            while (remaining.isNotEmpty()) {
+                repository.bulkDelete(remaining.first(), token)
+                remaining.removeAt(0)
+            }
+        }
     }
 
     fun changeStatus(bookIds: Set<String>, status: ReadingStatus) {
         val serverBookIds = _uiState.value.items.filter { it.id in bookIds }.map(ArchiveBookUiModel::bookId)
         if (serverBookIds.isEmpty()) return
+        val remaining = chunkLibraryBookIds(serverBookIds).toMutableList()
         mutate("reading_status_change", serverBookIds.size) { token ->
-            repository.bulkChangeStatus(serverBookIds, status.apiValue, token)
+            while (remaining.isNotEmpty()) {
+                repository.bulkChangeStatus(remaining.first(), status.apiValue, token)
+                remaining.removeAt(0)
+            }
         }
     }
 

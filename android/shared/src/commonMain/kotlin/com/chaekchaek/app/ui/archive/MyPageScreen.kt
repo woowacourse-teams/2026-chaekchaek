@@ -62,7 +62,7 @@ internal fun MyPageScreen(
     modifier: Modifier = Modifier,
 ) {
     var showNicknameDialog by rememberSaveable { mutableStateOf(false) }
-    var nicknameSavePending by rememberSaveable { mutableStateOf(false) }
+    var nicknameSaveRevision by rememberSaveable { mutableStateOf<Long?>(null) }
     var showWithdrawalDialog by remember { mutableStateOf(false) }
     val nicknameState = rememberLimitedTextFieldState(NicknameInputPolicy, state.nickname)
 
@@ -71,8 +71,8 @@ internal fun MyPageScreen(
     }
 
     LaunchedEffect(state.saveRevision) {
-        if (nicknameSavePending) {
-            nicknameSavePending = false
+        if (nicknameSaveRevision?.let { state.saveRevision > it } == true) {
+            nicknameSaveRevision = null
             showNicknameDialog = false
         }
     }
@@ -122,9 +122,9 @@ internal fun MyPageScreen(
     if (showNicknameDialog) {
         NicknameDialog(
             nicknameState = nicknameState,
-            onDismiss = { showNicknameDialog = false; nicknameSavePending = false },
+            onDismiss = { showNicknameDialog = false; nicknameSaveRevision = null },
             onConfirm = {
-                nicknameSavePending = true
+                nicknameSaveRevision = state.saveRevision
                 onAnonymousReviewsChange(false, nicknameState.text.toString().trim())
             },
         )

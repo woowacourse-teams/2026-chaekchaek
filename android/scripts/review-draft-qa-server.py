@@ -3,7 +3,7 @@
 python3 android/scripts/review-draft-qa-server.py
 Xcode build-for-testing에 CHAEKCHAEK_API_ENVIRONMENT=local을 빌드 설정으로 전달하고
 LoginRequiredSheetUITests/testReviewDraftSurvivesFailureAndClosesAfterRetry를 실행한다.
-첫 감상 저장은 500, 다음 저장은 201로 응답한다. 운영 API나 사용자 자격 증명은 쓰지 않는다.
+처음 두 감상 저장은 500, 이후 저장은 201로 응답한다. 운영 API나 사용자 자격 증명은 쓰지 않는다.
 """
 
 import json
@@ -19,7 +19,7 @@ class ReviewDraftFixture(BaseHTTPRequestHandler):
         "reviewId": 7,
         "content": "draft must survive",
         "quote": "saved quote",
-        "chapter": "chapter one",
+        "chapter": None,
         "createdAt": "2026-10-16T00:00:00Z",
         "author": {"displayName": "검증 게스트", "anonymous": False, "mine": True, "actorType": "GUEST"},
         "replyCount": 0,
@@ -57,7 +57,7 @@ class ReviewDraftFixture(BaseHTTPRequestHandler):
             return self.respond({"reviews": []})
         if path == "/api/v1/books/42/reviews":
             with self.lock:
-                saved = len(self.submissions) > 1
+                saved = len(self.submissions) > 2
             return self.respond({"totalCount": int(saved), "nextPage": None, "items": [self.review] if saved else []})
         if path == "/api/v1/books/by-isbn/9780000000042":
             return self.respond({
@@ -83,7 +83,7 @@ class ReviewDraftFixture(BaseHTTPRequestHandler):
                 self.submissions.append(body)
                 attempt = len(self.submissions)
             time.sleep(1)
-            if attempt == 1:
+            if attempt <= 2:
                 return self.respond({"message": "fixture failure"}, 500)
             response = {"bookId": 42, "review": self.review} if "/by-isbn/" in path else self.review
             return self.respond(response, 201)

@@ -16,6 +16,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -99,6 +100,22 @@ private fun runFeedViewModelTest(block: suspend TestScope.() -> Unit) = runTest 
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedViewModelTest {
+    @Test
+    fun `첫 피드가 지연되면 빈 자리 대신 로딩을 표시한다`() = runFeedViewModelTest {
+        val response = CompletableDeferred<ReviewFeedPage>()
+        val repository = object : ReviewFeedRepository {
+            override suspend fun reviewFeed(page: Int, viewer: FeedViewer) = response.await()
+        }
+        val vm = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions)
+        runCurrent()
+        advanceTimeBy(501)
+        runCurrent()
+        vm.uiState.value shouldBe FeedUiState.Loading
+        response.complete(ReviewFeedPage(listOf(review(1)), 1, null))
+        advanceUntilIdle()
+        vm.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.size shouldBe 1
+    }
+
     @Test
     fun `토큰 갱신 중에는 목록을 유지하고 갱신 실패 후에도 다음 페이지를 읽을 수 있다`() = runFeedViewModelTest {
         val refresh = CompletableDeferred<ReviewFeedPage>()

@@ -57,6 +57,33 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun failedRestorationRetriesThroughTheSavedPage() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val calls = mutableListOf<Int>()
+            var fail = true
+            val handle = SavedStateHandle(mapOf(
+                SearchSavedStateKeys.SubmittedQuery to "책",
+                SearchSavedStateKeys.LoadedPage to 3,
+            ))
+            val vm = SearchViewModel(BookSearchRepository { _, _, page ->
+                calls += page
+                if (page == 2 && fail) error("offline")
+                BookSearchPage(3, (page + 1).takeIf { page < 3 },
+                    listOf(book("책 $page", "2026").copy(isbn13 = "isbn$page")))
+            }, {}, { true }, savedStateHandle = handle)
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2), calls)
+            fail = false
+            vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke(null)
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2, 1, 2, 3), calls)
+            assertEquals(3, handle.get<Int>(SearchSavedStateKeys.LoadedPage))
+            assertEquals(3, (vm.uiState.value as SearchUiState.Success).results.size)
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test
     fun restorationReloadsThroughThePreviouslyLoadedPageAndDeduplicatesResults() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {

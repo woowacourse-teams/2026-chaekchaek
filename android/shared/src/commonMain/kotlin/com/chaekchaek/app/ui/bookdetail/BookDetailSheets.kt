@@ -33,6 +33,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import com.chaekchaek.app.presentation.common.ErrorRecoveryState
 import com.chaekchaek.app.ui.common.ErrorRecoveryEffect
@@ -364,13 +365,19 @@ internal fun ReviewInputSheet(
 internal fun ReplyInputSheet(
     initialContent: String = "",
     onDismiss: () -> Unit,
-    onSave: (String) -> Unit,
+    onSave: (String, () -> Unit) -> Unit,
+    onSaved: () -> Unit = onDismiss,
 ) {
     val errors = remember { ErrorRecoveryState() }
     ErrorRecoveryEffect(errors)
     val contentState = rememberLimitedTextFieldState(ReplyInputRules.Policy, initialContent, initialContent)
     val content = contentState.text.toString()
     val canSubmit = ReplyInputRules.canSubmit(content)
+    var active by remember { mutableStateOf(true) }
+    val latestOnSaved by rememberUpdatedState(onSaved)
+    DisposableEffect(Unit) {
+        onDispose { active = false }
+    }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -388,7 +395,12 @@ internal fun ReplyInputSheet(
             Text("${content.length} / ${ReplyInputRules.MAX_LENGTH}", Modifier.fillMaxWidth(), color = ChaekInkSecondary,
                 textAlign = TextAlign.End, style = MaterialTheme.typography.labelMedium)
             SheetPrimaryButton(if (initialContent.isEmpty()) "등록" else "수정 저장") {
-                if (canSubmit) onSave(content.trim()) else errors.confirm("답글을 입력해 주세요.")
+                if (canSubmit) {
+                    val submitted = contentState.text.toString()
+                    onSave(submitted.trim()) {
+                        if (active && contentState.text.toString() == submitted) latestOnSaved()
+                    }
+                } else errors.confirm("답글을 입력해 주세요.")
             }
         }
     }

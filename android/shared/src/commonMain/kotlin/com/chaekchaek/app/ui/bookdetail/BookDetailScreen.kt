@@ -554,11 +554,12 @@ fun BookDetailScreen(
                 onComposerDismiss()
                 editingReplyId = null
             },
-            onSave = { content ->
+            onSave = { content, onSaved ->
                 authorizeOrRun(BookDetailAuthenticatedAction.EditReply(reply.replyId, content)) {
-                    onReplyUpdate(reply.replyId, content) { editingReplyId = null }
+                    onReplyUpdate(reply.replyId, content, onSaved)
                 }
             },
+            onSaved = { editingReplyId = null },
         )
     }
     visibleBookReviews.firstOrNull { it.reviewId == deletingReviewId }?.let { review ->
@@ -1031,9 +1032,8 @@ private fun ReviewsSection(
                 onComposerDismiss()
                 replyTargetId = null
             },
-            onSave = { content ->
-                onReply(review.reviewId, content) { replyTargetId = null }
-            },
+            onSave = { content, onSaved -> onReply(review.reviewId, content, onSaved) },
+            onSaved = { replyTargetId = null },
         )
     }
 }

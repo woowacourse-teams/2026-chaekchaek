@@ -38,6 +38,37 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class ArchiveMembershipTest {
     @Test
+    fun partialBulkFailureRetriesOnlyTheUnfinishedChunkWithFreshToken() = runTest {
+        for (delete in listOf(true, false)) {
+            val bodies = mutableListOf<String>()
+            val tokens = mutableListOf<String?>()
+            var calls = 0
+            val engine = MockEngine { request ->
+                if (request.url.encodedPath.contains("bulk-")) {
+                    calls++
+                    bodies += (request.body as io.ktor.http.content.TextContent).text
+                    tokens += request.headers[HttpHeaders.Authorization]
+                    respond("", if (calls == 2) HttpStatusCode.Unauthorized else HttpStatusCode.NoContent)
+                } else respond(libraryJson((1..11).toList()), headers = jsonHeaders())
+            }
+            withArchive(engine) { vm ->
+                vm.authenticate("old-token")
+                awaitReal { vm.uiState.first { it.items.size == 11 } }
+                val ids = (1..11).mapTo(mutableSetOf(), ::isbn)
+                if (delete) vm.remove(ids) else vm.changeStatus(ids, ReadingStatus.FINISHED)
+                awaitReal { vm.errors.notice.first { it != null } }
+                assertEquals(2, calls)
+                vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke("fresh-token")
+                awaitReal { vm.uiState.first { it.mutationRevision == 1L } }
+                assertEquals(3, calls)
+                assertEquals(bodies[1], bodies[2])
+                assertFalse(bodies[0] == bodies[2])
+                assertEquals("Bearer fresh-token", tokens.last())
+            }
+        }
+    }
+
+    @Test
     fun tokenRenewalKeepsMembershipWhenRefreshFailsButNewLoginStartsEmpty() = runTest {
         var failRefresh = false
         val engine = MockEngine {

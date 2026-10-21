@@ -801,6 +801,12 @@ class BookDetailViewModel(
         action: suspend () -> T,
     ) {
         if (mutationJob?.isActive == true) return
+        if (preservesComposerOnFailure) {
+            _uiState.value = _uiState.value.copy(
+                reviewSubmissionState = ReviewSubmissionState.Submitting,
+                requestError = null,
+            )
+        }
         val generation = requestGeneration
         val book = _uiState.value.displayBook
         val actionHandle = actionName?.let { name ->
