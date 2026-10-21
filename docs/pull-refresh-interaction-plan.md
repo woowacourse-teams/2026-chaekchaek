@@ -334,3 +334,24 @@ Figma의 기존 End 메인 `1184:435`와 인스턴스 6개를 숨기고 상태 �
 - 최초 iOS 재실행의 검색 검사에서는 입력 문자열에서 두 글자가 누락된 결과가 관찰됐다. 연속 입력을 문자별 입력으로 바꾸고 새로고침 전에 정확한 입력값을 먼저 검사하도록 자동화를 보완했다. 위 최종 재실행에서는 입력 전제조건과 갱신 후 동일 문자열 보존이 모두 통과했다. 입력 누락이 발생한 정확한 내부 원인은 미확인이다.
 - iOS UI fixture는 긴 응답을 검증한다. 빠른 응답의 정확한 300ms 경계를 iOS 실시간 측정으로 검증한 것은 아니며, 해당 경계는 Android의 공통 Compose UI 시계 테스트로 확인했다.
 - 실제 회원 인증 전환은 사용자 직접 검증 범위다. 비로그인에서 로그인 후 회원 데이터 갱신은 사용자 확인, 로그아웃은 미확인이다. 회원 서재 필터 및 편집 UI, 네 탭 전체의 실제 네트워크 실패와 물리 기기 손가락 감각은 이번 자동화로 검증하지 않았다. TalkBack과 VoiceOver는 요청 범위에서 제외하며 확대 글자 및 textClipped 검사로 전체 접근성 검증을 주장하지 않는다.
+
+
+## 책 상세 당겨서 새로고침 확장 (2026-10-21)
+
+사용자가 책 상세의 첫 진입이 아닌 당겨서 새로고침에 같은 C 표시를 적용하도록 확정했다. 기존 #529 / Draft PR #530의 후속 구현이며 신규 API와 페이지네이션은 추가하지 않는다.
+
+- [책 상세 당김 상태](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1470-6093)는 기존 상세 `822:1403`을 바탕으로 C 메인 `1447:5952`의 인스턴스 `1470:6271`을 연결했다. 공통 레퍼런스 `1447:6560`도 같은 메인이다. 390pt 슬롯에서 147pt 표시의 중심 오차는 0pt다. 책 상세 원본과 추가 상태를 MCP로 조회하고 캡처를 확인했다. 라이브러리 게시와는 별개다.
+- 공통 `BookDetailScreen`과 `Navigation`에서 기존 공식 `PullToRefreshBox` 기반 `ChaekRefreshLayout`을 재사용한다. 80dp 임계값, C 링과 문구 즉시 표시, 최소 300ms 표시를 공유한다. 데이터는 요청 완료 즉시 반영하며 최초 진입, 저장과 추가 조회의 500ms 규칙은 유지한다.
+- `BookDetailViewModel.refreshState`를 감상 초기 로딩과 분리한다. 갱신 중 기존 책 정보, 감상, 범위와 정렬, 목록 위치, 화면의 saveable 입력을 유지한다. 읽던 페이지까지 재조회하고, 도서와 감상 요청이 모두 성공하면 결과와 다음 페이지를 함께 반영한다. 실패하면 기존 정보와 커서를 유지하고 공통 스낵바의 다시 시도로 복구한다.
+- 중복 새로고침과 갱신 중 추가 페이지 요청을 막는다. 정렬과 범위, 인증 또는 책 변경은 이전 갱신을 무효화한다. 저장 요청은 당김으로 취소하지 않으며 쓰기 중에는 당김을 비활성화한다. 저장 성공이 갱신을 대체할 때는 기존 조회 세대를 무효화한다. 복원 페이지 번호는 유효한 응답을 반영하는 시점에만 저장한다.
+- Android와 iOS는 공통 화면과 ViewModel을 호출한다. 상세 하단은 기존 페이지 로딩과 실패 재시도를 유지하며 이번 변경에서 하단 당김 효과를 추가하지 않는다.
+- 객체지향 구조의 기존 한계: `BookDetailViewModel`이 추상 저장소 대신 구체 `BookDetailRemoteRepository`와 `LibraryRemoteRepository`에 의존해 DIP를 위반한다. 이번 요청은 새로고침 확장이므로 저장소 계층 전체의 분리는 포함하지 않는다.
+
+### 검증
+
+- Android 공통 `:shared:testAndroidHostTest` 286개 통과, 실패와 오류 0개. 책 상세 ViewModel 37개에 이번 보존, 중복 차단, 실패 복구, 빈 목록, 인증 변경과 진행 중 쓰기 검사가 포함된다. 최초 실행의 기존 `MemberSettingsViewModelTest` 종료 시 코루틴 오류는 재실행에서 재현되지 않았으며 해당 코드는 변경하지 않았다.
+- Android 앱과 테스트 APK 빌드 통과. Android 13 `Pixel_6a_API_33_2` / `emulator-5584`, 기본 글자에서 `BookDetailPaginationRetryTest` 4개와 `PullRefreshTest` 6개, 총 10개 통과했다. 책 상세 UI 검사는 화면에 상태를 주입해 링, 문구, 기존 도서, 빈 감상, 중복 당김과 갱신 후 감상을 확인한다. 공통 검사에는 최소 300ms 경계와 빠른 실패 재시도, 편집 전환 상태 보존이 포함된다. 캡처 `/tmp/529-detail-android-existing.png`, `/tmp/529-detail-android-empty.png`를 직접 확인했다. 첫 검사에서 새 테스트의 링 조회가 병합된 semantics에 가려 실패한 부분을 기존 공통 테스트와 같은 unmerged 조회로 수정했다. AVD 프로세스 종료 후 같은 전용 AVD를 software GPU로 재시작했으며 최종 로그는 `/tmp/529-detail-android-ui-final.log`다.
+- APK `android/app/build/outputs/apk/debug/app-debug.apk`의 SHA-256은 `57a07a4f2aeef784a880aea803fa0978a6d9c3758b28b9d29d1a9777b9f237a1`이다. 패키지 `com.chamsae.chaekchaek`, 1.1.1/code5, 동일 디버그 서명을 확인했다. 이번 검증은 전용 AVD에서 수행했으며 물리 기기는 변경하지 않았다.
+- iOS 공통 코드와 프레임워크, Xcode 앱 및 UI 테스트 빌드 통과. iPhone 17 Pro / iOS 26.2 Simulator `B46EF0ED-AC41-4E73-8D86-0391438C283A`에서 두 책 상세 시나리오를 기본 large와 AX5 각각 2개씩 통과했다. 실제 앱의 홈에서 상세로 진입하고 로컬 guest fixture의 도서 및 감상 요청 횟수 증가, C 표시와 닫힘, 갱신된 감상을 확인한다. 첫 UI 검사의 fixture에 누락됐던 필수 `actorType`을 보완하고, 최초 감상 표시를 기다린 뒤 새로고침 응답을 전환하도록 검사 전제를 수정했다. 최종 결과는 `/tmp/529-detail-ios-large3.xcresult`, `/tmp/529-detail-ios-ax5.xcresult`다. 각 결과에서 추출한 C 표시와 갱신 후 캡처를 직접 확인했다. 글자 크기는 large로 복원하고 이번에 부팅한 Simulator만 종료했다.
+- 현재 OpenAPI와 저장소 계약의 SHA-256 `19fd60bd763c9eaa992963465825cc3622cf8f10cccde7eec39d1f41c9690bfd` 일치를 확인했다. API 계약 변경은 없다.
+- 실제 회원 인증과 운영 서버 데이터, 물리 기기 손가락 조작은 이번 추가 검증에 포함하지 않는다. iOS 실시간 300ms 경계 측정과 전체 접근성 감사도 수행하지 않았다. 기존 공통 Compose 테스트의 시간 검증을 재사용하며 TalkBack 및 VoiceOver는 사용자 결정으로 제외한다.

@@ -246,6 +246,7 @@ internal fun AppNavigation(
                     }
                     viewModel.attachAuthPlatform(authPlatform)
                     val state by viewModel.uiState.collectAsState()
+                    val refreshState by viewModel.refreshState.collectAsState()
                     val displayBook = state.displayBook ?: key.book
                     val archivedBook = archiveState.items.firstOrNull {
                         it.id == displayBook.isbn13.ifBlank { displayBook.id }
@@ -336,6 +337,8 @@ internal fun AppNavigation(
                         onLoadMoreReviews = viewModel::loadMoreReviews,
                         onRetryReviews = viewModel::retryReviews,
                         onRequestErrorShown = viewModel::clearRequestError,
+                        refreshState = refreshState,
+                        onRefresh = viewModel::refresh,
                     )
 
                     if (!restoringAuthentication && state.pendingAction != null) {

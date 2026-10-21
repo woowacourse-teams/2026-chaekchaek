@@ -181,6 +181,51 @@ final class LoginRequiredSheetUITests: XCTestCase {
     }
 
     @MainActor
+    func testBookDetailPullKeepsContentAndRefreshesReviews() throws {
+        try verifyBookDetailPull(initialReviews: true)
+    }
+
+    @MainActor
+    func testEmptyBookDetailReviewsCanBeRefreshed() throws {
+        try verifyBookDetailPull(initialReviews: false)
+    }
+
+    @MainActor
+    private func verifyBookDetailPull(initialReviews: Bool) throws {
+        let fixture = try RefreshFixtureServer(initialDetailReviews: initialReviews)
+        defer { fixture.stop() }
+        let app = refreshApplication(fixture)
+        app.launch()
+        let title = app.descendants(matching: .any).matching(NSPredicate(
+            format: "label CONTAINS %@", "새로고침 검증 도서"
+        )).firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 15))
+        title.tap()
+        let detailPath = "/api/v1/books/by-isbn/9780000000001"
+        let reviewsPath = "/api/v1/books/1/reviews"
+        waitForNewResponse(fixture, path: reviewsPath, after: 0)
+        XCTAssertTrue(app.buttons["뒤로 가기"].waitForExistence(timeout: 5))
+        let initialContent = initialReviews ? "기존 상세 감상" : "아직 등록된 감상이 없어요"
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", initialContent))
+            .firstMatch.waitForExistence(timeout: 10))
+        fixture.beginDetailRefresh()
+        let detailBefore = fixture.completedRequests(for: detailPath)
+        let reviewsBefore = fixture.completedRequests(for: reviewsPath)
+        app.swipeDown()
+        XCTAssertTrue(refreshLoadingLabel(in: app).waitForExistence(timeout: 3))
+        XCTAssertTrue(title.exists)
+        attachScreenshot(named: "책 상세 C 새로고침 \(initialReviews ? "기존 감상" : "빈 감상")")
+        waitForNewResponse(fixture, path: reviewsPath, after: reviewsBefore)
+        waitForRefreshIndicatorToClose(in: app)
+        XCTAssertEqual(fixture.completedRequests(for: detailPath), detailBefore + 1)
+        XCTAssertEqual(fixture.completedRequests(for: reviewsPath), reviewsBefore + 1)
+        let updated = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "갱신한 상세 감상")).firstMatch
+        for _ in 0..<4 where !updated.isHittable { app.swipeUp() }
+        XCTAssertTrue(updated.isHittable)
+        attachScreenshot(named: "책 상세 갱신 후 감상")
+    }
+
+    @MainActor
     private func refreshApplication(_ fixture: RefreshFixtureServer) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += ["-uiTestingGuest", "-uiTestingRefresh"]
@@ -242,10 +287,13 @@ private final class RefreshFixtureServer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "chaekchaek.refresh-ui-test-api")
     private let lock = NSLock()
     private var responses: [String: Int] = [:]
+    private let initialDetailReviews: Bool
+    private var detailRefreshArmed = false
 
     var baseURL: String { "http://127.0.0.1:\(listener.port!.rawValue)" }
 
-    init() throws {
+    init(initialDetailReviews: Bool = false) throws {
+        self.initialDetailReviews = initialDetailReviews
         listener = try NWListener(using: .tcp, on: .any)
         let ready = XCTestExpectation(description: "로컬 API 서버 시작")
         listener.stateUpdateHandler = { state in
@@ -269,6 +317,18 @@ private final class RefreshFixtureServer: @unchecked Sendable {
         return responses[path, default: 0]
     }
 
+    func beginDetailRefresh() {
+        lock.lock()
+        detailRefreshArmed = true
+        lock.unlock()
+    }
+
+    private var isDetailRefresh: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return detailRefreshArmed
+    }
+
     func stop() { listener.cancel() }
 
     private func receive(_ connection: NWConnection, buffered: Data = Data()) {
@@ -285,7 +345,9 @@ private final class RefreshFixtureServer: @unchecked Sendable {
             let body = self.response(for: path)
             let header = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(body.count)\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n"
             // 두 번째 조회부터 지연시켜 실제 표시와 응답 후 접힘을 검증한다.
-            let delay = self.completedRequests(for: path) > 0 ? 2.0 : 0.0
+            let detailRequest = path == "/api/v1/books/1/reviews" || path == "/api/v1/books/by-isbn/9780000000001"
+            let delayed = detailRequest ? self.isDetailRefresh : self.completedRequests(for: path) > 0
+            let delay = delayed ? 2.0 : 0.0
             self.queue.asyncAfter(deadline: .now() + delay) {
                 connection.send(content: Data(header.utf8) + body, completion: .contentProcessed { error in
                     if error == nil {
@@ -302,6 +364,21 @@ private final class RefreshFixtureServer: @unchecked Sendable {
     private func response(for path: String) -> Data {
         let body: String
         switch path {
+        case "/api/v1/books/by-isbn/9780000000001":
+            body = """
+            {"bookId":1,"isbn13":"9780000000001","title":"새로고침 검증 도서","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":null}
+            """
+        case "/api/v1/books/1/reviews":
+            let refreshed = isDetailRefresh
+            if !initialDetailReviews && !refreshed {
+                body = "{\"totalCount\":0,\"nextPage\":null,\"items\":[]}"
+            } else {
+                let content = refreshed ? "갱신한 상세 감상" : "기존 상세 감상"
+                body = """
+                {"totalCount":1,"nextPage":null,"items":[{"reviewId":7,"content":"\(content)","createdAt":"2026-10-21T00:00:00Z","author":{"displayName":"검증 독자","anonymous":false,"mine":false,"actorType":"GUEST"},"replyCount":0,"likeCount":0,"likedByMe":false,"isSpoiler":false,"recentReplies":[],"deleted":false}]}
+                """
+            }
+
         case "/api/v1/home/popular-books":
             body = """
             {"books":[{"bookId":1,"isbn13":"9780000000001","title":"새로고침 검증 도서","coverImageUrl":"","reviewCount":4,"replyCount":0}]}

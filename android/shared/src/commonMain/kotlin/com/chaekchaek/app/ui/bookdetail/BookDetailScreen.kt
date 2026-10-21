@@ -109,6 +109,8 @@ import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.domain.rating.Rating
 import com.chaekchaek.app.ui.common.avatarResource
+import com.chaekchaek.app.presentation.common.RefreshUiState
+import com.chaekchaek.app.ui.common.ChaekRefreshLayout
 import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.theme.ChaekAccentSoft
 import com.chaekchaek.app.ui.theme.ChaekBackground
@@ -167,6 +169,8 @@ fun BookDetailScreen(
     onLoadMoreReviews: () -> Unit = {},
     onRetryReviews: () -> Unit = {},
     onRequestErrorShown: () -> Unit = {},
+    refreshState: RefreshUiState = RefreshUiState(enabled = false),
+    onRefresh: () -> Unit = {},
 ) {
     val book = state.displayBook ?: return
     val listState = key(state.signedIn) { rememberLazyListState() }
@@ -200,8 +204,8 @@ fun BookDetailScreen(
         if (!action.requiresMember || state.signedIn) onAuthorized() else onLoginRequired(action)
     }
 
-    LaunchedEffect(reachedBottom, state.nextReviewPage, state.reviewScope, state.reviewSort, state.reviewPageLoadState) {
-        if (reachedBottom && state.nextReviewPage != null && state.reviewPageLoadState == ReviewPageLoadState.Idle) {
+    LaunchedEffect(reachedBottom, state.nextReviewPage, state.reviewScope, state.reviewSort, state.reviewPageLoadState, refreshState.isRefreshing) {
+        if (!refreshState.isRefreshing && reachedBottom && state.nextReviewPage != null && state.reviewPageLoadState == ReviewPageLoadState.Idle) {
             onLoadMoreReviews()
         }
     }
@@ -233,84 +237,91 @@ fun BookDetailScreen(
 
     Box(modifier = modifier.fillMaxSize().background(ChaekBackground).navigationBarsPadding()) {
         // 복원 데이터를 받기 전에 짧은 임시 목록으로 저장된 offset을 덮어쓰지 않는다.
-        if (!state.isRestoring) LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(bottom = 100.dp),
+        ChaekRefreshLayout(
+            state = refreshState,
+            onRefresh = onRefresh,
+            enabled = !state.isRestoring && !state.isLoading,
+            bottomEnabled = false,
         ) {
-            item {
-                BookHero(
-                    book = book,
-                    saved = savedToLibrary,
-                    averageRating = state.detail?.averageRating,
-                    onBack = onBack,
-                    onLibraryClick = {
-                        authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onToggleLibrary)
-                    },
-                    coverContent = coverContent,
-                )
-            }
-            item {
-                ReadingRecord(
-                    book = book,
-                    record = state.detail?.myRecord,
-                    currentPage = currentPage,
-                    onRate = {
-                        authorizeOrRun(BookDetailAuthenticatedAction.OpenRating) { showRatingDialog = true }
-                    },
-                    onStatusChange = { status ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.ChangeStatus(status)) { onStatusChange(status) }
-                    },
-                    onPageInput = {
-                        authorizeOrRun(BookDetailAuthenticatedAction.OpenPageInput) { showPageDialog = true }
-                    },
-                )
-            }
-            item { Spacer(Modifier.height(23.dp)) }
-            item {
-                ReviewsSection(
-                    reviews = state.reviews,
-                    reviewCount = state.reviewCount,
-                    hasMoreReviews = state.nextReviewPage != null,
-                    loading = state.isLoading,
-                    loadingMore = state.isLoadingMore,
-                    pageLoadState = state.reviewPageLoadState,
-                    onRetryReviews = onRetryReviews,
-                    revealedSpoilerReviewIds = revealedSpoilerReviewIds.toSet(),
-                    scope = state.reviewScope,
-                    sort = state.reviewSort,
-                    onScopeChange = { requested ->
-                        if (requested == ReviewScope.MINE && !state.signedIn) {
-                            onLoginRequired(BookDetailAuthenticatedAction.OpenMineFeed)
-                        } else {
-                            onReviewScopeChange(requested)
-                        }
-                    },
-                    onSortChange = onReviewSortChange,
-                    onRevealSpoiler = { reviewId ->
-                        revealedSpoilerReviewIds = (revealedSpoilerReviewIds + reviewId).distinct()
-                    },
-                    onLike = { reviewId, likedByMe ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.LikeReview(reviewId, likedByMe)) {
-                            onReviewLike(reviewId, likedByMe)
-                        }
-                    },
-                    onLoadReplies = onLoadReplies,
-                    onReplyOpen = onReplyOpen,
-                    onComposerDismiss = onComposerDismiss,
-                    onReply = { reviewId, content ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.CreateReply(reviewId, content)) {
-                            onReplyCreate(reviewId, content)
-                        }
-                    },
-                    onReplyLike = { replyId, likedByMe ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.LikeReply(replyId, likedByMe)) {
-                            onReplyLike(replyId, likedByMe)
-                        }
-                    },
-                    onManageReview = { reviewActionTargetId = it.reviewId },
-                    onManageReply = { replyActionTargetId = it.replyId },
-                )
+            if (!state.isRestoring) LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(bottom = 100.dp),
+            ) {
+                item {
+                    BookHero(
+                        book = book,
+                        saved = savedToLibrary,
+                        averageRating = state.detail?.averageRating,
+                        onBack = onBack,
+                        onLibraryClick = {
+                            authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onToggleLibrary)
+                        },
+                        coverContent = coverContent,
+                    )
+                }
+                item {
+                    ReadingRecord(
+                        book = book,
+                        record = state.detail?.myRecord,
+                        currentPage = currentPage,
+                        onRate = {
+                            authorizeOrRun(BookDetailAuthenticatedAction.OpenRating) { showRatingDialog = true }
+                        },
+                        onStatusChange = { status ->
+                            authorizeOrRun(BookDetailAuthenticatedAction.ChangeStatus(status)) { onStatusChange(status) }
+                        },
+                        onPageInput = {
+                            authorizeOrRun(BookDetailAuthenticatedAction.OpenPageInput) { showPageDialog = true }
+                        },
+                    )
+                }
+                item { Spacer(Modifier.height(23.dp)) }
+                item {
+                    ReviewsSection(
+                        reviews = state.reviews,
+                        reviewCount = state.reviewCount,
+                        hasMoreReviews = state.nextReviewPage != null,
+                        loading = state.isLoading,
+                        loadingMore = state.isLoadingMore,
+                        pageLoadState = state.reviewPageLoadState,
+                        onRetryReviews = onRetryReviews,
+                        revealedSpoilerReviewIds = revealedSpoilerReviewIds.toSet(),
+                        scope = state.reviewScope,
+                        sort = state.reviewSort,
+                        onScopeChange = { requested ->
+                            if (requested == ReviewScope.MINE && !state.signedIn) {
+                                onLoginRequired(BookDetailAuthenticatedAction.OpenMineFeed)
+                            } else {
+                                onReviewScopeChange(requested)
+                            }
+                        },
+                        onSortChange = onReviewSortChange,
+                        onRevealSpoiler = { reviewId ->
+                            revealedSpoilerReviewIds = (revealedSpoilerReviewIds + reviewId).distinct()
+                        },
+                        onLike = { reviewId, likedByMe ->
+                            authorizeOrRun(BookDetailAuthenticatedAction.LikeReview(reviewId, likedByMe)) {
+                                onReviewLike(reviewId, likedByMe)
+                            }
+                        },
+                        onLoadReplies = onLoadReplies,
+                        onReplyOpen = onReplyOpen,
+                        onComposerDismiss = onComposerDismiss,
+                        onReply = { reviewId, content ->
+                            authorizeOrRun(BookDetailAuthenticatedAction.CreateReply(reviewId, content)) {
+                                onReplyCreate(reviewId, content)
+                            }
+                        },
+                        onReplyLike = { replyId, likedByMe ->
+                            authorizeOrRun(BookDetailAuthenticatedAction.LikeReply(replyId, likedByMe)) {
+                                onReplyLike(replyId, likedByMe)
+                            }
+                        },
+                        onManageReview = { reviewActionTargetId = it.reviewId },
+                        onManageReply = { replyActionTargetId = it.replyId },
+                    )
+                }
             }
         }
 

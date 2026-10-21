@@ -1111,6 +1111,158 @@ class BookDetailViewModelTest {
     assertEquals(2, events.value.count { it.name == "cc_load_result" })
   }
 
+  @Test
+  fun `당김 갱신은 기존 내용과 정렬 및 페이지를 보존하고 중복 요청을 막는다`() = runViewModelTest {
+    val gate = CompletableDeferred<Unit>()
+    var calls = 0
+    val pages = mutableListOf<Int>()
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        calls++
+        if (calls > 1) gate.await()
+        respond(DETAIL_WITH_RECORD, headers = jsonHeaders())
+      } else {
+        assertEquals("MINE", request.url.parameters["feed"])
+        assertEquals("POPULAR", request.url.parameters["sort"])
+        val page = request.url.parameters["page"]!!.toInt()
+        pages += page
+        val review = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":$page")
+        respond("""{"totalCount":3,"nextPage":${page + 1},"items":[$review]}""", headers = jsonHeaders())
+      }
+    })
+    val saved = SavedStateHandle(mapOf(
+      BookDetailSavedStateKeys.LoadedPage to 2,
+      BookDetailSavedStateKeys.ReviewScope to ReviewScope.MINE.name,
+      BookDetailSavedStateKeys.ReviewSort to ReviewSort.POPULAR.name,
+    ))
+    val vm = viewModel(client, client, platform({ null }), savedStateHandle = saved)
+    vm.open(book().copy(isbn13 = "9780000000042"), "member-test")
+    awaitReal { vm.refreshState.first { it.enabled } }
+    val before = vm.uiState.value
+    vm.refresh()
+    assertTrue(vm.refreshState.value.isRefreshing)
+    vm.refresh()
+    vm.loadMoreReviews()
+    advanceTimeBy(600)
+    runCurrent()
+    assertEquals(before, vm.uiState.value)
+    assertFalse(vm.uiState.value.isLoading)
+    gate.complete(Unit)
+    awaitReal { vm.refreshState.first { !it.isRefreshing } }
+    assertEquals(2, calls)
+    assertEquals(listOf(1, 2, 1, 2), pages)
+    assertEquals(2, saved.get<Int>(BookDetailSavedStateKeys.LoadedPage))
+    assertEquals(ReviewScope.MINE, vm.uiState.value.reviewScope)
+    assertEquals(ReviewSort.POPULAR, vm.uiState.value.reviewSort)
+    assertEquals(3, vm.uiState.value.nextReviewPage)
+  }
+
+  @Test
+  fun `당김 실패는 기존 정보와 다음 페이지를 보존하고 다시 당기면 복구한다`() = runViewModelTest {
+    var fail = false
+    val client = testClient(MockEngine { request ->
+      when {
+        fail && request.url.encodedPath.contains("/reviews") -> respond("", HttpStatusCode.ServiceUnavailable)
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITH_RECORD, headers = jsonHeaders())
+        else -> respond("""{"totalCount":2,"nextPage":2,"items":[$REVIEW_RESPONSE]}""", headers = jsonHeaders())
+      }
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    vm.open(book().copy(isbn13 = "9780000000042"), null)
+    awaitReal { vm.refreshState.first { it.enabled } }
+    val before = vm.uiState.value
+    fail = true
+    vm.refresh()
+    awaitReal { vm.refreshState.first { it.errorMessage != null } }
+    assertEquals(before, vm.uiState.value)
+    assertFalse(vm.refreshState.value.isRefreshing)
+    assertTrue(vm.refreshState.value.enabled)
+    fail = false
+    vm.refresh()
+    assertNull(vm.refreshState.value.errorMessage)
+    awaitReal { vm.refreshState.first { !it.isRefreshing } }
+    assertEquals(before, vm.uiState.value)
+  }
+
+  @Test
+  fun `빈 감상 목록도 당김으로 새 감상을 받는다`() = runViewModelTest {
+    var calls = 0
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        calls++
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else respond(if (calls == 1) EMPTY_REVIEWS else
+        """{"totalCount":1,"nextPage":null,"items":[$REVIEW_RESPONSE]}""", headers = jsonHeaders())
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    vm.open(book().copy(isbn13 = "9780000000042"), null)
+    awaitReal { vm.refreshState.first { it.enabled } }
+    assertTrue(vm.uiState.value.reviews.isEmpty())
+    vm.refresh()
+    awaitReal { vm.refreshState.first { !it.isRefreshing } }
+    assertEquals(1, vm.uiState.value.reviews.size)
+    assertEquals(2, calls)
+  }
+
+  @Test
+  fun `당김 중 인증이 바뀌면 이전 갱신을 해제하고 회원 정보를 조회한다`() = runViewModelTest {
+    val gate = CompletableDeferred<Unit>()
+    var calls = 0
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        calls++
+        if (calls == 2) gate.await()
+        respond(if (request.headers[HttpHeaders.Authorization] == "Bearer member-test") DETAIL_WITH_RECORD
+          else DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else respond(EMPTY_REVIEWS, headers = jsonHeaders())
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    vm.open(book().copy(isbn13 = "9780000000042"), null)
+    awaitReal { vm.refreshState.first { it.enabled } }
+    vm.refresh()
+    awaitReal { while (calls < 2) kotlinx.coroutines.yield() }
+    vm.authenticate("member-test")
+    assertFalse(vm.refreshState.value.isRefreshing)
+    gate.complete(Unit)
+    awaitReal { vm.refreshState.first { it.enabled } }
+    assertTrue(vm.uiState.value.signedIn)
+    assertEquals(12, vm.uiState.value.detail?.myRecord?.currentPage)
+  }
+
+  @Test
+  fun `저장 중 당김은 쓰기를 취소하거나 상세를 중복 조회하지 않는다`() = runViewModelTest {
+    val gate = CompletableDeferred<Unit>()
+    var reads = 0
+    var writes = 0
+    val client = testClient(MockEngine { request ->
+      when {
+        request.method == HttpMethod.Patch -> {
+          writes++
+          gate.await()
+          respond("""{"bookId":42,"status":"READING","currentPage":24,"rating":4.0}""", headers = jsonHeaders())
+        }
+        request.url.encodedPath.contains("/by-isbn/") -> {
+          reads++
+          respond(DETAIL_WITH_RECORD, headers = jsonHeaders())
+        }
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    vm.open(book().copy(isbn13 = "9780000000042"), "member-test")
+    awaitReal { vm.refreshState.first { it.enabled } }
+    vm.savePage(24)
+    awaitReal { while (writes == 0) kotlinx.coroutines.yield() }
+    assertFalse(vm.refreshState.value.enabled)
+    vm.refresh()
+    assertFalse(vm.refreshState.value.isRefreshing)
+    assertEquals(1, reads)
+    gate.complete(Unit)
+    awaitReal { vm.refreshState.first { it.enabled } }
+    assertEquals(24, vm.uiState.value.detail?.myRecord?.currentPage)
+    assertEquals(1, writes)
+  }
+
   private fun viewModel(
     writeClient: HttpClient,
     authClient: HttpClient,
