@@ -124,6 +124,8 @@ import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.domain.rating.Rating
 import com.chaekchaek.app.ui.common.avatarResource
+import com.chaekchaek.app.presentation.common.RefreshUiState
+import com.chaekchaek.app.ui.common.ChaekRefreshLayout
 import com.chaekchaek.app.ui.theme.ChaekAccent
 import com.chaekchaek.app.ui.theme.ChaekAccentSoft
 import com.chaekchaek.app.ui.theme.ChaekBackground
@@ -186,6 +188,8 @@ fun BookDetailScreen(
     onLoadMoreReviews: () -> Unit = {},
     onRetryReviews: () -> Unit = {},
     onRequestErrorShown: () -> Unit = {},
+    refreshState: RefreshUiState = RefreshUiState(enabled = false),
+    onRefresh: () -> Unit = {},
     errorRecovery: com.chaekchaek.app.presentation.common.ErrorRecoveryState? = null,
     question: BookQuestionUiModel? = null,
     selectedQuestionReaction: String? = null,
@@ -252,8 +256,8 @@ fun BookDetailScreen(
         if (!action.requiresMember || state.signedIn) onAuthorized() else onLoginRequired(action)
     }
 
-    LaunchedEffect(reachedBottom, state.nextReviewPage, state.reviewScope, state.reviewSort, state.reviewPageLoadState) {
-        if (reachedBottom && state.nextReviewPage != null && state.reviewPageLoadState == ReviewPageLoadState.Idle) {
+    LaunchedEffect(reachedBottom, state.nextReviewPage, state.reviewScope, state.reviewSort, state.reviewPageLoadState, refreshState.isRefreshing) {
+        if (!refreshState.isRefreshing && reachedBottom && state.nextReviewPage != null && state.reviewPageLoadState == ReviewPageLoadState.Idle) {
             onLoadMoreReviews()
         }
     }
@@ -293,106 +297,113 @@ fun BookDetailScreen(
 
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(ChaekBackground).navigationBarsPadding()) {
         // 복원 데이터를 받기 전에 짧은 임시 목록으로 저장된 offset을 덮어쓰지 않는다.
-        if (!state.isRestoring) LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(bottom = composeBarHeight).testTag("book_detail_list")
-                .onGloballyPositioned { coordinates ->
-                    val position = coordinates.positionInWindow()
-                    reviewViewport = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
-                },
-            state = listState,
-            contentPadding = PaddingValues(bottom = 24.dp),
+        ChaekRefreshLayout(
+            state = refreshState,
+            onRefresh = onRefresh,
+            enabled = !state.isRestoring && !state.isLoading,
+            bottomEnabled = false,
         ) {
-            item {
-                BookHero(
-                    viewport = reviewViewport,
-                    referenceOverlayBounds = activeOverlayBounds,
-                    book = book,
-                    saved = savedToLibrary,
-                    averageRating = state.detail?.averageRating,
-                    saving = state.isSavingLibrary || externalLibrarySaving,
-                    showSaveLoading = state.isSubmitting || (externalLibrarySaving && externalLibraryLoading),
-                    saveEnabled = !state.isLoading && state.detail != null,
-                    onRemoveFromLibrary = { showLibraryDeleteConfirmation = true },
-                    onBack = onBack,
-                    onLibraryClick = {
-                        if (!savedToLibrary) authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onAddToLibrary)
+            if (!state.isRestoring) LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(bottom = composeBarHeight).testTag("book_detail_list")
+                    .onGloballyPositioned { coordinates ->
+                        val position = coordinates.positionInWindow()
+                        reviewViewport = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
                     },
-                    coverContent = coverContent,
-                )
-            }
-            if (question != null) item {
-                Box(Modifier.padding(horizontal = 24.dp)) {
-                    BookQuestionCard(
+                state = listState,
+                contentPadding = PaddingValues(bottom = 24.dp),
+            ) {
+                item {
+                    BookHero(
                         viewport = reviewViewport,
                         referenceOverlayBounds = activeOverlayBounds,
-                        question = question,
-                        selectedReaction = selectedQuestionReaction,
-                        onOpenReference = { showQuestionReference = true },
-                        onWriteReview = { onReviewOpen { showReviewSheet = true } },
-                        onReactionClick = { showReactionPicker = true; onQuestionReactionClick() },
-                        onReactionClear = onQuestionReactionClear,
-                        modifier = Modifier.testTag("bookQuestionCard"),
+                        book = book,
+                        saved = savedToLibrary,
+                        averageRating = state.detail?.averageRating,
+                        saving = state.isSavingLibrary || externalLibrarySaving,
+                        showSaveLoading = state.isSubmitting || (externalLibrarySaving && externalLibraryLoading),
+                        saveEnabled = !state.isLoading && state.detail != null,
+                        onRemoveFromLibrary = { showLibraryDeleteConfirmation = true },
+                        onBack = onBack,
+                        onLibraryClick = {
+                            if (!savedToLibrary) authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onAddToLibrary)
+                        },
+                        coverContent = coverContent,
                     )
-                    if (showReactionPicker) Popup(
-                        alignment = Alignment.BottomEnd,
-                        offset = IntOffset(0, with(density) { 58.dp.roundToPx() }),
-                        onDismissRequest = { showReactionPicker = false },
-                        properties = PopupProperties(focusable = true),
-                    ) {
-                        BookQuestionReactionPicker(selectedQuestionReaction, onReactionSelected = {
-                            onQuestionReactionSelected(it)
-                            showReactionPicker = false
-                        })
+                }
+                if (question != null) item {
+                    Box(Modifier.padding(horizontal = 24.dp)) {
+                        BookQuestionCard(
+                            viewport = reviewViewport,
+                            referenceOverlayBounds = activeOverlayBounds,
+                            question = question,
+                            selectedReaction = selectedQuestionReaction,
+                            onOpenReference = { showQuestionReference = true },
+                            onWriteReview = { onReviewOpen { showReviewSheet = true } },
+                            onReactionClick = { showReactionPicker = true; onQuestionReactionClick() },
+                            onReactionClear = onQuestionReactionClear,
+                            modifier = Modifier.testTag("bookQuestionCard"),
+                        )
+                        if (showReactionPicker) Popup(
+                            alignment = Alignment.BottomEnd,
+                            offset = IntOffset(0, with(density) { 58.dp.roundToPx() }),
+                            onDismissRequest = { showReactionPicker = false },
+                            properties = PopupProperties(focusable = true),
+                        ) {
+                            BookQuestionReactionPicker(selectedQuestionReaction, onReactionSelected = {
+                                onQuestionReactionSelected(it)
+                                showReactionPicker = false
+                            })
+                        }
                     }
                 }
-            }
-            item { Spacer(Modifier.height(23.dp)) }
-            item {
-                ReviewsSection(
-                    viewport = reviewViewport,
-                    referenceOverlayBounds = activeOverlayBounds,
-                    reviews = state.reviews,
-                    reviewCount = state.reviewCount,
-                    hasMoreReviews = state.nextReviewPage != null,
-                    loading = state.isLoading,
-                    loadingMore = state.isLoadingMore,
-                    pageLoadState = state.reviewPageLoadState,
-                    onRetryReviews = onRetryReviews,
-                    revealedSpoilerReviewIds = revealedSpoilerReviewIds.toSet(),
-                    scope = state.reviewScope,
-                    sort = state.reviewSort,
-                    onScopeChange = { requested ->
-                        if (requested == ReviewScope.MINE && !state.signedIn) {
-                            onLoginRequired(BookDetailAuthenticatedAction.OpenMineFeed)
-                        } else {
-                            onReviewScopeChange(requested)
-                        }
-                    },
-                    onSortChange = onReviewSortChange,
-                    onRevealSpoiler = { reviewId ->
-                        revealedSpoilerReviewIds = (revealedSpoilerReviewIds + reviewId).distinct()
-                    },
-                    onLike = { reviewId, likedByMe ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.LikeReview(reviewId, likedByMe)) {
-                            onReviewLike(reviewId, likedByMe)
-                        }
-                    },
-                    onLoadReplies = onLoadReplies,
-                    onReplyOpen = onReplyOpen,
-                    onComposerDismiss = onComposerDismiss,
-                    onReply = { reviewId, content, onSaved ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.CreateReply(reviewId, content)) {
-                            onReplyCreate(reviewId, content, onSaved)
-                        }
-                    },
-                    onReplyLike = { replyId, likedByMe ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.LikeReply(replyId, likedByMe)) {
-                            onReplyLike(replyId, likedByMe)
-                        }
-                    },
-                    onManageReview = { reviewActionTargetId = it.reviewId },
-                    onManageReply = { replyActionTargetId = it.replyId },
-                )
+                item { Spacer(Modifier.height(23.dp)) }
+                item {
+                    ReviewsSection(
+                        viewport = reviewViewport,
+                        referenceOverlayBounds = activeOverlayBounds,
+                        reviews = state.reviews,
+                        reviewCount = state.reviewCount,
+                        hasMoreReviews = state.nextReviewPage != null,
+                        loading = state.isLoading,
+                        loadingMore = state.isLoadingMore,
+                        pageLoadState = state.reviewPageLoadState,
+                        onRetryReviews = onRetryReviews,
+                        revealedSpoilerReviewIds = revealedSpoilerReviewIds.toSet(),
+                        scope = state.reviewScope,
+                        sort = state.reviewSort,
+                        onScopeChange = { requested ->
+                            if (requested == ReviewScope.MINE && !state.signedIn) {
+                                onLoginRequired(BookDetailAuthenticatedAction.OpenMineFeed)
+                            } else {
+                                onReviewScopeChange(requested)
+                            }
+                        },
+                        onSortChange = onReviewSortChange,
+                        onRevealSpoiler = { reviewId ->
+                            revealedSpoilerReviewIds = (revealedSpoilerReviewIds + reviewId).distinct()
+                        },
+                        onLike = { reviewId, likedByMe ->
+                            authorizeOrRun(BookDetailAuthenticatedAction.LikeReview(reviewId, likedByMe)) {
+                                onReviewLike(reviewId, likedByMe)
+                            }
+                        },
+                        onLoadReplies = onLoadReplies,
+                        onReplyOpen = onReplyOpen,
+                        onComposerDismiss = onComposerDismiss,
+                        onReply = { reviewId, content, onSaved ->
+                            authorizeOrRun(BookDetailAuthenticatedAction.CreateReply(reviewId, content)) {
+                                onReplyCreate(reviewId, content, onSaved)
+                            }
+                        },
+                        onReplyLike = { replyId, likedByMe ->
+                            authorizeOrRun(BookDetailAuthenticatedAction.LikeReply(replyId, likedByMe)) {
+                                onReplyLike(replyId, likedByMe)
+                            }
+                        },
+                        onManageReview = { reviewActionTargetId = it.reviewId },
+                        onManageReply = { replyActionTargetId = it.replyId },
+                    )
+                }
             }
         }
 

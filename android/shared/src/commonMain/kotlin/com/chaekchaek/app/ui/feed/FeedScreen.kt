@@ -28,7 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import com.chaekchaek.app.ui.common.ChaekSnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -58,6 +57,9 @@ import com.chaekchaek.app.analytics.analyticsImpression
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
 import com.chaekchaek.app.ui.RemoteBookImage
 import com.chaekchaek.app.ui.bookdetail.ReplyInputSheet
+import com.chaekchaek.app.ui.common.ChaekRefreshLayout
+import com.chaekchaek.app.ui.common.RefreshableEmptyContent
+import com.chaekchaek.app.ui.common.ListBoundary
 import com.chaekchaek.app.ui.common.BrandHeader
 import com.chaekchaek.app.ui.common.ChaekOneActionDialog
 import com.chaekchaek.app.ui.home.BookDetailTarget
@@ -81,67 +83,84 @@ fun FeedScreen(
     onSaveBook: (BookDetailTarget) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    val refreshState by viewModel.refreshState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var replyTargetNoteId by rememberSaveable { mutableStateOf<String?>(null) }
     var revealedSpoilerReviewIds by rememberSaveable { mutableStateOf(emptyList<Long>()) }
     com.chaekchaek.app.ui.common.ErrorRecoveryEffect(viewModel.errors)
-    val requestError = (state as? FeedUiState.Content)?.requestError
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize()) {
             BrandHeader(onProfileClick)
-            when (val current = state) {
-                FeedUiState.Loading -> Box(
-                    Modifier.weight(1f).fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
-                }
-                FeedUiState.Empty -> FeedEmptyContent(Modifier.weight(1f))
-                is FeedUiState.Content -> {
-                    if (current.reviews.isEmpty()) {
-                        Box(Modifier.weight(1f).fillMaxWidth())
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
-                            state = listState,
-                            contentPadding = PaddingValues(
-                                start = 24.dp,
-                                top = 18.dp,
-                                end = 24.dp,
-                                bottom = 24.dp,
-                            ),
-                        ) {
-                            itemsIndexed(current.reviews, key = { _, item -> item.noteId.value }) { index, reflection ->
-                                HorizontalDivider(color = ChaekBorderSoft)
-                                FeedReflectionArticle(
-                                    reflection = reflection,
-                                    saved = reflection.isbn13 in savedIsbns,
-                                    saving = reflection.isbn13 == librarySaveState.savingIsbn,
-                                    showSaveLoading = librarySaveState.showLoading,
-                                    saveEnabled = librarySaveState.savingIsbn == null,
-                                    onSaveBook = { onSaveBook(reflection.toBookDetailTarget()) },
-                                    spoilerRevealed = reflection.reviewId in revealedSpoilerReviewIds,
-                                    onRevealSpoiler = {
-                                        reflection.reviewId?.let { reviewId ->
-                                            revealedSpoilerReviewIds = (revealedSpoilerReviewIds + reviewId).distinct()
+            ChaekRefreshLayout(
+                refreshState, viewModel::refresh, Modifier.weight(1f),
+                enabled = state != FeedUiState.Loading,
+                bottomEnabled = (state as? FeedUiState.Content)?.reviews?.isNotEmpty() == true,
+            ) {
+                when (val current = state) {
+                    FeedUiState.Loading -> Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+                    }
+                    FeedUiState.Empty -> RefreshableEmptyContent { FeedEmptyContent() }
+                    is FeedUiState.Content -> {
+                        if (current.reviews.isEmpty()) {
+                            RefreshableEmptyContent { Box(Modifier.fillMaxSize()) }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                state = listState,
+                                contentPadding = PaddingValues(
+                                    start = 24.dp,
+                                    top = 18.dp,
+                                    end = 24.dp,
+                                    bottom = 24.dp,
+                                ),
+                            ) {
+                                itemsIndexed(current.reviews, key = { _, item -> item.noteId.value }) { index, reflection ->
+                                    HorizontalDivider(color = ChaekBorderSoft)
+                                    FeedReflectionArticle(
+                                        reflection = reflection,
+                                        saved = reflection.isbn13 in savedIsbns,
+                                        saving = reflection.isbn13 == librarySaveState.savingIsbn,
+                                        showSaveLoading = librarySaveState.showLoading,
+                                        saveEnabled = librarySaveState.savingIsbn == null,
+                                        onSaveBook = { onSaveBook(reflection.toBookDetailTarget()) },
+                                        spoilerRevealed = reflection.reviewId in revealedSpoilerReviewIds,
+                                        onRevealSpoiler = {
+                                            reflection.reviewId?.let { reviewId ->
+                                                revealedSpoilerReviewIds = (revealedSpoilerReviewIds + reviewId).distinct()
+                                            }
+                                        },
+                                        onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
+                                        onLike = { viewModel.toggleReviewLike(reflection.reviewId, reflection.likedByMe) },
+                                        onReply = { replyTargetNoteId = reflection.noteId.value },
+                                        modifier = Modifier.analyticsImpression(
+                                            contentType = "review",
+                                            contentId = reflection.noteId.value,
+                                            bookKey = analyticsBookKey(reflection.isbn13, reflection.bookId.value),
+                                            listId = "feed_recent_reviews",
+                                            position = index + 1,
+                                            isOwn = false,
+                                        ),
+                                    )
+                                }
+                                item(key = "boundary") {
+                                    if (!current.loadMoreFailed && current.requestError != FeedRequestError.LoadMore) ListBoundary(
+                                        hasNextPage = current.nextPage != null,
+                                        loading = current.loadingMore,
+                                        showLoading = current.showLoadingMore,
+                                        failed = current.loadMoreFailed || current.requestError == FeedRequestError.LoadMore,
+                                        onRetry = viewModel::retryLoadMore,
+                                    )
+                                }
+                                current.nextPage?.let { nextPage ->
+                                    item(key = "next-page-$nextPage") {
+                                        LaunchedEffect(nextPage, refreshState.isRefreshing) {
+                                            if (!refreshState.isRefreshing) viewModel.loadMore()
                                         }
-                                    },
-                                    onOpenBook = { onBookClick(reflection.toBookDetailTarget()) },
-                                    onLike = { viewModel.toggleReviewLike(reflection.reviewId, reflection.likedByMe) },
-                                    onReply = { replyTargetNoteId = reflection.noteId.value },
-                                    modifier = Modifier.analyticsImpression(
-                                        contentType = "review",
-                                        contentId = reflection.noteId.value,
-                                        bookKey = analyticsBookKey(reflection.isbn13, reflection.bookId.value),
-                                        listId = "feed_recent_reviews",
-                                        position = index + 1,
-                                        isOwn = false,
-                                    ),
-                                )
-                            }
-                            current.nextPage?.let { nextPage ->
-                                item(key = "next-page-$nextPage") {
-                                    LaunchedEffect(nextPage) { viewModel.loadMore() }
+                                    }
                                 }
                             }
                         }

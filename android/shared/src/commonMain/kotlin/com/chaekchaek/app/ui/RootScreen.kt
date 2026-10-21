@@ -277,6 +277,7 @@ internal fun RootScreen(
             RootTab.Discover -> SearchRoute(
                 viewModel = searchViewModel,
                 homeViewModel = homeViewModel,
+                accessToken = accessToken,
                 searchResultsListState = searchResultsListState,
                 registeredBookIds = archiveState.items.mapTo(mutableSetOf()) { it.id },
                 modifier = contentModifier,

@@ -99,6 +99,10 @@ val ChaekAccentInk: Color @Composable get() = LocalChaekColors.current.accentInk
 val ChaekOnDarkMuted: Color @Composable get() = LocalChaekColors.current.onDarkMuted
 val ChaekDanger: Color @Composable get() = LocalChaekColors.current.danger
 
+// Figma color/surface/action, color/text/inverse. 승인된 검정 컨트롤의 고정 대비색이다.
+val ChaekActionSurface: Color = Color(0xFF1C1C1C)
+val ChaekOnActionSurface: Color = Color.White
+
 enum class ChaekFontCandidate {
     Pretendard,
     IbmPlexSansKr,

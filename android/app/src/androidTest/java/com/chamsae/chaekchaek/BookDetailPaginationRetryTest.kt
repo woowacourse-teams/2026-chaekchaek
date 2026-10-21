@@ -8,12 +8,16 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
@@ -35,6 +39,46 @@ class BookDetailPaginationRetryTest {
 
     @Test
     fun failedRefreshKeepsRetryLoaderVisibleAndRecovers() = verifyRetry(refresh = true)
+
+    @Test
+    fun pullRefreshKeepsBookAndShowsCompactIndicator() = verifyPull(empty = false)
+
+    @Test
+    fun emptyReviewsCanBeRefreshed() = verifyPull(empty = true)
+
+    private fun verifyPull(empty: Boolean) {
+        var requests = 0
+        val refresh = mutableStateOf(RefreshUiState())
+        val state = mutableStateOf(BookDetailUiState(
+            book = BookDetailArgs(id = "42", bookId = 42, title = "당김 검증 도서"),
+            reviews = if (empty) emptyList() else listOf(review(7, "기존 감상")),
+            reviewCount = if (empty) 0 else 1,
+        ))
+        compose.setContent {
+            ChaekchaekTheme {
+                BookDetailScreen(state = state.value, onBack = {}, refreshState = refresh.value, onRefresh = {
+                    requests++
+                    refresh.value = RefreshUiState(isRefreshing = true)
+                })
+            }
+        }
+        compose.onRoot().performTouchInput { swipeDown() }
+        compose.onNodeWithTag("pull-refresh-indicator").assertIsDisplayed()
+        compose.onNodeWithTag("pull-refresh-spinner", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("새로고침 중이에요").assertIsDisplayed()
+        compose.onNodeWithText("당김 검증 도서").assertIsDisplayed()
+        capture("detail-pull-${if (empty) "empty" else "existing"}")
+        compose.onRoot().performTouchInput { swipeDown() }
+        compose.runOnIdle {
+            assertEquals(1, requests)
+            refresh.value = RefreshUiState()
+            state.value = state.value.copy(reviews = listOf(review(8, "갱신한 감상")), reviewCount = 1)
+        }
+        compose.waitUntil(5_000) {
+            compose.onAllNodes(androidx.compose.ui.test.hasTestTag("pull-refresh-indicator")).fetchSemanticsNodes().isEmpty()
+        }
+        compose.onNodeWithText("갱신한 감상").performScrollTo().assertIsDisplayed()
+    }
 
     private fun verifyRetry(refresh: Boolean) {
         val deleted = review(7, "삭제된 감상").copy(deleted = true)

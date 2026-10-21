@@ -8,6 +8,7 @@ import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.domain.feed.FeedSection
+import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.presentation.common.TimeLabels
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import kotlinx.coroutines.Job
@@ -31,6 +32,9 @@ class HomeViewModel(
     private var hasObservedAuthentication = false
     private var reloadOnNextHomeEntry = false
     private var loadJob: Job? = null
+    private var loadRevision = 0L
+    private val _refreshState = MutableStateFlow(RefreshUiState())
+    val refreshState: StateFlow<RefreshUiState> = _refreshState.asStateFlow()
     private val _uiState = MutableStateFlow<HomeUiState>(
         HomeUiState.Content(emptyList()),
     )
@@ -42,6 +46,19 @@ class HomeViewModel(
 
     fun retry() {
         load()
+    }
+
+    fun refresh() {
+        if (loadJob?.isActive == true) return
+        load(retainContent = true)
+    }
+
+    fun refresh(accessToken: String?) {
+        if (this.accessToken != accessToken) {
+            authenticate(accessToken)
+            return
+        }
+        refresh()
     }
 
     fun retry(accessToken: String?) {
@@ -68,24 +85,28 @@ class HomeViewModel(
         load()
     }
 
-    private fun load() {
+    private fun load(retainContent: Boolean = false) {
+        val revision = ++loadRevision
+        val token = accessToken
         loadJob?.cancel()
+        _refreshState.value = RefreshUiState(isRefreshing = retainContent)
         loadJob = viewModelScope.launch {
             val started = kotlin.time.TimeSource.Monotonic.markNow()
             val previousState = _uiState.value
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
+                    if (revision != loadRevision) return@withDelayedApiLoading
                     val hasContent = previousState is HomeUiState.Content &&
                         (previousState.sections.isNotEmpty() || previousState.readingBook != null)
-                    if (loading && !hasContent) {
+                    if (!retainContent && loading && !hasContent) {
                         _uiState.value = HomeUiState.Loading
-                    } else if (_uiState.value == HomeUiState.Loading) {
+                    } else if (!retainContent && _uiState.value == HomeUiState.Loading) {
                         _uiState.value = previousState
                     }
                 },
             ) {
-                _uiState.value = try {
-                    val feed = feedRepository.homeFeed(accessToken)
+                val result = try {
+                    val feed = feedRepository.homeFeed(token)
                     val sections = feed.visibleSections()
                     if (feed.isEmpty()) {
                         analytics.log(
@@ -130,12 +151,17 @@ class HomeViewModel(
                         ),
                         longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
                     )
-                    errors.report(error, ErrorOperation.HomeLoad) { token ->
-                        if (token != null) accessToken = token
-                        load()
+                    if (revision != loadRevision) return@withDelayedApiLoading
+                    errors.report(error, ErrorOperation.HomeLoad) { freshToken ->
+                        if (freshToken != null) accessToken = freshToken
+                        load(retainContent = retainContent)
                     }
                     previousState.takeUnless { it is HomeUiState.Loading } ?: HomeUiState.Content(emptyList())
                 }
+                if (revision == loadRevision) _uiState.value = result
+            }
+            if (revision == loadRevision) {
+                _refreshState.value = _refreshState.value.copy(isRefreshing = false)
             }
         }
     }

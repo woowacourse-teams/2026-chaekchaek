@@ -10,8 +10,10 @@ import com.chaekchaek.app.domain.feed.TrendingBook
 import com.chaekchaek.app.domain.note.NoteId
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -21,6 +23,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import kotlin.test.Test
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -79,6 +82,133 @@ private fun runViewModelTest(block: suspend TestScope.() -> Unit) = runTest {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
+    @Test
+    fun `현재 토큰의 갱신은 진행 중인 이전 회원 조회와 늦은 응답을 대체한다`() = runViewModelTest {
+        val oldResponse = CompletableDeferred<HomeFeed>()
+        val tokens = mutableListOf<String?>()
+        val repository = object : FeedRepository {
+            override suspend fun homeFeed(accessToken: String?): HomeFeed {
+                tokens += accessToken
+                return if (accessToken == "member-before") {
+                    withContext(NonCancellable) { oldResponse.await() }
+                } else HomeFeed(emptyList())
+            }
+        }
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        viewModel.authenticate("member-before")
+        runCurrent()
+
+        viewModel.refresh("member-after")
+        runCurrent()
+        oldResponse.complete(contentFeed())
+        advanceUntilIdle()
+
+        tokens shouldBe listOf(null, "member-before", "member-after")
+        viewModel.uiState.value shouldBe HomeUiState.Empty
+        viewModel.refreshState.value.isRefreshing shouldBe false
+    }
+
+    @Test
+    fun `로그아웃 후 발견 갱신은 이전 회원 토큰을 제거한다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        viewModel.authenticate("member-before")
+        advanceUntilIdle()
+        repository.feed = HomeFeed(emptyList())
+
+        viewModel.refresh(null)
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null, "member-before", null)
+        viewModel.uiState.value shouldBe HomeUiState.Empty
+    }
+
+    @Test
+    fun `로그인 후 발견 갱신은 현재 회원 토큰을 사용한다`() = runViewModelTest {
+        val repository = TestFeedRepository(feed = HomeFeed(emptyList()))
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        repository.feed = contentFeed()
+
+        viewModel.refresh("member-after")
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null, "member-after")
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
+    }
+
+    @Test
+    fun `같은 토큰의 반복 발견 갱신은 진행 중인 요청을 중복하지 않는다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        viewModel.authenticate("member-token")
+        advanceUntilIdle()
+        repository.responseDelayMillis = 700
+
+        viewModel.refresh("member-token")
+        viewModel.refresh("member-token")
+        runCurrent()
+        viewModel.refreshState.value.isRefreshing shouldBe true
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null, "member-token", "member-token")
+        viewModel.refreshState.value.isRefreshing shouldBe false
+    }
+
+    @Test
+    fun `갱신 요청 중에는 내용을 유지하고 완료하면 요청 상태를 해제한다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        val previous = viewModel.uiState.value
+        repository.responseDelayMillis = 700
+        viewModel.refresh()
+        viewModel.refresh()
+        runCurrent()
+        viewModel.uiState.value shouldBe previous
+        viewModel.refreshState.value.isRefreshing shouldBe true
+        advanceTimeBy(499)
+        runCurrent()
+        advanceTimeBy(1)
+        runCurrent()
+        viewModel.refreshState.value.isRefreshing shouldBe true
+        viewModel.uiState.value shouldBe previous
+        advanceUntilIdle()
+        viewModel.refreshState.value.isRefreshing shouldBe false
+        repository.callCount shouldBe 2
+    }
+
+    @Test
+    fun `갱신 실패는 기존 내용과 재시도를 유지한다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        val previous = viewModel.uiState.value
+        repository.failure = IllegalStateException("offline")
+        viewModel.refresh()
+        advanceUntilIdle()
+        viewModel.uiState.value shouldBe previous
+        (viewModel.errors.notice.value != null) shouldBe true
+        repository.failure = null
+        viewModel.errors.takeRecovery(viewModel.errors.notice.value!!.id)?.invoke(null)
+        advanceUntilIdle()
+        viewModel.refreshState.value.errorMessage shouldBe null
+    }
+
+    @Test
+    fun `빈 홈에서도 갱신해 새 내용을 받는다`() = runViewModelTest {
+        val repository = TestFeedRepository(feed = HomeFeed(emptyList()))
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        repository.feed = contentFeed()
+        viewModel.refresh()
+        advanceUntilIdle()
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
+    }
+
     @Test
     fun `500ms가 지난 요청만 로딩을 표시하고 응답 즉시 종료한다`() = runViewModelTest {
         val viewModel = HomeViewModel(

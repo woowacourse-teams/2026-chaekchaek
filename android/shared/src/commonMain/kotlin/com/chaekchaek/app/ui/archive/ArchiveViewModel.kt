@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.archive
 
+import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.presentation.common.ErrorRecoveryState
 import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
@@ -26,6 +27,8 @@ class ArchiveViewModel(
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
     val errors = ErrorRecoveryState()
+    private val _refreshState = MutableStateFlow(RefreshUiState(enabled = false))
+    val refreshState: StateFlow<RefreshUiState> = _refreshState.asStateFlow()
     private val _uiState = MutableStateFlow(ArchiveUiState())
     val uiState: StateFlow<ArchiveUiState> = _uiState.asStateFlow()
 
@@ -54,6 +57,11 @@ class ArchiveViewModel(
     }
 
     fun retry() = load()
+
+    fun refresh() {
+        if (readJob?.isActive == true) return
+        load(refreshing = true)
+    }
 
     fun acceptSavedBook(book: BookDetailArgs, record: LibraryRecord) {
         if (accessToken == null) return
@@ -112,15 +120,22 @@ class ArchiveViewModel(
         }
     }
 
-    private fun load() {
+    private fun load(refreshing: Boolean = false) {
         val token = accessToken ?: return
         invalidateRead()
         val generation = requestGeneration
         val session = sessionGeneration
+        _refreshState.value = RefreshUiState(isRefreshing = refreshing)
         readJob = viewModelScope.launch {
-            mutationMutex.withLock {
+            try {
+                mutationMutex.withLock {
+                    if (session == sessionGeneration && generation == requestGeneration) {
+                        loadIntoState(token, generation, session, refreshing)
+                    }
+                }
+            } finally {
                 if (session == sessionGeneration && generation == requestGeneration) {
-                    loadIntoState(token, generation, session)
+                    _refreshState.value = _refreshState.value.copy(isRefreshing = false)
                 }
             }
         }
@@ -130,6 +145,7 @@ class ArchiveViewModel(
         requestGeneration += 1
         readJob?.cancel()
         readJob = null
+        _refreshState.value = RefreshUiState(enabled = accessToken != null)
     }
 
     private fun mutate(
@@ -172,9 +188,9 @@ class ArchiveViewModel(
         job.start()
     }
 
-    private suspend fun loadIntoState(token: String, generation: Int, session: Int) {
+    private suspend fun loadIntoState(token: String, generation: Int, session: Int, refreshing: Boolean) {
         val started = kotlin.time.TimeSource.Monotonic.markNow()
-        withArchiveLoading(session) { repository.getAll(token) }
+        withArchiveLoading(session, showLoading = !refreshing) { repository.getAll(token) }
             .onSuccess { books ->
                 analytics.log(
                     name = "cc_load_result",
@@ -202,23 +218,23 @@ class ArchiveViewModel(
                     ),
                     longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
                 )
-                if (session == sessionGeneration && generation == requestGeneration) handleFailure(error)
+                if (session == sessionGeneration && generation == requestGeneration) handleFailure(error, refreshing)
             }
     }
 
-    private fun handleFailure(error: Throwable) {
+    private fun handleFailure(error: Throwable, refreshing: Boolean) {
         if (error is CancellationException) throw error
         errors.report(error, ErrorOperation.LibraryLoad) { freshToken ->
             if (freshToken != null) accessToken = freshToken
-            load()
+            load(refreshing = refreshing)
         }
         _uiState.value = _uiState.value.copy(errorMessage = "서재를 불러오지 못했어요")
     }
 
-    private suspend fun <T> withArchiveLoading(session: Int, action: suspend () -> T): Result<T> {
+    private suspend fun <T> withArchiveLoading(session: Int, showLoading: Boolean = true, action: suspend () -> T): Result<T> {
         val operationId = ++nextOperationId
         fun setLoading(loading: Boolean) {
-            if (session != sessionGeneration) return
+            if (session != sessionGeneration || !showLoading) return
             if (loading) loadingOperations += operationId else loadingOperations -= operationId
             _uiState.value = _uiState.value.copy(showLoading = loadingOperations.isNotEmpty())
         }

@@ -12,6 +12,7 @@ import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
 import com.chaekchaek.app.ui.input.TextInputPolicy
+import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,8 @@ sealed interface SearchUiState {
         val totalCount: Int,
         val nextPage: Int?,
         val loadingMore: Boolean = false,
+        val showLoadingMore: Boolean = false,
+        val loadMoreFailed: Boolean = false,
     ) : SearchUiState
     data class Error(val message: String) : SearchUiState
 }
@@ -66,6 +69,10 @@ class SearchViewModel(
     private val _pendingRegistration = MutableStateFlow<BookSearchResult?>(null)
     val pendingRegistration: StateFlow<BookSearchResult?> = _pendingRegistration.asStateFlow()
     private var searchJob: Job? = null
+    private var loadMoreJob: Job? = null
+    private var loadRevision = 0L
+    private val _refreshState = MutableStateFlow(RefreshUiState())
+    val refreshState: StateFlow<RefreshUiState> = _refreshState.asStateFlow()
     private var currentQuery = SearchInputRules.limit(
         savedStateHandle.get<String>(SearchSavedStateKeys.SubmittedQuery).orEmpty(),
     )
@@ -89,7 +96,10 @@ class SearchViewModel(
     }
 
     fun clear() {
+        loadRevision += 1
         searchJob?.cancel()
+        loadMoreJob?.cancel()
+        _refreshState.value = RefreshUiState()
         errors.dismiss()
         currentQuery = ""
         _query.value = ""
@@ -106,15 +116,25 @@ class SearchViewModel(
 
     fun search(query: String) = search(query, "submit")
 
-    private fun search(query: String, trigger: String, trackAnalytics: Boolean = true) {
+    fun refresh() {
+        if (currentQuery.isEmpty() || searchJob?.isActive == true) return
+        search(currentQuery, trigger = "refresh", trackAnalytics = false, retainContent = true)
+    }
+
+    private fun search(
+        query: String,
+        trigger: String,
+        trackAnalytics: Boolean = true,
+        retainContent: Boolean = false,
+    ) {
         val trimmed = SearchInputRules.limit(query.trim())
         if (trimmed.isEmpty()) return
         val previousLoadedPage = savedStateHandle.get<Int>(SearchSavedStateKeys.LoadedPage)
         val requestedSort = _sort.value
-        val restoreThroughPage = if (trigger == "restore") {
+        val restoreThroughPage = if (trigger == "restore" || retainContent) {
             savedStateHandle.get<Int>(SearchSavedStateKeys.LoadedPage) ?: FIRST_PAGE
         } else FIRST_PAGE
-        if (trigger != "restore") savedStateHandle[SearchSavedStateKeys.LoadedPage] = FIRST_PAGE
+        if (trigger != "restore" && !retainContent) savedStateHandle[SearchSavedStateKeys.LoadedPage] = FIRST_PAGE
         if (trigger == "submit") {
             _query.value = trimmed
             savedStateHandle[SearchSavedStateKeys.InputQuery] = trimmed
@@ -136,13 +156,21 @@ class SearchViewModel(
         }
         currentQuery = trimmed
         savedStateHandle[SearchSavedStateKeys.SubmittedQuery] = trimmed
+        val revision = ++loadRevision
         searchJob?.cancel()
-        val previousState = _uiState.value
+        loadMoreJob?.cancel()
+        val previousState = (_uiState.value as? SearchUiState.Success)?.copy(
+            loadingMore = false, showLoadingMore = false,
+        ) ?: _uiState.value
+        if (retainContent) _uiState.value = previousState
+        _refreshState.value = RefreshUiState(isRefreshing = retainContent)
         searchJob = viewModelScope.launch {
-            _uiState.value = try {
+            val result = try {
                 val page = withDelayedApiLoading(
                     onLoadingChanged = { loading ->
-                        if (loading && previousState !is SearchUiState.Success) _uiState.value = SearchUiState.Loading
+                        if (revision == loadRevision && !retainContent && loading && previousState !is SearchUiState.Success) {
+                            _uiState.value = SearchUiState.Loading
+                        }
                     },
                 ) {
                     var page = bookSearchRepository.search(trimmed, requestedSort, FIRST_PAGE)
@@ -154,9 +182,10 @@ class SearchViewModel(
                         page = next.copy(items = (page.items + next.items).distinctBy(BookSearchResult::isbn13))
                         loadedPage = nextPage
                     }
-                    savedStateHandle[SearchSavedStateKeys.LoadedPage] = loadedPage
+                    if (revision == loadRevision) savedStateHandle[SearchSavedStateKeys.LoadedPage] = loadedPage
                     page
                 }
+                if (revision != loadRevision) return@launch
                 if (searchId != null && searchStarted != null) {
                     analytics.log(
                         name = "cc_search_result",
@@ -191,9 +220,17 @@ class SearchViewModel(
                         longs = mapOf("duration_ms" to searchStarted.elapsedNow().inWholeMilliseconds),
                     )
                 }
-                errors.report(error, ErrorOperation.Search) { search(trimmed, if (trigger == "restore") "restore" else "retry", trackAnalytics = false) }
+                if (revision != loadRevision) return@launch
+                errors.report(error, ErrorOperation.Search) {
+                    search(trimmed, if (trigger == "restore") "restore" else "retry", trackAnalytics = false, retainContent = retainContent)
+                }
                 if (previousLoadedPage != null) savedStateHandle[SearchSavedStateKeys.LoadedPage] = previousLoadedPage
-                previousState.takeIf { it is SearchUiState.Success } ?: SearchUiState.Error("검색을 완료하지 못했어요")
+                if (retainContent) previousState
+                else previousState.takeIf { it is SearchUiState.Success } ?: SearchUiState.Error("검색을 완료하지 못했어요")
+            }
+            if (revision == loadRevision) {
+                _uiState.value = result
+                _refreshState.value = _refreshState.value.copy(isRefreshing = false)
             }
         }
     }
@@ -201,14 +238,20 @@ class SearchViewModel(
     fun loadMore() {
         val current = _uiState.value as? SearchUiState.Success ?: return
         val page = current.nextPage ?: return
-        if (current.loadingMore || searchJob?.isActive == true) return
+        if (current.loadingMore || current.loadMoreFailed || searchJob?.isActive == true || loadMoreJob?.isActive == true) return
+        val revision = loadRevision
         if (currentQuery != loadedQuery || _sort.value != loadedSort) return
         val query = currentQuery
         val sort = _sort.value
         _uiState.value = current.copy(loadingMore = true)
-        searchJob = viewModelScope.launch {
+        loadMoreJob = viewModelScope.launch {
             try {
-                val next = bookSearchRepository.search(query, sort, page)
+                val next = withDelayedApiLoading(onLoadingChanged = { loading ->
+                    if (revision == loadRevision) {
+                        (_uiState.value as? SearchUiState.Success)?.let { _uiState.value = it.copy(showLoadingMore = loading) }
+                    }
+                }) { bookSearchRepository.search(query, sort, page) }
+                if (revision != loadRevision) return@launch
                 val latest = _uiState.value as? SearchUiState.Success ?: return@launch
                 if (currentQuery != query || _sort.value != sort || latest.nextPage != page) return@launch
                 savedStateHandle[SearchSavedStateKeys.LoadedPage] = page
@@ -217,15 +260,24 @@ class SearchViewModel(
                     totalCount = next.totalCount,
                     nextPage = next.nextPage,
                     loadingMore = false,
+                    showLoadingMore = false,
                 )
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
-                errors.report(error, ErrorOperation.Search) { loadMore() }
+                if (revision != loadRevision) return@launch
+                errors.report(error, ErrorOperation.Search) { retryLoadMore() }
                 val latest = _uiState.value as? SearchUiState.Success ?: return@launch
-                if (latest.nextPage == page) _uiState.value = latest.copy(loadingMore = false)
+                if (latest.nextPage == page) _uiState.value = latest.copy(loadingMore = false, showLoadingMore = false, loadMoreFailed = true)
             }
         }
+    }
+
+    fun retryLoadMore() {
+        val current = _uiState.value as? SearchUiState.Success ?: return
+        if (!current.loadMoreFailed) return
+        _uiState.value = current.copy(loadMoreFailed = false)
+        loadMore()
     }
 
     fun selectSort(sort: BookSearchSort) {

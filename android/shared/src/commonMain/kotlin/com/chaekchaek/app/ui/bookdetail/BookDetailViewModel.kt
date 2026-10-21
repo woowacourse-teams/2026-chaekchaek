@@ -22,6 +22,7 @@ import com.chaekchaek.app.data.remote.ReviewSort
 import com.chaekchaek.app.data.remote.ReviewPage
 import com.chaekchaek.app.data.remote.WriteCredential
 import com.chaekchaek.app.domain.rating.Rating
+import com.chaekchaek.app.presentation.common.RefreshUiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -50,6 +51,9 @@ class BookDetailViewModel(
         BookDetailUiState(reviewScope = restoredReviewScope, reviewSort = restoredReviewSort),
     )
     val uiState: StateFlow<BookDetailUiState> = _uiState.asStateFlow()
+
+    private val _refreshState = MutableStateFlow(RefreshUiState(enabled = false))
+    val refreshState: StateFlow<RefreshUiState> = _refreshState.asStateFlow()
 
     private var authPlatform = authPlatform
     private var accessToken: String? = null
@@ -166,6 +170,11 @@ class BookDetailViewModel(
 
     fun retry() = reload()
 
+    fun refresh() {
+        if (loadJob?.isActive == true || mutationJob?.isActive == true || _uiState.value.isRestoring) return
+        reload(pullRefresh = true)
+    }
+
     fun clearRequestError() {
         _uiState.value = _uiState.value.copy(requestError = null)
     }
@@ -204,7 +213,7 @@ class BookDetailViewModel(
         val bookId = state.detail?.bookId ?: return
         val page = state.nextReviewPage ?: return
         val expectedState = if (retryAfterFailure) ReviewPageLoadState.Failed else ReviewPageLoadState.Idle
-        if (state.reviewPageLoadState != expectedState || loadMoreJob?.isActive == true) return
+        if (state.reviewPageLoadState != expectedState || loadMoreJob?.isActive == true || _refreshState.value.isRefreshing) return
         val generation = reviewPageGeneration
         val requestedScope = state.reviewScope
         val requestedSort = state.reviewSort
@@ -243,11 +252,12 @@ class BookDetailViewModel(
         }
     }
 
-    private fun resetReviewPagination() {
+    private fun resetReviewPagination(preserveCursor: Boolean = false) {
+        _refreshState.value = RefreshUiState(enabled = false)
         reviewPageGeneration += 1
         loadMoreJob?.cancel()
         _uiState.value = _uiState.value.copy(
-            nextReviewPage = null,
+            nextReviewPage = _uiState.value.nextReviewPage.takeIf { preserveCursor },
             isLoading = false,
             isLoadingMore = false,
             reviewPageLoadState = ReviewPageLoadState.Idle,
@@ -612,11 +622,18 @@ class BookDetailViewModel(
         }
     }
 
-    private fun reload(retryingReviews: Boolean = false) {
+    private fun reload(retryingReviews: Boolean = false, pullRefresh: Boolean = false) {
         val book = _uiState.value.book ?: return
-        resetReviewPagination()
+        val retainedPageState = _uiState.value.reviewPageLoadState.takeIf { it.canRetry }
+            ?: ReviewPageLoadState.Idle
+        resetReviewPagination(preserveCursor = pullRefresh)
+        _refreshState.value = RefreshUiState(isRefreshing = pullRefresh, enabled = pullRefresh && mutationJob?.isActive != true)
         _uiState.value = _uiState.value.copy(
-            reviewPageLoadState = if (retryingReviews) ReviewPageLoadState.RefreshRetrying else ReviewPageLoadState.Loading,
+            reviewPageLoadState = when {
+                pullRefresh -> retainedPageState
+                retryingReviews -> ReviewPageLoadState.RefreshRetrying
+                else -> ReviewPageLoadState.Loading
+            },
             requestError = null,
         )
         val reviewGeneration = reviewPageGeneration
@@ -633,7 +650,7 @@ class BookDetailViewModel(
             runCatching {
                 withDelayedLoading(
                     onLoadingChanged = { loading ->
-                        if (generation == requestGeneration && reviewGeneration == reviewPageGeneration) {
+                        if (!pullRefresh && generation == requestGeneration && reviewGeneration == reviewPageGeneration) {
                             _uiState.value = _uiState.value.copy(isLoading = loading)
                         }
                     },
@@ -650,8 +667,10 @@ class BookDetailViewModel(
                     }
                     detail to reviews
                 }
-            }.onSuccess { (detail, reviews) ->
+            }.onSuccess { (detail, restored) ->
                 if (generation != requestGeneration || reviewGeneration != reviewPageGeneration) return@onSuccess
+                val reviews = restored?.page
+                restored?.let { savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = it.loadedPage }
                 _uiState.value = _uiState.value.copy(
                     detail = if (librarySaveRevision != externalLibrarySaveRevision) {
                         detail?.copy(myRecord = _uiState.value.detail?.myRecord ?: externallySavedRecord)
@@ -662,6 +681,7 @@ class BookDetailViewModel(
                     isRestoring = false,
                     reviewPageLoadState = ReviewPageLoadState.Idle,
                 )
+                _refreshState.value = _refreshState.value.copy(isRefreshing = false, enabled = mutationJob?.isActive != true)
                 val bookKey = analyticsBookKey(detail?.isbn13 ?: book.isbn13, detail?.bookId?.toString() ?: book.id)
                 analytics.log(
                     name = "cc_load_result",
@@ -697,10 +717,14 @@ class BookDetailViewModel(
             }.onFailure { error ->
                 if (error is CancellationException) throw error
                 if (generation == requestGeneration && reviewGeneration == reviewPageGeneration) {
-                    reportFailure(error) { retryReviews() }
+                    reportFailure(error) { if (pullRefresh) refresh() else retryReviews() }
                     _uiState.value = _uiState.value.copy(
-                        reviewPageLoadState = ReviewPageLoadState.RefreshFailed,
+                        reviewPageLoadState = if (pullRefresh) retainedPageState else ReviewPageLoadState.RefreshFailed,
                         isRestoring = false,
+                    )
+                    _refreshState.value = _refreshState.value.copy(
+                        isRefreshing = false,
+                        enabled = mutationJob?.isActive != true,
                     )
                     analytics.log(
                         name = "cc_load_result",
@@ -720,7 +744,10 @@ class BookDetailViewModel(
     }
 
     private fun reloadReviews() {
-        val bookId = _uiState.value.detail?.bookId ?: return
+        val bookId = _uiState.value.detail?.bookId ?: run {
+            reload()
+            return
+        }
         resetReviewPagination()
         val generation = reviewPageGeneration
         val scope = _uiState.value.reviewScope
@@ -743,8 +770,11 @@ class BookDetailViewModel(
                         readCredential(),
                     )
                 }
-            }.onSuccess { reviews ->
+            }.onSuccess { restored ->
                 if (generation != reviewPageGeneration) return@onSuccess
+                val reviews = restored.page
+                savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = restored.loadedPage
+                _refreshState.value = RefreshUiState(enabled = mutationJob?.isActive != true)
                 _uiState.value = _uiState.value.copy(
                     reviews = reviews.items,
                     reviewCount = reviews.totalCount,
@@ -754,6 +784,7 @@ class BookDetailViewModel(
             }.onFailure { error ->
                 if (error is CancellationException) throw error
                 if (generation == reviewPageGeneration) {
+                    _refreshState.value = RefreshUiState(enabled = mutationJob?.isActive != true)
                     reportFailure(error) { retryReviews() }
                     _uiState.value = _uiState.value.copy(
                         reviewPageLoadState = ReviewPageLoadState.RefreshFailed,
@@ -769,7 +800,7 @@ class BookDetailViewModel(
         scope: ReviewScope,
         sort: ReviewSort,
         credential: WriteCredential?,
-    ): ReviewPage {
+    ): RestoredReviews {
         val restoreThroughPage = savedStateHandle.get<Int>(BookDetailSavedStateKeys.LoadedPage) ?: 1
         var page = repository.reviews(bookId, scope, sort, credential)
         var loadedPage = 1
@@ -779,9 +810,10 @@ class BookDetailViewModel(
             page = next.copy(items = (page.items + next.items).distinctBy(BookReview::reviewId))
             loadedPage = nextPage
         }
-        savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = loadedPage
-        return page
+        return RestoredReviews(page, loadedPage)
     }
+
+    private data class RestoredReviews(val page: ReviewPage, val loadedPage: Int)
 
     private fun <T> mutate(
         actionName: String? = null,
@@ -818,6 +850,7 @@ class BookDetailViewModel(
                 },
             )
         }
+        _refreshState.value = _refreshState.value.copy(enabled = false)
         mutationJob = viewModelScope.launch {
             runCatching {
                 withDelayedLoading(
@@ -832,7 +865,9 @@ class BookDetailViewModel(
                 }
             }.onSuccess { result ->
                 if (generation != requestGeneration) return@onSuccess
+                if (_refreshState.value.isRefreshing) reviewPageGeneration += 1
                 loadJob?.cancel()
+                _refreshState.value = RefreshUiState(enabled = false)
                 onSuccess(result)
                 actionHandle?.let { analytics.finishAction(it, "success", strings = actionResultStrings) }
                 if (closesComposer) analytics.completeComposer()
@@ -862,6 +897,12 @@ class BookDetailViewModel(
                 }
             }
             if (generation == requestGeneration) onFinished()
+        }.also { job ->
+            job.invokeOnCompletion {
+                if (generation == requestGeneration) {
+                    _refreshState.value = _refreshState.value.copy(enabled = loadJob?.isActive != true || _refreshState.value.isRefreshing)
+                }
+            }
         }
     }
 

@@ -92,6 +92,9 @@ import com.chaekchaek.app.ui.common.avatarResource
 import com.chaekchaek.app.ui.common.BrandHeader
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.*
+import com.chaekchaek.app.presentation.common.RefreshUiState
+import com.chaekchaek.app.ui.common.ChaekRefreshLayout
+import com.chaekchaek.app.ui.common.RefreshableEmptyContent
 import com.chaekchaek.app.ui.theme.ChaekBand
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.collageBookShadow
@@ -148,6 +151,7 @@ fun HomeScreen(
     onSaveBook: (BookDetailTarget) -> Unit = {},
 ) {
     val uiState by homeViewModel.uiState.collectAsState()
+    val refreshState by homeViewModel.refreshState.collectAsState()
     val contentStateHolder = rememberSaveableStateHolder()
 
     DisposableEffect(homeViewModel) {
@@ -166,7 +170,11 @@ fun HomeScreen(
             onProfileClick = onProfileClick,
             homeHeaderAction = homeHeaderAction,
             modifier = modifier,
-            content = { EmptyContent(it) },
+            content = { bodyModifier ->
+                ChaekRefreshLayout(refreshState, homeViewModel::refresh, modifier = bodyModifier, bottomEnabled = false) {
+                    RefreshableEmptyContent { EmptyContent(Modifier) }
+                }
+            },
         )
         is HomeUiState.Content -> contentStateHolder.SaveableStateProvider("home_content") {
             HomeContent(
@@ -179,6 +187,8 @@ fun HomeScreen(
                 onBookClick,
                 scrollTopRequest,
                 modifier,
+                refreshState,
+                homeViewModel::refresh,
                 savedIsbns,
                 librarySaveState,
                 onSaveBook,
@@ -237,6 +247,8 @@ private fun HomeContent(
     onBookClick: (BookDetailTarget) -> Unit,
     scrollTopRequest: Int,
     modifier: Modifier,
+    refreshState: RefreshUiState,
+    onRefresh: () -> Unit,
     savedIsbns: Set<String>,
     librarySaveState: LibrarySaveUiState,
     onSaveBook: (BookDetailTarget) -> Unit,
@@ -249,26 +261,28 @@ private fun HomeContent(
             listState.animateScrollToItem(0)
         }
     }
-    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(bottom = 76.dp),
-        ) {
-            item { BrandHeader(onProfileClick, additionalAction = homeHeaderAction) }
-            items(state.sections) { section ->
-                when (section) {
-                    is FeedSectionUiModel.TrendingBooks -> TrendingSection(section, onBookClick)
-                    is FeedSectionUiModel.RecentQuotes -> RecentReflectionsSection(
-                        title = section.title,
-                        quotes = section.cards,
-                        savedIsbns = savedIsbns,
-                        librarySaveState = librarySaveState,
-                        onSaveBook = onSaveBook,
-                        onOpenFeed = onOpenFeed,
-                        onBookClick = onBookClick,
-                    )
-                    is FeedSectionUiModel.OverlappedBooks -> Unit
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        BrandHeader(onProfileClick, additionalAction = homeHeaderAction)
+        ChaekRefreshLayout(refreshState, onRefresh, Modifier.weight(1f)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(bottom = 12.dp),
+            ) {
+                items(state.sections) { section ->
+                    when (section) {
+                        is FeedSectionUiModel.TrendingBooks -> TrendingSection(section, onBookClick)
+                        is FeedSectionUiModel.RecentQuotes -> RecentReflectionsSection(
+                            title = section.title,
+                            quotes = section.cards,
+                            savedIsbns = savedIsbns,
+                            librarySaveState = librarySaveState,
+                            onSaveBook = onSaveBook,
+                            onOpenFeed = onOpenFeed,
+                            onBookClick = onBookClick,
+                        )
+                        is FeedSectionUiModel.OverlappedBooks -> Unit
+                    }
                 }
             }
         }
@@ -279,7 +293,7 @@ private fun HomeContent(
                 if (readingBook == null) onSearchBook()
                 else onBookClick(readingBook.toBookDetailTarget())
             },
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier = Modifier,
         )
     }
 }
