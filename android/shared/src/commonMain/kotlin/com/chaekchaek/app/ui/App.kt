@@ -19,8 +19,6 @@ fun App(
     onboardingStorage: OnboardingStorage = OnboardingStorage(),
     analytics: AnalyticsTracker = AnalyticsTracker.None,
     uiTestingMyPage: Boolean = false,
-    uiTestingBookQuestion: Boolean = false,
-    uiTestingBookQuestionAbsent: Boolean = false,
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
 ) {
@@ -30,9 +28,7 @@ fun App(
             color = MaterialTheme.colorScheme.background,
         ) {
             androidx.compose.runtime.CompositionLocalProvider(LocalAnalyticsTracker provides analytics) {
-                if (uiTestingBookQuestion) {
-                    com.chaekchaek.app.ui.bookdetail.BookQuestionPreviewScreen(questionVisible = !uiTestingBookQuestionAbsent)
-                } else AppNavigation(
+                AppNavigation(
                     authPlatform = authPlatform,
                     recentSearchStorage = recentSearchStorage,
                     onboardingStorage = onboardingStorage,

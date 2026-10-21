@@ -2,7 +2,6 @@ package com.chamsae.chaekchaek
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -52,11 +51,10 @@ class ReviewDraftPreservationTest {
         }
         compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("사라지면 안 되는 감상")
-        compose.onNodeWithContentDescription("인상 깊은 문구").performScrollTo().performTextInput("기억할 문장")
+        compose.onNodeWithContentDescription("인상 깊은 문구 (선택)").performScrollTo().performTextInput("기억할 문장")
         compose.onNodeWithContentDescription("목차 또는 챕터").assertDoesNotExist()
         compose.onNodeWithContentDescription("쪽수").assertDoesNotExist()
-        compose.onNodeWithContentDescription("별점 선택").assertDoesNotExist()
-        compose.onNodeWithText("스포일러", substring = true).performScrollTo().performClick()
+        compose.onNodeWithText("스포일러 (선택)").performScrollTo().performClick()
         compose.onAllNodes(hasText("감상 남기기") and hasClickAction()).onLast().performScrollTo().performClick()
         compose.onNode(hasText("감상 남기기") and hasClickAction()).assertIsNotEnabled()
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
@@ -67,24 +65,42 @@ class ReviewDraftPreservationTest {
                 requestError = "요청을 처리하지 못했어요. 다시 시도해 주세요.",
             )
         }
+        // 실패 안내를 연 채 복원해도 마지막 제출을 재시도할 수 있어야 한다.
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithText("저장하지 못했어요").assertExists()
+        compose.onNode(hasText("다시 시도") and hasClickAction()).performClick()
+        compose.runOnIdle {
+            assertEquals(2, requests.size)
+            assertEquals(requests.first(), requests.last())
+            assertEquals(ReviewSubmissionState.Submitting, state.value.reviewSubmissionState)
+            state.value = state.value.copy(
+                reviewSubmissionState = ReviewSubmissionState.Failed,
+                requestError = "요청을 처리하지 못했어요. 다시 시도해 주세요.",
+            )
+        }
+        compose.onNodeWithText("저장하지 못했어요").assertExists()
+        compose.onNodeWithText("요청을 처리하지 못했어요. 다시 시도해 주세요.").assertExists()
+        compose.onNode(hasText("닫기") and hasClickAction()).performClick()
+        compose.onNodeWithText("저장하지 못했어요").assertDoesNotExist()
         restoration.emulateSavedInstanceStateRestore()
 
         compose.onNodeWithContentDescription("감상 (필수)").assertTextEquals("사라지면 안 되는 감상")
-        compose.onNodeWithContentDescription("인상 깊은 문구").assertTextEquals("기억할 문장")
+        compose.onNodeWithContentDescription("인상 깊은 문구 (선택)").assertTextEquals("기억할 문장")
         compose.onNodeWithContentDescription("목차 또는 챕터").assertDoesNotExist()
         compose.onNodeWithContentDescription("쪽수").assertDoesNotExist()
         compose.runOnIdle {
-            assertEquals(listOf(ReviewCreateRequest(
-                content = "사라지면 안 되는 감상", quote = "기억할 문장", isSpoiler = true,
-            )), requests)
+            val expected = ReviewCreateRequest(
+                content = "사라지면 안 되는 감상", quote = "기억할 문장",
+                chapter = null, currentPage = null, totalPages = null, isSpoiler = true,
+            )
+            assertEquals(listOf(expected, expected), requests)
         }
-        compose.onNodeWithText("스포일러", substring = true).assertIsOn()
+        compose.onNodeWithText("스포일러 (선택)").assertIsOn()
         compose.onNode(hasText("감상 남기기") and hasClickAction()).assertIsEnabled()
-        // 오류 안내의 노출 시간과 분리해 접근성 클릭으로 같은 초안의 재시도를 검증한다.
-        compose.onNode(hasText("감상 남기기") and hasClickAction())
-            .performSemanticsAction(SemanticsActions.OnClick) { it() }
+        compose.onNodeWithText("요청을 처리하지 못했어요. 다시 시도해 주세요.").assertDoesNotExist()
+        compose.onNode(hasText("감상 남기기") and hasClickAction()).performScrollTo().performClick()
         compose.runOnIdle {
-            assertEquals(2, requests.size)
+            assertEquals(3, requests.size)
             assertEquals(ReviewSubmissionState.Submitting, state.value.reviewSubmissionState)
             assertEquals(requests.first(), requests.last())
         }

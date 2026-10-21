@@ -4,7 +4,6 @@ import com.chaekchaek.app.ui.input.TextInputPolicy
 import com.chaekchaek.app.domain.rating.Rating
 import com.chaekchaek.app.data.remote.BookReview
 import com.chaekchaek.app.data.remote.ReplyPage
-import com.chaekchaek.app.data.remote.ReviewCreateRequest
 import com.chaekchaek.app.data.remote.ReviewReply
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -27,21 +26,6 @@ internal fun reviewMetadata(createdAt: String, currentPage: Int?): ReviewMetadat
         dateLabel = createdAt.take(10).replace('-', '.'),
         progressLabel = currentPage?.let { "p.${it}까지" },
     )
-
-/** 숨긴 읽기 메타데이터는 수정 시 보존하고, 별점 시안 값은 기존 감상 API로 전달하지 않는다. */
-internal fun buildReviewRequest(
-    draft: BookDetailReviewDraft,
-    initialReview: BookReview? = null,
-): ReviewCreateRequest {
-    require(draft.rating == null) { "별점이 포함된 초안은 기존 감상 API에 저장할 수 없습니다." }
-    return ReviewCreateRequest(
-        content = draft.content.trim(),
-        quote = draft.quote?.trim()?.ifEmpty { null },
-        chapter = initialReview?.chapter,
-        currentPage = initialReview?.currentPage,
-        isSpoiler = draft.isSpoiler,
-    )
-}
 
 internal object BookDetailInputRules {
     const val MAX_CONTENT_LENGTH = 1000
@@ -104,7 +88,15 @@ internal fun shouldLockReview(
 
 internal fun canManageContent(writtenByMe: Boolean, deleted: Boolean): Boolean = writtenByMe && !deleted
 
-internal fun visibleReviews(reviews: List<BookReview>): List<BookReview> = reviews.filterNot { it.deleted }
+internal fun BookReview.withDeletedContentHidden(): BookReview =
+    if (deleted) copy(content = "삭제된 감상입니다.", quote = null, chapter = null) else this
+
+// 답글이 남은 삭제 감상의 노출 여부와 집계는 서버가 결정한다.
+internal fun visibleReviews(reviews: List<BookReview>): List<BookReview> = reviews.map { it.withDeletedContentHidden() }
+
+internal fun canReplyToReview(deleted: Boolean): Boolean = !deleted
+
+internal fun canToggleReviewLike(deleted: Boolean, likedByMe: Boolean): Boolean = !deleted || likedByMe
 
 internal data class ReviewDisplay(
     val reviews: List<BookReview>,
@@ -118,10 +110,9 @@ internal fun reviewDisplay(
     hasMore: Boolean,
 ): ReviewDisplay {
     val visibleReviews = visibleReviews(reviews)
-    val loadedDeletedCount = reviews.count { it.deleted }
     return ReviewDisplay(
         reviews = visibleReviews,
-        count = (totalCount - loadedDeletedCount).coerceAtLeast(visibleReviews.size),
+        count = totalCount,
         showEmpty = visibleReviews.isEmpty() && !hasMore,
     )
 }
@@ -130,7 +121,7 @@ internal data class ReplyDisplay(val replies: List<ReviewReply>, val hasMore: Bo
 
 internal fun replyDisplay(replies: List<ReviewReply>, totalCount: Int): ReplyDisplay = ReplyDisplay(
     replies = replies.filterNot { it.deleted },
-    // 서버의 전체 개수에는 삭제 항목도 포함되므로 원본 조회 개수로 비교한다.
+    // 구 계약의 삭제 항목 포함 개수와 신 계약의 미삭제 개수 모두 원본 조회 개수로 비교한다.
     hasMore = replies.size < totalCount,
 )
 

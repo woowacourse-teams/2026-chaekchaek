@@ -397,6 +397,65 @@ class BookDetailRemoteRepositoryTest {
   }
 
   @Test
+  fun `감상 본문 수정은 회원과 게스트 모두 숨긴 읽기 메타데이터를 생략한다`() = runTest {
+    for (credential in listOf(WriteCredential.Member("member"), WriteCredential.Guest("guest-token"))) {
+      val actorType = if (credential is WriteCredential.Member) "MEMBER" else "GUEST"
+      val client = testClient(MockEngine { request ->
+        assertEquals(HttpMethod.Patch, request.method)
+        assertEquals("/api/v1/reviews/7", request.url.encodedPath)
+        assertEquals(credential.headerValue, request.headers[credential.headerName])
+        assertEquals(
+          Json.parseToJsonElement("""{"content":"수정 감상","quote":null,"isSpoiler":true}"""),
+          Json.parseToJsonElement((request.body as TextContent).text),
+        )
+        respond(
+          """{"reviewId":7,"content":"수정 감상","chapter":"기존 장","currentPage":80,"createdAt":"2026-10-21T00:00:00Z","author":{"displayName":"작성자","anonymous":false,"mine":true,"actorType":"$actorType"},"replyCount":0,"likeCount":0,"isSpoiler":true,"deleted":false}""",
+          headers = headersOf(HttpHeaders.ContentType, "application/json"),
+        )
+      })
+      try {
+        val repository = BookDetailRemoteRepository(client, ApiConfiguration("https://api.chaekchaek.com"))
+        val review = repository.updateReviewContent(
+          7,
+          ReviewCreateRequest("수정 감상", quote = null, chapter = "보내면 안 되는 장", currentPage = 999, totalPages = 100, isSpoiler = true),
+          credential,
+        )
+        assertEquals("기존 장", review.chapter)
+        assertEquals(80, review.currentPage)
+      } finally {
+        client.close()
+      }
+    }
+  }
+
+  @Test
+  fun `기존 회원 감상 수정은 읽기 메타데이터와 선택 입력 삭제를 계속 전송한다`() = runTest {
+    val client = testClient(MockEngine { request ->
+      assertEquals(HttpMethod.Patch, request.method)
+      assertEquals("/api/v1/reviews/7", request.url.encodedPath)
+      assertEquals("Bearer member", request.headers[HttpHeaders.Authorization])
+      assertEquals(
+        Json.parseToJsonElement("""{"content":"수정 감상","quote":null,"chapter":null,"currentPage":80,"totalPages":100,"isSpoiler":false}"""),
+        Json.parseToJsonElement((request.body as TextContent).text),
+      )
+      respond(
+        """{"reviewId":7,"content":"수정 감상","currentPage":80,"createdAt":"2026-10-21T00:00:00Z","author":{"displayName":"작성자","anonymous":false,"mine":true,"actorType":"MEMBER"},"replyCount":0,"likeCount":0,"deleted":false}""",
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+      )
+    })
+    try {
+      val repository = BookDetailRemoteRepository(client, ApiConfiguration("https://api.chaekchaek.com"))
+      repository.updateReview(
+        7,
+        ReviewCreateRequest("수정 감상", quote = null, chapter = null, currentPage = 80, totalPages = 100),
+        WriteCredential.Member("member"),
+      )
+    } finally {
+      client.close()
+    }
+  }
+
+  @Test
   fun `상세 서재 기록의 비어 있는 현재 페이지는 0으로 변환한다`() {
     val record = BookDetailRecordDto(status = "WANT_TO_READ", currentPage = null, myRating = null)
       .toLibraryRecord()
