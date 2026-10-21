@@ -141,6 +141,9 @@ export type { Props as InfoMessageProps } from './components/InfoMessage';
 export { Tabs } from './components/Tabs';
 export type { Props as TabsProps } from './components/Tabs';
 
+export { Showcase } from './components/Showcase';
+export type { Props as ShowcaseProps } from './components/Showcase';
+
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';
 
