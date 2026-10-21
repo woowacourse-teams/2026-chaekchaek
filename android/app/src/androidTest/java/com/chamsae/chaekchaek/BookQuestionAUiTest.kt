@@ -19,6 +19,7 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -27,6 +28,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
@@ -99,12 +102,15 @@ class BookQuestionAUiTest {
                 BookDetailScreen(state = detailState(), question = question(), onBack = { backCalls += 1 })
             }
         }
-        compose.onNodeWithTag("questionReferenceOpen").assertIsDisplayed().performClick()
+        val list = compose.onNodeWithTag("book_detail_list")
+        list.performScrollToNode(hasTestTag("questionReferenceOpen"))
+        compose.onNodeWithTag("questionReferenceOpen").performScrollTo().assertIsDisplayed().performClick()
+        list.performScrollToIndex(0)
         val panel = compose.onNodeWithTag("questionReferencePanel")
         val inset = with(compose.density) { 8.dp.toPx() }
         val tap = Offset(inset, inset)
         val panelBounds = panel.fetchSemanticsNode().boundsInRoot
-        val backBounds = compose.onNodeWithContentDescription("뒤로 가기").fetchSemanticsNode().boundsInRoot
+        val backBounds = compose.onNodeWithTag("book_detail_back").fetchSemanticsNode().boundsInRoot
         assertTrue("검증 탭은 패널 여백과 가려진 뒤로가기 버튼에 함께 놓여야 한다", backBounds.contains(panelBounds.topLeft + tap))
 
         panel.performTouchInput { click(tap) }

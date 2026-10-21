@@ -31,6 +31,7 @@ fun MainViewController(
   logAnalyticsEvent: (AnalyticsEvent) -> Unit = {},
   uiTestingMyPage: Boolean = false,
   uiTestingBookQuestionA: Boolean = false,
+  showQuestionAPreviewControls: Boolean = true,
 ): UIViewController {
   val analytics = AnalyticsTracker(analyticsEnvironment, logAnalyticsEvent)
   return ComposeUIViewController {
@@ -40,7 +41,7 @@ fun MainViewController(
           Box(Modifier.fillMaxSize().windowInsetsPadding(
             WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
           )) {
-            BookQuestionAPreviewScreen()
+            BookQuestionAPreviewScreen(showControls = showQuestionAPreviewControls)
           }
         }
       } else App(

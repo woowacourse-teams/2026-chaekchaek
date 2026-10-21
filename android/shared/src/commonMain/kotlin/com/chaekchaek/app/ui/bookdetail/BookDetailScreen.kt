@@ -42,6 +42,9 @@ import androidx.compose.material3.MaterialTheme
 import com.chaekchaek.app.ui.common.ChaekOneActionDialog
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
 import com.chaekchaek.app.ui.common.ChaekSnackbarHost
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -206,12 +209,16 @@ fun BookDetailScreen(
     val currentPage = state.detail?.myRecord?.currentPage ?: localCurrentPage
     val snackbarHostState = remember { SnackbarHostState() }
     var composeBarHeight by remember { mutableStateOf(0.dp) }
+    var reviewViewport by remember { mutableStateOf(Rect.Zero) }
+    var referenceOverlayBounds by remember { mutableStateOf(Rect.Zero) }
+
     var showLibraryDeleteConfirmation by rememberSaveable(book.id) { mutableStateOf(false) }
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
     var showPageDialog by rememberSaveable { mutableStateOf(false) }
     var showReviewSheet by rememberSaveable { mutableStateOf(false) }
     var showReactionPicker by rememberSaveable(book.id, question?.id) { mutableStateOf(false) }
     var showQuestionReference by rememberSaveable(book.id, question?.id) { mutableStateOf(false) }
+    val activeOverlayBounds = if (showQuestionReference && question != null) referenceOverlayBounds else Rect.Zero
     var referenceTab by rememberSaveable(book.id, question?.id) { mutableStateOf(BookQuestionReferenceTab.Synopsis) }
     var submittedReviewDraft by rememberSaveable(book.id, stateSaver = SubmittedQuestionAReviewSaver) {
         mutableStateOf<QuestionAReviewDraft?>(null)
@@ -287,12 +294,18 @@ fun BookDetailScreen(
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(ChaekBackground).navigationBarsPadding()) {
         // 복원 데이터를 받기 전에 짧은 임시 목록으로 저장된 offset을 덮어쓰지 않는다.
         if (!state.isRestoring) LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(bottom = composeBarHeight).testTag("book_detail_list")
+                .onGloballyPositioned { coordinates ->
+                    val position = coordinates.positionInWindow()
+                    reviewViewport = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
+                },
             state = listState,
-            contentPadding = PaddingValues(bottom = 100.dp),
+            contentPadding = PaddingValues(bottom = 24.dp),
         ) {
             item {
                 BookHero(
+                    viewport = reviewViewport,
+                    referenceOverlayBounds = activeOverlayBounds,
                     book = book,
                     saved = savedToLibrary,
                     averageRating = state.detail?.averageRating,
@@ -310,6 +323,8 @@ fun BookDetailScreen(
             if (question != null) item {
                 Box(Modifier.padding(horizontal = 24.dp)) {
                     BookQuestionCard(
+                        viewport = reviewViewport,
+                        referenceOverlayBounds = activeOverlayBounds,
                         question = question,
                         selectedReaction = selectedQuestionReaction,
                         onOpenReference = { showQuestionReference = true },
@@ -334,6 +349,8 @@ fun BookDetailScreen(
             item { Spacer(Modifier.height(23.dp)) }
             item {
                 ReviewsSection(
+                    viewport = reviewViewport,
+                    referenceOverlayBounds = activeOverlayBounds,
                     reviews = state.reviews,
                     reviewCount = state.reviewCount,
                     hasMoreReviews = state.nextReviewPage != null,
@@ -398,15 +415,20 @@ fun BookDetailScreen(
         }
         if (showQuestionReference && question != null) {
             // 패널은 목록과 별개로 그린다. 바깥 영역의 스크롤과 기존 위치를 유지한다.
-            val availableHeight = (maxHeight - 24.dp).coerceAtLeast(0.dp)
-            val referenceHeight = (maxHeight * 0.48f).coerceIn(280.dp, 340.dp).coerceAtMost(availableHeight)
+            val layout = bookQuestionOverlayLayout(maxHeight.value, (maxHeight - composeBarHeight).value.coerceAtLeast(0f))
             BookQuestionReferenceOverlay(
                 question = question,
+                compact = layout.sideScrollGutter,
                 selectedTab = referenceTab,
                 onTabSelected = { referenceTab = it },
                 onDismiss = { showQuestionReference = false },
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp, start = 12.dp, end = 12.dp)
-                    .height(referenceHeight).testTag("questionReferencePanel"),
+                modifier = Modifier.align(Alignment.TopStart)
+                    .padding(top = 12.dp, start = 12.dp, end = if (layout.sideScrollGutter) 76.dp else 12.dp)
+                    .fillMaxWidth().height(layout.height.dp).testTag("questionReferencePanel")
+                    .onGloballyPositioned { coordinates ->
+                        val position = coordinates.positionInWindow()
+                        referenceOverlayBounds = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
+                    },
             )
         }
         if (state.isSubmitting || state.isRestoring && state.isLoading) RequestLoadingOverlay(Modifier.fillMaxSize())
@@ -588,6 +610,8 @@ fun BookDetailScreen(
 
 @Composable
 private fun BookHero(
+    viewport: Rect,
+    referenceOverlayBounds: Rect,
     book: BookDetailArgs,
     saved: Boolean,
     averageRating: Double?,
@@ -606,7 +630,8 @@ private fun BookHero(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(44.dp).clickable(role = Role.Button, onClick = onBack),
+                modifier = Modifier.size(44.dp).clickable(role = Role.Button, onClick = onBack)
+                    .testTag("book_detail_back").accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(painterResource(Res.drawable.ic_back), "뒤로 가기", Modifier.size(21.dp), tint = ChaekInk)
@@ -632,7 +657,8 @@ private fun BookHero(
                         modifier = Modifier.size(44.dp).clickable(
                             enabled = !saving, role = Role.Button,
                             interactionSource = remember { MutableInteractionSource() }, indication = null,
-                        ) { showMenu = true }.semantics { contentDescription = "서재 관리" },
+                        ) { showMenu = true }.semantics { contentDescription = "서재 관리" }
+                            .accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text("⋯", fontFamily = ChaekIconFontFamily(), fontSize = 24.sp)
@@ -695,7 +721,8 @@ private fun BookHero(
                     showLoading = showSaveLoading,
                     enabled = saveEnabled,
                     onSave = onLibraryClick,
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = 8.dp).testTag("book_detail_library_save")
+                        .accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
                 )
             }
         }
@@ -924,6 +951,8 @@ private fun AverageRatingChip(averageRating: Double?) {
 
 @Composable
 private fun ReviewsSection(
+    viewport: Rect,
+    referenceOverlayBounds: Rect,
     reviews: List<BookReview>,
     reviewCount: Int,
     hasMoreReviews: Boolean,
@@ -969,14 +998,17 @@ private fun ReviewsSection(
                 optionLabel = { option -> if (option == ReviewSort.LATEST) "최신순" else "페이지순" },
                 onOptionSelected = onSortChange,
                 contentDescription = "감상 정렬",
+                modifier = Modifier.testTag("review_sort").accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
             )
         }
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ChaekFilterChip("전체", scope == ReviewScope.ALL, onClick = { onScopeChange(ReviewScope.ALL) })
-            ChaekFilterChip("내 감상", scope == ReviewScope.MINE, onClick = { onScopeChange(ReviewScope.MINE) })
+            ChaekFilterChip("전체", scope == ReviewScope.ALL, onClick = { onScopeChange(ReviewScope.ALL) },
+                modifier = Modifier.testTag("review_scope_all").accessibilityWhenFullyVisible(viewport, referenceOverlayBounds))
+            ChaekFilterChip("내 감상", scope == ReviewScope.MINE, onClick = { onScopeChange(ReviewScope.MINE) },
+                modifier = Modifier.testTag("review_scope_mine").accessibilityWhenFullyVisible(viewport, referenceOverlayBounds))
         }
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 24.dp),

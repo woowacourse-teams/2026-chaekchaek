@@ -39,7 +39,7 @@ final class QuestionAPreviewUITests: XCTestCase {
     @MainActor
     func testComposerDistinguishesUnselectedRatingAndActualZero() throws {
         let app = launchPreview()
-        let compose = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 쓰기")).firstMatch
+        let compose = app.buttons["questionReviewOpen"]
         reveal(compose, in: app)
         compose.tap()
 
@@ -60,7 +60,9 @@ final class QuestionAPreviewUITests: XCTestCase {
 
         let close = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "닫기")).firstMatch
         reveal(close, in: app, scrollingUp: false)
-        close.tap()
+        XCTAssertGreaterThanOrEqual(close.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(close.frame.minY, 20)
+        tapAfterScroll(close)
         let keep = element("계속 작성", in: app)
         XCTAssertTrue(keep.waitForExistence(timeout: 5))
         keep.tap()
@@ -74,7 +76,7 @@ final class QuestionAPreviewUITests: XCTestCase {
     @MainActor
     func testUnselectedRatingCanBeSaved() throws {
         let app = launchPreview()
-        let compose = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 쓰기")).firstMatch
+        let compose = app.buttons["questionReviewOpen"]
         reveal(compose, in: app)
         compose.tap()
         let content = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 (필수)")).firstMatch
@@ -96,7 +98,7 @@ final class QuestionAPreviewUITests: XCTestCase {
     func testSaveFailureKeepsDraftAndUnselectedRating() throws {
         let app = launchPreview()
         element("저장 실패", in: app).tap()
-        let compose = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 쓰기")).firstMatch
+        let compose = app.buttons["questionReviewOpen"]
         reveal(compose, in: app)
         compose.tap()
         let content = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 (필수)")).firstMatch
@@ -128,7 +130,7 @@ final class QuestionAPreviewUITests: XCTestCase {
     func testGuestRatingLoginPreservesDraft() throws {
         let app = launchPreview()
         element("게스트", in: app).tap()
-        let compose = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 쓰기")).firstMatch
+        let compose = app.buttons["questionReviewOpen"]
         reveal(compose, in: app)
         compose.tap()
         let content = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 (필수)")).firstMatch
@@ -182,10 +184,23 @@ final class QuestionAPreviewUITests: XCTestCase {
         XCTAssertEqual(restoredY, scrolledY, accuracy: 3)
         attachScreenshot(named: "자료 독립 스크롤과 탭 복원")
         let origin = app.coordinate(withNormalizedOffset: .zero)
-        let startY = min(app.frame.maxY - 110, panel.frame.maxY + 250)
-        let endY = panel.frame.maxY + 20
+        let list = element("book_detail_list", in: app)
+        let belowPanel = list.frame.maxY - panel.frame.maxY >= 44
+        let gestureX: CGFloat
+        let startY = list.frame.maxY - 8
+        let endY: CGFloat
+        if belowPanel {
+            gestureX = list.frame.midX
+            endY = panel.frame.maxY + 8
+        } else {
+            XCTAssertGreaterThanOrEqual(list.frame.maxX - panel.frame.maxX, 44,
+                                       "낮은 화면에는 오른쪽 배경 스크롤 여백이 있어야 한다")
+            gestureX = list.frame.maxX - 22
+            endY = max(list.frame.minY + 8, startY - 180)
+        }
         XCTAssertGreaterThan(startY - endY, 30)
-        origin.withOffset(CGVector(dx: app.frame.width * 0.9, dy: startY)).press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: app.frame.width * 0.9, dy: endY)))
+        print("QUESTION_A_BACKGROUND_GESTURE list=\(list.frame) panel=\(panel.frame) side=\(!belowPanel)")
+        origin.withOffset(CGVector(dx: gestureX, dy: startY)).press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: gestureX, dy: endY)))
         XCTAssertLessThan(heading.frame.minY, backgroundY - 20)
         XCTAssertTrue(panel.exists)
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "질문과 장면 닫기")).firstMatch.tap()
@@ -207,20 +222,15 @@ final class QuestionAPreviewUITests: XCTestCase {
 
     @MainActor
     func testRepresentativeAccessibilityAudit() throws {
-        let app = launchPreview()
-        let compose = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 쓰기")).firstMatch
-        reveal(compose, in: app)
-        // 감사 대상 아래의 기존 감상 필터도 화면 안에 온전히 놓는다.
-        let origin = app.coordinate(withNormalizedOffset: .zero)
-        origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: app.frame.maxY - 120))
-            .press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: app.frame.maxY - 260)))
-        reveal(compose, in: app)
+        let app = launchPreview(contentOnly: true)
+        let compose = app.buttons["questionReviewOpen"]
+        revealInBook(compose, app: app)
         attachScreenshot(named: "질문 카드 접근성 감사")
         try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion]) { issue in
             print("Question A accessibility issue: \(issue.compactDescription) | \(issue.detailedDescription) | \(issue.element?.debugDescription ?? "no element")")
             return false
         }
-        compose.tap()
+        tapAfterScroll(compose)
         let rating = app.otherElements.matching(NSPredicate(format: "label == %@ AND value != nil", "별점 (선택)")).firstMatch
         reveal(rating, in: app)
         attachScreenshot(named: "감상 별점 접근성 감사")
@@ -231,9 +241,221 @@ final class QuestionAPreviewUITests: XCTestCase {
     }
 
     @MainActor
-    private func launchPreview() -> XCUIApplication {
+    func testLibraryButtonReturnsToAccessibilityAndSavesAfterReferenceCloses() throws {
+        let app = launchPreview(contentOnly: true)
+        let library = element("book_detail_library_save", in: app)
+        revealInBook(library, app: app)
+        XCTAssertGreaterThanOrEqual(library.frame.height, 44)
+        let open = element("questionReferenceOpen", in: app)
+        revealInBook(open, app: app)
+        tapAfterScroll(open)
+        let overlay = element("questionReferencePanel", in: app)
+        XCTAssertTrue(overlay.waitForExistence(timeout: 5))
+        // 레이아웃 노드는 남아도 가려진 버튼의 역할과 동작은 노출하지 않는다.
+        let exposedLibraryButton = app.buttons.matching(identifier: "book_detail_library_save").firstMatch
+        XCTAssertTrue(exposedLibraryButton.waitForNonExistence(timeout: 5), "패널이 가린 버튼을 접근성 컨트롤로 노출하면 안 된다")
+        try audit(app, name: "자료 패널이 가린 서재 버튼")
+        element("questionReferenceClose", in: app).tap()
+        XCTAssertTrue(overlay.waitForNonExistence(timeout: 5))
+        revealInBook(library, app: app)
+        XCTAssertGreaterThanOrEqual(library.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(library.frame.height, 44)
+        tapAfterScroll(library)
+        XCTAssertEqual(library.value as? String, "서재에 저장됨", "다시 노출된 버튼의 실제 터치가 처리되어야 한다")
+        try audit(app, name: "자료 닫기 뒤 서재 담기")
+        print("QUESTION_A_FLOW_PASS testLibraryButtonReturnsToAccessibilityAndSavesAfterReferenceCloses")
+    }
+
+    @MainActor
+    func testReviewFiltersKeepFullTouchAreaAboveComposerAndSwitchScope() throws {
+        let app = launchPreview(contentOnly: true)
+        let all = element("review_scope_all", in: app)
+        let mine = element("review_scope_mine", in: app)
+        revealInBook(all, app: app)
+        let list = element("book_detail_list", in: app)
+        XCTAssertLessThanOrEqual(list.frame.maxY, bookFooter(in: app).frame.minY)
+        for filter in [all, mine] {
+            XCTAssertTrue(filter.isHittable)
+            XCTAssertGreaterThanOrEqual(filter.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(filter.frame.height, 44)
+            XCTAssertLessThanOrEqual(filter.frame.maxY, list.frame.maxY)
+        }
+        tapAfterScroll(mine)
+        XCTAssertTrue(mine.isSelected)
+        tapAfterScroll(all)
+        XCTAssertTrue(all.isSelected)
+        try audit(app, name: "감상 필터 전체 터치 영역과 선택 왕복")
+        attachScreenshot(named: "감상 필터와 하단 작성 버튼의 분리된 영역")
+        print("QUESTION_A_FLOW_PASS testReviewFiltersKeepFullTouchAreaAboveComposerAndSwitchScope")
+    }
+
+    @MainActor
+    func testPartiallyCoveredFiltersAndBackReturnAfterReferenceCloses() throws {
+        let app = launchPreview(contentOnly: true)
+        let open = element("questionReferenceOpen", in: app)
+        revealInBook(open, app: app)
+        tapAfterScroll(open)
+        let overlay = element("questionReferencePanel", in: app)
+        XCTAssertTrue(overlay.waitForExistence(timeout: 5))
+        let list = element("book_detail_list", in: app)
+        let all = element("review_scope_all", in: app)
+        // 패널 바깥 왼쪽 여백에서 스크롤해 필터의 위쪽 절반만 가린다.
+        for _ in 0..<12 {
+            let target = overlay.frame.maxY - 22
+            if all.exists && !all.frame.isEmpty && all.frame.minY < overlay.frame.maxY && all.frame.maxY > overlay.frame.maxY { break }
+            let delta = all.exists && !all.frame.isEmpty ? all.frame.minY - target : 120
+            dragListEdge(list, app: app, delta: min(160, max(-160, delta)))
+        }
+        XCTAssertTrue(all.exists && !all.frame.isEmpty && all.frame.minY < overlay.frame.maxY && all.frame.maxY > overlay.frame.maxY,
+                      "필터가 실제 패널 경계에 걸린 상태에서 접근성을 확인해야 한다")
+        attachScreenshot(named: "자료 패널 경계에 걸친 감상 필터")
+        let partialTree = XCTAttachment(string: app.debugDescription)
+        partialTree.name = "부분 가림 접근성 트리"
+        partialTree.lifetime = .keepAlways
+        add(partialTree)
+        XCTAssertFalse(app.buttons.matching(identifier: "review_scope_all").firstMatch.exists,
+                       "일부 가려진 필터를 작은 접근성 버튼으로 노출하면 안 된다")
+        try audit(app, name: "부분 가림 필터")
+        element("questionReferenceClose", in: app).tap()
+        revealInBook(all, app: app)
+        let mine = element("review_scope_mine", in: app)
+        tapAfterScroll(mine)
+        XCTAssertTrue(mine.isSelected)
+        tapAfterScroll(all)
+        XCTAssertTrue(all.isSelected)
+
+        revealInBook(open, app: app)
+        tapAfterScroll(open)
+        for _ in 0..<8 { dragListEdge(list, app: app, delta: -180) }
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "뒤로 가기")).firstMatch.exists,
+                       "자료 패널에 가려진 뒤로가기를 접근성 버튼으로 노출하면 안 된다")
+        try audit(app, name: "패널 아래 책 상단")
+        element("questionReferenceClose", in: app).tap()
+        let back = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "뒤로 가기")).firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        XCTAssertGreaterThanOrEqual(back.frame.height, 44)
+        tapAfterScroll(back)
+        try audit(app, name: "자료 닫기 뒤 뒤로가기 복원")
+        print("QUESTION_A_FLOW_PASS testPartiallyCoveredFiltersAndBackReturnAfterReferenceCloses")
+    }
+
+    @MainActor
+    func testLandscapeReferenceKeepsReadableBodyAndBackgroundScroll() throws {
+        let app = launchPreview(contentOnly: true)
+        let open = element("questionReferenceOpen", in: app)
+        revealInBook(open, app: app)
+        tapAfterScroll(open)
+        XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        Thread.sleep(forTimeInterval: 1)
+        XCTAssertGreaterThan(app.frame.width, app.frame.height, "실제 가로 회전이 적용되어야 한다")
+        let overlay = element("questionReferencePanel", in: app)
+        XCTAssertTrue(overlay.waitForExistence(timeout: 5))
+        let list = element("book_detail_list", in: app)
+        let body = element("book-question-reference-body", in: app)
+        XCTAssertGreaterThanOrEqual(body.frame.height, 44, "본문 스크롤 영역을 확보해야 한다")
+        XCTAssertLessThanOrEqual(overlay.frame.height, 341)
+        let bottom = list.frame.maxY - 8
+        let top = overlay.frame.maxY + 8
+        XCTAssertGreaterThanOrEqual(bottom - top, 44, "패널 아래 목록을 직접 스크롤할 영역을 확보해야 한다")
+        // 가려진 컨트롤은 네이티브 접근성 트리에서 없어지므로, 닫힌 상태의 실제 위치로 비교한다.
+        element("questionReferenceClose", in: app).tap()
+        revealInBook(open, app: app)
+        let originalY = open.frame.minY
+        tapAfterScroll(open)
+        let excerpt = element("questionReferenceTabExcerpt", in: app)
+        tapAfterScroll(excerpt)
+        let excerptText = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "네 장미꽃을 그토록 소중하게 만든")).firstMatch
+        XCTAssertTrue(excerptText.waitForExistence(timeout: 5), "탭 터치가 실제 발췌 본문을 표시해야 한다")
+        let excerptY = excerptText.frame.minY
+        let bodyBounds = body.frame.intersection(overlay.frame)
+        XCTAssertGreaterThanOrEqual(bodyBounds.height, 44)
+        attachScreenshot(named: "가로 화면 발췌 본문 스크롤 전")
+        print("QUESTION_A_BODY_BEFORE viewport=\(bodyBounds) text=\(excerptText.frame)")
+        let screenOrigin = app.coordinate(withNormalizedOffset: .zero)
+        for _ in 0..<3 {
+            screenOrigin.withOffset(CGVector(dx: bodyBounds.midX, dy: bodyBounds.maxY - 4)).press(forDuration: 0.05,
+                thenDragTo: screenOrigin.withOffset(CGVector(dx: bodyBounds.midX, dy: bodyBounds.minY + 4)))
+        }
+        attachScreenshot(named: "가로 화면 발췌 본문 스크롤 후")
+        print("QUESTION_A_BODY_AFTER exists=\(excerptText.exists) text=\(excerptText.frame)")
+        XCTAssertTrue(!excerptText.exists || abs(excerptText.frame.minY - excerptY) > 5, "발췌 본문이 독립 스크롤되어야 한다")
+        element("questionReferenceClose", in: app).tap()
+        XCTAssertEqual(open.frame.minY, originalY, accuracy: 3, "본문 스크롤이 배경으로 전달되면 안 된다")
+        tapAfterScroll(open)
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        origin.withOffset(CGVector(dx: list.frame.midX, dy: bottom)).press(forDuration: 0.05,
+            thenDragTo: origin.withOffset(CGVector(dx: list.frame.midX, dy: top)))
+        attachScreenshot(named: "작은 가로 화면의 독립 본문과 배경 목록")
+        try audit(app, name: "작은 가로 화면 자료 패널")
+        element("questionReferenceClose", in: app).tap()
+        XCTAssertTrue(overlay.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(!open.exists || abs(open.frame.minY - originalY) > 5, "패널 아래 배경 목록이 실제로 스크롤되어야 한다")
+        print("QUESTION_A_FLOW_PASS testLandscapeReferenceKeepsReadableBodyAndBackgroundScroll")
+    }
+
+    @MainActor
+    private func dragListEdge(_ list: XCUIElement, app: XCUIApplication, delta: CGFloat) {
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        let y = list.frame.midY
+        origin.withOffset(CGVector(dx: list.frame.minX + 4, dy: y)).press(forDuration: 0.05,
+            thenDragTo: origin.withOffset(CGVector(dx: list.frame.minX + 4, dy: y - delta)))
+        Thread.sleep(forTimeInterval: 0.5)
+    }
+
+    @MainActor
+    private func revealInBook(_ control: XCUIElement, app: XCUIApplication) {
+        let list = element("book_detail_list", in: app)
+        XCTAssertTrue(list.waitForExistence(timeout: 10))
+        let footer = bookFooter(in: app)
+        XCTAssertTrue(footer.waitForExistence(timeout: 5))
+        let top = max(80, list.frame.minY + 40)
+        let bottom = footer.frame.minY - 16
+        let middle = (top + bottom) / 2
+        for _ in 0..<12 {
+            if control.exists && control.isHittable && control.frame.minY >= top && control.frame.maxY <= bottom {
+                return
+            }
+            // AX5에서 전체 화면 스와이프가 대상을 상단 밖으로 지나치지 않게 이동량을 제한한다.
+            let distance = control.exists && !control.frame.isEmpty ? control.frame.midY - middle : 160
+            let delta = min(160, max(-160, distance))
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: list.frame.minX + 8, dy: middle))
+            let end = origin.withOffset(CGVector(dx: list.frame.minX + 8, dy: middle - delta))
+            start.press(forDuration: 0.05, thenDragTo: end)
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        XCTAssertTrue(control.isHittable && control.frame.minY >= top && control.frame.maxY <= bottom, app.debugDescription)
+    }
+
+    @MainActor
+    private func tapAfterScroll(_ control: XCUIElement) {
+        // 스크롤을 멈추는 첫 터치와 컨트롤 입력을 혼동하지 않도록 안정화 뒤 한 번 누른다.
+        Thread.sleep(forTimeInterval: 0.5)
+        control.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.15)
+    }
+
+    @MainActor
+    private func bookFooter(in app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "이 순간의 감상 남기기")).firstMatch
+    }
+
+    @MainActor
+    private func audit(_ app: XCUIApplication, name: String) throws {
+        attachScreenshot(named: name)
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion]) { issue in
+            print("QUESTION_A_AUDIT \(name): \(issue.compactDescription) | \(issue.detailedDescription) | \(issue.element?.debugDescription ?? "nil")")
+            return false
+        }
+    }
+
+    @MainActor
+    private func launchPreview(contentOnly: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
+        app.terminate()
+        XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uiTestingBookQuestionA", "-uiTestingExistingInstallation"]
+        if contentOnly { app.launchArguments.append("-uiTestingBookQuestionAContentOnly") }
         addUIInterruptionMonitor(withDescription: "시뮬레이터 초기 시스템 안내") { alert in
             if alert.staticTexts["Apple 계정에 로그인"].exists && alert.buttons["취소"].exists {
                 alert.buttons["취소"].tap()
@@ -254,13 +476,13 @@ final class QuestionAPreviewUITests: XCTestCase {
             app.activate()
         }
         XCTAssertEqual(app.state, .runningForeground)
-        XCTAssertTrue(element("질문 A 개발 프리뷰", in: app).waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(element(contentOnly ? "book_detail_list" : "질문 A 개발 프리뷰", in: app).waitForExistence(timeout: 15), app.debugDescription)
         return app
     }
 
     @MainActor
     private func element(_ label: String, in app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+        app.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@ OR label == %@", label, label)).firstMatch
     }
 
     @MainActor
@@ -268,7 +490,10 @@ final class QuestionAPreviewUITests: XCTestCase {
         var moveUp = scrollingUp
         for attempt in 0..<12 {
             let keyboard = app.keyboards.firstMatch
-            let bottom = keyboard.exists ? keyboard.frame.minY - 60 : app.frame.maxY - 34
+            let footer = bookFooter(in: app)
+            let list = self.element("book_detail_list", in: app)
+            let bookBottom = footer.exists && footer.isHittable && list.exists ? list.frame.maxY - 16 : app.frame.maxY - 34
+            let bottom = keyboard.exists ? keyboard.frame.minY - 60 : bookBottom
             let viewportTop = app.frame.minY + 68
             if element.exists {
                 let frame = element.frame
@@ -287,6 +512,7 @@ final class QuestionAPreviewUITests: XCTestCase {
             let start = origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: moveUp ? bottom - 24 : top))
             let end = origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: moveUp ? top : bottom - 24))
             start.press(forDuration: 0.05, thenDragTo: end)
+            Thread.sleep(forTimeInterval: 0.5)
         }
         XCTAssertTrue(element.exists && element.isHittable, app.debugDescription)
     }

@@ -8,6 +8,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,6 +67,8 @@ private val QuestionActionArrow = Color(0xFFFF920F)
 
 @Composable
 fun BookQuestionCard(
+    viewport: Rect,
+    referenceOverlayBounds: Rect,
     question: BookQuestionUiModel,
     selectedReaction: String?,
     onOpenReference: () -> Unit,
@@ -87,7 +99,7 @@ fun BookQuestionCard(
             modifier = Modifier.fillMaxWidth().height(44.dp)
                 .clip(ChaekOverlayTokens.cardShape)
                 .border(1.dp, QuestionDivider, ChaekOverlayTokens.cardShape)
-                .testTag("questionReferenceOpen").questionClick(onOpenReference)
+                .testTag("questionReferenceOpen").questionClick(onOpenReference).accessibilityWhenFullyVisible(viewport, referenceOverlayBounds)
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -112,7 +124,7 @@ fun BookQuestionCard(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.height(44.dp).questionClick(onWriteReview),
+                modifier = Modifier.height(44.dp).questionClick(onWriteReview).testTag("questionReviewOpen").accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
                 contentAlignment = Alignment.Center,
             ) {
                 Row(
@@ -142,7 +154,7 @@ fun BookQuestionCard(
                 }
             }
             if (selectedReaction != null) {
-                BookQuestionSelectedReaction(selectedReaction, onReactionClear)
+                BookQuestionSelectedReaction(selectedReaction, onReactionClear, viewport, referenceOverlayBounds)
             }
             Box(
                 modifier = Modifier.size(44.dp)
@@ -150,7 +162,7 @@ fun BookQuestionCard(
                         contentDescription = "질문에 이모지 달기"
                     }
                     .testTag("questionReactionOpen")
-                    .questionClick(onReactionClick),
+                    .questionClick(onReactionClick).accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(
@@ -217,7 +229,7 @@ fun BookQuestionReactionPicker(
 }
 
 @Composable
-private fun BookQuestionSelectedReaction(emoji: String, onClear: () -> Unit) {
+private fun BookQuestionSelectedReaction(emoji: String, onClear: () -> Unit, viewport: Rect, overlay: Rect) {
     Box(
         modifier = Modifier.size(44.dp)
             .semantics {
@@ -226,7 +238,7 @@ private fun BookQuestionSelectedReaction(emoji: String, onClear: () -> Unit) {
                 selected = true
             }
             .testTag("questionReactionClear")
-            .questionClick(onClear),
+            .questionClick(onClear).accessibilityWhenFullyVisible(viewport, overlay),
         contentAlignment = Alignment.Center,
     ) {
         Row(
@@ -251,6 +263,7 @@ private fun BookQuestionSelectedReaction(emoji: String, onClear: () -> Unit) {
 @Composable
 fun BookQuestionReferenceOverlay(
     question: BookQuestionUiModel,
+    compact: Boolean = false,
     selectedTab: BookQuestionReferenceTab,
     onTabSelected: (BookQuestionReferenceTab) -> Unit,
     onDismiss: () -> Unit,
@@ -264,31 +277,36 @@ fun BookQuestionReferenceOverlay(
         BookQuestionReferenceTab.Synopsis -> synopsisScroll
         BookQuestionReferenceTab.Excerpt -> excerptScroll
     }
-    Column(
-        modifier = modifier.widthIn(max = 366.dp).fillMaxWidth().height(340.dp)
+    BoxWithConstraints(
+        modifier = modifier.fillMaxWidth()
             .clip(ChaekOverlayTokens.containerShape)
             .background(ChaekSurface)
             .border(1.dp, QuestionDivider, ChaekOverlayTokens.containerShape)
             // 패널 여백의 탭이 아래 목록의 버튼으로 통과하지 않게 한다.
             .pointerInput(Unit) { detectTapGestures(onTap = {}) }
-            .padding(1.dp)
-            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(1.dp),
     ) {
+        val density = LocalDensity.current
+        var tabsHeight by remember { mutableStateOf(44.dp) }
+        val bodyLineHeight = with(density) { 23.sp.toDp() }.coerceAtLeast(44.dp)
+        val spacing = if (compact) 20.dp else 40.dp
+        val questionMax = (maxHeight - tabsHeight - bodyLineHeight - spacing).coerceIn(44.dp, 120.dp)
+        Column(Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp, bottom = if (compact) 8.dp else 16.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 8.dp)) {
         Row(
-            modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = if (compact) 4.dp else 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             QuestionMarkdown(
                 markdown = question.questionMarkdown,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).heightIn(max = questionMax).verticalScroll(rememberScrollState())
                     .clip(ChaekOverlayTokens.cardShape)
                     .background(ChaekSurfaceMuted)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = if (compact) 6.dp else 12.dp),
             )
             Box(
                 modifier = Modifier.size(44.dp)
-                    .semantics { contentDescription = "질문과 장면 닫기" }
+                    .testTag("questionReferenceClose").semantics { contentDescription = "질문과 장면 닫기" }
                     .questionClick(onDismiss),
                 contentAlignment = Alignment.Center,
             ) {
@@ -302,13 +320,13 @@ fun BookQuestionReferenceOverlay(
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(44.dp)
+            modifier = Modifier.fillMaxWidth().onSizeChanged { tabsHeight = with(density) { it.height.toDp() } }
                 .clip(ChaekOverlayTokens.cardShape)
                 .background(ChaekSurfaceMuted),
         ) {
             BookQuestionReferenceTab.entries.forEach { tab ->
                 Box(
-                    modifier = Modifier.weight(1f).height(44.dp).testTag(if (tab == BookQuestionReferenceTab.Synopsis) "questionReferenceTabSynopsis" else "questionReferenceTabExcerpt")
+                    modifier = Modifier.weight(1f).heightIn(min = 44.dp).testTag(if (tab == BookQuestionReferenceTab.Synopsis) "questionReferenceTabSynopsis" else "questionReferenceTabExcerpt")
                         .clip(ChaekOverlayTokens.cardShape)
                         .background(if (selectedTab == tab) ChaekSurface else Color.Transparent)
                         .selectable(
@@ -357,6 +375,7 @@ fun BookQuestionReferenceOverlay(
             }
         }
     }
+        }
 }
 
 @Composable

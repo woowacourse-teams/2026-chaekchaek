@@ -156,7 +156,8 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             analyticsEnvironment: analyticsEnvironment,
             logAnalyticsEvent: FirebaseAnalyticsEventLogger.log,
             uiTestingMyPage: uiTestingMyPage,
-            uiTestingBookQuestionA: uiTestingBookQuestionA
+            uiTestingBookQuestionA: uiTestingBookQuestionA,
+            showQuestionAPreviewControls: !launchArguments.contains("-uiTestingBookQuestionAContentOnly")
         )
     }
 

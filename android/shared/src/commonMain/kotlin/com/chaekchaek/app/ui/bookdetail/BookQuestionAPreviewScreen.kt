@@ -27,7 +27,9 @@ import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 
 /** 개발 도구와 DEBUG iOS 실행 인자에서만 연다. 실제 상세에 예시나 저장 성공을 공급하지 않는다. */
 @Composable
-fun BookQuestionAPreviewScreen(onExit: () -> Unit = {}) {
+fun BookQuestionAPreviewScreen(showControls: Boolean = true, onExit: () -> Unit = {}) {
+    var savedToLibrary by rememberSaveable { mutableStateOf(false) }
+    var reviewScope by rememberSaveable { mutableStateOf(com.chaekchaek.app.data.remote.ReviewScope.ALL) }
     var hasQuestion by rememberSaveable { mutableStateOf(true) }
     var signedIn by rememberSaveable { mutableStateOf(true) }
     var reaction by rememberSaveable { mutableStateOf<String?>(null) }
@@ -55,7 +57,7 @@ fun BookQuestionAPreviewScreen(onExit: () -> Unit = {}) {
             "2026-10-21T00:00:00Z", "프리뷰 독자", true, 0, 0)
     } }
     Column(Modifier.fillMaxSize()) {
-        Surface(color = ChaekSurfaceMuted) {
+        if (showControls) Surface(color = ChaekSurfaceMuted) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
                 Text("질문 A 개발 프리뷰", style = MaterialTheme.typography.labelSmall)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -76,11 +78,15 @@ fun BookQuestionAPreviewScreen(onExit: () -> Unit = {}) {
                 detail = BookDetail(1, "", book.title, listOf(book.creator), emptyList(), book.publisher, "소설", "1943", 200, "", 20, 4.5, 10, null),
                 reviews = reviews,
                 reviewCount = reviews.size,
+                reviewScope = reviewScope,
                 signedIn = signedIn,
                 reviewSubmissionState = submission,
                 requestError = requestError,
             ),
             onBack = onExit,
+            savedToLibrary = savedToLibrary,
+            onAddToLibrary = { savedToLibrary = true },
+            onReviewScopeChange = { reviewScope = it },
             nickname = "프리뷰 독자",
             question = question.takeIf { hasQuestion },
             allowZeroReviewRating = true,
