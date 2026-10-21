@@ -52,7 +52,9 @@ class GuestInteractionAuthorizationIntegrationTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2026, 1, 1),
-                308
+                308,
+                null,
+                null
         ));
 
         // when & then

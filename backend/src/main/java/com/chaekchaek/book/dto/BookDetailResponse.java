@@ -20,6 +20,9 @@ public record BookDetailResponse(
         BigDecimal averageRating,
         Integer ratingCount,
         Integer myRatingCount,
-        BookMyRecordResponse myRecord
+        BookMyRecordResponse myRecord,
+        String purchaseUrl,
+        String source,
+        BookQuestionResponse bookQuestion
 ) {
 }

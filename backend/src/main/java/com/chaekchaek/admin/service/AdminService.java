@@ -56,7 +56,6 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public RecommendedBookListResponse getRecommendedBooks() {
-        requireAdmin();
         List<RecommendedBook> recommendedBooks = recommendedBookRepository.findAllByOrderByCreatedAtDescIdDesc();
         Map<Long, Book> books = booksWithAuthorsById(recommendedBooks.stream()
                 .map(RecommendedBook::getBookId)

@@ -14,6 +14,7 @@ public record Yes24BookItem(
         String cover,
         String sideCover,
         String backCover,
+        String link,
         Integer pages,
         Yes24ContentDetail contentDetail
 ) {

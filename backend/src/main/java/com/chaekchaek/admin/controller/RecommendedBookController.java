@@ -18,27 +18,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/v1/recommended-books")
 @RequiredArgsConstructor
-public class AdminController {
+public class RecommendedBookController {
 
     private final AdminService adminService;
 
-    @GetMapping("/recommended-books")
+    @GetMapping
     public ResponseEntity<RecommendedBookListResponse> getRecommendedBooks() {
         return ResponseEntity.ok(adminService.getRecommendedBooks());
     }
 
-    @PostMapping("/recommended-books")
+    /** 관리자 전용 API */
+    @PostMapping
     public ResponseEntity<RecommendedBookResponse> addRecommendedBook(
             @Valid @RequestBody AddRecommendedBookRequest request
     ) {
         RecommendedBookResponse response = adminService.addRecommendedBookByIsbn13(new Isbn13(request.isbn13()));
-        return ResponseEntity.created(URI.create("/api/v1/admin/recommended-books/" + response.bookId()))
+        return ResponseEntity.created(URI.create("/api/v1/recommended-books/" + response.bookId()))
                 .body(response);
     }
 
-    @DeleteMapping("/recommended-books/{bookId}")
+    /** 관리자 전용 API */
+    @DeleteMapping("/{bookId}")
     public ResponseEntity<Void> deleteRecommendedBook(@PathVariable long bookId) {
         adminService.deleteRecommendedBook(bookId);
         return ResponseEntity.noContent().build();

@@ -396,6 +396,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 				return false
 			}
 			return path.startsWith('/api/v1/home/')
+					|| path == '/api/v1/recommended-books'
 					|| path == '/api/v1/books'
 					|| path == '/api/v1/books/by-isbn/{isbn13}'
 					|| path == '/api/v1/books/{bookId}/reviews'
@@ -645,6 +646,7 @@ tasks.register('verifyOpenApi') {
 				return false
 			}
 			return path.toString().startsWith('/api/v1/home/')
+					|| path.toString() == '/api/v1/recommended-books'
 					|| path.toString() == '/api/v1/books'
 					|| path.toString() == '/api/v1/books/by-isbn/{isbn13}'
 					|| path.toString() == '/api/v1/books/{bookId}/reviews'
@@ -727,9 +729,8 @@ tasks.register('verifyOpenApi') {
 				post: ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '404': ['REVIEW_NOT_FOUND'], '409': ['DELETED_RESOURCE']]
 			],
 			'/api/v1/replies/{replyId}': [
-				patch : ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND'],
-						'409': ['DELETED_RESOURCE']],
-				delete: ['401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND'], '409': ['DELETED_RESOURCE']]
+				patch : ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND']],
+				delete: ['401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND']]
 			],
 			'/api/v1/reviews/{reviewId}/reactions': [
 				post  : ['401': ['UNAUTHORIZED'], '404': ['REVIEW_NOT_FOUND'], '409': ['REACTION_ALREADY_EXISTS', 'DELETED_RESOURCE']],

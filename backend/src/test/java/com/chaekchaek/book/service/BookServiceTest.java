@@ -33,7 +33,9 @@ class BookServiceTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2026, 1, 1),
-                308
+                308,
+                "https://www.yes24.com/product/goods/101375809",
+                "yes24"
         );
         BookDetailResponse detailResponse = new BookDetailResponse(
                 1L,
@@ -52,6 +54,9 @@ class BookServiceTest {
                 null,
                 0,
                 0,
+                null,
+                "https://www.yes24.com/product/goods/101375809",
+                "yes24",
                 null
         );
         Isbn13 isbn13 = new Isbn13("9788925568683");

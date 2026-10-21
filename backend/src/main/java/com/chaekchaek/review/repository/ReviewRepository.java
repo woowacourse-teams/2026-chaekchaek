@@ -3,11 +3,11 @@ package com.chaekchaek.review.repository;
 import com.chaekchaek.review.domain.Review;
 import java.util.Collection;
 import java.util.List;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
@@ -18,6 +18,37 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByBookId(long bookId);
 
     List<Review> findByBookIdAndActorId(long bookId, long actorId);
+
+    long countByBookId(long bookId);
+
+    long countByBookIdAndActorId(long bookId, long actorId);
+
+    @Query(value = """
+            select r.*
+            from review r
+            where r.book_id = :bookId
+            order by (select count(*) from reaction rc where rc.review_id = r.review_id)
+                    + (select count(*) from reply rp where rp.review_id = r.review_id and rp.deleted_at is null) desc,
+                    r.review_id desc
+            limit :limit offset :offset
+            """, nativeQuery = true)
+    List<Review> findPopularByBookId(long bookId, int limit, long offset);
+
+    @Query(value = """
+            select r.*
+            from review r
+            where r.book_id = :bookId and r.actor_id = :actorId
+            order by (select count(*) from reaction rc where rc.review_id = r.review_id)
+                    + (select count(*) from reply rp where rp.review_id = r.review_id and rp.deleted_at is null) desc,
+                    r.review_id desc
+            limit :limit offset :offset
+            """, nativeQuery = true)
+    List<Review> findPopularByBookIdAndActorId(
+            long bookId,
+            long actorId,
+            int limit,
+            long offset
+    );
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Review r set r.actorId = :targetActorId where r.actorId = :sourceActorId")

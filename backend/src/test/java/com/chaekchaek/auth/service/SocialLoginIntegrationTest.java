@@ -131,7 +131,13 @@ public class SocialLoginIntegrationTest {
         assertThat(oldResponse.author().mine()).isFalse();
         assertThat(replyRepository.findById(oldReply.replyId()).orElseThrow().getActorId()).isEqualTo(oldActorId);
         assertThat(reviewRepository.findById(review.getId()).orElseThrow().getActorId()).isEqualTo(oldActorId);
-        assertThat(replyRepository.findById(deletedReply.getId()).orElseThrow().isDeleted()).isTrue();
+        Object[] deletedState = (Object[]) entityManager.createNativeQuery(
+                        "select actor_id, deleted_at from reply where reply_id = :replyId")
+                .setParameter("replyId", deletedReply.getId())
+                .getSingleResult();
+        assertThat(((Number) deletedState[0]).longValue()).isEqualTo(oldActorId);
+        assertThat(deletedState[1]).isNotNull();
+        assertThat(replyRepository.findById(deletedReply.getId())).isEmpty();
         assertThatThrownBy(() -> reviewService.updateReply(
                 oldReply.replyId(),
                 new ReplyUpdateRequest("수정 시도")
