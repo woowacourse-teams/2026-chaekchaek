@@ -60,8 +60,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -72,6 +75,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -198,6 +202,7 @@ fun BookDetailScreen(
     val currentPage = state.detail?.myRecord?.currentPage ?: localCurrentPage
     val snackbarHostState = remember { SnackbarHostState() }
     var composeBarHeight by remember { mutableStateOf(0.dp) }
+    var reviewViewport by remember { mutableStateOf(Rect.Zero) }
     var showLibraryDeleteConfirmation by rememberSaveable(book.id) { mutableStateOf(false) }
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
     var showPageDialog by rememberSaveable { mutableStateOf(false) }
@@ -281,97 +286,106 @@ fun BookDetailScreen(
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize().background(ChaekBackground).navigationBarsPadding()) {
-        // 복원 데이터를 받기 전에 짧은 임시 목록으로 저장된 offset을 덮어쓰지 않는다.
-        if (!state.isRestoring) LazyColumn(
-            modifier = Modifier.fillMaxSize().testTag("book_detail_list"),
-            state = listState,
-            contentPadding = PaddingValues(bottom = 100.dp),
-        ) {
-            item {
-                BookHero(
-                    book = book,
-                    saved = savedToLibrary,
-                    averageRating = state.detail?.averageRating,
-                    saving = state.isSavingLibrary || externalLibrarySaving,
-                    showSaveLoading = state.isSubmitting || (externalLibrarySaving && externalLibraryLoading),
-                    saveEnabled = !state.isLoading && state.detail != null,
-                    onRemoveFromLibrary = { showLibraryDeleteConfirmation = true },
-                    onBack = onBack,
-                    onLibraryClick = {
-                        if (!savedToLibrary) authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onAddToLibrary)
+        // 고정 작성 버튼 뒤로 목록과 접근성 터치 영역이 겹치지 않게 뷰포트를 나눈다.
+        Column(Modifier.fillMaxSize()) {
+            // 복원 데이터를 받기 전에 짧은 임시 목록으로 저장된 offset을 덮어쓰지 않는다.
+            if (!state.isRestoring) LazyColumn(
+                modifier = Modifier.weight(1f).fillMaxWidth().testTag("book_detail_list")
+                    .onGloballyPositioned { coordinates ->
+                        val position = coordinates.positionInWindow()
+                        reviewViewport = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
                     },
-                    coverContent = coverContent,
-                )
-            }
-            questionContent?.let { question ->
-                item(key = "question_${question.id}") {
-                    BookQuestionSection(
-                        content = question,
-                        reaction = questionReaction,
-                        onReferenceOpen = { showQuestionReference = true },
-                        onReviewOpen = { onReviewOpen { showReviewSheet = true } },
-                        onReaction = onQuestionReaction,
+                state = listState,
+                contentPadding = PaddingValues(bottom = 24.dp),
+            ) {
+                item {
+                    BookHero(
+                        book = book,
+                        saved = savedToLibrary,
+                        averageRating = state.detail?.averageRating,
+                        saving = state.isSavingLibrary || externalLibrarySaving,
+                        showSaveLoading = state.isSubmitting || (externalLibrarySaving && externalLibraryLoading),
+                        saveEnabled = !state.isLoading && state.detail != null,
+                        onRemoveFromLibrary = { showLibraryDeleteConfirmation = true },
+                        onBack = onBack,
+                        onLibraryClick = {
+                            if (!savedToLibrary) authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onAddToLibrary)
+                        },
+                        coverContent = coverContent,
                     )
                 }
-            }
-            item { Spacer(Modifier.height(23.dp)) }
-            item {
-                ReviewsSection(
-                    reviews = state.reviews,
-                    reviewCount = state.reviewCount,
-                    hasMoreReviews = state.nextReviewPage != null,
-                    loading = state.isLoading,
-                    loadingMore = state.isLoadingMore,
-                    pageLoadState = state.reviewPageLoadState,
-                    onRetryReviews = onRetryReviews,
-                    revealedSpoilerReviewIds = revealedSpoilerReviewIds.toSet(),
-                    scope = state.reviewScope,
-                    sort = state.reviewSort,
-                    onScopeChange = { requested ->
-                        if (requested == ReviewScope.MINE && !state.signedIn) {
-                            onLoginRequired(BookDetailAuthenticatedAction.OpenMineFeed)
-                        } else {
-                            onReviewScopeChange(requested)
-                        }
-                    },
-                    onSortChange = onReviewSortChange,
-                    onRevealSpoiler = { reviewId ->
-                        revealedSpoilerReviewIds = (revealedSpoilerReviewIds + reviewId).distinct()
-                    },
-                    onLike = { reviewId, likedByMe ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.LikeReview(reviewId, likedByMe)) {
-                            onReviewLike(reviewId, likedByMe)
-                        }
-                    },
-                    onLoadReplies = onLoadReplies,
-                    onReplyOpen = onReplyOpen,
-                    onComposerDismiss = onComposerDismiss,
-                    onReply = { reviewId, content ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.CreateReply(reviewId, content)) {
-                            onReplyCreate(reviewId, content)
-                        }
-                    },
-                    onReplyLike = { replyId, likedByMe ->
-                        authorizeOrRun(BookDetailAuthenticatedAction.LikeReply(replyId, likedByMe)) {
-                            onReplyLike(replyId, likedByMe)
-                        }
-                    },
-                    onManageReview = { reviewActionTargetId = it.reviewId },
-                    onManageReply = { replyActionTargetId = it.replyId },
-                )
-            }
-        }
-
-        ComposeBar(
-            onClick = {
-                authorizeOrRun(BookDetailAuthenticatedAction.OpenReview) {
-                    onReviewOpen { showReviewSheet = true }
+                questionContent?.let { question ->
+                    item(key = "question_${question.id}") {
+                        BookQuestionSection(
+                            content = question,
+                            reaction = questionReaction,
+                            onReferenceOpen = { showQuestionReference = true },
+                            onReviewOpen = { onReviewOpen { showReviewSheet = true } },
+                            onReaction = onQuestionReaction,
+                        )
+                    }
                 }
-            },
-            modifier = Modifier.align(Alignment.BottomCenter)
-                .onSizeChanged { composeBarHeight = with(density) { it.height.toDp() } }
-                .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 16.dp),
-        )
+                item { Spacer(Modifier.height(23.dp)) }
+                item {
+                    ReviewsSection(
+                        viewport = reviewViewport,
+                        reviews = state.reviews,
+                        reviewCount = state.reviewCount,
+                        hasMoreReviews = state.nextReviewPage != null,
+                        loading = state.isLoading,
+                        loadingMore = state.isLoadingMore,
+                        pageLoadState = state.reviewPageLoadState,
+                        onRetryReviews = onRetryReviews,
+                        revealedSpoilerReviewIds = revealedSpoilerReviewIds.toSet(),
+                        scope = state.reviewScope,
+                        sort = state.reviewSort,
+                        onScopeChange = { requested ->
+                            if (requested == ReviewScope.MINE && !state.signedIn) {
+                                onLoginRequired(BookDetailAuthenticatedAction.OpenMineFeed)
+                            } else {
+                                onReviewScopeChange(requested)
+                            }
+                        },
+                        onSortChange = onReviewSortChange,
+                        onRevealSpoiler = { reviewId ->
+                            revealedSpoilerReviewIds = (revealedSpoilerReviewIds + reviewId).distinct()
+                        },
+                        onLike = { reviewId, likedByMe ->
+                            authorizeOrRun(BookDetailAuthenticatedAction.LikeReview(reviewId, likedByMe)) {
+                                onReviewLike(reviewId, likedByMe)
+                            }
+                        },
+                        onLoadReplies = onLoadReplies,
+                        onReplyOpen = onReplyOpen,
+                        onComposerDismiss = onComposerDismiss,
+                        onReply = { reviewId, content ->
+                            authorizeOrRun(BookDetailAuthenticatedAction.CreateReply(reviewId, content)) {
+                                onReplyCreate(reviewId, content)
+                            }
+                        },
+                        onReplyLike = { replyId, likedByMe ->
+                            authorizeOrRun(BookDetailAuthenticatedAction.LikeReply(replyId, likedByMe)) {
+                                onReplyLike(replyId, likedByMe)
+                            }
+                        },
+                        onManageReview = { reviewActionTargetId = it.reviewId },
+                        onManageReply = { replyActionTargetId = it.replyId },
+                    )
+                }
+            } else {
+                Spacer(Modifier.weight(1f))
+            }
+
+            ComposeBar(
+                onClick = {
+                    authorizeOrRun(BookDetailAuthenticatedAction.OpenReview) {
+                        onReviewOpen { showReviewSheet = true }
+                    }
+                },
+                modifier = Modifier.onSizeChanged { composeBarHeight = with(density) { it.height.toDp() } }
+                    .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 16.dp),
+            )
+        }
 
         if (showScrollTop) {
             ScrollTopButton(
@@ -861,8 +875,34 @@ private fun AverageRatingChip(averageRating: Double?) {
     }
 }
 
+/** 스크롤로 잘린 필터를 작은 접근성 버튼으로 노출하지 않는다. 완전히 보이면 다시 탐색할 수 있다. */
+@Composable
+private fun ReviewScopeChip(
+    label: String,
+    selected: Boolean,
+    viewport: Rect,
+    testTag: String,
+    onClick: () -> Unit,
+) {
+    var bounds by remember { mutableStateOf(Rect.Zero) }
+    val fullyVisible = !bounds.isEmpty && !viewport.isEmpty &&
+        bounds.top >= viewport.top - 0.5f && bounds.bottom <= viewport.bottom + 0.5f
+    ChaekFilterChip(
+        label = label,
+        selected = selected,
+        onClick = onClick,
+        modifier = Modifier.testTag(testTag)
+            .onGloballyPositioned { coordinates ->
+                val position = coordinates.positionInWindow()
+                bounds = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
+            }
+            .semantics { if (!fullyVisible) hideFromAccessibility() },
+    )
+}
+
 @Composable
 private fun ReviewsSection(
+    viewport: Rect,
     reviews: List<BookReview>,
     reviewCount: Int,
     hasMoreReviews: Boolean,
@@ -914,8 +954,8 @@ private fun ReviewsSection(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ChaekFilterChip("전체", scope == ReviewScope.ALL, onClick = { onScopeChange(ReviewScope.ALL) })
-            ChaekFilterChip("내 감상", scope == ReviewScope.MINE, onClick = { onScopeChange(ReviewScope.MINE) })
+            ReviewScopeChip("전체", scope == ReviewScope.ALL, viewport, "review_scope_all") { onScopeChange(ReviewScope.ALL) }
+            ReviewScopeChip("내 감상", scope == ReviewScope.MINE, viewport, "review_scope_mine") { onScopeChange(ReviewScope.MINE) }
         }
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 24.dp),

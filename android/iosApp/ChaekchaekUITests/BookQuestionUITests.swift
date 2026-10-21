@@ -17,6 +17,29 @@ final class BookQuestionUITests: XCTestCase {
     }
 
     @MainActor
+    func testReviewFiltersKeepFullTouchAreaAboveComposerAndSwitchScope() throws {
+        let app = launchPreview()
+        let all = element("review_scope_all", in: app)
+        let mine = element("review_scope_mine", in: app)
+        revealInBook(all, app: app)
+        let list = element("book_detail_list", in: app)
+        XCTAssertLessThanOrEqual(list.frame.maxY, bookFooter(in: app).frame.minY)
+        for filter in [all, mine] {
+            XCTAssertTrue(filter.isHittable)
+            XCTAssertGreaterThanOrEqual(filter.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(filter.frame.height, 44)
+            XCTAssertLessThanOrEqual(filter.frame.maxY, list.frame.maxY)
+        }
+        tapAfterScroll(mine)
+        XCTAssertTrue(mine.isSelected)
+        tapAfterScroll(all)
+        XCTAssertTrue(all.isSelected)
+        try audit(app, name: "감상 필터 전체 터치 영역과 선택 왕복")
+        attachScreenshot(named: "감상 필터와 하단 작성 버튼의 분리된 영역")
+        print("QUESTION_A_FLOW_PASS testReviewFiltersKeepFullTouchAreaAboveComposerAndSwitchScope")
+    }
+
+    @MainActor
     func testBookWithoutQuestionKeepsReviewEntry() throws {
         let app = launchPreview(questionVisible: false)
         XCTAssertTrue(element("book_detail_list", in: app).waitForExistence(timeout: 10))

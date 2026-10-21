@@ -35,13 +35,35 @@ class BookQuestionInteractionTest {
             val footerTop = compose.onNodeWithText("이 순간의 감상 남기기", substring = true)
                 .fetchSemanticsNode().boundsInRoot.top
             if (control.fetchSemanticsNode().boundsInRoot.bottom < footerTop) return
-            // LazyColumn의 가시 영역과 고정 하단 버튼이 겹치므로 실제 터치 영역까지 더 올린다.
+            // 스크롤이 안정된 뒤 컨트롤 전체가 보이는지 확인한다.
             compose.onNodeWithTag("book_detail_list").performTouchInput {
                 swipe(start = androidx.compose.ui.geometry.Offset(4f, height * .7f),
                     end = androidx.compose.ui.geometry.Offset(4f, height * .4f), durationMillis = 400)
             }
         }
         control.assertIsDisplayed()
+    }
+
+    @Test
+    fun reviewFiltersKeepFullTouchAreaAboveComposerAndSwitchScope() {
+        launch()
+        val list = compose.onNodeWithTag("book_detail_list")
+        list.performScrollToNode(hasTestTag("review_scope_all"))
+        val all = compose.onNodeWithTag("review_scope_all").performScrollTo()
+        val mine = compose.onNodeWithTag("review_scope_mine")
+        val listBounds = list.fetchSemanticsNode().boundsInRoot
+        val footerTop = compose.onNodeWithText("이 순간의 감상 남기기", substring = true)
+            .fetchSemanticsNode().boundsInRoot.top
+        assertTrue("목록 뷰포트가 고정 작성 버튼과 겹치면 안 된다", listBounds.bottom <= footerTop)
+        for (filter in listOf(all, mine)) {
+            filter.assertIsDisplayed()
+            val bounds = filter.fetchSemanticsNode().boundsInRoot
+            assertTrue(bounds.width >= with(compose.density) { 44.dp.toPx() - 1f })
+            assertTrue(bounds.height >= with(compose.density) { 44.dp.toPx() - 1f })
+            assertTrue(bounds.bottom <= listBounds.bottom)
+        }
+        mine.performTouchInput { click() }.assertIsSelected()
+        all.performTouchInput { click() }.assertIsSelected()
     }
 
     @Test
@@ -118,6 +140,9 @@ class BookQuestionInteractionTest {
         compose.onNodeWithContentDescription("목차 또는 챕터").assertDoesNotExist()
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("시간을 들인 관계를 떠올렸어요.")
         compose.onNode(hasText("감상 남기기") and hasClickAction()).performScrollTo().performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onNodeWithTag("question_preview_confirmation").isDisplayed()
+        }
         compose.onNodeWithTag("question_preview_confirmation").assertIsDisplayed()
         compose.runOnIdle {
             assertEquals(1, submitted.size)

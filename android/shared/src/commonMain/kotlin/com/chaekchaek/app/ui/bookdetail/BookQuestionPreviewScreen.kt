@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 import com.chaekchaek.app.data.remote.BookDetail
+import com.chaekchaek.app.data.remote.ReviewScope
 import com.chaekchaek.app.data.remote.BookReview
 
 /** Debug 실행 옵션에서만 진입한다. 실제 도서 저장소와 연결하지 않는 검증용 시안이다. */
@@ -24,6 +25,8 @@ fun BookQuestionPreviewScreen(
     var reactionName by rememberSaveable { mutableStateOf<String?>(null) }
     val reaction = BookQuestionReaction.entries.firstOrNull { it.name == reactionName }
     var previewSubmitted by rememberSaveable { mutableStateOf(false) }
+    var reviewScopeName by rememberSaveable { mutableStateOf(ReviewScope.ALL.name) }
+    val reviewScope = ReviewScope.valueOf(reviewScopeName)
     val state = remember {
         BookDetailUiState(
             book = BookDetailArgs(id = "question-a-preview", title = "어린 왕자", creator = "앙투안 드 생텍쥐페리", publisher = "열린책들", year = "2015", category = "소설", totalPages = 136),
@@ -31,7 +34,7 @@ fun BookQuestionPreviewScreen(
             reviews = List(8) { index -> BookReview(
                 reviewId = index.toLong() + 1, content = "서로에게 특별해지는 데에는 시간이 필요하다는 말이 오래 남았습니다. 익숙한 문장을 다시 읽으며 내 곁의 사람들을 떠올렸어요. ${index + 1}",
                 quote = "네 장미꽃을 그토록 소중하게 만든 건 그 꽃을 위해 네가 소비한 시간이야.", chapter = null, currentPage = null,
-                createdAt = "2026-10-20T12:00:00", authorName = "독자 ${index + 1}", anonymous = false, replyCount = 0, likeCount = index,
+                createdAt = "2026-10-20T12:00:00", authorName = "독자 ${index + 1}", anonymous = false, replyCount = 0, likeCount = index, writtenByMe = index == 0,
             ) },
             reviewCount = 8,
             signedIn = true,
@@ -40,7 +43,12 @@ fun BookQuestionPreviewScreen(
     Column(modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
         if (previewSubmitted) Text("시안에서 입력을 확인했어요.", Modifier.padding(horizontal = 20.dp).testTag("question_preview_confirmation"))
         BookDetailScreen(
-            state = state,
+            state = state.copy(
+                reviewScope = reviewScope,
+                reviews = if (reviewScope == ReviewScope.MINE) state.reviews.filter { it.writtenByMe } else state.reviews,
+                reviewCount = if (reviewScope == ReviewScope.MINE) 1 else state.reviewCount,
+            ),
+            onReviewScopeChange = { reviewScopeName = it.name },
             onBack = {},
             modifier = Modifier.weight(1f),
             questionContent = if (questionVisible) BookQuestionPreviewContent else null,
