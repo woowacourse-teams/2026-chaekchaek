@@ -58,6 +58,26 @@ export const WithImgBox: Story = {
   },
 };
 
+export const WithEllipsis: Story = {
+  args: {
+    style: { width: '320px' },
+    children: (
+      <List.Item>
+        <List.Item.Leading>
+          <ImgBox img={DummyImg} size="small" />
+        </List.Item.Leading>
+        <List.Item.Content
+          title="This is a long title that should be truncated with an ellipsis"
+          content="This is long content that should be truncated with an ellipsis"
+          description="This is a long description that should be truncated with an ellipsis"
+          ellipsis
+        />
+        <List.Item.Trailing>Trailing</List.Item.Trailing>
+      </List.Item>
+    ),
+  },
+};
+
 export const TwoColumns: Story = {
   args: {
     columns: 2,

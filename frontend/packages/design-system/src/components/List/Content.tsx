@@ -10,9 +10,19 @@ import type { ContentProps } from './';
 const classnameDefault = 'ui-List-Item-Content';
 
 export const Content = <T extends ElementType>(props: ContentProps<T>) => {
-  const { as = 'div', className, title, content, description, ...restProps } = props;
+  const {
+    as = 'div',
+    className,
+    title,
+    content,
+    description,
+    ellipsis = false,
+    ...restProps
+  } = props;
 
-  const modifiers = {};
+  const modifiers = {
+    ellipsis: ellipsis && styles[`is-ellipsis`],
+  };
 
   const classname = createClassName({
     styles,
