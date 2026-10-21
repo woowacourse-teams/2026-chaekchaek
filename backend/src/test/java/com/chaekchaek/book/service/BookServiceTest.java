@@ -56,7 +56,8 @@ class BookServiceTest {
                 0,
                 null,
                 "https://www.yes24.com/product/goods/101375809",
-                "yes24"
+                "yes24",
+                null
         );
         Isbn13 isbn13 = new Isbn13("9788925568683");
         when(bookResolver.lookup(isbn13)).thenReturn(detailBook);

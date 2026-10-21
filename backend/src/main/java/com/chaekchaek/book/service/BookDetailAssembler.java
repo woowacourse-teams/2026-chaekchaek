@@ -1,8 +1,11 @@
 package com.chaekchaek.book.service;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.dto.BookMyRecordResponse;
+import com.chaekchaek.book.dto.BookQuestionResponse;
+import com.chaekchaek.book.repository.BookQuestionRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
@@ -25,6 +28,7 @@ class BookDetailAssembler {
     private final BookActivityCountReader activityCountReader;
     private final CurrentMemberIdProvider currentMemberIdProvider;
     private final LibraryItemRepository libraryItemRepository;
+    private final BookQuestionRepository bookQuestionRepository;
 
     @Value("${app.book-source:yes24}")
     private String defaultBookSource = DEFAULT_BOOK_SOURCE;
@@ -51,7 +55,8 @@ class BookDetailAssembler {
                     null,
                     null,
                     book.getPurchaseUrl(),
-                    bookSource(book)
+                    bookSource(book),
+                    bookQuestion(book.getIsbn13())
             );
         }
         OptionalLong memberId = currentMemberIdProvider.findCurrentMemberId();
@@ -81,12 +86,23 @@ class BookDetailAssembler {
                 myRatingCount(memberId),
                 myRecord(bookId, memberId),
                 book.getPurchaseUrl(),
-                bookSource(book)
+                bookSource(book),
+                bookQuestion(book.getIsbn13())
         );
     }
 
     private String bookSource(Book book) {
         return book.getSource() == null ? defaultBookSource : book.getSource();
+    }
+
+    private BookQuestionResponse bookQuestion(Isbn13 isbn13) {
+        return bookQuestionRepository.findByIsbn13(isbn13)
+                .map(question -> new BookQuestionResponse(
+                        question.getQuestion(),
+                        question.getPlot(),
+                        question.getExtract()
+                ))
+                .orElse(null);
     }
 
     private BigDecimal averageRating(LibraryItemRepository.RatingStatistics ratings) {
