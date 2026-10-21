@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
@@ -32,11 +32,35 @@ export const SearchPanel = () => {
 
   const booksData = (booksDataAll?.pages ?? []).flatMap((page) => page?.items).filter(Boolean);
 
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!scrollAreaRef.current) return;
+    const handleScroll = async () => {
+      if (!scrollAreaRef.current) return;
+      const { scrollTop, clientHeight, scrollHeight } = scrollAreaRef.current;
+
+      const isBottom = scrollTop + clientHeight >= scrollHeight;
+
+      if (isBottom) {
+        if (booksDataAll?.pages?.[booksDataAll?.pages.length - 1]?.nextPage === null) {
+          return;
+        }
+        await fetchNextPage();
+      }
+    };
+    scrollAreaRef.current.addEventListener('scroll', handleScroll);
+
+    return () => {
+      scrollAreaRef.current?.removeEventListener('scroll', handleScroll);
+    };
+  }, [booksDataAll]);
+
   return (
     <>
       <Input sx={{ mt: 2, mb: 4 }} size="small" value={query} onChange={handleChange} />
 
-      <ScrollArea height="320px">
+      <ScrollArea ref={scrollAreaRef} height="320px">
         <List>
           {booksData?.map((item) => {
             return (
