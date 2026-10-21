@@ -108,7 +108,11 @@ class BookDetailViewModel(
         this.accessToken = accessToken
         val pending = _uiState.value.pendingAction.takeIf { accessToken != null }
         val renewingMemberSession = previousAccessToken != null && accessToken != null
-        if (!renewingMemberSession) savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = 1
+        val continuingReviewRating = previousAccessToken == null &&
+            pending == BookDetailAuthenticatedAction.OpenReviewRating
+        if (!renewingMemberSession && !continuingReviewRating) {
+            savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = 1
+        }
         val reviewScope = _uiState.value.reviewScope.takeIf {
             it != ReviewScope.MINE || accessToken != null
         } ?: ReviewScope.ALL.also { savedStateHandle[BookDetailSavedStateKeys.ReviewScope] = it.name }
@@ -477,7 +481,7 @@ class BookDetailViewModel(
             onFailure = {
                 _uiState.value = _uiState.value.copy(reviewSubmissionState = ReviewSubmissionState.Failed)
             },
-            reloadAfterSuccess = false,
+            reloadAfterSuccess = preserveReadingMetadata,
             closesComposer = true,
             preservesComposerOnFailure = true,
         ) {

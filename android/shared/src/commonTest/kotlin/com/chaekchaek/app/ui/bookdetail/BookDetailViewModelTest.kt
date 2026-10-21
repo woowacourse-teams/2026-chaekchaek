@@ -52,6 +52,76 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
   @Test
+  fun `감상 별점 로그인은 수정 대상이 포함된 읽은 페이지를 다시 조회한다`() = runViewModelTest {
+    val requestedPages = mutableListOf<Int>()
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+      } else {
+        val page = request.url.parameters["page"]!!.toInt()
+        requestedPages += page
+        val review = REVIEW_RESPONSE.replace("\"reviewId\":7", "\"reviewId\":$page")
+        respond("""{"totalCount":2,"nextPage":${if (page == 1) "2" else "null"},"items":[$review]}""", headers = jsonHeaders())
+      }
+    })
+    val savedState = SavedStateHandle(mapOf(BookDetailSavedStateKeys.LoadedPage to 2))
+    val vm = viewModel(client, client, platform({ guest("guest") }), savedStateHandle = savedState)
+    val store = ViewModelStore().also { it.put("review", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), null)
+      awaitReal { vm.uiState.first { it.reviews.size == 2 } }
+      vm.requestAuthentication(BookDetailAuthenticatedAction.OpenReviewRating)
+
+      assertEquals(BookDetailAuthenticatedAction.OpenReviewRating, vm.authenticate("member"))
+      assertEquals(2, savedState.get<Int>(BookDetailSavedStateKeys.LoadedPage))
+      awaitReal { while (requestedPages.size < 4) kotlinx.coroutines.yield() }
+      awaitReal { vm.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.Idle } }
+      assertEquals(listOf(1, 2, 1, 2), requestedPages)
+      assertEquals(listOf(1L, 2L), vm.uiState.value.reviews.map { it.reviewId })
+    } finally {
+      store.clear()
+      advanceUntilIdle()
+      client.close()
+    }
+  }
+
+  @Test
+  fun `감상 수정에서 첫 개인 별점을 저장하면 상세 평균과 평가 수를 갱신한다`() = runViewModelTest {
+    var ratingSaved = false
+    val client = testClient(MockEngine { request ->
+      when (request.method) {
+        HttpMethod.Put -> {
+          ratingSaved = true
+          respond(RATED_LIBRARY_RECORD.replace("73", "42"), headers = jsonHeaders())
+        }
+        HttpMethod.Patch -> respond(REVIEW_RESPONSE, headers = jsonHeaders())
+        else -> respond(
+          if (request.url.encodedPath.contains("/by-isbn/")) {
+            if (ratingSaved) DETAIL_AFTER_EXISTING_RATING
+            else DETAIL_WITH_RECORD_AND_AVERAGE.replace("\"myRating\":4.0", "\"myRating\":null")
+          } else """{"totalCount":1,"nextPage":null,"items":[$REVIEW_RESPONSE]}""",
+          headers = jsonHeaders(),
+        )
+      }
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val store = ViewModelStore().also { it.put("review", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), "member")
+      awaitReal { vm.uiState.first { it.detail?.averageRating == 3.8 } }
+      vm.updateReviewWithRating(7, ReviewCreateRequest("수정 감상"), 5.0)
+      awaitReal { vm.uiState.first { it.detail?.averageRating == 4.2 } }
+      assertEquals(11, vm.uiState.value.detail?.ratingCount)
+      assertEquals(5.0, vm.uiState.value.detail?.myRecord?.rating)
+      assertEquals(ReviewSubmissionState.Succeeded, vm.uiState.value.reviewSubmissionState)
+    } finally {
+      store.clear()
+      advanceUntilIdle()
+      client.close()
+    }
+  }
+
+  @Test
   fun `감상 제출은 서재 자동 추가와 개인 별점 저장 뒤에 감상을 작성한다`() = runViewModelTest {
     val writes = mutableListOf<String>()
     var autoAdds = 0
