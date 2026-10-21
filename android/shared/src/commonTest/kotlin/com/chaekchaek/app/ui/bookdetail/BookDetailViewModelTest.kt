@@ -425,7 +425,7 @@ class BookDetailViewModelTest {
     awaitReal { viewModel.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.Failed } }
     assertFalse(viewModel.uiState.value.isLoadingMore)
     assertNull(viewModel.uiState.value.requestError)
-    assertTrue(visibleReviews(viewModel.uiState.value.reviews).isEmpty())
+    assertEquals(listOf(7L), visibleReviews(viewModel.uiState.value.reviews).map { it.reviewId })
     repeat(3) { viewModel.loadMoreReviews() }
     runCurrent()
     assertEquals(1, pageRequests)
@@ -440,7 +440,7 @@ class BookDetailViewModelTest {
     completeRetry.complete(Unit)
     awaitReal { viewModel.uiState.first { it.nextReviewPage == null } }
     assertEquals(ReviewPageLoadState.Idle, viewModel.uiState.value.reviewPageLoadState)
-    assertEquals(listOf(8L), visibleReviews(viewModel.uiState.value.reviews).map { it.reviewId })
+    assertEquals(listOf(7L, 8L), visibleReviews(viewModel.uiState.value.reviews).map { it.reviewId })
     assertEquals(2, viewModel.uiState.value.reviews.size)
   }
 
@@ -582,18 +582,18 @@ class BookDetailViewModelTest {
 
     viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = null)
     awaitReal { viewModel.uiState.first { it.nextReviewPage == 2 } }
-    assertTrue(visibleReviews(viewModel.uiState.value.reviews).isEmpty())
+    assertEquals(listOf(7L), visibleReviews(viewModel.uiState.value.reviews).map { it.reviewId })
 
     viewModel.loadMoreReviews()
     awaitReal { viewModel.uiState.first { it.reviews.size == 2 } }
 
-    assertEquals(listOf(8L), visibleReviews(viewModel.uiState.value.reviews).map { it.reviewId })
+    assertEquals(listOf(7L, 8L), visibleReviews(viewModel.uiState.value.reviews).map { it.reviewId })
     assertEquals(2, viewModel.uiState.value.reviewCount)
     assertNull(viewModel.uiState.value.nextReviewPage)
   }
 
   @Test
-  fun `삭제된 감상을 서버가 다시 반환해도 재조회 후 표시하지 않는다`() = runViewModelTest {
+  fun `답글이 남은 삭제 감상은 재조회 후 본문을 가리고 개수를 유지한다`() = runViewModelTest {
     var deleted = false
     val engine = MockEngine { request ->
       if (request.method == HttpMethod.Delete) {
@@ -601,7 +601,7 @@ class BookDetailViewModelTest {
         respond("", HttpStatusCode.NoContent)
       } else {
         val response = if (request.url.encodedPath.contains("/by-isbn/")) DETAIL_WITHOUT_RECORD else {
-          val review = REVIEW_RESPONSE.replace("\"deleted\":false", "\"deleted\":$deleted")
+          val review = REVIEW_RESPONSE.replace("\"deleted\":false", "\"deleted\":$deleted").replace("\"replyCount\":0", "\"replyCount\":1")
           """{"totalCount":1,"nextPage":null,"items":[$review]}"""
         }
         respond(response, headers = jsonHeaders())
@@ -615,12 +615,15 @@ class BookDetailViewModelTest {
     assertEquals(1, visibleReviews(viewModel.uiState.value.reviews).size)
 
     viewModel.deleteReview(7)
-    awaitReal { viewModel.uiState.first { it.reviews.isEmpty() } }
+    awaitReal { viewModel.uiState.first { it.reviews.singleOrNull()?.deleted == true && !it.isSubmitting } }
     viewModel.retry()
-    awaitReal { viewModel.uiState.first { it.reviews.any { review -> review.deleted } } }
+    awaitReal { viewModel.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.Idle } }
 
-    assertTrue(visibleReviews(viewModel.uiState.value.reviews).isEmpty())
-    assertTrue(viewModel.uiState.value.reviews.single().deleted)
+    val display = reviewDisplay(viewModel.uiState.value.reviews, viewModel.uiState.value.reviewCount, false)
+    assertEquals("삭제된 감상입니다.", display.reviews.single().content)
+    assertEquals(1, display.count)
+    assertEquals(1, display.reviews.single().replyCount)
+    assertFalse(display.showEmpty)
   }
 
   @Test
@@ -1248,7 +1251,7 @@ class BookDetailViewModelTest {
   }
 
   @Test
-  fun `감상 삭제 성공은 재조회 없이 목록에서 제거한다`() = runViewModelTest {
+  fun `답글 없는 감상 삭제 성공은 서버 재조회 후 목록과 개수를 갱신한다`() = runViewModelTest {
     var reviewGetCount = 0
     val engine = MockEngine { request ->
       when {
@@ -1260,7 +1263,7 @@ class BookDetailViewModelTest {
         else -> {
           reviewGetCount += 1
           respond(
-            """{"totalCount":1,"nextPage":null,"items":[$REVIEW_RESPONSE]}""",
+            if (reviewGetCount == 1) """{"totalCount":1,"nextPage":null,"items":[$REVIEW_RESPONSE]}""" else EMPTY_REVIEWS,
             headers = jsonHeaders(),
           )
         }
@@ -1274,7 +1277,65 @@ class BookDetailViewModelTest {
     viewModel.deleteReview(reviewId = 7)
     awaitReal { viewModel.uiState.first { it.reviews.isEmpty() && it.reviewCount == 0 } }
 
-    assertEquals(1, reviewGetCount)
+    assertEquals(2, reviewGetCount)
+  }
+
+  @Test
+  fun `삭제 감상의 마지막 답글 삭제는 서버 목록과 개수를 다시 조회한다`() = runViewModelTest {
+    var replyDeleted = false
+    var reviewGets = 0
+    val reply = """{"replyId":8,"content":"남은 답글","author":{"displayName":"게스트","anonymous":false,"mine":true,"actorType":"GUEST"},"likeCount":0}"""
+    val review = REVIEW_RESPONSE.replace("\"deleted\":false", "\"deleted\":true")
+      .replace("\"replyCount\":0", "\"replyCount\":1")
+      .replace("\"recentReplies\":[]", "\"recentReplies\":[$reply]")
+    val client = testClient(MockEngine { request ->
+      when {
+        request.method == HttpMethod.Delete -> {
+          assertEquals("/api/v1/replies/8", request.url.encodedPath)
+          replyDeleted = true
+          respond("", HttpStatusCode.NoContent)
+        }
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        else -> {
+          reviewGets += 1
+          respond(if (replyDeleted) EMPTY_REVIEWS else """{"totalCount":1,"items":[$review]}""", headers = jsonHeaders())
+        }
+      }
+    })
+    val viewModel = viewModel(client, client, platform(readGuest = { guest("test") }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = null)
+    awaitReal { viewModel.uiState.first { it.reviews.singleOrNull()?.replyCount == 1 } }
+
+    viewModel.deleteReply(8)
+    awaitReal { viewModel.uiState.first { it.reviews.isEmpty() && it.reviewCount == 0 } }
+
+    assertEquals(2, reviewGets)
+  }
+
+  @Test
+  fun `감상 삭제 후 재조회 실패에도 삭제 본문은 다시 노출하지 않는다`() = runViewModelTest {
+    var deleted = false
+    val client = testClient(MockEngine { request ->
+      when {
+        request.method == HttpMethod.Delete -> {
+          deleted = true
+          respond("", HttpStatusCode.NoContent)
+        }
+        deleted -> error("삭제 후 재조회 실패")
+        request.url.encodedPath.contains("/by-isbn/") -> respond(DETAIL_WITHOUT_RECORD, headers = jsonHeaders())
+        else -> respond("""{"totalCount":1,"items":[$REVIEW_RESPONSE]}""", headers = jsonHeaders())
+      }
+    })
+    val viewModel = viewModel(client, client, platform(readGuest = { guest("test") }))
+    viewModel.open(book().copy(isbn13 = "9780000000042"), accessToken = null)
+    awaitReal { viewModel.uiState.first { it.reviews.isNotEmpty() } }
+
+    viewModel.deleteReview(7)
+    awaitReal { viewModel.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.RefreshFailed } }
+
+    assertEquals("삭제된 감상입니다.", viewModel.uiState.value.reviews.single().content)
+    assertTrue(viewModel.uiState.value.reviews.single().deleted)
+    assertEquals(1, viewModel.uiState.value.reviewCount)
   }
 
   @Test

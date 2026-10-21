@@ -44,7 +44,9 @@ class ReplyResponseCompatibilityTest {
         compose.onNodeWithText("Reply compatibility").performClick()
         waitForText("Compatibility review")
         compose.onNodeWithText("Compatibility review").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Hidden deleted review").assertDoesNotExist()
+        compose.onNodeWithText("삭제된 감상입니다.").assertExists()
+        compose.onNodeWithText("Retained reply").assertExists()
+        compose.onNodeWithContentDescription("감상 목록 개수 2").assertExists()
         compose.onNodeWithText("Existing reply").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("답글 2개 모두 보기").performScrollTo().performClick()
         waitForText("Second page reply")
@@ -76,15 +78,30 @@ class ReplyResponseCompatibilityTest {
         waitForText("Compatibility review")
         compose.onNodeWithText("Existing reply").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Updated reply").assertDoesNotExist()
-        compose.onNodeWithText("Hidden deleted review").assertDoesNotExist()
+        compose.onNodeWithText("삭제된 감상입니다.").assertExists()
+        compose.onNodeWithText("Retained reply").assertExists()
+        compose.onNodeWithContentDescription("감상 목록 개수 2").assertExists()
         capture("reply-reentry")
+        compose.onNodeWithContentDescription("내 감상 수정 또는 삭제").performScrollTo().performClick()
+        compose.onNodeWithText("삭제").performClick()
+        compose.onNodeWithText("감상을 삭제할까요?").assertExists()
+        compose.onNodeWithText("삭제").performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Compatibility review").fetchSemanticsNodes().isEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("삭제된 감상입니다.").fetchSemanticsNodes().size == 2 }
+        compose.onNodeWithText("Existing reply").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("감상 목록 개수 2").assertExists()
+        compose.onNodeWithContentDescription("감상에 답글 작성", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithContentDescription("내 감상 수정 또는 삭제").assertDoesNotExist()
+        compose.onAllNodesWithContentDescription("감상 좋아요").assertAll(isNotEnabled())
+        capture("deleted-review-retained")
         val state = JSONObject(URI("http://10.0.2.2:19063/__reply-compat/state").toURL().readText())
         val requests = state.getJSONArray("requests")
         val calls = (0 until requests.length()).map { requests.getJSONObject(it) }
         assertEquals(1, calls.count { it.getString("method") == "PATCH" })
-        assertEquals(1, calls.count { it.getString("method") == "DELETE" })
+        assertEquals(2, calls.count { it.getString("method") == "DELETE" })
         assertTrue(calls.any { it.getString("path").contains("page=2") })
         assertEquals(2, state.getJSONArray("replies").length())
+        assertTrue(state.getBoolean("review_deleted"))
     }
 
     private fun waitForText(text: String) = compose.waitUntil(15_000) {

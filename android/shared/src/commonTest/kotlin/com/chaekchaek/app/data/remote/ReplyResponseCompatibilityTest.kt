@@ -72,7 +72,7 @@ class ReplyResponseCompatibilityTest {
     }
 
     @Test
-    fun reviewDeletionRemainsRequiredAndDeletedReviewsStayHidden() = runTest {
+    fun reviewDeletionRemainsRequiredAndDeletedReviewKeepsRepliesAndCount() = runTest {
         assertFailsWith<SerializationException> {
             Json.decodeFromString<ReviewDto>(review(null).replace(",\"deleted\":false", ""))
         }
@@ -80,8 +80,9 @@ class ReplyResponseCompatibilityTest {
         try {
             val result = BookDetailRemoteRepository(client).reviews(42, ReviewScope.ALL, ReviewSort.LATEST)
             val display = reviewDisplay(result.items, result.totalCount, hasMore = false)
-            assertTrue(display.reviews.isEmpty())
-            assertEquals(0, display.count)
+            assertEquals("삭제된 감상입니다.", display.reviews.single().content)
+            assertEquals(1, display.reviews.single().recentReplies.size)
+            assertEquals(1, display.count)
         } finally { client.close() }
     }
 

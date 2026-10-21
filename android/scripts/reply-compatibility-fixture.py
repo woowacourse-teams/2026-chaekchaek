@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """#563 모바일 UI 검증용 합성 API. python3 scripts/reply-compatibility-fixture.py
 
-답글 deleted 생략, 삭제 감상 유지, 미삭제 답글만 집계한다.
+답글 deleted 생략, 답글이 남은 삭제 감상 유지, 서버 목록과 개수 집계를 모사한다.
 운영 데이터나 자격 증명을 사용하지 않는다. 전용 포트 19063에서만 실행한다.
 """
 import json
@@ -19,13 +19,17 @@ BOOK = dict(bookId=42, isbn13='9780000000042', title='Reply compatibility', auth
 def reset():
     STATE.update(replies=[dict(replyId=8, content='Existing reply', author=AUTHOR, likeCount=0),
                           dict(replyId=9, content='Second page reply', author=AUTHOR, likeCount=0)],
-                 next_id=10, requests=[])
+                 next_id=10, requests=[], review_deleted=False)
 
 
-def review(deleted=False):
-    return dict(reviewId=99 if deleted else 7, content='Hidden deleted review' if deleted else 'Compatibility review',
-                createdAt='2026-10-21T00:00:00Z', author=AUTHOR, replyCount=len(STATE['replies']),
-                likeCount=0, recentReplies=[] if deleted else STATE['replies'][:1], deleted=deleted)
+def review(retained=False):
+    deleted = retained or STATE['review_deleted']
+    replies = [dict(replyId=98, content='Retained reply', author=AUTHOR, likeCount=0)] if retained else STATE['replies']
+    return dict(reviewId=99 if retained else 7,
+                content='삭제된 감상입니다.' if deleted else 'Compatibility review',
+                quote=None, chapter=None, createdAt='2026-10-21T00:00:00Z',
+                author=AUTHOR if retained else dict(AUTHOR, mine=True), replyCount=len(replies),
+                likeCount=0, recentReplies=replies[:1], deleted=deleted)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -66,7 +70,13 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/v1/books/by-isbn/9780000000042':
                 return self.send_json(BOOK)
             if path == '/api/v1/books/42/reviews':
-                return self.send_json(dict(totalCount=2, items=[review(True), review()]))
+                items = [review(True)]
+                if not STATE['review_deleted'] or STATE['replies']:
+                    items.append(review())
+                return self.send_json(dict(totalCount=len(items), items=items))
+            if path == '/api/v1/reviews/7' and method == 'DELETE':
+                STATE['review_deleted'] = True
+                return self.send_json(None, 204)
             if path == '/api/v1/reviews/7/replies':
                 if method == 'POST':
                     reply = dict(replyId=STATE['next_id'], content=body['content'],

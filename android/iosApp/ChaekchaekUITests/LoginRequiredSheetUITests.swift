@@ -37,7 +37,9 @@ final class LoginRequiredSheetUITests: XCTestCase {
             }
         }
         reveal(review)
-        XCTAssertFalse(app.staticTexts["Hidden deleted review"].exists)
+        XCTAssertTrue(app.staticTexts["삭제된 감상입니다."].exists)
+        XCTAssertTrue(app.staticTexts["Retained reply"].exists)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "감상 목록 개수 2")).firstMatch.exists)
         let existing = app.staticTexts["Existing reply"]
         reveal(existing)
         XCTAssertTrue(existing.exists)
@@ -80,8 +82,16 @@ final class LoginRequiredSheetUITests: XCTestCase {
         try await press(manage)
         try await press(app.buttons["수정"])
         XCTAssertTrue(input.waitForExistence(timeout: 5))
-        input.tap()
-        input.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "Created reply".count))
+        // 확대 글자에서는 가운데 탭 후 고정 횟수 삭제가 원문 한 글자를 남길 수 있다.
+        // 입력 끝에 커서를 놓고 실제 값이 비었는지 확인한 뒤 새 내용을 입력한다.
+        input.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        for _ in 0..<3 {
+            let current = input.value as? String ?? ""
+            if current.isEmpty { break }
+            input.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 1))
+            try await Task.sleep(for: .milliseconds(300))
+        }
+        XCTAssertEqual(input.value as? String ?? "", "", "수정 입력의 기존 내용을 모두 지운다")
         input.typeText("Updated reply")
         let save = app.buttons["수정 저장"]
         revealReviewControl(save, in: app, scrollingUp: true)
@@ -125,8 +135,26 @@ final class LoginRequiredSheetUITests: XCTestCase {
         reveal(existing)
         XCTAssertTrue(existing.exists)
         XCTAssertFalse(updated.exists)
-        XCTAssertFalse(app.staticTexts["Hidden deleted review"].exists)
+        XCTAssertTrue(app.staticTexts["삭제된 감상입니다."].exists)
+        XCTAssertTrue(app.staticTexts["Retained reply"].exists)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "감상 목록 개수 2")).firstMatch.exists)
         attachScreenshot(named: "563 reply reentry")
+        let reviewManage = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "내 감상 수정 또는 삭제")).firstMatch
+        reveal(reviewManage)
+        try await press(reviewManage)
+        try await press(app.buttons["삭제"])
+        XCTAssertTrue(app.staticTexts["감상을 삭제할까요?"].waitForExistence(timeout: 5))
+        try await press(app.buttons["삭제"])
+        let reviewRemoved = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: review)
+        await fulfillment(of: [reviewRemoved], timeout: 10)
+        XCTAssertEqual(app.staticTexts.matching(identifier: "삭제된 감상입니다.").count, 2)
+        reveal(existing)
+        XCTAssertTrue(existing.exists)
+        XCTAssertFalse(reviewManage.exists)
+        XCTAssertFalse(open.exists)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "감상 목록 개수 2")).firstMatch.exists)
+        attachScreenshot(named: "563 deleted review retained")
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped])
         let (data, _) = try await URLSession.shared.data(from: base.appendingPathComponent("__reply-compat/state"))
         let state = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let requests = try XCTUnwrap(state["requests"] as? [[String: Any]])
@@ -134,13 +162,14 @@ final class LoginRequiredSheetUITests: XCTestCase {
             $0["method"] as? String == "POST" && $0["path"] as? String == "/api/v1/reviews/7/replies"
         }.count, 1)
         XCTAssertEqual(requests.filter { $0["method"] as? String == "PATCH" }.count, 1)
-        XCTAssertEqual(requests.filter { $0["method"] as? String == "DELETE" }.count, 1)
+        XCTAssertEqual(requests.filter { $0["method"] as? String == "DELETE" }.count, 2)
         let deletionIndex = try XCTUnwrap(requests.firstIndex { $0["method"] as? String == "DELETE" })
         XCTAssertTrue(requests.dropFirst(deletionIndex + 1).contains {
             $0["path"] as? String == "/api/v1/books/by-isbn/9780000000042"
         })
         XCTAssertTrue(requests.contains { ($0["path"] as? String)?.contains("page=2") == true })
         XCTAssertEqual((state["replies"] as? [[String: Any]])?.count, 2)
+        XCTAssertEqual(state["review_deleted"] as? Bool, true)
     }
 
 
