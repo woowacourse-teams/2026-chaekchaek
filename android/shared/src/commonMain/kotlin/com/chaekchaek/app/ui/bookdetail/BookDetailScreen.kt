@@ -66,6 +66,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -966,7 +967,7 @@ private fun ReviewsSection(
             Text("감상", fontSize = 21.sp, lineHeight = 27.sp, fontWeight = FontWeight.Bold)
             Text(
                 display.count.toString(),
-                modifier = Modifier.padding(start = 5.dp),
+                modifier = Modifier.padding(start = 5.dp).semantics { contentDescription = "감상 목록 개수 ${display.count}" },
                 color = ChaekInkSecondary,
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
@@ -1083,7 +1084,7 @@ private fun ReviewCard(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth().then(
-            if (locked) {
+            if (locked && !review.deleted) {
                 Modifier.clickable(role = Role.Button, onClick = onOpenLockedReview)
                     .clearAndSetSemantics {
                         contentDescription = "스포일러 감상 가림. 탭해서 보기"
@@ -1132,7 +1133,7 @@ private fun ReviewCard(
                     }
                 }
             }
-            if (locked) {
+            if (locked && !review.deleted) {
                 Surface(
                     onClick = onOpenLockedReview,
                     modifier = Modifier.fillMaxWidth().height(84.dp),
@@ -1173,11 +1174,13 @@ private fun ReviewCard(
                     icon = if (review.likedByMe) Res.drawable.ic_heart_filled else Res.drawable.ic_heart_outline,
                     label = "좋아요 ${review.likeCount}",
                     description = if (review.likedByMe) "감상 좋아요 취소" else "감상 좋아요",
+                    enabled = canToggleReviewLike(review.deleted, review.likedByMe),
                 ) { onLike(review.reviewId, review.likedByMe) }
                 Row(
                     modifier = Modifier
                         .heightIn(min = 44.dp)
                         .clickable(
+                            enabled = canReplyToReview(review.deleted),
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             role = Role.Button,
@@ -1185,7 +1188,7 @@ private fun ReviewCard(
                         ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(painterResource(Res.drawable.ic_comment), contentDescription = "감상에 답글 작성", modifier = Modifier.size(17.dp))
+                    Icon(painterResource(Res.drawable.ic_comment), contentDescription = if (review.deleted) "삭제된 감상 답글 작성 불가" else "감상에 답글 작성", modifier = Modifier.size(17.dp))
                     Text("답글 ${review.replyCount}", modifier = Modifier.padding(start = 4.dp), fontSize = 12.sp)
                 }
                 Spacer(Modifier.weight(1f))
@@ -1220,6 +1223,15 @@ private fun Replies(
 
     Column(
         modifier = Modifier.fillMaxWidth().background(ChaekSurfaceMuted)
+            .then(
+                if (locked) Modifier.clickable(role = Role.Button, onClick = onOpenLockedReview)
+                    .clearAndSetSemantics {
+                        contentDescription = "스포일러 답글 가림. 탭해서 보기"
+                        role = Role.Button
+                        onClick { onOpenLockedReview(); true }
+                    }
+                else Modifier,
+            )
             .padding(start = 48.dp, top = 12.dp, end = 16.dp, bottom = 14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -1281,12 +1293,13 @@ private fun AuthorAvatar(name: String, size: Int) {
 }
 
 @Composable
-private fun ReviewAction(icon: DrawableResource, label: String, description: String, onClick: () -> Unit) {
+private fun ReviewAction(icon: DrawableResource, label: String, description: String, enabled: Boolean = true, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
             .heightIn(min = 44.dp)
             .clickable(
+                enabled = enabled,
                 interactionSource = interactionSource,
                 indication = null,
                 role = Role.Button,
@@ -1295,7 +1308,7 @@ private fun ReviewAction(icon: DrawableResource, label: String, description: Str
             .clearAndSetSemantics {
                 contentDescription = description
                 role = Role.Button
-                onClick {
+                if (!enabled) disabled() else onClick {
                     onClick()
                     true
                 }

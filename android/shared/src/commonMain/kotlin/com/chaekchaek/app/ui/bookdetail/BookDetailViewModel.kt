@@ -439,11 +439,12 @@ class BookDetailViewModel(
         actionName = "review_delete",
         onSuccess = {
             _uiState.value = _uiState.value.copy(
-                reviews = _uiState.value.reviews.filterNot { it.reviewId == reviewId },
-                reviewCount = (_uiState.value.reviewCount - 1).coerceAtLeast(0),
+                // 재조회가 실패해도 삭제한 본문이 다시 보이지 않도록 먼저 가린다.
+                reviews = _uiState.value.reviews.map {
+                    if (it.reviewId == reviewId) it.copy(deleted = true).withDeletedContentHidden() else it
+                },
             )
         },
-        reloadAfterSuccess = false,
     ) {
         publicWrite(retryUnauthorized = false) { repository.deleteReview(reviewId, it) }
     }
@@ -494,7 +495,6 @@ class BookDetailViewModel(
                 },
             )
         },
-        reloadAfterSuccess = false,
     ) {
         publicWrite(retryUnauthorized = false) { repository.deleteReply(replyId, it) }
     }

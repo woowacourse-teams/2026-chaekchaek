@@ -1,6 +1,178 @@
 import XCTest
 
 final class LoginRequiredSheetUITests: XCTestCase {
+    // scripts/reply-compatibility-fixture.py와 local API 환경에서 실행한다.
+    @MainActor
+    func testReplyResponseWithoutDeletedRoundTripAndReentry() async throws {
+        let base = URL(string: "http://127.0.0.1:19063")!
+        var probe = URLRequest(url: base.appendingPathComponent("__reply-compat"))
+        probe.timeoutInterval = 2
+        guard let (marker, _) = try? await URLSession.shared.data(for: probe),
+              String(data: marker, encoding: .utf8)?.contains("reply-compat") == true else {
+            throw XCTSkip("reply-compat fixture를 실행한 local 빌드에서 검증한다")
+        }
+        var reset = URLRequest(url: base.appendingPathComponent("__reply-compat/reset"))
+        reset.httpMethod = "POST"
+        _ = try await URLSession.shared.data(for: reset)
+        let app = XCUIApplication()
+        app.launchArguments.append("-uiTestingGuest")
+        app.launch()
+        func press(_ element: XCUIElement) async throws {
+            try await Task.sleep(for: .milliseconds(700))
+            element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.15)
+        }
+        let book = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Reply compatibility")).firstMatch
+        XCTAssertTrue(book.waitForExistence(timeout: 20))
+        try await press(book)
+        let review = app.staticTexts["Compatibility review"]
+        XCTAssertTrue(review.waitForExistence(timeout: 15))
+        func reveal(_ element: XCUIElement) {
+            for _ in 0..<6 {
+                if element.exists {
+                    let frame = element.frame
+                    if element.isHittable && frame.minY > app.frame.minY + 100 && frame.maxY < app.frame.maxY - 100 { return }
+                    if frame.minY < app.frame.minY + 100 { app.swipeDown() }
+                    else { app.swipeUp() }
+                } else { app.swipeUp() }
+            }
+        }
+        reveal(review)
+        XCTAssertTrue(app.staticTexts["삭제된 감상입니다."].exists)
+        XCTAssertTrue(app.staticTexts["Retained reply"].exists)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "감상 목록 개수 2")).firstMatch.exists)
+        let existing = app.staticTexts["Existing reply"]
+        reveal(existing)
+        XCTAssertTrue(existing.exists)
+        let all = app.buttons["답글 2개 모두 보기"]
+        reveal(all)
+        try await press(all)
+        let second = app.staticTexts["Second page reply"]
+        guard second.waitForExistence(timeout: 10) else {
+            attachScreenshot(named: "563 reply pagination failed")
+            XCTFail("답글 전체 보기 후 다음 페이지가 표시되지 않았다: \(app.debugDescription)")
+            return
+        }
+        reveal(second)
+        attachScreenshot(named: "563 reply pages")
+        let open = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "감상에 답글 작성")).firstMatch
+        if !open.isHittable { app.swipeDown() }
+        reveal(open)
+        try await press(open)
+        let input = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "답글")).firstMatch
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.tap()
+        input.typeText("Created reply")
+        let submit = app.buttons["등록"]
+        revealReviewControl(submit, in: app, scrollingUp: true)
+        let created = app.staticTexts["Created reply"]
+        for _ in 0..<3 {
+            try await Task.sleep(for: .milliseconds(700))
+            if created.exists { break }
+            if submit.exists && submit.isEnabled { try await press(submit) }
+            if created.waitForExistence(timeout: 3) { break }
+        }
+        guard created.waitForExistence(timeout: 10) else {
+            attachScreenshot(named: "563 reply create failed")
+            XCTFail("답글 등록 후 결과가 표시되지 않았다: \(app.debugDescription)")
+            return
+        }
+        reveal(created)
+        let manage = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "내 답글 수정 또는 삭제")).firstMatch
+        reveal(manage)
+        try await press(manage)
+        try await press(app.buttons["수정"])
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        // 확대 글자에서는 가운데 탭 후 고정 횟수 삭제가 원문 한 글자를 남길 수 있다.
+        // 입력 끝에 커서를 놓고 실제 값이 비었는지 확인한 뒤 새 내용을 입력한다.
+        input.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        for _ in 0..<3 {
+            let current = input.value as? String ?? ""
+            if current.isEmpty { break }
+            input.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 1))
+            try await Task.sleep(for: .milliseconds(300))
+        }
+        XCTAssertEqual(input.value as? String ?? "", "", "수정 입력의 기존 내용을 모두 지운다")
+        input.typeText("Updated reply")
+        let save = app.buttons["수정 저장"]
+        revealReviewControl(save, in: app, scrollingUp: true)
+        let updated = app.staticTexts["Updated reply"]
+        for _ in 0..<3 {
+            try await Task.sleep(for: .milliseconds(700))
+            if updated.exists { break }
+            if save.exists && save.isEnabled { try await press(save) }
+            if updated.waitForExistence(timeout: 3) { break }
+        }
+        guard updated.waitForExistence(timeout: 10) else {
+            attachScreenshot(named: "563 reply update failed")
+            XCTFail("답글 수정 후 결과가 표시되지 않았다: \(app.debugDescription)")
+            return
+        }
+        reveal(updated)
+        attachScreenshot(named: "563 reply updated")
+        reveal(manage)
+        try await press(manage)
+        try await press(app.buttons["삭제"])
+        XCTAssertTrue(app.staticTexts["답글을 삭제할까요?"].waitForExistence(timeout: 5))
+        try await press(app.buttons["삭제"])
+        let removed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: updated)
+        await fulfillment(of: [removed], timeout: 10)
+        let back = app.buttons["뒤로 가기"]
+        for _ in 0..<8 {
+            if back.exists && back.isHittable && back.frame.minY > app.frame.minY + 65 { break }
+            app.swipeDown()
+        }
+        // 스크롤 관성이 남아 있으면 첫 입력이 이동을 멈추는 데 소비될 수 있다.
+        for _ in 0..<3 {
+            try await Task.sleep(for: .milliseconds(700))
+            if !back.exists { break }
+            try await press(back)
+        }
+        let returnedHome = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: back)
+        await fulfillment(of: [returnedHome], timeout: 10)
+        XCTAssertTrue(book.waitForExistence(timeout: 10))
+        try await press(book)
+        XCTAssertTrue(review.waitForExistence(timeout: 10))
+        reveal(existing)
+        XCTAssertTrue(existing.exists)
+        XCTAssertFalse(updated.exists)
+        XCTAssertTrue(app.staticTexts["삭제된 감상입니다."].exists)
+        XCTAssertTrue(app.staticTexts["Retained reply"].exists)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "감상 목록 개수 2")).firstMatch.exists)
+        attachScreenshot(named: "563 reply reentry")
+        let reviewManage = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "내 감상 수정 또는 삭제")).firstMatch
+        reveal(reviewManage)
+        try await press(reviewManage)
+        try await press(app.buttons["삭제"])
+        XCTAssertTrue(app.staticTexts["감상을 삭제할까요?"].waitForExistence(timeout: 5))
+        try await press(app.buttons["삭제"])
+        let reviewRemoved = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: review)
+        await fulfillment(of: [reviewRemoved], timeout: 10)
+        XCTAssertEqual(app.staticTexts.matching(identifier: "삭제된 감상입니다.").count, 2)
+        reveal(existing)
+        XCTAssertTrue(existing.exists)
+        XCTAssertFalse(reviewManage.exists)
+        XCTAssertFalse(open.exists)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "감상 목록 개수 2")).firstMatch.exists)
+        attachScreenshot(named: "563 deleted review retained")
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped])
+        let (data, _) = try await URLSession.shared.data(from: base.appendingPathComponent("__reply-compat/state"))
+        let state = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let requests = try XCTUnwrap(state["requests"] as? [[String: Any]])
+        XCTAssertEqual(requests.filter {
+            $0["method"] as? String == "POST" && $0["path"] as? String == "/api/v1/reviews/7/replies"
+        }.count, 1)
+        XCTAssertEqual(requests.filter { $0["method"] as? String == "PATCH" }.count, 1)
+        XCTAssertEqual(requests.filter { $0["method"] as? String == "DELETE" }.count, 2)
+        let deletionIndex = try XCTUnwrap(requests.firstIndex { $0["method"] as? String == "DELETE" })
+        XCTAssertTrue(requests.dropFirst(deletionIndex + 1).contains {
+            $0["path"] as? String == "/api/v1/books/by-isbn/9780000000042"
+        })
+        XCTAssertTrue(requests.contains { ($0["path"] as? String)?.contains("page=2") == true })
+        XCTAssertEqual((state["replies"] as? [[String: Any]])?.count, 2)
+        XCTAssertEqual(state["review_deleted"] as? Bool, true)
+    }
+
+
     // CHAEKCHAEK_API_ENVIRONMENT=local 빌드와 실패 후 성공하는 로컬 fixture가 필요하다.
     @MainActor
     func testReviewDraftSurvivesFailureAndClosesAfterRetry() async throws {

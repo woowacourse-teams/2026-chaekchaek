@@ -419,7 +419,7 @@ internal data class ReviewReplyDto(
   val author: ReviewAuthorDto,
   val likeCount: Int,
   val likedByMe: Boolean = false,
-  val deleted: Boolean,
+  val deleted: Boolean = false,
 )
 
 @Serializable
