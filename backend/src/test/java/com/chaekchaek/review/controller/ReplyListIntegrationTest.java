@@ -3,6 +3,7 @@ package com.chaekchaek.review.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -127,6 +128,73 @@ class ReplyListIntegrationTest {
                 .andExpect(jsonPath("$.code").value("DELETED_RESOURCE"));
         mockMvc.perform(post("/api/v1/replies/{replyId}/reactions", replyId)
                         .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("DELETED_RESOURCE"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "PATCH, /api/v1/reviews/{reviewId}",
+            "POST, /api/v1/reviews/{reviewId}/replies",
+            "DELETE, /api/v1/reviews/{reviewId}/reactions",
+            "GET, /api/v1/reviews/{reviewId}/replies?page=1"
+    })
+    @DisplayName("정상 답글 없이 삭제된 감상에 요청하면 찾을 수 없다고 응답한다")
+    void should_ReturnReviewNotFound_When_RequestingDeletedReviewWithoutActiveReply(
+            String method,
+            String path
+    ) throws Exception {
+        // given
+        GuestTokenResponse guest = issueGuestToken();
+        String guestToken = guest.guestToken();
+        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, null, false, false));
+        long replyId = createReply(review.getId(), guestToken);
+        mockMvc.perform(delete("/api/v1/replies/{replyId}", replyId)
+                        .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/v1/reviews/{reviewId}", review.getId())
+                        .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken))
+                .andExpect(status().isNoContent());
+        MockHttpServletRequestBuilder reviewRequest = request(HttpMethod.valueOf(method), path, review.getId())
+                .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken);
+        if (HttpMethod.PATCH.matches(method) || HttpMethod.POST.matches(method)) {
+            reviewRequest.contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"내용\"}");
+        }
+
+        // when & then
+        mockMvc.perform(reviewRequest)
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("REVIEW_NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("정상 답글이 남은 삭제 감상은 답글 조회와 좋아요 취소를 허용하고 수정은 충돌로 응답한다")
+    void should_AllowReadingRepliesAndRejectUpdate_When_DeletedReviewHasActiveReply() throws Exception {
+        // given
+        GuestTokenResponse guest = issueGuestToken();
+        String guestToken = guest.guestToken();
+        Review review = reviewRepository.save(Review.create(1L, guest.actorId(), "감상", null, null, null, false, false));
+        createReply(review.getId(), guestToken);
+        mockMvc.perform(post("/api/v1/reviews/{reviewId}/reactions", review.getId())
+                        .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken))
+                .andExpect(status().isCreated());
+        mockMvc.perform(delete("/api/v1/reviews/{reviewId}", review.getId())
+                        .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken))
+                .andExpect(status().isNoContent());
+
+        // when & then
+        mockMvc.perform(get("/api/v1/reviews/{reviewId}/replies", review.getId())
+                        .param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalCount").value(1))
+                .andExpect(jsonPath("$.items[0].content").value("답글"));
+        mockMvc.perform(delete("/api/v1/reviews/{reviewId}/reactions", review.getId())
+                        .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(patch("/api/v1/reviews/{reviewId}", review.getId())
+                        .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"수정 감상\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("DELETED_RESOURCE"));
     }
