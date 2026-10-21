@@ -87,10 +87,22 @@ private struct ComposeViewController: UIViewControllerRepresentable {
         let authPlatform = AuthPlatformCallbacks(
             requestGoogleIdToken: { onResult in
                 Task { @MainActor in
+#if DEBUG
+                    if launchArguments.contains("-uiTestingSignInFailure") {
+                        _ = onResult(nil, "fixture provider failure")
+                        return
+                    }
+                    if launchArguments.contains("-uiTestingSignInCancellation") {
+                        _ = onResult(nil, nil)
+                        return
+                    }
+#endif
                     do {
                         _ = onResult(try await GoogleSignInProvider().signIn(), nil)
                     } catch {
-                        _ = onResult(nil, error.localizedDescription)
+                        let failure = error as NSError
+                        let cancelled = failure.domain == kGIDSignInErrorDomain && failure.code == GIDSignInError.canceled.rawValue
+                        _ = onResult(nil, cancelled ? nil : error.localizedDescription)
                     }
                 }
             },
@@ -110,7 +122,7 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                             nil
                         )
                     } catch is CancellationError {
-                        _ = onResult(nil, "Apple 로그인을 취소했어요.")
+                        _ = onResult(nil, nil)
                     } catch {
                         _ = onResult(nil, error.localizedDescription)
                     }

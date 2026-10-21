@@ -27,6 +27,8 @@ fun BookRegisterDialog(
     onDismiss: () -> Unit,
     onRegister: (title: String, creator: String, publisher: String, year: String, note: String) -> Unit,
 ) {
+    val errors = androidx.compose.runtime.remember { com.chaekchaek.app.presentation.common.ErrorRecoveryState() }
+    com.chaekchaek.app.ui.common.ErrorRecoveryEffect(errors)
     val titleState = rememberLimitedTextFieldState(BookRegisterInputRules.TitlePolicy, book.title, book)
     val title = titleState.text.toString()
     val creatorState = rememberLimitedTextFieldState(BookRegisterInputRules.CreatorPolicy, book.creator, book)
@@ -61,8 +63,11 @@ fun BookRegisterDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { onRegister(editedBook.title, editedBook.creator, editedBook.publisher, editedBook.year, note.trim()) },
-                enabled = editedBook.registrationValidationError() == null,
+                onClick = {
+                    val error = editedBook.registrationValidationError()
+                    if (error != null) errors.confirm(error)
+                    else onRegister(editedBook.title, editedBook.creator, editedBook.publisher, editedBook.year, note.trim())
+                },
             ) {
                 Text("서재에 등록", color = MaterialTheme.colorScheme.primary)
             }

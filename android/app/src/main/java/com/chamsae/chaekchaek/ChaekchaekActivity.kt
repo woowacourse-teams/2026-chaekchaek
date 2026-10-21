@@ -1,6 +1,8 @@
 package com.chamsae.chaekchaek
 
 import android.os.Bundle
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import kotlinx.coroutines.CancellationException
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -57,7 +59,10 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                         scope.launch {
                             runCatching { requestGoogleIdToken(context) }
                                 .onSuccess { onResult(it, null) }
-                                .onFailure { onResult(null, "Google 로그인을 완료하지 못했어요.") }
+                                 .onFailure { error ->
+                                    if (error is CancellationException) throw error
+                                    onResult(null, if (error is GetCredentialCancellationException) null else "Google 로그인을 완료하지 못했어요.")
+                                }
                         }
                     },
                     readRefreshToken = tokenStore::read,

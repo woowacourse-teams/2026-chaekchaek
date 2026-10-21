@@ -67,7 +67,7 @@ class ReviewDraftPreservationTest {
         }
         // 실패 안내를 연 채 복원해도 마지막 제출을 재시도할 수 있어야 한다.
         restoration.emulateSavedInstanceStateRestore()
-        compose.onNodeWithText("저장하지 못했어요").assertExists()
+        compose.onNodeWithText("요청을 처리하지 못했어요").assertExists()
         compose.onNode(hasText("다시 시도") and hasClickAction()).performClick()
         compose.runOnIdle {
             assertEquals(2, requests.size)
@@ -78,10 +78,11 @@ class ReviewDraftPreservationTest {
                 requestError = "요청을 처리하지 못했어요. 다시 시도해 주세요.",
             )
         }
-        compose.onNodeWithText("저장하지 못했어요").assertExists()
+        compose.onNodeWithText("요청을 처리하지 못했어요").assertExists()
         compose.onNodeWithText("요청을 처리하지 못했어요. 다시 시도해 주세요.").assertExists()
         compose.onNode(hasText("닫기") and hasClickAction()).performClick()
-        compose.onNodeWithText("저장하지 못했어요").assertDoesNotExist()
+        compose.onNodeWithText("요청을 처리하지 못했어요").assertDoesNotExist()
+
         restoration.emulateSavedInstanceStateRestore()
 
         compose.onNodeWithContentDescription("감상 (필수)").assertTextEquals("사라지면 안 되는 감상")
@@ -98,6 +99,7 @@ class ReviewDraftPreservationTest {
         compose.onNodeWithText("스포일러 (선택)").assertIsOn()
         compose.onNode(hasText("감상 남기기") and hasClickAction()).assertIsEnabled()
         compose.onNodeWithText("요청을 처리하지 못했어요. 다시 시도해 주세요.").assertDoesNotExist()
+
         compose.onNode(hasText("감상 남기기") and hasClickAction()).performScrollTo().performClick()
         compose.runOnIdle {
             assertEquals(3, requests.size)

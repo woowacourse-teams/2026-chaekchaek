@@ -161,7 +161,7 @@ fun BookDetailScreen(
     onRemoveFromLibrary: () -> Unit = {},
     onLibraryMessageShown: () -> Unit = {},
     onStatusChange: (ReadingStatus) -> Unit = {},
-    onPageSave: (Int) -> Unit = {},
+    onPageSave: (Int, () -> Unit) -> Unit = { _, _ -> },
     onRatingCriterionChange: (Rating) -> Unit = {},
     onRatingSave: (Rating, () -> Unit) -> Unit = { _, _ -> },
     onReviewOpen: (() -> Unit) -> Unit = { it() },
@@ -170,12 +170,12 @@ fun BookDetailScreen(
     onReplyEditOpen: () -> Unit = {},
     onComposerDismiss: () -> Unit = {},
     onReviewCreate: (ReviewCreateRequest) -> Unit = {},
-    onReviewUpdate: (Long, ReviewCreateRequest) -> Unit = { _, _ -> },
+    onReviewUpdate: (Long, ReviewCreateRequest, () -> Unit) -> Unit = { _, _, _ -> },
     onReviewDelete: (Long) -> Unit = {},
     onReviewLike: (Long, Boolean) -> Unit = { _, _ -> },
     onLoadReplies: (Long) -> Unit = {},
-    onReplyCreate: (Long, String) -> Unit = { _, _ -> },
-    onReplyUpdate: (Long, String) -> Unit = { _, _ -> },
+    onReplyCreate: (Long, String, () -> Unit) -> Unit = { _, _, _ -> },
+    onReplyUpdate: (Long, String, () -> Unit) -> Unit = { _, _, _ -> },
     onReplyDelete: (Long) -> Unit = {},
     onReplyLike: (Long, Boolean) -> Unit = { _, _ -> },
     onReviewScopeChange: (ReviewScope) -> Unit = {},
@@ -183,6 +183,7 @@ fun BookDetailScreen(
     onLoadMoreReviews: () -> Unit = {},
     onRetryReviews: () -> Unit = {},
     onRequestErrorShown: () -> Unit = {},
+    errorRecovery: com.chaekchaek.app.presentation.common.ErrorRecoveryState? = null,
     question: BookQuestionUiModel? = null,
     selectedQuestionReaction: String? = null,
     onQuestionReactionClick: () -> Unit = {},
@@ -192,6 +193,7 @@ fun BookDetailScreen(
     onQuestionAReviewCreate: ((QuestionAReviewDraft) -> Unit)? = null,
     onQuestionAReviewUpdate: ((Long, QuestionAReviewDraft, ReviewCreateRequest) -> Unit)? = null,
 ) {
+    errorRecovery?.let { com.chaekchaek.app.ui.common.ErrorRecoveryEffect(it) }
     val book = state.displayBook ?: return
     val listState = key(state.signedIn) { rememberLazyListState() }
     val coroutineScope = rememberCoroutineScope()
@@ -270,13 +272,13 @@ fun BookDetailScreen(
             BookDetailAuthenticatedAction.OpenReview -> onReviewOpen { showReviewSheet = true }
             BookDetailAuthenticatedAction.OpenMineFeed -> onReviewScopeChange(ReviewScope.MINE)
             is BookDetailAuthenticatedAction.ChangeStatus -> onStatusChange(action.status)
-            is BookDetailAuthenticatedAction.SavePage -> onPageSave(action.page)
+            is BookDetailAuthenticatedAction.SavePage -> onPageSave(action.page) { showPageDialog = false }
             is BookDetailAuthenticatedAction.LikeReview -> onReviewLike(action.reviewId, action.likedByMe)
-            is BookDetailAuthenticatedAction.CreateReply -> onReplyCreate(action.reviewId, action.content)
+            is BookDetailAuthenticatedAction.CreateReply -> onReplyCreate(action.reviewId, action.content) {}
             is BookDetailAuthenticatedAction.LikeReply -> onReplyLike(action.replyId, action.likedByMe)
-            is BookDetailAuthenticatedAction.EditReview -> onReviewUpdate(action.reviewId, action.request)
+            is BookDetailAuthenticatedAction.EditReview -> onReviewUpdate(action.reviewId, action.request) { editingReviewId = null }
             is BookDetailAuthenticatedAction.DeleteReview -> onReviewDelete(action.reviewId)
-            is BookDetailAuthenticatedAction.EditReply -> onReplyUpdate(action.replyId, action.content)
+            is BookDetailAuthenticatedAction.EditReply -> onReplyUpdate(action.replyId, action.content) { editingReplyId = null }
             is BookDetailAuthenticatedAction.DeleteReply -> onReplyDelete(action.replyId)
         }
         onAuthenticatedActionHandled()
@@ -361,9 +363,9 @@ fun BookDetailScreen(
                     onLoadReplies = onLoadReplies,
                     onReplyOpen = onReplyOpen,
                     onComposerDismiss = onComposerDismiss,
-                    onReply = { reviewId, content ->
+                    onReply = { reviewId, content, onSaved ->
                         authorizeOrRun(BookDetailAuthenticatedAction.CreateReply(reviewId, content)) {
-                            onReplyCreate(reviewId, content)
+                            onReplyCreate(reviewId, content, onSaved)
                         }
                     },
                     onReplyLike = { replyId, likedByMe ->
@@ -427,10 +429,7 @@ fun BookDetailScreen(
             initialPage = currentPage,
             totalPages = book.totalPages,
             onDismiss = { showPageDialog = false },
-            onSave = { page ->
-                onPageSave(page)
-                showPageDialog = false
-            },
+            onSave = { page, onSaved -> onPageSave(page, onSaved) },
         )
     }
     if (showReviewSheet) {
@@ -513,15 +512,16 @@ fun BookDetailScreen(
                 )
                 val submit = {
                     onQuestionAReviewUpdate?.invoke(review.reviewId, draft, request)
-                        ?: onReviewUpdate(review.reviewId, request)
+                        ?: onReviewUpdate(review.reviewId, request) {}
                 }
                 submittedReviewDraft = draft
                 submittedReviewId = review.reviewId
                 submit()
+
             },
         )
     }
-    state.requestError?.let { message ->
+    state.requestError?.takeIf { errorRecovery == null }?.let { message ->
         val retry = submittedReviewDraft?.takeIf {
             state.reviewSubmissionState == ReviewSubmissionState.Failed && (showReviewSheet || editingReviewId != null)
         }?.let { draft ->
@@ -532,20 +532,17 @@ fun BookDetailScreen(
                     chapter = review.chapter, currentPage = review.currentPage,
                     totalPages = book.totalPages.takeIf { review.currentPage != null && it > 0 },
                 )
-                ({ onQuestionAReviewUpdate?.invoke(id, draft, request) ?: onReviewUpdate(id, request) })
+                ({ onQuestionAReviewUpdate?.invoke(id, draft, request) ?: onReviewUpdate(id, request) {} })
             }
         }
-        if (retry != null) ChaekTwoActionDialog(
-            onDismissRequest = onRequestErrorShown,
-            title = { Text("저장하지 못했어요") },
-            text = { Text(message) },
-            confirmButton = { ChaekOverlayButton("다시 시도", { onRequestErrorShown(); retry() }) },
-            dismissButton = { ChaekOverlayButton("닫기", onRequestErrorShown, secondary = true) },
-        ) else ChaekOneActionDialog(
-            onDismissRequest = onRequestErrorShown,
-            title = { Text("요청을 완료하지 못했어요") },
-            text = { Text(message) },
-            confirmButton = { ChaekOverlayButton("확인", onRequestErrorShown) },
+        com.chaekchaek.app.ui.common.ChaekErrorDialog(
+            notice = com.chaekchaek.app.presentation.common.ErrorNotice(
+                0L, "요청을 처리하지 못했어요", message,
+                if (retry != null) com.chaekchaek.app.presentation.common.ErrorAction.Retry
+                else com.chaekchaek.app.presentation.common.ErrorAction.Confirm,
+            ),
+            onDismiss = onRequestErrorShown,
+            onAction = { onRequestErrorShown(); retry?.invoke() },
         )
     }
     replyById[editingReplyId]?.let { reply ->
@@ -555,12 +552,12 @@ fun BookDetailScreen(
                 onComposerDismiss()
                 editingReplyId = null
             },
-            onSave = { content ->
+            onSave = { content, onSaved ->
                 authorizeOrRun(BookDetailAuthenticatedAction.EditReply(reply.replyId, content)) {
-                    onReplyUpdate(reply.replyId, content)
+                    onReplyUpdate(reply.replyId, content, onSaved)
                 }
-                editingReplyId = null
             },
+            onSaved = { editingReplyId = null },
         )
     }
     visibleBookReviews.firstOrNull { it.reviewId == deletingReviewId }?.let { review ->
@@ -944,7 +941,7 @@ private fun ReviewsSection(
     onLoadReplies: (Long) -> Unit,
     onReplyOpen: () -> Unit,
     onComposerDismiss: () -> Unit,
-    onReply: (Long, String) -> Unit,
+    onReply: (Long, String, () -> Unit) -> Unit,
     onReplyLike: (Long, Boolean) -> Unit,
     onManageReview: (BookReview) -> Unit,
     onManageReply: (ReviewReply) -> Unit,
@@ -1008,34 +1005,12 @@ private fun ReviewsSection(
                 )
             }
         }
-        if (pageLoadState.showsRetry) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-            ) {
-                Row(
-                    modifier = Modifier.height(30.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    val showRetryLoader = loadingMore || loading
-                    if (showRetryLoader) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp).semantics { contentDescription = "감상 불러오는 중" },
-                            color = ChaekAccent,
-                            strokeWidth = 2.dp,
-                        )
-                    }
-                    Text(
-                        if (showRetryLoader) "감상을 불러오는 중이에요" else "감상을 불러오지 못했어요",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-                ChaekOverlayButton(
-                    "다시 시도",
-                    onRetryReviews,
-                    enabled = pageLoadState.canRetry,
+        if (pageLoadState.showsRetry && (loading || loadingMore)) {
+            Box(modifier = Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp).semantics { contentDescription = "감상 불러오는 중" },
+                    color = ChaekAccent,
+                    strokeWidth = 2.dp,
                 )
             }
         }
@@ -1055,10 +1030,8 @@ private fun ReviewsSection(
                 onComposerDismiss()
                 replyTargetId = null
             },
-            onSave = { content ->
-                onReply(review.reviewId, content)
-                replyTargetId = null
-            },
+            onSave = { content, onSaved -> onReply(review.reviewId, content, onSaved) },
+            onSaved = { replyTargetId = null },
         )
     }
 }

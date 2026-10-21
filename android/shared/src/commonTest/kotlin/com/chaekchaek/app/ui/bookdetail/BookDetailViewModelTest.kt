@@ -248,8 +248,55 @@ class BookDetailViewModelTest {
   }
 
   @Test
+  fun `별점 실패 후 토큰이 갱신돼도 공통 재시도로 감상 제출을 완료한다`() = runViewModelTest {
+    for (editing in listOf(false, true)) {
+      var ratingAttempts = 0
+      var reviewAttempts = 0
+      val client = testClient(MockEngine { request ->
+        when (request.method) {
+          HttpMethod.Put -> {
+            ratingAttempts += 1
+            if (ratingAttempts == 1) respond("", HttpStatusCode.InternalServerError)
+            else respond(RATED_LIBRARY_RECORD.replace("73", "42"), headers = jsonHeaders())
+          }
+          HttpMethod.Post, HttpMethod.Patch -> {
+            reviewAttempts += 1
+            respond(if (editing) REVIEW_RESPONSE else """{"bookId":42,"review":$REVIEW_RESPONSE}""",
+              HttpStatusCode.Created, jsonHeaders())
+          }
+          else -> respond(if (request.url.encodedPath.contains("/by-isbn/")) DETAIL_WITH_RECORD
+            else """{"totalCount":1,"nextPage":null,"items":[$REVIEW_RESPONSE]}""", headers = jsonHeaders())
+        }
+      })
+      val vm = viewModel(client, client, platform({ null }))
+      val store = ViewModelStore().also { it.put("review", vm) }
+      try {
+        vm.open(book().copy(isbn13 = "9780000000042"), "member")
+        awaitReal { vm.uiState.first { it.reviews.isNotEmpty() } }
+        if (editing) vm.updateReviewWithRating(7, ReviewCreateRequest("감상"), 5.0)
+        else vm.createReviewWithRating(ReviewCreateRequest("감상"), 5.0)
+        awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Failed } }
+        val retry = checkNotNull(vm.errors.takeRecovery(vm.errors.notice.value!!.id))
+        advanceUntilIdle()
+        vm.syncAuthentication("renewed-member")
+        awaitReal { vm.uiState.first { !it.isLoading && it.detail != null } }
+        retry(null)
+        awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Succeeded } }
+        assertEquals(2, ratingAttempts)
+        assertEquals(1, reviewAttempts)
+      } finally {
+        store.clear()
+        advanceUntilIdle()
+        client.close()
+      }
+    }
+  }
+
+  @Test
   fun `별점 저장 뒤 감상 수정만 실패하면 재시도는 별점을 다시 저장하지 않는다`() = runViewModelTest {
     val writes = mutableListOf<HttpMethod>()
+    val retryStarted = CompletableDeferred<Unit>()
+    val finishRetry = CompletableDeferred<Unit>()
     var updates = 0
     var ratingSaves = 0
     val updatedReview = REVIEW_RESPONSE.replace("\"content\":\"감상\"", "\"content\":\"수정 감상\"")
@@ -263,7 +310,11 @@ class BookDetailViewModelTest {
           writes += request.method
           updates += 1
           if (updates == 1) respond("", HttpStatusCode.InternalServerError)
-          else respond(updatedReview, headers = jsonHeaders())
+          else {
+            retryStarted.complete(Unit)
+            finishRetry.await()
+            respond(updatedReview, headers = jsonHeaders())
+          }
         }
         else -> respond(
           if (request.url.encodedPath.contains("/by-isbn/")) DETAIL_WITH_RECORD
@@ -273,23 +324,34 @@ class BookDetailViewModelTest {
       }
     })
     val vm = viewModel(client, client, platform({ null }))
-    vm.open(book().copy(isbn13 = "9780000000042"), "member")
-    awaitReal { vm.uiState.first { it.reviews.isNotEmpty() } }
-    val request = ReviewCreateRequest("수정 감상")
-    vm.updateReviewWithRating(7, request, 5.0, onRatingSaved = { ratingSaves += 1 })
-    awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Failed } }
-    assertEquals(5.0, vm.uiState.value.detail?.myRecord?.rating)
-    assertEquals("감상", vm.uiState.value.reviews.single().content)
-    assertEquals(1, ratingSaves)
-    advanceUntilIdle()
+    val store = ViewModelStore().also { it.put("review", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), "member")
+      awaitReal { vm.uiState.first { it.reviews.isNotEmpty() } }
+      val request = ReviewCreateRequest("수정 감상")
+      vm.updateReviewWithRating(7, request, 5.0, onRatingSaved = { ratingSaves += 1 })
+      awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Failed } }
+      assertEquals(5.0, vm.uiState.value.detail?.myRecord?.rating)
+      assertEquals("감상", vm.uiState.value.reviews.single().content)
+      assertEquals(1, ratingSaves)
+      advanceUntilIdle()
 
-    vm.updateReviewWithRating(7, request, 5.0, onRatingSaved = { ratingSaves += 1 })
-    awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Succeeded } }
-    assertEquals(listOf(HttpMethod.Put, HttpMethod.Patch, HttpMethod.Patch), writes)
-    assertEquals("수정 감상", vm.uiState.value.reviews.single().content)
-    assertEquals(1, ratingSaves)
-    vm.openReviewEditor()
-    assertEquals(ReviewSubmissionState.Idle, vm.uiState.value.reviewSubmissionState)
+      vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke(null)
+      assertEquals(ReviewSubmissionState.Submitting, vm.uiState.value.reviewSubmissionState)
+      awaitReal { retryStarted.await() }
+      assertEquals(ReviewSubmissionState.Submitting, vm.uiState.value.reviewSubmissionState)
+      finishRetry.complete(Unit)
+      awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Succeeded } }
+      assertEquals(listOf(HttpMethod.Put, HttpMethod.Patch, HttpMethod.Patch), writes)
+      assertEquals("수정 감상", vm.uiState.value.reviews.single().content)
+      assertEquals(1, ratingSaves)
+      vm.openReviewEditor()
+      assertEquals(ReviewSubmissionState.Idle, vm.uiState.value.reviewSubmissionState)
+    } finally {
+      store.clear()
+      advanceUntilIdle()
+      client.close()
+    }
   }
 
   @Test

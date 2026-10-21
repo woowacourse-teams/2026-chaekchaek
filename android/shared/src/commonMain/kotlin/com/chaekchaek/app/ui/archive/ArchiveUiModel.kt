@@ -26,6 +26,7 @@ data class ArchiveUiState(
     val items: List<ArchiveBookUiModel> = emptyList(),
     val showLoading: Boolean = false,
     val errorMessage: String? = null,
+    val mutationRevision: Long = 0,
 )
 
 internal fun booksForSpineShelf(

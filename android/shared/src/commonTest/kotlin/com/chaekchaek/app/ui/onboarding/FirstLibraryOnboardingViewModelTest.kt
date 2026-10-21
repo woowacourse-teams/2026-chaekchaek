@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.onboarding
 
+import io.ktor.client.request.get
+import io.ktor.client.engine.mock.respond
 import com.chaekchaek.app.domain.book.BookSearchPage
 import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchResult
@@ -22,6 +24,46 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FirstLibraryOnboardingViewModelTest {
+    @Test
+    fun expiredSessionResumesOnlyUnfinishedBooksAndConflictCountsAsSaved() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val conflict = io.ktor.client.HttpClient(io.ktor.client.engine.mock.MockEngine(io.ktor.client.engine.mock.MockEngineConfig().apply {
+            dispatcher = StandardTestDispatcher(testScheduler)
+            addHandler { respond("{}", io.ktor.http.HttpStatusCode.Conflict) }
+        })) { expectSuccess = true }
+        val attempts = mutableListOf<Pair<String, String>>()
+        var expired = true
+        val first = book("1", "이미 담은 책")
+        val second = book("2", "다음 책")
+        val vm = FirstLibraryOnboardingViewModel(
+            searchRepository = BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) },
+            addBook = { book, token ->
+                attempts += book.isbn13 to token
+                if (book == first) conflict.get("https://fixture.invalid/already-saved")
+                if (book == second && expired) throw com.chaekchaek.app.data.remote.MobileLoginException("expired", 401)
+            },
+        )
+        try {
+            vm.updateQuery("보존할 검색어")
+            vm.toggle(first)
+            vm.toggle(second)
+            vm.save("old-token")
+            advanceUntilIdle()
+            assertEquals(com.chaekchaek.app.presentation.common.ErrorAction.Login, vm.errors.notice.value?.action)
+            assertEquals(listOf(first, second), vm.state.value.selectedBooks)
+            expired = false
+            vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke("fresh-token")
+            advanceUntilIdle()
+            assertEquals(listOf("1" to "old-token", "2" to "old-token", "2" to "fresh-token"), attempts)
+            assertEquals("보존할 검색어", vm.state.value.query)
+            assertTrue(vm.state.value.saveCompleted)
+        } finally {
+            conflict.close()
+            runCurrent()
+            Dispatchers.resetMain()
+        }
+    }
+
     @Test
     fun installStorageShowsOnlyBeforeFirstExposure() {
         var shown = false

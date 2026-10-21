@@ -56,7 +56,6 @@ import chaekchaek.shared.generated.resources.ic_heart_outline
 import com.chaekchaek.app.analytics.analyticsBookKey
 import com.chaekchaek.app.analytics.analyticsImpression
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
-import com.chaekchaek.app.presentation.common.AppError
 import com.chaekchaek.app.ui.RemoteBookImage
 import com.chaekchaek.app.ui.bookdetail.ReplyInputSheet
 import com.chaekchaek.app.ui.common.BrandHeader
@@ -85,18 +84,8 @@ fun FeedScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var replyTargetNoteId by rememberSaveable { mutableStateOf<String?>(null) }
     var revealedSpoilerReviewIds by rememberSaveable { mutableStateOf(emptyList<Long>()) }
+    com.chaekchaek.app.ui.common.ErrorRecoveryEffect(viewModel.errors)
     val requestError = (state as? FeedUiState.Content)?.requestError
-    LaunchedEffect(requestError) {
-        requestError?.let { error ->
-            val result = snackbarHostState.showSnackbar(
-                message = error.message,
-                actionLabel = if (error == FeedRequestError.LoadMore) "다시 시도" else null,
-            )
-            if (result == SnackbarResult.ActionPerformed) viewModel.retryLoadMore()
-            viewModel.clearRequestError()
-        }
-    }
-
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize()) {
             BrandHeader(onProfileClick)
@@ -108,14 +97,9 @@ fun FeedScreen(
                     CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
                 }
                 FeedUiState.Empty -> FeedEmptyContent(Modifier.weight(1f))
-                is FeedUiState.Failure -> FeedLoadErrorContent(
-                    error = current.error,
-                    retry = viewModel::retry,
-                    modifier = Modifier.weight(1f),
-                )
                 is FeedUiState.Content -> {
                     if (current.reviews.isEmpty()) {
-                        FeedEmptyContent(Modifier.weight(1f))
+                        Box(Modifier.weight(1f).fillMaxWidth())
                     } else {
                         LazyColumn(
                             modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -172,9 +156,8 @@ fun FeedScreen(
     replyTarget?.let { reflection ->
         ReplyInputSheet(
             onDismiss = { replyTargetNoteId = null },
-            onSave = { content ->
-                viewModel.createReply(reflection.reviewId, content) { replyTargetNoteId = null }
-            },
+            onSave = { content, onSaved -> viewModel.createReply(reflection.reviewId, content, onSaved) },
+            onSaved = { replyTargetNoteId = null },
         )
     }
 }
@@ -184,26 +167,6 @@ private fun FeedEmptyContent(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Text("아직 도착한 감상이 없어요.", style = MaterialTheme.typography.bodyMedium)
     }
-}
-
-@Composable
-private fun FeedLoadErrorContent(error: AppError, retry: () -> Unit, modifier: Modifier) {
-    Box(modifier.fillMaxSize())
-    ChaekOneActionDialog(
-        onDismissRequest = {},
-        title = { Text("피드를 불러오지 못했어요") },
-        text = {
-            Text(
-                when (error) {
-                    AppError.Network -> "인터넷 연결을 확인해 주세요."
-                    AppError.NotFound -> "요청한 피드를 찾지 못했어요."
-                    AppError.Unauthorized -> "로그인이 필요한 요청이에요."
-                    AppError.Unknown -> "잠시 후 다시 시도해 주세요."
-                },
-            )
-        },
-        confirmButton = { TextButton(onClick = retry) { Text("다시 시도") } },
-    )
 }
 
 @Composable

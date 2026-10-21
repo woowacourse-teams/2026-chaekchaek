@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.archive
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.analytics.AnalyticsTracker
@@ -34,6 +36,7 @@ class LibrarySaveViewModel(
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
     private val isSaved: (String) -> Boolean = { false },
 ) : ViewModel() {
+    val errors = ErrorRecoveryState()
     private val state = MutableStateFlow(LibrarySaveUiState())
     val uiState = state.asStateFlow()
     private val completedSaves = MutableSharedFlow<SavedLibraryBook>(extraBufferCapacity = 1)
@@ -78,6 +81,7 @@ class LibrarySaveViewModel(
     fun save(book: BookDetailArgs) {
         if (isSaved(book.isbn13) || state.value.savingIsbn != null || state.value.pendingBook != null) return
         if (book.isbn13.isBlank()) {
+            errors.confirm("이 책의 ISBN 정보를 확인할 수 없어요")
             state.value = state.value.copy(errorMessage = "이 책의 ISBN 정보를 확인할 수 없어요")
             return
         }
@@ -111,6 +115,10 @@ class LibrarySaveViewModel(
             } catch (error: Throwable) {
                 analytics.finishAction(action, "failure", strings = mapOf("error_category" to analyticsErrorCategory(error)))
                 if (generation == requestGeneration) {
+                    errors.report(error, ErrorOperation.LibrarySave) { freshToken ->
+                        if (freshToken != null) accessToken = freshToken
+                        save(book)
+                    }
                     state.value = state.value.copy(failedBook = book, errorMessage = "서재에 담지 못했어요")
                 }
             } finally {

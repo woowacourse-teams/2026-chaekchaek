@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.archive
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.analytics.AnalyticsTracker
@@ -7,6 +9,7 @@ import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
+import com.chaekchaek.app.data.remote.chunkLibraryBookIds
 import com.chaekchaek.app.domain.shelf.ReadingStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
@@ -22,6 +25,7 @@ class ArchiveViewModel(
     private val repository: LibraryRemoteRepository,
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
+    val errors = ErrorRecoveryState()
     private val _uiState = MutableStateFlow(ArchiveUiState())
     val uiState: StateFlow<ArchiveUiState> = _uiState.asStateFlow()
 
@@ -87,14 +91,24 @@ class ArchiveViewModel(
     fun remove(bookIds: Set<String>) {
         val serverBookIds = _uiState.value.items.filter { it.id in bookIds }.map(ArchiveBookUiModel::bookId)
         if (serverBookIds.isEmpty()) return
-        mutate("library_remove", serverBookIds.size) { token -> repository.bulkDelete(serverBookIds, token) }
+        val remaining = chunkLibraryBookIds(serverBookIds).toMutableList()
+        mutate("library_remove", serverBookIds.size) { token ->
+            while (remaining.isNotEmpty()) {
+                repository.bulkDelete(remaining.first(), token)
+                remaining.removeAt(0)
+            }
+        }
     }
 
     fun changeStatus(bookIds: Set<String>, status: ReadingStatus) {
         val serverBookIds = _uiState.value.items.filter { it.id in bookIds }.map(ArchiveBookUiModel::bookId)
         if (serverBookIds.isEmpty()) return
+        val remaining = chunkLibraryBookIds(serverBookIds).toMutableList()
         mutate("reading_status_change", serverBookIds.size) { token ->
-            repository.bulkChangeStatus(serverBookIds, status.apiValue, token)
+            while (remaining.isNotEmpty()) {
+                repository.bulkChangeStatus(remaining.first(), status.apiValue, token)
+                remaining.removeAt(0)
+            }
         }
     }
 
@@ -133,7 +147,10 @@ class ArchiveViewModel(
                 val token = accessToken ?: return@withLock
                 withArchiveLoading(session) { action(token) }.onSuccess {
                     analytics.finishAction(analyticsAction, "success")
-                    if (session == sessionGeneration) load()
+                    if (session == sessionGeneration) {
+                        _uiState.value = _uiState.value.copy(mutationRevision = _uiState.value.mutationRevision + 1)
+                        load()
+                    }
                 }.onFailure { error ->
                     if (error is CancellationException) throw error
                     analytics.finishAction(
@@ -141,7 +158,12 @@ class ArchiveViewModel(
                         "failure",
                         strings = mapOf("error_category" to analyticsErrorCategory(error)),
                     )
-                    if (session == sessionGeneration) handleFailure(error)
+                    if (session == sessionGeneration) {
+                        errors.report(error, ErrorOperation.Request) { freshToken ->
+                            if (freshToken != null) accessToken = freshToken
+                            mutate(actionName, itemCount, action)
+                        }
+                    }
                 }
             }
         }
@@ -186,6 +208,10 @@ class ArchiveViewModel(
 
     private fun handleFailure(error: Throwable) {
         if (error is CancellationException) throw error
+        errors.report(error, ErrorOperation.LibraryLoad) { freshToken ->
+            if (freshToken != null) accessToken = freshToken
+            load()
+        }
         _uiState.value = _uiState.value.copy(errorMessage = "서재를 불러오지 못했어요")
     }
 

@@ -1,5 +1,7 @@
 package com.chaekchaek.app.presentation.home
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.analytics.AnalyticsTracker
@@ -7,7 +9,6 @@ import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.domain.feed.FeedSection
 import com.chaekchaek.app.presentation.common.TimeLabels
-import com.chaekchaek.app.presentation.common.toAppError
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ class HomeViewModel(
     private val clock: Clock,
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
+    val errors = ErrorRecoveryState()
     private var accessToken: String? = null
     private var hasObservedAuthentication = false
     private var reloadOnNextHomeEntry = false
@@ -73,7 +75,9 @@ class HomeViewModel(
             val previousState = _uiState.value
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
-                    if (loading) {
+                    val hasContent = previousState is HomeUiState.Content &&
+                        (previousState.sections.isNotEmpty() || previousState.readingBook != null)
+                    if (loading && !hasContent) {
                         _uiState.value = HomeUiState.Loading
                     } else if (_uiState.value == HomeUiState.Loading) {
                         _uiState.value = previousState
@@ -126,7 +130,11 @@ class HomeViewModel(
                         ),
                         longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
                     )
-                    HomeUiState.Failure(error.toAppError())
+                    errors.report(error, ErrorOperation.HomeLoad) { token ->
+                        if (token != null) accessToken = token
+                        load()
+                    }
+                    previousState.takeUnless { it is HomeUiState.Loading } ?: HomeUiState.Content(emptyList())
                 }
             }
         }

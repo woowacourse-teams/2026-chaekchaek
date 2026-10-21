@@ -150,6 +150,7 @@ fun ArchiveScreen(
         }
     }
 
+    LaunchedEffect(uiState.mutationRevision) { selectedIds = emptySet() }
     LaunchedEffect(uiState.items) {
         selectedIds = selectedIds.intersect(uiState.items.mapTo(mutableSetOf()) { it.id })
     }
@@ -203,7 +204,7 @@ fun ArchiveScreen(
             if (visibleItems.isEmpty()) {
                 item {
                     if (uiState.errorMessage == null) EmptyLibrary()
-                    else ArchiveError(uiState.errorMessage, onRetry)
+                    else Box(Modifier.fillMaxWidth())
                 }
             } else {
                 itemsIndexed(visibleItems, key = { _, book -> book.id }) { index, book ->
@@ -265,7 +266,6 @@ fun ArchiveScreen(
             onDismiss = { showStatusDialog = false },
             onChange = { status ->
                 onChangeStatus(selectedIds, status)
-                selectedIds = emptySet()
                 showStatusDialog = false
             },
         )
@@ -276,7 +276,6 @@ fun ArchiveScreen(
             onDismiss = { pendingDeletionIds = emptySet() },
             onConfirm = {
                 onRemove(pendingDeletionIds)
-                selectedIds -= pendingDeletionIds
                 pendingDeletionIds = emptySet()
             },
         )
@@ -615,15 +614,6 @@ private fun EmptyLibrary() {
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
-    }
-}
-
-@Composable
-private fun ArchiveError(message: String, onRetry: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        Text("서재를 불러오지 못했어요", style = MaterialTheme.typography.titleMedium)
-        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-        ChaekOverlayButton("다시 시도", onRetry)
     }
 }
 

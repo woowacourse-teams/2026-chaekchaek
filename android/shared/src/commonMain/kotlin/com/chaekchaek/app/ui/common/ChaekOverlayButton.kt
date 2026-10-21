@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
@@ -21,6 +22,7 @@ internal fun ChaekOverlayButton(
     enabled: Boolean = true,
     secondary: Boolean = false,
     modifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.bodySmall,
 ) {
     val colors = MaterialTheme.colorScheme
     Surface(
@@ -35,7 +37,7 @@ internal fun ChaekOverlayButton(
             Text(
                 label,
                 color = if (!enabled) colors.onSurfaceVariant else if (secondary) colors.onBackground else colors.surface,
-                style = MaterialTheme.typography.bodySmall,
+                style = textStyle,
                 textAlign = TextAlign.Center,
             )
         }

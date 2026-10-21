@@ -56,11 +56,6 @@ internal fun LoginRequiredSheet(
                 "내 독서 기록을 남기고 감상에 참여하려면 로그인해 주세요.",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            error?.let {
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = ChaekOverlayTokens.cardShape) {
-                    Text(it, Modifier.fillMaxWidth().padding(12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
             if (appleSignInAvailable) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),

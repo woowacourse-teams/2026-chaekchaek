@@ -2,15 +2,12 @@ package com.chamsae.chaekchaek
 
 import android.graphics.Bitmap
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
@@ -50,10 +47,22 @@ class BookDetailPaginationRetryTest {
                 reviewPageLoadState = if (refresh) ReviewPageLoadState.RefreshFailed else ReviewPageLoadState.Failed,
             ),
         )
+        val errors = com.chaekchaek.app.presentation.common.ErrorRecoveryState()
         var automaticRequests = 0
         var retryRequests = 0
         compose.setContent {
             ChaekchaekTheme {
+                com.chaekchaek.app.ui.common.ErrorRecoveryEffect(errors)
+                androidx.compose.runtime.LaunchedEffect(state.value.reviewPageLoadState) {
+                    if (state.value.reviewPageLoadState == ReviewPageLoadState.Failed ||
+                        state.value.reviewPageLoadState == ReviewPageLoadState.RefreshFailed) {
+                        errors.report(Exception(), com.chaekchaek.app.presentation.common.ErrorOperation.Request) {
+                            retryRequests += 1
+                            state.value = state.value.copy(reviewPageLoadState =
+                                if (refresh) ReviewPageLoadState.RefreshRetrying else ReviewPageLoadState.Retrying)
+                        }
+                    }
+                }
                 BookDetailScreen(
                     state = state.value,
                     onBack = {},
@@ -67,20 +76,19 @@ class BookDetailPaginationRetryTest {
                 )
             }
         }
-        compose.onNodeWithText("감상을 불러오지 못했어요").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("요청을 처리하지 못했어요").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("다시 시도").performScrollTo().assertIsEnabled()
-        compose.onRoot().performTouchInput { swipeUp() }
         compose.onNodeWithText("다시 시도").assertIsDisplayed()
         capture("${if (refresh) "refresh" else "pagination"}-failed")
         compose.onNodeWithText("다시 시도").performClick()
-        compose.onNodeWithText("다시 시도").assertIsNotEnabled()
+        compose.onNodeWithText("다시 시도").assertDoesNotExist()
         compose.runOnIdle {
             assertEquals(1, retryRequests)
             assertEquals(0, automaticRequests)
             state.value = state.value.copy(isLoading = refresh, isLoadingMore = !refresh)
         }
         compose.waitForIdle()
-        compose.onNodeWithContentDescription("감상 불러오는 중").assertIsDisplayed()
+        compose.onNodeWithContentDescription("감상 불러오는 중").performScrollTo().assertIsDisplayed()
         capture("${if (refresh) "refresh" else "pagination"}-retrying")
         compose.runOnIdle {
             state.value = state.value.copy(
@@ -108,10 +116,12 @@ class BookDetailPaginationRetryTest {
     }
 
     private fun capture(name: String) {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        File(context.getExternalFilesDir(null), "$name.png").outputStream().use {
-            compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it)
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val screenshot = instrumentation.uiAutomation.takeScreenshot()
+        File(instrumentation.targetContext.getExternalFilesDir(null), "$name.png").outputStream().use {
+            screenshot.compress(Bitmap.CompressFormat.PNG, 100, it)
         }
+        screenshot.recycle()
     }
 
     private fun review(id: Long, content: String) = BookReview(
