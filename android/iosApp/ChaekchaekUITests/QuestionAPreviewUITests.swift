@@ -184,10 +184,23 @@ final class QuestionAPreviewUITests: XCTestCase {
         XCTAssertEqual(restoredY, scrolledY, accuracy: 3)
         attachScreenshot(named: "자료 독립 스크롤과 탭 복원")
         let origin = app.coordinate(withNormalizedOffset: .zero)
-        let startY = min(app.frame.maxY - 110, panel.frame.maxY + 250)
-        let endY = panel.frame.maxY + 20
+        let list = element("book_detail_list", in: app)
+        let belowPanel = list.frame.maxY - panel.frame.maxY >= 44
+        let gestureX: CGFloat
+        let startY = list.frame.maxY - 8
+        let endY: CGFloat
+        if belowPanel {
+            gestureX = list.frame.midX
+            endY = panel.frame.maxY + 8
+        } else {
+            XCTAssertGreaterThanOrEqual(list.frame.maxX - panel.frame.maxX, 44,
+                                       "낮은 화면에는 오른쪽 배경 스크롤 여백이 있어야 한다")
+            gestureX = list.frame.maxX - 22
+            endY = max(list.frame.minY + 8, startY - 180)
+        }
         XCTAssertGreaterThan(startY - endY, 30)
-        origin.withOffset(CGVector(dx: app.frame.width * 0.9, dy: startY)).press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: app.frame.width * 0.9, dy: endY)))
+        print("QUESTION_A_BACKGROUND_GESTURE list=\(list.frame) panel=\(panel.frame) side=\(!belowPanel)")
+        origin.withOffset(CGVector(dx: gestureX, dy: startY)).press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: gestureX, dy: endY)))
         XCTAssertLessThan(heading.frame.minY, backgroundY - 20)
         XCTAssertTrue(panel.exists)
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "질문과 장면 닫기")).firstMatch.tap()
@@ -209,20 +222,15 @@ final class QuestionAPreviewUITests: XCTestCase {
 
     @MainActor
     func testRepresentativeAccessibilityAudit() throws {
-        let app = launchPreview()
+        let app = launchPreview(contentOnly: true)
         let compose = app.buttons["questionReviewOpen"]
-        reveal(compose, in: app)
-        // 감사 대상 아래의 기존 감상 필터도 화면 안에 온전히 놓는다.
-        let origin = app.coordinate(withNormalizedOffset: .zero)
-        origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: app.frame.maxY - 120))
-            .press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: app.frame.maxY - 260)))
-        reveal(compose, in: app)
+        revealInBook(compose, app: app)
         attachScreenshot(named: "질문 카드 접근성 감사")
         try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion]) { issue in
             print("Question A accessibility issue: \(issue.compactDescription) | \(issue.detailedDescription) | \(issue.element?.debugDescription ?? "no element")")
             return false
         }
-        compose.tap()
+        tapAfterScroll(compose)
         let rating = app.otherElements.matching(NSPredicate(format: "label == %@ AND value != nil", "별점 (선택)")).firstMatch
         reveal(rating, in: app)
         attachScreenshot(named: "감상 별점 접근성 감사")
