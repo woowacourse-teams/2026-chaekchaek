@@ -77,12 +77,15 @@ private struct ComposeViewController: UIViewControllerRepresentable {
         let appleSignIn = AppleSignInProvider()
         let uiTestingMyPage: Bool
         let uiTestingBookQuestionA: Bool
+        let showQuestionAPreviewControls: Bool
 #if DEBUG
         uiTestingMyPage = launchArguments.contains("-uiTestingMyPage")
         uiTestingBookQuestionA = launchArguments.contains("-uiTestingBookQuestionA")
+        showQuestionAPreviewControls = !launchArguments.contains("-uiTestingBookQuestionAContentOnly")
 #else
         uiTestingMyPage = false
         uiTestingBookQuestionA = false
+        showQuestionAPreviewControls = true
 #endif
         let authPlatform = AuthPlatformCallbacks(
             requestGoogleIdToken: { onResult in
@@ -157,7 +160,7 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             logAnalyticsEvent: FirebaseAnalyticsEventLogger.log,
             uiTestingMyPage: uiTestingMyPage,
             uiTestingBookQuestionA: uiTestingBookQuestionA,
-            showQuestionAPreviewControls: !launchArguments.contains("-uiTestingBookQuestionAContentOnly")
+            showQuestionAPreviewControls: showQuestionAPreviewControls
         )
     }
 

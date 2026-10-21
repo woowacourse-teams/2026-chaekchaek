@@ -1,5 +1,24 @@
 # iOS App Store 심사 준비
 
+## 최신 TestFlight 업로드: 1.3.1 (10)
+
+- 확인일: 2026-10-21
+- 상태: 2026-10-21 19:54 KST App Store Connect CLI 업로드 성공. Apple 처리 시작 확인, TestFlight 처리 완료와 테스터 설치 가능 여부는 미확인. 기본 크기 UI 테스트 실패 0개, AX5 접근성 감사 실패 1개
+- 기준 소스 커밋: `7fff9d43024396b7b9d67dded1c9495a3b245840`
+- Archive: `android/iosApp/release/Chaekchaek-1.3.1-10.xcarchive`
+- 업로드: `xcodebuild -exportArchive`, `method=app-store-connect`, `destination=upload`, `manageAppVersionAndBuildNumber=false`. 기존 Xcode 계정 인증 사용. `Upload succeeded`, `EXPORT SUCCEEDED` 및 `Uploaded package is processing` 확인
+- 업로드 경고: FirebaseAnalytics, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleAppMeasurementIdentitySupport의 dSYM 누락 4건. 앱 자체 dSYM은 UUID 일치
+- Archive 버전: `1.3.1 (10)`, 번들 ID `com.chamsae.chaekchaek`
+- `codesign --verify --deep --strict` 성공. Apple 로그인 entitlement 포함. 앱 바이너리와 dSYM UUID 일치
+- 앱 바이너리 SHA-256: `831a0b238e9ae1a45753fffc45265a16fa79b7bc202d83c200d9e56840bea2c0`
+- Release 컴파일 수정: Debug 전용 launch argument를 Release에서 참조하던 오류를 수정. 테스트용 preview control 옵션은 Debug에서만 읽고 Release는 기존 기본값 사용
+- Simulator: iPhone 17 Pro, iOS 26.2. 기본 크기 25개 통과, 2개 건너뜀. AX5 24개 통과, 2개 건너뜀, 1개 실패
+- AX5 실패: 자료 패널이 열린 상태에서 하단 감상 작성 영역에 일부 가려진 `감상 좋아요`의 접근성 hit area 높이가 약 14.3pt로 노출됨. `testPartiallyCoveredFiltersAndBackReturnAfterReferenceCloses`의 `Hit area is too small`. 최종 소스를 다시 빌드한 단독 재실행에서도 재현. HIG 준수로 판정하지 않음
+- fixture 의존 답글 왕복과 감상 저장 복구 테스트는 production 환경에서 건너뜀. 실기기 로그인과 TestFlight 설치는 미검증
+- 이전 업로드 기록: `1.3.0 (9)`, 2026-10-16 Xcode Organizer 업로드 완료, TestFlight 처리 상태 미확인
+- 이번 작업은 TestFlight 업로드이며 App Store 심사 제출은 포함하지 않음
+- 아래 제출 기록은 과거 심사 이력이며 최신 배포 상태와 구분함
+
 ## 현재 제출 상태
 
 - 제출 ID: `7294cb83-ecee-4ec2-831a-a11ce59afd2a`

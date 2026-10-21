@@ -6,13 +6,18 @@
 
 ## 현재 상태
 
-확인일: 2026-08-31
+확인일: 2026-10-21
 
 | 구분 | `versionName` | `versionCode` | Git 태그 | 상태 |
 | --- | --- | --- | --- | --- |
-| 프로덕션 배포 | 없음 | 없음 | 없음 | 아직 배포하지 않음 |
-| 최신 Play 심사 | `1.0` | `2` | 없음 | 심사 통과, 관리형 게시 대기 |
-| 현재 소스 | `1.1.1` | `5` | 없음 | 서명 AAB 생성, iOS TestFlight 업로드 |
+| 1.3.0 준비 당시 스토어 사용 버전(사용자 확인) | `1.2.2` | `8` | 미확인 | 과거 사용자 확인값. 당시 Play API의 번들 최대 코드는 `7`이었음 |
+| 직전 Android 내부 테스트 | `1.3.0` | `9` | 없음 | 2026-10-16 API로 내부 테스트 completed 확인 |
+| 현재 소스 및 Android 내부 테스트 | `1.3.1` | `10` | `android-v1.3.1-code10` | Play API internal completed 및 App Store Connect CLI 업로드 성공, Apple 처리 시작 확인 |
+
+직전 1.3.0 작업의 기준은 `origin/an-develop`의 `6b3d02276516617d755445cf7579fb586f39e9c0`이다.
+Android와 iOS의 마지막 스토어 사용 버전 `1.2.2 (8)`은 사용자가 확인했다.
+직전 1.3.0은 첫 책 선택 온보딩 등 기능 추가를 포함해 minor 버전 `1.3.0 (9)`으로 준비했다.
+과거 기록의 버전과 배포 상태는 당시 확인 결과이며 현재 상태로 해석하지 않는다.
 
 QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 정보에서 `versionName`과
 `versionCode`를 함께 확인한다. `1.0 (2)`처럼 두 값을 함께 말해야 같은 이름의 다른 빌드를
@@ -58,6 +63,70 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
    큰 값이 있으면 그 값 다음 번호를 사용한다.
 
 ## 릴리스 기록
+
+### 1.3.1 (10)
+
+- 상태: Android 내부 테스트 배포 완료. iOS App Store Connect CLI 업로드 성공, Apple 처리 시작 확인. TestFlight 처리 완료는 미확인
+- 기준 소스 커밋: `7fff9d43024396b7b9d67dded1c9495a3b245840`
+- 버전: 사용자 지정 `1.3.1 (10)`, Android와 iOS 공통
+- Android 산출물: `android/app/release/chaekchaek-1.3.1-code10.aab`
+- iOS 산출물: `android/iosApp/release/Chaekchaek-1.3.1-10.xcarchive`
+- 변경 범위: 직전 1.3.0 이후 통합된 당겨서 새로고침, 책 상세 질문 A안, 감상 입력 보존과 오류 복구, 답글 응답 호환성
+- Android 검증: production 환경의 서명 AAB 빌드, `lintVitalRelease`, `:shared:testAndroidHostTest :app:lintDebug` 성공. 공유 테스트 379개, 실패와 건너뜀 0개. 앱 모듈 단위 테스트는 `NO-SOURCE`. Debug Lint 오류 0개, 경고 56개
+- Android 서명: `jarsigner -verify` 성공. 자체 서명과 timestamp 부재 경고는 남음
+- bundletool 1.18.3으로 실제 AAB 내부의 패키지 `com.chamsae.chaekchaek`, 버전 `1.3.1 (10)`과 launcher icon 참조 및 파일 포함 확인. 스킬의 과거 중간 manifest 기반 파일명은 사용하지 않음
+- AAB SHA-256: `2fae955e93070f3db128d383d8b6d289e5bd3aea4a389876c6665dcbe64ecc24`
+- Android 배포: 2026-10-21 Play API로 업로드 후 internal 트랙 `1.3.1 (10)`, `completed` 설정. edit validate와 commit 성공. 별도 조회 edit에서 버전, 상태와 SHA-256 일치 및 production, alpha, beta 트랙 불변 확인
+- iOS Release Archive 생성과 `codesign --verify --deep --strict` 성공. Apple 로그인 entitlement 및 앱과 dSYM UUID 일치 확인
+- iOS 앱 바이너리 SHA-256: `831a0b238e9ae1a45753fffc45265a16fa79b7bc202d83c200d9e56840bea2c0`
+- Release에서 Debug 전용 launch argument를 참조한 컴파일 오류를 수정. preview 테스트 옵션의 Debug 동작과 Release 기본값은 유지
+- iOS 업로드: 2026-10-21 19:54 KST `xcodebuild -exportArchive`의 App Store Connect 경로로 성공. `manageAppVersionAndBuildNumber=false`로 빌드 10 유지. CLI에서 `Upload succeeded`, `EXPORT SUCCEEDED`, `Uploaded package is processing` 확인. TestFlight 처리 완료와 테스터 설치 가능 여부는 미확인
+- iOS 업로드 경고: FirebaseAnalytics, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleAppMeasurementIdentitySupport 프레임워크 dSYM 누락 4건. 앱 자체 dSYM UUID는 일치
+- 버전 변경과 배포 기록 커밋: Git 태그 `android-v1.3.1-code10`의 대상 커밋
+- iOS Simulator 검증: iPhone 17 Pro, iOS 26.2. 기본 크기 UI 테스트 27개 중 25개 통과와 fixture 의존 2개 건너뜀. AX5는 27개 중 24개 통과, 2개 건너뜀, 접근성 감사 실패 1개
+- AX5 실패: `QuestionAPreviewUITests/testPartiallyCoveredFiltersAndBackReturnAfterReferenceCloses`. 자료 패널이 열린 상태에서 하단 감상 작성 영역에 일부 가려진 `감상 좋아요`가 높이 약 14.3pt로 접근성 트리에 노출되어 `Hit area is too small` 발생. 기본 크기의 같은 테스트는 통과. HIG 준수로 판정하지 않음
+- 건너뛴 테스트: 로컬 fixture가 필요한 답글 응답 왕복과 감상 저장 실패 및 재시도. production 환경에서 실행하지 않음
+- 사용자 개인 scheme은 보존하고 같은 기준 소스와 버전의 임시 detached worktree에서 UI 테스트 실행. Release 전용 참조 오류 수정 뒤 최종 소스를 다시 빌드해 해당 AX5 테스트를 단독 재실행했으며 같은 실패 재현
+- 기본 크기의 질문 카드 및 감상 입력 캡처와 AX5 실패 캡처를 직접 확인. Simulator 글자 크기 복원과 이번 작업에서 부팅한 기기 종료 확인. 실기기와 스토어 배포본의 실제 로그인 및 설치 흐름은 미검증
+- 이전 배포 기록: Android 내부 테스트와 iOS App Store Connect `1.3.0 (9)`
+- 실기기 로그인과 TestFlight 테스터 설치는 별도 검증 항목
+
+### 1.3.0 (9)
+
+- 상태: Android AAB 업로드와 내부 테스트 트랙 `completed` 확인. iOS App Store Connect 업로드 완료, TestFlight 처리 상태 미확인
+- iOS 업로드 확인: 2026-10-16 14:01 KST, Xcode Organizer의 `Uploaded to Apple`과 `1.3.0 (9)` 확인
+- Android 업로드: 2026-10-16 14:39 KST, 전용 서비스 계정으로 Play API에 AAB를 전송하고 `internal` 트랙에 `1.3.0 (9)`, `status=completed`를 설정했다. edit validate와 commit 성공 후 새 조회용 edit에서도 버전 코드 `9`, `completed` 및 AAB SHA-256 일치를 확인하고 조회용 edit을 삭제했다
+- Android 업로드 전 조회: 내부 테스트 `1.2.0 (6)`, 프로덕션 `1.2.1 (7)`, 업로드된 번들 최대 코드 `7`. 업로드 후 프로덕션, 비공개와 공개 테스트 트랙이 변경되지 않은 것을 API로 대조했다. 테스터 목록은 변경하지 않았다
+- 초기 Google ADC 인증은 Play API scope 부족으로 403이었으나 전용 서비스 계정과 Play 앱 권한 설정 후 해결했다. 사용자의 보류 지시 이후 명시적인 내부 테스트 업로드 요청을 받아 수행했다
+- iOS 업로드 경고: FirebaseAnalytics, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleAppMeasurementIdentitySupport 프레임워크의 dSYM 누락 4건. 업로드 자체는 완료
+- App Store 심사 제출과 프로덕션 게시는 수행하지 않음
+- 기준 소스 커밋: `6b3d02276516617d755445cf7579fb586f39e9c0`
+- 버전 변경과 검증 기록 커밋: `93b7de787c82490c03bd890d9023f6267d3edeb6`
+- 관련 이슈와 PR: #531, #532
+- Android 산출물: `android/app/release/chaekchaek-1.3.0-code9.aab`
+- iOS 산출물: `android/iosApp/release/Chaekchaek-1.3.0-9.xcarchive`
+- AAB SHA-256: `9d7d0482d6deaf97c5afb00962c792380f0e3efa92ebee17533314310157c18d`
+- 변경 내역: 기준 브랜치에 통합된 첫 책 선택 온보딩, 서재 저장 피드백, 인증과 홈 재진입 복구를 포함
+- Android 검증:
+  - `:app:testDebugUnitTest :app:bundleRelease` 성공. 앱 모듈 단위 테스트는 `NO-SOURCE`로 실행 대상이 없음
+  - `:shared:testAndroidHostTest :app:lintDebug -PapiEnvironment=production` 성공. 공유 테스트 314개, 실패와 건너뜀 0개. 테스트 결과는 Gradle 캐시에서 재사용
+  - Lint 오류 0개, 경고 55개. release 빌드의 `lintVitalRelease` 통과
+  - 실제 AAB에 `jarsigner -verify` 성공. 업로드 키의 자체 서명과 timestamp 부재 경고는 남음
+  - bundletool 1.18.3으로 AAB 내부 manifest의 패키지 `com.chamsae.chaekchaek`, 버전 `1.3.0 (9)`, `@mipmap/ic_launcher` 참조와 아이콘 파일 12개 포함 확인
+  - 현재 빌드의 packaged manifest도 같은 버전으로 확인. 스킬 스크립트가 과거 중간 manifest에서 `1.1.0 (3)`을 읽어 만든 파일명은 검증 근거로 사용하지 않음
+- iOS 검증:
+  - iPhone 17 Pro, iOS 26.2에서 기본 글자 크기와 AX5 각각 UI 테스트 8개 통과, 1개 건너뜀, 실패 0개
+  - 건너뛴 항목은 로컬 fixture가 필요한 감상 저장 실패와 재시도 테스트. production 빌드에서는 해당 fixture를 실행하지 않음
+  - 홈 캐러셀 표시점의 작은 터치 영역은 기존 테스트의 접근성 예외로 기록됨. 테스트 성공을 앱 전체 HIG 준수로 해석하지 않음
+  - 기본 크기와 AX5 로그인 시트, AX5 마이페이지의 테스트 캡처를 직접 확인. AX5 시트 배경의 서재 필터 영역에는 기존 글자 겹침이 보이며 이번 버전 변경에서는 수정하지 않음
+  - 개인 scheme과 충돌을 피하기 위해 같은 커밋에 동일한 버전 변경을 적용한 임시 detached worktree의 공유 scheme으로 검증. 추적되는 공통 코드와 iOS 앱 소스의 바이트 일치 확인
+  - 테스트 전 글자 크기 복원과 이번 작업에서 부팅한 Simulator 종료 확인
+  - production 설정의 Release Archive 생성 성공. 앱과 Archive의 버전 `1.3.0 (9)`, 번들 ID와 Apple 로그인 entitlement 확인
+  - `codesign --verify --deep --strict` 성공. 로컬 Archive는 Apple Development 서명. 이후 Xcode Organizer의 App Store Connect 배포 경로로 업로드 완료
+  - 앱 실행 파일과 dSYM UUID 일치: `148C8A6F-51E1-361C-9977-2C3633CD1BA3`
+  - iOS 앱 실행 파일 SHA-256: `8997f93046eaca6ff0c6bfbaf97948ba3b5b57b0afa6a42d359de317abaa0cfe`
+- 실기기에서 이번 release 산출물의 실행과 공급업체 로그인, 스토어 배포본의 동작은 미검증
+- 이전 스토어 사용 버전: Android와 iOS `1.2.2 (8)`, 사용자 확인
 
 ### 1.1.1 (5)
 
@@ -157,6 +226,28 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
 7. 실제 프로덕션 배포가 끝난 뒤에만 현재 상태 표를 `프로덕션 배포`로 갱신한다. 심사 통과와
    배포 완료를 같은 상태로 취급하지 않는다.
 8. 배포 후 아래 규칙에 따라 release 커밋을 남긴다.
+
+## Google Play CLI 인증
+
+2026-10-16 확인 기준이다. 인증 설정 후 사용자 요청에 따라 `1.3.0 (9)`을 내부 테스트에 업로드하고 트랙 반영을 확인했다.
+
+- Google Cloud 프로젝트: `chaekchaek`. 앱 Firebase 프로젝트 `chaekchaek-d2b85`와 구분하며 앱의 Firebase 설정은 변경하지 않는다.
+- Google Play Developer API `androidpublisher.googleapis.com` 활성화 완료.
+- 배포용 서비스 계정: `chaekchaek-play-release@chaekchaek.iam.gserviceaccount.com`.
+- 로컬 JSON 키: `~/.config/chaekchaek/google-play-service-account.json`. 저장소 밖에 보관하며 파일 권한은 `0600`이다. 키 내용은 문서, 로그와 Git에 남기지 않는다.
+- JSON의 프로젝트와 서비스 계정, 파일 권한 및 `androidpublisher` scope의 OAuth 토큰 발급 성공 확인.
+- Play 앱 접근은 권한 등록 전 `403 PERMISSION_DENIED`였으며, 등록 후 CLI에서 앱 `com.chamsae.chaekchaek`과 `production`, `beta`, `alpha`, `internal` 트랙 조회에 성공했다. 인증 검증용 임시 edit은 삭제했다. 이후 별도 배포 edit으로 AAB 업로드와 내부 테스트 트랙 commit을 완료했으며 상세 근거는 위 릴리스 기록을 따른다.
+- Play Console에서 사용자 확인 후 책췍 앱에 한정해 앱 정보 읽기, 이에 포함되는 앱 품질 정보 읽기와 테스트 트랙 출시 권한을 등록했다. 계정이 `활성` 상태인 것을 확인했다. 테스트 트랙 권한은 내부, 비공개와 공개 테스트를 포함하며 프로덕션 출시, 관리자, 재무 권한은 부여하지 않았다.
+
+CLI 도구가 해당 환경변수를 지원하는지 확인한 뒤 호출 범위에서 키 경로를 참조한다. 다른 프로젝트의 기본 인증을 바꾸지 않도록 전역 shell 설정에 등록하지 않는다.
+
+```sh
+export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/chaekchaek/google-play-service-account.json"
+```
+
+실제 AAB 전송 전에는 앱 접근과 대상 트랙을 먼저 조회한다. 업로드는 사용자가 요청한 대상 트랙과 범위에서만 수행한다. 프로덕션 게시는 별도 요청이 필요하다. 파일 전송, 트랙 반영과 실제 테스터 설치는 구분한다.
+
+근거: [Google Play Developer API 시작하기](https://developers.google.com/android-publisher/getting_started), [앱별 권한](https://developers.google.com/android-publisher/api-ref/rest/v3/grants).
 
 ## Release 커밋
 
