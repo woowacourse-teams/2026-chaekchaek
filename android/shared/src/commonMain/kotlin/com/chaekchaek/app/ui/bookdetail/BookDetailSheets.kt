@@ -83,11 +83,14 @@ internal fun PageInputDialog(
     initialPage: Int,
     totalPages: Int,
     onDismiss: () -> Unit,
-    onSave: (Int) -> Unit,
+    onSave: (Int, () -> Unit) -> Unit,
 ) {
     val pageState = rememberLimitedTextFieldState(BookDetailInputRules.PagePolicy, initialPage.toString())
     val value = pageState.text.toString()
     val page = BookDetailInputRules.validPage(value, totalPages)
+    var active by remember { mutableStateOf(true) }
+    val latestOnDismiss by rememberUpdatedState(onDismiss)
+    DisposableEffect(Unit) { onDispose { active = false } }
     val errors = remember { ErrorRecoveryState() }
     ErrorRecoveryEffect(errors)
     ChaekTwoActionDialog(
@@ -125,7 +128,12 @@ internal fun PageInputDialog(
         },
         dismissButton = { ChaekOverlayButton("취소", onDismiss, secondary = true) },
         confirmButton = { ChaekOverlayButton("저장", {
-            if (page != null) onSave(page)
+            if (page != null) {
+                val submitted = pageState.text.toString()
+                onSave(page) {
+                    if (active && pageState.text.toString() == submitted) latestOnDismiss()
+                }
+            }
             else errors.confirm(if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.")
         }) },
     )

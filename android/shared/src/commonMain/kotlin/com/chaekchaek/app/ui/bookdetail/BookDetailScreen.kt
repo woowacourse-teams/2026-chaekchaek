@@ -429,9 +429,7 @@ fun BookDetailScreen(
             initialPage = currentPage,
             totalPages = book.totalPages,
             onDismiss = { showPageDialog = false },
-            onSave = { page ->
-                onPageSave(page) { showPageDialog = false }
-            },
+            onSave = { page, onSaved -> onPageSave(page, onSaved) },
         )
     }
     if (showReviewSheet) {

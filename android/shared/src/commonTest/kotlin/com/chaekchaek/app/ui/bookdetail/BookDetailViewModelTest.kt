@@ -248,6 +248,51 @@ class BookDetailViewModelTest {
   }
 
   @Test
+  fun `별점 실패 후 토큰이 갱신돼도 공통 재시도로 감상 제출을 완료한다`() = runViewModelTest {
+    for (editing in listOf(false, true)) {
+      var ratingAttempts = 0
+      var reviewAttempts = 0
+      val client = testClient(MockEngine { request ->
+        when (request.method) {
+          HttpMethod.Put -> {
+            ratingAttempts += 1
+            if (ratingAttempts == 1) respond("", HttpStatusCode.InternalServerError)
+            else respond(RATED_LIBRARY_RECORD.replace("73", "42"), headers = jsonHeaders())
+          }
+          HttpMethod.Post, HttpMethod.Patch -> {
+            reviewAttempts += 1
+            respond(if (editing) REVIEW_RESPONSE else """{"bookId":42,"review":$REVIEW_RESPONSE}""",
+              HttpStatusCode.Created, jsonHeaders())
+          }
+          else -> respond(if (request.url.encodedPath.contains("/by-isbn/")) DETAIL_WITH_RECORD
+            else """{"totalCount":1,"nextPage":null,"items":[$REVIEW_RESPONSE]}""", headers = jsonHeaders())
+        }
+      })
+      val vm = viewModel(client, client, platform({ null }))
+      val store = ViewModelStore().also { it.put("review", vm) }
+      try {
+        vm.open(book().copy(isbn13 = "9780000000042"), "member")
+        awaitReal { vm.uiState.first { it.reviews.isNotEmpty() } }
+        if (editing) vm.updateReviewWithRating(7, ReviewCreateRequest("감상"), 5.0)
+        else vm.createReviewWithRating(ReviewCreateRequest("감상"), 5.0)
+        awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Failed } }
+        val retry = checkNotNull(vm.errors.takeRecovery(vm.errors.notice.value!!.id))
+        advanceUntilIdle()
+        vm.syncAuthentication("renewed-member")
+        awaitReal { vm.uiState.first { !it.isLoading && it.detail != null } }
+        retry(null)
+        awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Succeeded } }
+        assertEquals(2, ratingAttempts)
+        assertEquals(1, reviewAttempts)
+      } finally {
+        store.clear()
+        advanceUntilIdle()
+        client.close()
+      }
+    }
+  }
+
+  @Test
   fun `별점 저장 뒤 감상 수정만 실패하면 재시도는 별점을 다시 저장하지 않는다`() = runViewModelTest {
     val writes = mutableListOf<HttpMethod>()
     val retryStarted = CompletableDeferred<Unit>()

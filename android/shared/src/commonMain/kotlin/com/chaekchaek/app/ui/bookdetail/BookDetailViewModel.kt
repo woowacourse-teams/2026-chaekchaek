@@ -353,7 +353,6 @@ class BookDetailViewModel(
         onRatingSaved: () -> Unit = {},
     ) {
         if (mutationJob?.isActive == true) return
-        val generation = requestGeneration
         _uiState.value = _uiState.value.copy(
             reviewSubmissionState = ReviewSubmissionState.Submitting,
             requestError = null,
@@ -390,7 +389,7 @@ class BookDetailViewModel(
             onFailure = {
                 _uiState.value = _uiState.value.copy(reviewSubmissionState = ReviewSubmissionState.Failed)
             },
-        ) {
+        ) { generation ->
             val resolvedTarget = target ?: throw ReviewCreateTargetUnavailableException()
             failureStage = "personal_rating"
             saveReviewRatingIfChanged(rating, generation, onLibraryAdded, onRatingSaved)
@@ -471,7 +470,6 @@ class BookDetailViewModel(
 
     ) {
         if (mutationJob?.isActive == true) return
-        val generation = requestGeneration
         _uiState.value = _uiState.value.copy(
             reviewSubmissionState = ReviewSubmissionState.Submitting,
             requestError = null,
@@ -491,7 +489,7 @@ class BookDetailViewModel(
             reloadAfterSuccess = preserveReadingMetadata,
             closesComposer = true,
             preservesComposerOnFailure = true,
-        ) {
+        ) { generation ->
             saveReviewRatingIfChanged(rating, generation, onLibraryAdded, onRatingSaved)
             publicWrite(retryUnauthorized = false) { credential ->
                 if (preserveReadingMetadata) repository.updateReviewContent(reviewId, request, credential)
@@ -798,7 +796,7 @@ class BookDetailViewModel(
         closesComposer: Boolean = false,
         onFinished: () -> Unit = {},
         preservesComposerOnFailure: Boolean = false,
-        action: suspend () -> T,
+        action: suspend (generation: Int) -> T,
     ) {
         if (mutationJob?.isActive == true) return
         if (preservesComposerOnFailure) {
@@ -830,7 +828,7 @@ class BookDetailViewModel(
                     },
                 ) {
                     if (awaitLoadBeforeAction) loadJob?.join()
-                    action()
+                    action(generation)
                 }
             }.onSuccess { result ->
                 if (generation != requestGeneration) return@onSuccess
@@ -883,7 +881,6 @@ class BookDetailViewModel(
         reloadAfterSuccess: Boolean = false,
         action: suspend (bookId: Long, token: String) -> LibraryRecord,
     ) {
-        val generation = requestGeneration
         mutate(
             actionName = actionName,
             onSuccess = { record: LibraryRecord ->
@@ -891,7 +888,7 @@ class BookDetailViewModel(
                 onSuccess()
             },
             reloadAfterSuccess = reloadAfterSuccess,
-        ) {
+        ) { generation ->
             val token = requireToken()
             action(
                 bookIdForWrite(token, generation, onLibraryAdded, actionName),
