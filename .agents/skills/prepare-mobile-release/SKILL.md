@@ -29,10 +29,12 @@ description: 책췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준
 3. 저장소 릴리즈 기록과 각 스토어에서 사용한 가장 큰 빌드 번호를 확인한다. `versionName`은 같은 SemVer로 맞추고 Android `versionCode`와 iOS build는 사용된 최댓값보다 크게 정한다.
 4. `docs/android-release-management.md`와 `android/docs/ios-app-store-review.md`를 버전 변경과 같은 커밋에서 갱신한다.
 5. Android는 `build-signed-aab` 스킬로 AAB를 만들고 서명, manifest, 아이콘과 SHA-256을 검증한 뒤 고정 산출물 경로에 파일이 있는지 확인한다.
-6. iOS는 `ios-simulator-validation` 스킬로 테스트한다. KMP Release Archive 전에 `df -h /`로 이 프로젝트 기준 5GB 이상의 여유 공간을 확인하고, 부족하면 현재 작업에서 만든 빌드 산출물만 정확한 경로로 정리한다.
-7. `xcodebuild archive`의 `-archivePath`에 고정 iOS Archive 경로를 지정한다. 사용자가 업로드를 요청한 경우에만 그 Archive를 App Store Connect에 업로드한다.
-8. 실제 AAB 해시, TestFlight 상태, 소스 커밋을 릴리즈 문서에 반영하고 `release-commit` 스킬 형식으로 커밋한다.
-9. 직접 push가 승인된 작업이면 원격 `an-develop`이 예상 기준에서 움직이지 않았는지 확인한 뒤 fast-forward push한다.
+6. iOS는 `ios-simulator-validation` 스킬로 기본 글자 크기와 AX5 테스트를 끝까지 실행한다. KMP Release Archive 전에 `df -h /`로 이 프로젝트 기준 5GB 이상의 여유 공간을 확인하고, 부족하면 현재 작업에서 만든 빌드 산출물만 정확한 경로로 정리한다.
+7. `xcodebuild archive`의 `-archivePath`에 고정 iOS Archive 경로를 지정한다. Debug Simulator 성공과 별도로 Release Archive 성공을 확인한다. `#if DEBUG` 안에서만 선언한 launch argument나 fixture 변수를 Release 호출부에서 참조하면 Debug 빌드는 성공해도 Archive는 실패한다. 테스트 옵션은 Debug 분기에서 계산하고 Release에는 기존 기본값을 명시한다.
+8. 외부 업로드 전에 양쪽 빌드와 전체 테스트 결과를 확인한다. Archive 빌드와 Simulator 테스트는 병행할 수 있지만, 테스트가 실행 중이거나 실패 원인이 미해결이면 업로드하지 않는다. fixture 의존 건너뜀은 실패와 구분해 사유를 기록한다. 알려진 실패가 있는 빌드의 업로드는 해당 실패를 알리고 사용자가 그 상태의 업로드를 명시적으로 요청한 경우에만 진행한다.
+9. 업로드가 요청된 경우 Android는 지정된 Play 트랙에 반영하고 새 API 조회로 상태와 AAB 해시를 대조한다. iOS는 아래 CLI 절차를 먼저 사용한다. 업로드된 동일 빌드 번호의 바이너리를 수정본으로 덮어쓸 수 있다고 가정하지 않는다. 업로드 뒤 결함을 발견했다면 현재 빌드의 상태와 결함을 기록하고 수정 배포의 새 빌드 번호를 사용자와 확정한다.
+10. 실제 AAB 해시, TestFlight 상태, 소스 커밋을 릴리즈 문서에 반영하고 `release-commit` 스킬 형식으로 커밋한다.
+11. 직접 push가 승인된 작업이면 원격 `an-develop`이 예상 기준에서 움직이지 않았는지 확인한 뒤 fast-forward push한다.
 
 Google Play 프로덕션 게시와 App Store 심사 제출은 릴리즈 준비에 포함하지 않는다.
 
@@ -41,19 +43,47 @@ Google Play 프로덕션 게시와 App Store 심사 제출은 릴리즈 준비�
 `build-signed-aab`의 빌드가 성공해도 스크립트가 과거 중간 산출물을 읽을 수 있다. 실제 사례에서는 `app/build/intermediates/bundle_manifest/release/processApplicationManifestReleaseForBundle/AndroidManifest.xml`이 이전 빌드 버전으로 남아 있었다. 이 경로의 존재만으로 최신 AAB의 버전을 판단하지 않는다.
 
 - 현재 Gradle 실행의 `processReleaseManifestForPackage` 결과인 `app/build/intermediates/packaged_manifests/release/processReleaseManifestForPackage/AndroidManifest.xml`의 생성 시각, package, versionName, versionCode, icon을 소스와 대조한다. 경로는 AGP 버전에 따라 달라질 수 있다.
-- 가능하면 실행 가능한 bundletool의 `dump manifest --bundle=<AAB> --module=base`로 AAB 내부 manifest를 확인한다. Gradle 캐시에서 발견한 임의 JAR가 실행형 bundletool이라고 가정하지 않는다.
+- 업로드할 AAB는 실행 가능한 공식 bundletool의 `dump manifest --bundle=<AAB> --module=base`로 내부 package, versionName, versionCode와 icon을 소스와 대조한 뒤 확정한다. Gradle 캐시에서 발견한 임의 JAR가 실행형 bundletool이라고 가정하지 않는다. 중간 manifest 조회만 성공한 상태를 내부 AAB 검증 완료로 기록하지 않는다.
 - 실제 `app/build/outputs/bundle/release/app-release.aab`에 `jarsigner -verify`를 실행하고 ZIP 안의 런처 아이콘을 확인한다. 스크립트 복사 단계만 실패했다면 이 검증을 마친 AAB를 고정 경로로 복사하고 SHA-256을 기록한다. 기존 파일은 덮어쓰기 전에 보존한다.
 - 내부 manifest 직접 검증과 현재 빌드의 중간 manifest 대조는 서로 다른 근거다. 수행한 방법만 기록하고, 출처나 버전이 불명확하면 배포용으로 확정하지 않는다.
 
 ## iOS TestFlight 업로드
 
-이 프로젝트에서는 2026-10-02 Xcode Organizer의 App Store Connect 경로로 `1.2.0 (6)` 업로드에 성공했다. 셸의 API 키 환경변수가 없고 로컬 코드 서명 목록에 개발용 인증서만 보여도 Xcode 업로드 불가로 단정하지 않는다. 계정 상태는 매 실행 때 확인한다.
+명령어를 우선한다. 2026-10-21 `1.3.1 (10)`은 기존 Xcode 계정 인증으로 `xcodebuild -exportArchive` 업로드에 성공했다. 별도 ASC API 키 환경변수가 없고 로컬 서명 목록에 개발용 인증서만 있어도 CLI 업로드 불가로 단정하지 않는다. 계정과 지원 옵션은 매 실행 때 확인한다.
 
-1. 고정 경로 Archive의 번들 ID, 버전, 빌드 번호와 서명을 확인한다. 이미 제공된 CLI 인증 설정이 있으면 사용할 수 있으나, 없으면 키체인 비밀값을 추출하거나 홈 디렉터리 전체에서 인증 정보를 검색하지 않는다. `security ... -g`처럼 암호를 출력하는 옵션도 사용하지 않는다.
-2. Xcode에서 해당 `.xcarchive`를 연다. Organizer가 기존 다른 앱을 선택할 수 있으므로 `Chaekchaek`, `com.chamsae.chaekchaek`, 요청 버전과 빌드 번호를 화면에서 대조한다. UI 조작에는 제공된 Computer Use 도구를 사용한다.
-3. `Distribute App`에서 `App Store Connect`를 선택하고 승인 범위 안에서 `Distribute`를 실행한다. 이 프로젝트의 재현된 성공 경로다. `TestFlight Internal Only`는 내부 전용 요청일 때만 선택한다. 로그인이나 계정 선택이 막히면 해당 단계에서 필요한 사용자 조작을 구체적으로 알린다.
-4. Preparing, Analyzing package, Uploading은 진행 상태다. `App upload complete`와 정확한 버전의 `uploaded` 표시를 확인하고, `Done` 후 Organizer의 `Uploaded to Apple`, 업로드 시각과 build 번호를 대조한다.
-5. 업로드 성공만 확인했다면 문서에 `App Store Connect 업로드 완료, TestFlight 처리 상태 미확인`으로 기록한다. App Store Connect에서 실제 상태를 읽지 않고 `처리 중`, `처리 대기`, `테스터 배포 가능`이라고 단정하지 않는다. 처리 완료까지 요청받았다면 해당 빌드의 TestFlight 상태를 추가 확인한다.
+1. 고정 Archive 안의 앱 Info.plist에서 번들 ID, 버전과 빌드 번호를 대조하고 `codesign --verify --deep --strict` 및 앱과 dSYM UUID 일치를 확인한다. 이미 제공된 CLI 인증이 있으면 사용한다. 없으면 `-allowProvisioningUpdates`로 기존 Xcode 계정을 사용하는 경로부터 시도한다. 키체인 비밀값 추출, `security ... -g`, 홈 전체 인증 파일 검색은 하지 않는다.
+2. 현재 `xcodebuild -help`의 export 옵션을 확인한다. 이 프로젝트의 성공 설정은 `method=app-store-connect`, `destination=upload`, `signingStyle=automatic`, `teamID=CB3GUFX279`, `manageAppVersionAndBuildNumber=false`, `uploadSymbols=true`다. 사용자가 지정한 빌드 번호를 유지한다. `testFlightInternalTestingOnly`는 외부 TestFlight와 App Store 배포를 제한하므로 내부 전용 빌드 요청이 있을 때만 설정한다. Android 내부 테스트 요청을 iOS 내부 전용 요청으로 해석하지 않는다.
+3. 저장소 루트에서 확인한 버전과 빌드 번호로 아래 예시를 실행한다. export plist는 임시 경로에 두고 로그에는 비밀값을 넣지 않는다. 이미 제공된 ASC 키를 쓰는 경우에만 `-authenticationKeyPath`, `-authenticationKeyID`, `-authenticationKeyIssuerID`를 추가한다.
+
+   ```sh
+   release_version="<확인한 버전>"
+   release_build="<확인한 빌드 번호>"
+   release_archive="$PWD/android/iosApp/release/Chaekchaek-${release_version}-${release_build}.xcarchive"
+   export_plist="$(mktemp -t chaekchaek-export-options)"
+   EXPORT_OPTIONS_PATH="$export_plist" python3 - <<'PY'
+   import os, plistlib
+   with open(os.environ["EXPORT_OPTIONS_PATH"], "wb") as output:
+       plistlib.dump({
+           "method": "app-store-connect",
+           "destination": "upload",
+           "signingStyle": "automatic",
+           "teamID": "CB3GUFX279",
+           "manageAppVersionAndBuildNumber": False,
+           "uploadSymbols": True,
+       }, output)
+   PY
+   xcodebuild -exportArchive \
+     -archivePath "$release_archive" \
+     -exportOptionsPlist "$export_plist" \
+     -allowProvisioningUpdates
+   ```
+
+4. 종료 코드 0, `Upload succeeded`, `EXPORT SUCCEEDED`와 대상 Archive의 버전을 대조해 업로드 성공을 판정한다. `Preparing`, `Analyzing package`, 전송 진행률 100%만으로 완료라고 하지 않는다.
+5. `Uploaded package is processing`도 확인한 경우에만 Apple 처리 시작을 기록한다. TestFlight 처리 완료와 테스터 배포 가능은 별도 상태이며 실제 조회하지 못했으면 미확인으로 남긴다.
+6. `Upload Symbols Failed`는 바이너리 업로드 실패와 구분한다. 1.3.1에서는 FirebaseAnalytics, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleAppMeasurementIdentitySupport의 dSYM 누락 4건이 경고로 남았다. 대상과 건수, 앱 자체 dSYM 검증 결과를 기록하고 경고만을 이유로 동일 바이너리를 재전송하지 않는다.
+7. CLI 실패 시 구체적인 인증, 서명 또는 검증 오류를 확인한다. 응답이 불명확하면 기존 업로드의 성공 여부부터 조회해 중복 전송을 피한다. CLI로 처리할 수 없는 상호작용이 확인된 경우에만 원인을 알리고 UI 대체 수단을 검토한다. 사용자가 CLI만 지정했다면 UI를 열지 말고 필요한 인증 조작을 구체적으로 알린다.
+
+확인 근거: 로컬 `xcodebuild -help`와 [1.3.1 배포 기록](../../../docs/android-release-management.md#131-10). 명령어 실행 성공, Apple 처리 시작, TestFlight 처리 완료와 테스터 설치를 구분한다.
 
 ## 검증과 기록의 판정 기준
 
