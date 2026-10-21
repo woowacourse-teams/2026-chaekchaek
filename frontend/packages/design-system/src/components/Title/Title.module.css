@@ -12,6 +12,12 @@
   align-items: center;
 }
 
+.heading {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
 .title * {
   vertical-align: top;
 }
