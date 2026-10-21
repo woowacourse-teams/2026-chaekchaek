@@ -130,6 +130,8 @@ internal fun NicknameDialog(
     onConfirm: () -> Unit,
 ) {
     val nickname = nicknameState.text.toString()
+    val errors = androidx.compose.runtime.remember { com.chaekchaek.app.presentation.common.ErrorRecoveryState() }
+    com.chaekchaek.app.ui.common.ErrorRecoveryEffect(errors)
     ChaekTwoActionDialog(
         onDismissRequest = onDismiss,
         title = { Text("닉네임 설정", style = MaterialTheme.typography.titleMedium) },
@@ -149,8 +151,10 @@ internal fun NicknameDialog(
         confirmButton = {
             DialogConfirmButton(
                 label = "확인",
-                onClick = onConfirm,
-                enabled = Nickname.isValid(nickname.trim()),
+                onClick = {
+                    if (Nickname.isValid(nickname.trim())) onConfirm()
+                    else errors.confirm("공백이 아닌 최대 10자의 닉네임을 입력해 주세요.")
+                },
             )
         },
     )

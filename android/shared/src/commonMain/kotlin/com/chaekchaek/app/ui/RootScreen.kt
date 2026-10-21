@@ -222,34 +222,11 @@ internal fun RootScreen(
             archiveViewModel.retry()
         }
     }
-    LaunchedEffect(registrationState.errorMessage) {
-        registrationState.errorMessage?.let {
-            snackbarHost.showSnackbar(it)
-            registrationViewModel.clearError()
-        }
-    }
     LaunchedEffect(librarySaveState.savedCount) {
         if (librarySaveViewModel.consumeSaveNotice()) snackbarHost.showSnackbar("내 서재에 담았어요")
     }
-    LaunchedEffect(librarySaveState.errorMessage) {
-        librarySaveState.errorMessage?.let { message ->
-            val failedBook = librarySaveState.failedBook
-            val result = snackbarHost.showSnackbar(message, actionLabel = failedBook?.let { "다시 시도" })
-            librarySaveViewModel.clearError()
-            if (result == SnackbarResult.ActionPerformed && failedBook != null && archiveViewModel.uiState.value.items.none { it.id == failedBook.isbn13 }) {
-                librarySaveViewModel.save(failedBook)
-            }
-        }
-    }
     LaunchedEffect(authState.errorMessage) {
         if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
-    }
-    LaunchedEffect(memberSettingsState.errorMessage) {
-        memberSettingsState.errorMessage?.let { message ->
-            val result = snackbarHost.showSnackbar(message, actionLabel = "다시 시도")
-            memberSettingsViewModel.clearError()
-            if (result == SnackbarResult.ActionPerformed) memberSettingsViewModel.retry()
-        }
     }
     val retryHome: () -> Unit = {
         rootScope.launch {

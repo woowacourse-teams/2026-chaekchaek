@@ -212,11 +212,12 @@ class FeedViewModelTest {
         val savedState = SavedStateHandle(mapOf(FeedSavedStateKeys.LoadedPage to 2))
         val viewModel = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, savedStateHandle = savedState)
         advanceUntilIdle()
-        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Failure>()
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>()
+        viewModel.errors.notice.value?.action shouldBe com.chaekchaek.app.presentation.common.ErrorAction.Retry
         repository.requestedPages shouldBe listOf(1, 2)
 
         repository.failurePage = null
-        viewModel.retry()
+        viewModel.errors.takeRecovery(viewModel.errors.notice.value!!.id)?.invoke(null)
         advanceUntilIdle()
         repository.requestedPages shouldBe listOf(1, 2, 1, 2)
         viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.size shouldBe 2

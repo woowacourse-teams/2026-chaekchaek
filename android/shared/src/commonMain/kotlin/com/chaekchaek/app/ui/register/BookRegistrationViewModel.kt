@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.register
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.analytics.AnalyticsAction
@@ -32,6 +34,7 @@ class BookRegistrationViewModel private constructor(
     private val addBook: suspend (isbn13: String, totalPages: Int?, accessToken: String) -> Unit,
     private val analytics: AnalyticsTracker,
 ) : ViewModel() {
+    val errors = ErrorRecoveryState()
     internal constructor(
         addBook: suspend (isbn13: String, totalPages: Int?, accessToken: String) -> Unit,
     ) : this(addBook, AnalyticsTracker.None)
@@ -67,6 +70,7 @@ class BookRegistrationViewModel private constructor(
                 outcome = "blocked",
                 strings = mapOf("error_category" to "validation"),
             )
+            errors.confirm(validationError)
             _uiState.value = _uiState.value.copy(errorMessage = validationError)
             return
         }
@@ -120,6 +124,10 @@ class BookRegistrationViewModel private constructor(
                     strings = mapOf("error_category" to analyticsErrorCategory(error)),
                 )
                 pendingAction = null
+                errors.report(error, ErrorOperation.LibrarySave) { freshToken ->
+                    if (freshToken != null) accessToken = freshToken
+                    accessToken?.let { performRegistration(book, it, analytics.startAction("library_add")) }
+                }
                 _uiState.value = _uiState.value.copy(errorMessage = error.registrationErrorMessage())
             }
             _uiState.value = _uiState.value.copy(isBusy = false)

@@ -24,6 +24,39 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModelTest {
     @Test
+    fun failedPaginationKeepsDraftResultsAndCursorUntilExplicitRetry() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val calls = mutableListOf<Int>()
+            var fail = true
+            val handle = SavedStateHandle()
+            val vm = SearchViewModel(BookSearchRepository { _, _, page ->
+                calls += page
+                if (page == 2 && fail) throw IllegalStateException("network")
+                BookSearchPage(2, if (page == 1) 2 else null,
+                    listOf(book("책 $page", "2026").copy(isbn13 = "isbn$page")))
+            }, {}, { true }, savedStateHandle = handle)
+            vm.search("실행 검색")
+            advanceUntilIdle()
+            vm.updateQuery("아직 제출하지 않은 입력")
+            vm.loadMore()
+            advanceUntilIdle()
+            val failed = vm.uiState.value as SearchUiState.Success
+            assertEquals(1, failed.results.size)
+            assertEquals(2, failed.nextPage)
+            assertEquals(false, failed.loadingMore)
+            assertEquals(1, handle.get<Int>(SearchSavedStateKeys.LoadedPage))
+            assertEquals("아직 제출하지 않은 입력", vm.query.value)
+            fail = false
+            vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke(null)
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2, 2), calls)
+            assertEquals(2, (vm.uiState.value as SearchUiState.Success).results.size)
+            assertEquals(2, handle.get<Int>(SearchSavedStateKeys.LoadedPage))
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test
     fun restorationReloadsThroughThePreviouslyLoadedPageAndDeduplicatesResults() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {

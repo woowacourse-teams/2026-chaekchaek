@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.bookdetail
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -37,6 +39,7 @@ class BookDetailViewModel(
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
+    val errors = ErrorRecoveryState()
     private val restoredReviewScope = ReviewScope.entries
         .firstOrNull { it.name == savedStateHandle[BookDetailSavedStateKeys.ReviewScope] }
         ?: ReviewScope.ALL
@@ -229,6 +232,7 @@ class BookDetailViewModel(
             }.onFailure { error ->
                 if (error is CancellationException) throw error
                 if (generation == reviewPageGeneration) {
+                    reportFailure(error) { retryReviews() }
                     _uiState.value = _uiState.value.copy(reviewPageLoadState = ReviewPageLoadState.Failed)
                 }
             }
@@ -332,7 +336,7 @@ class BookDetailViewModel(
                 if (accessToken == token) {
                     _uiState.value = _uiState.value.copy(ratingComparison = comparison.toUiModels())
                 }
-            }.onFailure(::handleFailure)
+            }.onFailure { error -> reportFailure(error) { loadRatingComparison(criterion) } }
         }
     }
 
@@ -422,12 +426,13 @@ class BookDetailViewModel(
 
     fun dismissComposer() = analytics.dismissComposer()
 
-    fun updateReview(reviewId: Long, request: ReviewCreateRequest) = mutate(
+    fun updateReview(reviewId: Long, request: ReviewCreateRequest, onSaved: () -> Unit = {}) = mutate(
         actionName = "review_update",
         onSuccess = { updated ->
             _uiState.value = _uiState.value.copy(
                 reviews = _uiState.value.reviews.map { if (it.reviewId == reviewId) updated else it },
             )
+            onSaved()
         },
         reloadAfterSuccess = false,
         closesComposer = true,
@@ -458,14 +463,15 @@ class BookDetailViewModel(
         }
     }
 
-    fun createReply(reviewId: Long, content: String) = mutate(
+    fun createReply(reviewId: Long, content: String, onSaved: () -> Unit = {}) = mutate(
         actionName = "reply_create",
+        onSuccess = { _: com.chaekchaek.app.data.remote.ReviewReply -> onSaved() },
         closesComposer = true,
     ) {
         publicWrite(retryUnauthorized = true) { repository.createReply(reviewId, content, it) }
     }
 
-    fun updateReply(replyId: Long, content: String) = mutate(
+    fun updateReply(replyId: Long, content: String, onSaved: () -> Unit = {}) = mutate(
         actionName = "reply_update",
         onSuccess = { updated ->
             _uiState.value = _uiState.value.copy(
@@ -475,6 +481,7 @@ class BookDetailViewModel(
                     )
                 },
             )
+            onSaved()
         },
         reloadAfterSuccess = false,
         closesComposer = true,
@@ -510,7 +517,7 @@ class BookDetailViewModel(
                         if (review.reviewId == reviewId) review.copy(recentReplies = replies) else review
                     },
                 )
-            }.onFailure(::handleFailure)
+            }.onFailure { error -> reportFailure(error) { loadReplies(reviewId) } }
         }
     }
 
@@ -609,6 +616,7 @@ class BookDetailViewModel(
             }.onFailure { error ->
                 if (error is CancellationException) throw error
                 if (generation == requestGeneration && reviewGeneration == reviewPageGeneration) {
+                    reportFailure(error) { retryReviews() }
                     _uiState.value = _uiState.value.copy(
                         reviewPageLoadState = ReviewPageLoadState.RefreshFailed,
                         isRestoring = false,
@@ -665,6 +673,7 @@ class BookDetailViewModel(
             }.onFailure { error ->
                 if (error is CancellationException) throw error
                 if (generation == reviewPageGeneration) {
+                    reportFailure(error) { retryReviews() }
                     _uiState.value = _uiState.value.copy(
                         reviewPageLoadState = ReviewPageLoadState.RefreshFailed,
                         isRestoring = false,
@@ -756,7 +765,14 @@ class BookDetailViewModel(
                 }
                 if (closesComposer && !preservesComposerOnFailure) analytics.completeComposer()
                 if (generation == requestGeneration && error !is CancellationException) onFailure(error)
-                if (generation == requestGeneration || error is CancellationException) handleFailure(error)
+                if (generation == requestGeneration || error is CancellationException) {
+                    reportFailure(error) {
+                        mutate<T>(actionName, actionStrings, actionResultStrings, failureActionStrings,
+                            failureActionLongs, onSuccess, onFailure, reloadAfterSuccess,
+                            awaitLoadBeforeAction, closesComposer, onFinished, preservesComposerOnFailure, action)
+                    }
+                    handleFailure(error)
+                }
             }
             if (generation == requestGeneration) onFinished()
         }
@@ -872,6 +888,20 @@ class BookDetailViewModel(
             val renewedGuest = issueGuestCredential()
             beforeRequest()
             request(renewedGuest)
+        }
+    }
+
+    private fun reportFailure(error: Throwable, retry: () -> Unit) {
+        if (error is GuestOwnershipLostException) {
+            errors.confirm("이 기기에서는 더 이상 수정할 수 없습니다.", "수정할 수 없어요")
+        } else {
+            errors.report(error, ErrorOperation.Request) { freshToken ->
+                if (freshToken != null) {
+                    accessToken = freshToken
+                    _uiState.value = _uiState.value.copy(signedIn = true)
+                }
+                retry()
+            }
         }
     }
 

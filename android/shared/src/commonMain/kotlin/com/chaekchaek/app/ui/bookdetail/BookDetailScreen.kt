@@ -153,7 +153,7 @@ fun BookDetailScreen(
     onRemoveFromLibrary: () -> Unit = {},
     onLibraryMessageShown: () -> Unit = {},
     onStatusChange: (ReadingStatus) -> Unit = {},
-    onPageSave: (Int) -> Unit = {},
+    onPageSave: (Int, () -> Unit) -> Unit = { _, _ -> },
     onRatingCriterionChange: (Rating) -> Unit = {},
     onRatingSave: (Rating, () -> Unit) -> Unit = { _, _ -> },
     onReviewOpen: (() -> Unit) -> Unit = { it() },
@@ -162,12 +162,12 @@ fun BookDetailScreen(
     onReplyEditOpen: () -> Unit = {},
     onComposerDismiss: () -> Unit = {},
     onReviewCreate: (ReviewCreateRequest) -> Unit = {},
-    onReviewUpdate: (Long, ReviewCreateRequest) -> Unit = { _, _ -> },
+    onReviewUpdate: (Long, ReviewCreateRequest, () -> Unit) -> Unit = { _, _, _ -> },
     onReviewDelete: (Long) -> Unit = {},
     onReviewLike: (Long, Boolean) -> Unit = { _, _ -> },
     onLoadReplies: (Long) -> Unit = {},
-    onReplyCreate: (Long, String) -> Unit = { _, _ -> },
-    onReplyUpdate: (Long, String) -> Unit = { _, _ -> },
+    onReplyCreate: (Long, String, () -> Unit) -> Unit = { _, _, _ -> },
+    onReplyUpdate: (Long, String, () -> Unit) -> Unit = { _, _, _ -> },
     onReplyDelete: (Long) -> Unit = {},
     onReplyLike: (Long, Boolean) -> Unit = { _, _ -> },
     onReviewScopeChange: (ReviewScope) -> Unit = {},
@@ -225,12 +225,6 @@ fun BookDetailScreen(
             onLoadMoreReviews()
         }
     }
-    LaunchedEffect(state.requestError) {
-        state.requestError?.let {
-            snackbarHostState.showSnackbar(it)
-            onRequestErrorShown()
-        }
-    }
     LaunchedEffect(state.libraryMessage) {
         state.libraryMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -248,13 +242,13 @@ fun BookDetailScreen(
             BookDetailAuthenticatedAction.OpenReview -> onReviewOpen { showReviewSheet = true }
             BookDetailAuthenticatedAction.OpenMineFeed -> onReviewScopeChange(ReviewScope.MINE)
             is BookDetailAuthenticatedAction.ChangeStatus -> onStatusChange(action.status)
-            is BookDetailAuthenticatedAction.SavePage -> onPageSave(action.page)
+            is BookDetailAuthenticatedAction.SavePage -> onPageSave(action.page) { showPageDialog = false }
             is BookDetailAuthenticatedAction.LikeReview -> onReviewLike(action.reviewId, action.likedByMe)
-            is BookDetailAuthenticatedAction.CreateReply -> onReplyCreate(action.reviewId, action.content)
+            is BookDetailAuthenticatedAction.CreateReply -> onReplyCreate(action.reviewId, action.content) {}
             is BookDetailAuthenticatedAction.LikeReply -> onReplyLike(action.replyId, action.likedByMe)
-            is BookDetailAuthenticatedAction.EditReview -> onReviewUpdate(action.reviewId, action.request)
+            is BookDetailAuthenticatedAction.EditReview -> onReviewUpdate(action.reviewId, action.request) { editingReviewId = null }
             is BookDetailAuthenticatedAction.DeleteReview -> onReviewDelete(action.reviewId)
-            is BookDetailAuthenticatedAction.EditReply -> onReplyUpdate(action.replyId, action.content)
+            is BookDetailAuthenticatedAction.EditReply -> onReplyUpdate(action.replyId, action.content) { editingReplyId = null }
             is BookDetailAuthenticatedAction.DeleteReply -> onReplyDelete(action.replyId)
         }
         onAuthenticatedActionHandled()
@@ -331,9 +325,9 @@ fun BookDetailScreen(
                     onLoadReplies = onLoadReplies,
                     onReplyOpen = onReplyOpen,
                     onComposerDismiss = onComposerDismiss,
-                    onReply = { reviewId, content ->
+                    onReply = { reviewId, content, onSaved ->
                         authorizeOrRun(BookDetailAuthenticatedAction.CreateReply(reviewId, content)) {
-                            onReplyCreate(reviewId, content)
+                            onReplyCreate(reviewId, content, onSaved)
                         }
                     },
                     onReplyLike = { replyId, likedByMe ->
@@ -385,8 +379,7 @@ fun BookDetailScreen(
             totalPages = book.totalPages,
             onDismiss = { showPageDialog = false },
             onSave = { page ->
-                onPageSave(page)
-                showPageDialog = false
+                onPageSave(page) { showPageDialog = false }
             },
         )
     }
@@ -451,9 +444,8 @@ fun BookDetailScreen(
             },
             onSave = { request ->
                 authorizeOrRun(BookDetailAuthenticatedAction.EditReview(review.reviewId, request)) {
-                    onReviewUpdate(review.reviewId, request)
+                    onReviewUpdate(review.reviewId, request) { editingReviewId = null }
                 }
-                editingReviewId = null
             },
         )
     }
@@ -466,9 +458,8 @@ fun BookDetailScreen(
             },
             onSave = { content ->
                 authorizeOrRun(BookDetailAuthenticatedAction.EditReply(reply.replyId, content)) {
-                    onReplyUpdate(reply.replyId, content)
+                    onReplyUpdate(reply.replyId, content) { editingReplyId = null }
                 }
-                editingReplyId = null
             },
         )
     }
@@ -950,7 +941,7 @@ private fun ReviewsSection(
     onLoadReplies: (Long) -> Unit,
     onReplyOpen: () -> Unit,
     onComposerDismiss: () -> Unit,
-    onReply: (Long, String) -> Unit,
+    onReply: (Long, String, () -> Unit) -> Unit,
     onReplyLike: (Long, Boolean) -> Unit,
     onManageReview: (BookReview) -> Unit,
     onManageReply: (ReviewReply) -> Unit,
@@ -1014,34 +1005,12 @@ private fun ReviewsSection(
                 )
             }
         }
-        if (pageLoadState.showsRetry) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-            ) {
-                Row(
-                    modifier = Modifier.height(30.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    val showRetryLoader = loadingMore || loading
-                    if (showRetryLoader) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp).semantics { contentDescription = "감상 불러오는 중" },
-                            color = ChaekAccent,
-                            strokeWidth = 2.dp,
-                        )
-                    }
-                    Text(
-                        if (showRetryLoader) "감상을 불러오는 중이에요" else "감상을 불러오지 못했어요",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-                ChaekOverlayButton(
-                    "다시 시도",
-                    onRetryReviews,
-                    enabled = pageLoadState.canRetry,
+        if (pageLoadState.showsRetry && (loading || loadingMore)) {
+            Box(modifier = Modifier.fillMaxWidth().height(48.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp).semantics { contentDescription = "감상 불러오는 중" },
+                    color = ChaekAccent,
+                    strokeWidth = 2.dp,
                 )
             }
         }
@@ -1062,8 +1031,7 @@ private fun ReviewsSection(
                 replyTargetId = null
             },
             onSave = { content ->
-                onReply(review.reviewId, content)
-                replyTargetId = null
+                onReply(review.reviewId, content) { replyTargetId = null }
             },
         )
     }

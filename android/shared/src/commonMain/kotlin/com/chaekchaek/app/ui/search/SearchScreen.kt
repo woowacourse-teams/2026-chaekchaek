@@ -87,7 +87,6 @@ import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.common.BrandHeader
 import com.chaekchaek.app.ui.common.ChaekDropdown
-import com.chaekchaek.app.ui.common.HomeLoadErrorContent
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
 import com.chaekchaek.app.presentation.home.HomeUiState
 import com.chaekchaek.app.presentation.home.HomeViewModel
@@ -107,6 +106,7 @@ fun SearchRoute(
   onProfileClick: () -> Unit = {},
   onBookClick: (BookDetailTarget) -> Unit = {},
 ) {
+  com.chaekchaek.app.ui.common.ErrorRecoveryEffect(viewModel.errors)
   val state by viewModel.uiState.collectAsState()
   val sort by viewModel.sort.collectAsState()
   val query by viewModel.query.collectAsState()
@@ -219,12 +219,7 @@ fun SearchScreen(
               modifier = Modifier.weight(1f),
             )
           }
-        is SearchUiState.Error ->
-          SearchMessage(
-            title = "검색 결과를 불러오지 못했어요",
-            body = "잠시 후 다시 검색해 주세요.",
-            modifier = Modifier.fillMaxSize(),
-          )
+        is SearchUiState.Error -> Box(Modifier.fillMaxSize())
         is SearchUiState.Success ->
           SearchResults(
             results = current.results,
@@ -285,7 +280,6 @@ private fun DiscoverLanding(
   when (homeState) {
     HomeUiState.Loading -> SearchLoading(modifier)
     HomeUiState.Empty -> DiscoverContent(emptyList(), onBookClick, modifier)
-    is HomeUiState.Failure -> HomeLoadErrorContent(homeState.error, onRetry, modifier)
     is HomeUiState.Content -> DiscoverContent(homeState.sections, onBookClick, modifier)
   }
 }

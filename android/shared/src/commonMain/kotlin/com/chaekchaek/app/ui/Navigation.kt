@@ -49,6 +49,8 @@ import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
 import com.chaekchaek.app.ui.bookdetail.analyticsName
+import com.chaekchaek.app.ui.common.ErrorRecoveryHost
+import com.chaekchaek.app.ui.common.ErrorRecoveryEffect
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
 import com.chaekchaek.app.ui.feed.FeedViewModel
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
@@ -96,6 +98,24 @@ internal fun AppNavigation(
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
 ) {
+    val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform) }
+    DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
+    ErrorRecoveryHost(authViewModel) {
+        AppNavigationContent(authPlatform, recentSearchStorage, onboardingStorage, analytics, uiTestingMyPage, homeHeaderAction, onExitRequested, authViewModel)
+    }
+}
+
+@Composable
+private fun AppNavigationContent(
+    authPlatform: AuthPlatformCallbacks,
+    recentSearchStorage: RecentSearchStorage,
+    onboardingStorage: OnboardingStorage,
+    analytics: AnalyticsTracker,
+    uiTestingMyPage: Boolean,
+    homeHeaderAction: @Composable () -> Unit,
+    onExitRequested: () -> Unit,
+    authViewModel: AuthViewModel,
+) {
     val safeContent = Modifier.windowInsetsPadding(
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     )
@@ -122,8 +142,6 @@ internal fun AppNavigation(
         )
         return
     }
-    val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform) }
-    DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     val authTokens by authViewModel.tokens.collectAsState()
     val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
@@ -132,6 +150,7 @@ internal fun AppNavigation(
     }
     val onboardingState by onboardingViewModel.state.collectAsState()
     val showOnboarding = onboardingState.visible
+    ErrorRecoveryEffect(onboardingViewModel.errors)
     var showOnboardingLogin by remember { mutableStateOf(false) }
     LaunchedEffect(showOnboarding) {
         if (showOnboarding) onboardingStorage.markShown()
@@ -149,15 +168,6 @@ internal fun AppNavigation(
             authViewModel.cancelPendingAuthentication()
             onboardingViewModel.cancelPendingWork()
             completeOnboarding()
-        }
-        LaunchedEffect(showOnboardingLogin, authState.errorMessage) {
-            val error = authState.errorMessage
-            if (showOnboardingLogin && error != null) {
-                authViewModel.cancelPendingAuthentication()
-                onboardingViewModel.showLoginError(error)
-                showOnboardingLogin = false
-                authViewModel.clearError()
-            }
         }
         LaunchedEffect(onboardingState.saveCompleted) {
             if (onboardingState.saveCompleted) completeOnboarding()
@@ -184,7 +194,7 @@ internal fun AppNavigation(
             onStartSearch = onboardingViewModel::startSearch,
             onBack = returnToPreviousStep,
             onQueryChange = onboardingViewModel::updateQuery,
-            onSearch = onboardingViewModel::search,
+            onSearch = { onboardingViewModel.search() },
             onToggleBook = onboardingViewModel::toggle,
             onReviewSelection = onboardingViewModel::reviewSelection,
             onLogin = saveSelectedBooks,
@@ -245,6 +255,11 @@ internal fun AppNavigation(
         )
     }
     val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository) }
+    ErrorRecoveryEffect(registrationViewModel.errors)
+    ErrorRecoveryEffect(archiveViewModel.errors)
+    ErrorRecoveryEffect(librarySaveViewModel.errors)
+    ErrorRecoveryEffect(memberSettingsViewModel.errors)
+    ErrorRecoveryEffect(homeViewModel.errors)
     val archiveState by archiveViewModel.uiState.collectAsState()
     val librarySaveState by librarySaveViewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
@@ -362,6 +377,7 @@ internal fun AppNavigation(
                         )
                     }
                     viewModel.attachAuthPlatform(authPlatform)
+                    ErrorRecoveryEffect(viewModel.errors)
                     val state by viewModel.uiState.collectAsState()
                     val displayBook = state.displayBook ?: key.book
                     val archivedBook = archiveState.items.firstOrNull {
@@ -433,10 +449,13 @@ internal fun AppNavigation(
                                 onLibraryAdded = archiveViewModel::retry,
                             )
                         },
-                        onPageSave = { page ->
+                        onPageSave = { page, onSaved ->
                             viewModel.savePage(
                                 page,
-                                onSuccess = archiveViewModel::retry,
+                                onSuccess = {
+                                    archiveViewModel.retry()
+                                    onSaved()
+                                },
                                 onLibraryAdded = archiveViewModel::retry,
                             )
                         },

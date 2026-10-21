@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.onboarding
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.data.remote.BookSearchRemoteRepository
@@ -42,6 +44,7 @@ class FirstLibraryOnboardingViewModel internal constructor(
     private val addBook: suspend (BookSearchResult, String) -> Unit,
     initiallyVisible: Boolean = true,
 ) : ViewModel() {
+    val errors = ErrorRecoveryState()
     constructor(
         searchRepository: BookSearchRepository = BookSearchRemoteRepository(),
         libraryRepository: LibraryRemoteRepository = LibraryRemoteRepository(),
@@ -68,9 +71,9 @@ class FirstLibraryOnboardingViewModel internal constructor(
         _state.value = _state.value.copy(query = SearchInputRules.applyChange(_state.value.query, value))
     }
 
-    fun search() {
+    fun search(submittedQuery: String = _state.value.query) {
         if (!_state.value.visible || _state.value.step != OnboardingStep.SEARCH) return
-        val query = _state.value.query.trim()
+        val query = submittedQuery.trim()
         if (query.isEmpty()) return
         val generation = ++searchGeneration
         job?.cancel()
@@ -91,8 +94,9 @@ class FirstLibraryOnboardingViewModel internal constructor(
                 }
             } catch (error: CancellationException) {
                 throw error
-            } catch (_: Exception) {
+            } catch (error: Exception) {
                 if (generation == searchGeneration) {
+                    errors.report(error, ErrorOperation.Search) { search(query) }
                     _state.value = _state.value.copy(searching = false, searchError = "검색을 완료하지 못했어요")
                 }
             }
@@ -160,7 +164,8 @@ class FirstLibraryOnboardingViewModel internal constructor(
                 _state.value = _state.value.copy(saveCompleted = true)
             } catch (error: CancellationException) {
                 throw error
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                errors.report(error, ErrorOperation.LibrarySave) { freshToken -> save(freshToken ?: accessToken) }
                 _state.value = _state.value.copy(
                     step = OnboardingStep.SAVE_ERROR,
                     stepRevision = _state.value.stepRevision + 1,

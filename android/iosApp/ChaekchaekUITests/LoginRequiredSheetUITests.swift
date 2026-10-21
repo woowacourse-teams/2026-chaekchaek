@@ -58,6 +58,15 @@ final class LoginRequiredSheetUITests: XCTestCase {
             XCTFail("첫 저장 요청이 전달되지 않았다: \(save.debugDescription)")
             return
         }
+        let retry = app.buttons["다시 시도"]
+        XCTAssertTrue(retry.waitForExistence(timeout: 5))
+        let close = app.buttons["닫기"].firstMatch
+        XCTAssertEqual(close.frame.midY, retry.frame.midY, accuracy: 1)
+        XCTAssertLessThan(close.frame.maxX, retry.frame.minX)
+        try await Task.sleep(for: .milliseconds(500))
+        attachScreenshot(named: "공통 오류 다이얼로그 가로 버튼")
+        try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
+        close.tap()
         guard content.exists else {
             attachScreenshot(named: "수정 전 저장 실패로 작성창이 닫힘")
             XCTFail("저장 실패 뒤 작성창과 입력이 사라졌다")
@@ -107,6 +116,40 @@ final class LoginRequiredSheetUITests: XCTestCase {
             let start = origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: scrollingUp ? bottom - 24 : top))
             let end = origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: scrollingUp ? top : bottom - 24))
             start.press(forDuration: 0.05, thenDragTo: end)
+        }
+    }
+
+    @MainActor
+    func testLoginFailureClosesOnlyErrorAndCancellationShowsNoError() throws {
+        for flag in ["-uiTestingSignInFailure", "-uiTestingSignInCancellation"] {
+            let app = XCUIApplication()
+            app.launchArguments += ["-uiTestingGuest", flag]
+            app.launch()
+            let shelf = app.buttons["내 서재"]
+            XCTAssertTrue(shelf.waitForExistence(timeout: 15))
+            shelf.tap()
+            let edit = app.buttons["편집"]
+            XCTAssertTrue(edit.waitForExistence(timeout: 10))
+            edit.tap()
+            let google = app.buttons["GIDSignInButton"]
+            XCTAssertTrue(google.waitForExistence(timeout: 5))
+            google.tap()
+            if flag == "-uiTestingSignInFailure" {
+                let title = app.staticTexts["로그인하지 못했어요"]
+                XCTAssertTrue(title.waitForExistence(timeout: 5))
+                let retry = app.buttons["다시 시도"]
+                XCTAssertTrue(retry.exists)
+                attachScreenshot(named: "로그인 시트 위 공통 오류")
+                try app.performAccessibilityAudit(for: [.dynamicType, .textClipped, .hitRegion])
+                app.buttons["닫기"].firstMatch.tap()
+                XCTAssertFalse(title.exists)
+                XCTAssertTrue(app.staticTexts["로그인이 필요해요"].exists)
+                XCTAssertTrue(google.exists)
+            } else {
+                XCTAssertFalse(app.staticTexts["로그인하지 못했어요"].exists)
+                XCTAssertTrue(app.staticTexts["로그인이 필요해요"].exists)
+            }
+            app.terminate()
         }
     }
 

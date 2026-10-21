@@ -45,7 +45,6 @@ import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
 import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.common.avatarResource
 import com.chaekchaek.app.ui.common.ChaekCloseButton
-import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekAccent
@@ -63,11 +62,19 @@ internal fun MyPageScreen(
     modifier: Modifier = Modifier,
 ) {
     var showNicknameDialog by rememberSaveable { mutableStateOf(false) }
+    var nicknameSavePending by rememberSaveable { mutableStateOf(false) }
     var showWithdrawalDialog by remember { mutableStateOf(false) }
     val nicknameState = rememberLimitedTextFieldState(NicknameInputPolicy, state.nickname)
 
     LaunchedEffect(state.nickname) {
         if (!showNicknameDialog) nicknameState.setTextAndPlaceCursorAtEnd(NicknameInputPolicy.limit(state.nickname))
+    }
+
+    LaunchedEffect(state.saveRevision) {
+        if (nicknameSavePending) {
+            nicknameSavePending = false
+            showNicknameDialog = false
+        }
     }
 
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -100,14 +107,7 @@ internal fun MyPageScreen(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             SectionLabel("계정 관리")
             ChaekOverlayButton("로그아웃", onSignOut, secondary = true)
-            if (state.withdrawalFailure != null) {
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = ChaekOverlayTokens.cardShape) {
-                    Text(state.withdrawalFailure.message(), Modifier.fillMaxWidth().padding(12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-                ChaekOverlayButton("다시 시도", onWithdraw, enabled = !state.withdrawing)
-            } else {
-                WithdrawalRow { showWithdrawalDialog = true }
-            }
+            WithdrawalRow { showWithdrawalDialog = true }
         }
         if (state.showLoading || state.withdrawing) {
             CircularProgressIndicator(
@@ -122,10 +122,10 @@ internal fun MyPageScreen(
     if (showNicknameDialog) {
         NicknameDialog(
             nicknameState = nicknameState,
-            onDismiss = { showNicknameDialog = false },
+            onDismiss = { showNicknameDialog = false; nicknameSavePending = false },
             onConfirm = {
+                nicknameSavePending = true
                 onAnonymousReviewsChange(false, nicknameState.text.toString().trim())
-                showNicknameDialog = false
             },
         )
     }
@@ -139,13 +139,6 @@ internal fun MyPageScreen(
         )
     }
 }
-
-private fun WithdrawalFailure.message(): String =
-    when (this) {
-        WithdrawalFailure.AuthenticationExpired -> "로그인이 만료됐어요. 로그아웃한 뒤 다시 로그인해 주세요."
-        WithdrawalFailure.NetworkUnavailable -> "네트워크 연결을 확인한 뒤 다시 시도해 주세요."
-        WithdrawalFailure.ServerRejected -> "회원 탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요."
-    }
 
 @Composable
 private fun MyPageTopBar(onBack: () -> Unit) {

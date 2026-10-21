@@ -20,6 +20,37 @@ import kotlin.test.assertNull
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthViewModelTest {
   @Test
+  fun `공급업체 실패 재시도는 같은 로그인과 보류 작업을 한번만 재개한다`() = runTest {
+    var callback: ((String?, String?) -> Unit)? = null
+    var requests = 0
+    val resumed = mutableListOf<String>()
+    val viewModel = AuthViewModel(
+      callbacks = AuthPlatformCallbacks(
+        requestGoogleIdToken = { requests++; callback = it },
+        readRefreshToken = { null }, writeRefreshToken = {}, clearRefreshToken = {},
+      ),
+      loginWithGoogle = { _, _ -> tokens("new") },
+      reissue = { error("unexpected") }, logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    viewModel.requireAuthentication { resumed += it }
+    callback?.invoke(null, "provider failure")
+    assertEquals(com.chaekchaek.app.presentation.common.ErrorAction.Retry, viewModel.errors.notice.value?.action)
+    val id = viewModel.errors.notice.value!!.id
+    viewModel.errors.takeRecovery(id)?.invoke(null)
+    assertEquals(2, requests)
+    callback?.invoke("id", null)
+    callback?.invoke("duplicate", null)
+    runCurrent()
+    assertEquals(listOf("access-new"), resumed)
+    viewModel.requireAuthentication(force = true) { resumed += it }
+    assertEquals(3, requests)
+    callback?.invoke(null, null)
+    assertNull(viewModel.errors.notice.value)
+    assertEquals(listOf("access-new"), resumed)
+  }
+
+  @Test
   fun `재발급 중의 null은 인증 복원 중이며 확정 로그아웃과 구분한다`() = runTest {
     val restored = CompletableDeferred<MobileAuthTokens>()
     val session = AuthSession(
@@ -394,11 +425,12 @@ class AuthViewModelTest {
     )
 
     viewModel.requireAuthentication { resumed = true }
-    googleResult?.invoke(null, "로그인을 취소했어요.")
+    googleResult?.invoke(null, null)
     advanceUntilIdle()
 
     assertEquals(false, resumed)
-    assertEquals("로그인을 취소했어요.", viewModel.uiState.value.errorMessage)
+    assertNull(viewModel.uiState.value.errorMessage)
+    assertNull(viewModel.errors.notice.value)
     assertNull(viewModel.tokens.value)
   }
 

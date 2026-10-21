@@ -1,5 +1,7 @@
 package com.chaekchaek.app.auth
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthTokens
@@ -63,6 +65,8 @@ class AuthViewModel private constructor(
     currentTimeMillis: () -> Long,
   ) : this(callbacks, loginWithGoogle, loginWithApple, reissue, logout, scope, false, currentTimeMillis)
 
+  val errors = ErrorRecoveryState()
+
   private val session = AuthSession(
     readRefreshToken = callbacks.readRefreshToken,
     writeRefreshToken = callbacks.writeRefreshToken,
@@ -82,26 +86,27 @@ class AuthViewModel private constructor(
   private var authenticationJob: Job? = null
   private var pendingAction: (suspend (accessToken: String) -> Unit)? = null
 
-  fun requireAuthentication(action: suspend (accessToken: String) -> Unit) {
-    requestAuthentication(action, callbacks.requestGoogleIdToken) { idToken ->
+  fun requireAuthentication(force: Boolean = false, action: suspend (accessToken: String) -> Unit) {
+    requestAuthentication(action, force, callbacks.requestGoogleIdToken) { idToken ->
       loginWithGoogle(idToken, callbacks.readGuest()?.token)
     }
   }
 
-  fun requireAppleAuthentication(action: suspend (accessToken: String) -> Unit) {
+  fun requireAppleAuthentication(force: Boolean = false, action: suspend (accessToken: String) -> Unit) {
     val requestAppleCredential = callbacks.requestAppleCredential ?: return
-    requestAuthentication(action, requestAppleCredential) { credential ->
+    requestAuthentication(action, force, requestAppleCredential) { credential ->
       loginWithApple(credential, callbacks.readGuest()?.token)
     }
   }
 
   private fun <Credential> requestAuthentication(
     action: suspend (accessToken: String) -> Unit,
+    force: Boolean,
     requestCredential: ((Credential?, String?) -> Unit) -> Unit,
     login: suspend (Credential) -> MobileAuthTokens,
   ) {
     val accessToken = tokens.value?.accessToken
-    if (accessToken != null) {
+    if (accessToken != null && !force) {
       scope.launch { action(accessToken) }
       return
     }
@@ -109,11 +114,17 @@ class AuthViewModel private constructor(
     pendingAction = action
     if (_uiState.value.signingIn) return
     val generation = ++authenticationGeneration
+    errors.dismiss()
+    var credentialConsumed = false
     _uiState.value = AuthUiState(signingIn = true)
     requestCredential { credential, platformError ->
-      if (generation != authenticationGeneration) return@requestCredential
+      if (generation != authenticationGeneration || credentialConsumed) return@requestCredential
+      credentialConsumed = true
       if (credential == null) {
-        _uiState.value = AuthUiState(errorMessage = platformError ?: LOGIN_ERROR)
+        _uiState.value = AuthUiState(errorMessage = platformError?.let { LOGIN_ERROR })
+        if (platformError != null) errors.report(IllegalStateException(), ErrorOperation.SignIn) {
+          requestAuthentication(action, force, requestCredential, login)
+        }
         return@requestCredential
       }
 
@@ -130,13 +141,19 @@ class AuthViewModel private constructor(
         } catch (error: CancellationException) {
           throw error
         } catch (_: Exception) {
-          if (generation == authenticationGeneration) _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
+          if (generation == authenticationGeneration) {
+            _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
+            errors.report(IllegalStateException(), ErrorOperation.SignIn) {
+              requestAuthentication(action, force, requestCredential, login)
+            }
+          }
         }
       }
     }
   }
 
   fun cancelPendingAuthentication() {
+    errors.dismiss()
     authenticationGeneration += 1
     authenticationJob?.cancel()
     authenticationJob = null

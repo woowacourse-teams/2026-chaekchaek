@@ -30,10 +30,12 @@ class ReviewDraftPreservationTest {
             book = BookDetailArgs(id = "42", bookId = 42, title = "감상 보존 검증", totalPages = 224),
             signedIn = true,
         ))
+        val errors = com.chaekchaek.app.presentation.common.ErrorRecoveryState()
         val requests = mutableListOf<ReviewCreateRequest>()
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
             ChaekchaekTheme {
+                com.chaekchaek.app.ui.common.ErrorRecoveryEffect(errors)
                 BookDetailScreen(
                     state = state.value,
                     onBack = {},
@@ -64,7 +66,11 @@ class ReviewDraftPreservationTest {
                 reviewSubmissionState = ReviewSubmissionState.Failed,
                 requestError = "요청을 처리하지 못했어요. 다시 시도해 주세요.",
             )
+            errors.report(Exception(), com.chaekchaek.app.presentation.common.ErrorOperation.Request) {}
         }
+        compose.onNodeWithText("다시 시도").assertIsDisplayed()
+        compose.onNodeWithText("닫기").performClick()
+        compose.onNodeWithContentDescription("감상 (필수)").assertExists()
         restoration.emulateSavedInstanceStateRestore()
 
         compose.onNodeWithContentDescription("감상 (필수)").assertTextEquals("사라지면 안 되는 감상")
@@ -81,11 +87,6 @@ class ReviewDraftPreservationTest {
         }
         compose.onNodeWithText("스포일러").assertIsOn()
         compose.onNode(hasText("감상 남기기") and hasClickAction()).assertIsEnabled()
-        // 하단 오류 안내가 버튼을 가리지 않는 시점에 실제 터치로 재시도한다.
-        compose.waitUntil(timeoutMillis = 10_000) {
-            compose.onAllNodesWithText("요청을 처리하지 못했어요. 다시 시도해 주세요.")
-                .fetchSemanticsNodes().isEmpty()
-        }
         compose.onNode(hasText("감상 남기기") and hasClickAction()).performScrollTo().performClick()
         compose.runOnIdle {
             assertEquals(2, requests.size)

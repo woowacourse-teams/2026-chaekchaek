@@ -8,7 +8,6 @@ import com.chaekchaek.app.domain.feed.QuoteCard
 import com.chaekchaek.app.domain.feed.ReadingBook
 import com.chaekchaek.app.domain.feed.TrendingBook
 import com.chaekchaek.app.domain.note.NoteId
-import com.chaekchaek.app.presentation.common.AppError
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.Dispatchers
@@ -175,7 +174,8 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         // then : 현재는 알 수 없는 오류로 표시한다
-        viewModel.uiState.value shouldBe HomeUiState.Failure(AppError.Unknown)
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
+        viewModel.errors.notice.value?.action shouldBe com.chaekchaek.app.presentation.common.ErrorAction.Retry
     }
 
     @Test
@@ -187,10 +187,10 @@ class HomeViewModelTest {
         repository.failure = null
 
         // when : 재시도하면
-        viewModel.retry()
+        viewModel.errors.takeRecovery(viewModel.errors.notice.value!!.id)?.invoke(null)
 
-        // then : 기존 오류 화면을 유지한 채 성공하고 저장소를 두 번 호출한다
-        viewModel.uiState.value shouldBe HomeUiState.Failure(AppError.Unknown)
+        // then : 기존 화면을 유지한 채 성공하고 저장소를 두 번 호출한다
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
         advanceUntilIdle()
         viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
         repository.callCount shouldBe 2

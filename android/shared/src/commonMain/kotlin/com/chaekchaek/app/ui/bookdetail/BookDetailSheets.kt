@@ -33,6 +33,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.ui.common.ErrorRecoveryEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -84,6 +87,8 @@ internal fun PageInputDialog(
     val pageState = rememberLimitedTextFieldState(BookDetailInputRules.PagePolicy, initialPage.toString())
     val value = pageState.text.toString()
     val page = BookDetailInputRules.validPage(value, totalPages)
+    val errors = remember { ErrorRecoveryState() }
+    ErrorRecoveryEffect(errors)
     ChaekTwoActionDialog(
         onDismissRequest = onDismiss,
         title = { Text("어디까지 읽으셨나요?", style = MaterialTheme.typography.titleMedium) },
@@ -109,10 +114,6 @@ internal fun PageInputDialog(
                         endText = totalPages.takeIf { it > 0 }?.let { "/ ${it}쪽" },
                         emphasized = true,
                     )
-                    if (value.isNotBlank() && page == null) {
-                        Text(if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.",
-                            color = ChaekDanger, style = MaterialTheme.typography.bodySmall)
-                    }
                     if (totalPages > 0) {
                         Text("전체 ${totalPages}쪽", color = ChaekInkSecondary, style = MaterialTheme.typography.labelMedium)
                         LinearProgressIndicator(progress = { ((page ?: 0).toFloat() / totalPages).coerceIn(0f, 1f) },
@@ -122,7 +123,10 @@ internal fun PageInputDialog(
             }
         },
         dismissButton = { ChaekOverlayButton("취소", onDismiss, secondary = true) },
-        confirmButton = { ChaekOverlayButton("저장", { page?.let(onSave) }, enabled = BookDetailInputRules.canSubmitPage(page)) },
+        confirmButton = { ChaekOverlayButton("저장", {
+            if (page != null) onSave(page)
+            else errors.confirm(if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.")
+        }) },
     )
 }
 
@@ -141,6 +145,8 @@ internal fun ReviewInputSheet(
     onDismiss: () -> Unit,
     onSave: (ReviewCreateRequest) -> Unit,
 ) {
+    val errors = remember { ErrorRecoveryState() }
+    ErrorRecoveryEffect(errors)
     val initialContent = initialReview?.content.orEmpty()
     val initialQuote = initialReview?.quote.orEmpty()
     val initialChapter = initialReview?.chapter.orEmpty()
@@ -271,10 +277,6 @@ internal fun ReviewInputSheet(
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 suffix = "쪽",
                             )
-                            if (pageValue.isNotBlank() && page == null) {
-                                Text(if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.",
-                                    color = ChaekDanger, style = MaterialTheme.typography.bodySmall)
-                            }
                         }
                     }
                     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -314,8 +316,13 @@ internal fun ReviewInputSheet(
                         )
                     }
                 }
-                SheetPrimaryButton(label = if (initialReview == null) "감상 남기기" else "수정 저장", enabled = canSubmit && !isSaving) {
-                    if (!canSubmit || isSaving) return@SheetPrimaryButton
+                SheetPrimaryButton(label = if (initialReview == null) "감상 남기기" else "수정 저장", enabled = !isSaving) {
+                    if (isSaving) return@SheetPrimaryButton
+                    if (!canSubmit) {
+                        errors.confirm(if (content.isBlank()) "감상을 입력해 주세요." else
+                            if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.")
+                        return@SheetPrimaryButton
+                    }
                     onSave(
                         ReviewCreateRequest(
                             content = content.trim(),
@@ -359,6 +366,8 @@ internal fun ReplyInputSheet(
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
 ) {
+    val errors = remember { ErrorRecoveryState() }
+    ErrorRecoveryEffect(errors)
     val contentState = rememberLimitedTextFieldState(ReplyInputRules.Policy, initialContent, initialContent)
     val content = contentState.text.toString()
     val canSubmit = ReplyInputRules.canSubmit(content)
@@ -378,8 +387,8 @@ internal fun ReplyInputSheet(
                 Modifier.fillMaxWidth(), 120)
             Text("${content.length} / ${ReplyInputRules.MAX_LENGTH}", Modifier.fillMaxWidth(), color = ChaekInkSecondary,
                 textAlign = TextAlign.End, style = MaterialTheme.typography.labelMedium)
-            SheetPrimaryButton(if (initialContent.isEmpty()) "등록" else "수정 저장", canSubmit) {
-                content.trim().takeIf(ReplyInputRules::canSubmit)?.let(onSave)
+            SheetPrimaryButton(if (initialContent.isEmpty()) "등록" else "수정 저장") {
+                if (canSubmit) onSave(content.trim()) else errors.confirm("답글을 입력해 주세요.")
             }
         }
     }
@@ -498,6 +507,6 @@ private fun ChaekTextInput(
 }
 
 @Composable
-private fun SheetPrimaryButton(label: String, enabled: Boolean, onClick: () -> Unit) {
+private fun SheetPrimaryButton(label: String, enabled: Boolean = true, onClick: () -> Unit) {
     ChaekOverlayButton(label, onClick, enabled = enabled)
 }

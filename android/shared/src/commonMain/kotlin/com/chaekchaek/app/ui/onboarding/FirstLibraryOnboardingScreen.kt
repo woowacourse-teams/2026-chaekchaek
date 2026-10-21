@@ -91,20 +91,15 @@ fun FirstLibraryOnboardingScreen(
                 when (state.step) {
                     OnboardingStep.INTRO -> IntroContent()
                     OnboardingStep.SEARCH -> Unit
-                    OnboardingStep.CHOICE -> ChoiceContent(state.selectedBooks, loginError = null)
-                    OnboardingStep.LOGIN_ERROR -> ChoiceContent(state.selectedBooks, loginError = state.loginError)
+                    OnboardingStep.CHOICE -> ChoiceContent(state.selectedBooks)
+                    OnboardingStep.LOGIN_ERROR -> ChoiceContent(state.selectedBooks)
                     OnboardingStep.SAVING -> StatusContent(
                         "내 서재에\n책을 담고 있어요",
                         "조금만 기다려 주세요.",
                         state.selectedBooks.firstOrNull(),
                         loading = state.showSaveLoading,
                     )
-                    OnboardingStep.SAVE_ERROR -> StatusContent(
-                        "책을 담지 못했어요",
-                        state.saveError ?: "연결 상태를 확인하고 다시 시도해 주세요.",
-                        state.selectedBooks.firstOrNull(),
-                        loading = false,
-                    )
+                    OnboardingStep.SAVE_ERROR -> ChoiceContent(state.selectedBooks)
                 }
             }
         }
@@ -210,10 +205,10 @@ private fun SearchContent(
             },
         )
         when {
-            state.searching -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            state.searching && state.results.isEmpty() -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 if (state.showSearchLoading) CircularProgressIndicator(color = ChaekAccent)
             }
-            state.searchError != null -> MessageCard(state.searchError)
+            state.searchError != null && state.results.isEmpty() -> Box(Modifier.fillMaxWidth().weight(1f))
             state.searchAttempted && state.results.isEmpty() -> MessageCard("검색 결과가 없어요")
             state.results.isEmpty() -> MessageCard("책을 찾아주세요\n한 권 이상 선택하면 다음으로 갈 수 있어요.")
             else -> LazyColumn(Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -252,15 +247,14 @@ private fun BookRow(book: BookSearchResult, selected: Boolean, onToggle: (BookSe
 }
 
 @Composable
-private fun ChoiceContent(books: List<BookSearchResult>, loginError: String?) {
-    Text(if (loginError != null) "고른 책은 그대로예요" else "첫 책을 골랐어요", style = MaterialTheme.typography.headlineMedium, color = ChaekInk)
+private fun ChoiceContent(books: List<BookSearchResult>) {
+    Text("첫 책을 골랐어요", style = MaterialTheme.typography.headlineMedium, color = ChaekInk)
     Text(
-        if (loginError != null) "다시 로그인하거나 그냥 시작할 수 있어요." else "로그인하면 선택한 책이\n내 서재에 바로 담겨요.",
+        "로그인하면 선택한 책이\n내 서재에 바로 담겨요.",
         Modifier.padding(top = 6.dp),
         color = ChaekInkSecondary,
     )
     books.firstOrNull()?.let { BookPreview(it) }
-    loginError?.let { MessageCard(it) }
 }
 
 @Composable
