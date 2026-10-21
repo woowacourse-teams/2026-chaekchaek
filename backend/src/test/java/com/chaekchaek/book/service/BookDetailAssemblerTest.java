@@ -9,7 +9,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.BookQuestion;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.repository.BookQuestionRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
@@ -35,13 +37,15 @@ class BookDetailAssemblerTest {
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookQuestionRepository bookQuestionRepository = mock(BookQuestionRepository.class);
         LibraryItemRepository.RatingStatistics ratingStatistics = mock(
                 LibraryItemRepository.RatingStatistics.class);
         LibraryItem libraryItem = mock(LibraryItem.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                bookQuestionRepository
         );
         when(activityCountReader.getActivityCounts(List.of(1L)))
                 .thenReturn(Map.of(
@@ -61,11 +65,20 @@ class BookDetailAssemblerTest {
         when(libraryItem.getStatus()).thenReturn(ReadingStatus.READING);
         when(libraryItem.getCurrentPage()).thenReturn(120);
         when(libraryItem.getRating()).thenReturn(new BigDecimal("4.2"));
+        when(bookQuestionRepository.findByIsbn13(new Isbn13("9788925568683")))
+                .thenReturn(Optional.of(BookQuestion.create(
+                        new Isbn13("9788925568683"),
+                        "화성에 홀로 남는다면 무엇부터 하시겠어요?",
+                        "줄거리",
+                        "발췌문"
+                )));
 
         // when
         var response = assembler.assemble(book);
 
         // then
+        assertThat(response.bookQuestion()).extracting("question", "plot", "extract")
+                .containsExactly("화성에 홀로 남는다면 무엇부터 하시겠어요?", "줄거리", "발췌문");
         assertThat(response.reviewCount()).isEqualTo(2);
         assertThat(response.replyCount()).isEqualTo(2);
         assertThat(response.description()).isEqualTo("책 설명");
@@ -86,10 +99,12 @@ class BookDetailAssemblerTest {
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookQuestionRepository bookQuestionRepository = mock(BookQuestionRepository.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                bookQuestionRepository
         );
         when(activityCountReader.getActivityCounts(List.of(1L)))
                 .thenReturn(Map.of(
@@ -113,6 +128,62 @@ class BookDetailAssemblerTest {
     }
 
     @Test
+    @DisplayName("등록된 질문이 없는 책이면 상세 응답의 질문은 null이다")
+    void should_ReturnNullBookQuestion_When_BookHasNoQuestion() {
+        // given
+        Book book = bookWithoutId();
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookQuestionRepository bookQuestionRepository = mock(BookQuestionRepository.class);
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository,
+                bookQuestionRepository
+        );
+        when(bookQuestionRepository.findByIsbn13(new Isbn13("9788925568683"))).thenReturn(Optional.empty());
+
+        // when
+        var response = assembler.assemble(book);
+
+        // then
+        assertThat(response.bookQuestion()).isNull();
+    }
+
+    @Test
+    @DisplayName("등록되지 않은 책이어도 ISBN13으로 등록된 질문을 상세 응답에 포함한다")
+    void should_IncludeBookQuestion_When_BookIsNotRegistered() {
+        // given
+        Book book = bookWithoutId();
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookQuestionRepository bookQuestionRepository = mock(BookQuestionRepository.class);
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository,
+                bookQuestionRepository
+        );
+        when(bookQuestionRepository.findByIsbn13(new Isbn13("9788925568683")))
+                .thenReturn(Optional.of(BookQuestion.create(
+                        new Isbn13("9788925568683"),
+                        "화성에 홀로 남는다면 무엇부터 하시겠어요?",
+                        null,
+                        null
+                )));
+
+        // when
+        var response = assembler.assemble(book);
+
+        // then
+        assertThat(response.bookId()).isNull();
+        assertThat(response.bookQuestion()).extracting("question", "plot", "extract")
+                .containsExactly("화성에 홀로 남는다면 무엇부터 하시겠어요?", null, null);
+    }
+
+    @Test
     @DisplayName("비로그인 사용자의 상세 응답에는 내 별점 등록 수를 포함하지 않는다")
     void should_ReturnNullMyRatingCount_When_Unauthenticated() {
         // given
@@ -120,10 +191,12 @@ class BookDetailAssemblerTest {
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookQuestionRepository bookQuestionRepository = mock(BookQuestionRepository.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                bookQuestionRepository
         );
         when(activityCountReader.getActivityCounts(List.of(1L)))
                 .thenReturn(Map.of(
@@ -152,10 +225,12 @@ class BookDetailAssemblerTest {
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookQuestionRepository bookQuestionRepository = mock(BookQuestionRepository.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                bookQuestionRepository
         );
 
         // when
@@ -181,10 +256,12 @@ class BookDetailAssemblerTest {
         BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        BookQuestionRepository bookQuestionRepository = mock(BookQuestionRepository.class);
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                bookQuestionRepository
         );
 
         // when

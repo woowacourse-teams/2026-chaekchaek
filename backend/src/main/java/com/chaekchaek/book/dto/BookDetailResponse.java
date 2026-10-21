@@ -22,6 +22,7 @@ public record BookDetailResponse(
         Integer myRatingCount,
         BookMyRecordResponse myRecord,
         String purchaseUrl,
-        String source
+        String source,
+        BookQuestionResponse bookQuestion
 ) {
 }

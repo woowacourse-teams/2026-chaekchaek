@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.BookQuestion;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.repository.BookQuestionRepository;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
@@ -43,6 +45,9 @@ class BookServicePersistenceTest {
 
     @Autowired
     private LibraryItemRepository libraryItemRepository;
+
+    @Autowired
+    private BookQuestionRepository bookQuestionRepository;
 
     @MockitoBean
     private BookActivityCountReader activityCountReader;
@@ -154,6 +159,26 @@ class BookServicePersistenceTest {
         assertThat(bookRepository.findAllByIsbn13In(List.of(isbn13)))
                 .extracting(Book::getIsbn13)
                 .containsExactly(isbn13);
+    }
+
+    @Test
+    @DisplayName("ISBN13으로 저장된 책 질문을 조회한다")
+    void should_FindBookQuestion_When_Isbn13Matches() {
+        // given
+        Isbn13 isbn13 = new Isbn13("9788925568683");
+        bookQuestionRepository.saveAndFlush(BookQuestion.create(
+                isbn13,
+                "화성에 홀로 남는다면 무엇부터 하시겠어요?",
+                null,
+                "발췌문"
+        ));
+        entityManager.clear();
+
+        // when & then
+        BookQuestion storedQuestion = bookQuestionRepository.findByIsbn13(isbn13).orElseThrow();
+        assertThat(storedQuestion.getQuestion()).isEqualTo("화성에 홀로 남는다면 무엇부터 하시겠어요?");
+        assertThat(storedQuestion.getPlot()).isNull();
+        assertThat(storedQuestion.getExtract()).isEqualTo("발췌문");
     }
 
     private LibraryItem ratedItem(long memberId, long bookId, String rating) {

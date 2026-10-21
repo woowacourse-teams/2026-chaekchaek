@@ -23,6 +23,7 @@ import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookMyRecordResponse;
+import com.chaekchaek.book.dto.BookQuestionResponse;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import com.chaekchaek.book.service.BookSearchService;
@@ -135,7 +136,11 @@ class BookControllerTest {
             fieldWithPath("myRecord.currentPage").type(JsonFieldType.NUMBER).description("현재 페이지").optional(),
             fieldWithPath("myRecord.myRating").type(JsonFieldType.NUMBER).description("내 별점").optional(),
             fieldWithPath("purchaseUrl").type(JsonFieldType.STRING).description("구매 링크").optional(),
-            fieldWithPath("source").type(JsonFieldType.STRING).description("도서 정보 출처")
+            fieldWithPath("source").type(JsonFieldType.STRING).description("도서 정보 출처"),
+            fieldWithPath("bookQuestion").type(JsonFieldType.OBJECT).description("책에 대한 질문. 등록된 질문이 없으면 null").optional(),
+            fieldWithPath("bookQuestion.question").type(JsonFieldType.STRING).description("질문").optional(),
+            fieldWithPath("bookQuestion.plot").type(JsonFieldType.STRING).description("질문의 맥락이 되는 줄거리").optional(),
+            fieldWithPath("bookQuestion.extract").type(JsonFieldType.STRING).description("질문과 관련된 책 속 발췌문").optional()
     };
 
     @Autowired
@@ -236,12 +241,15 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.source").value("yes24"))
                 .andExpect(jsonPath("$.reviewCount").value(22))
                 .andExpect(jsonPath("$.replyCount").value(24))
+                .andExpect(jsonPath("$.bookQuestion.question").value("화성에 홀로 남는다면 무엇부터 하시겠어요?"))
+                .andExpect(jsonPath("$.bookQuestion.plot").value("줄거리"))
+                .andExpect(jsonPath("$.bookQuestion.extract").value("발췌문"))
                 .andDo(document(
                         "book-detail",
                         responseFields(BOOK_DETAIL_RESPONSE_FIELDS),
                         resource(ResourceSnippetParameters.builder()
                                 .summary(BOOK_DETAIL_SUMMARY)
-                                .description("도서의 메타데이터, 댓글 수, 별점과 로그인 사용자의 서재 기록을 조회한다")
+                                .description("도서의 메타데이터, 댓글 수, 별점, 책에 대한 질문과 로그인 사용자의 서재 기록을 조회한다")
                                 .tag("도서")
                                 .pathParameters(ResourceDocumentation.parameterWithName("isbn13")
                                         .type(SimpleType.STRING).description("ISBN-13"))
@@ -454,7 +462,12 @@ class BookControllerTest {
                         new BigDecimal("4.2")
                 ),
                 "https://www.yes24.com/product/goods/101375809",
-                "yes24"
+                "yes24",
+                new BookQuestionResponse(
+                        "화성에 홀로 남는다면 무엇부터 하시겠어요?",
+                        "줄거리",
+                        "발췌문"
+                )
         );
     }
 
