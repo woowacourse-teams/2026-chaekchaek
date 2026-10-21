@@ -27,9 +27,15 @@ import { Link } from 'react-router-dom';
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
 import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
 import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
+import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
+import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';
 
-type LibraryPageDialogType =
-  'AddBooksToLibraryDialog' | 'ManageLibraryDialog' | 'ShareLibraryImageDialog';
+export type LibraryPageDialogType =
+  | 'AddBooksToLibraryDialog'
+  | 'ManageLibraryDialog'
+  | 'ShareLibraryImageDialog'
+  | 'RenameLibraryDialog'
+  | 'DeleteLibraryDialog';
 
 const booksHeight = [286, 304, 318, 312, 296, 282, 288, 306, 320, 298];
 
@@ -47,9 +53,14 @@ export const LibraryPage = () => {
       case 'AddBooksToLibraryDialog':
         return <AddBooksToLibraryDialog onClose={handleCloseDialog} />;
       case 'ManageLibraryDialog':
-        return <ManageLibraryDialog onClose={handleCloseDialog} />;
+        return <ManageLibraryDialog onClose={handleCloseDialog} onOpenDialog={handleOpenDialog} />;
       case 'ShareLibraryImageDialog':
         return <ShareLibraryImageDialog onClose={handleCloseDialog} />;
+
+      case 'RenameLibraryDialog':
+        return <RenameLibraryDialog onClose={handleCloseDialog} />;
+      case 'DeleteLibraryDialog':
+        return <DeleteLibraryDialog onClose={handleCloseDialog} />;
 
       default:
         return null;
