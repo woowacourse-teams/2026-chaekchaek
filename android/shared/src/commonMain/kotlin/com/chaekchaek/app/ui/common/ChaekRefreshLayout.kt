@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -35,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
@@ -60,13 +62,17 @@ import androidx.compose.ui.unit.sp
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.ic_refresh_loader
 import com.chaekchaek.app.presentation.common.RefreshUiState
-import com.chaekchaek.app.ui.theme.ChaekSurface
+import com.chaekchaek.app.ui.theme.ChaekActionSurface
+import com.chaekchaek.app.ui.theme.ChaekOnActionSurface
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 
-/** Figma PullRefresh 1184:428 / ListBoundary 1184:441. 헤더와 고정 바는 이 컨테이너 밖에 둔다. */
+private const val RefreshMinimumVisibleMillis = 300L
+
+/** Figma PullRefresh 1184:428 / C 1447:5952. 헤더와 고정 바는 이 컨테이너 밖에 둔다. */
 @Composable
 fun ChaekRefreshLayout(
     state: RefreshUiState,
@@ -85,11 +91,39 @@ fun ChaekRefreshLayout(
     val bottomLimit = with(LocalDensity.current) { 24.dp.toPx() }
     var bottomOffset by remember { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
+    var minimumFeedbackVisible by remember { mutableStateOf(false) }
+    var feedbackTimer by remember { mutableStateOf<Job?>(null) }
+    val refreshingVisible = state.isRefreshing || minimumFeedbackVisible
     var settling by remember { androidx.compose.runtime.mutableStateOf<Job?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val latestContent = rememberUpdatedState(content)
     // 편집 모드에서 공식 Box를 제거해도 목록과 입력의 remember 상태를 유지한다.
     val retainedContent = remember { movableContentOf { latestContent.value() } }
+
+    fun holdRefreshFeedback() {
+        minimumFeedbackVisible = true
+        feedbackTimer?.cancel()
+        feedbackTimer = scope.launch {
+            delay(RefreshMinimumVisibleMillis)
+            minimumFeedbackVisible = false
+        }
+    }
+
+    fun requestRefresh(afterFailure: Boolean = false) {
+        if (!latestEnabled.value || latestState.value.isRefreshing || (minimumFeedbackVisible && !afterFailure)) return
+        // 응답이 같은 프레임 안에 끝나도 사용자 동작의 피드백은 남긴다.
+        holdRefreshFeedback()
+        latestRefresh.value()
+    }
+
+    LaunchedEffect(state.isRefreshing, canPull) {
+        if (!canPull) {
+            feedbackTimer?.cancel()
+            minimumFeedbackVisible = false
+        } else if (state.isRefreshing && !minimumFeedbackVisible) {
+            holdRefreshFeedback()
+        }
+    }
 
     fun settleBottom() {
         settling?.cancel()
@@ -106,7 +140,7 @@ fun ChaekRefreshLayout(
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let {
             if (snackbar.showSnackbar(it, actionLabel = "다시 시도") == SnackbarResult.ActionPerformed &&
-                latestEnabled.value && !latestState.value.isRefreshing) latestRefresh.value()
+                latestEnabled.value && !latestState.value.isRefreshing) requestRefresh(afterFailure = true)
         }
     }
     val bottomConnection = remember(bottomLimit, pullState) {
@@ -144,25 +178,24 @@ fun ChaekRefreshLayout(
         .graphicsLayer { translationY = bottomOffset }
     CompositionLocalProvider(LocalOverscrollFactory provides null) {
         Box(modifier.fillMaxSize().clipToBounds().semantics {
-            if (canPull && !state.isRefreshing) {
-                customActions = listOf(CustomAccessibilityAction("새로고침") { onRefresh(); true })
+            if (canPull && !refreshingVisible) {
+                customActions = listOf(CustomAccessibilityAction("새로고침") { requestRefresh(); true })
             }
         }) {
             if (canPull) {
                 PullToRefreshBox(
-                    isRefreshing = state.isRefreshing,
-                    onRefresh = {
-                        if (latestEnabled.value && !latestState.value.isRefreshing) latestRefresh.value()
-                    },
+                    isRefreshing = refreshingVisible,
+                    onRefresh = { requestRefresh() },
                     modifier = Modifier.fillMaxSize(),
                     state = pullState,
                     indicator = {
-                        if (pullState.distanceFraction > 0f) {
+                        if (refreshingVisible || pullState.distanceFraction > 0f) {
                             RefreshIndicator(
-                                state = state,
+                                refreshing = refreshingVisible,
                                 ready = pullState.distanceFraction >= 1f,
                                 modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().heightIn(min = 64.dp).graphicsLayer {
-                                    translationY = (pullState.distanceFraction.coerceAtMost(1f) - 1f) * size.height
+                                    translationY = if (refreshingVisible) 0f else
+                                        (pullState.distanceFraction.coerceAtMost(1f) - 1f) * size.height
                                 },
                             )
                         }
@@ -191,25 +224,31 @@ fun RefreshableEmptyContent(modifier: Modifier = Modifier, content: @Composable 
 }
 
 @Composable
-private fun RefreshIndicator(state: RefreshUiState, ready: Boolean, modifier: Modifier) {
+private fun RefreshIndicator(refreshing: Boolean, ready: Boolean, modifier: Modifier) {
     val label = when {
-        state.showLoading -> "새로고침 중이에요"
-        state.isRefreshing -> "갱신 요청 중"
+        refreshing -> "새로고침 중이에요"
         ready -> "놓으면 새로고침"
         else -> "당겨서 새로고침"
     }
-    Row(
-        modifier.background(ChaekSurface).padding(horizontal = 12.dp).testTag("pull-refresh-indicator")
-            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (state.showLoading) RefreshSpinner(Modifier.testTag("pull-refresh-spinner"))
-        Text(
-            label,
-            color = ChaekInkSecondary,
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 19.5.sp),
-        )
+    Box(modifier.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+        Row(
+            Modifier.background(ChaekActionSurface, RoundedCornerShape(18.dp))
+                .heightIn(min = 36.dp).padding(horizontal = 12.dp, vertical = 8.dp)
+                .testTag("pull-refresh-indicator")
+                .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (refreshing) RefreshSpinner(Modifier.testTag("pull-refresh-spinner"))
+            Text(
+                label,
+                modifier = Modifier.weight(1f, fill = false),
+                color = ChaekOnActionSurface,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 13.sp, lineHeight = 19.5.sp, letterSpacing = (-0.426).sp,
+                ),
+            )
+        }
     }
 }
 

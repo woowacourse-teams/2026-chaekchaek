@@ -28,6 +28,7 @@ import com.chaekchaek.app.ui.common.ListBoundary
 import com.chaekchaek.app.ui.common.RefreshableEmptyContent
 import com.chaekchaek.app.ui.theme.ChaekchaekTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,11 +58,12 @@ class PullRefreshTest {
         val emptyBefore = compose.onNodeWithText("빈 화면").fetchSemanticsNode().boundsInRoot
         compose.onNodeWithTag("refresh-body").performTouchInput { swipeDown() }
         compose.onNodeWithTag("pull-refresh-indicator").assertIsDisplayed()
-        compose.onNodeWithText("갱신 요청 중").assertIsDisplayed()
-        compose.onNodeWithTag("pull-refresh-spinner", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("새로고침 중이에요").assertIsDisplayed()
+        compose.onNodeWithTag("pull-refresh-spinner", useUnmergedTree = true).assertIsDisplayed()
         val body = compose.onNodeWithTag("refresh-body").fetchSemanticsNode().boundsInRoot
         val indicator = compose.onNodeWithTag("pull-refresh-indicator").fetchSemanticsNode().boundsInRoot
         assertEquals(body.center.x, indicator.center.x, 0.5f)
+        assertTrue(indicator.width < body.width)
         assertEquals(headerBefore, compose.onNodeWithTag("fixed-header").fetchSemanticsNode().boundsInRoot)
         assertEquals(emptyBefore, compose.onNodeWithText("빈 화면").fetchSemanticsNode().boundsInRoot)
         compose.onNodeWithText("빈 화면").assertIsDisplayed()
@@ -119,7 +121,6 @@ class PullRefreshTest {
         compose.onNodeWithTag("refresh-body").performTouchInput { swipeDown() }
         compose.runOnIdle { assertEquals(1, requests) }
         compose.onNodeWithTag("pull-refresh-indicator").assertIsDisplayed()
-        compose.runOnIdle { state.value = RefreshUiState(isRefreshing = true, showLoading = true) }
         compose.onNodeWithTag("pull-refresh-indicator").assertIsDisplayed()
         compose.onNodeWithText("새로고침 중이에요").assertIsDisplayed()
         compose.onNodeWithTag("pull-refresh-spinner", useUnmergedTree = true).assertIsDisplayed()
@@ -130,25 +131,66 @@ class PullRefreshTest {
         }
         shot.recycle()
         compose.runOnIdle { state.value = RefreshUiState() }
+        compose.mainClock.advanceTimeBy(320)
         compose.onNodeWithTag("pull-refresh-indicator").assertDoesNotExist()
         compose.onNodeWithText("선택 유지").assertIsDisplayed()
     }
 
     @Test
-    fun immediateResponseClosesIndicatorAndAllowsAnotherRefresh() {
+    fun immediateResponseShowsFeedbackFor300msWithoutDelayingContentAndAllowsAnotherRefresh() {
         var requests = 0
+        val response = mutableStateOf("빠른 응답 전")
         compose.setContent {
             ChaekchaekTheme {
-                ChaekRefreshLayout(RefreshUiState(), { requests++ }, Modifier.testTag("refresh-body")) {
-                    RefreshableEmptyContent { Text("빠른 응답") }
+                ChaekRefreshLayout(RefreshUiState(), {
+                    requests++
+                    response.value = "응답 $requests 반영"
+                }, Modifier.testTag("refresh-body")) {
+                    RefreshableEmptyContent { Text(response.value) }
                 }
             }
         }
         repeat(2) { index ->
+            compose.mainClock.autoAdvance = false
             compose.onNodeWithTag("refresh-body").performTouchInput { swipeDown() }
+            // 손을 놓은 프레임부터 즉시 요청하고 링을 표시한다.
+            compose.mainClock.advanceTimeByFrame()
             compose.runOnIdle { assertEquals(index + 1, requests) }
+            compose.onNodeWithText("응답 ${index + 1} 반영").assertIsDisplayed()
+            compose.onNodeWithTag("pull-refresh-spinner", useUnmergedTree = true).assertIsDisplayed()
+            compose.mainClock.advanceTimeBy(240)
+            compose.onNodeWithTag("pull-refresh-spinner", useUnmergedTree = true).assertIsDisplayed()
+            compose.mainClock.advanceTimeBy(64)
+            compose.mainClock.autoAdvance = true
+            compose.waitForIdle()
             compose.onNodeWithTag("pull-refresh-indicator").assertDoesNotExist()
         }
+    }
+
+    @Test
+    fun immediateFailureCanRetryBeforeMinimumFeedbackEnds() {
+        var requests = 0
+        val state = mutableStateOf(RefreshUiState())
+        compose.setContent {
+            ChaekchaekTheme {
+                ChaekRefreshLayout(state.value, {
+                    requests++
+                    state.value = if (requests == 1) RefreshUiState(errorMessage = "갱신 실패")
+                    else RefreshUiState(isRefreshing = true)
+                }, Modifier.testTag("refresh-body")) {
+                    RefreshableEmptyContent { Text("기존 내용") }
+                }
+            }
+        }
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithTag("refresh-body").performTouchInput { swipeDown() }
+        compose.mainClock.advanceTimeBy(176)
+        compose.onNodeWithText("다시 시도").performClick()
+        compose.mainClock.advanceTimeByFrame()
+        compose.runOnIdle { assertEquals(2, requests) }
+        compose.onNodeWithTag("pull-refresh-spinner", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("기존 내용").assertIsDisplayed()
+        compose.mainClock.autoAdvance = true
     }
 
     @Test

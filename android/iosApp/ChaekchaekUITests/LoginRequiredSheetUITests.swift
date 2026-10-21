@@ -126,7 +126,14 @@ final class LoginRequiredSheetUITests: XCTestCase {
         let field = app.textViews["search-query-field"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap()
-        field.typeText("zzxqrefresh529nomatch\n")
+        let query = "zzxqrefresh529nomatch"
+        // 부하가 큰 Simulator의 연속 입력 누락과 새로고침의 입력 보존 실패를 구분한다.
+        for character in query { field.typeText(String(character)) }
+        guard field.value as? String == query else {
+            XCTFail("새로고침 전에 테스트 검색어가 정확히 입력되어야 합니다")
+            return
+        }
+        field.typeText("\n")
         let empty = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "검색 결과가 없어요")).firstMatch
         XCTAssertTrue(empty.waitForExistence(timeout: 15))
         let requestsBeforePull = fixture.completedRequests(for: "/api/v1/books")
@@ -138,7 +145,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
         waitForRefreshIndicatorToClose(in: app)
         XCTAssertEqual(fixture.completedRequests(for: "/api/v1/books"), requestsBeforePull + 1)
         XCTAssertTrue(empty.exists)
-        XCTAssertEqual(field.value as? String, "zzxqrefresh529nomatch")
+        XCTAssertEqual(field.value as? String, query)
         attachScreenshot(named: "빈 검색 결과 당김 후 검색어 유지")
         // hitRegion은 시스템 홈 인디케이터에서도 실패해 별도 검증 기록으로 남긴다.
         try app.performAccessibilityAudit(for: [.textClipped])

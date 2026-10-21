@@ -108,7 +108,6 @@ class HomeViewModelTest {
         tokens shouldBe listOf(null, "member-before", "member-after")
         viewModel.uiState.value shouldBe HomeUiState.Empty
         viewModel.refreshState.value.isRefreshing shouldBe false
-        viewModel.refreshState.value.showLoading shouldBe false
     }
 
     @Test
@@ -161,7 +160,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `갱신은 내용을 유지하고 500ms 뒤에만 회전 상태를 표시한다`() = runViewModelTest {
+    fun `갱신 요청 중에는 내용을 유지하고 완료하면 요청 상태를 해제한다`() = runViewModelTest {
         val repository = TestFeedRepository()
         val viewModel = HomeViewModel(repository, FIXED_CLOCK)
         advanceUntilIdle()
@@ -174,14 +173,12 @@ class HomeViewModelTest {
         viewModel.refreshState.value.isRefreshing shouldBe true
         advanceTimeBy(499)
         runCurrent()
-        viewModel.refreshState.value.showLoading shouldBe false
         advanceTimeBy(1)
         runCurrent()
-        viewModel.refreshState.value.showLoading shouldBe true
+        viewModel.refreshState.value.isRefreshing shouldBe true
         viewModel.uiState.value shouldBe previous
         advanceUntilIdle()
         viewModel.refreshState.value.isRefreshing shouldBe false
-        viewModel.refreshState.value.showLoading shouldBe false
         repository.callCount shouldBe 2
     }
 

@@ -162,8 +162,7 @@ class SearchViewModel(
                 val page = withDelayedApiLoading(
                     onLoadingChanged = { loading ->
                         if (revision == loadRevision) {
-                            if (retainContent) _refreshState.value = _refreshState.value.copy(showLoading = loading)
-                            else if (loading) _uiState.value = SearchUiState.Loading
+                            if (!retainContent && loading) _uiState.value = SearchUiState.Loading
                         }
                     },
                 ) {
@@ -220,7 +219,7 @@ class SearchViewModel(
             }
             if (revision == loadRevision) {
                 _uiState.value = result
-                _refreshState.value = _refreshState.value.copy(isRefreshing = false, showLoading = false)
+                _refreshState.value = _refreshState.value.copy(isRefreshing = false)
             }
         }
     }

@@ -201,7 +201,6 @@ class FeedViewModelTest {
         savedReplies shouldBe if (reply) 1 else 0
         requests shouldBe 2
         viewModel.refreshState.value.isRefreshing shouldBe false
-        viewModel.refreshState.value.showLoading shouldBe false
         viewModel.refreshState.value.errorMessage shouldBe null
     }
 

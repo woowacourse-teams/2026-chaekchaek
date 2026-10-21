@@ -177,11 +177,9 @@ class FeedViewModel(
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
                     if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
-                    if (refreshing) {
-                        _refreshState.value = _refreshState.value.copy(showLoading = loading)
-                    } else if (loading && !(retainContent && previousState is FeedUiState.Content)) {
+                    if (!refreshing && loading && !(retainContent && previousState is FeedUiState.Content)) {
                         _uiState.value = FeedUiState.Loading
-                    } else if (_uiState.value == FeedUiState.Loading) {
+                    } else if (!refreshing && _uiState.value == FeedUiState.Loading) {
                         _uiState.value = previousState
                     }
                 },
@@ -223,7 +221,7 @@ class FeedViewModel(
                 if (revision == loadRevision) _uiState.value = result
             }
             if (revision == loadRevision) {
-                _refreshState.value = _refreshState.value.copy(isRefreshing = false, showLoading = false)
+                _refreshState.value = _refreshState.value.copy(isRefreshing = false)
             }
         }
     }

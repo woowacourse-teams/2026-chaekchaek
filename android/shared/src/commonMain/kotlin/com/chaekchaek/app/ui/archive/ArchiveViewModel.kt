@@ -82,7 +82,7 @@ class ArchiveViewModel(
                 loadIntoState(token, authentication, revision, refreshing)
             }
             if (revision == queryRevision && authentication == authenticationRevision) {
-                _refreshState.value = _refreshState.value.copy(isRefreshing = false, showLoading = false)
+                _refreshState.value = _refreshState.value.copy(isRefreshing = false)
             }
         }
     }
@@ -133,8 +133,7 @@ class ArchiveViewModel(
         val started = kotlin.time.TimeSource.Monotonic.markNow()
         withDelayedLoading({ loading ->
             if (authentication == authenticationRevision && revision == queryRevision) {
-                if (refreshing) _refreshState.value = _refreshState.value.copy(showLoading = loading)
-                else setLoading(loading)
+                if (!refreshing) setLoading(loading)
             }
         }) { repository.getAll(token) }
             .onSuccess { books ->

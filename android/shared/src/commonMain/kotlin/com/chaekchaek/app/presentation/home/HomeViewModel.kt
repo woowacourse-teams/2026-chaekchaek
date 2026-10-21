@@ -78,11 +78,9 @@ class HomeViewModel(
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
                     if (revision != loadRevision) return@withDelayedApiLoading
-                    if (retainContent) {
-                        _refreshState.value = _refreshState.value.copy(showLoading = loading)
-                    } else if (loading) {
+                    if (!retainContent && loading) {
                         _uiState.value = HomeUiState.Loading
-                    } else if (_uiState.value == HomeUiState.Loading) {
+                    } else if (!retainContent && _uiState.value == HomeUiState.Loading) {
                         _uiState.value = previousState
                     }
                 },
@@ -143,7 +141,7 @@ class HomeViewModel(
                 if (revision == loadRevision) _uiState.value = result
             }
             if (revision == loadRevision) {
-                _refreshState.value = _refreshState.value.copy(isRefreshing = false, showLoading = false)
+                _refreshState.value = _refreshState.value.copy(isRefreshing = false)
             }
         }
     }
