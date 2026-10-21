@@ -29,9 +29,9 @@ description: 책췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준
 3. 저장소 릴리즈 기록과 각 스토어에서 사용한 가장 큰 빌드 번호를 확인한다. `versionName`은 같은 SemVer로 맞추고 Android `versionCode`와 iOS build는 사용된 최댓값보다 크게 정한다.
 4. `docs/android-release-management.md`와 `android/docs/ios-app-store-review.md`를 버전 변경과 같은 커밋에서 갱신한다.
 5. Android는 `build-signed-aab` 스킬로 AAB를 만들고 서명, manifest, 아이콘과 SHA-256을 검증한 뒤 고정 산출물 경로에 파일이 있는지 확인한다.
-6. iOS는 `ios-simulator-validation` 스킬로 기본 글자 크기와 AX5 테스트를 끝까지 실행한다. KMP Release Archive 전에 `df -h /`로 이 프로젝트 기준 5GB 이상의 여유 공간을 확인하고, 부족하면 현재 작업에서 만든 빌드 산출물만 정확한 경로로 정리한다.
+6. iOS는 `ios-simulator-validation` 스킬로 기본 글자 크기의 요청 기능과 일반 사용 흐름을 검증한다. 현재 우선순위는 루트 `AGENTS.md`의 모바일 검증 기준을 따른다. AX5와 전체 접근성 감사는 일반 배포의 필수 선행 조건이 아니며, 명시적인 접근성 검증 요청이 있을 때 확장 실행한다. KMP Release Archive 전에 `df -h /`로 이 프로젝트 기준 5GB 이상의 여유 공간을 확인하고, 부족하면 현재 작업에서 만든 빌드 산출물만 정확한 경로로 정리한다.
 7. `xcodebuild archive`의 `-archivePath`에 고정 iOS Archive 경로를 지정한다. Debug Simulator 성공과 별도로 Release Archive 성공을 확인한다. `#if DEBUG` 안에서만 선언한 launch argument나 fixture 변수를 Release 호출부에서 참조하면 Debug 빌드는 성공해도 Archive는 실패한다. 테스트 옵션은 Debug 분기에서 계산하고 Release에는 기존 기본값을 명시한다.
-8. 외부 업로드 전에 양쪽 빌드와 전체 테스트 결과를 확인한다. Archive 빌드와 Simulator 테스트는 병행할 수 있지만, 테스트가 실행 중이거나 실패 원인이 미해결이면 업로드하지 않는다. fixture 의존 건너뜀은 실패와 구분해 사유를 기록한다. 알려진 실패가 있는 빌드의 업로드는 해당 실패를 알리고 사용자가 그 상태의 업로드를 명시적으로 요청한 경우에만 진행한다.
+8. 외부 업로드 전에 양쪽 빌드와 필수 기능 검증의 완료 결과를 확인한다. Archive 빌드와 Simulator 테스트는 병행할 수 있지만, 필수 기능 검증이 실행 중이거나 빌드 및 기능 실패 원인이 미해결이면 업로드하지 않는다. fixture 의존 건너뜀은 실패와 구분해 사유를 기록한다. AX5, hit target 및 대비 수치 등 접근성 감사만의 실패는 기록하고 승인된 업로드를 계속하며 같은 사유로 재승인을 요구하지 않는다. 기본 크기에서 버튼 조작이나 핵심 흐름이 깨지면 기능 실패로 다룬다. 감사 실패로 뒤의 기능 단계가 실행되지 않았다면 그 기능은 별도로 확인한다. 알려진 빌드 및 기능 실패가 있는 상태의 업로드는 해당 실패를 알리고 사용자가 명시적으로 요청한 경우에만 진행한다.
 9. 업로드가 요청된 경우 Android는 지정된 Play 트랙에 반영하고 새 API 조회로 상태와 AAB 해시를 대조한다. iOS는 아래 CLI 절차를 먼저 사용한다. 업로드된 동일 빌드 번호의 바이너리를 수정본으로 덮어쓸 수 있다고 가정하지 않는다. 업로드 뒤 결함을 발견했다면 현재 빌드의 상태와 결함을 기록하고 수정 배포의 새 빌드 번호를 사용자와 확정한다.
 10. 실제 AAB 해시, TestFlight 상태, 소스 커밋을 릴리즈 문서에 반영하고 `release-commit` 스킬 형식으로 커밋한다.
 11. 직접 push가 승인된 작업이면 원격 `an-develop`이 예상 기준에서 움직이지 않았는지 확인한 뒤 fast-forward push한다.
