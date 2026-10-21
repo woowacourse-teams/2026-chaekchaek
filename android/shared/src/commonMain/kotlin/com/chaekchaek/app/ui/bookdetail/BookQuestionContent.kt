@@ -32,6 +32,19 @@ internal fun bookQuestionOverlayHeight(availableHeight: Float): Float {
     return (availableHeight * 0.48f).coerceIn(280f, 340f).coerceAtMost(availableHeight)
 }
 
+/** 낮은 화면에서는 오른쪽 여백에서 뒤 목록을 스크롤한다. 목록 자체의 크기는 바꾸지 않는다. */
+internal data class BookQuestionOverlayLayout(val height: Float, val sideScrollGutter: Boolean)
+
+internal fun bookQuestionOverlayLayout(windowHeight: Float, reviewViewportHeight: Float): BookQuestionOverlayLayout {
+    require(reviewViewportHeight.isFinite() && reviewViewportHeight >= 0f)
+    val sideScrollGutter = reviewViewportHeight < 248f
+    val reservedSpace = if (sideScrollGutter) 24f else 76f
+    return BookQuestionOverlayLayout(
+        height = bookQuestionOverlayHeight(windowHeight).coerceAtMost((reviewViewportHeight - reservedSpace).coerceAtLeast(0f)),
+        sideScrollGutter = sideScrollGutter,
+    )
+}
+
 /** 별점은 시안용 초안 값이다. null은 미선택이며 0f는 실제 0점으로 구분한다. */
 data class BookDetailReviewDraft(
     val content: String,

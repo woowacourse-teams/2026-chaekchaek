@@ -320,6 +320,8 @@ fun BookDetailScreen(
                 questionContent?.let { question ->
                     item(key = "question_${question.id}") {
                         BookQuestionSection(
+                            viewport = reviewViewport,
+                            referenceOverlayBounds = if (showQuestionReference && referenceTab != null) referenceOverlayBounds else Rect.Zero,
                             content = question,
                             reaction = questionReaction,
                             onReferenceOpen = { showQuestionReference = true },
@@ -332,6 +334,7 @@ fun BookDetailScreen(
                 item {
                     ReviewsSection(
                         viewport = reviewViewport,
+                        referenceOverlayBounds = if (showQuestionReference && referenceTab != null) referenceOverlayBounds else Rect.Zero,
                         reviews = state.reviews,
                         reviewCount = state.reviewCount,
                         hasMoreReviews = state.nextReviewPage != null,
@@ -397,13 +400,16 @@ fun BookDetailScreen(
             )
         }
         if (showQuestionReference && questionContent != null && referenceTab != null) {
+            val overlayLayout = bookQuestionOverlayLayout(windowHeight, (maxHeight - composeBarHeight).value.coerceAtLeast(0f))
             BookQuestionOverlay(
                 content = questionContent,
+                compact = overlayLayout.sideScrollGutter,
                 selectedTab = referenceTab,
                 onTabSelect = { referenceTabName = it.name },
                 onClose = { showQuestionReference = false },
-                modifier = Modifier.align(Alignment.TopCenter).padding(12.dp)
-                    .fillMaxWidth().height(bookQuestionOverlayHeight(windowHeight).coerceAtMost((maxHeight.value - 24f).coerceAtLeast(0f)).dp)
+                modifier = Modifier.align(Alignment.TopStart)
+                    .padding(start = 12.dp, top = 12.dp, end = if (overlayLayout.sideScrollGutter) 76.dp else 12.dp)
+                    .fillMaxWidth().height(overlayLayout.height.dp)
                     .onGloballyPositioned { coordinates ->
                         val position = coordinates.positionInWindow()
                         referenceOverlayBounds = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
@@ -562,17 +568,14 @@ private fun BookHero(
     coverContent: (@Composable (BookDetailArgs, Modifier) -> Unit)?,
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    var libraryButtonBounds by remember { mutableStateOf(Rect.Zero) }
-    val libraryButtonFullyVisible = !libraryButtonBounds.isEmpty && !viewport.isEmpty &&
-        libraryButtonBounds.top >= viewport.top - 0.5f && libraryButtonBounds.bottom <= viewport.bottom + 0.5f &&
-        (referenceOverlayBounds.isEmpty || !libraryButtonBounds.overlaps(referenceOverlayBounds))
     Column(modifier = Modifier.fillMaxWidth().background(ChaekSurface)) {
         Row(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(44.dp).clickable(role = Role.Button, onClick = onBack),
+                modifier = Modifier.size(44.dp).clickable(role = Role.Button, onClick = onBack)
+                    .testTag("book_detail_back").accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(painterResource(Res.drawable.ic_back), "뒤로 가기", Modifier.size(21.dp), tint = ChaekInk)
@@ -598,7 +601,8 @@ private fun BookHero(
                         modifier = Modifier.size(44.dp).clickable(
                             enabled = !saving, role = Role.Button,
                             interactionSource = remember { MutableInteractionSource() }, indication = null,
-                        ) { showMenu = true }.semantics { contentDescription = "서재 관리" },
+                        ) { showMenu = true }.semantics { contentDescription = "서재 관리" }
+                            .accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text("⋯", fontFamily = ChaekIconFontFamily(), fontSize = 24.sp)
@@ -662,12 +666,7 @@ private fun BookHero(
                     enabled = saveEnabled,
                     onSave = onLibraryClick,
                     modifier = Modifier.padding(top = 8.dp).testTag("book_detail_library_save")
-                        .onGloballyPositioned { coordinates ->
-                            val position = coordinates.positionInWindow()
-                            libraryButtonBounds = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
-                        }
-                        // 비모달 패널은 뒤 목록을 유지하므로 가려진 버튼만 접근성 탐색에서 제외한다.
-                        .then(if (libraryButtonFullyVisible) Modifier else Modifier.clearAndSetSemantics { hideFromAccessibility() }),
+                        .accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
                 )
             }
         }
@@ -894,34 +893,41 @@ private fun AverageRatingChip(averageRating: Double?) {
     }
 }
 
-/** 스크롤로 잘린 필터를 작은 접근성 버튼으로 노출하지 않는다. 완전히 보이면 다시 탐색할 수 있다. */
+/** 비모달 패널과 목록 경계에 가려진 컨트롤의 역할과 동작만 숨기고, 원래 배치는 유지한다. */
+@Composable
+internal fun Modifier.accessibilityWhenFullyVisible(viewport: Rect, overlay: Rect): Modifier {
+    var bounds by remember { mutableStateOf(Rect.Zero) }
+    val fullyVisible = !bounds.isEmpty && !viewport.isEmpty &&
+        bounds.top >= viewport.top - 0.5f && bounds.bottom <= viewport.bottom + 0.5f &&
+        bounds.left >= viewport.left - 0.5f && bounds.right <= viewport.right + 0.5f &&
+        (overlay.isEmpty || !bounds.overlaps(overlay))
+    return onGloballyPositioned { coordinates ->
+        val position = coordinates.positionInWindow()
+        bounds = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
+    }.then(if (fullyVisible) Modifier else Modifier.clearAndSetSemantics { hideFromAccessibility() })
+}
+
 @Composable
 private fun ReviewScopeChip(
     label: String,
     selected: Boolean,
     viewport: Rect,
+    overlay: Rect,
     testTag: String,
     onClick: () -> Unit,
 ) {
-    var bounds by remember { mutableStateOf(Rect.Zero) }
-    val fullyVisible = !bounds.isEmpty && !viewport.isEmpty &&
-        bounds.top >= viewport.top - 0.5f && bounds.bottom <= viewport.bottom + 0.5f
     ChaekFilterChip(
         label = label,
         selected = selected,
         onClick = onClick,
-        modifier = Modifier.testTag(testTag)
-            .onGloballyPositioned { coordinates ->
-                val position = coordinates.positionInWindow()
-                bounds = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
-            }
-            .semantics { if (!fullyVisible) hideFromAccessibility() },
+        modifier = Modifier.testTag(testTag).accessibilityWhenFullyVisible(viewport, overlay),
     )
 }
 
 @Composable
 private fun ReviewsSection(
     viewport: Rect,
+    referenceOverlayBounds: Rect,
     reviews: List<BookReview>,
     reviewCount: Int,
     hasMoreReviews: Boolean,
@@ -967,14 +973,15 @@ private fun ReviewsSection(
                 optionLabel = { option -> if (option == ReviewSort.LATEST) "최신순" else "페이지순" },
                 onOptionSelected = onSortChange,
                 contentDescription = "감상 정렬",
+                modifier = Modifier.testTag("review_sort").accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
             )
         }
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ReviewScopeChip("전체", scope == ReviewScope.ALL, viewport, "review_scope_all") { onScopeChange(ReviewScope.ALL) }
-            ReviewScopeChip("내 감상", scope == ReviewScope.MINE, viewport, "review_scope_mine") { onScopeChange(ReviewScope.MINE) }
+            ReviewScopeChip("전체", scope == ReviewScope.ALL, viewport, referenceOverlayBounds, "review_scope_all") { onScopeChange(ReviewScope.ALL) }
+            ReviewScopeChip("내 감상", scope == ReviewScope.MINE, viewport, referenceOverlayBounds, "review_scope_mine") { onScopeChange(ReviewScope.MINE) }
         }
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 24.dp),

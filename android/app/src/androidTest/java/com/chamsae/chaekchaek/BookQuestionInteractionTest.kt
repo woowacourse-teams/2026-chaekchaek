@@ -3,8 +3,10 @@ package com.chamsae.chaekchaek
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import android.view.accessibility.AccessibilityNodeInfo
 import com.chaekchaek.app.ui.bookdetail.BookQuestionPreviewScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailReviewDraft
 import com.chaekchaek.app.ui.theme.ChaekchaekTheme
@@ -16,20 +18,32 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class BookQuestionInteractionTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<androidx.activity.ComponentActivity>()
 
     private val submitted = mutableListOf<BookDetailReviewDraft>()
 
-    private fun launch(questionVisible: Boolean = true) {
+    private fun launch(questionVisible: Boolean = true, landscape: Boolean = false) {
+        compose.runOnUiThread {
+            compose.activity.requestedOrientation = if (landscape) {
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            } else {
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
+        }
         compose.setContent { ChaekchaekTheme {
             BookQuestionPreviewScreen(questionVisible = questionVisible, onReviewPreviewed = { submitted += it })
         } }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            val viewport = compose.onNodeWithTag("book_detail_list").fetchSemanticsNode().boundsInRoot
+            (viewport.width > viewport.height) == landscape
+        }
     }
 
     private fun scrollValue(tag: String): Float = compose.onNodeWithTag(tag)
         .fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
 
     private fun revealQuestionControl(tag: String) {
+        compose.onNodeWithTag("book_detail_list").performScrollToNode(hasTestTag(tag))
         val control = compose.onNodeWithTag(tag).performScrollTo()
         repeat(4) {
             val footerTop = compose.onNodeWithText("이 순간의 감상 남기기", substring = true)
@@ -121,6 +135,107 @@ class BookQuestionInteractionTest {
         }
         assertTrue(scrollValue("book_detail_list") > listBefore)
         compose.onNodeWithTag("question_reference_overlay").assertIsDisplayed()
+    }
+
+    private fun assertNativeAccessibleControl(label: String, expected: Boolean) {
+        compose.waitForIdle()
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        automation.waitForIdle(200, 5_000)
+        var root = checkNotNull(automation.rootInActiveWindow) { "실제 Android 접근성 트리를 읽을 수 없다" }
+        fun hasLabel(node: AccessibilityNodeInfo): Boolean =
+            node.text?.toString() == label || node.contentDescription?.toString() == label ||
+                (0 until node.childCount).any { node.getChild(it)?.let(::hasLabel) == true }
+        fun hasNativeRole(node: AccessibilityNodeInfo): Boolean =
+            node.className?.toString() in setOf("android.widget.Button", "android.widget.RadioButton")
+        fun containsControl(node: AccessibilityNodeInfo): Boolean {
+            // Compose의 Android 브리지는 이름과 역할을 자식으로 분리한다. 선택된 RadioButton은 클릭 불가다.
+            val control = node.isClickable || node.isCheckable || hasNativeRole(node) ||
+                (0 until node.childCount).any { node.getChild(it)?.let(::hasNativeRole) == true }
+            if (node.isVisibleToUser && control && hasLabel(node)) return true
+            return (0 until node.childCount).any { index -> node.getChild(index)?.let(::containsControl) == true }
+        }
+        fun describe(node: AccessibilityNodeInfo, depth: Int = 0): String = buildString {
+            appendLine("${" ".repeat(depth)}${node.className} text=${node.text} desc=${node.contentDescription} visible=${node.isVisibleToUser} clickable=${node.isClickable}")
+            repeat(node.childCount) { index -> node.getChild(index)?.let { append(describe(it, depth + 1)) } }
+        }
+        var actual = containsControl(root)
+        val deadline = android.os.SystemClock.uptimeMillis() + 5_000
+        while (actual != expected && android.os.SystemClock.uptimeMillis() < deadline) {
+            Thread.sleep(100)
+            root = checkNotNull(automation.rootInActiveWindow)
+            actual = containsControl(root)
+        }
+        assertEquals("실제 Android 접근성 컨트롤: $label\n${if (actual != expected) describe(root) else ""}", expected, actual)
+    }
+
+    @Test
+    fun partiallyCoveredFiltersAndBackRestoreTheirAccessibilityActions() {
+        launch()
+        revealQuestionControl("question_reference_open")
+        compose.onNodeWithTag("question_reference_open").performClick()
+        val list = compose.onNodeWithTag("book_detail_list")
+        list.performScrollToNode(hasTestTag("review_scope_all"))
+        val all = compose.onNodeWithTag("review_scope_all").performScrollTo()
+        repeat(10) {
+            val bounds = all.fetchSemanticsNode().boundsInRoot
+            val panel = compose.onNodeWithTag("question_reference_overlay").fetchSemanticsNode().boundsInRoot
+            val delta = bounds.top - (panel.bottom - bounds.height / 2)
+            if (!(bounds.top < panel.bottom && bounds.bottom > panel.bottom)) list.performTouchInput {
+                val shift = delta.coerceIn(-120f, 120f)
+                swipe(start = androidx.compose.ui.geometry.Offset(4f, centerY),
+                    end = androidx.compose.ui.geometry.Offset(4f, centerY - shift), durationMillis = 500)
+            }
+        }
+        val hidden = SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility)
+        val bounds = all.fetchSemanticsNode().boundsInRoot
+        val panel = compose.onNodeWithTag("question_reference_overlay").fetchSemanticsNode().boundsInRoot
+        assertTrue("필터가 패널 경계에 걸린 상태여야 한다", bounds.top < panel.bottom && bounds.bottom > panel.bottom)
+        all.assert(hidden)
+        assertNativeAccessibleControl("전체", false)
+        compose.onNodeWithTag("question_reference_close").performClick()
+        all.assert(hidden.not())
+        assertNativeAccessibleControl("전체", true)
+        compose.onNodeWithTag("review_scope_mine").performTouchInput { click() }.assertIsSelected()
+        all.performTouchInput { click() }.assertIsSelected()
+        revealQuestionControl("question_reference_open")
+        compose.onNodeWithTag("question_reference_open").performClick()
+        list.performScrollToIndex(0)
+        compose.onNodeWithTag("book_detail_back").assert(hidden)
+        assertNativeAccessibleControl("뒤로 가기", false)
+        compose.onNodeWithTag("question_reference_close").performClick()
+        compose.onNodeWithTag("book_detail_back").assert(hidden.not()).assertHasClickAction()
+        assertNativeAccessibleControl("뒤로 가기", true)
+    }
+
+    /** 테스트 Activity를 직접 회전해 작은 가로 화면을 검증한다. */
+    @Test
+    fun landscapeReferenceKeepsReadableBodyAndBackgroundScroll() {
+        launch(landscape = true)
+        revealQuestionControl("question_reference_open")
+        compose.onNodeWithTag("question_reference_open").performClick()
+        val list = compose.onNodeWithTag("book_detail_list")
+        val viewport = list.fetchSemanticsNode().boundsInRoot
+        assertTrue("가로 회전 화면에서 실행해야 한다", viewport.width > viewport.height)
+        val panel = compose.onNodeWithTag("question_reference_overlay").fetchSemanticsNode().boundsInRoot
+        val body = compose.onNodeWithTag("question_reference_body").fetchSemanticsNode().boundsInRoot
+        val minimum = with(compose.density) { 44.dp.toPx() }
+        assertTrue("본문을 직접 스크롤할 높이가 있어야 한다", body.height >= minimum - 1f)
+        val belowPanel = viewport.bottom - panel.bottom >= minimum
+        assertTrue("패널 밖 배경 목록 스크롤 영역이 있어야 한다", belowPanel || viewport.right - panel.right >= minimum)
+        val before = scrollValue("book_detail_list")
+        compose.onNodeWithTag("question_tab_Excerpt").performTouchInput { click() }.assertIsSelected()
+        compose.onNodeWithTag("question_reference_body").performTouchInput { swipeUp() }
+        assertTrue(scrollValue("question_reference_body") > 0)
+        assertEquals(before, scrollValue("book_detail_list"), 0.01f)
+        list.performTouchInput {
+            val x = if (belowPanel) centerX else width - minimum / 2
+            val endY = if (belowPanel) panel.bottom - viewport.top + 4f else 8f
+            swipe(start = androidx.compose.ui.geometry.Offset(x, height - 4f),
+                end = androidx.compose.ui.geometry.Offset(x, endY), durationMillis = 600)
+        }
+        assertTrue(scrollValue("book_detail_list") > before)
+        compose.onNodeWithTag("question_reference_close").performTouchInput { click() }
+        compose.onNodeWithTag("question_reference_overlay").assertDoesNotExist()
     }
 
     @Test

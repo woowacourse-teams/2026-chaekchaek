@@ -1,6 +1,8 @@
 package com.chaekchaek.app.ui.bookdetail
 
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
@@ -70,6 +72,19 @@ class BookQuestionContentTest {
         assertEquals(280f, bookQuestionOverlayHeight(280f))
         assertEquals(220f, bookQuestionOverlayHeight(220f))
         assertEquals(0f, bookQuestionOverlayHeight(0f))
+    }
+
+    @Test
+    fun `가로 화면에서도 본문과 배경 목록의 독립 스크롤 공간을 남긴다`() {
+        val seLandscape = bookQuestionOverlayLayout(windowHeight = 375f, reviewViewportHeight = 297f)
+        assertEquals(221f, seLandscape.height)
+        assertFalse(seLandscape.sideScrollGutter)
+        val compactLandscape = bookQuestionOverlayLayout(windowHeight = 320f, reviewViewportHeight = 194f)
+        assertEquals(170f, compactLandscape.height)
+        assertTrue(compactLandscape.sideScrollGutter)
+        val portrait = bookQuestionOverlayLayout(windowHeight = 844f, reviewViewportHeight = 766f)
+        assertEquals(340f, portrait.height)
+        assertFalse(portrait.sideScrollGutter)
     }
 
     @Test
