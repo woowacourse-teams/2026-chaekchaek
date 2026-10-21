@@ -1,10 +1,20 @@
+import { useState } from 'react';
+
 import { Button, Dialog, Tabs } from '@chaekchaek/design-system';
 
 import { MyLibraryPanel } from './components/MyLibraryPanel';
+import { SearchPanel } from './components/SearchPanel';
 
 import type { AddBooksToLibraryDialogProps } from './AddBooksToLibraryDialog.types';
 
+type TabType = 'my-library' | 'search';
+
 export const AddBooksToLibraryDialog = ({ onClose }: AddBooksToLibraryDialogProps) => {
+  const [active, setActive] = useState<TabType>('my-library');
+  const handleChange = (active: string | number) => {
+    setActive(active as TabType);
+  };
+
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
@@ -13,20 +23,20 @@ export const AddBooksToLibraryDialog = ({ onClose }: AddBooksToLibraryDialogProp
           <Tabs
             style={{ minHeight: '400px' }}
             distribution="equal"
-            active="a"
+            active={active}
             items={[
               {
                 text: '내 서재에서',
-                value: 'a',
+                value: 'my-library',
                 panel: <MyLibraryPanel />,
               },
               {
                 text: '책 검색',
-                value: 'b',
-                panel: <></>,
+                value: 'search',
+                panel: <SearchPanel />,
               },
             ]}
-            onChange={() => {}}
+            onChange={handleChange}
           />
         </Dialog.Body>
         <Dialog.Footer>
