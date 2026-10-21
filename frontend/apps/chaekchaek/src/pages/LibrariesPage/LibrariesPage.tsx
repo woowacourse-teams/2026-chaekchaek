@@ -18,6 +18,8 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
 
+import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
+
 export const LibrariesPage = () => {
   return (
     <Layout>
@@ -73,6 +75,7 @@ export const LibrariesPage = () => {
           </ContentArea>
         </Container>
       </Main>
+      {/* <RegisterLibraryDialog /> */}
     </Layout>
   );
 };
