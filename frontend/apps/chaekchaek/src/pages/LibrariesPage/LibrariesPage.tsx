@@ -43,6 +43,8 @@ const canDeleteLibrary = ({ isDefault }: { isDefault: boolean }): boolean => {
 type LibrariesPageDialogType =
   ManageLibraryDialogType | 'RegisterLibraryDialog' | 'ManageLibraryDialog';
 
+import { Sortable } from './components/Sortable/Sortable';
+
 export const LibrariesPage = () => {
   const { user } = useAuthContext();
   const getLibrariesLoadData = useCallback(async () => {
@@ -203,13 +205,16 @@ export const LibrariesPage = () => {
             </Title>
 
             <Partition columns={1}>
-              {librariesData?.libraries.map((library) => {
+              {librariesData?.libraries.map((library, index) => {
                 return (
-                  <Partition.Item key={library.libraryId}>
+                  <Sortable as={Partition.Item} id={index} index={index}>
                     <div>
                       <Title
                         level="content"
-                        sx={{ mt: 6, mb: 5 }}
+                        sx={{
+                          mt: 6,
+                          mb: 5,
+                        }}
                         trailing={
                           <>
                             <Text
@@ -261,7 +266,7 @@ export const LibrariesPage = () => {
                         })}
                       </Showcase>
                     </div>
-                  </Partition.Item>
+                  </Sortable>
                 );
               })}
             </Partition>
