@@ -42,17 +42,9 @@ export const LibraryPage = () => {
               sx={{ mb: 14 }}
               description={`내 책장 14권`}
               trailing={
-                <>
-                  <Button variant="primary">
-                    <Icon.PlusIcon color="inverse" />책 담기
-                  </Button>
-                  <IconButton variant="ghost" size="large">
-                    <Icon.UploadIcon size="large" />
-                  </IconButton>
-                  <IconButton variant="ghost" size="large">
-                    <Icon.DownloadIcon size="large" />
-                  </IconButton>
-                </>
+                <IconButton variant="secondary">
+                  <Icon.EllipsisIcon />
+                </IconButton>
               }
             >
               책장A
@@ -77,6 +69,18 @@ export const LibraryPage = () => {
             >
               <Text color="muted">어떤 책으로 채워볼까?</Text>
             </Surface>
+
+            <Title sx={{ mt: 8 }} level="detail">
+              <Button variant="primary" sx={{ mr: 4 }}>
+                <Icon.PlusIcon color="inverse" />책 담기
+              </Button>
+              <IconButton variant="ghost" size="large" sx={{ mr: 2 }}>
+                <Icon.UploadIcon size="large" />
+              </IconButton>
+              <IconButton variant="ghost" size="large" sx={{ mr: 2 }}>
+                <Icon.DownloadIcon size="large" />
+              </IconButton>
+            </Title>
 
             <Title
               sx={{ mt: 8 }}
