@@ -144,6 +144,9 @@ export type { Props as TabsProps } from './components/Tabs';
 export { Showcase } from './components/Showcase';
 export type { Props as ShowcaseProps } from './components/Showcase';
 
+export { ScrollArea } from './components/ScrollArea';
+export type { Props as ScrollAreaProps } from './components/ScrollArea';
+
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';
 
