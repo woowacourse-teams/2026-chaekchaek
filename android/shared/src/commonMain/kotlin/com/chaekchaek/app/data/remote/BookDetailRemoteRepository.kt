@@ -116,6 +116,22 @@ class BookDetailRemoteRepository(
       setBody(request.toUpdateBody(includeReadingProgress = credential is WriteCredential.Member))
     }.body<ReviewDto>().toBookReview()
 
+  /** 새 감상 화면에서 편집하지 않는 읽기 메타데이터는 PATCH에서 생략해 서버 값을 유지한다. */
+  suspend fun updateReviewContent(
+    reviewId: Long,
+    request: ReviewCreateRequest,
+    credential: WriteCredential,
+  ): BookReview =
+    client.patch("${apiConfiguration.baseUrl}/api/v1/reviews/$reviewId") {
+      authenticate(credential)
+      contentType(ContentType.Application.Json)
+      setBody(buildJsonObject {
+        put("content", request.content)
+        put("quote", request.quote?.let(::JsonPrimitive) ?: JsonNull)
+        put("isSpoiler", request.isSpoiler)
+      })
+    }.body<ReviewDto>().toBookReview()
+
   suspend fun deleteReview(reviewId: Long, credential: WriteCredential) {
     client.delete("${apiConfiguration.baseUrl}/api/v1/reviews/$reviewId") {
       authenticate(credential)
