@@ -60,7 +60,9 @@ final class QuestionAPreviewUITests: XCTestCase {
 
         let close = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "닫기")).firstMatch
         reveal(close, in: app, scrollingUp: false)
-        close.tap()
+        XCTAssertGreaterThanOrEqual(close.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(close.frame.minY, 20)
+        tapAfterScroll(close)
         let keep = element("계속 작성", in: app)
         XCTAssertTrue(keep.waitForExistence(timeout: 5))
         keep.tap()
@@ -502,6 +504,7 @@ final class QuestionAPreviewUITests: XCTestCase {
             let start = origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: moveUp ? bottom - 24 : top))
             let end = origin.withOffset(CGVector(dx: app.frame.width * 0.97, dy: moveUp ? top : bottom - 24))
             start.press(forDuration: 0.05, thenDragTo: end)
+            Thread.sleep(forTimeInterval: 0.5)
         }
         XCTAssertTrue(element.exists && element.isHittable, app.debugDescription)
     }
