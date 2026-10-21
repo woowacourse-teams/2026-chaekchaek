@@ -1,5 +1,7 @@
 package com.chaekchaek.app.presentation.home
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.analytics.AnalyticsTracker
@@ -8,7 +10,6 @@ import com.chaekchaek.app.domain.feed.FeedRepository
 import com.chaekchaek.app.domain.feed.FeedSection
 import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.presentation.common.TimeLabels
-import com.chaekchaek.app.presentation.common.toAppError
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,8 +27,10 @@ class HomeViewModel(
     private val clock: Clock,
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
+    val errors = ErrorRecoveryState()
     private var accessToken: String? = null
     private var hasObservedAuthentication = false
+    private var reloadOnNextHomeEntry = false
     private var loadJob: Job? = null
     private var loadRevision = 0L
     private val _refreshState = MutableStateFlow(RefreshUiState())
@@ -58,6 +61,21 @@ class HomeViewModel(
         refresh()
     }
 
+    fun retry(accessToken: String?) {
+        this.accessToken = accessToken
+        load()
+    }
+
+    fun onHomeEntered() {
+        if (!reloadOnNextHomeEntry) return
+        reloadOnNextHomeEntry = false
+        load()
+    }
+
+    fun onHomeHidden() {
+        reloadOnNextHomeEntry = true
+    }
+
     fun authenticate(accessToken: String?) {
         if (!hasObservedAuthentication) {
             hasObservedAuthentication = true
@@ -78,7 +96,9 @@ class HomeViewModel(
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
                     if (revision != loadRevision) return@withDelayedApiLoading
-                    if (!retainContent && loading) {
+                    val hasContent = previousState is HomeUiState.Content &&
+                        (previousState.sections.isNotEmpty() || previousState.readingBook != null)
+                    if (!retainContent && loading && !hasContent) {
                         _uiState.value = HomeUiState.Loading
                     } else if (!retainContent && _uiState.value == HomeUiState.Loading) {
                         _uiState.value = previousState
@@ -131,12 +151,12 @@ class HomeViewModel(
                         ),
                         longs = mapOf("duration_ms" to started.elapsedNow().inWholeMilliseconds),
                     )
-                    if (retainContent) {
-                        if (revision == loadRevision) {
-                            _refreshState.value = _refreshState.value.copy(errorMessage = "새로고침하지 못했어요")
-                        }
-                        previousState
-                    } else HomeUiState.Failure(error.toAppError())
+                    if (revision != loadRevision) return@withDelayedApiLoading
+                    errors.report(error, ErrorOperation.HomeLoad) { freshToken ->
+                        if (freshToken != null) accessToken = freshToken
+                        load(retainContent = retainContent)
+                    }
+                    previousState.takeUnless { it is HomeUiState.Loading } ?: HomeUiState.Content(emptyList())
                 }
                 if (revision == loadRevision) _uiState.value = result
             }

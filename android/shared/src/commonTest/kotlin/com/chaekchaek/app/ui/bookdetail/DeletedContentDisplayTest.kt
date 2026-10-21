@@ -12,52 +12,58 @@ import kotlin.test.assertTrue
 
 class DeletedContentDisplayTest {
     @Test
-    fun deletedReviewsAreExcludedFromCountWhenPaginationFinishes() {
+    fun deletedReviewsRemainVisibleAndIncludedInServerCount() {
         val active = review(1)
-        val deleted = review(2).copy(deleted = true)
-
+        val deleted = review(2).copy(deleted = true, replyCount = 1, recentReplies = listOf(reply(3)))
         val display = reviewDisplay(listOf(deleted, active), totalCount = 2, hasMore = false)
 
-        assertEquals(listOf(active), display.reviews)
-        assertEquals(1, display.count)
+        assertEquals(listOf(2L, 1L), display.reviews.map { it.reviewId })
+        assertEquals("삭제된 감상입니다.", display.reviews.first().content)
+        assertEquals(deleted.recentReplies, display.reviews.first().recentReplies)
+        assertEquals(2, display.count)
         assertFalse(display.showEmpty)
     }
 
     @Test
-    fun deletedOnlyPageDoesNotShowEmptyStateWhileNextPageRemains() {
-        val deleted = review(1).copy(deleted = true)
-
-        val display = reviewDisplay(listOf(deleted), totalCount = 2, hasMore = true)
-
-        assertTrue(display.reviews.isEmpty())
-        assertEquals(1, display.count)
-        assertFalse(display.showEmpty)
+    fun deletedReviewRemainsVisibleBeforeRepliesAreLoaded() {
+        val deleted = review(1).copy(deleted = true, replyCount = 2)
+        for (hasMore in listOf(true, false)) {
+            val display = reviewDisplay(listOf(deleted), totalCount = 3, hasMore = hasMore)
+            assertEquals(1, display.reviews.size)
+            assertEquals(3, display.count)
+            assertFalse(display.showEmpty)
+        }
     }
 
     @Test
-    fun deletedOnlyResultShowsZeroCountAndEmptyStateAfterPaginationFinishes() {
-        val deleted = review(1).copy(deleted = true)
-
-        val display = reviewDisplay(listOf(deleted), totalCount = 1, hasMore = false)
-
-        assertTrue(display.reviews.isEmpty())
-        assertEquals(0, display.count)
-        assertTrue(display.showEmpty)
+    fun emptyServerResultShowsZeroCountAfterPaginationFinishes() {
+        assertTrue(reviewDisplay(emptyList(), 0, hasMore = false).showEmpty)
+        assertFalse(reviewDisplay(emptyList(), 3, hasMore = true).showEmpty)
     }
 
     @Test
-    fun deletedReviewsAndTheirRepliesStayHiddenAfterReloadWithoutChangingPagination() {
-        val active = review(1)
-        val deleted = review(2).copy(deleted = true, recentReplies = listOf(reply(3)))
-        val response = ReviewPage(2, 2, listOf(deleted, active))
-
+    fun deletedReviewContentIsMaskedWithoutChangingRepliesOrPagination() {
+        val deleted = review(2).copy(deleted = true, quote = "인용", chapter = "장", recentReplies = listOf(reply(3)))
+        val response = ReviewPage(2, 2, listOf(deleted, review(1)))
         repeat(2) {
-            assertEquals(listOf(active), visibleReviews(response.items))
+            val masked = visibleReviews(response.items).first()
+            assertEquals("삭제된 감상입니다.", masked.content)
+            assertEquals(null, masked.quote)
+            assertEquals(null, masked.chapter)
+            assertEquals(deleted.recentReplies, masked.recentReplies)
         }
         assertEquals(2, response.totalCount)
         assertEquals(2, response.nextPage)
-        assertEquals(listOf(deleted, active), response.items)
-        assertTrue(visibleReviews(listOf(deleted)).isEmpty())
+        assertEquals("감상", response.items.first().content)
+    }
+
+    @Test
+    fun deletedReviewDisallowsNewRepliesAndLikesButAllowsUnlike() {
+        assertFalse(canReplyToReview(deleted = true))
+        assertFalse(canToggleReviewLike(deleted = true, likedByMe = false))
+        assertTrue(canToggleReviewLike(deleted = true, likedByMe = true))
+        assertTrue(canReplyToReview(deleted = false))
+        assertTrue(canToggleReviewLike(deleted = false, likedByMe = false))
     }
 
     @Test

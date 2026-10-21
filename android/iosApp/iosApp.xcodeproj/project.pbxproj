@@ -19,6 +19,8 @@
 		A10000000000000000000007 /* RefreshTokenKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* RefreshTokenKeychain.swift */; };
 		A20000000000000000000001 /* AppleSignInProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* AppleSignInProvider.swift */; };
 		B30000000000000000000001 /* LoginRequiredSheetUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000002 /* LoginRequiredSheetUITests.swift */; };
+		B40000000000000000000001 /* FirstLibraryOnboardingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */; };
+		B56000000000000000000001 /* QuestionAPreviewUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56000000000000000000002 /* QuestionAPreviewUITests.swift */; };
 		C1D48550D30C0BB273B37351 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */; };
 		FF331168D03AF9252AA103AA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6E70D11AEAFF647C18D3139 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -52,6 +54,8 @@
 		A20000000000000000000002 /* AppleSignInProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleSignInProvider.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* Chaekchaek.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = Chaekchaek.entitlements; sourceTree = "<group>"; };
 		B30000000000000000000002 /* LoginRequiredSheetUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoginRequiredSheetUITests.swift; sourceTree = "<group>"; };
+		B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FirstLibraryOnboardingUITests.swift; sourceTree = "<group>"; };
+		B56000000000000000000002 /* QuestionAPreviewUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuestionAPreviewUITests.swift; sourceTree = "<group>"; };
 		B30000000000000000000004 /* ChaekchaekUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChaekchaekUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chaekchaek.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D55D6C97221F513AE0BCFAAB /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -100,6 +104,8 @@
 		B30000000000000000000006 /* ChaekchaekUITests */ = {
 			isa = PBXGroup;
 			children = (
+				B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */,
+				B56000000000000000000002 /* QuestionAPreviewUITests.swift */,
 				B30000000000000000000002 /* LoginRequiredSheetUITests.swift */,
 			);
 			path = ChaekchaekUITests;
@@ -345,6 +351,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B40000000000000000000001 /* FirstLibraryOnboardingUITests.swift in Sources */,
+				B56000000000000000000001 /* QuestionAPreviewUITests.swift in Sources */,
 				B30000000000000000000001 /* LoginRequiredSheetUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

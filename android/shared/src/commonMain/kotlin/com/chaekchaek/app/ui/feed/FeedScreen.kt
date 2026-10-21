@@ -1,5 +1,8 @@
 package com.chaekchaek.app.ui.feed
 
+import com.chaekchaek.app.ui.common.LibrarySaveButton
+import com.chaekchaek.app.ui.archive.LibrarySaveUiState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -52,7 +55,6 @@ import chaekchaek.shared.generated.resources.ic_heart_outline
 import com.chaekchaek.app.analytics.analyticsBookKey
 import com.chaekchaek.app.analytics.analyticsImpression
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
-import com.chaekchaek.app.presentation.common.AppError
 import com.chaekchaek.app.ui.RemoteBookImage
 import com.chaekchaek.app.ui.bookdetail.ReplyInputSheet
 import com.chaekchaek.app.ui.common.ChaekRefreshLayout
@@ -76,26 +78,22 @@ fun FeedScreen(
     onBookClick: (BookDetailTarget) -> Unit,
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    savedIsbns: Set<String> = emptySet(),
+    librarySaveState: LibrarySaveUiState = LibrarySaveUiState(),
+    onSaveBook: (BookDetailTarget) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
     val refreshState by viewModel.refreshState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var replyTargetNoteId by rememberSaveable { mutableStateOf<String?>(null) }
     var revealedSpoilerReviewIds by rememberSaveable { mutableStateOf(emptyList<Long>()) }
-    val requestError = (state as? FeedUiState.Content)?.requestError
-    LaunchedEffect(requestError) {
-        requestError?.takeIf { it == FeedRequestError.Interaction }?.let { error ->
-            snackbarHostState.showSnackbar(message = error.message)
-            viewModel.clearRequestError()
-        }
-    }
-
+    com.chaekchaek.app.ui.common.ErrorRecoveryEffect(viewModel.errors)
     Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize()) {
             BrandHeader(onProfileClick)
             ChaekRefreshLayout(
                 refreshState, viewModel::refresh, Modifier.weight(1f),
-                enabled = state != FeedUiState.Loading && state !is FeedUiState.Failure,
+                enabled = state != FeedUiState.Loading,
                 bottomEnabled = (state as? FeedUiState.Content)?.reviews?.isNotEmpty() == true,
             ) {
                 when (val current = state) {
@@ -106,14 +104,9 @@ fun FeedScreen(
                         CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
                     }
                     FeedUiState.Empty -> RefreshableEmptyContent { FeedEmptyContent() }
-                    is FeedUiState.Failure -> FeedLoadErrorContent(
-                        error = current.error,
-                        retry = viewModel::retry,
-                        modifier = Modifier.fillMaxSize(),
-                    )
                     is FeedUiState.Content -> {
                         if (current.reviews.isEmpty()) {
-                            RefreshableEmptyContent { FeedEmptyContent() }
+                            RefreshableEmptyContent { Box(Modifier.fillMaxSize()) }
                         } else {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
@@ -129,6 +122,11 @@ fun FeedScreen(
                                     HorizontalDivider(color = ChaekBorderSoft)
                                     FeedReflectionArticle(
                                         reflection = reflection,
+                                        saved = reflection.isbn13 in savedIsbns,
+                                        saving = reflection.isbn13 == librarySaveState.savingIsbn,
+                                        showSaveLoading = librarySaveState.showLoading,
+                                        saveEnabled = librarySaveState.savingIsbn == null,
+                                        onSaveBook = { onSaveBook(reflection.toBookDetailTarget()) },
                                         spoilerRevealed = reflection.reviewId in revealedSpoilerReviewIds,
                                         onRevealSpoiler = {
                                             reflection.reviewId?.let { reviewId ->
@@ -149,7 +147,7 @@ fun FeedScreen(
                                     )
                                 }
                                 item(key = "boundary") {
-                                    ListBoundary(
+                                    if (!current.loadMoreFailed && current.requestError != FeedRequestError.LoadMore) ListBoundary(
                                         hasNextPage = current.nextPage != null,
                                         loading = current.loadingMore,
                                         showLoading = current.showLoadingMore,
@@ -177,9 +175,8 @@ fun FeedScreen(
     replyTarget?.let { reflection ->
         ReplyInputSheet(
             onDismiss = { replyTargetNoteId = null },
-            onSave = { content ->
-                viewModel.createReply(reflection.reviewId, content) { replyTargetNoteId = null }
-            },
+            onSave = { content, onSaved -> viewModel.createReply(reflection.reviewId, content, onSaved) },
+            onSaved = { replyTargetNoteId = null },
         )
     }
 }
@@ -192,28 +189,13 @@ private fun FeedEmptyContent(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun FeedLoadErrorContent(error: AppError, retry: () -> Unit, modifier: Modifier) {
-    Box(modifier.fillMaxSize())
-    ChaekOneActionDialog(
-        onDismissRequest = {},
-        title = { Text("피드를 불러오지 못했어요") },
-        text = {
-            Text(
-                when (error) {
-                    AppError.Network -> "인터넷 연결을 확인해 주세요."
-                    AppError.NotFound -> "요청한 피드를 찾지 못했어요."
-                    AppError.Unauthorized -> "로그인이 필요한 요청이에요."
-                    AppError.Unknown -> "잠시 후 다시 시도해 주세요."
-                },
-            )
-        },
-        confirmButton = { TextButton(onClick = retry) { Text("다시 시도") } },
-    )
-}
-
-@Composable
 private fun FeedReflectionArticle(
     reflection: QuoteCardUiModel,
+    saved: Boolean,
+    saving: Boolean,
+    showSaveLoading: Boolean,
+    saveEnabled: Boolean,
+    onSaveBook: () -> Unit,
     spoilerRevealed: Boolean,
     onRevealSpoiler: () -> Unit,
     onOpenBook: () -> Unit,
@@ -237,6 +219,14 @@ private fun FeedReflectionArticle(
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+            LibrarySaveButton(
+                bookTitle = reflection.bookTitle,
+                saved = saved,
+                saving = saving,
+                showLoading = showSaveLoading,
+                enabled = saveEnabled,
+                onSave = onSaveBook,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(

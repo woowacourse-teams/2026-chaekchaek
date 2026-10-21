@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.archive
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.data.remote.MemberRemoteRepository
@@ -16,6 +18,7 @@ import kotlinx.coroutines.launch
 
 data class MemberSettingsUiState(
     val signedIn: Boolean = false,
+    val saveRevision: Long = 0,
     val anonymousReviews: Boolean = true,
     val nickname: String = "",
     val anonymousNickname: String = "",
@@ -38,6 +41,7 @@ internal val MemberSettingsUiState.publicNickname: String
 class MemberSettingsViewModel(
     private val repository: MemberRemoteRepository,
 ) : ViewModel() {
+    val errors = ErrorRecoveryState()
     private val _uiState = MutableStateFlow(MemberSettingsUiState())
     val uiState: StateFlow<MemberSettingsUiState> = _uiState.asStateFlow()
 
@@ -85,6 +89,10 @@ class MemberSettingsViewModel(
                 .onFailure { error ->
                     if (error is CancellationException) throw error
                     if (accessToken == token) {
+                        errors.report(error, ErrorOperation.Withdrawal) { freshToken ->
+                            if (freshToken != null) accessToken = freshToken
+                            withdraw(onSuccess)
+                        }
                         _uiState.value = _uiState.value.copy(withdrawalFailure = error.toWithdrawalFailure())
                     }
                 }
@@ -114,7 +122,7 @@ class MemberSettingsViewModel(
             }.onSuccess {
                 if (accessToken == token) {
                     pendingSettings = null
-                    _uiState.value = _uiState.value.copy(errorMessage = null)
+                    _uiState.value = _uiState.value.copy(errorMessage = null, saveRevision = _uiState.value.saveRevision + 1)
                 }
             }.onFailure { handleFailure(it, "설정을 변경하지 못했어요") }
         }
@@ -133,6 +141,10 @@ class MemberSettingsViewModel(
 
     private fun handleFailure(error: Throwable, message: String) {
         if (error is CancellationException) throw error
+        errors.report(error, ErrorOperation.Settings) { freshToken ->
+            if (freshToken != null) accessToken = freshToken
+            retry()
+        }
         _uiState.value = _uiState.value.copy(errorMessage = message)
     }
 

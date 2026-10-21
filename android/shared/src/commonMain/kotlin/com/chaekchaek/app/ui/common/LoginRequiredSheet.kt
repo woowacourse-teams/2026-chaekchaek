@@ -31,6 +31,8 @@ internal fun LoginRequiredSheet(
     onDismiss: () -> Unit,
     onAppleSignIn: () -> Unit,
     onGoogleSignIn: () -> Unit,
+    skipLabel: String? = null,
+    onSkip: (() -> Unit)? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -54,11 +56,6 @@ internal fun LoginRequiredSheet(
                 "내 독서 기록을 남기고 감상에 참여하려면 로그인해 주세요.",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            error?.let {
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = ChaekOverlayTokens.cardShape) {
-                    Text(it, Modifier.fillMaxWidth().padding(12.dp), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
             if (appleSignInAvailable) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -92,7 +89,11 @@ internal fun LoginRequiredSheet(
                     )
                 }
             }
-            ChaekOverlayButton("닫기", onDismiss, secondary = true)
+            if (skipLabel != null && onSkip != null) {
+                ChaekOverlayButton(skipLabel, onSkip, secondary = true)
+            } else {
+                ChaekOverlayButton("닫기", onDismiss, secondary = true)
+            }
         }
     }
 }

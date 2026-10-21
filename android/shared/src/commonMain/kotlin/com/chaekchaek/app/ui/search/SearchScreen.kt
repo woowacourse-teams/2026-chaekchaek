@@ -91,7 +91,6 @@ import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.ui.common.ChaekRefreshLayout
 import com.chaekchaek.app.ui.common.RefreshableEmptyContent
 import com.chaekchaek.app.ui.common.ListBoundary
-import com.chaekchaek.app.ui.common.HomeLoadErrorContent
 import com.chaekchaek.app.presentation.home.FeedSectionUiModel
 import com.chaekchaek.app.presentation.home.HomeUiState
 import com.chaekchaek.app.presentation.home.HomeViewModel
@@ -107,10 +106,12 @@ fun SearchRoute(
   searchResultsListState: LazyListState,
   registeredBookIds: Set<String>,
   modifier: Modifier = Modifier,
+  onHomeRetry: () -> Unit = homeViewModel::retry,
   onBack: () -> Unit = {},
   onProfileClick: () -> Unit = {},
   onBookClick: (BookDetailTarget) -> Unit = {},
 ) {
+  com.chaekchaek.app.ui.common.ErrorRecoveryEffect(viewModel.errors)
   val state by viewModel.uiState.collectAsState()
   val sort by viewModel.sort.collectAsState()
   val query by viewModel.query.collectAsState()
@@ -146,7 +147,7 @@ fun SearchRoute(
       if (it != sort) searchResultsListState.requestScrollToItem(0)
       viewModel.selectSort(it)
     },
-    onHomeRetry = homeViewModel::retry,
+    onHomeRetry = onHomeRetry,
     modifier = modifier,
     onBack = onBack,
     onProfileClick = onProfileClick,
@@ -235,9 +236,7 @@ fun SearchScreen(
               SearchMessage(title = "검색 결과가 없어요", body = "다른 검색어로 다시 찾아보세요.")
             }
           }
-        is SearchUiState.Error -> RefreshableEmptyContent {
-          SearchMessage(title = "검색 결과를 불러오지 못했어요", body = "잠시 후 다시 검색해 주세요.")
-        }
+        is SearchUiState.Error -> RefreshableEmptyContent { Box(Modifier.fillMaxSize()) }
         is SearchUiState.Success ->
           SearchResults(
             results = current.results,
@@ -303,7 +302,6 @@ private fun DiscoverLanding(
   when (homeState) {
     HomeUiState.Loading -> SearchLoading(modifier)
     HomeUiState.Empty -> DiscoverContent(emptyList(), onBookClick, modifier)
-    is HomeUiState.Failure -> HomeLoadErrorContent(homeState.error, onRetry, modifier)
     is HomeUiState.Content -> DiscoverContent(homeState.sections, onBookClick, modifier)
   }
 }
@@ -672,7 +670,7 @@ private fun SearchResults(
         HorizontalDivider(color = ChaekBand)
       }
       item(key = "boundary") {
-        ListBoundary(nextPage != null, loadingMore, showLoadingMore, loadMoreFailed, onRetryLoadMore)
+        if (!loadMoreFailed) ListBoundary(nextPage != null, loadingMore, showLoadingMore, loadMoreFailed, onRetryLoadMore)
       }
       if (nextPage != null) {
         item(key = "next-page-$nextPage") {

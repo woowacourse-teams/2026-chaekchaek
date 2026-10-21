@@ -5,6 +5,8 @@ import com.chaekchaek.app.data.remote.MobileLoginException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -12,10 +14,42 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthViewModelTest {
+  @Test
+  fun `공급업체 실패 재시도는 같은 로그인과 보류 작업을 한번만 재개한다`() = runTest {
+    var callback: ((String?, String?) -> Unit)? = null
+    var requests = 0
+    val resumed = mutableListOf<String>()
+    val viewModel = AuthViewModel(
+      callbacks = AuthPlatformCallbacks(
+        requestGoogleIdToken = { requests++; callback = it },
+        readRefreshToken = { null }, writeRefreshToken = {}, clearRefreshToken = {},
+      ),
+      loginWithGoogle = { _, _ -> tokens("new") },
+      reissue = { error("unexpected") }, logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    viewModel.requireAuthentication { resumed += it }
+    callback?.invoke(null, "provider failure")
+    assertEquals(com.chaekchaek.app.presentation.common.ErrorAction.Retry, viewModel.errors.notice.value?.action)
+    val id = viewModel.errors.notice.value!!.id
+    viewModel.errors.takeRecovery(id)?.invoke(null)
+    assertEquals(2, requests)
+    callback?.invoke("id", null)
+    callback?.invoke("duplicate", null)
+    runCurrent()
+    assertEquals(listOf("access-new"), resumed)
+    viewModel.requireAuthentication(force = true) { resumed += it }
+    assertEquals(3, requests)
+    callback?.invoke(null, null)
+    assertNull(viewModel.errors.notice.value)
+    assertEquals(listOf("access-new"), resumed)
+  }
+
   @Test
   fun `재발급 중의 null은 인증 복원 중이며 확정 로그아웃과 구분한다`() = runTest {
     val restored = CompletableDeferred<MobileAuthTokens>()
@@ -101,6 +135,74 @@ class AuthViewModelTest {
   }
 
   @Test
+  fun `홈 재시도는 Access Token을 즉시 재발급한다`() = runTest {
+    val backend = FakeAuthBackend { tokens("refreshed") }
+    val session = authSession(backend)
+    session.signIn(tokens("expired"))
+
+    val accessToken = session.refreshAccessTokenForRetry()
+
+    assertEquals("access-refreshed", accessToken)
+    assertEquals(listOf("expired"), backend.reissueRequests)
+    assertEquals("refreshed", backend.storedRefreshToken)
+  }
+
+  @Test
+  fun `동시에 홈을 재시도하면 Token 재발급을 공유한다`() = runTest {
+    val reissueStarted = CompletableDeferred<Unit>()
+    val finishReissue = CompletableDeferred<Unit>()
+    val backend = FakeAuthBackend {
+      reissueStarted.complete(Unit)
+      finishReissue.await()
+      tokens("refreshed")
+    }
+    val session = authSession(backend)
+    session.signIn(tokens("expired"))
+
+    val first = launch { assertEquals("access-refreshed", session.refreshAccessTokenForRetry()) }
+    reissueStarted.await()
+    val second = launch { assertEquals("access-refreshed", session.refreshAccessTokenForRetry()) }
+    runCurrent()
+    assertEquals(listOf("expired"), backend.reissueRequests)
+
+    finishReissue.complete(Unit)
+    first.join()
+    second.join()
+    assertEquals(listOf("expired"), backend.reissueRequests)
+  }
+
+  @Test
+  fun `일시적인 재발급 실패 후 홈을 다시 시도할 수 있다`() = runTest {
+    var attempts = 0
+    val backend = FakeAuthBackend {
+      if (attempts++ == 0) throw MobileLoginException("INTERNAL_SERVER_ERROR", 500)
+      tokens("refreshed")
+    }
+    val session = authSession(backend)
+    session.signIn(tokens("expired"))
+
+    assertFailsWith<MobileLoginException> { session.refreshAccessTokenForRetry() }
+    assertEquals("expired", backend.storedRefreshToken)
+    assertEquals("access-refreshed", session.refreshAccessTokenForRetry())
+    assertEquals(listOf("expired", "expired"), backend.reissueRequests)
+  }
+
+  @Test
+  fun `만료된 Refresh Token은 홈 재시도에서 세션을 정리한다`() = runTest {
+    val backend = FakeAuthBackend {
+      throw MobileLoginException("INVALID_REFRESH_TOKEN", 401)
+    }
+    val session = authSession(backend)
+    session.signIn(tokens("expired"))
+
+    assertNull(session.refreshAccessTokenForRetry())
+
+    assertNull(session.tokens.value)
+    assertNull(backend.storedRefreshToken)
+    assertEquals(1, backend.clearCount)
+  }
+
+  @Test
   fun `이전 계정 재발급 실패가 새 로그인의 Token을 지우지 않는다`() = runTest {
     val reissueStarted = CompletableDeferred<Unit>()
     val finishReissue = CompletableDeferred<Unit>()
@@ -119,7 +221,7 @@ class AuthViewModelTest {
     runCurrent()
     signIn.join()
 
-    assertEquals(1, backend.clearCount)
+    assertEquals(0, backend.clearCount)
     assertEquals("account-b", session.tokens.value?.refreshToken)
     assertEquals("account-b", backend.storedRefreshToken)
   }
@@ -323,12 +425,144 @@ class AuthViewModelTest {
     )
 
     viewModel.requireAuthentication { resumed = true }
-    googleResult?.invoke(null, "로그인을 취소했어요.")
+    googleResult?.invoke(null, null)
     advanceUntilIdle()
 
     assertEquals(false, resumed)
-    assertEquals("로그인을 취소했어요.", viewModel.uiState.value.errorMessage)
+    assertNull(viewModel.uiState.value.errorMessage)
+    assertNull(viewModel.errors.notice.value)
     assertNull(viewModel.tokens.value)
+  }
+
+  @Test
+  fun `재발급 응답을 기다리지 않고 로그아웃하고 늦은 응답은 폐기한다`() = runTest {
+    val response = CompletableDeferred<MobileAuthTokens>()
+    var stored: String? = null
+    var localCleared = false
+    val session = AuthSession(
+      readRefreshToken = { stored }, writeRefreshToken = { stored = it },
+      clearRefreshToken = { stored = null },
+      reissue = { withContext(NonCancellable) { response.await() } },
+      logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    runCurrent()
+    session.signIn(tokens("signed-in"))
+    backgroundScope.launch { session.refreshAccessTokenForRetry() }
+    runCurrent()
+    backgroundScope.launch { session.signOut { localCleared = true } }
+    runCurrent()
+    assertEquals(true, localCleared)
+    assertNull(session.tokens.value)
+    assertNull(stored)
+    response.complete(tokens("late"))
+    runCurrent()
+    assertNull(session.tokens.value)
+    assertNull(stored)
+  }
+
+  @Test
+  fun `한 호출자의 취소는 공유 재발급을 분리하지 않는다`() = runTest {
+    val response = CompletableDeferred<MobileAuthTokens>()
+    val backend = FakeAuthBackend { response.await() }
+    val session = authSession(backend)
+    runCurrent()
+    session.signIn(tokens("signed-in"))
+    val canceled = backgroundScope.launch { session.refreshAccessTokenForRetry() }
+    runCurrent()
+    canceled.cancel()
+    runCurrent()
+    var received: String? = null
+    backgroundScope.launch { received = session.refreshAccessTokenForRetry() }
+    runCurrent()
+    assertEquals(1, backend.reissueRequests.size)
+    response.complete(tokens("renewed"))
+    runCurrent()
+    assertEquals("access-renewed", received)
+  }
+
+  @Test
+  fun `유일한 호출자 취소 뒤 완료된 실패는 다음 재발급을 막지 않는다`() = runTest {
+    val response = CompletableDeferred<MobileAuthTokens>()
+    var attempts = 0
+    val backend = FakeAuthBackend {
+      attempts += 1
+      if (attempts == 1) response.await() else tokens("renewed")
+    }
+    val session = authSession(backend)
+    runCurrent()
+    session.signIn(tokens("signed-in"))
+    val canceled = backgroundScope.launch { session.refreshAccessTokenForRetry() }
+    runCurrent()
+    canceled.cancel()
+    runCurrent()
+    response.completeExceptionally(MobileLoginException("TEMPORARY", 500))
+    runCurrent()
+
+    var received: String? = null
+    backgroundScope.launch { received = session.refreshAccessTokenForRetry() }
+    runCurrent()
+    assertEquals(2, attempts)
+    assertEquals("access-renewed", received)
+  }
+
+  @Test
+  fun `건너뛰기 뒤 늦은 로그인 응답은 세션과 게스트를 변경하지 않는다`() = runTest {
+    var credentialResult: ((String?, String?) -> Unit)? = null
+    val response = CompletableDeferred<MobileAuthTokens>()
+    var stored: String? = null
+    var guestCleared = false
+    var resumed = false
+    val viewModel = AuthViewModel(
+      callbacks = AuthPlatformCallbacks(
+        requestGoogleIdToken = { credentialResult = it },
+        readRefreshToken = { stored },
+        writeRefreshToken = { stored = it },
+        clearRefreshToken = { stored = null },
+        clearGuest = { guestCleared = true },
+      ),
+      loginWithGoogle = { _, _ -> withContext(NonCancellable) { response.await() } },
+      reissue = { error("예상하지 않은 재발급") },
+      logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    viewModel.requireAuthentication { resumed = true }
+    credentialResult!!.invoke("credential", null)
+    runCurrent()
+    viewModel.cancelPendingAuthentication()
+    response.complete(tokens("late"))
+    runCurrent()
+    assertNull(viewModel.tokens.value)
+    assertNull(stored)
+    assertEquals(false, guestCleared)
+    assertEquals(false, resumed)
+    assertEquals(AuthUiState(), viewModel.uiState.value)
+  }
+
+  @Test
+  fun `이전 공급업체 응답이 새 로그인 요청을 변경하지 않는다`() = runTest {
+    val callbacks = mutableListOf<(String?, String?) -> Unit>()
+    var loginCalls = 0
+    val viewModel = AuthViewModel(
+      callbacks = AuthPlatformCallbacks(
+        requestGoogleIdToken = { callbacks += it }, readRefreshToken = { null },
+        writeRefreshToken = {}, clearRefreshToken = {},
+      ),
+      loginWithGoogle = { _, _ -> loginCalls++; tokens("new") },
+      reissue = { error("예상하지 않은 재발급") }, logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    viewModel.requireAuthentication {}
+    viewModel.cancelPendingAuthentication()
+    viewModel.requireAuthentication {}
+    callbacks[0]("old", null)
+    runCurrent()
+    assertEquals(0, loginCalls)
+    assertEquals(true, viewModel.uiState.value.signingIn)
+    callbacks[1]("new", null)
+    runCurrent()
+    assertEquals(1, loginCalls)
+    assertEquals("access-new", viewModel.tokens.value?.accessToken)
   }
 
   private fun TestScope.authSession(backend: FakeAuthBackend): AuthSession = AuthSession(

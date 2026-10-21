@@ -81,6 +81,7 @@ kotlin {
             implementation(libs.compose.ui)
             implementation(libs.compose.material3)
             implementation(libs.compose.resources)
+            implementation(libs.markdown.renderer)
             implementation(libs.coil.compose)
             implementation(libs.jetbrains.navigation3.ui)
             implementation(libs.androidx.lifecycle.viewmodel)

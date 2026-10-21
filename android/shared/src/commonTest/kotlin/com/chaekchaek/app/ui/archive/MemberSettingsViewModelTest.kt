@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -53,7 +54,9 @@ class MemberSettingsViewModelTest {
 
             assertEquals(MemberSettingsUiState(), viewModel.uiState.value)
         } finally {
+            runCurrent()
             client.close()
+            runCurrent()
             Dispatchers.resetMain()
         }
     }
@@ -96,7 +99,9 @@ class MemberSettingsViewModelTest {
             assertEquals(2, withdrawalRequests)
             assertEquals(null, viewModel.uiState.value.withdrawalFailure)
         } finally {
+            runCurrent()
             client.close()
+            runCurrent()
             Dispatchers.resetMain()
         }
     }
@@ -123,7 +128,9 @@ class MemberSettingsViewModelTest {
             assertEquals(true, viewModel.uiState.value.signedIn)
             assertEquals(WithdrawalFailure.AuthenticationExpired, viewModel.uiState.value.withdrawalFailure)
         } finally {
+            runCurrent()
             client.close()
+            runCurrent()
             Dispatchers.resetMain()
         }
     }
@@ -150,7 +157,9 @@ class MemberSettingsViewModelTest {
             assertEquals(true, viewModel.uiState.value.signedIn)
             assertEquals(WithdrawalFailure.NetworkUnavailable, viewModel.uiState.value.withdrawalFailure)
         } finally {
+            runCurrent()
             client.close()
+            runCurrent()
             Dispatchers.resetMain()
         }
     }
@@ -181,7 +190,9 @@ class MemberSettingsViewModelTest {
 
             assertEquals(listOf("/api/v1/members/me/anonymity"), requests.map { it.url.encodedPath })
         } finally {
+            runCurrent()
             client.close()
+            runCurrent()
             Dispatchers.resetMain()
         }
     }
@@ -228,15 +239,18 @@ class MemberSettingsViewModelTest {
             assertEquals(Json.parseToJsonElement("""{"nickname":"새 이름"}"""), requests[0].jsonBody())
             requests.clear()
 
-            viewModel.clearError()
-            viewModel.retry()
-            viewModel.uiState.first { !it.anonymousReviews }
+            assertEquals(0, viewModel.uiState.value.saveRevision)
+            viewModel.errors.takeRecovery(viewModel.errors.notice.value!!.id)?.invoke(null)
+            viewModel.uiState.first { it.saveRevision > 0 }
+            assertEquals(false, viewModel.uiState.value.anonymousReviews)
 
             assertEquals(listOf("/api/v1/members/me/anonymity"), requests.map { it.url.encodedPath })
             assertEquals(Json.parseToJsonElement("""{"displayAnonymous":false}"""), requests.single().jsonBody())
             assertEquals(null, viewModel.uiState.value.errorMessage)
         } finally {
+            runCurrent()
             client.close()
+            runCurrent()
             Dispatchers.resetMain()
         }
     }

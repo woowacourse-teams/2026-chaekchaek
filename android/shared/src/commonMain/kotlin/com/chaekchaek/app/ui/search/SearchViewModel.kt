@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.search
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -43,6 +45,7 @@ class SearchViewModel(
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
+    val errors = ErrorRecoveryState()
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
     private val _sort = MutableStateFlow(
@@ -73,6 +76,8 @@ class SearchViewModel(
     private var currentQuery = SearchInputRules.limit(
         savedStateHandle.get<String>(SearchSavedStateKeys.SubmittedQuery).orEmpty(),
     )
+    private var loadedQuery = ""
+    private var loadedSort = _sort.value
     private var registerBook = registerBook
     private var isSignedIn = isSignedIn
 
@@ -95,6 +100,7 @@ class SearchViewModel(
         searchJob?.cancel()
         loadMoreJob?.cancel()
         _refreshState.value = RefreshUiState()
+        errors.dismiss()
         currentQuery = ""
         _query.value = ""
         _uiState.value = SearchUiState.Idle
@@ -123,6 +129,8 @@ class SearchViewModel(
     ) {
         val trimmed = SearchInputRules.limit(query.trim())
         if (trimmed.isEmpty()) return
+        val previousLoadedPage = savedStateHandle.get<Int>(SearchSavedStateKeys.LoadedPage)
+        val requestedSort = _sort.value
         val restoreThroughPage = if (trigger == "restore" || retainContent) {
             savedStateHandle.get<Int>(SearchSavedStateKeys.LoadedPage) ?: FIRST_PAGE
         } else FIRST_PAGE
@@ -149,7 +157,6 @@ class SearchViewModel(
         currentQuery = trimmed
         savedStateHandle[SearchSavedStateKeys.SubmittedQuery] = trimmed
         val revision = ++loadRevision
-        val sort = _sort.value
         searchJob?.cancel()
         loadMoreJob?.cancel()
         val previousState = (_uiState.value as? SearchUiState.Success)?.copy(
@@ -161,17 +168,17 @@ class SearchViewModel(
             val result = try {
                 val page = withDelayedApiLoading(
                     onLoadingChanged = { loading ->
-                        if (revision == loadRevision) {
-                            if (!retainContent && loading) _uiState.value = SearchUiState.Loading
+                        if (revision == loadRevision && !retainContent && loading && previousState !is SearchUiState.Success) {
+                            _uiState.value = SearchUiState.Loading
                         }
                     },
                 ) {
-                    var page = bookSearchRepository.search(trimmed, sort, FIRST_PAGE)
+                    var page = bookSearchRepository.search(trimmed, requestedSort, FIRST_PAGE)
                     var loadedPage = FIRST_PAGE
                     while (true) {
                         val nextPage = page.nextPage?.takeIf { it > loadedPage && it <= restoreThroughPage }
                             ?: break
-                        val next = bookSearchRepository.search(trimmed, sort, nextPage)
+                        val next = bookSearchRepository.search(trimmed, requestedSort, nextPage)
                         page = next.copy(items = (page.items + next.items).distinctBy(BookSearchResult::isbn13))
                         loadedPage = nextPage
                     }
@@ -192,6 +199,8 @@ class SearchViewModel(
                         ),
                     )
                 }
+                loadedQuery = trimmed
+                loadedSort = requestedSort
                 if (page.items.isEmpty()) SearchUiState.Empty else SearchUiState.Success(
                     page.items,
                     page.totalCount,
@@ -212,10 +221,12 @@ class SearchViewModel(
                     )
                 }
                 if (revision != loadRevision) return@launch
-                if (retainContent) {
-                    _refreshState.value = _refreshState.value.copy(errorMessage = "새로고침하지 못했어요")
-                    previousState
-                } else SearchUiState.Error(error.message ?: "검색 중 오류가 발생했습니다")
+                errors.report(error, ErrorOperation.Search) {
+                    search(trimmed, if (trigger == "restore") "restore" else "retry", trackAnalytics = false, retainContent = retainContent)
+                }
+                if (previousLoadedPage != null) savedStateHandle[SearchSavedStateKeys.LoadedPage] = previousLoadedPage
+                if (retainContent) previousState
+                else previousState.takeIf { it is SearchUiState.Success } ?: SearchUiState.Error("검색을 완료하지 못했어요")
             }
             if (revision == loadRevision) {
                 _uiState.value = result
@@ -229,6 +240,7 @@ class SearchViewModel(
         val page = current.nextPage ?: return
         if (current.loadingMore || current.loadMoreFailed || searchJob?.isActive == true || loadMoreJob?.isActive == true) return
         val revision = loadRevision
+        if (currentQuery != loadedQuery || _sort.value != loadedSort) return
         val query = currentQuery
         val sort = _sort.value
         _uiState.value = current.copy(loadingMore = true)
@@ -252,8 +264,9 @@ class SearchViewModel(
                 )
             } catch (error: CancellationException) {
                 throw error
-            } catch (_: Exception) {
+            } catch (error: Exception) {
                 if (revision != loadRevision) return@launch
+                errors.report(error, ErrorOperation.Search) { retryLoadMore() }
                 val latest = _uiState.value as? SearchUiState.Success ?: return@launch
                 if (latest.nextPage == page) _uiState.value = latest.copy(loadingMore = false, showLoadingMore = false, loadMoreFailed = true)
             }

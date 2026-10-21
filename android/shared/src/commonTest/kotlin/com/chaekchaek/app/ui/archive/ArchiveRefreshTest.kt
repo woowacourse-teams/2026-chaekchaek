@@ -48,7 +48,7 @@ class ArchiveRefreshTest {
             assertTrue(viewModel.refreshState.value.isRefreshing)
             deletion.complete(Unit)
             advanceUntilIdle()
-            assertEquals(listOf(HttpMethod.Get, HttpMethod.Post, HttpMethod.Get, HttpMethod.Get), requests)
+            assertEquals(listOf(HttpMethod.Get, HttpMethod.Post, HttpMethod.Get), requests)
             assertEquals(false, viewModel.refreshState.value.isRefreshing)
             assertEquals(1, viewModel.uiState.value.items.size)
         } finally { client.close(); Dispatchers.resetMain() }
@@ -76,7 +76,7 @@ class ArchiveRefreshTest {
             viewModel.refresh()
             advanceUntilIdle()
             assertEquals(books, viewModel.uiState.value.items)
-            assertEquals("새로고침하지 못했어요", viewModel.refreshState.value.errorMessage)
+            assertEquals(true, viewModel.errors.notice.value != null)
             viewModel.authenticate(null)
             viewModel.refresh()
             advanceUntilIdle()

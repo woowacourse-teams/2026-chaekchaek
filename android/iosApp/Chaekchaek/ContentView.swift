@@ -1,39 +1,108 @@
 import Shared
 import SwiftUI
+import StoreKit
 import GoogleSignIn
 import FirebaseAnalytics
 
 struct ContentView: View {
+    @State private var onboardingEligible: Bool?
+
     var body: some View {
-        ComposeViewController()
-            .ignoresSafeArea()
+        Group {
+            if let onboardingEligible {
+                ComposeViewController(onboardingEligible: onboardingEligible)
+            } else {
+                Color.white
+            }
+        }
+        .ignoresSafeArea()
+        .task {
+            if onboardingEligible == nil {
+                onboardingEligible = await FirstLibraryInstallationPolicy.isEligible()
+            }
+        }
+    }
+}
+
+private enum FirstLibraryInstallationPolicy {
+    static let shownKey = "first_library_onboarding_shown"
+    static let eligibleKey = "first_library_onboarding_eligible"
+
+    @MainActor
+    static func isEligible() async -> Bool {
+        let defaults = UserDefaults.standard
+#if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-uiTestingResetOnboarding") {
+            defaults.removeObject(forKey: shownKey)
+            defaults.removeObject(forKey: eligibleKey)
+            return true
+        }
+        if arguments.contains("-uiTestingExistingInstallation") { return false }
+#endif
+        if defaults.bool(forKey: shownKey) { return false }
+        if let eligible = defaults.object(forKey: eligibleKey) as? Bool { return eligible }
+        do {
+            guard case .verified(let transaction) = try await AppTransaction.shared,
+                  transaction.environment == .production,
+                  let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String,
+                  transaction.appVersion == build else { return false }
+            let eligible = transaction.originalAppVersion == transaction.appVersion
+            defaults.set(eligible, forKey: eligibleKey)
+            return eligible
+        } catch {
+            // 판별 불가 상태는 저장하지 않고 다음 실행에서 다시 확인한다.
+            return false
+        }
     }
 }
 
 private struct ComposeViewController: UIViewControllerRepresentable {
+    let onboardingEligible: Bool
     func makeUIViewController(context: Context) -> UIViewController {
         let keychain = RefreshTokenKeychain()
         let guestKeychain = GuestAuthKeychain()
 #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-uiTestingGuest") {
+        let launchArguments = ProcessInfo.processInfo.arguments
+        if launchArguments.contains("-uiTestingResetOnboarding") {
+            UserDefaults.standard.removeObject(forKey: "first_library_onboarding_shown")
+        } else if launchArguments.contains("-uiTestingGuest") || launchArguments.contains("-uiTestingMyPage") {
+            UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown")
+        }
+        if launchArguments.contains("-uiTestingGuest") {
             keychain.clear()
             guestKeychain.clear()
         }
 #endif
         let appleSignIn = AppleSignInProvider()
         let uiTestingMyPage: Bool
+        let uiTestingBookQuestionA: Bool
 #if DEBUG
-        uiTestingMyPage = ProcessInfo.processInfo.arguments.contains("-uiTestingMyPage")
+        uiTestingMyPage = launchArguments.contains("-uiTestingMyPage")
+        uiTestingBookQuestionA = launchArguments.contains("-uiTestingBookQuestionA")
 #else
         uiTestingMyPage = false
+        uiTestingBookQuestionA = false
 #endif
         let authPlatform = AuthPlatformCallbacks(
             requestGoogleIdToken: { onResult in
                 Task { @MainActor in
+#if DEBUG
+                    if launchArguments.contains("-uiTestingSignInFailure") {
+                        _ = onResult(nil, "fixture provider failure")
+                        return
+                    }
+                    if launchArguments.contains("-uiTestingSignInCancellation") {
+                        _ = onResult(nil, nil)
+                        return
+                    }
+#endif
                     do {
                         _ = onResult(try await GoogleSignInProvider().signIn(), nil)
                     } catch {
-                        _ = onResult(nil, error.localizedDescription)
+                        let failure = error as NSError
+                        let cancelled = failure.domain == kGIDSignInErrorDomain && failure.code == GIDSignInError.canceled.rawValue
+                        _ = onResult(nil, cancelled ? nil : error.localizedDescription)
                     }
                 }
             },
@@ -53,7 +122,7 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                             nil
                         )
                     } catch is CancellationError {
-                        _ = onResult(nil, "Apple 로그인을 취소했어요.")
+                        _ = onResult(nil, nil)
                     } catch {
                         _ = onResult(nil, error.localizedDescription)
                     }
@@ -71,13 +140,24 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                 UserDefaults.standard.set(queries, forKey: "recent_searches")
             }
         )
+        let onboardingStorage = OnboardingStorage(
+            hasBeenShown: {
+                KotlinBoolean(bool: !onboardingEligible || UserDefaults.standard.bool(forKey: "first_library_onboarding_shown"))
+            },
+            markShown: {
+                UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown")
+            }
+        )
         return MainViewControllerKt.MainViewController(
             authPlatform: authPlatform,
             recentSearchStorage: recentSearchStorage,
+            onboardingStorage: onboardingStorage,
             createGoogleSignInButton: GoogleSignInControl.init,
             analyticsEnvironment: analyticsEnvironment,
             logAnalyticsEvent: FirebaseAnalyticsEventLogger.log,
-            uiTestingMyPage: uiTestingMyPage
+            uiTestingMyPage: uiTestingMyPage,
+            uiTestingBookQuestionA: uiTestingBookQuestionA,
+            showQuestionAPreviewControls: !launchArguments.contains("-uiTestingBookQuestionAContentOnly")
         )
     }
 

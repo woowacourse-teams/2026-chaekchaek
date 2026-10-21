@@ -8,7 +8,6 @@ import com.chaekchaek.app.domain.feed.QuoteCard
 import com.chaekchaek.app.domain.feed.ReadingBook
 import com.chaekchaek.app.domain.feed.TrendingBook
 import com.chaekchaek.app.domain.note.NoteId
-import com.chaekchaek.app.presentation.common.AppError
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.CompletableDeferred
@@ -192,9 +191,9 @@ class HomeViewModelTest {
         viewModel.refresh()
         advanceUntilIdle()
         viewModel.uiState.value shouldBe previous
-        viewModel.refreshState.value.errorMessage shouldBe "새로고침하지 못했어요"
+        (viewModel.errors.notice.value != null) shouldBe true
         repository.failure = null
-        viewModel.refresh()
+        viewModel.errors.takeRecovery(viewModel.errors.notice.value!!.id)?.invoke(null)
         advanceUntilIdle()
         viewModel.refreshState.value.errorMessage shouldBe null
     }
@@ -305,7 +304,8 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         // then : 현재는 알 수 없는 오류로 표시한다
-        viewModel.uiState.value shouldBe HomeUiState.Failure(AppError.Unknown)
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
+        viewModel.errors.notice.value?.action shouldBe com.chaekchaek.app.presentation.common.ErrorAction.Retry
     }
 
     @Test
@@ -317,13 +317,27 @@ class HomeViewModelTest {
         repository.failure = null
 
         // when : 재시도하면
-        viewModel.retry()
+        viewModel.errors.takeRecovery(viewModel.errors.notice.value!!.id)?.invoke(null)
 
-        // then : 기존 오류 화면을 유지한 채 성공하고 저장소를 두 번 호출한다
-        viewModel.uiState.value shouldBe HomeUiState.Failure(AppError.Unknown)
+        // then : 기존 화면을 유지한 채 성공하고 저장소를 두 번 호출한다
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
         advanceUntilIdle()
         viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
         repository.callCount shouldBe 2
+    }
+
+    @Test
+    fun `인증 복구 후 재시도하면 새 Access Token으로 다시 로드한다`() = runViewModelTest {
+        val repository = TestFeedRepository(failure = IllegalStateException("failed"))
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+        repository.failure = null
+
+        viewModel.retry("refreshed-access-token")
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null, "refreshed-access-token")
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>()
     }
 
     @Test
@@ -398,5 +412,68 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         repository.accessTokens shouldBe listOf(null)
+    }
+
+    @Test
+    fun `최초 홈 진입과 게스트 인증은 완료된 초기 피드를 중복 호출하지 않는다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        advanceUntilIdle()
+
+        viewModel.authenticate(null)
+        viewModel.onHomeEntered()
+        advanceUntilIdle()
+
+        repository.accessTokens shouldBe listOf(null)
+    }
+
+    @Test
+    fun `같은 토큰으로 홈에 재진입하면 서재에서 삭제한 읽는 책을 제거한다`() = runViewModelTest {
+        val repository = TestFeedRepository(
+            feed = HomeFeed(
+                sections = contentFeed().visibleSections(),
+                readingBook = ReadingBook(
+                    bookId = BookId("42"),
+                    isbn13 = "9780000000042",
+                    title = "역병",
+                    coverId = "cover-42",
+                    currentPage = 132,
+                    totalPages = 320,
+                ),
+            ),
+        )
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        viewModel.authenticate("access-token")
+        viewModel.onHomeEntered()
+        advanceUntilIdle()
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>().readingBook?.title shouldBe "역병"
+
+        repository.feed = contentFeed()
+        val requestsBeforeReentry = repository.callCount
+        viewModel.onHomeHidden()
+        viewModel.onHomeEntered()
+        advanceUntilIdle()
+
+        repository.callCount shouldBe requestsBeforeReentry + 1
+        repository.accessToken shouldBe "access-token"
+        viewModel.uiState.value.shouldBeInstanceOf<HomeUiState.Content>().readingBook shouldBe null
+    }
+
+    @Test
+    fun `비홈 탭으로 시작한 뒤 첫 홈 진입도 최신 피드를 불러온다`() = runViewModelTest {
+        val repository = TestFeedRepository()
+        val viewModel = HomeViewModel(repository, FIXED_CLOCK)
+        viewModel.authenticate("access-token")
+        viewModel.onHomeHidden()
+        advanceUntilIdle()
+        val requestsBeforeEntry = repository.callCount
+        repository.feed = HomeFeed(emptyList())
+
+        viewModel.onHomeEntered()
+        advanceUntilIdle()
+
+        repository.callCount shouldBe requestsBeforeEntry + 1
+        repository.accessToken shouldBe "access-token"
+        viewModel.uiState.value shouldBe HomeUiState.Empty
     }
 }

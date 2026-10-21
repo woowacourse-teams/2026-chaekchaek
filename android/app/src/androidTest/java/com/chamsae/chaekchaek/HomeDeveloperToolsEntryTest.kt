@@ -1,13 +1,10 @@
 package com.chamsae.chaekchaek
 
 import android.graphics.Bitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -65,6 +62,7 @@ class HomeDeveloperToolsEntryTest {
         var developerToolsClicks = 0
         compose.setContent {
             ChaekchaekTheme {
+                com.chaekchaek.app.ui.common.ErrorRecoveryEffect(viewModel.errors)
                 HomeScreen(
                     homeViewModel = viewModel,
                     myDisplayName = "",
@@ -76,16 +74,15 @@ class HomeDeveloperToolsEntryTest {
         }
 
         compose.waitUntil(timeoutMillis = 3_000) {
-            viewModel.uiState.value is HomeUiState.Failure
+            viewModel.errors.notice.value != null
         }
         compose.waitForIdle()
         captureFailurePanel()
+        compose.onNodeWithText("닫기").performTouchInput { click() }
         compose.onNodeWithText("DEV")
             .assertIsDisplayed()
             .performTouchInput { click() }
-        compose.onNodeWithText("다시 시도")
-            .assertIsDisplayed()
-            .performTouchInput { click() }
+        compose.runOnIdle { viewModel.retry() }
 
         compose.waitUntil(timeoutMillis = 3_000) {
             viewModel.uiState.value == HomeUiState.Empty && requests == 2
@@ -94,11 +91,12 @@ class HomeDeveloperToolsEntryTest {
     }
 
     private fun captureFailurePanel() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        File(context.getExternalFilesDir(null), "home-failure-panel.png").outputStream().use {
-            compose.onRoot().captureToImage().asAndroidBitmap()
-                .compress(Bitmap.CompressFormat.PNG, 100, it)
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val screenshot = instrumentation.uiAutomation.takeScreenshot()
+        File(instrumentation.targetContext.getExternalFilesDir(null), "home-failure-panel.png").outputStream().use {
+            screenshot.compress(Bitmap.CompressFormat.PNG, 100, it)
         }
+        screenshot.recycle()
     }
 
     private fun assertDeveloperToolsEntry(
@@ -108,6 +106,7 @@ class HomeDeveloperToolsEntryTest {
         var clicks = 0
         compose.setContent {
             ChaekchaekTheme {
+                com.chaekchaek.app.ui.common.ErrorRecoveryEffect(viewModel.errors)
                 HomeScreen(
                     homeViewModel = viewModel,
                     myDisplayName = "",
@@ -118,6 +117,9 @@ class HomeDeveloperToolsEntryTest {
 
         compose.waitUntil(timeoutMillis = 3_000) { expectedState(viewModel.uiState.value) }
         compose.waitForIdle()
+        if (viewModel.errors.notice.value != null) {
+            compose.onNodeWithText("닫기").performTouchInput { click() }
+        }
         compose.onNodeWithText("DEV")
             .assertIsDisplayed()
             .performTouchInput { click() }

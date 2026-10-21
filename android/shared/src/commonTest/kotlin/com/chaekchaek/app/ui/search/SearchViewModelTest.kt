@@ -51,9 +51,9 @@ class SearchViewModelTest {
             assertEquals("다른 초안", viewModel.query.value)
             assertEquals(BookSearchSort.COMMENT, viewModel.sort.value)
             assertEquals(2, saved.get<Int>(SearchSavedStateKeys.LoadedPage))
-            assertEquals("새로고침하지 못했어요", viewModel.refreshState.value.errorMessage)
+            assertEquals(true, viewModel.errors.notice.value != null)
             fail = false
-            viewModel.refresh()
+            viewModel.errors.takeRecovery(viewModel.errors.notice.value!!.id)?.invoke(null)
             advanceUntilIdle()
             assertEquals(listOf(1, 2, 1, 1, 2), requests.map { it.third })
             assertTrue(requests.all { it.first == "제출" && it.second == BookSearchSort.COMMENT })
@@ -85,6 +85,39 @@ class SearchViewModelTest {
             advanceUntilIdle()
             assertEquals(listOf(1, 2, 2), requests)
             assertEquals(2, (viewModel.uiState.value as SearchUiState.Success).results.size)
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test
+    fun failedPaginationKeepsDraftResultsAndCursorUntilExplicitRetry() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val calls = mutableListOf<Int>()
+            var fail = true
+            val handle = SavedStateHandle()
+            val vm = SearchViewModel(BookSearchRepository { _, _, page ->
+                calls += page
+                if (page == 2 && fail) throw IllegalStateException("network")
+                BookSearchPage(2, if (page == 1) 2 else null,
+                    listOf(book("책 $page", "2026").copy(isbn13 = "isbn$page")))
+            }, {}, { true }, savedStateHandle = handle)
+            vm.search("실행 검색")
+            advanceUntilIdle()
+            vm.updateQuery("아직 제출하지 않은 입력")
+            vm.loadMore()
+            advanceUntilIdle()
+            val failed = vm.uiState.value as SearchUiState.Success
+            assertEquals(1, failed.results.size)
+            assertEquals(2, failed.nextPage)
+            assertEquals(false, failed.loadingMore)
+            assertEquals(1, handle.get<Int>(SearchSavedStateKeys.LoadedPage))
+            assertEquals("아직 제출하지 않은 입력", vm.query.value)
+            fail = false
+            vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke(null)
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2, 2), calls)
+            assertEquals(2, (vm.uiState.value as SearchUiState.Success).results.size)
+            assertEquals(2, handle.get<Int>(SearchSavedStateKeys.LoadedPage))
         } finally { Dispatchers.resetMain() }
     }
 
@@ -142,6 +175,33 @@ class SearchViewModelTest {
             assertEquals(false, content.loadingMore)
             assertEquals(false, content.showLoadingMore)
             assertEquals(2, requests)
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test
+    fun failedRestorationRetriesThroughTheSavedPage() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val calls = mutableListOf<Int>()
+            var fail = true
+            val handle = SavedStateHandle(mapOf(
+                SearchSavedStateKeys.SubmittedQuery to "책",
+                SearchSavedStateKeys.LoadedPage to 3,
+            ))
+            val vm = SearchViewModel(BookSearchRepository { _, _, page ->
+                calls += page
+                if (page == 2 && fail) error("offline")
+                BookSearchPage(3, (page + 1).takeIf { page < 3 },
+                    listOf(book("책 $page", "2026").copy(isbn13 = "isbn$page")))
+            }, {}, { true }, savedStateHandle = handle)
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2), calls)
+            fail = false
+            vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke(null)
+            advanceUntilIdle()
+            assertEquals(listOf(1, 2, 1, 2, 3), calls)
+            assertEquals(3, handle.get<Int>(SearchSavedStateKeys.LoadedPage))
+            assertEquals(3, (vm.uiState.value as SearchUiState.Success).results.size)
         } finally { Dispatchers.resetMain() }
     }
 

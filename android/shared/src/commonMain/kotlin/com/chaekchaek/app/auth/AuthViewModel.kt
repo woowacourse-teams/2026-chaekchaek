@@ -1,8 +1,12 @@
 package com.chaekchaek.app.auth
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.ViewModel
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthTokens
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -61,6 +65,8 @@ class AuthViewModel private constructor(
     currentTimeMillis: () -> Long,
   ) : this(callbacks, loginWithGoogle, loginWithApple, reissue, logout, scope, false, currentTimeMillis)
 
+  val errors = ErrorRecoveryState()
+
   private val session = AuthSession(
     readRefreshToken = callbacks.readRefreshToken,
     writeRefreshToken = callbacks.writeRefreshToken,
@@ -76,67 +82,93 @@ class AuthViewModel private constructor(
 
   private val _uiState = MutableStateFlow(AuthUiState())
   val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+  private var authenticationGeneration = 0
+  private var authenticationJob: Job? = null
   private var pendingAction: (suspend (accessToken: String) -> Unit)? = null
 
-  fun requireAuthentication(action: suspend (accessToken: String) -> Unit) {
-    requestAuthentication(action, callbacks.requestGoogleIdToken) { idToken ->
+  fun requireAuthentication(force: Boolean = false, action: suspend (accessToken: String) -> Unit) {
+    requestAuthentication(action, force, callbacks.requestGoogleIdToken) { idToken ->
       loginWithGoogle(idToken, callbacks.readGuest()?.token)
     }
   }
 
-  fun requireAppleAuthentication(action: suspend (accessToken: String) -> Unit) {
+  fun requireAppleAuthentication(force: Boolean = false, action: suspend (accessToken: String) -> Unit) {
     val requestAppleCredential = callbacks.requestAppleCredential ?: return
-    requestAuthentication(action, requestAppleCredential) { credential ->
+    requestAuthentication(action, force, requestAppleCredential) { credential ->
       loginWithApple(credential, callbacks.readGuest()?.token)
     }
   }
 
   private fun <Credential> requestAuthentication(
     action: suspend (accessToken: String) -> Unit,
+    force: Boolean,
     requestCredential: ((Credential?, String?) -> Unit) -> Unit,
     login: suspend (Credential) -> MobileAuthTokens,
   ) {
     val accessToken = tokens.value?.accessToken
-    if (accessToken != null) {
+    if (accessToken != null && !force) {
       scope.launch { action(accessToken) }
       return
     }
 
     pendingAction = action
     if (_uiState.value.signingIn) return
+    val generation = ++authenticationGeneration
+    errors.dismiss()
+    var credentialConsumed = false
     _uiState.value = AuthUiState(signingIn = true)
     requestCredential { credential, platformError ->
+      if (generation != authenticationGeneration || credentialConsumed) return@requestCredential
+      credentialConsumed = true
       if (credential == null) {
-        _uiState.value = AuthUiState(errorMessage = platformError ?: LOGIN_ERROR)
+        _uiState.value = AuthUiState(errorMessage = platformError?.let { LOGIN_ERROR })
+        if (platformError != null) errors.report(IllegalStateException(), ErrorOperation.SignIn) {
+          requestAuthentication(action, force, requestCredential, login)
+        }
         return@requestCredential
       }
 
-      scope.launch {
+      authenticationJob = scope.launch {
         try {
           val tokens = login(credential)
+          if (generation != authenticationGeneration) return@launch
           session.signIn(tokens)
           callbacks.clearGuest()
           val actionToResume = pendingAction
           this@AuthViewModel.pendingAction = null
           actionToResume?.invoke(tokens.accessToken)
           _uiState.value = AuthUiState()
+        } catch (error: CancellationException) {
+          throw error
         } catch (_: Exception) {
-          _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
+          if (generation == authenticationGeneration) {
+            _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
+            errors.report(IllegalStateException(), ErrorOperation.SignIn) {
+              requestAuthentication(action, force, requestCredential, login)
+            }
+          }
         }
       }
     }
   }
 
   fun cancelPendingAuthentication() {
+    errors.dismiss()
+    authenticationGeneration += 1
+    authenticationJob?.cancel()
+    authenticationJob = null
     pendingAction = null
+    _uiState.value = AuthUiState()
   }
 
   fun clearError() {
     _uiState.value = _uiState.value.copy(errorMessage = null)
   }
 
+  suspend fun refreshAccessTokenForRetry(): String? = session.refreshAccessTokenForRetry()
+
   fun signOut(onLocalSessionCleared: () -> Unit = {}) {
-    pendingAction = null
+    cancelPendingAuthentication()
     scope.launch { session.signOut(onLocalSessionCleared) }
   }
 

@@ -18,6 +18,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -221,10 +222,10 @@ class FeedViewModelTest {
         viewModel.refresh()
         advanceUntilIdle()
         viewModel.uiState.value shouldBe previous
-        viewModel.refreshState.value.errorMessage shouldBe "새로고침하지 못했어요"
+        (viewModel.errors.notice.value != null) shouldBe true
         saved.get<Int>(FeedSavedStateKeys.LoadedPage) shouldBe 2
         repository.failurePage = null
-        viewModel.refresh()
+        viewModel.errors.takeRecovery(viewModel.errors.notice.value!!.id)?.invoke(null)
         advanceUntilIdle()
         repository.requestedPages shouldBe listOf(1, 2, 1, 2, 1, 2)
         viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.size shouldBe 2
@@ -255,6 +256,22 @@ class FeedViewModelTest {
         advanceUntilIdle()
         repository.requestedPages shouldBe listOf(1, 2, 2)
         viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().nextPage shouldBe null
+    }
+
+    @Test
+    fun `첫 피드가 지연되면 빈 자리 대신 로딩을 표시한다`() = runFeedViewModelTest {
+        val response = CompletableDeferred<ReviewFeedPage>()
+        val repository = object : ReviewFeedRepository {
+            override suspend fun reviewFeed(page: Int, viewer: FeedViewer) = response.await()
+        }
+        val vm = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions)
+        runCurrent()
+        advanceTimeBy(501)
+        runCurrent()
+        vm.uiState.value shouldBe FeedUiState.Loading
+        response.complete(ReviewFeedPage(listOf(review(1)), 1, null))
+        advanceUntilIdle()
+        vm.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.size shouldBe 1
     }
 
     @Test
@@ -370,11 +387,12 @@ class FeedViewModelTest {
         val savedState = SavedStateHandle(mapOf(FeedSavedStateKeys.LoadedPage to 2))
         val viewModel = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, savedStateHandle = savedState)
         advanceUntilIdle()
-        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Failure>()
+        viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>()
+        viewModel.errors.notice.value?.action shouldBe com.chaekchaek.app.presentation.common.ErrorAction.Retry
         repository.requestedPages shouldBe listOf(1, 2)
 
         repository.failurePage = null
-        viewModel.retry()
+        viewModel.errors.takeRecovery(viewModel.errors.notice.value!!.id)?.invoke(null)
         advanceUntilIdle()
         repository.requestedPages shouldBe listOf(1, 2, 1, 2)
         viewModel.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.size shouldBe 2

@@ -19,6 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -37,20 +40,30 @@ import com.chaekchaek.app.data.remote.PopularBooksRemoteRepository
 import com.chaekchaek.app.data.remote.RemoteFeedReviewActions
 import com.chaekchaek.app.data.remote.ReviewFeedRemoteRepository
 import com.chaekchaek.app.presentation.home.HomeViewModel
+import com.chaekchaek.app.ui.archive.LibrarySaveViewModel
 import com.chaekchaek.app.ui.archive.ArchiveViewModel
 import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
 import com.chaekchaek.app.ui.archive.MyPageScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
+import com.chaekchaek.app.ui.bookdetail.toReviewRequest
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
 import com.chaekchaek.app.ui.bookdetail.analyticsName
+import com.chaekchaek.app.ui.common.ErrorRecoveryHost
+import com.chaekchaek.app.ui.common.ErrorRecoveryEffect
 import com.chaekchaek.app.ui.common.LoginRequiredSheet
 import com.chaekchaek.app.ui.feed.FeedViewModel
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchViewModel
 import com.chaekchaek.app.ui.search.RecentSearchStorage
+import com.chaekchaek.app.ui.onboarding.FirstLibraryOnboardingScreen
+import com.chaekchaek.app.ui.onboarding.FirstLibraryOnboardingViewModel
+import com.chaekchaek.app.ui.onboarding.OnboardingStep
+import com.chaekchaek.app.ui.onboarding.OnboardingStorage
+import com.chaekchaek.app.ui.onboarding.shouldShowFirstLibraryOnboarding
+import kotlinx.coroutines.flow.collect
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -80,10 +93,29 @@ private val navigationConfig = SavedStateConfiguration {
 internal fun AppNavigation(
     authPlatform: AuthPlatformCallbacks,
     recentSearchStorage: RecentSearchStorage,
+    onboardingStorage: OnboardingStorage,
     analytics: AnalyticsTracker,
     uiTestingMyPage: Boolean = false,
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
+) {
+    val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform) }
+    DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
+    ErrorRecoveryHost(authViewModel) {
+        AppNavigationContent(authPlatform, recentSearchStorage, onboardingStorage, analytics, uiTestingMyPage, homeHeaderAction, onExitRequested, authViewModel)
+    }
+}
+
+@Composable
+private fun AppNavigationContent(
+    authPlatform: AuthPlatformCallbacks,
+    recentSearchStorage: RecentSearchStorage,
+    onboardingStorage: OnboardingStorage,
+    analytics: AnalyticsTracker,
+    uiTestingMyPage: Boolean,
+    homeHeaderAction: @Composable () -> Unit,
+    onExitRequested: () -> Unit,
+    authViewModel: AuthViewModel,
 ) {
     val safeContent = Modifier.windowInsetsPadding(
         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
@@ -111,13 +143,97 @@ internal fun AppNavigation(
         )
         return
     }
-    val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform) }
-    DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     val authTokens by authViewModel.tokens.collectAsState()
     val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
+    val onboardingViewModel: FirstLibraryOnboardingViewModel = viewModel {
+        FirstLibraryOnboardingViewModel(initiallyVisible = shouldShowFirstLibraryOnboarding(onboardingStorage))
+    }
+    val onboardingState by onboardingViewModel.state.collectAsState()
+    val showOnboarding = onboardingState.visible
+    ErrorRecoveryEffect(onboardingViewModel.errors)
+    var showOnboardingLogin by remember { mutableStateOf(false) }
+    LaunchedEffect(showOnboarding) {
+        if (showOnboarding) onboardingStorage.markShown()
+    }
     LaunchedEffect(authState.errorMessage) {
         if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
+    }
+    if (showOnboarding && !uiTestingMyPage) {
+        val completeOnboarding = {
+            showOnboardingLogin = false
+            onboardingViewModel.finish()
+        }
+        val skipOnboarding = {
+            authViewModel.clearError()
+            authViewModel.cancelPendingAuthentication()
+            onboardingViewModel.cancelPendingWork()
+            completeOnboarding()
+        }
+        LaunchedEffect(onboardingState.saveCompleted) {
+            if (onboardingState.saveCompleted) completeOnboarding()
+        }
+        val saveSelectedBooks = {
+            val token = authTokens?.accessToken
+            if (token != null) onboardingViewModel.retrySave(token)
+            else {
+                authViewModel.clearError()
+                showOnboardingLogin = true
+            }
+        }
+        val backState = rememberNavigationEventState(NavigationEventInfo.None)
+        val returnToPreviousStep = {
+            onboardingViewModel.returnToPreviousStep(onboardingState.step, onboardingState.stepRevision)
+        }
+        NavigationBackHandler(
+            state = backState,
+            isBackEnabled = !showOnboardingLogin && onboardingState.step != OnboardingStep.INTRO,
+            onBackCompleted = returnToPreviousStep,
+        )
+        FirstLibraryOnboardingScreen(
+            state = onboardingState,
+            onStartSearch = onboardingViewModel::startSearch,
+            onBack = returnToPreviousStep,
+            onQueryChange = onboardingViewModel::updateQuery,
+            onSearch = { onboardingViewModel.search() },
+            onToggleBook = onboardingViewModel::toggle,
+            onReviewSelection = onboardingViewModel::reviewSelection,
+            onLogin = saveSelectedBooks,
+            onRetrySave = saveSelectedBooks,
+            onSkip = skipOnboarding,
+            modifier = safeContent,
+        )
+        if (showOnboardingLogin) {
+            LoginRequiredSheet(
+                signingIn = authState.signingIn,
+                error = authState.errorMessage,
+                appleSignInAvailable = authViewModel.appleSignInAvailable,
+                onDismiss = {
+                    if (!authState.signingIn) {
+                        authViewModel.clearError()
+                        authViewModel.cancelPendingAuthentication()
+                        showOnboardingLogin = false
+                    }
+                },
+                onAppleSignIn = {
+                    authViewModel.clearError()
+                    authViewModel.requireAppleAuthentication { token ->
+                        showOnboardingLogin = false
+                        onboardingViewModel.save(token)
+                    }
+                },
+                onGoogleSignIn = {
+                    authViewModel.clearError()
+                    authViewModel.requireAuthentication { token ->
+                        showOnboardingLogin = false
+                        onboardingViewModel.save(token)
+                    }
+                },
+                skipLabel = "건너뛰기",
+                onSkip = skipOnboarding,
+            )
+        }
+        return
     }
     val detailRepository = remember { BookDetailRemoteRepository() }
     val homeViewModel = remember {
@@ -131,14 +247,30 @@ internal fun AppNavigation(
     val memberRepository = remember { MemberRemoteRepository() }
     val registrationViewModel = remember { BookRegistrationViewModel(libraryRepository, analytics) }
     val archiveViewModel = remember { ArchiveViewModel(libraryRepository, analytics) }
+    val librarySaveViewModel = remember {
+        LibrarySaveViewModel(
+            addBook = detailRepository::addToLibrary,
+            onSaved = archiveViewModel::acceptSavedBook,
+            analytics = analytics,
+            isSaved = { isbn -> archiveViewModel.uiState.value.items.any { it.id == isbn } },
+        )
+    }
     val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository) }
+    ErrorRecoveryEffect(registrationViewModel.errors)
+    ErrorRecoveryEffect(archiveViewModel.errors)
+    ErrorRecoveryEffect(librarySaveViewModel.errors)
+    ErrorRecoveryEffect(memberSettingsViewModel.errors)
+    ErrorRecoveryEffect(homeViewModel.errors)
     val archiveState by archiveViewModel.uiState.collectAsState()
+    val librarySaveState by librarySaveViewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     LaunchedEffect(authTokens?.accessToken) {
         val accessToken = authTokens?.accessToken
         analytics.updateAuthentication(accessToken != null)
+        homeViewModel.authenticate(accessToken)
         registrationViewModel.authenticate(accessToken)
         archiveViewModel.authenticate(accessToken)
+        librarySaveViewModel.authenticate(accessToken)
         memberSettingsViewModel.authenticate(accessToken)
     }
     val backStack = rememberNavBackStack(navigationConfig, Root)
@@ -200,6 +332,7 @@ internal fun AppNavigation(
                         searchViewModel = searchViewModel,
                         registrationViewModel = registrationViewModel,
                         archiveViewModel = archiveViewModel,
+                        librarySaveViewModel = librarySaveViewModel,
                         memberSettingsViewModel = memberSettingsViewModel,
                         authViewModel = authViewModel,
                         analytics = analytics,
@@ -252,7 +385,7 @@ internal fun AppNavigation(
                         it.id == displayBook.isbn13.ifBlank { displayBook.id }
                     }
                     val savedBookId = archivedBook?.bookId
-                        ?: state.detail?.takeIf { it.myRecord != null }?.bookId
+                        ?: state.detail?.myRecord?.let { it.bookId ?: state.detail?.bookId }
                     var resumedAction by remember(key.book) {
                         mutableStateOf<BookDetailAuthenticatedAction?>(null)
                     }
@@ -269,6 +402,11 @@ internal fun AppNavigation(
                         if (token == null) resumedAction = null
                         else if (pendingAction != null) resumedAction = pendingAction
                     }
+                    LaunchedEffect(viewModel) {
+                        librarySaveViewModel.savesCompletedWhileObserving().collect { savedBook ->
+                            viewModel.acceptSavedLibraryRecord(savedBook.isbn13, savedBook.record)
+                        }
+                    }
 
                     if (restoringAuthentication) {
                         AuthenticationRestorationContent(safeContent)
@@ -277,6 +415,8 @@ internal fun AppNavigation(
                         onBack = { backStack.popDestinationIfCurrent(key) },
                         modifier = safeContent,
                         savedToLibrary = savedBookId != null,
+                        externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
+                        externalLibraryLoading = librarySaveState.showLoading,
                         anonymousReviews = memberSettingsState.anonymousReviews,
                         nickname = if (state.signedIn) {
                             if (memberSettingsState.anonymousReviews) memberSettingsState.anonymousNickname
@@ -290,9 +430,19 @@ internal fun AppNavigation(
                         resumedAuthenticatedAction = resumedAction,
                         onAuthenticatedActionHandled = { resumedAction = null },
                         onLoginRequired = viewModel::requestAuthentication,
-                        onToggleLibrary = {
-                            viewModel.toggleLibrary(savedBookId, archiveViewModel::retry)
+                        onAddToLibrary = {
+                            if (savedBookId == null && librarySaveViewModel.uiState.value.savingIsbn != displayBook.isbn13) viewModel.addToLibrary { record ->
+                                archiveViewModel.acceptSavedBook(displayBook, record)
+                            }
                         },
+                        onRemoveFromLibrary = {
+                            savedBookId?.let { id ->
+                                viewModel.removeFromLibrary(id) {
+                                    archiveViewModel.acceptRemovedBook(displayBook.isbn13)
+                                }
+                            }
+                        },
+                        onLibraryMessageShown = viewModel::clearLibraryMessage,
                         onStatusChange = { status ->
                             viewModel.updateStatus(
                                 status,
@@ -300,10 +450,13 @@ internal fun AppNavigation(
                                 onLibraryAdded = archiveViewModel::retry,
                             )
                         },
-                        onPageSave = { page ->
+                        onPageSave = { page, onSaved ->
                             viewModel.savePage(
                                 page,
-                                onSuccess = archiveViewModel::retry,
+                                onSuccess = {
+                                    archiveViewModel.retry()
+                                    onSaved()
+                                },
                                 onLibraryAdded = archiveViewModel::retry,
                             )
                         },
@@ -318,7 +471,14 @@ internal fun AppNavigation(
                                 onLibraryAdded = archiveViewModel::retry,
                             )
                         },
+                        errorRecovery = viewModel.errors,
                         onReviewCreate = viewModel::createReview,
+                        onQuestionAReviewCreate = { draft ->
+                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)
+                        },
+                        onQuestionAReviewUpdate = { reviewId, draft, request ->
+                            viewModel.updateReviewWithRating(reviewId, request, draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)
+                        },
                         onReviewOpen = viewModel::openReviewComposer,
                         onReplyOpen = viewModel::openReplyComposer,
                         onReviewEditOpen = viewModel::openReviewEditor,

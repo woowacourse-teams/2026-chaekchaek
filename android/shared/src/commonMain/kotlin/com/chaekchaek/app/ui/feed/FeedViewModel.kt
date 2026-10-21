@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.feed
 
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.presentation.common.ErrorOperation
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,7 +11,6 @@ import com.chaekchaek.app.domain.feed.QuoteCard
 import com.chaekchaek.app.domain.feed.ReviewFeedRepository
 import com.chaekchaek.app.presentation.common.RefreshUiState
 import com.chaekchaek.app.presentation.common.TimeLabels
-import com.chaekchaek.app.presentation.common.toAppError
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import com.chaekchaek.app.presentation.home.HomeLabels
 import com.chaekchaek.app.presentation.home.QuoteCardUiModel
@@ -31,6 +32,7 @@ class FeedViewModel(
     initialAccessToken: String? = null,
     deferInitialLoad: Boolean = false,
 ) : ViewModel() {
+    val errors = ErrorRecoveryState()
     private var reviewActions = reviewActions
     private var readGuestToken = readGuestToken
     private var accessToken: String? = initialAccessToken
@@ -118,8 +120,12 @@ class FeedViewModel(
                 )
             } catch (error: CancellationException) {
                 throw error
-            } catch (_: Throwable) {
+            } catch (error: Throwable) {
                 if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@launch
+                errors.report(error, ErrorOperation.FeedLoad) { freshToken ->
+                    if (freshToken != null) this@FeedViewModel.accessToken = freshToken
+                    retryLoadMore()
+                }
                 updateContent {
                     it.copy(
                         loadingMore = false,
@@ -177,7 +183,7 @@ class FeedViewModel(
             withDelayedApiLoading(
                 onLoadingChanged = { loading ->
                     if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
-                    if (!refreshing && loading && !(retainContent && previousState is FeedUiState.Content)) {
+                    if (!refreshing && loading && (previousState !is FeedUiState.Content || previousState.reviews.isEmpty())) {
                         _uiState.value = FeedUiState.Loading
                     } else if (!refreshing && _uiState.value == FeedUiState.Loading) {
                         _uiState.value = previousState
@@ -212,11 +218,11 @@ class FeedViewModel(
                     if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) {
                         return@withDelayedApiLoading
                     }
-                    if (refreshing) {
-                        _refreshState.value = _refreshState.value.copy(errorMessage = "새로고침하지 못했어요")
-                        previousState
-                    } else if (retainContent && previousState is FeedUiState.Content) previousState
-                    else FeedUiState.Failure(error.toAppError())
+                    errors.report(error, ErrorOperation.FeedLoad) { freshToken ->
+                        if (freshToken != null) this@FeedViewModel.accessToken = freshToken
+                        loadFirstPage(retainContent = true, refreshing = refreshing)
+                    }
+                    previousState.takeUnless { it == FeedUiState.Loading } ?: FeedUiState.Content(emptyList(), 0, null)
                 }
                 if (revision == loadRevision) _uiState.value = result
             }
@@ -246,7 +252,13 @@ class FeedViewModel(
                 }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
-                    if (authenticationRevision == this@FeedViewModel.authenticationRevision) showInteractionError()
+                    if (authenticationRevision == this@FeedViewModel.authenticationRevision) {
+                        errors.report(error, ErrorOperation.Request) { freshToken ->
+                            if (freshToken != null) this@FeedViewModel.accessToken = freshToken
+                            mutateReview(onSuccess, action)
+                        }
+                        showInteractionError()
+                    }
                 }
         }
     }
@@ -270,6 +282,7 @@ class FeedViewModel(
     }
 
     private fun showInteractionError() {
+        if (errors.notice.value == null) errors.confirm("이 감상을 찾을 수 없어요.", "요청을 처리하지 못했어요")
         updateContent { it.copy(requestError = FeedRequestError.Interaction) }
     }
 
