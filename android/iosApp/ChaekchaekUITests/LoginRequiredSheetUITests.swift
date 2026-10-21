@@ -211,7 +211,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
         revealReviewControl(content, in: app, scrollingUp: false)
         content.tap()
         content.typeText("draft must survive")
-        let spoiler = app.buttons["스포일러 (선택)"]
+        let spoiler = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "스포일러 (선택)")).firstMatch
         revealReviewControl(spoiler, in: app, scrollingUp: true)
         spoiler.tap()
         let save = app.buttons["감상 남기기"]
