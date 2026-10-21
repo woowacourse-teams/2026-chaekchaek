@@ -203,6 +203,7 @@ fun BookDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var composeBarHeight by remember { mutableStateOf(0.dp) }
     var reviewViewport by remember { mutableStateOf(Rect.Zero) }
+    var referenceOverlayBounds by remember { mutableStateOf(Rect.Zero) }
     var showLibraryDeleteConfirmation by rememberSaveable(book.id) { mutableStateOf(false) }
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
     var showPageDialog by rememberSaveable { mutableStateOf(false) }
@@ -300,6 +301,8 @@ fun BookDetailScreen(
             ) {
                 item {
                     BookHero(
+                        viewport = reviewViewport,
+                        referenceOverlayBounds = if (showQuestionReference && referenceTab != null) referenceOverlayBounds else Rect.Zero,
                         book = book,
                         saved = savedToLibrary,
                         averageRating = state.detail?.averageRating,
@@ -400,7 +403,11 @@ fun BookDetailScreen(
                 onTabSelect = { referenceTabName = it.name },
                 onClose = { showQuestionReference = false },
                 modifier = Modifier.align(Alignment.TopCenter).padding(12.dp)
-                    .fillMaxWidth().height(bookQuestionOverlayHeight(windowHeight).coerceAtMost((maxHeight.value - 24f).coerceAtLeast(0f)).dp),
+                    .fillMaxWidth().height(bookQuestionOverlayHeight(windowHeight).coerceAtMost((maxHeight.value - 24f).coerceAtLeast(0f)).dp)
+                    .onGloballyPositioned { coordinates ->
+                        val position = coordinates.positionInWindow()
+                        referenceOverlayBounds = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
+                    },
             )
         }
         if (state.isSubmitting || state.isRestoring && state.isLoading) RequestLoadingOverlay(Modifier.fillMaxSize())
@@ -541,6 +548,8 @@ fun BookDetailScreen(
 
 @Composable
 private fun BookHero(
+    viewport: Rect,
+    referenceOverlayBounds: Rect,
     book: BookDetailArgs,
     saved: Boolean,
     averageRating: Double?,
@@ -553,6 +562,10 @@ private fun BookHero(
     coverContent: (@Composable (BookDetailArgs, Modifier) -> Unit)?,
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var libraryButtonBounds by remember { mutableStateOf(Rect.Zero) }
+    val libraryButtonFullyVisible = !libraryButtonBounds.isEmpty && !viewport.isEmpty &&
+        libraryButtonBounds.top >= viewport.top - 0.5f && libraryButtonBounds.bottom <= viewport.bottom + 0.5f &&
+        (referenceOverlayBounds.isEmpty || !libraryButtonBounds.overlaps(referenceOverlayBounds))
     Column(modifier = Modifier.fillMaxWidth().background(ChaekSurface)) {
         Row(
             modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 16.dp),
@@ -648,7 +661,13 @@ private fun BookHero(
                     showLoading = showSaveLoading,
                     enabled = saveEnabled,
                     onSave = onLibraryClick,
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = 8.dp).testTag("book_detail_library_save")
+                        .onGloballyPositioned { coordinates ->
+                            val position = coordinates.positionInWindow()
+                            libraryButtonBounds = Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
+                        }
+                        // 비모달 패널은 뒤 목록을 유지하므로 가려진 버튼만 접근성 탐색에서 제외한다.
+                        .then(if (libraryButtonFullyVisible) Modifier else Modifier.clearAndSetSemantics { hideFromAccessibility() }),
                 )
             }
         }

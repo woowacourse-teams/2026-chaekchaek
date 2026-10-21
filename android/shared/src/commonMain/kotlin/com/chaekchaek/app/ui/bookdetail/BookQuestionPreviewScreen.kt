@@ -25,6 +25,7 @@ fun BookQuestionPreviewScreen(
     var reactionName by rememberSaveable { mutableStateOf<String?>(null) }
     val reaction = BookQuestionReaction.entries.firstOrNull { it.name == reactionName }
     var previewSubmitted by rememberSaveable { mutableStateOf(false) }
+    var savedToLibrary by rememberSaveable { mutableStateOf(false) }
     var reviewScopeName by rememberSaveable { mutableStateOf(ReviewScope.ALL.name) }
     val reviewScope = ReviewScope.valueOf(reviewScopeName)
     val state = remember {
@@ -49,6 +50,8 @@ fun BookQuestionPreviewScreen(
                 reviewCount = if (reviewScope == ReviewScope.MINE) 1 else state.reviewCount,
             ),
             onReviewScopeChange = { reviewScopeName = it.name },
+            savedToLibrary = savedToLibrary,
+            onAddToLibrary = { savedToLibrary = true },
             onBack = {},
             modifier = Modifier.weight(1f),
             questionContent = if (questionVisible) BookQuestionPreviewContent else null,

@@ -17,6 +17,32 @@ final class BookQuestionUITests: XCTestCase {
     }
 
     @MainActor
+    func testLibraryButtonReturnsToAccessibilityAndSavesAfterReferenceCloses() throws {
+        let app = launchPreview()
+        let library = element("book_detail_library_save", in: app)
+        revealInBook(library, app: app)
+        XCTAssertGreaterThanOrEqual(library.frame.height, 44)
+        let open = element("question_reference_open", in: app)
+        revealInBook(open, app: app)
+        tapAfterScroll(open)
+        let overlay = element("question_reference_overlay", in: app)
+        XCTAssertTrue(overlay.waitForExistence(timeout: 5))
+        // 레이아웃 노드는 남아도 가려진 버튼의 역할과 동작은 노출하지 않는다.
+        let exposedLibraryButton = app.buttons.matching(identifier: "book_detail_library_save").firstMatch
+        XCTAssertTrue(exposedLibraryButton.waitForNonExistence(timeout: 5), "패널이 가린 버튼을 접근성 컨트롤로 노출하면 안 된다")
+        try audit(app, name: "자료 패널이 가린 서재 버튼")
+        element("question_reference_close", in: app).tap()
+        XCTAssertTrue(overlay.waitForNonExistence(timeout: 5))
+        revealInBook(library, app: app)
+        XCTAssertGreaterThanOrEqual(library.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(library.frame.height, 44)
+        tapAfterScroll(library)
+        XCTAssertEqual(library.value as? String, "서재에 저장됨", "다시 노출된 버튼의 실제 터치가 처리되어야 한다")
+        try audit(app, name: "자료 닫기 뒤 서재 담기")
+        print("QUESTION_A_FLOW_PASS testLibraryButtonReturnsToAccessibilityAndSavesAfterReferenceCloses")
+    }
+
+    @MainActor
     func testReviewFiltersKeepFullTouchAreaAboveComposerAndSwitchScope() throws {
         let app = launchPreview()
         let all = element("review_scope_all", in: app)
@@ -130,7 +156,7 @@ final class BookQuestionUITests: XCTestCase {
             XCTAssertGreaterThanOrEqual(choice.frame.height, 44)
         }
         try audit(app, name: "질문 이모지 선택기 6개 반응")
-        element("question_reaction_choice_ThumbsUp", in: app).tap()
+        tapAfterScroll(element("question_reaction_choice_ThumbsUp", in: app))
         let selected = element("question_reaction_selected", in: app)
         XCTAssertTrue(selected.waitForExistence(timeout: 5))
         XCTAssertFalse(selected.label.isEmpty)
@@ -139,13 +165,13 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(selected.frame.width, 44)
         XCTAssertGreaterThanOrEqual(selected.frame.height, 44)
         let firstSelectionLabel = selected.label
-        reaction.tap()
+        tapAfterScroll(reaction)
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
-        element("question_reaction_choice_Heart", in: app).tap()
+        tapAfterScroll(element("question_reaction_choice_Heart", in: app))
         XCTAssertTrue(selected.waitForExistence(timeout: 5))
         XCTAssertNotEqual(selected.label, firstSelectionLabel, "바꾼 반응을 접근성 이름으로 구별할 수 있어야 한다")
         try audit(app, name: "선택된 이모지와 취소 pill")
-        selected.tap()
+        tapAfterScroll(selected)
         XCTAssertTrue(selected.waitForNonExistence(timeout: 5))
         XCTAssertTrue(reaction.exists)
         XCTAssertFalse(picker.exists)
@@ -164,17 +190,17 @@ final class BookQuestionUITests: XCTestCase {
         XCTAssertFalse(app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "목차 또는 챕터")).firstMatch.exists)
         let quote = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "인상 깊은 문구")).firstMatch
         revealInReview(quote, app: app, upward: true)
-        quote.tap()
+        tapAfterScroll(quote)
         quote.typeText("A remembered line")
         revealInReview(content, app: app, upward: false)
-        content.tap()
+        tapAfterScroll(content)
         content.typeText("Time made this special")
         let close = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "닫기")).firstMatch
         revealInReview(close, app: app, upward: false)
         tapAfterScroll(close)
         let keepWriting = app.buttons["계속 작성"]
         XCTAssertTrue(keepWriting.waitForExistence(timeout: 5))
-        keepWriting.tap()
+        tapAfterScroll(keepWriting)
         XCTAssertTrue(content.waitForExistence(timeout: 5))
         XCTAssertEqual(content.value as? String, "Time made this special")
         XCTAssertEqual(quote.value as? String, "A remembered line")

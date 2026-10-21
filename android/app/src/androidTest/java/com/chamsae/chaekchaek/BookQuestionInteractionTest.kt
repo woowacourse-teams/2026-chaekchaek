@@ -45,6 +45,28 @@ class BookQuestionInteractionTest {
     }
 
     @Test
+    fun libraryButtonReturnsToAccessibilityAndSavesAfterReferenceCloses() {
+        launch()
+        val list = compose.onNodeWithTag("book_detail_list")
+        val library = compose.onNodeWithTag("book_detail_library_save").performScrollTo()
+        val hidden = SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility)
+        library.assert(hidden.not()).assertIsDisplayed()
+        revealQuestionControl("question_reference_open")
+        compose.onNodeWithTag("question_reference_open").performClick()
+        // LazyColumn이 항목을 제거한 경우도 접근성 탐색에는 노출되지 않는다.
+        compose.onAllNodes(hasTestTag("book_detail_library_save")).fetchSemanticsNodes().forEach {
+            assertTrue(it.config.contains(SemanticsProperties.HideFromAccessibility))
+        }
+        compose.onNodeWithTag("question_reference_close").performClick()
+        list.performScrollToIndex(0)
+        library.performScrollTo().assert(hidden.not()).assertIsDisplayed()
+        val bounds = library.fetchSemanticsNode().boundsInRoot
+        assertTrue(bounds.height >= with(compose.density) { 44.dp.toPx() - 1f })
+        library.performTouchInput { click() }
+        compose.onNodeWithText("담았어요").assertIsDisplayed()
+    }
+
+    @Test
     fun reviewFiltersKeepFullTouchAreaAboveComposerAndSwitchScope() {
         launch()
         val list = compose.onNodeWithTag("book_detail_list")
