@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import styles from './LibrariesPage.module.css';
 
 import {
@@ -21,6 +23,26 @@ import { Container } from '@/frames/Container';
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
 
 export const LibrariesPage = () => {
+  const [dialog, setDialog] = useState<'RegisterLibraryDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'RegisterLibraryDialog') => {
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (dialog: 'RegisterLibraryDialog' | null) => {
+    switch (dialog) {
+      case 'RegisterLibraryDialog':
+        return <RegisterLibraryDialog onClose={handleCloseDialog} />;
+
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
+
   return (
     <Layout>
       <Header />
@@ -31,7 +53,12 @@ export const LibrariesPage = () => {
               level="main"
               description="책장 순서를 드래그로 변경하고, 책등도 순서대로 재배치할 수 있어요."
               trailing={
-                <IconButton variant="secondary">
+                <IconButton
+                  variant="secondary"
+                  onClick={() => {
+                    handleOpenDialog('RegisterLibraryDialog');
+                  }}
+                >
                   <Icon.PlusIcon />
                 </IconButton>
               }
@@ -75,7 +102,7 @@ export const LibrariesPage = () => {
           </ContentArea>
         </Container>
       </Main>
-      {/* <RegisterLibraryDialog /> */}
+      {dialogElement}
     </Layout>
   );
 };
