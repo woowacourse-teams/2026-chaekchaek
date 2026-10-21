@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import {
   Button,
   ConstrainedImgBox,
@@ -25,12 +27,37 @@ import { Link } from 'react-router-dom';
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
 import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
 import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
-import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';
-import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
+
+type LibraryPageDialogType =
+  'AddBooksToLibraryDialog' | 'ManageLibraryDialog' | 'ShareLibraryImageDialog';
 
 const booksHeight = [286, 304, 318, 312, 296, 282, 288, 306, 320, 298];
 
 export const LibraryPage = () => {
+  const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
+  const handleOpenDialog = (dialog: LibraryPageDialogType) => {
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (dialog: LibraryPageDialogType | null) => {
+    switch (dialog) {
+      case 'AddBooksToLibraryDialog':
+        return <AddBooksToLibraryDialog onClose={handleCloseDialog} />;
+      case 'ManageLibraryDialog':
+        return <ManageLibraryDialog onClose={handleCloseDialog} />;
+      case 'ShareLibraryImageDialog':
+        return <ShareLibraryImageDialog onClose={handleCloseDialog} />;
+
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
+
   return (
     <Layout>
       <Header />
@@ -42,7 +69,12 @@ export const LibraryPage = () => {
               sx={{ mb: 14 }}
               description={`내 책장 14권`}
               trailing={
-                <IconButton variant="secondary">
+                <IconButton
+                  variant="secondary"
+                  onClick={() => {
+                    handleOpenDialog('ManageLibraryDialog');
+                  }}
+                >
                   <Icon.EllipsisIcon />
                 </IconButton>
               }
@@ -71,13 +103,26 @@ export const LibraryPage = () => {
             </Surface>
 
             <Title sx={{ mt: 8 }} level="detail">
-              <Button variant="primary" sx={{ mr: 4 }}>
+              <Button
+                variant="primary"
+                sx={{ mr: 4 }}
+                onClick={() => {
+                  handleOpenDialog('AddBooksToLibraryDialog');
+                }}
+              >
                 <Icon.PlusIcon color="inverse" />책 담기
               </Button>
               <IconButton variant="ghost" size="large" sx={{ mr: 2 }}>
                 <Icon.UploadIcon size="large" />
               </IconButton>
-              <IconButton variant="ghost" size="large" sx={{ mr: 2 }}>
+              <IconButton
+                variant="ghost"
+                size="large"
+                sx={{ mr: 2 }}
+                onClick={() => {
+                  handleOpenDialog('ShareLibraryImageDialog');
+                }}
+              >
                 <Icon.DownloadIcon size="large" />
               </IconButton>
             </Title>
@@ -129,11 +174,7 @@ export const LibraryPage = () => {
         </Container>
       </Main>
 
-      {/* <AddBooksToLibraryDialog onClose={() => {}} /> */}
-      {/* <ManageLibraryDialog onClose={() => {}} /> */}
-      {/* <ShareLibraryImageDialog onClose={() => {}} /> */}
-      {/* <DeleteLibraryDialog onClose={() => {}} /> */}
-      {/* <RenameLibraryDialog onClose={() => {}} /> */}
+      {dialogElement}
     </Layout>
   );
 };
