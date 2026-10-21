@@ -22,6 +22,12 @@ import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
 import { Link } from 'react-router-dom';
 
+import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
+import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
+import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
+import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';
+import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
+
 const booksHeight = [286, 304, 318, 312, 296, 282, 288, 306, 320, 298];
 
 export const LibraryPage = () => {
@@ -118,6 +124,12 @@ export const LibraryPage = () => {
           </ContentArea>
         </Container>
       </Main>
+
+      {/* <AddBooksToLibraryDialog onClose={() => {}} /> */}
+      {/* <ManageLibraryDialog onClose={() => {}} /> */}
+      {/* <ShareLibraryImageDialog onClose={() => {}} /> */}
+      {/* <DeleteLibraryDialog onClose={() => {}} /> */}
+      {/* <RenameLibraryDialog onClose={() => {}} /> */}
     </Layout>
   );
 };
