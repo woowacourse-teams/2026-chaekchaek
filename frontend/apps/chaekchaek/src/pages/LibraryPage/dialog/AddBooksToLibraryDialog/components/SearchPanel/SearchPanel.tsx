@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
-import { ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
+import { Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
 
 import { getBooks } from '@/services/apis/books/repository';
 import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
@@ -62,7 +62,14 @@ export const SearchPanel = () => {
 
   return (
     <>
-      <Input sx={{ mt: 2, mb: 4 }} size="small" value={query} onChange={handleChange} />
+      <Input
+        sx={{ mt: 2, mb: 4 }}
+        size="small"
+        leading={<Icon.SearchIcon />}
+        placeholder="책 제목이나 작가를 검색하세요"
+        value={query}
+        onChange={handleChange}
+      />
 
       <ScrollArea ref={scrollAreaRef} height="320px">
         <List>

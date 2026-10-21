@@ -1,4 +1,4 @@
-import { Divider, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
+import { Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
 
 import ImgBoxDummyImg1 from '../../../../../../../../../packages/design-system/src/components/ImgBox/imgs/dummy.png';
 import { Link } from 'react-router-dom';
@@ -6,7 +6,12 @@ import { Link } from 'react-router-dom';
 export const MyLibraryPanel = () => {
   return (
     <>
-      <Input sx={{ mt: 2, mb: 4 }} size="small" />
+      <Input
+        sx={{ mt: 2, mb: 4 }}
+        size="small"
+        leading={<Icon.SearchIcon />}
+        placeholder="책 제목이나 작가를 검색하세요"
+      />
 
       <ScrollArea height="320px">
         <List>
