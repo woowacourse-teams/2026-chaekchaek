@@ -41,6 +41,7 @@ sealed interface BookDetailAuthenticatedAction {
     data object AddToLibrary : BookDetailAuthenticatedAction
     data object OpenPageInput : BookDetailAuthenticatedAction
     data object OpenRating : BookDetailAuthenticatedAction
+    data object OpenReviewRating : BookDetailAuthenticatedAction
     data object OpenReview : BookDetailAuthenticatedAction {
         override val requiresMember = false
     }

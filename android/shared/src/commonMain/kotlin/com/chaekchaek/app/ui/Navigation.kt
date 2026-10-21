@@ -46,6 +46,7 @@ import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
 import com.chaekchaek.app.ui.archive.MyPageScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
+import com.chaekchaek.app.ui.bookdetail.toReviewRequest
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailViewModel
 import com.chaekchaek.app.ui.bookdetail.analyticsName
@@ -377,7 +378,6 @@ private fun AppNavigationContent(
                         )
                     }
                     viewModel.attachAuthPlatform(authPlatform)
-                    ErrorRecoveryEffect(viewModel.errors)
                     val state by viewModel.uiState.collectAsState()
                     val displayBook = state.displayBook ?: key.book
                     val archivedBook = archiveState.items.firstOrNull {
@@ -470,7 +470,14 @@ private fun AppNavigationContent(
                                 onLibraryAdded = archiveViewModel::retry,
                             )
                         },
+                        errorRecovery = viewModel.errors,
                         onReviewCreate = viewModel::createReview,
+                        onQuestionAReviewCreate = { draft ->
+                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)
+                        },
+                        onQuestionAReviewUpdate = { reviewId, draft, request ->
+                            viewModel.updateReviewWithRating(reviewId, request, draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)
+                        },
                         onReviewOpen = viewModel::openReviewComposer,
                         onReplyOpen = viewModel::openReplyComposer,
                         onReviewEditOpen = viewModel::openReviewEditor,

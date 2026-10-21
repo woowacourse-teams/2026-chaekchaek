@@ -110,6 +110,7 @@ class BookDetailPaginationRetryTest {
         compose.onNodeWithText("재시도 성공 감상").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("다시 시도").assertDoesNotExist()
         compose.onNodeWithText("삭제된 감상").assertDoesNotExist()
+        compose.onNodeWithText("삭제된 감상입니다.").assertExists()
         capture("${if (refresh) "refresh" else "pagination"}-success")
         compose.runOnIdle { assertEquals(0, automaticRequests) }
     }

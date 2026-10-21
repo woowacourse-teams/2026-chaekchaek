@@ -30,12 +30,10 @@ class ReviewDraftPreservationTest {
             book = BookDetailArgs(id = "42", bookId = 42, title = "감상 보존 검증", totalPages = 224),
             signedIn = true,
         ))
-        val errors = com.chaekchaek.app.presentation.common.ErrorRecoveryState()
         val requests = mutableListOf<ReviewCreateRequest>()
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
             ChaekchaekTheme {
-                com.chaekchaek.app.ui.common.ErrorRecoveryEffect(errors)
                 BookDetailScreen(
                     state = state.value,
                     onBack = {},
@@ -53,10 +51,10 @@ class ReviewDraftPreservationTest {
         }
         compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("사라지면 안 되는 감상")
-        compose.onNodeWithContentDescription("인상 깊은 문구").performScrollTo().performTextInput("기억할 문장")
-        compose.onNodeWithContentDescription("목차 또는 챕터").performScrollTo().performTextInput("첫 번째 장")
-        compose.onNodeWithContentDescription("쪽수").performScrollTo().performTextInput("80")
-        compose.onNodeWithText("스포일러").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("인상 깊은 문구 (선택)").performScrollTo().performTextInput("기억할 문장")
+        compose.onNodeWithContentDescription("목차 또는 챕터").assertDoesNotExist()
+        compose.onNodeWithContentDescription("쪽수").assertDoesNotExist()
+        compose.onNodeWithText("스포일러 (선택)").performScrollTo().performClick()
         compose.onAllNodes(hasText("감상 남기기") and hasClickAction()).onLast().performScrollTo().performClick()
         compose.onNode(hasText("감상 남기기") and hasClickAction()).assertIsNotEnabled()
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
@@ -66,30 +64,45 @@ class ReviewDraftPreservationTest {
                 reviewSubmissionState = ReviewSubmissionState.Failed,
                 requestError = "요청을 처리하지 못했어요. 다시 시도해 주세요.",
             )
-            errors.report(Exception(), com.chaekchaek.app.presentation.common.ErrorOperation.Request) {}
         }
-        compose.onNodeWithText("다시 시도").assertIsDisplayed()
-        compose.onNodeWithText("닫기").performClick()
-        compose.onNodeWithContentDescription("감상 (필수)").assertExists()
+        // 실패 안내를 연 채 복원해도 마지막 제출을 재시도할 수 있어야 한다.
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithText("요청을 처리하지 못했어요").assertExists()
+        compose.onNode(hasText("다시 시도") and hasClickAction()).performClick()
+        compose.runOnIdle {
+            assertEquals(2, requests.size)
+            assertEquals(requests.first(), requests.last())
+            assertEquals(ReviewSubmissionState.Submitting, state.value.reviewSubmissionState)
+            state.value = state.value.copy(
+                reviewSubmissionState = ReviewSubmissionState.Failed,
+                requestError = "요청을 처리하지 못했어요. 다시 시도해 주세요.",
+            )
+        }
+        compose.onNodeWithText("요청을 처리하지 못했어요").assertExists()
+        compose.onNodeWithText("요청을 처리하지 못했어요. 다시 시도해 주세요.").assertExists()
+        compose.onNode(hasText("닫기") and hasClickAction()).performClick()
+        compose.onNodeWithText("요청을 처리하지 못했어요").assertDoesNotExist()
+
         restoration.emulateSavedInstanceStateRestore()
 
         compose.onNodeWithContentDescription("감상 (필수)").assertTextEquals("사라지면 안 되는 감상")
-        compose.onNodeWithContentDescription("인상 깊은 문구").assertTextEquals("기억할 문장")
-        compose.onNodeWithContentDescription("목차 또는 챕터").assertTextEquals("첫 번째 장")
-        compose.onNodeWithContentDescription("쪽수").assert(
-            SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("80")),
-        )
+        compose.onNodeWithContentDescription("인상 깊은 문구 (선택)").assertTextEquals("기억할 문장")
+        compose.onNodeWithContentDescription("목차 또는 챕터").assertDoesNotExist()
+        compose.onNodeWithContentDescription("쪽수").assertDoesNotExist()
         compose.runOnIdle {
-            assertEquals(listOf(ReviewCreateRequest(
-                content = "사라지면 안 되는 감상", quote = "기억할 문장", chapter = "첫 번째 장",
-                currentPage = 80, totalPages = 224, isSpoiler = true,
-            )), requests)
+            val expected = ReviewCreateRequest(
+                content = "사라지면 안 되는 감상", quote = "기억할 문장",
+                chapter = null, currentPage = null, totalPages = null, isSpoiler = true,
+            )
+            assertEquals(listOf(expected, expected), requests)
         }
-        compose.onNodeWithText("스포일러").assertIsOn()
+        compose.onNodeWithText("스포일러 (선택)").assertIsOn()
         compose.onNode(hasText("감상 남기기") and hasClickAction()).assertIsEnabled()
+        compose.onNodeWithText("요청을 처리하지 못했어요. 다시 시도해 주세요.").assertDoesNotExist()
+
         compose.onNode(hasText("감상 남기기") and hasClickAction()).performScrollTo().performClick()
         compose.runOnIdle {
-            assertEquals(2, requests.size)
+            assertEquals(3, requests.size)
             assertEquals(ReviewSubmissionState.Submitting, state.value.reviewSubmissionState)
             assertEquals(requests.first(), requests.last())
         }
