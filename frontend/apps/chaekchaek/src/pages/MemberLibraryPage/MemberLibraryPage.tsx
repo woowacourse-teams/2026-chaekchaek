@@ -11,7 +11,6 @@ import {
   Notice,
   OptionList,
   Pagination,
-  ProgressBar,
   Select,
   Split,
   Tag,
@@ -262,17 +261,6 @@ export const MemberLibraryPage = () => {
                           </>
                         }
                         content={item.authors.join(' · ')}
-                        description={
-                          <>
-                            {item.totalPages > 0 && (
-                              <ProgressBar
-                                variant={item.currentPage !== item.totalPages ? 'accent' : 'subtle'}
-                                value={item.currentPage}
-                                max={item.totalPages}
-                              />
-                            )}
-                          </>
-                        }
                       />
                       <List.Item.Trailing>
                         <Icon.ArrowRightIcon />
