@@ -1,24 +1,12 @@
 import { Link } from 'react-router-dom';
 
-import {
-  Banner,
-  Button,
-  Choice,
-  DataInfo,
-  Icon,
-  Rating,
-  Surface,
-  Title,
-} from '@chaekchaek/design-system';
-
-import { track } from '@/analytics/track';
+import { Button, Choice, DataInfo, Surface, Title } from '@chaekchaek/design-system';
 
 import Yes24LogoImg from './imgs/yes24.svg';
 
 import type { BookInfoProps } from './BookInfo.types';
 
 export const BookInfo = ({
-  myRecord,
   readingStatus,
   category,
   publishedDate,
@@ -26,39 +14,14 @@ export const BookInfo = ({
   authors,
   translators,
   purchaseUrl,
-  onRegistryLibrary,
-  onRatingCreate,
   onReadingStatusChange,
 }: BookInfoProps) => {
   const formattedCategory = category?.replace(/\s*>\s*/g, ' > ');
 
-  const handleClickRating = () => {
-    if (!myRecord) return onRegistryLibrary();
-
-    track('rating_open');
-    onRatingCreate();
-  };
-
   return (
     <>
       <Surface variant="outlined" spacing="medium">
-        <Title
-          level="main"
-          trailing={
-            <Button
-              size="x-small"
-              shape="link"
-              variant="ghost"
-              leading={<Icon.StartIcon color="inverse" />}
-              onClick={handleClickRating}
-            >
-              <Icon.StartIcon sx={{ mr: 2 }} />
-              별점 주기
-            </Button>
-          }
-        >
-          내 독서 기록
-        </Title>
+        <Title level="main">내 독서 기록</Title>
         <Choice
           sx={{ mt: 4 }}
           shape="normal"
@@ -70,18 +33,6 @@ export const BookInfo = ({
           ]}
           onChange={onReadingStatusChange}
         />
-        <Banner sx={{ mt: 4 }}>
-          <Banner.Content
-            title="내 별점"
-            content={
-              myRecord?.myRating ? (
-                <Rating size="small" value={myRecord.myRating} />
-              ) : (
-                '아직 평가하지 않았어요'
-              )
-            }
-          />
-        </Banner>
       </Surface>
       <DataInfo sx={{ mt: 4 }} heading="책 정보">
         {formattedCategory && <DataInfo.Item title="장르" content={formattedCategory} />}

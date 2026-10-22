@@ -27,9 +27,6 @@ import { BookOverview } from './components/BookOverview';
 import { BookInfo } from './components/BookInfo';
 import { BookReviews } from './components/BookReviews';
 
-import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
-import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
-
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
 
@@ -164,51 +161,6 @@ export const BookDetailPage = () => {
     };
   }, [reviewsDataAll]);
 
-  const [dialog, setDialog] = useState<'RegisterLibraryDialog' | 'UpdateRatingDialog' | null>(null);
-  const handleOpenDialog = (dialog: 'RegisterLibraryDialog' | 'UpdateRatingDialog') => {
-    if (!isAuthenticated) return handleOpenLoginDialog();
-    setDialog(dialog);
-  };
-  const handleCloseDialog = () => {
-    setDialog(null);
-  };
-
-  const renderDialog = (dialog: 'RegisterLibraryDialog' | 'UpdateRatingDialog' | null) => {
-    switch (dialog) {
-      case 'RegisterLibraryDialog':
-        return (
-          data?.isbn13 && (
-            <RegisterLibraryDialog
-              isbn={data.isbn13}
-              onLibraryRegistered={refetchGetBooksIsbnLoadData}
-              onClose={handleCloseDialog}
-            />
-          )
-        );
-
-      case 'UpdateRatingDialog':
-        return (
-          data?.bookId && (
-            <UpdateRatingDialog
-              isbn13={data.isbn13}
-              bookId={data?.bookId}
-              title={data.title}
-              rating={data.myRecord?.myRating}
-              myRatingCount={data?.myRatingCount}
-              onRatingUpdated={async () => {
-                await refetchGetBooksIsbnLoadData();
-              }}
-              onClose={handleCloseDialog}
-            />
-          )
-        );
-      default:
-        return null;
-    }
-  };
-
-  const dialogElement = renderDialog(dialog);
-
   return (
     <Layout>
       <Header />
@@ -217,7 +169,6 @@ export const BookDetailPage = () => {
           <Split>
             <Split.Side>
               <BookInfo
-                myRecord={data?.myRecord ?? null}
                 readingStatus={data?.myRecord?.status}
                 category={data?.category}
                 publishedDate={data?.publishedDate}
@@ -225,12 +176,6 @@ export const BookDetailPage = () => {
                 authors={data?.authors}
                 translators={data?.translators}
                 purchaseUrl={data?.purchaseUrl}
-                onRegistryLibrary={() => {
-                  handleOpenDialog('RegisterLibraryDialog');
-                }}
-                onRatingCreate={() => {
-                  handleOpenDialog('UpdateRatingDialog');
-                }}
                 onReadingStatusChange={handleRegisterLibrary}
               />
             </Split.Side>
@@ -267,7 +212,6 @@ export const BookDetailPage = () => {
           </Split>
         </Container>
 
-        {dialogElement}
         {openLoginDialog && <LoginDialog onClose={handleCloseLoginDialog} />}
       </Main>
     </Layout>
