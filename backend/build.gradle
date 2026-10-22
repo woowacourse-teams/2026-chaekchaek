@@ -234,6 +234,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		}
 		def libraryCreationOperation = ((specification.get('paths') as Map)
 				?.get('/api/v1/libraries') as Map)?.get('post') as Map
+		(libraryCreationOperation?.get('requestBody') as Map)?.put('required', true)
 		def libraryCreationRequestContent = ((libraryCreationOperation?.get('requestBody') as Map)
 				?.get('content') as Map)
 		libraryCreationRequestContent?.values()?.each { content ->
@@ -241,6 +242,20 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			if (examples?.containsKey('library-create')) {
 				(content as Map).put('examples', ['library-create': examples.get('library-create')] + examples)
 			}
+		}
+		def libraryCreationResponse = responseSchemaForPath('/api/v1/libraries', 'post', '201')
+		def libraryIdProperty = (libraryCreationResponse?.get('properties') as Map)?.get('libraryId') as Map
+		libraryIdProperty?.putAll([type: 'integer', format: 'int64'])
+		def libraryCreationResponses = libraryCreationOperation?.get('responses') as Map
+		def libraryCreationResponseDescriptions = [
+			'201': '서재 생성 성공. 저장된 서재 ID와 이름을 반환한다.',
+			'400': '잘못된 요청 본문 또는 이름. `INVALID_REQUEST`.',
+			'401': '회원 인증 실패 또는 비활성 회원. `UNAUTHORIZED`.',
+			'403': 'CSRF 검사에서 거부됨. 응답 본문이 없으므로 HTTP 상태로 구분한다.',
+			'409': '같은 회원의 앞뒤 공백을 제거한 서재 이름 중복. `LIBRARY_NAME_ALREADY_EXISTS`.'
+		]
+		libraryCreationResponseDescriptions.each { status, description ->
+			(libraryCreationResponses?.get(status) as Map)?.put('description', description)
 		}
 
 		['/api/v1/books', '/api/v1/library', '/api/v1/books/{bookId}/reviews',
@@ -849,6 +864,9 @@ tasks.register('verifyOpenApi') {
 			return required.contains(propertyName) && property?.get('nullable') == true
 		}
 		def libraryCreationRequest = requestSchema('/api/v1/libraries', 'post')
+		if ((libraryCreationOperation.get('requestBody') as Map)?.get('required') != true) {
+			throw new GradleException('OpenAPI specification must require the library creation request body')
+		}
 		if ((libraryCreationRequest?.get('required') as Set) != (['name'] as Set)
 				|| (libraryCreationRequest?.get('properties') as Map)?.get('name')?.get('type') != 'string') {
 			throw new GradleException('OpenAPI specification has invalid fields for POST /api/v1/libraries request')
@@ -869,6 +887,10 @@ tasks.register('verifyOpenApi') {
 		def libraryCreationResponse = responseSchema('/api/v1/libraries', 'post', '201')
 		if ((libraryCreationResponse?.get('required') as Set) != (['libraryId', 'name'] as Set)) {
 			throw new GradleException('OpenAPI specification has invalid fields for POST /api/v1/libraries response')
+		}
+		def libraryIdProperty = (libraryCreationResponse?.get('properties') as Map)?.get('libraryId') as Map
+		if (libraryIdProperty?.get('type') != 'integer' || libraryIdProperty?.get('format') != 'int64') {
+			throw new GradleException('OpenAPI specification must describe libraryId as an int64 integer')
 		}
 
 		[

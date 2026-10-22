@@ -85,12 +85,12 @@ class LibraryControllerTest {
     private static final String LIBRARY_TAG = "내 서재";
     private static final String LIBRARY_CREATE_SUMMARY = "서재 생성";
     private static final String LIBRARY_CREATE_DESCRIPTION = """
-            인증된 회원이 이름을 지정해 새 서재를 생성한다. 한 회원은 여러 서재를 가질 수 있다.
-            이름은 앞뒤 공백을 제거한 후 1~100자여야 하며, 응답에는 저장된 이름을 반환한다.
-            같은 회원의 서재 이름이 중복되면 `LIBRARY_NAME_ALREADY_EXISTS`를 반환한다.
+            인증된 회원이 새 서재를 생성한다. 한 회원은 여러 서재를 가질 수 있다.
+
+            - `name`: 앞뒤 공백 제거 후 1~100자여야 하며, 저장된 이름을 반환한다.
+            - 중복 기준: 같은 회원의 앞뒤 공백을 제거한 이름. 대소문자만 다른 이름도 중복될 수 있다.
+
             서재에 도서를 추가하는 기존 `POST /api/v1/library`와 별개의 API다.
-            Access Token은 Bearer 헤더 또는 쿠키로 전달한다.
-            인증 토큰과 CSRF 토큰이 모두 없으면 인증 처리 전에 `403`으로 거부된다.
             """;
     private static final String LIBRARY_LIST_SUMMARY = "내 서재 조회";
     private static final String LIBRARY_LIST_DESCRIPTION = "인증된 사용자가 읽기 상태와 정렬 기준으로 회원 단위의 기존 서재 도서 목록을 조회한다";
@@ -195,7 +195,8 @@ class LibraryControllerTest {
                         "library-create",
                         requestFields(LIBRARY_CREATE_REQUEST_FIELDS),
                         responseFields(LIBRARY_RESPONSE_FIELDS),
-                        responseHeaders(headerWithName(HttpHeaders.LOCATION).description("생성된 서재 URI")),
+                        responseHeaders(headerWithName(HttpHeaders.LOCATION)
+                                .description("생성된 서재 식별 URI. 현재 이 URI의 `GET` 조회 API는 제공하지 않는다")),
                         resource(ResourceSnippetParameters.builder()
                                 .summary(LIBRARY_CREATE_SUMMARY)
                                 .description(LIBRARY_CREATE_DESCRIPTION)
@@ -205,7 +206,8 @@ class LibraryControllerTest {
                                 .responseSchema(Schema.schema("LibraryResponse"))
                                 .responseFields(LIBRARY_RESPONSE_FIELDS)
                                 .responseHeaders(ResourceDocumentation.headerWithName(HttpHeaders.LOCATION)
-                                        .type(SimpleType.STRING).description("생성된 서재 URI"))
+                                        .type(SimpleType.STRING)
+                                        .description("생성된 서재 식별 URI. 현재 이 URI의 `GET` 조회 API는 제공하지 않는다"))
                                 .build())
                 ));
         verify(libraryService).create(MEMBER_ID, "가을에 읽을 책");
