@@ -1,15 +1,6 @@
 import type { ChangeEvent, SubmitEvent } from 'react';
 
-import {
-  Button,
-  Dialog,
-  Field,
-  FieldGroup,
-  Input,
-  Radio,
-  Text,
-  Textarea,
-} from '@chaekchaek/design-system';
+import { Button, Dialog, Field, Radio, Text, Textarea } from '@chaekchaek/design-system';
 
 import { track } from '@/analytics/track';
 
@@ -34,8 +25,6 @@ const buildReviewRequest = (formValues: ReviewFormValues) => {
     isSpoiler: formValues.isSpoiler,
     ...compact({
       quote: formValues.quote || undefined,
-      chapter: formValues.chapter || undefined,
-      currentPage: formValues.currentPage ? Number(formValues.currentPage) : undefined,
     }),
   };
 };
@@ -53,8 +42,6 @@ export const WriteReviewDialog = ({
       content: '',
       isSpoiler: false,
       quote: '',
-      currentPage: '',
-      chapter: '',
     },
     validate: validateReview,
   });
@@ -184,56 +171,6 @@ export const WriteReviewDialog = ({
                 />
               </Field.Content>
             </Field>
-
-            <FieldGroup sx={{ mt: 4 }}>
-              <Field>
-                <Field.Label>
-                  쪽수{' '}
-                  <Text as="span">
-                    (
-                    <Text as="span" color="muted">
-                      선택
-                    </Text>
-                    )
-                  </Text>
-                </Field.Label>
-                <Field.Content>
-                  <Input
-                    block
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="80"
-                    id="currentPage"
-                    value={values.currentPage}
-                    onChange={onChange}
-                  />
-                </Field.Content>
-                {!valids.currentPage && (
-                  <Field.Description>{errors.currentPage[0]?.message}</Field.Description>
-                )}
-              </Field>
-              <Field>
-                <Field.Label>
-                  목차 / 챕터{' '}
-                  <Text as="span">
-                    (
-                    <Text as="span" color="muted">
-                      선택
-                    </Text>
-                    )
-                  </Text>
-                </Field.Label>
-                <Field.Content>
-                  <Input
-                    block
-                    placeholder="Chapter 1"
-                    id="chapter"
-                    values={values.chapter}
-                    onChange={onChange}
-                  />
-                </Field.Content>
-              </Field>
-            </FieldGroup>
 
             <Text color="muted" sx={{ mt: 4 }}>
               {((isAuthenticated && user?.displayAnonymous) || !isAuthenticated) && (
