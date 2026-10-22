@@ -2,7 +2,13 @@ import { useRef } from 'react';
 
 import html2canvas from 'html2canvas';
 
-import { Button, ConstrainedImgBox, Dialog, Showcase } from '@chaekchaek/design-system';
+import {
+  Button,
+  ConstrainedImgBox,
+  Dialog,
+  DisplayCard,
+  Showcase,
+} from '@chaekchaek/design-system';
 
 import ConstrainedImgBoxDummyImg1 from '../../../../../../../packages/design-system/src/components/ConstrainedImgBox/imgs/dummy1.jpg';
 
@@ -55,17 +61,24 @@ export const ShareLibraryImageDialog = ({ onClose }: ShareLibraryImageDialogProp
       <Dialog.Container>
         <Dialog.Header>책장을 이미지로</Dialog.Header>
         <Dialog.Body>
-          <Showcase ref={domRef}>
-            {Array.from({ length: 10 }).map((_, index) => {
-              return (
-                <ConstrainedImgBox
-                  img={ConstrainedImgBoxDummyImg1}
-                  maxWidth="80px"
-                  maxHeight={'170px'}
-                />
-              );
-            })}
-          </Showcase>
+          <DisplayCard
+            title={`${nickname}의 책장`}
+            description={libraryName}
+            extra={APP_NAME}
+            ref={domRef}
+          >
+            <Showcase>
+              {Array.from({ length: 10 }).map((_, index) => {
+                return (
+                  <ConstrainedImgBox
+                    img={ConstrainedImgBoxDummyImg1}
+                    maxWidth="80px"
+                    maxHeight={'170px'}
+                  />
+                );
+              })}
+            </Showcase>
+          </DisplayCard>
         </Dialog.Body>
         <Dialog.Footer>
           <Button block variant="primary" onClick={handleClickDownload}>
