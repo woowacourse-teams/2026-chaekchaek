@@ -4,9 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
-import com.chaekchaek.book.domain.BookQuestion;
 import com.chaekchaek.book.domain.Isbn13;
-import com.chaekchaek.book.repository.BookQuestionRepository;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
@@ -45,9 +43,6 @@ class BookServicePersistenceTest {
 
     @Autowired
     private LibraryItemRepository libraryItemRepository;
-
-    @Autowired
-    private BookQuestionRepository bookQuestionRepository;
 
     @MockitoBean
     private BookActivityCountReader activityCountReader;
@@ -162,23 +157,35 @@ class BookServicePersistenceTest {
     }
 
     @Test
-    @DisplayName("ISBN13으로 저장된 책 질문을 조회한다")
-    void should_FindBookQuestion_When_Isbn13Matches() {
+    @DisplayName("책 질문 내용을 도서와 함께 저장한다")
+    void should_SaveQuestionContentWithBook() {
         // given
-        Isbn13 isbn13 = new Isbn13("9788925568683");
-        bookQuestionRepository.saveAndFlush(BookQuestion.create(
+        Isbn13 isbn13 = new Isbn13("9781234567905");
+        Book book = Book.create(
                 isbn13,
-                "화성에 홀로 남는다면 무엇부터 하시겠어요?",
+                "마션",
+                "https://image.example/martian.jpg",
                 null,
-                "발췌문"
-        ));
+                null,
+                "책 설명",
+                List.of("앤디 위어"),
+                List.of(),
+                "알에이치코리아",
+                "SF",
+                LocalDate.of(2026, 1, 1),
+                308,
+                null,
+                null
+        );
+        book.updateQuestionContent("화성에 홀로 남는다면 무엇부터 하시겠어요?", "줄거리", "발췌문");
+        bookRepository.saveAndFlush(book);
         entityManager.clear();
 
         // when & then
-        BookQuestion storedQuestion = bookQuestionRepository.findByIsbn13(isbn13).orElseThrow();
-        assertThat(storedQuestion.getQuestion()).isEqualTo("화성에 홀로 남는다면 무엇부터 하시겠어요?");
-        assertThat(storedQuestion.getPlot()).isNull();
-        assertThat(storedQuestion.getExtract()).isEqualTo("발췌문");
+        Book storedBook = bookRepository.findByIsbn13(isbn13).orElseThrow();
+        assertThat(storedBook.getQuestion()).isEqualTo("화성에 홀로 남는다면 무엇부터 하시겠어요?");
+        assertThat(storedBook.getPlot()).isEqualTo("줄거리");
+        assertThat(storedBook.getExtract()).isEqualTo("발췌문");
     }
 
     private LibraryItem ratedItem(long memberId, long bookId, String rating) {
