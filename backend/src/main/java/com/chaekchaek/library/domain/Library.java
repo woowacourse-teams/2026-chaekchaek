@@ -49,14 +49,19 @@ public class Library {
     }
 
     public static Library create(long memberId, String name, Instant now) {
-        validateName(name);
-        return new Library(memberId, name, now);
+        String normalizedName = validateAndNormalizeName(name);
+        return new Library(memberId, normalizedName, now);
     }
 
-    private static void validateName(String name) {
-        if (name == null || name.length() > NAME_MAX_LENGTH) {
+    private static String validateAndNormalizeName(String name) {
+        if (name == null) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
+        String normalizedName = name.strip();
+        if (normalizedName.isEmpty() || normalizedName.length() > NAME_MAX_LENGTH) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+        return normalizedName;
     }
 
     public boolean isOwnedBy(long memberId) {

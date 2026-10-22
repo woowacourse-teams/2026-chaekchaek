@@ -10,6 +10,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class LibraryTest {
 
@@ -42,6 +44,54 @@ class LibraryTest {
 
         // then
         assertThat(library.getName()).isEqualTo(name);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "  가을에  읽을 책  ",
+            "\t가을에  읽을 책\n",
+            "\u2003가을에  읽을 책\u2003"
+    })
+    @DisplayName("서재 이름의 앞뒤 공백을 제거하고 내부 공백은 유지한다")
+    void should_StripSurroundingWhitespace_When_CreatingLibrary(String name) {
+        // given
+        String expectedName = "가을에  읽을 책";
+
+        // when
+        Library library = Library.create(1L, name, NOW);
+
+        // then
+        assertThat(library.getName()).isEqualTo(expectedName);
+    }
+
+    @Test
+    @DisplayName("앞뒤 공백을 제거한 서재 이름이 100자이면 생성할 수 있다")
+    void should_CreateLibrary_When_StrippedNameHasMaximumLength() {
+        // given
+        String expectedName = "가".repeat(100);
+        String name = "  " + expectedName + "  ";
+
+        // when
+        Library library = Library.create(1L, name, NOW);
+
+        // then
+        assertThat(library.getName()).isEqualTo(expectedName);
+    }
+
+    @ParameterizedTest
+    @EmptySource
+    @ValueSource(strings = {" ", "\t\n", "\u2003"})
+    @DisplayName("앞뒤 공백을 제거한 서재 이름이 비어 있으면 생성을 거부한다")
+    void should_RejectCreation_When_StrippedNameIsEmpty(String name) {
+        // given
+        long memberId = 1L;
+
+        // when & then
+        assertThatThrownBy(() -> Library.create(memberId, name, NOW))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST)
+                );
     }
 
     @Test
