@@ -72,11 +72,30 @@ iOS UI 테스트 launch arguments: `-uiTestingRequiredUpdate`, `-uiTestingRecomm
 4. 배포 전 현재 템플릿을 다시 받아 기존 매개변수/조건을 보존하고 변경 diff를 검토한다. 초안 파일로 전체 템플릿을 무조건 대체하지 않는다.
 5. 잘못된 차단의 복구는 해당 최소 경계를 내리는 새 정책 발행이다. 오프라인 사용자는 새 정책을 받기 전까지 기존 차단을 유지한다.
 
-`android/config/remote-config/template.draft.json`은 배포되지 않은 검토용 템플릿이다. 최소/최신 경계는 0이고 검증 문구만 있다. 현재 접근 확인된 Firebase 프로젝트는 `chaekchaek-d2b85`다. Android Debug는 별도 `chaekchaek-debug`를 사용하며 현재 계정의 접근은 확인되지 않았다. 두 프로젝트를 섞거나 SDK 설정을 자동으로 바꾸지 않는다.
+`android/config/remote-config/template.draft.json`은 배포되지 않은 검토용 템플릿이다. 최소/최신 경계는 0이고 검증 문구만 있다. 현재 접근 확인된 Firebase 프로젝트는 `chaekchaek-d2b85`다. 원격 검증기의 Android Release 설정도 `chaekchaek-d2b85`임을 확인했다. Android Debug는 별도 `chaekchaek-debug`를 사용하며 현재 계정의 접근은 확인되지 않았다. 두 프로젝트를 섞거나 SDK 설정을 자동으로 바꾸지 않는다.
 
 ## 검증 상태
 
-구현 직후 검증 예정. 빌드, 공통 테스트, 기기 UI, 실제 Firebase 변경 수신, 구버전 스토어 업데이트를 각각 구분해 갱신한다. 초안 작성이나 Fake 결과로 완료 조건의 실서비스 수신과 구버전 설치 검증을 대체하지 않는다.
+2026-10-22~23 검증 코드 커밋: `45cee6e70edac0f8106a936f5946c4c06aaceede`. 이후 검증 기록만 갱신하는 커밋은 앱 소스를 바꾸지 않는다.
+
+| 항목 | 결과와 근거 |
+| --- | --- |
+| Android 원격 실행 경로 | `an-develop`과 `581-remote-config-update`를 허용했다. 실행 중인 검증기의 설정을 다시 읽게 한 뒤 해당 브랜치의 정확한 SHA로 작업이 수락됐다. |
+| Android Release, 단위 테스트 | `android-smoke` 작업 `d8ef89ffe3b74a4a962b124e3497cd6b` 성공. Release APK 빌드, 단위 테스트 388개 통과, 실패/오류/건너뜀 0. 공통 정책 테스트 9개를 포함한다. |
+| Android 설치와 실행 | 동일 서명의 기존 `1.1.1 (5)`을 확인하고 `1.3.1 (10)`을 덮어쓰기 설치했다. 프로세스와 MainActivity foreground를 확인했다. 실제 사용자 데이터 왕복과 전체 UI 시나리오의 증거는 아니다. |
+| iOS 공통 정책 | `iosSimulatorArm64Test`에서 MobilePolicyTest 9개 통과, 실패/오류/건너뜀 0. 첫 실행, 오프라인, 캐시 복원, 잘못된 정책, 숫자 버전 경계, 임시 설정과 응답 순서를 검증한다. |
+| iOS 앱과 UI | 최종 SHA 앱 빌드 성공. iOS 소스가 동일한 `e19a087f`에서는 iPhone 17 Pro, iOS 26.2로 강제/권장 UI 2개가 통과했고 캡처에서 문구와 버튼을 확인했다. 최종 SHA의 UI 실행은 테스트 도구의 Accessibility 초기화 시간 초과로 시작하지 못했다. 한 차례 재시도도 시뮬레이터 초기 데이터 이관 지연으로 중단했다. 최종 SHA UI 통과로 기록하지 않는다. |
+
+Android 원격 결과 묶음 `android-45cee6e7.zip`, iOS `RemotePolicy-45cee6e7.xcresult`와 공통 테스트 로그를 검증 세션의 결과 디렉터리에 수집한다. 원격 검증 프로필은 전체 Lint, AAB, Android instrumentation을 실행하지 않는다. Release 빌드에 포함된 lintVitalRelease 통과를 전체 Lint 통과로 해석하지 않는다.
+
+남은 확인:
+
+- Firebase 초안은 사용자 검토 대기이며 게시하지 않았다. 실제 값 변경과 앱 수신은 아직 미검증이다.
+- Android instrumentation의 팝업/입력 보존 테스트는 추가했지만 현재 원격 프로필이 지원하지 않아 실행하지 않았다. FakeAppUpdateManager의 전체 왕복도 기기에서 미검증이다.
+- Play 내부 앱 공유/테스트 트랙의 낮은 버전에서 Flexible/Immediate 설치를 끝까지 확인하지 않았다. 기존 앱을 adb로 덮어쓴 결과를 In-App Updates의 증거로 사용하지 않는다.
+- iOS App Store 이동과 실제 업데이트 후 복귀는 미검증이다. 이미 배포된 정책 미지원 앱을 이 구현으로 소급 차단할 수 없다.
+
+초안이나 Fake 결과로 실서비스 수신과 구버전 스토어 업데이트 완료 조건을 대체하지 않는다.
 
 ## 공식 근거
 
