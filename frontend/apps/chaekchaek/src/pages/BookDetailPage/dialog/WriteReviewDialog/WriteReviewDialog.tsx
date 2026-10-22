@@ -82,7 +82,7 @@ export const WriteReviewDialog = ({
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
-    await Promise.all([await writeReview(), await updateRating()]);
+    await Promise.all([writeReview(), updateRating()]);
 
     onReviewWritten();
     onClose();
@@ -91,37 +91,53 @@ export const WriteReviewDialog = ({
   const writeReview = async () => {
     const requestData = buildReviewRequest(values);
 
-    if (isAuthenticated) {
-      await postBookReviewMutate({
-        bookId,
-        ...requestData,
-      });
-
-      if (user) {
-        track('review_submit', {
-          actor_type: user.actorType,
-          actor_id: user.actorId,
-          isbn,
+    if (bookId) {
+      if (isAuthenticated) {
+        await postBookReviewMutate({
+          bookId,
+          ...requestData,
         });
       }
+      if (!isAuthenticated && guest) {
+        await postBookReviewMutate(
+          {
+            bookId,
+            ...requestData,
+          },
+          {
+            guestToken: guest.guestToken,
+          },
+        );
+      }
     } else {
-      if (!guest) return;
-      await postBookReviewByIsbnMutate(
-        {
+      if (isAuthenticated) {
+        await postBookReviewByIsbnMutate({
           isbn13: isbn,
           ...requestData,
-        },
-        {
-          guestToken: guest.guestToken,
-        },
-      );
-
-      track('review_submit', {
-        actor_type: guest.actorType,
-        actor_id: guest.actorId,
-        isbn,
-      });
+        });
+      }
+      if (!isAuthenticated && guest) {
+        await postBookReviewByIsbnMutate(
+          {
+            isbn13: isbn,
+            ...requestData,
+          },
+          {
+            guestToken: guest.guestToken,
+          },
+        );
+      }
     }
+
+    const actorType = user?.actorType ?? guest?.actorType;
+    const actorId = user?.actorId ?? guest?.actorId;
+
+    if (!(actorType && actorId)) return;
+    track('review_submit', {
+      actor_type: actorType,
+      actor_id: actorId,
+      isbn,
+    });
   };
 
   const [rating, setRating] = useState(defaultRating || 0);
