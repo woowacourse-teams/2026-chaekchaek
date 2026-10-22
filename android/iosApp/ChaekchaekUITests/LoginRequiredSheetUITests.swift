@@ -350,13 +350,14 @@ final class LoginRequiredSheetUITests: XCTestCase {
             // 필수 창 바깥을 눌러도 유지한다.
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).tap()
             XCTAssertTrue(title.exists)
-            let field = app.textFields.firstMatch
-            XCTAssertTrue(field.exists)
+            let field = app.textFields.firstMatch.exists ? app.textFields.firstMatch : app.textViews.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 5), app.debugDescription)
             field.tap()
             field.typeText("reader")
             app.buttons["확인"].tap()
             let failure = app.staticTexts["설정을 변경하지 못했어요"]
             XCTAssertTrue(failure.waitForExistence(timeout: 5))
+            XCTAssertEqual(field.value as? String, "reader")
             attachScreenshot(named: restored ? "기존 회원 닉네임 실패 입력 유지" : "신규 회원 닉네임 실패 입력 유지")
             app.buttons["다시 시도"].tap()
             XCTAssertTrue(title.waitForNonExistence(timeout: 10))
