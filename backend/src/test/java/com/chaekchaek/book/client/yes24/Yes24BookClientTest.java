@@ -1,27 +1,21 @@
-package com.chaekchaek.book.client;
+package com.chaekchaek.book.client.yes24;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.chaekchaek.book.client.BookDetailItem;
 import com.chaekchaek.book.client.fixture.Yes24MockServer;
 import com.chaekchaek.book.client.fixture.Yes24ResponseFixture;
-import com.chaekchaek.book.client.yes24.Yes24BookClient;
-import com.chaekchaek.book.client.yes24.Yes24ClientException;
-import com.chaekchaek.book.client.yes24.Yes24Properties;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.web.client.RestClient;
 
 class Yes24BookClientTest {
@@ -43,34 +37,6 @@ class Yes24BookClientTest {
     @AfterEach
     void tearDown() throws IOException {
         yes24Server.close();
-    }
-
-    @Test
-    @DisplayName("YES24 검색 요청을 보내고 실제 형식 응답을 검색 결과로 변환한다")
-    void should_ReturnMappedResult_When_Yes24ReturnsSearchResult() throws InterruptedException {
-        // given
-        yes24Server.응답한다(200, Yes24ResponseFixture.헤르만_헤세_검색_결과());
-
-        // when
-        BookSearchResult result = client.search("헤르만 헤세", 1);
-
-        // then
-        yes24Server.검색_요청을_검증한다("헤르만 헤세", 1);
-        assertThat(result.totalCount()).isEqualTo(1);
-        assertThat(result.nextPage()).isNull();
-        assertThat(result.items()).singleElement().satisfies(book ->
-                SoftAssertions.assertSoftly(softly -> {
-                    softly.assertThat(book.title()).isEqualTo("데미안");
-                    softly.assertThat(book.coverImageUrl())
-                            .isEqualTo("https://image.yes24.com/goods/101375809/L");
-                    softly.assertThat(book.authors()).containsExactly("헤르만 헤세");
-                    softly.assertThat(book.translators()).containsExactly("전영애");
-                    softly.assertThat(book.publishedDate()).isEqualTo(LocalDate.of(2000, 12, 20));
-                    softly.assertThat(book.isbn13()).isEqualTo("9788937460449");
-                    softly.assertThat(book.category()).isEqualTo("국내도서");
-                    softly.assertThat(book.publisher()).isEqualTo("민음사");
-                })
-        );
     }
 
     @Test
@@ -133,48 +99,6 @@ class Yes24BookClientTest {
                 .isInstanceOf(BookNotFoundException.class);
     }
 
-    @ParameterizedTest
-    @MethodSource("paginationCases")
-    @DisplayName("YES24 페이지 정보를 다음 페이지로 변환한다")
-    void should_ReturnNextPage_When_Yes24HasMoreResults(
-            int currentPage,
-            int pageSize,
-            int totalCount,
-            Integer expectedNextPage
-    ) {
-        // given
-        yes24Server.응답한다(
-                200,
-                Yes24ResponseFixture.검색_결과(currentPage, pageSize, totalCount)
-        );
-
-        // when
-        BookSearchResult result = client.search("데미안", currentPage);
-
-        // then
-        assertThat(result.nextPage()).isEqualTo(expectedNextPage);
-    }
-
-    @Test
-    @DisplayName("YES24가 검색 결과 없음 오류를 반환하면 빈 검색 결과로 변환한다")
-    void should_ReturnEmptyResult_When_Yes24ReturnsSearchNotFoundError() {
-        // given
-        yes24Server.응답한다(
-                404,
-                Yes24ResponseFixture.오류_응답("SEARCH_001", "검색 결과가 없습니다.")
-        );
-
-        // when
-        BookSearchResult result = client.search("없는책", 1);
-
-        // then
-        assertThat(result).isEqualTo(new BookSearchResult(
-                0,
-                null,
-                List.of()
-        ));
-    }
-
     @Test
     @DisplayName("YES24가 요청 제한 오류를 반환하면 외부 API 예외로 변환한다")
     void should_ThrowYes24ClientException_When_Yes24ReturnsRateLimitError() {
@@ -228,14 +152,14 @@ class Yes24BookClientTest {
     @DisplayName("YES24 응답의 출간일 형식이 잘못되면 외부 API 예외로 변환한다")
     void should_ThrowYes24ClientException_When_PublishDateIsMalformed() {
         // given
-        yes24Server.응답한다(200, Yes24ResponseFixture.잘못된_출간일_검색_결과());
+        yes24Server.응답한다(200, Yes24ResponseFixture.데미안_상세_결과().replace("2000-12-20", "not-a-date"));
 
         // when & then
         assertYes24ClientException();
     }
 
     private void assertYes24ClientException() {
-        assertThatThrownBy(() -> client.search("데미안", 1))
+        assertThatThrownBy(() -> client.findBookByIsbn13(ISBN13))
                 .isInstanceOf(Yes24ClientException.class);
     }
 

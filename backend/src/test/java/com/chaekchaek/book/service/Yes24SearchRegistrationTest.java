@@ -2,7 +2,6 @@ package com.chaekchaek.book.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.chaekchaek.book.client.BookSearchResult;
 import com.chaekchaek.book.client.fixture.Yes24MockServer;
 import com.chaekchaek.book.client.fixture.Yes24ResponseFixture;
 import com.chaekchaek.book.client.yes24.Yes24BookClient;
@@ -48,7 +47,6 @@ class Yes24SearchRegistrationTest {
     @DisplayName("YES24 검색 결과의 ISBN13으로 도서를 등록한다")
     void should_RegisterBook_When_ResolvingYes24SearchResult() throws InterruptedException {
         // given
-        yes24Server.응답한다(200, Yes24ResponseFixture.헤르만_헤세_검색_결과());
         yes24Server.응답한다(200, Yes24ResponseFixture.데미안_상세_결과());
         Yes24BookClient client = new Yes24BookClient(
                 RestClient.builder(),
@@ -57,12 +55,10 @@ class Yes24SearchRegistrationTest {
         BookResolver resolver = new BookResolver(client, bookRepository, transactionManager);
 
         // when
-        BookSearchResult searchResult = client.search("헤르만 헤세", 1);
-        Isbn13 isbn13 = new Isbn13(searchResult.items().get(0).isbn13());
+        Isbn13 isbn13 = new Isbn13("9788937460449");
         Book book = resolver.findOrCreate(isbn13);
 
         // then
-        yes24Server.검색_요청을_검증한다("헤르만 헤세", 1);
         yes24Server.상세_요청을_검증한다(isbn13.value());
         assertThat(bookRepository.findByIsbn13(isbn13))
                 .map(Book::getId)
