@@ -45,7 +45,11 @@ spring:
       auto-commit: true
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${JPA_DDL_AUTO:update}
+  flyway:
+    enabled: ${FLYWAY_ENABLED:false}
+    baseline-on-migrate: true
+    baseline-version: 0
   security:
     oauth2:
       client:
@@ -69,6 +73,8 @@ kakao:
   rest-api-key: ${KAKAO_REST_API_KEY:}
 
 app:
+  book-source: ${BOOK_SOURCE:yes24}
+
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
     local-base-url: ${FRONTEND_LOCAL_BASE_URL:http://localhost:3000}

@@ -38,6 +38,7 @@ dependencies {
 	// Application
 	implementation 'org.springframework.boot:spring-boot-h2console'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-flyway'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-restclient'
@@ -49,6 +50,7 @@ dependencies {
     implementation 'io.micrometer:micrometer-registry-prometheus'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'com.mysql:mysql-connector-j'
+	runtimeOnly 'org.flywaydb:flyway-mysql'
 	runtimeOnly 'org.webjars:swagger-ui:5.32.11'
 
 	// Code generation
@@ -729,9 +731,8 @@ tasks.register('verifyOpenApi') {
 				post: ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '404': ['REVIEW_NOT_FOUND'], '409': ['DELETED_RESOURCE']]
 			],
 			'/api/v1/replies/{replyId}': [
-				patch : ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND'],
-						'409': ['DELETED_RESOURCE']],
-				delete: ['401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND'], '409': ['DELETED_RESOURCE']]
+				patch : ['400': ['INVALID_REQUEST'], '401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND']],
+				delete: ['401': ['UNAUTHORIZED'], '403': ['FORBIDDEN'], '404': ['REPLY_NOT_FOUND']]
 			],
 			'/api/v1/reviews/{reviewId}/reactions': [
 				post  : ['401': ['UNAUTHORIZED'], '404': ['REVIEW_NOT_FOUND'], '409': ['REACTION_ALREADY_EXISTS', 'DELETED_RESOURCE']],

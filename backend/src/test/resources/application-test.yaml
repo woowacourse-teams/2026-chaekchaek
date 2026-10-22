@@ -8,6 +8,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+  flyway:
+    enabled: false
   security:
     oauth2:
       client:

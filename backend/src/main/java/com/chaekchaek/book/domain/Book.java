@@ -2,6 +2,7 @@ package com.chaekchaek.book.domain;
 
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -13,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,7 +22,7 @@ import java.util.List;
 
 @Entity
 @Table(
-        name = "books",
+        name = "book",
         uniqueConstraints = @UniqueConstraint(name = "uk_books_isbn13", columnNames = "isbn13")
 )
 public class Book {
@@ -48,14 +50,23 @@ public class Book {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(length = 1_000)
+    private String question;
+
+    @Column(columnDefinition = "TEXT")
+    private String plot;
+
+    @Column(columnDefinition = "TEXT")
+    private String extract;
+
     @ElementCollection
-    @CollectionTable(name = "book_authors", joinColumns = @JoinColumn(name = "book_id"))
+    @CollectionTable(name = "book_author", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "name", nullable = false)
     @OrderColumn(name = "display_order")
     private List<String> authors = new ArrayList<>();
 
     @ElementCollection
-    @CollectionTable(name = "book_translators", joinColumns = @JoinColumn(name = "book_id"))
+    @CollectionTable(name = "book_translator", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "name", nullable = false)
     @OrderColumn(name = "display_order")
     private List<String> translators = new ArrayList<>();
@@ -69,6 +80,13 @@ public class Book {
     private LocalDate publishedDate;
 
     private Integer totalPages;
+
+    @Column(length = 1_000)
+    private String purchaseUrl;
+
+    @Nullable
+    @Transient
+    private String source;
 
     protected Book() {
     }
@@ -85,7 +103,9 @@ public class Book {
             String publisher,
             String category,
             LocalDate publishedDate,
-            Integer totalPages
+            Integer totalPages,
+            String purchaseUrl,
+            String source
     ) {
         this.isbn13 = isbn13;
         this.title = title;
@@ -99,6 +119,8 @@ public class Book {
         this.category = category;
         this.publishedDate = publishedDate;
         this.totalPages = totalPages;
+        this.purchaseUrl = purchaseUrl;
+        this.source = source;
     }
 
     public static Book create(
@@ -113,7 +135,9 @@ public class Book {
             String publisher,
             String category,
             LocalDate publishedDate,
-            Integer totalPages
+            Integer totalPages,
+            String purchaseUrl,
+            String source
     ) {
         validateTotalPages(totalPages);
         return new Book(
@@ -128,7 +152,9 @@ public class Book {
                 publisher,
                 category,
                 publishedDate,
-                totalPages
+                totalPages,
+                purchaseUrl,
+                source
         );
     }
 
@@ -144,6 +170,12 @@ public class Book {
         if (!totalPages.equals(requestedTotalPages)) {
             throw new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT);
         }
+    }
+
+    public void updateQuestionContent(String question, String plot, String extract) {
+        this.question = question;
+        this.plot = plot;
+        this.extract = extract;
     }
 
     private static void validateTotalPages(Integer totalPages) {
@@ -180,6 +212,18 @@ public class Book {
         return description;
     }
 
+    public String getQuestion() {
+        return question;
+    }
+
+    public String getPlot() {
+        return plot;
+    }
+
+    public String getExtract() {
+        return extract;
+    }
+
     public List<String> getAuthors() {
         return List.copyOf(authors);
     }
@@ -202,5 +246,13 @@ public class Book {
 
     public Integer getTotalPages() {
         return totalPages;
+    }
+
+    public String getPurchaseUrl() {
+        return purchaseUrl;
+    }
+
+    public String getSource() {
+        return source;
     }
 }

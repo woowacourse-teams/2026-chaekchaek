@@ -64,6 +64,9 @@ class Yes24BookClientTest {
             softly.assertThat(result.category()).isEqualTo("국내도서");
             softly.assertThat(result.publisher()).isEqualTo("민음사");
             softly.assertThat(result.totalPages()).isEqualTo(240);
+            softly.assertThat(result.purchaseUrl())
+                    .isEqualTo("https://www.yes24.com/product/goods/101375809");
+            softly.assertThat(result.source()).isEqualTo("yes24");
         });
     }
 

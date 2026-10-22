@@ -86,7 +86,9 @@ class BookResolverTest {
                 ISBN13.value(),
                 "SF",
                 "알에이치코리아",
-                308
+                308,
+                "https://www.yes24.com/product/goods/118578901",
+                "yes24"
         ));
 
         // when
@@ -97,6 +99,8 @@ class BookResolverTest {
                 .isEqualTo("https://image.yes24.com/goods/118578901/side");
         assertThat(book.getBackImageUrl())
                 .isEqualTo("https://image.yes24.com/goods/118578901/back");
+        assertThat(book.getPurchaseUrl()).isEqualTo("https://www.yes24.com/product/goods/118578901");
+        assertThat(book.getSource()).isEqualTo("yes24");
     }
 
     @Test
@@ -169,7 +173,9 @@ class BookResolverTest {
                 ISBN13.value(),
                 "SF",
                 "알에이치코리아",
-                308
+                308,
+                "https://www.yes24.com/product/goods/118578901",
+                "yes24"
         );
     }
 }

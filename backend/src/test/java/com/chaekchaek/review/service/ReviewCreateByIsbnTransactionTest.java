@@ -69,7 +69,9 @@ class ReviewCreateByIsbnTransactionTest {
                     ISBN13.value(),
                     "SF",
                     "알에이치코리아",
-                    308
+                    308,
+                    "https://www.yes24.com/product/goods/101375809",
+                    "yes24"
             );
         });
         BookResolver bookResolver = new BookResolver(bookClient, bookRepository, transactionManager);

@@ -82,7 +82,9 @@ class RecommendedBookAuthorizationIntegrationTest {
                 "알에이치코리아",
                 "SF",
                 LocalDate.of(2015, 7, 10),
-                308
+                308,
+                null,
+                null
         ));
     }
 
@@ -173,6 +175,21 @@ class RecommendedBookAuthorizationIntegrationTest {
         // when & then
         mockMvc.perform(mutationRequest(method)
                         .cookie(new Cookie(AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME, accessToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        assertRecommendationUnchanged(method);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"POST", "DELETE"})
+    @DisplayName("일반 회원의 Bearer 헤더로 추천 도서 변경을 요청하면 거절한다")
+    void should_RejectMutation_When_MemberBearerHeaderIsProvided(String method) throws Exception {
+        // given
+        String accessToken = issueAccessToken(false);
+
+        // when & then
+        mockMvc.perform(mutationRequest(method)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
         assertRecommendationUnchanged(method);
