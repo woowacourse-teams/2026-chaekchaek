@@ -136,6 +136,8 @@ dependencies {
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.activity.compose)
+  // 업데이트 결과 수신에 쓰는 Activity Result API의 Fragment 호환 버전을 보장한다.
+  implementation("androidx.fragment:fragment:1.8.9")
   implementation(libs.androidx.credentials)
   implementation(libs.androidx.credentials.play.services.auth)
   implementation(libs.googleid)
