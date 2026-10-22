@@ -6,8 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.chaekchaek.book.client.BookDetailClient;
 import com.chaekchaek.book.client.BookDetailItem;
-import com.chaekchaek.book.client.BookSearchClient;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
@@ -54,7 +54,7 @@ class ReviewCreateByIsbnTransactionTest {
         // given
         AtomicBoolean externalCallInTransaction = new AtomicBoolean(true);
         AtomicBoolean reviewSaveInTransaction = new AtomicBoolean(false);
-        BookSearchClient bookClient = mock(BookSearchClient.class);
+        BookDetailClient bookClient = mock(BookDetailClient.class);
         when(bookClient.findBookByIsbn13(ISBN13)).thenAnswer(invocation -> {
             externalCallInTransaction.set(TransactionSynchronizationManager.isActualTransactionActive());
             return new BookDetailItem(

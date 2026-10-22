@@ -17,7 +17,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
 @Component
-public class Yes24BookClient implements BookSearchClient {
+public class Yes24BookClient implements BookSearchClient, BookDetailClient {
 
     private static final int PAGE_SIZE = 10;
 

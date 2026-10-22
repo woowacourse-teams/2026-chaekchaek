@@ -2,8 +2,8 @@ package com.chaekchaek.book.service;
 
 import static org.springframework.web.util.HtmlUtils.htmlUnescape;
 
+import com.chaekchaek.book.client.BookDetailClient;
 import com.chaekchaek.book.client.BookDetailItem;
-import com.chaekchaek.book.client.BookSearchClient;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
@@ -17,12 +17,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Component
 public class BookResolver {
 
-    private final BookSearchClient bookClient;
+    private final BookDetailClient bookClient;
     private final BookRepository bookRepository;
     private final TransactionTemplate newTransaction;
 
     public BookResolver(
-            BookSearchClient bookClient,
+            BookDetailClient bookClient,
             BookRepository bookRepository,
             PlatformTransactionManager transactionManager
     ) {
