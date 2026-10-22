@@ -4,7 +4,7 @@ export interface GetBooksBookIdReviewsParams {
   bookId: number;
   page: number;
   feed: string;
-  sort: string;
+  sort: 'LATEST' | 'OLDEST' | 'POPULAR';
 }
 
 export type GetBooksBookIdReviews = (
@@ -46,7 +46,6 @@ export type GetBooksBookIdReviews = (
     likedByMe: boolean;
     deleted: boolean;
     quote?: string;
-    currentPage: number;
     reviewId: number;
   }[];
 }>;

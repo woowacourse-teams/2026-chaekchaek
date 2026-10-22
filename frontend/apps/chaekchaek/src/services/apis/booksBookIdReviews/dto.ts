@@ -3,7 +3,7 @@ import type { RequestHeaders } from '@/services/context/requestHeaders';
 
 export interface GetBooksBookIdReviewsRequestDto {
   pathParams: [{ name: 'bookId'; value: number }];
-  query: { page: number; feed: string; sort: string };
+  query: { page: number; feed: string; sort: 'LATEST' | 'OLDEST' | 'POPULAR' };
   headers?: RequestHeaders;
 }
 
@@ -43,7 +43,6 @@ export type GetBooksBookIdReviewsResponseDto = ResponseDto<{
     likedByMe: boolean;
     deleted: boolean;
     quote?: string;
-    currentPage: number;
     reviewId: number;
   }[];
 }>;
