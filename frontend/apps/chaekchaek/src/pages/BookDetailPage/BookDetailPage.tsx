@@ -181,6 +181,7 @@ export const BookDetailPage = () => {
             </Split.Side>
             <Split.Content>
               <BookOverview
+                myRating={data?.myRecord?.myRating}
                 category={data?.category}
                 publishedDate={data?.publishedDate}
                 title={data?.title}
