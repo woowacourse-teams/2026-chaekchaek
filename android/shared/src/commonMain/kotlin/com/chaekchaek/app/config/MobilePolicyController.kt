@@ -75,6 +75,7 @@ class MobilePolicyController(
     fun dismissRecommended() {
         if (state.value.requirement != UpdateRequirement.Recommended) return
         dismissedPolicy = state.value.policy
+        if (override == UpdateRequirement.Recommended) override = UpdateRequirement.None
         mutableState.value = state.value.copy(requirement = UpdateRequirement.None)
     }
 

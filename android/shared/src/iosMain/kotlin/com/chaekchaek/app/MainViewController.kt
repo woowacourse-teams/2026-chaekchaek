@@ -54,14 +54,8 @@ fun MainViewController(
             BookQuestionAPreviewScreen(showControls = showQuestionAPreviewControls)
           }
         }
-      } else if (showPolicy && showPolicyDeveloperTools) {
-        ChaekchaekTheme {
-          Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).verticalScroll(rememberScrollState()).padding(24.dp)) {
-            com.chaekchaek.app.ui.common.ChaekOverlayButton("닫기", { showPolicy = false })
-            com.chaekchaek.app.ui.common.PolicyDeveloperContent(policyController, onPolicyRefresh)
-          }
-        }
-      } else App(
+      } else {
+        App(
         authPlatform = authPlatform,
         recentSearchStorage = recentSearchStorage,
         onboardingStorage = onboardingStorage,
@@ -70,9 +64,24 @@ fun MainViewController(
         policyController = policyController,
         onUpdate = onUpdate,
         homeHeaderAction = {
-          if (showPolicyDeveloperTools) com.chaekchaek.app.ui.common.ChaekOverlayButton("개발", { showPolicy = true })
+          if (showPolicyDeveloperTools) Box(Modifier.width(64.dp)) {
+            com.chaekchaek.app.ui.common.ChaekOverlayButton("개발", { showPolicy = true })
+          }
         },
       )
+        if (showPolicy && showPolicyDeveloperTools) {
+          ChaekchaekTheme {
+            androidx.compose.ui.window.Dialog(onDismissRequest = { showPolicy = false }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+              androidx.compose.material3.Surface {
+                Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).verticalScroll(rememberScrollState()).padding(24.dp)) {
+                  com.chaekchaek.app.ui.common.ChaekOverlayButton("닫기", { showPolicy = false })
+                  com.chaekchaek.app.ui.common.PolicyDeveloperContent(policyController, onPolicyRefresh)
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
