@@ -1,5 +1,5 @@
 export type FeedType = 'ALL' | 'MINE';
-export type SortType = 'LATEST' | 'OLDEST' | 'POPULAR' | 'PAGE';
+export type SortType = 'LATEST' | 'OLDEST' | 'POPULAR';
 
 export type RecentReply = {
   replyId: number;
@@ -28,7 +28,6 @@ export type BookReview = {
   createdAt: string;
   content: string;
   quote?: string;
-  currentPage?: number;
   likedByMe: boolean;
   likeCount: number;
   replyCount: number;

@@ -73,7 +73,6 @@ export const BookReviews = ({
                 { value: 'LATEST', text: '최신순' },
                 { value: 'OLDEST', text: '오래된순' },
                 { value: 'POPULAR', text: '인기순' },
-                { value: 'PAGE', text: '페이지순' },
               ]}
               onChange={onSortChange}
             />

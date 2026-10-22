@@ -86,7 +86,7 @@ export const BookDetailPage = () => {
   const [reviewsRequestParams, setReviewsRequestParams] = useState<{
     page: number;
     feed: 'ALL' | 'MINE';
-    sort: 'LATEST' | 'OLDEST' | 'POPULAR' | 'PAGE';
+    sort: 'LATEST' | 'OLDEST' | 'POPULAR';
   }>({
     page: 1,
     feed: 'ALL',
