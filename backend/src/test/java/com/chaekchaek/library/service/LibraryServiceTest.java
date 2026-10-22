@@ -3,10 +3,12 @@ package com.chaekchaek.library.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
@@ -15,10 +17,12 @@ import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
@@ -33,6 +37,7 @@ import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -46,6 +51,9 @@ class LibraryServiceTest {
             ZoneOffset.UTC
     );
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
+
+    @Mock
+    private LibraryRepository libraryRepository;
 
     @Mock
     private LibraryItemRepository libraryItemRepository;
@@ -64,6 +72,55 @@ class LibraryServiceTest {
 
     @Mock
     private PlatformTransactionManager transactionManager;
+
+    @Test
+    @DisplayName("회원의 서재를 현재 시각으로 생성하고 저장한 결과를 반환한다")
+    void should_ReturnSavedLibrary_When_Created() {
+        // given
+        Library saved = mock(Library.class);
+        when(libraryRepository.create(any(Library.class))).thenReturn(saved);
+        LibraryService service = service();
+
+        // when
+        Library actual = service.create(1L, "  가을에 읽을 책  ");
+
+        // then
+        ArgumentCaptor<Library> captor = ArgumentCaptor.forClass(Library.class);
+        verify(libraryRepository).create(captor.capture());
+        Library created = captor.getValue();
+        assertThat(created.isOwnedBy(1L)).isTrue();
+        assertThat(created.getName()).isEqualTo("가을에 읽을 책");
+        assertThat(created.getCreatedAt()).isEqualTo(CLOCK.instant());
+        assertThat(actual).isSameAs(saved);
+    }
+
+    @Test
+    @DisplayName("도메인이 허용하지 않는 서재 이름이면 저장하지 않는다")
+    void should_NotSaveLibrary_When_NameIsInvalid() {
+        // given
+        LibraryService service = service();
+
+        // when & then
+        assertThatThrownBy(() -> service.create(1L, "   "))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST)
+                );
+        verifyNoInteractions(libraryRepository);
+    }
+
+    @Test
+    @DisplayName("저장 중 발생한 서재명 중복 업무 오류를 그대로 전파한다")
+    void should_PropagateBusinessException_When_LibraryNameAlreadyExists() {
+        // given
+        BusinessException exception = new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS);
+        when(libraryRepository.create(any(Library.class))).thenThrow(exception);
+        LibraryService service = service();
+
+        // when & then
+        assertThatThrownBy(() -> service.create(1L, "가을에 읽을 책"))
+                .isSameAs(exception);
+    }
 
     @Test
     @DisplayName("일괄 완독 대상 중 전체 페이지가 없는 책이 있으면 어느 항목도 변경하지 않는다")
@@ -289,6 +346,7 @@ class LibraryServiceTest {
 
     private LibraryService service() {
         return new LibraryService(
+                libraryRepository,
                 libraryItemRepository,
                 bookRepository,
                 bookResolver,

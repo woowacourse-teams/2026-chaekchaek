@@ -7,6 +7,7 @@ import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
@@ -16,6 +17,7 @@ import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RatingComparisonBookResponse;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
@@ -43,6 +45,7 @@ public class LibraryService {
     private static final Logger log = LoggerFactory.getLogger(LibraryService.class);
     private static final int PAGE_SIZE = 10;
 
+    private final LibraryRepository libraryRepository;
     private final LibraryItemRepository libraryItemRepository;
     private final BookRepository bookRepository;
     private final BookResolver bookResolver;
@@ -52,6 +55,7 @@ public class LibraryService {
     private final TransactionTemplate transactionTemplate;
 
     public LibraryService(
+            LibraryRepository libraryRepository,
             LibraryItemRepository libraryItemRepository,
             BookRepository bookRepository,
             BookResolver bookResolver,
@@ -60,6 +64,7 @@ public class LibraryService {
             Clock clock,
             PlatformTransactionManager transactionManager
     ) {
+        this.libraryRepository = libraryRepository;
         this.libraryItemRepository = libraryItemRepository;
         this.bookRepository = bookRepository;
         this.bookResolver = bookResolver;
@@ -67,6 +72,12 @@ public class LibraryService {
         this.memberRepository = memberRepository;
         this.clock = clock;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
+    }
+
+    @Transactional
+    public Library create(long memberId, String name) {
+        Library library = Library.create(memberId, name, now());
+        return libraryRepository.create(library);
     }
 
     @Transactional(readOnly = true)
