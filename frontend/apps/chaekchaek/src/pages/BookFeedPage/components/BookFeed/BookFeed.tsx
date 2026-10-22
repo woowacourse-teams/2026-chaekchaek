@@ -1,4 +1,4 @@
-import { useState, type MouseEvent } from 'react';
+import { memo, useState, type MouseEvent } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 
 import {
@@ -38,7 +38,7 @@ import type { BookFeedProps } from './BookFeed.types';
 
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 
-export const BookFeed = (props: BookFeedProps) => {
+export const BookFeed = memo((props: BookFeedProps) => {
   const { review, onFeedRefresh } = props;
 
   const { isAuthenticated } = useAuthContext();
@@ -223,4 +223,4 @@ export const BookFeed = (props: BookFeedProps) => {
       {dialogElement}
     </>
   );
-};
+});
