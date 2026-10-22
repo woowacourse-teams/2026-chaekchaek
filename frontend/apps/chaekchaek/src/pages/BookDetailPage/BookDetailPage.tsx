@@ -18,6 +18,7 @@ import { postLibrary } from '@/services/apis/library/repository';
 import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
 import { getBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
 import { useLoadData } from '@/services/core/useLoadData';
+import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
 import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
@@ -27,9 +28,7 @@ import { BookInfo } from './components/BookInfo';
 import { BookReviews } from './components/BookReviews';
 
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
-import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
 import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
-import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
@@ -165,12 +164,8 @@ export const BookDetailPage = () => {
     };
   }, [reviewsDataAll]);
 
-  const [dialog, setDialog] = useState<
-    'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null
-  >(null);
-  const handleOpenDialog = (
-    dialog: 'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog',
-  ) => {
+  const [dialog, setDialog] = useState<'RegisterLibraryDialog' | 'UpdateRatingDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'RegisterLibraryDialog' | 'UpdateRatingDialog') => {
     if (!isAuthenticated) return handleOpenLoginDialog();
     setDialog(dialog);
   };
@@ -178,9 +173,7 @@ export const BookDetailPage = () => {
     setDialog(null);
   };
 
-  const renderDialog = (
-    dialog: 'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null,
-  ) => {
+  const renderDialog = (dialog: 'RegisterLibraryDialog' | 'UpdateRatingDialog' | null) => {
     switch (dialog) {
       case 'RegisterLibraryDialog':
         return (
@@ -192,19 +185,7 @@ export const BookDetailPage = () => {
             />
           )
         );
-      case 'UpdateCurrentPageDialog':
-        return (
-          data?.bookId && (
-            <UpdateCurrentPageDialog
-              bookId={data?.bookId}
-              currentPage={data?.myRecord?.currentPage || 0}
-              onCurrentPageUpdated={async () => {
-                await refetchGetBooksIsbnLoadData();
-              }}
-              onClose={handleCloseDialog}
-            />
-          )
-        );
+
       case 'UpdateRatingDialog':
         return (
           data?.bookId && (
@@ -238,8 +219,6 @@ export const BookDetailPage = () => {
               <BookInfo
                 myRecord={data?.myRecord ?? null}
                 readingStatus={data?.myRecord?.status}
-                currentPage={data?.myRecord?.currentPage}
-                totalPages={data?.totalPages}
                 category={data?.category}
                 publishedDate={data?.publishedDate}
                 isbn13={data?.isbn13}
@@ -253,9 +232,6 @@ export const BookDetailPage = () => {
                   handleOpenDialog('UpdateRatingDialog');
                 }}
                 onReadingStatusChange={handleRegisterLibrary}
-                onCurrentPageUpdate={() => {
-                  handleOpenDialog('UpdateCurrentPageDialog');
-                }}
               />
             </Split.Side>
             <Split.Content>

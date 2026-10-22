@@ -6,7 +6,6 @@ import {
   Choice,
   DataInfo,
   Icon,
-  ProgressBar,
   Rating,
   Surface,
   Title,
@@ -21,8 +20,6 @@ import type { BookInfoProps } from './BookInfo.types';
 export const BookInfo = ({
   myRecord,
   readingStatus,
-  currentPage,
-  totalPages,
   category,
   publishedDate,
   isbn13,
@@ -32,10 +29,7 @@ export const BookInfo = ({
   onRegistryLibrary,
   onRatingCreate,
   onReadingStatusChange,
-  onCurrentPageUpdate,
 }: BookInfoProps) => {
-  const readPageCount = currentPage || 0;
-  const bookPageCount = totalPages || 0;
   const formattedCategory = category?.replace(/\s*>\s*/g, ' > ');
 
   const handleClickRating = () => {
@@ -43,14 +37,6 @@ export const BookInfo = ({
 
     track('rating_open');
     onRatingCreate();
-  };
-
-  const handleClickCurrentPage = () => {
-    if (!myRecord) return onRegistryLibrary();
-
-    track('current_page_open');
-
-    onCurrentPageUpdate();
   };
 
   return (
@@ -96,24 +82,6 @@ export const BookInfo = ({
             }
           />
         </Banner>
-        <Title
-          level="caption"
-          trailing={
-            <Button size="x-small" shape="link" variant="ghost" onClick={handleClickCurrentPage}>
-              현재 읽은 쪽수 입력
-            </Button>
-          }
-        >
-          현재 읽은 범위
-        </Title>
-        <ProgressBar
-          sx={{ mt: 6 }}
-          variant={readPageCount !== bookPageCount ? 'accent' : 'subtle'}
-          value={readPageCount}
-          max={bookPageCount}
-          title={`${readPageCount} / ${bookPageCount}쪽`}
-          label={`${Math.ceil(readPageCount / bookPageCount)}%`}
-        />
       </Surface>
       <DataInfo sx={{ mt: 4 }} heading="책 정보">
         {formattedCategory && <DataInfo.Item title="장르" content={formattedCategory} />}

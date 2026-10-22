@@ -7,8 +7,6 @@ type MyRecord = {
 export type BookInfoProps = {
   myRecord: MyRecord | null;
   readingStatus: string | undefined;
-  currentPage: number | undefined;
-  totalPages: number | undefined;
   category: string | undefined;
   publishedDate: string | undefined;
   isbn13: string | undefined;
@@ -18,5 +16,4 @@ export type BookInfoProps = {
   onRegistryLibrary: () => void;
   onRatingCreate: () => void;
   onReadingStatusChange: (readingStatus: string) => void;
-  onCurrentPageUpdate: () => void;
 };
