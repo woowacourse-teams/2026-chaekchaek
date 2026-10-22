@@ -8,6 +8,7 @@ import { useFormValues } from '@/hooks/useFormValues';
 import { useExecute } from '@/services/core/useExecute';
 import { postBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
 import { postBooksByIsbnIsbn13Reviews } from '@/services/apis/booksByIsbnIsbn13Reviews/repository';
+import { putLibraryBookIdRating } from '@/services/apis/libraryBookIdRating/repository';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
@@ -115,6 +116,8 @@ export const WriteReviewDialog = ({
       });
     }
 
+    await updateRating();
+
     onReviewWritten();
     onClose();
   };
@@ -126,6 +129,18 @@ export const WriteReviewDialog = ({
 
   const ratingMessageNumber = getRatingMessageNumber(rating);
   const ratingMessage = RatingMessages[ratingMessageNumber as keyof typeof RatingMessages] || '-';
+
+  const { mutate } = useExecute({
+    executeFn: putLibraryBookIdRating,
+  });
+
+  const updateRating = async () => {
+    if (rating === defaultRating) return;
+
+    await mutate({ bookId, rating });
+
+    track('rating_submit');
+  };
 
   return (
     <Dialog size="large" onClose={onClose}>
