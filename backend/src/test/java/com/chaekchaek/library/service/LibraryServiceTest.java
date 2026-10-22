@@ -11,6 +11,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
@@ -35,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +47,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,6 +58,9 @@ class LibraryServiceTest {
             ZoneOffset.UTC
     );
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
+
+    private final Logger logger = (Logger) LoggerFactory.getLogger(LibraryService.class);
+    private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
 
     @Mock
     private LibraryRepository libraryRepository;
@@ -73,6 +82,18 @@ class LibraryServiceTest {
 
     @Mock
     private PlatformTransactionManager transactionManager;
+
+    @BeforeEach
+    void setUp() {
+        appender.start();
+        logger.addAppender(appender);
+    }
+
+    @AfterEach
+    void tearDown() {
+        logger.detachAppender(appender);
+        appender.stop();
+    }
 
     @Test
     @DisplayName("회원의 서재를 현재 시각으로 생성하고 저장한 결과를 반환한다")
@@ -96,6 +117,15 @@ class LibraryServiceTest {
         assertThat(created.getCreatedAt()).isEqualTo(CLOCK.instant());
         assertThat(actual.libraryId()).isEqualTo(7L);
         assertThat(actual.name()).isEqualTo("가을에 읽을 책");
+        assertThat(appender.list).singleElement()
+                .satisfies(event -> assertThat(event.getKeyValuePairs())
+                        .extracting(pair -> pair.key, pair -> pair.value)
+                        .containsExactlyInAnyOrder(
+                                tuple("type", "event"),
+                                tuple("event", "library_created"),
+                                tuple("memberId", 1L),
+                                tuple("libraryId", 7L)
+                        ));
     }
 
     @Test
@@ -111,6 +141,21 @@ class LibraryServiceTest {
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST)
                 );
         verifyNoInteractions(libraryRepository);
+        assertThat(appender.list).isEmpty();
+    }
+
+    @Test
+    @DisplayName("서재 저장이 실패하면 생성 이벤트를 기록하지 않는다")
+    void should_NotLogCreatedEvent_When_PersistenceFails() {
+        // given
+        when(libraryRepository.create(any(Library.class)))
+                .thenThrow(new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS));
+        LibraryService service = service();
+
+        // when & then
+        assertThatThrownBy(() -> service.create(1L, "가을에 읽을 책"))
+                .isInstanceOf(BusinessException.class);
+        assertThat(appender.list).isEmpty();
     }
 
     @Test

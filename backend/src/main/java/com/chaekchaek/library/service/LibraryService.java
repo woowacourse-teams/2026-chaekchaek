@@ -78,7 +78,14 @@ public class LibraryService {
     @Transactional
     public LibraryResponse create(long memberId, String name) {
         Library library = Library.create(memberId, name, now());
-        return LibraryResponse.from(libraryRepository.create(library));
+        Library saved = libraryRepository.create(library);
+        log.atInfo()
+                .addKeyValue("type", "event")
+                .addKeyValue("event", "library_created")
+                .addKeyValue("memberId", memberId)
+                .addKeyValue("libraryId", saved.getId())
+                .log("Library created");
+        return LibraryResponse.from(saved);
     }
 
     @Transactional(readOnly = true)
