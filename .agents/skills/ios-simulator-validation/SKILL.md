@@ -7,9 +7,11 @@ description: 책췍 KMP iOS 앱을 iOS Simulator에서 빌드, 테스트, UI 조
 
 대상은 `android/iosApp/iosApp.xcodeproj`의 `Chaekchaek` scheme이다.
 
-## 로컬 검증 실행권
+## 플랫폼별 검증 실행권
 
-빌드·Simulator 부팅·테스트·아카이브 전에 `~/.agents/skills/mobile-validation-queue/SKILL.md`를 읽고 공용 실행기로 실행한다. 같은 Mac의 Android 빌드·검증과 동시에 무거운 작업을 시작하지 않는다. 명시적 UDID를 사용하고 다른 세션이 실행 중인 Simulator를 인수하거나 종료하지 않는다. 자신이 시작한 기기 정리까지 슬롯을 유지한다. `test-ios-hig.sh`는 실행기를 자체 호출하므로 중복 대기 없이 같은 슬롯을 사용한다.
+iOS 빌드·Simulator 부팅·테스트·아카이브 전에 `~/.agents/skills/mobile-validation-queue/SKILL.md`를 읽고 공용 실행기로 실행한다. 같은 Mac의 Android 빌드·검증과 동시에 무거운 작업을 시작하지 않는다. 명시적 UDID를 사용하고 다른 세션이 실행 중인 Simulator를 인수하거나 종료하지 않는다. 자신이 시작한 기기 정리까지 슬롯을 유지한다. `test-ios-hig.sh`는 실행기를 자체 호출하므로 중복 대기 없이 같은 슬롯을 사용한다.
+
+Android 검증은 `~/.agents/skills/plipa-remote-validation/SKILL.md`로 제출한다. 원격 작업 대기는 Mac 슬롯을 점유하지 않으므로 같은 SHA의 iOS 검증과 병행할 수 있다. 설정 누락·장애·미지원 범위에서 자동으로 로컬 Android를 실행하지 않는다. 사용자에게 명시적으로 허용된 로컬 Android도 공용 대기열을 사용한다.
 
 ## 원칙
 

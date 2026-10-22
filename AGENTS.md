@@ -18,11 +18,13 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 - 설치, 조회, 빌드, 테스트, 디바이스 실행처럼 저장소 파일을 변경하지 않는 작업에는 새
   브랜치를 만들지 않는다.
 
-## 동일 기능 담당과 로컬 검증 대기열
+## 동일 기능 담당과 플랫폼별 검증 경로
 
-- Codex와 Claude Code 모두 기능 구현을 시작하기 전에 `~/.agents/skills/task-coordination/SKILL.md`를 읽고 공용 담당 목록을 조회·등록한다. 같은 기능을 별도 세션에서 다시 구현하지 않는다. 자동 세션 ID가 없는 도구는 대화 동안 고정된 `AGENT_SESSION_ID`를 지정한다.
-- 로컬 모바일 빌드·부팅·설치·테스트는 `~/.agents/skills/mobile-validation-queue/SKILL.md`의 실행기로 감싼다. Android 기기 임대는 슬롯 안에서 추가로 적용한다. 대기 중 다른 기기를 새로 띄우지 않는다. 양 플랫폼 검증 범위는 유지하고 같은 Mac에서는 순서대로 실행한다.
-- `android/scripts/test-ios-hig.sh`는 직접 실행해도 대기열을 거친다. 다른 빌드·검증 명령도 실행기로 감싸고, 자신이 시작한 기기 정리까지 슬롯을 유지한다. 원격 플리파 연동은 별도 작업이다.
+- Codex와 Claude Code 모두 기능 구현 전에 `~/.agents/skills/task-coordination/SKILL.md`를 읽고 담당 목록을 조회·등록한다. 같은 기능을 별도 세션에서 중복 구현하지 않는다. 자동 세션 ID가 없으면 대화 동안 고정된 `AGENT_SESSION_ID`를 지정한다.
+- Android 검증은 `~/.agents/skills/plipa-remote-validation/SKILL.md`를 먼저 읽고 플리파 원격에 제출한다. 대상 저장소·허용 ref·프로필과 정확한 SHA를 확인한다. 미커밋 변경이나 다른 SHA의 결과를 현재 변경의 검증으로 사용하지 않는다.
+- iOS 빌드·Simulator·테스트·Archive는 `~/.agents/skills/mobile-validation-queue/SKILL.md`의 공용 실행기로 감싼다. 명시적 UDID를 사용하고 자신이 시작한 기기 정리까지 슬롯을 유지한다. `android/scripts/test-ios-hig.sh`는 직접 실행해도 대기열을 거친다.
+- 원격 Android는 Mac 슬롯을 잡지 않으므로 같은 SHA의 iOS 로컬 검증과 병행할 수 있다. 같은 Mac의 무거운 작업은 직렬 실행한다. 로컬 Android는 사용자가 명시적으로 허용한 경우에만 공용 대기열 안에서 기기 임대·서명·데이터 보존 검사를 거쳐 수행한다.
+- 원격 설정 누락·장애·미지원 검증은 사유와 미검증 범위를 보고하고 자동으로 로컬로 전환하지 않는다. 현재 `android-smoke`의 APK·단위 테스트·설치·실행 결과는 AAB·Lint·로그인·저장 등 전체 UI 검증을 대신하지 않는다. 양 플랫폼의 동일 시나리오 요구는 유지한다.
 
 ## Android와 iOS 동작 일치 (필수)
 
