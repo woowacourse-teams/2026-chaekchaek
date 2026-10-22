@@ -182,6 +182,7 @@ private var policyDeveloperToolsEnabled: Bool {
 }
 
 /// UIKit과 Firebase 콜백은 메인 스레드에서 공통 상태로 전달한다.
+@MainActor
 private final class IOSRemotePolicy {
     let controller: MobilePolicyController
     private let remote = RemoteConfig.remoteConfig()
@@ -200,8 +201,8 @@ private final class IOSRemotePolicy {
         settings.fetchTimeout = 10
         remote.configSettings = settings
         remote.setDefaults(["mobile_policy_v1": MobilePolicy.companion.encode(policy: MobilePolicy(schemaVersion: 1, androidMinimumVersionCode: 0, androidLatestVersionCode: 0, iosMinimumVersion: "0.0.0", iosLatestVersion: "0.0.0", verificationMessage: "")) as NSString])
-        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in self?.start() })
-        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in self?.stop() })
+        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in Task { @MainActor in self?.start() } })
+        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in Task { @MainActor in self?.stop() } })
 #if DEBUG
         let args = ProcessInfo.processInfo.arguments
         if args.contains("-uiTestingRequiredUpdate") { controller.overrideRequirement(requirement: .required) }
@@ -210,19 +211,19 @@ private final class IOSRemotePolicy {
         start()
     }
 
-    deinit { stop(); observers.forEach(NotificationCenter.default.removeObserver) }
+    isolated deinit { stop(); observers.forEach(NotificationCenter.default.removeObserver) }
 
     private func start() {
         if registration == nil {
             registration = remote.addOnConfigUpdateListener { [weak self] update, error in
-                guard let self else { return }
-                if error != nil {
-                    DispatchQueue.main.async { self.controller.failed(message: "실시간 연결 실패: 마지막 정상 설정 유지") }
-                    return
-                }
-                guard update?.updatedKeys.contains("mobile_policy_v1") == true else { return }
-                self.remote.activate { _, error in
-                    DispatchQueue.main.async { if error == nil { self.accept() } else { self.controller.failed(message: "활성화 실패: 마지막 정상 설정 유지") } }
+                Task { @MainActor in
+                    guard let self else { return }
+                    if error != nil {
+                        self.controller.failed(message: "실시간 연결 실패: 마지막 정상 설정 유지")
+                        return
+                    }
+                    guard update?.updatedKeys.contains("mobile_policy_v1") == true else { return }
+                    self.activate()
                 }
             }
         }
@@ -234,13 +235,22 @@ private final class IOSRemotePolicy {
     func refresh(force: Bool) {
         guard controller.beginFetch() else { return }
         remote.fetch(withExpirationDuration: force ? 0 : 3600) { [weak self] status, error in
-            guard let self else { return }
-            guard error == nil, status == .success else {
-                DispatchQueue.main.async { self.controller.failed(message: "수신 실패: 마지막 정상 설정 유지") }
-                return
+            Task { @MainActor in
+                guard let self else { return }
+                guard error == nil, status == .success else {
+                    self.controller.failed(message: "수신 실패: 마지막 정상 설정 유지")
+                    return
+                }
+                self.activate()
             }
-            self.remote.activate { _, error in
-                DispatchQueue.main.async { if error == nil { self.accept() } else { self.controller.failed(message: "활성화 실패: 마지막 정상 설정 유지") } }
+        }
+    }
+
+    private func activate() {
+        remote.activate { [weak self] _, error in
+            Task { @MainActor in
+                guard let self else { return }
+                if error == nil { self.accept() } else { self.controller.failed(message: "활성화 실패: 마지막 정상 설정 유지") }
             }
         }
     }
