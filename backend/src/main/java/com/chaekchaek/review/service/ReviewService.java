@@ -722,7 +722,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     public enum Feed { ALL, MINE }
 
     public enum ReviewSort {
-        PAGE(Sort.by(Sort.Order.asc("currentPage").nullsLast(), Sort.Order.desc("id"))),
         LATEST(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))),
         OLDEST(Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id"))),
         POPULAR(Sort.unsorted());
