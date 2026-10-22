@@ -127,15 +127,20 @@ public class KakaoBookSearchClientTest {
     }
 
     @Test
-    @DisplayName("ISBN13이 없는 문서는 검색 결과에서 제외한다")
+    @DisplayName("ISBN13이 없거나 기준에 맞지 않는 문서는 검색 결과에서 제외한다")
     void should_ExcludeDocumentsWithoutIsbn13() {
         // given
         enqueueJson(200, """
                 {
-                  "meta": {"total_count": 2, "pageable_count": 2, "is_end": true},
+                  "meta": {"total_count": 7, "pageable_count": 7, "is_end": true},
                   "documents": [
                     {"title": "ISBN10만 있는 책", "isbn": "8996991341"},
-                    {"title": "ISBN13 형식이 아닌 책", "isbn": "1234567890123"}
+                    {"title": "잘못된 접두사", "isbn": "1234567890123"},
+                    {"title": "짧은 ISBN", "isbn": "978123456789"},
+                    {"title": "긴 ISBN", "isbn": "97912345678901"},
+                    {"title": "ISBN 누락"},
+                    {"title": "ISBN null", "isbn": null},
+                    {"title": "공백 ISBN", "isbn": "   "}
                   ]
                 }
                 """);
@@ -144,8 +149,31 @@ public class KakaoBookSearchClientTest {
         BookSearchResult result = client.search("책", 1);
 
         // then
-        assertThat(result.totalCount()).isEqualTo(2);
+        assertThat(result.totalCount()).isEqualTo(7);
         assertThat(result.items()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("979로 시작하는 13자리 ISBN도 검색 결과에 포함한다")
+    void should_IncludeDocument_When_Isbn13StartsWith979() {
+        // given
+        enqueueJson(200, """
+                {
+                  "meta": {"total_count": 1, "pageable_count": 1, "is_end": true},
+                  "documents": [
+                    {"title": "979 ISBN 책", "isbn": "9791234567896"}
+                  ]
+                }
+                """);
+
+        // when
+        BookSearchResult result = client.search("979 ISBN 책", 1);
+
+        // then
+        assertThat(result.items())
+                .singleElement()
+                .extracting(BookSearchItem::isbn13)
+                .isEqualTo("9791234567896");
     }
 
     @Test
