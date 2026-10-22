@@ -24,7 +24,12 @@ fun UpdatePolicyHost(controller: MobilePolicyController, onUpdate: () -> Unit) {
     if (state.requirement == UpdateRequirement.None && !state.downloadReady) return
     // Play 동의 창 뒤에 이 안내가 다시 나타나지 않게 한다. 취소하면 강제 안내가 복원된다.
     if (state.updating) return
-    val dismiss = { if (!required) controller.dismissRecommended() }
+    val dismiss = {
+        if (!required) {
+            controller.setDownloadReady(false)
+            controller.dismissRecommended()
+        }
+    }
     Dialog(
         onDismissRequest = dismiss,
         properties = DialogProperties(

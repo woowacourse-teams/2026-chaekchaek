@@ -34,7 +34,7 @@ data class MobilePolicy(
     }
 }
 
-data class AppVersion private constructor(val parts: List<Int>) : Comparable<AppVersion> {
+class AppVersion private constructor(private val parts: List<Int>) : Comparable<AppVersion> {
     override fun compareTo(other: AppVersion): Int {
         for (i in 0..2) {
             val result = parts[i].compareTo(other.parts[i])
