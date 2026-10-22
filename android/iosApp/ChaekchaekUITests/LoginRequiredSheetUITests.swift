@@ -357,9 +357,11 @@ final class LoginRequiredSheetUITests: XCTestCase {
             app.buttons["확인"].tap()
             let failure = app.staticTexts["설정을 변경하지 못했어요"]
             XCTAssertTrue(failure.waitForExistence(timeout: 5))
+            app.buttons["닫기"].tap()
+            XCTAssertTrue(field.waitForExistence(timeout: 5))
             XCTAssertEqual(field.value as? String, "reader")
             attachScreenshot(named: restored ? "기존 회원 닉네임 실패 입력 유지" : "신규 회원 닉네임 실패 입력 유지")
-            app.buttons["다시 시도"].tap()
+            app.buttons["확인"].tap()
             XCTAssertTrue(title.waitForNonExistence(timeout: 10))
             XCTAssertEqual(fixture.nicknameWrites, 2)
             app.terminate()
