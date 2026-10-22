@@ -25,6 +25,7 @@ import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
 import { BookOverview } from './components/BookOverview';
 import { BookInfo } from './components/BookInfo';
 import { BookReviews } from './components/BookReviews';
+import { BookQuestion } from './components/BookQuestion';
 
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
@@ -270,6 +271,8 @@ export const BookDetailPage = () => {
                 replyCount={data?.replyCount}
                 coverImageUrl={data?.coverImageUrl}
               />
+
+              {data?.bookQuestion && <BookQuestion {...data?.bookQuestion} />}
 
               <BookReviews
                 isbn={isbn}
