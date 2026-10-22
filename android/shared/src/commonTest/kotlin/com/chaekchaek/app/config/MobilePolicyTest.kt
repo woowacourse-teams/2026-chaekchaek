@@ -34,7 +34,7 @@ class MobilePolicyTest {
         val restarted = MobilePolicyController(InstalledApp(8), storage)
         restarted.failed("서버 장애")
         assertEquals("캐시", restarted.state.value.source)
-        assertEquals(123, restarted.state.value.lastReceivedAt)
+        assertEquals(123L, restarted.state.value.lastReceivedAt)
         assertEquals(policy, restarted.state.value.policy)
         assertEquals(UpdateRequirement.Required, restarted.state.value.requirement)
     }
@@ -51,7 +51,7 @@ class MobilePolicyTest {
             controller.received(it, 456)
             assertEquals(previous, saved)
             assertEquals(policy, controller.state.value.policy)
-            assertEquals(123, controller.state.value.lastReceivedAt)
+            assertEquals(123L, controller.state.value.lastReceivedAt)
             assertEquals(UpdateRequirement.Required, controller.state.value.requirement)
         }
     }
@@ -103,6 +103,6 @@ class MobilePolicyTest {
         controller.received(MobilePolicy.encode(policy), 200)
         controller.received(MobilePolicy.encode(MobilePolicy()), 100)
         assertEquals(policy, controller.state.value.policy)
-        assertEquals(200, controller.state.value.lastReceivedAt)
+        assertEquals(200L, controller.state.value.lastReceivedAt)
     }
 }

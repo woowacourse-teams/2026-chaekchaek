@@ -30,7 +30,7 @@ data class MobilePolicy(
             }
         }.getOrNull()
 
-        fun encode(policy: MobilePolicy): String = json.encodeToString(policy)
+        fun encode(policy: MobilePolicy): String = json.encodeToString(serializer(), policy)
     }
 }
 

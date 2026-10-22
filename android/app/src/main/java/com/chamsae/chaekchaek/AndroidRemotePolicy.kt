@@ -40,7 +40,9 @@ class AndroidRemotePolicy private constructor(context: Context) {
                 }
             }
             override fun onError(error: FirebaseRemoteConfigException) {
-                controller.failed("실시간 연결 실패: 마지막 정상 설정 유지")
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    controller.failed("실시간 연결 실패: 마지막 정상 설정 유지")
+                }
             }
         })
         refresh()
