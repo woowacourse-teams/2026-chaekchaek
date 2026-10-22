@@ -137,7 +137,7 @@ class ReviewControllerTest {
                 null,
                 List.of(reviewResponse())
         );
-        when(reviewService.findReviews(42L, 1, Feed.ALL, ReviewSort.PAGE)).thenReturn(response);
+        when(reviewService.findReviews(42L, 1, Feed.ALL, ReviewSort.LATEST)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/v1/books/{bookId}/reviews", 42L)
@@ -153,7 +153,7 @@ class ReviewControllerTest {
                                 parameterWithName("feed").optional()
                                         .description("피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL"),
                                 parameterWithName("sort").optional()
-                                        .description("정렬: PAGE, LATEST, OLDEST, POPULAR. 기본값 PAGE")
+                                        .description("정렬: LATEST, OLDEST, POPULAR. 기본값 LATEST")
                         ),
                         responseFields(pageReviewResponseFields()),
                         resource(ResourceSnippetParameters.builder()
@@ -169,13 +169,13 @@ class ReviewControllerTest {
                                                 "피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL",
                                                 true
                                         ),
-                                        queryParameter("sort", SimpleType.STRING, "정렬 기준. 기본값 PAGE", true)
+                                        queryParameter("sort", SimpleType.STRING, "정렬 기준. 기본값 LATEST", true)
                                 )
                                 .responseFields(pageReviewResponseFields())
                                 .build())
                 ));
 
-        verify(reviewService).findReviews(42L, 1, Feed.ALL, ReviewSort.PAGE);
+        verify(reviewService).findReviews(42L, 1, Feed.ALL, ReviewSort.LATEST);
     }
 
     @Test
@@ -594,7 +594,7 @@ class ReviewControllerTest {
     @DisplayName("내 감상 피드는 인증이 필요함을 문서화한다")
     void should_ReturnUnauthorized_When_FindingMyReviewsWithoutAuthentication() throws Exception {
         // given
-        when(reviewService.findReviews(42L, 1, Feed.MINE, ReviewSort.PAGE))
+        when(reviewService.findReviews(42L, 1, Feed.MINE, ReviewSort.LATEST))
                 .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
 
         // when & then
@@ -1138,7 +1138,7 @@ class ReviewControllerTest {
     @DisplayName("목록 대상과 페이지 오류를 문서화한다")
     void should_DocumentListErrors_When_TargetOrPageIsInvalid() throws Exception {
         // given
-        when(reviewService.findReviews(404L, 1, Feed.ALL, ReviewSort.PAGE))
+        when(reviewService.findReviews(404L, 1, Feed.ALL, ReviewSort.LATEST))
                 .thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
 
         // when & then
