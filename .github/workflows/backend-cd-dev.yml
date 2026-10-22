@@ -88,6 +88,8 @@ jobs:
           DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          FLYWAY_ENABLED: ${{ vars.FLYWAY_ENABLED }}
+          JPA_DDL_AUTO: ${{ vars.JPA_DDL_AUTO }}
           MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
@@ -128,6 +130,8 @@ jobs:
                 "DB_URL=$DB_URL" \
                 "DB_USERNAME=$DB_USERNAME" \
                 "DB_PASSWORD=$DB_PASSWORD" \
+                "FLYWAY_ENABLED=$FLYWAY_ENABLED" \
+                "JPA_DDL_AUTO=$JPA_DDL_AUTO" \
                 "FRONTEND_BASE_URL=$FRONTEND_BASE_URL" \
                 "FRONTEND_LOCAL_BASE_URL=$FRONTEND_LOCAL_BASE_URL" \
                 "FRONTEND_DEV_BASE_URL=$FRONTEND_DEV_BASE_URL" \

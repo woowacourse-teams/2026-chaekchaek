@@ -11,7 +11,7 @@ import java.time.Instant;
 
 @Entity
 @Table(
-        name = "recommended_books",
+        name = "recommended_book",
         uniqueConstraints = @UniqueConstraint(name = "uk_recommended_books_book_id", columnNames = "book_id")
 )
 public class RecommendedBook {
