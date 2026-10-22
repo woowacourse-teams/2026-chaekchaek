@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -234,6 +235,11 @@ fun QuestionAReviewInputSheet(
                 if (!editing) {
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                            .testTag("reviewAnonymousCheckbox")
+                            .semantics(mergeDescendants = true) {
+                                contentDescription = "익명으로 남기기"
+                                stateDescription = if (anonymousChoice) "익명" else "닉네임 공개"
+                            }
                             .background(MaterialTheme.colorScheme.surfaceVariant, ChaekOverlayTokens.inputShape)
                             .toggleable(value = anonymousChoice, enabled = !isSaving, role = Role.Checkbox,
                                 interactionSource = remember { MutableInteractionSource() }, indication = null,

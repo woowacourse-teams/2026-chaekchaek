@@ -105,6 +105,12 @@ final class QuestionAPreviewUITests: XCTestCase {
         XCTAssertTrue(content.waitForExistence(timeout: 5))
         content.tap()
         content.typeText("Question A failed draft")
+        let anonymous = app.descendants(matching: .any).matching(identifier: "reviewAnonymousCheckbox").firstMatch
+        reveal(anonymous, in: app)
+        XCTAssertTrue((anonymous.value as? String)?.contains("익명") == true, anonymous.debugDescription)
+        anonymous.tap()
+        XCTAssertTrue((anonymous.value as? String)?.contains("닉네임 공개") == true, anonymous.debugDescription)
+
         let quote = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "인상 깊은 문구 (선택)")).firstMatch
         reveal(quote, in: app)
         quote.tap()
@@ -123,6 +129,8 @@ final class QuestionAPreviewUITests: XCTestCase {
         let rating = app.otherElements.matching(NSPredicate(format: "label == %@ AND value != nil", "별점 (선택)")).firstMatch
         reveal(rating, in: app)
         XCTAssertTrue((rating.value as? String)?.contains("미선택") == true, rating.debugDescription)
+        reveal(anonymous, in: app)
+        XCTAssertTrue((anonymous.value as? String)?.contains("닉네임 공개") == true, anonymous.debugDescription)
         attachScreenshot(named: "저장 실패 뒤 미선택과 본문 문구 보존")
     }
 

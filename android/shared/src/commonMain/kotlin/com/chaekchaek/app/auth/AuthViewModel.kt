@@ -179,7 +179,10 @@ class AuthViewModel private constructor(
     _uiState.value = AuthUiState()
     val resume = pendingAction
     pendingAction = null
-    if (resume != null) scope.launch { resume(current.accessToken) }
+    val generation = authenticationGeneration
+    if (resume != null) scope.launch {
+      if (authenticationGeneration == generation && profileReady) resume(current.accessToken)
+    }
   }
 
   fun requireAuthentication(force: Boolean = false, action: suspend (accessToken: String) -> Unit) {

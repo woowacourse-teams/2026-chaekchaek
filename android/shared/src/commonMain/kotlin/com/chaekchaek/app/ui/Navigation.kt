@@ -137,6 +137,9 @@ private fun AppNavigationContent(
             onAnonymousReviewsChange = { anonymous, nickname ->
                 previewState = previewState.copy(anonymousReviews = anonymous, nickname = nickname)
             },
+            onNicknameChange = { nickname ->
+                previewState = previewState.copy(nickname = nickname, saveRevision = previewState.saveRevision + 1)
+            },
             onSignOut = {},
             onWithdraw = {},
             modifier = safeContent,
