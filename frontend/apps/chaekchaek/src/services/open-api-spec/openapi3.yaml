@@ -436,7 +436,7 @@ paths:
               schema: {$ref: '#/components/schemas/api-v1-feed-reviews1780686823'}
               examples:
                 feed-reviews: {value: '{"totalCount":41,"nextPage":2,"reviews":[{"reviewId":123,"content":"감상
-                    내용","quote":"인용 문장","currentPage":120,"isSpoiler":true,"createdAt":"2026-09-28T10:00:00Z","author":{"memberId":1,"displayName":"독자","profileImageUrl":null,"anonymous":false,"mine":false,"actorType":"MEMBER","profileStatus":"AVAILABLE"},"likeCount":7,"likedByMe":false,"replyCount":3,"bookId":42,"isbn13":"9788936433598","bookTitle":"도서
+                    내용","quote":"인용 문장","isSpoiler":true,"createdAt":"2026-09-28T10:00:00Z","author":{"memberId":1,"displayName":"독자","profileImageUrl":null,"anonymous":false,"mine":false,"actorType":"MEMBER","profileStatus":"AVAILABLE"},"likeCount":7,"likedByMe":false,"replyCount":3,"bookId":42,"isbn13":"9788936433598","bookTitle":"도서
                     제목","bookAuthors":["저자"],"bookCoverImageUrl":"https://example.com/cover.jpg"}]}'}
       security: *id001
   /api/v1/home/latest-reviews:
@@ -2276,7 +2276,6 @@ components:
               likedByMe: {type: boolean, description: 내가 좋아요를 눌렀는지 여부. 비로그인 시 false}
               quote: {type: string, description: 인용 문장, nullable: true}
               isbn13: {type: string, description: ISBN-13}
-              currentPage: {type: number, description: 감상 작성 시 읽은 페이지, nullable: true}
               reviewId: {type: number, description: 감상 ID}
               bookTitle: {type: string, description: 도서 제목}
         nextPage: {type: number, description: 다음 페이지 번호. 마지막 페이지면 null, nullable: true}
