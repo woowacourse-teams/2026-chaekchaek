@@ -74,11 +74,6 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             guestKeychain.clear()
         }
 #endif
-#if DEBUG
-        if launchArguments.contains("-uiTestingNicknameRestore") && launchArguments.contains("-uiTestingRefresh") {
-            keychain.write("fixture-refresh")
-        }
-#endif
         let appleSignIn = AppleSignInProvider()
         let uiTestingMyPage: Bool
         let uiTestingBookQuestionA: Bool
@@ -118,7 +113,14 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                     }
                 }
             },
-            readRefreshToken: keychain.read,
+            readRefreshToken: {
+#if DEBUG
+                if launchArguments.contains("-uiTestingNicknameRestore") && launchArguments.contains("-uiTestingRefresh") {
+                    return "fixture-refresh"
+                }
+#endif
+                return keychain.read()
+            },
             writeRefreshToken: keychain.write,
             clearRefreshToken: keychain.clear,
             requestAppleCredential: { onResult in
