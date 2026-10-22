@@ -26,4 +26,6 @@ export type GetBooksIsbnResponseDto = ResponseDto<{
   reviewCount: number;
   replyCount: number;
   myRatingCount: number;
+  purchaseUrl: string | null;
+  source: string;
 }>;
