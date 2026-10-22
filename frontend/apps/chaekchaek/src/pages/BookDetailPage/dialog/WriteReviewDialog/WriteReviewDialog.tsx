@@ -82,8 +82,7 @@ export const WriteReviewDialog = ({
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
-    await writeReview();
-    await updateRating();
+    await Promise.all([await writeReview(), await updateRating()]);
 
     onReviewWritten();
     onClose();
