@@ -11,22 +11,67 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    Page<Review> findByBookId(long bookId, Pageable pageable);
+    @Query(value = """
+            select r from Review r
+            where r.bookId = :bookId
+              and (r.deletedAt is null
+                   or exists (select rp.id from Reply rp where rp.reviewId = r.id and rp.deletedAt is null))
+            """, countQuery = """
+            select count(r) from Review r
+            where r.bookId = :bookId
+              and (r.deletedAt is null
+                   or exists (select rp.id from Reply rp where rp.reviewId = r.id and rp.deletedAt is null))
+            """)
+    Page<Review> findVisibleByBookId(long bookId, Pageable pageable);
 
-    Page<Review> findByBookIdAndActorId(long bookId, long actorId, Pageable pageable);
+    @Query(value = """
+            select r from Review r
+            where r.bookId = :bookId and r.actorId = :actorId
+              and (r.deletedAt is null
+                   or exists (select rp.id from Reply rp where rp.reviewId = r.id and rp.deletedAt is null))
+            """, countQuery = """
+            select count(r) from Review r
+            where r.bookId = :bookId and r.actorId = :actorId
+              and (r.deletedAt is null
+                   or exists (select rp.id from Reply rp where rp.reviewId = r.id and rp.deletedAt is null))
+            """)
+    Page<Review> findVisibleByBookIdAndActorId(long bookId, long actorId, Pageable pageable);
 
     List<Review> findByBookId(long bookId);
 
     List<Review> findByBookIdAndActorId(long bookId, long actorId);
 
-    long countByBookId(long bookId);
+    @Query("""
+            select count(r) from Review r
+            where r.bookId = :bookId
+              and (r.deletedAt is null
+                   or exists (select rp.id from Reply rp where rp.reviewId = r.id and rp.deletedAt is null))
+            """)
+    long countVisibleByBookId(long bookId);
 
-    long countByBookIdAndActorId(long bookId, long actorId);
+    @Query("""
+            select count(r) from Review r
+            where r.bookId = :bookId and r.actorId = :actorId
+              and (r.deletedAt is null
+                   or exists (select rp.id from Reply rp where rp.reviewId = r.id and rp.deletedAt is null))
+            """)
+    long countVisibleByBookIdAndActorId(long bookId, long actorId);
+
+    @Query("""
+            select case when count(r) > 0 then true else false end
+            from Review r
+            where r.id = :reviewId
+              and (r.deletedAt is null
+                   or exists (select rp.id from Reply rp where rp.reviewId = r.id and rp.deletedAt is null))
+            """)
+    boolean existsVisibleById(long reviewId);
 
     @Query(value = """
             select r.*
             from review r
             where r.book_id = :bookId
+              and (r.deleted_at is null
+                   or exists (select 1 from reply ar where ar.review_id = r.review_id and ar.deleted_at is null))
             order by (select count(*) from reaction rc where rc.review_id = r.review_id)
                     + (select count(*) from reply rp where rp.review_id = r.review_id and rp.deleted_at is null) desc,
                     r.review_id desc
@@ -38,6 +83,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             select r.*
             from review r
             where r.book_id = :bookId and r.actor_id = :actorId
+              and (r.deleted_at is null
+                   or exists (select 1 from reply ar where ar.review_id = r.review_id and ar.deleted_at is null))
             order by (select count(*) from reaction rc where rc.review_id = r.review_id)
                     + (select count(*) from reply rp where rp.review_id = r.review_id and rp.deleted_at is null) desc,
                     r.review_id desc
@@ -67,7 +114,14 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             """)
     Page<Review> findFeedReviews(Pageable pageable);
 
-    @Query("select r.bookId as bookId, count(r) as count from Review r where r.bookId in :bookIds group by r.bookId")
+    @Query("""
+            select r.bookId as bookId, count(r) as count
+            from Review r
+            where r.bookId in :bookIds
+              and (r.deletedAt is null
+                   or exists (select rp.id from Reply rp where rp.reviewId = r.id and rp.deletedAt is null))
+            group by r.bookId
+            """)
     List<BookCommentCount> countByBookIdInGroupByBookId(Collection<Long> bookIds);
 
     @Query(value = """
@@ -77,6 +131,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             from review r
             left join reply on reply.review_id = r.review_id and reply.deleted_at is null
             where r.deleted_at is null
+               or exists (select 1 from reply ar where ar.review_id = r.review_id and ar.deleted_at is null)
             group by r.book_id
             order by count(distinct r.review_id) + count(reply.reply_id) desc, r.book_id desc
             limit 10

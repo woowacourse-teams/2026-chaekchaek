@@ -159,7 +159,8 @@ class HomeControllerTest {
                 fieldWithPath("books[].coverImageUrl").type(JsonFieldType.STRING).description("표지 이미지 URL"),
                 fieldWithPath("books[].authors").type(JsonFieldType.ARRAY).description("저자 목록")
                         .attributes(key("itemsType").value(JsonFieldType.STRING)),
-                fieldWithPath("books[].reviewCount").type(JsonFieldType.NUMBER).description("삭제되지 않은 감상 수"),
+                fieldWithPath("books[].reviewCount").type(JsonFieldType.NUMBER)
+                        .description("감상 목록에 표시되는 감상 수(정상 답글이 남은 삭제 감상 포함)"),
                 fieldWithPath("books[].replyCount").type(JsonFieldType.NUMBER).description("삭제되지 않은 답글 수")
         };
     }
