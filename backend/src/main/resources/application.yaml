@@ -64,6 +64,10 @@ yes24:
   base-url: https://apis.yes24.com
   api-key: ${YES24_API_KEY}
 
+kakao:
+  base-url: https://dapi.kakao.com
+  rest-api-key: ${KAKAO_REST_API_KEY:}
+
 app:
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
