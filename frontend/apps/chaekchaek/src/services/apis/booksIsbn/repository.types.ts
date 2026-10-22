@@ -5,7 +5,6 @@ export interface GetBooksIsbnParams {
 export type GetBooksIsbn = (params: GetBooksIsbnParams) => Promise<{
   myRecord: {
     myRating: number;
-    currentPage: number;
     status: string;
   };
   coverImageUrl: string;

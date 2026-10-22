@@ -7,7 +7,6 @@ export interface GetBooksIsbnRequestDto {
 export type GetBooksIsbnResponseDto = ResponseDto<{
   myRecord: {
     myRating: number;
-    currentPage: number;
     status: string;
   };
   coverImageUrl: string;

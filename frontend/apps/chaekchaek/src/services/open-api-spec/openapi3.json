@@ -2615,7 +2615,7 @@
           "내 서재"
         ],
         "summary": "내 서재 항목 수정",
-        "description": "인증된 사용자가 읽기 상태 또는 현재 읽은 페이지 중 하나를 수정한다\n\n`status`와 `currentPage` 중 정확히 하나를 보내야 합니다. `totalPages`는 페이지 검증에만 사용되는 보조 값입니다. `WANT_TO_READ`는 `currentPage`를 0으로 만들고, `FINISHED`는 전체 페이지를 알아야 하며 마지막 페이지로 설정합니다. `currentPage`가 전체 페이지와 같으면 `FINISHED`, 작으면 `READING`이며 초과하면 `INVALID_READING_STATE`입니다.",
+        "description": "인증된 사용자가 독서 상태를 수정한다\n\n`status`로 독서 상태를 변경합니다. `totalPages`는 페이지 검증에만 사용되는 보조 값입니다. `FINISHED`로 변경하려면 전체 페이지를 알아야 합니다.",
         "operationId": "library-update",
         "parameters": [
           {
@@ -2641,12 +2641,6 @@
                     "nullable": true,
                     "minimum": 1
                   },
-                  "currentPage": {
-                    "type": "number",
-                    "description": "변경할 현재 읽은 페이지",
-                    "nullable": true,
-                    "minimum": 0
-                  },
                   "status": {
                     "type": "string",
                     "description": "변경할 읽기 상태",
@@ -2661,22 +2655,22 @@
               },
               "examples": {
                 "library-update-total-pages-conflict": {
-                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
+                  "value": "{\"status\":\"FINISHED\",\"totalPages\":368}\n"
                 },
                 "library-update-invalid-reading-state": {
-                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
+                  "value": "{\"status\":\"FINISHED\",\"totalPages\":368}\n"
                 },
                 "library-update-not-found": {
-                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
+                  "value": "{\"status\":\"FINISHED\",\"totalPages\":368}\n"
                 },
                 "library-update-invalid-request": {
-                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
+                  "value": "{\"status\":\"FINISHED\",\"totalPages\":368}\n"
                 },
                 "library-update": {
-                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
+                  "value": "{\"status\":\"FINISHED\",\"totalPages\":368}\n"
                 },
                 "library-update-unauthorized": {
-                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
+                  "value": "{\"status\":\"FINISHED\",\"totalPages\":368}\n"
                 }
               }
             }
@@ -5649,11 +5643,6 @@
                           "description": "내 별점",
                           "nullable": true
                         },
-                        "currentPage": {
-                          "type": "number",
-                          "description": "현재 페이지",
-                          "nullable": true
-                        },
                         "status": {
                           "type": "string",
                           "description": "읽기 상태",
@@ -5772,7 +5761,7 @@
                 },
                 "examples": {
                   "book-detail": {
-                    "value": "{\"bookId\":42,\"isbn13\":\"9788925568683\",\"title\":\"마션\",\"coverImageUrl\":\"https://image.aladin.co.kr/martian.jpg\",\"description\":\"책 설명\",\"authors\":[\"앤디 위어\"],\"translators\":[\"박아람\"],\"publisher\":\"알에이치코리아(RHK)\",\"category\":\"SF\",\"publishedDate\":\"2026-01-01\",\"totalPages\":308,\"reviewCount\":22,\"replyCount\":24,\"averageRating\":4.3,\"ratingCount\":21,\"myRatingCount\":12,\"myRecord\":{\"status\":\"READING\",\"currentPage\":120,\"myRating\":4.2}}"
+                    "value": "{\"bookId\":42,\"isbn13\":\"9788925568683\",\"title\":\"마션\",\"coverImageUrl\":\"https://image.aladin.co.kr/martian.jpg\",\"description\":\"책 설명\",\"authors\":[\"앤디 위어\"],\"translators\":[\"박아람\"],\"publisher\":\"알에이치코리아(RHK)\",\"category\":\"SF\",\"publishedDate\":\"2026-01-01\",\"totalPages\":308,\"reviewCount\":22,\"replyCount\":24,\"averageRating\":4.3,\"ratingCount\":21,\"myRatingCount\":12,\"myRecord\":{\"status\":\"READING\",\"myRating\":4.2}}"
                   },
                   "book-detail-without-library-record": {
                     "summary": "비로그인 사용자의 도서 상세",
@@ -11232,11 +11221,6 @@
                 "description": "내 별점",
                 "nullable": true
               },
-              "currentPage": {
-                "type": "number",
-                "description": "현재 페이지",
-                "nullable": true
-              },
               "status": {
                 "type": "string",
                 "description": "읽기 상태",
@@ -12588,12 +12572,6 @@
             "description": "변경할 전체 페이지 수",
             "nullable": true,
             "minimum": 1
-          },
-          "currentPage": {
-            "type": "number",
-            "description": "변경할 현재 읽은 페이지",
-            "nullable": true,
-            "minimum": 0
           },
           "status": {
             "type": "string",
