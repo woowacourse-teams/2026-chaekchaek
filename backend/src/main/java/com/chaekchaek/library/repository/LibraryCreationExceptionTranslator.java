@@ -23,6 +23,7 @@ final class LibraryCreationExceptionTranslator {
         }
         ErrorCode errorCode = ErrorCode.LIBRARY_NAME_ALREADY_EXISTS;
         log.atInfo()
+                .addKeyValue("type", "error")
                 .addKeyValue("errorCode", errorCode.getCode())
                 .addKeyValue("constraint", constraint)
                 .log("서재 이름 중복");

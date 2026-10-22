@@ -64,6 +64,7 @@ class LibraryCreationExceptionTranslatorTest {
                 .satisfies(event -> assertThat(event.getKeyValuePairs())
                         .extracting(pair -> pair.key, pair -> pair.value)
                         .contains(
+                                tuple("type", "error"),
                                 tuple("errorCode", ErrorCode.LIBRARY_NAME_ALREADY_EXISTS.getCode()),
                                 tuple("constraint", constraint)
                         ));
