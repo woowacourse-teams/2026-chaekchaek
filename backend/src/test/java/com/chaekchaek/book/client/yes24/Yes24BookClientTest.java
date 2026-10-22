@@ -9,13 +9,11 @@ import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.stream.Stream;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.Arguments;
 import org.springframework.web.client.RestClient;
 
 class Yes24BookClientTest {
@@ -161,12 +159,5 @@ class Yes24BookClientTest {
     private void assertYes24ClientException() {
         assertThatThrownBy(() -> client.findBookByIsbn13(ISBN13))
                 .isInstanceOf(Yes24ClientException.class);
-    }
-
-    private static Stream<Arguments> paginationCases() {
-        return Stream.of(
-                Arguments.of(2, 10, 21, 3),
-                Arguments.of(2, 10, 20, null)
-        );
     }
 }
