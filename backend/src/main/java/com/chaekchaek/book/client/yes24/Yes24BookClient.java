@@ -1,5 +1,10 @@
-package com.chaekchaek.book.client;
+package com.chaekchaek.book.client.yes24;
 
+import com.chaekchaek.book.client.BookDetailClient;
+import com.chaekchaek.book.client.BookDetailItem;
+import com.chaekchaek.book.client.BookSearchClient;
+import com.chaekchaek.book.client.BookSearchItem;
+import com.chaekchaek.book.client.BookSearchResult;
 import com.chaekchaek.book.client.dto.Yes24BookItem;
 import com.chaekchaek.book.client.dto.Yes24SearchData;
 import com.chaekchaek.book.client.dto.Yes24SearchResponse;
@@ -8,7 +13,6 @@ import com.chaekchaek.book.exception.BookNotFoundException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -26,16 +30,15 @@ public class Yes24BookClient implements BookSearchClient, BookDetailClient {
 
     public Yes24BookClient(
             RestClient.Builder builder,
-            @Value("${yes24.base-url}") String baseUrl,
-            @Value("${yes24.api-key}") String apiKey
+            Yes24Properties properties
     ) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(2));
         requestFactory.setReadTimeout(Duration.ofSeconds(3));
-        this.restClient = builder.baseUrl(baseUrl)
+        this.restClient = builder.baseUrl(properties.baseUrl())
                 .requestFactory(requestFactory)
                 .build();
-        this.apiKey = apiKey;
+        this.apiKey = properties.apiKey();
     }
 
     @Override

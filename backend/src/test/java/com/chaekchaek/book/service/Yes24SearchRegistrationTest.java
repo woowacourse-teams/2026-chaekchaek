@@ -3,9 +3,10 @@ package com.chaekchaek.book.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.chaekchaek.book.client.BookSearchResult;
-import com.chaekchaek.book.client.Yes24BookClient;
 import com.chaekchaek.book.client.fixture.Yes24MockServer;
 import com.chaekchaek.book.client.fixture.Yes24ResponseFixture;
+import com.chaekchaek.book.client.yes24.Yes24BookClient;
+import com.chaekchaek.book.client.yes24.Yes24Properties;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
@@ -51,8 +52,7 @@ class Yes24SearchRegistrationTest {
         yes24Server.응답한다(200, Yes24ResponseFixture.데미안_상세_결과());
         Yes24BookClient client = new Yes24BookClient(
                 RestClient.builder(),
-                yes24Server.baseUrl(),
-                yes24Server.apiKey()
+                new Yes24Properties(yes24Server.baseUrl(), yes24Server.apiKey())
         );
         BookResolver resolver = new BookResolver(client, bookRepository, transactionManager);
 
@@ -86,8 +86,7 @@ class Yes24SearchRegistrationTest {
         yes24Server.응답한다(200, response);
         Yes24BookClient client = new Yes24BookClient(
                 RestClient.builder(),
-                yes24Server.baseUrl(),
-                yes24Server.apiKey()
+                new Yes24Properties(yes24Server.baseUrl(), yes24Server.apiKey())
         );
         BookResolver resolver = new BookResolver(client, bookRepository, transactionManager);
         Isbn13 isbn13 = new Isbn13("9788937460586");

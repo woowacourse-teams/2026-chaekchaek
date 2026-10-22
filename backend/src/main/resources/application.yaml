@@ -62,7 +62,7 @@ spring:
 
 yes24:
   base-url: https://apis.yes24.com
-  api-key: ${YES24_API_KEY}
+  api-key: ${YES24_API_KEY:}
 
 kakao:
   base-url: https://dapi.kakao.com

@@ -3,7 +3,7 @@ package com.chaekchaek.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.chaekchaek.book.client.BookSearchClient;
-import com.chaekchaek.book.client.Yes24BookClient;
+import com.chaekchaek.book.client.yes24.Yes24BookClient;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.service.BookCommentCountReader;
 import com.chaekchaek.review.book.ReviewBookReader;

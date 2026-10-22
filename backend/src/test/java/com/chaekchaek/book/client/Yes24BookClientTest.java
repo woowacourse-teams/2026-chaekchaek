@@ -5,6 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.chaekchaek.book.client.fixture.Yes24MockServer;
 import com.chaekchaek.book.client.fixture.Yes24ResponseFixture;
+import com.chaekchaek.book.client.yes24.Yes24BookClient;
+import com.chaekchaek.book.client.yes24.Yes24ClientException;
+import com.chaekchaek.book.client.yes24.Yes24Properties;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import java.io.IOException;
@@ -33,8 +36,7 @@ class Yes24BookClientTest {
         yes24Server = new Yes24MockServer();
         client = new Yes24BookClient(
                 RestClient.builder(),
-                yes24Server.baseUrl(),
-                yes24Server.apiKey()
+                new Yes24Properties(yes24Server.baseUrl(), yes24Server.apiKey())
         );
     }
 
