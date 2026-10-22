@@ -21,7 +21,6 @@ export type PatchLibraryBookId = (params: PatchLibraryBookIdParams) => Promise<{
   totalPages: number;
   commentCount: number;
   status: string;
-  currentPage: number;
   rating: number;
   addedAt: string;
   readingUpdatedAt: string;

@@ -23,7 +23,6 @@ export type PatchLibraryBookIdResponseDto = ResponseDto<{
   totalPages: number;
   commentCount: number;
   status: string;
-  currentPage: number;
   rating: number;
   addedAt: string;
   readingUpdatedAt: string;

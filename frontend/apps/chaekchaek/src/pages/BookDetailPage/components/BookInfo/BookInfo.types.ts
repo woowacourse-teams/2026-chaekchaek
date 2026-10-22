@@ -1,6 +1,5 @@
 type MyRecord = {
   myRating: number;
-  currentPage: number;
   status: string;
 };
 
