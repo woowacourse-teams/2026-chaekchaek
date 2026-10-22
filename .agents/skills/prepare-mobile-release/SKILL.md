@@ -7,6 +7,10 @@ description: 책췍 Android 서명 AAB와 iOS TestFlight 릴리즈를 함께 준
 
 대상 저장소는 책췍이며 기준 브랜치는 `an-develop`이다.
 
+## 로컬 검증 실행권
+
+빌드·Simulator 부팅·테스트·아카이브 전에 `~/.agents/skills/mobile-validation-queue/SKILL.md`를 읽고 공용 실행기로 실행한다. 같은 Mac의 Android 빌드·검증과 동시에 무거운 작업을 시작하지 않는다. 명시적 UDID를 사용하고 다른 세션이 실행 중인 Simulator를 인수하거나 종료하지 않는다. 자신이 시작한 기기 정리까지 슬롯을 유지한다. `test-ios-hig.sh`는 실행기를 자체 호출하므로 중복 대기 없이 같은 슬롯을 사용한다.
+
 ## 작업 경계
 
 - 기본 GitHub 흐름은 프로젝트 `AGENTS.md`를 따른다.

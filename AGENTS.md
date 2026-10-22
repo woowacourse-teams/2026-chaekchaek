@@ -18,6 +18,12 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 - 설치, 조회, 빌드, 테스트, 디바이스 실행처럼 저장소 파일을 변경하지 않는 작업에는 새
   브랜치를 만들지 않는다.
 
+## 동일 기능 담당과 로컬 검증 대기열
+
+- Codex와 Claude Code 모두 기능 구현을 시작하기 전에 `~/.agents/skills/task-coordination/SKILL.md`를 읽고 공용 담당 목록을 조회·등록한다. 같은 기능을 별도 세션에서 다시 구현하지 않는다. 자동 세션 ID가 없는 도구는 대화 동안 고정된 `AGENT_SESSION_ID`를 지정한다.
+- 로컬 모바일 빌드·부팅·설치·테스트는 `~/.agents/skills/mobile-validation-queue/SKILL.md`의 실행기로 감싼다. Android 기기 임대는 슬롯 안에서 추가로 적용한다. 대기 중 다른 기기를 새로 띄우지 않는다. 양 플랫폼 검증 범위는 유지하고 같은 Mac에서는 순서대로 실행한다.
+- `android/scripts/test-ios-hig.sh`는 직접 실행해도 대기열을 거친다. 다른 빌드·검증 명령도 실행기로 감싸고, 자신이 시작한 기기 정리까지 슬롯을 유지한다. 원격 플리파 연동은 별도 작업이다.
+
 ## Android와 iOS 동작 일치 (필수)
 
 - 모바일 앱의 기능 구현과 버그 수정은 항상 Android와 iOS를 함께 대상으로 한다. 문제가

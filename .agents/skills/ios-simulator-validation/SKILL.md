@@ -7,9 +7,13 @@ description: 책췍 KMP iOS 앱을 iOS Simulator에서 빌드, 테스트, UI 조
 
 대상은 `android/iosApp/iosApp.xcodeproj`의 `Chaekchaek` scheme이다.
 
+## 로컬 검증 실행권
+
+빌드·Simulator 부팅·테스트·아카이브 전에 `~/.agents/skills/mobile-validation-queue/SKILL.md`를 읽고 공용 실행기로 실행한다. 같은 Mac의 Android 빌드·검증과 동시에 무거운 작업을 시작하지 않는다. 명시적 UDID를 사용하고 다른 세션이 실행 중인 Simulator를 인수하거나 종료하지 않는다. 자신이 시작한 기기 정리까지 슬롯을 유지한다. `test-ios-hig.sh`는 실행기를 자체 호출하므로 중복 대기 없이 같은 슬롯을 사용한다.
+
 ## 원칙
 
-- 동시에 부팅된 iOS Simulator는 최대 2대로 제한한다. 적합한 기기가 이미 있으면 새 기기를 부팅하지 않는다.
+- 동시에 부팅된 iOS Simulator는 최대 2대로 제한한다. 현재 대기열 작업이 직접 시작한 적합한 기기가 있으면 재사용한다. 다른 세션 또는 소유자가 불명확한 실행 기기는 인수하지 않는다.
 - Orca나 CLI 환경에서는 Computer Use 연결을 전제로 하지 않는다. 앱 UI 조작은 XCUITest, 기기와 앱 관리는 `xcrun simctl`을 사용한다.
 - 저장소를 변경하지 않는 검증을 우선한다. 영구 UI 테스트 추가가 필요하면 기존 작업 브랜치의 범위와 사용자 요청에 포함되는지 먼저 확인한다.
 - 앱 시작만 확인하고 화면 검증이 끝났다고 판단하지 않는다. 요청된 사용자 흐름을 재현하고 최종 상태를 스크린샷으로 확인한다.
@@ -76,3 +80,5 @@ Simulator 상태 설정, 대상 화면 도달, 스크린샷 또는 `performAcces
 - 재현은 기본 절차의 Simulator 선택과 상태 복원을 유지한 채 AX5로 설정하고, 같은 프로젝트 및 공유 scheme의 `xcodebuild test`에 `-only-testing:ChaekchaekUITests/QuestionAPreviewUITests/testPartiallyCoveredFiltersAndBackReturnAfterReferenceCloses`를 지정한다. 실패 시 xcresult의 감사 로그, 접근성 트리와 캡처를 보존한다. `xcrun xcresulttool export attachments --help`로 현재 옵션을 확인해 테스트 첨부 캡처를 추출할 수 있다. 추출한 캡처와 새로 촬영한 캡처의 출처를 구분한다.
 
 근거와 배포 상태는 [1.3.1 검증 기록](../../../docs/android-release-management.md#131-10)을 참고한다. Simulator 결과는 TestFlight 처리 완료나 실기기 검증을 대신하지 않는다.
+
+검증 진입점과 기기 보호를 변경하면 `python3 android/scripts/test-mobile-queue-integration.py`로 가짜 Apple 도구 기반 회귀 검사를 실행한다. 이 검사는 실제 Simulator 실행 증거와 구분한다.
