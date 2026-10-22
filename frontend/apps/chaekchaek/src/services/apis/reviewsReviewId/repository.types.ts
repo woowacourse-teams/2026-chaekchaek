@@ -10,11 +10,9 @@ export type DeleteReviewsReviewId = (
 ) => Promise<undefined>;
 export interface PatchReviewsReviewIdParams {
   reviewId: number;
-  chapter?: string | undefined;
   isSpoiler?: boolean | undefined;
   quote?: string | undefined;
   totalPages?: number | undefined;
-  currentPage?: number | undefined;
   content: string;
 }
 
@@ -22,7 +20,6 @@ export type PatchReviewsReviewId = (
   params: PatchReviewsReviewIdParams,
   context?: RequestContext,
 ) => Promise<{
-  chapter: string;
   author: {
     mine: boolean;
     displayName: string;
@@ -51,6 +48,5 @@ export type PatchReviewsReviewId = (
   likedByMe: boolean;
   deleted: boolean;
   quote: string;
-  currentPage: number;
   reviewId: number;
 }>;

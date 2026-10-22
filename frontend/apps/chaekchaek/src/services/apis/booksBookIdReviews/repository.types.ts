@@ -53,11 +53,9 @@ export type GetBooksBookIdReviews = (
 export interface PostBooksBookIdReviewsCommand {
   bookId: number;
   content: string;
-  chapter?: string | undefined;
   isSpoiler?: boolean | undefined;
   quote?: string | undefined;
   totalPages?: number | undefined;
-  currentPage?: number | undefined;
 }
 
 export type PostBooksBookIdReviews = (command: PostBooksBookIdReviewsCommand) => Promise<undefined>;

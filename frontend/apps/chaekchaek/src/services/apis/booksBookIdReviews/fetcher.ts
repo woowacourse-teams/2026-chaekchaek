@@ -24,12 +24,12 @@ import type { PostBooksBookIdReviewsRequestDto, PostBooksBookIdReviewsResponseDt
 
 export const postBooksBookIdReviews = async ({
   pathParams: [{ value: bookId }],
-  data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
+  data: { isSpoiler, quote, totalPages, content },
 }: PostBooksBookIdReviewsRequestDto): Promise<PostBooksBookIdReviewsResponseDto> => {
   const response = await instance(`/api/v1/books/${bookId}/reviews`, {
     method: 'post',
     // pathParams: [{ name: 'bookId', value: bookId }],
-    data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
+    data: { isSpoiler, quote, totalPages, content },
   });
 
   return response.data;

@@ -51,11 +51,9 @@ export interface PostBooksBookIdReviewsRequestDto {
   pathParams: [{ name: 'bookId'; value: number }];
   data: {
     content: string | undefined;
-    chapter?: string | undefined;
     isSpoiler?: boolean | undefined;
     quote?: string | undefined;
     totalPages?: number | undefined;
-    currentPage?: number | undefined;
   };
 }
 

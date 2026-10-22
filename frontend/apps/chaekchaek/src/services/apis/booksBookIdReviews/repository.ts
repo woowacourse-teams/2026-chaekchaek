@@ -29,12 +29,12 @@ import {
 import type { PostBooksBookIdReviews } from './repository.types';
 
 export const postBooksBookIdReviews: PostBooksBookIdReviews = async (model) => {
-  const { bookId, chapter, isSpoiler, quote, totalPages, currentPage, content } =
+  const { bookId, isSpoiler, quote, totalPages, content } =
     mapPostBooksBookIdReviewsModelToRequestDTO(model);
 
   const responseDTO = await fetcher.postBooksBookIdReviews({
     pathParams: [{ name: 'bookId', value: bookId }],
-    data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
+    data: { isSpoiler, quote, totalPages, content },
   });
 
   return mapPostBooksBookIdReviewsResponseDTOToModel(responseDTO);
