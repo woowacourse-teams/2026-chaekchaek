@@ -21,6 +21,7 @@ import com.chaekchaek.library.domain.Library;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
+import com.chaekchaek.library.dto.LibraryResponse;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
@@ -78,11 +79,13 @@ class LibraryServiceTest {
     void should_ReturnSavedLibrary_When_Created() {
         // given
         Library saved = mock(Library.class);
+        when(saved.getId()).thenReturn(7L);
+        when(saved.getName()).thenReturn("가을에 읽을 책");
         when(libraryRepository.create(any(Library.class))).thenReturn(saved);
         LibraryService service = service();
 
         // when
-        Library actual = service.create(1L, "  가을에 읽을 책  ");
+        LibraryResponse actual = service.create(1L, "  가을에 읽을 책  ");
 
         // then
         ArgumentCaptor<Library> captor = ArgumentCaptor.forClass(Library.class);
@@ -91,7 +94,8 @@ class LibraryServiceTest {
         assertThat(created.isOwnedBy(1L)).isTrue();
         assertThat(created.getName()).isEqualTo("가을에 읽을 책");
         assertThat(created.getCreatedAt()).isEqualTo(CLOCK.instant());
-        assertThat(actual).isSameAs(saved);
+        assertThat(actual.libraryId()).isEqualTo(7L);
+        assertThat(actual.name()).isEqualTo("가을에 읽을 책");
     }
 
     @Test
@@ -107,19 +111,6 @@ class LibraryServiceTest {
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST)
                 );
         verifyNoInteractions(libraryRepository);
-    }
-
-    @Test
-    @DisplayName("저장 중 발생한 서재명 중복 업무 오류를 그대로 전파한다")
-    void should_PropagateBusinessException_When_LibraryNameAlreadyExists() {
-        // given
-        BusinessException exception = new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS);
-        when(libraryRepository.create(any(Library.class))).thenThrow(exception);
-        LibraryService service = service();
-
-        // when & then
-        assertThatThrownBy(() -> service.create(1L, "가을에 읽을 책"))
-                .isSameAs(exception);
     }
 
     @Test

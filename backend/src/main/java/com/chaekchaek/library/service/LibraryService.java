@@ -13,6 +13,7 @@ import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
+import com.chaekchaek.library.dto.LibraryResponse;
 import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RatingComparisonBookResponse;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
@@ -75,9 +76,9 @@ public class LibraryService {
     }
 
     @Transactional
-    public Library create(long memberId, String name) {
+    public LibraryResponse create(long memberId, String name) {
         Library library = Library.create(memberId, name, now());
-        return libraryRepository.create(library);
+        return LibraryResponse.from(libraryRepository.create(library));
     }
 
     @Transactional(readOnly = true)
