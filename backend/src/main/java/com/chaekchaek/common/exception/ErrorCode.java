@@ -79,6 +79,10 @@ public enum ErrorCode {
     LIBRARY_NOT_FOUND(
             "LIBRARY_NOT_FOUND",
             "공개된 회원의 서재만 접근 가능합니다."),
+    LIBRARY_NAME_ALREADY_EXISTS(
+            "LIBRARY_NAME_ALREADY_EXISTS",
+            "같은 이름의 서재가 있습니다. 다른 이름을 입력해 주세요."
+    ),
     LIBRARY_ITEM_ALREADY_EXISTS(
             "LIBRARY_ITEM_ALREADY_EXISTS",
             "이미 서재에 등록된 책입니다."),

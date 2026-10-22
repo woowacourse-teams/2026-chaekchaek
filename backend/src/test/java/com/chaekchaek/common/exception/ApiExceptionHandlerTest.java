@@ -89,6 +89,22 @@ class ApiExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("서재 이름 중복은 충돌 응답과 업무 오류 코드로 변환한다")
+    void should_ReturnConflict_When_LibraryNameAlreadyExists() {
+        // given
+        BusinessException exception = new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS);
+
+        // when
+        ProblemDetail response = handler.handleBusinessException(exception, request);
+
+        // then
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
+        assertThat(response.getProperties())
+                .containsOnlyKeys("code")
+                .containsEntry("code", ErrorCode.LIBRARY_NAME_ALREADY_EXISTS.getCode());
+    }
+
+    @Test
     @DisplayName("4xx 비즈니스 예외는 요청 정보와 에러 코드를 필드로 기록하고 스택트레이스는 남기지 않는다")
     void should_LogFieldsWithoutStackTrace_When_ClientBusinessExceptionOccurs() {
         // given
