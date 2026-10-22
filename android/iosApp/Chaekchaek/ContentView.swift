@@ -216,13 +216,15 @@ private final class IOSRemotePolicy {
     private func start() {
         if registration == nil {
             registration = remote.addOnConfigUpdateListener { [weak self] update, error in
+                let failed = error != nil
+                let policyChanged = update?.updatedKeys.contains("mobile_policy_v1") == true
                 Task { @MainActor in
                     guard let self else { return }
-                    if error != nil {
+                    if failed {
                         self.controller.failed(message: "실시간 연결 실패: 마지막 정상 설정 유지")
                         return
                     }
-                    guard update?.updatedKeys.contains("mobile_policy_v1") == true else { return }
+                    guard policyChanged else { return }
                     self.activate()
                 }
             }
