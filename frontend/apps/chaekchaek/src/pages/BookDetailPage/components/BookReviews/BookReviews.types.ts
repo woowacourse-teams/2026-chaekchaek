@@ -42,6 +42,7 @@ export type BookReviewsProps = {
   feed: FeedType;
   sort: SortType;
   count: number | undefined;
+  myRating: number | undefined;
   reviews: BookReview[] | undefined;
   onFeedChange: (feed: FeedType) => void;
   onSortChange: (sort: SortType) => void;

@@ -32,6 +32,7 @@ const buildReviewRequest = (formValues: ReviewFormValues) => {
 export const WriteReviewDialog = ({
   bookId,
   isbn,
+  myRating: defaultRating,
   onReviewWritten,
   onClose,
 }: WriteReviewDialogProps) => {

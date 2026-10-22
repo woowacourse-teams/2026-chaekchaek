@@ -17,6 +17,7 @@ export const BookReviews = ({
   sort,
   feed,
   count,
+  myRating,
   reviews,
   onReviewsRefresh,
   onSortChange,
@@ -47,6 +48,7 @@ export const BookReviews = ({
             <WriteReviewDialog
               bookId={bookId}
               isbn={isbn}
+              myRating={myRating}
               onReviewWritten={onReviewsRefresh}
               onClose={handleCloseDialog}
             />

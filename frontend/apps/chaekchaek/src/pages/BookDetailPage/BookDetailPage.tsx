@@ -200,6 +200,7 @@ export const BookDetailPage = () => {
                 sort={reviewsRequestParams.sort}
                 feed={reviewsRequestParams.feed}
                 count={totalCount}
+                myRating={data?.myRecord?.myRating}
                 reviews={reviewsData}
                 onSortChange={(sort) => {
                   handleChangeReviewRequestParams({ name: 'sort', value: sort });
