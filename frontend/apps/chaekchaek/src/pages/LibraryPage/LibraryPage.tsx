@@ -13,7 +13,6 @@ import {
   Notice,
   OptionList,
   Pagination,
-  ProgressBar,
   Select,
   Split,
   Title,
@@ -432,17 +431,6 @@ export const LibraryPage = () => {
                           </>
                         }
                         content={item.authors.join(' · ')}
-                        description={
-                          <>
-                            {item.totalPages > 0 && (
-                              <ProgressBar
-                                variant={item.currentPage !== item.totalPages ? 'accent' : 'subtle'}
-                                value={item.currentPage}
-                                max={item.totalPages}
-                              />
-                            )}
-                          </>
-                        }
                       />
                       <List.Item.Trailing>
                         {!isEditing && <Icon.ArrowRightIcon />}
