@@ -523,6 +523,7 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def requiredLibraryOperations = [
+			'/api/v1/libraries'                       : ['post': ['201', '400', '401', '403', '409']],
 			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '404', '422']],
@@ -688,6 +689,7 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def problemResponseCodes = [
+			'/api/v1/libraries'                       : ['post': ['400', '401', '409']],
 			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '404', '422']],
@@ -773,6 +775,12 @@ tasks.register('verifyOpenApi') {
 		if ((locationHeader?.get('schema') as Map)?.get('type') != 'string') {
 			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/library 201 response')
 		}
+		def libraryCreationOperation = (paths.get('/api/v1/libraries') as Map).get('post') as Map
+		def libraryCreationLocation = ((((libraryCreationOperation.get('responses') as Map).get('201') as Map)
+				?.get('headers') as Map)?.get('Location') as Map)
+		if ((libraryCreationLocation?.get('schema') as Map)?.get('type') != 'string') {
+			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/libraries 201 response')
+		}
 
 		def libraryQueryParameters = (((paths.get('/api/v1/library') as Map).get('get') as Map)
 				?.get('parameters') as List)?.collectEntries { parameter -> [(parameter.get('name')): parameter] }
@@ -829,6 +837,15 @@ tasks.register('verifyOpenApi') {
 			def required = (schema?.get('required') as List) ?: []
 			def property = (schema?.get('properties') as Map)?.get(propertyName) as Map
 			return required.contains(propertyName) && property?.get('nullable') == true
+		}
+		def libraryCreationRequest = requestSchema('/api/v1/libraries', 'post')
+		if ((libraryCreationRequest?.get('required') as Set) != (['name'] as Set)
+				|| (libraryCreationRequest?.get('properties') as Map)?.get('name')?.get('type') != 'string') {
+			throw new GradleException('OpenAPI specification has invalid fields for POST /api/v1/libraries request')
+		}
+		def libraryCreationResponse = responseSchema('/api/v1/libraries', 'post', '201')
+		if ((libraryCreationResponse?.get('required') as Set) != (['libraryId', 'name'] as Set)) {
+			throw new GradleException('OpenAPI specification has invalid fields for POST /api/v1/libraries response')
 		}
 
 		[

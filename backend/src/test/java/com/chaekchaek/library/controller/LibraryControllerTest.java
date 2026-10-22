@@ -5,6 +5,7 @@ import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
@@ -33,6 +34,7 @@ import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
+import com.chaekchaek.library.dto.LibraryResponse;
 import com.chaekchaek.library.dto.PublicLibraryItemResponse;
 import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.PublicMemberResponse;
@@ -52,6 +54,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
 import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
@@ -79,8 +83,17 @@ class LibraryControllerTest {
     private static final long BOOK_ID = 10L;
     private static final String ISBN13 = "9788936433598";
     private static final String LIBRARY_TAG = "내 서재";
+    private static final String LIBRARY_CREATE_SUMMARY = "서재 생성";
+    private static final String LIBRARY_CREATE_DESCRIPTION = """
+            인증된 회원이 이름을 지정해 새 서재를 생성한다. 한 회원은 여러 서재를 가질 수 있다.
+            이름은 앞뒤 공백을 제거한 후 1~100자여야 하며, 응답에는 저장된 이름을 반환한다.
+            같은 회원의 서재 이름이 중복되면 `LIBRARY_NAME_ALREADY_EXISTS`를 반환한다.
+            서재에 도서를 추가하는 기존 `POST /api/v1/library`와 별개의 API다.
+            Access Token은 Bearer 헤더 또는 쿠키로 전달한다.
+            인증 토큰과 CSRF 토큰이 모두 없으면 인증 처리 전에 `403`으로 거부된다.
+            """;
     private static final String LIBRARY_LIST_SUMMARY = "내 서재 조회";
-    private static final String LIBRARY_LIST_DESCRIPTION = "인증된 사용자가 읽기 상태와 정렬 기준으로 내 서재를 조회한다";
+    private static final String LIBRARY_LIST_DESCRIPTION = "인증된 사용자가 읽기 상태와 정렬 기준으로 회원 단위의 기존 서재 도서 목록을 조회한다";
     private static final String PUBLIC_LIBRARY_LIST_SUMMARY = "사용자 공개 서재 조회";
     private static final String PUBLIC_LIBRARY_LIST_DESCRIPTION = """
             비로그인 사용자를 포함한 모든 사용자가 활성 회원의 공개 서재를 조회한다.
@@ -89,7 +102,7 @@ class LibraryControllerTest {
             존재하지 않거나 탈퇴·정지된 회원의 서재는 `LIBRARY_NOT_FOUND`를 반환한다.
             """;
     private static final String LIBRARY_ADD_SUMMARY = "내 서재에 도서 추가";
-    private static final String LIBRARY_ADD_DESCRIPTION = "인증된 사용자가 ISBN-13으로 도서를 조회해 내 서재에 추가한다";
+    private static final String LIBRARY_ADD_DESCRIPTION = "인증된 사용자가 ISBN-13으로 도서를 조회해 회원 단위의 기존 서재 항목으로 추가한다. 특정 서재를 선택하는 입력은 받지 않는다";
     private static final String LIBRARY_UPDATE_SUMMARY = "내 서재 항목 수정";
     private static final String LIBRARY_UPDATE_DESCRIPTION = "인증된 사용자가 읽기 상태 또는 현재 읽은 페이지 중 하나를 수정한다";
     private static final String LIBRARY_DELETE_SUMMARY = "내 서재 항목 삭제";
@@ -128,6 +141,13 @@ class LibraryControllerTest {
             fieldWithPath("addedAt").type(JsonFieldType.STRING).description("서재 추가 시각"),
             fieldWithPath("readingUpdatedAt").type(JsonFieldType.STRING).description("읽기 정보 갱신 시각")
     };
+    private static final FieldDescriptor[] LIBRARY_CREATE_REQUEST_FIELDS = {
+            fieldWithPath("name").type(JsonFieldType.STRING).description("앞뒤 공백 제거 후 1~100자인 서재 이름")
+    };
+    private static final FieldDescriptor[] LIBRARY_RESPONSE_FIELDS = {
+            fieldWithPath("libraryId").type(JsonFieldType.NUMBER).description("생성된 서재 ID"),
+            fieldWithPath("name").type(JsonFieldType.STRING).description("앞뒤 공백을 제거한 서재 이름")
+    };
     private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
             fieldWithPath("type").type(JsonFieldType.STRING).description("문제 유형 URI"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("HTTP 상태 설명"),
@@ -149,6 +169,141 @@ class LibraryControllerTest {
     @BeforeEach
     void setUp() {
         when(currentMemberIdProvider.getCurrentMemberId()).thenReturn(MEMBER_ID);
+    }
+
+    @Test
+    @DisplayName("이름을 지정하면 인증된 회원의 서재를 생성하고 서재 URI를 반환한다")
+    void should_CreateLibrary_When_NameIsValid() throws Exception {
+        // given
+        when(libraryService.create(MEMBER_ID, "가을에 읽을 책")).thenReturn(new LibraryResponse(
+                7L,
+                "가을에 읽을 책"
+        ));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"  가을에 읽을 책  "}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(header().string(HttpHeaders.LOCATION, "http://localhost:8080/api/v1/libraries/7"))
+                .andExpect(jsonPath("$.libraryId").value(7L))
+                .andExpect(jsonPath("$.name").value("가을에 읽을 책"))
+                .andDo(document(
+                        "library-create",
+                        requestFields(LIBRARY_CREATE_REQUEST_FIELDS),
+                        responseFields(LIBRARY_RESPONSE_FIELDS),
+                        responseHeaders(headerWithName(HttpHeaders.LOCATION).description("생성된 서재 URI")),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary(LIBRARY_CREATE_SUMMARY)
+                                .description(LIBRARY_CREATE_DESCRIPTION)
+                                .tag(LIBRARY_TAG)
+                                .requestSchema(Schema.schema("CreateLibraryRequest"))
+                                .requestFields(LIBRARY_CREATE_REQUEST_FIELDS)
+                                .responseSchema(Schema.schema("LibraryResponse"))
+                                .responseFields(LIBRARY_RESPONSE_FIELDS)
+                                .responseHeaders(ResourceDocumentation.headerWithName(HttpHeaders.LOCATION)
+                                        .type(SimpleType.STRING).description("생성된 서재 URI"))
+                                .build())
+                ));
+        verify(libraryService).create(MEMBER_ID, "가을에 읽을 책");
+    }
+
+    @Test
+    @DisplayName("앞뒤 공백을 제거한 이름이 100자이면 서재를 생성할 수 있다")
+    void should_CreateLibrary_When_StrippedNameHas100Characters() throws Exception {
+        // given
+        String name = "가".repeat(100);
+        when(libraryService.create(MEMBER_ID, name)).thenReturn(new LibraryResponse(
+                7L,
+                name
+        ));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"  " + name + "  \"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value(name));
+        verify(libraryService).create(MEMBER_ID, name);
+    }
+
+    @Test
+    @DisplayName("서재 이름이 없으면 잘못된 요청 오류를 반환한다")
+    void should_ReturnBadRequest_When_LibraryNameIsMissing() throws Exception {
+        // when & then
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/libraries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}")),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/libraries",
+                "library-create-invalid-request",
+                LIBRARY_CREATE_SUMMARY,
+                LIBRARY_CREATE_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
+        verifyNoInteractions(libraryService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"null", "\"\"", "\"   \"", "\"\u2003\""})
+    @DisplayName("서재 이름이 null이거나 공백뿐이면 서비스에 전달하지 않는다")
+    void should_ReturnBadRequest_When_LibraryNameIsNullOrBlank(String name) throws Exception {
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(post("/api/v1/libraries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":" + name + "}")),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/libraries"
+        );
+        verifyNoInteractions(libraryService);
+    }
+
+    @Test
+    @DisplayName("앞뒤 공백을 제거한 서재 이름이 100자를 초과하면 잘못된 요청 오류를 반환한다")
+    void should_ReturnBadRequest_When_StrippedLibraryNameIsTooLong() throws Exception {
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(post("/api/v1/libraries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"  " + "가".repeat(101) + "  \"}")),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/libraries"
+        );
+        verifyNoInteractions(libraryService);
+    }
+
+    @Test
+    @DisplayName("이미 같은 이름의 서재가 있으면 서재명 중복 오류를 반환한다")
+    void should_ReturnConflict_When_LibraryNameAlreadyExists() throws Exception {
+        // given
+        when(libraryService.create(MEMBER_ID, "가을에 읽을 책"))
+                .thenThrow(new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS));
+
+        // when & then
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/libraries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"가을에 읽을 책"}
+                                """)),
+                HttpStatus.CONFLICT,
+                ErrorCode.LIBRARY_NAME_ALREADY_EXISTS,
+                "/api/v1/libraries",
+                "library-create-name-already-exists",
+                LIBRARY_CREATE_SUMMARY,
+                LIBRARY_CREATE_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
     }
 
     @Test
@@ -940,6 +1095,21 @@ class LibraryControllerTest {
         when(currentMemberIdProvider.getCurrentMemberId()).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
 
         // when & then
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/libraries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"가을에 읽을 책"}
+                                """)),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/libraries",
+                "library-create-unauthorized",
+                LIBRARY_CREATE_SUMMARY,
+                LIBRARY_CREATE_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
         documentProblemDetail(
                 mockMvc.perform(get("/api/v1/library").param("page", "1")),
                 HttpStatus.UNAUTHORIZED,

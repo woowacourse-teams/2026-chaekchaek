@@ -1,14 +1,21 @@
 package com.chaekchaek.auth.token.access;
 
+import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.document;
+import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
+import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -16,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -34,6 +42,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@AutoConfigureRestDocs
 @ActiveProfiles("test")
 @Import(AccessTokenAuthenticationIntegrationTest.ProtectedTestController.class)
 @Transactional
@@ -41,6 +50,9 @@ class AccessTokenAuthenticationIntegrationTest {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private LibraryRepository libraryRepository;
 
     private Long memberId;
 
@@ -71,6 +83,83 @@ class AccessTokenAuthenticationIntegrationTest {
 
     @Autowired
     private JwtEncoder jwtEncoder;
+
+    @Test
+    @DisplayName("Bearer 토큰으로 인증된 회원의 서재를 생성한다")
+    void should_CreateLibraryForMember_When_BearerTokenIsValid() throws Exception {
+        // given
+        String token = issueAccessToken(memberId.toString());
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"  가을에 읽을 책  "}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.libraryId").isNumber())
+                .andExpect(jsonPath("$.name").value("가을에 읽을 책"));
+        assertThat(libraryRepository.findAll())
+                .filteredOn(library -> library.isOwnedBy(memberId))
+                .singleElement()
+                .satisfies(library -> assertThat(library.getName()).isEqualTo("가을에 읽을 책"));
+    }
+
+    @Test
+    @DisplayName("Access Token 쿠키로 인증된 회원의 서재를 생성한다")
+    void should_CreateLibraryForMember_When_AccessTokenCookieIsValid() throws Exception {
+        // given
+        String token = issueAccessToken(memberId.toString());
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries")
+                        .cookie(new Cookie(AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME, token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"쿠키로 만든 서재"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.libraryId").isNumber())
+                .andExpect(jsonPath("$.name").value("쿠키로 만든 서재"));
+        assertThat(libraryRepository.findAll())
+                .filteredOn(library -> library.isOwnedBy(memberId))
+                .singleElement()
+                .satisfies(library -> assertThat(library.getName()).isEqualTo("쿠키로 만든 서재"));
+    }
+
+    @Test
+    @DisplayName("인증 정보가 없으면 서재를 생성할 수 없다")
+    void should_RejectLibraryCreation_When_AuthenticationIsMissing() throws Exception {
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"가을에 읽을 책"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("인증 토큰과 CSRF 토큰이 모두 없으면 서재 생성을 CSRF 검사에서 거부한다")
+    void should_RejectLibraryCreation_When_AuthenticationAndCsrfAreMissing() throws Exception {
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"가을에 읽을 책"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andDo(document(
+                        "library-create-forbidden",
+                        resource(ResourceSnippetParameters.builder()
+                                .summary("서재 생성")
+                                .tag("내 서재")
+                                .build())
+                ));
+    }
 
     @Test
     @DisplayName("유효한 Access Token 쿠키로 보호 API에 접근한다")
