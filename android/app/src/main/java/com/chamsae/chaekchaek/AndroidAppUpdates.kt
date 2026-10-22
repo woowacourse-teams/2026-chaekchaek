@@ -1,5 +1,6 @@
 package com.chamsae.chaekchaek
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.ComponentActivity
@@ -23,7 +24,7 @@ class AndroidAppUpdates(
     private var checking = false
     private val launcher = activity.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
         controller.setUpdating(false)
-        if (result.resultCode == ComponentActivity.RESULT_OK && controller.state.value.requirement == UpdateRequirement.Recommended) {
+        if (result.resultCode == Activity.RESULT_OK && controller.state.value.requirement == UpdateRequirement.Recommended) {
             controller.dismissRecommended()
         }
     }
