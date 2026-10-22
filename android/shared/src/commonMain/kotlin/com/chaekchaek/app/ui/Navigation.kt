@@ -347,11 +347,15 @@ private fun AppNavigationContent(
                     )
                 }
                 entry<MyPageKey> {
-                    LaunchedEffect(Unit) { analytics.screenView("my_page") }
+                    LaunchedEffect(Unit) { analytics.screenView("my_page"); memberSettingsViewModel.retry() }
                     MyPageScreen(
                         state = memberSettingsState,
                         onBack = { backStack.popDestinationIfCurrent(MyPageKey) },
-                        onAnonymousReviewsChange = memberSettingsViewModel::setAnonymousReviews,
+                        onNicknameChange = memberSettingsViewModel::updateNickname,
+                        onAnonymousReviewsChange = { anonymous, nickname ->
+                            authPlatform.writeAnonymousReviews(anonymous)
+                            memberSettingsViewModel.setAnonymousReviews(anonymous, nickname)
+                        },
                         onSignOut = {
                             authViewModel.signOut {
                                 backStack.popDestinationIfCurrent(MyPageKey)
@@ -417,7 +421,8 @@ private fun AppNavigationContent(
                         savedToLibrary = savedBookId != null,
                         externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
                         externalLibraryLoading = librarySaveState.showLoading,
-                        anonymousReviews = memberSettingsState.anonymousReviews,
+                        anonymousReviews = authPlatform.readAnonymousReviews() ?: memberSettingsState.anonymousReviews,
+                        onAnonymousReviewsChange = authPlatform.writeAnonymousReviews,
                         nickname = if (state.signedIn) {
                             if (memberSettingsState.anonymousReviews) memberSettingsState.anonymousNickname
                             else memberSettingsState.nickname
@@ -474,7 +479,7 @@ private fun AppNavigationContent(
                         errorRecovery = viewModel.errors,
                         onReviewCreate = viewModel::createReview,
                         onQuestionAReviewCreate = { draft ->
-                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)
+                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry, anonymous = draft.anonymous)
                         },
                         onQuestionAReviewUpdate = { reviewId, draft, request ->
                             viewModel.updateReviewWithRating(reviewId, request, draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)

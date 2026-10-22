@@ -60,6 +60,7 @@ internal fun MyPageScreen(
     onSignOut: () -> Unit,
     onWithdraw: () -> Unit,
     modifier: Modifier = Modifier,
+    onNicknameChange: (String) -> Unit = {},
 ) {
     var showNicknameDialog by rememberSaveable { mutableStateOf(false) }
     var nicknameSaveRevision by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -94,6 +95,7 @@ internal fun MyPageScreen(
             Text(state.publicNickname, style = MaterialTheme.typography.titleLarge, fontSize = 23.sp)
             Text("공개 프로필", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, fontSize = 13.sp)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            ChaekOverlayButton("닉네임 변경", { showNicknameDialog = true }, secondary = true)
             SectionLabel("공개 설정")
             AnonymousSetting(
                 checked = state.anonymousReviews,
@@ -128,7 +130,7 @@ internal fun MyPageScreen(
             onConfirm = {
                 nicknameSaveRevision = state.saveRevision
                 submittedNickname = nicknameState.text.toString()
-                onAnonymousReviewsChange(false, nicknameState.text.toString().trim())
+                onNicknameChange(nicknameState.text.toString().trim())
             },
         )
     }

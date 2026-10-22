@@ -74,6 +74,11 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             guestKeychain.clear()
         }
 #endif
+#if DEBUG
+        if launchArguments.contains("-uiTestingNicknameRestore") && launchArguments.contains("-uiTestingRefresh") {
+            keychain.write("fixture-refresh")
+        }
+#endif
         let appleSignIn = AppleSignInProvider()
         let uiTestingMyPage: Bool
         let uiTestingBookQuestionA: Bool
@@ -91,6 +96,10 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             requestGoogleIdToken: { onResult in
                 Task { @MainActor in
 #if DEBUG
+                    if launchArguments.contains("-uiTestingNickname") && launchArguments.contains("-uiTestingRefresh") {
+                        _ = onResult("fixture-google", nil)
+                        return
+                    }
                     if launchArguments.contains("-uiTestingSignInFailure") {
                         _ = onResult(nil, "fixture provider failure")
                         return
@@ -133,7 +142,14 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             },
             readGuest: guestKeychain.read,
             writeGuest: guestKeychain.write,
-            clearGuest: guestKeychain.clear
+            clearGuest: guestKeychain.clear,
+            readAnonymousReviews: {
+                guard UserDefaults.standard.object(forKey: "review_anonymous") != nil else { return nil }
+                return KotlinBoolean(bool: UserDefaults.standard.bool(forKey: "review_anonymous"))
+            },
+            writeAnonymousReviews: { value in
+                UserDefaults.standard.set(value.boolValue, forKey: "review_anonymous")
+            }
         )
         let recentSearchStorage = RecentSearchStorage(
             read: {
@@ -209,6 +225,7 @@ private final class GoogleSignInControl: UIControl {
         providerFont = UIFont(name: "Roboto-Bold", size: 17) ?? .systemFont(ofSize: 17, weight: .semibold)
         super.init(frame: .zero)
 
+        isOpaque = false
         backgroundColor = .white
         clipsToBounds = true
         layer.cornerRadius = 8
@@ -222,10 +239,13 @@ private final class GoogleSignInControl: UIControl {
     }
 
     override func draw(_ rect: CGRect) {
+        UIColor.white.setFill()
+        UIBezierPath(rect: bounds).fill()
+        let foregroundAlpha: CGFloat = isEnabled && !isHighlighted ? 1 : 0.5
         let title = "Google로 계속하기"
         let attributes: [NSAttributedString.Key: Any] = [
             .font: providerFont,
-            .foregroundColor: UIColor(red: 23.0 / 255.0, green: 23.0 / 255.0, blue: 23.0 / 255.0, alpha: 1),
+            .foregroundColor: UIColor(red: 23.0 / 255.0, green: 23.0 / 255.0, blue: 23.0 / 255.0, alpha: foregroundAlpha),
         ]
         let textSize = title.size(withAttributes: attributes)
         let logoHeight = 18.0
@@ -233,7 +253,7 @@ private final class GoogleSignInControl: UIControl {
         let contentWidth = logoWidth + 12 + textSize.width
         let contentX = (bounds.width - contentWidth) / 2
 
-        logo.draw(in: CGRect(x: contentX, y: (bounds.height - logoHeight) / 2, width: logoWidth, height: logoHeight))
+        logo.draw(in: CGRect(x: contentX, y: (bounds.height - logoHeight) / 2, width: logoWidth, height: logoHeight), blendMode: .normal, alpha: foregroundAlpha)
         title.draw(
             at: CGPoint(x: contentX + logoWidth + 12, y: (bounds.height - textSize.height) / 2),
             withAttributes: attributes
@@ -246,6 +266,6 @@ private final class GoogleSignInControl: UIControl {
     }
 
     private func updateAlpha() {
-        alpha = isEnabled && !isHighlighted ? 1 : 0.5
+        setNeedsDisplay()
     }
 }

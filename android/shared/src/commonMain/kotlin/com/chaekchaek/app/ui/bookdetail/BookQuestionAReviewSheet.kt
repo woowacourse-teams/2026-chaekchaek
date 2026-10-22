@@ -85,6 +85,7 @@ data class QuestionAReviewDraft(
     val quote: String = "",
     val isSpoiler: Boolean = false,
     val rating: Double? = null,
+    val anonymous: Boolean? = null,
 )
 
 internal object QuestionAReviewRules {
@@ -128,10 +129,12 @@ fun QuestionAReviewInputSheet(
     onDismiss: () -> Unit,
     onLoginRequired: () -> Unit,
     onSave: (QuestionAReviewDraft) -> Unit,
+    onAnonymousChange: (Boolean) -> Unit = {},
 ) {
     val initial = remember(draftKey) { QuestionAReviewRules.normalize(initialDraft) }
     val contentState = rememberLimitedTextFieldState(BookDetailInputRules.ContentPolicy, initial.content, draftKey)
     val quoteState = rememberLimitedTextFieldState(BookDetailInputRules.QuotePolicy, initial.quote, draftKey)
+    var anonymousChoice by rememberSaveable(draftKey) { mutableStateOf(anonymous) }
     var spoiler by rememberSaveable(draftKey) { mutableStateOf(initial.isSpoiler) }
     var rating by rememberSaveable(draftKey) { mutableStateOf(initial.rating) }
     var ratingTouched by rememberSaveable(draftKey) { mutableStateOf(false) }
@@ -140,7 +143,7 @@ fun QuestionAReviewInputSheet(
     LaunchedEffect(draftKey, initialRating) {
         if (!ratingTouched) rating = initialRating
     }
-    val discardBaseline = initial.copy(rating = initialRating)
+    val discardBaseline = initial.copy(rating = initialRating, anonymous = if (editing || !signedIn) null else anonymous)
     val saving by rememberUpdatedState(isSaving)
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,
@@ -156,6 +159,7 @@ fun QuestionAReviewInputSheet(
         quote = quoteState.text.toString(),
         isSpoiler = spoiler,
         rating = rating,
+        anonymous = if (editing || !signedIn) null else anonymousChoice,
     ))
     val requestDismiss = {
         if (!isSaving) {
@@ -227,7 +231,24 @@ fun QuestionAReviewInputSheet(
                     quoteState, BookDetailInputRules.QuotePolicy,
                     "기억하고 싶은 문장", "인상 깊은 문구 (선택)", 54, readOnly = isSaving,
                 )
-                Text(
+                if (!editing) {
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant, ChaekOverlayTokens.inputShape)
+                            .toggleable(value = anonymousChoice, enabled = !isSaving, role = Role.Checkbox,
+                                interactionSource = remember { MutableInteractionSource() }, indication = null,
+                                onValueChange = { value ->
+                                    if (signedIn) { anonymousChoice = value; onAnonymousChange(value) }
+                                    else onLoginRequired()
+                                })
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text(if (anonymousChoice) "☑" else "□", fontFamily = ChaekIconFontFamily(), color = ChaekInkSecondary)
+                        Text("익명으로 남기기", color = ChaekInk, style = MaterialTheme.typography.bodySmall)
+                    }
+                } else Text(
                     if (anonymous) "익명으로 ‘${nickname.ifBlank { "익명" }}’가 표시돼요"
                     else "‘${nickname.ifBlank { "닉네임 없음" }}’으로 표시돼요",
                     color = ChaekInkSecondary,

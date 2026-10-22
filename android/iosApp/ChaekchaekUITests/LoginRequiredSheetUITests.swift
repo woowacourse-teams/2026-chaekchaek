@@ -325,6 +325,46 @@ final class LoginRequiredSheetUITests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testMissingNicknameCannotDismissAndCompletesLoginAfterSave() throws {
+        let fixture = try NicknameFixtureServer()
+        defer { fixture.stop() }
+        for restored in [false, true] {
+            fixture.reset()
+            let app = XCUIApplication()
+            app.launchArguments = ["-uiTestingGuest", "-uiTestingRefresh", "-uiTestingNickname"]
+            if restored { app.launchArguments.append("-uiTestingNicknameRestore") }
+            app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = fixture.baseURL
+            app.launch()
+            if !restored {
+                let shelf = app.buttons["내 서재"]
+                XCTAssertTrue(shelf.waitForExistence(timeout: 15))
+                shelf.tap()
+                app.buttons["편집"].tap()
+                let google = app.buttons["GIDSignInButton"]
+                XCTAssertTrue(google.waitForExistence(timeout: 5))
+                google.tap()
+            }
+            let title = app.staticTexts["닉네임 설정"]
+            XCTAssertTrue(title.waitForExistence(timeout: 10))
+            // 필수 창 바깥을 눌러도 유지한다.
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).tap()
+            XCTAssertTrue(title.exists)
+            let field = app.textFields.firstMatch
+            XCTAssertTrue(field.exists)
+            field.tap()
+            field.typeText("reader")
+            app.buttons["확인"].tap()
+            let failure = app.staticTexts["설정을 변경하지 못했어요"]
+            XCTAssertTrue(failure.waitForExistence(timeout: 5))
+            attachScreenshot(named: restored ? "기존 회원 닉네임 실패 입력 유지" : "신규 회원 닉네임 실패 입력 유지")
+            app.buttons["다시 시도"].tap()
+            XCTAssertTrue(title.waitForNonExistence(timeout: 10))
+            XCTAssertEqual(fixture.nicknameWrites, 2)
+            app.terminate()
+        }
+    }
+
     override func setUpWithError() throws {
         continueAfterFailure = false
     }
@@ -772,5 +812,75 @@ private final class RefreshFixtureServer: @unchecked Sendable {
             body = "{\"totalCount\":0,\"nextPage\":null,\"items\":[]}"
         }
         return Data(body.utf8)
+    }
+}
+
+/// 신규 인증과 기존 세션 복원을 같은 공개 HTTP 계약으로 검증한다.
+private final class NicknameFixtureServer: @unchecked Sendable {
+    private let listener: NWListener
+    private let queue = DispatchQueue(label: "chaekchaek.nickname-fixture")
+    private let lock = NSLock()
+    private var writes = 0
+    private var nickname = ""
+    var nicknameWrites: Int { lock.lock(); defer { lock.unlock() }; return writes }
+    var baseURL: String { "http://127.0.0.1:\(listener.port!.rawValue)" }
+    init() throws {
+        listener = try NWListener(using: .tcp, on: .any)
+        let ready = XCTestExpectation(description: "닉네임 API 준비")
+        listener.stateUpdateHandler = { if case .ready = $0 { ready.fulfill() } }
+        listener.newConnectionHandler = { [weak self] connection in
+            guard let self else { return }
+            connection.start(queue: self.queue)
+            self.receive(connection)
+        }
+        listener.start(queue: queue)
+        guard XCTWaiter.wait(for: [ready], timeout: 5) == .completed else {
+            listener.cancel()
+            throw NSError(domain: "NicknameFixture", code: 1)
+        }
+    }
+    func reset() { lock.lock(); writes = 0; nickname = ""; lock.unlock() }
+    func stop() { listener.cancel() }
+    private func receive(_ connection: NWConnection, buffered: Data = Data()) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self] data, _, complete, error in
+            guard let self else { return }
+            let bytes = buffered + (data ?? Data())
+            guard let request = String(data: bytes, encoding: .utf8), request.contains("\r\n\r\n") else {
+                if !complete && error == nil { self.receive(connection, buffered: bytes) }
+                else { connection.cancel() }
+                return
+            }
+            let path = request.components(separatedBy: " ").dropFirst().first ?? ""
+            self.lock.lock()
+            var status = "200 OK"
+            let body: String
+            switch path.components(separatedBy: "?")[0] {
+            case "/api/v1/auth/mobile/google", "/api/v1/auth/mobile/reissue":
+                body = """
+                {"accessToken":"fixture-access","refreshToken":"fixture-refresh","tokenType":"Bearer","accessTokenExpiresIn":3600,"refreshTokenExpiresIn":7200}
+                """
+            case "/api/v1/members/me/nickname":
+                self.writes += 1
+                if self.writes == 1 {
+                    status = "503 Service Unavailable"
+                    body = "{}"
+                } else {
+                    self.nickname = "reader"
+                    body = self.profile()
+                }
+            case "/api/v1/members/me": body = self.profile()
+            case "/api/v1/home/popular-books": body = "{\"books\":[]}"
+            case "/api/v1/home/latest-reviews": body = "{\"reviews\":[]}"
+            case "/api/v1/feed/reviews": body = "{\"reviews\":[],\"totalCount\":0,\"nextPage\":null}"
+            default: body = "{\"items\":[],\"totalCount\":0,\"nextPage\":null}"
+            }
+            self.lock.unlock()
+            let payload = Data(body.utf8)
+            let header = "HTTP/1.1 \(status)\r\nContent-Type: application/json\r\nContent-Length: \(payload.count)\r\nConnection: close\r\n\r\n"
+            connection.send(content: Data(header.utf8) + payload, completion: .contentProcessed { _ in connection.cancel() })
+        }
+    }
+    private func profile() -> String {
+        "{\"memberId\":1,\"nickname\":\"\(nickname)\",\"anonymousNickname\":\"참새\",\"displayAnonymous\":true}"
     }
 }

@@ -39,6 +39,7 @@ class BookDetailViewModel(
     private val authRepository: MobileAuthRemoteRepository = MobileAuthRemoteRepository(),
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    private val memberRepository: com.chaekchaek.app.data.remote.MemberRemoteRepository = com.chaekchaek.app.data.remote.MemberRemoteRepository(),
 ) : ViewModel() {
     val errors = ErrorRecoveryState()
     private val restoredReviewScope = ReviewScope.entries
@@ -361,6 +362,7 @@ class BookDetailViewModel(
         rating: Double?,
         onLibraryAdded: () -> Unit = {},
         onRatingSaved: () -> Unit = {},
+        anonymous: Boolean? = null,
     ) {
         if (mutationJob?.isActive == true) return
         _uiState.value = _uiState.value.copy(
@@ -401,6 +403,11 @@ class BookDetailViewModel(
             },
         ) { generation ->
             val resolvedTarget = target ?: throw ReviewCreateTargetUnavailableException()
+            if (anonymous != null && accessToken != null) {
+                failureStage = "anonymity"
+                memberRepository.updateAnonymity(anonymous, requireToken())
+                if (generation != requestGeneration) throw CancellationException("인증 상태가 변경됨")
+            }
             failureStage = "personal_rating"
             saveReviewRatingIfChanged(rating, generation, onLibraryAdded, onRatingSaved)
             publicWrite(
