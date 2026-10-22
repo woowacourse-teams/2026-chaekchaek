@@ -1,6 +1,6 @@
-import type { ChangeEvent, SubmitEvent } from 'react';
+import { useState, type ChangeEvent, type SubmitEvent } from 'react';
 
-import { Button, Dialog, Field, Radio, Text, Textarea } from '@chaekchaek/design-system';
+import { Button, Dialog, Field, Radio, Rating, Text, Textarea } from '@chaekchaek/design-system';
 
 import { track } from '@/analytics/track';
 
@@ -27,6 +27,23 @@ const buildReviewRequest = (formValues: ReviewFormValues) => {
       quote: formValues.quote || undefined,
     }),
   };
+};
+
+const RatingMessages = {
+  0.5: '아쉬웠어요',
+  1.0: '별로였어요',
+  1.5: '조금 아쉬웠어요',
+  2.0: '아쉬운 점이 많았어요',
+  2.5: '그저 그랬어요',
+  3.0: '괜찮았어요',
+  3.5: '꽤 좋았어요',
+  4.0: '좋았어요',
+  4.5: '정말 좋았어요',
+  5.0: '최고였어요',
+};
+
+const getRatingMessageNumber = (rating: number) => {
+  return Math.round(rating * 2) / 2;
 };
 
 export const WriteReviewDialog = ({
@@ -101,6 +118,14 @@ export const WriteReviewDialog = ({
     onReviewWritten();
     onClose();
   };
+
+  const [rating, setRating] = useState(defaultRating || 0);
+  const handleChangeRating = (rating: number) => {
+    setRating(rating);
+  };
+
+  const ratingMessageNumber = getRatingMessageNumber(rating);
+  const ratingMessage = RatingMessages[ratingMessageNumber as keyof typeof RatingMessages] || '-';
 
   return (
     <Dialog size="large" onClose={onClose}>
@@ -187,6 +212,18 @@ export const WriteReviewDialog = ({
                 ’(으)로 표시돼요
               </span>
             </Text>
+
+            <Field sx={{ mt: 4 }}>
+              <Field.Label>별점 (선택)</Field.Label>
+              <Field.Content>
+                <Rating
+                  value={rating}
+                  onChange={handleChangeRating}
+                  description={`${rating} · ${ratingMessage}`}
+                  block
+                />
+              </Field.Content>
+            </Field>
           </Dialog.Body>
 
           <Dialog.Footer>
