@@ -1,7 +1,10 @@
 package com.chaekchaek.library.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import java.time.Instant;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,6 +29,47 @@ class LibraryTest {
         assertThat(library.getName()).isEqualTo(name);
         assertThat(library.getCreatedAt()).isEqualTo(NOW);
         assertThat(library.getUpdatedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("서재 이름이 100자이면 생성할 수 있다")
+    void should_CreateLibrary_When_NameHasMaximumLength() {
+        // given
+        String name = "가".repeat(100);
+
+        // when
+        Library library = Library.create(1L, name, NOW);
+
+        // then
+        assertThat(library.getName()).isEqualTo(name);
+    }
+
+    @Test
+    @DisplayName("서재 이름이 없으면 생성을 거부한다")
+    void should_RejectCreation_When_NameIsNull() {
+        // given
+        String name = null;
+
+        // when & then
+        assertThatThrownBy(() -> Library.create(1L, name, NOW))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST)
+                );
+    }
+
+    @Test
+    @DisplayName("서재 이름이 100자를 초과하면 생성을 거부한다")
+    void should_RejectCreation_When_NameExceedsMaximumLength() {
+        // given
+        String name = "가".repeat(101);
+
+        // when & then
+        assertThatThrownBy(() -> Library.create(1L, name, NOW))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST)
+                );
     }
 
     @ParameterizedTest
