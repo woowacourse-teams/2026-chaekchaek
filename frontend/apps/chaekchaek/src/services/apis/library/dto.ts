@@ -27,7 +27,6 @@ export type GetLibraryResponseDto = ResponseDto<{
     totalPages: number;
     commentCount: number;
     status: string;
-    currentPage: number;
     rating: number;
     addedAt: string;
     readingUpdatedAt: string;
