@@ -21,6 +21,8 @@ fun App(
     uiTestingMyPage: Boolean = false,
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
+    policyController: com.chaekchaek.app.config.MobilePolicyController? = null,
+    onUpdate: () -> Unit = {},
 ) {
     ChaekchaekTheme {
         Surface(
@@ -37,6 +39,10 @@ fun App(
                     homeHeaderAction = homeHeaderAction,
                     onExitRequested = onExitRequested,
                 )
+                policyController?.let {
+                    com.chaekchaek.app.ui.common.UpdatePolicyHost(it, onUpdate)
+                    com.chaekchaek.app.ui.common.ErrorRecoveryEffect(it.errors)
+                }
             }
         }
     }

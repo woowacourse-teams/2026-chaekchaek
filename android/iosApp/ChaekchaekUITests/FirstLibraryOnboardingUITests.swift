@@ -51,3 +51,35 @@ final class FirstLibraryOnboardingUITests: XCTestCase {
     }
 
 }
+
+final class RemotePolicyUITests: XCTestCase {
+    @MainActor
+    func testRequiredUpdateHasNoDismissAndKeepsAppBlocked() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingRequiredUpdate"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["업데이트가 필요해요"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["업데이트"].exists)
+        XCTAssertFalse(app.buttons["나중에"].exists)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "강제 업데이트"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        XCTAssertTrue(app.staticTexts["업데이트가 필요해요"].exists)
+    }
+
+    @MainActor
+    func testRecommendedUpdateCanBeDeferredWithoutLosingHome() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingRecommendedUpdate"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["새 버전이 있어요"].waitForExistence(timeout: 10))
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "권장 업데이트"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        app.buttons["나중에"].tap()
+        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["새 버전이 있어요"].exists)
+    }
+}

@@ -84,7 +84,7 @@ class DeveloperToolsActivity : ComponentActivity() {
                 ) {
                     if (questionPreview) Box(Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
                         BookQuestionAPreviewScreen(onExit = { questionPreview = false })
-                    } else DeveloperToolsScreen(items = items, onBack = ::finish, onQuestionPreview = { questionPreview = true })
+                    } else DeveloperToolsScreen(items = items, onBack = ::finish, onQuestionPreview = { questionPreview = true }, policy = AndroidRemotePolicy.get(this))
                 }
             }
         }
@@ -101,6 +101,7 @@ private fun DeveloperToolsScreen(
     items: List<DeveloperInfoItem>,
     onBack: () -> Unit,
     onQuestionPreview: () -> Unit,
+    policy: AndroidRemotePolicy,
 ) {
     Column(
         modifier = Modifier
@@ -135,6 +136,18 @@ private fun DeveloperToolsScreen(
             )
             TextButton(onClick = onQuestionPreview) { Text("질문 A 개발 프리뷰") }
             DeveloperInfoCard(items)
+            com.chaekchaek.app.ui.common.PolicyDeveloperContent(policy.controller) { policy.refresh(force = true) }
+            val context = androidx.compose.ui.platform.LocalContext.current
+            TextButton(onClick = { DebugAppUpdates.enable(context) }) { Text("FakeAppUpdateManager 사용") }
+            TextButton(onClick = { DebugAppUpdates.fake?.userAcceptsUpdate() }) { Text("Fake 업데이트 수락") }
+            TextButton(onClick = { DebugAppUpdates.fake?.userRejectsUpdate(); policy.controller.setUpdating(false) }) { Text("Fake 업데이트 취소") }
+            TextButton(onClick = {
+                DebugAppUpdates.fake?.downloadStarts()
+                DebugAppUpdates.fake?.downloadCompletes()
+                policy.controller.setUpdating(false)
+                policy.controller.setDownloadReady(true)
+            }) { Text("Fake 다운로드 완료") }
+            TextButton(onClick = { DebugAppUpdates.reset(); policy.controller.overrideRequirement(null); policy.controller.setDownloadReady(false) }) { Text("실제 Play 업데이트로 복귀") }
         }
     }
 }

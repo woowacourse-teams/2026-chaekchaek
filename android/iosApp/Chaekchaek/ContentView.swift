@@ -3,6 +3,7 @@ import SwiftUI
 import StoreKit
 import GoogleSignIn
 import FirebaseAnalytics
+import FirebaseRemoteConfig
 
 struct ContentView: View {
     @State private var onboardingEligible: Bool?
@@ -59,6 +60,7 @@ private enum FirstLibraryInstallationPolicy {
 
 private struct ComposeViewController: UIViewControllerRepresentable {
     let onboardingEligible: Bool
+    func makeCoordinator() -> IOSRemotePolicy { IOSRemotePolicy() }
     func makeUIViewController(context: Context) -> UIViewController {
         let keychain = RefreshTokenKeychain()
         let guestKeychain = GuestAuthKeychain()
@@ -160,11 +162,104 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             logAnalyticsEvent: FirebaseAnalyticsEventLogger.log,
             uiTestingMyPage: uiTestingMyPage,
             uiTestingBookQuestionA: uiTestingBookQuestionA,
-            showQuestionAPreviewControls: showQuestionAPreviewControls
+            showQuestionAPreviewControls: showQuestionAPreviewControls,
+            policyController: context.coordinator.controller,
+            onUpdate: { context.coordinator.openStore() },
+            showPolicyDeveloperTools: policyDeveloperToolsEnabled,
+            onPolicyRefresh: { context.coordinator.refresh(force: true) }
         )
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
+private var policyDeveloperToolsEnabled: Bool {
+#if DEBUG
+    true
+#else
+    false
+#endif
+}
+
+/// UIKit과 Firebase 콜백은 메인 스레드에서 공통 상태로 전달한다.
+private final class IOSRemotePolicy {
+    let controller: MobilePolicyController
+    private let remote = RemoteConfig.remoteConfig()
+    private var registration: ConfigUpdateListenerRegistration?
+    private var observers: [NSObjectProtocol] = []
+
+    init() {
+        let defaults = UserDefaults.standard
+        controller = MobilePolicyController(
+            installed: InstalledApp(androidVersionCode: 0, iosVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""),
+            storage: PolicyStorage(read: { defaults.string(forKey: "accepted_mobile_policy") }, write: { defaults.set($0, forKey: "accepted_mobile_policy") }),
+            now: { KotlinLong(longLong: Int64(Date().timeIntervalSince1970 * 1000)) }
+        )
+        let settings = RemoteConfigSettings()
+        settings.minimumFetchInterval = 3600
+        settings.fetchTimeout = 10
+        remote.configSettings = settings
+        remote.setDefaults(["mobile_policy_v1": MobilePolicy.companion.encode(policy: MobilePolicy(schemaVersion: 1, androidMinimumVersionCode: 0, androidLatestVersionCode: 0, iosMinimumVersion: "0.0.0", iosLatestVersion: "0.0.0", verificationMessage: "")) as NSString])
+        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in self?.start() })
+        observers.append(NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in self?.stop() })
+#if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-uiTestingRequiredUpdate") { controller.overrideRequirement(requirement: .required) }
+        if args.contains("-uiTestingRecommendedUpdate") { controller.overrideRequirement(requirement: .recommended) }
+#endif
+        start()
+    }
+
+    deinit { stop(); observers.forEach(NotificationCenter.default.removeObserver) }
+
+    private func start() {
+        if registration == nil {
+            registration = remote.addOnConfigUpdateListener { [weak self] update, error in
+                guard let self else { return }
+                if error != nil {
+                    DispatchQueue.main.async { self.controller.failed(message: "실시간 연결 실패: 마지막 정상 설정 유지") }
+                    return
+                }
+                guard update?.updatedKeys.contains("mobile_policy_v1") == true else { return }
+                self.remote.activate { _, error in
+                    DispatchQueue.main.async { if error == nil { self.accept() } else { self.controller.failed(message: "활성화 실패: 마지막 정상 설정 유지") } }
+                }
+            }
+        }
+        refresh(force: false)
+    }
+
+    private func stop() { registration?.remove(); registration = nil }
+
+    func refresh(force: Bool) {
+        guard controller.beginFetch() else { return }
+        remote.fetch(withExpirationDuration: force ? 0 : 3600) { [weak self] status, error in
+            guard let self else { return }
+            guard error == nil, status == .success else {
+                DispatchQueue.main.async { self.controller.failed(message: "수신 실패: 마지막 정상 설정 유지") }
+                return
+            }
+            self.remote.activate { _, error in
+                DispatchQueue.main.async { if error == nil { self.accept() } else { self.controller.failed(message: "활성화 실패: 마지막 정상 설정 유지") } }
+            }
+        }
+    }
+
+    private func accept() {
+        let value = remote.configValue(forKey: "mobile_policy_v1")
+        guard value.source == .remote, let date = remote.lastFetchTime else {
+            controller.failed(message: "원격 값 없음: 기본값 또는 마지막 정상 설정 유지")
+            return
+        }
+        controller.received(raw: value.stringValue, receivedAt: Int64(date.timeIntervalSince1970 * 1000))
+    }
+
+    func openStore() {
+        guard let url = URL(string: "https://apps.apple.com/app/id6804956142") else { return }
+        UIApplication.shared.open(url, options: [:]) { [weak self] opened in
+            if !opened { self?.controller.storeFailed() }
+        }
+    }
 }
 
 private var analyticsEnvironment: String {

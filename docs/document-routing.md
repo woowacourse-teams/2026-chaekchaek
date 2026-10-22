@@ -38,6 +38,8 @@
 <a id="delivery"></a>
 ## 개발과 배포
 
+원격 설정과 최소 지원 버전, 업데이트 안내를 변경할 때는 [모바일 원격 설정과 업데이트 정책](mobile-remote-config-updates.md)을 먼저 읽는다.
+
 | 읽을 때 | 문서 | 적용 범위와 주의점 |
 | --- | --- | --- |
 | Android 작업 시작과 개발 문서 탐색 | [Android 시작 안내](../android/README.md) | 해당 디렉터리의 AGENTS.md도 적용한다. |

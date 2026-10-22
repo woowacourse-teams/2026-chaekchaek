@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 
 class MainActivity : ChaekchaekActivity() {
     override val analyticsEnvironment = "test"
+    override fun createAppUpdateManager() = DebugAppUpdates.fake ?: super.createAppUpdateManager()
 
     @Composable
     override fun HomeHeaderAction() {

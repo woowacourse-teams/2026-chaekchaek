@@ -23,12 +23,18 @@ import kotlinx.coroutines.launch
 
 abstract class ChaekchaekActivity : ComponentActivity() {
     protected abstract val analyticsEnvironment: String
+    private lateinit var remotePolicy: AndroidRemotePolicy
+    private lateinit var updates: AndroidAppUpdates
+    private val realUpdateManager by lazy { com.google.android.play.core.appupdate.AppUpdateManagerFactory.create(this) }
+    protected open fun createAppUpdateManager(): com.google.android.play.core.appupdate.AppUpdateManager = realUpdateManager
 
     @Composable
     protected open fun HomeHeaderAction() = Unit
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        remotePolicy = AndroidRemotePolicy.get(this)
+        updates = AndroidAppUpdates(this, createAppUpdateManager(), remotePolicy.controller, remotePolicy.controller::storeFailed)
 
         enableEdgeToEdge()
         setContent {
@@ -74,6 +80,8 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                 )
             }
             App(
+                policyController = remotePolicy.controller,
+                onUpdate = updates::update,
                 authPlatform = authPlatform,
                 analytics = analytics,
                 homeHeaderAction = { HomeHeaderAction() },
@@ -89,4 +97,9 @@ abstract class ChaekchaekActivity : ComponentActivity() {
             )
         }
     }
+
+    override fun onStart() { super.onStart(); remotePolicy.start() }
+    override fun onResume() { super.onResume(); updates.setManager(createAppUpdateManager()); updates.resume() }
+    override fun onStop() { remotePolicy.stop(); super.onStop() }
+    override fun onDestroy() { updates.dispose(); super.onDestroy() }
 }

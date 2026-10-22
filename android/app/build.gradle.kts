@@ -141,6 +141,8 @@ dependencies {
   implementation(libs.googleid)
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.analytics)
+  implementation("com.google.firebase:firebase-config")
+  implementation("com.google.android.play:app-update:2.1.0")
   releaseImplementation(libs.firebase.crashlytics)
   implementation(libs.compose.runtime)
   implementation(libs.compose.foundation)
