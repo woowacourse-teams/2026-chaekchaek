@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import okhttp3.mockwebserver.SocketPolicy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -196,6 +197,57 @@ public class KakaoBookSearchClientTest {
         enqueueJson(401, """
                 {"msg": "Unauthorized", "code": -401}
                 """);
+
+        // when & then
+        assertThatThrownBy(() -> client.search("데미안", 1))
+                .isInstanceOf(KakaoClientException.class);
+    }
+
+    @Test
+    @DisplayName("카카오 API 호출 제한 오류를 카카오 클라이언트 예외로 변환한다")
+    void should_ThrowKakaoClientException_When_KakaoRateLimitIsExceeded() {
+        // given
+        enqueueJson(429, """
+                {"msg": "Too many requests", "code": -10}
+                """);
+
+        // when & then
+        assertThatThrownBy(() -> client.search("데미안", 1))
+                .isInstanceOf(KakaoClientException.class);
+    }
+
+    @Test
+    @DisplayName("카카오 API 서버 오류를 카카오 클라이언트 예외로 변환한다")
+    void should_ThrowKakaoClientException_When_KakaoReturnsServerError() {
+        // given
+        enqueueJson(500, """
+                {"msg": "Internal server error", "code": -500}
+                """);
+
+        // when & then
+        assertThatThrownBy(() -> client.search("데미안", 1))
+                .isInstanceOf(KakaoClientException.class);
+    }
+
+    @Test
+    @DisplayName("카카오 API 연결이 중단되면 카카오 클라이언트 예외로 변환한다")
+    void should_ThrowKakaoClientException_When_KakaoConnectionIsDropped() {
+        // given
+        kakaoServer.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START));
+
+        // when & then
+        assertThatThrownBy(() -> client.search("데미안", 1))
+                .isInstanceOf(KakaoClientException.class);
+    }
+
+    @Test
+    @DisplayName("카카오 API 응답이 타임아웃되면 카카오 클라이언트 예외로 변환한다")
+    void should_ThrowKakaoClientException_When_KakaoResponseTimesOut() {
+        // given
+        kakaoServer.enqueue(new MockResponse()
+                .setHeadersDelay(4, TimeUnit.SECONDS)
+                .setHeader("Content-Type", "application/json; charset=utf-8")
+                .setBody(emptyResultJson(0, 0, true)));
 
         // when & then
         assertThatThrownBy(() -> client.search("데미안", 1))
