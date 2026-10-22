@@ -138,7 +138,7 @@ class AuthViewModel private constructor(
       throw error
     } catch (error: Exception) {
       if (session.tokens.value != current) return
-      _uiState.value = AuthUiState(requiresNickname = true)
+      _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
       errors.report(error, ErrorOperation.Settings) {
         profileJob = scope.launch { session.tokens.value?.let { checkProfile(it) } }
       }
@@ -210,9 +210,15 @@ class AuthViewModel private constructor(
       return
     }
 
-    val original = pendingAction.takeIf { force && _uiState.value.requiresNickname }
+    val original = pendingAction.takeIf { force && !profileReady && session.tokens.value != null }
     pendingAction = if (original == null) action else { token -> original(token); action(token) }
     if (_uiState.value.signingIn || (_uiState.value.requiresNickname && !force)) return
+    if (!force && session.tokens.value != null) {
+      errors.dismiss()
+      profileJob?.cancel()
+      profileJob = scope.launch { session.tokens.value?.let { checkProfile(it) } }
+      return
+    }
     val generation = ++authenticationGeneration
     errors.dismiss()
     var credentialConsumed = false
