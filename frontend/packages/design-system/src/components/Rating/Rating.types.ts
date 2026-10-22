@@ -7,7 +7,7 @@ export type AS = 'div';
 export type OwnProps = {
   value: number;
   onChange?: (value: number) => void;
-  size?: 'small' | 'medium';
+  size?: 'small' | 'medium' | 'large';
   title?: React.ReactNode;
   description?: React.ReactNode;
   block?: boolean;
