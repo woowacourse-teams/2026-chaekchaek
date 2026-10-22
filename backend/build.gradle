@@ -232,6 +232,16 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			content?.put('examples', examples)
 			examples.put(name, [summary: summary, value: value])
 		}
+		def libraryCreationOperation = ((specification.get('paths') as Map)
+				?.get('/api/v1/libraries') as Map)?.get('post') as Map
+		def libraryCreationRequestContent = ((libraryCreationOperation?.get('requestBody') as Map)
+				?.get('content') as Map)
+		libraryCreationRequestContent?.values()?.each { content ->
+			def examples = (content as Map).get('examples') as Map
+			if (examples?.containsKey('library-create')) {
+				(content as Map).put('examples', ['library-create': examples.get('library-create')] + examples)
+			}
+		}
 
 		['/api/v1/books', '/api/v1/library', '/api/v1/books/{bookId}/reviews',
 		 '/api/v1/reviews/{reviewId}/replies'].each { path ->
@@ -842,6 +852,19 @@ tasks.register('verifyOpenApi') {
 		if ((libraryCreationRequest?.get('required') as Set) != (['name'] as Set)
 				|| (libraryCreationRequest?.get('properties') as Map)?.get('name')?.get('type') != 'string') {
 			throw new GradleException('OpenAPI specification has invalid fields for POST /api/v1/libraries request')
+		}
+		def libraryCreationRequestContents = ((libraryCreationOperation.get('requestBody') as Map)
+				?.get('content') as Map)
+		libraryCreationRequestContents.values().each { content ->
+			def examples = (content as Map).get('examples') as Map
+			if (examples?.keySet()?.first() != 'library-create'
+					|| !examples.containsKey('library-create-invalid-request')) {
+				throw new GradleException('OpenAPI specification must show the successful library creation request first and preserve the invalid request example')
+			}
+			def defaultRequest = new JsonSlurper().parseText(examples.get('library-create').get('value').toString()) as Map
+			if (!(defaultRequest.get('name') instanceof String) || defaultRequest.get('name').toString().isBlank()) {
+				throw new GradleException('OpenAPI specification has an empty default library creation request example')
+			}
 		}
 		def libraryCreationResponse = responseSchema('/api/v1/libraries', 'post', '201')
 		if ((libraryCreationResponse?.get('required') as Set) != (['libraryId', 'name'] as Set)) {
