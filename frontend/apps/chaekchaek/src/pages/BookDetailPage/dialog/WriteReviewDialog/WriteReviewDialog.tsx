@@ -82,6 +82,14 @@ export const WriteReviewDialog = ({
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
+    await writeReview();
+    await updateRating();
+
+    onReviewWritten();
+    onClose();
+  };
+
+  const writeReview = async () => {
     const requestData = buildReviewRequest(values);
 
     if (isAuthenticated) {
@@ -115,11 +123,6 @@ export const WriteReviewDialog = ({
         isbn,
       });
     }
-
-    await updateRating();
-
-    onReviewWritten();
-    onClose();
   };
 
   const [rating, setRating] = useState(defaultRating || 0);
