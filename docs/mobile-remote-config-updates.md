@@ -72,30 +72,45 @@ iOS UI 테스트 launch arguments: `-uiTestingRequiredUpdate`, `-uiTestingRecomm
 4. 배포 전 현재 템플릿을 다시 받아 기존 매개변수/조건을 보존하고 변경 diff를 검토한다. 초안 파일로 전체 템플릿을 무조건 대체하지 않는다.
 5. 잘못된 차단의 복구는 해당 최소 경계를 내리는 새 정책 발행이다. 오프라인 사용자는 새 정책을 받기 전까지 기존 차단을 유지한다.
 
-`android/config/remote-config/template.draft.json`은 배포되지 않은 검토용 템플릿이다. 최소/최신 경계는 0이고 검증 문구만 있다. 현재 접근 확인된 Firebase 프로젝트는 `chaekchaek-d2b85`다. 원격 검증기의 Android Release 설정도 `chaekchaek-d2b85`임을 확인했다. Android Debug는 별도 `chaekchaek-debug`를 사용하며 현재 계정의 접근은 확인되지 않았다. 두 프로젝트를 섞거나 SDK 설정을 자동으로 바꾸지 않는다.
+`android/config/remote-config/template.draft.json`은 검토용 원본이다. 사용자 승인 후 같은 정책을 2026-10-23 16:30:50 KST에 `chaekchaek-d2b85` Remote Config 버전 1로 게시하고 다시 조회했다. 최소/최신 경계는 모두 0이며 `verificationMessage`는 `원격 설정 연결 확인`이다. 사용자를 차단하지 않는 수신 검증 정책이다. 현재 접근 확인된 Firebase 프로젝트는 `chaekchaek-d2b85`다. 원격 검증기의 Android Release 설정도 `chaekchaek-d2b85`임을 확인했다. Android Debug는 별도 `chaekchaek-debug`를 사용하며 현재 계정의 접근은 확인되지 않았다. 두 프로젝트를 섞거나 SDK 설정을 자동으로 바꾸지 않는다.
+
+Firebase는 기존 서비스와 원격 업데이트 정책에 사용하고 PostHog는 사용자 이벤트 분석에 사용한다. PostHog로 통합하는 전환 비용과 러닝커브를 고려해 현재는 둘을 유지한다. 이번 통합에서 PostHog 초기화와 이벤트 전달, Firebase Remote Config 연결을 함께 보존했다.
+
+실제 Firebase 수신 UI 테스트는 게시 이후 별도로 실행한다. Xcode 테스트 프로세스에 `TEST_RUNNER_VERIFY_LIVE_REMOTE_POLICY=1`을 전달하고 `RemotePolicyUITests/testPublishedPolicyIsReceivedWithoutStoreRelease`를 실행한다. 일반 테스트에서는 외부 서비스 의존 검증을 건너뛴다. 테스트는 개발자 도구에서 강제 수신 후 원격 출처, 검증 문구와 마지막 수신 시각을 확인한다.
 
 ## 검증 상태
 
-2026-10-22~23 검증 코드 커밋: `45cee6e70edac0f8106a936f5946c4c06aaceede`. 이후 검증 기록만 갱신하는 커밋은 앱 소스를 바꾸지 않는다.
+최신 `an-develop`의 PostHog 병합 커밋 `6a477fbb`를 반영했다. 이번 검증의 앱/테스트 코드 커밋은 `19873719`다. 이후 이 문서만 갱신하며 앱 소스는 바꾸지 않는다.
 
 | 항목 | 결과와 근거 |
 | --- | --- |
-| Android 원격 실행 경로 | `an-develop`과 `581-remote-config-update`를 허용했다. 실행 중인 검증기의 설정을 다시 읽게 한 뒤 해당 브랜치의 정확한 SHA로 작업이 수락됐다. |
-| Android Release, 단위 테스트 | `android-smoke` 작업 `d8ef89ffe3b74a4a962b124e3497cd6b` 성공. Release APK 빌드, 단위 테스트 388개 통과, 실패/오류/건너뜀 0. 공통 정책 테스트 9개를 포함한다. |
-| Android 설치와 실행 | 동일 서명의 기존 `1.1.1 (5)`을 확인하고 `1.3.1 (10)`을 덮어쓰기 설치했다. 프로세스와 MainActivity foreground를 확인했다. 실제 사용자 데이터 왕복과 전체 UI 시나리오의 증거는 아니다. |
-| iOS 공통 정책 | `iosSimulatorArm64Test`에서 MobilePolicyTest 9개 통과, 실패/오류/건너뜀 0. 첫 실행, 오프라인, 캐시 복원, 잘못된 정책, 숫자 버전 경계, 임시 설정과 응답 순서를 검증한다. |
-| iOS 앱과 UI | 최종 SHA 앱 빌드 성공. iOS 소스가 동일한 `e19a087f`에서는 iPhone 17 Pro, iOS 26.2로 강제/권장 UI 2개가 통과했고 캡처에서 문구와 버튼을 확인했다. 최종 SHA의 UI 실행은 테스트 도구의 Accessibility 초기화 시간 초과로 시작하지 못했다. 한 차례 재시도도 시뮬레이터 초기 데이터 이관 지연으로 중단했다. 최종 SHA UI 통과로 기록하지 않는다. |
+| Firebase 게시 | `chaekchaek-d2b85`, 버전 1, 2026-10-23 16:30:50 KST. 게시 후 다시 조회해 `mobile_policy_v1`과 차단 없는 경계를 확인했다. |
+| iOS 실제 수신 | iPhone 17 Pro, iOS 26.2에서 실제 서비스 수신 테스트 1개 통과, 실패/건너뜀 0. 개발자 도구의 출처 `원격`, 수신 결과 `수신 성공`, 수신 시각 `2026-10-23T07:46:02.935Z`, 검증 문구 `원격 설정 연결 확인`을 캡처에서 확인했다. 스토어 배포 없이 게시한 값이 앱에 적용됐다. |
+| iOS 공통 정책 | `iosSimulatorArm64Test`의 MobilePolicyTest 9개 통과, 실패/오류/건너뜀 0. 기본값, 오프라인, 캐시 복원, 잘못된 정책, 숫자 버전 경계, 임시 설정과 응답 순서를 검증한다. |
+| iOS 앱과 UI | 통합 앱 빌드 성공. 강제 차단/닫기 불가와 권장 안내 미루기/홈 보존 UI 2개 통과. 네이티브 단위 테스트 9개도 통과했다. |
+| Android 통합 빌드와 테스트 | 플리파 원격 접수 전에 SSH 연결 시간 초과를 확인해 Jev 로컬 대체 경로로 전환했다. 원격 제출은 하지 않았다. 같은 코드의 Release APK, Debug APK와 테스트 APK 빌드, `:app:lintDebug`, `:shared:testAndroidHostTest` 408개 통과, 실패/오류/건너뜀 0. AAB는 이번에 검증하지 않았다. |
+| Android 설치와 UI | Pixel_6a_API_33_2, `emulator-5580`에서 같은 서명의 기존 `1.3.1 (10)`을 확인한 뒤 `install -r`로 갱신하고 MainActivity 실행을 확인했다. UpdatePolicyTest 2개 통과: 강제 안내 뒤로가기 차단과 입력 보존, 권장 안내 미루기와 상태 보존. |
+| Android Jev | 고정 실행기 0.2.0, 소스 `a43a0e91` 확인. Portal 0.7.27의 패키지/서명 검사를 통과했으나 설치가 `INSTALL_FAILED_INSUFFICIENT_STORAGE`로 실패해 시나리오는 실행하지 못했다. 기존 데이터 삭제나 다른 AVD 우회를 하지 않았다. 자신이 부팅한 기기 종료와 임대 반환을 완료했다. |
 
-Android 원격 결과 묶음 `android-45cee6e7.zip`, iOS `RemotePolicy-45cee6e7.xcresult`와 공통 테스트 로그를 검증 세션의 결과 디렉터리에 수집한다. 원격 검증 프로필은 전체 Lint, AAB, Android instrumentation을 실행하지 않는다. Release 빌드에 포함된 lintVitalRelease 통과를 전체 Lint 통과로 해석하지 않는다.
+검증 시작 시 문서 수정과 Xcode가 자동으로 넣은 테스트 선택 속성이 추적 변경으로 기록됐지만 앱/테스트 소스는 `19873719`와 동일하다. 자동 scheme 속성은 검증 후 원복했다.
+
+첫 iOS 실제 수신 실행은 `CODE_SIGNING_ALLOWED=NO`로 빌드해 Firebase Installations의 키체인 접근 오류 `SecItemCopyMatching (-34018)`가 발생했다. 앱은 기본값과 차단 없음 상태를 유지했다. 시뮬레이터 검증에서는 `CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual`로 빌드한 뒤 실제 수신 테스트를 다시 실행해 통과했다. 운영 계정이나 정책을 바꿔 우회하지 않았다.
+
+결과 묶음:
+
+- iOS 공통 테스트 로그와 UI 2개/네이티브 9개 결과: `/tmp/chaekchaek-581-19873719-ios/RemotePolicy.xcresult`, 같은 폴더의 `common-tests.log`.
+- iOS 실제 수신 성공: `/tmp/chaekchaek-581-19873719-ios-signed/RemotePolicy.xcresult`.
+- Android 빌드, 설치 검사와 UI 결과: `/tmp/chaekchaek-581-19873719-android/`의 `build.log`, `app-preflight.json`, `instrumentation.log`.
+- 실제 수신 캡처: `/tmp/chaekchaek-581-ios-signed-attachments/EFA9B84E-41FB-42CC-8A27-BCE72C8A6470.png`.
 
 남은 확인:
 
-- Firebase 초안은 사용자 검토 대기이며 게시하지 않았다. 실제 값 변경과 앱 수신은 아직 미검증이다.
-- Android instrumentation의 팝업/입력 보존 테스트는 추가했지만 현재 원격 프로필이 지원하지 않아 실행하지 않았다. FakeAppUpdateManager의 전체 왕복도 기기에서 미검증이다.
+- Android Debug의 `chaekchaek-debug` 접근과 실제 원격 수신은 미검증이다. 운영 프로젝트 게시와 iOS 수신을 Debug 프로젝트 수신의 증거로 사용하지 않는다.
+- FakeAppUpdateManager의 전체 왕복은 기기에서 미검증이다.
 - Play 내부 앱 공유/테스트 트랙의 낮은 버전에서 Flexible/Immediate 설치를 끝까지 확인하지 않았다. 기존 앱을 adb로 덮어쓴 결과를 In-App Updates의 증거로 사용하지 않는다.
 - iOS App Store 이동과 실제 업데이트 후 복귀는 미검증이다. 이미 배포된 정책 미지원 앱을 이 구현으로 소급 차단할 수 없다.
 
-초안이나 Fake 결과로 실서비스 수신과 구버전 스토어 업데이트 완료 조건을 대체하지 않는다.
+실제 Firebase 수신과 구버전 스토어 업데이트 완료 조건은 별도다. 현재는 전체 요구사항 완료나 이슈 종료로 판정하지 않는다.
 
 ## 공식 근거
 
