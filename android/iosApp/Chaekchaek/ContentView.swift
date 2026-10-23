@@ -180,18 +180,19 @@ private var analyticsEnvironment: String {
 }
 
 enum PostHogAnalyticsEventLogger {
-    private static var configured = false
-
-    static func configure() {
-        guard !configured else { return }
+    private static let configured: Bool = {
 #if DEBUG
         let isDebug = true
 #else
         let isDebug = false
 #endif
-        guard let config = makeConfiguration(info: Bundle.main.infoDictionary ?? [:], isDebug: isDebug) else { return }
+        guard let config = makeConfiguration(info: Bundle.main.infoDictionary ?? [:], isDebug: isDebug) else { return false }
         PostHogSDK.shared.setup(config)
-        configured = true
+        return true
+    }()
+
+    static func configure() {
+        _ = configured
     }
 
     static func makeConfiguration(info: [String: Any], isDebug: Bool) -> PostHogConfig? {
