@@ -18,6 +18,7 @@ data class BookshelfUiState(
     val selectedId: Long? = null,
     val loading: Boolean = false,
     val refreshing: Boolean = false,
+    val detailRefreshing: Boolean = false,
     val mutating: Boolean = false,
     val loaded: Boolean = false,
 )
@@ -49,8 +50,8 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
         if (token == null || state.value.mutating) return
         val session = generation
         readJob?.cancel()
+        state.value = state.value.copy(refreshing = true)
         readJob = viewModelScope.launch {
-            state.value = state.value.copy(refreshing = true)
             try {
                 withDelayedLoading({ if (session == generation) state.value = state.value.copy(loading = it) }) {
                     repository.mine(token ?: return@withDelayedLoading null)
@@ -70,7 +71,7 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
         detailJob?.cancel()
         val session = generation
         val request = ++detailGeneration
-        state.value = state.value.copy(selectedId = id, detail = state.value.detail?.takeIf { it.libraryId == id })
+        state.value = state.value.copy(selectedId = id, detail = state.value.detail?.takeIf { it.libraryId == id }, detailRefreshing = true)
         detailJob = viewModelScope.launch {
             try {
                 val detail = withDelayedLoading({ if (request == detailGeneration) state.value = state.value.copy(loading = it) }) {
@@ -79,14 +80,14 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
                 if (session == generation && request == detailGeneration) state.value = state.value.copy(detail = detail)
             } catch (e: CancellationException) { throw e }
             catch (e: Throwable) { if (session == generation && request == detailGeneration) report(e) { open(id) } }
-            finally { if (request == detailGeneration) state.value = state.value.copy(loading = false) }
+            finally { if (session == generation && request == detailGeneration) state.value = state.value.copy(loading = false, detailRefreshing = false) }
         }
     }
 
     fun close() {
         detailGeneration++
         detailJob?.cancel()
-        state.value = state.value.copy(selectedId = null, detail = null, loading = false)
+        state.value = state.value.copy(selectedId = null, detail = null, loading = false, detailRefreshing = false)
     }
 
     fun create(name: String, done: () -> Unit) {
@@ -132,7 +133,7 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
         readJob?.cancel()
         detailGeneration++
         detailJob?.cancel()
-        state.value = state.value.copy(loading = false, mutating = true, refreshing = false)
+        state.value = state.value.copy(loading = false, mutating = true, refreshing = false, detailRefreshing = false)
         mutationJob = viewModelScope.launch {
             try {
                 withDelayedLoading({ if (session == generation) state.value = state.value.copy(loading = it) }) {

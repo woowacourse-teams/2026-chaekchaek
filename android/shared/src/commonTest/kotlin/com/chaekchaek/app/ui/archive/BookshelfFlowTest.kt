@@ -84,6 +84,25 @@ class BookshelfFlowTest {
         } finally { Dispatchers.resetMain() }
     }
 
+    @Test fun `배치 변경 뒤 상세 갱신이 끝날 때까지 기존 내용과 갱신 상태를 유지한다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = FakeShelves(listOf(shelf(1)))
+            val vm = BookshelfViewModel(repo)
+            vm.authenticate("token"); advanceUntilIdle()
+            vm.open(1); advanceUntilIdle()
+            val previous = vm.uiState.value.detail
+            val gate = CompletableDeferred<Unit>()
+            repo.detailGate = gate
+            vm.remove(1, 42); runCurrent()
+            assertEquals(previous, vm.uiState.value.detail)
+            assertTrue(vm.uiState.value.detailRefreshing)
+            assertFalse(vm.uiState.value.refreshing)
+            gate.complete(Unit); advanceUntilIdle()
+            assertFalse(vm.uiState.value.detailRefreshing)
+        } finally { Dispatchers.resetMain() }
+    }
+
     @Test fun `이름과 순서는 기존 긴 이름과 35권 이전 데이터를 임의로 자르지 않는다`() {
         assertNotNull(bookshelfNameError(" ", emptyList()))
         assertNotNull(bookshelfNameError("12345678901", emptyList()))
@@ -98,6 +117,7 @@ class BookshelfFlowTest {
 
 private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
     var fail = false
+    var detailGate: CompletableDeferred<Unit>? = null
     val added = mutableListOf<Long>()
     val orders = mutableListOf<List<Long>>()
     override suspend fun mine(token: String) = BookshelfCollection(9, shelves)
@@ -106,7 +126,10 @@ private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
         added += libraryId
         return LibraryRecord("FINISHED", 100, 4.5, 42)
     }
-    override suspend fun detail(libraryId: Long) = BookshelfDetail(libraryId, 9, "책장", false, 0, emptyList())
+    override suspend fun detail(libraryId: Long): BookshelfDetail {
+        detailGate?.await()
+        return BookshelfDetail(libraryId, 9, "책장", false, 0, emptyList())
+    }
     override suspend fun create(name: String, token: String) = Bookshelf(3, name, false, 0, emptyList())
     override suspend fun rename(libraryId: Long, name: String, token: String) {}
     override suspend fun delete(libraryId: Long, token: String) {}
