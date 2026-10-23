@@ -13,12 +13,17 @@ import {
 import ConstrainedImgBoxDummyImg1 from '../../../../../../../packages/design-system/src/components/ConstrainedImgBox/imgs/dummy1.jpg';
 
 import type { ShareLibraryImageDialogProps } from './ShareLibraryImageDialog.types';
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 const APP_NAME = '책췍';
 
-export const ShareLibraryImageDialog = ({ onClose }: ShareLibraryImageDialogProps) => {
-  const nickname = '먼지';
-  const libraryName = '나를 넓히는 책들';
+export const ShareLibraryImageDialog = ({
+  libraryName,
+  imgs,
+  onClose,
+}: ShareLibraryImageDialogProps) => {
+  const { user } = useAuthContext();
+  const nickname = user?.nickname;
 
   const domRef = useRef(null);
 
@@ -68,14 +73,8 @@ export const ShareLibraryImageDialog = ({ onClose }: ShareLibraryImageDialogProp
             ref={domRef}
           >
             <Showcase>
-              {Array.from({ length: 10 }).map((_, index) => {
-                return (
-                  <ConstrainedImgBox
-                    img={ConstrainedImgBoxDummyImg1}
-                    maxWidth="80px"
-                    maxHeight={'170px'}
-                  />
-                );
+              {imgs.map((img) => {
+                return <ConstrainedImgBox img={img.url} maxWidth="80px" maxHeight={'170px'} />;
               })}
             </Showcase>
           </DisplayCard>

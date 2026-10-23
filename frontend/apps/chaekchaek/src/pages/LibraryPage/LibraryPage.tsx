@@ -96,7 +96,17 @@ export const LibraryPage = () => {
       case 'ManageLibraryDialog':
         return <ManageLibraryDialog onClose={handleCloseDialog} onOpenDialog={handleOpenDialog} />;
       case 'ShareLibraryImageDialog':
-        return <ShareLibraryImageDialog onClose={handleCloseDialog} />;
+        return (
+          libraryItemsData && (
+            <ShareLibraryImageDialog
+              libraryName={libraryItemsData.name}
+              imgs={libraryItemsData?.items.map((item) => {
+                return { title: item.title, url: item.spineImageUrl };
+              })}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
 
       case 'RenameLibraryDialog':
         return (
