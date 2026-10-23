@@ -50,8 +50,11 @@ class BookshelfContractTest {
         waitText("담을 책장 고르기")
         compose.onNodeWithText("이 책장에 담기").performClick()
         compose.waitUntil(15_000) { compose.onAllNodesWithText("담을 책장 고르기").fetchSemanticsNodes().isEmpty() }
+        waitText("3권")
         compose.onNodeWithText("편집").performScrollTo().performClick()
         compose.onAllNodesWithText("빼기").onFirst().performScrollTo().performClick()
+        compose.waitUntil(15_000) { JSONObject(request("/__bookshelf/state")).getJSONArray("requests").toString().contains("/books/1") }
+        waitText("2권")
         compose.onNodeWithText("완료").performScrollTo().performClick()
         compose.waitUntil(15_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
