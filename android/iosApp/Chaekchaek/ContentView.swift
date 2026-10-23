@@ -4,6 +4,7 @@ import StoreKit
 import GoogleSignIn
 import FirebaseAnalytics
 import FirebaseRemoteConfig
+import PostHog
 
 struct ContentView: View {
     @State private var onboardingEligible: Bool?
@@ -93,6 +94,10 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             requestGoogleIdToken: { onResult in
                 Task { @MainActor in
 #if DEBUG
+                    if launchArguments.contains("-uiTestingNickname") && launchArguments.contains("-uiTestingRefresh") {
+                        _ = onResult("fixture-google", nil)
+                        return
+                    }
                     if launchArguments.contains("-uiTestingSignInFailure") {
                         _ = onResult(nil, "fixture provider failure")
                         return
@@ -111,7 +116,14 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                     }
                 }
             },
-            readRefreshToken: keychain.read,
+            readRefreshToken: {
+#if DEBUG
+                if launchArguments.contains("-uiTestingNicknameRestore") && launchArguments.contains("-uiTestingRefresh") {
+                    return "fixture-refresh"
+                }
+#endif
+                return keychain.read()
+            },
             writeRefreshToken: keychain.write,
             clearRefreshToken: keychain.clear,
             requestAppleCredential: { onResult in
@@ -135,7 +147,14 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             },
             readGuest: guestKeychain.read,
             writeGuest: guestKeychain.write,
-            clearGuest: guestKeychain.clear
+            clearGuest: guestKeychain.clear,
+            readAnonymousReviews: {
+                guard UserDefaults.standard.object(forKey: "review_anonymous") != nil else { return nil }
+                return KotlinBoolean(bool: UserDefaults.standard.bool(forKey: "review_anonymous"))
+            },
+            writeAnonymousReviews: { value in
+                UserDefaults.standard.set(value.boolValue, forKey: "review_anonymous")
+            }
         )
         let recentSearchStorage = RecentSearchStorage(
             read: {
@@ -153,13 +172,27 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                 UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown")
             }
         )
+        let defaults = UserDefaults.standard
+        let samplingSeed = defaults.string(forKey: "analytics_sampling_seed") ?? UUID().uuidString
+        defaults.set(samplingSeed, forKey: "analytics_sampling_seed")
+        let collection = AnalyticsCollectionController(
+            readCachedPolicy: { defaults.string(forKey: "analytics_collection_policy") },
+            writeCachedPolicy: { defaults.set($0, forKey: "analytics_collection_policy") },
+            samplingSeed: samplingSeed
+        )
         return MainViewControllerKt.MainViewController(
             authPlatform: authPlatform,
             recentSearchStorage: recentSearchStorage,
             onboardingStorage: onboardingStorage,
             createGoogleSignInButton: GoogleSignInControl.init,
             analyticsEnvironment: analyticsEnvironment,
-            logAnalyticsEvent: FirebaseAnalyticsEventLogger.log,
+            analyticsCollection: collection,
+            refreshAnalyticsConfiguration: { PostHogAnalyticsEventLogger.refreshCollectionPolicy(collection) },
+            logAnalyticsEvent: AnalyticsEventDispatcher(
+                primary: FirebaseAnalyticsEventLogger.log,
+                secondary: PostHogAnalyticsEventLogger.log
+            ).log,
+            logUserError: { PostHogAnalyticsEventLogger.captureUserError($0) },
             uiTestingMyPage: uiTestingMyPage,
             uiTestingBookQuestionA: uiTestingBookQuestionA,
             showQuestionAPreviewControls: showQuestionAPreviewControls,
@@ -282,20 +315,126 @@ private var analyticsEnvironment: String {
 #endif
 }
 
+enum PostHogAnalyticsEventLogger {
+    private static let configured: Bool = {
+#if DEBUG
+        let isDebug = true
+#else
+        let isDebug = false
+#endif
+        guard let config = makeConfiguration(info: Bundle.main.infoDictionary ?? [:], isDebug: isDebug) else { return false }
+        PostHogSDK.shared.setup(config)
+        return true
+    }()
+
+    static func configure() {
+        _ = configured
+    }
+
+    static func makeConfiguration(info: [String: Any], isDebug: Bool) -> PostHogConfig? {
+        if isDebug && info["POSTHOG_CAPTURE_DEBUG"] as? String != "YES" { return nil }
+        guard let rawToken = info["POSTHOG_PROJECT_TOKEN"] as? String else { return nil }
+        let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !token.isEmpty, !token.contains("$("),
+              let host = info["POSTHOG_HOST"] as? String,
+              let url = URL(string: host), url.scheme == "https", url.host != nil else { return nil }
+        let config = PostHogConfig(projectToken: token, host: host)
+        config.enableSwizzling = false
+        config.captureApplicationLifecycleEvents = false
+        config.captureScreenViews = false
+        config.captureElementInteractions = false
+        config.captureSwiftUIElementInteractions = false
+        config.capturePushNotificationSubscriptions = false
+        config.capturePushNotificationOpened = false
+        config.preloadFeatureFlags = false
+        config.sendFeatureFlagEvent = false
+        config.personProfiles = .never
+        config.sessionReplay = false
+        config.surveys = false
+        config.errorTrackingConfig.autoCapture = true
+        config.errorTrackingConfig.exceptionSteps.enabled = false
+        config.errorTrackingConfig.inAppIncludes.append("Shared")
+        config.setBeforeSend { @Sendable event in
+            guard event.event == "$exception" else { return event }
+            guard let data = try? JSONSerialization.data(withJSONObject: event.properties),
+                  let json = String(data: data, encoding: .utf8),
+                  let clean = UserErrorPrivacyKt.sanitizeExceptionProperties(propertiesJson: json),
+                  let cleanData = clean.data(using: .utf8),
+                  let properties = try? JSONSerialization.jsonObject(with: cleanData) as? [String: Any] else { return nil }
+            event.properties = properties
+            return event
+        }
+        return config
+    }
+
+    @MainActor
+    static func refreshCollectionPolicy(_ controller: AnalyticsCollectionController) {
+        guard configured else { return }
+        let receiver = AnalyticsPolicyReceiver(controller)
+        PostHogSDK.shared.reloadFeatureFlags { @Sendable in
+            guard let payload = PostHogSDK.shared.getFeatureFlagPayload(AnalyticsCollectionController.companion.FlagKey) as? [String: Any],
+                  let data = try? JSONSerialization.data(withJSONObject: payload),
+                  let json = String(data: data, encoding: .utf8) else { return }
+            DispatchQueue.main.async { receiver.receive(json) }
+        }
+    }
+
+    static func captureUserError(_ propertiesJson: String) {
+        guard configured,
+              let data = propertiesJson.data(using: .utf8),
+              let properties = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        PostHogSDK.shared.capture("$exception", properties: properties)
+    }
+
+    static func log(event: AnalyticsEvent) {
+        guard configured else { return }
+        let strings = event.stringParameters
+        var crashContext: [String: Any] = [:]
+        if let run = strings["run_id"] { crashContext["cc_run_id"] = run }
+        if let screen = strings["screen_name"] { crashContext["cc_screen_name"] = screen }
+        if !["cc_app_lifecycle", "cc_view_engagement", "cc_content_impression"].contains(event.name) {
+            crashContext["cc_last_event"] = event.name
+            if let action = strings["action"] { crashContext["cc_last_action"] = action }
+        }
+        PostHogSDK.shared.register(crashContext)
+        var properties = analyticsParameters(event)
+        properties["$geoip_disable"] = true
+        PostHogSDK.shared.capture(event.name, properties: properties)
+    }
+}
+
+// SDK의 완료 콜백에서 받은 정책을 공통 계측과 같은 main actor에서 적용한다.
+@MainActor
+private final class AnalyticsPolicyReceiver {
+    private let controller: AnalyticsCollectionController
+
+    init(_ controller: AnalyticsCollectionController) {
+        self.controller = controller
+    }
+
+    func receive(_ payload: String) {
+        _ = controller.receive(payload: payload)
+    }
+}
+
 private enum FirebaseAnalyticsEventLogger {
     static func log(event: AnalyticsEvent) {
-        var parameters: [String: Any] = [:]
-        (event.stringParameters as NSDictionary).forEach { key, value in
-            if let key = key as? String { parameters[key] = value }
-        }
-        (event.longParameters as NSDictionary).forEach { key, value in
-            if let key = key as? String { parameters[key] = value }
-        }
-        (event.doubleParameters as NSDictionary).forEach { key, value in
-            if let key = key as? String { parameters[key] = value }
-        }
-        Analytics.logEvent(event.name, parameters: parameters)
+        Analytics.logEvent(event.name, parameters: analyticsParameters(FirebaseAnalyticsParametersKt.firebaseAnalyticsEvent(event: event)))
     }
+}
+
+func analyticsParameters(_ event: AnalyticsEvent) -> [String: Any] {
+    var parameters: [String: Any] = [:]
+    (event.stringParameters as NSDictionary).forEach { key, value in
+        if let key = key as? String { parameters[key] = value }
+    }
+    (event.longParameters as NSDictionary).forEach { key, value in
+        if let key = key as? String { parameters[key] = value }
+    }
+    (event.doubleParameters as NSDictionary).forEach { key, value in
+        if let key = key as? String { parameters[key] = value }
+    }
+    return parameters
 }
 
 private final class GoogleSignInControl: UIControl {
@@ -316,6 +455,7 @@ private final class GoogleSignInControl: UIControl {
         providerFont = UIFont(name: "Roboto-Bold", size: 17) ?? .systemFont(ofSize: 17, weight: .semibold)
         super.init(frame: .zero)
 
+        isOpaque = false
         backgroundColor = .white
         clipsToBounds = true
         layer.cornerRadius = 8
@@ -329,10 +469,13 @@ private final class GoogleSignInControl: UIControl {
     }
 
     override func draw(_ rect: CGRect) {
+        UIColor.white.setFill()
+        UIBezierPath(rect: bounds).fill()
+        let foregroundAlpha: CGFloat = isEnabled && !isHighlighted ? 1 : 0.5
         let title = "Google로 계속하기"
         let attributes: [NSAttributedString.Key: Any] = [
             .font: providerFont,
-            .foregroundColor: UIColor(red: 23.0 / 255.0, green: 23.0 / 255.0, blue: 23.0 / 255.0, alpha: 1),
+            .foregroundColor: UIColor(red: 23.0 / 255.0, green: 23.0 / 255.0, blue: 23.0 / 255.0, alpha: foregroundAlpha),
         ]
         let textSize = title.size(withAttributes: attributes)
         let logoHeight = 18.0
@@ -340,7 +483,7 @@ private final class GoogleSignInControl: UIControl {
         let contentWidth = logoWidth + 12 + textSize.width
         let contentX = (bounds.width - contentWidth) / 2
 
-        logo.draw(in: CGRect(x: contentX, y: (bounds.height - logoHeight) / 2, width: logoWidth, height: logoHeight))
+        logo.draw(in: CGRect(x: contentX, y: (bounds.height - logoHeight) / 2, width: logoWidth, height: logoHeight), blendMode: .normal, alpha: foregroundAlpha)
         title.draw(
             at: CGPoint(x: contentX + logoWidth + 12, y: (bounds.height - textSize.height) / 2),
             withAttributes: attributes
@@ -353,6 +496,6 @@ private final class GoogleSignInControl: UIControl {
     }
 
     private func updateAlpha() {
-        alpha = isEnabled && !isHighlighted ? 1 : 0.5
+        setNeedsDisplay()
     }
 }

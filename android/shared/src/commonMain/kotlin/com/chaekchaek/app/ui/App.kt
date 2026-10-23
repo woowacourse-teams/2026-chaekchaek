@@ -19,11 +19,13 @@ fun App(
     onboardingStorage: OnboardingStorage = OnboardingStorage(),
     analytics: AnalyticsTracker = AnalyticsTracker.None,
     uiTestingMyPage: Boolean = false,
+    refreshAnalyticsConfiguration: () -> Unit = {},
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
     policyController: com.chaekchaek.app.config.MobilePolicyController? = null,
     onUpdate: () -> Unit = {},
 ) {
+    com.chaekchaek.app.analytics.AnalyticsLifecycleEffect(analytics, refreshAnalyticsConfiguration)
     ChaekchaekTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),

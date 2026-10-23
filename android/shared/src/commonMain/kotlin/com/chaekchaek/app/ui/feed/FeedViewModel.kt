@@ -22,6 +22,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
+import kotlin.time.TimeSource
+import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.analytics.analyticsErrorCategory
 
 class FeedViewModel(
     private val repository: ReviewFeedRepository,
@@ -31,8 +34,9 @@ class FeedViewModel(
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     initialAccessToken: String? = null,
     deferInitialLoad: Boolean = false,
+    private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(analytics.errors)
     private var reviewActions = reviewActions
     private var readGuestToken = readGuestToken
     private var accessToken: String? = initialAccessToken
@@ -60,12 +64,12 @@ class FeedViewModel(
     }
 
     fun retry() {
-        loadFirstPage()
+        loadFirstPage(trigger = "retry")
     }
 
     fun refresh() {
         if (awaitingInitialAuthentication || initialLoadJob?.isActive == true || mutationJob?.isActive == true) return
-        loadFirstPage(retainContent = true, refreshing = true)
+        loadFirstPage(retainContent = true, refreshing = true, trigger = "refresh")
     }
 
     fun attachActions(
@@ -101,6 +105,8 @@ class FeedViewModel(
         val authenticationRevision = authenticationRevision
         val revision = loadRevision
         val viewer = currentViewer()
+        val started = TimeSource.Monotonic.markNow()
+        val loadId = analytics.newId("load")
         loadMoreJob = viewModelScope.launch {
             try {
                 val next = withDelayedApiLoading(onLoadingChanged = { loading ->
@@ -109,6 +115,7 @@ class FeedViewModel(
                 if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@launch
                 val latest = _uiState.value as? FeedUiState.Content ?: return@launch
                 if (latest.nextPage != page) return@launch
+                recordLoad(loadId, "pagination", "success", started.elapsedNow().inWholeMilliseconds, next.reviews.size, page)
                 savedStateHandle[FeedSavedStateKeys.LoadedPage] = page
                 _uiState.value = latest.copy(
                     reviews = (latest.reviews + next.reviews.map { it.toUiModel() })
@@ -122,6 +129,7 @@ class FeedViewModel(
                 throw error
             } catch (error: Throwable) {
                 if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@launch
+                recordLoad(loadId, "pagination", "failure", started.elapsedNow().inWholeMilliseconds, page = page, error = error)
                 errors.report(error, ErrorOperation.FeedLoad) { freshToken ->
                     if (freshToken != null) this@FeedViewModel.accessToken = freshToken
                     retryLoadMore()
@@ -169,7 +177,17 @@ class FeedViewModel(
         }) { actions, accessToken -> actions.createReply(id, content, accessToken) }
     }
 
-    private fun loadFirstPage(retainContent: Boolean = false, refreshing: Boolean = false) {
+    private fun recordLoad(loadId: String, trigger: String, outcome: String, duration: Long, count: Int = 0, page: Int = 1, error: Throwable? = null) {
+        analytics.log("cc_load_result", strings = buildMap {
+            put("resource", "feed")
+            put("load_id", loadId)
+            put("trigger", trigger)
+            put("outcome", outcome)
+            error?.let { put("error_category", analyticsErrorCategory(it)) }
+        }, longs = mapOf("duration_ms" to duration, "result_count" to count.toLong(), "page" to page.toLong()), includeActionContext = false)
+    }
+
+    private fun loadFirstPage(retainContent: Boolean = false, refreshing: Boolean = false, trigger: String = "initial") {
         if (awaitingInitialAuthentication) return
         val revision = ++loadRevision
         initialLoadJob?.cancel()
@@ -178,6 +196,8 @@ class FeedViewModel(
         if (retainContent) updateContent { it.copy(loadingMore = false, showLoadingMore = false) }
         val authenticationRevision = authenticationRevision
         val viewer = currentViewer()
+        val started = TimeSource.Monotonic.markNow()
+        val loadId = analytics.newId("load")
         initialLoadJob = viewModelScope.launch {
             val previousState = _uiState.value
             withDelayedApiLoading(
@@ -202,6 +222,7 @@ class FeedViewModel(
                         loadedPage = nextPage
                     }
                     if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
+                    recordLoad(loadId, trigger, if (page.reviews.isEmpty()) "empty" else "success", started.elapsedNow().inWholeMilliseconds, page.reviews.size)
                     savedStateHandle[FeedSavedStateKeys.LoadedPage] = loadedPage
                     if (page.reviews.isEmpty()) {
                         FeedUiState.Empty
@@ -218,9 +239,10 @@ class FeedViewModel(
                     if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) {
                         return@withDelayedApiLoading
                     }
+                    recordLoad(loadId, trigger, "failure", started.elapsedNow().inWholeMilliseconds, error = error)
                     errors.report(error, ErrorOperation.FeedLoad) { freshToken ->
                         if (freshToken != null) this@FeedViewModel.accessToken = freshToken
-                        loadFirstPage(retainContent = true, refreshing = refreshing)
+                        loadFirstPage(retainContent = true, refreshing = refreshing, trigger = "retry")
                     }
                     previousState.takeUnless { it == FeedUiState.Loading } ?: FeedUiState.Content(emptyList(), 0, null)
                 }

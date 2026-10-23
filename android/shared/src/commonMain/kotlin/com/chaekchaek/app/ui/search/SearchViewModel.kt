@@ -45,7 +45,7 @@ class SearchViewModel(
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(analytics.errors)
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
     private val _sort = MutableStateFlow(
@@ -243,6 +243,8 @@ class SearchViewModel(
         if (currentQuery != loadedQuery || _sort.value != loadedSort) return
         val query = currentQuery
         val sort = _sort.value
+        val started = TimeSource.Monotonic.markNow()
+        val loadId = analytics.newId("load")
         _uiState.value = current.copy(loadingMore = true)
         loadMoreJob = viewModelScope.launch {
             try {
@@ -254,6 +256,7 @@ class SearchViewModel(
                 if (revision != loadRevision) return@launch
                 val latest = _uiState.value as? SearchUiState.Success ?: return@launch
                 if (currentQuery != query || _sort.value != sort || latest.nextPage != page) return@launch
+                analytics.log("cc_load_result", strings = mapOf("resource" to "search", "trigger" to "pagination", "outcome" to "success", "load_id" to loadId), longs = mapOf("page" to page.toLong(), "result_count" to next.items.size.toLong(), "duration_ms" to started.elapsedNow().inWholeMilliseconds), includeActionContext = false)
                 savedStateHandle[SearchSavedStateKeys.LoadedPage] = page
                 _uiState.value = latest.copy(
                     results = (latest.results + next.items).distinctBy(BookSearchResult::isbn13),
@@ -266,6 +269,7 @@ class SearchViewModel(
                 throw error
             } catch (error: Exception) {
                 if (revision != loadRevision) return@launch
+                analytics.log("cc_load_result", strings = mapOf("resource" to "search", "trigger" to "pagination", "outcome" to "failure", "load_id" to loadId, "error_category" to analyticsErrorCategory(error)), longs = mapOf("page" to page.toLong(), "duration_ms" to started.elapsedNow().inWholeMilliseconds), includeActionContext = false)
                 errors.report(error, ErrorOperation.Search) { retryLoadMore() }
                 val latest = _uiState.value as? SearchUiState.Success ?: return@launch
                 if (latest.nextPage == page) _uiState.value = latest.copy(loadingMore = false, showLoadingMore = false, loadMoreFailed = true)
@@ -282,6 +286,7 @@ class SearchViewModel(
 
     fun selectSort(sort: BookSearchSort) {
         if (_sort.value == sort) return
+        analytics.filterChange("search_sort", _sort.value.name.lowercase(), sort.name.lowercase())
         _sort.value = sort
         savedStateHandle[SearchSavedStateKeys.Sort] = sort.name
         if (currentQuery.isNotEmpty()) search(currentQuery, "sort_change")

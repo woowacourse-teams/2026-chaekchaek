@@ -40,8 +40,9 @@ internal val MemberSettingsUiState.publicNickname: String
 
 class MemberSettingsViewModel(
     private val repository: MemberRemoteRepository,
+    errorReporter: com.chaekchaek.app.analytics.UserErrorReporter = com.chaekchaek.app.analytics.UserErrorReporter.None,
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(errorReporter)
     private val _uiState = MutableStateFlow(MemberSettingsUiState())
     val uiState: StateFlow<MemberSettingsUiState> = _uiState.asStateFlow()
 
@@ -60,6 +61,12 @@ class MemberSettingsViewModel(
             _uiState.value = _uiState.value.copy(signedIn = true)
             load(accessToken)
         }
+    }
+
+    fun updateNickname(nickname: String) {
+        val settings = PendingMemberSettings(_uiState.value.anonymousReviews, nickname.trim())
+        pendingSettings = settings
+        save(settings)
     }
 
     fun setAnonymousReviews(anonymous: Boolean, nickname: String = "") {
@@ -113,7 +120,7 @@ class MemberSettingsViewModel(
         requestJob?.cancel()
         requestJob = viewModelScope.launch {
             withDelayedLoading(::setLoading) {
-                if (!settings.anonymous && settings.nickname != _uiState.value.nickname) {
+                if (settings.nickname.isNotBlank() && settings.nickname != _uiState.value.nickname) {
                     applyProfile(repository.updateNickname(settings.nickname, token), token)
                 }
                 if (settings.anonymous != _uiState.value.anonymousReviews) {

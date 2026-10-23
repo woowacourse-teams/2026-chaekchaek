@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.register
 
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,7 +28,8 @@ fun BookRegisterDialog(
     onDismiss: () -> Unit,
     onRegister: (title: String, creator: String, publisher: String, year: String, note: String) -> Unit,
 ) {
-    val errors = androidx.compose.runtime.remember { com.chaekchaek.app.presentation.common.ErrorRecoveryState() }
+    val errorReporter = com.chaekchaek.app.analytics.LocalAnalyticsTracker.current.errors
+    val errors = remember(errorReporter) { com.chaekchaek.app.presentation.common.ErrorRecoveryState(errorReporter) }
     com.chaekchaek.app.ui.common.ErrorRecoveryEffect(errors)
     val titleState = rememberLimitedTextFieldState(BookRegisterInputRules.TitlePolicy, book.title, book)
     val title = titleState.text.toString()

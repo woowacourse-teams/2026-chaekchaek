@@ -91,7 +91,8 @@ internal fun PageInputDialog(
     var active by remember { mutableStateOf(true) }
     val latestOnDismiss by rememberUpdatedState(onDismiss)
     DisposableEffect(Unit) { onDispose { active = false } }
-    val errors = remember { ErrorRecoveryState() }
+    val errorReporter = com.chaekchaek.app.analytics.LocalAnalyticsTracker.current.errors
+    val errors = remember(errorReporter) { com.chaekchaek.app.presentation.common.ErrorRecoveryState(errorReporter) }
     ErrorRecoveryEffect(errors)
     ChaekTwoActionDialog(
         onDismissRequest = onDismiss,
@@ -154,7 +155,8 @@ internal fun ReviewInputSheet(
     onDismiss: () -> Unit,
     onSave: (ReviewCreateRequest) -> Unit,
 ) {
-    val errors = remember { ErrorRecoveryState() }
+    val errorReporter = com.chaekchaek.app.analytics.LocalAnalyticsTracker.current.errors
+    val errors = remember(errorReporter) { com.chaekchaek.app.presentation.common.ErrorRecoveryState(errorReporter) }
     ErrorRecoveryEffect(errors)
     val initialContent = initialReview?.content.orEmpty()
     val initialQuote = initialReview?.quote.orEmpty()
@@ -376,7 +378,8 @@ internal fun ReplyInputSheet(
     onSave: (String, () -> Unit) -> Unit,
     onSaved: () -> Unit = onDismiss,
 ) {
-    val errors = remember { ErrorRecoveryState() }
+    val errorReporter = com.chaekchaek.app.analytics.LocalAnalyticsTracker.current.errors
+    val errors = remember(errorReporter) { com.chaekchaek.app.presentation.common.ErrorRecoveryState(errorReporter) }
     ErrorRecoveryEffect(errors)
     val contentState = rememberLimitedTextFieldState(ReplyInputRules.Policy, initialContent, initialContent)
     val content = contentState.text.toString()

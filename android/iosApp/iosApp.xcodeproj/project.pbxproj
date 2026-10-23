@@ -23,6 +23,7 @@
 		C1D48550D30C0BB273B37351 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */; };
 		D40000000000000000000001 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = D40000000000000000000004 /* FirebaseAnalytics */; };
 		D40000000000000000000002 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000003 /* GoogleService-Info.plist */; };
+		E58800000000000000000001 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = E58800000000000000000002 /* PostHog */; };
 		FF331168D03AF9252AA103AA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6E70D11AEAFF647C18D3139 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -86,6 +87,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D40000000000000000000001 /* FirebaseAnalytics in Frameworks */,
+				E58800000000000000000001 /* PostHog in Frameworks */,
 				A10000000000000000000003 /* GoogleSignIn in Frameworks */,
 				6AD10E5BA60949CD51D966B4 /* Foundation.framework in Frameworks */,
 				7645B8FE0A2C34DFBD15C3C7 /* FirebaseRemoteConfig in Frameworks */,
@@ -196,6 +198,7 @@
 			packageProductDependencies = (
 				A10000000000000000000005 /* GoogleSignIn */,
 				D40000000000000000000004 /* FirebaseAnalytics */,
+				E58800000000000000000002 /* PostHog */,
 				7BE5C99BDCC60B5BFA16A565 /* FirebaseRemoteConfig */,
 			);
 			productName = Chaekchaek;
@@ -270,6 +273,7 @@
 			);
 			mainGroup = 467A3487449985D2D21CE9C8;
 			packageReferences = (
+				E58800000000000000000003 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 				A10000000000000000000004 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				D40000000000000000000005 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
@@ -687,6 +691,14 @@
 				minimumVersion = 12.19.2;
 			};
 		};
+		E58800000000000000000003 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
+			requirement = {
+				kind = exactVersion;
+				version = 3.92.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -704,6 +716,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D40000000000000000000005 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAnalytics;
+		};
+		E58800000000000000000002 /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E58800000000000000000003 /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

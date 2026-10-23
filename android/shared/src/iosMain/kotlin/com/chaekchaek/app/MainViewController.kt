@@ -33,7 +33,10 @@ fun MainViewController(
   onboardingStorage: OnboardingStorage,
   createGoogleSignInButton: () -> UIControl,
   analyticsEnvironment: String = "production",
+  analyticsCollection: com.chaekchaek.app.analytics.AnalyticsCollectionController = com.chaekchaek.app.analytics.AnalyticsCollectionController(),
+  refreshAnalyticsConfiguration: () -> Unit = {},
   logAnalyticsEvent: (AnalyticsEvent) -> Unit = {},
+  logUserError: (String) -> Unit = {},
   uiTestingMyPage: Boolean = false,
   uiTestingBookQuestionA: Boolean = false,
   showQuestionAPreviewControls: Boolean = true,
@@ -42,7 +45,7 @@ fun MainViewController(
   showPolicyDeveloperTools: Boolean = false,
   onPolicyRefresh: () -> Unit = {},
 ): UIViewController {
-  val analytics = AnalyticsTracker(analyticsEnvironment, logAnalyticsEvent)
+  val analytics = AnalyticsTracker(analyticsEnvironment, logAnalyticsEvent, analyticsCollection, errorSink = logUserError)
   return ComposeUIViewController {
     CompositionLocalProvider(LocalGoogleSignInButtonFactory provides createGoogleSignInButton) {
       var showPolicy by remember { mutableStateOf(false) }
@@ -60,6 +63,7 @@ fun MainViewController(
         recentSearchStorage = recentSearchStorage,
         onboardingStorage = onboardingStorage,
         analytics = analytics,
+        refreshAnalyticsConfiguration = refreshAnalyticsConfiguration,
         uiTestingMyPage = uiTestingMyPage,
         policyController = policyController,
         onUpdate = onUpdate,

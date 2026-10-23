@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -61,6 +62,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.rating_star_filled
+import com.chaekchaek.app.ui.common.AnonymousReviewSetting
 import com.chaekchaek.app.ui.common.ChaekCloseButton
 import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
@@ -85,6 +87,7 @@ data class QuestionAReviewDraft(
     val quote: String = "",
     val isSpoiler: Boolean = false,
     val rating: Double? = null,
+    val anonymous: Boolean? = null,
 )
 
 internal object QuestionAReviewRules {
@@ -128,6 +131,7 @@ fun QuestionAReviewInputSheet(
     onDismiss: () -> Unit,
     onLoginRequired: () -> Unit,
     onSave: (QuestionAReviewDraft) -> Unit,
+    onAnonymousChange: (Boolean) -> Unit = {},
 ) {
     val initial = remember(draftKey) { QuestionAReviewRules.normalize(initialDraft) }
     val contentState = rememberLimitedTextFieldState(BookDetailInputRules.ContentPolicy, initial.content, draftKey)
@@ -140,7 +144,7 @@ fun QuestionAReviewInputSheet(
     LaunchedEffect(draftKey, initialRating) {
         if (!ratingTouched) rating = initialRating
     }
-    val discardBaseline = initial.copy(rating = initialRating)
+    val discardBaseline = initial.copy(rating = initialRating, anonymous = if (editing || !signedIn) null else anonymous)
     val saving by rememberUpdatedState(isSaving)
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true,
@@ -156,6 +160,7 @@ fun QuestionAReviewInputSheet(
         quote = quoteState.text.toString(),
         isSpoiler = spoiler,
         rating = rating,
+        anonymous = if (editing || !signedIn) null else anonymous,
     ))
     val requestDismiss = {
         if (!isSaving) {
@@ -227,7 +232,17 @@ fun QuestionAReviewInputSheet(
                     quoteState, BookDetailInputRules.QuotePolicy,
                     "기억하고 싶은 문장", "인상 깊은 문구 (선택)", 54, readOnly = isSaving,
                 )
-                Text(
+                if (!editing) {
+                    AnonymousReviewSetting(
+                        checked = anonymous,
+                        nickname = nickname,
+                        modifier = Modifier.testTag("reviewAnonymousSetting"),
+                        enabled = !isSaving,
+                        onClick = {
+                            if (signedIn) onAnonymousChange(!anonymous) else onLoginRequired()
+                        },
+                    )
+                } else Text(
                     if (anonymous) "익명으로 ‘${nickname.ifBlank { "익명" }}’가 표시돼요"
                     else "‘${nickname.ifBlank { "닉네임 없음" }}’으로 표시돼요",
                     color = ChaekInkSecondary,
@@ -244,7 +259,7 @@ fun QuestionAReviewInputSheet(
                         } else onLoginRequired()
                     },
                 )
-                ChaekOverlayButton(if (editing) "수정 저장" else "감상 남기기", enabled = QuestionAReviewRules.canSubmit(draft) && !isSaving, onClick = {
+                ChaekOverlayButton(if (editing) "수정 저장" else "감상 남기기", modifier = Modifier.semantics { contentDescription = if (editing) "수정 저장" else "감상 남기기" }, enabled = QuestionAReviewRules.canSubmit(draft) && !isSaving, onClick = {
                     if (QuestionAReviewRules.canSubmit(draft) && !isSaving) {
                         focusManager.clearFocus()
                         keyboardController?.hide()
