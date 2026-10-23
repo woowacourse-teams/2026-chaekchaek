@@ -44,7 +44,7 @@ class Jev580FlowHostTest {
         }
         if (!restored) {
             compose.onNodeWithText("내 서재").performClick()
-            compose.onNodeWithText("편집").performClick()
+            compose.onNodeWithText("로그인").performClick()
             compose.onNodeWithText("Google로 계속하기").performClick()
         }
         compose.waitUntil(10_000) { compose.onAllNodesWithText("닉네임 설정").fetchSemanticsNodes().isNotEmpty() }

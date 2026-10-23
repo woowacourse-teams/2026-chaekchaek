@@ -301,7 +301,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
             let shelf = app.buttons["내 서재"]
             XCTAssertTrue(shelf.waitForExistence(timeout: 15))
             shelf.tap()
-            let edit = app.buttons["편집"]
+            let edit = app.buttons["로그인"]
             XCTAssertTrue(edit.waitForExistence(timeout: 10))
             edit.tap()
             let google = app.buttons["GIDSignInButton"]
@@ -341,7 +341,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
                 let shelf = app.buttons["내 서재"]
                 XCTAssertTrue(shelf.waitForExistence(timeout: 15))
                 shelf.tap()
-                app.buttons["편집"].tap()
+                app.buttons["로그인"].tap()
                 let google = app.buttons["GIDSignInButton"]
                 XCTAssertTrue(google.waitForExistence(timeout: 5))
                 google.tap()
@@ -440,7 +440,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
         XCTAssertTrue(shelfTab.waitForExistence(timeout: 10))
         shelfTab.tap()
 
-        let editButton = app.buttons["편집"]
+        let editButton = app.buttons["로그인"]
         XCTAssertTrue(editButton.waitForExistence(timeout: 10))
         editButton.tap()
 
@@ -961,6 +961,7 @@ private final class NicknameFixtureServer: @unchecked Sendable {
                     body = self.profile()
                 }
             case "/api/v1/members/me": body = self.profile()
+            case "/api/v1/libraries": body = "{\"memberId\":1,\"libraries\":[]}"
             case "/api/v1/home/popular-books": body = "{\"books\":[]}"
             case "/api/v1/home/latest-reviews": body = "{\"reviews\":[]}"
             case "/api/v1/feed/reviews": body = "{\"reviews\":[],\"totalCount\":0,\"nextPage\":null}"

@@ -57,7 +57,7 @@ class LoginNicknameAnonymityTest {
         compose.setContent { App(callbacks) }
         if (!restored) {
             compose.onNodeWithText("내 서재").performClick()
-            compose.onNodeWithText("편집").performClick()
+            compose.onNodeWithText("로그인").performClick()
             compose.onNodeWithText("Google로 계속하기").assertIsDisplayed()
             capture("google-login")
             compose.onNodeWithText("Google로 계속하기").performClick()
