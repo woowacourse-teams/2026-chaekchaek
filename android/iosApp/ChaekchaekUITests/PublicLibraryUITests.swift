@@ -149,6 +149,7 @@ final class PublicLibraryUITests: XCTestCase {
         XCTAssertTrue(originalSort.isHittable)
     }
 
+    @MainActor
     private func requestCount(memberId: Int) async throws -> Int {
         let (data, _) = try await URLSession.shared.data(from: URL(string: "http://127.0.0.1:19087/__607")!)
         let body = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
