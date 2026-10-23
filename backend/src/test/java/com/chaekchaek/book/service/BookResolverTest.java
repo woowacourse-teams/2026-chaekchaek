@@ -7,8 +7,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.chaekchaek.book.client.BookDetailClient;
 import com.chaekchaek.book.client.BookDetailItem;
-import com.chaekchaek.book.client.BookSearchClient;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
@@ -28,7 +28,7 @@ class BookResolverTest {
     @DisplayName("등록된 ISBN13으로 책을 조회하거나 생성하면 기존 책을 반환한다")
     void should_ReturnStoredBookWithoutCallingClient_When_BookIsRegistered() {
         // given
-        BookSearchClient client = mock(BookSearchClient.class);
+        BookDetailClient client = mock(BookDetailClient.class);
         BookRepository repository = mock(BookRepository.class);
         BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         Book storedBook = mock(Book.class);
@@ -47,7 +47,7 @@ class BookResolverTest {
     @DisplayName("미등록 ISBN13을 조회하면 외부 상세 결과를 저장하지 않고 반환한다")
     void should_ReturnUnpersistedBookWithoutSaving_When_LookingUpUnregisteredIsbn13() {
         // given
-        BookSearchClient client = mock(BookSearchClient.class);
+        BookDetailClient client = mock(BookDetailClient.class);
         BookRepository repository = mock(BookRepository.class);
         BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
@@ -70,7 +70,7 @@ class BookResolverTest {
     @DisplayName("외부 상세 결과의 책등과 책뒷면 이미지 URL을 책에 전달한다")
     void should_PreserveSpineAndBackImageUrls_When_LookingUpUnregisteredBook() {
         // given
-        BookSearchClient client = mock(BookSearchClient.class);
+        BookDetailClient client = mock(BookDetailClient.class);
         BookRepository repository = mock(BookRepository.class);
         BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
@@ -107,7 +107,7 @@ class BookResolverTest {
     @DisplayName("외부 도서 설명에 HTML 엔티티가 있으면 디코딩해서 반환한다")
     void should_UnescapeHtmlEntities_When_DescriptionContainsHtmlEntities() {
         // given
-        BookSearchClient client = mock(BookSearchClient.class);
+        BookDetailClient client = mock(BookDetailClient.class);
         BookRepository repository = mock(BookRepository.class);
         BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
@@ -125,7 +125,7 @@ class BookResolverTest {
     @DisplayName("외부 도서 설명에 HTML 엔티티가 없으면 원문을 그대로 반환한다")
     void should_KeepDescriptionAsIs_When_DescriptionHasNoHtmlEntities() {
         // given
-        BookSearchClient client = mock(BookSearchClient.class);
+        BookDetailClient client = mock(BookDetailClient.class);
         BookRepository repository = mock(BookRepository.class);
         BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
@@ -142,7 +142,7 @@ class BookResolverTest {
     @DisplayName("외부 도서 설명이 없으면 설명 없이 책을 반환한다")
     void should_ReturnBookWithoutDescription_When_ExternalDescriptionIsNull() {
         // given
-        BookSearchClient client = mock(BookSearchClient.class);
+        BookDetailClient client = mock(BookDetailClient.class);
         BookRepository repository = mock(BookRepository.class);
         BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());

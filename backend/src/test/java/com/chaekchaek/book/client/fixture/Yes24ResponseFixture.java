@@ -5,10 +5,6 @@ public final class Yes24ResponseFixture {
     private Yes24ResponseFixture() {
     }
 
-    public static String 헤르만_헤세_검색_결과() {
-        return 검색_결과(1, 10, 1);
-    }
-
     public static String 검색_결과(int currentPage, int pageSize, int totalCount) {
         return """
                 {
@@ -93,9 +89,5 @@ public final class Yes24ResponseFixture {
                   "data": null
                 }
                 """.formatted(errorCode, message);
-    }
-
-    public static String 잘못된_출간일_검색_결과() {
-        return 헤르만_헤세_검색_결과().replace("20001220", "not-a-date");
     }
 }

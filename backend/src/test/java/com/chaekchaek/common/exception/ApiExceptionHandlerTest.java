@@ -10,7 +10,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.chaekchaek.auth.exception.AppleAuthServerException;
 import com.chaekchaek.book.client.BookClientException;
-import com.chaekchaek.book.client.Yes24ClientException;
+import com.chaekchaek.book.client.yes24.Yes24ClientException;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

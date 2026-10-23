@@ -66,7 +66,11 @@ spring:
 
 yes24:
   base-url: https://apis.yes24.com
-  api-key: ${YES24_API_KEY}
+  api-key: ${YES24_API_KEY:}
+
+kakao:
+  base-url: https://dapi.kakao.com
+  rest-api-key: ${KAKAO_REST_API_KEY:}
 
 app:
   book-source: ${BOOK_SOURCE:yes24}

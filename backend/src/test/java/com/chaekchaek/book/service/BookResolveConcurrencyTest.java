@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.chaekchaek.book.client.BookDetailClient;
 import com.chaekchaek.book.client.BookDetailItem;
-import com.chaekchaek.book.client.BookSearchClient;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
@@ -42,7 +42,7 @@ class BookResolveConcurrencyTest {
     @DisplayName("동시에 같은 ISBN13으로 책을 조회하거나 생성하면 하나의 책만 등록한다")
     void should_ReturnSameBookIdAndPersistOneBook_When_ResolveIsConcurrent() throws Exception {
         // given
-        BookSearchClient client = mock(BookSearchClient.class);
+        BookDetailClient client = mock(BookDetailClient.class);
         CyclicBarrier fetchedByBothRequests = new CyclicBarrier(2);
         when(client.findBookByIsbn13(ISBN13)).thenAnswer(invocation -> {
             fetchedByBothRequests.await(5, TimeUnit.SECONDS);
