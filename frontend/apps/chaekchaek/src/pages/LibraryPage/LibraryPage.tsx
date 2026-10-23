@@ -52,10 +52,28 @@ export const LibraryPage = () => {
   const { libraryId } = useParams<{ libraryId: string }>();
 
   const getLibrariesLibraryIdLoadData = useCallback(async () => {
-    return await getLibrariesLibraryId({
+    const firstPageData = await getLibrariesLibraryId({
       page: 1,
       libraryId: Number(libraryId),
     });
+
+    const totalPages = Math.ceil(firstPageData.totalCount / 10);
+
+    if (totalPages === 1) return firstPageData;
+
+    const remainingPages = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, index) =>
+        getLibrariesLibraryId({
+          libraryId: Number(libraryId),
+          page: index + 2,
+        }),
+      ),
+    );
+
+    return {
+      ...firstPageData,
+      items: [...firstPageData.items, ...remainingPages.flatMap((page) => page.items)],
+    };
   }, [libraryId]);
 
   const {
