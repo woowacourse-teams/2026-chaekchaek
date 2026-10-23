@@ -54,6 +54,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 public class MemberControllerIntegrationTest {
 
     private static final String MEMBER_TAG = "회원";
+    private static final String NICKNAME_UPDATE_DESCRIPTION = """
+            중복되지 않은 공개 닉네임을 설정한다. 첫 닉네임은 1~10자이며 한글 완성형, 영문,
+            숫자, _, -만 허용한다. 첫 저장과 기본 책장 생성은 함께 완료되며 같은 이름의 내 책장이
+            있으면 이름과 순서를 유지해 기본으로 승격한다. 기본 책장이 이미 있거나 이후 닉네임을
+            변경하면 책장을 새로 만들거나 이름을 바꾸지 않는다. 익명 표시 여부는 유지한다.
+            별도 CSRF 토큰 없이 Bearer 또는 Access Token 쿠키로 인증한다.
+            """;
     private static final FieldDescriptor[] MEMBER_RESPONSE_FIELDS = {
             fieldWithPath("memberId").type(JsonFieldType.NUMBER).description("회원 ID"),
             fieldWithPath("nickname").type(JsonFieldType.STRING).description("사용자가 설정한 공개 닉네임").optional(),
@@ -249,13 +256,7 @@ public class MemberControllerIntegrationTest {
                         responseFields(MEMBER_RESPONSE_FIELDS),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("닉네임 설정")
-                                .description("""
-                                        중복되지 않은 공개 닉네임을 설정한다. 첫 닉네임은 1~10자이며 한글 완성형, 영문,
-                                        숫자, _, -만 허용한다. 첫 저장과 기본 책장 생성은 함께 완료되며 같은 이름의 내 책장이
-                                        있으면 이름과 순서를 유지해 기본으로 승격한다. 기본 책장이 이미 있거나 이후 닉네임을
-                                        변경하면 책장을 새로 만들거나 이름을 바꾸지 않는다. 익명 표시 여부는 유지한다.
-                                        별도 CSRF 토큰 없이 Bearer 또는 Access Token 쿠키로 인증한다.
-                                        """)
+                                .description(NICKNAME_UPDATE_DESCRIPTION)
                                 .tag(MEMBER_TAG)
                                 .requestSchema(Schema.schema("UpdateNicknameRequest"))
                                 .requestFields(UPDATE_NICKNAME_REQUEST_FIELDS)
@@ -298,8 +299,8 @@ public class MemberControllerIntegrationTest {
                         .content("{\"nickname\":\"책 책\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
-                .andDo(problemDetailDocument("member-first-nickname-invalid", "닉네임 설정",
-                        "첫 닉네임은 기본 책장 이름 규칙을 만족해야 하며 실패 시 닉네임과 책장을 저장하지 않는다"));
+                .andDo(problemDetailDocument("member-nickname-update-first-invalid", "닉네임 설정",
+                        NICKNAME_UPDATE_DESCRIPTION));
         assertThat(memberRepository.findById(member.getId()).orElseThrow().getNickname()).isNull();
         assertThat(libraryRepository.findByMemberIdAndIsDefaultTrue(member.getId())).isEmpty();
     }
@@ -320,7 +321,7 @@ public class MemberControllerIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"))
                 .andDo(problemDetailDocument("member-nickname-update-forbidden", "닉네임 설정",
-                        "인증된 회원이 비활성 상태이면 닉네임과 기본 책장을 변경하지 않는다"));
+                        NICKNAME_UPDATE_DESCRIPTION));
     }
 
     @Test
@@ -347,7 +348,7 @@ public class MemberControllerIntegrationTest {
                 .andDo(problemDetailDocument(
                         "member-nickname-update-conflict",
                         "닉네임 설정",
-                        "이미 사용 중인 공개 닉네임이면 충돌 오류를 반환한다"
+                        NICKNAME_UPDATE_DESCRIPTION
                 ));
     }
 
@@ -430,7 +431,7 @@ public class MemberControllerIntegrationTest {
                 .andDo(problemDetailDocument(
                         "member-nickname-update-invalid",
                         "닉네임 설정",
-                        "닉네임이 공백이거나 100자를 초과하면 잘못된 요청 오류를 반환한다"
+                        NICKNAME_UPDATE_DESCRIPTION
                 ));
     }
 
@@ -447,7 +448,7 @@ public class MemberControllerIntegrationTest {
                 .andDo(problemDetailDocument(
                         "member-nickname-update-unauthorized",
                         "닉네임 설정",
-                        "유효한 Access Token이 없으면 인증 오류를 반환한다"
+                        NICKNAME_UPDATE_DESCRIPTION
                 ));
     }
 
