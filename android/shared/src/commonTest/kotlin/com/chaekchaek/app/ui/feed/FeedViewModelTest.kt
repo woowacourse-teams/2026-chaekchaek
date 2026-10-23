@@ -103,6 +103,43 @@ private fun runFeedViewModelTest(block: suspend TestScope.() -> Unit) = runTest 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedViewModelTest {
     @Test
+    fun `최초 조회 오류창에서 복구한 요청은 재시도로 기록한다`() = runFeedViewModelTest {
+        assertErrorRecoveryRecordsRetry(refresh = false)
+    }
+
+    @Test
+    fun `새로고침 오류창에서 복구한 요청은 재시도로 기록하고 내용을 유지한다`() = runFeedViewModelTest {
+        assertErrorRecoveryRecordsRetry(refresh = true)
+    }
+
+    private suspend fun TestScope.assertErrorRecoveryRecordsRetry(refresh: Boolean) {
+        val events = mutableListOf<com.chaekchaek.app.analytics.AnalyticsEvent>()
+        val analytics = com.chaekchaek.app.analytics.AnalyticsTracker("test", events::add)
+        val repository = TestReviewFeedRepository(mapOf(1 to ReviewFeedPage(listOf(review(1)), 1, null)))
+        if (!refresh) repository.failurePage = 1
+        val vm = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, analytics = analytics)
+        advanceUntilIdle()
+        if (refresh) {
+            repository.failurePage = 1
+            vm.refresh()
+            advanceUntilIdle()
+        }
+        val failed = events.last { it.name == "cc_load_result" }
+        failed.stringParameters["trigger"] shouldBe if (refresh) "refresh" else "initial"
+        failed.stringParameters["outcome"] shouldBe "failure"
+        repository.failurePage = null
+        val notice = checkNotNull(vm.errors.notice.value)
+        checkNotNull(vm.errors.takeRecovery(notice.id)).invoke(null)
+        advanceUntilIdle()
+
+        val recovered = events.last { it.name == "cc_load_result" }
+        recovered.stringParameters["trigger"] shouldBe "retry"
+        recovered.stringParameters["outcome"] shouldBe "success"
+        vm.uiState.value.shouldBeInstanceOf<FeedUiState.Content>().reviews.single().reviewId shouldBe 1L
+        vm.errors.notice.value shouldBe null
+    }
+
+    @Test
     fun `갱신 중 성공한 좋아요는 늦은 갱신 성공에 덮이지 않는다`() = runFeedViewModelTest {
         assertRefreshKeepsAcceptedWrite(reply = false, refreshFails = false)
     }

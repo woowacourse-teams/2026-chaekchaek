@@ -242,7 +242,7 @@ class FeedViewModel(
                     recordLoad(loadId, trigger, "failure", started.elapsedNow().inWholeMilliseconds, error = error)
                     errors.report(error, ErrorOperation.FeedLoad) { freshToken ->
                         if (freshToken != null) this@FeedViewModel.accessToken = freshToken
-                        loadFirstPage(retainContent = true, refreshing = refreshing)
+                        loadFirstPage(retainContent = true, refreshing = refreshing, trigger = "retry")
                     }
                     previousState.takeUnless { it == FeedUiState.Loading } ?: FeedUiState.Content(emptyList(), 0, null)
                 }

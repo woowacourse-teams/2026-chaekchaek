@@ -146,6 +146,9 @@ private fun AppNavigationContent(
     val authTokens by authViewModel.tokens.collectAsState()
     val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
+    LaunchedEffect(analytics, authTokens?.accessToken) {
+        analytics.updateAuthentication(authTokens != null)
+    }
     val onboardingViewModel: FirstLibraryOnboardingViewModel = viewModel {
         FirstLibraryOnboardingViewModel(initiallyVisible = shouldShowFirstLibraryOnboarding(onboardingStorage), errorReporter = analytics.errors)
     }
@@ -231,6 +234,7 @@ private fun AppNavigationContent(
                 onAppleSignIn = {
                     authViewModel.clearError()
                     authViewModel.requireAppleAuthentication { token ->
+                        analytics.updateAuthentication(true)
                         showOnboardingLogin = false
                         onboardingViewModel.save(token)
                     }
@@ -238,6 +242,7 @@ private fun AppNavigationContent(
                 onGoogleSignIn = {
                     authViewModel.clearError()
                     authViewModel.requireAuthentication { token ->
+                        analytics.updateAuthentication(true)
                         showOnboardingLogin = false
                         onboardingViewModel.save(token)
                     }
@@ -279,7 +284,6 @@ private fun AppNavigationContent(
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     LaunchedEffect(authTokens?.accessToken) {
         val accessToken = authTokens?.accessToken
-        analytics.updateAuthentication(accessToken != null)
         homeViewModel.authenticate(accessToken)
         registrationViewModel.authenticate(accessToken)
         archiveViewModel.authenticate(accessToken)
