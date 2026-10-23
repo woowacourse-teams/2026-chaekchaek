@@ -72,4 +72,37 @@ final class FirstLibraryOnboardingUITests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
     }
+
+    @MainActor
+    func testAnalyticsLoginFailureAndCancellationKeepSignInSheet() throws {
+        for flag in ["-uiTestingSignInFailure", "-uiTestingSignInCancellation"] {
+            app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingGuest", flag]
+            app.launch()
+            let cancel = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.buttons["취소"]
+            if cancel.waitForExistence(timeout: 2) { cancel.tap() }
+            let shelf = app.buttons["내 서재"]
+            XCTAssertTrue(shelf.waitForExistence(timeout: 15), app.debugDescription)
+            shelf.tap()
+            let edit = app.buttons["편집"]
+            XCTAssertTrue(edit.waitForExistence(timeout: 10))
+            edit.tap()
+            let google = app.buttons["GIDSignInButton"]
+            XCTAssertTrue(google.waitForExistence(timeout: 5))
+            google.tap()
+            let failure = app.staticTexts["로그인하지 못했어요"]
+            if flag == "-uiTestingSignInFailure" {
+                XCTAssertTrue(failure.waitForExistence(timeout: 5))
+                let attachment = XCTAttachment(screenshot: app.screenshot())
+                attachment.lifetime = .keepAlways
+                add(attachment)
+                app.buttons["닫기"].firstMatch.tap()
+                XCTAssertFalse(failure.exists)
+            } else {
+                XCTAssertFalse(failure.waitForExistence(timeout: 2))
+            }
+            XCTAssertTrue(app.staticTexts["로그인이 필요해요"].exists)
+            XCTAssertTrue(google.exists)
+            app.terminate()
+        }
+    }
 }
