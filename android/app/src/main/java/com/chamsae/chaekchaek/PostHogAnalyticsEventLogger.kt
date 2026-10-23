@@ -47,6 +47,10 @@ internal object PostHogAnalyticsEventLogger {
         }
         runCatching { PostHogAndroid.setup(context.applicationContext, config) }
             .onSuccess { configured = true }
+            .onFailure { error ->
+                // SDK 초기화 실패를 진단하되 메시지와 프로젝트 토큰은 로그에 남기지 않는다.
+                android.util.Log.w("PostHogSetup", "Initialization failed: ${error.javaClass.simpleName}")
+            }
     }
 
     fun refreshCollectionPolicy(controller: AnalyticsCollectionController) {
