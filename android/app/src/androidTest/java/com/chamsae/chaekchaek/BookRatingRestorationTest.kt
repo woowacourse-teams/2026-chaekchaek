@@ -5,6 +5,8 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -15,6 +17,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.LibraryRecord
@@ -77,6 +80,8 @@ class BookRatingRestorationTest {
         }
         compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("별점 복원 검증 감상")
+        closeSoftKeyboard()
+        compose.waitForIdle()
         compose.onNodeWithContentDescription("별점 (선택)").performScrollTo().assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "미선택"),
         )
@@ -93,7 +98,12 @@ class BookRatingRestorationTest {
         compose.onNodeWithContentDescription("별점 (선택)").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "${expected}점"),
         )
-        compose.onNode(hasText("감상 남기기") and hasClickAction()).performScrollTo().performClick()
+        compose.onNodeWithContentDescription("감상 (필수)").assertTextContains("별점 복원 검증 감상")
+        val submit = compose.onNode(hasText("감상 남기기") and hasClickAction())
+        submit.performScrollTo().assertIsEnabled()
+        compose.waitForIdle()
+        submit.performClick()
+        compose.waitUntil(timeoutMillis = 5_000) { saved != null }
         compose.runOnIdle { assertEquals(expected, saved) }
     }
 
