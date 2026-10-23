@@ -1,5 +1,6 @@
 import XCTest
 import Network
+import UIKit
 
 final class LoginRequiredSheetUITests: XCTestCase {
     // scripts/reply-compatibility-fixture.py와 local API 환경에서 실행한다.
@@ -370,6 +371,63 @@ final class LoginRequiredSheetUITests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
+    }
+
+    @MainActor
+    func testGoogleButtonCornersKeepLoginSheetBackgroundAfterReentry() throws {
+        try verifyGoogleButtonCorners(preservingSession: false)
+    }
+
+    @MainActor
+    func testGoogleButtonCornersPreservingDeviceSession() throws {
+        try verifyGoogleButtonCorners(preservingSession: true)
+    }
+
+    @MainActor
+    private func verifyGoogleButtonCorners(preservingSession: Bool) throws {
+        let app = XCUIApplication()
+        if !preservingSession { app.launchArguments.append("-uiTestingGuest") }
+        app.launch()
+        let profile = app.buttons["내 프로필"]
+        XCTAssertTrue(profile.waitForExistence(timeout: 15))
+
+        for attempt in 1...2 {
+            profile.tap()
+            let google = app.buttons["GIDSignInButton"]
+            XCTAssertTrue(google.waitForExistence(timeout: 5))
+            XCTAssertTrue(google.isHittable)
+            let screenshot = XCUIScreen.main.screenshot()
+            let attachment = XCTAttachment(screenshot: screenshot)
+            attachment.name = "홈 프로필 Google 버튼 모서리 진입 \(attempt)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            let image = try XCTUnwrap(screenshot.image.cgImage)
+            let scale = CGFloat(image.width) / app.frame.width
+            let frame = google.frame
+            // 8pt 둥근 테두리 바깥, 네이티브 뷰 사각형 안의 네 모서리는 시트의 흰색이어야 한다.
+            let corners = [
+                CGPoint(x: frame.minX + 1, y: frame.minY + 1),
+                CGPoint(x: frame.maxX - 1, y: frame.minY + 1),
+                CGPoint(x: frame.minX + 1, y: frame.maxY - 1),
+                CGPoint(x: frame.maxX - 1, y: frame.maxY - 1),
+            ]
+            for point in corners {
+                let pixel = try XCTUnwrap(image.cropping(to: CGRect(
+                    x: floor(point.x * scale), y: floor(point.y * scale), width: 1, height: 1
+                )))
+                var rgba = [UInt8](repeating: 0, count: 4)
+                let context = try XCTUnwrap(CGContext(
+                    data: &rgba, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                    space: CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                ))
+                context.draw(pixel, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+                XCTAssertTrue(rgba[0] > 230 && rgba[1] > 230 && rgba[2] > 230,
+                              "Google 버튼 모서리가 시트 배경과 다르다: \(point), RGB \(rgba)")
+            }
+            app.buttons["닫기"].firstMatch.tap()
+            XCTAssertTrue(profile.waitForExistence(timeout: 5))
+        }
     }
 
     @MainActor
