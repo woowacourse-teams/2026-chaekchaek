@@ -989,7 +989,7 @@ final class BookshelfContractUITests: XCTestCase {
         guard marker != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
         _ = try await request("/__bookshelf/reset", method: "POST")
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestingGuest", "-uiTestingNicknameRestore", "-uiTestingRefresh"]
+        app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingGuest", "-uiTestingNicknameRestore", "-uiTestingRefresh"]
         app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = origin
         app.launch()
         let shelfTab = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "내 서재")).firstMatch
