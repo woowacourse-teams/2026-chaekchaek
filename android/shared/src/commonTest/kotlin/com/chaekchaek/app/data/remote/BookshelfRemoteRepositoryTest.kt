@@ -47,6 +47,7 @@ class BookshelfRemoteRepositoryTest {
         repo.remove(2, 42, "member")
         repo.delete(3, "member")
         assertEquals(listOf("GET" to "/api/v1/libraries", "GET" to "/api/v1/libraries/2", "POST" to "/api/v1/libraries/2", "POST" to "/api/v1/libraries", "PATCH" to "/api/v1/libraries/2", "PATCH" to "/api/v1/libraries/order", "PATCH" to "/api/v1/libraries/2/books/order", "DELETE" to "/api/v1/libraries/2/books/42", "DELETE" to "/api/v1/libraries/3"), calls)
+        assertEquals("READING", bodies[0].jsonObject["status"]?.jsonPrimitive?.content)
         assertEquals(Json.parseToJsonElement("""{"libraryIds":[3,2]}"""), bodies[3])
         assertEquals(35, bodies[4].jsonObject["bookIds"]!!.jsonArray.size)
     }

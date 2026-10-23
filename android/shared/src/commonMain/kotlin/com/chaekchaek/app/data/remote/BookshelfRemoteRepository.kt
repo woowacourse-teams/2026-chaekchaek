@@ -49,7 +49,7 @@ class BookshelfRemoteRepository(
 
     override suspend fun add(libraryId: Long, isbn13: String, totalPages: Int?, token: String): LibraryRecord {
         val record = client.post(url("/api/v1/libraries/$libraryId")) {
-            authenticated(token, BookshelfBookRequest(isbn13, totalPages))
+            authenticated(token, BookshelfBookRequest(isbn13, totalPages, "READING"))
         }.body<BookshelfSavedRecord>()
         return LibraryRecord(record.status.orEmpty(), record.currentPage ?: 0, record.rating, record.bookId)
     }
@@ -119,7 +119,7 @@ data class BookshelfBook(
 )
 
 @Serializable private data class BookshelfNameRequest(val name: String)
-@Serializable private data class BookshelfBookRequest(val isbn13: String, val totalPages: Int?, val status: String = "READING")
+@Serializable private data class BookshelfBookRequest(val isbn13: String, val totalPages: Int?, val status: String)
 @Serializable private data class BookshelfOrderRequest(val libraryIds: List<Long>)
 @Serializable private data class BookshelfBookOrderRequest(val bookIds: List<Long>)
 @Serializable private data class BookshelfSavedRecord(

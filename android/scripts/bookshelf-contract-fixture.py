@@ -111,6 +111,8 @@ class Handler(BaseHTTPRequestHandler):
                     STATE['shelves'].remove(shelf)
                     return self.send_json(None, 204)
                 if method == 'POST':
+                    if body.get('status') not in ('WANT_TO_READ', 'READING', 'FINISHED'):
+                        return self.send_json({'code': 'INVALID_REQUEST'}, 400)
                     book_id = next(i for i, b in BOOKS.items() if b['isbn13'] == body['isbn13'])
                     if book_id in shelf['books']: return self.problem('LIBRARY_ITEM_ALREADY_EXISTS')
                     if len(shelf['books']) >= 30: return self.problem('LIBRARY_ITEM_LIMIT_EXCEEDED')
