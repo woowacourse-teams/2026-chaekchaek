@@ -222,27 +222,25 @@ export const LibraryPage = () => {
             )}
 
             <List columns={2}>
-              {
-                !libraryItemsData?.items.map((item) => {
-                  return (
-                    <List.Item key={item.bookId}>
-                      <List.Item.Leading>
-                        <IconButton edge="start">
-                          <Icon.DragHandleIcon />
-                        </IconButton>
-                        <Link to={`/books/${item.isbn13}`}>
-                          <ImgBox img={item.coverImageUrl} size="small" />
-                        </Link>
-                      </List.Item.Leading>
-                      <List.Item.Content
-                        title={<>{item.title}</>}
-                        content={item.authors?.join(' · ')}
-                      />
-                      <List.Item.Trailing></List.Item.Trailing>
-                    </List.Item>
-                  );
-                })
-              }
+              {libraryItemsData?.items.map((item) => {
+                return (
+                  <List.Item key={item.bookId}>
+                    <List.Item.Leading>
+                      <IconButton edge="start">
+                        <Icon.DragHandleIcon />
+                      </IconButton>
+                      <Link to={`/books/${item.isbn13}`}>
+                        <ImgBox img={item.coverImageUrl} size="small" />
+                      </Link>
+                    </List.Item.Leading>
+                    <List.Item.Content
+                      title={<>{item.title}</>}
+                      content={item.authors?.join(' · ')}
+                    />
+                    <List.Item.Trailing></List.Item.Trailing>
+                  </List.Item>
+                );
+              })}
             </List>
           </ContentArea>
         </Container>
