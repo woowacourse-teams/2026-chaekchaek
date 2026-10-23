@@ -66,6 +66,24 @@ class BookshelfFlowTest {
         } finally { Dispatchers.resetMain() }
     }
 
+    @Test fun `순서 저장 실패는 기존 책장을 보존하고 재시도에서 전체 순서를 다시 보낸다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = FakeShelves(listOf(shelf(1), shelf(2), shelf(3)))
+            val vm = BookshelfViewModel(repo)
+            vm.authenticate("token"); advanceUntilIdle()
+            repo.fail = true
+            vm.orderShelves(listOf(3, 1, 2)); advanceUntilIdle()
+            assertEquals(listOf(1L, 2L, 3L), vm.uiState.value.shelves.map { it.libraryId })
+            assertFalse(vm.uiState.value.mutating)
+            assertNotNull(vm.errors.notice.value)
+            repo.fail = false
+            vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke(null)
+            advanceUntilIdle()
+            assertEquals(listOf(listOf(3L, 1L, 2L), listOf(3L, 1L, 2L)), repo.orders)
+        } finally { Dispatchers.resetMain() }
+    }
+
     @Test fun `이름과 순서는 기존 긴 이름과 35권 이전 데이터를 임의로 자르지 않는다`() {
         assertNotNull(bookshelfNameError(" ", emptyList()))
         assertNotNull(bookshelfNameError("12345678901", emptyList()))
@@ -81,6 +99,7 @@ class BookshelfFlowTest {
 private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
     var fail = false
     val added = mutableListOf<Long>()
+    val orders = mutableListOf<List<Long>>()
     override suspend fun mine(token: String) = BookshelfCollection(9, shelves)
     override suspend fun add(libraryId: Long, isbn13: String, totalPages: Int?, token: String): LibraryRecord {
         if (fail) error("offline")
@@ -92,6 +111,6 @@ private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
     override suspend fun rename(libraryId: Long, name: String, token: String) {}
     override suspend fun delete(libraryId: Long, token: String) {}
     override suspend fun remove(libraryId: Long, bookId: Long, token: String) {}
-    override suspend fun orderShelves(ids: List<Long>, token: String) { if (fail) error("offline") }
+    override suspend fun orderShelves(ids: List<Long>, token: String) { orders += ids; if (fail) error("offline") }
     override suspend fun orderBooks(libraryId: Long, ids: List<Long>, token: String) { if (fail) error("offline") }
 }

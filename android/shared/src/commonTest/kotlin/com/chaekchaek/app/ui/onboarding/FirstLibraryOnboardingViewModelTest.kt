@@ -65,6 +65,27 @@ class FirstLibraryOnboardingViewModelTest {
     }
 
     @Test
+    fun capacityConflictDoesNotCompleteOnboardingOrDropSelectedBooks() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val conflict = io.ktor.client.HttpClient(io.ktor.client.engine.mock.MockEngine {
+            respond("""{"code":"LIBRARY_ITEM_LIMIT_EXCEEDED"}""", io.ktor.http.HttpStatusCode.Conflict)
+        }) { expectSuccess = true }
+        try {
+            val selected = book("1", "첫 책")
+            val vm = FirstLibraryOnboardingViewModel(
+                searchRepository = BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) },
+                addBook = { _, _ -> conflict.get("https://fixture.invalid/full") },
+            )
+            vm.toggle(selected)
+            vm.save("token")
+            advanceUntilIdle()
+            assertFalse(vm.state.value.saveCompleted)
+            assertEquals(listOf(selected), vm.state.value.selectedBooks)
+            assertEquals(OnboardingStep.SAVE_ERROR, vm.state.value.step)
+        } finally { conflict.close(); Dispatchers.resetMain() }
+    }
+
+    @Test
     fun installStorageShowsOnlyBeforeFirstExposure() {
         var shown = false
         val storage = OnboardingStorage(hasBeenShown = { shown }, markShown = { shown = true })
