@@ -8,6 +8,7 @@ import android.view.KeyEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import java.io.File
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.data.remote.ApiConfiguration
 import com.chaekchaek.app.ui.App
@@ -76,6 +77,19 @@ class BookshelfContractTest {
         assertTrue(calls.any { it.getString("method") == "POST" && it.getString("path") == "/api/v1/libraries/1" })
         assertTrue(calls.any { it.getString("method") == "DELETE" && it.getString("path").contains("/books/") })
         compose.waitUntil(10_000) { JSONObject(request("/__bookshelf/state")).getJSONArray("requests").toString().contains("/api/v1/books/3/reviews") }
+        compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
+        compose.waitUntil(15_000) {
+            automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver")
+        }
+        val exported = instrumentation.targetContext.cacheDir.resolve("bookshelf-images").listFiles()?.maxByOrNull { it.lastModified() }
+        assertNotNull("네이티브 공유에 전달할 PNG", exported)
+        val dimensions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(exported!!.absolutePath, dimensions)
+        assertTrue("전체 책장 이미지 너비", dimensions.outWidth > 0)
+        assertTrue("두 책의 감상 영역까지 포함한 이미지 높이", dimensions.outHeight > dimensions.outWidth * 2)
+        File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-native-share.png").outputStream().use {
+            automation.takeScreenshot().compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
     }
 
     private fun findSave(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
