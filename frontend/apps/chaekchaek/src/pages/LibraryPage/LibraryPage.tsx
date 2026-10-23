@@ -1,4 +1,5 @@
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
 import {
   Button,
@@ -9,27 +10,28 @@ import {
   IconButton,
   ImgBox,
   List,
+  Notice,
   Showcase,
   Surface,
   Text,
   Title,
 } from '@chaekchaek/design-system';
 
-import ConstrainedImgBoxDummyImg1 from '../../../../../packages/design-system/src/components/ConstrainedImgBox/imgs/dummy1.jpg';
-import ImgBoxDummyImg1 from '../../../../../packages/design-system/src/components/ImgBox/imgs/dummy.png';
-
 import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
+import { getLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repository';
+import { useLoadData } from '@/services/core/useLoadData';
 
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
 import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
 import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
 import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
 import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';
-import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 export type LibraryPageDialogType =
   | 'AddBooksToLibraryDialog'
@@ -38,12 +40,29 @@ export type LibraryPageDialogType =
   | 'RenameLibraryDialog'
   | 'DeleteLibraryDialog';
 
-const booksHeight = [286, 304, 318, 312, 296, 282, 288, 306, 320, 298];
+const booksHeight = [
+  ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
+  ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
+  ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
+];
 
 export const LibraryPage = () => {
   const { user } = useAuthContext();
 
   const { libraryId } = useParams<{ libraryId: string }>();
+
+  const getLibrariesLibraryIdLoadData = useCallback(async () => {
+    return await getLibrariesLibraryId({
+      page: 1,
+      libraryId: Number(libraryId),
+    });
+  }, [libraryId]);
+
+  const {
+    status: { data: libraryItemsData },
+  } = useLoadData({
+    queryFn: getLibrariesLibraryIdLoadData,
+  });
 
   const [isCopied, setIsCopied] = useState(false);
 
@@ -100,7 +119,7 @@ export const LibraryPage = () => {
             <Title
               level="main"
               sx={{ mb: 14 }}
-              description={`내 책장 14권`}
+              description={`${libraryItemsData?.name} 책장 ${libraryItemsData?.totalCount}권`}
               trailing={
                 <IconButton
                   variant="secondary"
@@ -112,13 +131,13 @@ export const LibraryPage = () => {
                 </IconButton>
               }
             >
-              책장A
+              {libraryItemsData?.name}
             </Title>
             <Showcase>
-              {Array.from({ length: 10 }).map((_, index) => {
+              {libraryItemsData?.items.map((item, index) => {
                 return (
                   <ConstrainedImgBox
-                    img={ConstrainedImgBoxDummyImg1}
+                    img={item.spineImageUrl}
                     maxWidth="80px"
                     maxHeight={`${booksHeight[index]}px`}
                   />
@@ -126,14 +145,16 @@ export const LibraryPage = () => {
               })}
             </Showcase>
 
-            <Surface
-              sx={{ mt: 14 }}
-              variant="dashed"
-              verticalAlign="center"
-              style={{ height: '320px' }}
-            >
-              <Text color="muted">어떤 책으로 채워볼까?</Text>
-            </Surface>
+            {libraryItemsData !== null && !libraryItemsData?.items.length && (
+              <Surface
+                sx={{ mt: 14 }}
+                variant="dashed"
+                verticalAlign="center"
+                style={{ height: '320px' }}
+              >
+                <Text color="muted">어떤 책으로 채워볼까?</Text>
+              </Surface>
+            )}
 
             <Title sx={{ mt: 8 }} level="detail">
               <Button
@@ -178,34 +199,32 @@ export const LibraryPage = () => {
 
             <Divider sx={{ mt: 4 }} />
 
-            <List columns={2}>
-              {Array.from({ length: 10 }).map(() => {
-                const item = {
-                  bookId: 1,
-                  isbn13: '',
-                  coverImageUrl: ImgBoxDummyImg1,
-                  title: 'Title',
-                  authors: ['author1', 'author2'],
-                };
+            {!libraryItemsData?.items.length && (
+              <Notice height={500}>이 책장에 등록된 책이 없습니다.</Notice>
+            )}
 
-                return (
-                  <List.Item key={item.bookId}>
-                    <List.Item.Leading>
-                      <IconButton edge="start">
-                        <Icon.DragHandleIcon />
-                      </IconButton>
-                      <Link to={`/books/${item.isbn13}`}>
-                        <ImgBox img={item.coverImageUrl} size="small" />
-                      </Link>
-                    </List.Item.Leading>
-                    <List.Item.Content
-                      title={<>{item.title}</>}
-                      content={item.authors.join(' · ')}
-                    />
-                    <List.Item.Trailing></List.Item.Trailing>
-                  </List.Item>
-                );
-              })}
+            <List columns={2}>
+              {
+                !libraryItemsData?.items.map((item) => {
+                  return (
+                    <List.Item key={item.bookId}>
+                      <List.Item.Leading>
+                        <IconButton edge="start">
+                          <Icon.DragHandleIcon />
+                        </IconButton>
+                        <Link to={`/books/${item.isbn13}`}>
+                          <ImgBox img={item.coverImageUrl} size="small" />
+                        </Link>
+                      </List.Item.Leading>
+                      <List.Item.Content
+                        title={<>{item.title}</>}
+                        content={item.authors?.join(' · ')}
+                      />
+                      <List.Item.Trailing></List.Item.Trailing>
+                    </List.Item>
+                  );
+                })
+              }
             </List>
           </ContentArea>
         </Container>
