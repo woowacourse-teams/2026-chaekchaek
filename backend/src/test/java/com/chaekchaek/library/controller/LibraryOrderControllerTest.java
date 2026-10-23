@@ -263,7 +263,7 @@ class LibraryOrderControllerTest {
     private RestDocumentationResultHandler orderDocument(String id, boolean books, boolean problem) {
         String field = books ? "bookIds" : "libraryIds";
         ResourceSnippetParametersBuilder builder = ResourceSnippetParameters.builder()
-                .tag("책장")
+                .tag(books ? "책장 도서" : "책장")
                 .summary(books ? "책장 내 도서 순서 변경" : "서재 내 책장 순서 변경")
                 .description(DESCRIPTION);
         if (books) {
