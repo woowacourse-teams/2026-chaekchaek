@@ -15,16 +15,21 @@ import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.library.domain.Library;
+import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
+import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +53,13 @@ class LibraryServiceTest {
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
 
     @Mock
+    private LibraryRepository libraryRepository;
+
+    @Mock
     private LibraryItemRepository libraryItemRepository;
+
+    @Mock
+    private LibraryBookRepository libraryBookRepository;
 
     @Mock
     private BookRepository bookRepository;
@@ -69,6 +80,7 @@ class LibraryServiceTest {
     @DisplayName("일괄 완독 대상 중 전체 페이지가 없는 책이 있으면 어느 항목도 변경하지 않는다")
     void should_NotChangeAnyItem_When_BulkFinishContainsUnknownTotalPages() {
         // given
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
         LibraryItem knownItem = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, CLOCK.instant());
         LibraryItem unknownItem = LibraryItem.create(1L, 3L, ReadingStatus.READING, null, CLOCK.instant());
         when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(2L, 3L)))
@@ -94,6 +106,7 @@ class LibraryServiceTest {
     @DisplayName("일괄 완독은 책을 먼저 잠근 뒤 서재 항목을 잠근다")
     void should_LockBooksBeforeLibraryItems_When_BulkFinishing() {
         // given
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, CLOCK.instant());
         when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(2L)))
                 .thenReturn(List.of(item));
@@ -106,7 +119,8 @@ class LibraryServiceTest {
         service.bulkChangeStatus(1L, List.of(2L), ReadingStatus.FINISHED);
 
         // then
-        InOrder lockOrder = inOrder(libraryItemRepository, bookRepository);
+        InOrder lockOrder = inOrder(memberRepository, libraryItemRepository, bookRepository);
+        lockOrder.verify(memberRepository).findByIdForUpdate(1L);
         lockOrder.verify(libraryItemRepository).findAllByMemberIdAndBookIdIn(1L, List.of(2L));
         lockOrder.verify(bookRepository).findByIdForUpdate(2L);
         lockOrder.verify(libraryItemRepository).findAllByMemberIdAndBookIdInForUpdate(1L, List.of(2L));
@@ -223,11 +237,10 @@ class LibraryServiceTest {
         when(secondBook.getId()).thenReturn(3L);
         when(firstBook.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
         when(secondBook.getIsbn13()).thenReturn(new Isbn13("9788936433598"));
-        when(libraryItemRepository.findAllByMemberId(1L)).thenReturn(List.of(firstItem, secondItem));
+        defaultItems(List.of(firstItem, secondItem));
         when(bookRepository.findAllById(List.of(2L, 3L))).thenReturn(List.of(firstBook, secondBook));
         when(commentCountReader.getCommentCounts(anyCollection()))
                 .thenReturn(Map.of(2L, 1L, 3L, 5L));
-        when(libraryItemRepository.countByMemberId(1L)).thenReturn(2L);
         LibraryService service = service();
 
         // when
@@ -236,6 +249,40 @@ class LibraryServiceTest {
         // then
         assertThat(response.items()).extracting("bookId", "commentCount")
                 .containsExactly(tuple(3L, 5L), tuple(2L, 1L));
+    }
+
+    @Test
+    @DisplayName("기본 책장에 배치된 독서 기록만 조회한다")
+    void should_ListPlacedReadingRecords_When_ListingDefaultLibrary() {
+        // given
+        LibraryItem activeItem = LibraryItem.create(1L, 2L, ReadingStatus.READING, null, CLOCK.instant());
+        defaultItems(List.of(activeItem));
+        Book activeBook = bookWithId(2L);
+        when(bookRepository.findAllById(List.of(2L))).thenReturn(List.of(activeBook));
+        when(commentCountReader.getCommentCounts(anyCollection())).thenReturn(Map.of());
+
+        // when
+        var response = service().getLibrary(1L, 1, null, LibrarySort.RECENT);
+
+        // then
+        assertThat(response.totalCount()).isEqualTo(1L);
+        assertThat(response.items()).extracting("bookId").containsExactly(2L);
+    }
+
+    private void defaultItems(List<LibraryItem> items) {
+        Library library = mock(Library.class);
+        when(library.getId()).thenReturn(7L);
+        when(libraryRepository.findByMemberIdAndIsDefaultTrue(1L)).thenReturn(Optional.of(library));
+        List<LibraryBook> placements = items
+                .stream()
+                .map(item -> LibraryBook.create(7L, item.getBookId(), item.getBookId()))
+                .toList();
+        when(libraryBookRepository.findAllByLibraryId(7L)).thenReturn(placements);
+        List<Long> bookIds = items
+                .stream()
+                .map(LibraryItem::getBookId)
+                .toList();
+        when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, bookIds)).thenReturn(items);
     }
 
     @Test
@@ -248,7 +295,6 @@ class LibraryServiceTest {
         when(member.getProfileImageUrl()).thenReturn("https://example.com/profile.jpg");
         when(member.getAccountStatus()).thenReturn(AccountStatus.ACTIVE);
         when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
-        when(libraryItemRepository.findAllByMemberId(1L)).thenReturn(List.of());
         when(commentCountReader.getCommentCounts(Set.of())).thenReturn(Map.of());
 
         // when
@@ -287,9 +333,15 @@ class LibraryServiceTest {
         );
     }
 
+    private Member activeMember() {
+        return Member.create("익명", null, LocalDateTime.of(2026, 10, 23, 12, 0));
+    }
+
     private LibraryService service() {
         return new LibraryService(
+                libraryRepository,
                 libraryItemRepository,
+                libraryBookRepository,
                 bookRepository,
                 bookResolver,
                 commentCountReader,
@@ -316,5 +368,15 @@ class LibraryServiceTest {
                 null,
                 null
         );
+    }
+
+    private Book bookWithId(long bookId) {
+        Book book = mock(Book.class);
+        when(book.getId()).thenReturn(bookId);
+        when(book.getIsbn13()).thenReturn(ISBN13);
+        when(book.getTitle()).thenReturn("마션");
+        when(book.getAuthors()).thenReturn(List.of());
+        when(book.getTranslators()).thenReturn(List.of());
+        return book;
     }
 }

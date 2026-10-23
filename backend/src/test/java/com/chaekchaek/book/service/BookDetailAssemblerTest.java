@@ -14,6 +14,7 @@ import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.math.BigDecimal;
@@ -26,6 +27,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class BookDetailAssemblerTest {
+
+    private final LibraryBookRepository libraryBookRepository = mock(LibraryBookRepository.class);
 
     @Test
     @DisplayName("책 상세에 감상·답글 수와 반올림한 평균 별점 및 내 기록을 결합한다")
@@ -41,7 +44,8 @@ class BookDetailAssemblerTest {
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                libraryBookRepository
         );
         when(activityCountReader.getActivityCounts(List.of(1L)))
                 .thenReturn(Map.of(
@@ -58,6 +62,7 @@ class BookDetailAssemblerTest {
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
         when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(12L);
         when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(libraryItem));
+        when(libraryBookRepository.countByMemberIdAndBookId(10L, 1L)).thenReturn(2L);
         when(libraryItem.getStatus()).thenReturn(ReadingStatus.READING);
         when(libraryItem.getCurrentPage()).thenReturn(120);
         when(libraryItem.getRating()).thenReturn(new BigDecimal("4.2"));
@@ -78,6 +83,7 @@ class BookDetailAssemblerTest {
         assertThat(response.source()).isEqualTo("yes24");
         assertThat(response.averageRating()).isEqualByComparingTo("4.2");
         assertThat(response.ratingCount()).isEqualTo(3);
+        assertThat(response.isRegisteredInMyLibrary()).isTrue();
         assertThat(response.myRatingCount()).isEqualTo(12);
         assertThat(response.myRecord()).extracting("status", "currentPage", "myRating")
                 .containsExactly("READING", 120, new BigDecimal("4.2"));
@@ -94,7 +100,8 @@ class BookDetailAssemblerTest {
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                libraryBookRepository
         );
         when(activityCountReader.getActivityCounts(List.of(1L)))
                 .thenReturn(Map.of(
@@ -113,8 +120,72 @@ class BookDetailAssemblerTest {
 
         // then
         assertThat(response.myRecord()).isNull();
+        assertThat(response.isRegisteredInMyLibrary()).isFalse();
         assertThat(response.purchaseUrl()).isEqualTo("https://www.yes24.com/product/goods/101375809");
         assertThat(response.source()).isEqualTo("yes24");
+    }
+
+    @Test
+    @DisplayName("독서 기록만 초기화된 항목은 도서 상세의 내 기록에서 제외한다")
+    void should_ReturnNullMyRecord_When_ReadingStateAndRatingAreMissing() {
+        // given
+        Book book = book();
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        LibraryItem item = mock(LibraryItem.class);
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository,
+                libraryBookRepository
+        );
+        when(activityCountReader.getActivityCounts(List.of(1L))).thenReturn(Map.of(1L, ActivityCounts.ZERO));
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
+        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(0L);
+        when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(item));
+        when(item.hasReadingState()).thenReturn(false);
+
+        // when
+        var response = assembler.assemble(book);
+
+        // then
+        assertThat(response.myRecord()).isNull();
+        assertThat(response.isRegisteredInMyLibrary()).isFalse();
+    }
+
+    @Test
+    @DisplayName("마지막 배치 삭제 뒤 별점만 남으면 독서 필드는 null로 반환한다")
+    void should_ReturnRatingWithoutReadingState_When_ReadingStateIsCleared() {
+        // given
+        Book book = book();
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        LibraryItem item = mock(LibraryItem.class);
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository,
+                libraryBookRepository
+        );
+        when(activityCountReader.getActivityCounts(List.of(1L))).thenReturn(Map.of(1L, ActivityCounts.ZERO));
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
+        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(1L);
+        when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(item));
+        when(item.hasReadingState()).thenReturn(false);
+        when(item.getCurrentPage()).thenReturn(null);
+        when(item.getRating()).thenReturn(new BigDecimal("4.5"));
+
+        // when
+        var response = assembler.assemble(book);
+
+        // then
+        assertThat(response.myRecord()).extracting("status", "currentPage", "myRating")
+                .containsExactly(null, null, new BigDecimal("4.5"));
+        assertThat(response.isRegisteredInMyLibrary()).isFalse();
     }
 
     @Test
@@ -128,7 +199,8 @@ class BookDetailAssemblerTest {
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                libraryBookRepository
         );
 
         // when
@@ -149,7 +221,8 @@ class BookDetailAssemblerTest {
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                libraryBookRepository
         );
         when(book.getQuestion()).thenReturn("화성에 홀로 남는다면 무엇부터 하시겠어요?");
 
@@ -173,7 +246,8 @@ class BookDetailAssemblerTest {
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                libraryBookRepository
         );
         when(activityCountReader.getActivityCounts(List.of(1L)))
                 .thenReturn(Map.of(
@@ -191,6 +265,7 @@ class BookDetailAssemblerTest {
 
         // then
         assertThat(response.myRatingCount()).isNull();
+        assertThat(response.isRegisteredInMyLibrary()).isNull();
         verify(libraryItemRepository, never()).countByMemberIdAndRatingIsNotNull(anyLong());
     }
 
@@ -205,7 +280,8 @@ class BookDetailAssemblerTest {
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                libraryBookRepository
         );
 
         // when
@@ -218,8 +294,9 @@ class BookDetailAssemblerTest {
         assertThat(response.averageRating()).isNull();
         assertThat(response.ratingCount()).isNull();
         assertThat(response.myRatingCount()).isNull();
+        assertThat(response.isRegisteredInMyLibrary()).isNull();
         assertThat(response.myRecord()).isNull();
-        verifyNoInteractions(activityCountReader, currentMemberIdProvider, libraryItemRepository);
+        verifyNoInteractions(activityCountReader, libraryItemRepository, libraryBookRepository);
     }
 
     @Test
@@ -234,7 +311,8 @@ class BookDetailAssemblerTest {
         BookDetailAssembler assembler = new BookDetailAssembler(
                 activityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryItemRepository,
+                libraryBookRepository
         );
 
         // when
@@ -242,6 +320,27 @@ class BookDetailAssemblerTest {
 
         // then
         assertThat(response.description()).isNull();
+    }
+
+    @Test
+    @DisplayName("저장되지 않은 도서는 로그인 회원에게 책장 미등록으로 반환한다")
+    void should_ReturnFalseMembership_When_AuthenticatedBookHasNoId() {
+        // given
+        CurrentMemberIdProvider provider = mock(CurrentMemberIdProvider.class);
+        when(provider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                mock(BookActivityCountReader.class),
+                provider,
+                mock(LibraryItemRepository.class),
+                libraryBookRepository
+        );
+
+        // when
+        var response = assembler.assemble(bookWithoutId());
+
+        // then
+        assertThat(response.isRegisteredInMyLibrary()).isFalse();
+        verifyNoInteractions(libraryBookRepository);
     }
 
     private Book book() {

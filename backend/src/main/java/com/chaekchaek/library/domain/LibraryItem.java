@@ -1,5 +1,8 @@
 package com.chaekchaek.library.domain;
 
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
+import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,15 +12,30 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import com.chaekchaek.common.exception.BusinessException;
-import com.chaekchaek.common.exception.ErrorCode;
 import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "library_item", uniqueConstraints = @UniqueConstraint(
-        name = "uk_library_item_member_book", columnNames = {"member_id", "book_id"}
-))
+@Table(
+        name = "library_item",
+        check = {
+                @CheckConstraint(
+                        name = "ck_library_item_reading_state",
+                        constraint = "(status is null and current_page is null and reading_updated_at is null) "
+                                + "or (status is not null and current_page is not null "
+                                + "and reading_updated_at is not null)"
+                ),
+                @CheckConstraint(
+                        name = "ck_library_item_rating_state",
+                        constraint = "(rating is null and rating_updated_at is null) "
+                                + "or (rating is not null and rating_updated_at is not null)"
+                )
+        },
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_library_item_member_book",
+                columnNames = {"member_id", "book_id"}
+        )
+)
 public class LibraryItem {
 
     @Id
@@ -31,11 +49,10 @@ public class LibraryItem {
     private long bookId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private ReadingStatus status;
 
-    @Column(nullable = false)
-    private int currentPage;
+    private Integer currentPage;
 
     @Column(precision = 2, scale = 1)
     private BigDecimal rating;
@@ -43,12 +60,17 @@ public class LibraryItem {
     @Column(nullable = false, updatable = false)
     private Instant addedAt;
 
-    @Column(nullable = false)
     private Instant readingUpdatedAt;
 
     private Instant ratingUpdatedAt;
 
     protected LibraryItem() {
+    }
+
+    private LibraryItem(long memberId, long bookId, Instant now) {
+        this.memberId = memberId;
+        this.bookId = bookId;
+        this.addedAt = now;
     }
 
     private LibraryItem(
@@ -58,11 +80,9 @@ public class LibraryItem {
             Integer totalPages,
             Instant now
     ) {
-        this.memberId = memberId;
-        this.bookId = bookId;
+        this(memberId, bookId, now);
         this.status = status;
         this.currentPage = initialPage(status, totalPages);
-        this.addedAt = now;
         this.readingUpdatedAt = now;
     }
 
@@ -73,14 +93,45 @@ public class LibraryItem {
             Integer totalPages,
             Instant now
     ) {
-        if (status == ReadingStatus.FINISHED && totalPages == null) {
+        if (status == null || (status == ReadingStatus.FINISHED && totalPages == null)) {
             throw invalidReadingState();
         }
         return new LibraryItem(memberId, bookId, status, totalPages, now);
     }
 
+    public static LibraryItem createForRating(
+            long memberId,
+            long bookId,
+            BigDecimal rating,
+            Instant now
+    ) {
+        LibraryItem item = new LibraryItem(memberId, bookId, now);
+        item.rate(rating, now);
+        return item;
+    }
+
+    public void startReading(ReadingStatus status, Integer totalPages, Instant now) {
+        if (hasReadingState() || status == null || (status == ReadingStatus.FINISHED && totalPages == null)) {
+            throw invalidReadingState();
+        }
+        this.status = status;
+        this.currentPage = initialPage(status, totalPages);
+        this.readingUpdatedAt = now;
+    }
+
+    public void clearReadingState() {
+        this.status = null;
+        this.currentPage = null;
+        this.readingUpdatedAt = null;
+    }
+
+    public boolean hasReadingState() {
+        return status != null && currentPage != null && readingUpdatedAt != null;
+    }
+
     public void changeStatus(ReadingStatus status, Integer totalPages, Instant now) {
-        if (status == ReadingStatus.FINISHED && totalPages == null) {
+        if (!hasReadingState() || status == null
+                || (status == ReadingStatus.FINISHED && totalPages == null)) {
             throw invalidReadingState();
         }
         int changedPage = status == ReadingStatus.WANT_TO_READ
@@ -93,6 +144,9 @@ public class LibraryItem {
     }
 
     public void changeCurrentPage(int currentPage, Integer totalPages, Instant now) {
+        if (!hasReadingState()) {
+            throw invalidReadingState();
+        }
         validatePage(currentPage, totalPages);
         ReadingStatus changedStatus = resolveStatusForPage(currentPage, totalPages);
         boolean changed = this.currentPage != currentPage || this.status != changedStatus;
@@ -155,7 +209,7 @@ public class LibraryItem {
     public long getMemberId() { return memberId; }
     public long getBookId() { return bookId; }
     public ReadingStatus getStatus() { return status; }
-    public int getCurrentPage() { return currentPage; }
+    public Integer getCurrentPage() { return currentPage; }
     public BigDecimal getRating() { return rating; }
     public Instant getAddedAt() { return addedAt; }
     public Instant getReadingUpdatedAt() { return readingUpdatedAt; }

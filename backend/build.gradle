@@ -118,6 +118,10 @@ openapi3 {
 }
 
 tasks.named('test') {
+	def mysqlMigrationTestPort = providers.environmentVariable('MYSQL_MIGRATION_TEST_PORT')
+	inputs.property('mysqlMigrationTestPort', mysqlMigrationTestPort.orElse('disabled'))
+	outputs.upToDateWhen { !mysqlMigrationTestPort.isPresent() }
+	outputs.doNotCacheIf('MySQL migration tests require a live database') { mysqlMigrationTestPort.isPresent() }
 	outputs.dir snippetsDir
 	useJUnitPlatform()
 	doFirst {
@@ -242,7 +246,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		setEnum('/api/v1/library', 'get', 'status', ['WANT_TO_READ', 'READING', 'FINISHED'])
 		setEnum('/api/v1/library', 'get', 'sort', ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], 'RECENT')
 		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'feed', ['ALL', 'MINE'], 'ALL')
-		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'sort', ['PAGE', 'LATEST', 'OLDEST', 'POPULAR'], 'PAGE')
+		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'sort', ['LATEST', 'OLDEST', 'POPULAR'], 'LATEST')
 
 		def ratingProperty = (requestSchema('/api/v1/library/{bookId}/rating', 'put')?.get('properties') as Map)
 			?.get('rating') as Map
@@ -265,7 +269,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		constrainString('/api/v1/reviews/{reviewId}/replies', 'post', 'content', 200)
 		constrainString('/api/v1/replies/{replyId}', 'patch', 'content', 200)
 		requestProperty('/api/v1/members/me/nickname', 'patch', 'nickname')
-				?.putAll([minLength: 1, maxLength: 100])
+				?.putAll([minLength: 1, maxLength: 10])
 		requestProperty('/api/v1/books/{bookId}/reviews', 'post', 'isSpoiler')?.putAll([nullable: false, default: false])
 		requestProperty('/api/v1/books/by-isbn/{isbn13}/reviews', 'post', 'isSpoiler')?.putAll([nullable: false, default: false])
 		requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'content')?.remove('nullable')
@@ -285,9 +289,9 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			['/api/v1/replies/{replyId}/reactions', 'post'], ['/api/v1/replies/{replyId}/reactions', 'delete']
 		].each { operation -> appendOperationDescription(operation[0], operation[1], guestInteractionGuidance) }
 		appendOperationDescription('/api/v1/books/{bookId}/reviews', 'post',
-				'게스트는 currentPage와 totalPages를 입력할 수 없으며 서재·독서 기록은 변경되지 않습니다.')
+				'게스트는 currentPage와 totalPages를 입력할 수 없으며 책장과 독서 기록은 변경되지 않습니다.')
 		appendOperationDescription('/api/v1/books/by-isbn/{isbn13}/reviews', 'post',
-				'게스트는 currentPage와 totalPages를 입력할 수 없으며 서재·독서 기록은 변경되지 않습니다.')
+				'게스트는 currentPage와 totalPages를 입력할 수 없으며 책장과 독서 기록은 변경되지 않습니다.')
 		['/api/v1/library/bulk-delete', '/api/v1/library/bulk-status'].each { path ->
 			def method = path.endsWith('bulk-delete') ? 'post' : 'patch'
 			def bookIds = (requestSchema(path, method)?.get('properties') as Map)?.get('bookIds') as Map
@@ -303,7 +307,9 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		markRequiredNullable(searchItem, propertyName)
 	}
 	def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
-	['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRatingCount', 'myRecord', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
+	['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRatingCount', 'myRecord', 'totalPages', 'isRegisteredInMyLibrary'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
+		def legacyRatingResponse = responseSchemaForPath('/api/v1/library/{bookId}/rating', 'put', '200')
+		['status', 'currentPage', 'readingUpdatedAt'].each { name -> markRequiredNullable(legacyRatingResponse, name) }
 		def libraryResponse = responseSchemaForPath('/api/v1/library', 'get', '200')
 		markRequiredNullable(libraryResponse, 'nextPage')
 		def libraryItem = arrayItemSchema(libraryResponse, 'items')
@@ -348,7 +354,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		addJsonExample('/api/v1/books/by-isbn/{isbn13}', 'get', '200', 'book-detail-without-library-record', '비로그인 사용자의 도서 상세', [
 			 bookId: 10, isbn13: '9788936433598', title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
 			 authors: ['한강'], translators: [], publisher: '창비', category: '국내도서>소설', publishedDate: '2007-10-30',
-				 totalPages: 368, reviewCount: 1, replyCount: 1, averageRating: 4.3, ratingCount: 21, myRatingCount: null, myRecord: null
+				 totalPages: 368, reviewCount: 1, replyCount: 1, averageRating: 4.3, ratingCount: 21, myRatingCount: null, myRecord: null, isRegisteredInMyLibrary: null
 		])
 		addJsonExample('/api/v1/books/{bookId}/reviews', 'get', '200', 'review-normal', '일반 감상', [
 			 totalCount: 1, nextPage: null,
@@ -525,11 +531,11 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def requiredLibraryOperations = [
-			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '404', '409', '422']],
-			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '404']],
-			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '404', '422']],
-			'/api/v1/library/{bookId}'                : ['patch': ['200', '400', '401', '404', '409', '422'], 'delete': ['204', '401', '404']],
-			'/api/v1/library/{bookId}/rating'         : ['put': ['200', '400', '401', '404'], 'delete': ['204', '401', '404']],
+			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '403', '404', '409', '422']],
+			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '403', '404']],
+			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '403', '404', '422']],
+			'/api/v1/library/{bookId}'                : ['patch': ['200', '400', '401', '403', '404', '409', '422'], 'delete': ['204', '401', '403', '404']],
+			'/api/v1/library/{bookId}/rating'         : ['put': ['200', '400', '401', '403', '404'], 'delete': ['204', '401', '403', '404']],
 			'/api/v1/members/me/ratings/comparison'   : ['get': ['200', '400', '401', '404']]
 		]
 		requiredLibraryOperations.each { path, expectedOperations ->
@@ -589,7 +595,7 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/auth/reissue'        : [post: ['204']],
 			'/api/v1/auth/logout'         : [post: ['204']],
 			'/api/v1/members/me'          : [get: ['200', '401'], delete: ['204', '401']],
-			'/api/v1/members/me/nickname' : [patch: ['200', '400', '401', '409']],
+			'/api/v1/members/me/nickname' : [patch: ['200', '400', '401', '403', '409']],
 			'/api/v1/members/me/anonymity': [patch: ['200', '400', '401', '422']]
 		]
 		authOperations.each { path, operations ->
@@ -690,11 +696,11 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def problemResponseCodes = [
-			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '404', '409', '422']],
-			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '404']],
-			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '404', '422']],
-			'/api/v1/library/{bookId}'                : ['patch': ['400', '401', '404', '409', '422'], 'delete': ['401', '404']],
-			'/api/v1/library/{bookId}/rating'         : ['put': ['400', '401', '404'], 'delete': ['401', '404']],
+			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '403', '404', '409', '422']],
+			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '403', '404']],
+			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '403', '404', '422']],
+			'/api/v1/library/{bookId}'                : ['patch': ['400', '401', '403', '404', '409', '422'], 'delete': ['401', '403', '404']],
+			'/api/v1/library/{bookId}/rating'         : ['put': ['400', '401', '403', '404'], 'delete': ['401', '403', '404']],
 			'/api/v1/members/me/ratings/comparison'   : ['get': ['400', '401', '404']]
 		]
 		problemResponseCodes.each { path, operations ->
@@ -706,6 +712,17 @@ tasks.register('verifyOpenApi') {
 					if ((problemContent?.get('schema') as Map)?.get('\$ref') != '#/components/schemas/ProblemDetail') {
 						throw new GradleException("OpenAPI specification is missing ProblemDetail schema for ${method.toUpperCase()} ${path} ${responseCode} response")
 					}
+				}
+			}
+		}
+
+		def legacyAddResponses = (((paths.get('/api/v1/library') as Map).get('post') as Map).get('responses') as Map)
+		['409': ['LIBRARY_ITEM_ALREADY_EXISTS', 'LIBRARY_ITEM_LIMIT_EXCEEDED'], '422': ['NICKNAME_REQUIRED']].each { errorStatus, codes ->
+			def examples = ((((legacyAddResponses.get(errorStatus) as Map)?.get('content') as Map)
+					?.get('application/problem+json') as Map)?.get('examples') as Map)
+			codes.each { code ->
+				if (!examples?.values()?.any { example -> (example as Map)?.get('value')?.toString()?.contains("\"code\":\"${code}\"") }) {
+					throw new GradleException("OpenAPI specification is missing legacy default-placement error ${code}")
 				}
 			}
 		}
@@ -775,7 +792,6 @@ tasks.register('verifyOpenApi') {
 		if ((locationHeader?.get('schema') as Map)?.get('type') != 'string') {
 			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/library 201 response')
 		}
-
 		def libraryQueryParameters = (((paths.get('/api/v1/library') as Map).get('get') as Map)
 				?.get('parameters') as List)?.collectEntries { parameter -> [(parameter.get('name')): parameter] }
 		if ((libraryQueryParameters?.get('page') as Map)?.get('schema')?.get('type') != 'integer'
@@ -832,7 +848,6 @@ tasks.register('verifyOpenApi') {
 			def property = (schema?.get('properties') as Map)?.get(propertyName) as Map
 			return required.contains(propertyName) && property?.get('nullable') == true
 		}
-
 		[
 			[path: '/api/v1/books', method: 'get', name: 'page'],
 			[path: '/api/v1/library', method: 'get', name: 'page'],
@@ -849,7 +864,7 @@ tasks.register('verifyOpenApi') {
 			[path: '/api/v1/library', method: 'get', name: 'status', values: ['WANT_TO_READ', 'READING', 'FINISHED']],
 			[path: '/api/v1/library', method: 'get', name: 'sort', values: ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], defaultValue: 'RECENT'],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'feed', values: ['ALL', 'MINE'], defaultValue: 'ALL'],
-			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'sort', values: ['PAGE', 'LATEST', 'OLDEST', 'POPULAR'], defaultValue: 'PAGE']
+			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'sort', values: ['LATEST', 'OLDEST', 'POPULAR'], defaultValue: 'LATEST']
 		].each { requirement ->
 			def parameter = queryParameter(requirement.path, requirement.method, requirement.name)
 			def schema = parameter?.get('schema') as Map
@@ -872,6 +887,7 @@ tasks.register('verifyOpenApi') {
 			throw new GradleException('OpenAPI specification must constrain rating to 0.1 through 5.0 in 0.1 increments')
 		}
 		[
+			[path: '/api/v1/members/me/nickname', method: 'patch', name: 'nickname', maxLength: 10],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'content', maxLength: 1000],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'quote', maxLength: 500],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'chapter', maxLength: 255],
@@ -949,8 +965,19 @@ tasks.register('verifyOpenApi') {
 				|| !requiredNullable(detailResponse, 'replyCount')
 				|| !requiredNullable(detailResponse, 'averageRating') || !requiredNullable(detailResponse, 'ratingCount')
 				|| !requiredNullable(detailResponse, 'myRatingCount')
-				|| !requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'totalPages')) {
+				|| !requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'totalPages')
+				|| !requiredNullable(detailResponse, 'isRegisteredInMyLibrary')) {
 			throw new GradleException('OpenAPI specification must describe nullable book detail state fields')
+		}
+		def legacyRatingResponse = responseSchema('/api/v1/library/{bookId}/rating', 'put', '200')
+		if (!['status', 'currentPage', 'readingUpdatedAt'].every { name -> requiredNullable(legacyRatingResponse, name) }
+				|| ((legacyRatingResponse?.get('properties') as Map)?.get('rating') as Map)?.get('nullable') == true) {
+			throw new GradleException('OpenAPI specification must describe rating-only reading fields as required and nullable')
+		}
+		def legacyRatingExamples = ((((((paths.get('/api/v1/library/{bookId}/rating') as Map).get('put') as Map)
+				.get('responses') as Map).get('200') as Map).get('content') as Map).get('application/json') as Map)?.get('examples') as Map
+		if (!legacyRatingExamples?.containsKey('library-rate-without-reading-state')) {
+			throw new GradleException('OpenAPI specification is missing the rating-only response example')
 		}
 		def libraryResponse = responseSchema('/api/v1/library', 'get', '200')
 		def libraryItem = ((libraryResponse?.get('properties') as Map)?.get('items') as Map)?.get('items') as Map

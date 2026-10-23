@@ -10,6 +10,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -21,6 +22,8 @@ import com.chaekchaek.actor.domain.Actor;
 import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.auth.token.access.AccessTokenProvider;
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
+import com.chaekchaek.library.repository.LibraryRepository;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.epages.restdocs.apispec.ResourceDocumentation;
@@ -42,6 +45,7 @@ import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -50,6 +54,13 @@ import org.springframework.test.web.servlet.MockMvc;
 public class MemberControllerIntegrationTest {
 
     private static final String MEMBER_TAG = "회원";
+    private static final String NICKNAME_UPDATE_DESCRIPTION = """
+            중복되지 않은 공개 닉네임을 설정한다. 첫 닉네임은 1~10자이며 한글 완성형, 영문,
+            숫자, _, -만 허용한다. 첫 저장과 기본 책장 생성은 함께 완료되며 같은 이름의 내 책장이
+            있으면 이름과 순서를 유지해 기본으로 승격한다. 기본 책장이 이미 있거나 이후 닉네임을
+            변경하면 책장을 새로 만들거나 이름을 바꾸지 않는다. 익명 표시 여부는 유지한다.
+            별도 CSRF 토큰 없이 Bearer 또는 Access Token 쿠키로 인증한다.
+            """;
     private static final FieldDescriptor[] MEMBER_RESPONSE_FIELDS = {
             fieldWithPath("memberId").type(JsonFieldType.NUMBER).description("회원 ID"),
             fieldWithPath("nickname").type(JsonFieldType.STRING).description("사용자가 설정한 공개 닉네임").optional(),
@@ -85,7 +96,7 @@ public class MemberControllerIntegrationTest {
     };
     private static final FieldDescriptor[] UPDATE_NICKNAME_REQUEST_FIELDS = {
             fieldWithPath("nickname").type(JsonFieldType.STRING)
-                    .description("설정할 공개 닉네임. 공백일 수 없으며 최대 100자")
+                    .description("공개 닉네임, 최대 10자. 첫 저장은 한글 완성형, 영문, 숫자, _, -만 허용하며 공백을 제거하지 않는다")
     };
     private static final FieldDescriptor[] UPDATE_ANONYMITY_REQUEST_FIELDS = {
             fieldWithPath("displayAnonymous").type(JsonFieldType.BOOLEAN)
@@ -99,6 +110,9 @@ public class MemberControllerIntegrationTest {
     private MemberRepository memberRepository;
 
     @Autowired
+    private LibraryRepository libraryRepository;
+
+    @Autowired
     private ActorRepository actorRepository;
 
     @Autowired
@@ -106,6 +120,7 @@ public class MemberControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        libraryRepository.deleteAll();
         actorRepository.deleteAll();
         memberRepository.deleteAll();
     }
@@ -228,7 +243,6 @@ public class MemberControllerIntegrationTest {
 
         // when & then
         mockMvc.perform(patch("/api/v1/members/me/nickname")
-                        .with(csrf().asHeader())
                         .cookie(cookie)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nickname\":\"책책이\"}"))
@@ -242,7 +256,7 @@ public class MemberControllerIntegrationTest {
                         responseFields(MEMBER_RESPONSE_FIELDS),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("닉네임 설정")
-                                .description("중복되지 않은 공개 닉네임을 설정한다. 설정 후에도 익명 여부는 변경되지 않는다")
+                                .description(NICKNAME_UPDATE_DESCRIPTION)
                                 .tag(MEMBER_TAG)
                                 .requestSchema(Schema.schema("UpdateNicknameRequest"))
                                 .requestFields(UPDATE_NICKNAME_REQUEST_FIELDS)
@@ -250,6 +264,64 @@ public class MemberControllerIntegrationTest {
                                 .responseFields(MEMBER_RESPONSE_FIELDS)
                                 .build())
                 ));
+        assertThat(libraryRepository.findByMemberIdAndIsDefaultTrue(member.getId()))
+                .get()
+                .satisfies(library -> assertThat(library.getName()).isEqualTo("책책이"));
+    }
+
+    @Test
+    @DisplayName("Bearer 인증으로 첫 닉네임과 기본 책장을 함께 저장한다")
+    void should_CreateDefaultLibrary_When_FirstNicknameIsSavedWithBearerToken() throws Exception {
+        // given
+        Member member = memberRepository.save(Member.create("익명", null, LocalDateTime.now()));
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/members/me/nickname")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessTokenProvider.issue(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nickname\":\"독서초보\"}"))
+                .andExpect(status().isOk());
+        assertThat(libraryRepository.findByMemberIdAndIsDefaultTrue(member.getId()))
+                .get()
+                .satisfies(library -> assertThat(library.getName()).isEqualTo("독서초보"));
+    }
+
+    @Test
+    @DisplayName("공백이 있는 첫 닉네임은 닉네임과 책장을 저장하지 않고 거절한다")
+    void should_RejectFirstNickname_When_ItContainsWhitespace() throws Exception {
+        // given
+        Member member = memberRepository.save(Member.create("익명", null, LocalDateTime.now()));
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/members/me/nickname")
+                        .cookie(accessTokenCookie(member))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nickname\":\"책 책\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+                .andDo(problemDetailDocument("member-nickname-update-first-invalid", "닉네임 설정",
+                        NICKNAME_UPDATE_DESCRIPTION));
+        assertThat(memberRepository.findById(member.getId()).orElseThrow().getNickname()).isNull();
+        assertThat(libraryRepository.findByMemberIdAndIsDefaultTrue(member.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("인증된 비활성 회원의 닉네임 저장은 거절한다")
+    void should_RejectNicknameUpdate_When_AuthenticatedMemberIsInactive() throws Exception {
+        // given
+        Member member = Member.create("익명", null, LocalDateTime.now());
+        ReflectionTestUtils.setField(member, "accountStatus", AccountStatus.SUSPENDED);
+        memberRepository.saveAndFlush(member);
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/members/me/nickname")
+                        .with(jwt().jwt(token -> token.subject(member.getId().toString())))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nickname\":\"책책이\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"))
+                .andDo(problemDetailDocument("member-nickname-update-forbidden", "닉네임 설정",
+                        NICKNAME_UPDATE_DESCRIPTION));
     }
 
     @Test
@@ -276,7 +348,7 @@ public class MemberControllerIntegrationTest {
                 .andDo(problemDetailDocument(
                         "member-nickname-update-conflict",
                         "닉네임 설정",
-                        "이미 사용 중인 공개 닉네임이면 충돌 오류를 반환한다"
+                        NICKNAME_UPDATE_DESCRIPTION
                 ));
     }
 
@@ -359,7 +431,7 @@ public class MemberControllerIntegrationTest {
                 .andDo(problemDetailDocument(
                         "member-nickname-update-invalid",
                         "닉네임 설정",
-                        "닉네임이 공백이거나 100자를 초과하면 잘못된 요청 오류를 반환한다"
+                        NICKNAME_UPDATE_DESCRIPTION
                 ));
     }
 
@@ -376,7 +448,7 @@ public class MemberControllerIntegrationTest {
                 .andDo(problemDetailDocument(
                         "member-nickname-update-unauthorized",
                         "닉네임 설정",
-                        "유효한 Access Token이 없으면 인증 오류를 반환한다"
+                        NICKNAME_UPDATE_DESCRIPTION
                 ));
     }
 

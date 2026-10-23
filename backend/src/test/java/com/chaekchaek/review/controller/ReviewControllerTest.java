@@ -74,6 +74,13 @@ import org.springframework.test.web.servlet.ResultActions;
 class ReviewControllerTest {
 
     private static final String REVIEW_TAG = "감상";
+    private static final String REVIEW_CREATE_DESCRIPTION =
+            "도서에 감상을 작성하고 필요한 경우 독서 기록을 갱신한다. "
+                    + "감상 작성은 책장에 도서를 추가하지 않는다. 회원이 페이지를 보내면 공유 독서 기록만 갱신한다.";
+    private static final String REVIEW_CREATE_BY_ISBN_DESCRIPTION =
+            "ISBN13으로 도서를 조회하고, 로컬에 없으면 등록한 뒤 감상을 작성한다. "
+                    + "응답의 bookId로 도서 상세와 감상 목록을 갱신할 수 있다. "
+                    + "감상 작성은 책장에 도서를 추가하지 않는다. 회원이 페이지를 보내면 공유 독서 기록만 갱신한다.";
     private static final AuthorResponse AUTHOR = new AuthorResponse(
             1L,
             "닉네임",
@@ -203,7 +210,7 @@ class ReviewControllerTest {
                         responseFields(reviewResponseFields("")),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("감상 작성")
-                                .description("도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다")
+                                .description(REVIEW_CREATE_DESCRIPTION)
                                 .tag(REVIEW_TAG)
                                 .pathParameters(pathParameter("bookId", "도서 ID"))
                                 .requestFields(REVIEW_CREATE_REQUEST_FIELDS)
@@ -246,8 +253,7 @@ class ReviewControllerTest {
                         responseFields(reviewCreateByIsbnResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("ISBN13으로 감상 작성")
-                                .description("ISBN13으로 도서를 조회하고, 로컬에 없으면 등록한 뒤 감상을 작성한다. "
-                                        + "응답의 bookId로 도서 상세와 감상 목록을 갱신할 수 있다")
+                                .description(REVIEW_CREATE_BY_ISBN_DESCRIPTION)
                                 .tag(REVIEW_TAG)
                                 .pathParameters(isbn13PathParameter())
                                 .requestFields(REVIEW_CREATE_REQUEST_FIELDS)
@@ -515,7 +521,7 @@ class ReviewControllerTest {
                 .andDo(problemDetailDocument(
                         "review-create-unauthorized",
                         "감상 작성",
-                        "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                        REVIEW_CREATE_DESCRIPTION,
                         "bookId",
                         "도서 ID"
                 ));
@@ -632,7 +638,7 @@ class ReviewControllerTest {
                 "/api/v1/books/42/reviews",
                 "review-create-invalid-request",
                 "감상 작성",
-                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                REVIEW_CREATE_DESCRIPTION,
                 "bookId",
                 "도서 ID"
         );
@@ -644,7 +650,7 @@ class ReviewControllerTest {
                 "/api/v1/books/404/reviews",
                 "review-create-book-not-found",
                 "감상 작성",
-                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                REVIEW_CREATE_DESCRIPTION,
                 "bookId",
                 "도서 ID"
         );
@@ -656,7 +662,7 @@ class ReviewControllerTest {
                 "/api/v1/books/409/reviews",
                 "review-create-total-pages-conflict",
                 "감상 작성",
-                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                REVIEW_CREATE_DESCRIPTION,
                 "bookId",
                 "도서 ID"
         );
@@ -668,7 +674,7 @@ class ReviewControllerTest {
                 "/api/v1/books/422/reviews",
                 "review-create-invalid-reading-state",
                 "감상 작성",
-                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                REVIEW_CREATE_DESCRIPTION,
                 "bookId",
                 "도서 ID"
         );
@@ -1361,7 +1367,7 @@ class ReviewControllerTest {
                 responseFields(PROBLEM_DETAIL_FIELDS),
                 resource(ResourceSnippetParameters.builder()
                         .summary(summary)
-                        .description("ISBN13으로 도서를 조회하고, 로컬에 없으면 등록한 뒤 감상을 작성한다")
+                        .description(REVIEW_CREATE_BY_ISBN_DESCRIPTION)
                         .tag(REVIEW_TAG)
                         .pathParameters(isbn13PathParameter())
                         .responseSchema(Schema.schema("ProblemDetail"))
