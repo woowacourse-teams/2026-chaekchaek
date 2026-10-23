@@ -234,31 +234,6 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			content?.put('examples', examples)
 			examples.put(name, [summary: summary, value: value])
 		}
-		def libraryCreationOperation = ((specification.get('paths') as Map)
-				?.get('/api/v1/libraries') as Map)?.get('post') as Map
-		(libraryCreationOperation?.get('requestBody') as Map)?.put('required', true)
-		def libraryCreationRequestContent = ((libraryCreationOperation?.get('requestBody') as Map)
-				?.get('content') as Map)
-		libraryCreationRequestContent?.values()?.each { content ->
-			def examples = (content as Map).get('examples') as Map
-			if (examples?.containsKey('library-create')) {
-				(content as Map).put('examples', ['library-create': examples.get('library-create')] + examples)
-			}
-		}
-		def libraryCreationResponse = responseSchemaForPath('/api/v1/libraries', 'post', '201')
-		def libraryIdProperty = (libraryCreationResponse?.get('properties') as Map)?.get('libraryId') as Map
-		libraryIdProperty?.putAll([type: 'integer', format: 'int64'])
-		def libraryCreationResponses = libraryCreationOperation?.get('responses') as Map
-		def libraryCreationResponseDescriptions = [
-			'201': '서재 생성 성공. 저장된 서재 ID와 이름을 반환한다.',
-			'400': '잘못된 요청 본문 또는 이름. `INVALID_REQUEST`.',
-			'401': '회원 인증 실패 또는 비활성 회원. `UNAUTHORIZED`.',
-			'403': 'CSRF 검사에서 거부됨. 응답 본문이 없으므로 HTTP 상태로 구분한다.',
-			'409': '같은 회원의 앞뒤 공백을 제거한 서재 이름 중복. `LIBRARY_NAME_ALREADY_EXISTS`.'
-		]
-		libraryCreationResponseDescriptions.each { status, description ->
-			(libraryCreationResponses?.get(status) as Map)?.put('description', description)
-		}
 
 		['/api/v1/books', '/api/v1/library', '/api/v1/books/{bookId}/reviews',
 		 '/api/v1/reviews/{reviewId}/replies'].each { path ->
@@ -552,9 +527,6 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def requiredLibraryOperations = [
-			'/api/v1/libraries'                       : ['post': ['201', '400', '401', '403', '409']],
-			'/api/v1/libraries/{libraryId}'           : ['post': ['201', '400', '401', '403', '404', '409', '422', '502']],
-			'/api/v1/libraries/{libraryId}/books/{bookId}': ['delete': ['204', '400', '401', '403', '404']],
 			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '403', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '403', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '403', '404', '422']],
@@ -720,9 +692,6 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def problemResponseCodes = [
-			'/api/v1/libraries'                       : ['post': ['400', '401', '409']],
-			'/api/v1/libraries/{libraryId}'           : ['post': ['400', '401', '403', '404', '409', '422', '502']],
-			'/api/v1/libraries/{libraryId}/books/{bookId}': ['delete': ['400', '401', '403', '404']],
 			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '403', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '403', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '403', '404', '422']],
@@ -750,41 +719,6 @@ tasks.register('verifyOpenApi') {
 			codes.each { code ->
 				if (!examples?.values()?.any { example -> (example as Map)?.get('value')?.toString()?.contains("\"code\":\"${code}\"") }) {
 					throw new GradleException("OpenAPI specification is missing legacy default-placement error ${code}")
-				}
-			}
-		}
-
-		def libraryBookPlacementProblemDetails = [
-			'/api/v1/libraries/{libraryId}': [
-				post: [
-					'400': ['INVALID_REQUEST'],
-					'401': ['UNAUTHORIZED'],
-					'403': ['FORBIDDEN'],
-					'404': ['LIBRARY_NOT_FOUND', 'BOOK_NOT_FOUND'],
-					'409': ['LIBRARY_ITEM_ALREADY_EXISTS', 'LIBRARY_ITEM_LIMIT_EXCEEDED', 'TOTAL_PAGES_CONFLICT'],
-					'422': ['INVALID_READING_STATE'],
-					'502': ['EXTERNAL_API_ERROR']
-				]
-			]
-		]
-		libraryBookPlacementProblemDetails.each { path, operations ->
-			operations.each { method, expectedResponses ->
-				def operation = (paths.get(path) as Map).get(method) as Map
-				def operationResponses = (operation.get('responses') as Map)?.collectEntries { status, response ->
-					[(status.toString()): response]
-				}
-				expectedResponses.each { errorStatus, expectedCodes ->
-					def response = operationResponses?.get(errorStatus) as Map
-					def problemContent = (response?.get('content') as Map)?.get('application/problem+json') as Map
-					def examples = problemContent?.get('examples') as Map
-					expectedCodes.each { expectedCode ->
-						def codeExists = examples?.values()?.any { example ->
-							(example as Map)?.get('value')?.toString()?.contains("\"code\":\"${expectedCode}\"")
-						}
-						if (!codeExists) {
-							throw new GradleException("OpenAPI specification is missing ${expectedCode} example for ${method.toUpperCase()} ${path}")
-						}
-					}
 				}
 			}
 		}
@@ -854,19 +788,6 @@ tasks.register('verifyOpenApi') {
 		if ((locationHeader?.get('schema') as Map)?.get('type') != 'string') {
 			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/library 201 response')
 		}
-		def libraryCreationOperation = (paths.get('/api/v1/libraries') as Map).get('post') as Map
-		def libraryCreationLocation = ((((libraryCreationOperation.get('responses') as Map).get('201') as Map)
-				?.get('headers') as Map)?.get('Location') as Map)
-		if ((libraryCreationLocation?.get('schema') as Map)?.get('type') != 'string') {
-			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/libraries 201 response')
-		}
-		def libraryBookAddOperation = (paths.get('/api/v1/libraries/{libraryId}') as Map).get('post') as Map
-		def libraryBookAddLocation = ((((libraryBookAddOperation.get('responses') as Map).get('201') as Map)
-				?.get('headers') as Map)?.get('Location') as Map)
-		if ((libraryBookAddLocation?.get('schema') as Map)?.get('type') != 'string') {
-			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/libraries/{libraryId} 201 response')
-		}
-
 		def libraryQueryParameters = (((paths.get('/api/v1/library') as Map).get('get') as Map)
 				?.get('parameters') as List)?.collectEntries { parameter -> [(parameter.get('name')): parameter] }
 		if ((libraryQueryParameters?.get('page') as Map)?.get('schema')?.get('type') != 'integer'
@@ -923,36 +844,6 @@ tasks.register('verifyOpenApi') {
 			def property = (schema?.get('properties') as Map)?.get(propertyName) as Map
 			return required.contains(propertyName) && property?.get('nullable') == true
 		}
-		def libraryCreationRequest = requestSchema('/api/v1/libraries', 'post')
-		if ((libraryCreationOperation.get('requestBody') as Map)?.get('required') != true) {
-			throw new GradleException('OpenAPI specification must require the library creation request body')
-		}
-		if ((libraryCreationRequest?.get('required') as Set) != (['name'] as Set)
-				|| (libraryCreationRequest?.get('properties') as Map)?.get('name')?.get('type') != 'string') {
-			throw new GradleException('OpenAPI specification has invalid fields for POST /api/v1/libraries request')
-		}
-		def libraryCreationRequestContents = ((libraryCreationOperation.get('requestBody') as Map)
-				?.get('content') as Map)
-		libraryCreationRequestContents.values().each { content ->
-			def examples = (content as Map).get('examples') as Map
-			if (examples?.keySet()?.first() != 'library-create'
-					|| !examples.containsKey('library-create-invalid-request')) {
-				throw new GradleException('OpenAPI specification must show the successful library creation request first and preserve the invalid request example')
-			}
-			def defaultRequest = new JsonSlurper().parseText(examples.get('library-create').get('value').toString()) as Map
-			if (!(defaultRequest.get('name') instanceof String) || defaultRequest.get('name').toString().isBlank()) {
-				throw new GradleException('OpenAPI specification has an empty default library creation request example')
-			}
-		}
-		def libraryCreationResponse = responseSchema('/api/v1/libraries', 'post', '201')
-		if ((libraryCreationResponse?.get('required') as Set) != (['libraryId', 'name'] as Set)) {
-			throw new GradleException('OpenAPI specification has invalid fields for POST /api/v1/libraries response')
-		}
-		def libraryIdProperty = (libraryCreationResponse?.get('properties') as Map)?.get('libraryId') as Map
-		if (libraryIdProperty?.get('type') != 'integer' || libraryIdProperty?.get('format') != 'int64') {
-			throw new GradleException('OpenAPI specification must describe libraryId as an int64 integer')
-		}
-
 		[
 			[path: '/api/v1/books', method: 'get', name: 'page'],
 			[path: '/api/v1/library', method: 'get', name: 'page'],

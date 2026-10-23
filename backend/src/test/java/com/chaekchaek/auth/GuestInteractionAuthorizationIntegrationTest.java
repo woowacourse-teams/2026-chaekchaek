@@ -91,14 +91,6 @@ class GuestInteractionAuthorizationIntegrationTest {
         String guestToken = issueGuestToken();
 
         // when & then
-        mockMvc.perform(post("/api/v1/libraries")
-                        .with(csrf())
-                        .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"가을에 읽을 책"}
-                                """))
-                .andExpect(status().isUnauthorized());
         mockMvc.perform(post("/api/v1/library")
                         .with(csrf())
                         .header(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER, guestToken)

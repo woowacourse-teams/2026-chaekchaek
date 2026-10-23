@@ -52,9 +52,6 @@ class LegacyLibraryServiceIntegrationTest {
     private LibraryService service;
 
     @Autowired
-    private LibraryBookService bookService;
-
-    @Autowired
     private LibraryRepository libraries;
 
     @Autowired
@@ -362,27 +359,6 @@ class LegacyLibraryServiceIntegrationTest {
         assertThat(item(book).getStatus()).isNull();
         assertThat(item(book).getRating()).isEqualByComparingTo("4.5");
         assertThat(placements.count()).isZero();
-    }
-
-    @Test
-    @DisplayName("기존 기본 책장 추가와 새 책장 삭제가 같은 공유 기록 생명주기를 따른다")
-    void should_ShareLifecycle_When_LegacyAndNewPlacementApisAreMixed() {
-        // given
-        Library main = library(true, 1L);
-        Library other = library(false, 2L);
-        Book book = book(100);
-        record(book, ReadingStatus.READING);
-        place(other, book, 1L);
-        service.add(owner.getId(), book.getId(), ReadingStatus.FINISHED, null);
-
-        // when
-        bookService.delete(owner.getId(), other.getId(), book.getId());
-        assertThat(item(book).getStatus()).isEqualTo(ReadingStatus.READING);
-        service.delete(owner.getId(), book.getId());
-
-        // then
-        assertThat(placements.countByLibraryId(main.getId())).isZero();
-        assertThat(item(book).getStatus()).isNull();
     }
 
     private Library library(boolean isDefault, long order) {

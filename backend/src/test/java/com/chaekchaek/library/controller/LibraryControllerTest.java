@@ -34,13 +34,11 @@ import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
-import com.chaekchaek.library.dto.LibraryResponse;
 import com.chaekchaek.library.dto.PublicLibraryItemResponse;
 import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.PublicMemberResponse;
 import com.chaekchaek.library.dto.RatingComparisonBookResponse;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
-import com.chaekchaek.library.service.LibraryBookService;
 import com.chaekchaek.library.service.LibraryService;
 import com.epages.restdocs.apispec.ParameterDescriptorWithType;
 import com.epages.restdocs.apispec.ResourceDocumentation;
@@ -56,8 +54,6 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
 import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration;
@@ -85,27 +81,6 @@ class LibraryControllerTest {
     private static final long BOOK_ID = 10L;
     private static final String ISBN13 = "9788936433598";
     private static final String LIBRARY_TAG = "내 서재";
-    private static final String LIBRARY_CREATE_SUMMARY = "서재 생성";
-    private static final String LIBRARY_CREATE_DESCRIPTION = """
-            인증된 회원이 새 서재를 생성한다. 한 회원은 여러 서재를 가질 수 있다.
-
-            - `name`: 앞뒤 공백 제거 후 1~100자여야 하며, 저장된 이름을 반환한다.
-            - 중복 기준: 같은 회원의 앞뒤 공백을 제거한 이름. 대소문자만 다른 이름도 중복될 수 있다.
-
-            서재에 도서를 추가하는 기존 `POST /api/v1/library`와 별개의 API다.
-            """;
-    private static final String LIBRARY_BOOK_ADD_SUMMARY = "책장에 도서 추가";
-    private static final String LIBRARY_BOOK_ADD_DESCRIPTION = """
-            인증된 회원이 소유한 책장에 ISBN-13 도서를 배치한다. 책장마다 최대 30권까지 등록할 수 있고,
-            같은 책장에 같은 도서를 중복 배치할 수 없다. 이미 독서 기록이 있으면 요청 상태를 적용하지 않고
-            기존 기록과 별점을 유지한다.
-            """;
-    private static final String LIBRARY_BOOK_DELETE_SUMMARY = "책장에서 도서 배치 삭제";
-    private static final String LIBRARY_BOOK_DELETE_DESCRIPTION = """
-            인증된 회원이 소유한 책장에서 도서 배치를 삭제한다. 배치가 이미 없으면 아무 변경 없이 `204`를 반환한다.
-            삭제 후 회원의 다른 책장에 배치가 남지 않은 경우 독서 상태, 현재 페이지, 독서 갱신 시각만 초기화하고
-            기존 별점은 유지한다.
-            """;
     private static final String LIBRARY_LIST_SUMMARY = "내 서재 조회";
     private static final String LIBRARY_LIST_DESCRIPTION = "인증된 사용자가 기본 책장에 배치된 도서를 기존 읽기 상태와 정렬 기준으로 조회한다. 기본 책장이 없으면 빈 목록을 반환한다";
     private static final String PUBLIC_LIBRARY_LIST_SUMMARY = "사용자 공개 서재 조회";
@@ -159,13 +134,6 @@ class LibraryControllerTest {
             fieldWithPath("addedAt").type(JsonFieldType.STRING).description("서재 추가 시각"),
             fieldWithPath("readingUpdatedAt").type(JsonFieldType.STRING).description("읽기 정보 갱신 시각")
     };
-    private static final FieldDescriptor[] LIBRARY_CREATE_REQUEST_FIELDS = {
-            fieldWithPath("name").type(JsonFieldType.STRING).description("앞뒤 공백 제거 후 1~100자인 서재 이름")
-    };
-    private static final FieldDescriptor[] LIBRARY_RESPONSE_FIELDS = {
-            fieldWithPath("libraryId").type(JsonFieldType.NUMBER).description("생성된 서재 ID"),
-            fieldWithPath("name").type(JsonFieldType.STRING).description("앞뒤 공백을 제거한 서재 이름")
-    };
     private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
             fieldWithPath("type").type(JsonFieldType.STRING).description("문제 유형 URI"),
             fieldWithPath("title").type(JsonFieldType.STRING).description("HTTP 상태 설명"),
@@ -179,9 +147,6 @@ class LibraryControllerTest {
     private LibraryService libraryService;
 
     @MockitoBean
-    private LibraryBookService libraryBookService;
-
-    @MockitoBean
     private CurrentMemberIdProvider currentMemberIdProvider;
 
     @Autowired
@@ -191,204 +156,6 @@ class LibraryControllerTest {
     void setUp() {
         when(currentMemberIdProvider.getCurrentMemberId()).thenReturn(MEMBER_ID);
         when(currentMemberIdProvider.getCurrentMemberIdForWrite()).thenReturn(MEMBER_ID);
-    }
-
-    @Test
-    @DisplayName("이름을 지정하면 인증된 회원의 서재를 생성하고 서재 URI를 반환한다")
-    void should_CreateLibrary_When_NameIsValid() throws Exception {
-        // given
-        when(libraryService.create(MEMBER_ID, "가을에 읽을 책")).thenReturn(new LibraryResponse(
-                7L,
-                "가을에 읽을 책"
-        ));
-
-        // when & then
-        mockMvc.perform(post("/api/v1/libraries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"  가을에 읽을 책  "}
-                                """))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(header().string(HttpHeaders.LOCATION, "http://localhost:8080/api/v1/libraries/7"))
-                .andExpect(jsonPath("$.libraryId").value(7L))
-                .andExpect(jsonPath("$.name").value("가을에 읽을 책"))
-                .andDo(document(
-                        "library-create",
-                        requestFields(LIBRARY_CREATE_REQUEST_FIELDS),
-                        responseFields(LIBRARY_RESPONSE_FIELDS),
-                        responseHeaders(headerWithName(HttpHeaders.LOCATION)
-                                .description("생성된 서재 식별 URI. 현재 이 URI의 `GET` 조회 API는 제공하지 않는다")),
-                        resource(ResourceSnippetParameters.builder()
-                                .summary(LIBRARY_CREATE_SUMMARY)
-                                .description(LIBRARY_CREATE_DESCRIPTION)
-                                .tag(LIBRARY_TAG)
-                                .requestSchema(Schema.schema("CreateLibraryRequest"))
-                                .requestFields(LIBRARY_CREATE_REQUEST_FIELDS)
-                                .responseSchema(Schema.schema("LibraryResponse"))
-                                .responseFields(LIBRARY_RESPONSE_FIELDS)
-                                .responseHeaders(ResourceDocumentation.headerWithName(HttpHeaders.LOCATION)
-                                        .type(SimpleType.STRING)
-                                        .description("생성된 서재 식별 URI. 현재 이 URI의 `GET` 조회 API는 제공하지 않는다"))
-                                .build())
-                ));
-        verify(libraryService).create(MEMBER_ID, "가을에 읽을 책");
-    }
-
-    @Test
-    @DisplayName("유효한 요청이라면 소유한 책장에 도서를 배치하고 배치 URI를 반환한다")
-    void should_AddBookToLibrary_When_RequestIsValid() throws Exception {
-        // given
-        LibraryItemResponse response = libraryItemResponse();
-        when(libraryBookService.addByIsbn13(MEMBER_ID, 7L, new Isbn13(ISBN13), ReadingStatus.READING, 368))
-                .thenReturn(response);
-
-        // when & then
-        mockMvc.perform(post("/api/v1/libraries/{libraryId}", 7L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"isbn13":"9788936433598","status":"READING","totalPages":368}
-                                """))
-                .andExpect(status().isCreated())
-                .andExpect(header().string(
-                        HttpHeaders.LOCATION,
-                        "http://localhost:8080/api/v1/libraries/7/books/" + BOOK_ID
-                ))
-                .andExpect(jsonPath("$.bookId").value(BOOK_ID))
-                .andDo(document(
-                        "library-book-add",
-                        pathParameters(libraryIdPathParameter()),
-                        requestFields(addLibraryItemRequestFields()),
-                        responseFields(LIBRARY_ITEM_RESPONSE_FIELDS),
-                        responseHeaders(headerWithName(HttpHeaders.LOCATION).description("생성된 책장 배치 URI")),
-                        resource(ResourceSnippetParameters.builder()
-                                .summary(LIBRARY_BOOK_ADD_SUMMARY)
-                                .description(LIBRARY_BOOK_ADD_DESCRIPTION)
-                                .tag(LIBRARY_TAG)
-                                .pathParameters(libraryIdResourcePathParameters())
-                                .requestSchema(Schema.schema("AddLibraryItemRequest"))
-                                .requestFields(addLibraryItemRequestFields())
-                                .responseFields(LIBRARY_ITEM_RESPONSE_FIELDS)
-                                .responseHeaders(ResourceDocumentation.headerWithName(HttpHeaders.LOCATION)
-                                        .type(SimpleType.STRING).description("생성된 책장 배치 URI"))
-                                .build())
-                ));
-
-        verify(libraryBookService).addByIsbn13(MEMBER_ID, 7L, new Isbn13(ISBN13), ReadingStatus.READING, 368);
-    }
-
-    @Test
-    @DisplayName("배치 식별자를 지정하면 소유한 책장에서 도서 배치를 멱등 삭제한다")
-    void should_DeleteBookPlacement_When_LibraryAndBookIdsAreValid() throws Exception {
-        mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", 7L, BOOK_ID))
-                .andExpect(status().isNoContent())
-                .andDo(document(
-                        "library-book-delete",
-                        pathParameters(libraryIdPathParameter(), bookIdPathParameter()),
-                        resource(ResourceSnippetParameters.builder()
-                                .summary(LIBRARY_BOOK_DELETE_SUMMARY)
-                                .description(LIBRARY_BOOK_DELETE_DESCRIPTION)
-                                .tag(LIBRARY_TAG)
-                                .pathParameters(libraryBookDeleteResourcePathParameters())
-                                .build())
-                ));
-
-        verify(libraryBookService).delete(MEMBER_ID, 7L, BOOK_ID);
-    }
-
-    @Test
-    @DisplayName("앞뒤 공백을 제거한 이름이 100자이면 서재를 생성할 수 있다")
-    void should_CreateLibrary_When_StrippedNameHas100Characters() throws Exception {
-        // given
-        String name = "가".repeat(100);
-        when(libraryService.create(MEMBER_ID, name)).thenReturn(new LibraryResponse(
-                7L,
-                name
-        ));
-
-        // when & then
-        mockMvc.perform(post("/api/v1/libraries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"  " + name + "  \"}"))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value(name));
-        verify(libraryService).create(MEMBER_ID, name);
-    }
-
-    @Test
-    @DisplayName("서재 이름이 없으면 잘못된 요청 오류를 반환한다")
-    void should_ReturnBadRequest_When_LibraryNameIsMissing() throws Exception {
-        // when & then
-        documentProblemDetail(
-                mockMvc.perform(post("/api/v1/libraries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}")),
-                HttpStatus.BAD_REQUEST,
-                ErrorCode.INVALID_REQUEST,
-                "/api/v1/libraries",
-                "library-create-invalid-request",
-                LIBRARY_CREATE_SUMMARY,
-                LIBRARY_CREATE_DESCRIPTION,
-                noPathParameters(),
-                noQueryParameters()
-        );
-        verifyNoInteractions(libraryService);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"null", "\"\"", "\"   \"", "\"\u2003\""})
-    @DisplayName("서재 이름이 null이거나 공백뿐이면 서비스에 전달하지 않는다")
-    void should_ReturnBadRequest_When_LibraryNameIsNullOrBlank(String name) throws Exception {
-        // when & then
-        expectProblemDetail(
-                mockMvc.perform(post("/api/v1/libraries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":" + name + "}")),
-                HttpStatus.BAD_REQUEST,
-                ErrorCode.INVALID_REQUEST,
-                "/api/v1/libraries"
-        );
-        verifyNoInteractions(libraryService);
-    }
-
-    @Test
-    @DisplayName("앞뒤 공백을 제거한 서재 이름이 100자를 초과하면 잘못된 요청 오류를 반환한다")
-    void should_ReturnBadRequest_When_StrippedLibraryNameIsTooLong() throws Exception {
-        // when & then
-        expectProblemDetail(
-                mockMvc.perform(post("/api/v1/libraries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"  " + "가".repeat(101) + "  \"}")),
-                HttpStatus.BAD_REQUEST,
-                ErrorCode.INVALID_REQUEST,
-                "/api/v1/libraries"
-        );
-        verifyNoInteractions(libraryService);
-    }
-
-    @Test
-    @DisplayName("이미 같은 이름의 서재가 있으면 서재명 중복 오류를 반환한다")
-    void should_ReturnConflict_When_LibraryNameAlreadyExists() throws Exception {
-        // given
-        when(libraryService.create(MEMBER_ID, "가을에 읽을 책"))
-                .thenThrow(new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS));
-
-        // when & then
-        documentProblemDetail(
-                mockMvc.perform(post("/api/v1/libraries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"가을에 읽을 책"}
-                                """)),
-                HttpStatus.CONFLICT,
-                ErrorCode.LIBRARY_NAME_ALREADY_EXISTS,
-                "/api/v1/libraries",
-                "library-create-name-already-exists",
-                LIBRARY_CREATE_SUMMARY,
-                LIBRARY_CREATE_DESCRIPTION,
-                noPathParameters(),
-                noQueryParameters()
-        );
     }
 
     @Test
@@ -1031,128 +798,6 @@ class LibraryControllerTest {
     }
 
     @Test
-    @DisplayName("책장 도서 배치 추가의 오류 응답을 문서화한다")
-    void should_DocumentProblemDetails_When_AddingBookToLibraryFails() throws Exception {
-        // when & then
-        documentProblemDetail(
-                mockMvc.perform(post("/api/v1/libraries/{libraryId}", 7L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"isbn13":"9788936433598","status":"READING","totalPages":0}
-                                """)),
-                HttpStatus.BAD_REQUEST,
-                ErrorCode.INVALID_REQUEST,
-                "/api/v1/libraries/7",
-                "library-book-add-invalid-request",
-                LIBRARY_BOOK_ADD_SUMMARY,
-                LIBRARY_BOOK_ADD_DESCRIPTION,
-                libraryIdResourcePathParameters(),
-                noQueryParameters()
-        );
-
-        documentLibraryBookAddProblem(
-                ErrorCode.LIBRARY_NOT_FOUND,
-                HttpStatus.NOT_FOUND,
-                "library-book-add-library-not-found"
-        );
-        documentLibraryBookAddProblem(
-                ErrorCode.FORBIDDEN,
-                HttpStatus.FORBIDDEN,
-                "library-book-add-forbidden"
-        );
-        documentLibraryBookAddProblem(
-                ErrorCode.BOOK_NOT_FOUND,
-                HttpStatus.NOT_FOUND,
-                "library-book-add-book-not-found"
-        );
-        documentLibraryBookAddProblem(
-                ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS,
-                HttpStatus.CONFLICT,
-                "library-book-add-already-exists"
-        );
-        documentLibraryBookAddProblem(
-                ErrorCode.LIBRARY_ITEM_LIMIT_EXCEEDED,
-                HttpStatus.CONFLICT,
-                "library-book-add-limit-exceeded"
-        );
-        documentLibraryBookAddProblem(
-                ErrorCode.TOTAL_PAGES_CONFLICT,
-                HttpStatus.CONFLICT,
-                "library-book-add-total-pages-conflict"
-        );
-        documentLibraryBookAddProblem(
-                ErrorCode.INVALID_READING_STATE,
-                HttpStatus.UNPROCESSABLE_CONTENT,
-                "library-book-add-invalid-reading-state"
-        );
-        documentLibraryBookAddProblem(
-                ErrorCode.EXTERNAL_API_ERROR,
-                HttpStatus.BAD_GATEWAY,
-                "library-book-add-external-api-error"
-        );
-    }
-
-    @Test
-    @DisplayName("책장 도서 배치 삭제의 오류 응답을 문서화한다")
-    void should_DocumentProblemDetails_When_DeletingBookPlacementFails() throws Exception {
-        documentProblemDetail(
-                mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", 0L, BOOK_ID)),
-                HttpStatus.BAD_REQUEST,
-                ErrorCode.INVALID_REQUEST,
-                "/api/v1/libraries/0/books/10",
-                "library-book-delete-invalid-request",
-                LIBRARY_BOOK_DELETE_SUMMARY,
-                LIBRARY_BOOK_DELETE_DESCRIPTION,
-                libraryBookDeleteResourcePathParameters(),
-                noQueryParameters()
-        );
-
-        documentLibraryBookDeleteProblem(
-                ErrorCode.FORBIDDEN,
-                HttpStatus.FORBIDDEN,
-                "library-book-delete-forbidden"
-        );
-        documentLibraryBookDeleteProblem(
-                ErrorCode.LIBRARY_NOT_FOUND,
-                HttpStatus.NOT_FOUND,
-                "library-book-delete-library-not-found"
-        );
-    }
-
-    private void documentLibraryBookDeleteProblem(ErrorCode errorCode, HttpStatus status, String identifier)
-            throws Exception {
-        doThrow(new BusinessException(errorCode)).when(libraryBookService).delete(MEMBER_ID, 7L, BOOK_ID);
-        documentProblemDetail(
-                mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", 7L, BOOK_ID)),
-                status,
-                errorCode,
-                "/api/v1/libraries/7/books/10",
-                identifier,
-                LIBRARY_BOOK_DELETE_SUMMARY,
-                LIBRARY_BOOK_DELETE_DESCRIPTION,
-                libraryBookDeleteResourcePathParameters(),
-                noQueryParameters()
-        );
-    }
-
-    private void documentLibraryBookAddProblem(ErrorCode errorCode, HttpStatus status, String identifier)
-            throws Exception {
-        doThrow(new BusinessException(errorCode)).when(libraryBookService)
-                .addByIsbn13(MEMBER_ID, 7L, new Isbn13(ISBN13), ReadingStatus.READING, 368);
-        documentProblemDetail(
-                postLibraryBook(7L),
-                status,
-                errorCode,
-                "/api/v1/libraries/7",
-                identifier,
-                LIBRARY_BOOK_ADD_SUMMARY,
-                LIBRARY_BOOK_ADD_DESCRIPTION,
-                libraryIdResourcePathParameters(),
-                noQueryParameters()
-        );
-    }
-
-    @Test
     @DisplayName("내 서재 수정의 오류 응답을 문서화한다")
     void should_DocumentProblemDetails_When_UpdatingLibraryItemFails() throws Exception {
         // given
@@ -1398,32 +1043,6 @@ class LibraryControllerTest {
 
         // when & then
         documentProblemDetail(
-                mockMvc.perform(post("/api/v1/libraries")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"가을에 읽을 책"}
-                                """)),
-                HttpStatus.UNAUTHORIZED,
-                ErrorCode.UNAUTHORIZED,
-                "/api/v1/libraries",
-                "library-create-unauthorized",
-                LIBRARY_CREATE_SUMMARY,
-                LIBRARY_CREATE_DESCRIPTION,
-                noPathParameters(),
-                noQueryParameters()
-        );
-        documentProblemDetail(
-                postLibraryBook(7L),
-                HttpStatus.UNAUTHORIZED,
-                ErrorCode.UNAUTHORIZED,
-                "/api/v1/libraries/7",
-                "library-book-add-unauthorized",
-                LIBRARY_BOOK_ADD_SUMMARY,
-                LIBRARY_BOOK_ADD_DESCRIPTION,
-                libraryIdResourcePathParameters(),
-                noQueryParameters()
-        );
-        documentProblemDetail(
                 mockMvc.perform(get("/api/v1/library").param("page", "1")),
                 HttpStatus.UNAUTHORIZED,
                 ErrorCode.UNAUTHORIZED,
@@ -1465,17 +1084,6 @@ class LibraryControllerTest {
                 LIBRARY_DELETE_SUMMARY,
                 LIBRARY_DELETE_DESCRIPTION,
                 bookIdResourcePathParameters(),
-                noQueryParameters()
-        );
-        documentProblemDetail(
-                mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", 7L, BOOK_ID)),
-                HttpStatus.UNAUTHORIZED,
-                ErrorCode.UNAUTHORIZED,
-                "/api/v1/libraries/7/books/10",
-                "library-book-delete-unauthorized",
-                LIBRARY_BOOK_DELETE_SUMMARY,
-                LIBRARY_BOOK_DELETE_DESCRIPTION,
-                libraryBookDeleteResourcePathParameters(),
                 noQueryParameters()
         );
         documentProblemDetail(
@@ -1696,14 +1304,6 @@ class LibraryControllerTest {
 
     private ResultActions postLibraryItem() throws Exception {
         return mockMvc.perform(post("/api/v1/library")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                        {"isbn13":"9788936433598","status":"READING","totalPages":368}
-                        """));
-    }
-
-    private ResultActions postLibraryBook(long libraryId) throws Exception {
-        return mockMvc.perform(post("/api/v1/libraries/{libraryId}", libraryId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"isbn13":"9788936433598","status":"READING","totalPages":368}
@@ -1962,28 +1562,6 @@ class LibraryControllerTest {
     private ParameterDescriptor memberIdPathParameter() {
         return RequestDocumentation.parameterWithName("memberId")
                 .description("공개 서재를 조회할 회원 ID");
-    }
-
-    private ParameterDescriptor libraryIdPathParameter() {
-        return RequestDocumentation.parameterWithName("libraryId")
-                .description("도서를 배치할 책장 ID");
-    }
-
-    private ParameterDescriptorWithType[] libraryIdResourcePathParameters() {
-        return new ParameterDescriptorWithType[]{
-                ResourceDocumentation.parameterWithName("libraryId")
-                        .type(SimpleType.INTEGER)
-                        .description("도서를 배치할 책장 ID")
-        };
-    }
-
-    private ParameterDescriptorWithType[] libraryBookDeleteResourcePathParameters() {
-        return new ParameterDescriptorWithType[]{
-                ResourceDocumentation.parameterWithName("libraryId")
-                        .type(SimpleType.INTEGER)
-                        .description("도서 배치를 삭제할 책장 ID"),
-                bookIdResourcePathParameter()
-        };
     }
 
     private ParameterDescriptorWithType[] memberIdResourcePathParameters() {

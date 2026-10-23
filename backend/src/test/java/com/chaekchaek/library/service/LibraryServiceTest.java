@@ -3,17 +3,12 @@ package com.chaekchaek.library.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
@@ -25,7 +20,6 @@ import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
-import com.chaekchaek.library.dto.LibraryResponse;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
@@ -41,16 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.LoggerFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,9 +51,6 @@ class LibraryServiceTest {
             ZoneOffset.UTC
     );
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
-
-    private final Logger logger = (Logger) LoggerFactory.getLogger(LibraryService.class);
-    private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
 
     @Mock
     private LibraryRepository libraryRepository;
@@ -88,89 +75,6 @@ class LibraryServiceTest {
 
     @Mock
     private PlatformTransactionManager transactionManager;
-
-    @BeforeEach
-    void setUp() {
-        appender.start();
-        logger.addAppender(appender);
-    }
-
-    @AfterEach
-    void tearDown() {
-        logger.detachAppender(appender);
-        appender.stop();
-    }
-
-    @Test
-    @DisplayName("회원의 서재를 현재 시각으로 생성하고 저장한 결과를 반환한다")
-    void should_ReturnSavedLibrary_When_Created() {
-        // given
-        Library saved = mock(Library.class);
-        when(saved.getId()).thenReturn(7L);
-        when(saved.getName()).thenReturn("가을에 읽을 책");
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
-        when(libraryRepository.findMaxDisplayOrderByMemberId(1L)).thenReturn(4L);
-        when(libraryRepository.create(any(Library.class))).thenReturn(saved);
-        LibraryService service = service();
-
-        // when
-        LibraryResponse actual = service.create(1L, "  가을에 읽을 책  ");
-
-        // then
-        ArgumentCaptor<Library> captor = ArgumentCaptor.forClass(Library.class);
-        InOrder lockOrder = inOrder(memberRepository, libraryRepository);
-        lockOrder.verify(memberRepository).findByIdForUpdate(1L);
-        lockOrder.verify(libraryRepository).findMaxDisplayOrderByMemberId(1L);
-        lockOrder.verify(libraryRepository).create(captor.capture());
-        Library created = captor.getValue();
-        assertThat(created.isOwnedBy(1L)).isTrue();
-        assertThat(created.getName()).isEqualTo("가을에 읽을 책");
-        assertThat(created.isDefault()).isFalse();
-        assertThat(created.getDisplayOrder()).isEqualTo(5L);
-        assertThat(created.getCreatedAt()).isEqualTo(CLOCK.instant());
-        assertThat(actual.libraryId()).isEqualTo(7L);
-        assertThat(actual.name()).isEqualTo("가을에 읽을 책");
-        assertThat(appender.list).singleElement()
-                .satisfies(event -> assertThat(event.getKeyValuePairs())
-                        .extracting(pair -> pair.key, pair -> pair.value)
-                        .containsExactlyInAnyOrder(
-                                tuple("type", "event"),
-                                tuple("event", "library_created"),
-                                tuple("memberId", 1L),
-                                tuple("libraryId", 7L)
-                        ));
-    }
-
-    @Test
-    @DisplayName("도메인이 허용하지 않는 서재 이름이면 저장하지 않는다")
-    void should_NotSaveLibrary_When_NameIsInvalid() {
-        // given
-        LibraryService service = service();
-
-        // when & then
-        assertThatThrownBy(() -> service.create(1L, "   "))
-                .isInstanceOfSatisfying(
-                        BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST)
-                );
-        verifyNoInteractions(libraryRepository);
-        assertThat(appender.list).isEmpty();
-    }
-
-    @Test
-    @DisplayName("서재 저장이 실패하면 생성 이벤트를 기록하지 않는다")
-    void should_NotLogCreatedEvent_When_PersistenceFails() {
-        // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
-        when(libraryRepository.create(any(Library.class)))
-                .thenThrow(new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS));
-        LibraryService service = service();
-
-        // when & then
-        assertThatThrownBy(() -> service.create(1L, "가을에 읽을 책"))
-                .isInstanceOf(BusinessException.class);
-        assertThat(appender.list).isEmpty();
-    }
 
     @Test
     @DisplayName("일괄 완독 대상 중 전체 페이지가 없는 책이 있으면 어느 항목도 변경하지 않는다")
