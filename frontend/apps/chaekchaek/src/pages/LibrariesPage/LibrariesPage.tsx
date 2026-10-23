@@ -26,6 +26,8 @@ import { useLoadData } from '@/services/core/useLoadData';
 
 import { ROUTES } from '@/constants/routes';
 
+import { track } from '@/analytics/track';
+
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
 
 export const LibrariesPage = () => {
@@ -40,6 +42,13 @@ export const LibrariesPage = () => {
   } = useLoadData({
     queryFn: getLibrariesLoadData,
   });
+
+  const handleGoToLibrary = () => {
+    track('navigate', {
+      destination: 'library',
+      source: 'libraries',
+    });
+  };
 
   const [dialog, setDialog] = useState<'RegisterLibraryDialog' | null>(null);
   const handleOpenDialog = (dialog: 'RegisterLibraryDialog') => {
@@ -105,6 +114,7 @@ export const LibrariesPage = () => {
                               to={generatePath(ROUTES.LIBRARY, {
                                 libraryId: String(library.libraryId),
                               })}
+                              onClick={handleGoToLibrary}
                             >
                               {library.items.length} 권
                             </Text>
@@ -122,6 +132,7 @@ export const LibrariesPage = () => {
                           to={generatePath(ROUTES.LIBRARY, {
                             libraryId: String(library.libraryId),
                           })}
+                          onClick={handleGoToLibrary}
                         >
                           {library.name}
                         </Link>
