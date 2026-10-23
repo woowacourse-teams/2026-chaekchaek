@@ -106,7 +106,7 @@ public class KakaoBookSearchClient implements BookSearchClient {
                 source.translators(),
                 toLocalDate(source.datetime()),
                 isbn13.get(),
-                null,
+                "",
                 source.publisher()
         ));
     }
