@@ -12,6 +12,13 @@ public interface CurrentMemberIdProvider {
     long getCurrentMemberId();
 
     /**
+     * Provides the member for a write request, distinguishing authenticated inactive members.
+     */
+    default long getCurrentMemberIdForWrite() {
+        return getCurrentMemberId();
+    }
+
+    /**
      * Returns the current member when the request is authenticated.
      * Public endpoints use this method so they can still provide personalized fields when possible.
      */
