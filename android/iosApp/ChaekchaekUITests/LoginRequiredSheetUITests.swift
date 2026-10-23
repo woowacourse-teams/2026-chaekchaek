@@ -1065,6 +1065,7 @@ final class BookshelfContractUITests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", text)).firstMatch
     }
 
+    @MainActor
     private func request(_ path: String, method: String = "GET") async throws -> Data {
         var request = URLRequest(url: URL(string: origin + path)!)
         request.httpMethod = method
