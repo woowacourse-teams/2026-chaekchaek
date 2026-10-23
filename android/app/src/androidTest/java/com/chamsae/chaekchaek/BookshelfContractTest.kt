@@ -54,7 +54,7 @@ class BookshelfContractTest {
         compose.waitUntil(15_000) { compose.onAllNodesWithText("내 서재에 담았어요").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithText("편집").performScrollTo().performClick()
         compose.onAllNodesWithText("빼기").onFirst().performScrollTo().performClick()
-        compose.waitUntil(15_000) { JSONObject(request("/__bookshelf/state")).getJSONArray("requests").toString().contains("/books/1") }
+        compose.waitUntil(15_000) { requested("DELETE", "/api/v1/libraries/1/books/1") }
         waitText("2권")
         compose.onNodeWithText("완료").performScrollTo().performClick()
         compose.waitUntil(15_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
@@ -87,7 +87,7 @@ class BookshelfContractTest {
         val calls = (0 until requests.length()).map { requests.getJSONObject(it) }
         assertTrue(calls.any { it.getString("method") == "POST" && it.getString("path") == "/api/v1/libraries/1" })
         assertTrue(calls.any { it.getString("method") == "DELETE" && it.getString("path").contains("/books/") })
-        compose.waitUntil(10_000) { JSONObject(request("/__bookshelf/state")).getJSONArray("requests").toString().contains("/api/v1/books/3/reviews") }
+        compose.waitUntil(10_000) { requested("GET", "/api/v1/books/3/reviews?") }
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
         compose.waitUntil(60_000) {
             automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver")
@@ -120,6 +120,14 @@ class BookshelfContractTest {
     private fun waitNameSheetClosed() = compose.waitUntil(15_000) { compose.onAllNodesWithTag("bookshelfName").fetchSemanticsNodes().isEmpty() }
     private fun waitText(text: String) = compose.waitUntil(15_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
     private fun waitTag(tag: String) = compose.waitUntil(15_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
+    private fun requested(method: String, pathPrefix: String): Boolean {
+        val calls = JSONObject(request("/__bookshelf/state")).getJSONArray("requests")
+        return (0 until calls.length()).any {
+            val call = calls.getJSONObject(it)
+            call.getString("method") == method && call.getString("path").startsWith(pathPrefix)
+        }
+    }
+
     private fun request(path: String, method: String = "GET"): String {
         val connection = URI(origin + path).toURL().openConnection() as HttpURLConnection
         connection.connectTimeout = 2_000; connection.readTimeout = 2_000; connection.requestMethod = method
