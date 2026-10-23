@@ -91,6 +91,9 @@ public enum ErrorCode {
     DEFAULT_LIBRARY_DELETE_NOT_ALLOWED(
             "DEFAULT_LIBRARY_DELETE_NOT_ALLOWED",
             "기본 책장은 유지해야 합니다. 다른 책장을 삭제해 주세요."),
+    ORDER_CONFLICT(
+            "ORDER_CONFLICT",
+            "목록이 변경되었습니다. 다시 조회한 뒤 순서를 변경해 주세요."),
     RECOMMENDED_BOOK_NOT_FOUND(
             "RECOMMENDED_BOOK_NOT_FOUND",
             "추천 도서를 찾을 수 없습니다."),

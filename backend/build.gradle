@@ -413,6 +413,20 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			bookIds?.put('items', [type: 'integer', format: 'int64'])
 		}
 
+		[
+			[path: '/api/v1/libraries/order', field: 'libraryIds'],
+			[path: '/api/v1/libraries/{libraryId}/books/order', field: 'bookIds']
+		].each { requirement ->
+			def operation = ((specification.get('paths') as Map)?.get(requirement.path) as Map)?.get('patch') as Map
+			(operation?.get('requestBody') as Map)?.put('required', true)
+			def ids = requestProperty(requirement.path, 'patch', requirement.field)
+			ids?.putAll([type: 'array', uniqueItems: true, minItems: 0])
+			ids?.put('items', [type: 'integer', format: 'int64', minimum: 1])
+			ids?.remove('maxItems')
+		}
+		(operationParameter('/api/v1/libraries/{libraryId}/books/order', 'patch', 'libraryId')?.get('schema') as Map)
+				?.putAll([type: 'integer', format: 'int64', minimum: 1])
+
 		def searchResponse = responseSchemaForPath('/api/v1/books', 'get', '200')
 		markRequiredNullable(searchResponse, 'nextPage')
 		def searchItem = arrayItemSchema(searchResponse, 'items')
@@ -579,6 +593,40 @@ def stageOpenApiSpec = tasks.register('stageOpenApiSpec') {
 	}
 }
 
+void verifyDisplayOrderContract(Map paths, Closure requestSchema) {
+	[
+		[path: '/api/v1/libraries/order', field: 'libraryIds'],
+		[path: '/api/v1/libraries/{libraryId}/books/order', field: 'bookIds']
+	].each { requirement ->
+		def schema = requestSchema(requirement.path, 'patch')
+		def ids = (schema?.get('properties') as Map)?.get(requirement.field) as Map
+		def items = ids?.get('items') as Map
+		def operation = (paths.get(requirement.path) as Map)?.get('patch') as Map
+		if ((operation?.get('requestBody') as Map)?.get('required') != true
+				|| (schema?.get('required') as List)?.contains(requirement.field) != true
+				|| ids?.get('type') != 'array' || ids?.get('uniqueItems') != true
+				|| ids?.get('minItems') != 0 || ids?.containsKey('maxItems')
+				|| items?.get('type') != 'integer' || items?.get('format') != 'int64' || items?.get('minimum') != 1) {
+			throw new GradleException("OpenAPI specification must require an unbounded complete positive ID array for PATCH ${requirement.path}")
+		}
+		def responses = operation?.get('responses') as Map
+		if ((responses?.get('204') as Map)?.containsKey('content')) {
+			throw new GradleException("OpenAPI specification must return an empty 204 response for PATCH ${requirement.path}")
+		}
+		def description = operation?.get('description')?.toString() ?: ''
+		if (!['ORDER_CONFLICT', '마지막으로 저장한 순서', '현재 목록의 ID가 빠지거나 다른 ID가 포함되면', '빈 배열'].every { description.contains(it) }) {
+			throw new GradleException("OpenAPI specification must explain complete ID and concurrency semantics for PATCH ${requirement.path}")
+		}
+		def conflict = ((responses?.get('409') as Map)?.get('content') as Map)?.get('application/problem+json') as Map
+		def hasConflictExample = (conflict?.get('examples') as Map)?.values()?.any { example ->
+			(example as Map)?.get('value')?.toString()?.contains('ORDER_CONFLICT')
+		}
+		if (!hasConflictExample) {
+			throw new GradleException("OpenAPI specification must document ORDER_CONFLICT for PATCH ${requirement.path}")
+		}
+	}
+}
+
 tasks.register('verifyOpenApi') {
 	dependsOn 'openapi3'
 	inputs.file openApiSpecFile
@@ -650,6 +698,8 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/libraries'                       : ['get': ['200', '400', '404'], 'post': ['201', '400', '401', '403', '409', '422', '500']],
 			'/api/v1/libraries/{libraryId}'           : ['get': ['200', '400', '404'], 'patch': ['204', '400', '401', '403', '404', '409', '500'],
 					'delete': ['204', '400', '401', '403', '404', '409']],
+			'/api/v1/libraries/order'                 : ['patch': ['204', '400', '401', '403', '409']],
+			'/api/v1/libraries/{libraryId}/books/order': ['patch': ['204', '400', '401', '403', '404', '409']],
 			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '403', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '403', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '403', '404', '422']],
@@ -820,6 +870,8 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/libraries'                       : ['get': ['400', '404'], 'post': ['400', '401', '403', '409', '422', '500']],
 			'/api/v1/libraries/{libraryId}'           : ['get': ['400', '404'], 'patch': ['400', '401', '403', '404', '409', '500'],
 					'delete': ['400', '401', '403', '404', '409']],
+			'/api/v1/libraries/order'                 : ['patch': ['400', '401', '403', '409']],
+			'/api/v1/libraries/{libraryId}/books/order': ['patch': ['400', '401', '403', '404', '409']],
 			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '403', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '403', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '403', '404', '422']],
@@ -1224,6 +1276,8 @@ tasks.register('verifyOpenApi') {
 				throw new GradleException("OpenAPI specification must constrain bookIds for ${method.toUpperCase()} ${path}")
 			}
 		}
+
+		verifyDisplayOrderContract(paths, requestSchema)
 
 		def searchResponse = responseSchema('/api/v1/books', 'get', '200')
 		def searchItem = ((searchResponse?.get('properties') as Map)?.get('items') as Map)?.get('items') as Map

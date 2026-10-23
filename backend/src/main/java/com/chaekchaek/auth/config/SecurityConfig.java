@@ -79,6 +79,8 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                         "/api/v1/auth/**",
                         "/api/v1/members/me/nickname",
+                        "/api/v1/libraries/order",
+                        "/api/v1/libraries/*/books/order",
                         "/api/v1/admin/**",
                         "/api/v1/recommended-books",
                         "/api/v1/recommended-books/*",
