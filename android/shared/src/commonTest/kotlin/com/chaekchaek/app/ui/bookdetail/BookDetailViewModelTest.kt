@@ -899,7 +899,7 @@ class BookDetailViewModelTest {
     assertEquals(listOf(8L), viewModel.uiState.value.reviews.map { it.reviewId })
     assertEquals(2, viewModel.uiState.value.nextReviewPage)
     assertFalse(viewModel.uiState.value.isLoading)
-    assertEquals(if (changeSort) "OLDEST" else "LATEST", requestedSorts.last())
+    assertEquals(if (changeSort) "OLDEST" else "POPULAR", requestedSorts.last())
     assertEquals(if (changeSort) 0 else 1, likes)
 
     viewModel.loadMoreReviews()
