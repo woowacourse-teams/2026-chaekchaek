@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -86,8 +88,8 @@ private fun DialogDismissButton(onClick: () -> Unit) {
 }
 
 @Composable
-private fun DialogConfirmButton(label: String, onClick: () -> Unit, enabled: Boolean = true) {
-    ChaekOverlayButton(label, onClick, enabled = enabled)
+private fun DialogConfirmButton(label: String, onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
+    ChaekOverlayButton(label, onClick, enabled = enabled, modifier = modifier)
 }
 
 @Composable
@@ -152,6 +154,7 @@ internal fun NicknameDialog(
         confirmButton = {
             DialogConfirmButton(
                 label = if (saving) "저장 중" else "확인",
+                modifier = Modifier.semantics { contentDescription = "닉네임 저장" },
                 enabled = !saving,
                 onClick = {
                     if (Nickname.isValid(nickname.trim())) onConfirm()
@@ -175,7 +178,7 @@ private fun NicknameInput(nicknameState: TextFieldState, readOnly: Boolean = fal
         BasicTextField(
             state = nicknameState,
             readOnly = readOnly,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).semantics { contentDescription = "닉네임 입력" },
             inputTransformation = NicknameInputPolicy.inputTransformation,
             lineLimits = TextFieldLineLimits.SingleLine,
             textStyle = MaterialTheme.typography.bodyMedium.copy(
