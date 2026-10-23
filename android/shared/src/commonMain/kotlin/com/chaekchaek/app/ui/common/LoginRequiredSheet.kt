@@ -31,6 +31,7 @@ internal fun LoginRequiredSheet(
     onDismiss: () -> Unit,
     onAppleSignIn: () -> Unit,
     onGoogleSignIn: () -> Unit,
+    message: String = "내 독서 기록을 남기고 감상에 참여하려면 로그인해 주세요.",
     skipLabel: String? = null,
     onSkip: (() -> Unit)? = null,
 ) {
@@ -53,7 +54,7 @@ internal fun LoginRequiredSheet(
                 ChaekCloseButton(onDismiss)
             }
             Text(
-                "내 독서 기록을 남기고 감상에 참여하려면 로그인해 주세요.",
+                message,
                 style = MaterialTheme.typography.bodyMedium,
             )
             if (appleSignInAvailable) {

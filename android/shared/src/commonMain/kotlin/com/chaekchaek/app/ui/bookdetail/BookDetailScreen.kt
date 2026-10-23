@@ -277,7 +277,7 @@ fun BookDetailScreen(
     }
     LaunchedEffect(resumedAuthenticatedAction) {
         when (val action = resumedAuthenticatedAction ?: return@LaunchedEffect) {
-            BookDetailAuthenticatedAction.AddToLibrary -> if (!savedToLibrary) onAddToLibrary()
+            BookDetailAuthenticatedAction.AddToLibrary -> onAddToLibrary()
             BookDetailAuthenticatedAction.OpenPageInput -> showPageDialog = true
             BookDetailAuthenticatedAction.OpenRating -> showRatingDialog = true
             BookDetailAuthenticatedAction.OpenReviewRating -> Unit // 로그인 전부터 열려 있던 초안을 유지한다.
@@ -323,10 +323,10 @@ fun BookDetailScreen(
                         saving = state.isSavingLibrary || externalLibrarySaving,
                         showSaveLoading = state.isSubmitting || (externalLibrarySaving && externalLibraryLoading),
                         saveEnabled = !state.isLoading && state.detail != null,
-                        onRemoveFromLibrary = { showLibraryDeleteConfirmation = true },
+                        onRemoveFromLibrary = onAddToLibrary,
                         onBack = onBack,
                         onLibraryClick = {
-                            if (!savedToLibrary) authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onAddToLibrary)
+                            authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onAddToLibrary)
                         },
                         coverContent = coverContent,
                     )
@@ -678,7 +678,7 @@ private fun BookHero(
                     }
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
-                            text = { Text("서재에서 삭제") },
+                            text = { Text("다른 책장에 담기") },
                             onClick = { showMenu = false; onRemoveFromLibrary() },
                         )
                     }

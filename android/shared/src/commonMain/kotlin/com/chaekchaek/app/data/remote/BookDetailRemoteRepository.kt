@@ -210,7 +210,7 @@ class BookDetailRemoteRepository(
   }
 }
 
-private suspend fun ResponseException.isAlreadySavedBookConflict(): Boolean {
+internal suspend fun ResponseException.isAlreadySavedBookConflict(): Boolean {
   if (response.status != HttpStatusCode.Conflict) return false
   val problem = response.bodyAsText()
   return runCatching {

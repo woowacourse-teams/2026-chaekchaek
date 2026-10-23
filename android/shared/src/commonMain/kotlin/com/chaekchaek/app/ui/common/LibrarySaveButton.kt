@@ -54,7 +54,7 @@ fun LibrarySaveButton(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 role = Role.Button,
-            ) { if (!saved && !saving && enabled) onSave() }
+            ) { if (!saving && enabled) onSave() }
             .semantics(mergeDescendants = true) {
                 contentDescription = "$bookTitle, $label"
                 stateDescription = if (saved) "서재에 저장됨" else if (saving) "저장 중" else "저장되지 않음"

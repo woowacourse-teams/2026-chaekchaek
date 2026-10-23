@@ -976,3 +976,80 @@ private final class NicknameFixtureServer: @unchecked Sendable {
         "{\"memberId\":1,\"nickname\":\"\(nickname)\",\"anonymousNickname\":\"참새\",\"displayAnonymous\":true}"
     }
 }
+
+
+final class BookshelfContractUITests: XCTestCase {
+    private let origin = "http://127.0.0.1:19068"
+
+    @MainActor
+    func testShelfCreateRenameAddRemoveAndImagePreview() async throws {
+        let marker = try? await request("/__bookshelf")
+        guard marker != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
+        _ = try await request("/__bookshelf/reset", method: "POST")
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingGuest", "-uiTestingNicknameRestore", "-uiTestingRefresh"]
+        app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = origin
+        app.launch()
+        let shelfTab = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "내 서재")).firstMatch
+        XCTAssertTrue(shelfTab.waitForExistence(timeout: 15))
+        shelfTab.tap()
+        let firstShelf = app.buttons["bookshelf-1"]
+        XCTAssertTrue(firstShelf.waitForExistence(timeout: 10))
+        app.buttons["bookshelf-menu-1"].tap()
+        element("이름 바꾸기", app).tap()
+        let input = app.textFields["bookshelfName"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.tap()
+        input.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 20))
+        input.typeText("나의 책장")
+        element("저장", app).tap()
+        XCTAssertTrue(element("나의 책장", app).waitForExistence(timeout: 10))
+        app.buttons["bookshelf-create"].tap()
+        let newName = app.textFields["bookshelfName"]
+        XCTAssertTrue(newName.waitForExistence(timeout: 5))
+        newName.tap()
+        newName.typeText("올해읽을책")
+        element("만들기", app).tap()
+        XCTAssertTrue(firstShelf.waitForExistence(timeout: 10))
+        firstShelf.tap()
+        let addButton = element("+ 책 담기", app)
+        XCTAssertTrue(addButton.waitForExistence(timeout: 10))
+        addButton.tap()
+        element("내 서재에서", app).tap()
+        element("검증 도서 3", app).tap()
+        XCTAssertTrue(element("담을 책장 고르기", app).waitForExistence(timeout: 5))
+        element("이 책장에 담기", app).tap()
+        XCTAssertTrue(addButton.waitForExistence(timeout: 10))
+        element("편집", app).tap()
+        let remove = app.buttons.matching(NSPredicate(format: "label == %@", "빼기")).firstMatch
+        XCTAssertTrue(remove.waitForExistence(timeout: 5))
+        remove.tap()
+        element("완료", app).tap()
+        element("이미지 공유", app).tap()
+        XCTAssertTrue(element("책장을 이미지로", app).waitForExistence(timeout: 10))
+        XCTAssertTrue(element("이미지 저장", app).exists)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "책장 이미지 미리보기"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        let data = try await request("/__bookshelf/state")
+        let state = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let shelves = try XCTUnwrap(state["shelves"] as? [[String: Any]])
+        XCTAssertTrue(shelves.contains { $0["name"] as? String == "올해읽을책" })
+        let calls = try XCTUnwrap(state["requests"] as? [[String: Any]])
+        XCTAssertTrue(calls.contains { $0["method"] as? String == "POST" && $0["path"] as? String == "/api/v1/libraries/1" })
+        XCTAssertTrue(calls.contains { ($0["path"] as? String)?.hasPrefix("/api/v1/books/3/reviews") == true })
+        XCTAssertTrue(calls.contains { $0["method"] as? String == "DELETE" && ($0["path"] as? String)?.contains("/books/") == true })
+    }
+
+    private func element(_ text: String, _ app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", text)).firstMatch
+    }
+
+    private func request(_ path: String, method: String = "GET") async throws -> Data {
+        var request = URLRequest(url: URL(string: origin + path)!)
+        request.httpMethod = method
+        request.timeoutInterval = 3
+        return try await URLSession.shared.data(for: request).0
+    }
+}

@@ -51,6 +51,15 @@ class DeveloperToolsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
+        if (intent.getBooleanExtra("bookshelves", false) && ApiConfiguration.environment == "local") {
+            setContent {
+                com.chaekchaek.app.ui.App(com.chaekchaek.app.auth.AuthPlatformCallbacks(
+                    requestGoogleIdToken = { it(null, null) },
+                    readRefreshToken = { "fixture-refresh" }, writeRefreshToken = {}, clearRefreshToken = {},
+                ))
+            }
+            return
+        }
         setContent {
             val items = remember {
                 listOf(

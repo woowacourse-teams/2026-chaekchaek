@@ -12,7 +12,7 @@ import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 import com.chaekchaek.app.ui.search.SearchInputRules
 import com.chaekchaek.app.domain.book.BookSearchSort
 import io.ktor.client.plugins.ClientRequestException
-import io.ktor.http.HttpStatusCode
+import com.chaekchaek.app.data.remote.isAlreadySavedBookConflict
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -159,7 +159,7 @@ class FirstLibraryOnboardingViewModel internal constructor(
                             try {
                                 addBook(book, accessToken)
                             } catch (error: ClientRequestException) {
-                                if (error.response.status != HttpStatusCode.Conflict) throw error
+                                if (!error.isAlreadySavedBookConflict()) throw error
                             }
                             savedBookIsbn13 += book.isbn13
                         }

@@ -29,7 +29,7 @@ class FirstLibraryOnboardingViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val conflict = io.ktor.client.HttpClient(io.ktor.client.engine.mock.MockEngine(io.ktor.client.engine.mock.MockEngineConfig().apply {
             dispatcher = StandardTestDispatcher(testScheduler)
-            addHandler { respond("{}", io.ktor.http.HttpStatusCode.Conflict) }
+            addHandler { respond("""{"code":"LIBRARY_ITEM_ALREADY_EXISTS"}""", io.ktor.http.HttpStatusCode.Conflict) }
         })) { expectSuccess = true }
         val attempts = mutableListOf<Pair<String, String>>()
         var expired = true
