@@ -5,6 +5,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.graphics.Bitmap
+import android.view.KeyEvent
+import org.junit.Assert.assertTrue
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.data.remote.ApiConfiguration
 import com.chaekchaek.app.ui.App
@@ -19,7 +21,7 @@ import org.junit.runner.RunWith
 class PublicLibraryNavigationTest {
     @get:Rule val compose = createComposeRule()
     private val base = "http://10.0.2.2:19087"
-    private fun start() {
+    private fun start(tab: String = "피드") {
         assertEquals(base, ApiConfiguration.current.baseUrl)
         check(URI("$base/__607/reset").toURL().readText().contains("607"))
         compose.setContent { App(AuthPlatformCallbacks(
@@ -27,8 +29,8 @@ class PublicLibraryNavigationTest {
             readRefreshToken = { null }, writeRefreshToken = {}, clearRefreshToken = {},
         )) }
         waitFor("피드")
-        compose.onNodeWithText("피드").performClick()
-        waitFor("독자A")
+        compose.onNodeWithText(tab).performClick()
+        if (tab == "피드") waitFor("독자A")
     }
     private fun waitFor(text: String) {
         compose.waitUntil(15_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
@@ -104,5 +106,75 @@ class PublicLibraryNavigationTest {
         back(); waitFor("읽는 중"); back(); waitFor("B책장"); back()
         waitFor("공개 서재를 확인하는 감상")
         compose.onNodeWithText("페이지순").performScrollTo().assertIsDisplayed()
+    }
+
+    private fun systemBack() {
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        compose.waitForIdle()
+    }
+    private fun spineRow() = compose.onAllNodes(
+        hasScrollToIndexAction() and hasAnyDescendant(hasContentDescription("서재 도서 1 책등")),
+        useUnmergedTree = true,
+    ).onLast()
+    private fun spine17() = compose.onNodeWithContentDescription("서재 도서 17 책등", useUnmergedTree = true)
+
+    @Test fun homeAndDiscoverProfilesReturnToTheirOriginalTabAndPosition() {
+        start("홈")
+        compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().performScrollTo()
+        val homeY = compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().fetchSemanticsNode().boundsInRoot.top
+        profile("독자A"); waitFor("기본책장"); back()
+        compose.onNodeWithText("홈").assertIsSelected()
+        assertEquals(homeY, compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().fetchSemanticsNode().boundsInRoot.top, 1f)
+        compose.onNodeWithText("발견").performClick()
+        compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().performScrollTo()
+        val discoverY = compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().fetchSemanticsNode().boundsInRoot.top
+        profile("독자A"); waitFor("기본책장"); systemBack()
+        compose.onNodeWithText("발견").assertIsSelected()
+        assertEquals(discoverY, compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().fetchSemanticsNode().boundsInRoot.top, 1f)
+        capture("home-discover-round-trip")
+    }
+
+    @Test fun replyProfileReusesExistingLibraryAndMixedBackKeepsRoot() {
+        start(); profile("독자A"); waitFor("기본책장")
+        compose.onNodeWithText("기본책장").performClick(); waitFor("읽는 중")
+        compose.onNodeWithText("서재 도서 1").performScrollTo().performClick()
+        waitFor("공개 서재를 확인하는 감상")
+        compose.onAllNodesWithContentDescription("답글독자 프로필").onFirst().performScrollTo().performTouchInput { doubleClick() }
+        waitFor("기본책장")
+        // 답글 작성자도 회원 42다. 새 서재를 쌓지 않고 기존 A 서재까지 복귀한다.
+        compose.onNodeWithText("독자A").assertIsDisplayed()
+        systemBack(); waitFor("피드")
+        compose.onNodeWithText("피드").assertIsSelected()
+        // 재진입 뒤 화면 버튼 연타와 시스템 뒤로가기를 섞어도 루트가 남는다.
+        profile("독자A"); waitFor("기본책장")
+        compose.onNodeWithText("기본책장").performTouchInput { doubleClick() }; waitFor("읽는 중")
+        compose.onNodeWithContentDescription("뒤로 가기").performTouchInput { doubleClick() }
+        waitFor("기본책장"); systemBack(); waitFor("피드")
+        compose.onNodeWithText("발견").performClick(); compose.onNodeWithText("발견").assertIsSelected()
+        capture("reply-mixed-back-root")
+    }
+
+    @Test fun horizontalSpinesEmptyBookshelfAndErrorClosePreserveNavigation() {
+        start(); profile("독자A"); waitFor("기본책장")
+        spineRow().performScrollToIndex(16)
+        val libraryX = spine17().assertIsDisplayed().fetchSemanticsNode().boundsInRoot.left
+        compose.onNodeWithText("기본책장").performClick(); waitFor("읽는 중")
+        spineRow().performScrollToIndex(16)
+        val shelfX = spine17().assertIsDisplayed().fetchSemanticsNode().boundsInRoot.left
+        spine17().performClick(); waitFor("공개 서재를 확인하는 감상"); back()
+        assertEquals(shelfX, spine17().assertIsDisplayed().fetchSemanticsNode().boundsInRoot.left, 1f)
+        back(); waitFor("기본책장")
+        assertEquals(libraryX, spine17().assertIsDisplayed().fetchSemanticsNode().boundsInRoot.left, 1f)
+        compose.onNodeWithText("빈책장").performScrollTo().performClick()
+        waitFor("전체"); compose.onNodeWithText("아직 담은 책이 없어요").assertIsDisplayed()
+        back(); waitFor("기본책장"); back(); feedItem(2); profile("오류서재독자")
+        waitFor("서재를 불러오지 못했어요"); compose.onNodeWithText("닫기").performClick()
+        compose.onNodeWithText("서재를 불러오지 못했어요").assertDoesNotExist()
+        compose.onNodeWithText("오류서재독자").assertIsDisplayed()
+        systemBack(); waitFor("피드")
+        compose.onNodeWithText("오류서재독자").assertIsDisplayed()
+        profile("오류서재독자"); waitFor("기본책장")
+        assertTrue(URI("$base/__607").toURL().readText().contains("memberId=44"))
+        capture("horizontal-empty-error-close")
     }
 }

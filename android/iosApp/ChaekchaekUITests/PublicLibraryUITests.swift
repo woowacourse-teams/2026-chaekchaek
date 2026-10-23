@@ -3,7 +3,7 @@ import XCTest
 final class PublicLibraryUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     @MainActor
-    private func start() async throws -> XCUIApplication {
+    private func start(tab: String = "피드") async throws -> XCUIApplication {
         let base = URL(string: "http://127.0.0.1:19087")!
         var probe = URLRequest(url: base.appendingPathComponent("__607/reset"))
         probe.timeoutInterval = 3
@@ -14,8 +14,8 @@ final class PublicLibraryUITests: XCTestCase {
         app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = base.absoluteString
         app.launch()
         XCTAssertTrue(app.buttons["피드"].waitForExistence(timeout: 20))
-        app.buttons["피드"].tap()
-        XCTAssertTrue(find("독자A 프로필", in: app).waitForExistence(timeout: 15))
+        app.buttons[tab].tap()
+        if tab == "피드" { XCTAssertTrue(find("독자A 프로필", in: app).waitForExistence(timeout: 15)) }
         return app
     }
     @MainActor
@@ -147,5 +147,85 @@ final class PublicLibraryUITests: XCTestCase {
         let originalSort = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "페이지순")).firstMatch
         reveal(originalSort, in: app); XCTAssertTrue(originalSort.waitForExistence(timeout: 15))
         XCTAssertTrue(originalSort.isHittable)
+    }
+
+    @MainActor
+    private func dragSpines(_ app: XCUIApplication, y: CGFloat) {
+        let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.width * 0.85, dy: y))
+        let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.width * 0.15, dy: y))
+        start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.3)
+        Thread.sleep(forTimeInterval: 1)
+    }
+    @MainActor
+    func testHomeAndDiscoverProfilesRestoreOriginalTabAndPosition() async throws {
+        let app = try await start(tab: "홈")
+        let author = find("독자A 프로필", in: app)
+        reveal(author, in: app); let homeY = author.frame.minY
+        author.tap(); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); back(app)
+        XCTAssertTrue(app.buttons["홈"].isSelected)
+        XCTAssertEqual(author.frame.minY, homeY, accuracy: 1)
+        app.buttons["발견"].tap()
+        reveal(author, in: app); let discoverY = author.frame.minY
+        author.tap(); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); back(app)
+        XCTAssertTrue(app.buttons["발견"].isSelected)
+        XCTAssertEqual(author.frame.minY, discoverY, accuracy: 1)
+        let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = "607-home-discover"; attachment.lifetime = .keepAlways; add(attachment)
+    }
+    @MainActor
+    func testReplyProfileReusesExistingLibraryAndRapidBackKeepsRoot() async throws {
+        let app = try await start()
+        profile("독자A", in: app); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); shelf(in: app).tap()
+        let firstBook = book("서재 도서 1", in: app)
+        XCTAssertTrue(firstBook.waitForExistence(timeout: 10)); reveal(firstBook, in: app); firstBook.tap()
+        let replyAuthor = find("답글독자 프로필", in: app)
+        reveal(replyAuthor, in: app); replyAuthor.doubleTap()
+        XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["독자A"].exists)
+        back(app); XCTAssertTrue(app.buttons["피드"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["피드"].isSelected)
+        profile("독자A", in: app); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); shelf(in: app).doubleTap()
+        XCTAssertTrue(find("읽는 중", in: app).waitForExistence(timeout: 10))
+        // 짧은 가장자리 드래그를 되돌려 취소하고 현재 책장에 남는지 확인한다.
+        let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.005, dy: 0.5))
+        let middle = app.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.5))
+        edge.press(forDuration: 0.05, thenDragTo: middle, withVelocity: .slow, thenHoldForDuration: 0.3)
+        XCTAssertTrue(find("읽는 중", in: app).exists)
+        app.buttons["뒤로 가기"].doubleTap()
+        XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); back(app)
+        XCTAssertTrue(app.buttons["피드"].waitForExistence(timeout: 10))
+        app.buttons["발견"].tap(); XCTAssertTrue(app.buttons["발견"].isSelected)
+        // 정상 종료 후 재실행에도 루트 탭이 표시되고 프로필 진입이 다시 가능하다.
+        app.terminate(); app.launch(); XCTAssertTrue(app.buttons["피드"].waitForExistence(timeout: 20)); app.buttons["피드"].tap()
+        profile("독자A", in: app); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); back(app)
+    }
+    @MainActor
+    func testHorizontalSpinesEmptyBookshelfAndErrorClose() async throws {
+        let app = try await start()
+        profile("독자A", in: app); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10))
+        let libraryShelf = shelf(in: app)
+        let originalLabel = libraryShelf.label
+        dragSpines(app, y: libraryShelf.frame.minY + 160)
+        let scrolledLabel = libraryShelf.label
+        XCTAssertNotEqual(scrolledLabel, originalLabel)
+        libraryShelf.tap(); XCTAssertTrue(find("읽는 중", in: app).waitForExistence(timeout: 10))
+        let firstSpine = find("서재 도서 1 책등", in: app)
+        XCTAssertTrue(firstSpine.waitForExistence(timeout: 10))
+        dragSpines(app, y: firstSpine.frame.midY)
+        let laterSpine = find("서재 도서 17 책등", in: app)
+        XCTAssertTrue(laterSpine.exists); XCTAssertTrue(laterSpine.isHittable)
+        let shelfX = laterSpine.frame.minX
+        laterSpine.tap(); XCTAssertTrue(app.staticTexts["공개 서재를 확인하는 감상"].waitForExistence(timeout: 15)); back(app)
+        XCTAssertTrue(laterSpine.waitForExistence(timeout: 10)); XCTAssertEqual(laterSpine.frame.minX, shelfX, accuracy: 1)
+        back(app); XCTAssertTrue(libraryShelf.waitForExistence(timeout: 10)); XCTAssertEqual(libraryShelf.label, scrolledLabel)
+        let empty = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "빈책장")).firstMatch
+        reveal(empty, in: app); empty.tap()
+        XCTAssertTrue(find("전체", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["아직 담은 책이 없어요"].exists)
+        back(app); XCTAssertTrue(libraryShelf.waitForExistence(timeout: 10)); back(app)
+        profile("오류서재독자", in: app); XCTAssertTrue(app.staticTexts["서재를 불러오지 못했어요"].waitForExistence(timeout: 10))
+        app.buttons["닫기"].tap(); XCTAssertFalse(app.staticTexts["서재를 불러오지 못했어요"].exists)
+        XCTAssertTrue(app.staticTexts["오류서재독자"].exists); back(app)
+        XCTAssertTrue(find("오류서재독자 프로필", in: app).exists)
+        profile("오류서재독자", in: app); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10))
     }
 }
