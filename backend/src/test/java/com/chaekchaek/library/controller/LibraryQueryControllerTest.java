@@ -47,6 +47,7 @@ class LibraryQueryControllerTest {
     private static final String COLLECTION_DESCRIPTION = """
             회원의 모든 책장과 각 책장에 담긴 도서 목록을 조회한다. 로그인 없이 이용할 수 있다.
             책장과 도서는 설정한 순서대로 반환한다. 같은 도서가 여러 책장에 있으면 각 책장에 포함한다.
+            도서별 표지와 저자를 포함하며, 저자가 없으면 authors는 빈 배열이다.
             빈 책장도 반환하며, 책장이 없으면 libraries는 빈 배열이다.
             책장 수나 도서 수로 결과를 제한하지 않는다. 기존 책장 이름도 그대로 반환한다.
             없는 회원이나 비활성 회원을 조회하면 `404`, `MEMBER_NOT_FOUND`를 반환한다.
@@ -68,8 +69,11 @@ class LibraryQueryControllerTest {
             fieldWithPath("libraries[].items").type(JsonFieldType.ARRAY).description("설정한 순서의 도서 목록"),
             fieldWithPath("libraries[].items[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
             fieldWithPath("libraries[].items[].title").type(JsonFieldType.STRING).description("도서 제목"),
+            fieldWithPath("libraries[].items[].coverImageUrl").type(JsonFieldType.STRING).description("도서 표지 이미지 URL"),
             fieldWithPath("libraries[].items[].spineImageUrl").type(JsonFieldType.STRING).description("책등 이미지 URL, 없으면 null").optional(),
-            fieldWithPath("libraries[].items[].isbn13").type(JsonFieldType.STRING).description("상세 조회에 사용하는 ISBN-13")
+            fieldWithPath("libraries[].items[].isbn13").type(JsonFieldType.STRING).description("상세 조회에 사용하는 ISBN-13"),
+            fieldWithPath("libraries[].items[].authors").type(JsonFieldType.ARRAY).description("저자 이름 목록, 없으면 빈 배열")
+                    .attributes(key("itemsType").value(JsonFieldType.STRING))
     };
     private static final FieldDescriptor[] DETAIL_FIELDS = {
             fieldWithPath("libraryId").type(JsonFieldType.NUMBER).description("책장 ID"),
@@ -106,14 +110,16 @@ class LibraryQueryControllerTest {
     private LibraryQueryService service;
 
     @Test
-    @DisplayName("전체 서재는 기존 이름과 nullable 책등을 포함한 전체 도서 요약만 반환한다")
+    @DisplayName("전체 서재는 기존 이름과 표지, 저자, nullable 책등을 포함한 전체 도서 요약을 반환한다")
     void should_ReturnCollection_When_MemberIsActive() throws Exception {
         // given
         LibraryBookSummaryResponse book = new LibraryBookSummaryResponse(
                 42L,
                 "책 제목",
+                "https://example.com/cover.jpg",
                 null,
-                "9788925568683"
+                "9788925568683",
+                List.of("두 번째 저자", "첫 번째 저자")
         );
         LibraryShelfResponse shelf = new LibraryShelfResponse(
                 7L,
@@ -135,8 +141,9 @@ class LibraryQueryControllerTest {
                 .andExpect(jsonPath("$.libraries[0].items[0].isbn13").value("9788925568683"))
                 .andExpect(jsonPath("$.libraries[0].items[0].spineImageUrl").value(nullValue()))
                 .andExpect(jsonPath("$.libraries[0].items[0].status").doesNotExist())
-                .andExpect(jsonPath("$.libraries[0].items[0].coverImageUrl").doesNotExist())
-                .andExpect(jsonPath("$.libraries[0].items[0].authors").doesNotExist())
+                .andExpect(jsonPath("$.libraries[0].items[0].coverImageUrl").value("https://example.com/cover.jpg"))
+                .andExpect(jsonPath("$.libraries[0].items[0].authors[0]").value("두 번째 저자"))
+                .andExpect(jsonPath("$.libraries[0].items[0].authors[1]").value("첫 번째 저자"))
                 .andDo(document("libraries-public-collection", resource(ResourceSnippetParameters.builder()
                         .tag("서재")
                         .summary("회원의 전체 책장과 도서 요약 조회")
