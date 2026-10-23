@@ -62,6 +62,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.rating_star_filled
+import com.chaekchaek.app.ui.common.AnonymousReviewSetting
 import com.chaekchaek.app.ui.common.ChaekCloseButton
 import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
@@ -135,7 +136,6 @@ fun QuestionAReviewInputSheet(
     val initial = remember(draftKey) { QuestionAReviewRules.normalize(initialDraft) }
     val contentState = rememberLimitedTextFieldState(BookDetailInputRules.ContentPolicy, initial.content, draftKey)
     val quoteState = rememberLimitedTextFieldState(BookDetailInputRules.QuotePolicy, initial.quote, draftKey)
-    var anonymousChoice by rememberSaveable(draftKey) { mutableStateOf(anonymous) }
     var spoiler by rememberSaveable(draftKey) { mutableStateOf(initial.isSpoiler) }
     var rating by rememberSaveable(draftKey) { mutableStateOf(initial.rating) }
     var ratingTouched by rememberSaveable(draftKey) { mutableStateOf(false) }
@@ -160,7 +160,7 @@ fun QuestionAReviewInputSheet(
         quote = quoteState.text.toString(),
         isSpoiler = spoiler,
         rating = rating,
-        anonymous = if (editing || !signedIn) null else anonymousChoice,
+        anonymous = if (editing || !signedIn) null else anonymous,
     ))
     val requestDismiss = {
         if (!isSaving) {
@@ -233,27 +233,15 @@ fun QuestionAReviewInputSheet(
                     "기억하고 싶은 문장", "인상 깊은 문구 (선택)", 54, readOnly = isSaving,
                 )
                 if (!editing) {
-                    Row(
-                        Modifier.fillMaxWidth().heightIn(min = 50.dp)
-                            .testTag("reviewAnonymousCheckbox")
-                            .semantics(mergeDescendants = true) {
-                                contentDescription = "익명으로 남기기"
-                                stateDescription = if (anonymousChoice) "익명" else "닉네임 공개"
-                            }
-                            .background(MaterialTheme.colorScheme.surfaceVariant, ChaekOverlayTokens.inputShape)
-                            .toggleable(value = anonymousChoice, enabled = !isSaving, role = Role.Checkbox,
-                                interactionSource = remember { MutableInteractionSource() }, indication = null,
-                                onValueChange = { value ->
-                                    if (signedIn) { anonymousChoice = value; onAnonymousChange(value) }
-                                    else onLoginRequired()
-                                })
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Text(if (anonymousChoice) "☑" else "□", fontFamily = ChaekIconFontFamily(), color = ChaekInkSecondary)
-                        Text("익명으로 남기기", color = ChaekInk, style = MaterialTheme.typography.bodySmall)
-                    }
+                    AnonymousReviewSetting(
+                        checked = anonymous,
+                        nickname = nickname,
+                        modifier = Modifier.testTag("reviewAnonymousSetting"),
+                        enabled = !isSaving,
+                        onClick = {
+                            if (signedIn) onAnonymousChange(!anonymous) else onLoginRequired()
+                        },
+                    )
                 } else Text(
                     if (anonymous) "익명으로 ‘${nickname.ifBlank { "익명" }}’가 표시돼요"
                     else "‘${nickname.ifBlank { "닉네임 없음" }}’으로 표시돼요",

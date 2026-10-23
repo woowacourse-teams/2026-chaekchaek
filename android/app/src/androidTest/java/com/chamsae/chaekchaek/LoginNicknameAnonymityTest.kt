@@ -104,6 +104,7 @@ class LoginNicknameAnonymityTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val preferences = context.getSharedPreferences("qa_580_review_preferences", 0)
         preferences.edit().putBoolean("anonymous", true).commit()
+        val anonymousReviews = mutableStateOf(preferences.getBoolean("anonymous", true))
         val state = mutableStateOf(BookDetailUiState(
             book = BookDetailArgs(id = "42", bookId = 42, title = "익명 선택 검증", totalPages = 224),
             signedIn = true,
@@ -114,8 +115,8 @@ class LoginNicknameAnonymityTest {
             ChaekchaekTheme {
                 BookDetailScreen(
                     state = state.value, onBack = {},
-                    anonymousReviews = preferences.getBoolean("anonymous", true),
-                    onAnonymousReviewsChange = { preferences.edit().putBoolean("anonymous", it).commit() },
+                    anonymousReviews = anonymousReviews.value,
+                    onAnonymousReviewsChange = { preferences.edit().putBoolean("anonymous", it).commit(); anonymousReviews.value = it },
                     onQuestionAReviewCreate = {
                         submitted += it
                         state.value = state.value.copy(reviewSubmissionState = ReviewSubmissionState.Submitting)
@@ -127,10 +128,10 @@ class LoginNicknameAnonymityTest {
         }
         compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("실패해도 보존할 감상")
-        compose.onNodeWithTag("reviewAnonymousCheckbox").performScrollTo().assertIsOn().performClick().assertIsOff()
+        compose.onNodeWithTag("reviewAnonymousSetting").performScrollTo().assertIsOn().performClick().assertIsOff()
         assertFalse(preferences.getBoolean("anonymous", true))
         restoration.emulateSavedInstanceStateRestore()
-        compose.onNodeWithTag("reviewAnonymousCheckbox").assertIsOff()
+        compose.onNodeWithTag("reviewAnonymousSetting").assertIsOff()
         compose.onAllNodes(hasText("감상 남기기") and hasClickAction()).onLast().performScrollTo().performClick()
         compose.onNode(hasText("감상 남기기") and hasClickAction()).assertIsNotEnabled()
         compose.runOnIdle {
@@ -142,10 +143,32 @@ class LoginNicknameAnonymityTest {
         compose.onNodeWithText("닫기").performClick()
         restoration.emulateSavedInstanceStateRestore()
         compose.onNodeWithContentDescription("감상 (필수)").assertTextEquals("실패해도 보존할 감상")
-        compose.onNodeWithTag("reviewAnonymousCheckbox").performScrollTo().assertIsOff()
+        compose.onNodeWithTag("reviewAnonymousSetting").performScrollTo().assertIsOff()
         capture("anonymous-failure-retained")
-        compose.onNodeWithTag("reviewAnonymousCheckbox").performClick().assertIsOn()
+        compose.onNodeWithTag("reviewAnonymousSetting").performClick().assertIsOn()
         assertTrue(preferences.getBoolean("anonymous", false))
+    }
+
+    @Test fun reviewSettingFollowsExternalChangesWhileSheetIsOpen() {
+        val anonymous = mutableStateOf(true)
+        val nickname = mutableStateOf("reader")
+        compose.setContent {
+            ChaekchaekTheme {
+                com.chaekchaek.app.ui.bookdetail.QuestionAReviewInputSheet(
+                    signedIn = true, nickname = nickname.value, anonymous = anonymous.value,
+                    onAnonymousChange = { anonymous.value = it },
+                    onDismiss = {}, onLoginRequired = {}, onSave = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("reviewAnonymousSetting").performScrollTo().assertIsOn()
+        compose.onNodeWithText("해제하면 기존 닉네임으로 공개됩니다").assertExists()
+        compose.runOnIdle { anonymous.value = false }
+        compose.onNodeWithTag("reviewAnonymousSetting").assertIsOff()
+        compose.onNodeWithText("닉네임이 감상에 표시됩니다").assertExists()
+        compose.onNodeWithTag("reviewAnonymousSetting").performClick().assertIsOn()
+        compose.runOnIdle { assertTrue(anonymous.value); nickname.value = "" }
+        compose.onNodeWithText("해제하면 닉네임을 설정해야 합니다").assertExists()
     }
 
     private fun waitFor(text: String) = compose.waitUntil(10_000) {

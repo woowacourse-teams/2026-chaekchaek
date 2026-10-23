@@ -65,6 +65,7 @@ class Jev580FlowHostTest {
         val previousAnonymous = prefs.getBoolean("anonymous", true)
         prefs.edit().putBoolean("anonymous", true).commit()
         try {
+            val anonymousReviews = mutableStateOf(prefs.getBoolean("anonymous", true))
             val state = mutableStateOf(BookDetailUiState(
                 book = BookDetailArgs(id = "42", bookId = 42, title = "익명 선택 검증", totalPages = 224), signedIn = true,
             ))
@@ -73,8 +74,8 @@ class Jev580FlowHostTest {
             restoration.setContent {
                 ChaekchaekTheme {
                     BookDetailScreen(state = state.value, onBack = {},
-                        anonymousReviews = prefs.getBoolean("anonymous", true),
-                        onAnonymousReviewsChange = { prefs.edit().putBoolean("anonymous", it).commit() },
+                        anonymousReviews = anonymousReviews.value,
+                        onAnonymousReviewsChange = { prefs.edit().putBoolean("anonymous", it).commit(); anonymousReviews.value = it },
                         onReviewOpen = { it() },
                         onQuestionAReviewCreate = {
                             submissions += it
@@ -86,7 +87,7 @@ class Jev580FlowHostTest {
                 }
             }
             compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
-            compose.waitUntil(10_000) { compose.onAllNodesWithTag("reviewAnonymousCheckbox").fetchSemanticsNodes().isNotEmpty() }
+            compose.waitUntil(10_000) { compose.onAllNodesWithTag("reviewAnonymousSetting").fetchSemanticsNodes().isNotEmpty() }
             post("/__580/ready?phase=review")
             var restored = false
             val until = System.currentTimeMillis() + 600_000
@@ -99,14 +100,14 @@ class Jev580FlowHostTest {
                         assertFalse(prefs.getBoolean("anonymous", true))
                         restoration.emulateSavedInstanceStateRestore()
                         compose.onNodeWithContentDescription("감상 (필수)").assertTextEquals("draft")
-                        compose.onNodeWithTag("reviewAnonymousCheckbox").assertIsOff()
+                        compose.onNodeWithTag("reviewAnonymousSetting").assertIsOff()
                         restored = true
                         post("/__580/ready?phase=review-restored")
                     }
                     "finish" -> {
                         assertTrue(restored)
                         assertTrue(prefs.getBoolean("anonymous", false))
-                        compose.onNodeWithTag("reviewAnonymousCheckbox").assertIsOn()
+                        compose.onNodeWithTag("reviewAnonymousSetting").assertIsOn()
                         return
                     }
                 }

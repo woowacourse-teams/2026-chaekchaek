@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.selection.toggleable
 import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.verticalScroll
@@ -35,21 +34,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.chaekchaek.app.ui.common.AnonymousReviewSetting
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
 import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.common.avatarResource
 import com.chaekchaek.app.ui.common.ChaekCloseButton
 import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
-import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
-import com.chaekchaek.app.ui.theme.ChaekAccent
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.clip
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
@@ -97,7 +92,7 @@ internal fun MyPageScreen(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             ChaekOverlayButton("닉네임 변경", { showNicknameDialog = true }, secondary = true)
             SectionLabel("공개 설정")
-            AnonymousSetting(
+            AnonymousReviewSetting(
                 checked = state.anonymousReviews,
                 nickname = state.nickname,
                 onClick = {
@@ -156,36 +151,6 @@ private fun MyPageTopBar(onBack: () -> Unit) {
 @Composable
 private fun SectionLabel(text: String) {
     Text(text, style = MaterialTheme.typography.labelMedium, fontSize = 12.sp)
-}
-
-@Composable
-private fun AnonymousSetting(checked: Boolean, nickname: String, onClick: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
-                .clip(ChaekOverlayTokens.inputShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onClick() })
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(if (checked) "●" else "○", color = if (checked) ChaekAccent else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontFamily = ChaekIconFontFamily(), fontSize = 20.sp,
-                modifier = Modifier.clearAndSetSemantics {})
-            Text("익명으로 감상 공개", style = MaterialTheme.typography.bodySmall, fontSize = 14.sp)
-        }
-        Text(
-            when {
-                checked && nickname.isNotBlank() -> "해제하면 기존 닉네임으로 공개됩니다"
-                checked -> "해제하면 닉네임을 설정해야 합니다"
-                else -> "닉네임이 감상에 표시됩니다"
-            },
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall,
-            fontSize = 13.sp,
-        )
-    }
 }
 
 @Composable

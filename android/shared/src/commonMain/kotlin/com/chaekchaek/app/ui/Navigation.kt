@@ -267,6 +267,12 @@ private fun AppNavigationContent(
     val archiveState by archiveViewModel.uiState.collectAsState()
     val librarySaveState by librarySaveViewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
+    var anonymousReviewsOverride by remember(authPlatform) { mutableStateOf(authPlatform.readAnonymousReviews()) }
+    val anonymousReviews = anonymousReviewsOverride ?: memberSettingsState.anonymousReviews
+    val updateAnonymousReviews: (Boolean) -> Unit = { value ->
+        authPlatform.writeAnonymousReviews(value)
+        anonymousReviewsOverride = value
+    }
     LaunchedEffect(authTokens?.accessToken) {
         val accessToken = authTokens?.accessToken
         analytics.updateAuthentication(accessToken != null)
@@ -352,11 +358,11 @@ private fun AppNavigationContent(
                 entry<MyPageKey> {
                     LaunchedEffect(Unit) { analytics.screenView("my_page"); memberSettingsViewModel.retry() }
                     MyPageScreen(
-                        state = memberSettingsState,
+                        state = memberSettingsState.copy(anonymousReviews = anonymousReviews),
                         onBack = { backStack.popDestinationIfCurrent(MyPageKey) },
                         onNicknameChange = memberSettingsViewModel::updateNickname,
                         onAnonymousReviewsChange = { anonymous, nickname ->
-                            authPlatform.writeAnonymousReviews(anonymous)
+                            updateAnonymousReviews(anonymous)
                             memberSettingsViewModel.setAnonymousReviews(anonymous, nickname)
                         },
                         onSignOut = {
@@ -424,11 +430,10 @@ private fun AppNavigationContent(
                         savedToLibrary = savedBookId != null,
                         externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
                         externalLibraryLoading = librarySaveState.showLoading,
-                        anonymousReviews = authPlatform.readAnonymousReviews() ?: memberSettingsState.anonymousReviews,
-                        onAnonymousReviewsChange = authPlatform.writeAnonymousReviews,
+                        anonymousReviews = anonymousReviews,
+                        onAnonymousReviewsChange = updateAnonymousReviews,
                         nickname = if (state.signedIn) {
-                            if (memberSettingsState.anonymousReviews) memberSettingsState.anonymousNickname
-                            else memberSettingsState.nickname
+                            memberSettingsState.nickname
                         } else {
                             state.guestNickname.orEmpty()
                         },
