@@ -70,9 +70,37 @@ public class LibraryController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/libraries/{libraryId}")
+    public ResponseEntity<LibraryItemResponse> addToLibrary(
+            @PathVariable @Positive long libraryId,
+            @Valid @RequestBody AddLibraryItemRequest request
+    ) {
+        LibraryItemResponse response = libraryBookService.addByIsbn13(
+                writeMemberId(),
+                libraryId,
+                new Isbn13(request.isbn13()),
+                request.status(),
+                request.totalPages()
+        );
+        return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
+                        .path("/books/{bookId}")
+                        .buildAndExpand(response.bookId())
+                        .toUri())
+                .body(response);
+    }
+
     @DeleteMapping("/libraries/{libraryId}")
     public ResponseEntity<Void> deleteLibrary(@PathVariable @Positive long libraryId) {
         libraryBookService.deleteLibrary(writeMemberId(), libraryId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/libraries/{libraryId}/books/{bookId}")
+    public ResponseEntity<Void> removeFromLibrary(
+            @PathVariable @Positive long libraryId,
+            @PathVariable @Positive long bookId
+    ) {
+        libraryBookService.delete(writeMemberId(), libraryId, bookId);
         return ResponseEntity.noContent().build();
     }
 

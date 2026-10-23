@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.chaekchaek.book.repository.BookRepository;
+import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.Library;
@@ -22,8 +24,10 @@ import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +43,7 @@ class LibraryBookLibraryDeletionServiceTest {
     private static final long MEMBER_ID = 1L;
     private static final long LIBRARY_ID = 7L;
     private static final Instant NOW = Instant.parse("2026-10-23T03:00:00Z");
+    private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
 
     @Test
     @DisplayName("책장이 없으면 소유권을 확인하지 못해 배치 조회 없이 오류를 반환한다")
@@ -196,7 +201,11 @@ class LibraryBookLibraryDeletionServiceTest {
                         libraryRepository,
                         libraryBookRepository,
                         libraryItemRepository,
+                        mock(BookRepository.class),
+                        mock(BookResolver.class),
+                        mock(BookCommentCountReader.class),
                         memberRepository,
+                        CLOCK,
                         transactionManager()
                 ),
                 libraryRepository,
