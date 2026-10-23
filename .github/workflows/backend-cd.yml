@@ -101,6 +101,7 @@ jobs:
           APPLE_PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           YES24_API_KEY: ${{ secrets.YES24_API_KEY }}
+          KAKAO_REST_API_KEY: ${{secrets.KAKAO_REST_API_KEY}}
           AUTH_COOKIE_SECURE: "true"
           AUTH_COOKIE_SAME_SITE: "None"
           LOGGING_STRUCTURED_FORMAT_CONSOLE: "logstash"
@@ -141,6 +142,7 @@ jobs:
                 "APPLE_PRIVATE_KEY=$APPLE_PRIVATE_KEY" \
                 "JWT_SECRET=$JWT_SECRET" \
                 "YES24_API_KEY=$YES24_API_KEY" \
+                "KAKAO_REST_API_KEY=$KAKAO_REST_API_KEY" \
                 "AUTH_COOKIE_SECURE=$AUTH_COOKIE_SECURE" \
                 "AUTH_COOKIE_SAME_SITE=$AUTH_COOKIE_SAME_SITE" \
                 "LOGGING_STRUCTURED_FORMAT_CONSOLE=$LOGGING_STRUCTURED_FORMAT_CONSOLE" \
