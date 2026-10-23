@@ -156,6 +156,7 @@ fun BookDetailScreen(
     externalLibrarySaving: Boolean = false,
     externalLibraryLoading: Boolean = false,
     anonymousReviews: Boolean = true,
+    onAnonymousReviewsChange: (Boolean) -> Unit = {},
     nickname: String = "",
     localCurrentPage: Int = 0,
     coverContent: (@Composable (BookDetailArgs, Modifier) -> Unit)? = null,
@@ -469,6 +470,7 @@ fun BookDetailScreen(
         QuestionAReviewInputSheet(
             signedIn = state.signedIn,
             anonymous = !state.signedIn || anonymousReviews,
+            onAnonymousChange = onAnonymousReviewsChange,
             nickname = nickname,
             initialDraft = QuestionAReviewDraft(rating = state.detail?.myRecord?.rating),
             draftKey = "${book.id}:create",

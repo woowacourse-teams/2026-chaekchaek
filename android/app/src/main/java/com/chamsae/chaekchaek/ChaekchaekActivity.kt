@@ -87,6 +87,13 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                     readGuest = tokenStore::readGuest,
                     writeGuest = tokenStore::writeGuest,
                     clearGuest = tokenStore::clearGuest,
+                    readAnonymousReviews = {
+                        val preferences = context.getSharedPreferences("review_preferences", MODE_PRIVATE)
+                        if (preferences.contains("anonymous")) preferences.getBoolean("anonymous", true) else null
+                    },
+                    writeAnonymousReviews = { value ->
+                        context.getSharedPreferences("review_preferences", MODE_PRIVATE).edit().putBoolean("anonymous", value).apply()
+                    },
                 )
             }
             App(

@@ -137,6 +137,9 @@ private fun AppNavigationContent(
             onAnonymousReviewsChange = { anonymous, nickname ->
                 previewState = previewState.copy(anonymousReviews = anonymous, nickname = nickname)
             },
+            onNicknameChange = { nickname ->
+                previewState = previewState.copy(nickname = nickname, saveRevision = previewState.saveRevision + 1)
+            },
             onSignOut = {},
             onWithdraw = {},
             modifier = safeContent,
@@ -282,6 +285,12 @@ private fun AppNavigationContent(
     val archiveState by archiveViewModel.uiState.collectAsState()
     val librarySaveState by librarySaveViewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
+    var anonymousReviewsOverride by remember(authPlatform) { mutableStateOf(authPlatform.readAnonymousReviews()) }
+    val anonymousReviews = anonymousReviewsOverride ?: memberSettingsState.anonymousReviews
+    val updateAnonymousReviews: (Boolean) -> Unit = { value ->
+        authPlatform.writeAnonymousReviews(value)
+        anonymousReviewsOverride = value
+    }
     LaunchedEffect(authTokens?.accessToken) {
         val accessToken = authTokens?.accessToken
         homeViewModel.authenticate(accessToken)
@@ -365,11 +374,15 @@ private fun AppNavigationContent(
                     )
                 }
                 entry<MyPageKey> {
-                    LaunchedEffect(Unit) { analytics.screenView("my_page") }
+                    LaunchedEffect(Unit) { analytics.screenView("my_page"); memberSettingsViewModel.retry() }
                     MyPageScreen(
-                        state = memberSettingsState,
+                        state = memberSettingsState.copy(anonymousReviews = anonymousReviews),
                         onBack = { backStack.popDestinationIfCurrent(MyPageKey) },
-                        onAnonymousReviewsChange = memberSettingsViewModel::setAnonymousReviews,
+                        onNicknameChange = memberSettingsViewModel::updateNickname,
+                        onAnonymousReviewsChange = { anonymous, nickname ->
+                            updateAnonymousReviews(anonymous)
+                            memberSettingsViewModel.setAnonymousReviews(anonymous, nickname)
+                        },
                         onSignOut = {
                             authViewModel.signOut {
                                 backStack.popDestinationIfCurrent(MyPageKey)
@@ -435,10 +448,10 @@ private fun AppNavigationContent(
                         savedToLibrary = savedBookId != null,
                         externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
                         externalLibraryLoading = librarySaveState.showLoading,
-                        anonymousReviews = memberSettingsState.anonymousReviews,
+                        anonymousReviews = anonymousReviews,
+                        onAnonymousReviewsChange = updateAnonymousReviews,
                         nickname = if (state.signedIn) {
-                            if (memberSettingsState.anonymousReviews) memberSettingsState.anonymousNickname
-                            else memberSettingsState.nickname
+                            memberSettingsState.nickname
                         } else {
                             state.guestNickname.orEmpty()
                         },
@@ -492,7 +505,7 @@ private fun AppNavigationContent(
                         errorRecovery = viewModel.errors,
                         onReviewCreate = viewModel::createReview,
                         onQuestionAReviewCreate = { draft ->
-                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)
+                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry, anonymous = draft.anonymous)
                         },
                         onQuestionAReviewUpdate = { reviewId, draft, request ->
                             viewModel.updateReviewWithRating(reviewId, request, draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)

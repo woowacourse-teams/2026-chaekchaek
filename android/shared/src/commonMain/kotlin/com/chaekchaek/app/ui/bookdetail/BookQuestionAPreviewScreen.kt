@@ -32,6 +32,7 @@ fun BookQuestionAPreviewScreen(showControls: Boolean = true, onExit: () -> Unit 
     var reviewScope by rememberSaveable { mutableStateOf(com.chaekchaek.app.data.remote.ReviewScope.ALL) }
     var hasQuestion by rememberSaveable { mutableStateOf(true) }
     var signedIn by rememberSaveable { mutableStateOf(true) }
+    var anonymousReviews by rememberSaveable { mutableStateOf(true) }
     var reaction by rememberSaveable { mutableStateOf<String?>(null) }
     var submission by remember { mutableStateOf(ReviewSubmissionState.Idle) }
     var savedRating by rememberSaveable { mutableStateOf<Double?>(null) }
@@ -88,6 +89,8 @@ fun BookQuestionAPreviewScreen(showControls: Boolean = true, onExit: () -> Unit 
             onAddToLibrary = { savedToLibrary = true },
             onReviewScopeChange = { reviewScope = it },
             nickname = "프리뷰 독자",
+            anonymousReviews = anonymousReviews,
+            onAnonymousReviewsChange = { anonymousReviews = it },
             question = question.takeIf { hasQuestion },
             allowZeroReviewRating = true,
             selectedQuestionReaction = reaction,

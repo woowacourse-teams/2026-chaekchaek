@@ -20,11 +20,71 @@ import kotlin.test.assertNull
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthViewModelTest {
   @Test
+  fun `신규 회원은 닉네임 저장 전 토큰과 대기 작업을 공개하지 않는다`() = runTest {
+    var callback: ((String?, String?) -> Unit)? = null
+    var resumed = 0
+    var saves = 0
+    val saved = CompletableDeferred<com.chaekchaek.app.data.remote.RemoteMemberProfile>()
+    val vm = AuthViewModel(
+      callbacks = AuthPlatformCallbacks({ callback = it }, { null }, {}, {}),
+      getProfile = { com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "", "참새", null, true) },
+      updateNickname = { value, _ -> saves++; assertEquals("책췍", value); saved.await() },
+      loginWithGoogle = { _, _ -> tokens("new") },
+      reissue = { error("unexpected") }, logout = {}, scope = backgroundScope,
+      currentTimeMillis = { testScheduler.currentTime },
+    )
+    vm.requireAuthentication { resumed++ }
+    callback!!("id", null)
+    runCurrent()
+    assertEquals(true, vm.uiState.value.requiresNickname)
+    assertNull(vm.tokens.value)
+    vm.cancelPendingAuthentication()
+    assertEquals(true, vm.uiState.value.requiresNickname)
+    vm.saveNickname("책췍")
+    vm.saveNickname("책췍")
+    runCurrent()
+    assertEquals(1, saves)
+    assertEquals(0, resumed)
+    saved.complete(com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "책췍", "참새", null, true))
+    runCurrent()
+    assertEquals(1, resumed)
+    assertEquals("access-new", vm.tokens.value?.accessToken)
+    assertEquals(false, vm.uiState.value.requiresNickname)
+  }
+
+  @Test
+  fun `닉네임 없는 기존 회원 복원도 저장 실패 후 재시도까지 로그인 완료를 보류한다`() = runTest {
+    var saves = 0
+    val vm = AuthViewModel(
+      callbacks = AuthPlatformCallbacks({}, { "stored" }, {}, {}),
+      getProfile = { com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "  ", "참새", null, true) },
+      updateNickname = { value, _ ->
+        if (++saves == 1) throw IllegalStateException("network")
+        com.chaekchaek.app.data.remote.RemoteMemberProfile(1, value, "참새", null, true)
+      },
+      loginWithGoogle = { _, _ -> error("unexpected") }, reissue = { tokens("restored") },
+      logout = {}, scope = backgroundScope, currentTimeMillis = { testScheduler.currentTime },
+    )
+    runCurrent()
+    assertEquals(true, vm.uiState.value.requiresNickname)
+    assertNull(vm.tokens.value)
+    vm.saveNickname("책췍")
+    runCurrent()
+    assertNull(vm.tokens.value)
+    assertEquals(false, vm.uiState.value.savingNickname)
+    vm.errors.takeRecovery(vm.errors.notice.value!!.id)!!.invoke(null)
+    runCurrent()
+    assertEquals(2, saves)
+    assertEquals("access-restored", vm.tokens.value?.accessToken)
+  }
+
+  @Test
   fun `공급업체 실패 재시도는 같은 로그인과 보류 작업을 한번만 재개한다`() = runTest {
     var callback: ((String?, String?) -> Unit)? = null
     var requests = 0
     val resumed = mutableListOf<String>()
     val viewModel = AuthViewModel(
+      getProfile = { com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "책췍", "참새", null, true) },
       callbacks = AuthPlatformCallbacks(
         requestGoogleIdToken = { requests++; callback = it },
         readRefreshToken = { null }, writeRefreshToken = {}, clearRefreshToken = {},
@@ -337,6 +397,7 @@ class AuthViewModelTest {
     var resumedWith: String? = null
     var guest: GuestAuth? = GuestAuth("guest-token", "게스트", "2026-09-25T09:00:00")
     val viewModel = AuthViewModel(
+      getProfile = { com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "책췍", "참새", null, true) },
       callbacks = AuthPlatformCallbacks(
         requestGoogleIdToken = { googleResult = it },
         readRefreshToken = { storedRefreshToken },
@@ -374,6 +435,7 @@ class AuthViewModelTest {
     var resumedWith: String? = null
     var guest: GuestAuth? = GuestAuth("guest-token", "게스트", "2026-09-25T09:00:00")
     val viewModel = AuthViewModel(
+      getProfile = { com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "책췍", "참새", null, true) },
       callbacks = AuthPlatformCallbacks(
         requestGoogleIdToken = { error("호출되면 안 됨") },
         readRefreshToken = { null },
@@ -411,6 +473,7 @@ class AuthViewModelTest {
     var googleResult: ((String?, String?) -> Unit)? = null
     var resumed = false
     val viewModel = AuthViewModel(
+      getProfile = { com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "책췍", "참새", null, true) },
       callbacks = AuthPlatformCallbacks(
         requestGoogleIdToken = { googleResult = it },
         readRefreshToken = { null },
@@ -514,6 +577,7 @@ class AuthViewModelTest {
     var guestCleared = false
     var resumed = false
     val viewModel = AuthViewModel(
+      getProfile = { com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "책췍", "참새", null, true) },
       callbacks = AuthPlatformCallbacks(
         requestGoogleIdToken = { credentialResult = it },
         readRefreshToken = { stored },
@@ -544,6 +608,7 @@ class AuthViewModelTest {
     val callbacks = mutableListOf<(String?, String?) -> Unit>()
     var loginCalls = 0
     val viewModel = AuthViewModel(
+      getProfile = { com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "책췍", "참새", null, true) },
       callbacks = AuthPlatformCallbacks(
         requestGoogleIdToken = { callbacks += it }, readRefreshToken = { null },
         writeRefreshToken = {}, clearRefreshToken = {},

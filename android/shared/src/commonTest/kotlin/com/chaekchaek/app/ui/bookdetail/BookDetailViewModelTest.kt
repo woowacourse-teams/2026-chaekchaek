@@ -52,6 +52,43 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
   @Test
+  fun `익명 설정 실패는 감상 작성을 막고 재시도는 설정 성공 후 한번만 등록한다`() = runViewModelTest {
+    val writes = mutableListOf<String>()
+    var failAnonymity = true
+    val client = testClient(MockEngine { request ->
+      when {
+        request.url.encodedPath.endsWith("/anonymity") -> {
+          writes += "anonymity"
+          if (failAnonymity) respond("{}", HttpStatusCode.ServiceUnavailable, jsonHeaders())
+          else respond("""{"memberId":1,"nickname":"책췍","anonymousNickname":"참새","displayAnonymous":false}""", headers = jsonHeaders())
+        }
+        request.method == HttpMethod.Post -> {
+          writes += "review"
+          respond("""{"bookId":42,"review":$REVIEW_RESPONSE}""", headers = jsonHeaders())
+        }
+        else -> respond(if (request.url.encodedPath.contains("/by-isbn/")) DETAIL_WITHOUT_RECORD else EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val store = ViewModelStore().also { it.put("review", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), "member")
+      awaitReal { vm.uiState.first { it.detail != null } }
+      vm.createReviewWithRating(ReviewCreateRequest("보존할 감상"), null, anonymous = false)
+      awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Failed } }
+      assertEquals(listOf("anonymity"), writes)
+      failAnonymity = false
+      vm.errors.takeRecovery(vm.errors.notice.value!!.id)!!.invoke(null)
+      awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Succeeded } }
+      assertEquals(listOf("anonymity", "anonymity", "review"), writes)
+    } finally {
+      store.clear()
+      advanceUntilIdle()
+      client.close()
+    }
+  }
+
+  @Test
   fun `감상 별점 로그인은 수정 대상이 포함된 읽은 페이지를 다시 조회한다`() = runViewModelTest {
     val requestedPages = mutableListOf<Int>()
     val client = testClient(MockEngine { request ->
@@ -1840,6 +1877,7 @@ class BookDetailViewModelTest {
     authRepository = MobileAuthRemoteRepository(authClient),
     analytics = analytics,
     savedStateHandle = savedStateHandle,
+    memberRepository = com.chaekchaek.app.data.remote.MemberRemoteRepository(writeClient),
   )
 
   private fun platform(
