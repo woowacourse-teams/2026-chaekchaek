@@ -7,7 +7,7 @@ export type LibraryFormValues = {
   name: string;
 };
 
-const LIBRARY_NAME_REGEX = /^[가-힣a-zA-Z0-9_-]+$/;
+const LIBRARY_NAME_REGEX = /^[가-힣a-zA-Z0-9_ -]+$/;
 
 const isValidLibraryName = (name: unknown): boolean => {
   if (!isString(name)) return false;
@@ -26,7 +26,7 @@ export const validateLibrary = ({ name }: LibraryFormValues) => {
       {
         type: 'custom',
         validate: isValidLibraryName,
-        message: '한글/영문/숫자/- /_. 만 입력해주세요',
+        message: '한글/영문/숫자/공백/-/_만 입력해주세요',
       },
     ],
   } satisfies FormValuesRules<LibraryFormValues>;
