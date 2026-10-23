@@ -101,7 +101,7 @@ data class BookDetailUiState(
     val reviews: List<BookReview> = emptyList(),
     val reviewCount: Int = 0,
     val reviewScope: ReviewScope = ReviewScope.ALL,
-    val reviewSort: ReviewSort = ReviewSort.LATEST,
+    val reviewSort: ReviewSort = ReviewSort.POPULAR,
     val nextReviewPage: Int? = null,
     val isLoading: Boolean = false,
     val isRestoring: Boolean = false,

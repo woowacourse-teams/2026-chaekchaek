@@ -19,6 +19,7 @@ data class BookshelfUiState(
     val loading: Boolean = false,
     val refreshing: Boolean = false,
     val detailRefreshing: Boolean = false,
+    val detailStale: Boolean = false,
     val mutating: Boolean = false,
     val loaded: Boolean = false,
 )
@@ -71,13 +72,13 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
         detailJob?.cancel()
         val session = generation
         val request = ++detailGeneration
-        state.value = state.value.copy(selectedId = id, detail = state.value.detail?.takeIf { it.libraryId == id }, detailRefreshing = true)
+        state.value = state.value.copy(selectedId = id, detail = state.value.detail?.takeIf { it.libraryId == id }, detailRefreshing = true, detailStale = true)
         detailJob = viewModelScope.launch {
             try {
                 val detail = withDelayedLoading({ if (request == detailGeneration) state.value = state.value.copy(loading = it) }) {
                     repository.detail(id)
                 }.getOrThrow()
-                if (session == generation && request == detailGeneration) state.value = state.value.copy(detail = detail)
+                if (session == generation && request == detailGeneration) state.value = state.value.copy(detail = detail, detailStale = false)
             } catch (e: CancellationException) { throw e }
             catch (e: Throwable) { if (session == generation && request == detailGeneration) report(e) { open(id) } }
             finally { if (session == generation && request == detailGeneration) state.value = state.value.copy(loading = false, detailRefreshing = false) }
@@ -141,7 +142,7 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
                 }.getOrThrow()
                 if (session == generation) {
                     done()
-                    state.value = state.value.copy(mutating = false)
+                    state.value = state.value.copy(mutating = false, detailStale = true)
                     refresh()
                 }
             } catch (e: CancellationException) { throw e }

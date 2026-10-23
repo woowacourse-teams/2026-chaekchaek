@@ -47,7 +47,7 @@ class BookDetailViewModel(
         ?: ReviewScope.ALL
     private val restoredReviewSort = ReviewSort.entries
         .firstOrNull { it.name == savedStateHandle[BookDetailSavedStateKeys.ReviewSort] }
-        ?: ReviewSort.LATEST
+        ?: ReviewSort.POPULAR
     private val _uiState = MutableStateFlow(
         BookDetailUiState(reviewScope = restoredReviewScope, reviewSort = restoredReviewSort),
     )
@@ -336,6 +336,7 @@ class BookDetailViewModel(
         onSuccess = onSuccess,
         onLibraryAdded = onLibraryAdded,
         reloadAfterSuccess = true,
+        requiresPlacement = false,
     ) { bookId, token ->
         repository.rate(bookId, rating.score.toDouble(), token)
     }
@@ -530,7 +531,7 @@ class BookDetailViewModel(
             "개인 별점은 0.5점부터 5점까지 0.5점 단위로 저장할 수 있어요."
         }
         val token = requireToken()
-        val bookId = bookIdForWrite(token, generation, onLibraryAdded, "rating_save")
+        val bookId = bookIdForRating(token)
         val record = repository.rate(bookId, rating, token)
         if (generation != requestGeneration) throw CancellationException("인증 상태가 변경됨")
         // 감상만 실패한 뒤 재시도해도 이미 저장한 별점은 중복 저장하지 않는다.
@@ -927,6 +928,7 @@ class BookDetailViewModel(
         onSuccess: () -> Unit,
         onLibraryAdded: () -> Unit,
         reloadAfterSuccess: Boolean = false,
+        requiresPlacement: Boolean = true,
         action: suspend (bookId: Long, token: String) -> LibraryRecord,
     ) {
         mutate(
@@ -939,10 +941,20 @@ class BookDetailViewModel(
         ) { generation ->
             val token = requireToken()
             action(
-                bookIdForWrite(token, generation, onLibraryAdded, actionName),
+                if (requiresPlacement) bookIdForWrite(token, generation, onLibraryAdded, actionName)
+                else bookIdForRating(token),
                 token,
             )
         }
+    }
+
+    /** 별점 저장은 배치와 독서 상태를 생성하지 않는다. ISBN 검색 결과도 상세 ID로 해석한다. */
+    private suspend fun bookIdForRating(token: String): Long {
+        val detail = requireNotNull(_uiState.value.detail)
+        detail.bookId?.let { return it }
+        detail.myRecord?.bookId?.let { return it }
+        val book = requireNotNull(_uiState.value.displayBook)
+        return requireNotNull(repository.detail(book.isbn13, WriteCredential.Member(token)).bookId)
     }
 
     private suspend fun bookIdForWrite(

@@ -19,6 +19,23 @@ import kotlin.test.assertFailsWith
 
 class BookDetailRemoteRepositoryTest {
   @Test
+  fun `마지막 배치를 제거한 책의 별점 전용 상세 기록을 보존한다`() {
+    assertEquals(LibraryRecord(null, 0, 4.5), BookDetailRecordDto(myRating = 4.5).toLibraryRecord())
+  }
+
+  @Test
+  fun `별점 전용 저장 응답의 빈 독서 상태를 수용한다`() = runTest {
+    val client = testClient(MockEngine { request ->
+      assertEquals(HttpMethod.Put, request.method)
+      assertEquals("/api/v1/library/42/rating", request.url.encodedPath)
+      respond("""{"bookId":42,"status":null,"currentPage":null,"rating":4.5}""", headers = headersOf(HttpHeaders.ContentType, "application/json"))
+    })
+    try {
+      assertEquals(LibraryRecord(null, 0, 4.5, 42), BookDetailRemoteRepository(client, ApiConfiguration("https://api.chaekchaek.com")).rate(42, 4.5, "member"))
+    } finally { client.close() }
+  }
+
+  @Test
   fun `이미 저장된 책의 추가 충돌은 회원 상세에서 기존 기록을 복원한다`() = runTest {
     val requests = mutableListOf<Triple<HttpMethod, String, String?>>()
     val client = testClient(MockEngine { request ->

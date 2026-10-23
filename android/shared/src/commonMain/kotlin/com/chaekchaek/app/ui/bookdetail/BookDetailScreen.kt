@@ -1007,8 +1007,12 @@ private fun ReviewsSection(
             Spacer(Modifier.weight(1f))
             ChaekDropdown(
                 selectedOption = sort,
-                options = listOf(ReviewSort.LATEST, ReviewSort.PAGE),
-                optionLabel = { option -> if (option == ReviewSort.LATEST) "최신순" else "페이지순" },
+                options = listOf(ReviewSort.POPULAR, ReviewSort.LATEST, ReviewSort.OLDEST),
+                optionLabel = { option -> when (option) {
+                    ReviewSort.POPULAR -> "인기순"
+                    ReviewSort.LATEST -> "최신순"
+                    ReviewSort.OLDEST -> "오래된순"
+                } },
                 onOptionSelected = onSortChange,
                 contentDescription = "감상 정렬",
                 modifier = Modifier.testTag("review_sort").accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),

@@ -242,7 +242,8 @@ class AuthViewModel private constructor(
           val tokens = login(credential)
           if (generation != authenticationGeneration) return@launch
           profileReady = false
-          readyTokens.value = null
+          // 재인증의 프로필 확인 중에도 이미 확인된 세션과 오류 복구 작업을 유지한다.
+          // 새 토큰은 프로필 확인 후에만 전달하고 실제 로그아웃에서만 기존 토큰을 지운다.
           session.signIn(tokens)
           callbacks.clearGuest()
         } catch (error: CancellationException) {

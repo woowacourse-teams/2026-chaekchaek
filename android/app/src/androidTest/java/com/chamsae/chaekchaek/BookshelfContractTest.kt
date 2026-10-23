@@ -127,7 +127,12 @@ class BookshelfContractTest {
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
         waitText("책장을 이미지로")
         compose.onNodeWithTag("bookshelf-image-share", useUnmergedTree = true).performScrollTo()
-        compose.waitUntil(30_000) { compose.onAllNodes(hasTestTag("bookshelf-image-share") and isEnabled(), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        try {
+            compose.waitUntil(30_000) { compose.onAllNodes(hasTestTag("bookshelf-image-share") and isEnabled(), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        } catch (error: Throwable) {
+            compose.onRoot(useUnmergedTree = true).printToLog("BookshelfShareReadiness")
+            throw error
+        }
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val directory = instrumentation.targetContext.cacheDir.resolve("bookshelf-images")
         val previousFiles = directory.listFiles()?.map { it.name }?.toSet().orEmpty()

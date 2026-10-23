@@ -20,6 +20,35 @@ import kotlin.test.assertNull
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthViewModelTest {
   @Test
+  fun `재로그인의 프로필 확인 중 기존 준비 토큰과 복구 작업을 보존한다`() = runTest {
+    var callback: ((String?, String?) -> Unit)? = null
+    val profile = CompletableDeferred<com.chaekchaek.app.data.remote.RemoteMemberProfile>()
+    val observed = mutableListOf<String?>()
+    var resumed: String? = null
+    val vm = AuthViewModel(
+      callbacks = AuthPlatformCallbacks({ callback = it }, { "stored" }, {}, {}),
+      getProfile = { token ->
+        if (token == "access-new") profile.await()
+        else com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "책췍", "참새", null, true)
+      },
+      loginWithGoogle = { _, _ -> tokens("new") }, reissue = { tokens("old") },
+      logout = {}, scope = backgroundScope, currentTimeMillis = { testScheduler.currentTime },
+    )
+    backgroundScope.launch { vm.tokens.collect { observed += it?.accessToken } }
+    runCurrent()
+    assertEquals("access-old", vm.tokens.value?.accessToken)
+    val before = observed.size
+    vm.requireAuthentication(force = true) { resumed = it }
+    callback!!("id", null); runCurrent()
+    assertEquals("access-old", vm.tokens.value?.accessToken)
+    assertNull(resumed)
+    profile.complete(com.chaekchaek.app.data.remote.RemoteMemberProfile(1, "책췍", "참새", null, true))
+    runCurrent()
+    assertEquals("access-new", resumed)
+    assertEquals(listOf("access-new"), observed.drop(before))
+  }
+
+  @Test
   fun `신규 회원은 닉네임 저장 전 토큰과 대기 작업을 공개하지 않는다`() = runTest {
     var callback: ((String?, String?) -> Unit)? = null
     var resumed = 0

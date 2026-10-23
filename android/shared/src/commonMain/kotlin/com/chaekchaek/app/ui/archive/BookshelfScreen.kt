@@ -73,7 +73,11 @@ internal fun BookshelfRoute(
                 TextButton(onClick = { creating = true }, enabled = !state.mutating, modifier = Modifier.testTag("bookshelf-create")) { Text("+ 책장") }
             }
             Text("책은 꾹 눌러 이동, 넘치는 책은 좌우로 밀어 보기", Modifier.padding(horizontal = 24.dp, vertical = 12.dp), style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
-            LazyColumn(Modifier.weight(1f), state = listState) {
+            ChaekRefreshLayout(
+                com.chaekchaek.app.presentation.common.RefreshUiState(isRefreshing = state.refreshing, enabled = !state.mutating),
+                viewModel::refresh, Modifier.weight(1f),
+            ) {
+            LazyColumn(Modifier.fillMaxSize(), state = listState) {
                 itemsIndexed(state.shelves, key = { _, it -> it.libraryId }) { index, shelf ->
                     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -94,8 +98,13 @@ internal fun BookshelfRoute(
                 }
                 item { TextButton(onClick = viewModel::refresh, modifier = Modifier.fillMaxWidth(), enabled = !state.refreshing) { Text("새로고침") } }
             }
+            }
         } else if (detail != null) {
-            LazyColumn(Modifier.weight(1f), state = detailListState, contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            ChaekRefreshLayout(
+                com.chaekchaek.app.presentation.common.RefreshUiState(isRefreshing = state.refreshing || state.detailRefreshing, enabled = !state.mutating && !editing),
+                viewModel::refresh, Modifier.weight(1f),
+            ) {
+            LazyColumn(Modifier.fillMaxSize(), state = detailListState, contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 item {
                     Text(detail.name, style = MaterialTheme.typography.headlineSmall)
                     Text("${detail.totalCount}권", style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
@@ -106,7 +115,7 @@ internal fun BookshelfRoute(
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ChaekOverlayButton("+ 책 담기", { adding = true }, modifier = Modifier.weight(1f), enabled = !state.mutating)
-                        ChaekOverlayButton("이미지 공유", { sharing = true }, enabled = !state.mutating && !state.refreshing && !state.detailRefreshing, secondary = true, modifier = Modifier.weight(1f))
+                        ChaekOverlayButton("이미지 공유", { sharing = true }, enabled = !state.mutating && !state.refreshing && !state.detailRefreshing && !state.detailStale, secondary = true, modifier = Modifier.weight(1f))
                     }
                 }
                 item { Row(verticalAlignment = Alignment.CenterVertically) {
@@ -122,6 +131,7 @@ internal fun BookshelfRoute(
                         if (editing) TextButton(onClick = { viewModel.remove(detail.libraryId, book.bookId) }, enabled = !state.mutating) { Text("빼기") }
                     }
                 }
+            }
             }
         } else Spacer(Modifier.weight(1f))
         if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -142,7 +152,7 @@ internal fun BookshelfRoute(
         }
     }
     if (adding) ShelfAddSheet(state.shelves, onDismiss = { adding = false }, onAdd = { adding = false; onAdd(it) })
-    if (sharing && detail != null && token != null) BookshelfImageSheet(detail, token, onDismiss = { sharing = false })
+    if (sharing && detail != null && token != null && !state.detailStale) BookshelfImageSheet(detail, token, onDismiss = { sharing = false })
 }
 
 @Composable

@@ -103,6 +103,27 @@ class BookshelfFlowTest {
         } finally { Dispatchers.resetMain() }
     }
 
+    @Test fun `변경 성공 후 재조회가 실패해도 이전 상세를 공유 가능한 상태로 바꾸지 않는다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = FakeShelves(listOf(shelf(1)))
+            val vm = BookshelfViewModel(repo)
+            vm.authenticate("token"); advanceUntilIdle()
+            vm.open(1); advanceUntilIdle()
+            assertFalse(vm.uiState.value.detailStale)
+            val previous = vm.uiState.value.detail
+            repo.detailFails = true
+            vm.remove(1, 42); advanceUntilIdle()
+            assertEquals(previous, vm.uiState.value.detail)
+            assertFalse(vm.uiState.value.detailRefreshing)
+            assertTrue(vm.uiState.value.detailStale)
+            repo.detailFails = false
+            vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke(null)
+            advanceUntilIdle()
+            assertFalse(vm.uiState.value.detailStale)
+        } finally { Dispatchers.resetMain() }
+    }
+
     @Test fun `이름과 순서는 기존 긴 이름과 35권 이전 데이터를 임의로 자르지 않는다`() {
         assertNotNull(bookshelfNameError(" ", emptyList()))
         assertNotNull(bookshelfNameError("12345678901", emptyList()))
@@ -118,6 +139,7 @@ class BookshelfFlowTest {
 private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
     var fail = false
     var detailGate: CompletableDeferred<Unit>? = null
+    var detailFails = false
     val added = mutableListOf<Long>()
     val orders = mutableListOf<List<Long>>()
     override suspend fun mine(token: String) = BookshelfCollection(9, shelves)
@@ -128,6 +150,7 @@ private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
     }
     override suspend fun detail(libraryId: Long): BookshelfDetail {
         detailGate?.await()
+        if (detailFails) error("offline")
         return BookshelfDetail(libraryId, 9, "책장", false, 0, emptyList())
     }
     override suspend fun create(name: String, token: String) = Bookshelf(3, name, false, 0, emptyList())

@@ -232,7 +232,7 @@ private fun ReviewCreateRequest.toUpdateBody(includeReadingProgress: Boolean) = 
 
 enum class ReviewScope { ALL, MINE }
 
-enum class ReviewSort { PAGE, LATEST, OLDEST, POPULAR }
+enum class ReviewSort { LATEST, OLDEST, POPULAR }
 
 data class BookDetail(
   val bookId: Long?,
@@ -252,7 +252,7 @@ data class BookDetail(
 )
 
 data class LibraryRecord(
-  val status: String,
+  val status: String?,
   val currentPage: Int,
   val rating: Double?,
   val bookId: Long? = null,
@@ -329,8 +329,8 @@ internal data class BookDetailDto(
 @Serializable
 internal data class LibraryRecordDto(
   val bookId: Long,
-  val status: String,
-  val currentPage: Int,
+  val status: String? = null,
+  val currentPage: Int? = null,
   val rating: Double? = null,
 )
 
@@ -459,7 +459,7 @@ internal fun BookDetailDto.toBookDetail() =
     myRecord = myRecord?.toLibraryRecord(),
   )
 
-internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage, rating, bookId)
+internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage ?: 0, rating, bookId)
 
 private fun RatingComparisonDto.toRatingComparison() =
   RatingComparison(lower?.toRatingComparisonBook(), current?.toRatingComparisonBook(), higher?.toRatingComparisonBook())
@@ -468,7 +468,7 @@ private fun RatingComparisonBookDto.toRatingComparisonBook() =
   RatingComparisonBook(bookId, title, myRating, ratingUpdatedAt)
 
 internal fun BookDetailRecordDto.toLibraryRecord() =
-  status?.let { LibraryRecord(it, currentPage ?: 0, myRating) }
+  LibraryRecord(status, currentPage ?: 0, myRating)
 
 internal fun ReviewPageDto.toReviewPage() =
   ReviewPage(
