@@ -130,6 +130,8 @@ class BookControllerTest {
             fieldWithPath("replyCount").type(JsonFieldType.NUMBER).description("답글 수"),
             fieldWithPath("averageRating").type(JsonFieldType.NUMBER).description("평균 별점").optional(),
             fieldWithPath("ratingCount").type(JsonFieldType.NUMBER).description("별점 수"),
+            fieldWithPath("isRegisteredInMyLibrary").type(JsonFieldType.BOOLEAN)
+                    .description("내 책장 배치가 하나 이상이면 true, 없으면 false, 비회원은 null").optional(),
             fieldWithPath("myRatingCount").type(JsonFieldType.NUMBER).description("내가 별점을 등록한 도서 수").optional(),
             fieldWithPath("myRecord").type(JsonFieldType.OBJECT)
                     .description("독서 기록과 별점이 모두 없으면 null")
@@ -469,6 +471,7 @@ class BookControllerTest {
                         120,
                         new BigDecimal("4.2")
                 ),
+                true,
                 "https://www.yes24.com/product/goods/101375809",
                 "yes24",
                 new BookQuestionResponse(

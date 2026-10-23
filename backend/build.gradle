@@ -303,7 +303,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		markRequiredNullable(searchItem, propertyName)
 	}
 	def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
-	['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRatingCount', 'myRecord', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
+	['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRatingCount', 'myRecord', 'totalPages', 'isRegisteredInMyLibrary'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
 		def legacyRatingResponse = responseSchemaForPath('/api/v1/library/{bookId}/rating', 'put', '200')
 		['status', 'currentPage', 'readingUpdatedAt'].each { name -> markRequiredNullable(legacyRatingResponse, name) }
 		def libraryResponse = responseSchemaForPath('/api/v1/library', 'get', '200')
@@ -350,7 +350,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		addJsonExample('/api/v1/books/by-isbn/{isbn13}', 'get', '200', 'book-detail-without-library-record', '비로그인 사용자의 도서 상세', [
 			 bookId: 10, isbn13: '9788936433598', title: '채식주의자', coverImageUrl: 'https://example.com/book.jpg',
 			 authors: ['한강'], translators: [], publisher: '창비', category: '국내도서>소설', publishedDate: '2007-10-30',
-				 totalPages: 368, reviewCount: 1, replyCount: 1, averageRating: 4.3, ratingCount: 21, myRatingCount: null, myRecord: null
+				 totalPages: 368, reviewCount: 1, replyCount: 1, averageRating: 4.3, ratingCount: 21, myRatingCount: null, myRecord: null, isRegisteredInMyLibrary: null
 		])
 		addJsonExample('/api/v1/books/{bookId}/reviews', 'get', '200', 'review-normal', '일반 감상', [
 			 totalCount: 1, nextPage: null,
@@ -961,7 +961,8 @@ tasks.register('verifyOpenApi') {
 				|| !requiredNullable(detailResponse, 'replyCount')
 				|| !requiredNullable(detailResponse, 'averageRating') || !requiredNullable(detailResponse, 'ratingCount')
 				|| !requiredNullable(detailResponse, 'myRatingCount')
-				|| !requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'totalPages')) {
+				|| !requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'totalPages')
+				|| !requiredNullable(detailResponse, 'isRegisteredInMyLibrary')) {
 			throw new GradleException('OpenAPI specification must describe nullable book detail state fields')
 		}
 		def legacyRatingResponse = responseSchema('/api/v1/library/{bookId}/rating', 'put', '200')
