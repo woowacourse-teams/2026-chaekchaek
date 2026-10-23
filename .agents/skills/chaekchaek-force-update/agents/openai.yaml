@@ -1,0 +1,4 @@
+interface:
+  display_name: "책췍 강제 업데이트"
+  short_description: "원격 강제 업데이트 게시와 실제 앱 차단, 기존 정책 복원을 검증합니다"
+  default_prompt: "$chaekchaek-force-update로 책췍 강제 업데이트 정책 변경과 앱 확인, 원복을 진행해줘."
