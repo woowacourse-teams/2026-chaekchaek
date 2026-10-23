@@ -80,7 +80,7 @@ class LibraryControllerTest {
     private static final long MEMBER_ID = 1L;
     private static final long BOOK_ID = 10L;
     private static final String ISBN13 = "9788936433598";
-    private static final String LIBRARY_TAG = "내 서재";
+    private static final String LIBRARY_TAG = "기존 서재 API";
     private static final String LIBRARY_LIST_SUMMARY = "내 서재 조회";
     private static final String LIBRARY_LIST_DESCRIPTION = "인증된 사용자가 기본 책장에 배치된 도서를 기존 읽기 상태와 정렬 기준으로 조회한다. 기본 책장이 없으면 빈 목록을 반환한다";
     private static final String PUBLIC_LIBRARY_LIST_SUMMARY = "사용자 공개 서재 조회";
