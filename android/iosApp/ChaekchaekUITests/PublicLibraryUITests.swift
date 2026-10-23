@@ -185,11 +185,15 @@ final class PublicLibraryUITests: XCTestCase {
         XCTAssertTrue(app.buttons["피드"].isSelected)
         profile("독자A", in: app); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); shelf(in: app).doubleTap()
         XCTAssertTrue(find("읽는 중", in: app).waitForExistence(timeout: 10))
-        // 짧은 가장자리 드래그를 되돌려 취소하고 현재 책장에 남는지 확인한다.
+        let before = XCTAttachment(screenshot: app.screenshot()); before.name = "607-before-edge-gesture"; before.lifetime = .keepAlways; add(before)
+        print("607_BEFORE_EDGE\n\(app.debugDescription)")
+        // 짧은 가장자리 드래그 후 화면 전환이 안정된 상태를 확인한다.
         let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.005, dy: 0.5))
         let middle = app.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.5))
         edge.press(forDuration: 0.05, thenDragTo: middle, withVelocity: .slow, thenHoldForDuration: 0.3)
-        XCTAssertTrue(find("읽는 중", in: app).exists)
+        let after = XCTAttachment(screenshot: app.screenshot()); after.name = "607-after-edge-gesture"; after.lifetime = .keepAlways; add(after)
+        print("607_AFTER_EDGE\n\(app.debugDescription)")
+        XCTAssertTrue(find("읽는 중", in: app).waitForExistence(timeout: 10))
         app.buttons["뒤로 가기"].doubleTap()
         XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); back(app)
         XCTAssertTrue(app.buttons["피드"].waitForExistence(timeout: 10))
