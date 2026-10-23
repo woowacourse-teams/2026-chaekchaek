@@ -221,7 +221,7 @@ describe('LibraryPage', () => {
     expect(capturedSpines).toEqual(libraryResponse.items.map((book) => book.spineImageUrl));
   });
 
-  it('내 서재에서 탭에서 검색한 책을 선택하여 책장에 추가할 수 있다', async () => {
+  it('내 서재에서 탭의 책을 선택하여 책장에 추가할 수 있다', async () => {
     const user = userEvent.setup();
     let isBookAdded = false;
 
@@ -231,7 +231,7 @@ describe('LibraryPage', () => {
           structuredClone(isBookAdded ? libraryAfterAddResponse : libraryResponse),
         );
       }),
-      http.get(`${ENV.APP_API_URL}/api/v1/library`, () => {
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
         return HttpResponse.json(structuredClone(myLibraryResponse));
       }),
       http.post(
@@ -277,19 +277,13 @@ describe('LibraryPage', () => {
     const popup = within(dialog);
     await user.click(popup.getByText('내 서재에서'));
 
-    // 추가할 책 제목을 검색한다.
-    await user.type(
-      popup.getByPlaceholderText('책 제목이나 작가를 검색하세요'),
-      searchedBook.title,
-    );
+    // 내 서재의 책이 목록에 표시되는지 확인한다.
+    const libraryBook = await popup.findByText(searchedBook.title);
+    expect(libraryBook).toBeVisible();
 
-    // 검색한 책이 결과에 표시되는지 확인한다.
-    const searchResult = await popup.findByText(searchedBook.title);
-    expect(searchResult).toBeVisible();
-
-    // 검색 결과에서 추가할 책을 선택한다.
-    const bookItem = searchResult.closest<HTMLElement>('.ui-List-Item');
-    if (!bookItem) throw new Error('검색한 책의 목록 항목을 찾을 수 없습니다.');
+    // 내 서재 목록에서 추가할 책을 선택한다.
+    const bookItem = libraryBook.closest<HTMLElement>('.ui-List-Item');
+    if (!bookItem) throw new Error('내 서재 책의 목록 항목을 찾을 수 없습니다.');
     const checkbox = within(bookItem).getByRole('checkbox');
     await user.click(checkbox);
 

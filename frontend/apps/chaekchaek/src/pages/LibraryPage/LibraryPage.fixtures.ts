@@ -69,10 +69,17 @@ export const libraryAfterAddResponse = {
 
 // 내 서재에는 있지만 현재 책장에는 아직 담기지 않은 책을 포함한다.
 export const myLibraryResponse = {
-  totalCount: libraryAfterAddResponse.totalCount,
-  filteredCount: libraryAfterAddResponse.totalCount,
-  nextPage: null,
-  items: libraryAfterAddResponse.items,
+  memberId: libraryResponse.memberId,
+  libraries: [
+    libraryResponse,
+    {
+      libraryId: 2,
+      name: '내 서재',
+      isDefault: false,
+      totalCount: 1,
+      items: [searchedBook],
+    },
+  ],
 };
 
 export const downloadedLibraryImageDataUrl =
