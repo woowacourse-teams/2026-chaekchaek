@@ -109,6 +109,30 @@ final class FirstLibraryOnboardingUITests: XCTestCase {
 
 final class RemotePolicyUITests: XCTestCase {
     @MainActor
+    func testPublishedPolicyIsReceivedWithoutStoreRelease() throws {
+        guard ProcessInfo.processInfo.environment["VERIFY_LIVE_REMOTE_POLICY"] == "1" else {
+            throw XCTSkip("Firebase 게시 후 실행하는 실제 수신 검증")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingExistingInstallation"]
+        app.launch()
+        XCTAssertTrue(app.buttons["개발"].waitForExistence(timeout: 15))
+        app.buttons["개발"].tap()
+        let refresh = app.buttons["설정 다시 받기"]
+        XCTAssertTrue(refresh.waitForExistence(timeout: 10))
+        refresh.tap()
+        let received = app.staticTexts.matching(NSPredicate(
+            format: "label CONTAINS %@ AND label CONTAINS %@ AND NOT (label CONTAINS %@)",
+            "설정 출처: 원격", "검증 문구: 원격 설정 연결 확인", "마지막 수신: 없음"
+        )).firstMatch
+        XCTAssertTrue(received.waitForExistence(timeout: 30))
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "Firebase 실제 정책 수신"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    @MainActor
     func testRequiredUpdateHasNoDismissAndKeepsAppBlocked() {
         let app = XCUIApplication()
         app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingRequiredUpdate"]
