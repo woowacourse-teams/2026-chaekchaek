@@ -1,6 +1,5 @@
 package com.chamsae.chaekchaek
 
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -70,10 +69,8 @@ class BookRatingRestorationTest {
             ),
         )
         var saved: Double? = null
-        var rootView: android.view.View? = null
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
-            rootView = LocalView.current
             ChaekchaekTheme {
                 BookDetailScreen(
                     state = state.value,
@@ -84,21 +81,24 @@ class BookRatingRestorationTest {
         }
         compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("별점 복원 검증 감상")
-        fun dismissKeyboard() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val automation = instrumentation.uiAutomation
+        automation.serviceInfo = automation.serviceInfo.apply {
+            flags = flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+        }
+        fun keyboardVisible() = automation.windows.any {
+            it.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD
+        }
+        fun dismissKeyboard(waitForAppearance: Boolean = false) {
             compose.waitForIdle()
-            val visible = android.os.Build.VERSION.SDK_INT >= 30 &&
-                rootView?.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime()) == true
-            if (visible) {
-                InstrumentationRegistry.getInstrumentation()
-                    .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
-                compose.waitUntil(timeoutMillis = 5_000) {
-                    android.os.Build.VERSION.SDK_INT < 30 ||
-                        rootView?.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime()) != true
-                }
+            if (waitForAppearance) compose.waitUntil(timeoutMillis = 5_000) { keyboardVisible() }
+            if (keyboardVisible()) {
+                instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+                compose.waitUntil(timeoutMillis = 5_000) { !keyboardVisible() }
                 compose.waitForIdle()
             }
         }
-        dismissKeyboard()
+        dismissKeyboard(waitForAppearance = true)
         compose.onNodeWithContentDescription("별점 (선택)").performScrollTo().assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "미선택"),
         )
@@ -124,7 +124,6 @@ class BookRatingRestorationTest {
         try {
             compose.waitUntil(timeoutMillis = 5_000) { saved != null }
         } catch (failure: androidx.compose.ui.test.ComposeTimeoutException) {
-            val instrumentation = InstrumentationRegistry.getInstrumentation()
             val screenshot = java.io.File(instrumentation.targetContext.cacheDir, "rating-restoration-failure.png")
             instrumentation.uiAutomation.takeScreenshot()?.let { bitmap ->
                 screenshot.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
