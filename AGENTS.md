@@ -154,6 +154,9 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 
 ## 문서 규칙
 
+- 원격 설정, 최소 지원 버전, 강제/권장 업데이트를 변경하거나 검증할 때는 [모바일 원격 설정과 업데이트 정책](docs/mobile-remote-config-updates.md)을 먼저 읽는다. Firebase 템플릿 게시, 앱 수신과 구버전 스토어 설치 검증을 구분한다.
+- 강제 업데이트 운영값을 게시하거나 일시 차단과 원복을 검증할 때는 [책췍 강제 업데이트 스킬](.agents/skills/chaekchaek-force-update/SKILL.md)을 적용한다. 게시 전 기기 준비, 승인 범위와 서버·앱 복원 확인을 따른다.
+
 - A안 책장 목록·상세·편집·이미지 저장·단일 책장 공유를 앱에 적용할 때는 [책장 A안 적용 핸드오프](handoff/handoff_261020_1019.md)를 먼저 읽는다. 승인된 로컬 HTML과 동기화한 Figma, 확정 동작과 구현 전 미결을 구분한다.
 
 - 앱 구조, 도메인, API, 인증 권한, 상태 복원을 다룰 때는 [설계와 동작 문서 라우팅](docs/document-routing.md#architecture)을 먼저 확인하고 해당 작업의 원문을 읽는다.

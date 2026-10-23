@@ -1,0 +1,12 @@
+{
+  "parameters": {
+    "mobile_policy_v1": {
+      "defaultValue": {
+        "value": "{\"schemaVersion\":1,\"androidMinimumVersionCode\":0,\"androidLatestVersionCode\":0,\"iosMinimumVersion\":\"0.0.0\",\"iosLatestVersion\":\"0.0.0\",\"verificationMessage\":\"원격 설정 연결 확인\"}"
+      },
+      "valueType": "JSON",
+      "description": "모바일 최소 지원 버전과 최신 버전. 스토어 설치 가능 확인 후에만 경계를 올립니다."
+    }
+  },
+  "conditions": []
+}
