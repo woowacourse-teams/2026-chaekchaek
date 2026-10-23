@@ -84,6 +84,7 @@ class Jev580FlowHostTest {
                 }
             }
             compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
+            compose.waitUntil(10_000) { compose.onAllNodesWithTag("reviewAnonymousCheckbox").fetchSemanticsNodes().isNotEmpty() }
             post("/__580/ready?phase=review")
             var restored = false
             val until = System.currentTimeMillis() + 600_000
@@ -107,6 +108,7 @@ class Jev580FlowHostTest {
                         return
                     }
                 }
+                compose.waitForIdle()
                 Thread.sleep(200)
             }
             error("Jev 제어 대기 시간 초과")
@@ -121,7 +123,8 @@ class Jev580FlowHostTest {
         val until = System.currentTimeMillis() + 600_000
         while (System.currentTimeMillis() < until) {
             if (get("/__580/control") == "finish") return
-            Thread.sleep(200)
+            compose.waitForIdle()
+                Thread.sleep(200)
         }
         error("Jev 제어 대기 시간 초과")
     }
