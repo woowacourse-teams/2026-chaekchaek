@@ -99,7 +99,7 @@ internal fun AppNavigation(
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
 ) {
-    val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform) }
+    val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform, errorReporter = analytics.errors) }
     DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     ErrorRecoveryHost(authViewModel) {
         AppNavigationContent(authPlatform, recentSearchStorage, onboardingStorage, analytics, uiTestingMyPage, homeHeaderAction, onExitRequested, authViewModel)
@@ -147,7 +147,7 @@ private fun AppNavigationContent(
     val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
     val onboardingViewModel: FirstLibraryOnboardingViewModel = viewModel {
-        FirstLibraryOnboardingViewModel(initiallyVisible = shouldShowFirstLibraryOnboarding(onboardingStorage))
+        FirstLibraryOnboardingViewModel(initiallyVisible = shouldShowFirstLibraryOnboarding(onboardingStorage), errorReporter = analytics.errors)
     }
     val onboardingState by onboardingViewModel.state.collectAsState()
     val showOnboarding = onboardingState.visible
@@ -268,7 +268,7 @@ private fun AppNavigationContent(
             isSaved = { isbn -> archiveViewModel.uiState.value.items.any { it.id == isbn } },
         )
     }
-    val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository) }
+    val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository, errorReporter = analytics.errors) }
     ErrorRecoveryEffect(registrationViewModel.errors)
     ErrorRecoveryEffect(archiveViewModel.errors)
     ErrorRecoveryEffect(librarySaveViewModel.errors)

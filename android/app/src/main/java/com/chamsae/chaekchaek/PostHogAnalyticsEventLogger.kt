@@ -32,6 +32,18 @@ internal object PostHogAnalyticsEventLogger {
             personProfiles = PersonProfiles.NEVER
             sessionReplay = false
             surveys = false
+            errorTrackingConfig.autoCapture = true
+            errorTrackingConfig.exceptionSteps.enabled = false
+            errorTrackingConfig.inAppIncludes.add("com.chaekchaek")
+            errorTrackingConfig.inAppIncludes.add("com.chamsae")
+            addBeforeSend { event ->
+                if (event.event != "\$exception") event else {
+                    val clean = com.chaekchaek.app.analytics.sanitizeExceptionProperties(
+                        org.json.JSONObject(event.properties.orEmpty()).toString(),
+                    )
+                    clean?.let { event.copy(properties = jsonProperties(it).toMutableMap()) }
+                }
+            }
         }
         runCatching { PostHogAndroid.setup(context.applicationContext, config) }
             .onSuccess { configured = true }
@@ -48,8 +60,31 @@ internal object PostHogAnalyticsEventLogger {
         }
     }
 
+    fun captureUserError(propertiesJson: String) {
+        if (!configured) return
+        PostHog.capture(event = "\$exception", properties = jsonProperties(propertiesJson))
+    }
+
+    private fun jsonProperties(json: String): Map<String, Any> {
+        fun value(item: Any?): Any = when (item) {
+            is org.json.JSONObject -> item.keys().asSequence().associateWith { value(item.get(it)) }
+            is org.json.JSONArray -> (0 until item.length()).map { value(item.get(it)) }
+            null, org.json.JSONObject.NULL -> ""
+            else -> item
+        }
+        val source = org.json.JSONObject(json)
+        return source.keys().asSequence().associateWith { value(source.get(it)) }
+    }
+
     fun log(event: AnalyticsEvent) {
         if (!configured) return
+        // 크래시 시점에도 마지막으로 알려진 논리 화면과 행동을 연결한다.
+        event.stringParameters["run_id"]?.let { PostHog.register("cc_run_id", it) }
+        event.stringParameters["screen_name"]?.let { PostHog.register("cc_screen_name", it) }
+        if (event.name !in setOf("cc_app_lifecycle", "cc_view_engagement", "cc_content_impression")) {
+            PostHog.register("cc_last_event", event.name)
+            event.stringParameters["action"]?.let { PostHog.register("cc_last_action", it) }
+        }
         val properties = buildMap<String, Any> {
             putAll(event.stringParameters)
             putAll(event.longParameters)

@@ -36,7 +36,7 @@ class FeedViewModel(
     deferInitialLoad: Boolean = false,
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(analytics.errors)
     private var reviewActions = reviewActions
     private var readGuestToken = readGuestToken
     private var accessToken: String? = initialAccessToken

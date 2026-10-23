@@ -18,6 +18,7 @@ class AnalyticsTracker(
     private val sink: (AnalyticsEvent) -> Unit,
     private val collection: AnalyticsCollectionController,
     private val timeSource: TimeSource = TimeSource.Monotonic,
+    private val errorSink: (String) -> Unit = {},
 ) {
     constructor(environment: String, sink: (AnalyticsEvent) -> Unit) : this(environment, sink, AnalyticsCollectionController())
 
@@ -39,6 +40,19 @@ class AnalyticsTracker(
     private var currentComposer: AnalyticsComposer? = null
     private val recordedImpressions = mutableSetOf<String>()
     private val lastBookImpression = mutableMapOf<String, BookImpressionContext>()
+
+    private var lastUserEvent: String? = null
+    private var lastUserAction: String? = null
+    val errors = UserErrorReporter(sink = { failure ->
+        val event = contextualEvent("cc_user_error", buildMap {
+            put("operation", failure.operation)
+            put("error_category", failure.category)
+            put("error_kind", if (failure.category == "validation") "validation" else "operational")
+            lastUserEvent?.let { put("last_event", it) }
+            lastUserAction?.let { put("last_action", it) }
+        }, failure.status?.let { mapOf("http_status" to it.toLong()) }.orEmpty(), emptyMap(), true)
+        collection.filter(event)?.let { runCatching { errorSink(failure.properties(it)) } }
+    }, timeSource = timeSource)
 
     fun updateAuthentication(signedIn: Boolean) {
         this.signedIn = signedIn
@@ -70,6 +84,21 @@ class AnalyticsTracker(
         doubles: Map<String, Double> = emptyMap(),
         includeActionContext: Boolean = true,
     ) {
+        val event = contextualEvent(name, strings, longs, doubles, includeActionContext)
+        if (name !in setOf("cc_app_lifecycle", "cc_view_engagement", "cc_content_impression")) {
+            lastUserEvent = name
+            strings["action"]?.let { lastUserAction = it }
+        }
+        collection.filter(event)?.let { filtered -> runCatching { sink(filtered) } }
+    }
+
+    private fun contextualEvent(
+        name: String,
+        strings: Map<String, String>,
+        longs: Map<String, Long>,
+        doubles: Map<String, Double>,
+        includeActionContext: Boolean,
+    ): AnalyticsEvent {
         eventSequence += 1
         val contextualStrings = buildMap {
             put("environment", environment)
@@ -90,7 +119,7 @@ class AnalyticsTracker(
             }
             strings.forEach { (key, value) -> put(key, value.take(MAX_STRING_LENGTH)) }
         }
-        val event = AnalyticsEvent(
+        return AnalyticsEvent(
             name = name,
             stringParameters = contextualStrings,
             longParameters = mapOf(
@@ -100,7 +129,6 @@ class AnalyticsTracker(
             ) + longs,
             doubleParameters = doubles,
         )
-        collection.filter(event)?.let { filtered -> runCatching { sink(filtered) } }
     }
 
     fun screenView(screenName: String, previousScreen: String? = null): String {

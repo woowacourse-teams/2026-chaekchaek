@@ -43,15 +43,18 @@ class FirstLibraryOnboardingViewModel internal constructor(
     private val searchRepository: BookSearchRepository,
     private val addBook: suspend (BookSearchResult, String) -> Unit,
     initiallyVisible: Boolean = true,
+    errorReporter: com.chaekchaek.app.analytics.UserErrorReporter = com.chaekchaek.app.analytics.UserErrorReporter.None,
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(errorReporter)
     constructor(
         searchRepository: BookSearchRepository = BookSearchRemoteRepository(),
         libraryRepository: LibraryRemoteRepository = LibraryRemoteRepository(),
         initiallyVisible: Boolean = true,
+    errorReporter: com.chaekchaek.app.analytics.UserErrorReporter = com.chaekchaek.app.analytics.UserErrorReporter.None,
     ) : this(
         searchRepository = searchRepository,
         initiallyVisible = initiallyVisible,
+        errorReporter = errorReporter,
         addBook = { book, token ->
             libraryRepository.add(book.isbn13, book.totalPages.takeIf { it > 0 }, token)
         },

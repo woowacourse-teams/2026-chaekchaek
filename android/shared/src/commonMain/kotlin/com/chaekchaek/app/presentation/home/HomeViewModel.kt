@@ -27,7 +27,7 @@ class HomeViewModel(
     private val clock: Clock,
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(analytics.errors)
     private var accessToken: String? = null
     private var hasObservedAuthentication = false
     private var reloadOnNextHomeEntry = false

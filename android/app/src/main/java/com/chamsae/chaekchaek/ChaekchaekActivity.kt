@@ -64,6 +64,7 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                 val logger = FirebaseAnalyticsEventLogger(FirebaseAnalytics.getInstance(context))
                 AnalyticsTracker(
                     environment = analyticsEnvironment,
+                    errorSink = PostHogAnalyticsEventLogger::captureUserError,
                     collection = collection,
                     sink = AnalyticsEventDispatcher(logger::log, PostHogAnalyticsEventLogger::log)::log,
                 )

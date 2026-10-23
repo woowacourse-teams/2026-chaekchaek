@@ -31,11 +31,12 @@ fun MainViewController(
   analyticsCollection: com.chaekchaek.app.analytics.AnalyticsCollectionController = com.chaekchaek.app.analytics.AnalyticsCollectionController(),
   refreshAnalyticsConfiguration: () -> Unit = {},
   logAnalyticsEvent: (AnalyticsEvent) -> Unit = {},
+  logUserError: (String) -> Unit = {},
   uiTestingMyPage: Boolean = false,
   uiTestingBookQuestionA: Boolean = false,
   showQuestionAPreviewControls: Boolean = true,
 ): UIViewController {
-  val analytics = AnalyticsTracker(analyticsEnvironment, logAnalyticsEvent, analyticsCollection)
+  val analytics = AnalyticsTracker(analyticsEnvironment, logAnalyticsEvent, analyticsCollection, errorSink = logUserError)
   return ComposeUIViewController {
     CompositionLocalProvider(LocalGoogleSignInButtonFactory provides createGoogleSignInButton) {
       if (uiTestingBookQuestionA) {

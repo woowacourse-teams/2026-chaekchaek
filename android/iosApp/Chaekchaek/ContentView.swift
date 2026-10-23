@@ -172,6 +172,7 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                 primary: FirebaseAnalyticsEventLogger.log,
                 secondary: PostHogAnalyticsEventLogger.log
             ).log,
+            logUserError: { PostHogAnalyticsEventLogger.captureUserError($0); return KotlinUnit() },
             uiTestingMyPage: uiTestingMyPage,
             uiTestingBookQuestionA: uiTestingBookQuestionA,
             showQuestionAPreviewControls: showQuestionAPreviewControls
@@ -225,6 +226,19 @@ enum PostHogAnalyticsEventLogger {
         config.personProfiles = .never
         config.sessionReplay = false
         config.surveys = false
+        config.errorTrackingConfig.autoCapture = true
+        config.errorTrackingConfig.exceptionSteps.enabled = false
+        config.errorTrackingConfig.inAppIncludes.append("Shared")
+        config.setBeforeSend { @Sendable event in
+            guard event.event == "$exception" else { return event }
+            guard let data = try? JSONSerialization.data(withJSONObject: event.properties),
+                  let json = String(data: data, encoding: .utf8),
+                  let clean = UserErrorPrivacyKt.sanitizeExceptionProperties(propertiesJson: json),
+                  let cleanData = clean.data(using: .utf8),
+                  let properties = try? JSONSerialization.jsonObject(with: cleanData) as? [String: Any] else { return nil }
+            event.properties = properties
+            return event
+        }
         return config
     }
 
@@ -240,8 +254,24 @@ enum PostHogAnalyticsEventLogger {
         }
     }
 
+    static func captureUserError(_ propertiesJson: String) {
+        guard configured,
+              let data = propertiesJson.data(using: .utf8),
+              let properties = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        PostHogSDK.shared.capture("$exception", properties: properties)
+    }
+
     static func log(event: AnalyticsEvent) {
         guard configured else { return }
+        let strings = event.stringParameters
+        var crashContext: [String: Any] = [:]
+        if let run = strings["run_id"] { crashContext["cc_run_id"] = run }
+        if let screen = strings["screen_name"] { crashContext["cc_screen_name"] = screen }
+        if !["cc_app_lifecycle", "cc_view_engagement", "cc_content_impression"].contains(event.name) {
+            crashContext["cc_last_event"] = event.name
+            if let action = strings["action"] { crashContext["cc_last_action"] = action }
+        }
+        PostHogSDK.shared.register(crashContext)
         var properties = analyticsParameters(event)
         properties["$geoip_disable"] = true
         PostHogSDK.shared.capture(event.name, properties: properties)

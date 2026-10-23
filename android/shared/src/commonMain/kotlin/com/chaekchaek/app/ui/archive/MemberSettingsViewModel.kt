@@ -40,8 +40,9 @@ internal val MemberSettingsUiState.publicNickname: String
 
 class MemberSettingsViewModel(
     private val repository: MemberRemoteRepository,
+    errorReporter: com.chaekchaek.app.analytics.UserErrorReporter = com.chaekchaek.app.analytics.UserErrorReporter.None,
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(errorReporter)
     private val _uiState = MutableStateFlow(MemberSettingsUiState())
     val uiState: StateFlow<MemberSettingsUiState> = _uiState.asStateFlow()
 

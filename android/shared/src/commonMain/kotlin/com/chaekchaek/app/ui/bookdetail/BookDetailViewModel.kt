@@ -40,7 +40,7 @@ class BookDetailViewModel(
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(analytics.errors)
     private val restoredReviewScope = ReviewScope.entries
         .firstOrNull { it.name == savedStateHandle[BookDetailSavedStateKeys.ReviewScope] }
         ?: ReviewScope.ALL

@@ -45,7 +45,7 @@ class SearchViewModel(
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(analytics.errors)
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
     private val _sort = MutableStateFlow(
