@@ -39,6 +39,7 @@ export const LibrariesPage = () => {
 
   const {
     status: { data: librariesData },
+    refetch: refetchGetLibraries,
   } = useLoadData({
     queryFn: getLibrariesLoadData,
   });
@@ -61,7 +62,14 @@ export const LibrariesPage = () => {
   const renderDialog = (dialog: 'RegisterLibraryDialog' | null) => {
     switch (dialog) {
       case 'RegisterLibraryDialog':
-        return <RegisterLibraryDialog onClose={handleCloseDialog} />;
+        return (
+          <RegisterLibraryDialog
+            onLibraryRegistered={async () => {
+              await refetchGetLibraries();
+            }}
+            onClose={handleCloseDialog}
+          />
+        );
 
       default:
         return null;

@@ -9,7 +9,10 @@ import { validateLibrary, type LibraryFormValues } from './validator';
 
 import type { RegisterLibraryDialogProps } from './RegisterLibraryDialog.types';
 
-export const RegisterLibraryDialog = ({ onClose }: RegisterLibraryDialogProps) => {
+export const RegisterLibraryDialog = ({
+  onLibraryRegistered,
+  onClose,
+}: RegisterLibraryDialogProps) => {
   const { values, errors, onChange, isValid, valids } = useFormValues<LibraryFormValues>({
     initialValues: { name: '' },
     validate: validateLibrary,
@@ -23,6 +26,9 @@ export const RegisterLibraryDialog = ({ onClose }: RegisterLibraryDialogProps) =
     await postLibrariesMutate({
       name: values.name,
     });
+
+    await onLibraryRegistered();
+    onClose();
   };
 
   return (
