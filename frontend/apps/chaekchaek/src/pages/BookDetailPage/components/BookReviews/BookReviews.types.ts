@@ -11,7 +11,6 @@ export type RecentReply = {
   content: string;
   likedByMe: boolean;
   likeCount: number;
-  deleted: boolean;
 };
 
 export type BookReview = {
@@ -32,7 +31,6 @@ export type BookReview = {
   likedByMe: boolean;
   likeCount: number;
   replyCount: number;
-  deleted: boolean;
   isSpoiler: boolean;
   recentReplies: RecentReply[];
 };

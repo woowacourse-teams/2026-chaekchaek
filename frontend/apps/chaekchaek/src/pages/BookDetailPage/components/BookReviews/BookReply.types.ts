@@ -12,7 +12,6 @@ type BookReply = {
   content: string;
   likedByMe: boolean;
   likeCount: number;
-  deleted: boolean;
 };
 
 export type BookReplyProps = {
