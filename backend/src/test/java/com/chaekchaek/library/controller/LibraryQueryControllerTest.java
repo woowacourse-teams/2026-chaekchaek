@@ -45,28 +45,27 @@ import org.springframework.test.web.servlet.MockMvc;
 class LibraryQueryControllerTest {
 
     private static final String COLLECTION_DESCRIPTION = """
-            인증 없이 ACTIVE 회원의 모든 책장과 각 책장 전체 도서 요약을 저장된 표시 순서로 조회한다.
-            회원당 책장 수와 응답 도서 수를 제한하지 않으며 이전된 30권 초과 책장도 모두 반환한다.
-            같은 도서가 여러 책장에 있으면 책장마다 포함한다. 빈 책장도 포함하고 책장이 없으면 libraries는 빈 배열이다.
-            기존 책장 이름은 10자 초과, 공백 등 새 입력 규칙을 벗어나도 그대로 반환한다.
-            없는 회원과 비활성 회원은 MEMBER_NOT_FOUND다.
+            회원의 모든 책장과 각 책장에 담긴 도서 목록을 조회한다. 로그인 없이 이용할 수 있다.
+            책장과 도서는 설정한 순서대로 반환한다. 같은 도서가 여러 책장에 있으면 각 책장에 포함한다.
+            빈 책장도 반환하며, 책장이 없으면 libraries는 빈 배열이다.
+            책장 수나 도서 수로 결과를 제한하지 않는다. 기존 책장 이름도 그대로 반환한다.
+            없는 회원이나 비활성 회원을 조회하면 `404`, `MEMBER_NOT_FOUND`를 반환한다.
             """;
     private static final String DETAIL_DESCRIPTION = """
-            인증 없이 ACTIVE 회원 소유 책장의 전체 도서를 저장된 표시 순서로 조회하며 상세 항목에 표지와 저장 순서의 저자를 포함한다. 저자가 없으면 authors는 빈 배열이다.
-            totalCount는 책장 전체 권수이며 items 길이와 같다. 페이지네이션 없이 한 번에 전체를 반환한다.
-            빈 책장은 `200`, totalCount: 0과 빈 items를 반환한다.
-            memberId와 독서 기록은 조회자가 아닌 책장 소유자 기준이다. 배치된 도서의 독서 기록은 null이 아니다.
-            이전된 30권 초과 책장도 조회하며 기존 책장 이름을 자르거나 보정하지 않는다.
-            없는 책장과 비활성 회원의 책장은 LIBRARY_NOT_FOUND다.
+            책장에 담긴 모든 도서를 설정한 순서대로 조회한다. 로그인 없이 이용할 수 있다.
+            도서별 표지, 저자, 독서 상태와 현재 쪽수를 포함한다. 독서 기록은 책장 소유자의 기록이다.
+            저자가 없으면 authors는 빈 배열이다. totalCount는 items에 포함된 도서 수다.
+            빈 책장은 totalCount가 0이고 items는 빈 배열이다. 기존에 30권을 넘게 담은 책장도 모두 조회한다.
+            없는 책장이나 비활성 회원의 책장을 조회하면 `404`, `LIBRARY_NOT_FOUND`를 반환한다.
             """;
     private static final FieldDescriptor[] COLLECTION_FIELDS = {
             fieldWithPath("memberId").type(JsonFieldType.NUMBER).description("서재 소유 회원 ID"),
-            fieldWithPath("libraries").type(JsonFieldType.ARRAY).description("저장된 표시 순서의 전체 책장"),
+            fieldWithPath("libraries").type(JsonFieldType.ARRAY).description("설정한 순서의 책장 목록"),
             fieldWithPath("libraries[].libraryId").type(JsonFieldType.NUMBER).description("책장 ID"),
-            fieldWithPath("libraries[].name").type(JsonFieldType.STRING).description("기존 값을 보존한 책장 이름"),
+            fieldWithPath("libraries[].name").type(JsonFieldType.STRING).description("책장 이름"),
             fieldWithPath("libraries[].isDefault").type(JsonFieldType.BOOLEAN).description("기본 책장 여부"),
-            fieldWithPath("libraries[].totalCount").type(JsonFieldType.NUMBER).description("책장 전체 권수, items 길이"),
-            fieldWithPath("libraries[].items").type(JsonFieldType.ARRAY).description("표시 순서의 전체 도서 요약"),
+            fieldWithPath("libraries[].totalCount").type(JsonFieldType.NUMBER).description("책장에 담긴 도서 수"),
+            fieldWithPath("libraries[].items").type(JsonFieldType.ARRAY).description("설정한 순서의 도서 목록"),
             fieldWithPath("libraries[].items[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
             fieldWithPath("libraries[].items[].title").type(JsonFieldType.STRING).description("도서 제목"),
             fieldWithPath("libraries[].items[].spineImageUrl").type(JsonFieldType.STRING).description("책등 이미지 URL, 없으면 null").optional(),
@@ -75,14 +74,14 @@ class LibraryQueryControllerTest {
     private static final FieldDescriptor[] DETAIL_FIELDS = {
             fieldWithPath("libraryId").type(JsonFieldType.NUMBER).description("책장 ID"),
             fieldWithPath("memberId").type(JsonFieldType.NUMBER).description("책장 소유 회원 ID"),
-            fieldWithPath("name").type(JsonFieldType.STRING).description("기존 값을 보존한 책장 이름"),
+            fieldWithPath("name").type(JsonFieldType.STRING).description("책장 이름"),
             fieldWithPath("isDefault").type(JsonFieldType.BOOLEAN).description("기본 책장 여부"),
             fieldWithPath("totalCount").type(JsonFieldType.NUMBER).description("책장 전체 권수"),
-            fieldWithPath("items").type(JsonFieldType.ARRAY).description("저장된 표시 순서의 전체 도서"),
+            fieldWithPath("items").type(JsonFieldType.ARRAY).description("설정한 순서의 도서 목록"),
             fieldWithPath("items[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
             fieldWithPath("items[].title").type(JsonFieldType.STRING).description("도서 제목"),
             fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING).description("도서 표지 이미지 URL"),
-            fieldWithPath("items[].authors").type(JsonFieldType.ARRAY).description("저장 순서의 저자 이름, 없으면 빈 배열")
+            fieldWithPath("items[].authors").type(JsonFieldType.ARRAY).description("저자 이름 목록, 없으면 빈 배열")
                     .attributes(key("itemsType").value(JsonFieldType.STRING)),
             fieldWithPath("items[].spineImageUrl").type(JsonFieldType.STRING).description("책등 이미지 URL, 없으면 null").optional(),
             fieldWithPath("items[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
@@ -142,7 +141,7 @@ class LibraryQueryControllerTest {
                         .tag("서재")
                         .summary("회원의 전체 책장과 도서 요약 조회")
                         .description(COLLECTION_DESCRIPTION)
-                        .queryParameters(parameterWithName("memberId").type(SimpleType.INTEGER).description("조회할 양의 회원 ID"))
+                        .queryParameters(parameterWithName("memberId").type(SimpleType.INTEGER).description("조회할 회원 ID"))
                         .responseSchema(Schema.schema("LibraryCollectionResponse"))
                         .responseFields(COLLECTION_FIELDS)
                         .build())));
@@ -187,7 +186,7 @@ class LibraryQueryControllerTest {
                         .tag("책장")
                         .summary("책장 전체 도서 조회")
                         .description(DETAIL_DESCRIPTION)
-                        .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("양의 책장 ID"))
+                        .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("책장 ID"))
                         .responseSchema(Schema.schema("LibraryDetailResponse"))
                         .responseFields(DETAIL_FIELDS)
                         .build())));
@@ -228,7 +227,7 @@ class LibraryQueryControllerTest {
                         .tag("책장")
                         .summary("책장 전체 도서 조회")
                         .description(DETAIL_DESCRIPTION)
-                        .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("양의 책장 ID"))
+                        .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("책장 ID"))
                         .responseSchema(Schema.schema("LibraryDetailResponse"))
                         .responseFields(DETAIL_FIELDS)
                         .build())));
@@ -298,7 +297,7 @@ class LibraryQueryControllerTest {
                         .tag("책장")
                         .summary("책장 전체 도서 조회")
                         .description(DETAIL_DESCRIPTION)
-                        .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("양의 책장 ID"))
+                        .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("책장 ID"))
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_FIELDS)
                         .build())));
@@ -318,7 +317,7 @@ class LibraryQueryControllerTest {
                         .tag("서재")
                         .summary("회원의 전체 책장과 도서 요약 조회")
                         .description(COLLECTION_DESCRIPTION)
-                        .queryParameters(parameterWithName("memberId").type(SimpleType.INTEGER).description("조회할 양의 회원 ID"))
+                        .queryParameters(parameterWithName("memberId").type(SimpleType.INTEGER).description("조회할 회원 ID"))
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_FIELDS)
                         .build())));
@@ -338,7 +337,7 @@ class LibraryQueryControllerTest {
                         .tag("책장")
                         .summary("책장 전체 도서 조회")
                         .description(DETAIL_DESCRIPTION)
-                        .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("양의 책장 ID"))
+                        .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("책장 ID"))
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_FIELDS)
                         .build())));
