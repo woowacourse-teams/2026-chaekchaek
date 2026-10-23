@@ -159,4 +159,33 @@ class LibraryItemTest {
                                 .isEqualTo(ErrorCode.INVALID_READING_STATE)
         );
     }
+
+    @Test
+    @DisplayName("별점만 있는 공유 기록은 독서 상태와 현재 페이지 및 독서 갱신 시각을 만들지 않는다")
+    void should_CreateOnlyRatingState_When_CreatingForRating() {
+        // given
+
+        // when
+        LibraryItem item = LibraryItem.createForRating(1L, 2L, new BigDecimal("4.5"), NOW);
+
+        // then
+        assertThat(item.hasReadingState()).isFalse();
+        assertThat(item.getStatus()).isNull();
+        assertThat(item.getCurrentPage()).isNull();
+        assertThat(item.getReadingUpdatedAt()).isNull();
+        assertThat(item.getRating()).isEqualByComparingTo("4.5");
+        assertThat(item.getRatingUpdatedAt()).isEqualTo(NOW);
+        assertThat(item.getAddedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    @DisplayName("별점 전용 공유 기록 생성에도 기존 별점 범위 검증을 적용한다")
+    void should_RejectInvalidRating_When_CreatingForRating() {
+        // given
+
+        // when & then
+        assertThatThrownBy(() -> LibraryItem.createForRating(1L, 2L, new BigDecimal("5.1"), NOW))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST));
+    }
 }

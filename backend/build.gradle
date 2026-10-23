@@ -329,6 +329,8 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 	}
 	def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
 	['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRatingCount', 'myRecord', 'totalPages'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
+		def legacyRatingResponse = responseSchemaForPath('/api/v1/library/{bookId}/rating', 'put', '200')
+		['status', 'currentPage', 'readingUpdatedAt'].each { name -> markRequiredNullable(legacyRatingResponse, name) }
 		def libraryResponse = responseSchemaForPath('/api/v1/library', 'get', '200')
 		markRequiredNullable(libraryResponse, 'nextPage')
 		def libraryItem = arrayItemSchema(libraryResponse, 'items')
@@ -1070,6 +1072,16 @@ tasks.register('verifyOpenApi') {
 				|| !requiredNullable(detailResponse, 'myRatingCount')
 				|| !requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'totalPages')) {
 			throw new GradleException('OpenAPI specification must describe nullable book detail state fields')
+		}
+		def legacyRatingResponse = responseSchema('/api/v1/library/{bookId}/rating', 'put', '200')
+		if (!['status', 'currentPage', 'readingUpdatedAt'].every { name -> requiredNullable(legacyRatingResponse, name) }
+				|| ((legacyRatingResponse?.get('properties') as Map)?.get('rating') as Map)?.get('nullable') == true) {
+			throw new GradleException('OpenAPI specification must describe rating-only reading fields as required and nullable')
+		}
+		def legacyRatingExamples = ((((((paths.get('/api/v1/library/{bookId}/rating') as Map).get('put') as Map)
+				.get('responses') as Map).get('200') as Map).get('content') as Map).get('application/json') as Map)?.get('examples') as Map
+		if (!legacyRatingExamples?.containsKey('library-rate-without-reading-state')) {
+			throw new GradleException('OpenAPI specification is missing the rating-only response example')
 		}
 		def libraryResponse = responseSchema('/api/v1/library', 'get', '200')
 		def libraryItem = ((libraryResponse?.get('properties') as Map)?.get('items') as Map)?.get('items') as Map

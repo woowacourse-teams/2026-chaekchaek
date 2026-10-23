@@ -67,6 +67,12 @@ public class LibraryItem {
     protected LibraryItem() {
     }
 
+    private LibraryItem(long memberId, long bookId, Instant now) {
+        this.memberId = memberId;
+        this.bookId = bookId;
+        this.addedAt = now;
+    }
+
     private LibraryItem(
             long memberId,
             long bookId,
@@ -74,11 +80,9 @@ public class LibraryItem {
             Integer totalPages,
             Instant now
     ) {
-        this.memberId = memberId;
-        this.bookId = bookId;
+        this(memberId, bookId, now);
         this.status = status;
         this.currentPage = initialPage(status, totalPages);
-        this.addedAt = now;
         this.readingUpdatedAt = now;
     }
 
@@ -93,6 +97,17 @@ public class LibraryItem {
             throw invalidReadingState();
         }
         return new LibraryItem(memberId, bookId, status, totalPages, now);
+    }
+
+    public static LibraryItem createForRating(
+            long memberId,
+            long bookId,
+            BigDecimal rating,
+            Instant now
+    ) {
+        LibraryItem item = new LibraryItem(memberId, bookId, now);
+        item.rate(rating, now);
+        return item;
     }
 
     public void startReading(ReadingStatus status, Integer totalPages, Instant now) {
