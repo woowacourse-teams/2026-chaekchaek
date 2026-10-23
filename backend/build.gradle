@@ -1185,7 +1185,7 @@ tasks.register('verifyOpenApi') {
 		[
 			[schema: publicCollection, names: ['memberId', 'libraries']],
 			[schema: publicShelf, names: ['libraryId', 'name', 'isDefault', 'totalCount', 'items']],
-			[schema: publicPreview, names: ['bookId', 'title', 'spineImageUrl', 'isbn13']],
+			[schema: publicPreview, names: ['bookId', 'title', 'coverImageUrl', 'spineImageUrl', 'isbn13', 'authors']],
 			[schema: publicDetail, names: ['libraryId', 'memberId', 'name', 'isDefault', 'totalCount', 'items']],
 			[schema: publicBook, names: ['bookId', 'title', 'coverImageUrl', 'spineImageUrl', 'isbn13', 'authors', 'totalPages', 'status', 'currentPage', 'readingUpdatedAt']]
 		].each { requirement ->
@@ -1199,10 +1199,12 @@ tasks.register('verifyOpenApi') {
 				|| ((publicDetail?.get('properties') as Map)?.get('name') as Map)?.get('maxLength') != null) {
 			throw new GradleException('OpenAPI specification must preserve nullable fields and legacy library names')
 		}
-		def publicAuthors = (publicBook?.get('properties') as Map)?.get('authors') as Map
-		if (publicAuthors?.get('type') != 'array' || (publicAuthors?.get('items') as Map)?.get('type') != 'string'
-				|| ((publicBook?.get('properties') as Map)?.get('coverImageUrl') as Map)?.get('nullable') == true) {
-			throw new GradleException('OpenAPI specification must require cover image and the author name array in library detail')
+		[publicPreview, publicBook].each { schema ->
+			def publicAuthors = (schema?.get('properties') as Map)?.get('authors') as Map
+			if (publicAuthors?.get('type') != 'array' || (publicAuthors?.get('items') as Map)?.get('type') != 'string'
+					|| ((schema?.get('properties') as Map)?.get('coverImageUrl') as Map)?.get('nullable') == true) {
+				throw new GradleException('OpenAPI specification must require cover image and the author name array in library responses')
+			}
 		}
 		if (queryParameter('/api/v1/libraries/{libraryId}', 'get', 'page') != null
 				|| (publicDetail?.get('properties') as Map)?.containsKey('nextPage')) {

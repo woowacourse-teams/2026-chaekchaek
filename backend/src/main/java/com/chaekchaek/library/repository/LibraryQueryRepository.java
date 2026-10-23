@@ -37,9 +37,9 @@ public class LibraryQueryRepository {
     }
 
     public List<PlacedBook> findAllBooksByMemberId(long memberId) {
-        return jdbcTemplate.query(
+        List<PlacedBook> placedBooks = jdbcTemplate.query(
                 """
-                select lb.library_id, lb.book_id, b.title, b.spine_image_url, b.isbn13,
+                select lb.library_id, lb.book_id, b.title, b.cover_image_url, b.spine_image_url, b.isbn13,
                        li.status, li.current_page, li.reading_updated_at
                 from library l
                 join library_book lb on lb.library_id = l.id
@@ -55,13 +55,33 @@ public class LibraryQueryRepository {
                             new LibraryBookSummaryResponse(
                                     rs.getLong("book_id"),
                                     rs.getString("title"),
+                                    rs.getString("cover_image_url"),
                                     rs.getString("spine_image_url"),
-                                    rs.getString("isbn13")
+                                    rs.getString("isbn13"),
+                                    List.of()
                             )
                     );
                 },
                 memberId
         );
+        if (placedBooks.isEmpty()) {
+            return placedBooks;
+        }
+        List<Long> bookIds = placedBooks
+                .stream()
+                .map(placedBook -> placedBook.book().bookId())
+                .distinct()
+                .toList();
+        Map<Long, List<String>> authorsByBookId = authorsByBookId(bookIds);
+        return placedBooks
+                .stream()
+                .map(placedBook -> new PlacedBook(
+                        placedBook.libraryId(),
+                        placedBook.book().withAuthors(
+                                authorsByBookId.getOrDefault(placedBook.book().bookId(), List.of())
+                        )
+                ))
+                .toList();
     }
 
     public Optional<LibraryHeader> findPublicLibraryById(long libraryId) {

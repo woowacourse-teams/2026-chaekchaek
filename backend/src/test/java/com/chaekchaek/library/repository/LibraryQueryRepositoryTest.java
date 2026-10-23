@@ -287,6 +287,38 @@ class LibraryQueryRepositoryTest {
         assertThat(detail.items().subList(0, 10)).allSatisfy(item -> assertThat(item.authors()).isEmpty());
     }
 
+    @Test
+    @DisplayName("전체 조회 저자는 중복 배치를 제외한 도서를 한 번에 조회해 저장 순서를 유지하고 없으면 빈 배열로 반환한다")
+    void should_BatchLoadOrderedAuthors_When_FindingCollection() {
+        // given
+        Member owner = member();
+        Library first = library(owner, "첫 책장", 1L);
+        Library second = library(owner, "둘째 책장", 2L);
+        Book authorlessBook = book(1, List.of());
+        Book authoredBook = book(2, List.of("두 번째 저자", "첫 번째 저자"));
+        record(owner, authorlessBook, ReadingStatus.READING);
+        record(owner, authoredBook, ReadingStatus.READING);
+        placement(first, authorlessBook, 1L);
+        placement(first, authoredBook, 2L);
+        placement(second, authoredBook, 1L);
+        flushAndClear();
+        clearInvocations(jdbcTemplate);
+
+        // when
+        LibraryCollectionResponse response = service.findLibraries(owner.getId());
+
+        // then
+        assertThat(response.libraries().getFirst().items().getFirst()).satisfies(item -> {
+            assertThat(item.coverImageUrl()).isEqualTo("https://example.com/cover.jpg");
+            assertThat(item.authors()).isEmpty();
+        });
+        assertThat(response.libraries()).allSatisfy(shelf -> assertThat(shelf.items().getLast().authors())
+                .containsExactly("두 번째 저자", "첫 번째 저자"));
+        ArgumentCaptor<Object[]> authorBookIds = ArgumentCaptor.forClass(Object[].class);
+        verify(jdbcTemplate).query(anyString(), any(RowCallbackHandler.class), authorBookIds.capture());
+        assertThat(authorBookIds.getValue()).containsExactly(authorlessBook.getId(), authoredBook.getId());
+    }
+
     private Member member() {
         return members.save(Member.create("익명", null, LocalDateTime.of(2026, 10, 23, 12, 0)));
     }
