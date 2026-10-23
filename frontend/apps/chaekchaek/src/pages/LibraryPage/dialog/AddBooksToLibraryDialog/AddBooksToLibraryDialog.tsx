@@ -21,7 +21,7 @@ export const AddBooksToLibraryDialog = ({ onClose }: AddBooksToLibraryDialogProp
         <Dialog.Header>책장에 책 담기</Dialog.Header>
         <Dialog.Body>
           <Tabs
-            style={{ minHeight: '400px' }}
+            style={{ minHeight: '500px' }}
             distribution="equal"
             active={active}
             items={[
@@ -39,11 +39,6 @@ export const AddBooksToLibraryDialog = ({ onClose }: AddBooksToLibraryDialogProp
             onChange={handleChange}
           />
         </Dialog.Body>
-        <Dialog.Footer>
-          <Button block variant="primary">
-            담기
-          </Button>
-        </Dialog.Footer>
       </Dialog.Container>
     </Dialog>
   );

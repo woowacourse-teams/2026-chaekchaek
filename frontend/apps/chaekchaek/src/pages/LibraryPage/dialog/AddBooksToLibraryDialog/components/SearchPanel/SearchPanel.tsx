@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
-import { Checkbox, Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
+import { Button, Checkbox, Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
 
 import { getBooks } from '@/services/apis/books/repository';
 import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
@@ -81,7 +81,7 @@ export const SearchPanel = () => {
         onChange={handleChange}
       />
 
-      <ScrollArea ref={scrollAreaRef} height="320px">
+      <ScrollArea ref={scrollAreaRef} height="340px">
         <List>
           {booksData?.map((item) => {
             const isIncluded = selection.includes(item.isbn13);
@@ -107,6 +107,9 @@ export const SearchPanel = () => {
           })}
         </List>
       </ScrollArea>
+      <Button block variant="primary">
+        담기
+      </Button>
     </>
   );
 };
