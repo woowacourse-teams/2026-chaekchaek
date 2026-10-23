@@ -43,11 +43,13 @@ class AuthViewModel private constructor(
   private val scope: CoroutineScope,
   private val ownsScope: Boolean,
   currentTimeMillis: () -> Long,
+  errorReporter: com.chaekchaek.app.analytics.UserErrorReporter,
 ) : ViewModel() {
   constructor(
     callbacks: AuthPlatformCallbacks,
     remoteRepository: MobileAuthRemoteRepository = MobileAuthRemoteRepository(),
     memberRepository: MemberRemoteRepository = MemberRemoteRepository(),
+    errorReporter: com.chaekchaek.app.analytics.UserErrorReporter = com.chaekchaek.app.analytics.UserErrorReporter.None,
   ) : this(
     callbacks = callbacks,
     getProfile = memberRepository::get,
@@ -66,6 +68,7 @@ class AuthViewModel private constructor(
     scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
     ownsScope = true,
     currentTimeMillis = { Clock.System.now().toEpochMilliseconds() },
+    errorReporter = errorReporter,
   )
 
   internal constructor(
@@ -80,9 +83,9 @@ class AuthViewModel private constructor(
     logout: suspend (String) -> Unit,
     scope: CoroutineScope,
     currentTimeMillis: () -> Long,
-  ) : this(callbacks, getProfile, updateNickname, loginWithGoogle, loginWithApple, reissue, logout, scope, false, currentTimeMillis)
+  ) : this(callbacks, getProfile, updateNickname, loginWithGoogle, loginWithApple, reissue, logout, scope, false, currentTimeMillis, com.chaekchaek.app.analytics.UserErrorReporter.None)
 
-  val errors = ErrorRecoveryState()
+  val errors = ErrorRecoveryState(errorReporter)
 
   private val session = AuthSession(
     readRefreshToken = callbacks.readRefreshToken,
@@ -244,10 +247,10 @@ class AuthViewModel private constructor(
           callbacks.clearGuest()
         } catch (error: CancellationException) {
           throw error
-        } catch (_: Exception) {
+        } catch (error: Exception) {
           if (generation == authenticationGeneration) {
             _uiState.value = AuthUiState(errorMessage = LOGIN_ERROR)
-            errors.report(IllegalStateException(), ErrorOperation.SignIn) {
+            errors.report(error, ErrorOperation.SignIn) {
               requestAuthentication(action, force, requestCredential, login)
             }
           }

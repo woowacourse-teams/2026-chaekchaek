@@ -41,7 +41,7 @@ class BookDetailViewModel(
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     private val memberRepository: com.chaekchaek.app.data.remote.MemberRemoteRepository = com.chaekchaek.app.data.remote.MemberRemoteRepository(),
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(analytics.errors)
     private val restoredReviewScope = ReviewScope.entries
         .firstOrNull { it.name == savedStateHandle[BookDetailSavedStateKeys.ReviewScope] }
         ?: ReviewScope.ALL

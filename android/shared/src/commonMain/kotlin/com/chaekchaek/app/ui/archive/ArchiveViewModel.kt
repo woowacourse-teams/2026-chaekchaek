@@ -26,7 +26,7 @@ class ArchiveViewModel(
     private val repository: LibraryRemoteRepository,
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(analytics.errors)
     private val _refreshState = MutableStateFlow(RefreshUiState(enabled = false))
     val refreshState: StateFlow<RefreshUiState> = _refreshState.asStateFlow()
     private val _uiState = MutableStateFlow(ArchiveUiState())

@@ -355,12 +355,14 @@ class BookDetailViewModelTest {
         }
         else -> respond(
           if (request.url.encodedPath.contains("/by-isbn/")) DETAIL_WITH_RECORD
-          else """{"totalCount":1,"nextPage":null,"items":[$REVIEW_RESPONSE]}""",
+          else """{"totalCount":1,"nextPage":null,"items":[${if (updates > 1) updatedReview else REVIEW_RESPONSE}]}""",
           headers = jsonHeaders(),
         )
       }
     })
-    val vm = viewModel(client, client, platform({ null }))
+    val capturedErrors = mutableListOf<String>()
+    val analytics = AnalyticsTracker("test", {}, com.chaekchaek.app.analytics.AnalyticsCollectionController(), errorSink = capturedErrors::add)
+    val vm = viewModel(client, client, platform({ null }), analytics = analytics)
     val store = ViewModelStore().also { it.put("review", vm) }
     try {
       vm.open(book().copy(isbn13 = "9780000000042"), "member")
@@ -371,6 +373,8 @@ class BookDetailViewModelTest {
       assertEquals(5.0, vm.uiState.value.detail?.myRecord?.rating)
       assertEquals("감상", vm.uiState.value.reviews.single().content)
       assertEquals(1, ratingSaves)
+      assertEquals(1, capturedErrors.size)
+      assertTrue(capturedErrors.single().contains("\"http_status\":500"))
       advanceUntilIdle()
 
       vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke(null)

@@ -7,6 +7,7 @@ import FirebaseAnalytics
 struct ChaekchaekApp: App {
     init() {
         FirebaseApp.configure()
+        PostHogAnalyticsEventLogger.configure()
 #if DEBUG
         Analytics.setAnalyticsCollectionEnabled(false)
 #else

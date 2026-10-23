@@ -19,9 +19,11 @@ fun App(
     onboardingStorage: OnboardingStorage = OnboardingStorage(),
     analytics: AnalyticsTracker = AnalyticsTracker.None,
     uiTestingMyPage: Boolean = false,
+    refreshAnalyticsConfiguration: () -> Unit = {},
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
 ) {
+    com.chaekchaek.app.analytics.AnalyticsLifecycleEffect(analytics, refreshAnalyticsConfiguration)
     ChaekchaekTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),

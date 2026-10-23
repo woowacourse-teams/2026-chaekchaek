@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.archive
 
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -133,7 +134,8 @@ internal fun NicknameDialog(
     saving: Boolean = false,
 ) {
     val nickname = nicknameState.text.toString()
-    val errors = androidx.compose.runtime.remember { com.chaekchaek.app.presentation.common.ErrorRecoveryState() }
+    val errorReporter = com.chaekchaek.app.analytics.LocalAnalyticsTracker.current.errors
+    val errors = remember(errorReporter) { com.chaekchaek.app.presentation.common.ErrorRecoveryState(errorReporter) }
     com.chaekchaek.app.ui.common.ErrorRecoveryEffect(errors)
     ChaekTwoActionDialog(
         onDismissRequest = onDismiss,

@@ -21,7 +21,7 @@ class AnalyticsTrackerTest {
         assertEquals(flowId, events.first().stringParameters["flow_id"])
         assertEquals("search", events.first().stringParameters["origin"])
         assertEquals("signed_in", events.first().stringParameters["auth_state"])
-        assertEquals(1L, events.first().longParameters["schema_version"])
+        assertEquals(2L, events.first().longParameters["schema_version"])
         assertEquals(listOf(1L, 2L), events.map { it.longParameters["event_seq"] })
         assertEquals(1, events.map { it.stringParameters["run_id"] }.distinct().size)
         assertNotEquals(

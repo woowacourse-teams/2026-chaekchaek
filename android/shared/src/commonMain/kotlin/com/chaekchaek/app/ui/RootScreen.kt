@@ -323,6 +323,7 @@ internal fun RootScreen(
             ChaekBottomBar(
                 selectedTab = selectedTab,
                 onTabSelected = {
+                    analytics.interaction("root_tab", it.analyticsScreenName, if (selectedTab == it) "reselect" else "tap")
                     archiveEditing = false
                     if (selectedTab == it) {
                         when (it) {
