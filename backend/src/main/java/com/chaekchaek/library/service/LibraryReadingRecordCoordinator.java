@@ -8,6 +8,8 @@ import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.member.domain.AccountStatus;
+import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import java.time.Clock;
@@ -65,8 +67,11 @@ class LibraryReadingRecordCoordinator implements ReadingRecordCoordinator {
     }
 
     private void lockMember(long memberId) {
-        memberRepository.findByIdForUpdate(memberId)
+        Member member = memberRepository.findByIdForUpdate(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        if (member.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
     }
 
     private void rememberTotalPages(Book book, Integer totalPages) {
