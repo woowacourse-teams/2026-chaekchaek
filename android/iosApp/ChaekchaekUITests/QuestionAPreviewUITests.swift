@@ -86,7 +86,7 @@ final class QuestionAPreviewUITests: XCTestCase {
         let rating = app.otherElements.matching(NSPredicate(format: "label == %@ AND value != nil", "별점 (선택)")).firstMatch
         reveal(rating, in: app)
         XCTAssertTrue((rating.value as? String)?.contains("미선택") == true, rating.debugDescription)
-        let submit = app.buttons.matching(NSPredicate(format: "label == %@", "감상 남기기")).firstMatch
+        let submit = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 남기기")).firstMatch
         reveal(submit, in: app)
         submit.tap()
         let saved = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "로컬 프리뷰 감상: Question A unselected draft", "미선택")).firstMatch
@@ -110,7 +110,7 @@ final class QuestionAPreviewUITests: XCTestCase {
         rating.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
         let selected = rating.value as? String
         XCTAssertTrue(selected?.contains("점") == true)
-        let submit = app.buttons.matching(NSPredicate(format: "label == %@", "감상 남기기")).firstMatch
+        let submit = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 남기기")).firstMatch
         reveal(submit, in: app)
         submit.tap()
         let saved = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "로컬 프리뷰 감상: Rating only compatibility")).firstMatch
@@ -169,7 +169,7 @@ final class QuestionAPreviewUITests: XCTestCase {
         reveal(quote, in: app)
         quote.tap()
         quote.typeText("Question A retained quote")
-        let submit = app.buttons.matching(NSPredicate(format: "label == %@", "감상 남기기")).firstMatch
+        let submit = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 남기기")).firstMatch
         reveal(submit, in: app)
         submit.tap()
         print("QuestionA helper revision: retry-dialog-close-v3")
