@@ -187,7 +187,12 @@ describe('LibraryPage', () => {
     expect(html2canvas).toHaveBeenCalledTimes(1);
 
     // 페이지의 이미지가 아니라 실제 다운로드용으로 캡처한 영역의 책등을 검증한다.
-    const [capturedElement] = vi.mocked(html2canvas).mock.calls[0];
+    const captureCall = vi.mocked(html2canvas).mock.calls[0];
+    if (!captureCall) {
+      throw new Error('책등 이미지 캡처가 호출되지 않았습니다.');
+    }
+
+    const [capturedElement] = captureCall;
     const capturedSpines = Array.from(capturedElement.querySelectorAll('img')).map((image) =>
       image.getAttribute('src'),
     );
