@@ -126,7 +126,8 @@ class BookshelfContractTest {
         compose.waitUntil(30_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
         waitText("책장을 이미지로")
-        compose.onNodeWithTag("bookshelf-image-share", useUnmergedTree = true).performScrollTo()
+        compose.onNodeWithTag("bookshelf-image-share", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.waitForIdle()
         try {
             compose.waitUntil(30_000) { compose.onAllNodes(hasTestTag("bookshelf-image-share") and isEnabled(), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         } catch (error: Throwable) {

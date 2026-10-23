@@ -348,7 +348,7 @@ internal fun RootScreen(
                 authViewModel.clearError()
                 authViewModel.requireAppleAuthentication { token ->
                     analytics.endAuthAttempt("success")
-                    librarySaveViewModel.authenticate(token)
+                    librarySaveViewModel.authenticate(token, authViewModel.memberIdFor(token))
                     searchViewModel.resumeRegistration()
                 }
             },
@@ -357,7 +357,7 @@ internal fun RootScreen(
                 authViewModel.clearError()
                 authViewModel.requireAuthentication { token ->
                     analytics.endAuthAttempt("success")
-                    librarySaveViewModel.authenticate(token)
+                    librarySaveViewModel.authenticate(token, authViewModel.memberIdFor(token))
                     searchViewModel.resumeRegistration()
                 }
             },

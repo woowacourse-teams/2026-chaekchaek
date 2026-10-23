@@ -110,6 +110,11 @@ class AuthViewModel private constructor(
   private var pendingAction: (suspend (accessToken: String) -> Unit)? = null
 
   // 보안 세션은 복원하되 공개 닉네임이 확인된 뒤에만 화면과 대기 작업에 전달한다.
+  private var confirmedMemberId: Long? = null
+
+  fun memberIdFor(accessToken: String?): Long? =
+    confirmedMemberId.takeIf { accessToken != null && readyTokens.value?.accessToken == accessToken }
+
   private var profileReady = false
   private var profileJob: Job? = null
 
@@ -118,6 +123,7 @@ class AuthViewModel private constructor(
       session.tokens.collectLatest { current ->
         if (current == null) {
           profileReady = false
+          confirmedMemberId = null
           readyTokens.value = null
           if (_uiState.value.requiresNickname || _uiState.value.checkingProfile) _uiState.value = AuthUiState()
         } else if (profileReady) {
@@ -136,7 +142,7 @@ class AuthViewModel private constructor(
       if (session.tokens.value != current) return
       if (profile.nickname.isBlank()) {
         _uiState.value = AuthUiState(requiresNickname = true)
-      } else completeAuthentication(current)
+      } else completeAuthentication(current, profile.memberId)
     } catch (error: CancellationException) {
       throw error
     } catch (error: Exception) {
@@ -162,7 +168,7 @@ class AuthViewModel private constructor(
         val profile = updateNickname(value, current.accessToken)
         if (session.tokens.value != current) return@launch
         check(profile.nickname.isNotBlank())
-        completeAuthentication(current)
+        completeAuthentication(current, profile.memberId)
       } catch (error: CancellationException) {
         throw error
       } catch (error: Exception) {
@@ -176,7 +182,8 @@ class AuthViewModel private constructor(
     }
   }
 
-  private suspend fun completeAuthentication(current: MobileAuthTokens) {
+  private suspend fun completeAuthentication(current: MobileAuthTokens, memberId: Long) {
+    confirmedMemberId = memberId
     profileReady = true
     readyTokens.value = current
     _uiState.value = AuthUiState()
@@ -279,6 +286,7 @@ class AuthViewModel private constructor(
   fun signOut(onLocalSessionCleared: () -> Unit = {}) {
     profileJob?.cancel()
     profileReady = false
+    confirmedMemberId = null
     readyTokens.value = null
     _uiState.value = AuthUiState()
     cancelPendingAuthentication()

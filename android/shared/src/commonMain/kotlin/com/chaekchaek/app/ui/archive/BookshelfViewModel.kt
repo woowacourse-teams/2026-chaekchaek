@@ -20,6 +20,7 @@ data class BookshelfUiState(
     val refreshing: Boolean = false,
     val detailRefreshing: Boolean = false,
     val detailStale: Boolean = false,
+    val collectionStale: Boolean = true,
     val mutating: Boolean = false,
     val loaded: Boolean = false,
 )
@@ -30,20 +31,23 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
     private val state = MutableStateFlow(BookshelfUiState())
     val uiState = state.asStateFlow()
     private var token: String? = null
+    private var authenticatedMemberId: Long? = null
     private var generation = 0
     private var readJob: Job? = null
     private var detailJob: Job? = null
     private var mutationJob: Job? = null
     private var detailGeneration = 0
 
-    fun authenticate(value: String?) {
-        if (token == value) return
-        if (token != null && value != null) { token = value; return }
+    fun authenticate(value: String?, memberId: Long? = null) {
+        val memberChanged = authenticatedMemberId != null && memberId != null && authenticatedMemberId != memberId
+        if (value == null || memberId != null) authenticatedMemberId = memberId
+        if (token == value && !memberChanged) return
+        if (!memberChanged && token != null && value != null) { token = value; return }
         generation++
         errors.dismiss()
         readJob?.cancel(); detailJob?.cancel(); mutationJob?.cancel()
         token = value
-        state.value = BookshelfUiState()
+        state.value = BookshelfUiState(memberId = memberId)
         if (value != null) refresh()
     }
 
@@ -51,14 +55,14 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
         if (token == null || state.value.mutating) return
         val session = generation
         readJob?.cancel()
-        state.value = state.value.copy(refreshing = true, detailStale = state.value.detail != null || state.value.detailStale)
+        state.value = state.value.copy(refreshing = true, collectionStale = true, detailStale = state.value.detail != null || state.value.detailStale)
         readJob = viewModelScope.launch {
             try {
                 withDelayedLoading({ if (session == generation) state.value = state.value.copy(loading = it) }) {
                     repository.mine(token ?: return@withDelayedLoading null)
                 }.getOrThrow()?.let { result ->
                     if (session != generation) return@launch
-                    state.value = state.value.copy(shelves = result.libraries, memberId = result.memberId, loaded = true)
+                    state.value = state.value.copy(shelves = result.libraries, memberId = result.memberId, loaded = true, collectionStale = false)
                     state.value.selectedId?.let(::open)
                 }
             } catch (e: CancellationException) { throw e }
@@ -111,11 +115,14 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
     fun remove(libraryId: Long, bookId: Long) = mutate { repository.remove(libraryId, bookId, it) }
 
     fun orderShelves(ids: List<Long>) {
+        if (state.value.refreshing || state.value.collectionStale || !state.value.loaded) return
         if (!sameIds(ids, state.value.shelves.map { it.libraryId })) return
         mutate { repository.orderShelves(ids, it) }
     }
 
     fun orderBooks(libraryId: Long, ids: List<Long>) {
+        if (state.value.refreshing || state.value.collectionStale || state.value.detailRefreshing ||
+            (state.value.selectedId == libraryId && state.value.detailStale)) return
         val existing = state.value.detail?.takeIf { it.libraryId == libraryId }?.items?.map { it.bookId }
             ?: state.value.shelves.firstOrNull { it.libraryId == libraryId }?.items?.map { it.bookId } ?: return
         if (!sameIds(ids, existing)) return
@@ -142,7 +149,7 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
                 }.getOrThrow()
                 if (session == generation) {
                     done()
-                    state.value = state.value.copy(mutating = false, detailStale = true)
+                    state.value = state.value.copy(mutating = false, detailStale = true, collectionStale = true)
                     refresh()
                 }
             } catch (e: CancellationException) { throw e }

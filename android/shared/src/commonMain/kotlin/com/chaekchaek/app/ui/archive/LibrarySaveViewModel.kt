@@ -50,6 +50,7 @@ class LibrarySaveViewModel(
     val uiState = state.asStateFlow()
     private val completedSaves = MutableSharedFlow<SavedLibraryBook>(extraBufferCapacity = 1)
     private var accessToken: String? = null
+    private var authenticatedMemberId: Long? = null
     private var generation = 0
     private var acknowledgedSavedCount = 0
     private var saveJob: Job? = null
@@ -57,9 +58,11 @@ class LibrarySaveViewModel(
     /** 각 관찰자가 구독한 뒤 완료된 저장만 전달하며 이전 화면의 완료 상태는 재생하지 않는다. */
     fun savesCompletedWhileObserving(): Flow<SavedLibraryBook> = completedSaves.asSharedFlow()
 
-    fun authenticate(token: String?) {
-        if (accessToken == token) return
-        if (accessToken != null && token != null) {
+    fun authenticate(token: String?, memberId: Long? = null) {
+        val memberChanged = authenticatedMemberId != null && memberId != null && authenticatedMemberId != memberId
+        if (token == null || memberId != null) authenticatedMemberId = memberId
+        if (accessToken == token && !memberChanged) return
+        if (!memberChanged && accessToken != null && token != null) {
             accessToken = token
             return
         }
@@ -68,7 +71,7 @@ class LibrarySaveViewModel(
         errors.dismiss()
         saveJob?.cancel()
         accessToken = token
-        state.value = LibrarySaveUiState()
+        state.value = LibrarySaveUiState(memberId = memberId)
         acknowledgedSavedCount = 0
         pending?.let(::save)
     }

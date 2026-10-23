@@ -45,10 +45,12 @@ internal fun BookshelfRoute(
     var deleting by remember { mutableStateOf<Bookshelf?>(null) }
     var adding by rememberSaveable { mutableStateOf(false) }
     var sharing by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(signedIn) { if (!signedIn) { creating = false; namingId = null; deleting = null; adding = false; sharing = false; editing = false } }
+    LaunchedEffect(signedIn, state.memberId) { creating = false; namingId = null; deleting = null; adding = false; sharing = false; editing = false }
     val listState = rememberLazyListState()
     val detailListState = rememberLazyListState()
     LaunchedEffect(scrollTopRequest) { if (state.selectedId == null) listState.scrollToItem(0) else detailListState.scrollToItem(0) }
+    val canOrder = !state.mutating && !state.refreshing && !state.collectionStale && !state.detailRefreshing &&
+        (state.selectedId == null || !state.detailStale)
     val detail = state.detail
     val selected = state.shelves.firstOrNull { it.libraryId == state.selectedId }
     val back = rememberNavigationEventState(NavigationEventInfo.None)
@@ -81,7 +83,7 @@ internal fun BookshelfRoute(
                 itemsIndexed(state.shelves, key = { _, it -> it.libraryId }) { index, shelf ->
                     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            ReorderHandle(index, state.shelves.size, !state.mutating, "bookshelf-reorder-${shelf.libraryId}", 340f) { from, to ->
+                            ReorderHandle(index, state.shelves.size, canOrder, "bookshelf-reorder-${shelf.libraryId}", 340f) { from, to ->
                                 viewModel.orderShelves(state.shelves.map { it.libraryId }.moved(from, to))
                             }
                             TextButton(onClick = { viewModel.open(shelf.libraryId) }, modifier = Modifier.weight(1f).testTag("bookshelf-${shelf.libraryId}")) {
@@ -90,7 +92,7 @@ internal fun BookshelfRoute(
                             Text("${shelf.totalCount}권", style = MaterialTheme.typography.bodySmall)
                             ShelfMenu(shelf, { namingId = shelf.libraryId }, { deleting = shelf })
                         }
-                        SpineRow(shelf.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = { from, to ->
+                        SpineRow(shelf.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = if (!canOrder) null else { from, to ->
                             viewModel.orderBooks(shelf.libraryId, shelf.items.map { it.bookId }.moved(from, to))
                         })
                         HorizontalDivider(color = ChaekBorder)
@@ -109,7 +111,7 @@ internal fun BookshelfRoute(
                     Text(detail.name, style = MaterialTheme.typography.headlineSmall)
                     Text("${detail.totalCount}권", style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
                 }
-                item { SpineRow(detail.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = { from, to ->
+                item { SpineRow(detail.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = if (!canOrder) null else { from, to ->
                     viewModel.orderBooks(detail.libraryId, detail.items.map { it.bookId }.moved(from, to))
                 }) }
                 item {
@@ -124,7 +126,7 @@ internal fun BookshelfRoute(
                 } }
                 itemsIndexed(detail.items, key = { _, it -> it.bookId }) { index, book ->
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        if (!editing) ReorderHandle(index, detail.items.size, !state.mutating, "bookshelf-book-reorder-${book.bookId}") { from, to ->
+                        if (!editing) ReorderHandle(index, detail.items.size, canOrder, "bookshelf-book-reorder-${book.bookId}") { from, to ->
                             viewModel.orderBooks(detail.libraryId, detail.items.map { it.bookId }.moved(from, to))
                         }
                         BookShelfRow(book.title, book.authors.joinToString(", "), book.coverImageUrl, Modifier.weight(1f)) { onBook(book.asArchive().asArgs()) }
@@ -245,10 +247,11 @@ private fun SpineRow(books: List<ArchiveBookUiModel>, onBook: (ArchiveBookUiMode
 @Composable
 private fun ReorderHandle(index: Int, count: Int, enabled: Boolean, tag: String, rowHeight: Float = 88f, move: (Int, Int) -> Unit) {
     val threshold = with(LocalDensity.current) { rowHeight.dp.toPx() }
+    val currentMove by rememberUpdatedState(move)
     Box(Modifier.size(44.dp).testTag(tag).pointerInput(index, count, enabled) {
         var delta = 0f
         detectDragGesturesAfterLongPress(onDragStart = { delta = 0f }, onDragEnd = {
-            if (enabled) { val target = (index + (delta / threshold).toInt()).coerceIn(0, count - 1); if (target != index) move(index, target) }
+            if (enabled) { val target = (index + (delta / threshold).toInt()).coerceIn(0, count - 1); if (target != index) currentMove(index, target) }
         }, onDrag = { change, amount -> change.consume(); delta += amount.y })
     }, contentAlignment = Alignment.Center) { Text("☰", fontFamily = ChaekIconFontFamily()) }
 }

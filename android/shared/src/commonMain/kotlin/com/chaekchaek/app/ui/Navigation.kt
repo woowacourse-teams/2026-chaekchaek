@@ -294,8 +294,8 @@ private fun AppNavigationContent(
     LaunchedEffect(authTokens?.accessToken) {
         val accessToken = authTokens?.accessToken
         homeViewModel.authenticate(accessToken)
-        bookshelfViewModel.authenticate(accessToken)
-        librarySaveViewModel.authenticate(accessToken)
+        bookshelfViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
+        librarySaveViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
         memberSettingsViewModel.authenticate(accessToken)
     }
     val backStack = rememberNavBackStack(navigationConfig, Root)
