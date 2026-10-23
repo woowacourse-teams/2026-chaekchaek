@@ -6,7 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.graphics.Bitmap
 import android.view.KeyEvent
-import org.junit.Assert.assertTrue
+import org.json.JSONObject
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.data.remote.ApiConfiguration
 import com.chaekchaek.app.ui.App
@@ -120,9 +120,13 @@ class PublicLibraryNavigationTest {
 
     @Test fun homeAndDiscoverProfilesReturnToTheirOriginalTabAndPosition() {
         start("홈")
+        // 안쪽 가로 LazyRow만 스크롤하면 프로필이 화면 아래에 남는다.
+        waitFor("독자A")
+        compose.onAllNodes(hasScrollToIndexAction()).onFirst().performScrollToIndex(1)
         compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().performScrollTo()
         val homeY = compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().fetchSemanticsNode().boundsInRoot.top
-        profile("독자A"); waitFor("기본책장"); back()
+        capture("home-profile-before")
+        profile("독자A"); capture("home-profile-after"); waitFor("기본책장"); back()
         compose.onNodeWithText("홈").assertIsSelected()
         assertEquals(homeY, compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().fetchSemanticsNode().boundsInRoot.top, 1f)
         compose.onNodeWithText("발견").performClick()
@@ -171,10 +175,11 @@ class PublicLibraryNavigationTest {
         waitFor("서재를 불러오지 못했어요"); compose.onNodeWithText("닫기").performClick()
         compose.onNodeWithText("서재를 불러오지 못했어요").assertDoesNotExist()
         compose.onNodeWithText("오류서재독자").assertIsDisplayed()
+        assertEquals(1, JSONObject(URI("$base/__607").toURL().readText()).getJSONObject("counts").getInt("/api/v1/libraries?memberId=44"))
         systemBack(); waitFor("피드")
         compose.onNodeWithText("오류서재독자").assertIsDisplayed()
         profile("오류서재독자"); waitFor("기본책장")
-        assertTrue(URI("$base/__607").toURL().readText().contains("memberId=44"))
+        assertEquals(2, JSONObject(URI("$base/__607").toURL().readText()).getJSONObject("counts").getInt("/api/v1/libraries?memberId=44"))
         capture("horizontal-empty-error-close")
     }
 }
