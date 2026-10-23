@@ -2,6 +2,7 @@ package com.chamsae.chaekchaek
 
 import android.content.Context
 import com.chaekchaek.app.analytics.AnalyticsEvent
+import com.chaekchaek.app.analytics.AnalyticsCollectionController
 import com.posthog.PersonProfiles
 import com.posthog.PostHog
 import com.posthog.android.PostHogAndroid
@@ -34,6 +35,17 @@ internal object PostHogAnalyticsEventLogger {
         }
         runCatching { PostHogAndroid.setup(context.applicationContext, config) }
             .onSuccess { configured = true }
+    }
+
+    fun refreshCollectionPolicy(controller: AnalyticsCollectionController) {
+        if (!configured) return
+        PostHog.reloadFeatureFlags {
+            val payload = PostHog.getFeatureFlagPayload(AnalyticsCollectionController.FlagKey)
+            if (payload is Map<*, *>) {
+                val json = org.json.JSONObject(payload).toString()
+                android.os.Handler(android.os.Looper.getMainLooper()).post { controller.receive(json) }
+            }
+        }
     }
 
     fun log(event: AnalyticsEvent) {

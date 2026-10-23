@@ -164,14 +164,21 @@ private fun AppNavigationContent(
             showOnboardingLogin = false
             onboardingViewModel.finish()
         }
+        LaunchedEffect(onboardingState.step) {
+            analytics.screenView("onboarding_${onboardingState.step.name.lowercase()}")
+        }
         val skipOnboarding = {
+            analytics.log("cc_onboarding_exit", strings = mapOf("outcome" to "skipped"), longs = mapOf("selected_count" to onboardingState.selectedBooks.size.toLong()))
             authViewModel.clearError()
             authViewModel.cancelPendingAuthentication()
             onboardingViewModel.cancelPendingWork()
             completeOnboarding()
         }
         LaunchedEffect(onboardingState.saveCompleted) {
-            if (onboardingState.saveCompleted) completeOnboarding()
+            if (onboardingState.saveCompleted) {
+                analytics.log("cc_onboarding_exit", strings = mapOf("outcome" to "completed"), longs = mapOf("selected_count" to onboardingState.selectedBooks.size.toLong()))
+                completeOnboarding()
+            }
         }
         val saveSelectedBooks = {
             val token = authTokens?.accessToken
@@ -196,7 +203,13 @@ private fun AppNavigationContent(
             onBack = returnToPreviousStep,
             onQueryChange = onboardingViewModel::updateQuery,
             onSearch = { onboardingViewModel.search() },
-            onToggleBook = onboardingViewModel::toggle,
+            onToggleBook = { book ->
+                analytics.log("cc_onboarding_selection", strings = buildMap {
+                    com.chaekchaek.app.analytics.analyticsBookKey(book.isbn13, null)?.let { put("book_key", it) }
+                    put("effect", if (onboardingState.selectedBooks.any { it.isbn13 == book.isbn13 }) "removed" else "added")
+                })
+                onboardingViewModel.toggle(book)
+            },
             onReviewSelection = onboardingViewModel::reviewSelection,
             onLogin = saveSelectedBooks,
             onRetrySave = saveSelectedBooks,
@@ -303,6 +316,7 @@ private fun AppNavigationContent(
                             savedStateHandle = createSavedStateHandle(),
                             initialAccessToken = authTokens?.accessToken,
                             deferInitialLoad = restoringAuthentication,
+                            analytics = analytics,
                         )
                     }
                     feedViewModel.attachActions(

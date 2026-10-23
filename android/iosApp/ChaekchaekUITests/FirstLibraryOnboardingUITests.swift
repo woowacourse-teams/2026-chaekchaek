@@ -50,4 +50,21 @@ final class FirstLibraryOnboardingUITests: XCTestCase {
         XCTAssertTrue(start.waitForExistence(timeout: 5))
     }
 
+
+    @MainActor
+    func testAnalyticsNavigationKeepsTabsWorking() throws {
+        app.launchArguments = ["-uiTestingExistingInstallation"]
+        app.launch()
+        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 5))
+        for name in ["피드", "발견", "홈"] {
+            let tab = app.buttons[name]
+            XCTAssertTrue(tab.exists)
+            tab.tap()
+            XCTAssertTrue(tab.isSelected, app.debugDescription)
+        }
+        app.buttons["홈"].tap()
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
 }

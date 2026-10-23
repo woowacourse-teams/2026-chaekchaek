@@ -63,4 +63,23 @@ final class ChaekchaekTests: XCTestCase {
             isDebug: false
         ))
     }
+
+    @MainActor
+    func testCollectionPolicyCacheAndStopAreBridgedToShared() {
+        var cached: String?
+        let controller = AnalyticsCollectionController(
+            readCachedPolicy: { cached },
+            writeCachedPolicy: { cached = $0 },
+            samplingSeed: "ios-test-installation"
+        )
+        let event = AnalyticsEvent(name: "cc_action_start", stringParameters: [:], longParameters: [:], doubleParameters: [:])
+        XCTAssertNotNil(controller.filter(event: event))
+        XCTAssertTrue(controller.receive(payload: "{\"schema_version\":1,\"revision\":\"ios-test\",\"enabled\":false,\"sample_rate\":1}"))
+        XCTAssertNil(controller.filter(event: event))
+        XCTAssertFalse(controller.receive(payload: "{}"))
+        let restarted = AnalyticsCollectionController(
+            readCachedPolicy: { cached }, writeCachedPolicy: { _ in }, samplingSeed: "ios-test-installation"
+        )
+        XCTAssertNil(restarted.filter(event: event))
+    }
 }

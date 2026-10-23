@@ -16,13 +16,23 @@ data class AnalyticsEvent(
 class AnalyticsTracker(
     private val environment: String,
     private val sink: (AnalyticsEvent) -> Unit,
+    private val collection: AnalyticsCollectionController,
+    private val timeSource: TimeSource = TimeSource.Monotonic,
 ) {
+    constructor(environment: String, sink: (AnalyticsEvent) -> Unit) : this(environment, sink, AnalyticsCollectionController())
+
     private val runId = newId("run")
     private var eventSequence = 0L
     private var signedIn = false
     private var currentFlowId: String? = null
     private var currentOrigin: String? = null
     private var currentViewId: String? = null
+    private var currentScreen: String? = null
+    private var previousScreen: String? = null
+    private val started = timeSource.markNow()
+    private var foreground = false
+    private var engagementStarted: TimeMark? = null
+    private var engagementSegment = 0L
     private var currentSearchId: String? = null
     private var currentActionId: String? = null
     private var currentAttempt: AnalyticsAttempt? = null
@@ -66,6 +76,8 @@ class AnalyticsTracker(
             put("auth_state", if (signedIn) "signed_in" else "signed_out")
             put("event_id", newId("event"))
             put("run_id", runId)
+            currentScreen?.let { put("screen_name", it) }
+            previousScreen?.let { put("previous_screen", it) }
             currentFlowId?.let { put("flow_id", it) }
             currentOrigin?.let { put("origin", it) }
             currentViewId?.let { put("view_id", it) }
@@ -84,14 +96,20 @@ class AnalyticsTracker(
             longParameters = mapOf(
                 "schema_version" to SCHEMA_VERSION,
                 "event_seq" to eventSequence,
+                "process_elapsed_ms" to started.elapsedNow().inWholeMilliseconds,
             ) + longs,
             doubleParameters = doubles,
         )
-        if (event.parameterCount <= MAX_PARAMETER_COUNT) runCatching { sink(event) }
+        collection.filter(event)?.let { filtered -> runCatching { sink(filtered) } }
     }
 
     fun screenView(screenName: String, previousScreen: String? = null): String {
+        recordViewEngagement()
+        engagementSegment = 0
+        engagementStarted = if (foreground) timeSource.markNow() else null
         val viewId = newId("view")
+        this.previousScreen = previousScreen ?: currentScreen
+        currentScreen = screenName
         currentViewId = viewId
         resetImpressionScope()
         log(
@@ -104,6 +122,30 @@ class AnalyticsTracker(
             },
         )
         return viewId
+    }
+
+    fun setForeground(active: Boolean) {
+        if (foreground == active) return
+        if (!active) recordViewEngagement()
+        foreground = active
+        engagementStarted = if (active && currentViewId != null) timeSource.markNow() else null
+        log("cc_app_lifecycle", strings = mapOf("state" to if (active) "foreground" else "background"), includeActionContext = false)
+    }
+
+    fun recordViewEngagement() {
+        val mark = engagementStarted ?: return
+        engagementStarted = if (foreground) timeSource.markNow() else null
+        val activeMillis = mark.elapsedNow().inWholeMilliseconds
+        if (activeMillis <= 0 || currentViewId == null) return
+        log("cc_view_engagement", longs = mapOf("active_ms" to activeMillis, "segment_index" to ++engagementSegment), includeActionContext = false)
+    }
+
+    fun interaction(control: String, target: String, trigger: String = "tap") {
+        log("cc_ui_interaction", strings = mapOf("control" to control, "target" to target, "trigger" to trigger), includeActionContext = false)
+    }
+
+    fun filterChange(control: String, oldValue: String, newValue: String) {
+        if (oldValue != newValue) log("cc_filter_change", strings = mapOf("control" to control, "old_value" to oldValue, "new_value" to newValue), includeActionContext = false)
     }
 
     fun contentImpression(
@@ -157,7 +199,7 @@ class AnalyticsTracker(
         strings: Map<String, String> = emptyMap(),
         longs: Map<String, Long> = emptyMap(),
     ): AnalyticsAction {
-        val handle = AnalyticsAction(newId("action"), action, TimeSource.Monotonic.markNow())
+        val handle = AnalyticsAction(newId("action"), action, timeSource.markNow())
         currentActionId = handle.id
         log(
             name = "cc_action_start",
@@ -191,7 +233,7 @@ class AnalyticsTracker(
     }
 
     fun beginAuthAttempt(provider: String, trigger: String): String {
-        val attempt = AnalyticsAttempt(newId("attempt"), provider, trigger, TimeSource.Monotonic.markNow())
+        val attempt = AnalyticsAttempt(newId("attempt"), provider, trigger, timeSource.markNow())
         currentAttempt = attempt
         log(
             name = "cc_au" + "th_start",
@@ -255,8 +297,7 @@ class AnalyticsTracker(
 
     companion object {
         val None = AnalyticsTracker("test") {}
-        private const val SCHEMA_VERSION = 1L
-        private const val MAX_PARAMETER_COUNT = 25
+        private const val SCHEMA_VERSION = 2L
         private const val MAX_STRING_LENGTH = 100
     }
 }
@@ -308,6 +349,3 @@ fun analyticsQueryLengthBucket(length: Int): String = when (length) {
     in 6..15 -> "6_15"
     else -> "16_plus"
 }
-
-private val AnalyticsEvent.parameterCount: Int
-    get() = stringParameters.size + longParameters.size + doubleParameters.size

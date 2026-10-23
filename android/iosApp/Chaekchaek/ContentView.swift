@@ -152,12 +152,22 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                 UserDefaults.standard.set(true, forKey: "first_library_onboarding_shown")
             }
         )
+        let defaults = UserDefaults.standard
+        let samplingSeed = defaults.string(forKey: "analytics_sampling_seed") ?? UUID().uuidString
+        defaults.set(samplingSeed, forKey: "analytics_sampling_seed")
+        let collection = AnalyticsCollectionController(
+            readCachedPolicy: { defaults.string(forKey: "analytics_collection_policy") },
+            writeCachedPolicy: { defaults.set($0, forKey: "analytics_collection_policy") },
+            samplingSeed: samplingSeed
+        )
         return MainViewControllerKt.MainViewController(
             authPlatform: authPlatform,
             recentSearchStorage: recentSearchStorage,
             onboardingStorage: onboardingStorage,
             createGoogleSignInButton: GoogleSignInControl.init,
             analyticsEnvironment: analyticsEnvironment,
+            analyticsCollection: collection,
+            refreshAnalyticsConfiguration: { PostHogAnalyticsEventLogger.refreshCollectionPolicy(collection) },
             logAnalyticsEvent: AnalyticsEventDispatcher(
                 primary: FirebaseAnalyticsEventLogger.log,
                 secondary: PostHogAnalyticsEventLogger.log
@@ -218,6 +228,18 @@ enum PostHogAnalyticsEventLogger {
         return config
     }
 
+    @MainActor
+    static func refreshCollectionPolicy(_ controller: AnalyticsCollectionController) {
+        guard configured else { return }
+        let receiver = AnalyticsPolicyReceiver(controller)
+        PostHogSDK.shared.reloadFeatureFlags {
+            guard let payload = PostHogSDK.shared.getFeatureFlagPayload(AnalyticsCollectionController.companion.FlagKey) as? [String: Any],
+                  let data = try? JSONSerialization.data(withJSONObject: payload),
+                  let json = String(data: data, encoding: .utf8) else { return }
+            DispatchQueue.main.async { receiver.receive(json) }
+        }
+    }
+
     static func log(event: AnalyticsEvent) {
         guard configured else { return }
         var properties = analyticsParameters(event)
@@ -226,9 +248,23 @@ enum PostHogAnalyticsEventLogger {
     }
 }
 
+// SDK의 완료 콜백에서 받은 정책을 공통 계측과 같은 main actor에서 적용한다.
+@MainActor
+private final class AnalyticsPolicyReceiver {
+    private let controller: AnalyticsCollectionController
+
+    init(_ controller: AnalyticsCollectionController) {
+        self.controller = controller
+    }
+
+    func receive(_ payload: String) {
+        _ = controller.receive(payload: payload)
+    }
+}
+
 private enum FirebaseAnalyticsEventLogger {
     static func log(event: AnalyticsEvent) {
-        Analytics.logEvent(event.name, parameters: analyticsParameters(event))
+        Analytics.logEvent(event.name, parameters: analyticsParameters(FirebaseAnalyticsParametersKt.firebaseAnalyticsEvent(event: event)))
     }
 }
 

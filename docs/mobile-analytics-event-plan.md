@@ -62,7 +62,7 @@ Android와 iOS에 같은 의미의 이벤트를 기록하여 탐색, 독서 기�
 
 | 속성 | 용도와 수명 |
 | --- | --- |
-| `schema_version` | 모든 수동 이벤트에 정수 `1`. 의미가 바뀌면 버전을 올린다 |
+| `schema_version` | 모든 수동 이벤트에 정수 `2`. 의미가 바뀌면 버전을 올린다 |
 | `environment` | `production/test`. 개발자 테스트는 별도 Firebase 프로젝트 또는 분석 필터로 분리 |
 | `auth_state` | 이벤트 당시 `signed_in/signed_out`. 계정 ID는 보내지 않는다 |
 | `screen_name` | `home/feed/discover/library/book_detail/my_page` 등 고정 이름 |
@@ -128,7 +128,7 @@ W1은 여기서는 최초 실행 시점 기준의 경과 시간이다. GA4 달�
 
 - 복수 세션과 이벤트 순서를 연결하는 분석을 위해 Firebase Analytics의 BigQuery 내보내기를 구성해야 한다. 이 문서는 실제 연결을 수행하지 않았다. 연결 시작 시점, 내보내기 데이터의 실제 시작일, 저장 지역, 보관 기간, 접근 권한 및 비용은 활성화 전에 확인한다.
 - GA4 사용자 정의 측정기준에는 `origin`, `action`, `outcome`, `auth_state`, `error_category`, `schema_version` 같은 고정 범주를 우선 등록한다. event_id, flow_id, action_id, book_key 등 고유값이 많은 키는 BigQuery 연결용으로 사용하고 일반 보고서 측정기준 등록에서 제외한다.
-- 수동 이벤트 하나당 공통 속성과 전용 속성을 합쳐 25개 이하로 유지한다. 자동 이벤트에 이 공통 속성 세트를 무조건 적용하지 않는다.
+- Firebase 전송 시 공통 속성과 전용 속성을 합쳐 25개 이하로 투영한다. PostHog에는 전체 계측 속성을 보낸다. 25개 초과를 이유로 이벤트 자체를 폐기하지 않는다. 자동 이벤트에 이 공통 속성 세트를 무조건 적용하지 않는다.
 - Android와 iOS에서 같은 시나리오의 이벤트명, 속성 타입, 발생 순서가 같아야 한다. 핵심 시나리오는 검색→등록, 로그인→중단 행동 재개, 감상 노출→작성, 자동 서재 등록→페이지 저장, 오류→재시도다.
 - 재구성 중복, 백그라운드 노출 제외, 이미 등록된 책, 좋아요 해제, 일괄 변경, 취소, 서버 실패를 검증한다. Analytics 전송 실패는 사용자 기능의 성공 여부를 바꾸지 않는다.
 - DebugView 수신과 운영 BigQuery 내보내기 확인은 별도 검증으로 기록한다. 현재 공식 문서상 디버그 모드 이벤트도 기본적으로 일일 내보내기에 포함될 수 있으므로 개발자 트래픽 필터와 테스트 환경 분리를 확인한다. 운영 전환율에 테스트 이벤트가 섞이지 않아야 한다.
@@ -153,3 +153,47 @@ W1은 여기서는 최초 실행 시점 기준의 경과 시간이다. GA4 달�
 - [Firebase BigQuery 내보내기](https://firebase.google.com/docs/projects/bigquery-export)
 - [GA4 고유값 개수와 보고서 제한](https://support.google.com/analytics/answer/12226705?hl=en)
 - [Firebase DebugView](https://firebase.google.com/docs/analytics/debugview)
+
+
+## 8. PostHog 수집 제어와 계측 보강 (2026-10-23)
+
+Firebase와 PostHog의 수동 이벤트는 하나의 `AnalyticsTracker`와 수집 정책을 통과한다. 분석 중심은 PostHog이며 Firebase 전송도 유지한다. 화면 디자인과 저장 동작은 변경하지 않는다.
+
+### 구현 범위
+
+- 기존 책 노출과 선택, 검색 제출과 결과, 상세 로딩, 서재 저장, 독서 상태, 감상과 답글, 인증 이벤트를 유지한다.
+- 모든 수동 이벤트에 현재 `screen_name`, `previous_screen`, `process_elapsed_ms`, `collection_revision`, `sample_rate`를 붙인다. 화면 정보는 논리적 방문 이후부터 존재한다. 플랫폼과 앱 버전은 각 SDK가 제공한다.
+- `cc_app_lifecycle`: 앱 전면과 백그라운드 전환. `state=foreground/background`.
+- `cc_view_engagement`: 전면 체류 30초 구간과 화면 이탈 또는 백그라운드 전환 직전 잔여 시간. 백그라운드 시간은 제외한다. 프로세스 강제 종료 시 마지막 구간은 보장하지 않는다.
+- `cc_ui_interaction`: 루트 탭 선택과 재선택. `control=root_tab`, `target`, `trigger=tap/reselect`. 모든 UI 터치를 자동 수집하는 기능은 아니다.
+- `cc_filter_change`: 발견 검색 정렬 값이 실제 바뀔 때.
+- `cc_load_result`: 피드 최초 로딩, 새로고침, 재시도와 추가 페이지, 검색 추가 페이지 결과. 취소되거나 오래된 응답은 성공 또는 실패로 기록하지 않는다.
+- 온보딩 단계별 `screen_view`, `cc_onboarding_selection`의 도서 키와 추가/제거, `cc_onboarding_exit`의 건너뛰기/완료와 선택 개수. 온보딩 노출 조건은 바꾸지 않는다.
+- Firebase의 25개 제한은 `FirebaseAnalyticsParameters.kt`에서 적용한다. 이벤트 ID, 스키마, 실행과 화면 및 행동 연결, 결과와 정책 정보를 우선하고 나머지는 키 이름 순으로 선택한다. 세부 속성 전체 분석은 PostHog를 사용한다.
+
+### 원격 설정 계약
+
+[PostHog 원격 정책](https://us.posthog.com/project/682573/feature-flags/986675)의 Remote config 플래그 `mobile-analytics-collection-v1`을 활성화해 모든 설치에 JSON payload를 전달한다. 2026-10-23 콘솔 저장과 공개 SDK 설정 API에서 v1, 활성, 비율 1 응답을 확인했다. 플래그 비활성화나 삭제는 마지막 정상 정책을 지우지 않는다. 수집 중지는 플래그 payload의 `enabled=false`로 설정한다.
+
+```json
+{
+  "schema_version": 1,
+  "revision": "v1",
+  "enabled": true,
+  "sample_rate": 1.0,
+  "events": {}
+}
+```
+
+- 전체 수동 이벤트 중지: `enabled=false`. 복구: `true`.
+- 특정 이벤트 중지: `events`에 `"cc_content_impression": {"enabled": false}` 추가.
+- 전체 설치의 20% 수집: `sample_rate=0.2`. 특정 이벤트만 변경하려면 해당 규칙에 `sample_rate`를 넣는다.
+- 비율은 0부터 1이며 설치별 로컬 난수 시드의 안정된 표본을 쓴다. 같은 비율에서는 start/result와 재방문 표본을 유지한다. 이벤트별 비율을 다르게 설정하면 퍼널 모집단이 달라진다. 시드는 이벤트 속성이나 계정 ID로 보내지 않는다.
+- `schema_version`, `revision`, `enabled`, `sample_rate`는 필수다. 정책 스키마는 1, 이벤트 스키마는 2다. 잘못된 JSON, 지원하지 않는 버전, 범위 밖 비율은 전체 정책을 거부한다. revision은 영문, 숫자, 밑줄, 점, hyphen으로 1~64자다.
+- 앱 전면 진입과 전면 실행 중 60초마다 SDK의 feature flags를 다시 읽는다. 전달과 네트워크 지연이 있어 즉시 반영을 보장하지 않는다.
+- 정상 정책은 Android SharedPreferences와 iOS UserDefaults에 저장한다. 오프라인, 응답 누락, 형식 오류에서는 마지막 정책을 유지한다. 캐시가 없는 최초 실행의 기본값은 수동 이벤트 100% 수집이다. 최초 원격 응답 이전 이벤트는 기본값을 따른다.
+- 정책은 수동 이벤트 생성에만 적용한다. 이미 SDK 큐에 들어간 이벤트를 회수하거나 Firebase SDK 자동 이벤트를 중지하지 않는다. 수집이 꺼져도 정책을 다시 읽는 요청은 계속한다.
+- 새 이벤트나 새 속성을 원격으로 만들어낼 수는 없다. 이 버전에 포함한 계측의 수집 여부와 비율을 앱 업데이트 없이 바꾼다.
+- 검색어, 작성 원문, 계정 식별자와 인증값은 추가하지 않는다. PostHog replay와 자동 터치 수집은 계속 비활성 상태다.
+
+운영 확인은 PostHog 이벤트 속성의 `schema_version=2`, `collection_revision`과 `sample_rate`를 확인한다. 빌드 성공과 단위 테스트는 기기에서 정책을 수신했다는 증거와 구분한다.
