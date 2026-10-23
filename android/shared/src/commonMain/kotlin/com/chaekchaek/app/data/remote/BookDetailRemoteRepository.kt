@@ -294,6 +294,7 @@ data class BookReview(
   val authorProfileImageUrl: String? = null,
   val writtenByMe: Boolean = false,
   val deleted: Boolean = false,
+  val authorProfile: com.chaekchaek.app.domain.profile.AuthorProfile = com.chaekchaek.app.domain.profile.AuthorProfile(authorName, anonymous = anonymous),
 )
 
 data class ReviewReply(
@@ -306,6 +307,7 @@ data class ReviewReply(
   val authorProfileImageUrl: String? = null,
   val writtenByMe: Boolean = false,
   val deleted: Boolean = false,
+  val authorProfile: com.chaekchaek.app.domain.profile.AuthorProfile = com.chaekchaek.app.domain.profile.AuthorProfile(authorName, anonymous = anonymous),
 )
 
 @Serializable
@@ -426,7 +428,13 @@ internal data class ReviewAuthorDto(
   val mine: Boolean,
   val actorType: String,
   val profileImageUrl: String? = null,
-)
+  val memberId: Long? = null,
+  val profileStatus: String? = null,
+) {
+  fun toAuthorProfile() = com.chaekchaek.app.domain.profile.AuthorProfile(
+    displayName, memberId, profileImageUrl, anonymous, actorType, profileStatus,
+  )
+}
 
 @Serializable
 internal data class ReviewReplyDto(
@@ -493,6 +501,7 @@ internal fun ReviewDto.toBookReview() =
     currentPage = currentPage,
     createdAt = createdAt,
     authorName = author.displayName,
+    authorProfile = author.toAuthorProfile(),
     authorProfileImageUrl = author.profileImageUrl,
     anonymous = author.anonymous,
     replyCount = replyCount,
@@ -509,6 +518,7 @@ internal fun ReviewReplyDto.toReviewReply() =
     replyId = replyId,
     content = content,
     authorName = author.displayName,
+    authorProfile = author.toAuthorProfile(),
     authorProfileImageUrl = author.profileImageUrl,
     anonymous = author.anonymous,
     likeCount = likeCount,

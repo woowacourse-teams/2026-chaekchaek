@@ -92,6 +92,7 @@ class QuoteCard(
     val likeCount: Int = 0,
     val likedByMe: Boolean = false,
     val isSpoiler: Boolean = false,
+    val authorProfile: com.chaekchaek.app.domain.profile.AuthorProfile = com.chaekchaek.app.domain.profile.AuthorProfile(authorLabel),
 )
 
 /** `밑줄이 겹친 책` 카드. */

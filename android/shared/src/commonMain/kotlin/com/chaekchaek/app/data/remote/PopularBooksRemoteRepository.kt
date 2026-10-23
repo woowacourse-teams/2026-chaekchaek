@@ -111,7 +111,15 @@ internal data class LatestReviewDto(
 internal data class LatestReviewAuthorDto(
     val displayName: String,
     val profileImageUrl: String? = null,
-)
+    val memberId: Long? = null,
+    val anonymous: Boolean = false,
+    val actorType: String? = null,
+    val profileStatus: String? = null,
+) {
+    fun toAuthorProfile() = com.chaekchaek.app.domain.profile.AuthorProfile(
+        displayName, memberId, profileImageUrl, anonymous, actorType, profileStatus,
+    )
+}
 
 internal fun LatestReviewsResponseDto.withReviewDetails(
     reviewDetailsByBook: Map<Long, List<ReviewDto>>,
@@ -178,6 +186,7 @@ internal fun PopularBooksResponseDto.toHomeFeed(
                     bookTitle = review.bookTitle,
                     coverId = review.bookCoverImageUrl,
                     authorLabel = review.author.displayName,
+                    authorProfile = review.author.toAuthorProfile(),
                     authorProfileImageUrl = review.author.profileImageUrl,
                     createdAt = Instant.parse(review.createdAt),
                     quoteText = review.content,

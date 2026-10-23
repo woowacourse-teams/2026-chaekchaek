@@ -42,7 +42,7 @@ DTO의 `actorType`은 현재 `BookReview` 매핑에 전달되지 않는다. `ano
 
 ## 타인 공개 서재 조회 확정 정책 (2026-10-23)
 
-[이슈 #607](https://github.com/woowacourse-teams/2026-chaekchaek/issues/607)의 구현 기준이다. 이 절을 추가한 시점에는 앱 기능을 구현하지 않았으며 Android·iOS 빌드, 기기 실행과 새 백엔드 실연동을 검증하지 않았다.
+[이슈 #607](https://github.com/woowacourse-teams/2026-chaekchaek/issues/607)의 구현 기준이다. 공통 앱 코드에 공개 조회와 프로필 이동을 추가했으며, 빌드·실행 결과는 아래 검증 기록으로 구분한다.
 
 ### 사용자 행동과 조회 범위
 
@@ -72,6 +72,33 @@ DTO의 `actorType`은 현재 `BookReview` 매핑에 전달되지 않는다. `ano
 
 - 사용자는 운영 API의 평면 책 목록 대신 전달받은 새 API 명세에 맞춘 여러 책장 구조 구현을 선택했다. 비교한 로컬 자료는 `/Users/ujeonghyeon/Downloads/openapi3 (1).yaml`이다. 운영 배포 여부는 별도 확인 대상이다.
 - `GET /api/v1/libraries?memberId={memberId}`로 책장 목록과 도서 요약을, `GET /api/v1/libraries/{libraryId}`로 책장 소유자의 독서 상태를 포함한 도서를 조회한다. 둘 다 로그인 없이 조회하는 계약이다.
-- 작성자 상태는 API의 `actorType`, `anonymous`, `profileStatus`, `memberId` 계약으로 판단한다. 표시 이름 문자열로 작성자 유형을 추정하지 않는다. 탈퇴 구분의 실제 응답은 구현 시 확인한다.
+- 작성자 상태는 API의 `actorType`, `anonymous`, `profileStatus`, `memberId` 계약으로 판단한다. 표시 이름 문자열로 작성자 유형을 추정하지 않는다. `origin/main`의 `ReviewService.authorOf`와 `HomeService`에서 익명은 ID·이미지를 숨기며, 비익명 탈퇴 회원은 MEMBER·UNAVAILABLE과 탈퇴 표시를 반환하는 경로를 확인했다. 필드가 빠진 과거 응답은 이름으로 추측하지 않고 접근을 차단한다.
 - 가입·닉네임 검증·기본 책장 생성, 내 서재 전환, 담기, 책장과 책의 편집·순서 저장, 이미지 공유, 질문 이모지 변경과 서버 수정은 이 이슈의 구현 범위가 아니다.
 - 다른 작업과 공유하는 최신 이름 정책은 닉네임 1~10자, 한글·영문·숫자·`-`·`_` 허용이다. 가입 시 기본 서재의 이름은 접미어 없이 닉네임과 같다. 조회 화면은 서버가 반환한 이름에 `의 책장`이나 `의 서재`를 붙이지 않는다. 기존 이름을 조회할 때 새 이름 입력 제약으로 자르거나 정규화하지 않는다.
+
+### 앱 구현과 디자인
+
+- [타인 서재 책장 목록](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1588-6560), [읽기 전용 책장 상세](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1588-6716), [빈 책장](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1588-7008), [빈 서재](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1588-7099), [로딩](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1588-7145), [조회 실패](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1588-7193), [열람 불가](https://www.figma.com/design/tn59Thk2GRcVLkzoO8k9Sr?node-id=1588-7253)를 기존 A안 섹션에 추가했다. 공통 Avatar·FilterChip·ErrorDialog·Loading 인스턴스를 재사용한다. 팀 라이브러리 게시는 수행하지 않았다.
+- `AuthorProfile`에서 작성자 접근을 판단한다. 홈 최신 감상, 피드 감상, 발견 감상, 책 상세 감상과 답글의 이름·아바타를 해당 entry에 묶인 이동 콜백으로 연결한다. 상단 내 프로필 버튼은 기존 마이페이지 이동을 유지한다.
+- `PublicLibraryRemoteRepository`는 공개 GET만 제공하고 쓰기 토큰을 전송하지 않는다. 책장 순서와 책 순서, 여러 책장에 담긴 같은 책과 과거 30권 초과 데이터를 유지한다. 서버가 반환한 다른 소유자의 자료는 화면에 표시하지 않는다.
+- `PublicLibraryViewModel`은 entry 수명 동안 조회 응답과 진행 중 요청을 소유하며 오류·재시도는 공통 정책에 위임한다. 필터와 세로·가로 목록 위치는 Navigation 3의 saveable entry 상태에 둔다. 로딩 중 임시 빈 목록으로 복원 위치를 덮어쓰지 않는다.
+- 객체지향 관점에서 기존 `AppNavigation`은 의존 객체 생성, 인증 동기화와 이동을 함께 담당해 단일 책임 원칙의 책임 집중이 남아 있다. 이 작업은 접근 정책과 공개 조회 책임을 별도 타입으로 분리했으며 전체 내비게이션 구조 개편은 포함하지 않는다.
+
+### 다른 세션에 남기는 합의
+
+이번 작업은 위의 타인 공개 조회만 가져온다. 다음은 별도 구현 범위다.
+
+- 내 서재의 여러 책장 전환, 책장 만들기·이름 변경·삭제, 책장·책 순서 편집과 저장.
+- 담기 시 최근 책장 자동 선택, 다른 책장 선택과 확정, 온보딩의 기본 책장 저장, 여러 책장 중복 배치, 같은 책장 중복 방지와 책장당 30권 저장 제한. 비회원 담기 안내는 “책을 담으려면 로그인이 필요해요.”다.
+- 회원가입 기본 책장 생성과 기존 사용자 마이그레이션. 기본 이름은 닉네임 그대로이며 닉네임은 1~10자, 한글·영문·숫자·`-`·`_`만 허용한다.
+- 이미지 공유와 감상 없는 책의 플레이스홀더. 링크 공개 범위·수명·취소·수정 반영 논의는 제외한다.
+- 책 상세 질문의 별 삭제와 `good`, `heart`, `think`, `calm`, `sad` 유지.
+- 저장 실패의 로컬 처리와 복구. 이번 공개 조회 작업에서 쓰기 실패 정책을 새로 정하지 않는다.
+
+책장 이름 최대 길이·책장 수 제한, 질문 이모지별 표시 이름·의미, 구체적인 저장 실패 복구는 별도 논의가 남아 있다. 조회 화면에서 이 제한을 임의로 적용하지 않는다.
+
+### 검증 기록
+
+- 운영 OpenAPI를 2026-10-23 다시 조회했으며 `/api/v1/libraries` 경로가 아직 없다. 사용자 지정 새 명세를 구현한 것으로, 운영 배포·실연동 완료를 뜻하지 않는다.
+- 단위 테스트는 접근 행렬, 익명 이미지 차단, 작성자 DTO 매핑, 공개 GET의 인증 헤더 부재, 순서·빈 책장·여러 배치·31권 응답, 오류 전파, 중복 이동·기존 서재 복귀와 지연 로딩·명시적 재시도를 검증한다. 실행 결과는 검증 후 갱신한다.
+- `android/scripts/public-library-fixture.py`와 Android `PublicLibraryNavigationTest`, iOS `PublicLibraryUITests`는 같은 로컬 HTTP 계약으로 비로그인 열람, 책 상세 왕복과 필터 보존, 기존 서재 복귀, 빈 서재, 오류 재시도와 작성자별 차단을 확인한다. 운영 데이터에 쓰지 않는다. 실행 전에는 테스트 추가와 실제 통과를 구분한다.

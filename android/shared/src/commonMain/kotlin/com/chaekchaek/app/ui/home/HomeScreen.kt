@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.home
 
+import com.chaekchaek.app.ui.common.authorProfileLink
+
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.chaekchaek.app.ui.common.LibrarySaveButton
 import com.chaekchaek.app.ui.archive.LibrarySaveUiState
@@ -910,6 +912,7 @@ private fun RecentReflectionsSection(
                         },
                         coverId = card.coverId,
                         authorName = card.authorName,
+                        authorProfile = card.authorProfile,
                         timeLabel = card.timeLabel,
                         excerpt = card.quoteText,
                         replyLabel = card.replyLabel,
@@ -963,6 +966,7 @@ private fun ReflectionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     saveButton: (@Composable () -> Unit)? = null,
+    authorProfile: com.chaekchaek.app.domain.profile.AuthorProfile = com.chaekchaek.app.domain.profile.AuthorProfile(authorName),
 ) {
     Surface(
         onClick = onClick,
@@ -1001,6 +1005,7 @@ private fun ReflectionCard(
                         authorName = authorName,
                         timeLabel = timeLabel,
                         imageSize = 18.dp,
+                        authorProfile = authorProfile,
                     )
                     Text(
                         excerpt,
@@ -1101,17 +1106,18 @@ private fun AuthorLine(
     timeLabel: String,
     imageSize: Dp,
     modifier: Modifier = Modifier,
+    authorProfile: com.chaekchaek.app.domain.profile.AuthorProfile = com.chaekchaek.app.domain.profile.AuthorProfile(authorName),
 ) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        val imageModifier = Modifier.size(imageSize).clip(CircleShape)
-        Image(painterResource(avatarResource(authorName)), null, imageModifier, contentScale = ContentScale.Crop)
+        com.chaekchaek.app.ui.common.AuthorProfileAvatar(authorProfile, imageSize)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 authorName,
+                modifier = Modifier.authorProfileLink(authorProfile),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,

@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.bookdetail
 
+import com.chaekchaek.app.ui.common.authorProfileLink
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -1115,9 +1117,9 @@ private fun ReviewCard(
             verticalArrangement = Arrangement.spacedBy(17.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AuthorAvatar(review.authorName, 30)
+                com.chaekchaek.app.ui.common.AuthorProfileAvatar(review.authorProfile, 30.dp)
                 Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
-                    Text(review.authorName, style = MaterialTheme.typography.titleSmall)
+                    Text(review.authorName, modifier = Modifier.authorProfileLink(review.authorProfile), style = MaterialTheme.typography.titleSmall)
                     val metadata = reviewMetadata(review.createdAt, review.currentPage)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
@@ -1248,10 +1250,11 @@ private fun Replies(
     ) {
         display.replies.forEach { reply ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                AuthorAvatar(reply.authorName, 24)
+                com.chaekchaek.app.ui.common.AuthorProfileAvatar(reply.authorProfile, 24.dp)
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
                         reply.authorName,
+                        modifier = Modifier.authorProfileLink(reply.authorProfile),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -1295,12 +1298,6 @@ private fun Replies(
             )
         }
     }
-}
-
-@Composable
-private fun AuthorAvatar(name: String, size: Int) {
-    val modifier = Modifier.size(size.dp).clip(CircleShape)
-    Image(painterResource(avatarResource(name)), contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
 }
 
 @Composable

@@ -7,6 +7,31 @@ import kotlin.test.assertTrue
 
 class NavigationBackStackTest {
     @Test
+    fun reopeningOwnerPopsToTheExistingEntryWithoutReplacingItsState() {
+        data class Screen(val id: String, val savedFilter: String = "전체")
+        val root = Screen("root")
+        val owner = Screen("member-42", "READING")
+        val detail = Screen("book-7")
+        val stack = mutableListOf(root, owner, Screen("shelf-9"), detail)
+        assertTrue(stack.navigateToExistingFromCurrent(detail, Screen("member-42")) { it.id == "member-42" })
+        assertEquals(listOf(root, owner), stack)
+        assertTrue(stack.last() === owner)
+    }
+    @Test
+    fun staleAndRepeatedPublicProfileCallbacksCannotChangeTheStack() {
+        val stack = mutableListOf("root", "book", "member-42")
+        assertFalse(stack.navigateToExistingFromCurrent("book", "member-99"))
+        assertFalse(stack.navigateToExistingFromCurrent("member-42", "member-42"))
+        assertEquals(listOf("root", "book", "member-42"), stack)
+    }
+    @Test
+    fun anotherOwnerIsAddedWithoutDiscardingPreviousOwners() {
+        val stack = mutableListOf("root", "member-42", "book")
+        assertTrue(stack.navigateToExistingFromCurrent("book", "member-99"))
+        assertEquals(listOf("root", "member-42", "book", "member-99"), stack)
+    }
+
+    @Test
     fun rootDestinationCannotBePopped() {
         val backStack = mutableListOf("root")
 
