@@ -55,7 +55,7 @@ class FutureBookCompatibilityTest {
     }) { install(ContentNegotiation) { json(json) } }
     try {
       assertEquals(listOf(42L), LibraryRemoteRepository(client).getAll("member").map { it.bookId })
-      assertEquals(listOf("1", "2"), pages)
+      assertEquals(listOf<String?>("1", "2"), pages)
     } finally { client.close() }
   }
 
