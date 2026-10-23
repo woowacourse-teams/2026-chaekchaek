@@ -59,8 +59,10 @@ describe('BooksPage', () => {
     renderProvider(<BooksPage />, { initialEntries: [`/books?query=${searchKeyword}`] });
 
     const user = userEvent.setup();
+    const searchInput = screen.getByRole('textbox', { name: '책 검색' });
 
-    await user.type(screen.getByRole('textbox', { name: '책 검색' }), searchKeyword);
+    await user.clear(searchInput);
+    await user.type(searchInput, searchKeyword);
 
     expect(await screen.findByText(/마션/)).toBeInTheDocument();
   });
