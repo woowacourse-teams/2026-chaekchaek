@@ -170,7 +170,7 @@ private fun ShelfNameSheet(initial: String, rename: Boolean, saving: Boolean, on
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ShelfSheet(title: String, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = ChaekSurface, shape = ChaekOverlayTokens.sheetShape) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = ChaekSurface, shape = ChaekOverlayTokens.sheetShape) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
