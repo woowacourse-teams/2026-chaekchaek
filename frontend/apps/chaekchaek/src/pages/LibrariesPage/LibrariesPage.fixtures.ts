@@ -42,3 +42,8 @@ export const librariesResponse = {
     },
   ],
 };
+
+export const librariesAfterCreateResponse = {
+  ...librariesResponse,
+  libraries: [...librariesResponse.libraries, createdLibraryResponse],
+};

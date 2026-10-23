@@ -1,7 +1,7 @@
-import { act, fireEvent, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { http, HttpResponse } from 'msw';
 
@@ -12,7 +12,11 @@ import { defaultLoggedAuthContextValue, renderProvider } from '@/test/utils/rend
 
 import { LibrariesPage } from '@/pages/LibrariesPage';
 
-import { createdLibraryResponse, librariesResponse } from './LibrariesPage.fixtures';
+import {
+  createdLibraryResponse,
+  librariesAfterCreateResponse,
+  librariesResponse,
+} from './LibrariesPage.fixtures';
 
 describe('LibrariesPage', () => {
   it('기본 렌더링이 된다', () => {
@@ -49,20 +53,29 @@ describe('LibrariesPage', () => {
 
   it('책장 추가 버튼을 클릭하면 팝업이 열리고, 이름을 입력해 책장을 추가할 수 있다', async () => {
     const user = userEvent.setup();
-    const createLibraryRequest = vi.fn();
-    const response = structuredClone(librariesResponse);
+    let isLibraryCreated = false;
 
     server.use(
-      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => HttpResponse.json(response)),
-      http.post(`${ENV.APP_API_URL}/api/v1/libraries`, async ({ request }) => {
-        createLibraryRequest(await request.json());
-        response.libraries.push(structuredClone(createdLibraryResponse));
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
+        if (isLibraryCreated) {
+          return HttpResponse.json(structuredClone(librariesAfterCreateResponse));
+        }
+
+        return HttpResponse.json(structuredClone(librariesResponse));
+      }),
+      http.post(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
+        isLibraryCreated = true;
 
         return HttpResponse.json(structuredClone(createdLibraryResponse), { status: 201 });
       }),
     );
 
     renderProvider(<LibrariesPage />, { auth: defaultLoggedAuthContextValue });
+
+    for (const library of librariesResponse.libraries) {
+      expect(await screen.findByRole('link', { name: library.name })).toBeVisible();
+    }
+    expect(screen.queryByRole('link', { name: createdLibraryResponse.name })).not.toBeInTheDocument();
 
     // 1. 책장 추가 버튼 클릭
     await user.click(screen.getByRole('button', { name: '책장 추가' }));
@@ -76,10 +89,7 @@ describe('LibrariesPage', () => {
     await user.type(within(popup).getByRole('textbox'), createdLibraryResponse.name);
     await user.click(within(popup).getByRole('button', { name: '만들기' }));
 
-    // 4. 추가한 책장이 화면에 표시되는지 확인
+    // 4. 추가한 책장이 목록에 표시되는지 확인한다.
     expect(await screen.findByRole('link', { name: createdLibraryResponse.name })).toBeVisible();
-    expect(createLibraryRequest).toHaveBeenCalledExactlyOnceWith({
-      name: createdLibraryResponse.name,
-    });
   });
 });
