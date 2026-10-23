@@ -280,7 +280,7 @@ class BookDetailViewModel(
             reloadAfterSuccess = false,
         ) {
             val state = _uiState.value
-            state.detail?.myRecord?.let { return@mutate it }
+            state.detail?.takeIf { it.isRegisteredInMyLibrary }?.myRecord?.let { return@mutate it }
             requireNotNull(state.detail)
             val book = requireNotNull(state.displayBook)
             repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken())

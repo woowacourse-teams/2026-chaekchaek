@@ -554,6 +554,8 @@ final class LoginRequiredSheetUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["출판일 없는 호밀 도서"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts["출판일 누락 도서"].exists)
         XCTAssertFalse(app.staticTexts["ISBN 없는 세트"].exists)
+        XCTAssertFalse(app.staticTexts["ID 없는 도서"].exists)
+        XCTAssertFalse(app.staticTexts["ID 누락 도서"].exists)
         XCTAssertFalse(app.staticTexts["출판일 정보 없음"].exists)
         XCTAssertFalse(app.buttons["다시 시도"].exists)
         XCTAssertEqual(fixture.completedRequests(for: "/api/v1/books"), 1)
@@ -866,10 +868,12 @@ private final class RefreshFixtureServer: @unchecked Sendable {
         switch path {
         case "/api/v1/books" where searchMetadata:
             body = """
-            {"totalCount":3,"nextPage":null,"items":[
-              {"title":"출판일 없는 호밀 도서","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","publishedDate":null,"isbn13":"9788937460449"},
-              {"title":"출판일 누락 도서","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","isbn13":"9788936433598"},
-              {"title":"ISBN 없는 세트","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","publishedDate":null,"isbn13":""}
+            {"totalCount":5,"nextPage":null,"items":[
+              {"bookId":null,"title":"ID 없는 도서","coverImageUrl":"","authors":[],"translators":[],"publisher":"출판사","category":"소설","isbn13":"9780000000001"},
+              {"title":"ID 누락 도서","coverImageUrl":"","authors":[],"translators":[],"publisher":"출판사","category":"소설","isbn13":"9780000000002"},
+              {"bookId":41,"title":"출판일 없는 호밀 도서","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","publishedDate":null,"isbn13":"9788937460449"},
+              {"bookId":42,"title":"출판일 누락 도서","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","isbn13":"9788936433598"},
+              {"bookId":43,"title":"ISBN 없는 세트","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","publishedDate":null,"isbn13":""}
             ]}
             """
         case "/api/v1/books/by-isbn/9780000000001":

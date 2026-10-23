@@ -103,6 +103,34 @@ private fun runFeedViewModelTest(block: suspend TestScope.() -> Unit) = runTest 
 @OptIn(ExperimentalCoroutinesApi::class)
 class FeedViewModelTest {
     @Test
+    fun `건너뛴 실제 페이지까지 최초 조회와 추가 로딩 후 복원한다`() = runFeedViewModelTest {
+        for (skipInitial in listOf(true, false)) {
+            var changed = false
+            val requests = mutableListOf<Int>()
+            val repository = object : ReviewFeedRepository {
+                override suspend fun reviewFeed(page: Int, viewer: FeedViewer): ReviewFeedPage {
+                    requests += page
+                    val actual = if (!changed && page == (if (skipInitial) 1 else 2)) 3 else page
+                    return ReviewFeedPage(listOf(review(actual.toLong())), 3,
+                        if (actual < 3) actual + 1 else null, lastLoadedPage = actual)
+                }
+            }
+            val saved = SavedStateHandle()
+            val vm = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, savedStateHandle = saved)
+            advanceUntilIdle()
+            if (!skipInitial) { vm.loadMore(); advanceUntilIdle() }
+            saved.get<Int>(FeedSavedStateKeys.LoadedPage) shouldBe 3
+            changed = true
+            requests.clear()
+            val restored = FeedViewModel(repository, FEED_CLOCK, TestFeedReviewActions, savedStateHandle = saved)
+            advanceUntilIdle()
+            requests shouldBe listOf(1, 2, 3)
+            restored.uiState.value.shouldBeInstanceOf<FeedUiState.Content>()
+                .reviews.map { it.reviewId } shouldBe listOf(1L, 2L, 3L)
+        }
+    }
+
+    @Test
     fun `최초 조회 오류창에서 복구한 요청은 재시도로 기록한다`() = runFeedViewModelTest {
         assertErrorRecoveryRecordsRetry(refresh = false)
     }

@@ -32,17 +32,26 @@ class PopularBooksRemoteRepository(
         val detailedLatestReviews = latestReviews.withReviewDetails(
             reviewDetailsByBook = loadLatestReviewDetails(latestReviews, accessToken),
         )
-        val readingBook = accessToken?.let { token ->
-            client.get("${apiConfiguration.baseUrl}/api/v1/library") {
+        val readingBook = accessToken?.let { loadReadingBook(it) }
+        return popularBooks.toHomeFeed(detailedLatestReviews, readingBook)
+    }
+
+    private suspend fun loadReadingBook(token: String): ReadingBookDto? {
+        var page = 1
+        while (true) {
+            val response = client.get("${apiConfiguration.baseUrl}/api/v1/library") {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 url {
-                    parameters.append("page", "1")
+                    parameters.append("page", page.toString())
                     parameters.append("status", "READING")
                     parameters.append("sort", "RECENT")
                 }
-            }.body<LibraryResponseDto>().items.firstOrNull { it.bookId != null }
+            }.body<LibraryResponseDto>()
+            response.items.firstOrNull { it.bookId != null }?.let { return it }
+            val nextPage = response.nextPage ?: return null
+            check(nextPage > page) { "서재의 다음 페이지가 현재 페이지보다 커야 합니다" }
+            page = nextPage
         }
-        return popularBooks.toHomeFeed(detailedLatestReviews, readingBook)
     }
 
     private suspend fun loadLatestReviewDetails(
@@ -138,6 +147,7 @@ internal fun LatestReviewsResponseDto.withReviewDetails(
 @Serializable
 internal data class LibraryResponseDto(
     val items: List<ReadingBookDto>,
+    val nextPage: Int? = null,
 )
 
 @Serializable

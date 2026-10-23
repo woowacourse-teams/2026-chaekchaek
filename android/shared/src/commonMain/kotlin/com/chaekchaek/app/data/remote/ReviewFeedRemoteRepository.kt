@@ -22,7 +22,7 @@ class ReviewFeedRemoteRepository(
     override suspend fun reviewFeed(page: Int, viewer: FeedViewer): ReviewFeedPage {
         var requestedPage = page
         while (true) {
-            val result = loadPage(requestedPage, viewer)
+            val result = loadPage(requestedPage, viewer).copy(lastLoadedPage = requestedPage)
             val nextPage = result.nextPage
             if (result.reviews.isNotEmpty() || nextPage == null) return result
             check(nextPage > requestedPage) { "피드의 다음 페이지가 현재 페이지보다 커야 합니다" }

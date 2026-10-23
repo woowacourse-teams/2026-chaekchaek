@@ -58,6 +58,7 @@ class FutureBookCompatibilityTest {
       assertEquals(listOf("42"), result.reviews.map { it.bookId.value })
       assertEquals(listOf<String?>("1", "2"), pages)
       assertNull(result.nextPage)
+      assertEquals(2, result.lastLoadedPage)
     } finally { client.close() }
   }
 
@@ -88,6 +89,28 @@ class FutureBookCompatibilityTest {
       assertNull(result.lower)
       assertNull(result.current)
       assertEquals(42L, result.higher?.bookId)
+    } finally { client.close() }
+  }
+
+  @Test
+  fun `홈 읽는 책은 ID 없는 첫 페이지 뒤의 정상 책을 찾는다`() = runTest {
+    val pages = mutableListOf<String?>()
+    val client = HttpClient(MockEngine { request ->
+      val body = when (request.url.encodedPath) {
+        "/api/v1/home/popular-books" -> """{"books":[]}"""
+        "/api/v1/home/latest-reviews" -> """{"reviews":[]}"""
+        else -> {
+          val page = request.url.parameters["page"]
+          pages += page
+          if (page == "1") """{"nextPage":2,"items":[{"bookId":null,$LIBRARY}]}"""
+          else """{"nextPage":null,"items":[{"bookId":42,$LIBRARY}]}"""
+        }
+      }
+      respond(body, headers = headersOf(HttpHeaders.ContentType, "application/json"))
+    }) { install(ContentNegotiation) { json(json) } }
+    try {
+      assertEquals("42", PopularBooksRemoteRepository(client).homeFeed("member").readingBook?.bookId?.value)
+      assertEquals(listOf<String?>("1", "2"), pages)
     } finally { client.close() }
   }
 

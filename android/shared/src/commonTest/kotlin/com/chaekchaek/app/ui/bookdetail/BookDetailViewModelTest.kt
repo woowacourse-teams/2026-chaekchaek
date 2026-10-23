@@ -52,6 +52,36 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class BookDetailViewModelTest {
   @Test
+  fun `독서 기록만 남은 미등록 책 담기는 서버에 등록하고 별점을 유지한다`() = runViewModelTest {
+    var adds = 0
+    val client = testClient(MockEngine { request ->
+      val body = when {
+        request.method == HttpMethod.Post && request.url.encodedPath == "/api/v1/library" -> {
+          adds += 1
+          """{"bookId":42,"status":"READING","currentPage":12,"rating":4.0}"""
+        }
+        request.url.encodedPath.contains("/by-isbn/") ->
+          DETAIL_WITH_RECORD.replace("\"myRecord\":", "\"isRegisteredInMyLibrary\":false,\"myRecord\":")
+        else -> EMPTY_REVIEWS
+      }
+      respond(body, headers = jsonHeaders())
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val store = ViewModelStore().also { it.put("detail", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), "member")
+      awaitReal { vm.uiState.first { it.detail != null } }
+      assertFalse(vm.uiState.value.detail!!.isRegisteredInMyLibrary)
+      val saved = CompletableDeferred<Unit>()
+      vm.addToLibrary { saved.complete(Unit) }
+      awaitReal { saved.await() }
+      assertEquals(1, adds)
+      assertTrue(vm.uiState.value.detail!!.isRegisteredInMyLibrary)
+      assertEquals(4.0, vm.uiState.value.detail?.myRating)
+    } finally { store.clear(); client.close() }
+  }
+
+  @Test
   fun `익명 설정 실패는 감상 작성을 막고 재시도는 설정 성공 후 한번만 등록한다`() = runViewModelTest {
     val writes = mutableListOf<String>()
     var failAnonymity = true
