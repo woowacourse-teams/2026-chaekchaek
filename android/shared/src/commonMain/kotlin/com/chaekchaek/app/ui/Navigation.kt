@@ -438,7 +438,7 @@ private fun AppNavigationContent(
                         state = state,
                         onBack = { bookshelfViewModel.refresh(); backStack.popDestinationIfCurrent(key) },
                         modifier = safeContent,
-                        savedToLibrary = bookshelfState.shelves.any { shelf -> shelf.items.any { it.isbn13 == displayBook.isbn13 } },
+                        savedToLibrary = state.detail?.isRegisteredInMyLibrary ?: bookshelfState.shelves.any { shelf -> shelf.items.any { it.isbn13 == displayBook.isbn13 } },
                         externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
                         externalLibraryLoading = librarySaveState.showLoading,
                         anonymousReviews = anonymousReviews,
@@ -481,16 +481,15 @@ private fun AppNavigationContent(
                                     bookshelfViewModel.refresh()
                                     onSaved()
                                 },
-                                onLibraryAdded = bookshelfViewModel::refresh,
                             )
                         },
                         errorRecovery = viewModel.errors,
                         onReviewCreate = viewModel::createReview,
                         onQuestionAReviewCreate = { draft ->
-                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, bookshelfViewModel::refresh, onRatingSaved = bookshelfViewModel::refresh, anonymous = draft.anonymous)
+                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, onRatingSaved = bookshelfViewModel::refresh, anonymous = draft.anonymous)
                         },
                         onQuestionAReviewUpdate = { reviewId, draft, request ->
-                            viewModel.updateReviewWithRating(reviewId, request, draft.rating, bookshelfViewModel::refresh, onRatingSaved = bookshelfViewModel::refresh)
+                            viewModel.updateReviewWithRating(reviewId, request, draft.rating, onRatingSaved = bookshelfViewModel::refresh)
                         },
                         onReviewOpen = viewModel::openReviewComposer,
                         onReplyOpen = viewModel::openReplyComposer,
