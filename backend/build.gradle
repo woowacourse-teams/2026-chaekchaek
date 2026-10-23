@@ -118,6 +118,10 @@ openapi3 {
 }
 
 tasks.named('test') {
+	def mysqlMigrationTestPort = providers.environmentVariable('MYSQL_MIGRATION_TEST_PORT')
+	inputs.property('mysqlMigrationTestPort', mysqlMigrationTestPort.orElse('disabled'))
+	outputs.upToDateWhen { !mysqlMigrationTestPort.isPresent() }
+	outputs.doNotCacheIf('MySQL migration tests require a live database') { mysqlMigrationTestPort.isPresent() }
 	outputs.dir snippetsDir
 	useJUnitPlatform()
 	doFirst {
