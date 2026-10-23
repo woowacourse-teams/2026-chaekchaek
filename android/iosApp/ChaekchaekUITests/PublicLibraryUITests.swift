@@ -149,6 +149,12 @@ final class PublicLibraryUITests: XCTestCase {
         XCTAssertTrue(originalSort.isHittable)
     }
 
+    private func requestCount(memberId: Int) async throws -> Int {
+        let (data, _) = try await URLSession.shared.data(from: URL(string: "http://127.0.0.1:19087/__607")!)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let counts = try XCTUnwrap(body["counts"] as? [String: Int])
+        return try XCTUnwrap(counts["/api/v1/libraries?memberId=\(memberId)"])
+    }
     @MainActor
     private func dragSpines(_ app: XCUIApplication, y: CGFloat) {
         let start = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.width * 0.85, dy: y))
@@ -211,6 +217,9 @@ final class PublicLibraryUITests: XCTestCase {
         dragSpines(app, y: libraryShelf.frame.minY + 160)
         let scrolledLabel = libraryShelf.label
         XCTAssertNotEqual(scrolledLabel, originalLabel)
+        let librarySpine = find("서재 도서 17 책등", in: app)
+        XCTAssertTrue(librarySpine.exists)
+        let libraryX = librarySpine.frame.minX
         libraryShelf.tap(); XCTAssertTrue(find("읽는 중", in: app).waitForExistence(timeout: 10))
         let firstSpine = find("서재 도서 1 책등", in: app)
         XCTAssertTrue(firstSpine.waitForExistence(timeout: 10))
@@ -221,6 +230,7 @@ final class PublicLibraryUITests: XCTestCase {
         laterSpine.tap(); XCTAssertTrue(app.staticTexts["공개 서재를 확인하는 감상"].waitForExistence(timeout: 15)); back(app)
         XCTAssertTrue(laterSpine.waitForExistence(timeout: 10)); XCTAssertEqual(laterSpine.frame.minX, shelfX, accuracy: 1)
         back(app); XCTAssertTrue(libraryShelf.waitForExistence(timeout: 10)); XCTAssertEqual(libraryShelf.label, scrolledLabel)
+        XCTAssertTrue(librarySpine.exists); XCTAssertEqual(librarySpine.frame.minX, libraryX, accuracy: 1)
         let empty = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "빈책장")).firstMatch
         reveal(empty, in: app); empty.tap()
         XCTAssertTrue(find("전체", in: app).waitForExistence(timeout: 10))
@@ -228,8 +238,11 @@ final class PublicLibraryUITests: XCTestCase {
         back(app); XCTAssertTrue(libraryShelf.waitForExistence(timeout: 10)); back(app)
         profile("오류서재독자", in: app); XCTAssertTrue(app.staticTexts["서재를 불러오지 못했어요"].waitForExistence(timeout: 10))
         app.buttons["닫기"].tap(); XCTAssertFalse(app.staticTexts["서재를 불러오지 못했어요"].exists)
-        XCTAssertTrue(app.staticTexts["오류서재독자"].exists); back(app)
+        XCTAssertTrue(app.staticTexts["오류서재독자"].exists)
+        let countAfterClose = try await requestCount(memberId: 44); XCTAssertEqual(countAfterClose, 1)
+        back(app)
         XCTAssertTrue(find("오류서재독자 프로필", in: app).exists)
         profile("오류서재독자", in: app); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10))
+        let countAfterReentry = try await requestCount(memberId: 44); XCTAssertEqual(countAfterReentry, 2)
     }
 }
