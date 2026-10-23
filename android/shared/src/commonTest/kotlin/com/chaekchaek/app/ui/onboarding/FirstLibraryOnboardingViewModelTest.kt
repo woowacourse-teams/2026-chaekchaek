@@ -67,9 +67,10 @@ class FirstLibraryOnboardingViewModelTest {
     @Test
     fun capacityConflictDoesNotCompleteOnboardingOrDropSelectedBooks() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        val conflict = io.ktor.client.HttpClient(io.ktor.client.engine.mock.MockEngine {
-            respond("""{"code":"LIBRARY_ITEM_LIMIT_EXCEEDED"}""", io.ktor.http.HttpStatusCode.Conflict)
-        }) { expectSuccess = true }
+        val conflict = io.ktor.client.HttpClient(io.ktor.client.engine.mock.MockEngine(io.ktor.client.engine.mock.MockEngineConfig().apply {
+            dispatcher = StandardTestDispatcher(testScheduler)
+            addHandler { respond("""{"code":"LIBRARY_ITEM_LIMIT_EXCEEDED"}""", io.ktor.http.HttpStatusCode.Conflict) }
+        })) { expectSuccess = true }
         try {
             val selected = book("1", "첫 책")
             val vm = FirstLibraryOnboardingViewModel(
