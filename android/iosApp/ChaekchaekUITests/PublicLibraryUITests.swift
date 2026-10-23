@@ -1,6 +1,7 @@
 import XCTest
 
 final class PublicLibraryUITests: XCTestCase {
+    override func setUpWithError() throws { continueAfterFailure = false }
     @MainActor
     private func start() async throws -> XCUIApplication {
         let base = URL(string: "http://127.0.0.1:19087")!
@@ -52,7 +53,14 @@ final class PublicLibraryUITests: XCTestCase {
         XCTAssertTrue(filter.waitForExistence(timeout: 10))
         XCTAssertTrue(filter.isSelected)
         XCTAssertTrue(book.exists)
-        reveal(book, in: app); book.tap()
+        let laterBook = app.staticTexts["서재 도서 17"]
+        reveal(laterBook, in: app); laterBook.tap()
+        XCTAssertTrue(app.staticTexts["공개 서재를 확인하는 감상"].waitForExistence(timeout: 15))
+        back(app)
+        XCTAssertTrue(laterBook.waitForExistence(timeout: 10))
+        XCTAssertTrue(laterBook.isHittable)
+        XCTAssertFalse(app.staticTexts["서재 도서 18"].exists)
+        laterBook.tap()
         XCTAssertTrue(app.staticTexts["공개 서재를 확인하는 감상"].waitForExistence(timeout: 15))
         profile("독자A", in: app)
         XCTAssertTrue(app.staticTexts["기본책장"].waitForExistence(timeout: 10))

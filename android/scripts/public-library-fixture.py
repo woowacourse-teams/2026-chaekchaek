@@ -21,7 +21,7 @@ def book(i):
                 readingUpdatedAt="2026-10-23T00:00:00Z")
 def review(i, profile=None):
     return dict(reviewId=i, content="공개 서재를 확인하는 감상", quote=None, chapter=None, currentPage=None,
-                createdAt="2026-10-23T00:00:00Z", author=profile or author(), replyCount=1,
+                createdAt=f"2026-10-23T00:00:{i:02d}Z", author=profile or author(), replyCount=1,
                 likeCount=0, likedByMe=False, isSpoiler=False, deleted=False,
                 recentReplies=[dict(replyId=100+i, content="답글 작성자도 서재로 이동", author=author("답글독자", 42),
                                     likeCount=0, likedByMe=False, deleted=False)],
