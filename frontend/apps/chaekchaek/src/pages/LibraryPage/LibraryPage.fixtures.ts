@@ -25,6 +25,9 @@ export const libraryResponse = {
 
 export const renamedLibraryName = '다시 읽고 싶은 책';
 
+export const downloadedLibraryImageDataUrl =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aCWQAAAAASUVORK5CYII=';
+
 export const libraryBooks = Array.from({ length: 23 }, (_, index) => ({
   bookId: index + 100,
   title: `책장 도서 ${index + 1}`,
