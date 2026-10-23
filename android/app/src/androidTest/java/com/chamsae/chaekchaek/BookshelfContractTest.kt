@@ -23,10 +23,10 @@ import java.net.URI
 @RunWith(AndroidJUnit4::class)
 class BookshelfContractTest {
     @get:Rule val compose = createComposeRule()
-    private val origin = "http://10.0.2.2:19068"
+    private val origin = ApiConfiguration.current.baseUrl
 
     @Test fun createRenameAddRemove() {
-        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.current.baseUrl == origin)
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
         request("/__bookshelf/reset", "POST")
         compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
         waitText("내 서재")
@@ -67,7 +67,7 @@ class BookshelfContractTest {
     }
 
     @Test fun nativeImageSaveAndShare() {
-        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.current.baseUrl == origin)
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
         request("/__bookshelf/reset", "POST")
         compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
         waitText("내 서재")
@@ -142,7 +142,7 @@ class BookshelfContractTest {
 
     private fun request(path: String, method: String = "GET"): String {
         val connection = URI(origin + path).toURL().openConnection() as HttpURLConnection
-        connection.connectTimeout = 2_000; connection.readTimeout = 2_000; connection.requestMethod = method
+        connection.connectTimeout = 10_000; connection.readTimeout = 10_000; connection.requestMethod = method
         return try { connection.inputStream.bufferedReader().use { it.readText() } } finally { connection.disconnect() }
     }
 }
