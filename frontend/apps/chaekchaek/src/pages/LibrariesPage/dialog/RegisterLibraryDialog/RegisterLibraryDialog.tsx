@@ -4,7 +4,7 @@ import type { RegisterLibraryDialogProps } from './RegisterLibraryDialog.types';
 
 export const RegisterLibraryDialog = ({ onClose }: RegisterLibraryDialogProps) => {
   return (
-    <Dialog onClose={onClose}>
+    <Dialog onClose={onClose} role="dialog" aria-label="새 책장 만들기">
       <Dialog.Container>
         <Dialog.Header>새 책장 만들기</Dialog.Header>
         <Dialog.Body>

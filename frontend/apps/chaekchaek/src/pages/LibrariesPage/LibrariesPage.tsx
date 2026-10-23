@@ -82,6 +82,7 @@ export const LibrariesPage = () => {
               trailing={
                 <IconButton
                   variant="secondary"
+                  aria-label="책장 추가"
                   onClick={() => {
                     handleOpenDialog('RegisterLibraryDialog');
                   }}
