@@ -993,7 +993,14 @@ final class BookshelfContractUITests: XCTestCase {
         app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = origin
         app.launch()
         let shelfTab = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "내 서재")).firstMatch
-        XCTAssertTrue(shelfTab.waitForExistence(timeout: 15))
+        guard shelfTab.waitForExistence(timeout: 15) else {
+            let screen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            screen.name = "책장 시작 화면 실패"
+            screen.lifetime = .keepAlways
+            add(screen)
+            XCTFail("내 서재 진입 버튼이 표시되지 않았어요: \(app.debugDescription)")
+            return
+        }
         shelfTab.tap()
         let firstShelf = app.buttons["bookshelf-1"]
         XCTAssertTrue(firstShelf.waitForExistence(timeout: 10))
