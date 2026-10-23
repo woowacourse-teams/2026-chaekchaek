@@ -48,10 +48,10 @@ class LibraryTest {
     }
 
     @Test
-    @DisplayName("서재 이름이 100자이면 생성할 수 있다")
+    @DisplayName("서재 이름이 10자이면 생성할 수 있다")
     void should_CreateLibrary_When_NameHasMaximumLength() {
         // given
-        String name = "가".repeat(100);
+        String name = "가".repeat(10);
 
         // when
         Library library = Library.create(1L, name, NOW);
@@ -79,10 +79,10 @@ class LibraryTest {
     }
 
     @Test
-    @DisplayName("앞뒤 공백을 제거한 서재 이름이 100자이면 생성할 수 있다")
+    @DisplayName("앞뒤 공백을 제거한 서재 이름이 10자이면 생성할 수 있다")
     void should_CreateLibrary_When_StrippedNameHasMaximumLength() {
         // given
-        String expectedName = "가".repeat(100);
+        String expectedName = "가".repeat(10);
         String name = "  " + expectedName + "  ";
 
         // when
@@ -123,10 +123,10 @@ class LibraryTest {
     }
 
     @Test
-    @DisplayName("서재 이름이 100자를 초과하면 생성을 거부한다")
+    @DisplayName("서재 이름이 10자를 초과하면 생성을 거부한다")
     void should_RejectCreation_When_NameExceedsMaximumLength() {
         // given
-        String name = "가".repeat(101);
+        String name = "가".repeat(11);
 
         // when & then
         assertThatThrownBy(() -> Library.create(1L, name, NOW))

@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 )
 public class Library {
 
-    private static final int NAME_MAX_LENGTH = 100;
+    private static final int NAME_MAX_LENGTH = 10;
     private static final int NAME_COLUMN_LENGTH = 104;
     private static final Pattern NEW_NAME_PATTERN = Pattern.compile("^[가-힣A-Za-z0-9_-]{1,10}$");
 
