@@ -204,7 +204,7 @@ class SearchViewModel(
                 }
                 loadedQuery = trimmed
                 loadedSort = requestedSort
-                if (page.items.isEmpty()) SearchUiState.Empty else SearchUiState.Success(
+                if (page.items.isEmpty() && page.nextPage == null) SearchUiState.Empty else SearchUiState.Success(
                     page.items,
                     page.totalCount,
                     page.nextPage,

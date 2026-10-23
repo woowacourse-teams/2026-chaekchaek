@@ -705,6 +705,18 @@ class SearchViewModelTest {
             assertEquals(refreshed.results,
                 (restoredWithoutLastPage.uiState.value as SearchUiState.Success).results)
             assertEquals(listOf(1, 3, 1, 3, 1, 3, 1, 3, 1, 3), requests)
+
+            earlierPageChanged = false
+            requests.clear()
+            vm.refresh()
+            advanceUntilIdle()
+            val emptyWindow = vm.uiState.value as SearchUiState.Success
+            assertTrue(emptyWindow.results.isEmpty())
+            assertEquals(5, emptyWindow.nextPage)
+            val restoredEmptyWindow = SearchViewModel(repository, {}, { true }, savedStateHandle = handle)
+            advanceUntilIdle()
+            assertEquals(emptyWindow, restoredEmptyWindow.uiState.value)
+            assertEquals(listOf(1, 3, 1, 3), requests)
         } finally { Dispatchers.resetMain() }
     }
 
