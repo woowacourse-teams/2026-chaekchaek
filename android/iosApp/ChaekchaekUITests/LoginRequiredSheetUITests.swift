@@ -984,6 +984,7 @@ final class BookshelfContractUITests: XCTestCase {
 
     @MainActor
     func testShelfCreateRenameAddRemoveAndImagePreview() async throws {
+        continueAfterFailure = false
         let marker = try? await request("/__bookshelf")
         guard marker != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
         _ = try await request("/__bookshelf/reset", method: "POST")
@@ -998,7 +999,7 @@ final class BookshelfContractUITests: XCTestCase {
         XCTAssertTrue(firstShelf.waitForExistence(timeout: 10))
         app.buttons["bookshelf-menu-1"].tap()
         element("이름 바꾸기", app).tap()
-        let input = app.textFields["bookshelfName"]
+        let input = app.textViews["bookshelfName"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()
         input.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 20))
@@ -1007,7 +1008,7 @@ final class BookshelfContractUITests: XCTestCase {
         XCTAssertTrue(input.waitForNonExistence(timeout: 10))
         XCTAssertTrue(element("나의 책장", app).waitForExistence(timeout: 10))
         app.buttons["bookshelf-create"].tap()
-        let newName = app.textFields["bookshelfName"]
+        let newName = app.textViews["bookshelfName"]
         XCTAssertTrue(newName.waitForExistence(timeout: 5))
         newName.tap()
         newName.typeText("올해읽을책")
