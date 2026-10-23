@@ -8,12 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 
-final class LibraryCreationExceptionTranslator {
+final class LibraryNameExceptionTranslator {
 
     private static final String NAME_UNIQUE_CONSTRAINT = "uq_libraries_member_name";
-    private static final Logger log = LoggerFactory.getLogger(LibraryCreationExceptionTranslator.class);
+    private static final Logger log = LoggerFactory.getLogger(LibraryNameExceptionTranslator.class);
 
-    private LibraryCreationExceptionTranslator() {
+    private LibraryNameExceptionTranslator() {
     }
 
     static RuntimeException translate(DataIntegrityViolationException exception) {
@@ -26,7 +26,7 @@ final class LibraryCreationExceptionTranslator {
                 .addKeyValue("type", "error")
                 .addKeyValue("errorCode", errorCode.getCode())
                 .addKeyValue("constraint", constraint)
-                .log("서재 이름 중복");
+                .log("책장 이름 중복");
         BusinessException translated = new BusinessException(errorCode);
         translated.initCause(exception);
         return translated;

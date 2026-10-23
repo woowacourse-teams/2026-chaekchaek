@@ -88,7 +88,9 @@ public class SecurityConfig {
                         "/api/v1/reviews/*/replies",
                         "/api/v1/reviews/*/reactions",
                         "/api/v1/replies/*",
-                        "/api/v1/replies/*/reactions"
+                        "/api/v1/replies/*/reactions",
+                        "/api/v1/libraries",
+                        "/api/v1/libraries/**"
                 ))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(

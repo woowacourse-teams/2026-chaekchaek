@@ -9,12 +9,16 @@ import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.AddLibraryItemRequest;
 import com.chaekchaek.library.dto.BulkDeleteLibraryItemsRequest;
 import com.chaekchaek.library.dto.BulkUpdateLibraryStatusRequest;
+import com.chaekchaek.library.dto.CreateLibraryRequest;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
+import com.chaekchaek.library.dto.LibraryResponse;
 import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RateBookRequest;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
+import com.chaekchaek.library.dto.RenameLibraryRequest;
 import com.chaekchaek.library.dto.UpdateLibraryItemRequest;
+import com.chaekchaek.library.service.LibraryBookService;
 import com.chaekchaek.library.service.LibraryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -44,7 +48,33 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class LibraryController {
 
     private final LibraryService libraryService;
+    private final LibraryBookService libraryBookService;
     private final CurrentMemberIdProvider currentMemberIdProvider;
+
+    @PostMapping("/libraries")
+    public ResponseEntity<LibraryResponse> create(@Valid @RequestBody CreateLibraryRequest request) {
+        LibraryResponse response = libraryService.create(writeMemberId(), request.name());
+        return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
+                        .path("/{libraryId}")
+                        .buildAndExpand(response.libraryId())
+                        .toUri())
+                .body(response);
+    }
+
+    @PatchMapping("/libraries/{libraryId}")
+    public ResponseEntity<Void> rename(
+            @PathVariable @Positive long libraryId,
+            @Valid @RequestBody RenameLibraryRequest request
+    ) {
+        libraryService.rename(writeMemberId(), libraryId, request.name());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/libraries/{libraryId}")
+    public ResponseEntity<Void> deleteLibrary(@PathVariable @Positive long libraryId) {
+        libraryBookService.deleteLibrary(writeMemberId(), libraryId);
+        return ResponseEntity.noContent().build();
+    }
 
     @GetMapping("/library")
     public ResponseEntity<LibraryListResponse> getLibrary(

@@ -20,9 +20,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 
-class LibraryCreationExceptionTranslatorTest {
+class LibraryNameExceptionTranslatorTest {
 
-    private final Logger logger = (Logger) LoggerFactory.getLogger(LibraryCreationExceptionTranslator.class);
+    private final Logger logger = (Logger) LoggerFactory.getLogger(LibraryNameExceptionTranslator.class);
     private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
 
     @BeforeEach
@@ -43,7 +43,7 @@ class LibraryCreationExceptionTranslatorTest {
             "PUBLIC.UQ_LIBRARIES_MEMBER_NAME_INDEX_9",
             "libraries.uq_libraries_member_name"
     })
-    @DisplayName("원인 체인의 서재명 제약 위반을 중복 오류로 바꾸고 식별 정보를 기록한다")
+    @DisplayName("원인 체인의 책장 이름 제약 위반을 중복 오류로 바꾸고 식별 정보를 기록한다")
     void should_TranslateAndLogDuplicateName_When_ConstraintMatches(String constraint) {
         // given
         ConstraintViolationException violation = new ConstraintViolationException(
@@ -52,7 +52,7 @@ class LibraryCreationExceptionTranslatorTest {
                 "insert failed", new IllegalStateException(violation));
 
         // when
-        RuntimeException translated = LibraryCreationExceptionTranslator.translate(exception);
+        RuntimeException translated = LibraryNameExceptionTranslator.translate(exception);
 
         // then
         assertThat(translated).isInstanceOfSatisfying(
@@ -81,7 +81,7 @@ class LibraryCreationExceptionTranslatorTest {
         DataIntegrityViolationException exception = new DataIntegrityViolationException("insert failed", violation);
 
         // when
-        RuntimeException translated = LibraryCreationExceptionTranslator.translate(exception);
+        RuntimeException translated = LibraryNameExceptionTranslator.translate(exception);
 
         // then
         assertThat(translated).isSameAs(exception);
@@ -96,7 +96,7 @@ class LibraryCreationExceptionTranslatorTest {
                 "insert failed", new SQLException("invalid data"));
 
         // when
-        RuntimeException translated = LibraryCreationExceptionTranslator.translate(exception);
+        RuntimeException translated = LibraryNameExceptionTranslator.translate(exception);
 
         // then
         assertThat(translated).isSameAs(exception);

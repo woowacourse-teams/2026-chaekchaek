@@ -26,7 +26,15 @@ public interface LibraryRepository extends JpaRepository<Library, Long> {
         try {
             return saveAndFlush(library);
         } catch (DataIntegrityViolationException exception) {
-            throw LibraryCreationExceptionTranslator.translate(exception);
+            throw LibraryNameExceptionTranslator.translate(exception);
+        }
+    }
+
+    default void rename(Library library) {
+        try {
+            saveAndFlush(library);
+        } catch (DataIntegrityViolationException exception) {
+            throw LibraryNameExceptionTranslator.translate(exception);
         }
     }
 }

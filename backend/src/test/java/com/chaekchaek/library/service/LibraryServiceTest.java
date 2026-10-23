@@ -3,12 +3,18 @@ package com.chaekchaek.library.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
@@ -20,6 +26,7 @@ import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
+import com.chaekchaek.library.dto.LibraryResponse;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
@@ -35,12 +42,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,6 +63,9 @@ class LibraryServiceTest {
             ZoneOffset.UTC
     );
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
+
+    private final Logger logger = (Logger) LoggerFactory.getLogger(LibraryService.class);
+    private final ListAppender<ILoggingEvent> appender = new ListAppender<>();
 
     @Mock
     private LibraryRepository libraryRepository;
@@ -75,6 +90,234 @@ class LibraryServiceTest {
 
     @Mock
     private PlatformTransactionManager transactionManager;
+
+    @BeforeEach
+    void setUp() {
+        appender.start();
+        logger.addAppender(appender);
+    }
+
+    @AfterEach
+    void tearDown() {
+        logger.detachAppender(appender);
+        appender.stop();
+    }
+
+    @Test
+    @DisplayName("닉네임이 있는 활성 회원의 맨 뒤에 빈 일반 책장을 생성한다")
+    void should_ReturnSavedLibrary_When_Created() {
+        // given
+        Library saved = mock(Library.class);
+        when(saved.getId()).thenReturn(7L);
+        when(saved.getName()).thenReturn("올해읽을책");
+        when(saved.isDefault()).thenReturn(false);
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
+        when(libraryRepository.findMaxDisplayOrderByMemberId(1L)).thenReturn(4L);
+        when(libraryRepository.create(any(Library.class))).thenReturn(saved);
+        LibraryService service = service();
+
+        // when
+        LibraryResponse actual = service.create(1L, "올해읽을책");
+
+        // then
+        ArgumentCaptor<Library> captor = ArgumentCaptor.forClass(Library.class);
+        InOrder lockOrder = inOrder(memberRepository, libraryRepository);
+        lockOrder.verify(memberRepository).findByIdForUpdate(1L);
+        lockOrder.verify(libraryRepository).findMaxDisplayOrderByMemberId(1L);
+        lockOrder.verify(libraryRepository).create(captor.capture());
+        Library created = captor.getValue();
+        assertThat(created.isOwnedBy(1L)).isTrue();
+        assertThat(created.getName()).isEqualTo("올해읽을책");
+        assertThat(created.isDefault()).isFalse();
+        assertThat(created.getDisplayOrder()).isEqualTo(5L);
+        assertThat(created.getCreatedAt()).isEqualTo(CLOCK.instant());
+        assertThat(actual.libraryId()).isEqualTo(7L);
+        assertThat(actual.name()).isEqualTo("올해읽을책");
+        assertThat(actual.isDefault()).isFalse();
+        assertThat(actual.totalCount()).isZero();
+        assertThat(actual.items()).isEmpty();
+        assertThat(appender.list).singleElement()
+                .satisfies(event -> assertThat(event.getKeyValuePairs())
+                        .extracting(pair -> pair.key, pair -> pair.value)
+                        .containsExactlyInAnyOrder(
+                                tuple("type", "event"),
+                                tuple("event", "library_created"),
+                                tuple("memberId", 1L),
+                                tuple("libraryId", 7L)
+                        ));
+    }
+
+    @Test
+    @DisplayName("도메인이 허용하지 않는 서재 이름이면 저장하지 않는다")
+    void should_NotSaveLibrary_When_NameIsInvalid() {
+        // given
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
+        LibraryService service = service();
+
+        // when & then
+        assertThatThrownBy(() -> service.create(1L, "   "))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST)
+                );
+        verifyNoInteractions(libraryRepository);
+        assertThat(appender.list).isEmpty();
+    }
+
+    @Test
+    @DisplayName("닉네임이 없으면 책장을 조회하거나 저장하지 않는다")
+    void should_RequireNickname_BeforeCreatingLibrary() {
+        // given
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
+        LibraryService service = service();
+
+        // when & then
+        assertThatThrownBy(() -> service.create(1L, "올해읽을책"))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.NICKNAME_REQUIRED)
+                );
+        verifyNoInteractions(libraryRepository);
+        assertThat(appender.list).isEmpty();
+    }
+
+    @Test
+    @DisplayName("비활성 회원은 책장을 조회하거나 저장할 수 없다")
+    void should_RejectCreatingLibrary_When_MemberIsInactive() {
+        // given
+        Member inactiveMember = memberWithoutNickname();
+        inactiveMember.withdraw(LocalDateTime.now());
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(inactiveMember));
+        LibraryService service = service();
+
+        // when & then
+        assertThatThrownBy(() -> service.create(1L, "올해읽을책"))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
+                );
+        verifyNoInteractions(libraryRepository);
+        assertThat(appender.list).isEmpty();
+    }
+
+    @Test
+    @DisplayName("서재 저장이 실패하면 생성 이벤트를 기록하지 않는다")
+    void should_NotLogCreatedEvent_When_PersistenceFails() {
+        // given
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
+        when(libraryRepository.create(any(Library.class)))
+                .thenThrow(new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS));
+        LibraryService service = service();
+
+        // when & then
+        assertThatThrownBy(() -> service.create(1L, "올해읽을책"))
+                .isInstanceOf(BusinessException.class);
+        assertThat(appender.list).isEmpty();
+    }
+
+    @Test
+    @DisplayName("책장 이름을 변경하고 기본 여부와 순서를 보존한 이벤트를 기록한다")
+    void should_RenameOwnedLibraryAndLogEvent_When_NameChanges() {
+        // given
+        Library library = Library.createDefault(1L, "올해읽을책", 5L, CLOCK.instant());
+        ReflectionTestUtils.setField(library, "id", 7L);
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
+        when(libraryRepository.findById(7L)).thenReturn(Optional.of(library));
+        LibraryService service = service();
+
+        // when
+        service.rename(1L, 7L, "읽을책");
+
+        // then
+        InOrder lockOrder = inOrder(memberRepository, libraryRepository);
+        lockOrder.verify(memberRepository).findByIdForUpdate(1L);
+        lockOrder.verify(libraryRepository).findById(7L);
+        lockOrder.verify(libraryRepository).rename(library);
+        assertThat(library.getName()).isEqualTo("읽을책");
+        assertThat(library.isDefault()).isTrue();
+        assertThat(library.getDisplayOrder()).isEqualTo(5L);
+        assertThat(library.getUpdatedAt()).isEqualTo(CLOCK.instant());
+        assertThat(appender.list).singleElement()
+                .satisfies(event -> assertThat(event.getKeyValuePairs())
+                        .extracting(pair -> pair.key, pair -> pair.value)
+                        .containsExactlyInAnyOrder(
+                                tuple("type", "event"),
+                                tuple("event", "library_renamed"),
+                                tuple("memberId", 1L),
+                                tuple("libraryId", 7L)
+                        ));
+        assertThat(appender.list.getFirst().getKeyValuePairs())
+                .extracting(pair -> pair.key)
+                .doesNotContain("name");
+    }
+
+    @Test
+    @DisplayName("현재 이름을 다시 요청하면 저장과 이벤트 없이 성공한다")
+    void should_NotPersistOrLog_When_RenamingToCurrentName() {
+        // given
+        Library library = Library.create(1L, "올해읽을책", CLOCK.instant());
+        ReflectionTestUtils.setField(library, "id", 7L);
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
+        when(libraryRepository.findById(7L)).thenReturn(Optional.of(library));
+        LibraryService service = service();
+
+        // when
+        service.rename(1L, 7L, "올해읽을책");
+
+        // then
+        verify(libraryRepository, never()).rename(any());
+        assertThat(library.getUpdatedAt()).isNull();
+        assertThat(appender.list).isEmpty();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 책장 이름 변경은 책장 없음 오류로 끝난다")
+    void should_RejectRename_When_LibraryIsMissing() {
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
+        when(libraryRepository.findById(7L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service().rename(1L, 7L, "읽을책"))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND)
+                );
+        verify(libraryRepository, never()).rename(any());
+        assertThat(appender.list).isEmpty();
+    }
+
+    @Test
+    @DisplayName("다른 회원의 책장은 이름을 변경할 수 없다")
+    void should_RejectRename_When_LibraryBelongsToAnotherMember() {
+        Library library = Library.create(2L, "다른사람", CLOCK.instant());
+        ReflectionTestUtils.setField(library, "id", 7L);
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
+        when(libraryRepository.findById(7L)).thenReturn(Optional.of(library));
+
+        assertThatThrownBy(() -> service().rename(1L, 7L, "읽을책"))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
+                );
+        assertThat(library.getName()).isEqualTo("다른사람");
+        verify(libraryRepository, never()).rename(any());
+        assertThat(appender.list).isEmpty();
+    }
+
+    @Test
+    @DisplayName("비활성 회원의 책장 이름 변경은 책장을 조회하기 전에 거절한다")
+    void should_RejectRename_When_MemberIsInactive() {
+        Member inactiveMember = memberWithoutNickname();
+        inactiveMember.withdraw(LocalDateTime.now());
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(inactiveMember));
+
+        assertThatThrownBy(() -> service().rename(1L, 7L, "읽을책"))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
+                );
+        verifyNoInteractions(libraryRepository);
+        assertThat(appender.list).isEmpty();
+    }
 
     @Test
     @DisplayName("일괄 완독 대상 중 전체 페이지가 없는 책이 있으면 어느 항목도 변경하지 않는다")
@@ -378,5 +621,15 @@ class LibraryServiceTest {
         when(book.getAuthors()).thenReturn(List.of());
         when(book.getTranslators()).thenReturn(List.of());
         return book;
+    }
+
+    private Member memberWithNickname() {
+        Member member = memberWithoutNickname();
+        member.updateNickname("책읽는사람");
+        return member;
+    }
+
+    private Member memberWithoutNickname() {
+        return Member.create("익명 회원", null, LocalDateTime.of(2026, 8, 14, 0, 0));
     }
 }

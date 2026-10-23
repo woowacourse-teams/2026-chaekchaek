@@ -20,7 +20,7 @@ public enum ErrorCode {
     ),
     NICKNAME_REQUIRED(
             "NICKNAME_REQUIRED",
-            "닉네임을 설정해야 익명 상태를 해제할 수 있습니다."
+            "닉네임을 먼저 설정해 주세요."
     ),
     REFRESH_TOKEN_REQUIRED(
             "REFRESH_TOKEN_REQUIRED",
