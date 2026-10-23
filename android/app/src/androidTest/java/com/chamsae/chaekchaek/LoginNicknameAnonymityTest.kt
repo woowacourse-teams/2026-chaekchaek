@@ -77,7 +77,9 @@ class LoginNicknameAnonymityTest {
         compose.onNode(hasSetTextAction()).performTextInput("reader")
         compose.onNodeWithText("확인").performClick()
         waitFor("설정을 변경하지 못했어요")
-        compose.onNodeWithText("닫기").performClick()
+        compose.onNode(hasText("닫기") and hasAnyAncestor(
+            isDialog() and hasAnyDescendant(hasText("설정을 변경하지 못했어요")),
+        )).performClick()
         compose.onNode(hasSetTextAction()).assertTextEquals("reader")
         capture(if (restored) "restored-nickname-retained" else "new-nickname-retained")
         compose.onNodeWithText("확인").performClick()
