@@ -1079,7 +1079,7 @@ final class BookshelfContractUITests: XCTestCase {
         attachment.lifetime = .keepAlways
         add(attachment)
         element("이미지 공유", app).tap()
-        let copyAction = app.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "복사", "Copy")).firstMatch
+        let copyAction = app.cells.matching(NSPredicate(format: "label == %@ OR label == %@", "복사", "Copy")).firstMatch
         guard copyAction.waitForExistence(timeout: 15) else {
             let failure = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             failure.name = "네이티브 공유창 표시 실패"
