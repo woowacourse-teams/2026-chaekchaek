@@ -23,6 +23,8 @@ export const libraryResponse = {
   ],
 };
 
+export const renamedLibraryName = '다시 읽고 싶은 책';
+
 // 10권씩 반환되는 API의 모든 페이지를 조회해야 전체 책등을 표시할 수 있다.
 export const paginatedLibraryBooks = Array.from({ length: 23 }, (_, index) => ({
   bookId: index + 100,
