@@ -2,8 +2,10 @@ package com.chaekchaek.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.chaekchaek.book.client.BookDetailClient;
 import com.chaekchaek.book.client.BookSearchClient;
-import com.chaekchaek.book.client.Yes24BookClient;
+import com.chaekchaek.book.client.kakao.KakaoBookSearchClient;
+import com.chaekchaek.book.client.yes24.Yes24BookClient;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.service.BookCommentCountReader;
 import com.chaekchaek.review.book.ReviewBookReader;
@@ -30,6 +32,7 @@ class DomainBoundaryWiringTest {
         // given
         var commentCountReaders = applicationContext.getBeansOfType(BookCommentCountReader.class);
         BookSearchClient bookSearchClient = applicationContext.getBean(BookSearchClient.class);
+        BookDetailClient bookDetailClient = applicationContext.getBean(BookDetailClient.class);
         var currentMemberIdProviders = applicationContext.getBeansOfType(CurrentMemberIdProvider.class);
         var reviewBookReaders = applicationContext.getBeansOfType(ReviewBookReader.class);
         var reviewMemberReaders = applicationContext.getBeansOfType(ReviewMemberReader.class);
@@ -37,7 +40,8 @@ class DomainBoundaryWiringTest {
 
         // then
         assertThat(commentCountReaders).containsOnlyKeys("reviewService");
-        assertThat(bookSearchClient).isInstanceOf(Yes24BookClient.class);
+        assertThat(bookSearchClient).isInstanceOf(KakaoBookSearchClient.class);
+        assertThat(bookDetailClient).isInstanceOf(Yes24BookClient.class);
         assertThat(currentMemberIdProviders).containsOnlyKeys("securityContextCurrentMemberIdProvider");
         assertThat(reviewBookReaders).containsOnlyKeys("persistentReviewBookReader");
         assertThat(reviewMemberReaders).containsOnlyKeys("persistentReviewMemberReader");
