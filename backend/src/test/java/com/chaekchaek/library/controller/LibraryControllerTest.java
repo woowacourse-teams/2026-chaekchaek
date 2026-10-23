@@ -99,6 +99,12 @@ class LibraryControllerTest {
             같은 책장에 같은 도서를 중복 배치할 수 없다. 이미 독서 기록이 있으면 요청 상태를 적용하지 않고
             기존 기록과 별점을 유지한다.
             """;
+    private static final String LIBRARY_BOOK_DELETE_SUMMARY = "책장에서 도서 배치 삭제";
+    private static final String LIBRARY_BOOK_DELETE_DESCRIPTION = """
+            인증된 회원이 소유한 책장에서 도서 배치를 삭제한다. 배치가 이미 없으면 아무 변경 없이 `204`를 반환한다.
+            삭제 후 회원의 다른 책장에 배치가 남지 않은 경우 독서 상태, 현재 페이지, 독서 갱신 시각만 초기화하고
+            기존 별점은 유지한다.
+            """;
     private static final String LIBRARY_LIST_SUMMARY = "내 서재 조회";
     private static final String LIBRARY_LIST_DESCRIPTION = "인증된 사용자가 읽기 상태와 정렬 기준으로 회원 단위의 기존 서재 도서 목록을 조회한다";
     private static final String PUBLIC_LIBRARY_LIST_SUMMARY = "사용자 공개 서재 조회";
@@ -263,6 +269,25 @@ class LibraryControllerTest {
                 ));
 
         verify(libraryBookService).addByIsbn13(MEMBER_ID, 7L, new Isbn13(ISBN13), ReadingStatus.READING, 368);
+    }
+
+    @Test
+    @DisplayName("배치 식별자를 지정하면 소유한 책장에서 도서 배치를 멱등 삭제한다")
+    void should_DeleteBookPlacement_When_LibraryAndBookIdsAreValid() throws Exception {
+        mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", 7L, BOOK_ID))
+                .andExpect(status().isNoContent())
+                .andDo(document(
+                        "library-book-delete",
+                        pathParameters(libraryIdPathParameter(), bookIdPathParameter()),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary(LIBRARY_BOOK_DELETE_SUMMARY)
+                                .description(LIBRARY_BOOK_DELETE_DESCRIPTION)
+                                .tag(LIBRARY_TAG)
+                                .pathParameters(libraryBookDeleteResourcePathParameters())
+                                .build())
+                ));
+
+        verify(libraryBookService).delete(MEMBER_ID, 7L, BOOK_ID);
     }
 
     @Test
@@ -967,6 +992,49 @@ class LibraryControllerTest {
         );
     }
 
+    @Test
+    @DisplayName("책장 도서 배치 삭제의 오류 응답을 문서화한다")
+    void should_DocumentProblemDetails_When_DeletingBookPlacementFails() throws Exception {
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", 0L, BOOK_ID)),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/libraries/0/books/10",
+                "library-book-delete-invalid-request",
+                LIBRARY_BOOK_DELETE_SUMMARY,
+                LIBRARY_BOOK_DELETE_DESCRIPTION,
+                libraryBookDeleteResourcePathParameters(),
+                noQueryParameters()
+        );
+
+        documentLibraryBookDeleteProblem(
+                ErrorCode.FORBIDDEN,
+                HttpStatus.FORBIDDEN,
+                "library-book-delete-forbidden"
+        );
+        documentLibraryBookDeleteProblem(
+                ErrorCode.LIBRARY_NOT_FOUND,
+                HttpStatus.NOT_FOUND,
+                "library-book-delete-library-not-found"
+        );
+    }
+
+    private void documentLibraryBookDeleteProblem(ErrorCode errorCode, HttpStatus status, String identifier)
+            throws Exception {
+        doThrow(new BusinessException(errorCode)).when(libraryBookService).delete(MEMBER_ID, 7L, BOOK_ID);
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", 7L, BOOK_ID)),
+                status,
+                errorCode,
+                "/api/v1/libraries/7/books/10",
+                identifier,
+                LIBRARY_BOOK_DELETE_SUMMARY,
+                LIBRARY_BOOK_DELETE_DESCRIPTION,
+                libraryBookDeleteResourcePathParameters(),
+                noQueryParameters()
+        );
+    }
+
     private void documentLibraryBookAddProblem(ErrorCode errorCode, HttpStatus status, String identifier)
             throws Exception {
         doThrow(new BusinessException(errorCode)).when(libraryBookService)
@@ -1296,6 +1364,17 @@ class LibraryControllerTest {
                 LIBRARY_DELETE_SUMMARY,
                 LIBRARY_DELETE_DESCRIPTION,
                 bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", 7L, BOOK_ID)),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/libraries/7/books/10",
+                "library-book-delete-unauthorized",
+                LIBRARY_BOOK_DELETE_SUMMARY,
+                LIBRARY_BOOK_DELETE_DESCRIPTION,
+                libraryBookDeleteResourcePathParameters(),
                 noQueryParameters()
         );
         documentProblemDetail(
@@ -1689,6 +1768,15 @@ class LibraryControllerTest {
                 ResourceDocumentation.parameterWithName("libraryId")
                         .type(SimpleType.INTEGER)
                         .description("도서를 배치할 책장 ID")
+        };
+    }
+
+    private ParameterDescriptorWithType[] libraryBookDeleteResourcePathParameters() {
+        return new ParameterDescriptorWithType[]{
+                ResourceDocumentation.parameterWithName("libraryId")
+                        .type(SimpleType.INTEGER)
+                        .description("도서 배치를 삭제할 책장 ID"),
+                bookIdResourcePathParameter()
         };
     }
 

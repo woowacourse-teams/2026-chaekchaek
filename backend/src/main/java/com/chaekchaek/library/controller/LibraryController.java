@@ -77,6 +77,15 @@ public class LibraryController {
                 .body(response);
     }
 
+    @DeleteMapping("/libraries/{libraryId}/books/{bookId}")
+    public ResponseEntity<Void> removeFromLibrary(
+            @PathVariable @Positive long libraryId,
+            @PathVariable @Positive long bookId
+    ) {
+        libraryBookService.delete(memberId(), libraryId, bookId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/library")
     public ResponseEntity<LibraryListResponse> getLibrary(
             @RequestParam @Positive int page,

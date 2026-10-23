@@ -79,6 +79,28 @@ public class LibraryBookService {
                 add(memberId, libraryId, resolvedBook.getId(), status, totalPages)));
     }
 
+    public void delete(long memberId, long libraryId, long bookId) {
+        writeTransaction.executeWithoutResult(transactionStatus -> deletePlacement(memberId, libraryId, bookId));
+    }
+
+    private void deletePlacement(long memberId, long libraryId, long bookId) {
+        memberRepository.findByIdForUpdate(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        requireOwnedLibrary(memberId, libraryId);
+
+        libraryBookRepository.findByLibraryIdAndBookId(libraryId, bookId).ifPresent(placement -> {
+            libraryBookRepository.delete(placement);
+            libraryBookRepository.flush();
+            if (libraryBookRepository.countByMemberIdAndBookId(memberId, bookId) == 0) {
+                LibraryItem item = libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
+                        .orElseThrow(() -> new IllegalStateException(
+                                "A placed book must have a shared library item"
+                        ));
+                item.clearReadingState();
+            }
+        });
+    }
+
     private LibraryItemResponse add(
             long memberId,
             long libraryId,

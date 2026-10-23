@@ -552,6 +552,7 @@ tasks.register('verifyOpenApi') {
 		def requiredLibraryOperations = [
 			'/api/v1/libraries'                       : ['post': ['201', '400', '401', '403', '409']],
 			'/api/v1/libraries/{libraryId}'           : ['post': ['201', '400', '401', '403', '404', '409', '422', '502']],
+			'/api/v1/libraries/{libraryId}/books/{bookId}': ['delete': ['204', '400', '401', '403', '404']],
 			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '404', '422']],
@@ -719,6 +720,7 @@ tasks.register('verifyOpenApi') {
 		def problemResponseCodes = [
 			'/api/v1/libraries'                       : ['post': ['400', '401', '409']],
 			'/api/v1/libraries/{libraryId}'           : ['post': ['400', '401', '403', '404', '409', '422', '502']],
+			'/api/v1/libraries/{libraryId}/books/{bookId}': ['delete': ['400', '401', '403', '404']],
 			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '404', '422']],

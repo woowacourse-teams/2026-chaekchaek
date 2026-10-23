@@ -4,6 +4,7 @@ import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.docume
 import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -17,6 +18,8 @@ import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.Library;
+import com.chaekchaek.library.domain.LibraryBook;
+import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
@@ -25,6 +28,7 @@ import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import jakarta.servlet.http.Cookie;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -167,6 +171,71 @@ class AccessTokenAuthenticationIntegrationTest {
         assertThat(libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()))
                 .get()
                 .satisfies(item -> assertThat(item.getStatus()).isEqualTo(ReadingStatus.READING));
+    }
+
+    @Test
+    @DisplayName("마지막 배치 삭제는 독서 상태를 초기화하고 별점을 유지하며 멱등하게 처리한다")
+    void should_ClearReadingStateAndPreserveRating_When_LastPlacementIsDeleted() throws Exception {
+        // given
+        String token = issueAccessToken(memberId.toString());
+        Library library = libraryRepository.create(Library.create(memberId, "가을에 읽을 책", Instant.now()));
+        Library anotherLibrary = libraryRepository.create(
+                Library.create(memberId, "겨울에 읽을 책", Instant.now())
+        );
+        Book book = bookRepository.saveAndFlush(Book.create(
+                new Isbn13("9788936433598"),
+                "책 제목",
+                "https://example.com/cover.jpg",
+                null,
+                null,
+                null,
+                List.of("작가"),
+                List.of(),
+                "출판사",
+                "분류",
+                null,
+                368,
+                null,
+                null
+        ));
+        LibraryItem item = LibraryItem.create(memberId, book.getId(), ReadingStatus.READING, 368, Instant.now());
+        item.rate(new BigDecimal("4.5"), Instant.now());
+        Instant addedAt = item.getAddedAt();
+        Instant ratingUpdatedAt = item.getRatingUpdatedAt();
+        libraryItemRepository.saveAndFlush(item);
+        libraryBookRepository.saveAndFlush(LibraryBook.create(library.getId(), book.getId(), 1L));
+        libraryBookRepository.saveAndFlush(LibraryBook.create(anotherLibrary.getId(), book.getId(), 1L));
+
+        // when
+        mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", library.getId(), book.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        assertThat(libraryBookRepository.findByLibraryIdAndBookId(library.getId(), book.getId())).isEmpty();
+        LibraryItem savedItem = libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()).orElseThrow();
+        assertThat(savedItem.getStatus()).isEqualTo(ReadingStatus.READING);
+        assertThat(savedItem.getRating()).isEqualByComparingTo("4.5");
+
+        // and then
+        mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", anotherLibrary.getId(), book.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        assertThat(libraryBookRepository.findByLibraryIdAndBookId(anotherLibrary.getId(), book.getId())).isEmpty();
+        savedItem = libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()).orElseThrow();
+        assertThat(savedItem.getStatus()).isNull();
+        assertThat(savedItem.getCurrentPage()).isNull();
+        assertThat(savedItem.getReadingUpdatedAt()).isNull();
+        assertThat(savedItem.getRating()).isEqualByComparingTo("4.5");
+        assertThat(savedItem.getAddedAt()).isEqualTo(addedAt);
+        assertThat(savedItem.getRatingUpdatedAt()).isEqualTo(ratingUpdatedAt);
+
+        mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", anotherLibrary.getId(), book.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNoContent());
+        assertThat(libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()))
+                .get()
+                .satisfies(unchanged -> assertThat(unchanged.getRating()).isEqualByComparingTo("4.5"));
     }
 
     @Test
