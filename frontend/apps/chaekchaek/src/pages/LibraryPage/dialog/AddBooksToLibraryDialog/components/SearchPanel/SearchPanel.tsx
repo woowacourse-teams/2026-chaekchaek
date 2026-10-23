@@ -98,6 +98,7 @@ export const SearchPanel = ({ onSubmit }: SearchPanelProps) => {
                   <Checkbox
                     value={item.isbn13}
                     checked={isIncluded}
+                    disabled={item.isRegisteredInMyLibrary}
                     onChange={handleChangeSelection}
                   />
                   <ImgBox img={item.coverImageUrl} size="x-small" />
@@ -107,7 +108,7 @@ export const SearchPanel = ({ onSubmit }: SearchPanelProps) => {
                   title={<>{item.title}</>}
                   content={item.authors.join(' · ')}
                 />
-                {/* <List.Item.Trailing>담긴 책</List.Item.Trailing> */}
+                {item.isRegisteredInMyLibrary && <List.Item.Trailing>담긴 책</List.Item.Trailing>}
               </List.Item>
             );
           })}
