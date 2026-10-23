@@ -35,7 +35,7 @@ internal fun ShelfAddSheet(shelves: List<Bookshelf>, onDismiss: () -> Unit, onAd
     val repository = remember { BookSearchRemoteRepository() }
     val errors = remember { ErrorRecoveryState() }
     val scope = rememberCoroutineScope()
-    val load: (String, Int) -> Unit = { term, page ->
+    fun load(term: String, page: Int) {
         if (!loading && term.isNotBlank()) scope.launch {
             loading = true
             try {
@@ -44,7 +44,7 @@ internal fun ShelfAddSheet(shelves: List<Bookshelf>, onDismiss: () -> Unit, onAd
                 submitted = term
                 nextPage = result.nextPage
             } catch (e: CancellationException) { throw e }
-            catch (e: Throwable) { errors.report(e, ErrorOperation.Search) }
+            catch (e: Throwable) { errors.report(e, ErrorOperation.Search) { load(term, page) } }
             finally { loading = false }
         }
     }

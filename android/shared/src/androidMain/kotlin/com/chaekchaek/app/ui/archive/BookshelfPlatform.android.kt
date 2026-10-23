@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -58,4 +59,9 @@ internal actual fun rememberBookshelfPlatform(): BookshelfPlatform {
             }
         }
     }
+}
+
+internal actual fun ImageBitmap.forSoftwareCanvas(): ImageBitmap {
+    val bitmap = asAndroidBitmap()
+    return if (bitmap.config == Bitmap.Config.HARDWARE) checkNotNull(bitmap.copy(Bitmap.Config.ARGB_8888, false)).asImageBitmap() else this
 }

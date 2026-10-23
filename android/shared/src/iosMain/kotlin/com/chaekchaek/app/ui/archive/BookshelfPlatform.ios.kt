@@ -48,3 +48,5 @@ internal actual fun rememberBookshelfPlatform(): BookshelfPlatform = remember {
         }
     }
 }
+
+internal actual fun ImageBitmap.forSoftwareCanvas(): ImageBitmap = this

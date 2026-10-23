@@ -155,7 +155,7 @@ private suspend fun captureShelfSections(layers: List<GraphicsLayer>): ImageBitm
     val canvas = Canvas(image)
     var y = 0f
     for (layer in layers) {
-        val part = layer.toImageBitmap()
+        val part = layer.toImageBitmap().forSoftwareCanvas()
         canvas.drawImage(part, Offset(0f, y), Paint())
         y += part.height
     }

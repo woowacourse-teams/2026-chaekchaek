@@ -73,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
                 book_id = int(path.split('/')[4])
                 if book_id % 2 == 0: return self.send_json(dict(items=[], totalCount=0, nextPage=None))
                 review = dict(reviewId=book_id, content=f'검증 도서 {book_id}의 최신 감상', quote=None, chapter=None,
-                              createdAt='2026-10-23T01:00:00Z', author=dict(displayName='검증', anonymous=False, mine=True, actorType='MEMBER'), replyCount=0, likeCount=0)
+                              createdAt='2026-10-23T01:00:00Z', author=dict(displayName='검증', anonymous=False, mine=True, actorType='MEMBER'), replyCount=0, likeCount=0, deleted=False)
                 return self.send_json(dict(items=[review], totalCount=1, nextPage=None))
             if path == '/api/v1/library':
                 if method == 'GET': return self.send_json(dict(items=[BOOKS[i] for i in STATE['shelves'][0]['books']], totalCount=len(STATE['shelves'][0]['books']), nextPage=None))
