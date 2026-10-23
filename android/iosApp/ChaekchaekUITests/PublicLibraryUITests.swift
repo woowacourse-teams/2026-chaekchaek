@@ -33,8 +33,15 @@ final class PublicLibraryUITests: XCTestCase {
     @MainActor
     private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
         for _ in 0..<9 {
-            if element.exists && element.isHittable && element.frame.minY > 90 && element.frame.maxY < app.frame.maxY - 80 { return }
+            if element.exists && element.isHittable && element.frame.minY > 90 && element.frame.maxY < app.frame.maxY - 80 {
+                // Compose의 관성 스크롤은 XCTest idle 이후에도 이동할 수 있다.
+                let before = element.frame
+                Thread.sleep(forTimeInterval: 0.5)
+                if element.exists && abs(element.frame.minY - before.minY) < 1 { return }
+                continue
+            }
             app.swipeUp()
+            Thread.sleep(forTimeInterval: 0.8)
         }
     }
     @MainActor
