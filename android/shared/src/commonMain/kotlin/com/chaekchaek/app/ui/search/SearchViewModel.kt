@@ -131,7 +131,8 @@ class SearchViewModel(
         if (trimmed.isEmpty()) return
         val previousLoadedPage = savedStateHandle.get<Int>(SearchSavedStateKeys.LoadedPage)
         val requestedSort = _sort.value
-        val restoreThroughPage = if (trigger == "restore" || retainContent) {
+        val restoringPages = trigger == "restore" || retainContent
+        val restoreThroughPage = if (restoringPages) {
             savedStateHandle.get<Int>(SearchSavedStateKeys.LoadedPage) ?: FIRST_PAGE
         } else FIRST_PAGE
         if (trigger != "restore" && !retainContent) savedStateHandle[SearchSavedStateKeys.LoadedPage] = FIRST_PAGE
@@ -173,14 +174,16 @@ class SearchViewModel(
                         }
                     },
                 ) {
-                    var page = bookSearchRepository.search(trimmed, requestedSort, FIRST_PAGE)
-                    var loadedPage = FIRST_PAGE
+                    var page = if (restoringPages) {
+                        bookSearchRepository.searchPage(trimmed, requestedSort, FIRST_PAGE)
+                    } else bookSearchRepository.search(trimmed, requestedSort, FIRST_PAGE)
+                    var loadedPage = page.lastLoadedPage ?: FIRST_PAGE
                     while (true) {
                         val nextPage = page.nextPage?.takeIf { it > loadedPage && it <= restoreThroughPage }
                             ?: break
-                        val next = bookSearchRepository.search(trimmed, requestedSort, nextPage)
+                        val next = bookSearchRepository.searchPage(trimmed, requestedSort, nextPage)
                         page = next.copy(items = (page.items + next.items).distinctBy(BookSearchResult::isbn13))
-                        loadedPage = nextPage
+                        loadedPage = next.lastLoadedPage ?: nextPage
                     }
                     if (revision == loadRevision) savedStateHandle[SearchSavedStateKeys.LoadedPage] = loadedPage
                     page
@@ -201,7 +204,7 @@ class SearchViewModel(
                 }
                 loadedQuery = trimmed
                 loadedSort = requestedSort
-                if (page.items.isEmpty()) SearchUiState.Empty else SearchUiState.Success(
+                if (page.items.isEmpty() && page.nextPage == null) SearchUiState.Empty else SearchUiState.Success(
                     page.items,
                     page.totalCount,
                     page.nextPage,
@@ -257,7 +260,7 @@ class SearchViewModel(
                 val latest = _uiState.value as? SearchUiState.Success ?: return@launch
                 if (currentQuery != query || _sort.value != sort || latest.nextPage != page) return@launch
                 analytics.log("cc_load_result", strings = mapOf("resource" to "search", "trigger" to "pagination", "outcome" to "success", "load_id" to loadId), longs = mapOf("page" to page.toLong(), "result_count" to next.items.size.toLong(), "duration_ms" to started.elapsedNow().inWholeMilliseconds), includeActionContext = false)
-                savedStateHandle[SearchSavedStateKeys.LoadedPage] = page
+                savedStateHandle[SearchSavedStateKeys.LoadedPage] = next.lastLoadedPage ?: page
                 _uiState.value = latest.copy(
                     results = (latest.results + next.items).distinctBy(BookSearchResult::isbn13),
                     totalCount = next.totalCount,

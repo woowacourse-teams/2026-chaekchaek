@@ -14,12 +14,23 @@ class BookSearchRemoteRepository(
     private val client: HttpClient = createHttpClient(),
     private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
 ) : BookSearchRepository {
-    override suspend fun search(query: String, sort: BookSearchSort, page: Int): BookSearchPage =
+    override suspend fun search(query: String, sort: BookSearchSort, page: Int): BookSearchPage {
+        var requestedPage = page
+        while (true) {
+            val result = searchPage(query, sort, requestedPage)
+            val nextPage = result.nextPage
+            if (result.items.isNotEmpty() || nextPage == null) return result
+            check(nextPage > requestedPage) { "검색의 다음 페이지가 현재 페이지보다 커야 합니다" }
+            requestedPage = nextPage
+        }
+    }
+
+    override suspend fun searchPage(query: String, sort: BookSearchSort, page: Int): BookSearchPage =
         client.get("${apiConfiguration.baseUrl}/api/v1/books") {
             parameter("query", query)
             parameter("sort", sort.name)
             parameter("page", page)
-        }.body<BookSearchResponseDto>().toSearchPage()
+        }.body<BookSearchResponseDto>().toSearchPage(page)
 }
 
 @Serializable
@@ -35,8 +46,8 @@ internal data class BookSearchItemDto(
     val coverImageUrl: String,
     val authors: List<String>,
     val translators: List<String>,
-    val publishedDate: String,
-    val isbn13: String,
+    val publishedDate: String? = null,
+    val isbn13: String? = null,
     val category: String,
     val publisher: String,
 )
@@ -46,15 +57,16 @@ internal fun BookSearchItemDto.toSearchResult(): BookSearchResult =
         title = title,
         creator = (authors + translators.map { "$it 옮김" }).joinToString("  "),
         publisher = publisher,
-        year = publishedDate.take(4),
+        year = publishedDate?.take(4).orEmpty(),
         coverUrl = coverImageUrl,
-        isbn13 = isbn13,
+        isbn13 = isbn13.orEmpty(),
         category = category.substringAfterLast('>'),
     )
 
-private fun BookSearchResponseDto.toSearchPage(): BookSearchPage =
+private fun BookSearchResponseDto.toSearchPage(page: Int): BookSearchPage =
     BookSearchPage(
         totalCount = totalCount,
+        lastLoadedPage = page,
         nextPage = nextPage,
-        items = items.map(BookSearchItemDto::toSearchResult),
+        items = items.filterNot { it.isbn13.isNullOrBlank() }.map(BookSearchItemDto::toSearchResult),
     )
