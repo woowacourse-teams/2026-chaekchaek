@@ -92,7 +92,15 @@ export const LibraryPage = () => {
   const renderDialog = (dialog: LibraryPageDialogType | null) => {
     switch (dialog) {
       case 'AddBooksToLibraryDialog':
-        return <AddBooksToLibraryDialog onClose={handleCloseDialog} />;
+        return (
+          <AddBooksToLibraryDialog
+            libraryId={Number(libraryId)}
+            onBookAdded={async () => {
+              await refetchGetLibrary();
+            }}
+            onClose={handleCloseDialog}
+          />
+        );
       case 'ManageLibraryDialog':
         return <ManageLibraryDialog onClose={handleCloseDialog} onOpenDialog={handleOpenDialog} />;
       case 'ShareLibraryImageDialog':

@@ -1,1 +1,5 @@
-export type SearchPanelProps = Record<string, never>;
+type Isbn = string;
+
+export type SearchPanelProps = {
+  onSubmit: (isbns: Isbn[]) => Promise<void>;
+};

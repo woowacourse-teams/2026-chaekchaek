@@ -6,7 +6,9 @@ import { Button, Checkbox, Icon, ImgBox, Input, List, ScrollArea } from '@chaekc
 import { getBooks } from '@/services/apis/books/repository';
 import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
-export const SearchPanel = () => {
+import type { SearchPanelProps } from './SearchPanel.types';
+
+export const SearchPanel = ({ onSubmit }: SearchPanelProps) => {
   const [query, setQuery] = useState('');
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
@@ -70,6 +72,10 @@ export const SearchPanel = () => {
     });
   };
 
+  const handleSubmit = async () => {
+    onSubmit(selection);
+  };
+
   return (
     <>
       <Input
@@ -107,7 +113,7 @@ export const SearchPanel = () => {
           })}
         </List>
       </ScrollArea>
-      <Button block variant="primary">
+      <Button block variant="primary" onClick={handleSubmit}>
         담기
       </Button>
     </>

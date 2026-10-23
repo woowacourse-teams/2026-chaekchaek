@@ -1,6 +1,9 @@
 import { useState } from 'react';
 
-import { Button, Dialog, Tabs } from '@chaekchaek/design-system';
+import { Dialog, Tabs } from '@chaekchaek/design-system';
+
+import { postLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repository';
+import { useExecute } from '@/services/core/useExecute';
 
 import { MyLibraryPanel } from './components/MyLibraryPanel';
 import { SearchPanel } from './components/SearchPanel';
@@ -9,10 +12,34 @@ import type { AddBooksToLibraryDialogProps } from './AddBooksToLibraryDialog.typ
 
 type TabType = 'my-library' | 'search';
 
-export const AddBooksToLibraryDialog = ({ onClose }: AddBooksToLibraryDialogProps) => {
+export const AddBooksToLibraryDialog = ({
+  libraryId,
+  onBookAdded,
+  onClose,
+}: AddBooksToLibraryDialogProps) => {
   const [active, setActive] = useState<TabType>('my-library');
   const handleChange = (active: string | number) => {
     setActive(active as TabType);
+  };
+
+  const { mutate: postLibrariesLibraryIdMutate } = useExecute({
+    executeFn: postLibrariesLibraryId,
+  });
+
+  const addBookToLibrary = async (isbns: string[]) => {
+    await Promise.all(
+      isbns.map((isbn) =>
+        postLibrariesLibraryIdMutate({
+          libraryId,
+          isbn13: isbn,
+          status: 'READING',
+        }),
+      ),
+    );
+
+    await onBookAdded();
+
+    onClose();
   };
 
   return (
@@ -33,7 +60,7 @@ export const AddBooksToLibraryDialog = ({ onClose }: AddBooksToLibraryDialogProp
               {
                 text: '책 검색',
                 value: 'search',
-                panel: <SearchPanel />,
+                panel: <SearchPanel onSubmit={addBookToLibrary} />,
               },
             ]}
             onChange={handleChange}
