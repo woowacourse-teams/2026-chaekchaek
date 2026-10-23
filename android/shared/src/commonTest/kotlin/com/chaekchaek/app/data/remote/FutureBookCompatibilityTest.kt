@@ -44,6 +44,24 @@ class FutureBookCompatibilityTest {
   }
 
   @Test
+  fun `피드에서 첫 페이지가 모두 ID 없는 책이면 뒤 페이지를 조회한다`() = runTest {
+    val pages = mutableListOf<String?>()
+    val client = HttpClient(MockEngine { request ->
+      val page = request.url.parameters["page"]
+      pages += page
+      respond(if (page == "1") """{"reviews":[{"bookId":null,$REVIEW}],"totalCount":2,"nextPage":2}"""
+        else """{"reviews":[{"bookId":42,$REVIEW}],"totalCount":2,"nextPage":null}""",
+        headers = headersOf(HttpHeaders.ContentType, "application/json"))
+    }) { install(ContentNegotiation) { json(json) } }
+    try {
+      val result = ReviewFeedRemoteRepository(client).reviewFeed(1, com.chaekchaek.app.domain.feed.FeedViewer.Anonymous)
+      assertEquals(listOf("42"), result.reviews.map { it.bookId.value })
+      assertEquals(listOf<String?>("1", "2"), pages)
+      assertNull(result.nextPage)
+    } finally { client.close() }
+  }
+
+  @Test
   fun `내 서재는 ID 없는 항목을 건너뛰고 뒤 페이지의 정상 도서를 가져온다`() = runTest {
     val pages = mutableListOf<String?>()
     val client = HttpClient(MockEngine { request ->

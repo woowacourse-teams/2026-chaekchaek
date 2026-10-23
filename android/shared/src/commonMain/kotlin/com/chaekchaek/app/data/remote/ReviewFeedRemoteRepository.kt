@@ -19,7 +19,18 @@ class ReviewFeedRemoteRepository(
     private val client: HttpClient = createHttpClient(),
     private val apiConfiguration: ApiConfiguration = ApiConfiguration.current,
 ) : ReviewFeedRepository {
-    override suspend fun reviewFeed(page: Int, viewer: FeedViewer): ReviewFeedPage =
+    override suspend fun reviewFeed(page: Int, viewer: FeedViewer): ReviewFeedPage {
+        var requestedPage = page
+        while (true) {
+            val result = loadPage(requestedPage, viewer)
+            val nextPage = result.nextPage
+            if (result.reviews.isNotEmpty() || nextPage == null) return result
+            check(nextPage > requestedPage) { "피드의 다음 페이지가 현재 페이지보다 커야 합니다" }
+            requestedPage = nextPage
+        }
+    }
+
+    private suspend fun loadPage(page: Int, viewer: FeedViewer): ReviewFeedPage =
         client.get("${apiConfiguration.baseUrl}/api/v1/feed/reviews") {
             parameter("page", page)
             when (viewer) {
