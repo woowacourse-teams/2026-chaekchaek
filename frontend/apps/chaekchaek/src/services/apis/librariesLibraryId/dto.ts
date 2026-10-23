@@ -1,35 +1,42 @@
 import type { ResponseDto } from '@/services/apis/api.types';
 
+export interface GetLibrariesLibraryIdRequestDto {
+  pathParams: [{ name: 'libraryId'; value: number }];
+}
+
+export type GetLibrariesLibraryIdResponseDto = ResponseDto<{
+  isDefault: boolean;
+  libraryId: number;
+  name: string;
+  totalCount: number;
+  items: {
+    coverImageUrl: string;
+    isbn13: string;
+    totalPages: number;
+    spineImageUrl: string;
+    currentPage: number;
+    title: string;
+    readingUpdatedAt: string;
+    status: string;
+    authors: string[];
+    bookId: number;
+  }[];
+  memberId: number;
+}>;
+export interface PostLibrariesLibraryIdRequestDto {
+  pathParams: [{ name: 'libraryId'; value: number }];
+  data: { isbn13: string; totalPages: number; status: string };
+}
+
+export type PostLibrariesLibraryIdResponseDto = ResponseDto<undefined>;
 export interface DeleteLibrariesLibraryIdRequestDto {
   pathParams: [{ name: 'libraryId'; value: number }];
 }
 
 export type DeleteLibrariesLibraryIdResponseDto = ResponseDto<undefined>;
-export interface GetLibrariesLibraryIdRequestDto {
+export interface PatchLibrariesLibraryIdRequestDto {
   pathParams: [{ name: 'libraryId'; value: number }];
-  query: { page: number };
+  data: { name: string };
 }
 
-export type GetLibrariesLibraryIdResponseDto = ResponseDto<{
-  libraryId: number;
-  memberId: number;
-  name: string;
-  isDefault: boolean;
-  totalCount: number;
-  nextPage: number;
-  items: {
-    bookId: number;
-    isbn13: string;
-    title: string;
-    spineImageUrl: string;
-    coverImageUrl: string;
-    totalPages: number;
-    authors: string[];
-  }[];
-}>;
-export interface PostLibrariesLibraryIdRequestDto {
-  pathParams: [{ name: 'libraryId'; value: number }];
-  data: { isbn13: string; totalPages: number };
-}
-
-export type PostLibrariesLibraryIdResponseDto = ResponseDto<undefined>;
+export type PatchLibrariesLibraryIdResponseDto = ResponseDto<undefined>;

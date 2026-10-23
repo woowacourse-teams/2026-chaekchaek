@@ -1,3 +1,34 @@
+export interface GetLibrariesLibraryIdParams {
+  libraryId: number;
+}
+
+export type GetLibrariesLibraryId = (params: GetLibrariesLibraryIdParams) => Promise<{
+  isDefault: boolean;
+  libraryId: number;
+  name: string;
+  totalCount: number;
+  items: {
+    coverImageUrl: string;
+    isbn13: string;
+    totalPages: number;
+    spineImageUrl: string;
+    currentPage: number;
+    title: string;
+    readingUpdatedAt: string;
+    status: string;
+    authors: string[];
+    bookId: number;
+  }[];
+  memberId: number;
+}>;
+export interface PostLibrariesLibraryIdCommand {
+  libraryId: number;
+  isbn13: string;
+  totalPages: number;
+  status: string;
+}
+
+export type PostLibrariesLibraryId = (command: PostLibrariesLibraryIdCommand) => Promise<undefined>;
 export interface DeleteLibrariesLibraryIdParams {
   libraryId: number;
 }
@@ -5,32 +36,9 @@ export interface DeleteLibrariesLibraryIdParams {
 export type DeleteLibrariesLibraryId = (
   params: DeleteLibrariesLibraryIdParams,
 ) => Promise<undefined>;
-export interface GetLibrariesLibraryIdParams {
+export interface PatchLibrariesLibraryIdParams {
   libraryId: number;
-  page: number;
-}
-
-export type GetLibrariesLibraryId = (params: GetLibrariesLibraryIdParams) => Promise<{
-  libraryId: number;
-  memberId: number;
   name: string;
-  isDefault: boolean;
-  totalCount: number;
-  nextPage: number;
-  items: {
-    bookId: number;
-    isbn13: string;
-    title: string;
-    spineImageUrl: string;
-    coverImageUrl: string;
-    totalPages: number;
-    authors: string[];
-  }[];
-}>;
-export interface PostLibrariesLibraryIdCommand {
-  libraryId: number;
-  isbn13: string;
-  totalPages: number;
 }
 
-export type PostLibrariesLibraryId = (command: PostLibrariesLibraryIdCommand) => Promise<undefined>;
+export type PatchLibrariesLibraryId = (params: PatchLibrariesLibraryIdParams) => Promise<undefined>;
