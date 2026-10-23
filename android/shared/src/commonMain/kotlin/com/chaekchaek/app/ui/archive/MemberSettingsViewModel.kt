@@ -46,17 +46,22 @@ class MemberSettingsViewModel(
     private val _uiState = MutableStateFlow(MemberSettingsUiState())
     val uiState: StateFlow<MemberSettingsUiState> = _uiState.asStateFlow()
 
+    private var authenticatedMemberId: Long? = null
     private var accessToken: String? = null
     private var requestJob: Job? = null
     private var pendingSettings: PendingMemberSettings? = null
 
-    fun authenticate(accessToken: String?) {
-        if (this.accessToken == accessToken) return
+    fun authenticate(accessToken: String?, memberId: Long? = null) {
+        val memberChanged = authenticatedMemberId != null && memberId != null && authenticatedMemberId != memberId
+        if (accessToken == null || memberId != null) authenticatedMemberId = memberId
+        if (this.accessToken == accessToken && !memberChanged) return
         this.accessToken = accessToken
         requestJob?.cancel()
         pendingSettings = null
-        if (accessToken == null) {
-            _uiState.value = MemberSettingsUiState()
+        if (accessToken == null || memberChanged) {
+            errors.dismiss()
+            _uiState.value = MemberSettingsUiState(signedIn = accessToken != null)
+            if (accessToken != null) load(accessToken)
         } else {
             _uiState.value = _uiState.value.copy(signedIn = true)
             load(accessToken)

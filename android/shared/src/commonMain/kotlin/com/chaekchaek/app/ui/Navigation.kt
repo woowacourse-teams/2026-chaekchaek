@@ -296,7 +296,7 @@ private fun AppNavigationContent(
         homeViewModel.authenticate(accessToken)
         bookshelfViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
         librarySaveViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
-        memberSettingsViewModel.authenticate(accessToken)
+        memberSettingsViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
     }
     val backStack = rememberNavBackStack(navigationConfig, Root)
     CompositionLocalProvider(
