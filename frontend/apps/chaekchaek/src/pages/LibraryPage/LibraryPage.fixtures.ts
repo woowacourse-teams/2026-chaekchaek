@@ -67,6 +67,14 @@ export const libraryAfterAddResponse = {
   items: [...libraryResponse.items, addedBookResponse],
 };
 
+// 내 서재에는 있지만 현재 책장에는 아직 담기지 않은 책을 포함한다.
+export const myLibraryResponse = {
+  totalCount: libraryAfterAddResponse.totalCount,
+  filteredCount: libraryAfterAddResponse.totalCount,
+  nextPage: null,
+  items: libraryAfterAddResponse.items,
+};
+
 export const downloadedLibraryImageDataUrl =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aCWQAAAAASUVORK5CYII=';
 

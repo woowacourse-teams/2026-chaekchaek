@@ -23,6 +23,7 @@ import {
   fullLibraryResponse,
   libraryAfterAddResponse,
   libraryResponse,
+  myLibraryResponse,
   renamedLibraryName,
   searchedBook,
 } from './LibraryPage.fixtures';
@@ -202,6 +203,73 @@ describe('LibraryPage', () => {
       image.getAttribute('src'),
     );
     expect(capturedSpines).toEqual(libraryResponse.items.map((book) => book.spineImageUrl));
+  });
+
+  it('내 서재에서 탭에서 검색한 책을 선택하여 책장에 추가할 수 있다', async () => {
+    const user = userEvent.setup();
+    let isBookAdded = false;
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
+        return HttpResponse.json(
+          structuredClone(isBookAdded ? libraryAfterAddResponse : libraryResponse),
+        );
+      }),
+      http.get(`${ENV.APP_API_URL}/api/v1/library`, () => {
+        return HttpResponse.json(structuredClone(myLibraryResponse));
+      }),
+      http.post(
+        `${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`,
+        async ({ request }) => {
+          const { isbn13 } = (await request.json()) as { isbn13: string };
+          if (isbn13 !== searchedBook.isbn13) {
+            return new HttpResponse(null, { status: 400 });
+          }
+          isBookAdded = true;
+          return HttpResponse.json(structuredClone(addedBookResponse), { status: 201 });
+        },
+      ),
+    );
+
+    const { container } = renderProvider(
+      <Routes>
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+      </Routes>,
+      {
+        auth: defaultLoggedAuthContextValue,
+        initialEntries: [`/libraries/${libraryResponse.libraryId}`],
+      },
+    );
+
+    expect(await screen.findByText(libraryResponse.name)).toBeVisible();
+    // 본문에 main 역할이 없어 클래스 이름으로 범위를 제한한다.
+    const libraryContent = container.querySelector<HTMLElement>('.frame-Main');
+    if (!libraryContent) throw new Error('책장 본문을 찾을 수 없습니다.');
+    const library = within(libraryContent);
+    expect(library.queryByText(searchedBook.title)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '책 담기' }));
+
+    const dialogTitle = screen.getByText('책장에 책 담기');
+    const dialog = dialogTitle.closest<HTMLElement>('.ui-Dialog-Container');
+    if (!dialog) throw new Error('책 담기 팝업을 찾을 수 없습니다.');
+    const popup = within(dialog);
+    await user.click(popup.getByText('내 서재에서'));
+    await user.type(
+      popup.getByPlaceholderText('책 제목이나 작가를 검색하세요'),
+      searchedBook.title,
+    );
+
+    const searchResult = await popup.findByText(searchedBook.title);
+    expect(searchResult).toBeVisible();
+    const bookItem = searchResult.closest<HTMLElement>('.ui-List-Item');
+    if (!bookItem) throw new Error('검색한 책의 목록 항목을 찾을 수 없습니다.');
+    const checkbox = within(bookItem).getByRole('checkbox');
+    await user.click(checkbox);
+    expect(checkbox).toBeChecked();
+    await user.click(popup.getByRole('button', { name: '담기' }));
+
+    // 검색 결과가 아닌 현재 책장의 본문에 추가되었는지 확인한다.
+    expect(await library.findByText(searchedBook.title)).toBeVisible();
   });
 
   it('책 검색 탭에서 검색한 책을 선택하여 책장에 추가할 수 있다', async () => {
