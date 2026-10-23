@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
-import { Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
+import { Checkbox, Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
 
 import { getBooks } from '@/services/apis/books/repository';
 import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
@@ -60,6 +60,16 @@ export const SearchPanel = () => {
     scrollAreaRef.current?.scrollTo({ top: 0 });
   }, [query]);
 
+  const [selection, setSelection] = useState<string[]>([]);
+  const handleChangeSelection = (e: ChangeEvent<HTMLInputElement>) => {
+    const isbn = e.target.value;
+
+    setSelection((prev) => {
+      const isIncluded = selection.includes(isbn);
+      return isIncluded ? prev.filter((item) => item === isbn) : [...prev, isbn];
+    });
+  };
+
   return (
     <>
       <Input
@@ -74,9 +84,16 @@ export const SearchPanel = () => {
       <ScrollArea ref={scrollAreaRef} height="320px">
         <List>
           {booksData?.map((item) => {
+            const isIncluded = selection.includes(item.isbn13);
+
             return (
               <List.Item key={item.isbn13}>
                 <List.Item.Leading>
+                  <Checkbox
+                    value={item.isbn13}
+                    checked={isIncluded}
+                    onChange={handleChangeSelection}
+                  />
                   <ImgBox img={item.coverImageUrl} size="x-small" />
                 </List.Item.Leading>
                 <List.Item.Content
@@ -84,7 +101,7 @@ export const SearchPanel = () => {
                   title={<>{item.title}</>}
                   content={item.authors.join(' · ')}
                 />
-                <List.Item.Trailing>담긴 책</List.Item.Trailing>
+                {/* <List.Item.Trailing>담긴 책</List.Item.Trailing> */}
               </List.Item>
             );
           })}
