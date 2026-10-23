@@ -44,7 +44,20 @@ class BookRatingRestorationTest {
     fun restoredUntouchedDraftAcceptsLateExistingFractionalRating() =
         verifyRating(edited = false, restore = true, existingRating = 4.2)
 
-    private fun verifyRating(edited: Boolean, restore: Boolean, existingRating: Double = 2.0) {
+    @Test
+    fun ratingWithoutLibraryRecordPrefillsDraft() =
+        verifyRating(edited = false, restore = false, existingRating = 4.5, ratingOnly = true)
+
+    @Test
+    fun ratingWithoutLibraryRecordSurvivesDraftRestoration() =
+        verifyRating(edited = false, restore = true, existingRating = 4.5, ratingOnly = true)
+
+    private fun verifyRating(
+        edited: Boolean,
+        restore: Boolean,
+        existingRating: Double = 2.0,
+        ratingOnly: Boolean = false,
+    ) {
         val state = mutableStateOf(
             BookDetailUiState(
                 book = BookDetailArgs(id = "42", bookId = 42, title = "별점 복원 검증"),
@@ -70,7 +83,12 @@ class BookRatingRestorationTest {
         if (edited) compose.onNodeWithContentDescription("별점 (선택)")
             .performSemanticsAction(SemanticsActions.SetProgress) { it(4.5f) }
         if (restore) restoration.emulateSavedInstanceStateRestore()
-        compose.runOnIdle { state.value = state.value.copy(detail = detailWithRating(existingRating)) }
+        compose.runOnIdle {
+            val detail = detailWithRating(existingRating)
+            state.value = state.value.copy(detail = if (ratingOnly) {
+                detail.copy(myRecord = null, myRating = existingRating, isRegisteredInMyLibrary = false)
+            } else detail)
+        }
         val expected = if (edited) 4.5 else existingRating
         compose.onNodeWithContentDescription("별점 (선택)").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "${expected}점"),

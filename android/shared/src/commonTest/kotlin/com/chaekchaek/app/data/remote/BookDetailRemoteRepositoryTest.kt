@@ -15,9 +15,44 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
 
 class BookDetailRemoteRepositoryTest {
+  @Test
+  fun `별점 단독 저장 응답은 독서 상태와 페이지가 null이어도 파싱한다`() = runTest {
+    val client = testClient(MockEngine { request ->
+      assertEquals(HttpMethod.Put, request.method)
+      assertEquals("/api/v1/library/10/rating", request.url.encodedPath)
+      respond("""{"bookId":10,"status":null,"currentPage":null,"rating":4.5,"readingUpdatedAt":null}""",
+        headers = headersOf(HttpHeaders.ContentType, "application/json"))
+    })
+    try {
+      val result = BookDetailRemoteRepository(client).rate(10, 4.5, "member")
+      assertEquals(4.5, result.rating)
+      assertNull(result.status)
+      assertNull(result.currentPage)
+    } finally { client.close() }
+  }
+
+  @Test
+  fun `상세 별점과 책장 등록 여부는 독서 기록과 독립적으로 보존한다`() = runTest {
+    for (membership in listOf("false", "true", "null")) {
+      val client = testClient(MockEngine {
+        respond("""{"bookId":10,"isbn13":"9788936433598","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":{"status":null,"currentPage":null,"myRating":4.5},"isRegisteredInMyLibrary":$membership}""",
+          headers = headersOf(HttpHeaders.ContentType, "application/json"))
+      })
+      try {
+        val detail = BookDetailRemoteRepository(client).detail("9788936433598")
+        assertEquals(4.5, detail.myRating)
+        assertNull(detail.myRecord)
+        assertEquals(membership == "true", detail.isRegisteredInMyLibrary)
+      } finally { client.close() }
+    }
+  }
+
   @Test
   fun `이미 저장된 책의 추가 충돌은 회원 상세에서 기존 기록을 복원한다`() = runTest {
     val requests = mutableListOf<Triple<HttpMethod, String, String?>>()

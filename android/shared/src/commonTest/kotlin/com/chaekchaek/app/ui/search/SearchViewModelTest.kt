@@ -615,7 +615,7 @@ class SearchViewModelTest {
                         2 -> if (earlierPageChanged) listOf("9788925568683") else listOf("")
                         else -> listOf("9788937460449", "9788936433598")
                     }.joinToString(",") { isbn ->
-                        """{"title":"책 $isbn","coverImageUrl":"","authors":[],"translators":[],"publishedDate":null,"isbn13":"$isbn","category":"소설","publisher":"출판사"}"""
+                        """{"bookId":42,"title":"책 $isbn","coverImageUrl":"","authors":[],"translators":[],"publishedDate":null,"isbn13":"$isbn","category":"소설","publisher":"출판사"}"""
                     }
                     respond(
                         """{"totalCount":4,"nextPage":${when (page) { 1 -> 2; 2 -> 4; else -> null }},"items":[$products]}""",
@@ -671,7 +671,7 @@ class SearchViewModelTest {
                     }
                         else if (earlierPageChanged) "9788937460449" else ""
                     respond(
-                        """{"totalCount":2,"nextPage":${if (page == 1) 3 else if (lastPageExcluded) 5 else null},"items":[{"title":"책 $isbn","coverImageUrl":"","authors":[],"translators":[],"publishedDate":null,"isbn13":"$isbn","category":"소설","publisher":"출판사"}]}""",
+                        """{"totalCount":2,"nextPage":${if (page == 1) 3 else if (lastPageExcluded) 5 else null},"items":[{"bookId":42,"title":"책 $isbn","coverImageUrl":"","authors":[],"translators":[],"publishedDate":null,"isbn13":"$isbn","category":"소설","publisher":"출판사"}]}""",
                         headers = headersOf(HttpHeaders.ContentType, "application/json"),
                     )
                 }

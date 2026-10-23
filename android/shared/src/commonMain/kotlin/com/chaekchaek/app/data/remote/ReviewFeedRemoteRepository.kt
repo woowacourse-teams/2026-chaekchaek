@@ -48,18 +48,19 @@ internal data class ReviewFeedItemDto(
     val likeCount: Int,
     val likedByMe: Boolean,
     val replyCount: Int,
-    val bookId: Long,
+    val bookId: Long? = null,
     val isbn13: String,
     val bookTitle: String,
     val bookCoverImageUrl: String,
 )
 
 internal fun ReviewFeedPageDto.toReviewFeedPage() = ReviewFeedPage(
-    reviews = reviews.map { review ->
+    reviews = reviews.mapNotNull { review ->
+        val bookId = review.bookId ?: return@mapNotNull null
         QuoteCard(
             reviewId = review.reviewId,
             noteId = NoteId("review-${review.reviewId}"),
-            bookId = BookId(review.bookId.toString()),
+            bookId = BookId(bookId.toString()),
             isbn13 = review.isbn13,
             bookTitle = review.bookTitle,
             coverId = review.bookCoverImageUrl,

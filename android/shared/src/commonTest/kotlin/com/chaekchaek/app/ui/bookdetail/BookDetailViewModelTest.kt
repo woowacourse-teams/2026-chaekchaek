@@ -149,7 +149,7 @@ class BookDetailViewModelTest {
       vm.updateReviewWithRating(7, ReviewCreateRequest("수정 감상"), 5.0)
       awaitReal { vm.uiState.first { it.detail?.averageRating == 4.2 } }
       assertEquals(11, vm.uiState.value.detail?.ratingCount)
-      assertEquals(5.0, vm.uiState.value.detail?.myRecord?.rating)
+      assertEquals(5.0, vm.uiState.value.detail?.myRating)
       assertEquals(ReviewSubmissionState.Succeeded, vm.uiState.value.reviewSubmissionState)
     } finally {
       store.clear()
@@ -159,9 +159,8 @@ class BookDetailViewModelTest {
   }
 
   @Test
-  fun `감상 제출은 서재 자동 추가와 개인 별점 저장 뒤에 감상을 작성한다`() = runViewModelTest {
+  fun `감상 제출은 서재 등록 없이 개인 별점 저장 뒤에 감상을 작성한다`() = runViewModelTest {
     val writes = mutableListOf<String>()
-    var autoAdds = 0
     val client = testClient(MockEngine { request ->
       when (request.method) {
         HttpMethod.Post -> {
@@ -190,15 +189,14 @@ class BookDetailViewModelTest {
       vm.open(book().copy(isbn13 = "9780000000042"), "member")
       awaitReal { vm.uiState.first { it.detail != null } }
 
-      vm.createReviewWithRating(ReviewCreateRequest("감상"), 5.0, onLibraryAdded = { autoAdds += 1 })
+      vm.createReviewWithRating(ReviewCreateRequest("감상"), 5.0)
       awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Succeeded } }
 
       assertEquals(
-        listOf("/api/v1/library", "/api/v1/library/73/rating", "/api/v1/books/by-isbn/9780000000042/reviews"),
+        listOf("/api/v1/library/42/rating", "/api/v1/books/by-isbn/9780000000042/reviews"),
         writes,
       )
-      assertEquals(1, autoAdds)
-      assertEquals(5.0, vm.uiState.value.detail?.myRecord?.rating)
+      assertEquals(5.0, vm.uiState.value.detail?.myRating)
     } finally {
       store.clear()
       advanceUntilIdle()
@@ -229,7 +227,7 @@ class BookDetailViewModelTest {
         vm.createReviewWithRating(ReviewCreateRequest("감상"), selectedRating)
         awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Succeeded } }
         assertEquals(listOf(HttpMethod.Post), writes)
-        assertEquals(4.2, vm.uiState.value.detail?.myRecord?.rating)
+        assertEquals(4.2, vm.uiState.value.detail?.myRating)
       } finally {
         // 성공 후 자동 재조회와 지연 로딩을 Main dispatcher를 해제하기 전에 정리한다.
         store.clear()
@@ -281,7 +279,7 @@ class BookDetailViewModelTest {
     vm.createReviewWithRating(ReviewCreateRequest("보존할 감상"), 5.0)
     awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Failed } }
     assertEquals(listOf(HttpMethod.Put), writes)
-    assertEquals(4.0, vm.uiState.value.detail?.myRecord?.rating)
+    assertEquals(4.0, vm.uiState.value.detail?.myRating)
   }
 
   @Test
@@ -370,7 +368,7 @@ class BookDetailViewModelTest {
       val request = ReviewCreateRequest("수정 감상")
       vm.updateReviewWithRating(7, request, 5.0, onRatingSaved = { ratingSaves += 1 })
       awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Failed } }
-      assertEquals(5.0, vm.uiState.value.detail?.myRecord?.rating)
+      assertEquals(5.0, vm.uiState.value.detail?.myRating)
       assertEquals("감상", vm.uiState.value.reviews.single().content)
       assertEquals(1, ratingSaves)
       assertEquals(1, capturedErrors.size)
@@ -433,7 +431,7 @@ class BookDetailViewModelTest {
       } else {
         assertEquals("FINISHED", detail.uiState.value.detail?.myRecord?.status)
         assertEquals(12, detail.uiState.value.detail?.myRecord?.currentPage)
-        assertEquals(4.0, detail.uiState.value.detail?.myRecord?.rating)
+        assertEquals(4.0, detail.uiState.value.detail?.myRating)
       }
       observation.cancel()
     }
@@ -1295,7 +1293,7 @@ class BookDetailViewModelTest {
   }
 
   @Test
-  fun `서재 미등록 책은 등록 응답 ID로 별점을 저장하고 즉시 반영한다`() = runViewModelTest {
+  fun `서재 미등록 책은 상세 ID로 별점만 저장하고 즉시 반영한다`() = runViewModelTest {
     val requestedPaths = mutableListOf<String>()
     var detailGetCount = 0
     val engine = MockEngine { request ->
@@ -1319,9 +1317,10 @@ class BookDetailViewModelTest {
     viewModel.saveRating(Rating.ofScore(5f))
     awaitReal { viewModel.uiState.first { it.detail?.averageRating == 5.0 } }
 
-    assertTrue("/api/v1/library/73/rating" in requestedPaths)
-    assertEquals(73L, viewModel.uiState.value.detail?.bookId)
-    assertEquals(5.0, viewModel.uiState.value.detail?.myRecord?.rating)
+    assertTrue("/api/v1/library/42/rating" in requestedPaths)
+    assertFalse("/api/v1/library" in requestedPaths)
+    assertEquals(42L, viewModel.uiState.value.detail?.bookId)
+    assertEquals(5.0, viewModel.uiState.value.detail?.myRating)
   }
 
   @Test
@@ -1368,16 +1367,16 @@ class BookDetailViewModelTest {
 
     assertEquals(2, detailGetCount)
     assertTrue("/api/v1/library/42/rating" in requestedPaths)
+    assertFalse("/api/v1/library" in requestedPaths)
     assertEquals(0, requestedPaths.count { it == "/api/v1/library" })
     assertEquals(1, successCount)
-    assertEquals(5.0, viewModel.uiState.value.detail?.myRecord?.rating)
+    assertEquals(5.0, viewModel.uiState.value.detail?.myRating)
     assertEquals(4.2, viewModel.uiState.value.detail?.averageRating)
     assertEquals(11, viewModel.uiState.value.detail?.ratingCount)
   }
 
   @Test
-  fun `자동 서재 등록 뒤 별점 실패도 등록 성공을 즉시 알린다`() = runViewModelTest {
-    var libraryAddedCount = 0
+  fun `별점 실패는 서재 등록 없이 기존 상태를 보존한다`() = runViewModelTest {
     var successCount = 0
     val requestedPaths = mutableListOf<String>()
     val engine = MockEngine { request ->
@@ -1399,15 +1398,15 @@ class BookDetailViewModelTest {
     viewModel.saveRating(
       Rating.ofScore(5f),
       onSuccess = { successCount += 1 },
-      onLibraryAdded = { libraryAddedCount += 1 },
     )
     awaitReal { viewModel.uiState.first { it.requestError != null } }
 
-    assertTrue("/api/v1/library/73/rating" in requestedPaths)
-    assertEquals(1, libraryAddedCount)
+    assertTrue("/api/v1/library/42/rating" in requestedPaths)
+    assertFalse("/api/v1/library" in requestedPaths)
     assertEquals(0, successCount)
-    assertEquals(73L, viewModel.uiState.value.detail?.myRecord?.bookId)
-    assertNull(viewModel.uiState.value.detail?.myRecord?.rating)
+    assertNull(viewModel.uiState.value.detail?.myRecord)
+    assertFalse(viewModel.uiState.value.detail!!.isRegisteredInMyLibrary)
+    assertNull(viewModel.uiState.value.detail?.myRating)
     assertEquals("요청을 처리하지 못했어요. 다시 시도해 주세요.", viewModel.uiState.value.requestError)
   }
 
@@ -1864,6 +1863,72 @@ class BookDetailViewModelTest {
     assertEquals(1, writes)
   }
 
+  @Test
+  fun `마지막 책장 삭제 후 별점은 유지하고 독서 기록과 등록 상태만 제거한다`() = runViewModelTest {
+    var removed = false
+    val client = testClient(MockEngine { request ->
+      when {
+        request.method == HttpMethod.Post -> {
+          assertTrue(request.url.encodedPath.endsWith("/bulk-delete"))
+          removed = true
+          respond("", HttpStatusCode.NoContent)
+        }
+        request.url.encodedPath.contains("/by-isbn/") ->
+          respond(if (removed) DETAIL_AFTER_RATING.replace("5.0", "4.0") else DETAIL_WITH_RECORD, headers = jsonHeaders())
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val store = ViewModelStore().also { it.put("rating", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), "member")
+      awaitReal { vm.uiState.first { it.detail?.myRecord != null } }
+      vm.removeFromLibrary(42)
+      awaitReal { vm.uiState.first { it.detail?.myRating == 4.0 && !it.isLoading } }
+      assertNull(vm.uiState.value.detail?.myRecord)
+      assertFalse(vm.uiState.value.detail!!.isRegisteredInMyLibrary)
+      assertEquals(4.0, vm.uiState.value.detail?.myRating)
+    } finally { store.clear(); advanceUntilIdle(); client.close() }
+  }
+
+  @Test
+  fun `별점 단독 저장 뒤 감상 실패를 재시도해도 책장과 별점을 중복 생성하지 않는다`() = runViewModelTest {
+    val writes = mutableListOf<String>()
+    var failReview = true
+    val client = testClient(MockEngine { request ->
+      when {
+        request.method == HttpMethod.Put -> {
+          writes += "rating"
+          respond(RATED_LIBRARY_RECORD, headers = jsonHeaders())
+        }
+        request.method == HttpMethod.Post -> {
+          assertFalse(request.url.encodedPath == "/api/v1/library")
+          writes += "review"
+          if (failReview) respond("", HttpStatusCode.InternalServerError)
+          else respond("""{"bookId":42,"review":$REVIEW_RESPONSE}""", headers = jsonHeaders())
+        }
+        request.url.encodedPath.contains("/by-isbn/") ->
+          respond(if (writes.isEmpty()) DETAIL_WITHOUT_RECORD else DETAIL_AFTER_RATING, headers = jsonHeaders())
+        else -> respond(EMPTY_REVIEWS, headers = jsonHeaders())
+      }
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val store = ViewModelStore().also { it.put("rating", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), "member")
+      awaitReal { vm.uiState.first { it.detail != null } }
+      vm.createReviewWithRating(ReviewCreateRequest("보존할 감상"), 5.0)
+      awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Failed } }
+      assertEquals(5.0, vm.uiState.value.detail?.myRating)
+      assertNull(vm.uiState.value.detail?.myRecord)
+      assertFalse(vm.uiState.value.detail!!.isRegisteredInMyLibrary)
+      failReview = false
+      vm.errors.takeRecovery(vm.errors.notice.value!!.id)!!.invoke(null)
+      awaitReal { vm.uiState.first { it.reviewSubmissionState == ReviewSubmissionState.Succeeded } }
+      assertEquals(listOf("rating", "review", "review"), writes)
+    } finally { store.clear(); advanceUntilIdle(); client.close() }
+  }
+
   private fun viewModel(
     writeClient: HttpClient,
     authClient: HttpClient,
@@ -1926,11 +1991,11 @@ class BookDetailViewModelTest {
     const val DETAIL_AFTER_EXISTING_RATING =
       """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","averageRating":4.2,"ratingCount":11,"myRecord":{"status":"READING","currentPage":12,"myRating":5.0}}"""
     const val DETAIL_AFTER_RATING =
-      """{"bookId":73,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","averageRating":5.0,"ratingCount":1,"myRecord":{"status":"READING","currentPage":0,"myRating":5.0}}"""
+      """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","averageRating":5.0,"ratingCount":1,"isRegisteredInMyLibrary":false,"myRecord":{"status":null,"currentPage":null,"myRating":5.0}}"""
     const val DETAIL_AFTER_AUTH_CHANGE =
       """{"bookId":42,"isbn13":"9780000000042","title":"책","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":{"status":"READING","currentPage":7,"myRating":3.0}}"""
     const val LIBRARY_RECORD = """{"bookId":73,"status":"READING","currentPage":0,"rating":null}"""
-    const val RATED_LIBRARY_RECORD = """{"bookId":73,"status":"READING","currentPage":0,"rating":5.0}"""
+    const val RATED_LIBRARY_RECORD = """{"bookId":42,"status":null,"currentPage":null,"rating":5.0,"readingUpdatedAt":null}"""
     const val REVIEW_RESPONSE =
       """{"reviewId":7,"content":"감상","createdAt":"2026-08-27T00:00:00Z","author":{"displayName":"게스트","anonymous":false,"mine":true,"actorType":"GUEST"},"replyCount":0,"likeCount":0,"likedByMe":false,"isSpoiler":false,"recentReplies":[],"deleted":false}"""
   }

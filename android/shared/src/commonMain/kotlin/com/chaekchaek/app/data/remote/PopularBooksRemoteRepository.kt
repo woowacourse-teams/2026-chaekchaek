@@ -40,7 +40,7 @@ class PopularBooksRemoteRepository(
                     parameters.append("status", "READING")
                     parameters.append("sort", "RECENT")
                 }
-            }.body<LibraryResponseDto>().items.firstOrNull()
+            }.body<LibraryResponseDto>().items.firstOrNull { it.bookId != null }
         }
         return popularBooks.toHomeFeed(detailedLatestReviews, readingBook)
     }
@@ -49,7 +49,7 @@ class PopularBooksRemoteRepository(
         latestReviews: LatestReviewsResponseDto,
         accessToken: String?,
     ): Map<Long, List<ReviewDto>> = supervisorScope {
-        latestReviews.reviews.map(LatestReviewDto::bookId).distinct().map { bookId ->
+        latestReviews.reviews.mapNotNull(LatestReviewDto::bookId).distinct().map { bookId ->
             async {
                 try {
                     bookId to client.get("${apiConfiguration.baseUrl}/api/v1/books/$bookId/reviews") {
@@ -78,7 +78,7 @@ internal data class PopularBooksResponseDto(
 
 @Serializable
 internal data class PopularBookDto(
-    val bookId: Long,
+    val bookId: Long? = null,
     val isbn13: String = "",
     val title: String,
     val coverImageUrl: String,
@@ -98,7 +98,7 @@ internal data class LatestReviewDto(
     val createdAt: String,
     val author: LatestReviewAuthorDto,
     val replyCount: Int,
-    val bookId: Long,
+    val bookId: Long? = null,
     val isbn13: String = "",
     val bookTitle: String,
     val bookCoverImageUrl: String,
@@ -142,7 +142,7 @@ internal data class LibraryResponseDto(
 
 @Serializable
 internal data class ReadingBookDto(
-    val bookId: Long,
+    val bookId: Long? = null,
     val isbn13: String,
     val title: String,
     val coverImageUrl: String,
@@ -156,9 +156,10 @@ internal fun PopularBooksResponseDto.toHomeFeed(
 ): HomeFeed = HomeFeed(
     sections = listOf(
         FeedSection.TrendingBooks(
-            books = books.map { book ->
+            books = books.mapNotNull { book ->
+                val bookId = book.bookId ?: return@mapNotNull null
                 TrendingBook(
-                    bookId = BookId(book.bookId.toString()),
+                    bookId = BookId(bookId.toString()),
                     isbn13 = book.isbn13,
                     title = book.title,
                     coverId = book.coverImageUrl,
@@ -166,14 +167,15 @@ internal fun PopularBooksResponseDto.toHomeFeed(
                     replyCount = book.replyCount,
                 )
             },
-            totalCount = books.size,
+            totalCount = books.count { it.bookId != null },
         ),
         FeedSection.RecentQuotes(
-            cards = latestReviews.reviews.map { review ->
+            cards = latestReviews.reviews.mapNotNull { review ->
+                val bookId = review.bookId ?: return@mapNotNull null
                 QuoteCard(
                     reviewId = review.reviewId,
                     noteId = NoteId("${review.bookId}-${review.createdAt}"),
-                    bookId = BookId(review.bookId.toString()),
+                    bookId = BookId(bookId.toString()),
                     isbn13 = review.isbn13,
                     bookTitle = review.bookTitle,
                     coverId = review.bookCoverImageUrl,
@@ -189,7 +191,7 @@ internal fun PopularBooksResponseDto.toHomeFeed(
             },
         ),
     ),
-    readingBook = readingBook?.let { book ->
+    readingBook = readingBook?.takeIf { it.bookId != null }?.let { book ->
         ReadingBook(
             bookId = BookId(book.bookId.toString()),
             isbn13 = book.isbn13,

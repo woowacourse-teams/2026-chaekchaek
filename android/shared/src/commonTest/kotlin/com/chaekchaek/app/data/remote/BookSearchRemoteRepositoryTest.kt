@@ -151,6 +151,24 @@ class BookSearchRemoteRepositoryTest {
         assertEquals(listOf(2), requests)
     }
 
+    @Test
+    fun `bookId 없는 검색 결과를 제외하고 다음 페이지에서 유효한 책을 찾는다`() = runTest {
+        val requests = mutableListOf<Int>()
+        val client = searchClient { page ->
+            requests += page
+            if (page == 1) response(3, 2,
+                item("ID null", "9788937460449", null).replace("\"bookId\":42", "\"bookId\":null"),
+                item("ID 누락", "9788936433598", null).replace("\"bookId\":42,", ""))
+            else response(3, null, item("정상 도서", "9788925568683", null))
+        }
+        try {
+            val result = BookSearchRemoteRepository(client).search("책", BookSearchSort.LATEST, 1)
+            assertEquals(listOf(1, 2), requests)
+            assertEquals(listOf("정상 도서"), result.items.map { it.title })
+            assertEquals(3, result.totalCount)
+        } finally { client.close() }
+    }
+
     private fun searchClient(body: (Int) -> String) = HttpClient(MockEngine { request ->
         respond(body(request.url.parameters["page"]!!.toInt()),
             headers = headersOf(HttpHeaders.ContentType, "application/json"))
@@ -162,6 +180,6 @@ class BookSearchRemoteRepositoryTest {
         """{"totalCount":$total,"nextPage":$next,"items":[${items.joinToString(",")}]}"""
 
     private fun item(title: String, isbn: String?, date: String?) =
-        """{"title":"$title","coverImageUrl":"cover","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","isbn13":${isbn?.let { "\"$it\"" }},"publishedDate":${date?.let { "\"$it\"" }}}"""
+        """{"bookId":42,"title":"$title","coverImageUrl":"cover","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","isbn13":${isbn?.let { "\"$it\"" }},"publishedDate":${date?.let { "\"$it\"" }}}"""
 
 }
