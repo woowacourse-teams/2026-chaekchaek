@@ -10,6 +10,7 @@ describe('App', () => {
   it('기본 렌더링이 된다', async () => {
     renderProvider(<App />);
 
-    expect(screen.getAllByText(/책췍/).length).toBeGreaterThan(0);
+    const elements = await screen.findAllByText(/책췍/);
+    expect(elements.length).toBeGreaterThan(0);
   });
 });
