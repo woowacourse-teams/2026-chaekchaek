@@ -33,6 +33,9 @@ class UserErrorReporter(
             400, 422 -> "validation"
             401 -> "auth"
             403 -> "permission"
+            404 -> "not_found"
+            409 -> "conflict"
+            in 500..599 -> "server"
             else -> analyticsErrorCategory(error)
         }
         val details = UserErrorDetails(

@@ -1,14 +1,43 @@
 package com.chaekchaek.app.analytics
 
+import com.chaekchaek.app.data.remote.MobileLoginException
 import com.chaekchaek.app.presentation.common.ErrorOperation
 import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.ResponseException
+import io.ktor.client.request.get
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.*
 import kotlin.test.*
 import kotlin.time.TestTimeSource
 import kotlin.time.Duration.Companion.seconds
 
 class UserErrorReporterTest {
+    @Test fun loginAndGeneralHttpFailuresKeepTheSameCategoryAndStatus() = runTest {
+        val reports = mutableListOf<UserErrorDetails>()
+        val reporter = UserErrorReporter(sink = reports::add)
+        for ((status, category) in listOf(
+            400 to "validation", 401 to "auth", 403 to "permission", 404 to "not_found",
+            409 to "conflict", 422 to "validation", 500 to "server", 503 to "server",
+        )) {
+            val client = HttpClient(MockEngine { respond("", HttpStatusCode.fromValue(status)) })
+            try {
+                val response = client.get("https://example.invalid/failure")
+                reporter.report(ResponseException(response, ""), "Search")
+                reporter.report(MobileLoginException("PRIVATE_SERVER_DETAIL", status), "SignIn")
+                val pair = reports.takeLast(2)
+                assertEquals(listOf(category, category), pair.map { it.category }, "HTTP $status")
+                assertEquals(listOf(status, status), pair.map { it.status }, "HTTP $status")
+            } finally {
+                client.close()
+            }
+        }
+    }
+
     @Test fun cancellationIsExcludedAndSameFailureIsReportedOnlyOncePerOperation() {
         val reports = mutableListOf<UserErrorDetails>()
         val reporter = UserErrorReporter(sink = reports::add)
