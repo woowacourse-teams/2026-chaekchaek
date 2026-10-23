@@ -228,3 +228,13 @@ Firebase와 PostHog의 수동 이벤트는 하나의 `AnalyticsTracker`와 수�
 - 단위 테스트는 취소 제외, 중복과 폭주 제한, 화면과 행동 연결, Firebase 분리, 원격 중지와 재개 및 개인정보 필터를 검사한다. 빌드, 기기 오류 재현, 콘솔 수신과 배포본 스택 복원은 각각 구분해 기록한다.
 
 사양 근거: [Android 설치](https://posthog.com/docs/error-tracking/installation/android), [iOS 설치](https://posthog.com/docs/error-tracking/installation/ios), [수동 예외 형식](https://posthog.com/docs/error-tracking/installation/manual). 실제 SDK 버전의 자동 수집 설정과 전송 전 훅도 소스에서 확인했다.
+
+### 이번 변경의 확인 결과
+
+- Android Debug APK와 Kotlin/Native Simulator 프레임워크 빌드, 공통 호스트 테스트 393개가 통과했다. Android CI의 Build, test, lint도 소스 `4e7e2437`에서 통과했다.
+- iPhone 17 Pro / iOS 26.2 전용 Simulator에서 앱 빌드, 네이티브 XCTest 9개, 탭 이동과 기존 설치의 로그인 실패/취소 UI 테스트 2개가 통과했다. 이전 로그인 UI 테스트는 최초 설치 준비 단계에서 실패했으며 전체 UI 테스트 통과로 해석하지 않는다.
+- Android Pixel_6a_API_33_2 / emulator-5580에서 서명과 버전 검사 후 데이터 보존 업데이트를 수행했다. 오프라인 홈 조회 오류를 재현하고 연결을 복구한 뒤 PostHog의 실제 `UnknownHostException` 수신과 오류 그룹 생성을 확인했다. 메시지는 `redacted`, 화면은 `home`, 작업은 `FeedLoad`, 정책은 `v1`, 이벤트 스키마는 2였다. 공통 분류는 `unknown`이며 원본 예외 타입으로 DNS 오류를 구분할 수 있다.
+- iOS 로그인 실패 UI 시나리오의 실제 `IllegalStateException` 수신과 오류 그룹 생성을 확인했다. `posthog-ios 3.92.2`, `operation=SignIn`, `screen_name=library`, `environment=test`, 정책 `v1`과 스키마 2가 전달됐다. 메시지는 `redacted`이며 Kotlin 함수 스택이 표시됐다. 앱을 테스트 후 다시 실행하고 배치 전송을 기다린 결과로, 치명적 크래시 검증은 아니다.
+- Android Jev 재시도 조작은 선택 확신도 기준으로 0단계에서 차단됐다. API 1회, 입력 2,642 토큰과 출력 38 토큰을 사용했다. 재시도 UI 성공으로 보고하지 않는다. 기기와 임대는 정리했다.
+- Android 원격 서버는 제출 전 SSH 연결 시간 초과로 접근하지 못했다. 미확정 접수 없이 공용 대기열의 로컬 대체 경로를 사용했다.
+- 네이티브 치명적 크래시의 실제 종료/재실행 수신, 실기기 설치와 스토어 배포는 이번 확인에 포함하지 않았다.
