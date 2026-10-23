@@ -144,17 +144,19 @@ export const LibraryPage = () => {
             >
               {libraryItemsData?.name}
             </Title>
-            <Showcase>
-              {libraryItemsData?.items.map((item, index) => {
-                return (
-                  <ConstrainedImgBox
-                    img={item.spineImageUrl}
-                    maxWidth="80px"
-                    maxHeight={`${booksHeight[index]}px`}
-                  />
-                );
-              })}
-            </Showcase>
+            {libraryItemsData !== null && !!libraryItemsData?.items.length && (
+              <Showcase>
+                {libraryItemsData?.items.map((item, index) => {
+                  return (
+                    <ConstrainedImgBox
+                      img={item.spineImageUrl}
+                      maxWidth="80px"
+                      maxHeight={`${booksHeight[index]}px`}
+                    />
+                  );
+                })}
+              </Showcase>
+            )}
 
             {libraryItemsData !== null && !libraryItemsData?.items.length && (
               <Surface
