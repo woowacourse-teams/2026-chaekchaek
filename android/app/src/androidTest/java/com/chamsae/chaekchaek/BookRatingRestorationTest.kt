@@ -91,7 +91,8 @@ class BookRatingRestorationTest {
                 InstrumentationRegistry.getInstrumentation()
                     .sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
                 compose.waitUntil(timeoutMillis = 5_000) {
-                    rootView?.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime()) != true
+                    android.os.Build.VERSION.SDK_INT < 30 ||
+                        rootView?.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime()) != true
                 }
                 compose.waitForIdle()
             }
