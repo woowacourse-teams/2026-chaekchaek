@@ -551,6 +551,7 @@ tasks.register('verifyOpenApi') {
 
 		def requiredLibraryOperations = [
 			'/api/v1/libraries'                       : ['post': ['201', '400', '401', '403', '409']],
+			'/api/v1/libraries/{libraryId}'           : ['post': ['201', '400', '401', '403', '404', '409', '422', '502']],
 			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '404', '422']],
@@ -717,6 +718,7 @@ tasks.register('verifyOpenApi') {
 
 		def problemResponseCodes = [
 			'/api/v1/libraries'                       : ['post': ['400', '401', '409']],
+			'/api/v1/libraries/{libraryId}'           : ['post': ['400', '401', '403', '404', '409', '422', '502']],
 			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '404', '422']],
@@ -732,6 +734,41 @@ tasks.register('verifyOpenApi') {
 							?.get('application/problem+json') as Map
 					if ((problemContent?.get('schema') as Map)?.get('\$ref') != '#/components/schemas/ProblemDetail') {
 						throw new GradleException("OpenAPI specification is missing ProblemDetail schema for ${method.toUpperCase()} ${path} ${responseCode} response")
+					}
+				}
+			}
+		}
+
+		def libraryBookPlacementProblemDetails = [
+			'/api/v1/libraries/{libraryId}': [
+				post: [
+					'400': ['INVALID_REQUEST'],
+					'401': ['UNAUTHORIZED'],
+					'403': ['FORBIDDEN'],
+					'404': ['LIBRARY_NOT_FOUND', 'BOOK_NOT_FOUND'],
+					'409': ['LIBRARY_ITEM_ALREADY_EXISTS', 'LIBRARY_ITEM_LIMIT_EXCEEDED', 'TOTAL_PAGES_CONFLICT'],
+					'422': ['INVALID_READING_STATE'],
+					'502': ['EXTERNAL_API_ERROR']
+				]
+			]
+		]
+		libraryBookPlacementProblemDetails.each { path, operations ->
+			operations.each { method, expectedResponses ->
+				def operation = (paths.get(path) as Map).get(method) as Map
+				def operationResponses = (operation.get('responses') as Map)?.collectEntries { status, response ->
+					[(status.toString()): response]
+				}
+				expectedResponses.each { errorStatus, expectedCodes ->
+					def response = operationResponses?.get(errorStatus) as Map
+					def problemContent = (response?.get('content') as Map)?.get('application/problem+json') as Map
+					def examples = problemContent?.get('examples') as Map
+					expectedCodes.each { expectedCode ->
+						def codeExists = examples?.values()?.any { example ->
+							(example as Map)?.get('value')?.toString()?.contains("\"code\":\"${expectedCode}\"")
+						}
+						if (!codeExists) {
+							throw new GradleException("OpenAPI specification is missing ${expectedCode} example for ${method.toUpperCase()} ${path}")
+						}
 					}
 				}
 			}
@@ -807,6 +844,12 @@ tasks.register('verifyOpenApi') {
 				?.get('headers') as Map)?.get('Location') as Map)
 		if ((libraryCreationLocation?.get('schema') as Map)?.get('type') != 'string') {
 			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/libraries 201 response')
+		}
+		def libraryBookAddOperation = (paths.get('/api/v1/libraries/{libraryId}') as Map).get('post') as Map
+		def libraryBookAddLocation = ((((libraryBookAddOperation.get('responses') as Map).get('201') as Map)
+				?.get('headers') as Map)?.get('Location') as Map)
+		if ((libraryBookAddLocation?.get('schema') as Map)?.get('type') != 'string') {
+			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/libraries/{libraryId} 201 response')
 		}
 
 		def libraryQueryParameters = (((paths.get('/api/v1/library') as Map).get('get') as Map)

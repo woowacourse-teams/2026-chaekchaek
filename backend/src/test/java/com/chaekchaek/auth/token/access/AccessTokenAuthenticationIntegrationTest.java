@@ -7,11 +7,19 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
+import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.library.domain.Library;
+import com.chaekchaek.library.domain.ReadingStatus;
+import com.chaekchaek.library.repository.LibraryBookRepository;
+import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
@@ -19,6 +27,7 @@ import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import jakarta.servlet.http.Cookie;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,6 +62,15 @@ class AccessTokenAuthenticationIntegrationTest {
 
     @Autowired
     private LibraryRepository libraryRepository;
+
+    @Autowired
+    private LibraryBookRepository libraryBookRepository;
+
+    @Autowired
+    private LibraryItemRepository libraryItemRepository;
+
+    @Autowired
+    private BookRepository bookRepository;
 
     private Long memberId;
 
@@ -104,6 +122,68 @@ class AccessTokenAuthenticationIntegrationTest {
                 .filteredOn(library -> library.isOwnedBy(memberId))
                 .singleElement()
                 .satisfies(library -> assertThat(library.getName()).isEqualTo("가을에 읽을 책"));
+    }
+
+    @Test
+    @DisplayName("Bearer 토큰으로 인증된 회원은 자신이 소유한 책장에 도서를 배치한다")
+    void should_AddBookToOwnedLibrary_When_BearerTokenIsValid() throws Exception {
+        // given
+        String token = issueAccessToken(memberId.toString());
+        Library library = libraryRepository.create(Library.create(memberId, "가을에 읽을 책", Instant.now()));
+        Book book = bookRepository.saveAndFlush(Book.create(
+                new Isbn13("9788936433598"),
+                "책 제목",
+                "https://example.com/cover.jpg",
+                null,
+                null,
+                null,
+                List.of("작가"),
+                List.of(),
+                "출판사",
+                "분류",
+                null,
+                368,
+                null,
+                null
+        ));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries/{libraryId}", library.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"isbn13":"9788936433598","status":"READING","totalPages":368}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.bookId").value(book.getId()))
+                .andExpect(jsonPath("$.status").value("READING"))
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(header().exists(HttpHeaders.LOCATION));
+
+        assertThat(libraryBookRepository.findAll())
+                .filteredOn(placement -> placement.getLibraryId() == library.getId())
+                .singleElement()
+                .satisfies(placement -> assertThat(placement.getBookId()).isEqualTo(book.getId()));
+        assertThat(libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()))
+                .get()
+                .satisfies(item -> assertThat(item.getStatus()).isEqualTo(ReadingStatus.READING));
+    }
+
+    @Test
+    @DisplayName("인증 정보가 없으면 책장 도서 배치를 추가할 수 없다")
+    void should_RejectBookPlacement_When_AuthenticationIsMissing() throws Exception {
+        // given
+        Library library = libraryRepository.create(Library.create(memberId, "가을에 읽을 책", Instant.now()));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries/{libraryId}", library.getId())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"isbn13":"9788936433598","status":"READING"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     @Test

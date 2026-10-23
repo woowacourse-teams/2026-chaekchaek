@@ -8,6 +8,7 @@ import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.member.repository.MemberRepository;
 import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import java.time.Clock;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ class LibraryReadingRecordCoordinator implements ReadingRecordCoordinator {
 
     private final BookRepository bookRepository;
     private final LibraryItemRepository libraryItemRepository;
+    private final MemberRepository memberRepository;
     private final Clock clock;
 
     @Override
@@ -28,6 +30,7 @@ class LibraryReadingRecordCoordinator implements ReadingRecordCoordinator {
             Integer currentPage,
             Integer totalPages
     ) {
+        lockMember(memberId);
         Book book = lockedBook(bookId);
         rememberTotalPages(book, totalPages);
         if (currentPage != null && book.getTotalPages() == null) {
@@ -45,10 +48,11 @@ class LibraryReadingRecordCoordinator implements ReadingRecordCoordinator {
     }
 
     @Override
-    public void validateReviewPage(long bookId, Integer currentPage, Integer totalPages) {
+    public void validateReviewPage(long memberId, long bookId, Integer currentPage, Integer totalPages) {
         if (currentPage == null) {
             return;
         }
+        lockMember(memberId);
         Book book = lockedBook(bookId);
         rememberTotalPages(book, totalPages);
         if (book.getTotalPages() == null || currentPage < 0 || currentPage > book.getTotalPages()) {
@@ -58,6 +62,11 @@ class LibraryReadingRecordCoordinator implements ReadingRecordCoordinator {
 
     private Book lockedBook(long bookId) {
         return bookRepository.findByIdForUpdate(bookId).orElseThrow(BookNotFoundException::new);
+    }
+
+    private void lockMember(long memberId) {
+        memberRepository.findByIdForUpdate(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
     }
 
     private void rememberTotalPages(Book book, Integer totalPages) {

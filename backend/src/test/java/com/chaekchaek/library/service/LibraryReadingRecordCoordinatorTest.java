@@ -3,6 +3,7 @@ package com.chaekchaek.library.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +16,8 @@ import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -24,6 +27,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 class LibraryReadingRecordCoordinatorTest {
 
@@ -37,6 +41,8 @@ class LibraryReadingRecordCoordinatorTest {
         Book book = book(null);
         BookRepository bookRepository = mock(BookRepository.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        MemberRepository memberRepository = mock(MemberRepository.class);
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(Member.class)));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book));
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
                 .thenReturn(Optional.empty());
@@ -45,6 +51,7 @@ class LibraryReadingRecordCoordinatorTest {
         LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
                 bookRepository,
                 libraryItemRepository,
+                memberRepository,
                 CLOCK
         );
 
@@ -54,6 +61,10 @@ class LibraryReadingRecordCoordinatorTest {
         // then
         ArgumentCaptor<LibraryItem> itemCaptor = ArgumentCaptor.forClass(LibraryItem.class);
         verify(libraryItemRepository).save(itemCaptor.capture());
+        InOrder lockOrder = inOrder(memberRepository, bookRepository, libraryItemRepository);
+        lockOrder.verify(memberRepository).findByIdForUpdate(1L);
+        lockOrder.verify(bookRepository).findByIdForUpdate(2L);
+        lockOrder.verify(libraryItemRepository).findByMemberIdAndBookIdForUpdate(1L, 2L);
         LibraryItem savedItem = itemCaptor.getValue();
         assertThat(book.getTotalPages()).isEqualTo(308);
         assertThat(savedItem.getStatus()).isEqualTo(ReadingStatus.READING);
@@ -69,12 +80,15 @@ class LibraryReadingRecordCoordinatorTest {
         item.changeCurrentPage(200, 308, NOW.minusSeconds(60));
         BookRepository bookRepository = mock(BookRepository.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        MemberRepository memberRepository = mock(MemberRepository.class);
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(Member.class)));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book));
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
                 .thenReturn(Optional.of(item));
         LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
                 bookRepository,
                 libraryItemRepository,
+                memberRepository,
                 CLOCK
         );
 
@@ -96,12 +110,15 @@ class LibraryReadingRecordCoordinatorTest {
         item.clearReadingState();
         BookRepository bookRepository = mock(BookRepository.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        MemberRepository memberRepository = mock(MemberRepository.class);
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(Member.class)));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book));
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
                 .thenReturn(Optional.of(item));
         LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
                 bookRepository,
                 libraryItemRepository,
+                memberRepository,
                 CLOCK
         );
 
@@ -121,15 +138,18 @@ class LibraryReadingRecordCoordinatorTest {
         // given
         BookRepository bookRepository = mock(BookRepository.class);
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        MemberRepository memberRepository = mock(MemberRepository.class);
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(Member.class)));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book(308)));
         LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
                 bookRepository,
                 libraryItemRepository,
+                memberRepository,
                 CLOCK
         );
 
         // when & then
-        assertThatThrownBy(() -> coordinator.validateReviewPage(2L, 309, 308))
+        assertThatThrownBy(() -> coordinator.validateReviewPage(1L, 2L, 309, 308))
                 .isInstanceOfSatisfying(
                 BusinessException.class,
                 exception -> assertThat(exception.getErrorCode())

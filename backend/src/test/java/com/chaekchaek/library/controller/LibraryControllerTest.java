@@ -40,6 +40,7 @@ import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.PublicMemberResponse;
 import com.chaekchaek.library.dto.RatingComparisonBookResponse;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
+import com.chaekchaek.library.service.LibraryBookService;
 import com.chaekchaek.library.service.LibraryService;
 import com.epages.restdocs.apispec.ParameterDescriptorWithType;
 import com.epages.restdocs.apispec.ResourceDocumentation;
@@ -91,6 +92,12 @@ class LibraryControllerTest {
             - 중복 기준: 같은 회원의 앞뒤 공백을 제거한 이름. 대소문자만 다른 이름도 중복될 수 있다.
 
             서재에 도서를 추가하는 기존 `POST /api/v1/library`와 별개의 API다.
+            """;
+    private static final String LIBRARY_BOOK_ADD_SUMMARY = "책장에 도서 추가";
+    private static final String LIBRARY_BOOK_ADD_DESCRIPTION = """
+            인증된 회원이 소유한 책장에 ISBN-13 도서를 배치한다. 책장마다 최대 30권까지 등록할 수 있고,
+            같은 책장에 같은 도서를 중복 배치할 수 없다. 이미 독서 기록이 있으면 요청 상태를 적용하지 않고
+            기존 기록과 별점을 유지한다.
             """;
     private static final String LIBRARY_LIST_SUMMARY = "내 서재 조회";
     private static final String LIBRARY_LIST_DESCRIPTION = "인증된 사용자가 읽기 상태와 정렬 기준으로 회원 단위의 기존 서재 도서 목록을 조회한다";
@@ -161,6 +168,9 @@ class LibraryControllerTest {
     private LibraryService libraryService;
 
     @MockitoBean
+    private LibraryBookService libraryBookService;
+
+    @MockitoBean
     private CurrentMemberIdProvider currentMemberIdProvider;
 
     @Autowired
@@ -211,6 +221,48 @@ class LibraryControllerTest {
                                 .build())
                 ));
         verify(libraryService).create(MEMBER_ID, "가을에 읽을 책");
+    }
+
+    @Test
+    @DisplayName("유효한 요청이라면 소유한 책장에 도서를 배치하고 배치 URI를 반환한다")
+    void should_AddBookToLibrary_When_RequestIsValid() throws Exception {
+        // given
+        LibraryItemResponse response = libraryItemResponse();
+        when(libraryBookService.addByIsbn13(MEMBER_ID, 7L, new Isbn13(ISBN13), ReadingStatus.READING, 368))
+                .thenReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries/{libraryId}", 7L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"isbn13":"9788936433598","status":"READING","totalPages":368}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(header().string(
+                        HttpHeaders.LOCATION,
+                        "http://localhost:8080/api/v1/libraries/7/books/" + BOOK_ID
+                ))
+                .andExpect(jsonPath("$.bookId").value(BOOK_ID))
+                .andDo(document(
+                        "library-book-add",
+                        pathParameters(libraryIdPathParameter()),
+                        requestFields(addLibraryItemRequestFields()),
+                        responseFields(LIBRARY_ITEM_RESPONSE_FIELDS),
+                        responseHeaders(headerWithName(HttpHeaders.LOCATION).description("생성된 책장 배치 URI")),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary(LIBRARY_BOOK_ADD_SUMMARY)
+                                .description(LIBRARY_BOOK_ADD_DESCRIPTION)
+                                .tag(LIBRARY_TAG)
+                                .pathParameters(libraryIdResourcePathParameters())
+                                .requestSchema(Schema.schema("AddLibraryItemRequest"))
+                                .requestFields(addLibraryItemRequestFields())
+                                .responseFields(LIBRARY_ITEM_RESPONSE_FIELDS)
+                                .responseHeaders(ResourceDocumentation.headerWithName(HttpHeaders.LOCATION)
+                                        .type(SimpleType.STRING).description("생성된 책장 배치 URI"))
+                                .build())
+                ));
+
+        verify(libraryBookService).addByIsbn13(MEMBER_ID, 7L, new Isbn13(ISBN13), ReadingStatus.READING, 368);
     }
 
     @Test
@@ -489,7 +541,7 @@ class LibraryControllerTest {
                 ErrorCode.LIBRARY_NOT_FOUND,
                 "/api/v1/members/" + MEMBER_ID + "/library"
         )
-                .andExpect(jsonPath("$.detail").value("공개된 회원의 서재만 접근 가능합니다."))
+                .andExpect(jsonPath("$.detail").value("책장을 찾을 수 없습니다."))
                 .andDo(problemDetailDocument(
                         "public-library-list-not-found",
                         PUBLIC_LIBRARY_LIST_SUMMARY,
@@ -854,6 +906,85 @@ class LibraryControllerTest {
     }
 
     @Test
+    @DisplayName("책장 도서 배치 추가의 오류 응답을 문서화한다")
+    void should_DocumentProblemDetails_When_AddingBookToLibraryFails() throws Exception {
+        // when & then
+        documentProblemDetail(
+                mockMvc.perform(post("/api/v1/libraries/{libraryId}", 7L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"isbn13":"9788936433598","status":"READING","totalPages":0}
+                                """)),
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.INVALID_REQUEST,
+                "/api/v1/libraries/7",
+                "library-book-add-invalid-request",
+                LIBRARY_BOOK_ADD_SUMMARY,
+                LIBRARY_BOOK_ADD_DESCRIPTION,
+                libraryIdResourcePathParameters(),
+                noQueryParameters()
+        );
+
+        documentLibraryBookAddProblem(
+                ErrorCode.LIBRARY_NOT_FOUND,
+                HttpStatus.NOT_FOUND,
+                "library-book-add-library-not-found"
+        );
+        documentLibraryBookAddProblem(
+                ErrorCode.FORBIDDEN,
+                HttpStatus.FORBIDDEN,
+                "library-book-add-forbidden"
+        );
+        documentLibraryBookAddProblem(
+                ErrorCode.BOOK_NOT_FOUND,
+                HttpStatus.NOT_FOUND,
+                "library-book-add-book-not-found"
+        );
+        documentLibraryBookAddProblem(
+                ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS,
+                HttpStatus.CONFLICT,
+                "library-book-add-already-exists"
+        );
+        documentLibraryBookAddProblem(
+                ErrorCode.LIBRARY_ITEM_LIMIT_EXCEEDED,
+                HttpStatus.CONFLICT,
+                "library-book-add-limit-exceeded"
+        );
+        documentLibraryBookAddProblem(
+                ErrorCode.TOTAL_PAGES_CONFLICT,
+                HttpStatus.CONFLICT,
+                "library-book-add-total-pages-conflict"
+        );
+        documentLibraryBookAddProblem(
+                ErrorCode.INVALID_READING_STATE,
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                "library-book-add-invalid-reading-state"
+        );
+        documentLibraryBookAddProblem(
+                ErrorCode.EXTERNAL_API_ERROR,
+                HttpStatus.BAD_GATEWAY,
+                "library-book-add-external-api-error"
+        );
+    }
+
+    private void documentLibraryBookAddProblem(ErrorCode errorCode, HttpStatus status, String identifier)
+            throws Exception {
+        doThrow(new BusinessException(errorCode)).when(libraryBookService)
+                .addByIsbn13(MEMBER_ID, 7L, new Isbn13(ISBN13), ReadingStatus.READING, 368);
+        documentProblemDetail(
+                postLibraryBook(7L),
+                status,
+                errorCode,
+                "/api/v1/libraries/7",
+                identifier,
+                LIBRARY_BOOK_ADD_SUMMARY,
+                LIBRARY_BOOK_ADD_DESCRIPTION,
+                libraryIdResourcePathParameters(),
+                noQueryParameters()
+        );
+    }
+
+    @Test
     @DisplayName("내 서재 수정의 오류 응답을 문서화한다")
     void should_DocumentProblemDetails_When_UpdatingLibraryItemFails() throws Exception {
         // given
@@ -1113,6 +1244,17 @@ class LibraryControllerTest {
                 noQueryParameters()
         );
         documentProblemDetail(
+                postLibraryBook(7L),
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.UNAUTHORIZED,
+                "/api/v1/libraries/7",
+                "library-book-add-unauthorized",
+                LIBRARY_BOOK_ADD_SUMMARY,
+                LIBRARY_BOOK_ADD_DESCRIPTION,
+                libraryIdResourcePathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
                 mockMvc.perform(get("/api/v1/library").param("page", "1")),
                 HttpStatus.UNAUTHORIZED,
                 ErrorCode.UNAUTHORIZED,
@@ -1269,6 +1411,14 @@ class LibraryControllerTest {
 
     private ResultActions postLibraryItem() throws Exception {
         return mockMvc.perform(post("/api/v1/library")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"isbn13":"9788936433598","status":"READING","totalPages":368}
+                        """));
+    }
+
+    private ResultActions postLibraryBook(long libraryId) throws Exception {
+        return mockMvc.perform(post("/api/v1/libraries/{libraryId}", libraryId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                         {"isbn13":"9788936433598","status":"READING","totalPages":368}
@@ -1527,6 +1677,19 @@ class LibraryControllerTest {
     private ParameterDescriptor memberIdPathParameter() {
         return RequestDocumentation.parameterWithName("memberId")
                 .description("공개 서재를 조회할 회원 ID");
+    }
+
+    private ParameterDescriptor libraryIdPathParameter() {
+        return RequestDocumentation.parameterWithName("libraryId")
+                .description("도서를 배치할 책장 ID");
+    }
+
+    private ParameterDescriptorWithType[] libraryIdResourcePathParameters() {
+        return new ParameterDescriptorWithType[]{
+                ResourceDocumentation.parameterWithName("libraryId")
+                        .type(SimpleType.INTEGER)
+                        .description("도서를 배치할 책장 ID")
+        };
     }
 
     private ParameterDescriptorWithType[] memberIdResourcePathParameters() {

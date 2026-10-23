@@ -15,6 +15,7 @@ import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RateBookRequest;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
 import com.chaekchaek.library.dto.UpdateLibraryItemRequest;
+import com.chaekchaek.library.service.LibraryBookService;
 import com.chaekchaek.library.service.LibraryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -44,6 +45,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class LibraryController {
 
     private final LibraryService libraryService;
+    private final LibraryBookService libraryBookService;
     private final CurrentMemberIdProvider currentMemberIdProvider;
 
     @PostMapping("/libraries")
@@ -52,6 +54,25 @@ public class LibraryController {
         return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
                         .path("/{libraryId}")
                         .buildAndExpand(response.libraryId())
+                        .toUri())
+                .body(response);
+    }
+
+    @PostMapping("/libraries/{libraryId}")
+    public ResponseEntity<LibraryItemResponse> addToLibrary(
+            @PathVariable long libraryId,
+            @Valid @RequestBody AddLibraryItemRequest request
+    ) {
+        LibraryItemResponse response = libraryBookService.addByIsbn13(
+                memberId(),
+                libraryId,
+                new Isbn13(request.isbn13()),
+                request.status(),
+                request.totalPages()
+        );
+        return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
+                        .path("/books/{bookId}")
+                        .buildAndExpand(response.bookId())
                         .toUri())
                 .body(response);
     }
