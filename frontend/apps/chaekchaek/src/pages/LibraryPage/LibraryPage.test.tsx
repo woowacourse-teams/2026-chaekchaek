@@ -272,7 +272,11 @@ describe('LibraryPage', () => {
       );
       const searchResult = await popup.findByText(searchedBook.title);
       expect(searchResult).toBeVisible();
-      await user.click(searchResult);
+      const bookItem = searchResult.closest<HTMLElement>('.ui-List-Item');
+      if (!bookItem) throw new Error('검색한 책의 목록 항목을 찾을 수 없습니다.');
+      const checkbox = within(bookItem).getByRole('checkbox');
+      await user.click(checkbox);
+      expect(checkbox).toBeChecked();
       await user.click(popup.getByRole('button', { name: '담기' }));
 
       // 팝업에 남아 있는 검색 결과로 테스트가 통과하지 않도록 책장 본문에서 확인한다.
