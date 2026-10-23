@@ -3,6 +3,7 @@ import SwiftUI
 import StoreKit
 import GoogleSignIn
 import FirebaseAnalytics
+import PostHog
 
 struct ContentView: View {
     @State private var onboardingEligible: Bool?
@@ -157,7 +158,10 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             onboardingStorage: onboardingStorage,
             createGoogleSignInButton: GoogleSignInControl.init,
             analyticsEnvironment: analyticsEnvironment,
-            logAnalyticsEvent: FirebaseAnalyticsEventLogger.log,
+            logAnalyticsEvent: AnalyticsEventDispatcher(
+                primary: FirebaseAnalyticsEventLogger.log,
+                secondary: PostHogAnalyticsEventLogger.log
+            ).log,
             uiTestingMyPage: uiTestingMyPage,
             uiTestingBookQuestionA: uiTestingBookQuestionA,
             showQuestionAPreviewControls: showQuestionAPreviewControls
@@ -175,20 +179,70 @@ private var analyticsEnvironment: String {
 #endif
 }
 
+enum PostHogAnalyticsEventLogger {
+    private static var configured = false
+
+    static func configure() {
+        guard !configured else { return }
+#if DEBUG
+        let isDebug = true
+#else
+        let isDebug = false
+#endif
+        guard let config = makeConfiguration(info: Bundle.main.infoDictionary ?? [:], isDebug: isDebug) else { return }
+        PostHogSDK.shared.setup(config)
+        configured = true
+    }
+
+    static func makeConfiguration(info: [String: Any], isDebug: Bool) -> PostHogConfig? {
+        if isDebug && info["POSTHOG_CAPTURE_DEBUG"] as? String != "YES" { return nil }
+        guard let rawToken = info["POSTHOG_PROJECT_TOKEN"] as? String else { return nil }
+        let token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !token.isEmpty, !token.contains("$("),
+              let host = info["POSTHOG_HOST"] as? String,
+              let url = URL(string: host), url.scheme == "https", url.host != nil else { return nil }
+        let config = PostHogConfig(projectToken: token, host: host)
+        config.enableSwizzling = false
+        config.captureApplicationLifecycleEvents = false
+        config.captureScreenViews = false
+        config.captureElementInteractions = false
+        config.captureSwiftUIElementInteractions = false
+        config.capturePushNotificationSubscriptions = false
+        config.capturePushNotificationOpened = false
+        config.preloadFeatureFlags = false
+        config.sendFeatureFlagEvent = false
+        config.personProfiles = .never
+        config.sessionReplay = false
+        config.surveys = false
+        return config
+    }
+
+    static func log(event: AnalyticsEvent) {
+        guard configured else { return }
+        var properties = analyticsParameters(event)
+        properties["$geoip_disable"] = true
+        PostHogSDK.shared.capture(event.name, properties: properties)
+    }
+}
+
 private enum FirebaseAnalyticsEventLogger {
     static func log(event: AnalyticsEvent) {
-        var parameters: [String: Any] = [:]
-        (event.stringParameters as NSDictionary).forEach { key, value in
-            if let key = key as? String { parameters[key] = value }
-        }
-        (event.longParameters as NSDictionary).forEach { key, value in
-            if let key = key as? String { parameters[key] = value }
-        }
-        (event.doubleParameters as NSDictionary).forEach { key, value in
-            if let key = key as? String { parameters[key] = value }
-        }
-        Analytics.logEvent(event.name, parameters: parameters)
+        Analytics.logEvent(event.name, parameters: analyticsParameters(event))
     }
+}
+
+func analyticsParameters(_ event: AnalyticsEvent) -> [String: Any] {
+    var parameters: [String: Any] = [:]
+    (event.stringParameters as NSDictionary).forEach { key, value in
+        if let key = key as? String { parameters[key] = value }
+    }
+    (event.longParameters as NSDictionary).forEach { key, value in
+        if let key = key as? String { parameters[key] = value }
+    }
+    (event.doubleParameters as NSDictionary).forEach { key, value in
+        if let key = key as? String { parameters[key] = value }
+    }
+    return parameters
 }
 
 private final class GoogleSignInControl: UIControl {

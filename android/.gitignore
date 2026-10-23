@@ -25,3 +25,5 @@ iosApp/Configuration/Secrets.xcconfig
 /config/overrides.properties
 /config/ios.local.xcconfig
 !/config/local.properties
+
+/posthog.properties

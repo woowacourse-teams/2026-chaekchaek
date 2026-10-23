@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.chamsae.chaekchaek.auth.RefreshTokenStore
 import com.chamsae.chaekchaek.auth.requestGoogleIdToken
 import com.chamsae.chaekchaek.search.RecentSearchPreferences
+import com.chaekchaek.app.analytics.AnalyticsEventDispatcher
 import com.chaekchaek.app.analytics.AnalyticsTracker
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.ui.App
@@ -30,6 +31,7 @@ abstract class ChaekchaekActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        PostHogAnalyticsEventLogger.configure(applicationContext)
         enableEdgeToEdge()
         setContent {
             val context = LocalContext.current
@@ -50,7 +52,7 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                 val logger = FirebaseAnalyticsEventLogger(FirebaseAnalytics.getInstance(context))
                 AnalyticsTracker(
                     environment = analyticsEnvironment,
-                    sink = logger::log,
+                    sink = AnalyticsEventDispatcher(logger::log, PostHogAnalyticsEventLogger::log)::log,
                 )
             }
             val authPlatform = remember(context, scope, tokenStore) {
