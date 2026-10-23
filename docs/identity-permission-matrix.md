@@ -97,7 +97,7 @@
 
 책장 이름 최대 길이·책장 수 제한, 질문 이모지별 표시 이름·의미, 구체적인 저장 실패 복구는 별도 논의가 남아 있다. 조회 화면에서 이 제한을 임의로 적용하지 않는다.
 
-### 검증 기록
+### 초기 검증 기록
 
 - 운영 OpenAPI를 2026-10-23 다시 조회했으며 `/api/v1/libraries` 경로가 아직 없다. 사용자 지정 새 명세를 구현한 것으로, 운영 배포·실연동 완료를 뜻하지 않는다.
 - 공통 테스트 430개가 실패·생략 없이 통과했다. 접근 행렬, 익명 이미지 차단, 작성자 DTO 매핑, 공개 GET의 인증 헤더 부재, 순서·빈 책장·여러 배치·31권 응답, 오류 전파, 중복 이동·기존 서재 복귀와 지연 로딩·명시적 재시도를 포함한다.
@@ -117,3 +117,23 @@
 - Jev 3회 실행의 총 API 호출은 4회, 입력 34,915토큰·출력 187토큰이다. 근거는 현재 호스트의 `/tmp/607-jev-feed-run-1`, `/tmp/607-jev-library-run-1`, `/tmp/607-jev-back-run-1`의 `result.json`과 `events.jsonl`, 후속 `/tmp/607-android-tree-after-back.log`다. 원문 트리와 비밀 환경파일은 커밋하지 않는다.
 - 검증 후 키보드·접근성 설정을 복원하고 전용 Android 에뮬레이터 종료·임대 반환을 확인했다. iOS 전용 Simulator도 종료했다. 기본 글자 크기의 새 목록·상세 화면을 양 플랫폼에서 캡처로 확인했으며 확대 글자·전체 접근성 감사나 운영 서버 저장 검증을 대신하지 않는다.
 - 로컬 근거: Android `/tmp/607-android-capture-ui.log`, iOS `/tmp/607-ios-public-library-v6.xcresult`. Android 목록·상세 캡처는 `/tmp/607-android-public-library-final.png`, `/tmp/607-android-public-bookshelf-final.png`이며 1080×1920이다. iOS 캡처는 `/tmp/607-ios-library-final.png`, `/tmp/607-ios-bookshelf-final.png`이며 1206×2622다. 임시 경로는 현재 검증 호스트에만 존재한다.
+
+### 추가 UI 검증 (2026-10-24)
+
+홈·발견·답글 진입과 백스택의 미검증 항목을 양 플랫폼의 기존 UI 테스트에 추가했다. 앱 동작 코드는 변경하지 않았다. 같은 로컬 HTTP fixture를 사용했으며 아래 결과는 운영 API 배포나 실연동의 근거가 아니다.
+
+| 플랫폼 | 실행 소스와 기기 | 최종 결과 |
+| --- | --- | --- |
+| Android | `909dff1e5df7eb2781107c35a734942cd2f23b97`, 전용 `chaekchaek_public_607`, Android 16 / API 36, `emulator-5594` | `PublicLibraryNavigationTest` 6개 통과, 27.552초. 별도 실제 `MainActivity` 종료·재실행 확인도 통과 |
+| iOS | `c24b08a17fc6e9ef899f10343d53b84a72d362de`, iPhone 17 Pro / iOS 26.2, `74464F96-99AB-4F02-BFC2-A8D7C082ACE1` | `PublicLibraryUITests` 6개 통과, 206.765초, 실패·생략 0개 |
+
+- 홈·발견의 프로필에서 서재를 열고 뒤로 가면 원래 탭과 작성자 위치가 유지된다.
+- 책 상세의 답글 작성자를 연속 탭하면 기존 A 서재로 돌아가고, 그 뒤로 가기는 원래 피드로 복귀한다. 연속 진입·뒤로가기와 시스템 뒤로가기를 섞어도 루트 탭을 사용할 수 있다.
+- 두 플랫폼에서 화면 가장자리 뒤로가기 제스처를 취소하면 현재 책장에 남는다. iOS는 이어지는 긴 제스처로 실제 이전 화면 복귀도 확인했다. Android의 실제 Activity 종료·재실행과 iOS 앱 종료·재실행 후 루트 탭·프로필 재진입도 확인했다.
+- 서재 책장 카드와 책장 상세의 가로 책등 위치, 상세의 독서 상태 필터·세로 위치가 왕복 후 유지된다. 가로 위치는 17번째 책등의 X 좌표로도 확인했다.
+- 빈 책장 안내를 확인했다. 조회 오류를 닫으면 현재 소유자 화면을 유지하며 추가 요청하지 않고, 나갔다 다시 들어갈 때 새로 조회한다. 명시적 재시도와 빈 서재, 익명·비회원·탈퇴 작성자 차단도 재검증했다.
+- A 책장 → 책 X 상세(페이지순) → B 서재·책장 → 같은 X 상세(최신순) → 원래 상세(페이지순)에서 진입별 상태가 독립적으로 유지된다.
+- 초기 실패는 Android 홈 바깥 목록 스크롤 선택, iOS의 취소 의도와 달리 완료된 제스처, Swift 6 테스트 함수의 액터 격리 문제였다. 테스트를 보완한 위 최종 실행은 모두 통과했다. `909dff1e` 이후 소스 차이는 iOS 테스트 보조 함수의 `@MainActor` 한 줄이며 Android 소스·공통 앱 코드는 동일하다.
+- 플리파는 연결됐지만 해당 브랜치와 UI 계측을 지원하지 않아 원격 작업을 접수하지 않았다. 사용자에게 로컬 Android UI 검증을 명시적으로 승인받고 공용 대기열·전용 AVD 임대 안에서 수행했다. 같은 버전·서명을 확인한 `adb install -r`로 데이터를 보존했으며 Android 앱 APK SHA-256은 `a9d670743c21f88a9fefd6b01404901463a7c0f048e364827523fb9198c6c70d`, 계측 APK는 `c768dd8da7623820e30bfa9a5b9ff5251fa2cb5ac0be79a89817febf5031c385`다.
+- 로컬 근거는 Android `/tmp/607-remaining-final-android-ui.log`, `/tmp/607-remaining-final-android-root-relaunch.txt`, iOS `/tmp/607-ios-public-library-final.xcresult`다. Android 캡처 `/tmp/607-remaining-final-android-public-bookshelf.png`, `/tmp/607-remaining-final-android-reply-mixed-back-root.png`와 iOS 첨부 `/tmp/607-ios-final-attachments`에서 기본 크기의 화면을 직접 확인했다. 임시 경로는 현재 호스트에서만 유효하다.
+- 검증 뒤 전용 Android AVD 종료·임대 반환과 iOS 글자 크기 복원·Simulator 종료, 공용 대기열 반환을 확인했다. 확대 글자·전체 접근성 감사·운영 API 실연동은 이번 결과에 포함하지 않는다. 기존 `AppNavigation`의 단일 책임 원칙상 책임 집중은 앞서 기록한 상태와 같다.
