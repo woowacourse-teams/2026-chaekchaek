@@ -166,13 +166,13 @@ export const LibraryPage = () => {
               >
                 <Icon.PlusIcon color="inverse" />책 담기
               </Button>
-              <IconButton variant="ghost" size="large" sx={{ mr: 2 }} onClick={handleCopyLink}>
+              {/* <IconButton variant="ghost" size="large" sx={{ mr: 2 }} onClick={handleCopyLink}>
                 {isCopied ? (
                   <Icon.CheckAnimatedIcon size="large" />
                 ) : (
                   <Icon.UploadIcon size="large" />
                 )}
-              </IconButton>
+              </IconButton> */}
               <IconButton
                 variant="ghost"
                 size="large"

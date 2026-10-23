@@ -31,7 +31,7 @@ export const ManageLibraryDialog = ({ onOpenDialog, onClose }: ManageLibraryDial
             <Icon.DragHandleIcon size="large" sx={{ mr: 3 }} />책 삭제
           </Button>
           <Divider sx={{ mt: 1, mb: 1 }} />
-          <Button
+          {/* <Button
             block
             align="left"
             size="large"
@@ -42,7 +42,7 @@ export const ManageLibraryDialog = ({ onOpenDialog, onClose }: ManageLibraryDial
             <Icon.UploadIcon size="large" sx={{ mr: 3 }} />
             책장 공유
           </Button>
-          <Divider sx={{ mt: 1, mb: 1 }} />
+          <Divider sx={{ mt: 1, mb: 1 }} /> */}
           <Button
             block
             align="left"
