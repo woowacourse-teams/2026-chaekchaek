@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasClickAction
@@ -117,10 +118,20 @@ class BookRatingRestorationTest {
         compose.onNodeWithContentDescription("감상 (필수)").assertTextContains("별점 복원 검증 감상")
         dismissKeyboard()
         val submit = compose.onNode(hasText("감상 남기기") and hasClickAction())
-        submit.performScrollTo().assertIsEnabled()
+        submit.performScrollTo().assertIsDisplayed().assertIsEnabled()
         compose.waitForIdle()
         submit.performClick()
-        compose.waitUntil(timeoutMillis = 5_000) { saved != null }
+        try {
+            compose.waitUntil(timeoutMillis = 5_000) { saved != null }
+        } catch (failure: androidx.compose.ui.test.ComposeTimeoutException) {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val screenshot = java.io.File(instrumentation.targetContext.cacheDir, "rating-restoration-failure.png")
+            instrumentation.uiAutomation.takeScreenshot()?.let { bitmap ->
+                screenshot.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+                bitmap.recycle()
+            }
+            throw AssertionError("저장 버튼 탭 후 콜백 없음: ${submit.fetchSemanticsNode().boundsInRoot}", failure)
+        }
         compose.runOnIdle { assertEquals(expected, saved) }
     }
 
