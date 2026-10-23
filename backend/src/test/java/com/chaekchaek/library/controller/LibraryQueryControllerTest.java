@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.snippet.Attributes.key;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -51,7 +52,7 @@ class LibraryQueryControllerTest {
             없는 회원과 비활성 회원은 MEMBER_NOT_FOUND다.
             """;
     private static final String DETAIL_DESCRIPTION = """
-            인증 없이 ACTIVE 회원 소유 책장 도서를 저장된 표시 순서로 조회한다.
+            인증 없이 ACTIVE 회원 소유 책장 도서를 저장된 표시 순서로 조회하며 상세 항목에 표지와 저장 순서의 저자를 포함한다. 저자가 없으면 authors는 빈 배열이다.
             page는 생략하면 1이며 페이지 크기는 10이다. 빈 값, 소수, 0 이하, int 범위 초과는 INVALID_REQUEST다.
             totalCount는 책장 전체 권수이며 마지막 페이지의 nextPage는 null이다.
             빈 책장과 범위 밖 페이지도 200과 빈 items, nextPage: null을 반환한다.
@@ -82,6 +83,9 @@ class LibraryQueryControllerTest {
             fieldWithPath("items").type(JsonFieldType.ARRAY).description("표시 순서의 도서, 페이지당 최대 10권"),
             fieldWithPath("items[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
             fieldWithPath("items[].title").type(JsonFieldType.STRING).description("도서 제목"),
+            fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING).description("도서 표지 이미지 URL"),
+            fieldWithPath("items[].authors").type(JsonFieldType.ARRAY).description("저장 순서의 저자 이름, 없으면 빈 배열")
+                    .attributes(key("itemsType").value(JsonFieldType.STRING)),
             fieldWithPath("items[].spineImageUrl").type(JsonFieldType.STRING).description("책등 이미지 URL, 없으면 null").optional(),
             fieldWithPath("items[].isbn13").type(JsonFieldType.STRING).description("ISBN-13"),
             fieldWithPath("items[].totalPages").type(JsonFieldType.NUMBER).description("전체 페이지, 모르면 null").optional(),
@@ -134,6 +138,8 @@ class LibraryQueryControllerTest {
                 .andExpect(jsonPath("$.libraries[0].items[0].isbn13").value("9788925568683"))
                 .andExpect(jsonPath("$.libraries[0].items[0].spineImageUrl").value(nullValue()))
                 .andExpect(jsonPath("$.libraries[0].items[0].status").doesNotExist())
+                .andExpect(jsonPath("$.libraries[0].items[0].coverImageUrl").doesNotExist())
+                .andExpect(jsonPath("$.libraries[0].items[0].authors").doesNotExist())
                 .andDo(document("libraries-public-collection", resource(ResourceSnippetParameters.builder()
                         .tag("공개 서재")
                         .summary("회원의 전체 책장과 도서 요약 조회")
@@ -151,8 +157,10 @@ class LibraryQueryControllerTest {
         LibraryBookDetailResponse book = new LibraryBookDetailResponse(
                 42L,
                 "책 제목",
+                "https://example.com/cover.jpg",
                 null,
                 "9788925568683",
+                List.of("두 번째 저자", "첫 번째 저자"),
                 null,
                 ReadingStatus.READING,
                 23,
@@ -175,7 +183,53 @@ class LibraryQueryControllerTest {
                 .andExpect(jsonPath("$.nextPage").value(nullValue()))
                 .andExpect(jsonPath("$.items[0].totalPages").value(nullValue()))
                 .andExpect(jsonPath("$.items[0].currentPage").value(23))
+                .andExpect(jsonPath("$.items[0].coverImageUrl").value("https://example.com/cover.jpg"))
+                .andExpect(jsonPath("$.items[0].authors[0]").value("두 번째 저자"))
+                .andExpect(jsonPath("$.items[0].authors[1]").value("첫 번째 저자"))
                 .andDo(document("libraries-public-detail", resource(ResourceSnippetParameters.builder()
+                        .tag("공개 서재")
+                        .summary("책장 도서 페이지 조회")
+                        .description(DETAIL_DESCRIPTION)
+                        .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("양의 책장 ID"))
+                        .queryParameters(parameterWithName("page").type(SimpleType.INTEGER).description("생략하면 1, 페이지당 10권").optional())
+                        .responseSchema(Schema.schema("LibraryDetailResponse"))
+                        .responseFields(DETAIL_FIELDS)
+                        .build())));
+    }
+
+    @Test
+    @DisplayName("저자가 없는 도서도 필수 표지와 빈 저자 배열을 반환한다")
+    void should_ReturnEmptyAuthors_When_BookHasNoAuthorNames() throws Exception {
+        // given
+        LibraryBookDetailResponse book = new LibraryBookDetailResponse(
+                42L,
+                "책 제목",
+                "https://example.com/cover.jpg",
+                null,
+                "9788925568683",
+                List.of(),
+                null,
+                ReadingStatus.READING,
+                0,
+                Instant.parse("2026-10-23T03:00:00Z")
+        );
+        when(service.findLibrary(7L, 1)).thenReturn(new LibraryDetailResponse(
+                7L,
+                1L,
+                "책장",
+                false,
+                1L,
+                null,
+                List.of(book)
+        ));
+
+        // when & then
+        mockMvc.perform(get("/api/v1/libraries/{libraryId}", 7L).param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].coverImageUrl").value("https://example.com/cover.jpg"))
+                .andExpect(jsonPath("$.items[0].authors").isArray())
+                .andExpect(jsonPath("$.items[0].authors").isEmpty())
+                .andDo(document("libraries-public-detail-without-authors", resource(ResourceSnippetParameters.builder()
                         .tag("공개 서재")
                         .summary("책장 도서 페이지 조회")
                         .description(DETAIL_DESCRIPTION)

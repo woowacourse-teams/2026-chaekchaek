@@ -5,8 +5,12 @@ import com.chaekchaek.library.dto.LibraryBookDetailResponse;
 import com.chaekchaek.library.dto.LibraryBookSummaryResponse;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 import lombok.RequiredArgsConstructor;
@@ -84,9 +88,9 @@ public class LibraryQueryRepository {
     }
 
     public List<LibraryBookDetailResponse> findBooksByLibraryId(long libraryId, long offset, int limit) {
-        return jdbcTemplate.query(
+        List<LibraryBookDetailResponse> books = jdbcTemplate.query(
                 """
-                select lb.book_id, b.title, b.spine_image_url, b.isbn13, b.total_pages,
+                select lb.book_id, b.title, b.cover_image_url, b.spine_image_url, b.isbn13, b.total_pages,
                        li.status, li.current_page, li.reading_updated_at
                 from library_book lb
                 join library l on l.id = lb.library_id
@@ -101,8 +105,10 @@ public class LibraryQueryRepository {
                     return new LibraryBookDetailResponse(
                             rs.getLong("book_id"),
                             rs.getString("title"),
+                            rs.getString("cover_image_url"),
                             rs.getString("spine_image_url"),
                             rs.getString("isbn13"),
+                            List.of(),
                             rs.getObject("total_pages", Integer.class),
                             ReadingStatus.valueOf(rs.getString("status")),
                             rs.getInt("current_page"),
@@ -113,6 +119,33 @@ public class LibraryQueryRepository {
                 limit,
                 offset
         );
+        if (books.isEmpty()) {
+            return books;
+        }
+        List<Long> bookIds = books
+                .stream()
+                .map(LibraryBookDetailResponse::bookId)
+                .toList();
+        Map<Long, List<String>> authorsByBookId = authorsByBookId(bookIds);
+        return books
+                .stream()
+                .map(book -> book.withAuthors(authorsByBookId.getOrDefault(book.bookId(), List.of())))
+                .toList();
+    }
+
+    private Map<Long, List<String>> authorsByBookId(List<Long> bookIds) {
+        Map<Long, List<String>> authorsByBookId = new HashMap<>();
+        String placeholders = String.join(", ", Collections.nCopies(bookIds.size(), "?"));
+        jdbcTemplate.query(
+                "select book_id, name from book_author where book_id in (" + placeholders + ") "
+                        + "order by book_id, display_order",
+                rs -> {
+                    authorsByBookId.computeIfAbsent(rs.getLong("book_id"), ignored -> new ArrayList<>())
+                            .add(rs.getString("name"));
+                },
+                bookIds.toArray()
+        );
+        return authorsByBookId;
     }
 
     private LibraryHeader libraryHeader(ResultSet rs) throws SQLException {

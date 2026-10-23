@@ -31,11 +31,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -172,10 +174,13 @@ class LibraryQueryRepositoryTest {
             assertThat(item.currentPage()).isEqualTo(23);
             assertThat(item.readingUpdatedAt()).isEqualTo(NOW.plusSeconds(10));
             assertThat(item.totalPages()).isEqualTo(368);
+            assertThat(item.coverImageUrl()).isEqualTo("https://example.com/cover.jpg");
+            assertThat(item.authors()).containsExactly("저자");
             assertThat(item.isbn13()).isEqualTo(book.getIsbn13().value());
         });
         verify(jdbcTemplate, times(2)).query(anyString(), ArgumentMatchers.<RowMapper<Object>>any(), any(Object[].class));
         verify(jdbcTemplate).queryForObject("select count(*) from library_book where library_id = ?", Long.class, library.getId());
+        verify(jdbcTemplate).query(anyString(), any(RowCallbackHandler.class), any(Object[].class));
     }
 
     @Test
@@ -278,6 +283,39 @@ class LibraryQueryRepositoryTest {
         verify(jdbcTemplate).query(anyString(), ArgumentMatchers.<RowMapper<Object>>any(), any(Object[].class));
     }
 
+    @Test
+    @DisplayName("상세 저자는 해당 페이지 도서만 한 번 조회해 저장 순서를 유지하고 없으면 빈 배열로 반환한다")
+    void should_BatchLoadOrderedAuthorsForPageOnly_When_ReadingLibraryDetail() {
+        // given
+        Member owner = member();
+        Library library = library(owner, "책장", 1L);
+        for (int index = 1; index <= 10; index++) {
+            Book book = book(index, List.of());
+            record(owner, book, ReadingStatus.READING);
+            placement(library, book, index);
+        }
+        Book lastBook = book(11, List.of("두 번째 저자", "첫 번째 저자"));
+        record(owner, lastBook, ReadingStatus.READING);
+        placement(library, lastBook, 11L);
+        flushAndClear();
+        clearInvocations(jdbcTemplate);
+
+        // when
+        LibraryDetailResponse lastPage = service.findLibrary(library.getId(), 2);
+
+        // then
+        assertThat(lastPage.items()).singleElement().satisfies(item -> {
+            assertThat(item.bookId()).isEqualTo(lastBook.getId());
+            assertThat(item.coverImageUrl()).isEqualTo("https://example.com/cover.jpg");
+            assertThat(item.authors()).containsExactly("두 번째 저자", "첫 번째 저자");
+        });
+        ArgumentCaptor<Object[]> authorBookIds = ArgumentCaptor.forClass(Object[].class);
+        verify(jdbcTemplate).query(anyString(), any(RowCallbackHandler.class), authorBookIds.capture());
+        assertThat(authorBookIds.getValue()).containsExactly(lastBook.getId());
+        LibraryDetailResponse firstPage = service.findLibrary(library.getId(), 1);
+        assertThat(firstPage.items()).hasSize(10).allSatisfy(item -> assertThat(item.authors()).isEmpty());
+    }
+
     private Member member() {
         return members.save(Member.create("익명", null, LocalDateTime.of(2026, 10, 23, 12, 0)));
     }
@@ -291,6 +329,10 @@ class LibraryQueryRepositoryTest {
     }
 
     private Book book(int index) {
+        return book(index, List.of("저자"));
+    }
+
+    private Book book(int index, List<String> authors) {
         return books.save(Book.create(
                 new Isbn13(String.format("978%010d", index)),
                 "도서 " + index,
@@ -298,7 +340,7 @@ class LibraryQueryRepositoryTest {
                 null,
                 null,
                 null,
-                List.of("저자"),
+                authors,
                 List.of(),
                 "출판사",
                 "분류",

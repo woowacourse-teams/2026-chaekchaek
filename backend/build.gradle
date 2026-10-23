@@ -354,6 +354,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 				?.putAll([type: 'integer', format: 'int32', minimum: 0])
 		((publicLibraryBook?.get('properties') as Map)?.get('totalPages') as Map)
 				?.putAll([type: 'integer', format: 'int32', minimum: 1])
+		((publicLibraryBook?.get('properties') as Map)?.get('coverImageUrl') as Map)?.put('format', 'uri')
 		constrainReadingStatus((publicLibraryBook?.get('properties') as Map)?.get('status') as Map)
 		((publicLibraryBook?.get('properties') as Map)?.get('readingUpdatedAt') as Map)?.put('format', 'date-time')
 
@@ -1120,7 +1121,7 @@ tasks.register('verifyOpenApi') {
 			[schema: publicShelf, names: ['libraryId', 'name', 'isDefault', 'totalCount', 'items']],
 			[schema: publicPreview, names: ['bookId', 'title', 'spineImageUrl', 'isbn13']],
 			[schema: publicDetail, names: ['libraryId', 'memberId', 'name', 'isDefault', 'totalCount', 'nextPage', 'items']],
-			[schema: publicBook, names: ['bookId', 'title', 'spineImageUrl', 'isbn13', 'totalPages', 'status', 'currentPage', 'readingUpdatedAt']]
+			[schema: publicBook, names: ['bookId', 'title', 'coverImageUrl', 'spineImageUrl', 'isbn13', 'authors', 'totalPages', 'status', 'currentPage', 'readingUpdatedAt']]
 		].each { requirement ->
 			if ((requirement.schema?.get('required') as Set) != (requirement.names as Set)) {
 				throw new GradleException('OpenAPI specification has invalid fields for public library responses')
@@ -1131,6 +1132,11 @@ tasks.register('verifyOpenApi') {
 				|| ((publicShelf?.get('properties') as Map)?.get('name') as Map)?.get('maxLength') != null
 				|| ((publicDetail?.get('properties') as Map)?.get('name') as Map)?.get('maxLength') != null) {
 			throw new GradleException('OpenAPI specification must preserve nullable fields and legacy library names')
+		}
+		def publicAuthors = (publicBook?.get('properties') as Map)?.get('authors') as Map
+		if (publicAuthors?.get('type') != 'array' || (publicAuthors?.get('items') as Map)?.get('type') != 'string'
+				|| ((publicBook?.get('properties') as Map)?.get('coverImageUrl') as Map)?.get('nullable') == true) {
+			throw new GradleException('OpenAPI specification must require cover image and the author name array in library detail')
 		}
 		def publicPage = queryParameter('/api/v1/libraries/{libraryId}', 'get', 'page')?.get('schema') as Map
 		if (publicPage?.get('type') != 'integer' || publicPage?.get('minimum') != 1 || publicPage?.get('default') != 1) {
