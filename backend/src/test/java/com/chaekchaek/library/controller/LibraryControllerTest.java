@@ -51,6 +51,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -125,7 +126,11 @@ class LibraryControllerTest {
     private static final String LIBRARY_BULK_STATUS_SUMMARY = "내 서재 읽기 상태 일괄 변경";
     private static final String LIBRARY_BULK_STATUS_DESCRIPTION = "인증된 사용자가 최대 10개의 공유 독서 상태를 한 번에 변경한다. 초기화된 기록이 하나라도 있으면 `LIBRARY_ITEM_NOT_FOUND`로 전체 실패하며 배치와 표시 순서는 유지한다";
     private static final String LIBRARY_RATE_SUMMARY = "도서 별점 등록";
-    private static final String LIBRARY_RATE_DESCRIPTION = "인증된 사용자가 내 서재 도서에 0.1부터 5.0까지의 별점을 등록한다";
+    private static final String LIBRARY_RATE_DESCRIPTION = """
+            인증된 회원이 도서에 0.1부터 5.0까지 별점을 등록한다. 책장 배치와 독서 기록을 새로 만들지 않으며
+            기존 독서 기록은 유지하고 초기화된 기록도 되살리지 않는다. 책장 한도와 닉네임 설정 여부에 영향을 받지 않는다.
+            별점만 있는 응답의 status, currentPage, readingUpdatedAt은 null이다. 기존 URI와 응답 필드 구조를 유지한다.
+            """;
     private static final String LIBRARY_REMOVE_RATING_SUMMARY = "도서 별점 삭제";
     private static final String LIBRARY_REMOVE_RATING_DESCRIPTION = "인증된 사용자가 내 서재 도서에 등록한 별점을 삭제한다";
     private static final String RATING_COMPARISON_SUMMARY = "별점 비교 도서 조회";
@@ -744,7 +749,60 @@ class LibraryControllerTest {
                         "library-rate",
                         pathParameters(bookIdPathParameter()),
                         requestFields(ratingRequestFields()),
-                        responseFields(LIBRARY_ITEM_RESPONSE_FIELDS),
+                        responseFields(ratingResponseFields()),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary(LIBRARY_RATE_SUMMARY)
+                                .description(LIBRARY_RATE_DESCRIPTION)
+                                .tag(LIBRARY_TAG)
+                                .pathParameters(bookIdResourcePathParameter())
+                                .requestSchema(Schema.schema("RateBookRequest"))
+                                .responseSchema(Schema.schema("LegacyRatingResponse"))
+                                .requestFields(ratingRequestFields())
+                                .responseFields(ratingResponseFields())
+                                .build())
+                ));
+
+        verify(libraryService).rate(MEMBER_ID, BOOK_ID, new BigDecimal("4.5"));
+    }
+
+    @Test
+    @DisplayName("독서 기록 없이 저장한 별점은 nullable 독서 필드를 명시한다")
+    void should_ReturnNullReadingFields_When_RatingWithoutReadingRecord() throws Exception {
+        // given
+        LibraryItemResponse original = libraryItemResponse();
+        LibraryItemResponse ratingOnly = new LibraryItemResponse(
+                original.bookId(),
+                original.isbn13(),
+                original.title(),
+                original.coverImageUrl(),
+                original.spineImageUrl(),
+                original.backImageUrl(),
+                original.authors(),
+                original.translators(),
+                original.publisher(),
+                original.category(),
+                original.publishedDate(),
+                original.totalPages(),
+                original.commentCount(),
+                null,
+                null,
+                original.rating(),
+                original.addedAt(),
+                null
+        );
+        when(libraryService.rate(MEMBER_ID, BOOK_ID, new BigDecimal("4.5"))).thenReturn(ratingOnly);
+
+        // when & then
+        mockMvc.perform(put("/api/v1/library/{bookId}/rating", BOOK_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rating\":4.5}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(nullValue()))
+                .andExpect(jsonPath("$.currentPage").value(nullValue()))
+                .andExpect(jsonPath("$.readingUpdatedAt").value(nullValue()))
+                .andExpect(jsonPath("$.rating").value(4.5))
+                .andDo(document(
+                        "library-rate-without-reading-state",
                         resource(ResourceSnippetParameters.builder()
                                 .summary(LIBRARY_RATE_SUMMARY)
                                 .description(LIBRARY_RATE_DESCRIPTION)
@@ -752,11 +810,24 @@ class LibraryControllerTest {
                                 .pathParameters(bookIdResourcePathParameter())
                                 .requestSchema(Schema.schema("RateBookRequest"))
                                 .requestFields(ratingRequestFields())
-                                .responseFields(LIBRARY_ITEM_RESPONSE_FIELDS)
+                                .responseSchema(Schema.schema("LegacyRatingResponse"))
+                                .responseFields(ratingResponseFields())
                                 .build())
                 ));
+    }
 
-        verify(libraryService).rate(MEMBER_ID, BOOK_ID, new BigDecimal("4.5"));
+    private FieldDescriptor[] ratingResponseFields() {
+        List<String> ratingFields = List.of("status", "currentPage", "readingUpdatedAt", "rating");
+        return Stream.concat(
+                Stream.of(LIBRARY_ITEM_RESPONSE_FIELDS)
+                        .filter(field -> !ratingFields.contains(field.getPath())),
+                Stream.of(
+                        fieldWithPath("status").type(JsonFieldType.STRING).description("기존 독서 상태, 없으면 null").optional(),
+                        fieldWithPath("currentPage").type(JsonFieldType.NUMBER).description("기존 현재 페이지, 없으면 null").optional(),
+                        fieldWithPath("readingUpdatedAt").type(JsonFieldType.STRING).description("기존 독서 갱신 시각, 없으면 null").optional(),
+                        fieldWithPath("rating").type(JsonFieldType.NUMBER).description("저장한 내 별점")
+                )
+        ).toArray(FieldDescriptor[]::new);
     }
 
     @Test

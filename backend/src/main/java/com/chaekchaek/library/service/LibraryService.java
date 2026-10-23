@@ -38,7 +38,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Isolation;
@@ -465,25 +464,25 @@ public class LibraryService {
         validateRating(rating);
         lockMember(memberId);
         Book book = getBook(bookId);
-        LibraryItem item = libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
-                .orElseGet(() -> createForRating(memberId, book));
-        item.rate(rating, now());
+        Instant now = now();
+        LibraryItem item = libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId).orElse(null);
+        if (item == null) {
+            item = libraryItemRepository.saveAndFlush(
+                    LibraryItem.createForRating(memberId, bookId, rating, now)
+            );
+        } else {
+            item.rate(rating, now);
+        }
         logItemEvent("library_item_rated", "Library item rated", memberId, bookId);
         return response(item, book, Map.of());
     }
 
-    private LibraryItem createForRating(long memberId, Book book) {
-        try {
-            return libraryItemRepository.saveAndFlush(
-                    LibraryItem.create(memberId, book.getId(), ReadingStatus.WANT_TO_READ, null, now()));
-        } catch (DataIntegrityViolationException exception) {
-            return getItemForUpdate(memberId, book.getId());
-        }
-    }
-
     private void lockMember(long memberId) {
-        memberRepository.findByIdForUpdate(memberId)
+        Member member = memberRepository.findByIdForUpdate(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        if (member.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
     }
 
     private void requireReadingState(LibraryItem item) {

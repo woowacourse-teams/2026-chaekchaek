@@ -35,6 +35,7 @@ import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +108,7 @@ class LibraryServiceTest {
         Library saved = mock(Library.class);
         when(saved.getId()).thenReturn(7L);
         when(saved.getName()).thenReturn("가을에 읽을 책");
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(Member.class)));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
         when(libraryRepository.findMaxDisplayOrderByMemberId(1L)).thenReturn(4L);
         when(libraryRepository.create(any(Library.class))).thenReturn(saved);
         LibraryService service = service();
@@ -160,7 +161,7 @@ class LibraryServiceTest {
     @DisplayName("서재 저장이 실패하면 생성 이벤트를 기록하지 않는다")
     void should_NotLogCreatedEvent_When_PersistenceFails() {
         // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(Member.class)));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
         when(libraryRepository.create(any(Library.class)))
                 .thenThrow(new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS));
         LibraryService service = service();
@@ -175,7 +176,7 @@ class LibraryServiceTest {
     @DisplayName("일괄 완독 대상 중 전체 페이지가 없는 책이 있으면 어느 항목도 변경하지 않는다")
     void should_NotChangeAnyItem_When_BulkFinishContainsUnknownTotalPages() {
         // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(Member.class)));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
         LibraryItem knownItem = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, CLOCK.instant());
         LibraryItem unknownItem = LibraryItem.create(1L, 3L, ReadingStatus.READING, null, CLOCK.instant());
         when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(2L, 3L)))
@@ -201,7 +202,7 @@ class LibraryServiceTest {
     @DisplayName("일괄 완독은 책을 먼저 잠근 뒤 서재 항목을 잠근다")
     void should_LockBooksBeforeLibraryItems_When_BulkFinishing() {
         // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(Member.class)));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, CLOCK.instant());
         when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(2L)))
                 .thenReturn(List.of(item));
@@ -426,6 +427,10 @@ class LibraryServiceTest {
                 BusinessException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND)
         );
+    }
+
+    private Member activeMember() {
+        return Member.create("익명", null, LocalDateTime.of(2026, 10, 23, 12, 0));
     }
 
     private LibraryService service() {
