@@ -4,7 +4,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import android.view.KeyEvent
+import android.os.Bundle
 import android.view.accessibility.AccessibilityNodeInfo
 import java.io.File
 import android.graphics.Bitmap
@@ -51,6 +51,7 @@ class BookshelfContractTest {
         compose.onNodeWithText("이 책장에 담기").performClick()
         compose.waitUntil(15_000) { compose.onAllNodesWithText("담을 책장 고르기").fetchSemanticsNodes().isEmpty() }
         waitText("3권")
+        compose.waitUntil(15_000) { compose.onAllNodesWithText("내 서재에 담았어요").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithText("편집").performScrollTo().performClick()
         compose.onAllNodesWithText("빼기").onFirst().performScrollTo().performClick()
         compose.waitUntil(15_000) { JSONObject(request("/__bookshelf/state")).getJSONArray("requests").toString().contains("/books/1") }
@@ -66,6 +67,11 @@ class BookshelfContractTest {
         val automation = instrumentation.uiAutomation
         compose.waitUntil(60_000) { automation.rootInActiveWindow?.packageName?.toString()?.endsWith("documentsui") == true }
         compose.waitUntil(60_000) { findSave(automation.rootInActiveWindow) != null }
+        val name = findFileName(automation.rootInActiveWindow)
+        assertNotNull("네이티브 저장 파일 이름", name)
+        assertTrue(name!!.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "책장-계측-${System.currentTimeMillis()}.png")
+        }))
         val save = findSave(automation.rootInActiveWindow)
         assertNotNull("네이티브 파일 저장 버튼", save)
         assertTrue(save!!.performAction(AccessibilityNodeInfo.ACTION_CLICK))
@@ -83,7 +89,7 @@ class BookshelfContractTest {
         assertTrue(calls.any { it.getString("method") == "DELETE" && it.getString("path").contains("/books/") })
         compose.waitUntil(10_000) { JSONObject(request("/__bookshelf/state")).getJSONArray("requests").toString().contains("/api/v1/books/3/reviews") }
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
-        compose.waitUntil(15_000) {
+        compose.waitUntil(60_000) {
             automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver")
         }
         val exported = instrumentation.targetContext.cacheDir.resolve("bookshelf-images").listFiles()?.maxByOrNull { it.lastModified() }
@@ -95,6 +101,13 @@ class BookshelfContractTest {
         File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-native-share.png").outputStream().use {
             automation.takeScreenshot().compress(Bitmap.CompressFormat.PNG, 100, it)
         }
+    }
+
+    private fun findFileName(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+        if (node == null) return null
+        if (node.isEditable && node.viewIdResourceName == "android:id/title") return node
+        for (index in 0 until node.childCount) findFileName(node.getChild(index))?.let { return it }
+        return null
     }
 
     private fun findSave(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
