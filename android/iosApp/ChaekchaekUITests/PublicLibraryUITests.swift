@@ -138,6 +138,12 @@ final class PublicLibraryUITests: XCTestCase {
         XCTAssertTrue(latest.isHittable)
         back(app); XCTAssertTrue(find("읽는 중", in: app).waitForExistence(timeout: 10))
         back(app); XCTAssertTrue(otherShelf.waitForExistence(timeout: 10)); back(app)
+        // 원래 상세의 저장된 위치는 B 프로필 근처다. 정렬은 위쪽에 있으므로 먼저 TOP으로 이동한다.
+        let top = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "TOP")).firstMatch
+        if top.exists && top.isHittable {
+            top.tap()
+            XCTAssertTrue(app.buttons["뒤로 가기"].waitForExistence(timeout: 10))
+        }
         let originalSort = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "페이지순")).firstMatch
         reveal(originalSort, in: app); XCTAssertTrue(originalSort.waitForExistence(timeout: 15))
         XCTAssertTrue(originalSort.isHittable)
