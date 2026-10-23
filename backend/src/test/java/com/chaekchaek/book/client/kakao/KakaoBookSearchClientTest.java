@@ -80,7 +80,7 @@ public class KakaoBookSearchClientTest {
                         List.of("전경아"),
                         LocalDate.of(2014, 11, 17),
                         "9788996991342",
-                        null,
+                        "",
                         "인플루엔셜"
                 ))
         ));
