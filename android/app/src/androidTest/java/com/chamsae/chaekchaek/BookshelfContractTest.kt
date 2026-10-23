@@ -98,7 +98,7 @@ class BookshelfContractTest {
         automation.takeScreenshot()?.let { bitmap -> screenshot.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } }
 
         compose.waitUntil(10_000) { requested("GET", "/api/v1/books/1/reviews?") }
-        compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
+        compose.onNodeWithTag("bookshelf-image-share").performScrollTo().performClick()
         compose.waitUntil(60_000) {
             automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver")
         }
@@ -126,11 +126,11 @@ class BookshelfContractTest {
         compose.waitUntil(30_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
         waitText("책장을 이미지로")
-        compose.waitUntil(30_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(30_000) { compose.onAllNodes(hasTestTag("bookshelf-image-share") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val directory = instrumentation.targetContext.cacheDir.resolve("bookshelf-images")
         val previousFiles = directory.listFiles()?.map { it.name }?.toSet().orEmpty()
-        compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
+        compose.onNodeWithTag("bookshelf-image-share").performScrollTo().performClick()
         val automation = instrumentation.uiAutomation
         compose.waitUntil(60_000) {
             automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver")

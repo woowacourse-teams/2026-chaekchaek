@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.layer.GraphicsLayer
@@ -124,7 +125,7 @@ internal fun BookshelfImageSheet(detail: BookshelfDetail, token: String, onDismi
         if (saved) Text("이미지 저장을 완료했어요", style = MaterialTheme.typography.bodySmall)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ChaekOverlayButton("이미지 저장", { export(true) }, enabled = ready, secondary = true, modifier = Modifier.weight(1f))
-            ChaekOverlayButton("이미지 공유", { export(false) }, enabled = ready, modifier = Modifier.weight(1f))
+            ChaekOverlayButton("이미지 공유", { export(false) }, enabled = ready, modifier = Modifier.weight(1f).testTag("bookshelf-image-share"))
         }
     }
 }
