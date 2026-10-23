@@ -106,7 +106,7 @@ internal fun BookshelfRoute(
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ChaekOverlayButton("+ 책 담기", { adding = true }, modifier = Modifier.weight(1f), enabled = !state.mutating)
-                        ChaekOverlayButton("이미지 공유", { sharing = true }, enabled = !state.mutating, secondary = true, modifier = Modifier.weight(1f))
+                        ChaekOverlayButton("이미지 공유", { sharing = true }, enabled = !state.mutating && !state.refreshing, secondary = true, modifier = Modifier.weight(1f))
                     }
                 }
                 item { Row(verticalAlignment = Alignment.CenterVertically) {
