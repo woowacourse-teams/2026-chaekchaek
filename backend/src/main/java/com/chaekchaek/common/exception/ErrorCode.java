@@ -88,6 +88,9 @@ public enum ErrorCode {
     LIBRARY_ITEM_LIMIT_EXCEEDED(
             "LIBRARY_ITEM_LIMIT_EXCEEDED",
             "책장에는 최대 30권까지 등록할 수 있습니다."),
+    DEFAULT_LIBRARY_DELETE_NOT_ALLOWED(
+            "DEFAULT_LIBRARY_DELETE_NOT_ALLOWED",
+            "기본 책장은 유지해야 합니다. 다른 책장을 삭제해 주세요."),
     RECOMMENDED_BOOK_NOT_FOUND(
             "RECOMMENDED_BOOK_NOT_FOUND",
             "추천 도서를 찾을 수 없습니다."),
