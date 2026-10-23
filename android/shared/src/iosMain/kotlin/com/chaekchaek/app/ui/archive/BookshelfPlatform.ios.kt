@@ -28,10 +28,13 @@ internal actual fun rememberBookshelfPlatform(): BookshelfPlatform = remember {
         override suspend fun share(image: ImageBitmap) {
             var controller = UIApplication.sharedApplication.keyWindow?.rootViewController
                 ?: error("공유 화면을 열 수 없어요")
-            while (controller?.presentedViewController != null) controller = controller.presentedViewController
+            while (true) {
+                val presented = controller.presentedViewController ?: break
+                controller = presented
+            }
             val activity = UIActivityViewController(listOf(nativeImage(image)), null)
-            activity.popoverPresentationController?.sourceView = controller?.view
-            controller?.presentViewController(activity, animated = true, completion = null)
+            activity.popoverPresentationController?.sourceView = controller.view
+            controller.presentViewController(activity, animated = true, completion = null)
         }
         override suspend fun save(image: ImageBitmap): Boolean {
             val native = nativeImage(image)
