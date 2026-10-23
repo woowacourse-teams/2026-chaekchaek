@@ -232,7 +232,7 @@ enum PostHogAnalyticsEventLogger {
     static func refreshCollectionPolicy(_ controller: AnalyticsCollectionController) {
         guard configured else { return }
         let receiver = AnalyticsPolicyReceiver(controller)
-        PostHogSDK.shared.reloadFeatureFlags {
+        PostHogSDK.shared.reloadFeatureFlags { @Sendable in
             guard let payload = PostHogSDK.shared.getFeatureFlagPayload(AnalyticsCollectionController.companion.FlagKey) as? [String: Any],
                   let data = try? JSONSerialization.data(withJSONObject: payload),
                   let json = String(data: data, encoding: .utf8) else { return }
