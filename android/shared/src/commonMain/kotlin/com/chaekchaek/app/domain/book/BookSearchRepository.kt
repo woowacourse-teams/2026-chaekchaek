@@ -2,6 +2,10 @@ package com.chaekchaek.app.domain.book
 
 fun interface BookSearchRepository {
     suspend fun search(query: String, sort: BookSearchSort, page: Int): BookSearchPage
+
+    // 저장된 범위를 재조회할 때는 빈 페이지도 다음 서버 페이지로 넘어가지 않고 반환한다.
+    suspend fun searchPage(query: String, sort: BookSearchSort, page: Int): BookSearchPage =
+        search(query, sort, page)
 }
 
 enum class BookSearchSort { LATEST, COMMENT }

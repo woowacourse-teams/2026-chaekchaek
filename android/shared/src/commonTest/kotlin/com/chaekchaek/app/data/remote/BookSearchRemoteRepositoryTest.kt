@@ -136,6 +136,21 @@ class BookSearchRemoteRepositoryTest {
         }
     }
 
+    @Test
+    fun `single page query preserves an empty filtered page for bounded restoration`() = runTest {
+        val requests = mutableListOf<Int>()
+        val client = searchClient { page ->
+            requests += page
+            check(page == 2) { "다음 페이지를 요청하면 안 됩니다" }
+            response(3, 3, item("ISBN 없는 세트", "", null))
+        }
+        val result = BookSearchRemoteRepository(client).searchPage("책", BookSearchSort.LATEST, 2)
+        assertTrue(result.items.isEmpty())
+        assertEquals(3, result.nextPage)
+        assertEquals(2, result.lastLoadedPage)
+        assertEquals(listOf(2), requests)
+    }
+
     private fun searchClient(body: (Int) -> String) = HttpClient(MockEngine { request ->
         respond(body(request.url.parameters["page"]!!.toInt()),
             headers = headersOf(HttpHeaders.ContentType, "application/json"))

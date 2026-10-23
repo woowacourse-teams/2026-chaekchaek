@@ -131,7 +131,8 @@ class SearchViewModel(
         if (trimmed.isEmpty()) return
         val previousLoadedPage = savedStateHandle.get<Int>(SearchSavedStateKeys.LoadedPage)
         val requestedSort = _sort.value
-        val restoreThroughPage = if (trigger == "restore" || retainContent) {
+        val restoringPages = trigger == "restore" || retainContent
+        val restoreThroughPage = if (restoringPages) {
             savedStateHandle.get<Int>(SearchSavedStateKeys.LoadedPage) ?: FIRST_PAGE
         } else FIRST_PAGE
         if (trigger != "restore" && !retainContent) savedStateHandle[SearchSavedStateKeys.LoadedPage] = FIRST_PAGE
@@ -173,12 +174,14 @@ class SearchViewModel(
                         }
                     },
                 ) {
-                    var page = bookSearchRepository.search(trimmed, requestedSort, FIRST_PAGE)
+                    var page = if (restoringPages) {
+                        bookSearchRepository.searchPage(trimmed, requestedSort, FIRST_PAGE)
+                    } else bookSearchRepository.search(trimmed, requestedSort, FIRST_PAGE)
                     var loadedPage = page.lastLoadedPage ?: FIRST_PAGE
                     while (true) {
                         val nextPage = page.nextPage?.takeIf { it > loadedPage && it <= restoreThroughPage }
                             ?: break
-                        val next = bookSearchRepository.search(trimmed, requestedSort, nextPage)
+                        val next = bookSearchRepository.searchPage(trimmed, requestedSort, nextPage)
                         page = next.copy(items = (page.items + next.items).distinctBy(BookSearchResult::isbn13))
                         loadedPage = next.lastLoadedPage ?: nextPage
                     }

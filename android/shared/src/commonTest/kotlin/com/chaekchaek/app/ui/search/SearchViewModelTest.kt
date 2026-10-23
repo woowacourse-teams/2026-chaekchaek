@@ -658,16 +658,20 @@ class SearchViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
             var earlierPageChanged = false
+            var lastPageExcluded = false
             val requests = mutableListOf<Int>()
             val client = HttpClient(MockEngine(MockEngineConfig().apply {
                 dispatcher = StandardTestDispatcher(testScheduler)
                 addHandler { request ->
                     val page = request.url.parameters["page"]!!.toInt()
                     requests += page
-                    val isbn = if (page == 3) "9788936433598"
+                    check(page <= 3) { "복원 범위 밖 페이지는 실패합니다" }
+                    val isbn = if (page == 3) {
+                        if (lastPageExcluded) "" else "9788936433598"
+                    }
                         else if (earlierPageChanged) "9788937460449" else ""
                     respond(
-                        """{"totalCount":2,"nextPage":${if (page == 1) 3 else null},"items":[{"title":"책 $isbn","coverImageUrl":"","authors":[],"translators":[],"publishedDate":null,"isbn13":"$isbn","category":"소설","publisher":"출판사"}]}""",
+                        """{"totalCount":2,"nextPage":${if (page == 1) 3 else if (lastPageExcluded) 5 else null},"items":[{"title":"책 $isbn","coverImageUrl":"","authors":[],"translators":[],"publishedDate":null,"isbn13":"$isbn","category":"소설","publisher":"출판사"}]}""",
                         headers = headersOf(HttpHeaders.ContentType, "application/json"),
                     )
                 }
@@ -689,6 +693,18 @@ class SearchViewModelTest {
             advanceUntilIdle()
             assertEquals(expected, (restored.uiState.value as SearchUiState.Success).results.map { it.isbn13 })
             assertEquals(listOf(1, 3, 1, 3, 1, 3), requests)
+
+            lastPageExcluded = true
+            vm.refresh()
+            advanceUntilIdle()
+            val refreshed = vm.uiState.value as SearchUiState.Success
+            assertEquals(listOf("9788937460449"), refreshed.results.map { it.isbn13 })
+            assertEquals(5, refreshed.nextPage)
+            val restoredWithoutLastPage = SearchViewModel(repository, {}, { true }, savedStateHandle = handle)
+            advanceUntilIdle()
+            assertEquals(refreshed.results,
+                (restoredWithoutLastPage.uiState.value as SearchUiState.Success).results)
+            assertEquals(listOf(1, 3, 1, 3, 1, 3, 1, 3, 1, 3), requests)
         } finally { Dispatchers.resetMain() }
     }
 

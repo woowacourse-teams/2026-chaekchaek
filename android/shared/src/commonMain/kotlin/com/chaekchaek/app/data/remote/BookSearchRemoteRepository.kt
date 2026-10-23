@@ -25,7 +25,7 @@ class BookSearchRemoteRepository(
         }
     }
 
-    private suspend fun searchPage(query: String, sort: BookSearchSort, page: Int): BookSearchPage =
+    override suspend fun searchPage(query: String, sort: BookSearchSort, page: Int): BookSearchPage =
         client.get("${apiConfiguration.baseUrl}/api/v1/books") {
             parameter("query", query)
             parameter("sort", sort.name)
