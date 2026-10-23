@@ -56,6 +56,11 @@ final class FirstLibraryOnboardingUITests: XCTestCase {
         app.launchArguments = ["-uiTestingExistingInstallation"]
         app.launch()
         XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 5))
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let cancelSignIn = springboard.alerts.buttons["취소"]
+        if cancelSignIn.waitForExistence(timeout: 3) {
+            cancelSignIn.tap()
+        }
         for name in ["피드", "발견", "홈"] {
             let tab = app.buttons[name]
             XCTAssertTrue(tab.exists)
