@@ -59,7 +59,8 @@ class Jev580FlowHostTest {
     private fun review() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val prefs = context.getSharedPreferences("qa_580_jev_preferences", 0)
-        val previous = prefs.all
+        val hadAnonymous = prefs.contains("anonymous")
+        val previousAnonymous = prefs.getBoolean("anonymous", true)
         prefs.edit().putBoolean("anonymous", true).commit()
         try {
             val state = mutableStateOf(BookDetailUiState(
@@ -110,8 +111,8 @@ class Jev580FlowHostTest {
             }
             error("Jev 제어 대기 시간 초과")
         } finally {
-            val edit = prefs.edit().clear()
-            previous.forEach { (key, value) -> if (value is Boolean) edit.putBoolean(key, value) }
+            val edit = prefs.edit()
+            if (hadAnonymous) edit.putBoolean("anonymous", previousAnonymous) else edit.remove("anonymous")
             edit.commit()
         }
     }
