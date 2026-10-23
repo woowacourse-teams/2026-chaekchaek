@@ -103,6 +103,19 @@ Firebase는 기존 서비스와 원격 업데이트 정책에 사용하고 PostH
 - Android 빌드, 설치 검사와 UI 결과: `/tmp/chaekchaek-581-19873719-android/`의 `build.log`, `app-preflight.json`, `instrumentation.log`.
 - 실제 수신 캡처: `/tmp/chaekchaek-581-ios-signed-attachments/EFA9B84E-41FB-42CC-8A27-BCE72C8A6470.png`.
 
+### Android 물리기기 실제 정책 왕복 (2026-10-23)
+
+소스 `bc1f5cef`의 Release 빌드를 SM-S931N (`R3CY709C7BD`)에 설치했다. 기존 앱과 같은 `1.3.1 (10)`이며, 운영 Firebase `chaekchaek-d2b85` 연결을 유지했다. 기존 앱이 로컬 Debug 키로 서명되어 있어 검증용 Release 빌드만 같은 키로 서명했다. 설치 전 패키지, 버전과 인증서 SHA-256 일치를 확인하고 `adb install -r`로 설치했다. 앱 삭제나 데이터 초기화는 하지 않았다. 이 APK는 스토어 배포 서명의 검증 근거가 아니다.
+
+- 사용자 승인 후 17:19:56 KST에 Remote Config 버전 2를 게시했다. Android 최소/최신은 11, iOS 최소/최신은 1.3.2로 설정하고 나머지 값은 보존했다.
+- 게시 후 서버 재조회 완료부터 약 2.5초 뒤 Android 화면 구조에서 `업데이트가 필요해요`, 안내 본문과 `업데이트` 버튼을 확인했다. `나중에` 버튼은 없었다. 앱 재설치나 재시작 없이 기존 홈 위에 원격 정책이 반영됐다. 이 측정은 한 번의 관측이며 반영 시간 보장값이 아니다.
+- 사용자가 직접 업데이트 버튼을 눌러 캡처에는 Play 전환 중 화면이 담겼다. 자동 뒤로가기 검사와 수동 조작이 겹쳐 이번 실행만으로 뒤로가기 차단을 독립 검증했다고 판정하지 않는다. 해당 동작의 기존 Android instrumentation 검증은 위 표와 같다.
+- 17:20:17 KST에 버전 3으로 기존 정책을 복원했다. 게시 간격은 21초다. 서버를 다시 조회해 Android 최소/최신 0, iOS 최소/최신 0.0.0과 기존 검증 문구를 확인했다.
+- 책췍을 앞으로 가져온 뒤 강제 팝업이 사라지고 홈이 보이는 것을 화면 구조와 캡처로 확인했다. 앱 데이터 삭제 없이 차단 해제까지 반영됐다.
+- 이번에는 Android 물리기기의 실제 Firebase 수신과 복원을 확인했다. iOS 기기의 동일 운영 정책 왕복과 Play 실제 업데이트 설치는 확인하지 않았다.
+
+근거는 `/tmp/chaekchaek-581-physical/`의 `preflight.json`, `physical-release-build.log`, `required.xml`, `required-result.json`, `restored.xml`, `restored.png`, `restored-result.json`과 `policy/`의 게시/복원 템플릿 및 `versions.log`다. `required.png`는 수동 터치로 인한 Play 전환 캡처이므로 팝업 전체의 시각 검증 자료로 사용하지 않는다. 임시 경로의 자료는 기기 검증 시점의 로컬 근거이며 저장소에 영구 보관한 첨부는 아니다.
+
 남은 확인:
 
 - Android Debug의 `chaekchaek-debug` 접근과 실제 원격 수신은 미검증이다. 운영 프로젝트 게시와 iOS 수신을 Debug 프로젝트 수신의 증거로 사용하지 않는다.
