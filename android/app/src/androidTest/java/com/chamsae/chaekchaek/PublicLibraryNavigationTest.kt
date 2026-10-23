@@ -4,6 +4,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import android.graphics.Bitmap
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.data.remote.ApiConfiguration
 import com.chaekchaek.app.ui.App
@@ -39,10 +40,23 @@ class PublicLibraryNavigationTest {
     private fun feedItem(index: Int) {
         compose.onAllNodes(hasScrollToIndexAction()).onFirst().performScrollToIndex(index)
     }
+    private fun capture(name: String) {
+        compose.waitForIdle()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val image = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
+        try {
+            val file = java.io.File(instrumentation.targetContext.getExternalFilesDir(null), "$name-607.png")
+            file.outputStream().use { check(image.compress(Bitmap.CompressFormat.PNG, 100, it)) }
+        } finally {
+            image.recycle()
+        }
+    }
     @Test fun guestViewerKeepsFilterAndReturnsToExistingOwnerLibrary() {
         start(); profile("독자A"); waitFor("기본책장")
+        capture("public-library")
         compose.onNodeWithText("기본책장").performClick(); waitFor("읽는 중")
         compose.onNodeWithText("읽는 중").performClick()
+        capture("public-bookshelf")
         compose.onNodeWithText("서재 도서 1").performScrollTo().performClick()
         waitFor("공개 서재를 확인하는 감상")
         back(); waitFor("읽는 중")
