@@ -103,6 +103,7 @@ class BookSearchRemoteRepositoryTest {
         assertEquals(listOf(1, 3, 5), requests)
         assertEquals("단행본", result.items.single().title)
         assertEquals(7, result.nextPage)
+        assertEquals(5, result.lastLoadedPage)
     }
 
     @Test

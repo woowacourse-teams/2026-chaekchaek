@@ -604,6 +604,7 @@ class SearchViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
             val requests = mutableListOf<Int>()
+            var earlierPageChanged = false
             val client = HttpClient(MockEngine(MockEngineConfig().apply {
                 dispatcher = StandardTestDispatcher(testScheduler)
                 addHandler { request ->
@@ -611,7 +612,7 @@ class SearchViewModelTest {
                     requests += page
                     val products = when (page) {
                         1 -> listOf("9788937460449")
-                        2 -> listOf("")
+                        2 -> if (earlierPageChanged) listOf("9788925568683") else listOf("")
                         else -> listOf("9788937460449", "9788936433598")
                     }.joinToString(",") { isbn ->
                         """{"title":"책 $isbn","coverImageUrl":"","authors":[],"translators":[],"publishedDate":null,"isbn13":"$isbn","category":"소설","publisher":"출판사"}"""
@@ -636,10 +637,58 @@ class SearchViewModelTest {
             assertTrue(content.results.all { it.year.isEmpty() })
             assertEquals(listOf(1, 2, 4), requests)
 
+            assertEquals(4, handle.get<Int>(SearchSavedStateKeys.LoadedPage))
+            earlierPageChanged = true
             val restored = SearchViewModel(repository, {}, { true }, savedStateHandle = handle)
             advanceUntilIdle()
-            assertEquals(content.results, (restored.uiState.value as SearchUiState.Success).results)
+            val expected = listOf("9788937460449", "9788925568683", "9788936433598")
+            assertEquals(expected, (restored.uiState.value as SearchUiState.Success).results.map { it.isbn13 })
             assertEquals(listOf(1, 2, 4, 1, 2, 4), requests)
+
+            vm.refresh()
+            advanceUntilIdle()
+            assertEquals(expected, (vm.uiState.value as SearchUiState.Success).results.map { it.isbn13 })
+            assertEquals(listOf(1, 2, 4, 1, 2, 4, 1, 2, 4), requests)
+        } finally { Dispatchers.resetMain() }
+    }
+
+
+    @Test
+    fun firstSearchRemembersTheLastPageAfterSkippingExcludedProducts() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            var earlierPageChanged = false
+            val requests = mutableListOf<Int>()
+            val client = HttpClient(MockEngine(MockEngineConfig().apply {
+                dispatcher = StandardTestDispatcher(testScheduler)
+                addHandler { request ->
+                    val page = request.url.parameters["page"]!!.toInt()
+                    requests += page
+                    val isbn = if (page == 3) "9788936433598"
+                        else if (earlierPageChanged) "9788937460449" else ""
+                    respond(
+                        """{"totalCount":2,"nextPage":${if (page == 1) 3 else null},"items":[{"title":"책 $isbn","coverImageUrl":"","authors":[],"translators":[],"publishedDate":null,"isbn13":"$isbn","category":"소설","publisher":"출판사"}]}""",
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+            })) { install(ContentNegotiation) { json() } }
+            val repository = BookSearchRemoteRepository(client)
+            val handle = SavedStateHandle()
+            val vm = SearchViewModel(repository, {}, { true }, savedStateHandle = handle)
+            vm.search("호밀")
+            advanceUntilIdle()
+            assertEquals(3, handle.get<Int>(SearchSavedStateKeys.LoadedPage))
+            assertEquals(listOf(1, 3), requests)
+
+            earlierPageChanged = true
+            vm.refresh()
+            advanceUntilIdle()
+            val expected = listOf("9788937460449", "9788936433598")
+            assertEquals(expected, (vm.uiState.value as SearchUiState.Success).results.map { it.isbn13 })
+            val restored = SearchViewModel(repository, {}, { true }, savedStateHandle = handle)
+            advanceUntilIdle()
+            assertEquals(expected, (restored.uiState.value as SearchUiState.Success).results.map { it.isbn13 })
+            assertEquals(listOf(1, 3, 1, 3, 1, 3), requests)
         } finally { Dispatchers.resetMain() }
     }
 

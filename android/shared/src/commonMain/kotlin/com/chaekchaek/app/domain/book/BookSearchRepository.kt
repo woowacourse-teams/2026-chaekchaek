@@ -10,6 +10,7 @@ data class BookSearchPage(
     val totalCount: Int,
     val nextPage: Int?,
     val items: List<BookSearchResult>,
+    val lastLoadedPage: Int? = null,
 )
 
 data class BookSearchResult(

@@ -30,7 +30,7 @@ class BookSearchRemoteRepository(
             parameter("query", query)
             parameter("sort", sort.name)
             parameter("page", page)
-        }.body<BookSearchResponseDto>().toSearchPage()
+        }.body<BookSearchResponseDto>().toSearchPage(page)
 }
 
 @Serializable
@@ -63,9 +63,10 @@ internal fun BookSearchItemDto.toSearchResult(): BookSearchResult =
         category = category.substringAfterLast('>'),
     )
 
-private fun BookSearchResponseDto.toSearchPage(): BookSearchPage =
+private fun BookSearchResponseDto.toSearchPage(page: Int): BookSearchPage =
     BookSearchPage(
         totalCount = totalCount,
+        lastLoadedPage = page,
         nextPage = nextPage,
         items = items.filterNot { it.isbn13.isNullOrBlank() }.map(BookSearchItemDto::toSearchResult),
     )

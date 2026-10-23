@@ -174,13 +174,13 @@ class SearchViewModel(
                     },
                 ) {
                     var page = bookSearchRepository.search(trimmed, requestedSort, FIRST_PAGE)
-                    var loadedPage = FIRST_PAGE
+                    var loadedPage = page.lastLoadedPage ?: FIRST_PAGE
                     while (true) {
                         val nextPage = page.nextPage?.takeIf { it > loadedPage && it <= restoreThroughPage }
                             ?: break
                         val next = bookSearchRepository.search(trimmed, requestedSort, nextPage)
                         page = next.copy(items = (page.items + next.items).distinctBy(BookSearchResult::isbn13))
-                        loadedPage = nextPage
+                        loadedPage = next.lastLoadedPage ?: nextPage
                     }
                     if (revision == loadRevision) savedStateHandle[SearchSavedStateKeys.LoadedPage] = loadedPage
                     page
@@ -254,7 +254,7 @@ class SearchViewModel(
                 if (revision != loadRevision) return@launch
                 val latest = _uiState.value as? SearchUiState.Success ?: return@launch
                 if (currentQuery != query || _sort.value != sort || latest.nextPage != page) return@launch
-                savedStateHandle[SearchSavedStateKeys.LoadedPage] = page
+                savedStateHandle[SearchSavedStateKeys.LoadedPage] = next.lastLoadedPage ?: page
                 _uiState.value = latest.copy(
                     results = (latest.results + next.items).distinctBy(BookSearchResult::isbn13),
                     totalCount = next.totalCount,
