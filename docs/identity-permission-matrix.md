@@ -19,7 +19,7 @@
 
 관련 코드: [FeedViewModel](../android/shared/src/commonMain/kotlin/com/chaekchaek/app/ui/feed/FeedViewModel.kt)의 `currentViewer`, [ReviewFeedRemoteRepository](../android/shared/src/commonMain/kotlin/com/chaekchaek/app/data/remote/ReviewFeedRemoteRepository.kt)의 인증 헤더, [BookDetailRemoteRepository](../android/shared/src/commonMain/kotlin/com/chaekchaek/app/data/remote/BookDetailRemoteRepository.kt)의 `ReviewAuthorDto`, `toBookReview`, `toReviewReply`.
 
-DTO의 `actorType`은 현재 `BookReview` 매핑에 전달되지 않는다. `anonymous`와 `mine`은 각각 표시 상태와 `writtenByMe`로 전달된다. 후속 기능이 작성자 유형을 필요로 하면 현재 모델에 정보가 남아 있는지 먼저 확인한다. 이 문서 추가로 모델을 바꾸지는 않는다.
+2026-10-21 정적 조사 당시 DTO의 `actorType`은 `BookReview` 매핑에 전달되지 않았다. 2026-10-23 공개 서재 구현에서는 `AuthorProfile`에 작성자 ID·유형·익명·프로필 상태를 보존한다. `mine`은 기존 소유권 판단인 `writtenByMe`로 유지하며, 공개 조회 권한과 분리한다.
 
 ## 행동별 권한과 현재 구현
 
@@ -100,5 +100,16 @@ DTO의 `actorType`은 현재 `BookReview` 매핑에 전달되지 않는다. `ano
 ### 검증 기록
 
 - 운영 OpenAPI를 2026-10-23 다시 조회했으며 `/api/v1/libraries` 경로가 아직 없다. 사용자 지정 새 명세를 구현한 것으로, 운영 배포·실연동 완료를 뜻하지 않는다.
-- 단위 테스트는 접근 행렬, 익명 이미지 차단, 작성자 DTO 매핑, 공개 GET의 인증 헤더 부재, 순서·빈 책장·여러 배치·31권 응답, 오류 전파, 중복 이동·기존 서재 복귀와 지연 로딩·명시적 재시도를 검증한다. 실행 결과는 검증 후 갱신한다.
-- `android/scripts/public-library-fixture.py`와 Android `PublicLibraryNavigationTest`, iOS `PublicLibraryUITests`는 같은 로컬 HTTP 계약으로 비로그인 열람, 책 상세 왕복과 필터 보존, 기존 서재 복귀, 빈 서재, 오류 재시도와 작성자별 차단을 확인한다. 운영 데이터에 쓰지 않는다. 실행 전에는 테스트 추가와 실제 통과를 구분한다.
+- 공통 테스트 430개가 실패·생략 없이 통과했다. 접근 행렬, 익명 이미지 차단, 작성자 DTO 매핑, 공개 GET의 인증 헤더 부재, 순서·빈 책장·여러 배치·31권 응답, 오류 전파, 중복 이동·기존 서재 복귀와 지연 로딩·명시적 재시도를 포함한다.
+- `483844f8`의 [CI 빌드·테스트·Lint](https://github.com/woowacourse-teams/2026-chaekchaek/actions/runs/39945270719/job/120386287889)가 통과했다. Android 앱·계측 APK 빌드와 로컬 Lint도 통과했다.
+- `android/scripts/public-library-fixture.py`의 같은 로컬 HTTP 계약으로 아래 실제 앱 테스트를 실행했다. 운영 데이터에는 쓰지 않았다.
+
+| 플랫폼 | 실행 코드와 기기 | 결과와 범위 |
+| --- | --- | --- |
+| Android | `483844f8`, 전용 `chaekchaek_public_607` AVD, Android 16 / API 36, `emulator-5594` | `PublicLibraryNavigationTest` 2개 통과, 34.455초 |
+| iOS | `5fd379f3`, iPhone 17 Pro / iOS 26.2 Simulator, `74464F96-99AB-4F02-BFC2-A8D7C082ACE1` | `PublicLibraryUITests` 2개 통과, 63.334초 |
+
+- 두 플랫폼에서 비로그인 열람, 책장 → 책 상세 → 책장 왕복, 읽는 중 필터와 스크롤 위치 보존, 기존 A 서재 복귀, 빈 서재, 조회 실패 후 재시도와 익명·비회원·탈퇴 작성자별 차단을 확인했다. iOS 검증 후 추가한 파일은 Android 계측 APK의 버전 매니페스트뿐이며 공통 앱 동작은 같다.
+- Android 원격 플리파 연결이 접수 전에 실패해 공용 대기열과 기기 임대 안에서 로컬 검증으로 전환했다. 앱·계측·Portal APK의 패키지·버전·서명을 비교한 뒤 데이터 보존 설치했다. SDK 37 서명 출력과 기존 검사기의 형식 차이는 SDK 36 도구 선택으로 해결했으며 검사기를 우회하지 않았다.
+- Android 계측 테스트 통과 후 Jev 준비 단계에서 실행 스크립트가 추상 Activity를 지정해 중단됐다. 실제 매니페스트의 `MainActivity`로 바로잡았고 Jev 검증은 대기열에서 진행 중이다. 계측 테스트 성공과 Jev 준비 실패를 구분한다.
+- 로컬 근거: Android `/tmp/607-android-instrumentation-483844f8.log`, iOS `/tmp/607-ios-public-library-v6.xcresult`. iOS 책장 목록·상세 캡처는 `/tmp/607-ios-library-final.png`, `/tmp/607-ios-bookshelf-final.png`다. 임시 경로는 현재 검증 호스트에만 존재한다.
