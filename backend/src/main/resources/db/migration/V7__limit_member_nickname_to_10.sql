@@ -1,0 +1,2 @@
+ALTER TABLE `member`
+    MODIFY COLUMN `nickname` VARCHAR(10) NULL;

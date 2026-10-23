@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "library_items", uniqueConstraints = @UniqueConstraint(
+@Table(name = "library_item", uniqueConstraints = @UniqueConstraint(
         name = "uk_library_item_member_book", columnNames = {"member_id", "book_id"}
 ))
 public class LibraryItem {

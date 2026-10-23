@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 public class Member {
 
     private static final String NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE =
-            "[ERROR] 닉네임은 100자 이하여야 합니다";
+            "[ERROR] 닉네임은 10자 이하여야 합니다";
     private static final String ANONYMOUS_NICKNAME_MUST_EXIST_ERROR_MESSAGE =
             "[ERROR] 익명 닉네임이 존재해야 합니다";
     private static final String ANONYMOUS_NICKNAME_LENGTH_MUST_BE_VALID_ERROR_MESSAGE =
@@ -33,7 +33,7 @@ public class Member {
     @Column(name = "member_id")
     private Long id;
 
-    @Column(name = "nickname", unique = true, length = 100)
+    @Column(name = "nickname", unique = true, length = 10)
     private String nickname;
 
     @Column(name = "profile_image_url", columnDefinition = "TEXT")

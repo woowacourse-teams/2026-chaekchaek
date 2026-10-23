@@ -22,7 +22,7 @@ import java.util.List;
 
 @Entity
 @Table(
-        name = "books",
+        name = "book",
         uniqueConstraints = @UniqueConstraint(name = "uk_books_isbn13", columnNames = "isbn13")
 )
 public class Book {
@@ -50,14 +50,23 @@ public class Book {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(length = 1_000)
+    private String question;
+
+    @Column(columnDefinition = "TEXT")
+    private String plot;
+
+    @Column(columnDefinition = "TEXT")
+    private String extract;
+
     @ElementCollection
-    @CollectionTable(name = "book_authors", joinColumns = @JoinColumn(name = "book_id"))
+    @CollectionTable(name = "book_author", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "name", nullable = false)
     @OrderColumn(name = "display_order")
     private List<String> authors = new ArrayList<>();
 
     @ElementCollection
-    @CollectionTable(name = "book_translators", joinColumns = @JoinColumn(name = "book_id"))
+    @CollectionTable(name = "book_translator", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "name", nullable = false)
     @OrderColumn(name = "display_order")
     private List<String> translators = new ArrayList<>();
@@ -163,6 +172,12 @@ public class Book {
         }
     }
 
+    public void updateQuestionContent(String question, String plot, String extract) {
+        this.question = question;
+        this.plot = plot;
+        this.extract = extract;
+    }
+
     private static void validateTotalPages(Integer totalPages) {
         if (totalPages != null && totalPages <= 0) {
             throw new IllegalArgumentException("Total pages must be positive");
@@ -195,6 +210,18 @@ public class Book {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getQuestion() {
+        return question;
+    }
+
+    public String getPlot() {
+        return plot;
+    }
+
+    public String getExtract() {
+        return extract;
     }
 
     public List<String> getAuthors() {

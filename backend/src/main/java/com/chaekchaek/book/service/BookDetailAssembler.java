@@ -1,11 +1,9 @@
 package com.chaekchaek.book.service;
 
 import com.chaekchaek.book.domain.Book;
-import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.dto.BookMyRecordResponse;
 import com.chaekchaek.book.dto.BookQuestionResponse;
-import com.chaekchaek.book.repository.BookQuestionRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
@@ -28,7 +26,6 @@ class BookDetailAssembler {
     private final BookActivityCountReader activityCountReader;
     private final CurrentMemberIdProvider currentMemberIdProvider;
     private final LibraryItemRepository libraryItemRepository;
-    private final BookQuestionRepository bookQuestionRepository;
 
     @Value("${app.book-source:yes24}")
     private String defaultBookSource = DEFAULT_BOOK_SOURCE;
@@ -56,7 +53,7 @@ class BookDetailAssembler {
                     null,
                     book.getPurchaseUrl(),
                     bookSource(book),
-                    bookQuestion(book.getIsbn13())
+                    bookQuestion(book)
             );
         }
         OptionalLong memberId = currentMemberIdProvider.findCurrentMemberId();
@@ -87,7 +84,7 @@ class BookDetailAssembler {
                 myRecord(bookId, memberId),
                 book.getPurchaseUrl(),
                 bookSource(book),
-                bookQuestion(book.getIsbn13())
+                bookQuestion(book)
         );
     }
 
@@ -95,14 +92,11 @@ class BookDetailAssembler {
         return book.getSource() == null ? defaultBookSource : book.getSource();
     }
 
-    private BookQuestionResponse bookQuestion(Isbn13 isbn13) {
-        return bookQuestionRepository.findByIsbn13(isbn13)
-                .map(question -> new BookQuestionResponse(
-                        question.getQuestion(),
-                        question.getPlot(),
-                        question.getExtract()
-                ))
-                .orElse(null);
+    private BookQuestionResponse bookQuestion(Book book) {
+        if (book.getQuestion() == null) {
+            return null;
+        }
+        return new BookQuestionResponse(book.getQuestion(), book.getPlot(), book.getExtract());
     }
 
     private BigDecimal averageRating(LibraryItemRepository.RatingStatistics ratings) {

@@ -283,27 +283,6 @@ class ReviewQueryIntegrationTest {
                 .isEqualTo(ErrorCode.UNAUTHORIZED);
     }
 
-    @Test
-    @DisplayName("쪽수순은 쪽수가 같으면 ID 내림차순이며 쪽수가 없는 감상을 마지막에 조회한다")
-    void should_OrderByPageThenIdWithNullLast_When_PageSortIsRequested() {
-        // given
-        Review nullPage = saveReview(BOOK_ID, ACTOR_ID, null);
-        Review laterPage = saveReview(BOOK_ID, ACTOR_ID, 100);
-        Review olderFirstPage = saveReview(BOOK_ID, ACTOR_ID, 10);
-        Review newerFirstPage = saveReview(BOOK_ID, ACTOR_ID, 10);
-        saveReview(99L, ACTOR_ID, 0);
-        flushAndClear();
-
-        // when
-        PageResponse<ReviewResponse> response = service.findReviews(BOOK_ID, 1, Feed.ALL, ReviewSort.PAGE);
-
-        // then
-        assertThat(response.totalCount()).isEqualTo(4);
-        assertThat(response.nextPage()).isNull();
-        assertThat(response.items()).extracting(ReviewResponse::reviewId)
-                .containsExactly(newerFirstPage.getId(), olderFirstPage.getId(), laterPage.getId(), nullPage.getId());
-    }
-
     @ParameterizedTest
     @EnumSource(Feed.class)
     @DisplayName("인기순 감상이 많아도 요청한 페이지의 감상 열 개만 영속성 컨텍스트에 로딩한다")

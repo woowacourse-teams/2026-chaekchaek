@@ -1,0 +1,4 @@
+ALTER TABLE book
+    ADD COLUMN question VARCHAR(1000) NULL,
+    ADD COLUMN plot TEXT NULL,
+    ADD COLUMN extract TEXT NULL;
