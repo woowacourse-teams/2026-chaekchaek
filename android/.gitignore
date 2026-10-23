@@ -26,4 +26,4 @@ iosApp/Configuration/Secrets.xcconfig
 /config/ios.local.xcconfig
 !/config/local.properties
 
-/posthog.properties
+/.env.posthog

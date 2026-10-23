@@ -29,7 +29,7 @@ val releaseSigningError =
 
 // 프로젝트 연결값은 저장소 밖 환경변수 또는 무시된 로컬 설정에서 읽는다.
 val postHogProperties = Properties().apply {
-    val config = rootProject.file("posthog.properties")
+    val config = rootProject.file(".env.posthog")
     if (config.isFile) config.reader(Charsets.UTF_8).use { load(it) }
 }
 fun postHogSetting(name: String, fallback: String = ""): String =
