@@ -152,7 +152,7 @@ fun BookDetailScreen(
     state: BookDetailUiState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    savedToLibrary: Boolean = state.detail?.myRecord != null,
+    savedToLibrary: Boolean = state.detail?.myRecord?.status != null,
     externalLibrarySaving: Boolean = false,
     externalLibraryLoading: Boolean = false,
     anonymousReviews: Boolean = true,

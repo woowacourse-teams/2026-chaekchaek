@@ -51,7 +51,7 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
         if (token == null || state.value.mutating) return
         val session = generation
         readJob?.cancel()
-        state.value = state.value.copy(refreshing = true)
+        state.value = state.value.copy(refreshing = true, detailStale = state.value.detail != null || state.value.detailStale)
         readJob = viewModelScope.launch {
             try {
                 withDelayedLoading({ if (session == generation) state.value = state.value.copy(loading = it) }) {

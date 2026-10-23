@@ -130,7 +130,8 @@ class BookshelfContractTest {
         try {
             compose.waitUntil(30_000) { compose.onAllNodes(hasTestTag("bookshelf-image-share") and isEnabled(), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         } catch (error: Throwable) {
-            compose.onRoot(useUnmergedTree = true).printToLog("BookshelfShareReadiness")
+            val roots = compose.onAllNodes(isRoot(), useUnmergedTree = true)
+            repeat(roots.fetchSemanticsNodes().size) { roots[it].printToLog("BookshelfShareReadiness") }
             throw error
         }
         val instrumentation = InstrumentationRegistry.getInstrumentation()

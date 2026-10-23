@@ -964,8 +964,10 @@ class BookDetailViewModel(
         causedByAction: String,
     ): Long {
         val detail = requireNotNull(_uiState.value.detail)
-        detail.myRecord?.bookId?.let { return it }
-        if (detail.myRecord != null) return requireNotNull(detail.bookId)
+        if (detail.myRecord?.status != null) {
+            detail.myRecord.bookId?.let { return it }
+            return requireNotNull(detail.bookId)
+        }
         val book = requireNotNull(_uiState.value.displayBook)
         val record = repository.addToLibrary(
             book.isbn13,

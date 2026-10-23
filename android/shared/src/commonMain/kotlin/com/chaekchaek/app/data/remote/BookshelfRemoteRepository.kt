@@ -51,7 +51,7 @@ class BookshelfRemoteRepository(
         val record = client.post(url("/api/v1/libraries/$libraryId")) {
             authenticated(token, BookshelfBookRequest(isbn13, totalPages, "READING"))
         }.body<BookshelfSavedRecord>()
-        return LibraryRecord(record.status.orEmpty(), record.currentPage ?: 0, record.rating, record.bookId)
+        return LibraryRecord(record.status, record.currentPage ?: 0, record.rating, record.bookId)
     }
 
     override suspend fun remove(libraryId: Long, bookId: Long, token: String) {
