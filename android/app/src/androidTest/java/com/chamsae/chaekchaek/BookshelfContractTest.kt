@@ -115,6 +115,39 @@ class BookshelfContractTest {
         }
     }
 
+    @Test fun nativeShareWithoutSave() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
+        request("/__bookshelf/reset", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("내 서재")
+        compose.onNodeWithText("내 서재").performClick()
+        waitTag("bookshelf-1")
+        compose.onNodeWithTag("bookshelf-1").performClick()
+        compose.waitUntil(30_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
+        waitText("책장을 이미지로")
+        compose.waitUntil(30_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val directory = instrumentation.targetContext.cacheDir.resolve("bookshelf-images")
+        val previousFiles = directory.listFiles()?.map { it.name }?.toSet().orEmpty()
+        compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
+        val automation = instrumentation.uiAutomation
+        compose.waitUntil(60_000) {
+            automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver")
+        }
+        val exported = directory.listFiles()?.singleOrNull { it.name !in previousFiles }
+        assertNotNull("이번 공유에서 생성한 PNG", exported)
+        val dimensions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(exported!!.absolutePath, dimensions)
+        assertTrue("책장 이미지 너비", dimensions.outWidth > 0)
+        assertTrue("두 책과 감상 영역을 포함한 이미지 높이", dimensions.outHeight > dimensions.outWidth * 2)
+        automation.takeScreenshot()?.let { bitmap ->
+            File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-native-share.png").outputStream().use {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            }
+        }
+    }
+
     private fun findFileName(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
         if (node == null) return null
         if (node.isEditable && node.className?.toString() == "android.widget.EditText") return node
