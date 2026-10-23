@@ -12,7 +12,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
-import java.util.regex.Pattern;
 
 @Entity
 @Table(
@@ -32,9 +31,8 @@ import java.util.regex.Pattern;
 )
 public class Library {
 
-    private static final int NAME_MAX_LENGTH = 10;
     private static final int NAME_COLUMN_LENGTH = 104;
-    private static final Pattern NEW_NAME_PATTERN = Pattern.compile("^[가-힣A-Za-z0-9_-]{1,10}$");
+    private static final int MAX_NAME_LENGTH = 10;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -74,8 +72,8 @@ public class Library {
     }
 
     public static Library create(long memberId, String name, Instant now) {
-        String normalizedName = validateAndNormalizeName(name);
-        return new Library(memberId, normalizedName, now);
+        validateNewName(name);
+        return new Library(memberId, name, now);
     }
 
     public static Library createDefault(
@@ -92,13 +90,23 @@ public class Library {
     }
 
     public static void validateNewName(String name) {
-        if (name == null || !NEW_NAME_PATTERN.matcher(name).matches()) {
+        if (name == null || name.isBlank() || name.length() > MAX_NAME_LENGTH) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
     }
 
     public void promoteToDefault() {
         this.isDefault = true;
+    }
+
+    public boolean rename(String name, Instant now) {
+        validateNewName(name);
+        if (this.name.equals(name)) {
+            return false;
+        }
+        this.name = name;
+        this.updatedAt = now;
+        return true;
     }
 
     public void changeDisplayOrder(long displayOrder) {
@@ -108,15 +116,10 @@ public class Library {
         this.displayOrder = displayOrder;
     }
 
-    private static String validateAndNormalizeName(String name) {
-        if (name == null) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+    public void assertDeletable() {
+        if (isDefault) {
+            throw new BusinessException(ErrorCode.DEFAULT_LIBRARY_DELETE_NOT_ALLOWED);
         }
-        String normalizedName = name.strip();
-        if (normalizedName.isEmpty() || normalizedName.length() > NAME_MAX_LENGTH) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
-        return normalizedName;
     }
 
     public boolean isOwnedBy(long memberId) {
