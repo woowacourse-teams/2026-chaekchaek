@@ -1,4 +1,5 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -11,7 +12,7 @@ import { defaultLoggedAuthContextValue, renderProvider } from '@/test/utils/rend
 
 import { LibrariesPage } from '@/pages/LibrariesPage';
 
-import { librariesResponse } from './LibrariesPage.fixtures';
+import { createdLibraryResponse, librariesResponse } from './LibrariesPage.fixtures';
 
 describe('LibrariesPage', () => {
   it('기본 렌더링이 된다', () => {
@@ -44,5 +45,44 @@ describe('LibrariesPage', () => {
         expect(spineImage).toBeVisible();
       }
     }
+  });
+
+  it('책장 추가 버튼을 클릭하면 팝업이 열리고, 이름을 입력해 책장을 추가할 수 있다', async () => {
+    const user = userEvent.setup();
+    const createLibraryRequest = vi.fn();
+    const response = structuredClone(librariesResponse);
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => HttpResponse.json(response)),
+      http.post(`${ENV.APP_API_URL}/api/v1/libraries`, async ({ request }) => {
+        createLibraryRequest(await request.json());
+        response.libraries.push(structuredClone(createdLibraryResponse));
+
+        return HttpResponse.json(structuredClone(createdLibraryResponse), { status: 201 });
+      }),
+    );
+
+    renderProvider(<LibrariesPage />, { auth: defaultLoggedAuthContextValue });
+
+    // 1. 책장 추가 버튼 클릭
+    // 추가 버튼에 접근 가능한 이름이 없어 페이지 제목 영역 안에서 조회한다.
+    const titleArea = screen.getByText('나의 책장').parentElement!.parentElement!;
+    await user.click(within(titleArea).getByRole('button'));
+
+    // 2. 책장 추가 팝업 표시 확인
+    expect(screen.getByText('새 책장 만들기')).toBeVisible();
+    // 팝업의 dialog 역할과 입력 필드의 label 연결이 없어 표시된 팝업 안에서 조회한다.
+    const popup = screen.getByText('새 책장 만들기').closest<HTMLElement>('.ui-Dialog-Container')!;
+    expect(within(popup).getByText('책장 이름')).toBeVisible();
+
+    // 3. 책장 이름 입력 후 추가 버튼 클릭
+    await user.type(within(popup).getByRole('textbox'), createdLibraryResponse.name);
+    await user.click(within(popup).getByRole('button', { name: '만들기' }));
+
+    // 4. 추가한 책장이 화면에 표시되는지 확인
+    expect(await screen.findByRole('link', { name: createdLibraryResponse.name })).toBeVisible();
+    expect(createLibraryRequest).toHaveBeenCalledExactlyOnceWith({
+      name: createdLibraryResponse.name,
+    });
   });
 });

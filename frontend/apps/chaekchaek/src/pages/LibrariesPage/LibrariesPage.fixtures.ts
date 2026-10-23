@@ -1,3 +1,11 @@
+export const createdLibraryResponse = {
+  libraryId: 3,
+  name: '여행하며 읽을 책',
+  isDefault: false,
+  totalCount: 0,
+  items: [],
+};
+
 export const librariesResponse = {
   memberId: 3,
   libraries: [
