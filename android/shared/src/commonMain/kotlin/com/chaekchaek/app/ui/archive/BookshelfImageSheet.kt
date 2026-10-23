@@ -25,6 +25,8 @@ import com.chaekchaek.app.presentation.common.ErrorRecoveryState
 import com.chaekchaek.app.ui.common.*
 import com.chaekchaek.app.ui.theme.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import com.chaekchaek.app.presentation.common.withDelayedApiLoading
 
@@ -63,9 +65,12 @@ internal fun BookshelfImageSheet(detail: BookshelfDetail, token: String, onDismi
     val layers = remember(detail) { mutableMapOf<Int, GraphicsLayer>() }
     ErrorRecoveryEffect(errors)
     LaunchedEffect(detail, token, revision) {
+        // 빠른 응답도 UI 상태 발행과 재구성을 같은 메인 디스패처에서 순서대로 처리한다.
+        withContext(Dispatchers.Main.immediate) {
         try { reviews = withDelayedApiLoading({ showLoading = it }) { latestShelfReviews(detail, token, repository) } }
         catch (e: CancellationException) { throw e }
         catch (e: Throwable) { errors.report(e, ErrorOperation.Request) { revision++ } }
+        }
     }
     val export: (Boolean) -> Unit = { save ->
         if (!exporting && reviews != null && imageUrls.all { readyImages[it] == true }) scope.launch {
