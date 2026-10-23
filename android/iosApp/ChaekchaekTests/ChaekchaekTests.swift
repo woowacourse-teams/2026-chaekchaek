@@ -42,7 +42,7 @@ final class ChaekchaekTests: XCTestCase {
         XCTAssertNotNil(PostHogAnalyticsEventLogger.makeConfiguration(info: info, isDebug: true))
     }
 
-    func testPostHogOnlyCapturesExistingManualEvents() throws {
+    func testPostHogEnablesCrashesWithoutAutomaticInteractionCapture() throws {
         let config = try XCTUnwrap(PostHogAnalyticsEventLogger.makeConfiguration(
             info: ["POSTHOG_PROJECT_TOKEN": "test-token", "POSTHOG_HOST": "https://us.i.posthog.com"],
             isDebug: false
@@ -55,6 +55,16 @@ final class ChaekchaekTests: XCTestCase {
         XCTAssertFalse(config.sessionReplay)
         XCTAssertFalse(config.surveys)
         XCTAssertFalse(config.enableSwizzling)
+        XCTAssertTrue(config.errorTrackingConfig.autoCapture)
+        XCTAssertFalse(config.errorTrackingConfig.exceptionSteps.enabled)
+    }
+
+    func testSharedExceptionPrivacyFilterIsAvailableToNativeCrashHook() throws {
+        let input = "{\"$exception_list\":[{\"type\":\"SwiftError\",\"value\":\"private-body\"}],\"token\":\"private-token\"}"
+        let clean = try XCTUnwrap(UserErrorPrivacyKt.sanitizeExceptionProperties(propertiesJson: input))
+        XCTAssertFalse(clean.contains("private-body"))
+        XCTAssertFalse(clean.contains("private-token"))
+        XCTAssertTrue(clean.contains("SwiftError"))
     }
 
     func testPostHogRejectsInsecureHost() {

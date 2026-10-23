@@ -50,7 +50,7 @@ class FirstLibraryOnboardingViewModel internal constructor(
         searchRepository: BookSearchRepository = BookSearchRemoteRepository(),
         libraryRepository: LibraryRemoteRepository = LibraryRemoteRepository(),
         initiallyVisible: Boolean = true,
-    errorReporter: com.chaekchaek.app.analytics.UserErrorReporter = com.chaekchaek.app.analytics.UserErrorReporter.None,
+        errorReporter: com.chaekchaek.app.analytics.UserErrorReporter = com.chaekchaek.app.analytics.UserErrorReporter.None,
     ) : this(
         searchRepository = searchRepository,
         initiallyVisible = initiallyVisible,

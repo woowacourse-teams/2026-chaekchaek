@@ -67,7 +67,7 @@ private val diagnosticContextKeys = setOf(
     "environment", "auth_state", "run_id", "view_id", "screen_name", "previous_screen", "flow_id", "origin",
     "action_id", "search_id", "composer_id", "content_type", "composer_mode", "event_id", "event_seq",
     "schema_version", "process_elapsed_ms", "operation", "error_category", "error_kind", "http_status",
-    "last_event", "last_action", "collection_revision", "sample_rate",
+    "last_event", "last_action", "last_action_id", "collection_revision", "sample_rate",
     "cc_run_id", "cc_screen_name", "cc_last_event", "cc_last_action",
     "\$exception_level", "\$exception_source", "\$lib", "\$lib_version", "\$os", "\$os_version",
     "\$app_name", "\$app_namespace", "\$app_version", "\$app_build", "\$app_build_code",

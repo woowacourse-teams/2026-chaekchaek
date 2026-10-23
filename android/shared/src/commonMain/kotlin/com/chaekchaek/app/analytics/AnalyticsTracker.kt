@@ -43,6 +43,7 @@ class AnalyticsTracker(
 
     private var lastUserEvent: String? = null
     private var lastUserAction: String? = null
+    private var lastUserActionId: String? = null
     val errors = UserErrorReporter(sink = { failure ->
         val event = contextualEvent("cc_user_error", buildMap {
             put("operation", failure.operation)
@@ -50,6 +51,7 @@ class AnalyticsTracker(
             put("error_kind", if (failure.category == "validation") "validation" else "operational")
             lastUserEvent?.let { put("last_event", it) }
             lastUserAction?.let { put("last_action", it) }
+            lastUserActionId?.let { put("last_action_id", it) }
         }, failure.status?.let { mapOf("http_status" to it.toLong()) }.orEmpty(), emptyMap(), true)
         collection.filter(event)?.let { runCatching { errorSink(failure.properties(it)) } }
     }, timeSource = timeSource)
@@ -87,7 +89,7 @@ class AnalyticsTracker(
         val event = contextualEvent(name, strings, longs, doubles, includeActionContext)
         if (name !in setOf("cc_app_lifecycle", "cc_view_engagement", "cc_content_impression")) {
             lastUserEvent = name
-            strings["action"]?.let { lastUserAction = it }
+            strings["action"]?.let { lastUserAction = it; lastUserActionId = strings["action_id"] }
         }
         collection.filter(event)?.let { filtered -> runCatching { sink(filtered) } }
     }
