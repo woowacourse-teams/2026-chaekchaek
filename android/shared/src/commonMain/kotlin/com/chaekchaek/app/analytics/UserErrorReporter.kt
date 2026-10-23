@@ -77,6 +77,7 @@ class UserErrorDetails internal constructor(
                             frame.line?.let { put("lineno", it) }
                             put("in_app", frame.function.contains("com.chaekchaek") || frame.function.contains("com.chamsae"))
                         }) }
+                    })
                 })
             })
         })
