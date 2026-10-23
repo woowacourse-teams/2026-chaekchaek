@@ -984,7 +984,6 @@ final class BookshelfContractUITests: XCTestCase {
 
     @MainActor
     func testShelfCreateRenameAddRemoveAndImagePreview() async throws {
-        continueAfterFailure = false
         let marker = try? await request("/__bookshelf")
         guard marker != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
         _ = try await request("/__bookshelf/reset", method: "POST")
@@ -1029,7 +1028,21 @@ final class BookshelfContractUITests: XCTestCase {
         element("내 서재에서", app).tap()
         element("검증 도서 3", app).tap()
         XCTAssertTrue(element("담을 책장 고르기", app).waitForExistence(timeout: 5))
-        element("이 책장에 담기", app).tap()
+        let confirmAdd = element("이 책장에 담기", app)
+        for _ in 0..<4 {
+            if confirmAdd.exists && confirmAdd.isHittable { break }
+            app.swipeUp()
+        }
+        guard confirmAdd.waitForExistence(timeout: 5) else {
+            let screen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            screen.name = "책장 선택 확인 버튼 실패"
+            screen.lifetime = .keepAlways
+            add(screen)
+            XCTFail("책장 선택을 확인할 수 없어요: \(app.debugDescription)")
+            return
+        }
+        confirmAdd.tap()
+        XCTAssertTrue(confirmAdd.waitForNonExistence(timeout: 10))
         XCTAssertTrue(addButton.waitForExistence(timeout: 10))
         element("편집", app).tap()
         let remove = app.buttons.matching(NSPredicate(format: "label == %@", "빼기")).firstMatch
