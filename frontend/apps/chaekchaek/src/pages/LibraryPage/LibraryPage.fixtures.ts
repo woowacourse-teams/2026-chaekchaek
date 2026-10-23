@@ -25,6 +25,48 @@ export const libraryResponse = {
 
 export const renamedLibraryName = '다시 읽고 싶은 책';
 
+export const searchedBook = {
+  bookId: 44,
+  title: '마션',
+  isbn13: '9788925588650',
+  authors: ['앤디 위어'],
+  translators: ['박아람'],
+  publisher: '알에이치코리아',
+  publishedDate: '2021-05-04',
+  category: '소설',
+  coverImageUrl: 'https://static.example.com/books/44/cover.webp',
+  spineImageUrl: 'https://static.example.com/books/44/spine.webp',
+  totalPages: 600,
+  reviewCount: 0,
+  replyCount: 0,
+  isRegisteredInMyLibrary: false,
+};
+
+export const bookSearchResponse = {
+  totalCount: 1,
+  nextPage: null,
+  items: [searchedBook],
+};
+
+export const emptyBookSearchResponse = { totalCount: 0, nextPage: null, items: [] };
+
+export const addedBookResponse = {
+  ...searchedBook,
+  addedAt: '2026-10-23T09:00:00',
+  readingUpdatedAt: '2026-10-23T09:00:00',
+  currentPage: 0,
+  status: 'WANT_TO_READ',
+  commentCount: 0,
+  rating: null,
+  backImageUrl: null,
+};
+
+export const libraryAfterAddResponse = {
+  ...libraryResponse,
+  totalCount: libraryResponse.totalCount + 1,
+  items: [...libraryResponse.items, addedBookResponse],
+};
+
 export const downloadedLibraryImageDataUrl =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aCWQAAAAASUVORK5CYII=';
 

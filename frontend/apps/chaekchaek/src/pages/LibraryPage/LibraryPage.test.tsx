@@ -16,10 +16,15 @@ import { defaultLoggedAuthContextValue, renderProvider } from '@/test/utils/rend
 import { LibraryPage } from '@/pages/LibraryPage';
 
 import {
+  addedBookResponse,
+  bookSearchResponse,
   downloadedLibraryImageDataUrl,
+  emptyBookSearchResponse,
   fullLibraryResponse,
+  libraryAfterAddResponse,
   libraryResponse,
   renamedLibraryName,
+  searchedBook,
 } from './LibraryPage.fixtures';
 
 vi.mock('html2canvas', () => ({ default: vi.fn() }));
@@ -197,5 +202,87 @@ describe('LibraryPage', () => {
       image.getAttribute('src'),
     );
     expect(capturedSpines).toEqual(libraryResponse.items.map((book) => book.spineImageUrl));
+  });
+
+  it('책 검색 탭에서 검색한 책을 선택하여 책장에 추가할 수 있다', async () => {
+    const user = userEvent.setup();
+    let isBookAdded = false;
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
+        return HttpResponse.json(
+          structuredClone(isBookAdded ? libraryAfterAddResponse : libraryResponse),
+        );
+      }),
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, ({ request }) => {
+        const query = new URL(request.url).searchParams.get('query');
+        return HttpResponse.json(
+          structuredClone(
+            query === searchedBook.title ? bookSearchResponse : emptyBookSearchResponse,
+          ),
+        );
+      }),
+      http.post(
+        `${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`,
+        async ({ request }) => {
+          const { isbn13 } = (await request.json()) as { isbn13: string };
+          if (isbn13 !== searchedBook.isbn13) {
+            return new HttpResponse(null, { status: 400 });
+          }
+          isBookAdded = true;
+          return HttpResponse.json(structuredClone(addedBookResponse), { status: 201 });
+        },
+      ),
+    );
+
+    // jsdom에 없는 스크롤 API만 대체하고 테스트가 끝나면 원래 상태로 복구한다.
+    const scrollToDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTo');
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      value: vi.fn(),
+    });
+
+    try {
+      const { container } = renderProvider(
+        <Routes>
+          <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+        </Routes>,
+        {
+          auth: defaultLoggedAuthContextValue,
+          initialEntries: [`/libraries/${libraryResponse.libraryId}`],
+        },
+      );
+
+      expect(await screen.findByText(libraryResponse.name)).toBeVisible();
+      // 본문에 main 역할이 없어 클래스 이름으로 범위를 제한한다.
+      const libraryContent = container.querySelector<HTMLElement>('.frame-Main');
+      if (!libraryContent) throw new Error('책장 본문을 찾을 수 없습니다.');
+      const library = within(libraryContent);
+      expect(library.queryByText(searchedBook.title)).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: '책 담기' }));
+
+      const dialogTitle = screen.getByText('책장에 책 담기');
+      const dialog = dialogTitle.closest<HTMLElement>('.ui-Dialog-Container');
+      if (!dialog) throw new Error('책 담기 팝업을 찾을 수 없습니다.');
+      const popup = within(dialog);
+      await user.click(popup.getByText('책 검색'));
+      await user.type(
+        popup.getByPlaceholderText('책 제목이나 작가를 검색하세요'),
+        searchedBook.title,
+      );
+      const searchResult = await popup.findByText(searchedBook.title);
+      expect(searchResult).toBeVisible();
+      await user.click(searchResult);
+      await user.click(popup.getByRole('button', { name: '담기' }));
+
+      // 팝업에 남아 있는 검색 결과로 테스트가 통과하지 않도록 책장 본문에서 확인한다.
+      expect(await library.findByText(searchedBook.title)).toBeVisible();
+    } finally {
+      if (scrollToDescriptor) {
+        Object.defineProperty(HTMLElement.prototype, 'scrollTo', scrollToDescriptor);
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollTo');
+      }
+    }
   });
 });
