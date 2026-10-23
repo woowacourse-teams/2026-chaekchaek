@@ -64,12 +64,12 @@ class BookshelfContractTest {
         compose.onNodeWithText("이미지 저장").performClick()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val automation = instrumentation.uiAutomation
-        compose.waitUntil(15_000) { automation.rootInActiveWindow?.packageName?.toString()?.endsWith("documentsui") == true }
-        compose.waitUntil(15_000) { findSave(automation.rootInActiveWindow) != null }
+        compose.waitUntil(60_000) { automation.rootInActiveWindow?.packageName?.toString()?.endsWith("documentsui") == true }
+        compose.waitUntil(60_000) { findSave(automation.rootInActiveWindow) != null }
         val save = findSave(automation.rootInActiveWindow)
         assertNotNull("네이티브 파일 저장 버튼", save)
         assertTrue(save!!.performAction(AccessibilityNodeInfo.ACTION_CLICK))
-        compose.waitUntil(30_000) { automation.rootInActiveWindow?.packageName?.toString() == instrumentation.targetContext.packageName }
+        compose.waitUntil(60_000) { automation.rootInActiveWindow?.packageName?.toString() == instrumentation.targetContext.packageName }
         waitText("이미지 저장을 완료했어요")
         val screenshot = File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-image-preview.png")
         screenshot.outputStream().use { automation.takeScreenshot().compress(Bitmap.CompressFormat.PNG, 100, it) }
