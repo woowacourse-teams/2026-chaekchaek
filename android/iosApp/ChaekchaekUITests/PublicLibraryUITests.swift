@@ -186,16 +186,16 @@ final class PublicLibraryUITests: XCTestCase {
         profile("독자A", in: app); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); shelf(in: app).doubleTap()
         XCTAssertTrue(find("읽는 중", in: app).waitForExistence(timeout: 10))
         let before = XCTAttachment(screenshot: app.screenshot()); before.name = "607-before-edge-gesture"; before.lifetime = .keepAlways; add(before)
-        print("607_BEFORE_EDGE\n\(app.debugDescription)")
-        // 짧은 가장자리 드래그 후 화면 전환이 안정된 상태를 확인한다.
+        // 짧고 느린 드래그는 취소하고, 다음 긴 스와이프는 완료한다.
         let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.005, dy: 0.5))
         let middle = app.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.5))
-        edge.press(forDuration: 0.05, thenDragTo: middle, withVelocity: .slow, thenHoldForDuration: 0.3)
+        edge.press(forDuration: 0.05, thenDragTo: middle, withVelocity: XCUIGestureVelocity(rawValue: 25), thenHoldForDuration: 0.3)
         let after = XCTAttachment(screenshot: app.screenshot()); after.name = "607-after-edge-gesture"; after.lifetime = .keepAlways; add(after)
-        print("607_AFTER_EDGE\n\(app.debugDescription)")
         XCTAssertTrue(find("읽는 중", in: app).waitForExistence(timeout: 10))
         app.buttons["뒤로 가기"].doubleTap()
-        XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); back(app)
+        XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10))
+        let completed = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5))
+        edge.press(forDuration: 0.05, thenDragTo: completed, withVelocity: .slow, thenHoldForDuration: 0.3)
         XCTAssertTrue(app.buttons["피드"].waitForExistence(timeout: 10))
         app.buttons["발견"].tap(); XCTAssertTrue(app.buttons["발견"].isSelected)
         // 정상 종료 후 재실행에도 루트 탭이 표시되고 프로필 진입이 다시 가능하다.

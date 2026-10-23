@@ -6,6 +6,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.graphics.Bitmap
 import android.view.KeyEvent
+import android.view.MotionEvent
+import android.os.SystemClock
 import org.json.JSONObject
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.data.remote.ApiConfiguration
@@ -112,6 +114,21 @@ class PublicLibraryNavigationTest {
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
         compose.waitForIdle()
     }
+    private fun cancelSystemBackGesture() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val metrics = instrumentation.targetContext.resources.displayMetrics
+        val down = SystemClock.uptimeMillis()
+        fun input(action: Int, x: Float) {
+            val event = MotionEvent.obtain(down, SystemClock.uptimeMillis(), action, x, metrics.heightPixels * 0.5f, 0)
+            try { check(instrumentation.uiAutomation.injectInputEvent(event, true)) } finally { event.recycle() }
+        }
+        input(MotionEvent.ACTION_DOWN, 1f)
+        // 시스템 가장자리에서 시작해 진행한 뒤 반대로 되돌려 취소한다.
+        for (step in 1..20) { SystemClock.sleep(16); input(MotionEvent.ACTION_MOVE, metrics.widthPixels * 0.2f * step / 20) }
+        for (step in 19 downTo 0) { SystemClock.sleep(16); input(MotionEvent.ACTION_MOVE, maxOf(1f, metrics.widthPixels * 0.2f * step / 20)) }
+        input(MotionEvent.ACTION_UP, 1f)
+        compose.waitForIdle()
+    }
     private fun spineRow() = compose.onAllNodes(
         hasScrollToIndexAction() and hasAnyDescendant(hasContentDescription("서재 도서 1 책등")),
         useUnmergedTree = true,
@@ -152,6 +169,8 @@ class PublicLibraryNavigationTest {
         // 재진입 뒤 화면 버튼 연타와 시스템 뒤로가기를 섞어도 루트가 남는다.
         profile("독자A"); waitFor("기본책장")
         compose.onNodeWithText("기본책장").performTouchInput { doubleClick() }; waitFor("읽는 중")
+        cancelSystemBackGesture()
+        compose.onNodeWithText("읽는 중").assertIsDisplayed()
         compose.onNodeWithContentDescription("뒤로 가기").performTouchInput { doubleClick() }
         waitFor("기본책장"); systemBack(); waitFor("피드")
         compose.onNodeWithText("발견").performClick(); compose.onNodeWithText("발견").assertIsSelected()
