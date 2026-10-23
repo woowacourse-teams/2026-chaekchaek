@@ -30,10 +30,12 @@ class BookshelfContractTest {
         compose.onNodeWithText("이름 바꾸기").performClick()
         compose.onNodeWithTag("bookshelfName").performTextReplacement("나의 책장")
         compose.onNodeWithText("저장").performClick()
+        waitNameSheetClosed()
         waitText("나의 책장")
         compose.onNodeWithTag("bookshelf-create").performClick()
         compose.onNodeWithTag("bookshelfName").performTextInput("올해읽을책")
         compose.onNodeWithText("만들기").performClick()
+        waitNameSheetClosed()
         waitTag("bookshelf-1")
         compose.onNodeWithTag("bookshelf-1").performClick()
         waitText("+ 책 담기")
@@ -45,6 +47,7 @@ class BookshelfContractTest {
         compose.onNodeWithText("편집").performScrollTo().performClick()
         compose.onAllNodesWithText("빼기").onFirst().performScrollTo().performClick()
         compose.onNodeWithText("완료").performScrollTo().performClick()
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
         waitText("책장을 이미지로")
         compose.onNodeWithText("이미지 저장").performScrollTo().assertIsDisplayed()
@@ -58,6 +61,7 @@ class BookshelfContractTest {
         compose.waitUntil(10_000) { JSONObject(request("/__bookshelf/state")).getJSONArray("requests").toString().contains("/api/v1/books/3/reviews") }
     }
 
+    private fun waitNameSheetClosed() = compose.waitUntil(15_000) { compose.onAllNodesWithTag("bookshelfName").fetchSemanticsNodes().isEmpty() }
     private fun waitText(text: String) = compose.waitUntil(15_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
     private fun waitTag(tag: String) = compose.waitUntil(15_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
     private fun request(path: String, method: String = "GET"): String {
