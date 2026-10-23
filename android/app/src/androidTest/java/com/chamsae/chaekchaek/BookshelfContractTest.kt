@@ -25,7 +25,7 @@ class BookshelfContractTest {
     @get:Rule val compose = createComposeRule()
     private val origin = "http://10.0.2.2:19068"
 
-    @Test fun createRenameAddRemoveAndImagePreview() {
+    @Test fun createRenameAddRemove() {
         Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.current.baseUrl == origin)
         request("/__bookshelf/reset", "POST")
         compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
@@ -35,12 +35,12 @@ class BookshelfContractTest {
         compose.onNodeWithTag("bookshelf-menu-1").performClick()
         compose.onNodeWithText("이름 바꾸기").performClick()
         compose.onNodeWithTag("bookshelfName").performTextReplacement("나의 책장")
-        compose.onNodeWithText("저장").performClick()
+        compose.onNodeWithText("저장").performScrollTo().performClick()
         waitNameSheetClosed()
         waitText("나의 책장")
         compose.onNodeWithTag("bookshelf-create").performClick()
         compose.onNodeWithTag("bookshelfName").performTextInput("올해읽을책")
-        compose.onNodeWithText("만들기").performClick()
+        compose.onNodeWithText("만들기").performScrollTo().performClick()
         waitNameSheetClosed()
         waitTag("bookshelf-1")
         compose.onNodeWithTag("bookshelf-1").performClick()
@@ -48,7 +48,7 @@ class BookshelfContractTest {
         compose.onNodeWithText("+ 책 담기").performScrollTo().performClick()
         compose.onNodeWithText("검증 도서 3").performScrollTo().performClick()
         waitText("담을 책장 고르기")
-        compose.onNodeWithText("이 책장에 담기").performClick()
+        compose.onNodeWithText("이 책장에 담기").performScrollTo().performClick()
         compose.waitUntil(15_000) { compose.onAllNodesWithText("담을 책장 고르기").fetchSemanticsNodes().isEmpty() }
         waitText("3권")
         compose.waitUntil(15_000) { compose.onAllNodesWithText("내 서재에 담았어요").fetchSemanticsNodes().isEmpty() }
@@ -57,6 +57,23 @@ class BookshelfContractTest {
         compose.waitUntil(15_000) { requested("DELETE", "/api/v1/libraries/1/books/1") }
         waitText("2권")
         compose.onNodeWithText("완료").performScrollTo().performClick()
+        val state = JSONObject(request("/__bookshelf/state"))
+        val shelves = state.getJSONArray("shelves")
+        assertTrue((0 until shelves.length()).any { shelves.getJSONObject(it).getString("name") == "올해읽을책" })
+        val requests = state.getJSONArray("requests")
+        val calls = (0 until requests.length()).map { requests.getJSONObject(it) }
+        assertTrue(calls.any { it.getString("method") == "POST" && it.getString("path") == "/api/v1/libraries/1" })
+        assertTrue(calls.any { it.getString("method") == "DELETE" && it.getString("path").contains("/books/") })
+    }
+
+    @Test fun nativeImageSaveAndShare() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.current.baseUrl == origin)
+        request("/__bookshelf/reset", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("내 서재")
+        compose.onNodeWithText("내 서재").performClick()
+        waitTag("bookshelf-1")
+        compose.onNodeWithTag("bookshelf-1").performClick()
         compose.waitUntil(15_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
         waitText("책장을 이미지로")
@@ -80,14 +97,7 @@ class BookshelfContractTest {
         val screenshot = File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-image-preview.png")
         screenshot.outputStream().use { automation.takeScreenshot().compress(Bitmap.CompressFormat.PNG, 100, it) }
 
-        val state = JSONObject(request("/__bookshelf/state"))
-        val shelves = state.getJSONArray("shelves")
-        assertTrue((0 until shelves.length()).any { shelves.getJSONObject(it).getString("name") == "올해읽을책" })
-        val requests = state.getJSONArray("requests")
-        val calls = (0 until requests.length()).map { requests.getJSONObject(it) }
-        assertTrue(calls.any { it.getString("method") == "POST" && it.getString("path") == "/api/v1/libraries/1" })
-        assertTrue(calls.any { it.getString("method") == "DELETE" && it.getString("path").contains("/books/") })
-        compose.waitUntil(10_000) { requested("GET", "/api/v1/books/3/reviews?") }
+        compose.waitUntil(10_000) { requested("GET", "/api/v1/books/1/reviews?") }
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
         compose.waitUntil(60_000) {
             automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver")
@@ -105,7 +115,7 @@ class BookshelfContractTest {
 
     private fun findFileName(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
         if (node == null) return null
-        if (node.isEditable && node.viewIdResourceName == "android:id/title") return node
+        if (node.isEditable && node.className?.toString() == "android.widget.EditText") return node
         for (index in 0 until node.childCount) findFileName(node.getChild(index))?.let { return it }
         return null
     }
