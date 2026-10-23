@@ -55,8 +55,8 @@ public class MemberControllerIntegrationTest {
 
     private static final String MEMBER_TAG = "회원";
     private static final String NICKNAME_UPDATE_DESCRIPTION = """
-            중복되지 않은 공개 닉네임을 설정한다. 첫 닉네임은 1~10자이며 한글 완성형, 영문,
-            숫자, _, -만 허용한다. 첫 저장과 기본 책장 생성은 함께 완료되며 같은 이름의 내 책장이
+            중복되지 않은 공개 닉네임을 설정한다. 닉네임은 공백뿐이 아닌 1~10자를 허용한다.
+            첫 저장과 기본 책장 생성은 함께 완료되며 같은 이름의 내 책장이
             있으면 이름과 순서를 유지해 기본으로 승격한다. 기본 책장이 이미 있거나 이후 닉네임을
             변경하면 책장을 새로 만들거나 이름을 바꾸지 않는다. 익명 표시 여부는 유지한다.
             별도 CSRF 토큰 없이 Bearer 또는 Access Token 쿠키로 인증한다.
@@ -96,7 +96,7 @@ public class MemberControllerIntegrationTest {
     };
     private static final FieldDescriptor[] UPDATE_NICKNAME_REQUEST_FIELDS = {
             fieldWithPath("nickname").type(JsonFieldType.STRING)
-                    .description("공개 닉네임, 최대 10자. 첫 저장은 한글 완성형, 영문, 숫자, _, -만 허용하며 공백을 제거하지 않는다")
+                    .description("공개 닉네임, 공백뿐이 아닌 1~10자")
     };
     private static final FieldDescriptor[] UPDATE_ANONYMITY_REQUEST_FIELDS = {
             fieldWithPath("displayAnonymous").type(JsonFieldType.BOOLEAN)
@@ -287,8 +287,8 @@ public class MemberControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("공백이 있는 첫 닉네임은 닉네임과 책장을 저장하지 않고 거절한다")
-    void should_RejectFirstNickname_When_ItContainsWhitespace() throws Exception {
+    @DisplayName("10자를 초과한 첫 닉네임은 닉네임과 책장을 저장하지 않고 거절한다")
+    void should_RejectFirstNickname_When_ItExceedsMaximumLength() throws Exception {
         // given
         Member member = memberRepository.save(Member.create("익명", null, LocalDateTime.now()));
 
@@ -296,7 +296,7 @@ public class MemberControllerIntegrationTest {
         mockMvc.perform(patch("/api/v1/members/me/nickname")
                         .cookie(accessTokenCookie(member))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nickname\":\"책 책\"}"))
+                        .content("{\"nickname\":\"" + "책".repeat(11) + "\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
                 .andDo(problemDetailDocument("member-nickname-update-first-invalid", "닉네임 설정",

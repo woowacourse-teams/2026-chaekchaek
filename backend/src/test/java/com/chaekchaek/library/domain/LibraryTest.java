@@ -60,9 +60,9 @@ class LibraryTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"가을 책", " 가을책", "가을책 ", "가을\t책", "책장!", "book.name"})
-    @DisplayName("공백이나 허용되지 않는 문자가 포함되면 생성을 거부한다")
-    void should_RejectCreation_When_NameContainsUnsupportedCharacters(String name) {
-        assertInvalidName(name);
+    @DisplayName("공백과 문장부호가 포함된 이름으로 책장을 생성할 수 있다")
+    void should_CreateLibrary_When_NameContainsSpacesOrPunctuation(String name) {
+        assertThat(Library.create(1L, name, NOW).getName()).isEqualTo(name);
     }
 
     @ParameterizedTest
@@ -146,11 +146,11 @@ class LibraryTest {
     }
 
     @Test
-    @DisplayName("책장 이름 변경에 허용되지 않는 이름이면 기존 책장을 변경하지 않는다")
+    @DisplayName("10자를 초과하는 이름이면 기존 책장을 변경하지 않는다")
     void should_NotChangeLibrary_When_NewNameIsInvalid() {
         Library library = Library.create(1L, "가을책장", NOW);
 
-        assertThatThrownBy(() -> library.rename("가을 책", NOW.plusSeconds(1)))
+        assertThatThrownBy(() -> library.rename("가".repeat(11), NOW.plusSeconds(1)))
                 .isInstanceOfSatisfying(
                         BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST)

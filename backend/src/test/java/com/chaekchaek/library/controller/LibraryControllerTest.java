@@ -89,7 +89,7 @@ class LibraryControllerTest {
     private static final String LIBRARY_CREATE_DESCRIPTION = """
             인증된 회원의 내 서재 맨 뒤에 일반 책장을 추가한다.
 
-            - `name`: 1~10자이며 한글, 영문, 숫자, `-`, `_`만 허용한다. 공백은 허용하지 않는다.
+            - `name`: 닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다.
             - 같은 회원의 다른 책장과 이름이 중복되면 대소문자를 구분하지 않고 `409`, `LIBRARY_NAME_ALREADY_EXISTS`를 반환한다.
             - 닉네임을 설정하지 않은 회원은 `422`, `NICKNAME_REQUIRED`를 반환한다.
             - `SUSPENDED`, `WITHDRAWN` 회원은 `403`, `FORBIDDEN`을 반환한다.
@@ -109,7 +109,7 @@ class LibraryControllerTest {
     private static final String LIBRARY_RENAME_DESCRIPTION = """
             인증된 회원이 소유한 책장의 이름을 변경한다. 기본 책장도 변경할 수 있으며 기본 여부, 순서와 도서 배치는 유지한다.
 
-            - `name`: 1~10자이며 한글, 영문, 숫자, `-`, `_`만 허용한다. 공백은 허용하지 않는다.
+            - `name`: 닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다.
             - 같은 회원의 다른 책장과 이름이 중복되면 대소문자를 구분하지 않고 `409`, `LIBRARY_NAME_ALREADY_EXISTS`를 반환한다.
             - 다른 책장과 중복되지 않으면 현재 이름의 대소문자만 바꾸는 요청도 허용한다.
             - 현재와 같은 이름이면 수정 시각과 변경 이벤트를 갱신하지 않고 성공한다.
@@ -171,11 +171,11 @@ class LibraryControllerTest {
     };
     private static final FieldDescriptor[] LIBRARY_CREATE_REQUEST_FIELDS = {
             fieldWithPath("name").type(JsonFieldType.STRING)
-                    .description("1~10자. 한글, 영문, 숫자, 하이픈(-), 밑줄(_)만 허용하며 공백은 허용하지 않는다")
+                    .description("닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다")
     };
     private static final FieldDescriptor[] LIBRARY_RENAME_REQUEST_FIELDS = {
             fieldWithPath("name").type(JsonFieldType.STRING)
-                    .description("1~10자. 한글, 영문, 숫자, 하이픈(-), 밑줄(_)만 허용하며 공백은 허용하지 않는다")
+                    .description("닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다")
     };
     private static final FieldDescriptor[] LIBRARY_RESPONSE_FIELDS = {
             fieldWithPath("libraryId").type(JsonFieldType.NUMBER).description("생성된 책장 ID"),
@@ -265,7 +265,7 @@ class LibraryControllerTest {
         mockMvc.perform(patch("/api/v1/libraries/{libraryId}", 7L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"읽을책"}
+                                {"name":"읽을 책"}
                                 """))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""))
@@ -283,18 +283,16 @@ class LibraryControllerTest {
                                 .build())
                 ));
 
-        verify(libraryService).rename(MEMBER_ID, 7L, "읽을책");
+        verify(libraryService).rename(MEMBER_ID, 7L, "읽을 책");
     }
 
     @Test
-    @DisplayName("허용되지 않는 이름으로 책장 변경을 요청하면 잘못된 요청 오류를 반환한다")
+    @DisplayName("10자를 초과하는 이름으로 책장 변경을 요청하면 잘못된 요청 오류를 반환한다")
     void should_ReturnBadRequest_When_RenameNameIsInvalid() throws Exception {
         expectProblemDetail(
                 mockMvc.perform(patch("/api/v1/libraries/{libraryId}", 7L)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"읽을 책"}
-                                """)),
+                        .content("{\"name\":\"" + "가".repeat(11) + "\"}")),
                 HttpStatus.BAD_REQUEST,
                 ErrorCode.INVALID_REQUEST,
                 "/api/v1/libraries/7"
@@ -374,33 +372,35 @@ class LibraryControllerTest {
     }
 
     @Test
-    @DisplayName("허용되지 않는 문자가 포함되면 잘못된 요청 오류를 반환한다")
-    void should_ReturnBadRequest_When_LibraryNameContainsUnsupportedCharacters() throws Exception {
+    @DisplayName("공백과 문장부호가 있는 이름으로 책장을 생성할 수 있다")
+    void should_CreateLibrary_When_NameContainsSpacesAndPunctuation() throws Exception {
+        // given
+        String name = "가을 책!";
+        when(libraryService.create(MEMBER_ID, name)).thenReturn(libraryResponse(name));
+
         // when & then
-        expectProblemDetail(
-                mockMvc.perform(post("/api/v1/libraries")
+        mockMvc.perform(post("/api/v1/libraries")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"가을 책\"}")),
-                HttpStatus.BAD_REQUEST,
-                ErrorCode.INVALID_REQUEST,
-                "/api/v1/libraries"
-        );
-        verifyNoInteractions(libraryService);
+                        .content("{\"name\":\"" + name + "\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value(name));
+        verify(libraryService).create(MEMBER_ID, name);
     }
 
     @Test
-    @DisplayName("책장 이름 앞뒤 공백을 제거해 수용하지 않는다")
-    void should_ReturnBadRequest_When_LibraryNameHasSurroundingSpaces() throws Exception {
+    @DisplayName("책장 이름 앞뒤 공백을 제거하지 않고 그대로 수용한다")
+    void should_CreateLibrary_When_LibraryNameHasSurroundingSpaces() throws Exception {
+        // given
+        String name = " 올해읽을책 ";
+        when(libraryService.create(MEMBER_ID, name)).thenReturn(libraryResponse(name));
+
         // when & then
-        expectProblemDetail(
-                mockMvc.perform(post("/api/v1/libraries")
+        mockMvc.perform(post("/api/v1/libraries")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\" 올해읽을책 \"}")),
-                HttpStatus.BAD_REQUEST,
-                ErrorCode.INVALID_REQUEST,
-                "/api/v1/libraries"
-        );
-        verifyNoInteractions(libraryService);
+                        .content("{\"name\":\"" + name + "\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value(name));
+        verify(libraryService).create(MEMBER_ID, name);
     }
 
     @Test

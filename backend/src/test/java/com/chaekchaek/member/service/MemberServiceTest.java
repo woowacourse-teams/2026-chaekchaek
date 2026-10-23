@@ -179,9 +179,9 @@ class MemberServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"  책책이", "책 책이", "닉네임!", "가나다라마바사아자차카"})
-    @DisplayName("첫 닉네임이 책장 이름 규칙을 벗어나면 닉네임과 책장을 저장하지 않는다")
-    void should_RejectFirstNickname_When_LibraryNameIsInvalid(String nickname) {
+    @ValueSource(strings = {"가나다라마바사아자차카"})
+    @DisplayName("첫 닉네임이 10자를 초과하면 닉네임과 책장을 저장하지 않는다")
+    void should_RejectFirstNickname_When_NicknameExceedsMaximumLength(String nickname) {
         // given
         Member member = Member.create("익명", null, LocalDateTime.now());
         given(memberRepository.findByIdForUpdate(1L)).willReturn(Optional.of(member));

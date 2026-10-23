@@ -243,7 +243,8 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		(libraryCreationOperation?.get('requestBody') as Map)?.put('required', true)
 		def libraryCreationRequestSchema = requestSchema('/api/v1/libraries', 'post')
 		def libraryCreationName = (libraryCreationRequestSchema?.get('properties') as Map)?.get('name') as Map
-		libraryCreationName?.putAll([minLength: 1, maxLength: 10, pattern: '^[가-힣A-Za-z0-9_-]+$'])
+		libraryCreationName?.putAll([minLength: 1, maxLength: 10])
+		libraryCreationName?.remove('pattern')
 		def libraryCreationRequestContent = ((libraryCreationOperation?.get('requestBody') as Map)
 				?.get('content') as Map)
 		libraryCreationRequestContent?.values()?.each { content ->
@@ -293,7 +294,8 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		(libraryRenameOperation?.get('requestBody') as Map)?.put('required', true)
 		def libraryRenameRequestSchema = requestSchema('/api/v1/libraries/{libraryId}', 'patch')
 		def libraryRenameName = (libraryRenameRequestSchema?.get('properties') as Map)?.get('name') as Map
-		libraryRenameName?.putAll([minLength: 1, maxLength: 10, pattern: '^[가-힣A-Za-z0-9_-]+$'])
+		libraryRenameName?.putAll([minLength: 1, maxLength: 10])
+		libraryRenameName?.remove('pattern')
 		def libraryRenamePathParameter = (libraryRenameOperation?.get('parameters') as List)
 				?.find { parameter -> (parameter as Map)?.get('name') == 'libraryId' } as Map
 		def libraryRenamePathSchema = libraryRenamePathParameter?.get('schema') as Map
@@ -999,7 +1001,7 @@ tasks.register('verifyOpenApi') {
 		def libraryCreationRequestName = (libraryCreationRequest.get('properties') as Map).get('name') as Map
 		if (libraryCreationRequestName.get('minLength') != 1
 				|| libraryCreationRequestName.get('maxLength') != 10
-				|| libraryCreationRequestName.get('pattern') != '^[가-힣A-Za-z0-9_-]+$') {
+				|| libraryCreationRequestName.containsKey('pattern')) {
 			throw new GradleException('OpenAPI specification must enforce the library creation name rules')
 		}
 		def libraryCreationRequestContents = ((libraryCreationOperation.get('requestBody') as Map)
@@ -1051,7 +1053,7 @@ tasks.register('verifyOpenApi') {
 		if (libraryRenameRequestName?.get('type') != 'string'
 				|| libraryRenameRequestName?.get('minLength') != 1
 				|| libraryRenameRequestName?.get('maxLength') != 10
-				|| libraryRenameRequestName?.get('pattern') != '^[가-힣A-Za-z0-9_-]+$') {
+				|| libraryRenameRequestName?.containsKey('pattern')) {
 			throw new GradleException('OpenAPI specification must enforce the library rename name rules')
 		}
 		def libraryRenameIdParameter = ((((paths.get('/api/v1/libraries/{libraryId}') as Map)

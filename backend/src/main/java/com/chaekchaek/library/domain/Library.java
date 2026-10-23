@@ -12,7 +12,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
-import java.util.regex.Pattern;
 
 @Entity
 @Table(
@@ -33,7 +32,7 @@ import java.util.regex.Pattern;
 public class Library {
 
     private static final int NAME_COLUMN_LENGTH = 104;
-    private static final Pattern NEW_NAME_PATTERN = Pattern.compile("^[가-힣A-Za-z0-9_-]{1,10}$");
+    private static final int MAX_NAME_LENGTH = 10;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -91,7 +90,7 @@ public class Library {
     }
 
     public static void validateNewName(String name) {
-        if (name == null || !NEW_NAME_PATTERN.matcher(name).matches()) {
+        if (name == null || name.isBlank() || name.length() > MAX_NAME_LENGTH) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
     }

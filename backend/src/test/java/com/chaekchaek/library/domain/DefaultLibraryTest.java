@@ -18,7 +18,7 @@ class DefaultLibraryTest {
     private static final Instant NOW = Instant.parse("2026-10-23T03:00:00Z");
 
     @ParameterizedTest
-    @ValueSource(strings = {"가나다라마바사아자차", "Study_1-2", "A"})
+    @ValueSource(strings = {"가나다라마바사아자차", "Study_1-2", "소낙 눈", "닉네임!", "A"})
     @DisplayName("첫 닉네임을 그대로 사용해 기본 책장을 지정한 순서에 만든다")
     void should_CreateDefaultLibrary_When_NicknameIsValid(String nickname) {
         // when
@@ -34,8 +34,8 @@ class DefaultLibraryTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {" ", " Study", "Study ", "Study 책", "가나다라마바사아자차카", "닉네임!", "é", "ㄱ"})
-    @DisplayName("기본 책장의 새 이름은 공백을 제거하지 않고 길이와 문자 규칙을 검증한다")
+    @ValueSource(strings = {" ", "\t\n", "\u2003", "가나다라마바사아자차카"})
+    @DisplayName("기본 책장의 이름이 공백뿐이거나 10자를 초과하면 거부한다")
     void should_RejectDefaultLibrary_When_NicknameIsInvalid(String nickname) {
         // when & then
         assertThatThrownBy(() -> Library.createDefault(7L, nickname, 1L, NOW))
