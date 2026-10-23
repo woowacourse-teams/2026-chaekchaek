@@ -1034,11 +1034,23 @@ final class BookshelfContractUITests: XCTestCase {
         await fulfillment(of: [imageReady], timeout: 15)
         imageShare.tap()
         XCTAssertTrue(element("책장을 이미지로", app).waitForExistence(timeout: 10))
-        XCTAssertTrue(element("이미지 저장", app).exists)
+        let saveImage = element("이미지 저장", app)
+        XCTAssertTrue(saveImage.exists)
+        let saveReady = expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: saveImage)
+        await fulfillment(of: [saveReady], timeout: 15)
+        saveImage.tap()
+        let permission = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.firstMatch
+        if permission.waitForExistence(timeout: 5) { permission.buttons.allElementsBoundByIndex.last?.tap() }
+        XCTAssertTrue(element("이미지 저장을 완료했어요", app).waitForExistence(timeout: 15))
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "책장 이미지 미리보기"
         attachment.lifetime = .keepAlways
         add(attachment)
+        element("이미지 공유", app).tap()
+        let nativeShare = XCTAttachment(screenshot: app.screenshot())
+        nativeShare.name = "네이티브 이미지 공유"
+        nativeShare.lifetime = .keepAlways
+        add(nativeShare)
         let data = try await request("/__bookshelf/state")
         let state = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let shelves = try XCTUnwrap(state["shelves"] as? [[String: Any]])

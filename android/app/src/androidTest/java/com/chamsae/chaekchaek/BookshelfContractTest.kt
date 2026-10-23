@@ -3,6 +3,11 @@ package com.chamsae.chaekchaek
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import android.view.KeyEvent
+import android.view.accessibility.AccessibilityNodeInfo
+import java.io.File
+import android.graphics.Bitmap
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.data.remote.ApiConfiguration
 import com.chaekchaek.app.ui.App
@@ -51,6 +56,18 @@ class BookshelfContractTest {
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
         waitText("책장을 이미지로")
         compose.onNodeWithText("이미지 저장").performScrollTo().assertIsDisplayed()
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText("이미지 저장") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("이미지 저장").performClick()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val automation = instrumentation.uiAutomation
+        compose.waitUntil(15_000) { automation.rootInActiveWindow?.packageName?.toString()?.endsWith("documentsui") == true }
+        val save = findSave(automation.rootInActiveWindow)
+        assertNotNull("네이티브 파일 저장 버튼", save)
+        assertTrue(save!!.performAction(AccessibilityNodeInfo.ACTION_CLICK))
+        waitText("이미지 저장을 완료했어요")
+        val screenshot = File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-image-preview.png")
+        screenshot.outputStream().use { automation.takeScreenshot().compress(Bitmap.CompressFormat.PNG, 100, it) }
+
         val state = JSONObject(request("/__bookshelf/state"))
         val shelves = state.getJSONArray("shelves")
         assertTrue((0 until shelves.length()).any { shelves.getJSONObject(it).getString("name") == "올해읽을책" })
@@ -59,6 +76,13 @@ class BookshelfContractTest {
         assertTrue(calls.any { it.getString("method") == "POST" && it.getString("path") == "/api/v1/libraries/1" })
         assertTrue(calls.any { it.getString("method") == "DELETE" && it.getString("path").contains("/books/") })
         compose.waitUntil(10_000) { JSONObject(request("/__bookshelf/state")).getJSONArray("requests").toString().contains("/api/v1/books/3/reviews") }
+    }
+
+    private fun findSave(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+        if (node == null) return null
+        if (node.isEnabled && node.isClickable && (node.viewIdResourceName?.endsWith(":id/action_menu_save") == true || node.text?.toString()?.equals("Save", ignoreCase = true) == true || node.text?.toString() == "저장")) return node
+        for (index in 0 until node.childCount) findSave(node.getChild(index))?.let { return it }
+        return null
     }
 
     private fun waitNameSheetClosed() = compose.waitUntil(15_000) { compose.onAllNodesWithTag("bookshelfName").fetchSemanticsNodes().isEmpty() }
