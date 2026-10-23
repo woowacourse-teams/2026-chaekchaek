@@ -319,7 +319,6 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		def publicLibraryDetail = responseSchemaForPath('/api/v1/libraries/{libraryId}', 'get', '200')
 		def publicLibraryBook = arrayItemSchema(publicLibraryDetail, 'items')
 		markRequiredNullable(publicLibraryPreview, 'spineImageUrl')
-		markRequiredNullable(publicLibraryDetail, 'nextPage')
 		['spineImageUrl', 'totalPages'].each { name -> markRequiredNullable(publicLibraryBook, name) }
 		[publicLibraryPreview, publicLibraryBook].each { schema ->
 			((schema?.get('properties') as Map)?.get('spineImageUrl') as Map)?.put('format', 'uri')
@@ -346,10 +345,6 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			(operationParameter(path, 'get', name)?.get('schema') as Map)
 					?.putAll([type: 'integer', format: 'int64', minimum: 1])
 		}
-		(operationParameter('/api/v1/libraries/{libraryId}', 'get', 'page')?.get('schema') as Map)
-				?.putAll([type: 'integer', format: 'int32', minimum: 1, maximum: 2147483647, default: 1])
-		((publicLibraryDetail?.get('properties') as Map)?.get('nextPage') as Map)
-				?.putAll([type: 'integer', format: 'int32', minimum: 1])
 		((publicLibraryBook?.get('properties') as Map)?.get('currentPage') as Map)
 				?.putAll([type: 'integer', format: 'int32', minimum: 0])
 		((publicLibraryBook?.get('properties') as Map)?.get('totalPages') as Map)
@@ -1120,14 +1115,14 @@ tasks.register('verifyOpenApi') {
 			[schema: publicCollection, names: ['memberId', 'libraries']],
 			[schema: publicShelf, names: ['libraryId', 'name', 'isDefault', 'totalCount', 'items']],
 			[schema: publicPreview, names: ['bookId', 'title', 'spineImageUrl', 'isbn13']],
-			[schema: publicDetail, names: ['libraryId', 'memberId', 'name', 'isDefault', 'totalCount', 'nextPage', 'items']],
+			[schema: publicDetail, names: ['libraryId', 'memberId', 'name', 'isDefault', 'totalCount', 'items']],
 			[schema: publicBook, names: ['bookId', 'title', 'coverImageUrl', 'spineImageUrl', 'isbn13', 'authors', 'totalPages', 'status', 'currentPage', 'readingUpdatedAt']]
 		].each { requirement ->
 			if ((requirement.schema?.get('required') as Set) != (requirement.names as Set)) {
 				throw new GradleException('OpenAPI specification has invalid fields for public library responses')
 			}
 		}
-		if (!requiredNullable(publicPreview, 'spineImageUrl') || !requiredNullable(publicDetail, 'nextPage')
+		if (!requiredNullable(publicPreview, 'spineImageUrl')
 				|| !requiredNullable(publicBook, 'spineImageUrl') || !requiredNullable(publicBook, 'totalPages')
 				|| ((publicShelf?.get('properties') as Map)?.get('name') as Map)?.get('maxLength') != null
 				|| ((publicDetail?.get('properties') as Map)?.get('name') as Map)?.get('maxLength') != null) {
@@ -1138,9 +1133,9 @@ tasks.register('verifyOpenApi') {
 				|| ((publicBook?.get('properties') as Map)?.get('coverImageUrl') as Map)?.get('nullable') == true) {
 			throw new GradleException('OpenAPI specification must require cover image and the author name array in library detail')
 		}
-		def publicPage = queryParameter('/api/v1/libraries/{libraryId}', 'get', 'page')?.get('schema') as Map
-		if (publicPage?.get('type') != 'integer' || publicPage?.get('minimum') != 1 || publicPage?.get('default') != 1) {
-			throw new GradleException('OpenAPI specification must describe optional public library page with default 1')
+		if (queryParameter('/api/v1/libraries/{libraryId}', 'get', 'page') != null
+				|| (publicDetail?.get('properties') as Map)?.containsKey('nextPage')) {
+			throw new GradleException('OpenAPI library detail must return all books without pagination')
 		}
 		[
 			[path: '/api/v1/books', method: 'get', name: 'page'],

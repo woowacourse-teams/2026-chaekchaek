@@ -53,9 +53,6 @@ class LibraryQueryRepositoryTest {
     private LibraryQueryService service;
 
     @Autowired
-    private LibraryQueryRepository queryRepository;
-
-    @Autowired
     private MemberRepository members;
 
     @Autowired
@@ -112,14 +109,15 @@ class LibraryQueryRepositoryTest {
         verify(jdbcTemplate, times(2)).query(anyString(), ArgumentMatchers.<RowMapper<Object>>any(), any(Object[].class));
     }
 
-    @Test
-    @DisplayName("35권 이전 책장을 전체 조회하고 고정 크기의 첫 페이지와 마지막 페이지로 조회한다")
-    void should_ReadAllMigratedBooksAndPages_When_LibraryExceedsThirtyBooks() {
+    @ParameterizedTest
+    @ValueSource(ints = {30, 35})
+    @DisplayName("30권 책장과 한도를 초과한 기존 책장도 전체 도서를 순서대로 반환한다")
+    void should_ReturnAllBooks_When_LibraryContainsThirtyOrMoreBooks(int count) {
         // given
         Member owner = member();
         Library library = library(owner, "이전 책장", 1L);
         List<Long> bookIds = new ArrayList<>();
-        for (int index = 1; index <= 35; index++) {
+        for (int index = 1; index <= count; index++) {
             Book book = book(index);
             record(owner, book, ReadingStatus.READING);
             placement(library, book, index);
@@ -129,24 +127,13 @@ class LibraryQueryRepositoryTest {
 
         // when
         LibraryCollectionResponse collection = service.findLibraries(owner.getId());
-        LibraryDetailResponse first = service.findLibrary(library.getId(), 1);
-        LibraryDetailResponse last = service.findLibrary(library.getId(), 4);
-        LibraryDetailResponse beyondLast = service.findLibrary(library.getId(), 5);
-        LibraryDetailResponse maximumPage = service.findLibrary(library.getId(), Integer.MAX_VALUE);
+        LibraryDetailResponse detail = service.findLibrary(library.getId());
 
         // then
-        assertThat(collection.libraries().getFirst().totalCount()).isEqualTo(35L);
-        assertThat(collection.libraries().getFirst().items()).hasSize(35);
-        assertThat(first.totalCount()).isEqualTo(35L);
-        assertThat(first.items()).extracting(item -> item.bookId()).containsExactlyElementsOf(bookIds.subList(0, 10));
-        assertThat(first.nextPage()).isEqualTo(2);
-        assertThat(last.items()).extracting(item -> item.bookId()).containsExactlyElementsOf(bookIds.subList(30, 35));
-        assertThat(last.nextPage()).isNull();
-        assertThat(beyondLast.totalCount()).isEqualTo(35L);
-        assertThat(beyondLast.items()).isEmpty();
-        assertThat(beyondLast.nextPage()).isNull();
-        assertThat(maximumPage.items()).isEmpty();
-        assertThat(maximumPage.nextPage()).isNull();
+        assertThat(collection.libraries().getFirst().totalCount()).isEqualTo(count);
+        assertThat(collection.libraries().getFirst().items()).hasSize(count);
+        assertThat(detail.totalCount()).isEqualTo(count);
+        assertThat(detail.items()).extracting(item -> item.bookId()).containsExactlyElementsOf(bookIds);
     }
 
     @Test
@@ -165,7 +152,7 @@ class LibraryQueryRepositoryTest {
         clearInvocations(jdbcTemplate);
 
         // when
-        LibraryDetailResponse response = service.findLibrary(library.getId(), 1);
+        LibraryDetailResponse response = service.findLibrary(library.getId());
 
         // then
         assertThat(response.memberId()).isEqualTo(owner.getId());
@@ -179,12 +166,11 @@ class LibraryQueryRepositoryTest {
             assertThat(item.isbn13()).isEqualTo(book.getIsbn13().value());
         });
         verify(jdbcTemplate, times(2)).query(anyString(), ArgumentMatchers.<RowMapper<Object>>any(), any(Object[].class));
-        verify(jdbcTemplate).queryForObject("select count(*) from library_book where library_id = ?", Long.class, library.getId());
         verify(jdbcTemplate).query(anyString(), any(RowCallbackHandler.class), any(Object[].class));
     }
 
     @Test
-    @DisplayName("빈 서재와 빈 책장은 빈 목록과 null 다음 페이지를 반환한다")
+    @DisplayName("빈 서재와 빈 책장은 빈 목록을 반환한다")
     void should_ReturnEmptyItems_When_MemberOrShelfHasNoPlacements() {
         // given
         Member owner = member();
@@ -194,10 +180,9 @@ class LibraryQueryRepositoryTest {
         assertThat(service.findLibraries(owner.getId()).libraries()).isEmpty();
         Library library = library(owner, "빈 책장", 1L);
         flushAndClear();
-        LibraryDetailResponse response = service.findLibrary(library.getId(), 1);
+        LibraryDetailResponse response = service.findLibrary(library.getId());
         assertThat(response.totalCount()).isZero();
         assertThat(response.items()).isEmpty();
-        assertThat(response.nextPage()).isNull();
     }
 
     @ParameterizedTest
@@ -214,7 +199,7 @@ class LibraryQueryRepositoryTest {
         assertThatThrownBy(() -> service.findLibraries(owner.getId()))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
-        assertThatThrownBy(() -> service.findLibrary(library.getId(), 1))
+        assertThatThrownBy(() -> service.findLibrary(library.getId()))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND));
     }
@@ -229,7 +214,7 @@ class LibraryQueryRepositoryTest {
         assertThatThrownBy(() -> service.findLibraries(missingId))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
-        assertThatThrownBy(() -> service.findLibrary(missingId, 1))
+        assertThatThrownBy(() -> service.findLibrary(missingId))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND));
     }
@@ -246,7 +231,7 @@ class LibraryQueryRepositoryTest {
 
         // when & then
         assertThatThrownBy(() -> service.findLibraries(owner.getId())).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> service.findLibrary(library.getId(), 1)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> service.findLibrary(library.getId())).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -263,29 +248,12 @@ class LibraryQueryRepositoryTest {
 
         // when & then
         assertThatThrownBy(() -> service.findLibraries(owner.getId())).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> service.findLibrary(library.getId(), 1)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> service.findLibrary(library.getId())).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    @DisplayName("페이지 조회는 도서마다 추가 조회하지 않고 큰 offset도 정수 오버플로 없이 처리한다")
-    void should_ReadPageWithFixedQueries_When_OffsetExceedsIntegerRange() {
-        // given
-        Member owner = member();
-        Library library = library(owner, "빈 책장", 1L);
-        flushAndClear();
-        clearInvocations(jdbcTemplate);
-
-        // when
-        List<?> response = queryRepository.findBooksByLibraryId(library.getId(), 21_474_836_460L, 10);
-
-        // then
-        assertThat(response).isEmpty();
-        verify(jdbcTemplate).query(anyString(), ArgumentMatchers.<RowMapper<Object>>any(), any(Object[].class));
-    }
-
-    @Test
-    @DisplayName("상세 저자는 해당 페이지 도서만 한 번 조회해 저장 순서를 유지하고 없으면 빈 배열로 반환한다")
-    void should_BatchLoadOrderedAuthorsForPageOnly_When_ReadingLibraryDetail() {
+    @DisplayName("상세 저자는 책장 전체 도서를 한 번에 조회해 저장 순서를 유지하고 없으면 빈 배열로 반환한다")
+    void should_BatchLoadOrderedAuthors_When_ReadingAllLibraryBooks() {
         // given
         Member owner = member();
         Library library = library(owner, "책장", 1L);
@@ -301,19 +269,22 @@ class LibraryQueryRepositoryTest {
         clearInvocations(jdbcTemplate);
 
         // when
-        LibraryDetailResponse lastPage = service.findLibrary(library.getId(), 2);
+        LibraryDetailResponse detail = service.findLibrary(library.getId());
 
         // then
-        assertThat(lastPage.items()).singleElement().satisfies(item -> {
+        assertThat(detail.items()).hasSize(11);
+        assertThat(detail.items().getLast()).satisfies(item -> {
             assertThat(item.bookId()).isEqualTo(lastBook.getId());
             assertThat(item.coverImageUrl()).isEqualTo("https://example.com/cover.jpg");
             assertThat(item.authors()).containsExactly("두 번째 저자", "첫 번째 저자");
         });
         ArgumentCaptor<Object[]> authorBookIds = ArgumentCaptor.forClass(Object[].class);
         verify(jdbcTemplate).query(anyString(), any(RowCallbackHandler.class), authorBookIds.capture());
-        assertThat(authorBookIds.getValue()).containsExactly(lastBook.getId());
-        LibraryDetailResponse firstPage = service.findLibrary(library.getId(), 1);
-        assertThat(firstPage.items()).hasSize(10).allSatisfy(item -> assertThat(item.authors()).isEmpty());
+        assertThat(authorBookIds.getValue()).containsExactlyElementsOf(detail.items()
+                .stream()
+                .map(item -> item.bookId())
+                .toList());
+        assertThat(detail.items().subList(0, 10)).allSatisfy(item -> assertThat(item.authors()).isEmpty());
     }
 
     private Member member() {

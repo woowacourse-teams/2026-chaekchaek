@@ -8,7 +8,6 @@ public record LibraryDetailResponse(
         String name,
         boolean isDefault,
         long totalCount,
-        Integer nextPage,
         List<LibraryBookDetailResponse> items
 ) {
     public LibraryDetailResponse {

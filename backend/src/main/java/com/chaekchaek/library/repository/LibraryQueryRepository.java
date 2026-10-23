@@ -79,15 +79,7 @@ public class LibraryQueryRepository {
                 .findFirst();
     }
 
-    public long countBooksByLibraryId(long libraryId) {
-        return jdbcTemplate.queryForObject(
-                "select count(*) from library_book where library_id = ?",
-                Long.class,
-                libraryId
-        );
-    }
-
-    public List<LibraryBookDetailResponse> findBooksByLibraryId(long libraryId, long offset, int limit) {
+    public List<LibraryBookDetailResponse> findBooksByLibraryId(long libraryId) {
         List<LibraryBookDetailResponse> books = jdbcTemplate.query(
                 """
                 select lb.book_id, b.title, b.cover_image_url, b.spine_image_url, b.isbn13, b.total_pages,
@@ -98,7 +90,6 @@ public class LibraryQueryRepository {
                 left join library_item li on li.member_id = l.member_id and li.book_id = lb.book_id
                 where lb.library_id = ?
                 order by lb.display_order, lb.id
-                limit ? offset ?
                 """,
                 (rs, row) -> {
                     assertReadingState(rs);
@@ -115,9 +106,7 @@ public class LibraryQueryRepository {
                             rs.getTimestamp("reading_updated_at", Calendar.getInstance(TimeZone.getTimeZone("UTC"))).toInstant()
                     );
                 },
-                libraryId,
-                limit,
-                offset
+                libraryId
         );
         if (books.isEmpty()) {
             return books;

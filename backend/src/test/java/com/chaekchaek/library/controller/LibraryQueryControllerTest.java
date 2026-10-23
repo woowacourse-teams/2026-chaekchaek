@@ -52,10 +52,9 @@ class LibraryQueryControllerTest {
             없는 회원과 비활성 회원은 MEMBER_NOT_FOUND다.
             """;
     private static final String DETAIL_DESCRIPTION = """
-            인증 없이 ACTIVE 회원 소유 책장 도서를 저장된 표시 순서로 조회하며 상세 항목에 표지와 저장 순서의 저자를 포함한다. 저자가 없으면 authors는 빈 배열이다.
-            page는 생략하면 1이며 페이지 크기는 10이다. 빈 값, 소수, 0 이하, int 범위 초과는 INVALID_REQUEST다.
-            totalCount는 책장 전체 권수이며 마지막 페이지의 nextPage는 null이다.
-            빈 책장과 범위 밖 페이지도 200과 빈 items, nextPage: null을 반환한다.
+            인증 없이 ACTIVE 회원 소유 책장의 전체 도서를 저장된 표시 순서로 조회하며 상세 항목에 표지와 저장 순서의 저자를 포함한다. 저자가 없으면 authors는 빈 배열이다.
+            totalCount는 책장 전체 권수이며 items 길이와 같다. 페이지네이션 없이 한 번에 전체를 반환한다.
+            빈 책장은 `200`, totalCount: 0과 빈 items를 반환한다.
             memberId와 독서 기록은 조회자가 아닌 책장 소유자 기준이다. 배치된 도서의 독서 기록은 null이 아니다.
             이전된 30권 초과 책장도 조회하며 기존 책장 이름을 자르거나 보정하지 않는다.
             없는 책장과 비활성 회원의 책장은 LIBRARY_NOT_FOUND다.
@@ -79,8 +78,7 @@ class LibraryQueryControllerTest {
             fieldWithPath("name").type(JsonFieldType.STRING).description("기존 값을 보존한 책장 이름"),
             fieldWithPath("isDefault").type(JsonFieldType.BOOLEAN).description("기본 책장 여부"),
             fieldWithPath("totalCount").type(JsonFieldType.NUMBER).description("책장 전체 권수"),
-            fieldWithPath("nextPage").type(JsonFieldType.NUMBER).description("다음 페이지, 마지막이면 null").optional(),
-            fieldWithPath("items").type(JsonFieldType.ARRAY).description("표시 순서의 도서, 페이지당 최대 10권"),
+            fieldWithPath("items").type(JsonFieldType.ARRAY).description("저장된 표시 순서의 전체 도서"),
             fieldWithPath("items[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
             fieldWithPath("items[].title").type(JsonFieldType.STRING).description("도서 제목"),
             fieldWithPath("items[].coverImageUrl").type(JsonFieldType.STRING).description("도서 표지 이미지 URL"),
@@ -166,21 +164,20 @@ class LibraryQueryControllerTest {
                 23,
                 Instant.parse("2026-10-23T03:00:00Z")
         );
-        when(service.findLibrary(7L, 1)).thenReturn(new LibraryDetailResponse(
+        when(service.findLibrary(7L)).thenReturn(new LibraryDetailResponse(
                 7L,
                 1L,
                 "기존의 긴 책장 이름 !",
                 true,
                 1L,
-                null,
                 List.of(book)
         ));
 
         // when & then
-        mockMvc.perform(get("/api/v1/libraries/{libraryId}", 7L).param("page", "1"))
+        mockMvc.perform(get("/api/v1/libraries/{libraryId}", 7L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.memberId").value(1L))
-                .andExpect(jsonPath("$.nextPage").value(nullValue()))
+                .andExpect(jsonPath("$.nextPage").doesNotExist())
                 .andExpect(jsonPath("$.items[0].totalPages").value(nullValue()))
                 .andExpect(jsonPath("$.items[0].currentPage").value(23))
                 .andExpect(jsonPath("$.items[0].coverImageUrl").value("https://example.com/cover.jpg"))
@@ -188,10 +185,9 @@ class LibraryQueryControllerTest {
                 .andExpect(jsonPath("$.items[0].authors[1]").value("첫 번째 저자"))
                 .andDo(document("libraries-public-detail", resource(ResourceSnippetParameters.builder()
                         .tag("책장")
-                        .summary("책장 도서 페이지 조회")
+                        .summary("책장 전체 도서 조회")
                         .description(DETAIL_DESCRIPTION)
                         .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("양의 책장 ID"))
-                        .queryParameters(parameterWithName("page").type(SimpleType.INTEGER).description("생략하면 1, 페이지당 10권").optional())
                         .responseSchema(Schema.schema("LibraryDetailResponse"))
                         .responseFields(DETAIL_FIELDS)
                         .build())));
@@ -213,44 +209,41 @@ class LibraryQueryControllerTest {
                 0,
                 Instant.parse("2026-10-23T03:00:00Z")
         );
-        when(service.findLibrary(7L, 1)).thenReturn(new LibraryDetailResponse(
+        when(service.findLibrary(7L)).thenReturn(new LibraryDetailResponse(
                 7L,
                 1L,
                 "책장",
                 false,
                 1L,
-                null,
                 List.of(book)
         ));
 
         // when & then
-        mockMvc.perform(get("/api/v1/libraries/{libraryId}", 7L).param("page", "1"))
+        mockMvc.perform(get("/api/v1/libraries/{libraryId}", 7L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].coverImageUrl").value("https://example.com/cover.jpg"))
                 .andExpect(jsonPath("$.items[0].authors").isArray())
                 .andExpect(jsonPath("$.items[0].authors").isEmpty())
                 .andDo(document("libraries-public-detail-without-authors", resource(ResourceSnippetParameters.builder()
                         .tag("책장")
-                        .summary("책장 도서 페이지 조회")
+                        .summary("책장 전체 도서 조회")
                         .description(DETAIL_DESCRIPTION)
                         .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("양의 책장 ID"))
-                        .queryParameters(parameterWithName("page").type(SimpleType.INTEGER).description("생략하면 1, 페이지당 10권").optional())
                         .responseSchema(Schema.schema("LibraryDetailResponse"))
                         .responseFields(DETAIL_FIELDS)
                         .build())));
     }
 
     @Test
-    @DisplayName("페이지를 생략하면 첫 페이지로 조회한다")
-    void should_DefaultToFirstPage_When_PageIsOmitted() throws Exception {
+    @DisplayName("빈 책장은 페이지 정보 없이 빈 도서 목록을 반환한다")
+    void should_ReturnEmptyBooks_When_LibraryIsEmpty() throws Exception {
         // given
-        when(service.findLibrary(7L, 1)).thenReturn(new LibraryDetailResponse(
+        when(service.findLibrary(7L)).thenReturn(new LibraryDetailResponse(
                 7L,
                 1L,
                 "빈 책장",
                 false,
                 0L,
-                null,
                 List.of()
         ));
 
@@ -258,20 +251,7 @@ class LibraryQueryControllerTest {
         mockMvc.perform(get("/api/v1/libraries/7"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items").isEmpty());
-        verify(service).findLibrary(7L, 1);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"", "0", "-1", "1.5", "2147483648", "abc", " "})
-    @DisplayName("빈 값과 유효하지 않은 페이지는 조회 전에 거절한다")
-    void should_RejectInvalidPage_When_PageIsSupplied(String page) throws Exception {
-        // given
-
-        // when & then
-        mockMvc.perform(get("/api/v1/libraries/7").param("page", page))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
-        verifyNoInteractions(service);
+        verify(service).findLibrary(7L);
     }
 
     @ParameterizedTest
@@ -307,19 +287,18 @@ class LibraryQueryControllerTest {
     }
 
     @Test
-    @DisplayName("유효하지 않은 페이지에 INVALID_REQUEST 문서를 생성한다")
-    void should_DocumentBadRequest_When_PageIsEmpty() throws Exception {
+    @DisplayName("양수가 아닌 책장 ID에 INVALID_REQUEST 문서를 생성한다")
+    void should_DocumentBadRequest_When_LibraryIdIsNotPositive() throws Exception {
         // given
 
         // when & then
-        mockMvc.perform(get("/api/v1/libraries/{libraryId}", 7L).param("page", ""))
+        mockMvc.perform(get("/api/v1/libraries/{libraryId}", 0L))
                 .andExpect(status().isBadRequest())
                 .andDo(document("libraries-public-detail-invalid-request", resource(ResourceSnippetParameters.builder()
                         .tag("책장")
-                        .summary("책장 도서 페이지 조회")
+                        .summary("책장 전체 도서 조회")
                         .description(DETAIL_DESCRIPTION)
                         .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("양의 책장 ID"))
-                        .queryParameters(parameterWithName("page").type(SimpleType.INTEGER).description("생략하면 1, 페이지당 10권").optional())
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_FIELDS)
                         .build())));
@@ -349,18 +328,17 @@ class LibraryQueryControllerTest {
     @DisplayName("없는 책장과 비활성 회원의 책장은 LIBRARY_NOT_FOUND로 응답한다")
     void should_ReturnLibraryNotFound_When_ShelfIsUnavailable() throws Exception {
         // given
-        when(service.findLibrary(7L, 1)).thenThrow(new BusinessException(ErrorCode.LIBRARY_NOT_FOUND));
+        when(service.findLibrary(7L)).thenThrow(new BusinessException(ErrorCode.LIBRARY_NOT_FOUND));
 
         // when & then
-        mockMvc.perform(get("/api/v1/libraries/{libraryId}", 7L).param("page", "1"))
+        mockMvc.perform(get("/api/v1/libraries/{libraryId}", 7L))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("LIBRARY_NOT_FOUND"))
                 .andDo(document("libraries-public-detail-not-found", resource(ResourceSnippetParameters.builder()
                         .tag("책장")
-                        .summary("책장 도서 페이지 조회")
+                        .summary("책장 전체 도서 조회")
                         .description(DETAIL_DESCRIPTION)
                         .pathParameters(parameterWithName("libraryId").type(SimpleType.INTEGER).description("양의 책장 ID"))
-                        .queryParameters(parameterWithName("page").type(SimpleType.INTEGER).description("생략하면 1, 페이지당 10권").optional())
                         .responseSchema(Schema.schema("ProblemDetail"))
                         .responseFields(PROBLEM_FIELDS)
                         .build())));

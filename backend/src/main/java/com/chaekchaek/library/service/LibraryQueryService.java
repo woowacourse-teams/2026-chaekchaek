@@ -25,8 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
 public class LibraryQueryService {
 
-    private static final int PAGE_SIZE = 10;
-
     private final MemberRepository memberRepository;
     private final LibraryQueryRepository libraryQueryRepository;
 
@@ -66,30 +64,16 @@ public class LibraryQueryService {
         );
     }
 
-    public LibraryDetailResponse findLibrary(long libraryId, int page) {
-        if (page < 1) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
+    public LibraryDetailResponse findLibrary(long libraryId) {
         LibraryHeader library = libraryQueryRepository.findPublicLibraryById(libraryId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.LIBRARY_NOT_FOUND));
-        long totalCount = libraryQueryRepository.countBooksByLibraryId(libraryId);
-        long offset = ((long) page - 1) * PAGE_SIZE;
-        List<LibraryBookDetailResponse> books = libraryQueryRepository.findBooksByLibraryId(
-                libraryId,
-                offset,
-                PAGE_SIZE
-        );
-        Integer nextPage = null;
-        if (offset + books.size() < totalCount && page < Integer.MAX_VALUE) {
-            nextPage = page + 1;
-        }
+        List<LibraryBookDetailResponse> books = libraryQueryRepository.findBooksByLibraryId(libraryId);
         return new LibraryDetailResponse(
                 library.libraryId(),
                 library.memberId(),
                 library.name(),
                 library.isDefault(),
-                totalCount,
-                nextPage,
+                books.size(),
                 books
         );
     }

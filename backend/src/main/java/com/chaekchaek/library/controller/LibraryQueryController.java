@@ -1,7 +1,5 @@
 package com.chaekchaek.library.controller;
 
-import com.chaekchaek.common.exception.BusinessException;
-import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.dto.LibraryCollectionResponse;
 import com.chaekchaek.library.dto.LibraryDetailResponse;
 import com.chaekchaek.library.service.LibraryQueryService;
@@ -27,28 +25,7 @@ public class LibraryQueryController {
     }
 
     @GetMapping("/{libraryId}")
-    public ResponseEntity<LibraryDetailResponse> findLibrary(
-            @PathVariable @Positive long libraryId,
-            @RequestParam(required = false) String page
-    ) {
-        return ResponseEntity.ok(libraryQueryService.findLibrary(libraryId, pageNumber(page)));
-    }
-
-    private int pageNumber(String page) {
-        if (page == null) {
-            return 1;
-        }
-        if (!page.matches("[0-9]+")) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
-        try {
-            int value = Integer.parseInt(page);
-            if (value > 0) {
-                return value;
-            }
-        } catch (NumberFormatException exception) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        }
-        throw new BusinessException(ErrorCode.INVALID_REQUEST);
+    public ResponseEntity<LibraryDetailResponse> findLibrary(@PathVariable @Positive long libraryId) {
+        return ResponseEntity.ok(libraryQueryService.findLibrary(libraryId));
     }
 }
