@@ -59,6 +59,7 @@ export const LibraryPage = () => {
 
   const {
     status: { data: libraryItemsData },
+    refetch: refetchGetLibrary,
   } = useLoadData({
     queryFn: getLibrariesLibraryIdLoadData,
   });
@@ -98,7 +99,18 @@ export const LibraryPage = () => {
         return <ShareLibraryImageDialog onClose={handleCloseDialog} />;
 
       case 'RenameLibraryDialog':
-        return <RenameLibraryDialog onClose={handleCloseDialog} />;
+        return (
+          libraryItemsData && (
+            <RenameLibraryDialog
+              libraryId={Number(libraryId)}
+              name={libraryItemsData?.name}
+              onLibraryRenamed={async () => {
+                await refetchGetLibrary();
+              }}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
       case 'DeleteLibraryDialog':
         return <DeleteLibraryDialog onClose={handleCloseDialog} />;
 
