@@ -1,6 +1,8 @@
 package com.chaekchaek.library.repository;
 
 import com.chaekchaek.library.domain.LibraryBook;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +14,21 @@ public interface LibraryBookRepository extends JpaRepository<LibraryBook, Long> 
     boolean existsByLibraryIdAndBookId(long libraryId, long bookId);
 
     Optional<LibraryBook> findByLibraryIdAndBookId(long libraryId, long bookId);
+
+    @Query("""
+            select distinct p.bookId
+            from LibraryBook p
+            where p.bookId in :bookIds
+              and p.libraryId in (
+                  select l.id
+                  from Library l
+                  where l.memberId = :memberId
+              )
+            """)
+    List<Long> findPlacedBookIdsByMemberIdAndBookIdIn(
+            @Param("memberId") long memberId,
+            @Param("bookIds") Collection<Long> bookIds
+    );
 
     long countByLibraryId(long libraryId);
 
