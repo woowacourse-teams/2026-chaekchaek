@@ -136,6 +136,8 @@ class BookshelfContractTest {
         compose.waitUntil(60_000) {
             automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver")
         }
+        automation.waitForIdle(500, 10_000)
+        assertTrue("시스템 공유 창 유지", automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver"))
         val exported = directory.listFiles()?.singleOrNull { it.name !in previousFiles }
         assertNotNull("이번 공유에서 생성한 PNG", exported)
         val dimensions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
