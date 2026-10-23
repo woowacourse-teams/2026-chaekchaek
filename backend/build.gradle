@@ -696,10 +696,12 @@ tasks.register('verifyOpenApi') {
 
 		def requiredLibraryOperations = [
 			'/api/v1/libraries'                       : ['get': ['200', '400', '404'], 'post': ['201', '400', '401', '403', '409', '422', '500']],
-			'/api/v1/libraries/{libraryId}'           : ['get': ['200', '400', '404'], 'patch': ['204', '400', '401', '403', '404', '409', '500'],
+			'/api/v1/libraries/{libraryId}'           : ['get': ['200', '400', '404'], 'post': ['201', '400', '401', '403', '404', '409', '422', '502'],
+					'patch': ['204', '400', '401', '403', '404', '409', '500'],
 					'delete': ['204', '400', '401', '403', '404', '409']],
 			'/api/v1/libraries/order'                 : ['patch': ['204', '400', '401', '403', '409']],
 			'/api/v1/libraries/{libraryId}/books/order': ['patch': ['204', '400', '401', '403', '404', '409']],
+			'/api/v1/libraries/{libraryId}/books/{bookId}': ['delete': ['204', '400', '401', '403', '404']],
 			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '403', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '403', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '403', '404', '422']],
@@ -868,10 +870,12 @@ tasks.register('verifyOpenApi') {
 
 		def problemResponseCodes = [
 			'/api/v1/libraries'                       : ['get': ['400', '404'], 'post': ['400', '401', '403', '409', '422', '500']],
-			'/api/v1/libraries/{libraryId}'           : ['get': ['400', '404'], 'patch': ['400', '401', '403', '404', '409', '500'],
+			'/api/v1/libraries/{libraryId}'           : ['get': ['400', '404'], 'post': ['400', '401', '403', '404', '409', '422', '502'],
+					'patch': ['400', '401', '403', '404', '409', '500'],
 					'delete': ['400', '401', '403', '404', '409']],
 			'/api/v1/libraries/order'                 : ['patch': ['400', '401', '403', '409']],
 			'/api/v1/libraries/{libraryId}/books/order': ['patch': ['400', '401', '403', '404', '409']],
+			'/api/v1/libraries/{libraryId}/books/{bookId}': ['delete': ['400', '401', '403', '404']],
 			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '403', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '403', '404']],
 			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '403', '404', '422']],
@@ -922,6 +926,15 @@ tasks.register('verifyOpenApi') {
 					'404': ['LIBRARY_NOT_FOUND'],
 					'409': ['LIBRARY_NAME_ALREADY_EXISTS'],
 					'500': ['INTERNAL_SERVER_ERROR']
+				],
+				post: [
+					'400': ['INVALID_REQUEST'],
+					'401': ['UNAUTHORIZED'],
+					'403': ['FORBIDDEN'],
+					'404': ['LIBRARY_NOT_FOUND', 'BOOK_NOT_FOUND'],
+					'409': ['LIBRARY_ITEM_ALREADY_EXISTS', 'LIBRARY_ITEM_LIMIT_EXCEEDED', 'TOTAL_PAGES_CONFLICT'],
+					'422': ['INVALID_READING_STATE'],
+					'502': ['EXTERNAL_API_ERROR']
 				],
 				delete: [
 					'400': ['INVALID_REQUEST'],
@@ -1024,6 +1037,12 @@ tasks.register('verifyOpenApi') {
 				?.get('headers') as Map)?.get('Location') as Map)
 		if ((libraryCreationLocation?.get('schema') as Map)?.get('type') != 'string') {
 			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/libraries 201 response')
+		}
+		def libraryBookAddOperation = (paths.get('/api/v1/libraries/{libraryId}') as Map).get('post') as Map
+		def libraryBookAddLocation = ((((libraryBookAddOperation.get('responses') as Map).get('201') as Map)
+				?.get('headers') as Map)?.get('Location') as Map)
+		if ((libraryBookAddLocation?.get('schema') as Map)?.get('type') != 'string') {
+			throw new GradleException('OpenAPI specification is missing string Location header for POST /api/v1/libraries/{libraryId} 201 response')
 		}
 
 		def libraryQueryParameters = (((paths.get('/api/v1/library') as Map).get('get') as Map)
