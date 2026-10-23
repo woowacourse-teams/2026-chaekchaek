@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { generatePath, Link } from 'react-router-dom';
 
 import styles from './LibrariesPage.module.css';
 
@@ -22,6 +23,8 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { getLibraries } from '@/services/apis/libraries/repository';
 import { useLoadData } from '@/services/core/useLoadData';
+
+import { ROUTES } from '@/constants/routes';
 
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
 
@@ -96,7 +99,15 @@ export const LibrariesPage = () => {
                         sx={{ mt: 6, mb: 5 }}
                         trailing={
                           <>
-                            <Text color="muted">{library.items.length} 권</Text>
+                            <Text
+                              color="muted"
+                              as={Link}
+                              to={generatePath(ROUTES.LIBRARY, {
+                                libraryId: String(library.libraryId),
+                              })}
+                            >
+                              {library.items.length} 권
+                            </Text>
                             <IconButton>
                               <Icon.EllipsisIcon />
                             </IconButton>
@@ -107,7 +118,13 @@ export const LibrariesPage = () => {
                           <Icon.DragHandleIcon />
                         </IconButton>
 
-                        {library.name}
+                        <Link
+                          to={generatePath(ROUTES.LIBRARY, {
+                            libraryId: String(library.libraryId),
+                          })}
+                        >
+                          {library.name}
+                        </Link>
                       </Title>
                       <Showcase>
                         {library.items.map((item) => {
