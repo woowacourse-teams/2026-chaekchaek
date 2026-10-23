@@ -81,10 +81,10 @@ public enum ErrorCode {
             "책장을 찾을 수 없습니다."),
     LIBRARY_NAME_ALREADY_EXISTS(
             "LIBRARY_NAME_ALREADY_EXISTS",
-            "같은 이름의 서재가 있습니다. 다른 이름을 입력해 주세요."),
+            "같은 이름의 책장이 있습니다. 다른 이름을 입력해 주세요."),
     LIBRARY_ITEM_ALREADY_EXISTS(
             "LIBRARY_ITEM_ALREADY_EXISTS",
-            "이미 서재에 등록된 책입니다."),
+            "이미 책장에 담긴 책입니다."),
     LIBRARY_ITEM_LIMIT_EXCEEDED(
             "LIBRARY_ITEM_LIMIT_EXCEEDED",
             "책장에는 최대 30권까지 등록할 수 있습니다."),

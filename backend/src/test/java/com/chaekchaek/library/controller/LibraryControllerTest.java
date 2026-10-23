@@ -107,7 +107,7 @@ class LibraryControllerTest {
             별점만 있는 응답의 status, currentPage, readingUpdatedAt은 null이다. 기존 URI와 응답 필드 구조를 유지한다.
             """;
     private static final String LIBRARY_REMOVE_RATING_SUMMARY = "도서 별점 삭제";
-    private static final String LIBRARY_REMOVE_RATING_DESCRIPTION = "인증된 사용자가 내 서재 도서에 등록한 별점을 삭제한다";
+    private static final String LIBRARY_REMOVE_RATING_DESCRIPTION = "인증된 사용자가 내 별점을 삭제한다";
     private static final String RATING_COMPARISON_SUMMARY = "별점 비교 도서 조회";
     private static final String RATING_COMPARISON_DESCRIPTION = "인증된 사용자가 지금 별점을 주려는 도서를 제외하고 기준 별점과 같거나 낮거나 높은 내 별점 도서를 각각 한 권씩 조회한다";
     private static final FieldDescriptor[] LIBRARY_ITEM_RESPONSE_FIELDS = {
