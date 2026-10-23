@@ -313,6 +313,45 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		libraryRenameResponseDescriptions.each { status, description ->
 			(libraryRenameResponses?.get(status) as Map)?.put('description', description)
 		}
+		def publicLibraryCollection = responseSchemaForPath('/api/v1/libraries', 'get', '200')
+		def publicLibraryShelf = arrayItemSchema(publicLibraryCollection, 'libraries')
+		def publicLibraryPreview = arrayItemSchema(publicLibraryShelf, 'items')
+		def publicLibraryDetail = responseSchemaForPath('/api/v1/libraries/{libraryId}', 'get', '200')
+		def publicLibraryBook = arrayItemSchema(publicLibraryDetail, 'items')
+		markRequiredNullable(publicLibraryPreview, 'spineImageUrl')
+		['spineImageUrl', 'totalPages'].each { name -> markRequiredNullable(publicLibraryBook, name) }
+		[publicLibraryPreview, publicLibraryBook].each { schema ->
+			((schema?.get('properties') as Map)?.get('spineImageUrl') as Map)?.put('format', 'uri')
+			((schema?.get('properties') as Map)?.get('isbn13') as Map)?.put('pattern', '^[0-9]{13}$')
+		}
+		[
+			[schema: publicLibraryCollection, names: ['memberId']],
+			[schema: publicLibraryShelf, names: ['libraryId']],
+			[schema: publicLibraryPreview, names: ['bookId']],
+			[schema: publicLibraryDetail, names: ['libraryId', 'memberId']],
+			[schema: publicLibraryBook, names: ['bookId']]
+		].each { requirement ->
+			requirement.names.each { name ->
+				((requirement.schema?.get('properties') as Map)?.get(name) as Map)
+						?.putAll([type: 'integer', format: 'int64', minimum: 1])
+			}
+		}
+		[publicLibraryShelf, publicLibraryDetail].each { schema ->
+			((schema?.get('properties') as Map)?.get('totalCount') as Map)
+					?.putAll([type: 'integer', format: 'int64', minimum: 0])
+		}
+		['/api/v1/libraries', '/api/v1/libraries/{libraryId}'].each { path ->
+			def name = path.endsWith('}') ? 'libraryId' : 'memberId'
+			(operationParameter(path, 'get', name)?.get('schema') as Map)
+					?.putAll([type: 'integer', format: 'int64', minimum: 1])
+		}
+		((publicLibraryBook?.get('properties') as Map)?.get('currentPage') as Map)
+				?.putAll([type: 'integer', format: 'int32', minimum: 0])
+		((publicLibraryBook?.get('properties') as Map)?.get('totalPages') as Map)
+				?.putAll([type: 'integer', format: 'int32', minimum: 1])
+		((publicLibraryBook?.get('properties') as Map)?.get('coverImageUrl') as Map)?.put('format', 'uri')
+		constrainReadingStatus((publicLibraryBook?.get('properties') as Map)?.get('status') as Map)
+		((publicLibraryBook?.get('properties') as Map)?.get('readingUpdatedAt') as Map)?.put('format', 'date-time')
 
 		['/api/v1/books', '/api/v1/library', '/api/v1/books/{bookId}/reviews',
 		 '/api/v1/reviews/{reviewId}/replies'].each { path ->
@@ -484,6 +523,8 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 					|| path == '/api/v1/books/by-isbn/{isbn13}'
 					|| path == '/api/v1/books/{bookId}/reviews'
 					|| path == '/api/v1/reviews/{reviewId}/replies'
+					|| path == '/api/v1/libraries'
+					|| path == '/api/v1/libraries/{libraryId}'
 		}
 		def memberSecurityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
 		def guestOnlySecurityRequirement = [[guestToken: []]]
@@ -606,8 +647,8 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def requiredLibraryOperations = [
-			'/api/v1/libraries'                       : ['post': ['201', '400', '401', '403', '409', '422', '500']],
-			'/api/v1/libraries/{libraryId}'           : ['patch': ['204', '400', '401', '403', '404', '409', '500'],
+			'/api/v1/libraries'                       : ['get': ['200', '400', '404'], 'post': ['201', '400', '401', '403', '409', '422', '500']],
+			'/api/v1/libraries/{libraryId}'           : ['get': ['200', '400', '404'], 'patch': ['204', '400', '401', '403', '404', '409', '500'],
 					'delete': ['204', '400', '401', '403', '404', '409']],
 			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '403', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '403', '404']],
@@ -737,6 +778,8 @@ tasks.register('verifyOpenApi') {
 					|| path.toString() == '/api/v1/books/by-isbn/{isbn13}'
 					|| path.toString() == '/api/v1/books/{bookId}/reviews'
 					|| path.toString() == '/api/v1/reviews/{reviewId}/replies'
+					|| path.toString() == '/api/v1/libraries'
+					|| path.toString() == '/api/v1/libraries/{libraryId}'
 		}
 		def openApiHttpMethods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as Set
 		paths.each { path, pathItem ->
@@ -774,8 +817,8 @@ tasks.register('verifyOpenApi') {
 		}
 
 		def problemResponseCodes = [
-			'/api/v1/libraries'                       : ['post': ['400', '401', '403', '409', '422', '500']],
-			'/api/v1/libraries/{libraryId}'           : ['patch': ['400', '401', '403', '404', '409', '500'],
+			'/api/v1/libraries'                       : ['get': ['400', '404'], 'post': ['400', '401', '403', '409', '422', '500']],
+			'/api/v1/libraries/{libraryId}'           : ['get': ['400', '404'], 'patch': ['400', '401', '403', '404', '409', '500'],
 					'delete': ['400', '401', '403', '404', '409']],
 			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '403', '404', '409', '422']],
 			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '403', '404']],
@@ -1063,7 +1106,37 @@ tasks.register('verifyOpenApi') {
 				|| (libraryRenameIdParameter?.get('schema') as Map)?.get('minimum') != 1) {
 			throw new GradleException('OpenAPI specification must constrain libraryId to a positive value for PATCH /api/v1/libraries/{libraryId}')
 		}
-
+		def publicCollection = responseSchema('/api/v1/libraries', 'get', '200')
+		def publicShelf = dereferenceSchema(((publicCollection?.get('properties') as Map)?.get('libraries') as Map)?.get('items'))
+		def publicPreview = dereferenceSchema(((publicShelf?.get('properties') as Map)?.get('items') as Map)?.get('items'))
+		def publicDetail = responseSchema('/api/v1/libraries/{libraryId}', 'get', '200')
+		def publicBook = dereferenceSchema(((publicDetail?.get('properties') as Map)?.get('items') as Map)?.get('items'))
+		[
+			[schema: publicCollection, names: ['memberId', 'libraries']],
+			[schema: publicShelf, names: ['libraryId', 'name', 'isDefault', 'totalCount', 'items']],
+			[schema: publicPreview, names: ['bookId', 'title', 'spineImageUrl', 'isbn13']],
+			[schema: publicDetail, names: ['libraryId', 'memberId', 'name', 'isDefault', 'totalCount', 'items']],
+			[schema: publicBook, names: ['bookId', 'title', 'coverImageUrl', 'spineImageUrl', 'isbn13', 'authors', 'totalPages', 'status', 'currentPage', 'readingUpdatedAt']]
+		].each { requirement ->
+			if ((requirement.schema?.get('required') as Set) != (requirement.names as Set)) {
+				throw new GradleException('OpenAPI specification has invalid fields for public library responses')
+			}
+		}
+		if (!requiredNullable(publicPreview, 'spineImageUrl')
+				|| !requiredNullable(publicBook, 'spineImageUrl') || !requiredNullable(publicBook, 'totalPages')
+				|| ((publicShelf?.get('properties') as Map)?.get('name') as Map)?.get('maxLength') != null
+				|| ((publicDetail?.get('properties') as Map)?.get('name') as Map)?.get('maxLength') != null) {
+			throw new GradleException('OpenAPI specification must preserve nullable fields and legacy library names')
+		}
+		def publicAuthors = (publicBook?.get('properties') as Map)?.get('authors') as Map
+		if (publicAuthors?.get('type') != 'array' || (publicAuthors?.get('items') as Map)?.get('type') != 'string'
+				|| ((publicBook?.get('properties') as Map)?.get('coverImageUrl') as Map)?.get('nullable') == true) {
+			throw new GradleException('OpenAPI specification must require cover image and the author name array in library detail')
+		}
+		if (queryParameter('/api/v1/libraries/{libraryId}', 'get', 'page') != null
+				|| (publicDetail?.get('properties') as Map)?.containsKey('nextPage')) {
+			throw new GradleException('OpenAPI library detail must return all books without pagination')
+		}
 		[
 			[path: '/api/v1/books', method: 'get', name: 'page'],
 			[path: '/api/v1/library', method: 'get', name: 'page'],
