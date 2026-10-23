@@ -1,5 +1,8 @@
 package com.chamsae.chaekchaek
 
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -17,7 +20,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
-import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.LibraryRecord
@@ -68,8 +70,12 @@ class BookRatingRestorationTest {
             ),
         )
         var saved: Double? = null
+        var keyboard: SoftwareKeyboardController? = null
+        var rootView: android.view.View? = null
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
+            keyboard = LocalSoftwareKeyboardController.current
+            rootView = LocalView.current
             ChaekchaekTheme {
                 BookDetailScreen(
                     state = state.value,
@@ -80,7 +86,10 @@ class BookRatingRestorationTest {
         }
         compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("별점 복원 검증 감상")
-        closeSoftKeyboard()
+        compose.runOnIdle { keyboard?.hide() }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            rootView?.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime()) != true
+        }
         compose.waitForIdle()
         compose.onNodeWithContentDescription("별점 (선택)").performScrollTo().assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "미선택"),
