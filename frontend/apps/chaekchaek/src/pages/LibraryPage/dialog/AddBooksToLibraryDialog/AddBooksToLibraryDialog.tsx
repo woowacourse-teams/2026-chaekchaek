@@ -55,7 +55,7 @@ export const AddBooksToLibraryDialog = ({
               {
                 text: '내 서재에서',
                 value: 'my-library',
-                panel: <MyLibraryPanel />,
+                panel: <MyLibraryPanel libraryId={libraryId} onSubmit={addBookToLibrary} />,
               },
               {
                 text: '책 검색',

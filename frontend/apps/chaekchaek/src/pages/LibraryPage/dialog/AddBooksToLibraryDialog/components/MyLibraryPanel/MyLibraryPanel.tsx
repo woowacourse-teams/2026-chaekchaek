@@ -1,9 +1,41 @@
-import { Button, Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
-
-import ImgBoxDummyImg1 from '../../../../../../../../../packages/design-system/src/components/ImgBox/imgs/dummy.png';
+import { useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
-export const MyLibraryPanel = () => {
+import { Button, Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
+
+import { getLibraries } from '@/services/apis/libraries/repository';
+
+import { useLoadData } from '@/services/core/useLoadData';
+
+import type { MyLibraryPanelProps } from './MyLibraryPanel.types';
+
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
+export const MyLibraryPanel = ({ libraryId }: MyLibraryPanelProps) => {
+  const { user } = useAuthContext();
+
+  const getLibrariesLoadData = useCallback(async () => {
+    if (!user?.memberId) return;
+    return await getLibraries({ memberId: user?.memberId });
+  }, [user?.memberId]);
+
+  const {
+    status: { data: librariesData },
+  } = useLoadData({
+    queryFn: getLibrariesLoadData,
+  });
+
+  const filteredLibraries = librariesData?.libraries.filter(
+    (library) => library.libraryId !== libraryId,
+  );
+
+  const filteredBooks = [
+    ...new Map(
+      filteredLibraries?.flatMap((library) => library.items).map((item) => [item.isbn13, item]) ??
+        [],
+    ).values(),
+  ];
+
   return (
     <>
       <Input
@@ -15,34 +47,25 @@ export const MyLibraryPanel = () => {
 
       <ScrollArea height="340px">
         <List>
-          {Array.from({ length: 10 }).map(() => {
-            const item = {
-              bookId: 1,
-              isbn13: '',
-              coverImageUrl: ImgBoxDummyImg1,
-              title: 'Title Title Title Title Title Title',
-              authors: ['author1', 'author2'],
-            };
-
+          {filteredBooks?.map((item) => {
             return (
               <List.Item key={item.bookId}>
                 <List.Item.Leading>
                   <Link to={`/books/${item.isbn13}`}>
-                    <ImgBox img={item.coverImageUrl} size="x-small" />
+                    {/* <ImgBox img={item.coverImageUrl} size="x-small" /> */}
                   </Link>
                 </List.Item.Leading>
                 <List.Item.Content
                   ellipsis
                   title={<>{item.title}</>}
-                  content={item.authors.join(' · ')}
+                  // content={item.authors.join(' · ')}
                 />
-                <List.Item.Trailing>담긴 책</List.Item.Trailing>
               </List.Item>
             );
           })}
         </List>
       </ScrollArea>
-      <Button block variant="primary">
+      <Button block variant="primary" onClick={() => {}}>
         담기
       </Button>
     </>
