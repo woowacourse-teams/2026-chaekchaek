@@ -1884,7 +1884,7 @@ class BookDetailViewModelTest {
       vm.open(book().copy(isbn13 = "9780000000042"), "member")
       awaitReal { vm.uiState.first { it.detail?.myRecord != null } }
       vm.removeFromLibrary(42)
-      awaitReal { vm.uiState.first { it.detail?.myRating == 4.0 && !it.isLoading } }
+      awaitReal { vm.uiState.first { removed && it.detail?.isRegisteredInMyLibrary == false && !it.isLoading } }
       assertNull(vm.uiState.value.detail?.myRecord)
       assertFalse(vm.uiState.value.detail!!.isRegisteredInMyLibrary)
       assertEquals(4.0, vm.uiState.value.detail?.myRating)
