@@ -65,14 +65,11 @@ describe('LibrariesPage', () => {
     renderProvider(<LibrariesPage />, { auth: defaultLoggedAuthContextValue });
 
     // 1. 책장 추가 버튼 클릭
-    // 추가 버튼에 접근 가능한 이름이 없어 페이지 제목 영역 안에서 조회한다.
-    const titleArea = screen.getByText('나의 책장').parentElement!.parentElement!;
-    await user.click(within(titleArea).getByRole('button'));
+    await user.click(screen.getByRole('button', { name: '책장 추가' }));
 
     // 2. 책장 추가 팝업 표시 확인
-    expect(screen.getByText('새 책장 만들기')).toBeVisible();
-    // 팝업의 dialog 역할과 입력 필드의 label 연결이 없어 표시된 팝업 안에서 조회한다.
-    const popup = screen.getByText('새 책장 만들기').closest<HTMLElement>('.ui-Dialog-Container')!;
+    const popup = screen.getByRole('dialog', { name: '새 책장 만들기' });
+    expect(popup).toBeVisible();
     expect(within(popup).getByText('책장 이름')).toBeVisible();
 
     // 3. 책장 이름 입력 후 추가 버튼 클릭
