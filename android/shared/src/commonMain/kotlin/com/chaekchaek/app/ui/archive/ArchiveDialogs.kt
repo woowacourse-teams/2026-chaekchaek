@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -86,8 +88,8 @@ private fun DialogDismissButton(onClick: () -> Unit) {
 }
 
 @Composable
-private fun DialogConfirmButton(label: String, onClick: () -> Unit, enabled: Boolean = true) {
-    ChaekOverlayButton(label, onClick, enabled = enabled)
+private fun DialogConfirmButton(label: String, onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
+    ChaekOverlayButton(label, onClick, enabled = enabled, modifier = modifier)
 }
 
 @Composable
@@ -126,14 +128,16 @@ private fun StatusOptionRow(status: ReadingStatus, selected: Boolean, onClick: (
 @Composable
 internal fun NicknameDialog(
     nicknameState: TextFieldState,
-    onDismiss: () -> Unit,
+    onDismiss: (() -> Unit)?,
     onConfirm: () -> Unit,
+    saving: Boolean = false,
 ) {
     val nickname = nicknameState.text.toString()
     val errors = androidx.compose.runtime.remember { com.chaekchaek.app.presentation.common.ErrorRecoveryState() }
     com.chaekchaek.app.ui.common.ErrorRecoveryEffect(errors)
     ChaekTwoActionDialog(
         onDismissRequest = onDismiss,
+        dismissButton = if (onDismiss == null) null else ({ DialogDismissButton(onDismiss) }),
         title = { Text("닉네임 설정", style = MaterialTheme.typography.titleMedium) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -143,14 +147,15 @@ internal fun NicknameDialog(
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Text("닉네임", style = MaterialTheme.typography.labelMedium)
-                NicknameInput(nicknameState)
+                NicknameInput(nicknameState, readOnly = saving)
                 Text("공백이 아닌 최대 10자", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }
         },
-        dismissButton = { DialogDismissButton(onDismiss) },
         confirmButton = {
             DialogConfirmButton(
-                label = "확인",
+                label = if (saving) "저장 중" else "확인",
+                modifier = Modifier.semantics { contentDescription = if (saving) "저장 중" else "확인" },
+                enabled = !saving,
                 onClick = {
                     if (Nickname.isValid(nickname.trim())) onConfirm()
                     else errors.confirm("공백이 아닌 최대 10자의 닉네임을 입력해 주세요.")
@@ -163,7 +168,7 @@ internal fun NicknameDialog(
 internal val NicknameInputPolicy = TextInputPolicy(Nickname.MAX_LENGTH, utf16 = true)
 
 @Composable
-private fun NicknameInput(nicknameState: TextFieldState) {
+private fun NicknameInput(nicknameState: TextFieldState, readOnly: Boolean = false) {
     val nickname = nicknameState.text.toString()
     Row(
         modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp).background(MaterialTheme.colorScheme.surfaceVariant, ChaekOverlayTokens.inputShape).padding(horizontal = 12.dp),
@@ -172,7 +177,8 @@ private fun NicknameInput(nicknameState: TextFieldState) {
     ) {
         BasicTextField(
             state = nicknameState,
-            modifier = Modifier.weight(1f),
+            readOnly = readOnly,
+            modifier = Modifier.weight(1f).semantics { contentDescription = "닉네임 입력" },
             inputTransformation = NicknameInputPolicy.inputTransformation,
             lineLimits = TextFieldLineLimits.SingleLine,
             textStyle = MaterialTheme.typography.bodyMedium.copy(

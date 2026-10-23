@@ -95,6 +95,32 @@ final class QuestionAPreviewUITests: XCTestCase {
     }
 
     @MainActor
+    func testAnonymousSettingUsesMyPageCopyAndUpdatesImmediately() throws {
+        let app = launchPreview()
+        let compose = app.buttons["questionReviewOpen"]
+        reveal(compose, in: app)
+        compose.tap()
+        let anonymous = app.descendants(matching: .any).matching(identifier: "reviewAnonymousSetting").firstMatch
+        reveal(anonymous, in: app)
+        XCTAssertTrue(anonymous.label.contains("익명으로 감상 공개"), anonymous.debugDescription)
+        XCTAssertTrue((anonymous.value as? String)?.contains("익명") == true, anonymous.debugDescription)
+        let checkedHelp = app.staticTexts["해제하면 기존 닉네임으로 공개됩니다"]
+        reveal(checkedHelp, in: app)
+        XCTAssertTrue(checkedHelp.exists)
+        reveal(anonymous, in: app, scrollingUp: false)
+        anonymous.tap()
+        XCTAssertTrue((anonymous.value as? String)?.contains("닉네임 공개") == true, anonymous.debugDescription)
+        let uncheckedHelp = app.staticTexts["닉네임이 감상에 표시됩니다"]
+        reveal(uncheckedHelp, in: app)
+        XCTAssertTrue(uncheckedHelp.exists)
+        attachScreenshot(named: "마이페이지와 동일한 익명 공개 설정")
+        reveal(anonymous, in: app, scrollingUp: false)
+        anonymous.tap()
+        XCTAssertTrue((anonymous.value as? String)?.contains("익명") == true, anonymous.debugDescription)
+        XCTAssertTrue(checkedHelp.exists)
+    }
+
+    @MainActor
     func testSaveFailureKeepsDraftAndUnselectedRating() throws {
         let app = launchPreview()
         element("저장 실패", in: app).tap()
@@ -105,6 +131,12 @@ final class QuestionAPreviewUITests: XCTestCase {
         XCTAssertTrue(content.waitForExistence(timeout: 5))
         content.tap()
         content.typeText("Question A failed draft")
+        let anonymous = app.descendants(matching: .any).matching(identifier: "reviewAnonymousSetting").firstMatch
+        reveal(anonymous, in: app)
+        XCTAssertTrue((anonymous.value as? String)?.contains("익명") == true, anonymous.debugDescription)
+        anonymous.tap()
+        XCTAssertTrue((anonymous.value as? String)?.contains("닉네임 공개") == true, anonymous.debugDescription)
+
         let quote = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "인상 깊은 문구 (선택)")).firstMatch
         reveal(quote, in: app)
         quote.tap()
@@ -123,6 +155,8 @@ final class QuestionAPreviewUITests: XCTestCase {
         let rating = app.otherElements.matching(NSPredicate(format: "label == %@ AND value != nil", "별점 (선택)")).firstMatch
         reveal(rating, in: app)
         XCTAssertTrue((rating.value as? String)?.contains("미선택") == true, rating.debugDescription)
+        reveal(anonymous, in: app)
+        XCTAssertTrue((anonymous.value as? String)?.contains("닉네임 공개") == true, anonymous.debugDescription)
         attachScreenshot(named: "저장 실패 뒤 미선택과 본문 문구 보존")
     }
 

@@ -73,21 +73,7 @@ internal fun LoginRequiredSheet(
                     )
                 }
             } else {
-                Surface(
-                    onClick = onGoogleSignIn,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    enabled = !signingIn,
-                    shape = RoundedCornerShape(8.dp),
-                    color = ChaekInk,
-                ) {
-                    Text(
-                        if (signingIn) "로그인 중..." else "Google로 계속하기",
-                        modifier = Modifier.padding(vertical = 14.dp),
-                        color = ChaekSurface,
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelLarge,
-                    )
-                }
+                GoogleSignInButton(signingIn, onGoogleSignIn, Modifier.fillMaxWidth().padding(top = 8.dp))
             }
             if (skipLabel != null && onSkip != null) {
                 ChaekOverlayButton(skipLabel, onSkip, secondary = true)

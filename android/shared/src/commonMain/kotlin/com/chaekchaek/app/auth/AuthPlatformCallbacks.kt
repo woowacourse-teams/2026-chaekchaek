@@ -11,6 +11,8 @@ class AuthPlatformCallbacks(
   val readGuest: () -> GuestAuth? = { null },
   val writeGuest: (GuestAuth) -> Unit = {},
   val clearGuest: () -> Unit = {},
+  val readAnonymousReviews: () -> Boolean? = { null },
+  val writeAnonymousReviews: (Boolean) -> Unit = {},
 )
 
 data class GuestAuth(

@@ -38,9 +38,9 @@ internal fun ChaekOneActionDialog(
 
 @Composable
 internal fun ChaekTwoActionDialog(
-    onDismissRequest: () -> Unit,
+    onDismissRequest: (() -> Unit)?,
     confirmButton: @Composable () -> Unit,
-    dismissButton: @Composable () -> Unit,
+    dismissButton: @Composable (() -> Unit)?,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
 ) = ChaekAlertDialog(onDismissRequest, confirmButton, dismissButton, title, text)

@@ -62,6 +62,12 @@ class MemberSettingsViewModel(
         }
     }
 
+    fun updateNickname(nickname: String) {
+        val settings = PendingMemberSettings(_uiState.value.anonymousReviews, nickname.trim())
+        pendingSettings = settings
+        save(settings)
+    }
+
     fun setAnonymousReviews(anonymous: Boolean, nickname: String = "") {
         val settings = PendingMemberSettings(anonymous, nickname.trim())
         pendingSettings = settings
@@ -113,7 +119,7 @@ class MemberSettingsViewModel(
         requestJob?.cancel()
         requestJob = viewModelScope.launch {
             withDelayedLoading(::setLoading) {
-                if (!settings.anonymous && settings.nickname != _uiState.value.nickname) {
+                if (settings.nickname.isNotBlank() && settings.nickname != _uiState.value.nickname) {
                     applyProfile(repository.updateNickname(settings.nickname, token), token)
                 }
                 if (settings.anonymous != _uiState.value.anonymousReviews) {
