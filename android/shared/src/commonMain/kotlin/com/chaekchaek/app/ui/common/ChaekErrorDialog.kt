@@ -50,9 +50,11 @@ internal fun ErrorRecoveryHost(auth: AuthViewModel, content: @Composable () -> U
         content()
         ErrorRecoveryEffect(auth.errors)
         authenticating?.let { (owner, id) ->
+            val originalMemberId = auth.memberIdFor(auth.tokens.value?.accessToken)
             val resume: suspend (String) -> Unit = { token ->
                 authenticating = null
-                if (owner in sources.states) owner.takeRecovery(id)?.invoke(token)
+                if (originalMemberId != null && auth.memberIdFor(token) != originalMemberId) owner.dismiss(id)
+                else if (owner in sources.states) owner.takeRecovery(id)?.invoke(token)
             }
             LoginRequiredSheet(
                 signingIn = authState.signingIn,

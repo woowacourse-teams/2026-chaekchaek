@@ -655,7 +655,7 @@ class BookDetailViewModelTest {
       BookDetailSavedStateKeys.Opened to true,
       BookDetailSavedStateKeys.LoadedPage to 2,
       BookDetailSavedStateKeys.ReviewScope to ReviewScope.MINE.name,
-      BookDetailSavedStateKeys.ReviewSort to ReviewSort.PAGE.name,
+      BookDetailSavedStateKeys.ReviewSort to "PAGE",
     ))
     val viewModel = viewModel(client, client, platform({ null }), savedStateHandle = savedState)
     val target = book().copy(isbn13 = "9780000000042")
@@ -668,7 +668,7 @@ class BookDetailViewModelTest {
     awaitReal { while (requestedPages.size < 4) kotlinx.coroutines.yield() }
     viewModel.open(target, "member-after-recreation")
     assertEquals(ReviewScope.MINE, viewModel.uiState.value.reviewScope)
-    assertEquals(ReviewSort.PAGE, viewModel.uiState.value.reviewSort)
+    assertEquals(ReviewSort.POPULAR, viewModel.uiState.value.reviewSort)
     assertEquals(2, savedState.get<Int>(BookDetailSavedStateKeys.LoadedPage))
 
     viewModel.signOut()
@@ -733,19 +733,19 @@ class BookDetailViewModelTest {
     val savedStateHandle = SavedStateHandle(
       mapOf(
         BookDetailSavedStateKeys.ReviewScope to ReviewScope.MINE.name,
-        BookDetailSavedStateKeys.ReviewSort to ReviewSort.PAGE.name,
+        BookDetailSavedStateKeys.ReviewSort to "PAGE",
       ),
     )
     val first = viewModel(client, client, platform(readGuest = { null }), savedStateHandle = savedStateHandle)
 
     assertEquals(ReviewScope.MINE, first.uiState.value.reviewScope)
-    assertEquals(ReviewSort.PAGE, first.uiState.value.reviewSort)
+    assertEquals(ReviewSort.POPULAR, first.uiState.value.reviewSort)
     assertFalse(first.requestAuthentication(BookDetailAuthenticatedAction.AddToLibrary))
 
     val restored = viewModel(client, client, platform(readGuest = { null }), savedStateHandle = savedStateHandle)
 
     assertEquals(ReviewScope.MINE, restored.uiState.value.reviewScope)
-    assertEquals(ReviewSort.PAGE, restored.uiState.value.reviewSort)
+    assertEquals(ReviewSort.POPULAR, restored.uiState.value.reviewSort)
     assertNull(restored.uiState.value.pendingAction)
   }
 
@@ -927,7 +927,7 @@ class BookDetailViewModelTest {
     assertEquals(listOf(8L), viewModel.uiState.value.reviews.map { it.reviewId })
     assertEquals(2, viewModel.uiState.value.nextReviewPage)
     assertFalse(viewModel.uiState.value.isLoading)
-    assertEquals(if (changeSort) "OLDEST" else "LATEST", requestedSorts.last())
+    assertEquals(if (changeSort) "OLDEST" else "POPULAR", requestedSorts.last())
     assertEquals(if (changeSort) 0 else 1, likes)
 
     viewModel.loadMoreReviews()
