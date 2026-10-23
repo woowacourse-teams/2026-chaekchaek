@@ -34,7 +34,7 @@ class BookRegistrationViewModel private constructor(
     private val addBook: suspend (isbn13: String, totalPages: Int?, accessToken: String) -> Unit,
     private val analytics: AnalyticsTracker,
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(analytics.errors)
     internal constructor(
         addBook: suspend (isbn13: String, totalPages: Int?, accessToken: String) -> Unit,
     ) : this(addBook, AnalyticsTracker.None)

@@ -30,7 +30,7 @@ R8은 보안 경계가 아니다. APK에 들어간 문자열, `BuildConfig` 값,
 - `release`는 `isMinifyEnabled = true`, `isShrinkResources = true`로 R8을 실행한다.
 - Firebase Crashlytics SDK와 Firebase BoM은 `releaseImplementation`으로만 포함한다.
 - Crashlytics Gradle plugin은 release mapping 파일을 자동 업로드한다.
-- `firebase_crashlytics_collection_enabled=true`로 release 앱의 자동 수집을 요청한다.
+- 2026-10-23 PostHog Error Tracking 통합에 따라 `firebase_crashlytics_collection_enabled=false`로 Crashlytics 자동 수집을 중지한다. 기존 SDK와 mapping 업로드 구성은 유지한다. 현재 오류 추적 계약은 [모바일 계측 계획](mobile-analytics-event-plan.md#9-사용자-오류-추적-2026-10-23)을 따른다. PostHog용 mapping 업로드와 배포본 스택 복원은 아직 미검증이다.
 - release용 실제 `android/app/google-services.json`은 Git에서 제외한다.
 - debug는 Firebase SDK를 포함하지 않으며, 빌드만 가능한 자리표시자
   `google-services.json`을 둔다.

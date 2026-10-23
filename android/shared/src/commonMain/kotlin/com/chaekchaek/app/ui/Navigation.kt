@@ -99,7 +99,7 @@ internal fun AppNavigation(
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit = {},
 ) {
-    val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform) }
+    val authViewModel = remember(authPlatform) { AuthViewModel(authPlatform, errorReporter = analytics.errors) }
     DisposableEffect(authViewModel) { onDispose(authViewModel::close) }
     ErrorRecoveryHost(authViewModel) {
         AppNavigationContent(authPlatform, recentSearchStorage, onboardingStorage, analytics, uiTestingMyPage, homeHeaderAction, onExitRequested, authViewModel)
@@ -137,6 +137,9 @@ private fun AppNavigationContent(
             onAnonymousReviewsChange = { anonymous, nickname ->
                 previewState = previewState.copy(anonymousReviews = anonymous, nickname = nickname)
             },
+            onNicknameChange = { nickname ->
+                previewState = previewState.copy(nickname = nickname, saveRevision = previewState.saveRevision + 1)
+            },
             onSignOut = {},
             onWithdraw = {},
             modifier = safeContent,
@@ -146,8 +149,11 @@ private fun AppNavigationContent(
     val authTokens by authViewModel.tokens.collectAsState()
     val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
+    LaunchedEffect(analytics, authTokens?.accessToken) {
+        analytics.updateAuthentication(authTokens != null)
+    }
     val onboardingViewModel: FirstLibraryOnboardingViewModel = viewModel {
-        FirstLibraryOnboardingViewModel(initiallyVisible = shouldShowFirstLibraryOnboarding(onboardingStorage))
+        FirstLibraryOnboardingViewModel(initiallyVisible = shouldShowFirstLibraryOnboarding(onboardingStorage), errorReporter = analytics.errors)
     }
     val onboardingState by onboardingViewModel.state.collectAsState()
     val showOnboarding = onboardingState.visible
@@ -164,14 +170,21 @@ private fun AppNavigationContent(
             showOnboardingLogin = false
             onboardingViewModel.finish()
         }
+        LaunchedEffect(onboardingState.step) {
+            analytics.screenView("onboarding_${onboardingState.step.name.lowercase()}")
+        }
         val skipOnboarding = {
+            analytics.log("cc_onboarding_exit", strings = mapOf("outcome" to "skipped"), longs = mapOf("selected_count" to onboardingState.selectedBooks.size.toLong()))
             authViewModel.clearError()
             authViewModel.cancelPendingAuthentication()
             onboardingViewModel.cancelPendingWork()
             completeOnboarding()
         }
         LaunchedEffect(onboardingState.saveCompleted) {
-            if (onboardingState.saveCompleted) completeOnboarding()
+            if (onboardingState.saveCompleted) {
+                analytics.log("cc_onboarding_exit", strings = mapOf("outcome" to "completed"), longs = mapOf("selected_count" to onboardingState.selectedBooks.size.toLong()))
+                completeOnboarding()
+            }
         }
         val saveSelectedBooks = {
             val token = authTokens?.accessToken
@@ -196,7 +209,13 @@ private fun AppNavigationContent(
             onBack = returnToPreviousStep,
             onQueryChange = onboardingViewModel::updateQuery,
             onSearch = { onboardingViewModel.search() },
-            onToggleBook = onboardingViewModel::toggle,
+            onToggleBook = { book ->
+                analytics.log("cc_onboarding_selection", strings = buildMap {
+                    com.chaekchaek.app.analytics.analyticsBookKey(book.isbn13, null)?.let { put("book_key", it) }
+                    put("effect", if (onboardingState.selectedBooks.any { it.isbn13 == book.isbn13 }) "removed" else "added")
+                })
+                onboardingViewModel.toggle(book)
+            },
             onReviewSelection = onboardingViewModel::reviewSelection,
             onLogin = saveSelectedBooks,
             onRetrySave = saveSelectedBooks,
@@ -218,6 +237,7 @@ private fun AppNavigationContent(
                 onAppleSignIn = {
                     authViewModel.clearError()
                     authViewModel.requireAppleAuthentication { token ->
+                        analytics.updateAuthentication(true)
                         showOnboardingLogin = false
                         onboardingViewModel.save(token)
                     }
@@ -225,6 +245,7 @@ private fun AppNavigationContent(
                 onGoogleSignIn = {
                     authViewModel.clearError()
                     authViewModel.requireAuthentication { token ->
+                        analytics.updateAuthentication(true)
                         showOnboardingLogin = false
                         onboardingViewModel.save(token)
                     }
@@ -255,7 +276,7 @@ private fun AppNavigationContent(
             isSaved = { isbn -> archiveViewModel.uiState.value.items.any { it.id == isbn } },
         )
     }
-    val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository) }
+    val memberSettingsViewModel = remember { MemberSettingsViewModel(memberRepository, errorReporter = analytics.errors) }
     ErrorRecoveryEffect(registrationViewModel.errors)
     ErrorRecoveryEffect(archiveViewModel.errors)
     ErrorRecoveryEffect(librarySaveViewModel.errors)
@@ -264,9 +285,14 @@ private fun AppNavigationContent(
     val archiveState by archiveViewModel.uiState.collectAsState()
     val librarySaveState by librarySaveViewModel.uiState.collectAsState()
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
+    var anonymousReviewsOverride by remember(authPlatform) { mutableStateOf(authPlatform.readAnonymousReviews()) }
+    val anonymousReviews = anonymousReviewsOverride ?: memberSettingsState.anonymousReviews
+    val updateAnonymousReviews: (Boolean) -> Unit = { value ->
+        authPlatform.writeAnonymousReviews(value)
+        anonymousReviewsOverride = value
+    }
     LaunchedEffect(authTokens?.accessToken) {
         val accessToken = authTokens?.accessToken
-        analytics.updateAuthentication(accessToken != null)
         homeViewModel.authenticate(accessToken)
         registrationViewModel.authenticate(accessToken)
         archiveViewModel.authenticate(accessToken)
@@ -303,6 +329,7 @@ private fun AppNavigationContent(
                             savedStateHandle = createSavedStateHandle(),
                             initialAccessToken = authTokens?.accessToken,
                             deferInitialLoad = restoringAuthentication,
+                            analytics = analytics,
                         )
                     }
                     feedViewModel.attachActions(
@@ -347,11 +374,15 @@ private fun AppNavigationContent(
                     )
                 }
                 entry<MyPageKey> {
-                    LaunchedEffect(Unit) { analytics.screenView("my_page") }
+                    LaunchedEffect(Unit) { analytics.screenView("my_page"); memberSettingsViewModel.retry() }
                     MyPageScreen(
-                        state = memberSettingsState,
+                        state = memberSettingsState.copy(anonymousReviews = anonymousReviews),
                         onBack = { backStack.popDestinationIfCurrent(MyPageKey) },
-                        onAnonymousReviewsChange = memberSettingsViewModel::setAnonymousReviews,
+                        onNicknameChange = memberSettingsViewModel::updateNickname,
+                        onAnonymousReviewsChange = { anonymous, nickname ->
+                            updateAnonymousReviews(anonymous)
+                            memberSettingsViewModel.setAnonymousReviews(anonymous, nickname)
+                        },
                         onSignOut = {
                             authViewModel.signOut {
                                 backStack.popDestinationIfCurrent(MyPageKey)
@@ -417,10 +448,10 @@ private fun AppNavigationContent(
                         savedToLibrary = savedBookId != null,
                         externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
                         externalLibraryLoading = librarySaveState.showLoading,
-                        anonymousReviews = memberSettingsState.anonymousReviews,
+                        anonymousReviews = anonymousReviews,
+                        onAnonymousReviewsChange = updateAnonymousReviews,
                         nickname = if (state.signedIn) {
-                            if (memberSettingsState.anonymousReviews) memberSettingsState.anonymousNickname
-                            else memberSettingsState.nickname
+                            memberSettingsState.nickname
                         } else {
                             state.guestNickname.orEmpty()
                         },
@@ -474,7 +505,7 @@ private fun AppNavigationContent(
                         errorRecovery = viewModel.errors,
                         onReviewCreate = viewModel::createReview,
                         onQuestionAReviewCreate = { draft ->
-                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)
+                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry, anonymous = draft.anonymous)
                         },
                         onQuestionAReviewUpdate = { reviewId, draft, request ->
                             viewModel.updateReviewWithRating(reviewId, request, draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)

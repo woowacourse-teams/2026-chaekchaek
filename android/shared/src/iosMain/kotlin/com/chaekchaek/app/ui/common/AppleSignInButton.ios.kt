@@ -70,7 +70,8 @@ internal actual fun GoogleSignInButton(
                 )
             }
         },
-        modifier = modifier.height(48.dp),
+        // 네이티브 버튼뿐 아니라 Compose의 투명 cut-out도 같은 모서리로 자른다.
+        modifier = modifier.height(48.dp).clip(RoundedCornerShape(8.dp)),
         update = { it.enabled = !signingIn },
         properties = UIKitInteropProperties(isNativeAccessibilityEnabled = true),
     )

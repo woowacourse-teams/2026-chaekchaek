@@ -36,7 +36,7 @@ class LibrarySaveViewModel(
     private val analytics: AnalyticsTracker = AnalyticsTracker.None,
     private val isSaved: (String) -> Boolean = { false },
 ) : ViewModel() {
-    val errors = ErrorRecoveryState()
+    val errors = ErrorRecoveryState(analytics.errors)
     private val state = MutableStateFlow(LibrarySaveUiState())
     val uiState = state.asStateFlow()
     private val completedSaves = MutableSharedFlow<SavedLibraryBook>(extraBufferCapacity = 1)

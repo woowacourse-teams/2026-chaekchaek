@@ -19,7 +19,9 @@ enum class ErrorOperation(val failureTitle: String) {
 
 data class ErrorNotice(val id: Long, val title: String, val message: String, val action: ErrorAction)
 
-class ErrorRecoveryState {
+class ErrorRecoveryState(
+    private val errorReporter: com.chaekchaek.app.analytics.UserErrorReporter = com.chaekchaek.app.analytics.UserErrorReporter.None,
+) {
     private val state = MutableStateFlow<ErrorNotice?>(null)
     val notice = state.asStateFlow()
     private var revision = 0L
@@ -31,6 +33,7 @@ class ErrorRecoveryState {
         retry: ((freshAccessToken: String?) -> Unit)? = null,
     ) {
         if (error is CancellationException) throw error
+        errorReporter.report(error, operation.name)
         val status = (error as? ResponseException)?.response?.status?.value
             ?: (error as? MobileLoginException)?.statusCode
         val action = when {

@@ -67,6 +67,17 @@ internal fun ErrorRecoveryHost(auth: AuthViewModel, content: @Composable () -> U
                 onGoogleSignIn = { auth.requireAuthentication(force = true, action = resume) },
             )
         }
+        if (authState.requiresNickname) {
+            val nickname = com.chaekchaek.app.ui.input.rememberLimitedTextFieldState(
+                com.chaekchaek.app.ui.archive.NicknameInputPolicy,
+            )
+            com.chaekchaek.app.ui.archive.NicknameDialog(
+                nicknameState = nickname,
+                onDismiss = null,
+                saving = authState.savingNickname,
+                onConfirm = { auth.saveNickname(nickname.text.toString()) },
+            )
+        }
         val active = sources.states.map { owner ->
             val notice = key(owner) { owner.notice.collectAsState().value }
             owner to notice

@@ -13,7 +13,9 @@ import androidx.compose.ui.platform.LocalContext
 import com.chamsae.chaekchaek.auth.RefreshTokenStore
 import com.chamsae.chaekchaek.auth.requestGoogleIdToken
 import com.chamsae.chaekchaek.search.RecentSearchPreferences
+import com.chaekchaek.app.analytics.AnalyticsEventDispatcher
 import com.chaekchaek.app.analytics.AnalyticsTracker
+import com.chaekchaek.app.analytics.AnalyticsCollectionController
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.ui.App
 import com.chaekchaek.app.ui.search.RecentSearchStorage
@@ -30,6 +32,7 @@ abstract class ChaekchaekActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        PostHogAnalyticsEventLogger.configure(applicationContext)
         enableEdgeToEdge()
         setContent {
             val context = LocalContext.current
@@ -46,11 +49,24 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                     }
                 }
             }
-            val analytics = remember(context, analyticsEnvironment) {
+            val collection = remember(context) {
+                val preferences = context.getSharedPreferences("analytics_collection", MODE_PRIVATE)
+                val seed = preferences.getString("sampling_seed", null) ?: java.util.UUID.randomUUID().toString().also {
+                    preferences.edit().putString("sampling_seed", it).apply()
+                }
+                AnalyticsCollectionController(
+                    readCachedPolicy = { preferences.getString("policy", null) },
+                    writeCachedPolicy = { preferences.edit().putString("policy", it).apply() },
+                    samplingSeed = seed,
+                )
+            }
+            val analytics = remember(context, analyticsEnvironment, collection) {
                 val logger = FirebaseAnalyticsEventLogger(FirebaseAnalytics.getInstance(context))
                 AnalyticsTracker(
                     environment = analyticsEnvironment,
-                    sink = logger::log,
+                    errorSink = PostHogAnalyticsEventLogger::captureUserError,
+                    collection = collection,
+                    sink = AnalyticsEventDispatcher(logger::log, PostHogAnalyticsEventLogger::log)::log,
                 )
             }
             val authPlatform = remember(context, scope, tokenStore) {
@@ -71,11 +87,19 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                     readGuest = tokenStore::readGuest,
                     writeGuest = tokenStore::writeGuest,
                     clearGuest = tokenStore::clearGuest,
+                    readAnonymousReviews = {
+                        val preferences = context.getSharedPreferences("review_preferences", MODE_PRIVATE)
+                        if (preferences.contains("anonymous")) preferences.getBoolean("anonymous", true) else null
+                    },
+                    writeAnonymousReviews = { value ->
+                        context.getSharedPreferences("review_preferences", MODE_PRIVATE).edit().putBoolean("anonymous", value).apply()
+                    },
                 )
             }
             App(
                 authPlatform = authPlatform,
                 analytics = analytics,
+                refreshAnalyticsConfiguration = { PostHogAnalyticsEventLogger.refreshCollectionPolicy(collection) },
                 homeHeaderAction = { HomeHeaderAction() },
                 onExitRequested = { finish() },
                 recentSearchStorage = RecentSearchStorage(
