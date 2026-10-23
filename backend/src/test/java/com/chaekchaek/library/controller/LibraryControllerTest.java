@@ -106,24 +106,24 @@ class LibraryControllerTest {
             기존 별점은 유지한다.
             """;
     private static final String LIBRARY_LIST_SUMMARY = "내 서재 조회";
-    private static final String LIBRARY_LIST_DESCRIPTION = "인증된 사용자가 읽기 상태와 정렬 기준으로 회원 단위의 기존 서재 도서 목록을 조회한다";
+    private static final String LIBRARY_LIST_DESCRIPTION = "인증된 사용자가 기본 책장에 배치된 도서를 기존 읽기 상태와 정렬 기준으로 조회한다. 기본 책장이 없으면 빈 목록을 반환한다";
     private static final String PUBLIC_LIBRARY_LIST_SUMMARY = "사용자 공개 서재 조회";
     private static final String PUBLIC_LIBRARY_LIST_DESCRIPTION = """
-            비로그인 사용자를 포함한 모든 사용자가 활성 회원의 공개 서재를 조회한다.
+            비로그인 사용자를 포함한 모든 사용자가 활성 회원의 기본 책장에 배치된 도서를 조회한다. 기본 책장이 없으면 빈 목록을 반환한다.
             `page`는 1부터 시작하며 한 페이지에 최대 10개를 반환한다. 마지막 페이지의 `nextPage`는 `null`이다.
             필터 결과나 서재가 비어 있으면 200 응답과 빈 `items`를 반환한다.
             존재하지 않거나 탈퇴·정지된 회원의 서재는 `LIBRARY_NOT_FOUND`를 반환한다.
             """;
     private static final String LIBRARY_ADD_SUMMARY = "내 서재에 도서 추가";
-    private static final String LIBRARY_ADD_DESCRIPTION = "인증된 사용자가 ISBN-13으로 도서를 조회해 회원 단위의 기존 서재 항목으로 추가한다. 특정 서재를 선택하는 입력은 받지 않는다";
+    private static final String LIBRARY_ADD_DESCRIPTION = "인증된 사용자가 ISBN-13 도서를 기본 책장 맨 뒤에 배치한다. 같은 기본 책장 중복은 `LIBRARY_ITEM_ALREADY_EXISTS`, 30권 이상이면 `LIBRARY_ITEM_LIMIT_EXCEEDED`, 기본 책장이 없으면 `NICKNAME_REQUIRED`다. 다른 책장에 이미 있으면 공유 독서 기록을 유지하고 기본 책장에 추가한다";
     private static final String LIBRARY_UPDATE_SUMMARY = "내 서재 항목 수정";
-    private static final String LIBRARY_UPDATE_DESCRIPTION = "인증된 사용자가 읽기 상태 또는 현재 읽은 페이지 중 하나를 수정한다";
+    private static final String LIBRARY_UPDATE_DESCRIPTION = "인증된 사용자가 공유 독서 상태 또는 현재 읽은 페이지 중 하나를 수정한다. 초기화된 독서 기록은 `LIBRARY_ITEM_NOT_FOUND`이며 배치와 표시 순서는 변경하지 않는다";
     private static final String LIBRARY_DELETE_SUMMARY = "내 서재 항목 삭제";
-    private static final String LIBRARY_DELETE_DESCRIPTION = "인증된 사용자가 내 서재에서 도서를 삭제한다";
+    private static final String LIBRARY_DELETE_DESCRIPTION = "인증된 사용자가 도서 존재를 확인한 뒤 기본 책장의 배치만 삭제한다. 배치가 없으면 `204`이며 마지막 배치만 독서 기록을 초기화하고 공유 행과 별점을 보존한다";
     private static final String LIBRARY_BULK_DELETE_SUMMARY = "내 서재 항목 일괄 삭제";
-    private static final String LIBRARY_BULK_DELETE_DESCRIPTION = "인증된 사용자가 최대 10개의 내 서재 항목을 한 번에 삭제한다";
+    private static final String LIBRARY_BULK_DELETE_DESCRIPTION = "인증된 사용자가 기본 책장의 배치를 최대 10개 한 번에 삭제한다. 대상이 하나라도 기본 책장에 없으면 `LIBRARY_ITEM_NOT_FOUND`로 전체 실패한다. 마지막 배치만 독서 기록을 초기화하고 별점을 보존한다";
     private static final String LIBRARY_BULK_STATUS_SUMMARY = "내 서재 읽기 상태 일괄 변경";
-    private static final String LIBRARY_BULK_STATUS_DESCRIPTION = "인증된 사용자가 최대 10개의 내 서재 항목의 읽기 상태를 한 번에 변경한다";
+    private static final String LIBRARY_BULK_STATUS_DESCRIPTION = "인증된 사용자가 최대 10개의 공유 독서 상태를 한 번에 변경한다. 초기화된 기록이 하나라도 있으면 `LIBRARY_ITEM_NOT_FOUND`로 전체 실패하며 배치와 표시 순서는 유지한다";
     private static final String LIBRARY_RATE_SUMMARY = "도서 별점 등록";
     private static final String LIBRARY_RATE_DESCRIPTION = "인증된 사용자가 내 서재 도서에 0.1부터 5.0까지의 별점을 등록한다";
     private static final String LIBRARY_REMOVE_RATING_SUMMARY = "도서 별점 삭제";
@@ -185,6 +185,7 @@ class LibraryControllerTest {
     @BeforeEach
     void setUp() {
         when(currentMemberIdProvider.getCurrentMemberId()).thenReturn(MEMBER_ID);
+        when(currentMemberIdProvider.getCurrentMemberIdForWrite()).thenReturn(MEMBER_ID);
     }
 
     @Test
@@ -900,6 +901,34 @@ class LibraryControllerTest {
                 noQueryParameters()
         );
 
+        doThrow(new BusinessException(ErrorCode.LIBRARY_ITEM_LIMIT_EXCEEDED)).when(libraryService)
+                .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
+        documentProblemDetail(
+                postLibraryItem(),
+                HttpStatus.CONFLICT,
+                ErrorCode.LIBRARY_ITEM_LIMIT_EXCEEDED,
+                "/api/v1/library",
+                "library-add-limit-exceeded",
+                LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
+
+        doThrow(new BusinessException(ErrorCode.NICKNAME_REQUIRED)).when(libraryService)
+                .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
+        documentProblemDetail(
+                postLibraryItem(),
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                ErrorCode.NICKNAME_REQUIRED,
+                "/api/v1/library",
+                "library-add-nickname-required",
+                LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
+
         doThrow(new BusinessException(ErrorCode.TOTAL_PAGES_CONFLICT)).when(libraryService)
                 .addByIsbn13(MEMBER_ID, new Isbn13(ISBN13), ReadingStatus.READING, 368);
         documentProblemDetail(
@@ -1294,6 +1323,7 @@ class LibraryControllerTest {
     void should_DocumentUnauthorizedProblemDetails_When_MemberIsNotAuthenticated() throws Exception {
         // given
         when(currentMemberIdProvider.getCurrentMemberId()).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
+        when(currentMemberIdProvider.getCurrentMemberIdForWrite()).thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
 
         // when & then
         documentProblemDetail(
@@ -1432,6 +1462,111 @@ class LibraryControllerTest {
                 noPathParameters(),
                 ratingComparisonResourceQueryParameters()
         );
+    }
+
+    @Test
+    @DisplayName("비활성 회원의 기존 서재 쓰기는 FORBIDDEN으로 구분한다")
+    void should_DocumentForbidden_When_AuthenticatedMemberIsInactive() throws Exception {
+        // given
+        when(currentMemberIdProvider.getCurrentMemberIdForWrite()).thenThrow(new BusinessException(ErrorCode.FORBIDDEN));
+
+        // when & then
+        documentProblemDetail(
+                postLibraryItem(),
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                "/api/v1/library",
+                "library-add-forbidden",
+                LIBRARY_ADD_SUMMARY,
+                LIBRARY_ADD_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                patchLibraryItem(),
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                "/api/v1/library/10",
+                "library-update-forbidden",
+                LIBRARY_UPDATE_SUMMARY,
+                LIBRARY_UPDATE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/library/{bookId}", BOOK_ID)),
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                "/api/v1/library/10",
+                "library-delete-forbidden",
+                LIBRARY_DELETE_SUMMARY,
+                LIBRARY_DELETE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                postBulkDelete(),
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                "/api/v1/library/bulk-delete",
+                "library-bulk-delete-forbidden",
+                LIBRARY_BULK_DELETE_SUMMARY,
+                LIBRARY_BULK_DELETE_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                patchBulkStatus(),
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                "/api/v1/library/bulk-status",
+                "library-bulk-status-forbidden",
+                LIBRARY_BULK_STATUS_SUMMARY,
+                LIBRARY_BULK_STATUS_DESCRIPTION,
+                noPathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                putRating(),
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                "/api/v1/library/10/rating",
+                "library-rate-forbidden",
+                LIBRARY_RATE_SUMMARY,
+                LIBRARY_RATE_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/library/{bookId}/rating", BOOK_ID)),
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                "/api/v1/library/10/rating",
+                "library-remove-rating-forbidden",
+                LIBRARY_REMOVE_RATING_SUMMARY,
+                LIBRARY_REMOVE_RATING_DESCRIPTION,
+                bookIdResourcePathParameters(),
+                noQueryParameters()
+        );
+    }
+
+    @Test
+    @DisplayName("기존 일괄 삭제와 수정의 ID 중복은 INVALID_REQUEST로 거절한다")
+    void should_RejectDuplicateBookIds_When_UsingLegacyBulkWrites() throws Exception {
+        // given
+
+        // when & then
+        mockMvc.perform(post("/api/v1/library/bulk-delete")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"bookIds\":[10,10]}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        mockMvc.perform(patch("/api/v1/library/bulk-status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"bookIds\":[10,10],\"status\":\"READING\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        verifyNoInteractions(libraryService);
     }
 
     private ResultActions expectProblemDetail(

@@ -8,6 +8,7 @@ import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.Library;
+import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
@@ -17,6 +18,7 @@ import com.chaekchaek.library.dto.LibraryResponse;
 import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RatingComparisonBookResponse;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
+import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
@@ -30,6 +32,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -37,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -45,19 +50,23 @@ public class LibraryService {
 
     private static final Logger log = LoggerFactory.getLogger(LibraryService.class);
     private static final int PAGE_SIZE = 10;
+    private static final int LIBRARY_BOOK_LIMIT = 30;
 
     private final LibraryRepository libraryRepository;
     private final LibraryItemRepository libraryItemRepository;
+    private final LibraryBookRepository libraryBookRepository;
     private final BookRepository bookRepository;
     private final BookResolver bookResolver;
     private final BookCommentCountReader commentCountReader;
     private final MemberRepository memberRepository;
     private final Clock clock;
     private final TransactionTemplate transactionTemplate;
+    private final TransactionTemplate readTransaction;
 
     public LibraryService(
             LibraryRepository libraryRepository,
             LibraryItemRepository libraryItemRepository,
+            LibraryBookRepository libraryBookRepository,
             BookRepository bookRepository,
             BookResolver bookResolver,
             BookCommentCountReader commentCountReader,
@@ -67,12 +76,15 @@ public class LibraryService {
     ) {
         this.libraryRepository = libraryRepository;
         this.libraryItemRepository = libraryItemRepository;
+        this.libraryBookRepository = libraryBookRepository;
         this.bookRepository = bookRepository;
         this.bookResolver = bookResolver;
         this.commentCountReader = commentCountReader;
         this.memberRepository = memberRepository;
         this.clock = clock;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.readTransaction = new TransactionTemplate(transactionManager);
+        this.readTransaction.setReadOnly(true);
     }
 
     @Transactional
@@ -92,7 +104,7 @@ public class LibraryService {
         return LibraryResponse.from(saved);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public LibraryListResponse getLibrary(
             long memberId,
             int page,
@@ -102,30 +114,59 @@ public class LibraryService {
         if (page < 1) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
-        List<LibraryItem> filteredItems = status == null
-                ? libraryItemRepository.findAllByMemberId(memberId)
-                : libraryItemRepository.findAllByMemberIdAndStatus(memberId, status);
+        List<LibraryItem> allItems = defaultLibraryItems(memberId);
+        List<LibraryItem> filteredItems = allItems
+                .stream()
+                .filter(item -> status == null || item.getStatus() == status)
+                .toList();
         Map<Long, Book> books = booksById(filteredItems);
         Map<Long, Long> commentCounts = commentCountReader.getCommentCounts(books.keySet());
-        List<LibraryItem> sortedItems = filteredItems.stream()
+        List<LibraryItem> sortedItems = filteredItems
+                .stream()
                 .sorted(comparator(sort, books, commentCounts))
                 .toList();
         List<LibraryItem> pageItems = pageOf(sortedItems, page);
         Integer nextPage = null;
-        if (page * PAGE_SIZE < sortedItems.size()) {
+        if ((long) page * PAGE_SIZE < sortedItems.size()) {
             nextPage = page + 1;
         }
         return new LibraryListResponse(
-                libraryItemRepository.countByMemberId(memberId),
+                allItems.size(),
                 filteredItems.size(),
                 nextPage,
-                pageItems.stream()
+                pageItems
+                        .stream()
                         .map(item -> response(item, books.get(item.getBookId()), commentCounts))
                         .toList()
         );
     }
 
+    private List<LibraryItem> defaultLibraryItems(long memberId) {
+        Library library = libraryRepository.findByMemberIdAndIsDefaultTrue(memberId).orElse(null);
+        if (library == null) {
+            return List.of();
+        }
+        List<Long> bookIds = libraryBookRepository.findAllByLibraryId(library.getId())
+                .stream()
+                .map(LibraryBook::getBookId)
+                .toList();
+        if (bookIds.isEmpty()) {
+            return List.of();
+        }
+        List<LibraryItem> items = libraryItemRepository.findAllByMemberIdAndBookIdIn(memberId, bookIds);
+        boolean missingReadingState = items
+                .stream()
+                .anyMatch(item -> !item.hasReadingState());
+        if (items.size() != bookIds.size() || missingReadingState) {
+            throw new IllegalStateException("Default library placements must have shared reading records");
+        }
+        return items;
+    }
+
     private Map<Long, Book> booksById(Collection<LibraryItem> items) {
+        if (items.isEmpty()) {
+            return Map.of();
+        }
         return bookRepository.findAllById(items.stream()
                 .map(LibraryItem::getBookId)
                 .toList())
@@ -176,7 +217,7 @@ public class LibraryService {
         return items.subList(startIndex, Math.min(startIndex + PAGE_SIZE, items.size()));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PublicLibraryListResponse getPublicLibrary(
             long memberId,
             int page,
@@ -196,14 +237,48 @@ public class LibraryService {
             ReadingStatus status,
             Integer totalPages
     ) {
+        lockMember(memberId);
         Book book = getBookForUpdate(bookId);
+        Library library = requireDefaultLibrary(memberId);
+        validateNewPlacement(library.getId(), bookId);
         rememberTotalPages(book, totalPages);
-        if (libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId).isPresent()) {
+        LibraryItem item = readingItem(memberId, book, status);
+        savePlacement(library.getId(), bookId);
+        logItemEvent("library_item_added", "Library item added", memberId, bookId);
+        return response(item, book, commentCountReader.getCommentCounts(List.of(bookId)));
+    }
+
+    private Library requireDefaultLibrary(long memberId) {
+        return libraryRepository.findByMemberIdAndIsDefaultTrue(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NICKNAME_REQUIRED));
+    }
+
+    private void validateNewPlacement(long libraryId, long bookId) {
+        if (libraryBookRepository.existsByLibraryIdAndBookId(libraryId, bookId)) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
         }
-        LibraryItemResponse response = saveNewItem(memberId, book, status);
-        logItemEvent("library_item_added", "Library item added", memberId, bookId);
-        return response;
+        if (libraryBookRepository.countByLibraryId(libraryId) >= LIBRARY_BOOK_LIMIT) {
+            throw new BusinessException(ErrorCode.LIBRARY_ITEM_LIMIT_EXCEEDED);
+        }
+    }
+
+    private LibraryItem readingItem(long memberId, Book book, ReadingStatus status) {
+        LibraryItem existing = libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, book.getId())
+                .orElse(null);
+        if (existing == null) {
+            return libraryItemRepository.saveAndFlush(
+                    LibraryItem.create(memberId, book.getId(), status, book.getTotalPages(), now())
+            );
+        }
+        if (!existing.hasReadingState()) {
+            existing.startReading(status, book.getTotalPages(), now());
+        }
+        return existing;
+    }
+
+    private void savePlacement(long libraryId, long bookId) {
+        long displayOrder = libraryBookRepository.findMaxDisplayOrderByLibraryId(libraryId) + 1;
+        libraryBookRepository.create(LibraryBook.create(libraryId, bookId, displayOrder));
     }
 
     private void logItemEvent(String event, String message, long memberId, long bookId) {
@@ -224,30 +299,16 @@ public class LibraryService {
                 .log(message);
     }
 
-    private LibraryItemResponse saveNewItem(long memberId, Book book, ReadingStatus status) {
-        try {
-            LibraryItem item = LibraryItem.create(
-                    memberId,
-                    book.getId(),
-                    status,
-                    book.getTotalPages(),
-                    now()
-            );
-            return response(libraryItemRepository.saveAndFlush(item), book, Map.of());
-        } catch (DataIntegrityViolationException exception) {
-            throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
-        }
-    }
-
     public LibraryItemResponse addByIsbn13(
             long memberId,
             Isbn13 isbn13,
             ReadingStatus status,
             Integer totalPages
     ) {
+        readTransaction.executeWithoutResult(transactionStatus -> requireDefaultLibrary(memberId));
         Book book = bookResolver.findOrCreate(isbn13);
-        return transactionTemplate.execute(statusTemplate ->
-                add(memberId, book.getId(), status, totalPages));
+        return Objects.requireNonNull(transactionTemplate.execute(transactionStatus ->
+                add(memberId, book.getId(), status, totalPages)));
     }
 
     @Transactional(readOnly = true)
@@ -269,8 +330,10 @@ public class LibraryService {
         if ((status == null) == (currentPage == null)) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
+        lockMember(memberId);
         Book book = getBookForUpdate(bookId);
         LibraryItem item = getItemForUpdate(memberId, bookId);
+        requireReadingState(item);
         rememberTotalPages(book, totalPages);
         if (currentPage != null && book.getTotalPages() == null) {
             throw new BusinessException(ErrorCode.INVALID_READING_STATE);
@@ -292,28 +355,56 @@ public class LibraryService {
 
     @Transactional
     public void delete(long memberId, long bookId) {
+        lockMember(memberId);
         getBook(bookId);
-        libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
-                .ifPresent(item -> {
-                    libraryItemRepository.delete(item);
-                    logItemEvent("library_item_deleted", "Library item deleted", memberId, bookId);
-                });
+        Library library = libraryRepository.findByMemberIdAndIsDefaultTrue(memberId).orElse(null);
+        if (library == null) {
+            return;
+        }
+        libraryBookRepository.findByLibraryIdAndBookId(library.getId(), bookId)
+                .ifPresent(placement -> removePlacements(memberId, List.of(placement)));
+        logItemEvent("library_item_deleted", "Library item deleted", memberId, bookId);
     }
 
     @Transactional
     public void bulkDelete(long memberId, Collection<Long> bookIds) {
         validateBulkBookIds(bookIds);
-        libraryItemRepository.deleteAll(requireAllLibraryItemsForUpdate(memberId, bookIds));
+        lockMember(memberId);
+        Library library = libraryRepository.findByMemberIdAndIsDefaultTrue(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND));
+        List<LibraryBook> placements = libraryBookRepository.findAllByLibraryIdAndBookIdIn(library.getId(), bookIds);
+        if (placements.size() != bookIds.size()) {
+            throw new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND);
+        }
+        removePlacements(memberId, placements);
         logBulkEvent("library_items_deleted", "Library items deleted", memberId, bookIds.size());
+    }
+
+    private void removePlacements(long memberId, List<LibraryBook> placements) {
+        List<Long> bookIds = placements
+                .stream()
+                .map(LibraryBook::getBookId)
+                .toList();
+        List<LibraryItem> records = requireAllReadingItemsForUpdate(memberId, bookIds);
+        libraryBookRepository.deleteAll(placements);
+        libraryBookRepository.flush();
+        Set<Long> remainingBookIds = new HashSet<>(
+                libraryBookRepository.findPlacedBookIdsByMemberIdAndBookIdIn(memberId, bookIds)
+        );
+        records
+                .stream()
+                .filter(record -> !remainingBookIds.contains(record.getBookId()))
+                .forEach(LibraryItem::clearReadingState);
     }
 
     @Transactional
     public void bulkChangeStatus(long memberId, Collection<Long> bookIds, ReadingStatus status) {
         validateBulkBookIds(bookIds);
+        lockMember(memberId);
         if (status == ReadingStatus.FINISHED) {
             validateAllLibraryItemsExist(memberId, bookIds);
             Map<Long, Book> books = booksByIdForUpdate(bookIds);
-            List<LibraryItem> items = requireAllLibraryItemsForUpdate(memberId, bookIds);
+            List<LibraryItem> items = requireAllReadingItemsForUpdate(memberId, bookIds);
             if (books.values()
                     .stream()
                     .anyMatch(book -> book.getTotalPages() == null)) {
@@ -327,7 +418,7 @@ public class LibraryService {
             logBulkEvent("library_items_status_changed", "Library items status changed", memberId, items.size());
             return;
         }
-        List<LibraryItem> items = requireAllLibraryItemsForUpdate(memberId, bookIds);
+        List<LibraryItem> items = requireAllReadingItemsForUpdate(memberId, bookIds);
         Instant now = now();
         items.forEach(item -> item.changeStatus(status, null, now));
         logBulkEvent("library_items_status_changed", "Library items status changed", memberId, items.size());
@@ -343,9 +434,11 @@ public class LibraryService {
     }
 
     private void validateAllLibraryItemsExist(long memberId, Collection<Long> bookIds) {
-        if (libraryItemRepository.findAllByMemberIdAndBookIdIn(memberId, bookIds).size() != bookIds.size()) {
+        List<LibraryItem> items = libraryItemRepository.findAllByMemberIdAndBookIdIn(memberId, bookIds);
+        if (items.size() != bookIds.size()) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND);
         }
+        items.forEach(this::requireReadingState);
     }
 
     private Map<Long, Book> booksByIdForUpdate(Collection<Long> bookIds) {
@@ -358,17 +451,19 @@ public class LibraryService {
         return bookRepository.findByIdForUpdate(bookId).orElseThrow(BookNotFoundException::new);
     }
 
-    private List<LibraryItem> requireAllLibraryItemsForUpdate(long memberId, Collection<Long> bookIds) {
+    private List<LibraryItem> requireAllReadingItemsForUpdate(long memberId, Collection<Long> bookIds) {
         List<LibraryItem> items = libraryItemRepository.findAllByMemberIdAndBookIdInForUpdate(memberId, bookIds);
         if (items.size() != bookIds.size()) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND);
         }
+        items.forEach(this::requireReadingState);
         return items;
     }
 
     @Transactional
     public LibraryItemResponse rate(long memberId, long bookId, BigDecimal rating) {
         validateRating(rating);
+        lockMember(memberId);
         Book book = getBook(bookId);
         LibraryItem item = libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
                 .orElseGet(() -> createForRating(memberId, book));
@@ -383,6 +478,17 @@ public class LibraryService {
                     LibraryItem.create(memberId, book.getId(), ReadingStatus.WANT_TO_READ, null, now()));
         } catch (DataIntegrityViolationException exception) {
             return getItemForUpdate(memberId, book.getId());
+        }
+    }
+
+    private void lockMember(long memberId) {
+        memberRepository.findByIdForUpdate(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    private void requireReadingState(LibraryItem item) {
+        if (!item.hasReadingState()) {
+            throw new BusinessException(ErrorCode.LIBRARY_ITEM_NOT_FOUND);
         }
     }
 
@@ -401,6 +507,7 @@ public class LibraryService {
 
     @Transactional
     public void removeRating(long memberId, long bookId) {
+        lockMember(memberId);
         getBook(bookId);
         libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
                 .ifPresent(item -> {

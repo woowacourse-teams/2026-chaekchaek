@@ -32,6 +32,10 @@ public interface LibraryBookRepository extends JpaRepository<LibraryBook, Long> 
 
     long countByLibraryId(long libraryId);
 
+    List<LibraryBook> findAllByLibraryId(long libraryId);
+
+    List<LibraryBook> findAllByLibraryIdAndBookIdIn(long libraryId, Collection<Long> bookIds);
+
     @Query("""
             select coalesce(max(libraryBook.displayOrder), 0)
             from LibraryBook libraryBook

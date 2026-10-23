@@ -553,11 +553,11 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/libraries'                       : ['post': ['201', '400', '401', '403', '409']],
 			'/api/v1/libraries/{libraryId}'           : ['post': ['201', '400', '401', '403', '404', '409', '422', '502']],
 			'/api/v1/libraries/{libraryId}/books/{bookId}': ['delete': ['204', '400', '401', '403', '404']],
-			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '404', '409', '422']],
-			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '404']],
-			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '404', '422']],
-			'/api/v1/library/{bookId}'                : ['patch': ['200', '400', '401', '404', '409', '422'], 'delete': ['204', '401', '404']],
-			'/api/v1/library/{bookId}/rating'         : ['put': ['200', '400', '401', '404'], 'delete': ['204', '401', '404']],
+			'/api/v1/library'                         : ['get': ['200', '400', '401'], 'post': ['201', '400', '401', '403', '404', '409', '422']],
+			'/api/v1/library/bulk-delete'             : ['post': ['204', '400', '401', '403', '404']],
+			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '403', '404', '422']],
+			'/api/v1/library/{bookId}'                : ['patch': ['200', '400', '401', '403', '404', '409', '422'], 'delete': ['204', '401', '403', '404']],
+			'/api/v1/library/{bookId}/rating'         : ['put': ['200', '400', '401', '403', '404'], 'delete': ['204', '401', '403', '404']],
 			'/api/v1/members/me/ratings/comparison'   : ['get': ['200', '400', '401', '404']]
 		]
 		requiredLibraryOperations.each { path, expectedOperations ->
@@ -721,11 +721,11 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/libraries'                       : ['post': ['400', '401', '409']],
 			'/api/v1/libraries/{libraryId}'           : ['post': ['400', '401', '403', '404', '409', '422', '502']],
 			'/api/v1/libraries/{libraryId}/books/{bookId}': ['delete': ['400', '401', '403', '404']],
-			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '404', '409', '422']],
-			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '404']],
-			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '404', '422']],
-			'/api/v1/library/{bookId}'                : ['patch': ['400', '401', '404', '409', '422'], 'delete': ['401', '404']],
-			'/api/v1/library/{bookId}/rating'         : ['put': ['400', '401', '404'], 'delete': ['401', '404']],
+			'/api/v1/library'                         : ['get': ['400', '401'], 'post': ['400', '401', '403', '404', '409', '422']],
+			'/api/v1/library/bulk-delete'             : ['post': ['400', '401', '403', '404']],
+			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '403', '404', '422']],
+			'/api/v1/library/{bookId}'                : ['patch': ['400', '401', '403', '404', '409', '422'], 'delete': ['401', '403', '404']],
+			'/api/v1/library/{bookId}/rating'         : ['put': ['400', '401', '403', '404'], 'delete': ['401', '403', '404']],
 			'/api/v1/members/me/ratings/comparison'   : ['get': ['400', '401', '404']]
 		]
 		problemResponseCodes.each { path, operations ->
@@ -737,6 +737,17 @@ tasks.register('verifyOpenApi') {
 					if ((problemContent?.get('schema') as Map)?.get('\$ref') != '#/components/schemas/ProblemDetail') {
 						throw new GradleException("OpenAPI specification is missing ProblemDetail schema for ${method.toUpperCase()} ${path} ${responseCode} response")
 					}
+				}
+			}
+		}
+
+		def legacyAddResponses = (((paths.get('/api/v1/library') as Map).get('post') as Map).get('responses') as Map)
+		['409': ['LIBRARY_ITEM_ALREADY_EXISTS', 'LIBRARY_ITEM_LIMIT_EXCEEDED'], '422': ['NICKNAME_REQUIRED']].each { errorStatus, codes ->
+			def examples = ((((legacyAddResponses.get(errorStatus) as Map)?.get('content') as Map)
+					?.get('application/problem+json') as Map)?.get('examples') as Map)
+			codes.each { code ->
+				if (!examples?.values()?.any { example -> (example as Map)?.get('value')?.toString()?.contains("\"code\":\"${code}\"") }) {
+					throw new GradleException("OpenAPI specification is missing legacy default-placement error ${code}")
 				}
 			}
 		}
