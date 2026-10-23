@@ -106,10 +106,14 @@
 
 | 플랫폼 | 실행 코드와 기기 | 결과와 범위 |
 | --- | --- | --- |
-| Android | `483844f8`, 전용 `chaekchaek_public_607` AVD, Android 16 / API 36, `emulator-5594` | `PublicLibraryNavigationTest` 2개 통과, 34.455초 |
+| Android | `80e31823`, 전용 `chaekchaek_public_607` AVD, Android 16 / API 36, `emulator-5594` | `PublicLibraryNavigationTest` 2개 통과, 10.082초 |
 | iOS | `5fd379f3`, iPhone 17 Pro / iOS 26.2 Simulator, `74464F96-99AB-4F02-BFC2-A8D7C082ACE1` | `PublicLibraryUITests` 2개 통과, 63.334초 |
 
-- 두 플랫폼에서 비로그인 열람, 책장 → 책 상세 → 책장 왕복, 읽는 중 필터와 스크롤 위치 보존, 기존 A 서재 복귀, 빈 서재, 조회 실패 후 재시도와 익명·비회원·탈퇴 작성자별 차단을 확인했다. iOS 검증 후 추가한 파일은 Android 계측 APK의 버전 매니페스트뿐이며 공통 앱 동작은 같다.
+- 두 플랫폼에서 비로그인 열람, 책장 → 책 상세 → 책장 왕복, 읽는 중 필터와 스크롤 위치 보존, 기존 A 서재 복귀, 빈 서재, 조회 실패 후 재시도와 익명·비회원·탈퇴 작성자별 차단을 확인했다. iOS 검증 후에는 Android 계측 APK 버전과 테스트 캡처, 검증 문서만 보완했으며 공통 앱 동작은 같다.
 - Android 원격 플리파 연결이 접수 전에 실패해 공용 대기열과 기기 임대 안에서 로컬 검증으로 전환했다. 앱·계측·Portal APK의 패키지·버전·서명을 비교한 뒤 데이터 보존 설치했다. SDK 37 서명 출력과 기존 검사기의 형식 차이는 SDK 36 도구 선택으로 해결했으며 검사기를 우회하지 않았다.
-- Android 계측 테스트 통과 후 Jev 준비 단계에서 실행 스크립트가 추상 Activity를 지정해 중단됐다. 실제 매니페스트의 `MainActivity`로 바로잡았고 Jev 검증은 대기열에서 진행 중이다. 계측 테스트 성공과 Jev 준비 실패를 구분한다.
-- 로컬 근거: Android `/tmp/607-android-instrumentation-483844f8.log`, iOS `/tmp/607-ios-public-library-v6.xcresult`. iOS 책장 목록·상세 캡처는 `/tmp/607-ios-library-final.png`, `/tmp/607-ios-bookshelf-final.png`다. 임시 경로는 현재 검증 호스트에만 존재한다.
+- Jev 준비 스크립트가 추상 Activity를 지정해 중단된 뒤 실제 매니페스트의 `MainActivity`로 바로잡았다. 이후 데이터 보존 업데이트·전면 실행·트리 조회까지 성공했다. 앱 APK는 `1.3.1 (10)`, SHA-256 `b30d2f76426a75150cb99c66e70fd3af35bbfa4e5fadd2632fe7066cfa062b67`이며 설치본과 같은 서명을 확인했다. 최종 계측 APK는 `1.0 (1)`, SHA-256 `3d876580967cf9bc7efdb5c45d2513e1d2a1fa1a9503d0f15931ee56894306dc`다.
+- Jev 고정 설치본은 소스 `a43a0e917e1aed0eef3d1b46dcbf4e100055ae60`, 패키지 `0.2.0`, Droidrun과 Portal `0.7.27`을 사용했다. 실제 트리에서 선택자를 확정하고 형식 검사 후 실행했다. 피드 탭 진입과 비로그인 작성자 → 공개 서재 조회는 각각 1단계로 통과했다.
+- Jev 시스템 뒤로가기 실행은 요청·응답 후 즉시 트리에 서재가 남아 `blocked`로 끝났다. 낮은 확신도나 단계 제한을 완화하지 않았다. 별도 후속 관찰에서 선택된 피드와 독자A 프로필이 다시 표시되는 것을 확인했으며, 해당 자동 실행을 통과로 바꾸지는 않는다. 기기 행동 성공과 자동 판정의 한계를 구분한다.
+- Jev 3회 실행의 총 API 호출은 4회, 입력 34,915토큰·출력 187토큰이다. 근거는 현재 호스트의 `/tmp/607-jev-feed-run-1`, `/tmp/607-jev-library-run-1`, `/tmp/607-jev-back-run-1`의 `result.json`과 `events.jsonl`, 후속 `/tmp/607-android-tree-after-back.log`다. 원문 트리와 비밀 환경파일은 커밋하지 않는다.
+- 검증 후 키보드·접근성 설정을 복원하고 전용 Android 에뮬레이터 종료·임대 반환을 확인했다. iOS 전용 Simulator도 종료했다. 기본 글자 크기의 새 목록·상세 화면을 양 플랫폼에서 캡처로 확인했으며 확대 글자·전체 접근성 감사나 운영 서버 저장 검증을 대신하지 않는다.
+- 로컬 근거: Android `/tmp/607-android-capture-ui.log`, iOS `/tmp/607-ios-public-library-v6.xcresult`. Android 목록·상세 캡처는 `/tmp/607-android-public-library-final.png`, `/tmp/607-android-public-bookshelf-final.png`이며 1080×1920이다. iOS 캡처는 `/tmp/607-ios-library-final.png`, `/tmp/607-ios-bookshelf-final.png`이며 1206×2622다. 임시 경로는 현재 검증 호스트에만 존재한다.
