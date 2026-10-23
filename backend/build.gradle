@@ -573,7 +573,7 @@ void verifyDisplayOrderContract(Map paths, Closure requestSchema) {
 			throw new GradleException("OpenAPI specification must return an empty 204 response for PATCH ${requirement.path}")
 		}
 		def description = operation?.get('description')?.toString() ?: ''
-		if (!['ORDER_CONFLICT', '마지막 반영', '전체 ID', '빈 배열'].every { description.contains(it) }) {
+		if (!['ORDER_CONFLICT', '마지막으로 저장한 순서', '현재 목록의 ID가 빠지거나 다른 ID가 포함되면', '빈 배열'].every { description.contains(it) }) {
 			throw new GradleException("OpenAPI specification must explain complete ID and concurrency semantics for PATCH ${requirement.path}")
 		}
 		def conflict = ((responses?.get('409') as Map)?.get('content') as Map)?.get('application/problem+json') as Map

@@ -46,10 +46,10 @@ import org.springframework.test.web.servlet.ResultActions;
 class LibraryOrderControllerTest {
 
     private static final String COMMON_ORDER_DESCRIPTION = """
-            빈 목록은 빈 배열을 허용한다.
-            ID는 양의 int64 정수이며 null, 문자열, 소수와 중복은 `400`, `INVALID_REQUEST`다.
-            현재 전체 ID 집합과 다르면 `409`, `ORDER_CONFLICT`이며 목록을 다시 조회한 뒤 요청한다.
-            실패하면 기존 순서를 전부 유지하고, 같은 집합의 동시 요청은 마지막 반영 순서를 적용한다.
+            목록이 비어 있으면 빈 배열을 전달한다.
+            ID를 중복해서 보내거나 잘못된 형식으로 보내면 `400`, `INVALID_REQUEST`를 반환한다.
+            현재 목록의 ID가 빠지거나 다른 ID가 포함되면 `409`, `ORDER_CONFLICT`를 반환한다. 목록을 다시 조회한 뒤 요청한다.
+            실패하면 기존 순서를 유지한다. 같은 목록을 동시에 변경하면 마지막으로 저장한 순서를 따른다.
             다른 책장, 독서 기록과 별점은 변경하지 않는다.
             """;
     private static final String LIBRARY_ORDER_DESCRIPTION =
@@ -57,7 +57,7 @@ class LibraryOrderControllerTest {
                     + COMMON_ORDER_DESCRIPTION;
     private static final String BOOK_ORDER_DESCRIPTION =
             "인증 회원이 소유한 특정 책장의 전체 도서 ID를 원하는 순서대로 전달한다. "
-                    + "이전된 30권 초과 책장에도 도서 개수 제한을 적용하지 않는다. "
+                    + "기존에 30권을 넘게 담은 책장도 순서를 바꿀 수 있다. "
                     + COMMON_ORDER_DESCRIPTION;
     private static final FieldDescriptor[] PROBLEM_FIELDS = {
             fieldWithPath("type").description("문제 유형 URI"),
@@ -274,14 +274,14 @@ class LibraryOrderControllerTest {
                 .description(books ? BOOK_ORDER_DESCRIPTION : LIBRARY_ORDER_DESCRIPTION);
         if (books) {
             builder.pathParameters(ResourceDocumentation.parameterWithName("libraryId").type(SimpleType.INTEGER)
-                    .description("소유한 책장 ID, 양의 BIGINT 정수"));
+                    .description("순서를 변경할 책장 ID"));
         }
         if (problem) {
             builder.responseSchema(Schema.schema("ProblemDetail")).responseFields(PROBLEM_FIELDS);
         } else {
             builder.requestSchema(Schema.schema(books ? "BookOrderRequest" : "LibraryOrderRequest"))
                     .requestFields(fieldWithPath(field).type(JsonFieldType.ARRAY)
-                            .description("원하는 순서로 나열한 현재 전체 ID, 빈 배열 허용")
+                            .description("원하는 순서로 나열한 전체 ID 목록")
                             .attributes(key("itemsType").value(JsonFieldType.NUMBER)));
         }
         return document(id, resource(builder.build()));
