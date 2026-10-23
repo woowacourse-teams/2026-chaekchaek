@@ -1025,8 +1025,12 @@ final class BookshelfContractUITests: XCTestCase {
         let addButton = element("+ 책 담기", app)
         XCTAssertTrue(addButton.waitForExistence(timeout: 10))
         addButton.tap()
-        element("내 서재에서", app).tap()
-        element("검증 도서 3", app).tap()
+        let selectedBook = element("검증 도서 3", app)
+        guard selectedBook.waitForExistence(timeout: 10) else {
+            XCTFail("내 서재의 책 목록을 찾지 못했어요: \(app.debugDescription)")
+            return
+        }
+        selectedBook.tap()
         XCTAssertTrue(element("담을 책장 고르기", app).waitForExistence(timeout: 5))
         let confirmAdd = element("이 책장에 담기", app)
         for _ in 0..<4 {
@@ -1046,7 +1050,14 @@ final class BookshelfContractUITests: XCTestCase {
         XCTAssertTrue(addButton.waitForExistence(timeout: 10))
         element("편집", app).tap()
         let remove = app.buttons.matching(NSPredicate(format: "label == %@", "빼기")).firstMatch
-        XCTAssertTrue(remove.waitForExistence(timeout: 5))
+        for _ in 0..<4 {
+            if remove.exists && remove.isHittable { break }
+            app.swipeUp()
+        }
+        guard remove.waitForExistence(timeout: 5) else {
+            XCTFail("책 빼기 버튼을 찾지 못했어요: \(app.debugDescription)")
+            return
+        }
         remove.tap()
         element("완료", app).tap()
         let imageShare = element("이미지 공유", app)
@@ -1082,6 +1093,7 @@ final class BookshelfContractUITests: XCTestCase {
         XCTAssertTrue(calls.contains { $0["method"] as? String == "DELETE" && ($0["path"] as? String)?.contains("/books/") == true })
     }
 
+    @MainActor
     private func element(_ text: String, _ app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", text)).firstMatch
     }
