@@ -11,7 +11,7 @@ import { defaultLoggedAuthContextValue, renderProvider } from '@/test/utils/rend
 
 import { LibrariesPage } from '@/pages/LibrariesPage';
 
-import { registeredLibraries } from './LibrariesPage.fixtures';
+import { librariesResponse } from './LibrariesPage.fixtures';
 
 describe('LibrariesPage', () => {
   it('기본 렌더링이 된다', () => {
@@ -23,7 +23,7 @@ describe('LibrariesPage', () => {
   it('내 책장에 진입하면 등록된 책장 목록이 표시된다', async () => {
     server.use(
       http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
-        return HttpResponse.json(structuredClone(registeredLibraries));
+        return HttpResponse.json(structuredClone(librariesResponse));
       }),
     );
 
@@ -31,7 +31,8 @@ describe('LibrariesPage', () => {
       auth: defaultLoggedAuthContextValue,
     });
 
-    for (const library of registeredLibraries.libraries) {
+    // API가 반환한 모든 책장 이름과 각 책의 책등 이미지가 표시된다.
+    for (const library of librariesResponse.libraries) {
       expect(await screen.findByText(library.name)).toBeVisible();
 
       for (const book of library.items) {

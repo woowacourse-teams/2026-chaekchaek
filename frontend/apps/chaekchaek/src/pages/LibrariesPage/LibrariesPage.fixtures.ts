@@ -1,4 +1,4 @@
-export const registeredLibraries = {
+export const librariesResponse = {
   memberId: 3,
   libraries: [
     {
