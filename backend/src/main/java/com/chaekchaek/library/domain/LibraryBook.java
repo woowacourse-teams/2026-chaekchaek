@@ -65,6 +65,13 @@ public class LibraryBook {
         return new LibraryBook(libraryId, bookId, displayOrder);
     }
 
+    public void changeDisplayOrder(long displayOrder) {
+        if (displayOrder < 1) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+        this.displayOrder = displayOrder;
+    }
+
     public Long getId() {
         return id;
     }

@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface LibraryBookRepository extends JpaRepository<LibraryBook, Long> {
 
+    List<LibraryBook> findAllByLibraryIdOrderByDisplayOrderAscIdAsc(long libraryId);
+
     boolean existsByLibraryIdAndBookId(long libraryId, long bookId);
 
     Optional<LibraryBook> findByLibraryIdAndBookId(long libraryId, long bookId);
