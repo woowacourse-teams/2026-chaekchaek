@@ -37,12 +37,16 @@ def response(path, query):
         member = int(query.get("memberId", [42])[0])
         if member == 44 and COUNTS[path+"?memberId=44"] == 1: return 503, {"code":"UNAVAILABLE"}
         if member == 43: return 200, {"memberId":43,"libraries":[]}
+        if member == 45:
+            return 200, {"memberId":45,"libraries":[dict(libraryId=11,name="B책장",isDefault=True,totalCount=35,items=[book(i) for i in range(1,36)])]}
         return 200, {"memberId":member,"libraries":[dict(libraryId=9,name="기본책장",isDefault=True,totalCount=35,items=[book(i) for i in range(1,36)]),dict(libraryId=10,name="빈책장",isDefault=False,totalCount=0,items=[])]}
-    if path in ("/api/v1/libraries/9", "/api/v1/libraries/10"):
+    if path in ("/api/v1/libraries/9", "/api/v1/libraries/10", "/api/v1/libraries/11"):
         empty = path.endswith("/10")
+        if path.endswith("/11"):
+            return 200, dict(libraryId=11, memberId=45,name="B책장",isDefault=True,totalCount=35,items=[book(i) for i in range(1,36)])
         return 200, dict(libraryId=10 if empty else 9, memberId=42,name="빈책장" if empty else "기본책장",isDefault=not empty,totalCount=0 if empty else 35,items=[] if empty else [book(i) for i in range(1,36)])
     if "/replies" in path: return 200, {"items":[review(1)["recentReplies"][0]],"totalCount":1,"nextPage":None}
-    if path.endswith("/reviews"): return 200, {"items":[review(1)],"totalCount":1,"nextPage":None}
+    if path.endswith("/reviews"): return 200, {"items":[review(1), dict(review(7, author("독자B", 45)), content="다른 책장의 같은 책을 확인하는 감상")],"totalCount":2,"nextPage":None}
     if path.startswith("/api/v1/books/by-isbn/"):
         isbn = path.rsplit("/",1)[-1]; i=int(isbn[-4:])
         return 200, dict(book(i),isbn13=isbn,translators=[],publisher="검증출판사",category="소설",publishedDate=None,myRecord=None,description="공개 서재 도서 상세")

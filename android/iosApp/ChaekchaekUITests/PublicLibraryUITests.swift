@@ -103,4 +103,26 @@ final class PublicLibraryUITests: XCTestCase {
             XCTAssertTrue(app.buttons["피드"].exists)
         }
     }
+    @MainActor
+    func testSameBookFromAnotherOwnerKeepsIndependentDetailSort() async throws {
+        let app = try await start()
+        profile("독자A", in: app)
+        XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); shelf(in: app).tap()
+        let firstBook = book("서재 도서 1", in: app)
+        XCTAssertTrue(firstBook.waitForExistence(timeout: 10)); reveal(firstBook, in: app); firstBook.tap()
+        let latest = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "최신순")).firstMatch
+        reveal(latest, in: app); XCTAssertTrue(latest.waitForExistence(timeout: 15)); latest.tap()
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "페이지순")).firstMatch.tap()
+        profile("독자B", in: app)
+        let otherShelf = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "B책장")).firstMatch
+        XCTAssertTrue(otherShelf.waitForExistence(timeout: 10)); otherShelf.tap()
+        XCTAssertTrue(firstBook.waitForExistence(timeout: 10)); reveal(firstBook, in: app); firstBook.tap()
+        reveal(latest, in: app); XCTAssertTrue(latest.waitForExistence(timeout: 15))
+        XCTAssertTrue(latest.isHittable)
+        back(app); XCTAssertTrue(find("읽는 중", in: app).waitForExistence(timeout: 10))
+        back(app); XCTAssertTrue(otherShelf.waitForExistence(timeout: 10)); back(app)
+        let originalSort = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "페이지순")).firstMatch
+        reveal(originalSort, in: app); XCTAssertTrue(originalSort.waitForExistence(timeout: 15))
+        XCTAssertTrue(originalSort.isHittable)
+    }
 }

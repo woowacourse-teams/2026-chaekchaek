@@ -80,12 +80,18 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import kotlin.time.Clock
+import kotlin.uuid.Uuid
+import kotlin.uuid.ExperimentalUuidApi
 
 @Serializable
 private data object Root : NavKey
 
 @Serializable
-private data class BookDetailKey(val book: BookDetailArgs) : NavKey
+@OptIn(ExperimentalUuidApi::class)
+internal data class BookDetailKey(
+    val book: BookDetailArgs,
+    val entryId: String = Uuid.random().toString(),
+) : NavKey
 
 @Serializable
 private data class PublicLibraryKey(val memberId: Long, val ownerName: String) : NavKey

@@ -4,8 +4,28 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.assertNotEquals
+import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 
 class NavigationBackStackTest {
+    @Test
+    fun sameBookOpenedFromAnotherShelfHasIndependentSerializableEntry() {
+        val book = BookDetailArgs(id = "9780000000001", title = "같은 책")
+        val first = BookDetailKey(book)
+        val second = BookDetailKey(book)
+        assertNotEquals(first, second)
+        assertNotEquals(first.toString(), second.toString())
+        assertEquals(first, Json.decodeFromString<BookDetailKey>(Json.encodeToString(first)))
+        val stack = mutableListOf<Any>("root", first, "other-shelf")
+        assertTrue(stack.navigateFromCurrent("other-shelf", second))
+        assertFalse(stack.popDestinationIfCurrent(first))
+        assertTrue(stack.popDestinationIfCurrent(second))
+        assertEquals(listOf("root", first, "other-shelf"), stack)
+    }
+
     @Test
     fun reopeningOwnerPopsToTheExistingEntryWithoutReplacingItsState() {
         data class Screen(val id: String, val savedFilter: String = "전체")
