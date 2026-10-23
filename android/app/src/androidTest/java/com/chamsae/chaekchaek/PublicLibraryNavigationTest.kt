@@ -21,7 +21,10 @@ class PublicLibraryNavigationTest {
     private fun start() {
         assertEquals(base, ApiConfiguration.current.baseUrl)
         check(URI("$base/__607/reset").toURL().readText().contains("607"))
-        compose.setContent { App(AuthPlatformCallbacks(requestGoogleIdToken = { it(null, null) })) }
+        compose.setContent { App(AuthPlatformCallbacks(
+            requestGoogleIdToken = { it(null, null) },
+            readRefreshToken = { null }, writeRefreshToken = {}, clearRefreshToken = {},
+        )) }
         waitFor("피드")
         compose.onNodeWithText("피드").performClick()
         waitFor("독자A")
