@@ -32,17 +32,26 @@ final class PublicLibraryUITests: XCTestCase {
     }
     @MainActor
     private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
-        for _ in 0..<9 {
-            if element.exists && element.isHittable && element.frame.minY > 90 && element.frame.maxY < app.frame.maxY - 80 {
-                // Compose의 관성 스크롤은 XCTest idle 이후에도 이동할 수 있다.
-                let before = element.frame
-                Thread.sleep(forTimeInterval: 0.5)
-                if element.exists && abs(element.frame.minY - before.minY) < 1 { return }
-                continue
+        for _ in 0..<18 {
+            let top = app.frame.minY + 150
+            let bottom = app.frame.maxY - 140
+            var moveUp = true
+            if element.exists {
+                let frame = element.frame
+                if element.isHittable && frame.minY >= top && frame.maxY <= bottom {
+                    // Compose의 관성 스크롤은 XCTest idle 이후에도 이동할 수 있다.
+                    Thread.sleep(forTimeInterval: 0.5)
+                    if element.exists && abs(element.frame.minY - frame.minY) < 1 { return }
+                    continue
+                }
+                moveUp = frame.minY >= top
             }
-            app.swipeUp()
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: moveUp ? 0.72 : 0.42))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: moveUp ? 0.42 : 0.72))
+            start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.3)
             Thread.sleep(forTimeInterval: 0.8)
         }
+        XCTFail("요소를 안전한 표시 영역으로 스크롤하지 못함: \(element)")
     }
     @MainActor
     private func profile(_ name: String, in app: XCUIApplication) {
@@ -52,7 +61,15 @@ final class PublicLibraryUITests: XCTestCase {
         target.tap()
     }
     @MainActor
-    private func back(_ app: XCUIApplication) { app.buttons["뒤로 가기"].tap() }
+    private func back(_ app: XCUIApplication) {
+        let back = app.buttons["뒤로 가기"]
+        if !back.exists || !back.isHittable {
+            let top = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "TOP")).firstMatch
+            if top.exists && top.isHittable { top.tap() }
+        }
+        XCTAssertTrue(back.waitForExistence(timeout: 10))
+        back.tap()
+    }
     @MainActor
     func testGuestViewerKeepsFilterAndReturnsToExistingLibrary() async throws {
         let app = try await start()
