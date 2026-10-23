@@ -21,10 +21,10 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 ## 동일 기능 담당과 플랫폼별 검증 경로
 
 - Codex와 Claude Code 모두 기능 구현 전에 `~/.agents/skills/task-coordination/SKILL.md`를 읽고 담당 목록을 조회·등록한다. 같은 기능을 별도 세션에서 중복 구현하지 않는다. 자동 세션 ID가 없으면 대화 동안 고정된 `AGENT_SESSION_ID`를 지정한다.
-- Android 검증은 `~/.agents/skills/plipa-remote-validation/SKILL.md`를 먼저 읽고 플리파 원격에 제출한다. 대상 저장소·허용 ref·프로필과 정확한 SHA를 확인한다. 미커밋 변경이나 다른 SHA의 결과를 현재 변경의 검증으로 사용하지 않는다.
+- Android 검증은 `~/.agents/skills/plipa-remote-validation/SKILL.md`를 먼저 읽고 플리파 원격에 제출한다. 대상 저장소·허용 ref·프로필과 정확한 SHA를 확인한다. 미커밋 변경이나 다른 SHA의 결과를 현재 변경의 검증으로 사용하지 않는다. 원격 접수 전에 서버 꺼짐·연결 불가가 확인되고 같은 검증의 미확정 원격 접수가 없으면 `~/.agents/skills/jev-local-validation/SKILL.md`로 추가 승인 없이 전환한다.
 - iOS 빌드·Simulator·테스트·Archive는 `~/.agents/skills/mobile-validation-queue/SKILL.md`의 공용 실행기로 감싼다. 명시적 UDID를 사용하고 자신이 시작한 기기 정리까지 슬롯을 유지한다. `android/scripts/test-ios-hig.sh`는 직접 실행해도 대기열을 거친다.
-- 원격 Android는 Mac 슬롯을 잡지 않으므로 같은 SHA의 iOS 로컬 검증과 병행할 수 있다. 같은 Mac의 무거운 작업은 직렬 실행한다. 로컬 Android는 사용자가 명시적으로 허용한 경우에만 공용 대기열 안에서 기기 임대·서명·데이터 보존 검사를 거쳐 수행한다.
-- 원격 설정 누락·장애·미지원 검증은 사유와 미검증 범위를 보고하고 자동으로 로컬로 전환하지 않는다. 현재 `android-smoke`의 APK·단위 테스트·설치·실행 결과는 AAB·Lint·로그인·저장 등 전체 UI 검증을 대신하지 않는다. 양 플랫폼의 동일 시나리오 요구는 유지한다.
+- 원격 Android는 Mac 슬롯을 잡지 않으므로 같은 SHA의 iOS 로컬 검증과 병행할 수 있다. 같은 Mac의 무거운 작업은 직렬 실행한다. 플리파 오프라인 대체 경로의 Jev 로컬 Android 검증과 명시적으로 요청된 로컬 실행은 공용 대기열 안에서 기기 임대·서명·데이터 보존 검사를 거쳐 수행한다. Jev 대체 경로는 로컬 빌드·단위 테스트와 UI 시나리오 결과를 구분하고 기기 정리까지 슬롯을 유지한다.
+- 원격 설정 누락·403·인증·ref 오류·미지원 검증은 서버 오프라인과 구분해 사유와 미검증 범위를 보고한다. 원격 submit 뒤 접수 여부가 불명확하면 기존 request-id/job-id로 미접수 또는 종료를 확인하기 전 로컬 작업을 중복 실행하지 않는다. 현재 `android-smoke`의 APK·단위 테스트·설치·실행 결과는 AAB·Lint·로그인·저장 등 전체 UI 검증을 대신하지 않는다. 양 플랫폼의 동일 시나리오 요구는 유지한다.
 
 ## Android와 iOS 동작 일치 (필수)
 
