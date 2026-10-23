@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 
-import { Button, Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
+import { Button, Checkbox, Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
 
 import { getLibraries } from '@/services/apis/libraries/repository';
 
@@ -11,7 +11,7 @@ import type { MyLibraryPanelProps } from './MyLibraryPanel.types';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
-export const MyLibraryPanel = ({ libraryId }: MyLibraryPanelProps) => {
+export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => {
   const { user } = useAuthContext();
 
   const getLibrariesLoadData = useCallback(async () => {
@@ -36,6 +36,20 @@ export const MyLibraryPanel = ({ libraryId }: MyLibraryPanelProps) => {
     ).values(),
   ];
 
+  const [selection, setSelection] = useState<string[]>([]);
+  const handleChangeSelection = (e: ChangeEvent<HTMLInputElement>) => {
+    const isbn = e.target.value;
+
+    setSelection((prev) => {
+      const isIncluded = selection.includes(isbn);
+      return isIncluded ? prev.filter((item) => item === isbn) : [...prev, isbn];
+    });
+  };
+
+  const handleSubmit = async () => {
+    onSubmit(selection);
+  };
+
   return (
     <>
       <Input
@@ -48,12 +62,17 @@ export const MyLibraryPanel = ({ libraryId }: MyLibraryPanelProps) => {
       <ScrollArea height="340px">
         <List>
           {filteredBooks?.map((item) => {
+            const isIncluded = selection.includes(item.isbn13);
+
             return (
               <List.Item key={item.bookId}>
                 <List.Item.Leading>
-                  <Link to={`/books/${item.isbn13}`}>
-                    {/* <ImgBox img={item.coverImageUrl} size="x-small" /> */}
-                  </Link>
+                  <Checkbox
+                    value={item.isbn13}
+                    checked={isIncluded}
+                    onChange={handleChangeSelection}
+                  />
+                  {/* <ImgBox img={item.coverImageUrl} size="x-small" /> */}
                 </List.Item.Leading>
                 <List.Item.Content
                   ellipsis
@@ -65,7 +84,7 @@ export const MyLibraryPanel = ({ libraryId }: MyLibraryPanelProps) => {
           })}
         </List>
       </ScrollArea>
-      <Button block variant="primary" onClick={() => {}}>
+      <Button block variant="primary" onClick={handleSubmit}>
         담기
       </Button>
     </>
