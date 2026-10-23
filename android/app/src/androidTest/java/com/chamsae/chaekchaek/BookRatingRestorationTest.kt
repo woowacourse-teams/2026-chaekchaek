@@ -88,7 +88,8 @@ class BookRatingRestorationTest {
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("별점 복원 검증 감상")
         compose.runOnIdle { keyboard?.hide() }
         compose.waitUntil(timeoutMillis = 5_000) {
-            rootView?.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime()) != true
+            android.os.Build.VERSION.SDK_INT < 30 ||
+                rootView?.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime()) != true
         }
         compose.waitForIdle()
         compose.onNodeWithContentDescription("별점 (선택)").performScrollTo().assert(
