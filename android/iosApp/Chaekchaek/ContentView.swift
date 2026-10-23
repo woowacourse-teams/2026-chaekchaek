@@ -172,7 +172,7 @@ private struct ComposeViewController: UIViewControllerRepresentable {
                 primary: FirebaseAnalyticsEventLogger.log,
                 secondary: PostHogAnalyticsEventLogger.log
             ).log,
-            logUserError: { PostHogAnalyticsEventLogger.captureUserError($0); return KotlinUnit() },
+            logUserError: { PostHogAnalyticsEventLogger.captureUserError($0) },
             uiTestingMyPage: uiTestingMyPage,
             uiTestingBookQuestionA: uiTestingBookQuestionA,
             showQuestionAPreviewControls: showQuestionAPreviewControls
