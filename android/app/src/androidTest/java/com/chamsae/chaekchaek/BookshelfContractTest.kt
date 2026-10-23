@@ -95,7 +95,7 @@ class BookshelfContractTest {
         compose.waitUntil(60_000) { automation.rootInActiveWindow?.packageName?.toString() == instrumentation.targetContext.packageName }
         waitText("이미지 저장을 완료했어요")
         val screenshot = File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-image-preview.png")
-        screenshot.outputStream().use { automation.takeScreenshot().compress(Bitmap.CompressFormat.PNG, 100, it) }
+        automation.takeScreenshot()?.let { bitmap -> screenshot.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } }
 
         compose.waitUntil(10_000) { requested("GET", "/api/v1/books/1/reviews?") }
         compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
@@ -108,8 +108,10 @@ class BookshelfContractTest {
         BitmapFactory.decodeFile(exported!!.absolutePath, dimensions)
         assertTrue("전체 책장 이미지 너비", dimensions.outWidth > 0)
         assertTrue("두 책의 감상 영역까지 포함한 이미지 높이", dimensions.outHeight > dimensions.outWidth * 2)
-        File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-native-share.png").outputStream().use {
-            automation.takeScreenshot().compress(Bitmap.CompressFormat.PNG, 100, it)
+        automation.takeScreenshot()?.let { bitmap ->
+            File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-native-share.png").outputStream().use {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+            }
         }
     }
 
