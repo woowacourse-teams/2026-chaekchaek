@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public record BookMyRecordResponse(
         String status,
-        int currentPage,
+        Integer currentPage,
         BigDecimal myRating
 ) {
 }

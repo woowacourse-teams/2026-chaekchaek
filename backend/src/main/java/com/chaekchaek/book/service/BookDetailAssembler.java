@@ -5,6 +5,7 @@ import com.chaekchaek.book.dto.BookDetailResponse;
 import com.chaekchaek.book.dto.BookMyRecordResponse;
 import com.chaekchaek.book.dto.BookQuestionResponse;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
@@ -122,11 +123,19 @@ class BookDetailAssembler {
             return null;
         }
         return libraryItemRepository.findByMemberIdAndBookId(memberId.getAsLong(), bookId)
-                .map(item -> new BookMyRecordResponse(
-                        item.getStatus().name(),
-                        item.getCurrentPage(),
-                        item.getRating()
-                ))
+                .map(this::myRecord)
                 .orElse(null);
+    }
+
+    private BookMyRecordResponse myRecord(LibraryItem item) {
+        if (!item.hasReadingState() && item.getRating() == null) {
+            return null;
+        }
+        String status = item.getStatus() == null ? null : item.getStatus().name();
+        return new BookMyRecordResponse(
+                status,
+                item.getCurrentPage(),
+                item.getRating()
+        );
     }
 }

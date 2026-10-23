@@ -36,6 +36,9 @@ class LibraryReadingRecordCoordinator implements ReadingRecordCoordinator {
         LibraryItem item = libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
                 .orElseGet(() -> libraryItemRepository.save(
                         LibraryItem.create(memberId, bookId, ReadingStatus.WANT_TO_READ, null, clock.instant())));
+        if (!item.hasReadingState()) {
+            item.startReading(ReadingStatus.WANT_TO_READ, null, clock.instant());
+        }
         if (currentPage != null && currentPage > item.getCurrentPage()) {
             item.changeCurrentPage(currentPage, book.getTotalPages(), clock.instant());
         }

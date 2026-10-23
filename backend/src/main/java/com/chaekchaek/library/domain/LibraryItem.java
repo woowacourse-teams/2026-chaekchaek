@@ -31,11 +31,10 @@ public class LibraryItem {
     private long bookId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private ReadingStatus status;
 
-    @Column(nullable = false)
-    private int currentPage;
+    private Integer currentPage;
 
     @Column(precision = 2, scale = 1)
     private BigDecimal rating;
@@ -43,7 +42,6 @@ public class LibraryItem {
     @Column(nullable = false, updatable = false)
     private Instant addedAt;
 
-    @Column(nullable = false)
     private Instant readingUpdatedAt;
 
     private Instant ratingUpdatedAt;
@@ -73,14 +71,34 @@ public class LibraryItem {
             Integer totalPages,
             Instant now
     ) {
-        if (status == ReadingStatus.FINISHED && totalPages == null) {
+        if (status == null || (status == ReadingStatus.FINISHED && totalPages == null)) {
             throw invalidReadingState();
         }
         return new LibraryItem(memberId, bookId, status, totalPages, now);
     }
 
+    public void startReading(ReadingStatus status, Integer totalPages, Instant now) {
+        if (hasReadingState() || status == null || (status == ReadingStatus.FINISHED && totalPages == null)) {
+            throw invalidReadingState();
+        }
+        this.status = status;
+        this.currentPage = initialPage(status, totalPages);
+        this.readingUpdatedAt = now;
+    }
+
+    public void clearReadingState() {
+        this.status = null;
+        this.currentPage = null;
+        this.readingUpdatedAt = null;
+    }
+
+    public boolean hasReadingState() {
+        return status != null && currentPage != null && readingUpdatedAt != null;
+    }
+
     public void changeStatus(ReadingStatus status, Integer totalPages, Instant now) {
-        if (status == ReadingStatus.FINISHED && totalPages == null) {
+        if (!hasReadingState() || status == null
+                || (status == ReadingStatus.FINISHED && totalPages == null)) {
             throw invalidReadingState();
         }
         int changedPage = status == ReadingStatus.WANT_TO_READ
@@ -93,6 +111,9 @@ public class LibraryItem {
     }
 
     public void changeCurrentPage(int currentPage, Integer totalPages, Instant now) {
+        if (!hasReadingState()) {
+            throw invalidReadingState();
+        }
         validatePage(currentPage, totalPages);
         ReadingStatus changedStatus = resolveStatusForPage(currentPage, totalPages);
         boolean changed = this.currentPage != currentPage || this.status != changedStatus;
@@ -155,7 +176,7 @@ public class LibraryItem {
     public long getMemberId() { return memberId; }
     public long getBookId() { return bookId; }
     public ReadingStatus getStatus() { return status; }
-    public int getCurrentPage() { return currentPage; }
+    public Integer getCurrentPage() { return currentPage; }
     public BigDecimal getRating() { return rating; }
     public Instant getAddedAt() { return addedAt; }
     public Instant getReadingUpdatedAt() { return readingUpdatedAt; }

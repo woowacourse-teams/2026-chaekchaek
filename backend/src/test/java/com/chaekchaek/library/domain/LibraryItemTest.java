@@ -70,6 +70,67 @@ class LibraryItemTest {
     }
 
     @Test
+    @DisplayName("독서 상태를 초기화해도 별점과 최초 추가 시각은 유지한다")
+    void should_KeepRatingAndAddedAt_When_ReadingStateIsCleared() {
+        // given
+        LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, NOW);
+        item.rate(new BigDecimal("4.5"), NOW);
+
+        // when
+        item.clearReadingState();
+
+        // then
+        assertThat(item.hasReadingState()).isFalse();
+        assertThat(item.getStatus()).isNull();
+        assertThat(item.getCurrentPage()).isNull();
+        assertThat(item.getReadingUpdatedAt()).isNull();
+        assertThat(item.getRating()).isEqualByComparingTo("4.5");
+        assertThat(item.getRatingUpdatedAt()).isEqualTo(NOW);
+        assertThat(item.getAddedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    @DisplayName("독서 상태가 초기화된 항목에 독서를 다시 시작한다")
+    void should_StartReading_When_ReadingStateWasCleared() {
+        // given
+        LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, NOW);
+        item.rate(new BigDecimal("4.5"), NOW);
+        item.clearReadingState();
+
+        // when
+        item.startReading(ReadingStatus.FINISHED, 100, NOW.plusSeconds(1));
+
+        // then
+        assertThat(item.hasReadingState()).isTrue();
+        assertThat(item.getStatus()).isEqualTo(ReadingStatus.FINISHED);
+        assertThat(item.getCurrentPage()).isEqualTo(100);
+        assertThat(item.getReadingUpdatedAt()).isEqualTo(NOW.plusSeconds(1));
+        assertThat(item.getRating()).isEqualByComparingTo("4.5");
+    }
+
+    @Test
+    @DisplayName("독서 상태가 초기화된 항목은 상태를 직접 수정할 수 없다")
+    void should_RejectReadingStateChange_When_ReadingStateWasCleared() {
+        // given
+        LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, NOW);
+        item.clearReadingState();
+
+        // when & then
+        assertThatThrownBy(() -> item.changeStatus(ReadingStatus.FINISHED, 100, NOW.plusSeconds(1)))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.INVALID_READING_STATE)
+                );
+        assertThatThrownBy(() -> item.changeCurrentPage(20, 100, NOW.plusSeconds(1)))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.INVALID_READING_STATE)
+                );
+    }
+
+    @Test
     @DisplayName("허용 범위 밖 별점은 거부한다")
     void should_ThrowException_When_RatingIsOutsideAllowedRange() {
         // given

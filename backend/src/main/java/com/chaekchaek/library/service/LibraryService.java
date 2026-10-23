@@ -132,13 +132,22 @@ public class LibraryService {
     private Comparator<LibraryItem> comparator(LibrarySort sort, Map<Long, Book> books, Map<Long, Long> commentCounts) {
         LibrarySort effectiveSort = sort == null ? LibrarySort.RECENT : sort;
         return switch (effectiveSort) {
-            case RECENT -> Comparator.comparing(LibraryItem::getReadingUpdatedAt).reversed()
+            case RECENT -> Comparator.comparing(
+                            LibraryItem::getReadingUpdatedAt,
+                            Comparator.nullsLast(Comparator.reverseOrder())
+                    )
                     .thenComparing(LibraryItem::getBookId, Comparator.reverseOrder());
-            case OLDEST -> Comparator.comparing(LibraryItem::getReadingUpdatedAt)
+            case OLDEST -> Comparator.comparing(
+                            LibraryItem::getReadingUpdatedAt,
+                            Comparator.nullsLast(Comparator.naturalOrder())
+                    )
                     .thenComparing(LibraryItem::getBookId);
             case COMMENT -> Comparator.comparingLong((LibraryItem item) ->
                             commentCounts.getOrDefault(item.getBookId(), 0L)).reversed()
-                    .thenComparing(LibraryItem::getReadingUpdatedAt, Comparator.reverseOrder())
+                    .thenComparing(
+                            LibraryItem::getReadingUpdatedAt,
+                            Comparator.nullsLast(Comparator.reverseOrder())
+                    )
                     .thenComparing(LibraryItem::getBookId, Comparator.reverseOrder());
             case RATING -> Comparator.comparing(
                     LibraryItem::getRating,

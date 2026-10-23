@@ -131,10 +131,18 @@ class BookControllerTest {
             fieldWithPath("averageRating").type(JsonFieldType.NUMBER).description("평균 별점").optional(),
             fieldWithPath("ratingCount").type(JsonFieldType.NUMBER).description("별점 수"),
             fieldWithPath("myRatingCount").type(JsonFieldType.NUMBER).description("내가 별점을 등록한 도서 수").optional(),
-            fieldWithPath("myRecord").type(JsonFieldType.OBJECT).description("내 서재 기록").optional(),
-            fieldWithPath("myRecord.status").type(JsonFieldType.STRING).description("읽기 상태").optional(),
-            fieldWithPath("myRecord.currentPage").type(JsonFieldType.NUMBER).description("현재 페이지").optional(),
-            fieldWithPath("myRecord.myRating").type(JsonFieldType.NUMBER).description("내 별점").optional(),
+            fieldWithPath("myRecord").type(JsonFieldType.OBJECT)
+                    .description("독서 기록과 별점이 모두 없으면 null")
+                    .optional().attributes(key("nullable").value(true)),
+            fieldWithPath("myRecord.status").type(JsonFieldType.STRING)
+                    .description("읽기 상태. 마지막 배치 삭제 뒤 독서 기록이 없으면 null")
+                    .optional().attributes(key("nullable").value(true)),
+            fieldWithPath("myRecord.currentPage").type(JsonFieldType.NUMBER)
+                    .description("현재 페이지. 마지막 배치 삭제 뒤 독서 기록이 없으면 null")
+                    .optional().attributes(key("nullable").value(true)),
+            fieldWithPath("myRecord.myRating").type(JsonFieldType.NUMBER)
+                    .description("내 별점. 별점이 없으면 null")
+                    .optional().attributes(key("nullable").value(true)),
             fieldWithPath("purchaseUrl").type(JsonFieldType.STRING).description("구매 링크").optional(),
             fieldWithPath("source").type(JsonFieldType.STRING).description("도서 정보 출처"),
             fieldWithPath("bookQuestion").type(JsonFieldType.OBJECT).description("책에 대한 질문. 등록된 질문이 없으면 null").optional(),

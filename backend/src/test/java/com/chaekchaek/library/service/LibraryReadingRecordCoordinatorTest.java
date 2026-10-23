@@ -15,6 +15,7 @@ import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -83,6 +84,35 @@ class LibraryReadingRecordCoordinatorTest {
         // then
         assertThat(item.getCurrentPage()).isEqualTo(200);
         assertThat(item.getReadingUpdatedAt()).isEqualTo(NOW.minusSeconds(60));
+    }
+
+    @Test
+    @DisplayName("독서 상태가 초기화된 기록에 감상을 작성하면 독서를 다시 시작한다")
+    void should_RestartReading_When_RecordingReviewForClearedReadingState() {
+        // given
+        Book book = book(308);
+        LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 308, NOW.minusSeconds(60));
+        item.rate(new BigDecimal("4.5"), NOW.minusSeconds(60));
+        item.clearReadingState();
+        BookRepository bookRepository = mock(BookRepository.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book));
+        when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
+                .thenReturn(Optional.of(item));
+        LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
+                bookRepository,
+                libraryItemRepository,
+                CLOCK
+        );
+
+        // when
+        coordinator.recordReview(1L, 2L, 120, 308);
+
+        // then
+        assertThat(item.getStatus()).isEqualTo(ReadingStatus.READING);
+        assertThat(item.getCurrentPage()).isEqualTo(120);
+        assertThat(item.getReadingUpdatedAt()).isEqualTo(NOW);
+        assertThat(item.getRating()).isEqualByComparingTo("4.5");
     }
 
     @Test

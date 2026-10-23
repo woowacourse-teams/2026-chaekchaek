@@ -118,6 +118,65 @@ class BookDetailAssemblerTest {
     }
 
     @Test
+    @DisplayName("독서 기록만 초기화된 항목은 도서 상세의 내 기록에서 제외한다")
+    void should_ReturnNullMyRecord_When_ReadingStateAndRatingAreMissing() {
+        // given
+        Book book = book();
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        LibraryItem item = mock(LibraryItem.class);
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
+        when(activityCountReader.getActivityCounts(List.of(1L))).thenReturn(Map.of(1L, ActivityCounts.ZERO));
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
+        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(0L);
+        when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(item));
+        when(item.hasReadingState()).thenReturn(false);
+
+        // when
+        var response = assembler.assemble(book);
+
+        // then
+        assertThat(response.myRecord()).isNull();
+    }
+
+    @Test
+    @DisplayName("마지막 배치 삭제 뒤 별점만 남으면 독서 필드는 null로 반환한다")
+    void should_ReturnRatingWithoutReadingState_When_ReadingStateIsCleared() {
+        // given
+        Book book = book();
+        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        LibraryItem item = mock(LibraryItem.class);
+        BookDetailAssembler assembler = new BookDetailAssembler(
+                activityCountReader,
+                currentMemberIdProvider,
+                libraryItemRepository
+        );
+        when(activityCountReader.getActivityCounts(List.of(1L))).thenReturn(Map.of(1L, ActivityCounts.ZERO));
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
+        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(1L);
+        when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(item));
+        when(item.hasReadingState()).thenReturn(false);
+        when(item.getCurrentPage()).thenReturn(null);
+        when(item.getRating()).thenReturn(new BigDecimal("4.5"));
+
+        // when
+        var response = assembler.assemble(book);
+
+        // then
+        assertThat(response.myRecord()).extracting("status", "currentPage", "myRating")
+                .containsExactly(null, null, new BigDecimal("4.5"));
+    }
+
+    @Test
     @DisplayName("등록된 질문이 없는 책이면 상세 응답의 질문은 null이다")
     void should_ReturnNullBookQuestion_When_BookHasNoQuestion() {
         // given

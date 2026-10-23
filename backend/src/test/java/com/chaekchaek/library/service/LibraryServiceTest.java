@@ -332,6 +332,28 @@ class LibraryServiceTest {
     }
 
     @Test
+    @DisplayName("읽기 기록이 초기화된 항목을 최근순 조회에서 마지막에 둔다")
+    void should_PlaceClearedReadingStateLast_When_ListingLibraryByRecent() {
+        // given
+        LibraryItem activeItem = LibraryItem.create(1L, 2L, ReadingStatus.READING, null, CLOCK.instant());
+        LibraryItem clearedItem = LibraryItem.create(1L, 3L, ReadingStatus.READING, null, CLOCK.instant());
+        clearedItem.clearReadingState();
+        Book activeBook = bookWithId(2L);
+        Book clearedBook = bookWithId(3L);
+        when(libraryItemRepository.findAllByMemberId(1L)).thenReturn(List.of(clearedItem, activeItem));
+        when(bookRepository.findAllById(List.of(3L, 2L))).thenReturn(List.of(clearedBook, activeBook));
+        when(commentCountReader.getCommentCounts(anyCollection())).thenReturn(Map.of());
+        when(libraryItemRepository.countByMemberId(1L)).thenReturn(2L);
+
+        // when
+        var response = service().getLibrary(1L, 1, null, LibrarySort.RECENT);
+
+        // then
+        assertThat(response.items()).extracting("bookId")
+                .containsExactly(2L, 3L);
+    }
+
+    @Test
     @DisplayName("활성 회원의 빈 공개 서재는 빈 목록을 반환한다")
     void should_ReturnEmptyPublicLibrary_When_ActiveMemberHasNoItems() {
         // given
@@ -410,5 +432,15 @@ class LibraryServiceTest {
                 null,
                 null
         );
+    }
+
+    private Book bookWithId(long bookId) {
+        Book book = mock(Book.class);
+        when(book.getId()).thenReturn(bookId);
+        when(book.getIsbn13()).thenReturn(ISBN13);
+        when(book.getTitle()).thenReturn("마션");
+        when(book.getAuthors()).thenReturn(List.of());
+        when(book.getTranslators()).thenReturn(List.of());
+        return book;
     }
 }

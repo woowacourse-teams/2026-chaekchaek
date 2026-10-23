@@ -1355,11 +1355,17 @@ class LibraryControllerTest {
                 fieldWithPath("items[].publishedDate").type(JsonFieldType.STRING).description("출판일"),
                 fieldWithPath("items[].totalPages").type(JsonFieldType.NUMBER).description("전체 페이지 수").optional(),
                 fieldWithPath("items[].commentCount").type(JsonFieldType.NUMBER).description("감상과 답글 수"),
-                fieldWithPath("items[].status").type(JsonFieldType.STRING).description("읽기 상태"),
-                fieldWithPath("items[].currentPage").type(JsonFieldType.NUMBER).description("현재 읽은 페이지"),
+                fieldWithPath("items[].status").type(JsonFieldType.STRING)
+                        .description("읽기 상태. 독서 기록이 초기화된 항목이면 null")
+                        .attributes(key("nullable").value(true)),
+                fieldWithPath("items[].currentPage").type(JsonFieldType.NUMBER)
+                        .description("현재 읽은 페이지. 독서 기록이 초기화된 항목이면 null")
+                        .attributes(key("nullable").value(true)),
                 fieldWithPath("items[].rating").type(JsonFieldType.NUMBER).description("내 별점").optional(),
                 fieldWithPath("items[].addedAt").type(JsonFieldType.STRING).description("서재 추가 시각"),
-                fieldWithPath("items[].readingUpdatedAt").type(JsonFieldType.STRING).description("읽기 정보 갱신 시각")
+                fieldWithPath("items[].readingUpdatedAt").type(JsonFieldType.STRING)
+                        .description("읽기 정보 갱신 시각. 독서 기록이 초기화된 항목이면 null")
+                        .attributes(key("nullable").value(true))
         };
     }
 
@@ -1393,9 +1399,12 @@ class LibraryControllerTest {
                 fieldWithPath("items[].publishedDate").type(JsonFieldType.STRING).description("출판일"),
                 fieldWithPath("items[].totalPages").type(JsonFieldType.NUMBER).description("전체 페이지 수").optional(),
                 fieldWithPath("items[].commentCount").type(JsonFieldType.NUMBER).description("감상과 답글 수"),
-                fieldWithPath("items[].status").type(JsonFieldType.STRING).description("서재 소유자의 읽기 상태"),
+                fieldWithPath("items[].status").type(JsonFieldType.STRING)
+                        .description("서재 소유자의 읽기 상태. 독서 기록이 초기화된 항목이면 null")
+                        .attributes(key("nullable").value(true)),
                 fieldWithPath("items[].currentPage").type(JsonFieldType.NUMBER)
-                        .description("서재 소유자의 현재 읽은 페이지"),
+                        .description("서재 소유자의 현재 읽은 페이지. 독서 기록이 초기화된 항목이면 null")
+                        .attributes(key("nullable").value(true)),
                 fieldWithPath("items[].rating").type(JsonFieldType.NUMBER)
                         .description("서재 소유자가 부여한 별점").optional()
         };
