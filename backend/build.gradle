@@ -246,7 +246,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		setEnum('/api/v1/library', 'get', 'status', ['WANT_TO_READ', 'READING', 'FINISHED'])
 		setEnum('/api/v1/library', 'get', 'sort', ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], 'RECENT')
 		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'feed', ['ALL', 'MINE'], 'ALL')
-		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'sort', ['PAGE', 'LATEST', 'OLDEST', 'POPULAR'], 'PAGE')
+		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'sort', ['LATEST', 'OLDEST', 'POPULAR'], 'LATEST')
 
 		def ratingProperty = (requestSchema('/api/v1/library/{bookId}/rating', 'put')?.get('properties') as Map)
 			?.get('rating') as Map
@@ -289,9 +289,9 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			['/api/v1/replies/{replyId}/reactions', 'post'], ['/api/v1/replies/{replyId}/reactions', 'delete']
 		].each { operation -> appendOperationDescription(operation[0], operation[1], guestInteractionGuidance) }
 		appendOperationDescription('/api/v1/books/{bookId}/reviews', 'post',
-				'게스트는 currentPage와 totalPages를 입력할 수 없으며 서재·독서 기록은 변경되지 않습니다.')
+				'게스트는 currentPage와 totalPages를 입력할 수 없으며 책장과 독서 기록은 변경되지 않습니다.')
 		appendOperationDescription('/api/v1/books/by-isbn/{isbn13}/reviews', 'post',
-				'게스트는 currentPage와 totalPages를 입력할 수 없으며 서재·독서 기록은 변경되지 않습니다.')
+				'게스트는 currentPage와 totalPages를 입력할 수 없으며 책장과 독서 기록은 변경되지 않습니다.')
 		['/api/v1/library/bulk-delete', '/api/v1/library/bulk-status'].each { path ->
 			def method = path.endsWith('bulk-delete') ? 'post' : 'patch'
 			def bookIds = (requestSchema(path, method)?.get('properties') as Map)?.get('bookIds') as Map
@@ -864,7 +864,7 @@ tasks.register('verifyOpenApi') {
 			[path: '/api/v1/library', method: 'get', name: 'status', values: ['WANT_TO_READ', 'READING', 'FINISHED']],
 			[path: '/api/v1/library', method: 'get', name: 'sort', values: ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], defaultValue: 'RECENT'],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'feed', values: ['ALL', 'MINE'], defaultValue: 'ALL'],
-			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'sort', values: ['PAGE', 'LATEST', 'OLDEST', 'POPULAR'], defaultValue: 'PAGE']
+			[path: '/api/v1/books/{bookId}/reviews', method: 'get', name: 'sort', values: ['LATEST', 'OLDEST', 'POPULAR'], defaultValue: 'LATEST']
 		].each { requirement ->
 			def parameter = queryParameter(requirement.path, requirement.method, requirement.name)
 			def schema = parameter?.get('schema') as Map
