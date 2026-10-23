@@ -22,3 +22,33 @@ export const libraryResponse = {
     },
   ],
 };
+
+// 10권씩 반환되는 API의 모든 페이지를 조회해야 전체 책등을 표시할 수 있다.
+export const paginatedLibraryBooks = Array.from({ length: 23 }, (_, index) => ({
+  bookId: index + 100,
+  title: `책장 도서 ${index + 1}`,
+  spineImageUrl: `https://static.example.com/books/${index + 100}/spine.webp`,
+  isbn13: String(9780000000000 + index),
+  totalPages: 200,
+}));
+
+export const libraryPageResponses = [
+  {
+    ...libraryResponse,
+    totalCount: paginatedLibraryBooks.length,
+    nextPage: 2,
+    items: paginatedLibraryBooks.slice(0, 10),
+  },
+  {
+    ...libraryResponse,
+    totalCount: paginatedLibraryBooks.length,
+    nextPage: 3,
+    items: paginatedLibraryBooks.slice(10, 20),
+  },
+  {
+    ...libraryResponse,
+    totalCount: paginatedLibraryBooks.length,
+    nextPage: null,
+    items: paginatedLibraryBooks.slice(20),
+  },
+];

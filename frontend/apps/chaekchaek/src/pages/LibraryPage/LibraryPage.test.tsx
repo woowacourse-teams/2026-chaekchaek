@@ -12,7 +12,11 @@ import { defaultLoggedAuthContextValue, renderProvider } from '@/test/utils/rend
 
 import { LibraryPage } from '@/pages/LibraryPage';
 
-import { libraryResponse } from './LibraryPage.fixtures';
+import {
+  libraryPageResponses,
+  libraryResponse,
+  paginatedLibraryBooks,
+} from './LibraryPage.fixtures';
 
 describe('LibraryPage', () => {
   it('책장에 진입하면 등록된 책장 내 책 목록이 표시된다', async () => {
@@ -39,9 +43,19 @@ describe('LibraryPage', () => {
 
   it('책장에 등록된 모든 책의 책등이 표시된다', async () => {
     server.use(
-      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
-        return HttpResponse.json(structuredClone(libraryResponse));
-      }),
+      http.get(
+        `${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`,
+        ({ request }) => {
+          const page = Number(new URL(request.url).searchParams.get('page') ?? '1');
+          const response = libraryPageResponses[page - 1];
+
+          if (!Number.isInteger(page) || !response) {
+            return new HttpResponse(null, { status: 400 });
+          }
+
+          return HttpResponse.json(structuredClone(response));
+        },
+      ),
     );
 
     const { container } = renderProvider(
@@ -58,7 +72,8 @@ describe('LibraryPage', () => {
       // 책등 이미지의 alt가 비어 있어 img 역할 대신 응답의 이미지 주소로 조회한다.
       const images = Array.from(container.querySelectorAll('img'));
 
-      for (const book of libraryResponse.items) {
+      // 페이지 이동 없이 첫 페이지부터 마지막 페이지까지 모든 책등이 함께 보여야 한다.
+      for (const book of paginatedLibraryBooks) {
         const spineImage = images.find((image) => image.getAttribute('src') === book.spineImageUrl);
 
         expect(spineImage, `${book.title} 책등 이미지`).toBeDefined();
