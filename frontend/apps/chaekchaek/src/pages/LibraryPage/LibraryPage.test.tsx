@@ -71,11 +71,21 @@ describe('LibraryPage', () => {
 
   it('책장 이름을 변경하면 변경된 이름이 표시된다', async () => {
     const user = userEvent.setup();
+    const currentLibrary = structuredClone(libraryResponse);
 
     server.use(
       http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
-        return HttpResponse.json(structuredClone(libraryResponse));
+        return HttpResponse.json(structuredClone(currentLibrary));
       }),
+      http.patch(
+        `${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`,
+        async ({ request }) => {
+          const { name } = (await request.json()) as { name: string };
+          currentLibrary.name = name;
+
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
     );
 
     renderProvider(
