@@ -154,7 +154,7 @@ internal fun NicknameDialog(
         confirmButton = {
             DialogConfirmButton(
                 label = if (saving) "저장 중" else "확인",
-                modifier = Modifier.semantics { contentDescription = "닉네임 저장" },
+                modifier = Modifier.semantics { contentDescription = if (saving) "저장 중" else "확인" },
                 enabled = !saving,
                 onClick = {
                     if (Nickname.isValid(nickname.trim())) onConfirm()

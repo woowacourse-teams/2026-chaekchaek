@@ -271,7 +271,7 @@ fun QuestionAReviewInputSheet(
                         } else onLoginRequired()
                     },
                 )
-                ChaekOverlayButton(if (editing) "수정 저장" else "감상 남기기", modifier = Modifier.semantics { contentDescription = if (editing) "감상 수정 저장" else "감상 등록" }, enabled = QuestionAReviewRules.canSubmit(draft) && !isSaving, onClick = {
+                ChaekOverlayButton(if (editing) "수정 저장" else "감상 남기기", modifier = Modifier.semantics { contentDescription = if (editing) "수정 저장" else "감상 남기기" }, enabled = QuestionAReviewRules.canSubmit(draft) && !isSaving, onClick = {
                     if (QuestionAReviewRules.canSubmit(draft) && !isSaving) {
                         focusManager.clearFocus()
                         keyboardController?.hide()
