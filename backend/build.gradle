@@ -290,7 +290,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		constrainString('/api/v1/reviews/{reviewId}/replies', 'post', 'content', 200)
 		constrainString('/api/v1/replies/{replyId}', 'patch', 'content', 200)
 		requestProperty('/api/v1/members/me/nickname', 'patch', 'nickname')
-				?.putAll([minLength: 1, maxLength: 100])
+				?.putAll([minLength: 1, maxLength: 10])
 		requestProperty('/api/v1/books/{bookId}/reviews', 'post', 'isSpoiler')?.putAll([nullable: false, default: false])
 		requestProperty('/api/v1/books/by-isbn/{isbn13}/reviews', 'post', 'isSpoiler')?.putAll([nullable: false, default: false])
 		requestProperty('/api/v1/reviews/{reviewId}', 'patch', 'content')?.remove('nullable')
@@ -617,7 +617,7 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/auth/reissue'        : [post: ['204']],
 			'/api/v1/auth/logout'         : [post: ['204']],
 			'/api/v1/members/me'          : [get: ['200', '401'], delete: ['204', '401']],
-			'/api/v1/members/me/nickname' : [patch: ['200', '400', '401', '409']],
+			'/api/v1/members/me/nickname' : [patch: ['200', '400', '401', '403', '409']],
 			'/api/v1/members/me/anonymity': [patch: ['200', '400', '401', '422']]
 		]
 		authOperations.each { path, operations ->
@@ -979,6 +979,7 @@ tasks.register('verifyOpenApi') {
 			throw new GradleException('OpenAPI specification must constrain rating to 0.1 through 5.0 in 0.1 increments')
 		}
 		[
+			[path: '/api/v1/members/me/nickname', method: 'patch', name: 'nickname', maxLength: 10],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'content', maxLength: 1000],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'quote', maxLength: 500],
 			[path: '/api/v1/books/{bookId}/reviews', method: 'post', name: 'chapter', maxLength: 255],

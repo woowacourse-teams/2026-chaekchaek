@@ -1,12 +1,19 @@
 package com.chaekchaek.library.repository;
 
 import com.chaekchaek.library.domain.Library;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LibraryRepository extends JpaRepository<Library, Long> {
+
+    boolean existsByMemberIdAndIsDefaultTrue(long memberId);
+
+    Optional<Library> findByMemberIdAndIsDefaultTrue(long memberId);
+
+    Optional<Library> findByMemberIdAndName(long memberId, String name);
 
     @Query("""
             select coalesce(max(l.displayOrder), 0)

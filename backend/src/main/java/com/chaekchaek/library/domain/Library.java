@@ -12,6 +12,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import java.util.regex.Pattern;
 
 @Entity
 @Table(
@@ -33,6 +34,7 @@ public class Library {
 
     private static final int NAME_MAX_LENGTH = 100;
     private static final int NAME_COLUMN_LENGTH = 104;
+    private static final Pattern NEW_NAME_PATTERN = Pattern.compile("^[가-힣A-Za-z0-9_-]{1,10}$");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -74,6 +76,29 @@ public class Library {
     public static Library create(long memberId, String name, Instant now) {
         String normalizedName = validateAndNormalizeName(name);
         return new Library(memberId, normalizedName, now);
+    }
+
+    public static Library createDefault(
+            long memberId,
+            String name,
+            long displayOrder,
+            Instant now
+    ) {
+        validateNewName(name);
+        Library library = new Library(memberId, name, now);
+        library.changeDisplayOrder(displayOrder);
+        library.promoteToDefault();
+        return library;
+    }
+
+    public static void validateNewName(String name) {
+        if (name == null || !NEW_NAME_PATTERN.matcher(name).matches()) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+    }
+
+    public void promoteToDefault() {
+        this.isDefault = true;
     }
 
     public void changeDisplayOrder(long displayOrder) {
