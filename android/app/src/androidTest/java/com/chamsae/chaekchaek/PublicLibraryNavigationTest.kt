@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.graphics.Bitmap
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.os.SystemClock
@@ -120,6 +121,7 @@ class PublicLibraryNavigationTest {
         val down = SystemClock.uptimeMillis()
         fun input(action: Int, x: Float) {
             val event = MotionEvent.obtain(down, SystemClock.uptimeMillis(), action, x, metrics.heightPixels * 0.5f, 0)
+            event.source = InputDevice.SOURCE_TOUCHSCREEN
             try { check(instrumentation.uiAutomation.injectInputEvent(event, true)) } finally { event.recycle() }
         }
         input(MotionEvent.ACTION_DOWN, 1f)
