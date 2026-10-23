@@ -24,7 +24,7 @@ export type GetLibrariesLibraryId = (params: GetLibrariesLibraryIdParams) => Pro
 export interface PostLibrariesLibraryIdCommand {
   libraryId: number;
   isbn13: string;
-  totalPages: number;
+  totalPages?: number | undefined;
   status: string;
 }
 

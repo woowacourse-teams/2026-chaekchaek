@@ -20,6 +20,7 @@ export type GetLibrariesResponseDto = ResponseDto<{
       bookId: number;
       title: string;
       spineImageUrl: string;
+      isbn13: string;
     }[];
   }[];
 }>;

@@ -25,7 +25,7 @@ export type GetLibrariesLibraryIdResponseDto = ResponseDto<{
 }>;
 export interface PostLibrariesLibraryIdRequestDto {
   pathParams: [{ name: 'libraryId'; value: number }];
-  data: { isbn13: string; totalPages: number; status: string };
+  data: { isbn13: string; totalPages?: number | undefined; status: string };
 }
 
 export type PostLibrariesLibraryIdResponseDto = ResponseDto<undefined>;
