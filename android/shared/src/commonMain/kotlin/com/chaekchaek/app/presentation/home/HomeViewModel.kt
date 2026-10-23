@@ -194,6 +194,7 @@ private fun FeedSection.toUiModel(now: Instant): FeedSectionUiModel = when (this
                 bookTitle = card.bookTitle,
                 coverId = card.coverId,
                 authorName = card.authorLabel,
+                authorProfile = card.authorProfile,
                 timeLabel = TimeLabels.relative(card.createdAt, now),
                 quoteText = card.quoteText,
                 quote = card.quote,

@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.search
 
+import com.chaekchaek.app.ui.common.authorProfileLink
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -522,6 +524,7 @@ private fun DiscoverReflection(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
           Text(
             card.authorName,
+            modifier = Modifier.authorProfileLink(card.authorProfile),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
             maxLines = 1,

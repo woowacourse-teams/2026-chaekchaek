@@ -45,6 +45,7 @@ data class QuoteCardUiModel(
     val replyCount: Int,
     val replyLabel: String,
     val isSpoiler: Boolean = false,
+    val authorProfile: com.chaekchaek.app.domain.profile.AuthorProfile = com.chaekchaek.app.domain.profile.AuthorProfile(authorName),
 )
 
 data class OverlappedCardUiModel(
