@@ -19,6 +19,8 @@ Google 로그인 설정, 패키지명 및 Play 서명 변경 점검과 오류 �
 
 ## 개발 문서
 
+- [모바일 원격 설정과 업데이트 정책](../docs/mobile-remote-config-updates.md) - 기본값, 수신 시점, 최소 지원 버전과 검증 경계
+
 - [Android CI 운영 및 학습 기록](docs/android-ci.md) - 자동 검증 범위, 실행 방법, 실패 대응
 - [iOS App Store 심사 준비](docs/ios-app-store-review.md) - 빌드, 서명, 키, 제출 메타데이터
 

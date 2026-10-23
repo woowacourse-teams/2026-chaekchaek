@@ -12,18 +12,19 @@
 		6AD10E5BA60949CD51D966B4 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 19D0BD55F8A3754D36BA743B /* Foundation.framework */; };
 		6ED143CCB7658FFD45C4B742 /* ChaekchaekApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */; };
 		74D496A28AE8876E8F7BF668 /* ChaekchaekTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E4ABD4BA4F5B4E8CA2294BE /* ChaekchaekTests.swift */; };
+		7645B8FE0A2C34DFBD15C3C7 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 7BE5C99BDCC60B5BFA16A565 /* FirebaseRemoteConfig */; };
 		A10000000000000000000001 /* GoogleSignInProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* GoogleSignInProvider.swift */; };
 		A10000000000000000000003 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000005 /* GoogleSignIn */; };
-		D40000000000000000000001 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = D40000000000000000000004 /* FirebaseAnalytics */; };
-		D40000000000000000000002 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000003 /* GoogleService-Info.plist */; };
 		A10000000000000000000007 /* RefreshTokenKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* RefreshTokenKeychain.swift */; };
 		A20000000000000000000001 /* AppleSignInProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* AppleSignInProvider.swift */; };
 		B30000000000000000000001 /* LoginRequiredSheetUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000002 /* LoginRequiredSheetUITests.swift */; };
 		B40000000000000000000001 /* FirstLibraryOnboardingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */; };
 		B56000000000000000000001 /* QuestionAPreviewUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56000000000000000000002 /* QuestionAPreviewUITests.swift */; };
 		C1D48550D30C0BB273B37351 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */; };
-		FF331168D03AF9252AA103AA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6E70D11AEAFF647C18D3139 /* Assets.xcassets */; };
+		D40000000000000000000001 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = D40000000000000000000004 /* FirebaseAnalytics */; };
+		D40000000000000000000002 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000003 /* GoogleService-Info.plist */; };
 		E58800000000000000000001 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = E58800000000000000000002 /* PostHog */; };
+		FF331168D03AF9252AA103AA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F6E70D11AEAFF647C18D3139 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,14 +55,14 @@
 		A10000000000000000000008 /* RefreshTokenKeychain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RefreshTokenKeychain.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* AppleSignInProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppleSignInProvider.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* Chaekchaek.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = Chaekchaek.entitlements; sourceTree = "<group>"; };
+		AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chaekchaek.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B30000000000000000000002 /* LoginRequiredSheetUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoginRequiredSheetUITests.swift; sourceTree = "<group>"; };
+		B30000000000000000000004 /* ChaekchaekUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChaekchaekUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FirstLibraryOnboardingUITests.swift; sourceTree = "<group>"; };
 		B56000000000000000000002 /* QuestionAPreviewUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuestionAPreviewUITests.swift; sourceTree = "<group>"; };
-		B30000000000000000000004 /* ChaekchaekUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChaekchaekUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Chaekchaek.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D40000000000000000000003 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D55D6C97221F513AE0BCFAAB /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChaekchaekApp.swift; sourceTree = "<group>"; };
-		D40000000000000000000003 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		F6E70D11AEAFF647C18D3139 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -74,6 +75,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B30000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FB1D8635B72AE66B4450069B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -82,13 +90,7 @@
 				E58800000000000000000001 /* PostHog in Frameworks */,
 				A10000000000000000000003 /* GoogleSignIn in Frameworks */,
 				6AD10E5BA60949CD51D966B4 /* Foundation.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		B30000000000000000000005 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+				7645B8FE0A2C34DFBD15C3C7 /* FirebaseRemoteConfig in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -101,16 +103,6 @@
 				5E4ABD4BA4F5B4E8CA2294BE /* ChaekchaekTests.swift */,
 			);
 			path = ChaekchaekTests;
-			sourceTree = "<group>";
-		};
-		B30000000000000000000006 /* ChaekchaekUITests */ = {
-			isa = PBXGroup;
-			children = (
-				B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */,
-				B56000000000000000000002 /* QuestionAPreviewUITests.swift */,
-				B30000000000000000000002 /* LoginRequiredSheetUITests.swift */,
-			);
-			path = ChaekchaekUITests;
 			sourceTree = "<group>";
 		};
 		467A3487449985D2D21CE9C8 = {
@@ -176,6 +168,16 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		B30000000000000000000006 /* ChaekchaekUITests */ = {
+			isa = PBXGroup;
+			children = (
+				B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */,
+				B56000000000000000000002 /* QuestionAPreviewUITests.swift */,
+				B30000000000000000000002 /* LoginRequiredSheetUITests.swift */,
+			);
+			path = ChaekchaekUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -197,28 +199,11 @@
 				A10000000000000000000005 /* GoogleSignIn */,
 				D40000000000000000000004 /* FirebaseAnalytics */,
 				E58800000000000000000002 /* PostHog */,
+				7BE5C99BDCC60B5BFA16A565 /* FirebaseRemoteConfig */,
 			);
 			productName = Chaekchaek;
 			productReference = AC7D0FDB46E56D34F88402A8 /* Chaekchaek.app */;
 			productType = "com.apple.product-type.application";
-		};
-		E467D74FC3CE4235D70EF8C4 /* ChaekchaekTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = DB1A8D5DC64EA63F21BFBEB6 /* Build configuration list for PBXNativeTarget "ChaekchaekTests" */;
-			buildPhases = (
-				E52D446097827E5F9990B821 /* Sources */,
-				A40A9483AB0C520AF04867C0 /* Frameworks */,
-				0B99CCD145B75C8464EAEC54 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				91E51FB8D2C01F70DAE39C64 /* PBXTargetDependency */,
-			);
-			name = ChaekchaekTests;
-			productName = ChaekchaekTests;
-			productReference = 91AA8D77ED3D6DB15210D4BE /* ChaekchaekTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		B30000000000000000000007 /* ChaekchaekUITests */ = {
 			isa = PBXNativeTarget;
@@ -237,6 +222,24 @@
 			productName = ChaekchaekUITests;
 			productReference = B30000000000000000000004 /* ChaekchaekUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		E467D74FC3CE4235D70EF8C4 /* ChaekchaekTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DB1A8D5DC64EA63F21BFBEB6 /* Build configuration list for PBXNativeTarget "ChaekchaekTests" */;
+			buildPhases = (
+				E52D446097827E5F9990B821 /* Sources */,
+				A40A9483AB0C520AF04867C0 /* Frameworks */,
+				0B99CCD145B75C8464EAEC54 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				91E51FB8D2C01F70DAE39C64 /* PBXTargetDependency */,
+			);
+			name = ChaekchaekTests;
+			productName = ChaekchaekTests;
+			productReference = 91AA8D77ED3D6DB15210D4BE /* ChaekchaekTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -343,14 +346,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E52D446097827E5F9990B821 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				74D496A28AE8876E8F7BF668 /* ChaekchaekTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		B30000000000000000000009 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -358,6 +353,14 @@
 				B40000000000000000000001 /* FirstLibraryOnboardingUITests.swift in Sources */,
 				B56000000000000000000001 /* QuestionAPreviewUITests.swift in Sources */,
 				B30000000000000000000001 /* LoginRequiredSheetUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E52D446097827E5F9990B821 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				74D496A28AE8876E8F7BF668 /* ChaekchaekTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -403,6 +406,9 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.3.1;
+				OTHER_LDFLAGS = (
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -515,6 +521,9 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.3.1;
+				OTHER_LDFLAGS = (
+					"-ObjC",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -523,6 +532,36 @@
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
+		};
+		B3000000000000000000000C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Chaekchaek;
+			};
+			name = Debug;
+		};
+		B3000000000000000000000D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Chaekchaek;
+			};
+			name = Release;
 		};
 		C796AF80A55F6F2F2BE51406 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -594,36 +633,6 @@
 			};
 			name = Debug;
 		};
-		B3000000000000000000000C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGNING_ALLOWED = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek.uitests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				TEST_TARGET_NAME = Chaekchaek;
-			};
-			name = Debug;
-		};
-		B3000000000000000000000D /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGNING_ALLOWED = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.chamsae.chaekchaek.uitests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				TEST_TARGET_NAME = Chaekchaek;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -632,6 +641,15 @@
 			buildConfigurations = (
 				9680B3B7975576A80228A2BD /* Debug */,
 				C796AF80A55F6F2F2BE51406 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B30000000000000000000008 /* Build configuration list for PBXNativeTarget "ChaekchaekUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B3000000000000000000000D /* Release */,
+				B3000000000000000000000C /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -650,15 +668,6 @@
 			buildConfigurations = (
 				90BDD8B3BF210CC7D0DCA611 /* Release */,
 				E29D294E7481CE14C1947C14 /* Debug */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		B30000000000000000000008 /* Build configuration list for PBXNativeTarget "ChaekchaekUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				B3000000000000000000000D /* Release */,
-				B3000000000000000000000C /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -685,11 +694,19 @@
 		E58800000000000000000003 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
-			requirement = { kind = exactVersion; version = 3.92.2; };
+			requirement = {
+				kind = exactVersion;
+				version = 3.92.2;
+			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		7BE5C99BDCC60B5BFA16A565 /* FirebaseRemoteConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D40000000000000000000005 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseRemoteConfig;
+		};
 		A10000000000000000000005 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A10000000000000000000004 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
