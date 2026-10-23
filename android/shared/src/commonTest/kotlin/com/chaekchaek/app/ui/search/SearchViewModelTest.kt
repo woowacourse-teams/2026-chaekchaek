@@ -7,6 +7,15 @@ import com.chaekchaek.app.domain.book.BookSearchRepository
 import com.chaekchaek.app.domain.book.BookSearchPage
 import com.chaekchaek.app.domain.book.BookSearchResult
 import com.chaekchaek.app.domain.book.BookSearchSort
+import com.chaekchaek.app.data.remote.BookSearchRemoteRepository
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockEngineConfig
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpHeaders
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -588,6 +597,50 @@ class SearchViewModelTest {
         } finally {
             Dispatchers.resetMain()
         }
+    }
+
+    @Test
+    fun filteredPagesKeepValidIsbnDeduplicationAndRestoration() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val requests = mutableListOf<Int>()
+            val client = HttpClient(MockEngine(MockEngineConfig().apply {
+                dispatcher = StandardTestDispatcher(testScheduler)
+                addHandler { request ->
+                    val page = request.url.parameters["page"]!!.toInt()
+                    requests += page
+                    val products = when (page) {
+                        1 -> listOf("9788937460449")
+                        2 -> listOf("")
+                        else -> listOf("9788937460449", "9788936433598")
+                    }.joinToString(",") { isbn ->
+                        """{"title":"책 $isbn","coverImageUrl":"","authors":[],"translators":[],"publishedDate":null,"isbn13":"$isbn","category":"소설","publisher":"출판사"}"""
+                    }
+                    respond(
+                        """{"totalCount":4,"nextPage":${when (page) { 1 -> 2; 2 -> 4; else -> null }},"items":[$products]}""",
+                        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                    )
+                }
+            })) { install(ContentNegotiation) { json() } }
+            val repository = BookSearchRemoteRepository(client)
+            val handle = SavedStateHandle()
+            val vm = SearchViewModel(repository, {}, { true }, savedStateHandle = handle)
+            vm.search("호밀")
+            advanceUntilIdle()
+            vm.loadMore()
+            advanceUntilIdle()
+
+            val content = vm.uiState.value as SearchUiState.Success
+            assertEquals(listOf("9788937460449", "9788936433598"), content.results.map { it.isbn13 })
+            assertEquals(null, content.nextPage)
+            assertTrue(content.results.all { it.year.isEmpty() })
+            assertEquals(listOf(1, 2, 4), requests)
+
+            val restored = SearchViewModel(repository, {}, { true }, savedStateHandle = handle)
+            advanceUntilIdle()
+            assertEquals(content.results, (restored.uiState.value as SearchUiState.Success).results)
+            assertEquals(listOf(1, 2, 4, 1, 2, 4), requests)
+        } finally { Dispatchers.resetMain() }
     }
 
     private fun book(title: String, year: String) = BookSearchResult(

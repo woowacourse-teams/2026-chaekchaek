@@ -56,6 +56,31 @@ class LibraryRemoteRepositoryTest {
     assertNull(book.spineImageUrl)
   }
 
+  @Test
+  fun `library keeps all pages when publication dates are null missing or empty`() = runTest {
+    val requests = mutableListOf<Int>()
+    val client = HttpClient(MockEngine { request ->
+      val page = request.url.parameters["page"]!!.toInt()
+      requests += page
+      val dateField = when (page) {
+        1 -> "\"publishedDate\":\"2001-05-30\","
+        2 -> "\"publishedDate\":null,"
+        3 -> ""
+        else -> "\"publishedDate\":\"\","
+      }
+      respond(
+        """{"nextPage":${if (page < 4) page + 1 else null},"items":[{"bookId":$page,"isbn13":"978000000000$page","title":"책 $page","coverImageUrl":"cover","authors":[],"publisher":"출판사","category":"소설",${dateField}"status":"READING","currentPage":10,"readingUpdatedAt":"2026-01-01T00:00:00Z"}]}""",
+        headers = headersOf(HttpHeaders.ContentType, "application/json"),
+      )
+    }) { install(ContentNegotiation) { json() } }
+
+    val books = LibraryRemoteRepository(client).getAll("access-token")
+
+    assertEquals(listOf(1, 2, 3, 4), requests)
+    assertEquals(listOf(1L, 2L, 3L, 4L), books.map { it.bookId })
+    assertEquals(listOf("2001-05-30", null, null, ""), books.map { it.publishedDate })
+  }
+
   private fun libraryClient(optionalImageFields: String = "") = HttpClient(MockEngine {
     respond(
       """{"nextPage":null,"items":[{"bookId":1,"isbn13":"9780000000001","title":"책","coverImageUrl":"cover",$optionalImageFields"authors":[],"publisher":"출판사","category":"소설","publishedDate":"2026-01-01","totalPages":100,"status":"READING","currentPage":10,"readingUpdatedAt":"2026-01-01T00:00:00Z"}]}""",

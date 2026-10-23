@@ -439,6 +439,27 @@ final class LoginRequiredSheetUITests: XCTestCase {
     }
 
     @MainActor
+    func testSearchOmitsMissingYearsAndExcludesProductsWithoutIsbn() throws {
+        let fixture = try RefreshFixtureServer(searchMetadata: true)
+        defer { fixture.stop() }
+        let app = refreshApplication(fixture)
+        app.launch()
+        XCTAssertTrue(app.buttons["발견"].waitForExistence(timeout: 15))
+        app.buttons["발견"].tap()
+        let field = app.textViews["search-query-field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("rye\n")
+        XCTAssertTrue(app.staticTexts["출판일 없는 호밀 도서"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["출판일 누락 도서"].exists)
+        XCTAssertFalse(app.staticTexts["ISBN 없는 세트"].exists)
+        XCTAssertFalse(app.staticTexts["출판일 정보 없음"].exists)
+        XCTAssertFalse(app.buttons["다시 시도"].exists)
+        XCTAssertEqual(fixture.completedRequests(for: "/api/v1/books"), 1)
+        attachScreenshot(named: "검색 출판일 생략과 ISBN 없는 상품 제외")
+    }
+
+    @MainActor
     func testEmptySearchPullKeepsSubmittedInput() throws {
         let fixture = try RefreshFixtureServer()
         defer { fixture.stop() }
@@ -663,12 +684,14 @@ private final class RefreshFixtureServer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "chaekchaek.refresh-ui-test-api")
     private let lock = NSLock()
     private var responses: [String: Int] = [:]
+    private let searchMetadata: Bool
     private let initialDetailReviews: Bool
     private var detailRefreshArmed = false
 
     var baseURL: String { "http://127.0.0.1:\(listener.port!.rawValue)" }
 
-    init(initialDetailReviews: Bool = false) throws {
+    init(initialDetailReviews: Bool = false, searchMetadata: Bool = false) throws {
+        self.searchMetadata = searchMetadata
         self.initialDetailReviews = initialDetailReviews
         listener = try NWListener(using: .tcp, on: .any)
         let ready = XCTestExpectation(description: "로컬 API 서버 시작")
@@ -740,6 +763,14 @@ private final class RefreshFixtureServer: @unchecked Sendable {
     private func response(for path: String) -> Data {
         let body: String
         switch path {
+        case "/api/v1/books" where searchMetadata:
+            body = """
+            {"totalCount":3,"nextPage":null,"items":[
+              {"title":"출판일 없는 호밀 도서","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","publishedDate":null,"isbn13":"9788937460449"},
+              {"title":"출판일 누락 도서","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","isbn13":"9788936433598"},
+              {"title":"ISBN 없는 세트","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","publishedDate":null,"isbn13":""}
+            ]}
+            """
         case "/api/v1/books/by-isbn/9780000000001":
             body = """
             {"bookId":1,"isbn13":"9780000000001","title":"새로고침 검증 도서","authors":[],"translators":[],"publisher":"출판사","category":"소설","coverImageUrl":"","myRecord":null}
