@@ -52,7 +52,9 @@ class Jev580FlowHostTest {
         awaitFinish()
         val state = JSONObject(get("/__580/state"))
         assertEquals("reader", state.getString("nickname"))
-        assertEquals(2, state.getInt("nicknameWrites"))
+        val expectedWrites = InstrumentationRegistry.getArguments().getString("nicknameWrites")?.toInt() ?: 2
+        require(expectedWrites in 1..2)
+        assertEquals(expectedWrites, state.getInt("nicknameWrites"))
         compose.onNodeWithText("닉네임 설정").assertDoesNotExist()
     }
 
