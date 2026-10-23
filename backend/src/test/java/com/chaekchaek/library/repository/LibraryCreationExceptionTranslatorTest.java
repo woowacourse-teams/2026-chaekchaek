@@ -39,9 +39,9 @@ class LibraryCreationExceptionTranslatorTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "uk_libraries_member_name",
-            "PUBLIC.UK_LIBRARIES_MEMBER_NAME_INDEX_9",
-            "libraries.uk_libraries_member_name"
+            "uq_libraries_member_name",
+            "PUBLIC.UQ_LIBRARIES_MEMBER_NAME_INDEX_9",
+            "libraries.uq_libraries_member_name"
     })
     @DisplayName("원인 체인의 서재명 제약 위반을 중복 오류로 바꾸고 식별 정보를 기록한다")
     void should_TranslateAndLogDuplicateName_When_ConstraintMatches(String constraint) {
@@ -72,7 +72,7 @@ class LibraryCreationExceptionTranslatorTest {
 
     @ParameterizedTest
     @NullSource
-    @ValueSource(strings = {"uk_member_nickname", "fk_libraries_member"})
+    @ValueSource(strings = {"uq_member_nickname", "fk_library_member"})
     @DisplayName("제약 이름이 없거나 다른 제약이면 원래 예외를 유지한다")
     void should_PreserveException_When_ConstraintDoesNotMatch(String constraint) {
         // given

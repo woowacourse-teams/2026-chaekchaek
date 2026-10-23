@@ -40,6 +40,8 @@ class LibraryRepositoryTest {
         Library found = libraryRepository.findById(saved.getId()).orElseThrow();
         assertThat(found.isOwnedBy(1L)).isTrue();
         assertThat(found.getName()).isEqualTo("가을에 읽을 책");
+        assertThat(found.isDefault()).isFalse();
+        assertThat(found.getDisplayOrder()).isEqualTo(1L);
         assertThat(found.getCreatedAt()).isEqualTo(NOW);
         assertThat(found.getUpdatedAt()).isNull();
     }
@@ -68,6 +70,27 @@ class LibraryRepositoryTest {
 
         // then
         assertThat(libraryRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("멤버별 책장 순서 중 가장 큰 값을 조회한다")
+    void should_FindMaxDisplayOrder_When_MemberHasLibraries() {
+        // given
+        Library first = Library.create(1L, "첫 번째", NOW);
+        first.changeDisplayOrder(2L);
+        libraryRepository.create(first);
+        Library second = Library.create(1L, "두 번째", NOW);
+        second.changeDisplayOrder(5L);
+        libraryRepository.create(second);
+        Library anotherMember = Library.create(2L, "다른 회원", NOW);
+        anotherMember.changeDisplayOrder(9L);
+        libraryRepository.create(anotherMember);
+
+        // when
+        long actual = libraryRepository.findMaxDisplayOrderByMemberId(1L);
+
+        // then
+        assertThat(actual).isEqualTo(5L);
     }
 
     @Test

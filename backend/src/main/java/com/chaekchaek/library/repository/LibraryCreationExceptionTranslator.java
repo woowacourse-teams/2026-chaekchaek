@@ -10,7 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 final class LibraryCreationExceptionTranslator {
 
-    private static final String NAME_UNIQUE_CONSTRAINT = "uk_libraries_member_name";
+    private static final String NAME_UNIQUE_CONSTRAINT = "uq_libraries_member_name";
     private static final Logger log = LoggerFactory.getLogger(LibraryCreationExceptionTranslator.class);
 
     private LibraryCreationExceptionTranslator() {

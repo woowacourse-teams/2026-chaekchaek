@@ -78,6 +78,10 @@ public class LibraryService {
     @Transactional
     public LibraryResponse create(long memberId, String name) {
         Library library = Library.create(memberId, name, now());
+        memberRepository.findByIdForUpdate(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        long displayOrder = libraryRepository.findMaxDisplayOrderByMemberId(memberId) + 1;
+        library.changeDisplayOrder(displayOrder);
         Library saved = libraryRepository.create(library);
         log.atInfo()
                 .addKeyValue("type", "event")

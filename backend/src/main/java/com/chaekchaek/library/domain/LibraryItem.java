@@ -1,5 +1,8 @@
 package com.chaekchaek.library.domain;
 
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
+import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,15 +12,30 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import com.chaekchaek.common.exception.BusinessException;
-import com.chaekchaek.common.exception.ErrorCode;
 import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "library_item", uniqueConstraints = @UniqueConstraint(
-        name = "uk_library_item_member_book", columnNames = {"member_id", "book_id"}
-))
+@Table(
+        name = "library_item",
+        check = {
+                @CheckConstraint(
+                        name = "ck_library_item_reading_state",
+                        constraint = "(status is null and current_page is null and reading_updated_at is null) "
+                                + "or (status is not null and current_page is not null "
+                                + "and reading_updated_at is not null)"
+                ),
+                @CheckConstraint(
+                        name = "ck_library_item_rating_state",
+                        constraint = "(rating is null and rating_updated_at is null) "
+                                + "or (rating is not null and rating_updated_at is not null)"
+                )
+        },
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_library_item_member_book",
+                columnNames = {"member_id", "book_id"}
+        )
+)
 public class LibraryItem {
 
     @Id

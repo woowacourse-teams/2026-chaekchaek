@@ -102,6 +102,8 @@ class LibraryServiceTest {
         Library saved = mock(Library.class);
         when(saved.getId()).thenReturn(7L);
         when(saved.getName()).thenReturn("가을에 읽을 책");
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(Member.class)));
+        when(libraryRepository.findMaxDisplayOrderByMemberId(1L)).thenReturn(4L);
         when(libraryRepository.create(any(Library.class))).thenReturn(saved);
         LibraryService service = service();
 
@@ -110,10 +112,15 @@ class LibraryServiceTest {
 
         // then
         ArgumentCaptor<Library> captor = ArgumentCaptor.forClass(Library.class);
-        verify(libraryRepository).create(captor.capture());
+        InOrder lockOrder = inOrder(memberRepository, libraryRepository);
+        lockOrder.verify(memberRepository).findByIdForUpdate(1L);
+        lockOrder.verify(libraryRepository).findMaxDisplayOrderByMemberId(1L);
+        lockOrder.verify(libraryRepository).create(captor.capture());
         Library created = captor.getValue();
         assertThat(created.isOwnedBy(1L)).isTrue();
         assertThat(created.getName()).isEqualTo("가을에 읽을 책");
+        assertThat(created.isDefault()).isFalse();
+        assertThat(created.getDisplayOrder()).isEqualTo(5L);
         assertThat(created.getCreatedAt()).isEqualTo(CLOCK.instant());
         assertThat(actual.libraryId()).isEqualTo(7L);
         assertThat(actual.name()).isEqualTo("가을에 읽을 책");
@@ -148,6 +155,7 @@ class LibraryServiceTest {
     @DisplayName("서재 저장이 실패하면 생성 이벤트를 기록하지 않는다")
     void should_NotLogCreatedEvent_When_PersistenceFails() {
         // given
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mock(Member.class)));
         when(libraryRepository.create(any(Library.class)))
                 .thenThrow(new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS));
         LibraryService service = service();

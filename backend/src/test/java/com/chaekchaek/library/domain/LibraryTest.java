@@ -29,8 +29,22 @@ class LibraryTest {
 
         // then
         assertThat(library.getName()).isEqualTo(name);
+        assertThat(library.isDefault()).isFalse();
+        assertThat(library.getDisplayOrder()).isEqualTo(1L);
         assertThat(library.getCreatedAt()).isEqualTo(NOW);
         assertThat(library.getUpdatedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("서재 표시 순서는 양수여야 한다")
+    void should_RejectNonPositiveDisplayOrder_When_ChangingDisplayOrder() {
+        // when & then
+        Library library = Library.create(1L, "가을에 읽을 책", NOW);
+        assertThatThrownBy(() -> library.changeDisplayOrder(0L))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST)
+                );
     }
 
     @Test
