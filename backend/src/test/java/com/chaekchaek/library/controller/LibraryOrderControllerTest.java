@@ -45,14 +45,20 @@ import org.springframework.test.web.servlet.ResultActions;
 @AutoConfigureRestDocs
 class LibraryOrderControllerTest {
 
-    private static final String DESCRIPTION = """
-            인증 회원의 전체 ID를 원하는 순서대로 전달한다. 책장 순서는 기본 책장도 포함한다.
-            빈 목록은 빈 배열을 허용하며, 이전된 30권 초과 책장에도 도서 개수 제한을 적용하지 않는다.
+    private static final String COMMON_ORDER_DESCRIPTION = """
+            빈 목록은 빈 배열을 허용한다.
             ID는 양의 int64 정수이며 null, 문자열, 소수와 중복은 `400`, `INVALID_REQUEST`다.
             현재 전체 ID 집합과 다르면 `409`, `ORDER_CONFLICT`이며 목록을 다시 조회한 뒤 요청한다.
             실패하면 기존 순서를 전부 유지하고, 같은 집합의 동시 요청은 마지막 반영 순서를 적용한다.
             다른 책장, 독서 기록과 별점은 변경하지 않는다.
             """;
+    private static final String LIBRARY_ORDER_DESCRIPTION =
+            "인증 회원의 모든 책장 ID를 기본 책장까지 포함해 원하는 순서대로 전달한다. "
+                    + COMMON_ORDER_DESCRIPTION;
+    private static final String BOOK_ORDER_DESCRIPTION =
+            "인증 회원이 소유한 특정 책장의 전체 도서 ID를 원하는 순서대로 전달한다. "
+                    + "이전된 30권 초과 책장에도 도서 개수 제한을 적용하지 않는다. "
+                    + COMMON_ORDER_DESCRIPTION;
     private static final FieldDescriptor[] PROBLEM_FIELDS = {
             fieldWithPath("type").description("문제 유형 URI"),
             fieldWithPath("title").description("HTTP 상태 설명"),
@@ -265,7 +271,7 @@ class LibraryOrderControllerTest {
         ResourceSnippetParametersBuilder builder = ResourceSnippetParameters.builder()
                 .tag(books ? "책장 도서" : "책장")
                 .summary(books ? "책장 내 도서 순서 변경" : "서재 내 책장 순서 변경")
-                .description(DESCRIPTION);
+                .description(books ? BOOK_ORDER_DESCRIPTION : LIBRARY_ORDER_DESCRIPTION);
         if (books) {
             builder.pathParameters(ResourceDocumentation.parameterWithName("libraryId").type(SimpleType.INTEGER)
                     .description("소유한 책장 ID, 양의 BIGINT 정수"));
