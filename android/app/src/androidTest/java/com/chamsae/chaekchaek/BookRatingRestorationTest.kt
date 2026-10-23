@@ -5,6 +5,9 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -16,6 +19,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
@@ -44,7 +48,20 @@ class BookRatingRestorationTest {
     fun restoredUntouchedDraftAcceptsLateExistingFractionalRating() =
         verifyRating(edited = false, restore = true, existingRating = 4.2)
 
-    private fun verifyRating(edited: Boolean, restore: Boolean, existingRating: Double = 2.0) {
+    @Test
+    fun ratingWithoutLibraryRecordPrefillsDraft() =
+        verifyRating(edited = false, restore = false, existingRating = 4.5, ratingOnly = true)
+
+    @Test
+    fun ratingWithoutLibraryRecordSurvivesDraftRestoration() =
+        verifyRating(edited = false, restore = true, existingRating = 4.5, ratingOnly = true)
+
+    private fun verifyRating(
+        edited: Boolean,
+        restore: Boolean,
+        existingRating: Double = 2.0,
+        ratingOnly: Boolean = false,
+    ) {
         val state = mutableStateOf(
             BookDetailUiState(
                 book = BookDetailArgs(id = "42", bookId = 42, title = "별점 복원 검증"),
@@ -64,18 +81,56 @@ class BookRatingRestorationTest {
         }
         compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("별점 복원 검증 감상")
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val automation = instrumentation.uiAutomation
+        automation.serviceInfo = automation.serviceInfo.apply {
+            flags = flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+        }
+        fun keyboardVisible() = automation.windows.any {
+            it.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD
+        }
+        fun dismissKeyboard(waitForAppearance: Boolean = false) {
+            compose.waitForIdle()
+            if (waitForAppearance) compose.waitUntil(timeoutMillis = 5_000) { keyboardVisible() }
+            if (keyboardVisible()) {
+                instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+                compose.waitUntil(timeoutMillis = 5_000) { !keyboardVisible() }
+                compose.waitForIdle()
+            }
+        }
+        dismissKeyboard(waitForAppearance = true)
         compose.onNodeWithContentDescription("별점 (선택)").performScrollTo().assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "미선택"),
         )
         if (edited) compose.onNodeWithContentDescription("별점 (선택)")
             .performSemanticsAction(SemanticsActions.SetProgress) { it(4.5f) }
         if (restore) restoration.emulateSavedInstanceStateRestore()
-        compose.runOnIdle { state.value = state.value.copy(detail = detailWithRating(existingRating)) }
+        compose.runOnIdle {
+            val detail = detailWithRating(existingRating)
+            state.value = state.value.copy(detail = if (ratingOnly) {
+                detail.copy(myRecord = null, myRating = existingRating, isRegisteredInMyLibrary = false)
+            } else detail)
+        }
         val expected = if (edited) 4.5 else existingRating
         compose.onNodeWithContentDescription("별점 (선택)").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "${expected}점"),
         )
-        compose.onNode(hasText("감상 남기기") and hasClickAction()).performScrollTo().performClick()
+        compose.onNodeWithContentDescription("감상 (필수)").assertTextContains("별점 복원 검증 감상")
+        dismissKeyboard()
+        val submit = compose.onNode(hasText("감상 남기기") and hasClickAction())
+        submit.performScrollTo().assertIsDisplayed().assertIsEnabled()
+        compose.waitForIdle()
+        submit.performClick()
+        try {
+            compose.waitUntil(timeoutMillis = 5_000) { saved != null }
+        } catch (failure: androidx.compose.ui.test.ComposeTimeoutException) {
+            val screenshot = java.io.File(instrumentation.targetContext.cacheDir, "rating-restoration-failure.png")
+            instrumentation.uiAutomation.takeScreenshot()?.let { bitmap ->
+                screenshot.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+                bitmap.recycle()
+            }
+            throw AssertionError("저장 버튼 탭 후 콜백 없음: ${submit.fetchSemanticsNode().boundsInRoot}", failure)
+        }
         compose.runOnIdle { assertEquals(expected, saved) }
     }
 

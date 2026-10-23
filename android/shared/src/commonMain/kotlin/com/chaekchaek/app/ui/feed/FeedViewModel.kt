@@ -116,7 +116,7 @@ class FeedViewModel(
                 val latest = _uiState.value as? FeedUiState.Content ?: return@launch
                 if (latest.nextPage != page) return@launch
                 recordLoad(loadId, "pagination", "success", started.elapsedNow().inWholeMilliseconds, next.reviews.size, page)
-                savedStateHandle[FeedSavedStateKeys.LoadedPage] = page
+                savedStateHandle[FeedSavedStateKeys.LoadedPage] = next.lastLoadedPage ?: page
                 _uiState.value = latest.copy(
                     reviews = (latest.reviews + next.reviews.map { it.toUiModel() })
                         .distinctBy { it.noteId.value },
@@ -213,13 +213,13 @@ class FeedViewModel(
                 val result = try {
                     val restoreThroughPage = savedStateHandle.get<Int>(FeedSavedStateKeys.LoadedPage) ?: FIRST_PAGE
                     var page = repository.reviewFeed(FIRST_PAGE, viewer)
-                    var loadedPage = FIRST_PAGE
+                    var loadedPage = page.lastLoadedPage ?: FIRST_PAGE
                     while (true) {
                         val nextPage = page.nextPage?.takeIf { it > loadedPage && it <= restoreThroughPage }
                             ?: break
                         val next = repository.reviewFeed(nextPage, viewer)
                         page = next.copy(reviews = (page.reviews + next.reviews).distinctBy { it.noteId.value })
-                        loadedPage = nextPage
+                        loadedPage = next.lastLoadedPage ?: nextPage
                     }
                     if (revision != loadRevision || authenticationRevision != this@FeedViewModel.authenticationRevision) return@withDelayedApiLoading
                     recordLoad(loadId, trigger, if (page.reviews.isEmpty()) "empty" else "success", started.elapsedNow().inWholeMilliseconds, page.reviews.size)

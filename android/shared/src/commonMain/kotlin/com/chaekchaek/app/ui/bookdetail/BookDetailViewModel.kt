@@ -12,6 +12,7 @@ import com.chaekchaek.app.analytics.analyticsErrorCategory
 import com.chaekchaek.app.auth.AuthPlatformCallbacks
 import com.chaekchaek.app.data.remote.BookDetailRemoteRepository
 import com.chaekchaek.app.data.remote.BookReview
+import com.chaekchaek.app.data.remote.PersonalRating
 import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.data.remote.LibraryRemoteRepository
 import com.chaekchaek.app.data.remote.MobileAuthRemoteRepository
@@ -266,7 +267,7 @@ class BookDetailViewModel(
     }
 
     fun addToLibrary(onSuccess: (LibraryRecord) -> Unit = {}) {
-        if (mutationJob?.isActive == true || _uiState.value.detail?.myRecord != null) return
+        if (mutationJob?.isActive == true || _uiState.value.detail?.isRegisteredInMyLibrary == true) return
         _uiState.value = _uiState.value.copy(isSavingLibrary = true)
         mutate(
             actionName = "library_add",
@@ -279,7 +280,7 @@ class BookDetailViewModel(
             reloadAfterSuccess = false,
         ) {
             val state = _uiState.value
-            state.detail?.myRecord?.let { return@mutate it }
+            state.detail?.takeIf { it.isRegisteredInMyLibrary }?.myRecord?.let { return@mutate it }
             requireNotNull(state.detail)
             val book = requireNotNull(state.displayBook)
             repository.addToLibrary(book.isbn13, book.totalPages.takeIf { it > 0 }, requireToken())
@@ -288,7 +289,7 @@ class BookDetailViewModel(
 
     fun acceptSavedLibraryRecord(isbn13: String, record: LibraryRecord) {
         if (accessToken == null || _uiState.value.displayBook?.isbn13 != isbn13) return
-        if (_uiState.value.detail?.myRecord != null) return
+        if (_uiState.value.detail?.isRegisteredInMyLibrary == true) return
         externalLibrarySaveRevision += 1
         externallySavedRecord = record
         updateMyRecord(record)
@@ -301,7 +302,7 @@ class BookDetailViewModel(
             _uiState.value = _uiState.value.copy(libraryMessage = "서재에서 삭제했어요")
             onSuccess()
         },
-        reloadAfterSuccess = false,
+        reloadAfterSuccess = true,
     ) {
         libraryRepository.bulkDelete(listOf(savedBookId), requireToken())
     }
@@ -329,15 +330,16 @@ class BookDetailViewModel(
 
     fun saveRating(
         rating: Rating,
-        onLibraryAdded: () -> Unit = {},
         onSuccess: () -> Unit = {},
-    ) = mutateLibraryRecord(
+    ) = mutate(
         actionName = "rating_save",
-        onSuccess = onSuccess,
-        onLibraryAdded = onLibraryAdded,
+        onSuccess = { result: PersonalRating ->
+            updateMyRating(result)
+            onSuccess()
+        },
         reloadAfterSuccess = true,
-    ) { bookId, token ->
-        repository.rate(bookId, rating.score.toDouble(), token)
+    ) {
+        repository.rate(ratingBookId(), rating.score.toDouble(), requireToken())
     }
 
     fun loadRatingComparison(criterion: Rating) {
@@ -360,7 +362,6 @@ class BookDetailViewModel(
     fun createReviewWithRating(
         request: ReviewCreateRequest,
         rating: Double?,
-        onLibraryAdded: () -> Unit = {},
         onRatingSaved: () -> Unit = {},
         anonymous: Boolean? = null,
     ) {
@@ -409,7 +410,7 @@ class BookDetailViewModel(
                 if (generation != requestGeneration) throw CancellationException("인증 상태가 변경됨")
             }
             failureStage = "personal_rating"
-            saveReviewRatingIfChanged(rating, generation, onLibraryAdded, onRatingSaved)
+            saveReviewRatingIfChanged(rating, generation, onRatingSaved)
             publicWrite(
                 retryUnauthorized = true,
                 beforeAuth = { failureStage = "auth" },
@@ -467,12 +468,10 @@ class BookDetailViewModel(
         reviewId: Long,
         request: ReviewCreateRequest,
         rating: Double?,
-        onLibraryAdded: () -> Unit = {},
         onRatingSaved: () -> Unit = {},
     ) = submitReviewUpdate(
         reviewId, request, rating,
         preserveReadingMetadata = true,
-        onLibraryAdded = onLibraryAdded,
         onRatingSaved = onRatingSaved,
     )
 
@@ -482,7 +481,6 @@ class BookDetailViewModel(
         rating: Double?,
         preserveReadingMetadata: Boolean,
         onSaved: () -> Unit = {},
-        onLibraryAdded: () -> Unit = {},
         onRatingSaved: () -> Unit = {},
 
     ) {
@@ -507,7 +505,7 @@ class BookDetailViewModel(
             closesComposer = true,
             preservesComposerOnFailure = true,
         ) { generation ->
-            saveReviewRatingIfChanged(rating, generation, onLibraryAdded, onRatingSaved)
+            saveReviewRatingIfChanged(rating, generation, onRatingSaved)
             publicWrite(retryUnauthorized = false) { credential ->
                 if (preserveReadingMetadata) repository.updateReviewContent(reviewId, request, credential)
                 else repository.updateReview(reviewId, request, credential)
@@ -519,22 +517,21 @@ class BookDetailViewModel(
     private suspend fun saveReviewRatingIfChanged(
         rating: Double?,
         generation: Int,
-        onLibraryAdded: () -> Unit,
         onRatingSaved: () -> Unit,
     ) {
         if (rating == null) return
         loadJob?.join()
         // 과거 서버 값이 0.5 단위가 아니어도 변경하지 않은 값은 그대로 보존한다.
-        if (rating == _uiState.value.detail?.myRecord?.rating) return
+        if (rating == _uiState.value.detail?.myRating) return
         require(rating in 0.5..5.0 && rating * 2 == (rating * 2).toInt().toDouble()) {
             "개인 별점은 0.5점부터 5점까지 0.5점 단위로 저장할 수 있어요."
         }
         val token = requireToken()
-        val bookId = bookIdForWrite(token, generation, onLibraryAdded, "rating_save")
+        val bookId = ratingBookId()
         val record = repository.rate(bookId, rating, token)
         if (generation != requestGeneration) throw CancellationException("인증 상태가 변경됨")
         // 감상만 실패한 뒤 재시도해도 이미 저장한 별점은 중복 저장하지 않는다.
-        updateMyRecord(record)
+        updateMyRating(record)
         onRatingSaved()
     }
 
@@ -680,7 +677,11 @@ class BookDetailViewModel(
                 restored?.let { savedStateHandle[BookDetailSavedStateKeys.LoadedPage] = it.loadedPage }
                 _uiState.value = _uiState.value.copy(
                     detail = if (librarySaveRevision != externalLibrarySaveRevision) {
-                        detail?.copy(myRecord = _uiState.value.detail?.myRecord ?: externallySavedRecord)
+                        detail?.let {
+                            val savedRecord = _uiState.value.detail?.myRecord ?: externallySavedRecord
+                            it.copy(myRecord = savedRecord, myRating = savedRecord?.rating ?: it.myRating,
+                                isRegisteredInMyLibrary = true)
+                        }
                     } else detail,
                     reviews = reviews?.items.orEmpty(),
                     reviewCount = reviews?.totalCount ?: 0,
@@ -984,9 +985,23 @@ class BookDetailViewModel(
         ratingComparisonJob?.cancel()
     }
 
+    private fun ratingBookId(): Long = requireNotNull(_uiState.value.detail?.bookId)
+
+    private fun updateMyRating(result: PersonalRating) {
+        val detail = _uiState.value.detail ?: return
+        _uiState.value = _uiState.value.copy(detail = detail.copy(
+            myRating = result.rating,
+            myRecord = detail.myRecord?.copy(rating = result.rating),
+        ))
+    }
+
     private fun updateMyRecord(record: LibraryRecord?) {
         val detail = _uiState.value.detail ?: return
-        _uiState.value = _uiState.value.copy(detail = detail.copy(myRecord = record))
+        _uiState.value = _uiState.value.copy(detail = detail.copy(
+            myRecord = record,
+            myRating = record?.rating ?: detail.myRating,
+            isRegisteredInMyLibrary = record != null,
+        ))
     }
 
     private fun requireToken(): String = requireNotNull(accessToken)

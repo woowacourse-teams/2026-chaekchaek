@@ -4,6 +4,7 @@ data class ReviewFeedPage(
     val reviews: List<QuoteCard>,
     val totalCount: Int,
     val nextPage: Int?,
+    val lastLoadedPage: Int? = null,
 )
 
 sealed interface FeedViewer {

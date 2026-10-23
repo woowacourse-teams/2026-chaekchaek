@@ -415,8 +415,10 @@ private fun AppNavigationContent(
                     val archivedBook = archiveState.items.firstOrNull {
                         it.id == displayBook.isbn13.ifBlank { displayBook.id }
                     }
-                    val savedBookId = archivedBook?.bookId
-                        ?: state.detail?.myRecord?.let { it.bookId ?: state.detail?.bookId }
+                    val savedBookId = state.detail?.let { detail ->
+                        if (detail.isRegisteredInMyLibrary) detail.bookId ?: detail.myRecord?.bookId
+                        else null
+                    } ?: archivedBook?.bookId?.takeIf { state.detail == null }
                     var resumedAction by remember(key.book) {
                         mutableStateOf<BookDetailAuthenticatedAction?>(null)
                     }
@@ -445,7 +447,7 @@ private fun AppNavigationContent(
                         state = state,
                         onBack = { backStack.popDestinationIfCurrent(key) },
                         modifier = safeContent,
-                        savedToLibrary = savedBookId != null,
+                        savedToLibrary = state.detail?.isRegisteredInMyLibrary ?: (savedBookId != null),
                         externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
                         externalLibraryLoading = librarySaveState.showLoading,
                         anonymousReviews = anonymousReviews,
@@ -499,16 +501,15 @@ private fun AppNavigationContent(
                                     archiveViewModel.retry()
                                     onSaved()
                                 },
-                                onLibraryAdded = archiveViewModel::retry,
                             )
                         },
                         errorRecovery = viewModel.errors,
                         onReviewCreate = viewModel::createReview,
                         onQuestionAReviewCreate = { draft ->
-                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry, anonymous = draft.anonymous)
+                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, onRatingSaved = archiveViewModel::retry, anonymous = draft.anonymous)
                         },
                         onQuestionAReviewUpdate = { reviewId, draft, request ->
-                            viewModel.updateReviewWithRating(reviewId, request, draft.rating, archiveViewModel::retry, onRatingSaved = archiveViewModel::retry)
+                            viewModel.updateReviewWithRating(reviewId, request, draft.rating, onRatingSaved = archiveViewModel::retry)
                         },
                         onReviewOpen = viewModel::openReviewComposer,
                         onReplyOpen = viewModel::openReplyComposer,
