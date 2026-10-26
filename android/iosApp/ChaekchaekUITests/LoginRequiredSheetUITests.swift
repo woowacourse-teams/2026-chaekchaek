@@ -554,8 +554,8 @@ final class LoginRequiredSheetUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["출판일 없는 호밀 도서"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts["출판일 누락 도서"].exists)
         XCTAssertFalse(app.staticTexts["ISBN 없는 세트"].exists)
-        XCTAssertFalse(app.staticTexts["ID 없는 도서"].exists)
-        XCTAssertFalse(app.staticTexts["ID 누락 도서"].exists)
+        XCTAssertTrue(app.staticTexts["ID 없는 도서"].exists)
+        XCTAssertTrue(app.staticTexts["ID 누락 도서"].exists)
         XCTAssertFalse(app.staticTexts["출판일 정보 없음"].exists)
         XCTAssertFalse(app.buttons["다시 시도"].exists)
         XCTAssertEqual(fixture.completedRequests(for: "/api/v1/books"), 1)
@@ -869,8 +869,8 @@ private final class RefreshFixtureServer: @unchecked Sendable {
         case "/api/v1/books" where searchMetadata:
             body = """
             {"totalCount":5,"nextPage":null,"items":[
-              {"bookId":null,"title":"ID 없는 도서","coverImageUrl":"","authors":[],"translators":[],"publisher":"출판사","category":"소설","isbn13":"9780000000001"},
-              {"title":"ID 누락 도서","coverImageUrl":"","authors":[],"translators":[],"publisher":"출판사","category":"소설","isbn13":"9780000000002"},
+              {"bookId":null,"title":"ID 없는 도서","coverImageUrl":"","authors":[],"translators":[],"publisher":"출판사","category":null,"isbn13":"9780000000001"},
+              {"title":"ID 누락 도서","coverImageUrl":"","authors":[],"translators":[],"publisher":"출판사","isbn13":"9780000000002"},
               {"bookId":41,"title":"출판일 없는 호밀 도서","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","publishedDate":null,"isbn13":"9788937460449"},
               {"bookId":42,"title":"출판일 누락 도서","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","isbn13":"9788936433598"},
               {"bookId":43,"title":"ISBN 없는 세트","coverImageUrl":"","authors":["저자"],"translators":[],"publisher":"출판사","category":"소설","publishedDate":null,"isbn13":""}
@@ -985,6 +985,49 @@ private final class NicknameFixtureServer: @unchecked Sendable {
 
 final class BookshelfContractUITests: XCTestCase {
     private let origin = "http://127.0.0.1:19068"
+
+    @MainActor
+    func testSearchAndCreateShelfWhileChoosingDestination() async throws {
+        continueAfterFailure = false
+        guard (try? await request("/__bookshelf")) != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
+        _ = try await request("/__bookshelf/reset", method: "POST")
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingGuest", "-uiTestingNicknameRestore", "-uiTestingRefresh"]
+        app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = origin
+        app.launch()
+        XCTAssertTrue(app.buttons["발견"].waitForExistence(timeout: 15))
+        app.buttons["발견"].tap()
+        let search = app.textViews["search-query-field"]
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        search.tap(); search.typeText("book\n")
+        XCTAssertTrue(element("검증 도서 36", app).waitForExistence(timeout: 10))
+        let addBook = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "책 담기")).firstMatch
+        XCTAssertTrue(addBook.waitForExistence(timeout: 10))
+        addBook.tap()
+        XCTAssertTrue(element("담을 책장 고르기", app).waitForExistence(timeout: 10))
+        let create = app.buttons["shelf-choice-create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 5))
+        for _ in 0..<3 { if create.isHittable { break }; app.swipeUp() }
+        create.tap()
+        let input = app.textViews["bookshelfName"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.tap(); input.typeText("New shelf")
+        element("만들기", app).tap()
+        XCTAssertTrue(input.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(element("담을 책장 고르기", app).waitForExistence(timeout: 10))
+        XCTAssertTrue(element("New shelf", app).exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "A안 책장 선택과 새 책장 생성"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        element("이 책장에 담기", app).tap()
+        XCTAssertTrue(element("담을 책장 고르기", app).waitForNonExistence(timeout: 10))
+        let data = try await request("/__bookshelf/state")
+        let state = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let shelves = try XCTUnwrap(state["shelves"] as? [[String: Any]])
+        let created = try XCTUnwrap(shelves.first { $0["name"] as? String == "New shelf" })
+        XCTAssertEqual(created["books"] as? [Int], [36])
+    }
 
     @MainActor
     func testShelfCreateRenameAddRemoveAndImagePreview() async throws {

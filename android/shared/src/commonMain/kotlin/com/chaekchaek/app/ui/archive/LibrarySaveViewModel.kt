@@ -26,6 +26,7 @@ data class LibrarySaveUiState(
     val choosingBook: BookDetailArgs? = null,
     val shelves: List<Bookshelf> = emptyList(),
     val selectedShelfId: Long? = null,
+    val creatingShelf: Boolean = false,
     val memberId: Long? = null,
     val savingIsbn: String? = null,
     val showLoading: Boolean = false,
@@ -44,6 +45,7 @@ class LibrarySaveViewModel(
     private val readRecentShelf: (Long) -> Long? = { null },
     private val writeRecentShelf: (Long, Long) -> Unit = { _, _ -> },
     private val isSaved: (String) -> Boolean = { false },
+    private val onShelfCreated: () -> Unit = {},
 ) : ViewModel() {
     val errors = ErrorRecoveryState(analytics.errors)
     private val state = MutableStateFlow(LibrarySaveUiState())
@@ -116,10 +118,53 @@ class LibrarySaveViewModel(
     }
 
     fun dismissShelfChoice() {
-        if (state.value.savingIsbn == null) state.value = state.value.copy(choosingBook = null, selectedShelfId = null)
+        if (state.value.savingIsbn == null) state.value = state.value.copy(choosingBook = null, selectedShelfId = null, creatingShelf = false)
+    }
+
+    fun beginShelfCreation() {
+        if (state.value.choosingBook != null && state.value.savingIsbn == null)
+            state.value = state.value.copy(creatingShelf = true)
+    }
+
+    fun cancelShelfCreation() {
+        if (state.value.savingIsbn == null) state.value = state.value.copy(creatingShelf = false)
+    }
+
+    /** 생성 성공 후에도 담을 책을 유지하며 새 책장을 선택한다. 실제 담기는 사용자가 확정한다. */
+    fun createShelf(name: String) {
+        val repository = shelves ?: return
+        val token = accessToken ?: return
+        val book = state.value.choosingBook ?: return
+        if (!state.value.creatingShelf || state.value.savingIsbn != null) return
+        bookshelfNameError(name, state.value.shelves.map { it.name })?.let { errors.confirm(it); return }
+        val requestGeneration = generation
+        state.value = state.value.copy(savingIsbn = book.isbn13)
+        saveJob = viewModelScope.launch {
+            try {
+                val created = withDelayedLoading({ loading ->
+                    if (generation == requestGeneration) state.value = state.value.copy(showLoading = loading)
+                }) { repository.create(name, token) }.getOrThrow()
+                if (generation != requestGeneration) return@launch
+                state.value = state.value.copy(
+                    shelves = state.value.shelves.filterNot { it.libraryId == created.libraryId } + created,
+                    selectedShelfId = created.libraryId,
+                    creatingShelf = false,
+                )
+                onShelfCreated()
+            } catch (e: CancellationException) { throw e }
+            catch (e: Throwable) {
+                if (generation == requestGeneration) errors.report(e, ErrorOperation.Request) { fresh ->
+                    if (fresh != null) accessToken = fresh
+                    createShelf(name)
+                }
+            } finally {
+                if (generation == requestGeneration) state.value = state.value.copy(savingIsbn = null, showLoading = false)
+            }
+        }
     }
 
     fun confirmShelf() {
+        if (state.value.creatingShelf) return
         val book = state.value.choosingBook ?: return
         val shelf = state.value.shelves.firstOrNull { it.libraryId == state.value.selectedShelfId } ?: return
         if (state.value.savingIsbn != null) return

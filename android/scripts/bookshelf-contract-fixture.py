@@ -65,7 +65,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/v1/home/reading-books': return self.send_json({'books': []})
             if path == '/api/v1/feed/reviews': return self.send_json(dict(reviews=[], totalCount=0, nextPage=None))
             if path in ('/api/v1/reviews', '/api/v1/feed'): return self.send_json(dict(items=[], totalCount=0, nextPage=None))
-            if path == '/api/v1/books': return self.send_json(dict(items=[dict(BOOKS[36], publishedDate=None)], totalCount=1, nextPage=None))
+            if path == '/api/v1/books': return self.send_json(dict(items=[dict(BOOKS[36], translators=[], bookId=None, category=None, publishedDate=None)], totalCount=1, nextPage=None))
             if path.startswith('/api/v1/books/by-isbn/'):
                 book = next((b for b in BOOKS.values() if b['isbn13'] == path.rsplit('/', 1)[1]), BOOKS[36])
                 return self.send_json(dict(book, translators=[], myRecord=dict(bookId=book['bookId'], status='READING', currentPage=20, rating=None)))

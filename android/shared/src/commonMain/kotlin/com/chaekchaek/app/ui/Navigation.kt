@@ -297,6 +297,7 @@ private fun AppNavigationContent(
         LibrarySaveViewModel(
             addBook = detailRepository::addToLibrary,
             onSaved = { _, _ -> bookshelfViewModel.refresh() },
+            onShelfCreated = bookshelfViewModel::refresh,
             shelves = bookshelfRepository,
             readRecentShelf = shelfPlatform::readRecent,
             writeRecentShelf = shelfPlatform::writeRecent,

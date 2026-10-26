@@ -25,6 +25,34 @@ class BookshelfContractTest {
     @get:Rule val compose = createComposeRule()
     private val origin = ApiConfiguration.current.baseUrl
 
+    @Test fun searchAndCreateShelfWhileChoosingDestination() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
+        request("/__bookshelf/reset", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("발견")
+        compose.onNodeWithText("발견").performClick()
+        waitTag("search-query-field")
+        compose.onNodeWithTag("search-query-field").performTextInput("검증")
+        compose.onNodeWithTag("search-query-field").performImeAction()
+        waitText("검증 도서 36")
+        waitText("책 담기")
+        compose.onNodeWithText("책 담기").performClick()
+        waitText("담을 책장 고르기")
+        compose.onNodeWithTag("shelf-choice-create").performScrollTo().performClick()
+        waitTag("bookshelfName")
+        compose.onNodeWithTag("bookshelfName").performTextInput("담기 중 생성")
+        compose.onNodeWithText("만들기").performScrollTo().performClick()
+        waitNameSheetClosed()
+        waitText("담을 책장 고르기")
+        compose.onNodeWithText("담기 중 생성").assertExists()
+        assertFalse(requested("POST", "/api/v1/libraries/4"))
+        compose.onNodeWithText("이 책장에 담기").performScrollTo().performClick()
+        compose.waitUntil(15_000) { requested("POST", "/api/v1/libraries/4") }
+        val shelves = JSONObject(request("/__bookshelf/state")).getJSONArray("shelves")
+        val created = (0 until shelves.length()).map { shelves.getJSONObject(it) }.single { it.getString("name") == "담기 중 생성" }
+        assertEquals(36, created.getJSONArray("books").getInt(0))
+    }
+
     @Test fun createRenameAddRemove() {
         Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
         request("/__bookshelf/reset", "POST")
@@ -74,8 +102,8 @@ class BookshelfContractTest {
         compose.onNodeWithText("내 서재").performClick()
         waitTag("bookshelf-1")
         compose.onNodeWithTag("bookshelf-1").performClick()
-        compose.waitUntil(15_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
+        compose.waitUntil(15_000) { compose.onAllNodes(hasContentDescription("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("이미지 공유").performScrollTo().performClick()
         waitText("책장을 이미지로")
         compose.onNodeWithText("이미지 저장").performScrollTo().assertIsDisplayed()
         compose.waitUntil(15_000) { compose.onAllNodes(hasText("이미지 저장") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
@@ -123,8 +151,8 @@ class BookshelfContractTest {
         compose.onNodeWithText("내 서재").performClick()
         waitTag("bookshelf-1")
         compose.onNodeWithTag("bookshelf-1").performClick()
-        compose.waitUntil(30_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
+        compose.waitUntil(30_000) { compose.onAllNodes(hasContentDescription("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("이미지 공유").performScrollTo().performClick()
         waitText("책장을 이미지로")
         compose.onNodeWithTag("bookshelf-image-share", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         compose.waitForIdle()

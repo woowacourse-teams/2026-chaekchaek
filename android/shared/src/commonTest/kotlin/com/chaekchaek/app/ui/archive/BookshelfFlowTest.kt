@@ -11,6 +11,50 @@ class BookshelfFlowTest {
     private val book = BookDetailArgs("isbn", "isbn", title = "책")
     private fun shelf(id: Long, books: List<BookshelfBookSummary> = emptyList(), count: Int = books.size) = Bookshelf(id, "책장$id", id == 1L, count, books)
 
+    @Test fun `담기 중 책장을 만들면 책과 입력 흐름을 보존하고 새 책장에 확정 저장한다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = FakeShelves(listOf(shelf(1), shelf(2)))
+            val vm = LibrarySaveViewModel({ _, _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
+            vm.authenticate("a", 9); vm.save(book); advanceUntilIdle()
+            vm.selectShelf(2); vm.beginShelfCreation(); vm.cancelShelfCreation()
+            assertEquals(book, vm.uiState.value.choosingBook)
+            assertEquals(2L, vm.uiState.value.selectedShelfId)
+            vm.beginShelfCreation(); repo.fail = true
+            vm.createShelf("새 책장"); advanceUntilIdle()
+            assertTrue(vm.uiState.value.creatingShelf)
+            assertEquals(book, vm.uiState.value.choosingBook)
+            assertTrue(repo.added.isEmpty())
+            repo.fail = false
+            vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke(null); advanceUntilIdle()
+            assertFalse(vm.uiState.value.creatingShelf)
+            assertEquals(3L, vm.uiState.value.selectedShelfId)
+            assertEquals("새 책장", vm.uiState.value.shelves.last().name)
+            assertEquals(book, vm.uiState.value.choosingBook)
+            assertTrue(repo.added.isEmpty())
+            vm.confirmShelf(); advanceUntilIdle()
+            assertEquals(listOf(3L), repo.added)
+            assertNull(vm.uiState.value.choosingBook)
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test fun `책장 생성 응답이 늦어도 계정 변경 후 이전 선택을 복원하지 않는다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = FakeShelves(listOf(shelf(1)))
+            val vm = LibrarySaveViewModel({ _, _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
+            vm.authenticate("a", 9); vm.save(book); advanceUntilIdle(); vm.beginShelfCreation()
+            val gate = CompletableDeferred<Unit>(); repo.createGate = gate
+            vm.createShelf("이전 책장"); runCurrent()
+            vm.authenticate("b", 10); gate.complete(Unit); advanceUntilIdle()
+            assertEquals(10L, vm.uiState.value.memberId)
+            assertFalse(vm.uiState.value.creatingShelf)
+            assertTrue(vm.uiState.value.shelves.isEmpty())
+            assertNull(vm.uiState.value.choosingBook)
+            assertTrue(repo.added.isEmpty())
+        } finally { Dispatchers.resetMain() }
+    }
+
     @Test fun `최근 선택은 회원별 성공한 저장 뒤에만 갱신한다`() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
@@ -211,6 +255,7 @@ class BookshelfFlowTest {
 
 private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
     var fail = false
+    var createGate: CompletableDeferred<Unit>? = null
     var detailGate: CompletableDeferred<Unit>? = null
     var detailFails = false
     var mineFails = false
@@ -236,7 +281,11 @@ private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
         if (detailFails) error("offline")
         return BookshelfDetail(libraryId, 9, "책장", false, 0, emptyList())
     }
-    override suspend fun create(name: String, token: String) = Bookshelf(3, name, false, 0, emptyList())
+    override suspend fun create(name: String, token: String): Bookshelf {
+        withContext(NonCancellable) { createGate?.await() }
+        if (fail) error("offline")
+        return Bookshelf(3, name, false, 0, emptyList())
+    }
     override suspend fun rename(libraryId: Long, name: String, token: String) {}
     override suspend fun delete(libraryId: Long, token: String) {}
     override suspend fun remove(libraryId: Long, bookId: Long, token: String) {}
