@@ -56,6 +56,13 @@ export const UpdateReviewDialog = ({
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
+    await updateReview();
+
+    onReviewUpdated();
+    onClose();
+  };
+
+  const updateReview = async () => {
     const requestData = buildReviewRequest(values);
 
     await mutate(
@@ -69,9 +76,6 @@ export const UpdateReviewDialog = ({
           }
         : undefined,
     );
-
-    onReviewUpdated();
-    onClose();
   };
 
   return (
