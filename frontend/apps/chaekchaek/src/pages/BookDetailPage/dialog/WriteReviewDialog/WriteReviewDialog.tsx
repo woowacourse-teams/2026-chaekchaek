@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type SubmitEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type SubmitEvent } from 'react';
 
 import { Button, Dialog, Field, Radio, Rating, Text, Textarea } from '@chaekchaek/design-system';
 
@@ -124,8 +124,15 @@ export const WriteReviewDialog = ({
   };
 
   const [rating, setRating] = useState(defaultRating || 0);
+  const hasTrackedRatingSelectRef = useRef<boolean>(false);
+
   const handleChangeRating = (rating: number) => {
     setRating(rating);
+
+    if (!hasTrackedRatingSelectRef.current) {
+      track('rating_select');
+      hasTrackedRatingSelectRef.current = true;
+    }
   };
 
   const ratingMessageNumber = getRatingMessageNumber(rating);
