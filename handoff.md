@@ -22,11 +22,16 @@
 
 - API 응답에서 UI 모델까지 전달, 질문 누락·null·공백, 자료 일부·전체 누락에 대한 공통 테스트를 추가했다.
 - Android와 iOS UI 테스트에 이모지 부재, 줄거리만·발췌만·자료 없음 상태를 반영했다.
-- iOS 공통 `BookQuestionApiTest` 3개가 실패·건너뜀 없이 통과했다. iPhone 17 Pro / iOS 26.2의 기본 글자 크기에서 자료 유무, 질문 없음, 본문 독립 스크롤·배경 스크롤·탭 위치 복원 UI 테스트 3개가 통과했다.
+- 최종 앱·테스트 소스 SHA는 `f24495bfb109ccc3a29e0b80fff9962741950b4e`이며, 추적 파일 변경이 없는 상태로 양 플랫폼을 검증했다. 이후 문서 기록만 갱신한다.
+- iOS `build-for-testing`과 공통 `BookQuestionApiTest` 3개가 실패·건너뜀 없이 통과했다. iPhone 17 Pro / iOS 26.2의 기본 글자 크기에서 자료 유무, 질문 없음, 본문 독립 스크롤·배경 스크롤·탭 위치 복원 UI 테스트 3개가 통과했다.
 - dev 실제 검색 경로는 `마음` 검색 응답의 `category: null`을 기존 검색 DTO가 읽지 못해 질문 상세 진입 전에 실패했다. 직접 상세 API의 질문 데이터 존재와 앱의 실제 dev 왕복 성공을 구분한다. 이 검색 계약 문제는 이번 질문 연결에서 수정하지 않았다.
 - 테스트 API 응답을 실제 HTTP 조회·Navigation으로 전달해 질문 표시, 탭 전환과 기존 게스트 감상 작성 진입까지 확인한 iOS 테스트 1개가 통과했다. 예시 모델 직접 주입과 구분하며 실제 서버 감상 저장은 수행하지 않았다.
+- 최종 iOS UI 실행은 위 4개를 한 번에 실행해 실패·건너뜀 없이 통과했다. 로그는 `/tmp/chaekchaek-616-ios-final.log`, 결과는 `/tmp/chaekchaek-616-ios-final.xcresult`, 공통 테스트 로그는 `/tmp/chaekchaek-616-ios-unit-final.log`다. 직접 시작한 Simulator를 종료하고 공용 실행 슬롯을 반환했다.
 - iOS 캡처는 `/Users/ujeonghyeon/.codex/visualizations/2026/10/26/01a176dc-0d62-7300-8df3-7eb902fdc61f/question-api-validation/`에 보관했다.
-- 원격 Android 실행기는 사용자 승인으로 `origin`의 작업 브랜치 패턴을 허용하도록 수정했다. 실행기 회귀 테스트 20개를 통과했고, 고정 SHA·프로필·서명·설치 검사를 유지했다. 앱의 이번 커밋에 대한 원격 실행 결과는 후속 기록한다.
+- 원격 Android 실행기는 사용자 승인으로 `refs/remotes/origin/*` 패턴을 허용하도록 수정했다. 실행기 커밋 `35c120949fdbb2e4c40408d65b202342a5490eac`의 회귀 테스트 20개를 통과했다. 실제 origin ref에서 도달 가능한 SHA만 허용하며, 고정 프로필·서명·데이터 보존 설치 검사를 유지했다.
+- 최종 SHA의 원격 `android-smoke` 작업 `5501f6e42f6a45938dba22939623a218`이 성공했다. release APK 빌드, 실제 실행한 공통 단위 테스트 464개(실패·오류·건너뜀 0), 서명·버전 검사, `install -r`, foreground와 앱 프로세스 생존을 확인했다. `:app:testDebugUnitTest`는 `NO-SOURCE`였으며 테스트 464개는 `:shared:testAndroidHostTest`의 결과다. 결과 ZIP은 `/tmp/chaekchaek-616-android-f24495bf-passed.zip`이다.
+- 같은 SHA의 직전 작업 `f4faefcf13f94c9a8739d780a4f5f4de`는 빌드·단위 테스트 통과 후 `pidof` 호출 실패로 smoke가 실패했다. 원인은 미확정이며 앱 코드를 변경하지 않고 위 작업으로 재실행했다. 성공·실패 작업 모두 기기와 작업 checkout 정리 경고가 없고, 마지막 조회에서 실행 중 검증 AVD와 미종료 작업이 없었다.
+- Android 자료 탭·감상 진입 UI 계측 테스트는 소스만 갱신했다. 현재 원격 프로필은 이를 지원하지 않아 실행하지 않았다. 이번 smoke는 AAB, Lint, 로그인·감상 저장 또는 전체 UI 시나리오의 검증을 대신하지 않는다.
 
 
 ## 프로젝트 위치 / 브랜치
