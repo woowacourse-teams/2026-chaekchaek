@@ -106,7 +106,7 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
           })}
         </List>
       </ScrollArea>
-      <Button block variant="primary" onClick={handleSubmit}>
+      <Button block variant="primary" disabled={!selection.length} onClick={handleSubmit}>
         담기
       </Button>
     </>
