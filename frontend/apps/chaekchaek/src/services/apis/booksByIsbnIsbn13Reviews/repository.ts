@@ -13,14 +13,16 @@ export const postBooksByIsbnIsbn13Reviews: PostBooksByIsbnIsbn13Reviews = async 
   const { isbn13, isSpoiler, quote, totalPages, content } =
     mapPostBooksByIsbnIsbn13ReviewsModelToRequestDTO(model);
 
-  const { guestToken } = context;
+  const guestToken = context?.guestToken;
 
   const responseDTO = await fetcher.postBooksByIsbnIsbn13Reviews({
     pathParams: [{ name: 'isbn13', value: isbn13 }],
     data: { isSpoiler, quote, totalPages, content },
-    headers: {
-      'X-Guest-Token': guestToken,
-    },
+    ...(guestToken && {
+      headers: {
+        'X-Guest-Token': guestToken,
+      },
+    }),
   });
 
   return mapPostBooksByIsbnIsbn13ReviewsResponseDTOToModel(responseDTO);

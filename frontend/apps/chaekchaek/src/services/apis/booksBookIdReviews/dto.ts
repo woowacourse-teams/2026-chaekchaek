@@ -54,6 +54,9 @@ export interface PostBooksBookIdReviewsRequestDto {
     quote?: string | undefined;
     totalPages?: number | undefined;
   };
+  headers?: {
+    'X-Guest-Token'?: string;
+  };
 }
 
 export type PostBooksBookIdReviewsResponseDto = ResponseDto<undefined>;

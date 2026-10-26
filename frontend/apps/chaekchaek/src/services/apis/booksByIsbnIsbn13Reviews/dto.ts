@@ -8,8 +8,8 @@ export interface PostBooksByIsbnIsbn13ReviewsRequestDto {
     totalPages?: number | undefined;
     content: string;
   };
-  headers: {
-    'X-Guest-Token': string;
+  headers?: {
+    'X-Guest-Token'?: string;
   };
 }
 

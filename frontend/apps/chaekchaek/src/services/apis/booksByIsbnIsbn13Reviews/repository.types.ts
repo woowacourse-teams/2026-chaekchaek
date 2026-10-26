@@ -12,5 +12,5 @@ type RequestContext = {
 
 export type PostBooksByIsbnIsbn13Reviews = (
   command: PostBooksByIsbnIsbn13ReviewsCommand,
-  context: RequestContext,
+  context?: RequestContext,
 ) => Promise<undefined>;

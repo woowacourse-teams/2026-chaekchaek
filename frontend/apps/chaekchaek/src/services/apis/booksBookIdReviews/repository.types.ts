@@ -57,4 +57,7 @@ export interface PostBooksBookIdReviewsCommand {
   totalPages?: number | undefined;
 }
 
-export type PostBooksBookIdReviews = (command: PostBooksBookIdReviewsCommand) => Promise<undefined>;
+export type PostBooksBookIdReviews = (
+  command: PostBooksBookIdReviewsCommand,
+  context?: RequestContext,
+) => Promise<undefined>;
