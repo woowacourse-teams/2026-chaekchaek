@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.chaekchaek.book.client.yes24.Yes24ClientException;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.dto.BookDetailResponse;
+import com.chaekchaek.book.dto.BookDetailV2Response;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookMyRecordResponse;
 import com.chaekchaek.book.dto.BookQuestionResponse;
@@ -35,7 +36,9 @@ import com.epages.restdocs.apispec.ResourceSnippetParameters;
 import com.epages.restdocs.apispec.Schema;
 import com.epages.restdocs.apispec.SimpleType;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -153,6 +156,25 @@ class BookControllerTest {
             fieldWithPath("bookQuestion.extract").type(JsonFieldType.STRING).description("질문과 관련된 책 속 발췌문").optional()
     };
 
+    private static final String BOOK_DETAIL_V2_DESCRIPTION =
+            "도서 메타데이터와 집계를 조회하며 myRecord에는 내 별점만 제공한다. "
+                    + "별점이 없으면 독서 기록 유무와 관계없이 myRecord는 null이다. "
+                    + "독서 상태와 현재 페이지는 제공하지 않는다. 비로그인 조회를 지원한다.";
+
+    private static final FieldDescriptor[] BOOK_DETAIL_V2_RESPONSE_FIELDS = Stream.concat(
+            Arrays.stream(BOOK_DETAIL_RESPONSE_FIELDS)
+                    .filter(field -> !field.getPath().startsWith("myRecord")),
+            Stream.of(
+                    fieldWithPath("myRecord").type(JsonFieldType.OBJECT)
+                            .description("내 별점. 비로그인이거나 별점이 없으면 null")
+                            .optional().attributes(key("nullable").value(true)),
+                    fieldWithPath("myRecord.myRating").type(JsonFieldType.NUMBER)
+                            .description("내 별점. myRecord 객체가 있으면 반드시 숫자로 제공한다")
+                            .optional()
+            )
+    )
+            .toArray(FieldDescriptor[]::new);
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -268,6 +290,84 @@ class BookControllerTest {
                 ));
 
         verify(bookService).getDetail(new Isbn13("9788925568683"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    @DisplayName("v2 상세는 별점만 반환하고 별점이 없으면 myRecord를 null로 반환한다")
+    void should_ReturnRatingOnlyDetail_When_V2IsRequested(boolean rated) throws Exception {
+        // given
+        BigDecimal rating = null;
+        if (rated) {
+            rating = new BigDecimal("4.2");
+        }
+        BookDetailV2Response detail = BookDetailV2Response.from(bookDetailResponse(new BookMyRecordResponse(
+                "READING",
+                120,
+                rating
+        )));
+        when(bookService.getDetailV2(new Isbn13("9788925568683"))).thenReturn(detail);
+        String identifier = "book-detail-v2-without-rating";
+        if (rated) {
+            identifier = "book-detail-v2-with-rating";
+        }
+
+        // when & then
+        ResultActions result = mockMvc.perform(get("/api/v2/books/by-isbn/{isbn13}", "9788925568683"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bookId").value(42))
+                .andExpect(jsonPath("$.totalPages").value(308))
+                .andExpect(jsonPath("$.myRating").doesNotExist())
+                .andExpect(jsonPath("$.myRecord.status").doesNotExist())
+                .andExpect(jsonPath("$.myRecord.currentPage").doesNotExist());
+        if (rated) {
+            result.andExpect(jsonPath("$.myRecord.myRating").value(4.2));
+        } else {
+            result.andExpect(jsonPath("$.myRecord").value(nullValue()));
+        }
+        result.andDo(document(
+                identifier,
+                responseFields(BOOK_DETAIL_V2_RESPONSE_FIELDS),
+                resource(ResourceSnippetParameters.builder()
+                        .summary("도서 상세 조회 v2")
+                        .description(BOOK_DETAIL_V2_DESCRIPTION)
+                        .tag("도서")
+                        .pathParameters(ResourceDocumentation.parameterWithName("isbn13")
+                                .type(SimpleType.STRING).description("ISBN-13"))
+                        .responseFields(BOOK_DETAIL_V2_RESPONSE_FIELDS)
+                        .build())
+        ));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {401, 404, 502})
+    @DisplayName("v2 상세 오류는 기존 ProblemDetail 형식과 실제 요청 경로를 반환한다")
+    void should_ReturnProblemDetail_When_V2DetailFails(int responseStatus) throws Exception {
+        // given
+        RuntimeException exception = new BookNotFoundException();
+        ErrorCode errorCode = ErrorCode.BOOK_NOT_FOUND;
+        if (responseStatus == 401) {
+            exception = new BusinessException(ErrorCode.UNAUTHORIZED);
+            errorCode = ErrorCode.UNAUTHORIZED;
+        }
+        if (responseStatus == 502) {
+            exception = new Yes24ClientException(new RuntimeException("upstream failure"));
+            errorCode = ErrorCode.EXTERNAL_API_ERROR;
+        }
+        when(bookService.getDetailV2(new Isbn13("9788925568683"))).thenThrow(exception);
+
+        // when & then
+        expectProblemDetail(
+                mockMvc.perform(get("/api/v2/books/by-isbn/{isbn13}", "9788925568683")),
+                HttpStatus.valueOf(responseStatus),
+                errorCode.name(),
+                errorCode.getMessage(),
+                "/api/v2/books/by-isbn/9788925568683"
+        ).andDo(problemDetailDocument(
+                "book-detail-v2-error-" + responseStatus,
+                "도서 상세 조회 v2",
+                BOOK_DETAIL_V2_DESCRIPTION
+        ));
     }
 
     @Test
@@ -449,6 +549,14 @@ class BookControllerTest {
     }
 
     private BookDetailResponse bookDetailResponse() {
+        return bookDetailResponse(new BookMyRecordResponse(
+                "READING",
+                120,
+                new BigDecimal("4.2")
+        ));
+    }
+
+    private BookDetailResponse bookDetailResponse(BookMyRecordResponse myRecord) {
         return new BookDetailResponse(
                 42L,
                 "9788925568683",
@@ -466,11 +574,7 @@ class BookControllerTest {
                 new BigDecimal("4.3"),
                 21,
                 12,
-                new BookMyRecordResponse(
-                        "READING",
-                        120,
-                        new BigDecimal("4.2")
-                ),
+                myRecord,
                 true,
                 "https://www.yes24.com/product/goods/101375809",
                 "yes24",
