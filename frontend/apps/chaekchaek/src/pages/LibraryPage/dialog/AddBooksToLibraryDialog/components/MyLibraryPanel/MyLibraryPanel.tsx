@@ -29,6 +29,11 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
     (library) => library.libraryId !== libraryId,
   );
 
+  const currentLibrary = librariesData?.libraries.find(
+    (library) => library.libraryId === libraryId,
+  );
+  const currentLibraryBooks = currentLibrary ? currentLibrary.items : [];
+
   const filteredBooks = [
     ...new Map(
       filteredLibraries?.flatMap((library) => library.items).map((item) => [item.isbn13, item]) ??
@@ -64,10 +69,15 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
           {filteredBooks?.map((item) => {
             const isIncluded = selection.includes(item.isbn13);
 
+            const isRegisteredInCurrentLibrary = !!currentLibraryBooks.find(
+              (currentLibraryBook) => currentLibraryBook.isbn13 === item.isbn13,
+            );
+
             return (
               <List.Item key={item.bookId}>
                 <List.Item.Leading>
                   <Checkbox
+                    disabled={isRegisteredInCurrentLibrary}
                     value={item.isbn13}
                     checked={isIncluded}
                     onChange={handleChangeSelection}
@@ -79,6 +89,7 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
                   title={<>{item.title}</>}
                   content={item.authors.join(' · ')}
                 />
+                {isRegisteredInCurrentLibrary && <List.Item.Trailing>담긴 책</List.Item.Trailing>}
               </List.Item>
             );
           })}
