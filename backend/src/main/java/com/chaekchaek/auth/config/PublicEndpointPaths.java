@@ -8,6 +8,7 @@ public final class PublicEndpointPaths {
             "/api/v1/feed/reviews",
             "/api/v1/books",
             "/api/v1/books/**",
+            "/api/v2/books/by-isbn/*",
             "/api/v1/books/*/reviews",
             "/api/v1/reviews/*/replies",
             "/api/v1/members/*/library",
