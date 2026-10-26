@@ -66,7 +66,7 @@ import tools.jackson.databind.ObjectMapper;
 class IsbnRatingIntegrationTest {
 
     private static final Isbn13 ISBN13 = new Isbn13("9788937460449");
-    private static final Instant NOW = Instant.now();
+    private static final Instant NOW = Instant.parse("2026-08-14T00:00:00Z");
     private static final Yes24MockServer YES24 = startYes24();
 
     @Autowired
@@ -108,9 +108,11 @@ class IsbnRatingIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        when(clock.instant()).thenReturn(NOW);
         member = members.saveAndFlush(Member.create("익명", null, LocalDateTime.now()));
+        // 토큰 만료 검증은 실제 시계를 사용하므로 발급 시각만 현재 시각으로 맞춘다
+        when(clock.instant()).thenReturn(Instant.now());
         token = accessTokens.issue(member);
+        when(clock.instant()).thenReturn(NOW);
     }
 
     @AfterEach
