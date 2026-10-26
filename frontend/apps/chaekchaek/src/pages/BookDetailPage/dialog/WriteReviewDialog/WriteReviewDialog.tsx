@@ -91,42 +91,25 @@ export const WriteReviewDialog = ({
   const writeReview = async () => {
     const requestData = buildReviewRequest(values);
 
+    const guestContext =
+      !isAuthenticated && guest?.guestToken ? { guestToken: guest.guestToken } : undefined;
+
     if (bookId) {
-      if (isAuthenticated) {
-        await postBookReviewMutate({
+      await postBookReviewMutate(
+        {
           bookId,
           ...requestData,
-        });
-      }
-      if (!isAuthenticated && guest) {
-        await postBookReviewMutate(
-          {
-            bookId,
-            ...requestData,
-          },
-          {
-            guestToken: guest.guestToken,
-          },
-        );
-      }
+        },
+        guestContext,
+      );
     } else {
-      if (isAuthenticated) {
-        await postBookReviewByIsbnMutate({
+      await postBookReviewByIsbnMutate(
+        {
           isbn13: isbn,
           ...requestData,
-        });
-      }
-      if (!isAuthenticated && guest) {
-        await postBookReviewByIsbnMutate(
-          {
-            isbn13: isbn,
-            ...requestData,
-          },
-          {
-            guestToken: guest.guestToken,
-          },
-        );
-      }
+        },
+        guestContext,
+      );
     }
 
     const actorType = user?.actorType ?? guest?.actorType;
