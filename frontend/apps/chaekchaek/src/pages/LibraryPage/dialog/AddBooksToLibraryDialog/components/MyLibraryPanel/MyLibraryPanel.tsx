@@ -41,6 +41,15 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
     ).values(),
   ];
 
+  const [query, setQuery] = useState('');
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+  };
+
+  const queryFilteredBooks = filteredBooks.filter(
+    (book) => book.title.includes(query) || book.authors.some((author) => author.includes(query)),
+  );
+
   const [selection, setSelection] = useState<string[]>([]);
   const handleChangeSelection = (e: ChangeEvent<HTMLInputElement>) => {
     const isbn = e.target.value;
@@ -62,11 +71,13 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
         size="small"
         leading={<Icon.SearchIcon />}
         placeholder="책 제목이나 작가를 검색하세요"
+        value={query}
+        onChange={handleChange}
       />
 
       <ScrollArea height="340px">
         <List>
-          {filteredBooks?.map((item) => {
+          {queryFilteredBooks?.map((item) => {
             const isIncluded = selection.includes(item.isbn13);
 
             const isRegisteredInCurrentLibrary = !!currentLibraryBooks.find(
