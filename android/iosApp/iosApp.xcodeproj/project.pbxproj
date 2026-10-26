@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B60700000000000000000001 /* PublicLibraryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60700000000000000000002 /* PublicLibraryUITests.swift */; };
 		3212D5F9818079E21FCAD3C5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D55D6C97221F513AE0BCFAAB /* ContentView.swift */; };
 		4A15FAACE600294DBF52F532 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 19D0BD55F8A3754D36BA743B /* Foundation.framework */; };
 		6AD10E5BA60949CD51D966B4 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 19D0BD55F8A3754D36BA743B /* Foundation.framework */; };
@@ -45,6 +46,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B60700000000000000000002 /* PublicLibraryUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PublicLibraryUITests.swift; sourceTree = "<group>"; };
 		088EB291EEE334B891EA3CA5 /* Debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		19D0BD55F8A3754D36BA743B /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -173,6 +175,7 @@
 			children = (
 				B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */,
 				B56000000000000000000002 /* QuestionAPreviewUITests.swift */,
+				B60700000000000000000002 /* PublicLibraryUITests.swift */,
 				B30000000000000000000002 /* LoginRequiredSheetUITests.swift */,
 			);
 			path = ChaekchaekUITests;
@@ -352,6 +355,7 @@
 			files = (
 				B40000000000000000000001 /* FirstLibraryOnboardingUITests.swift in Sources */,
 				B56000000000000000000001 /* QuestionAPreviewUITests.swift in Sources */,
+				B60700000000000000000001 /* PublicLibraryUITests.swift in Sources */,
 				B30000000000000000000001 /* LoginRequiredSheetUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -320,6 +320,7 @@ class FeedViewModel(
         bookTitle = bookTitle,
         coverId = coverId,
         authorName = authorLabel,
+        authorProfile = authorProfile,
         timeLabel = TimeLabels.relative(createdAt, clock.now()),
         quoteText = quoteText,
         quote = quote,

@@ -76,6 +76,7 @@ internal fun ReviewFeedPageDto.toReviewFeedPage() = ReviewFeedPage(
             bookTitle = review.bookTitle,
             coverId = review.bookCoverImageUrl,
             authorLabel = review.author.displayName,
+            authorProfile = review.author.toAuthorProfile(),
             authorProfileImageUrl = review.author.profileImageUrl,
             createdAt = Instant.parse(review.createdAt),
             quoteText = review.content,

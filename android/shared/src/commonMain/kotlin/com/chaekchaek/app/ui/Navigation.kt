@@ -1,5 +1,16 @@
 package com.chaekchaek.app.ui
 
+import com.chaekchaek.app.domain.profile.AuthorProfile
+import com.chaekchaek.app.domain.profile.LibraryAccess
+import com.chaekchaek.app.data.remote.PublicLibraryRemoteRepository
+import com.chaekchaek.app.domain.library.PublicLibrary
+import com.chaekchaek.app.domain.library.PublicBookshelfDetail
+import com.chaekchaek.app.presentation.common.ErrorRecoveryState
+import com.chaekchaek.app.ui.common.LocalOpenAuthorLibrary
+import com.chaekchaek.app.ui.publiclibrary.PublicLibraryViewModel
+import com.chaekchaek.app.ui.publiclibrary.PublicLibraryScreen
+import com.chaekchaek.app.ui.publiclibrary.PublicBookshelfScreen
+
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -67,12 +78,24 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import kotlin.time.Clock
+import kotlin.uuid.Uuid
+import kotlin.uuid.ExperimentalUuidApi
 
 @Serializable
 private data object Root : NavKey
 
 @Serializable
-private data class BookDetailKey(val book: BookDetailArgs) : NavKey
+@OptIn(ExperimentalUuidApi::class)
+internal data class BookDetailKey(
+    val book: BookDetailArgs,
+    val entryId: String = Uuid.random().toString(),
+) : NavKey
+
+@Serializable
+private data class PublicLibraryKey(val memberId: Long, val ownerName: String) : NavKey
+
+@Serializable
+private data class PublicBookshelfKey(val memberId: Long, val libraryId: Long, val ownerName: String) : NavKey
 
 @Serializable
 private data object MyPageKey : NavKey
@@ -83,6 +106,8 @@ private val navigationConfig = SavedStateConfiguration {
             subclass(Root::class, Root.serializer())
             subclass(BookDetailKey::class, BookDetailKey.serializer())
             subclass(MyPageKey::class, MyPageKey.serializer())
+            subclass(PublicLibraryKey::class, PublicLibraryKey.serializer())
+            subclass(PublicBookshelfKey::class, PublicBookshelfKey.serializer())
         }
     }
 }
@@ -299,6 +324,20 @@ private fun AppNavigationContent(
         memberSettingsViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
     }
     val backStack = rememberNavBackStack(navigationConfig, Root)
+    val publicLibraryRepository = remember { PublicLibraryRemoteRepository() }
+    val profileErrors = remember { ErrorRecoveryState() }
+    ErrorRecoveryEffect(profileErrors)
+    fun openAuthorLibrary(source: NavKey, profile: AuthorProfile) {
+        if (!backStack.isCurrentDestination(source)) return
+        if (profile.libraryAccess != LibraryAccess.Available) {
+            profileErrors.confirm(profile.libraryAccess.message.orEmpty(), title = "서재를 볼 수 없어요")
+            return
+        }
+        val destination = PublicLibraryKey(requireNotNull(profile.memberId), profile.displayName)
+        backStack.navigateToExistingFromCurrent(source, destination) {
+            it is PublicLibraryKey && it.memberId == destination.memberId
+        }
+    }
     CompositionLocalProvider(
         LocalRemoteBookCover provides { url, description, modifier ->
             RemoteBookImage(url, description, modifier)
@@ -352,24 +391,56 @@ private fun AppNavigationContent(
                     LaunchedEffect(authTokens?.accessToken, restoringAuthentication) {
                         if (!restoringAuthentication) feedViewModel.authenticate(authTokens?.accessToken)
                     }
-                    RootScreen(
-                        homeViewModel = homeViewModel,
-                        feedViewModel = feedViewModel,
-                        searchViewModel = searchViewModel,
-                        librarySaveViewModel = librarySaveViewModel,
-                        bookshelfViewModel = bookshelfViewModel,
-                        memberSettingsViewModel = memberSettingsViewModel,
-                        authViewModel = authViewModel,
-                        analytics = analytics,
-                        onBookClick = { backStack.navigateFromCurrent(Root, BookDetailKey(it)) },
-                        onMyPage = { backStack.navigateFromCurrent(Root, MyPageKey) },
-                        rootBackEnabled = backStack.isCurrentDestination(Root),
-                        homeHeaderAction = homeHeaderAction,
-                        onExitRequested = {
-                            if (backStack.prepareRootExit(Root)) onExitRequested()
-                        },
-                        modifier = safeContent,
-                    )
+                    CompositionLocalProvider(LocalOpenAuthorLibrary provides { profile -> openAuthorLibrary(Root, profile) }) {
+                        RootScreen(
+                            homeViewModel = homeViewModel,
+                            feedViewModel = feedViewModel,
+                            searchViewModel = searchViewModel,
+                            librarySaveViewModel = librarySaveViewModel,
+                            bookshelfViewModel = bookshelfViewModel,
+                            memberSettingsViewModel = memberSettingsViewModel,
+                            authViewModel = authViewModel,
+                            analytics = analytics,
+                            onBookClick = { backStack.navigateFromCurrent(Root, BookDetailKey(it)) },
+                            onMyPage = { backStack.navigateFromCurrent(Root, MyPageKey) },
+                            rootBackEnabled = backStack.isCurrentDestination(Root),
+                            homeHeaderAction = homeHeaderAction,
+                            onExitRequested = {
+                                if (backStack.prepareRootExit(Root)) onExitRequested()
+                            },
+                            modifier = safeContent,
+                        )
+                    }
+                }
+                entry<PublicLibraryKey> { key ->
+                    val viewModel = viewModel<PublicLibraryViewModel<PublicLibrary>> {
+                        PublicLibraryViewModel { publicLibraryRepository.library(key.memberId) }
+                    }
+                    ErrorRecoveryEffect(viewModel.errors)
+                    val state by viewModel.uiState.collectAsState()
+                    PublicLibraryScreen(key.ownerName, state,
+                        onBack = { backStack.popDestinationIfCurrent(key) },
+                        onBookshelf = { shelf ->
+                            val destination = PublicBookshelfKey(key.memberId, shelf.libraryId, key.ownerName)
+                            backStack.navigateToExistingFromCurrent(key, destination) {
+                                it is PublicBookshelfKey && it.libraryId == shelf.libraryId && it.memberId == key.memberId
+                            }
+                        }, modifier = safeContent)
+                }
+                entry<PublicBookshelfKey> { key ->
+                    val viewModel = viewModel<PublicLibraryViewModel<PublicBookshelfDetail>> {
+                        PublicLibraryViewModel {
+                            publicLibraryRepository.bookshelf(key.libraryId).also {
+                                check(it.memberId == key.memberId) { "책장 소유자가 일치하지 않아요" }
+                            }
+                        }
+                    }
+                    ErrorRecoveryEffect(viewModel.errors)
+                    val state by viewModel.uiState.collectAsState()
+                    PublicBookshelfScreen(key.ownerName, state,
+                        onBack = { backStack.popDestinationIfCurrent(key) },
+                        onBook = { backStack.navigateFromCurrent(key, BookDetailKey(it)) },
+                        modifier = safeContent)
                 }
                 entry<MyPageKey> {
                     LaunchedEffect(Unit) { analytics.screenView("my_page"); memberSettingsViewModel.retry() }
@@ -434,84 +505,86 @@ private fun AppNavigationContent(
 
                     if (restoringAuthentication) {
                         AuthenticationRestorationContent(safeContent)
-                    } else BookDetailScreen(
-                        state = state,
-                        onBack = { bookshelfViewModel.refresh(); backStack.popDestinationIfCurrent(key) },
-                        modifier = safeContent,
-                        savedToLibrary = state.detail?.isRegisteredInMyLibrary ?: bookshelfState.shelves.any { shelf -> shelf.items.any { it.isbn13 == displayBook.isbn13 } },
-                        externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
-                        externalLibraryLoading = librarySaveState.showLoading,
-                        anonymousReviews = anonymousReviews,
-                        onAnonymousReviewsChange = updateAnonymousReviews,
-                        nickname = if (state.signedIn) {
-                            memberSettingsState.nickname
-                        } else {
-                            state.guestNickname.orEmpty()
-                        },
-                        coverContent = { book, modifier ->
-                            RemoteBookImage(book.coverUrl, "${book.title} 표지", modifier)
-                        },
-                        resumedAuthenticatedAction = resumedAction,
-                        onAuthenticatedActionHandled = { resumedAction = null },
-                        onLoginRequired = viewModel::requestAuthentication,
-                        onAddToLibrary = { librarySaveViewModel.save(displayBook) },
-                        onLibraryMessageShown = viewModel::clearLibraryMessage,
-                        onStatusChange = { status ->
-                            viewModel.updateStatus(
-                                status,
-                                onSuccess = bookshelfViewModel::refresh,
-                                onLibraryAdded = bookshelfViewModel::refresh,
-                            )
-                        },
-                        onPageSave = { page, onSaved ->
-                            viewModel.savePage(
-                                page,
-                                onSuccess = {
-                                    bookshelfViewModel.refresh()
-                                    onSaved()
-                                },
-                                onLibraryAdded = bookshelfViewModel::refresh,
-                            )
-                        },
-                        onRatingCriterionChange = viewModel::loadRatingComparison,
-                        onRatingSave = { rating, onSaved ->
-                            viewModel.saveRating(
-                                rating,
-                                onSuccess = {
-                                    bookshelfViewModel.refresh()
-                                    onSaved()
-                                },
-                            )
-                        },
-                        errorRecovery = viewModel.errors,
-                        onReviewCreate = viewModel::createReview,
-                        onQuestionAReviewCreate = { draft ->
-                            viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, onRatingSaved = bookshelfViewModel::refresh, anonymous = draft.anonymous)
-                        },
-                        onQuestionAReviewUpdate = { reviewId, draft, request ->
-                            viewModel.updateReviewWithRating(reviewId, request, draft.rating, onRatingSaved = bookshelfViewModel::refresh)
-                        },
-                        onReviewOpen = viewModel::openReviewComposer,
-                        onReplyOpen = viewModel::openReplyComposer,
-                        onReviewEditOpen = viewModel::openReviewEditor,
-                        onReplyEditOpen = viewModel::openReplyEditor,
-                        onComposerDismiss = viewModel::dismissComposer,
-                        onReviewUpdate = viewModel::updateReview,
-                        onReviewDelete = viewModel::deleteReview,
-                        onReviewLike = viewModel::likeReview,
-                        onLoadReplies = viewModel::loadReplies,
-                        onReplyCreate = viewModel::createReply,
-                        onReplyUpdate = viewModel::updateReply,
-                        onReplyDelete = viewModel::deleteReply,
-                        onReplyLike = viewModel::likeReply,
-                        onReviewScopeChange = viewModel::changeReviewScope,
-                        onReviewSortChange = viewModel::changeReviewSort,
-                        onLoadMoreReviews = viewModel::loadMoreReviews,
-                        onRetryReviews = viewModel::retryReviews,
-                        onRequestErrorShown = viewModel::clearRequestError,
-                        refreshState = refreshState,
-                        onRefresh = viewModel::refresh,
-                    )
+                    } else CompositionLocalProvider(LocalOpenAuthorLibrary provides { profile -> openAuthorLibrary(key, profile) }) {
+                        BookDetailScreen(
+                            state = state,
+                            onBack = { bookshelfViewModel.refresh(); backStack.popDestinationIfCurrent(key) },
+                            modifier = safeContent,
+                            savedToLibrary = state.detail?.isRegisteredInMyLibrary ?: bookshelfState.shelves.any { shelf -> shelf.items.any { it.isbn13 == displayBook.isbn13 } },
+                            externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
+                            externalLibraryLoading = librarySaveState.showLoading,
+                            anonymousReviews = anonymousReviews,
+                            onAnonymousReviewsChange = updateAnonymousReviews,
+                            nickname = if (state.signedIn) {
+                                memberSettingsState.nickname
+                            } else {
+                                state.guestNickname.orEmpty()
+                            },
+                            coverContent = { book, modifier ->
+                                RemoteBookImage(book.coverUrl, "${book.title} 표지", modifier)
+                            },
+                            resumedAuthenticatedAction = resumedAction,
+                            onAuthenticatedActionHandled = { resumedAction = null },
+                            onLoginRequired = viewModel::requestAuthentication,
+                            onAddToLibrary = { librarySaveViewModel.save(displayBook) },
+                            onLibraryMessageShown = viewModel::clearLibraryMessage,
+                            onStatusChange = { status ->
+                                viewModel.updateStatus(
+                                    status,
+                                    onSuccess = bookshelfViewModel::refresh,
+                                    onLibraryAdded = bookshelfViewModel::refresh,
+                                )
+                            },
+                            onPageSave = { page, onSaved ->
+                                viewModel.savePage(
+                                    page,
+                                    onSuccess = {
+                                        bookshelfViewModel.refresh()
+                                        onSaved()
+                                    },
+                                    onLibraryAdded = bookshelfViewModel::refresh,
+                                )
+                            },
+                            onRatingCriterionChange = viewModel::loadRatingComparison,
+                            onRatingSave = { rating, onSaved ->
+                                viewModel.saveRating(
+                                    rating,
+                                    onSuccess = {
+                                        bookshelfViewModel.refresh()
+                                        onSaved()
+                                    },
+                                )
+                            },
+                            errorRecovery = viewModel.errors,
+                            onReviewCreate = viewModel::createReview,
+                            onQuestionAReviewCreate = { draft ->
+                                viewModel.createReviewWithRating(draft.toReviewRequest(), draft.rating, onRatingSaved = bookshelfViewModel::refresh, anonymous = draft.anonymous)
+                            },
+                            onQuestionAReviewUpdate = { reviewId, draft, request ->
+                                viewModel.updateReviewWithRating(reviewId, request, draft.rating, onRatingSaved = bookshelfViewModel::refresh)
+                            },
+                            onReviewOpen = viewModel::openReviewComposer,
+                            onReplyOpen = viewModel::openReplyComposer,
+                            onReviewEditOpen = viewModel::openReviewEditor,
+                            onReplyEditOpen = viewModel::openReplyEditor,
+                            onComposerDismiss = viewModel::dismissComposer,
+                            onReviewUpdate = viewModel::updateReview,
+                            onReviewDelete = viewModel::deleteReview,
+                            onReviewLike = viewModel::likeReview,
+                            onLoadReplies = viewModel::loadReplies,
+                            onReplyCreate = viewModel::createReply,
+                            onReplyUpdate = viewModel::updateReply,
+                            onReplyDelete = viewModel::deleteReply,
+                            onReplyLike = viewModel::likeReply,
+                            onReviewScopeChange = viewModel::changeReviewScope,
+                            onReviewSortChange = viewModel::changeReviewSort,
+                            onLoadMoreReviews = viewModel::loadMoreReviews,
+                            onRetryReviews = viewModel::retryReviews,
+                            onRequestErrorShown = viewModel::clearRequestError,
+                            refreshState = refreshState,
+                            onRefresh = viewModel::refresh,
+                        )
+                    }
 
                     if (!restoringAuthentication && state.pendingAction != null) {
                         LoginRequiredSheet(

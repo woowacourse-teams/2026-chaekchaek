@@ -1,5 +1,7 @@
 package com.chaekchaek.app.ui.feed
 
+import com.chaekchaek.app.ui.common.authorProfileLink
+
 import com.chaekchaek.app.ui.common.LibrarySaveButton
 import com.chaekchaek.app.ui.archive.LibrarySaveUiState
 
@@ -229,17 +231,7 @@ private fun FeedReflectionArticle(
                 onSave = onSaveBook,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(18.dp).clip(CircleShape).background(Color(0xFFE1E1E5)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        reflection.authorName.take(1),
-                        color = ChaekInkSecondary,
-                        fontSize = 9.sp,
-                        lineHeight = 14.4.sp,
-                    )
-                }
+                com.chaekchaek.app.ui.common.AuthorProfileAvatar(reflection.authorProfile, 18.dp)
                 Row(
                     modifier = Modifier.padding(start = 5.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -247,6 +239,7 @@ private fun FeedReflectionArticle(
                 ) {
                     Text(
                         reflection.authorName,
+                        modifier = Modifier.authorProfileLink(reflection.authorProfile),
                         color = ChaekInkSecondary,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp, lineHeight = 16.sp),
                         maxLines = 1,
