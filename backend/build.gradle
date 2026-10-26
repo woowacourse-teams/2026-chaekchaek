@@ -1338,6 +1338,12 @@ tasks.register('verifyOpenApi') {
 		def legacyRatingResponse = responseSchema('/api/v1/library/{bookId}/rating', 'put', '200')
 		def isbnRatingOperation = (paths.get('/api/v1/books/by-isbn/{isbn13}/rating') as Map)?.get('put') as Map
 		def legacyRatingOperation = (paths.get('/api/v1/library/{bookId}/rating') as Map)?.get('put') as Map
+		def removeRatingOperation = (paths.get('/api/v1/library/{bookId}/rating') as Map)?.get('delete') as Map
+		if (legacyRatingOperation?.get('deprecated') != true
+				|| !legacyRatingOperation?.get('description')?.toString()?.contains('PUT /api/v1/books/by-isbn/{isbn13}/rating')
+				|| isbnRatingOperation?.get('deprecated') == true || removeRatingOperation?.get('deprecated') == true) {
+			throw new GradleException('OpenAPI must deprecate only ID rating writes and point to the ISBN replacement')
+		}
 		def isbnRatingParameter = (isbnRatingOperation?.get('parameters') as List)?.find { parameter ->
 			(parameter as Map)?.get('name') == 'isbn13' && (parameter as Map)?.get('in') == 'path'
 		} as Map

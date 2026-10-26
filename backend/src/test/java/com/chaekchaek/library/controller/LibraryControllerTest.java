@@ -151,6 +151,9 @@ class LibraryControllerTest {
     private static final String LIBRARY_BULK_STATUS_DESCRIPTION = "인증된 사용자가 최대 10개의 공유 독서 상태를 한 번에 변경한다. 초기화된 기록이 하나라도 있으면 `LIBRARY_ITEM_NOT_FOUND`로 전체 실패하며 배치와 표시 순서는 유지한다";
     private static final String LIBRARY_RATE_SUMMARY = "도서 별점 등록";
     private static final String LIBRARY_RATE_DESCRIPTION = """
+            사용 중단 권고 대상이다. `PUT /api/v1/books/by-isbn/{isbn13}/rating`으로 전환한다.
+            요청 본문과 성공 응답은 같으며 기존 ID 경로도 계속 지원한다. 삭제 API는 사용 중단 권고 대상이 아니다.
+
             인증된 회원이 도서에 0.1부터 5.0까지 별점을 등록한다. 책장 배치와 독서 기록을 새로 만들지 않으며
             기존 독서 기록은 유지하고 초기화된 기록도 되살리지 않는다. 책장 한도와 닉네임 설정 여부에 영향을 받지 않는다.
             별점만 있는 응답의 status, currentPage, readingUpdatedAt은 null이다. 기존 URI와 응답 필드 구조를 유지한다.
@@ -983,6 +986,7 @@ class LibraryControllerTest {
                         resource(ResourceSnippetParameters.builder()
                                 .summary(LIBRARY_RATE_SUMMARY)
                                 .description(LIBRARY_RATE_DESCRIPTION)
+                                .deprecated(true)
                                 .tag(LIBRARY_TAG)
                                 .pathParameters(bookIdResourcePathParameter())
                                 .requestSchema(Schema.schema("RateBookRequest"))
@@ -1016,6 +1020,7 @@ class LibraryControllerTest {
                         resource(ResourceSnippetParameters.builder()
                                 .summary(LIBRARY_RATE_SUMMARY)
                                 .description(LIBRARY_RATE_DESCRIPTION)
+                                .deprecated(true)
                                 .tag(LIBRARY_TAG)
                                 .pathParameters(bookIdResourcePathParameter())
                                 .requestSchema(Schema.schema("RateBookRequest"))
@@ -2070,6 +2075,7 @@ class LibraryControllerTest {
         var parameters = ResourceSnippetParameters.builder()
                 .summary(summary)
                 .description(description)
+                .deprecated(summary.equals(LIBRARY_RATE_SUMMARY))
                 .tag(documentationTag(summary))
                 .pathParameters(pathParameters)
                 .queryParameters(queryParameters)
