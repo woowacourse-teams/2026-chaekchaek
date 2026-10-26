@@ -127,15 +127,15 @@ final class PublicLibraryUITests: XCTestCase {
         XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); shelf(in: app).tap()
         let firstBook = book("서재 도서 1", in: app)
         XCTAssertTrue(firstBook.waitForExistence(timeout: 10)); reveal(firstBook, in: app); firstBook.tap()
-        let latest = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "최신순")).firstMatch
-        reveal(latest, in: app); XCTAssertTrue(latest.waitForExistence(timeout: 15)); latest.tap()
-        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "페이지순")).firstMatch.tap()
+        let popular = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "인기순")).firstMatch
+        reveal(popular, in: app); XCTAssertTrue(popular.waitForExistence(timeout: 15)); popular.tap()
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "최신순")).firstMatch.tap()
         profile("독자B", in: app)
         let otherShelf = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "B책장")).firstMatch
         XCTAssertTrue(otherShelf.waitForExistence(timeout: 10)); otherShelf.tap()
         XCTAssertTrue(firstBook.waitForExistence(timeout: 10)); reveal(firstBook, in: app); firstBook.tap()
-        reveal(latest, in: app); XCTAssertTrue(latest.waitForExistence(timeout: 15))
-        XCTAssertTrue(latest.isHittable)
+        reveal(popular, in: app); XCTAssertTrue(popular.waitForExistence(timeout: 15))
+        XCTAssertTrue(popular.isHittable)
         back(app); XCTAssertTrue(find("읽는 중", in: app).waitForExistence(timeout: 10))
         back(app); XCTAssertTrue(otherShelf.waitForExistence(timeout: 10)); back(app)
         // 원래 상세의 저장된 위치는 B 프로필 근처다. 정렬은 위쪽에 있으므로 먼저 TOP으로 이동한다.
@@ -144,7 +144,7 @@ final class PublicLibraryUITests: XCTestCase {
             top.tap()
             XCTAssertTrue(app.buttons["뒤로 가기"].waitForExistence(timeout: 10))
         }
-        let originalSort = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "페이지순")).firstMatch
+        let originalSort = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "최신순")).firstMatch
         reveal(originalSort, in: app); XCTAssertTrue(originalSort.waitForExistence(timeout: 15))
         XCTAssertTrue(originalSort.isHittable)
     }

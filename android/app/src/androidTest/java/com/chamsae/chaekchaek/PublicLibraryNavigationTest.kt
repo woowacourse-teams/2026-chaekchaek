@@ -99,16 +99,16 @@ class PublicLibraryNavigationTest {
         compose.onNodeWithText("기본책장").performClick(); waitFor("읽는 중")
         compose.onNodeWithText("서재 도서 1").performScrollTo().performClick()
         waitFor("공개 서재를 확인하는 감상")
-        compose.onNodeWithText("최신순").performScrollTo().performClick()
-        compose.onNodeWithText("페이지순").performClick()
+        compose.onNodeWithText("인기순").performScrollTo().performClick()
+        compose.onNodeWithText("최신순").performClick()
         compose.onAllNodesWithContentDescription("독자B 프로필").onFirst().performScrollTo().performClick()
         waitFor("B책장"); compose.onNodeWithText("B책장").performClick(); waitFor("읽는 중")
         compose.onNodeWithText("서재 도서 1").performScrollTo().performClick()
         waitFor("공개 서재를 확인하는 감상")
-        compose.onNodeWithText("최신순").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("인기순").performScrollTo().assertIsDisplayed()
         back(); waitFor("읽는 중"); back(); waitFor("B책장"); back()
         waitFor("공개 서재를 확인하는 감상")
-        compose.onNodeWithText("페이지순").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("최신순").performScrollTo().assertIsDisplayed()
     }
 
     private fun systemBack() {
