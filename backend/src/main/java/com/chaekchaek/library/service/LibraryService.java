@@ -491,13 +491,6 @@ public class LibraryService {
 
     public LibraryItemResponse rateByIsbn13(long memberId, Isbn13 isbn13, BigDecimal rating) {
         validateRating(rating);
-        readTransaction.executeWithoutResult(transactionStatus -> {
-            Member member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-            if (member.getAccountStatus() != AccountStatus.ACTIVE) {
-                throw new BusinessException(ErrorCode.FORBIDDEN);
-            }
-        });
         Book book = bookResolver.findOrCreate(isbn13);
         return Objects.requireNonNull(transactionTemplate.execute(transactionStatus ->
                 rate(memberId, book.getId(), rating)));

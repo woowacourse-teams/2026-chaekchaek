@@ -48,7 +48,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
@@ -120,22 +119,6 @@ class LibraryServiceTest {
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST));
         verifyNoInteractions(memberRepository, bookResolver, transactionManager);
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = AccountStatus.class, names = {"SUSPENDED", "WITHDRAWN"})
-    @DisplayName("ISBN 별점 저장의 비활성 회원은 도서 확보 전에 거절한다")
-    void should_RejectBeforeResolvingBook_When_RatingMemberIsInactive(AccountStatus accountStatus) {
-        // given
-        Member member = activeMember();
-        ReflectionTestUtils.setField(member, "accountStatus", accountStatus);
-        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
-
-        // when & then
-        assertThatThrownBy(() -> service().rateByIsbn13(1L, ISBN13, new BigDecimal("4.5")))
-                .isInstanceOfSatisfying(BusinessException.class,
-                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
-        verifyNoInteractions(bookResolver, libraryItemRepository, libraryBookRepository);
     }
 
     @Test
