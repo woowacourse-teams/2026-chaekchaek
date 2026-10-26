@@ -681,7 +681,7 @@ final class QuestionAPreviewUITests: XCTestCase {
     }
 }
 
-/// 실제 앱의 HTTP 조회와 Navigation 연결을 확인하며 저장 요청은 받지 않는다.
+/// 실제 앱의 HTTP 조회와 Navigation 연결을 확인하며 감상 저장 요청은 받지 않는다.
 private final class BookQuestionFixtureServer: @unchecked Sendable {
     private let listener: NWListener
     private let queue = DispatchQueue(label: "chaekchaek.question-api-test")
@@ -716,8 +716,13 @@ private final class BookQuestionFixtureServer: @unchecked Sendable {
                 return
             }
             let path = String(request.split(separator: " ").dropFirst().first ?? "").split(separator: "?").first.map(String.init) ?? ""
+            let method = request.split(separator: " ").first.map(String.init) ?? ""
+            let status = method == "GET" || (method == "POST" && path == "/api/v1/auth/guest-token") ? "200 OK" : "405 Method Not Allowed"
             let body: String
             switch path {
+            case "/api/v1/auth/guest-token":
+                body = "{\"guestToken\":\"\(UUID().uuidString)\",\"nickname\":\"검증 독자\",\"expiresAt\":\"2099-01-01T00:00:00Z\"}"
+
             case "/api/v1/home/popular-books":
                 body = #"{"books":[{"bookId":616,"isbn13":"9780000000616","title":"질문 API 검증 도서","coverImageUrl":"","reviewCount":0,"replyCount":0}]}"#
             case "/api/v1/books/by-isbn/9780000000616":
@@ -729,7 +734,7 @@ private final class BookQuestionFixtureServer: @unchecked Sendable {
                 body = #"{"reviews":[],"items":[],"totalCount":0,"nextPage":null}"#
             }
             let payload = Data(body.utf8)
-            var response = Data("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(payload.count)\r\nConnection: close\r\n\r\n".utf8)
+            var response = Data("HTTP/1.1 \(status)\r\nContent-Type: application/json\r\nContent-Length: \(payload.count)\r\nConnection: close\r\n\r\n".utf8)
             response.append(payload)
             connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
         }
