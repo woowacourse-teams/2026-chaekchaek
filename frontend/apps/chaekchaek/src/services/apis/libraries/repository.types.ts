@@ -18,6 +18,8 @@ export type GetLibraries = (params: GetLibrariesParams) => Promise<{
       bookId: number;
       title: string;
       spineImageUrl: string;
+      coverImageUrl: string;
+      authors: string[];
       isbn13: string;
     }[];
   }[];
