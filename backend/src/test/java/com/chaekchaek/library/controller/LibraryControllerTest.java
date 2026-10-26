@@ -51,12 +51,14 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
@@ -149,9 +151,27 @@ class LibraryControllerTest {
     private static final String LIBRARY_BULK_STATUS_DESCRIPTION = "인증된 사용자가 최대 10개의 공유 독서 상태를 한 번에 변경한다. 초기화된 기록이 하나라도 있으면 `LIBRARY_ITEM_NOT_FOUND`로 전체 실패하며 배치와 표시 순서는 유지한다";
     private static final String LIBRARY_RATE_SUMMARY = "도서 별점 등록";
     private static final String LIBRARY_RATE_DESCRIPTION = """
+            사용 중단 권고 대상이다. `PUT /api/v1/books/by-isbn/{isbn13}/rating`으로 전환한다.
+            요청 본문과 성공 응답은 같으며 기존 ID 경로도 계속 지원한다. 삭제 API는 사용 중단 권고 대상이 아니다.
+
             인증된 회원이 도서에 0.1부터 5.0까지 별점을 등록한다. 책장 배치와 독서 기록을 새로 만들지 않으며
             기존 독서 기록은 유지하고 초기화된 기록도 되살리지 않는다. 책장 한도와 닉네임 설정 여부에 영향을 받지 않는다.
             별점만 있는 응답의 status, currentPage, readingUpdatedAt은 null이다. 기존 URI와 응답 필드 구조를 유지한다.
+            """;
+    private static final String ISBN_RATE_SUMMARY = "ISBN으로 도서 별점 등록, 수정";
+    private static final String ISBN_RATE_DESCRIPTION = """
+            인증된 활성 회원이 ISBN으로 도서에 별점을 등록하거나 기존 별점을 변경한다.
+
+            - `isbn13`: 검색, 상세 응답의 ISBN 문자열을 그대로 전달한다. `bookId` 확보 요청은 필요하지 않다.
+            - `rating`: 기존 ID 경로와 같은 `0.1`부터 `5.0`까지 소수 첫째 자리의 별점이다.
+            - DB에 있는 도서는 그대로 사용하고, 미등록 도서만 외부 상세 조회 후 저장한다.
+            - 책장, 닉네임과 감상 등록을 요구하지 않으며 책장 배치와 독서 기록을 만들지 않는다.
+            - 기존 독서 상태, 현재 페이지와 독서 갱신 시각은 유지하고 초기화된 기록도 되살리지 않는다.
+            - 등록, 수정과 같은 값 재요청 모두 `200`이며 기존 `PUT /api/v1/library/{bookId}/rating`과
+              응답 필드, 타입, nullable 조건과 의미가 같다. 별점만 있으면 `status`, `currentPage`, `readingUpdatedAt`은 `null`이다.
+            - 응답의 `bookId`로 기존 `DELETE /api/v1/library/{bookId}/rating`을 호출할 수 있다.
+            - 미등록 도서의 외부 조회 결과가 없으면 `404`, `BOOK_NOT_FOUND`, 외부 조회 실패는 `502`, `EXTERNAL_API_ERROR`다.
+            - 도서 확보 후 별점 저장에 실패하면 도서만 남을 수 있다. 같은 요청을 다시 보내면 기존 도서를 재사용한다.
             """;
     private static final String LIBRARY_REMOVE_RATING_SUMMARY = "도서 별점 삭제";
     private static final String LIBRARY_REMOVE_RATING_DESCRIPTION = "인증된 사용자가 내 별점을 삭제한다";
@@ -966,6 +986,7 @@ class LibraryControllerTest {
                         resource(ResourceSnippetParameters.builder()
                                 .summary(LIBRARY_RATE_SUMMARY)
                                 .description(LIBRARY_RATE_DESCRIPTION)
+                                .deprecated(true)
                                 .tag(LIBRARY_TAG)
                                 .pathParameters(bookIdResourcePathParameter())
                                 .requestSchema(Schema.schema("RateBookRequest"))
@@ -982,27 +1003,7 @@ class LibraryControllerTest {
     @DisplayName("독서 기록 없이 저장한 별점은 nullable 독서 필드를 명시한다")
     void should_ReturnNullReadingFields_When_RatingWithoutReadingRecord() throws Exception {
         // given
-        LibraryItemResponse original = libraryItemResponse();
-        LibraryItemResponse ratingOnly = new LibraryItemResponse(
-                original.bookId(),
-                original.isbn13(),
-                original.title(),
-                original.coverImageUrl(),
-                original.spineImageUrl(),
-                original.backImageUrl(),
-                original.authors(),
-                original.translators(),
-                original.publisher(),
-                original.category(),
-                original.publishedDate(),
-                original.totalPages(),
-                original.commentCount(),
-                null,
-                null,
-                original.rating(),
-                original.addedAt(),
-                null
-        );
+        LibraryItemResponse ratingOnly = ratingOnlyResponse();
         when(libraryService.rate(MEMBER_ID, BOOK_ID, new BigDecimal("4.5"))).thenReturn(ratingOnly);
 
         // when & then
@@ -1019,6 +1020,7 @@ class LibraryControllerTest {
                         resource(ResourceSnippetParameters.builder()
                                 .summary(LIBRARY_RATE_SUMMARY)
                                 .description(LIBRARY_RATE_DESCRIPTION)
+                                .deprecated(true)
                                 .tag(LIBRARY_TAG)
                                 .pathParameters(bookIdResourcePathParameter())
                                 .requestSchema(Schema.schema("RateBookRequest"))
@@ -1027,6 +1029,76 @@ class LibraryControllerTest {
                                 .responseFields(ratingResponseFields())
                                 .build())
                 ));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    @DisplayName("ISBN 별점은 기존 ID 별점과 같은 응답과 nullable 독서 필드를 반환한다")
+    void should_ReturnCommonRatingResponse_When_RatingByIsbn(boolean hasReadingState) throws Exception {
+        // given
+        LibraryItemResponse response = hasReadingState ? libraryItemResponse() : ratingOnlyResponse();
+        when(libraryService.rateByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5")))
+                .thenReturn(response);
+
+        // when & then
+        putIsbnRating()
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bookId").value(BOOK_ID))
+                .andExpect(jsonPath("$.isbn13").value(ISBN13))
+                .andExpect(jsonPath("$.rating").value(4.5))
+                .andExpect(jsonPath("$.status").value(hasReadingState ? "READING" : null))
+                .andExpect(jsonPath("$.currentPage").value(hasReadingState ? 100 : null))
+                .andDo(document(
+                        hasReadingState ? "books-rate-by-isbn" : "books-rate-by-isbn-without-reading-state",
+                        pathParameters(parameterWithName("isbn13").description("검색, 상세 응답의 ISBN 문자열")),
+                        requestFields(ratingRequestFields()),
+                        responseFields(ratingResponseFields()),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary(ISBN_RATE_SUMMARY)
+                                .description(ISBN_RATE_DESCRIPTION)
+                                .tag("별점")
+                                .pathParameters(isbnRatingPathParameters())
+                                .requestSchema(Schema.schema("RateBookRequest"))
+                                .responseSchema(Schema.schema("LegacyRatingResponse"))
+                                .requestFields(ratingRequestFields())
+                                .responseFields(ratingResponseFields())
+                                .build())
+                ));
+
+        verify(libraryService).rateByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ErrorCode.class, names = {
+            "INVALID_REQUEST", "UNAUTHORIZED", "FORBIDDEN", "BOOK_NOT_FOUND", "EXTERNAL_API_ERROR", "INTERNAL_SERVER_ERROR"
+    })
+    @DisplayName("ISBN 별점의 입력, 인증과 도서 확보 오류를 문서화한다")
+    void should_DocumentProblemDetails_When_RatingByIsbnFails(ErrorCode errorCode) throws Exception {
+        // given
+        HttpStatus expectedStatus = switch (errorCode) {
+            case INVALID_REQUEST -> HttpStatus.BAD_REQUEST;
+            case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
+            case FORBIDDEN -> HttpStatus.FORBIDDEN;
+            case BOOK_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case EXTERNAL_API_ERROR -> HttpStatus.BAD_GATEWAY;
+            case INTERNAL_SERVER_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
+            default -> throw new IllegalArgumentException("지원하지 않는 별점 오류 코드");
+        };
+        when(libraryService.rateByIsbn13(MEMBER_ID, new Isbn13(ISBN13), new BigDecimal("4.5")))
+                .thenThrow(new BusinessException(errorCode));
+
+        // when & then
+        documentProblemDetail(
+                putIsbnRating(),
+                expectedStatus,
+                errorCode,
+                "/api/v1/books/by-isbn/" + ISBN13 + "/rating",
+                "books-rate-by-isbn-" + errorCode.name().toLowerCase(Locale.ROOT).replace('_', '-'),
+                ISBN_RATE_SUMMARY,
+                ISBN_RATE_DESCRIPTION,
+                isbnRatingPathParameters(),
+                noQueryParameters()
+        );
     }
 
     private FieldDescriptor[] ratingResponseFields() {
@@ -1055,7 +1127,7 @@ class LibraryControllerTest {
                         resource(ResourceSnippetParameters.builder()
                                 .summary(LIBRARY_REMOVE_RATING_SUMMARY)
                                 .description(LIBRARY_REMOVE_RATING_DESCRIPTION)
-                                .tag(LIBRARY_TAG)
+                                .tag("별점")
                                 .pathParameters(bookIdResourcePathParameter())
                                 .build())
                 ));
@@ -2000,18 +2072,23 @@ class LibraryControllerTest {
             ParameterDescriptorWithType[] pathParameters,
             ParameterDescriptorWithType[] queryParameters
     ) {
+        var parameters = ResourceSnippetParameters.builder()
+                .summary(summary)
+                .description(description)
+                .deprecated(summary.equals(LIBRARY_RATE_SUMMARY))
+                .tag(documentationTag(summary))
+                .pathParameters(pathParameters)
+                .queryParameters(queryParameters)
+                .responseSchema(Schema.schema("ProblemDetail"))
+                .responseFields(PROBLEM_DETAIL_FIELDS);
+        if (summary.equals(ISBN_RATE_SUMMARY) || summary.equals(LIBRARY_RATE_SUMMARY)) {
+            parameters.requestSchema(Schema.schema("RateBookRequest"))
+                    .requestFields(ratingRequestFields());
+        }
         return document(
                 identifier,
                 responseFields(PROBLEM_DETAIL_FIELDS),
-                resource(ResourceSnippetParameters.builder()
-                        .summary(summary)
-                        .description(description)
-                        .tag(documentationTag(summary))
-                        .pathParameters(pathParameters)
-                        .queryParameters(queryParameters)
-                        .responseSchema(Schema.schema("ProblemDetail"))
-                        .responseFields(PROBLEM_DETAIL_FIELDS)
-                        .build())
+                resource(parameters.build())
         );
     }
 
@@ -2019,6 +2096,7 @@ class LibraryControllerTest {
         return switch (summary) {
             case LIBRARY_CREATE_SUMMARY, LIBRARY_RENAME_SUMMARY, LIBRARY_DELETE_LIBRARY_SUMMARY -> "책장";
             case LIBRARY_BOOK_ADD_SUMMARY, LIBRARY_BOOK_DELETE_SUMMARY -> "책장 도서";
+            case ISBN_RATE_SUMMARY, LIBRARY_REMOVE_RATING_SUMMARY -> "별점";
             default -> LIBRARY_TAG;
         };
     }
@@ -2092,6 +2170,19 @@ class LibraryControllerTest {
                 .content("""
                         {"rating":4.5}
                         """));
+    }
+
+    private ResultActions putIsbnRating() throws Exception {
+        return mockMvc.perform(put("/api/v1/books/by-isbn/{isbn13}/rating", ISBN13)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"rating\":4.5}"));
+    }
+
+    private ParameterDescriptorWithType[] isbnRatingPathParameters() {
+        return new ParameterDescriptorWithType[]{
+                ResourceDocumentation.parameterWithName("isbn13").type(SimpleType.STRING)
+                        .description("검색, 상세 응답의 ISBN 문자열")
+        };
     }
 
     private ResultActions getRatingComparison() throws Exception {
@@ -2380,6 +2471,30 @@ class LibraryControllerTest {
 
     private ParameterDescriptorWithType[] bookIdResourcePathParameters() {
         return new ParameterDescriptorWithType[]{bookIdResourcePathParameter()};
+    }
+
+    private LibraryItemResponse ratingOnlyResponse() {
+        LibraryItemResponse original = libraryItemResponse();
+        return new LibraryItemResponse(
+                original.bookId(),
+                original.isbn13(),
+                original.title(),
+                original.coverImageUrl(),
+                original.spineImageUrl(),
+                original.backImageUrl(),
+                original.authors(),
+                original.translators(),
+                original.publisher(),
+                original.category(),
+                original.publishedDate(),
+                original.totalPages(),
+                original.commentCount(),
+                null,
+                null,
+                original.rating(),
+                original.addedAt(),
+                null
+        );
     }
 
     private LibraryItemResponse libraryItemResponse() {

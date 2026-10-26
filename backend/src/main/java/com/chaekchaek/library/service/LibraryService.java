@@ -489,6 +489,13 @@ public class LibraryService {
         return items;
     }
 
+    public LibraryItemResponse rateByIsbn13(long memberId, Isbn13 isbn13, BigDecimal rating) {
+        validateRating(rating);
+        Book book = bookResolver.findOrCreate(isbn13);
+        return Objects.requireNonNull(transactionTemplate.execute(transactionStatus ->
+                rate(memberId, book.getId(), rating)));
+    }
+
     @Transactional
     public LibraryItemResponse rate(long memberId, long bookId, BigDecimal rating) {
         validateRating(rating);
