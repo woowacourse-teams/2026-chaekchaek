@@ -82,7 +82,7 @@ export const WriteReviewDialog = ({
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
-    await Promise.all([writeReview(), updateRating()]);
+    await Promise.all([writeReview(), ...(isAuthenticated ? [updateRating()] : [])]);
 
     onReviewWritten();
     onClose();
@@ -229,17 +229,19 @@ export const WriteReviewDialog = ({
               </span>
             </Text>
 
-            <Field sx={{ mt: 4 }}>
-              <Field.Label>별점 (선택)</Field.Label>
-              <Field.Content>
-                <Rating
-                  value={rating}
-                  onChange={handleChangeRating}
-                  description={`${rating} · ${ratingMessage}`}
-                  block
-                />
-              </Field.Content>
-            </Field>
+            {isAuthenticated && (
+              <Field sx={{ mt: 4 }}>
+                <Field.Label>별점 (선택)</Field.Label>
+                <Field.Content>
+                  <Rating
+                    value={rating}
+                    onChange={handleChangeRating}
+                    description={`${rating} · ${ratingMessage}`}
+                    block
+                  />
+                </Field.Content>
+              </Field>
+            )}
           </Dialog.Body>
 
           <Dialog.Footer>
