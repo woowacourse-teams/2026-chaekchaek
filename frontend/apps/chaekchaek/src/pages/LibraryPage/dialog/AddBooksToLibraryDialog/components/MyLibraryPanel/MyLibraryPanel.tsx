@@ -72,12 +72,12 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
                     checked={isIncluded}
                     onChange={handleChangeSelection}
                   />
-                  {/* <ImgBox img={item.coverImageUrl} size="x-small" /> */}
+                  <ImgBox img={item.coverImageUrl} size="x-small" />
                 </List.Item.Leading>
                 <List.Item.Content
                   ellipsis
                   title={<>{item.title}</>}
-                  // content={item.authors.join(' · ')}
+                  content={item.authors.join(' · ')}
                 />
               </List.Item>
             );
