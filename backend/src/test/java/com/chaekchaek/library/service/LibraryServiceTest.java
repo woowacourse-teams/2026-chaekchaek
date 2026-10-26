@@ -47,6 +47,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -101,6 +105,37 @@ class LibraryServiceTest {
     void tearDown() {
         logger.detachAppender(appender);
         appender.stop();
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"0", "5.1", "4.55"})
+    @DisplayName("ISBN 별점의 값이 잘못되면 회원과 도서를 조회하지 않는다")
+    void should_RejectBeforeLookup_When_IsbnRatingIsInvalid(String value) {
+        // given
+        BigDecimal rating = value == null ? null : new BigDecimal(value);
+
+        // when & then
+        assertThatThrownBy(() -> service().rateByIsbn13(1L, ISBN13, rating))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST));
+        verifyNoInteractions(memberRepository, bookResolver, transactionManager);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AccountStatus.class, names = {"SUSPENDED", "WITHDRAWN"})
+    @DisplayName("ISBN 별점 저장의 비활성 회원은 도서 확보 전에 거절한다")
+    void should_RejectBeforeResolvingBook_When_RatingMemberIsInactive(AccountStatus accountStatus) {
+        // given
+        Member member = activeMember();
+        ReflectionTestUtils.setField(member, "accountStatus", accountStatus);
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> service().rateByIsbn13(1L, ISBN13, new BigDecimal("4.5")))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
+        verifyNoInteractions(bookResolver, libraryItemRepository, libraryBookRepository);
     }
 
     @Test

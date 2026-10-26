@@ -182,6 +182,14 @@ public class LibraryController {
         return ResponseEntity.ok(libraryService.rate(writeMemberId(), bookId, request.rating()));
     }
 
+    @PutMapping("/books/by-isbn/{isbn13}/rating")
+    public ResponseEntity<LibraryItemResponse> rateByIsbn13(
+            @PathVariable String isbn13,
+            @Valid @RequestBody RateBookRequest request
+    ) {
+        return ResponseEntity.ok(libraryService.rateByIsbn13(writeMemberId(), new Isbn13(isbn13), request.rating()));
+    }
+
     @DeleteMapping("/library/{bookId}/rating")
     public ResponseEntity<Void> removeRating(@PathVariable long bookId) {
         libraryService.removeRating(writeMemberId(), bookId);
