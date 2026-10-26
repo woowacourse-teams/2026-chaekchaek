@@ -76,7 +76,8 @@ fun BookQuestionAPreviewScreen(showControls: Boolean = true, onExit: () -> Unit 
             modifier = Modifier.weight(1f),
             state = BookDetailUiState(
                 book = book,
-                detail = BookDetail(1, "", book.title, listOf(book.creator), emptyList(), book.publisher, "소설", "1943", 200, "", 20, 4.5, 10, null),
+                detail = BookDetail(1, "", book.title, listOf(book.creator), emptyList(), book.publisher, "소설", "1943", 200, "", 20, 4.5, 10, null,
+                    myRating = savedRating, isRegisteredInMyLibrary = savedToLibrary),
                 reviews = reviews,
                 reviewCount = reviews.size,
                 reviewScope = reviewScope,

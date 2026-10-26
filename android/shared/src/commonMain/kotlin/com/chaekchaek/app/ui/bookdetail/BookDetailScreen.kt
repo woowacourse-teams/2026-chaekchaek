@@ -154,7 +154,7 @@ fun BookDetailScreen(
     state: BookDetailUiState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    savedToLibrary: Boolean = state.detail?.myRecord != null,
+    savedToLibrary: Boolean = state.detail?.isRegisteredInMyLibrary == true,
     externalLibrarySaving: Boolean = false,
     externalLibraryLoading: Boolean = false,
     anonymousReviews: Boolean = true,
@@ -451,7 +451,7 @@ fun BookDetailScreen(
 
     if (showRatingDialog) {
         BookRatingDialog(
-            initialRating = state.detail?.myRecord?.rating?.let { Rating.ofScore(it.toFloat()) },
+            initialRating = state.detail?.myRating?.let { Rating.ofScore(it.toFloat()) },
             comparisonRatings = state.ratingComparison,
             onCriterionChange = onRatingCriterionChange,
             onDismiss = { showRatingDialog = false },
@@ -474,7 +474,7 @@ fun BookDetailScreen(
             anonymous = !state.signedIn || anonymousReviews,
             onAnonymousChange = onAnonymousReviewsChange,
             nickname = nickname,
-            initialDraft = QuestionAReviewDraft(rating = state.detail?.myRecord?.rating),
+            initialDraft = QuestionAReviewDraft(rating = state.detail?.myRating),
             draftKey = "${book.id}:create",
             allowZeroRating = allowZeroReviewRating,
             isSaving = state.reviewSubmissionState == ReviewSubmissionState.Submitting,
@@ -528,7 +528,7 @@ fun BookDetailScreen(
             signedIn = state.signedIn,
             anonymous = review.anonymous,
             nickname = review.authorName,
-            initialDraft = QuestionAReviewDraft(review.content, review.quote.orEmpty(), review.isSpoiler, state.detail?.myRecord?.rating),
+            initialDraft = QuestionAReviewDraft(review.content, review.quote.orEmpty(), review.isSpoiler, state.detail?.myRating),
             draftKey = "${book.id}:edit:${review.reviewId}",
             editing = true,
             allowZeroRating = allowZeroReviewRating,

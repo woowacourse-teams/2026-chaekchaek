@@ -42,6 +42,7 @@ internal data class BookSearchResponseDto(
 
 @Serializable
 internal data class BookSearchItemDto(
+    val bookId: Long? = null,
     val title: String,
     val coverImageUrl: String,
     val authors: List<String>,
@@ -54,6 +55,7 @@ internal data class BookSearchItemDto(
 
 internal fun BookSearchItemDto.toSearchResult(): BookSearchResult =
     BookSearchResult(
+        bookId = bookId,
         title = title,
         creator = (authors + translators.map { "$it 옮김" }).joinToString("  "),
         publisher = publisher,
@@ -68,5 +70,5 @@ private fun BookSearchResponseDto.toSearchPage(page: Int): BookSearchPage =
         totalCount = totalCount,
         lastLoadedPage = page,
         nextPage = nextPage,
-        items = items.filterNot { it.isbn13.isNullOrBlank() }.map(BookSearchItemDto::toSearchResult),
+        items = items.filter { it.bookId != null && !it.isbn13.isNullOrBlank() }.map(BookSearchItemDto::toSearchResult),
     )

@@ -73,10 +73,10 @@ class BookDetailRemoteRepository(
       authenticatedJson(accessToken, LibraryUpdateRequest(currentPage = currentPage, totalPages = totalPages))
     }.body<LibraryRecordDto>().toLibraryRecord()
 
-  suspend fun rate(bookId: Long, rating: Double, accessToken: String): LibraryRecord =
+  suspend fun rate(bookId: Long, rating: Double, accessToken: String): PersonalRating =
     client.put("${apiConfiguration.baseUrl}/api/v1/library/$bookId/rating") {
       authenticatedJson(accessToken, RatingRequest(rating))
-    }.body<LibraryRecordDto>().toLibraryRecord()
+    }.body<PersonalRating>()
 
   suspend fun ratingComparison(isbn13: String, criterion: Double, accessToken: String): RatingComparison =
     client.get("${apiConfiguration.baseUrl}/api/v1/members/me/ratings/comparison") {
@@ -249,6 +249,17 @@ data class BookDetail(
   val averageRating: Double?,
   val ratingCount: Int?,
   val myRecord: LibraryRecord?,
+  val myRating: Double? = myRecord?.rating,
+  val isRegisteredInMyLibrary: Boolean = myRecord != null,
+)
+
+/** 별점 저장은 책장 배치나 독서 기록의 생성을 뜻하지 않는다. */
+@Serializable
+data class PersonalRating(
+  val bookId: Long,
+  val rating: Double,
+  val status: String? = null,
+  val currentPage: Int? = null,
 )
 
 data class LibraryRecord(
@@ -326,6 +337,7 @@ internal data class BookDetailDto(
   val averageRating: Double? = null,
   val ratingCount: Int? = null,
   val myRecord: BookDetailRecordDto? = null,
+  val isRegisteredInMyLibrary: Boolean? = null,
 )
 
 @Serializable
@@ -365,7 +377,7 @@ private data class RatingComparisonDto(
 
 @Serializable
 private data class RatingComparisonBookDto(
-  val bookId: Long,
+  val bookId: Long? = null,
   val title: String,
   val myRating: Double,
   val ratingUpdatedAt: String,
@@ -465,6 +477,9 @@ internal fun BookDetailDto.toBookDetail() =
     averageRating = averageRating,
     ratingCount = ratingCount,
     myRecord = myRecord?.toLibraryRecord(),
+    myRating = myRecord?.myRating,
+    // 이전 서버에는 등록 여부 필드가 없어 실제 독서 기록으로만 보완한다.
+    isRegisteredInMyLibrary = isRegisteredInMyLibrary ?: (myRecord?.status != null),
   )
 
 internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage, rating, bookId)
@@ -473,7 +488,7 @@ private fun RatingComparisonDto.toRatingComparison() =
   RatingComparison(lower?.toRatingComparisonBook(), current?.toRatingComparisonBook(), higher?.toRatingComparisonBook())
 
 private fun RatingComparisonBookDto.toRatingComparisonBook() =
-  RatingComparisonBook(bookId, title, myRating, ratingUpdatedAt)
+  bookId?.let { RatingComparisonBook(it, title, myRating, ratingUpdatedAt) }
 
 internal fun BookDetailRecordDto.toLibraryRecord() =
   status?.let { LibraryRecord(it, currentPage ?: 0, myRating) }

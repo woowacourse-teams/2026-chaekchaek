@@ -864,6 +864,7 @@ internal fun BookSearchResult.registrationId(): String =
 
 private fun BookSearchResult.toBookDetailTarget() = BookDetailTarget(
   id = registrationId(),
+  bookId = bookId,
   isbn13 = isbn13,
   title = title,
   creator = creator,

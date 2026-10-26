@@ -25,7 +25,7 @@ class LibraryRemoteRepository(
         header(HttpHeaders.Authorization, "Bearer $accessToken")
         parameter("page", page)
       }.body<LibraryPageDto>()
-      items += response.items.map(LibraryBookDto::toRemoteLibraryBook)
+      items += response.items.mapNotNull(LibraryBookDto::toRemoteLibraryBook)
       page = response.nextPage
     }
     return items
@@ -91,7 +91,7 @@ private data class LibraryPageDto(
 
 @Serializable
 private data class LibraryBookDto(
-  val bookId: Long,
+  val bookId: Long? = null,
   val isbn13: String,
   val title: String,
   val coverImageUrl: String,
@@ -105,8 +105,9 @@ private data class LibraryBookDto(
   val currentPage: Int,
   val readingUpdatedAt: String,
 ) {
-  fun toRemoteLibraryBook() =
-    RemoteLibraryBook(
+  fun toRemoteLibraryBook(): RemoteLibraryBook? {
+    val bookId = bookId ?: return null
+    return RemoteLibraryBook(
       bookId = bookId,
       isbn13 = isbn13,
       title = title,
@@ -121,6 +122,7 @@ private data class LibraryBookDto(
       currentPage = currentPage,
       readingUpdatedAt = readingUpdatedAt,
     )
+  }
 }
 
 @Serializable

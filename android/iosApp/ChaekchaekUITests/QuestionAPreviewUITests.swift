@@ -86,12 +86,40 @@ final class QuestionAPreviewUITests: XCTestCase {
         let rating = app.otherElements.matching(NSPredicate(format: "label == %@ AND value != nil", "별점 (선택)")).firstMatch
         reveal(rating, in: app)
         XCTAssertTrue((rating.value as? String)?.contains("미선택") == true, rating.debugDescription)
-        let submit = app.buttons.matching(NSPredicate(format: "label == %@", "감상 남기기")).firstMatch
+        let submit = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 남기기")).firstMatch
         reveal(submit, in: app)
         submit.tap()
         let saved = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "로컬 프리뷰 감상: Question A unselected draft", "미선택")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 5), app.debugDescription)
         attachScreenshot(named: "별점 미선택 감상 저장")
+    }
+
+    @MainActor
+    func testPersonalRatingWithoutLibraryRecordPrefillsNextDraft() throws {
+        let app = launchPreview()
+        let compose = app.buttons["questionReviewOpen"]
+        reveal(compose, in: app)
+        compose.tap()
+        let content = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 (필수)")).firstMatch
+        XCTAssertTrue(content.waitForExistence(timeout: 5))
+        content.tap()
+        content.typeText("Rating only compatibility")
+        let rating = app.otherElements.matching(NSPredicate(format: "label == %@ AND value != nil", "별점 (선택)")).firstMatch
+        reveal(rating, in: app)
+        XCTAssertTrue((rating.value as? String)?.contains("미선택") == true)
+        rating.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        let selected = rating.value as? String
+        XCTAssertTrue(selected?.contains("점") == true)
+        let submit = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 남기기")).firstMatch
+        reveal(submit, in: app)
+        submit.tap()
+        let saved = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "로컬 프리뷰 감상: Rating only compatibility")).firstMatch
+        XCTAssertTrue(saved.waitForExistence(timeout: 5), app.debugDescription)
+        reveal(compose, in: app)
+        compose.tap()
+        reveal(rating, in: app)
+        XCTAssertEqual(rating.value as? String, selected)
+        attachScreenshot(named: "서재 독서 기록 없이 개인 별점 복원")
     }
 
     @MainActor
@@ -141,7 +169,7 @@ final class QuestionAPreviewUITests: XCTestCase {
         reveal(quote, in: app)
         quote.tap()
         quote.typeText("Question A retained quote")
-        let submit = app.buttons.matching(NSPredicate(format: "label == %@", "감상 남기기")).firstMatch
+        let submit = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 남기기")).firstMatch
         reveal(submit, in: app)
         submit.tap()
         print("QuestionA helper revision: retry-dialog-close-v3")
