@@ -293,48 +293,27 @@ class BookQuestionAUiTest {
     }
 
     @Test
-    fun reactionUsesCallerStateAndPreservesDetailPosition() {
-        val selected = mutableStateOf<String?>(null)
-        var clicks = 0
-        val choices = mutableListOf<String>()
-        var clears = 0
+    fun referencesUseOnlyAvailableTabsAndEmojiControlsAreAbsent() {
+        val currentQuestion = mutableStateOf(question().copy(synopsisMarkdown = ""))
         compose.setContent {
             ChaekchaekTheme {
-                BookDetailScreen(
-                    state = detailState(), question = question(), onBack = {},
-                    selectedQuestionReaction = selected.value,
-                    onQuestionReactionClick = { clicks++ },
-                    onQuestionReactionSelected = { choices += it; selected.value = it },
-                    onQuestionReactionClear = { clears++; selected.value = null },
-                )
+                BookDetailScreen(state = detailState(), question = currentQuestion.value, onBack = {})
             }
         }
-        compose.onNodeWithTag("questionReactionOpen").performScrollTo()
-        val position = detailPosition()
-        compose.onNodeWithTag("questionReactionOpen").performClick()
-        compose.onNodeWithTag("questionReactionPicker").assertIsDisplayed()
-        compose.runOnIdle {
-            assertEquals(null, selected.value)
-            assertEquals(1, clicks)
-        }
-        compose.onNodeWithTag("questionReactionChoice👍").performClick()
-        compose.onNodeWithTag("questionReactionPicker").assertDoesNotExist()
-        compose.onNodeWithTag("questionReactionClear").assertIsSelected()
-        compose.onNodeWithContentDescription("이모지 반응 👍").assertExists()
-        assertEquals(position, detailPosition(), 0.0001f)
-        compose.runOnIdle {
-            assertEquals("👍", selected.value)
-            assertEquals(listOf("👍"), choices)
-        }
-        compose.onNodeWithTag("questionReactionClear").performClick()
-        compose.onNodeWithTag("questionReactionClear").assertDoesNotExist()
-        compose.onNodeWithTag("questionReactionOpen").assertIsDisplayed()
-        assertEquals(position, detailPosition(), 0.0001f)
-        compose.runOnIdle {
-            assertEquals(null, selected.value)
-            assertEquals(1, clears)
-            assertEquals(1, clicks)
-        }
+        compose.onNodeWithTag("questionReactionOpen").assertDoesNotExist()
+        compose.onNodeWithTag("questionReferenceOpen").performScrollTo().performClick()
+        compose.onNodeWithTag("questionReferenceTabSynopsis").assertDoesNotExist()
+        compose.onNodeWithTag("questionReferenceTabExcerpt").assertIsSelected()
+        compose.onNodeWithTag("questionReferenceClose").performClick()
+        compose.runOnIdle { currentQuestion.value = question().copy(excerptMarkdown = "") }
+        compose.onNodeWithTag("questionReferenceOpen").performScrollTo().performClick()
+        compose.onNodeWithTag("questionReferenceTabExcerpt").assertDoesNotExist()
+        compose.onNodeWithTag("questionReferenceTabSynopsis").assertIsSelected()
+        // A refresh can remove the selected material while the overlay is open.
+        compose.runOnIdle { currentQuestion.value = question().copy(synopsisMarkdown = "", excerptMarkdown = "") }
+        compose.onNodeWithTag("questionReferencePanel").assertDoesNotExist()
+        compose.onNodeWithTag("questionReferenceOpen").assertDoesNotExist()
+        compose.onNodeWithTag("questionReviewOpen").performScrollTo().assertIsDisplayed()
     }
 
     private fun openReview() {
