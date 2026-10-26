@@ -40,7 +40,13 @@ import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
 import styles from './BookReview.module.css';
 import { BookReply } from './BookReply';
 
-export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) => {
+export const BookReview = ({
+  bookId,
+  isbn,
+  myRating,
+  review,
+  onReviewsRefresh,
+}: BookReviewProps) => {
   const { isAuthenticated, user, guest } = useAuthContext();
   const getReviewsReviewIdRepliesLoadData = useCallback(
     async ({ pageParam }: { pageParam: number }) => {
@@ -165,6 +171,8 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
       case 'UpdateReviewDialog':
         return (
           <UpdateReviewDialog
+            bookId={bookId}
+            myRating={myRating}
             review={review}
             onReviewUpdated={onReviewsRefresh}
             onClose={handleCloseDialog}

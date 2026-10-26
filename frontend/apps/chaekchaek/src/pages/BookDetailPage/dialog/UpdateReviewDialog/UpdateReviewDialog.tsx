@@ -1,12 +1,15 @@
-import type { ChangeEvent, SubmitEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type SubmitEvent } from 'react';
 
-import { Button, Dialog, Field, Radio, Text, Textarea } from '@chaekchaek/design-system';
+import { Button, Dialog, Field, Radio, Rating, Text, Textarea } from '@chaekchaek/design-system';
 
 import { useFormValues } from '@/hooks/useFormValues';
 import { useExecute } from '@/services/core/useExecute';
+import { putLibraryBookIdRating } from '@/services/apis/libraryBookIdRating/repository';
 import { patchReviewsReviewId } from '@/services/apis/reviewsReviewId/repository';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
+import { track } from '@/analytics/track';
 
 import { validateReview } from './validator';
 import type { ReviewFormValues } from './validator';
@@ -26,7 +29,26 @@ const buildReviewRequest = (formValues: ReviewFormValues) => {
   };
 };
 
+const RatingMessages = {
+  0.5: '아쉬웠어요',
+  1.0: '별로였어요',
+  1.5: '조금 아쉬웠어요',
+  2.0: '아쉬운 점이 많았어요',
+  2.5: '그저 그랬어요',
+  3.0: '괜찮았어요',
+  3.5: '꽤 좋았어요',
+  4.0: '좋았어요',
+  4.5: '정말 좋았어요',
+  5.0: '최고였어요',
+};
+
+const getRatingMessageNumber = (rating: number) => {
+  return Math.round(rating * 2) / 2;
+};
+
 export const UpdateReviewDialog = ({
+  bookId,
+  myRating: defaultRating,
   review,
   onReviewUpdated,
   onClose,
@@ -56,7 +78,7 @@ export const UpdateReviewDialog = ({
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
-    await updateReview();
+    await Promise.all([updateReview(), ...(isAuthenticated ? [updateRating()] : [])]);
 
     onReviewUpdated();
     onClose();
@@ -76,6 +98,34 @@ export const UpdateReviewDialog = ({
           }
         : undefined,
     );
+  };
+
+  const [rating, setRating] = useState(defaultRating || 0);
+  const hasTrackedRatingSelectRef = useRef<boolean>(false);
+
+  const handleChangeRating = (rating: number) => {
+    setRating(rating);
+
+    if (!hasTrackedRatingSelectRef.current) {
+      track('rating_select');
+      hasTrackedRatingSelectRef.current = true;
+    }
+  };
+
+  const ratingMessageNumber = getRatingMessageNumber(rating);
+  const ratingMessage = RatingMessages[ratingMessageNumber as keyof typeof RatingMessages] || '-';
+
+  const { mutate: putLibraryBookIdRatingMutate } = useExecute({
+    executeFn: putLibraryBookIdRating,
+  });
+
+  const updateRating = async () => {
+    if (rating === defaultRating) return;
+
+    if (!bookId) return;
+    await putLibraryBookIdRatingMutate({ bookId, rating });
+
+    track('rating_submit');
   };
 
   return (
@@ -162,6 +212,20 @@ export const UpdateReviewDialog = ({
                 ’(으)로 표시돼요
               </span>
             </Text>
+
+            {isAuthenticated && (
+              <Field sx={{ mt: 4 }}>
+                <Field.Label>별점 (선택)</Field.Label>
+                <Field.Content>
+                  <Rating
+                    value={rating}
+                    onChange={handleChangeRating}
+                    description={`${rating} · ${ratingMessage}`}
+                    block
+                  />
+                </Field.Content>
+              </Field>
+            )}
           </Dialog.Body>
 
           <Dialog.Footer>

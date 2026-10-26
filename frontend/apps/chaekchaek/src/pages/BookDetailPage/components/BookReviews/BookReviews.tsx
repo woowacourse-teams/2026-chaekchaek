@@ -116,7 +116,9 @@ export const BookReviews = ({
           return (
             <BookReview
               key={review.reviewId}
+              bookId={bookId}
               isbn={isbn}
+              myRating={myRating}
               review={review}
               onReviewsRefresh={onReviewsRefresh}
             />
