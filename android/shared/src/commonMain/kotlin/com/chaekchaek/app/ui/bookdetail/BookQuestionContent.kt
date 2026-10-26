@@ -183,22 +183,20 @@ fun BookQuestionCard(
 }
 
 /** Figma 1416:5812. 열기와 닫기는 호출 화면이 관리하며 배경을 차단하지 않는다. */
+enum class BookQuestionReaction(val type: String, val emoji: String, val displayName: String) {
+    Good("good", "👍", "좋아요"), Heart("heart", "❤️", "마음에 남아요"),
+    Think("think", "🤔", "생각하게 돼요"), Calm("calm", "😌", "편안해요"), Sad("sad", "🥲", "뭉클해요"),
+}
+
 @Composable
 fun BookQuestionReactionPicker(
     selectedReaction: String?,
     onReactionSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val choices = listOf(
-        "👍" to "좋아요",
-        "❤️" to "마음에 남아요",
-        "🤔" to "생각하게 돼요",
-        "😌" to "편안해요",
-        "🥲" to "뭉클해요",
-        "✨" to "인상적이에요",
-    )
+    val choices = BookQuestionReaction.entries.map { it.emoji to it.displayName }
     Row(
-        modifier = modifier.width(274.dp).height(54.dp)
+        modifier = modifier.width(230.dp).height(54.dp)
             .clip(ChaekOverlayTokens.cardShape)
             .background(ChaekSurface)
             .border(1.dp, QuestionDivider, ChaekOverlayTokens.cardShape)

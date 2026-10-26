@@ -210,7 +210,7 @@ class BookDetailRemoteRepository(
   }
 }
 
-private suspend fun ResponseException.isAlreadySavedBookConflict(): Boolean {
+internal suspend fun ResponseException.isAlreadySavedBookConflict(): Boolean {
   if (response.status != HttpStatusCode.Conflict) return false
   val problem = response.bodyAsText()
   return runCatching {
@@ -232,7 +232,7 @@ private fun ReviewCreateRequest.toUpdateBody(includeReadingProgress: Boolean) = 
 
 enum class ReviewScope { ALL, MINE }
 
-enum class ReviewSort { PAGE, LATEST, OLDEST, POPULAR }
+enum class ReviewSort { LATEST, OLDEST, POPULAR }
 
 data class BookDetail(
   val bookId: Long?,
@@ -263,7 +263,7 @@ data class PersonalRating(
 )
 
 data class LibraryRecord(
-  val status: String,
+  val status: String?,
   val currentPage: Int,
   val rating: Double?,
   val bookId: Long? = null,
@@ -341,8 +341,8 @@ internal data class BookDetailDto(
 @Serializable
 internal data class LibraryRecordDto(
   val bookId: Long,
-  val status: String,
-  val currentPage: Int,
+  val status: String? = null,
+  val currentPage: Int? = null,
   val rating: Double? = null,
 )
 
@@ -474,7 +474,7 @@ internal fun BookDetailDto.toBookDetail() =
     isRegisteredInMyLibrary = isRegisteredInMyLibrary ?: (myRecord?.status != null),
   )
 
-internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage, rating, bookId)
+internal fun LibraryRecordDto.toLibraryRecord() = LibraryRecord(status, currentPage ?: 0, rating, bookId)
 
 private fun RatingComparisonDto.toRatingComparison() =
   RatingComparison(lower?.toRatingComparisonBook(), current?.toRatingComparisonBook(), higher?.toRatingComparisonBook())

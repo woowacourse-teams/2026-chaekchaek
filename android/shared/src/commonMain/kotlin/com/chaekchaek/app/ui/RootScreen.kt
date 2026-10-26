@@ -62,9 +62,9 @@ import com.chaekchaek.app.analytics.analyticsBookKey
 import com.chaekchaek.app.auth.AuthViewModel
 import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.ui.archive.ArchiveBookUiModel
-import com.chaekchaek.app.ui.archive.ArchiveRoute
+import com.chaekchaek.app.ui.archive.BookshelfRoute
+import com.chaekchaek.app.ui.archive.BookshelfViewModel
 import com.chaekchaek.app.ui.archive.LibrarySaveViewModel
-import com.chaekchaek.app.ui.archive.ArchiveViewModel
 import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
 import com.chaekchaek.app.ui.archive.publicNickname
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
@@ -76,7 +76,6 @@ import com.chaekchaek.app.ui.home.HomeScreen
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
 import com.chaekchaek.app.ui.feed.FeedScreen
 import com.chaekchaek.app.ui.feed.FeedViewModel
-import com.chaekchaek.app.ui.register.BookRegistrationViewModel
 import com.chaekchaek.app.ui.search.SearchRoute
 import com.chaekchaek.app.ui.search.SearchViewModel
 import kotlinx.coroutines.Job
@@ -105,9 +104,8 @@ internal fun RootScreen(
     homeViewModel: HomeViewModel,
     feedViewModel: FeedViewModel,
     searchViewModel: SearchViewModel,
-    registrationViewModel: BookRegistrationViewModel,
-    archiveViewModel: ArchiveViewModel,
     librarySaveViewModel: LibrarySaveViewModel,
+    bookshelfViewModel: BookshelfViewModel,
     memberSettingsViewModel: MemberSettingsViewModel,
     authViewModel: AuthViewModel,
     analytics: AnalyticsTracker,
@@ -121,16 +119,14 @@ internal fun RootScreen(
     var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
     var homeScrollTopRequest by rememberSaveable { mutableIntStateOf(0) }
     var archiveScrollTopRequest by remember { mutableIntStateOf(0) }
-    var archiveEditing by rememberSaveable { mutableStateOf(false) }
     var showArchiveLoginSheet by rememberSaveable { mutableStateOf(false) }
     var archiveLoginOpensMyPage by rememberSaveable { mutableStateOf(false) }
     val tokens by authViewModel.tokens.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
     val pendingRegistration by searchViewModel.pendingRegistration.collectAsState()
-    val registrationState by registrationViewModel.uiState.collectAsState()
-    val archiveState by archiveViewModel.uiState.collectAsState()
     val librarySaveState by librarySaveViewModel.uiState.collectAsState()
-    val savedIsbns = archiveState.items.mapTo(mutableSetOf()) { it.id }
+    val bookshelfState by bookshelfViewModel.uiState.collectAsState()
+    val savedIsbns = bookshelfState.shelves.flatMap { it.items }.mapTo(mutableSetOf()) { it.isbn13 }
     val memberSettingsState by memberSettingsViewModel.uiState.collectAsState()
     val snackbarHost = remember { SnackbarHostState() }
     val backNavigationEventState = rememberNavigationEventState(NavigationEventInfo.None)
@@ -166,7 +162,7 @@ internal fun RootScreen(
     }
 
     val saveBook: (BookDetailTarget) -> Unit = { book ->
-        if (book.isbn13 !in savedIsbns) librarySaveViewModel.save(book.toBookDetailArgs())
+        librarySaveViewModel.save(book.toBookDetailArgs())
     }
 
     NavigationBackHandler(
@@ -217,11 +213,6 @@ internal fun RootScreen(
         }
     }
 
-    LaunchedEffect(registrationState.completedRegistrationCount) {
-        if (registrationState.completedRegistrationCount > 0) {
-            archiveViewModel.retry()
-        }
-    }
     LaunchedEffect(librarySaveState.savedCount) {
         if (librarySaveViewModel.consumeSaveNotice()) snackbarHost.showSnackbar("내 서재에 담았어요")
     }
@@ -244,7 +235,7 @@ internal fun RootScreen(
         },
     ) {
     Box(modifier = modifier.fillMaxSize()) {
-        val showBottomBar = !(selectedTab == RootTab.Shelf && archiveEditing)
+        val showBottomBar = true
         val contentModifier = Modifier.fillMaxSize().navigationBarsPadding()
             .then(if (showBottomBar) Modifier.padding(bottom = RootTabBarHeight) else Modifier)
         tabStateHolder.SaveableStateProvider(selectedTab.name) {
@@ -279,7 +270,7 @@ internal fun RootScreen(
                 homeViewModel = homeViewModel,
                 accessToken = accessToken,
                 searchResultsListState = searchResultsListState,
-                registeredBookIds = archiveState.items.mapTo(mutableSetOf()) { it.id },
+                registeredBookIds = savedIsbns,
                 modifier = contentModifier,
                 onHomeRetry = retryHome,
                 onBack = {
@@ -289,33 +280,16 @@ internal fun RootScreen(
                 onProfileClick = openProfile,
                 onBookClick = { openBook(it.toBookDetailArgs(), "search") },
             )
-            RootTab.Shelf -> ArchiveRoute(
-                viewModel = archiveViewModel,
-                memberSettingsViewModel = memberSettingsViewModel,
-                editing = archiveEditing,
+            RootTab.Shelf -> BookshelfRoute(
+                viewModel = bookshelfViewModel,
+                signedIn = accessToken != null,
+                token = accessToken,
+                onProfile = openProfile,
+                onLogin = { archiveLoginOpensMyPage = false; showArchiveLoginSheet = true },
                 scrollTopRequest = archiveScrollTopRequest,
-                onEditingChange = { editing ->
-                    if (!editing || accessToken != null) archiveEditing = editing
-                    else {
-                        clearExitConfirmation()
-                        archiveLoginOpensMyPage = false
-                        showArchiveLoginSheet = true
-                    }
-                },
-                onProfileClick = openProfile,
-                onBookClick = { openBook(it.toBookDetailArgs(), "library") },
+                onBook = { openBook(it, "library") },
+                onAdd = librarySaveViewModel::save,
                 modifier = contentModifier,
-                bookCover = { book ->
-                    RemoteBookImage(book.coverUrl, "${book.title} 표지", Modifier.fillMaxSize())
-                },
-                bookSpine = { book, imageModifier, showGeneratedSpine, onSpineImageLoadFailed ->
-                    com.chaekchaek.app.ui.archive.LibraryBookSpine(
-                        book = book,
-                        modifier = imageModifier,
-                        showGeneratedSpine = showGeneratedSpine,
-                        onSpineImageLoadFailed = onSpineImageLoadFailed,
-                    )
-                },
             )
         }
         }
@@ -324,7 +298,6 @@ internal fun RootScreen(
                 selectedTab = selectedTab,
                 onTabSelected = {
                     analytics.interaction("root_tab", it.analyticsScreenName, if (selectedTab == it) "reselect" else "tap")
-                    archiveEditing = false
                     if (selectedTab == it) {
                         when (it) {
                             RootTab.Home -> homeScrollTopRequest += 1
@@ -336,14 +309,6 @@ internal fun RootScreen(
                 },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
-        }
-        if (registrationState.showLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
         }
         ChaekSnackbarHost(
             snackbarHost,
@@ -361,6 +326,7 @@ internal fun RootScreen(
             )
         }
         LoginRequiredSheet(
+            message = "책을 담으려면 로그인이 필요해요.",
             signingIn = authState.signingIn,
             error = authState.errorMessage,
             appleSignInAvailable = authViewModel.appleSignInAvailable,
@@ -374,7 +340,6 @@ internal fun RootScreen(
                         name = "cc_auth_dismiss",
                         strings = mapOf("trigger_action" to "library_add"),
                     )
-                    registrationViewModel.cancelRegistration()
                     librarySaveViewModel.cancelPendingSave()
                 }
             },
@@ -383,9 +348,7 @@ internal fun RootScreen(
                 authViewModel.clearError()
                 authViewModel.requireAppleAuthentication { token ->
                     analytics.endAuthAttempt("success")
-                    archiveViewModel.authenticate(token)
-                    librarySaveViewModel.authenticate(token)
-                    registrationViewModel.authenticate(token)
+                    librarySaveViewModel.authenticate(token, authViewModel.memberIdFor(token))
                     searchViewModel.resumeRegistration()
                 }
             },
@@ -394,9 +357,7 @@ internal fun RootScreen(
                 authViewModel.clearError()
                 authViewModel.requireAuthentication { token ->
                     analytics.endAuthAttempt("success")
-                    archiveViewModel.authenticate(token)
-                    librarySaveViewModel.authenticate(token)
-                    registrationViewModel.authenticate(token)
+                    librarySaveViewModel.authenticate(token, authViewModel.memberIdFor(token))
                     searchViewModel.resumeRegistration()
                 }
             },
@@ -433,7 +394,7 @@ internal fun RootScreen(
                 authViewModel.requireAppleAuthentication {
                     analytics.endAuthAttempt("success")
                     showArchiveLoginSheet = false
-                    if (archiveLoginOpensMyPage) onMyPage() else archiveEditing = true
+                    if (archiveLoginOpensMyPage) onMyPage()
                     archiveLoginOpensMyPage = false
                 }
             },
@@ -443,7 +404,7 @@ internal fun RootScreen(
                 authViewModel.requireAuthentication {
                     analytics.endAuthAttempt("success")
                     showArchiveLoginSheet = false
-                    if (archiveLoginOpensMyPage) onMyPage() else archiveEditing = true
+                    if (archiveLoginOpensMyPage) onMyPage()
                     archiveLoginOpensMyPage = false
                 }
             },

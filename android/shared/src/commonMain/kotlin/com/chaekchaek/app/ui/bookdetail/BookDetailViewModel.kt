@@ -48,7 +48,7 @@ class BookDetailViewModel(
         ?: ReviewScope.ALL
     private val restoredReviewSort = ReviewSort.entries
         .firstOrNull { it.name == savedStateHandle[BookDetailSavedStateKeys.ReviewSort] }
-        ?: ReviewSort.LATEST
+        ?: ReviewSort.POPULAR
     private val _uiState = MutableStateFlow(
         BookDetailUiState(reviewScope = restoredReviewScope, reviewSort = restoredReviewSort),
     )
@@ -339,7 +339,7 @@ class BookDetailViewModel(
         },
         reloadAfterSuccess = true,
     ) {
-        repository.rate(ratingBookId(), rating.score.toDouble(), requireToken())
+        repository.rate(bookIdForRating(requireToken()), rating.score.toDouble(), requireToken())
     }
 
     fun loadRatingComparison(criterion: Rating) {
@@ -527,7 +527,7 @@ class BookDetailViewModel(
             "개인 별점은 0.5점부터 5점까지 0.5점 단위로 저장할 수 있어요."
         }
         val token = requireToken()
-        val bookId = ratingBookId()
+        val bookId = bookIdForRating(token)
         val record = repository.rate(bookId, rating, token)
         if (generation != requestGeneration) throw CancellationException("인증 상태가 변경됨")
         // 감상만 실패한 뒤 재시도해도 이미 저장한 별점은 중복 저장하지 않는다.
@@ -946,6 +946,15 @@ class BookDetailViewModel(
         }
     }
 
+    /** 별점 저장은 배치와 독서 상태를 생성하지 않는다. ISBN 검색 결과도 상세 ID로 해석한다. */
+    private suspend fun bookIdForRating(token: String): Long {
+        val detail = requireNotNull(_uiState.value.detail)
+        detail.bookId?.let { return it }
+        detail.myRecord?.bookId?.let { return it }
+        val book = requireNotNull(_uiState.value.displayBook)
+        return requireNotNull(repository.detail(book.isbn13, WriteCredential.Member(token)).bookId)
+    }
+
     private suspend fun bookIdForWrite(
         token: String,
         generation: Int,
@@ -953,8 +962,10 @@ class BookDetailViewModel(
         causedByAction: String,
     ): Long {
         val detail = requireNotNull(_uiState.value.detail)
-        detail.myRecord?.bookId?.let { return it }
-        if (detail.myRecord != null) return requireNotNull(detail.bookId)
+        if (detail.myRecord?.status != null) {
+            detail.myRecord.bookId?.let { return it }
+            return requireNotNull(detail.bookId)
+        }
         val book = requireNotNull(_uiState.value.displayBook)
         val record = repository.addToLibrary(
             book.isbn13,
@@ -984,8 +995,6 @@ class BookDetailViewModel(
         mutationJob?.cancel()
         ratingComparisonJob?.cancel()
     }
-
-    private fun ratingBookId(): Long = requireNotNull(_uiState.value.detail?.bookId)
 
     private fun updateMyRating(result: PersonalRating) {
         val detail = _uiState.value.detail ?: return
