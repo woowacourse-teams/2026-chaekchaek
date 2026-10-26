@@ -251,7 +251,10 @@ data class BookDetail(
   val myRecord: LibraryRecord?,
   val myRating: Double? = myRecord?.rating,
   val isRegisteredInMyLibrary: Boolean = myRecord != null,
+  val bookQuestion: BookQuestion? = null,
 )
+
+data class BookQuestion(val question: String, val plot: String? = null, val extract: String? = null)
 
 /** 별점 저장은 책장 배치나 독서 기록의 생성을 뜻하지 않는다. */
 @Serializable
@@ -338,6 +341,14 @@ internal data class BookDetailDto(
   val ratingCount: Int? = null,
   val myRecord: BookDetailRecordDto? = null,
   val isRegisteredInMyLibrary: Boolean? = null,
+  val bookQuestion: BookQuestionDto? = null,
+)
+
+@Serializable
+internal data class BookQuestionDto(
+  val question: String? = null,
+  val plot: String? = null,
+  val extract: String? = null,
 )
 
 @Serializable
@@ -478,6 +489,11 @@ internal fun BookDetailDto.toBookDetail() =
     ratingCount = ratingCount,
     myRecord = myRecord?.toLibraryRecord(),
     myRating = myRecord?.myRating,
+    bookQuestion = bookQuestion?.let { value ->
+      value.question?.takeIf(String::isNotBlank)?.let { question ->
+        BookQuestion(question, value.plot?.takeIf(String::isNotBlank), value.extract?.takeIf(String::isNotBlank))
+      }
+    },
     // 이전 서버에는 등록 여부 필드가 없어 실제 독서 기록으로만 보완한다.
     isRegisteredInMyLibrary = isRegisteredInMyLibrary ?: (myRecord?.status != null),
   )

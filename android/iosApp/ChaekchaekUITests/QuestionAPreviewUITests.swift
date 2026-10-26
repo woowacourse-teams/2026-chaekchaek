@@ -1,4 +1,5 @@
 import XCTest
+import Network
 
 final class QuestionAPreviewUITests: XCTestCase {
     override func setUpWithError() throws {
@@ -214,7 +215,7 @@ final class QuestionAPreviewUITests: XCTestCase {
     }
 
     @MainActor
-    func testReferenceBodyBackgroundScrollAndReaction() throws {
+    func testReferenceBodyAndBackgroundScrollWithoutEmoji() throws {
         let app = launchPreview()
         let reference = app.buttons["questionReferenceOpen"]
         reveal(reference, in: app)
@@ -266,20 +267,9 @@ final class QuestionAPreviewUITests: XCTestCase {
         XCTAssertLessThan(heading.frame.minY, backgroundY - 20)
         XCTAssertTrue(panel.exists)
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "질문과 장면 닫기")).firstMatch.tap()
-        let reaction = app.buttons["questionReactionOpen"]
-        reveal(reaction, in: app, scrollingUp: false)
-        waitForStableFrame(reaction)
-        reaction.tap()
-        let choice = app.buttons["questionReactionChoice🤔"]
-        XCTAssertTrue(choice.waitForExistence(timeout: 5), app.debugDescription)
-        choice.tap()
-        let clear = app.buttons["questionReactionClear"]
-        XCTAssertTrue(clear.waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(clear.label.contains("🤔"))
-        attachScreenshot(named: "이모지 반응 선택")
-        clear.tap()
-        XCTAssertFalse(clear.exists)
-        attachScreenshot(named: "이모지 반응 취소")
+        XCTAssertFalse(app.buttons["questionReactionOpen"].exists)
+        XCTAssertFalse(app.buttons["questionReactionPicker"].exists)
+        attachScreenshot(named: "이모지 제외 자료 패널 닫기")
     }
 
     @MainActor
@@ -512,6 +502,96 @@ final class QuestionAPreviewUITests: XCTestCase {
     }
 
     @MainActor
+    func testOnlyAvailableReferencesAreShown() {
+        let app = launchPreview()
+        let toggle = app.buttons["previewReferenceModeToggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["questionReactionOpen"].exists)
+        toggle.tap()
+        let open = app.buttons["questionReferenceOpen"]
+        reveal(open, in: app, scrollingUp: false)
+        open.tap()
+        XCTAssertTrue(app.buttons["questionReferenceTabSynopsis"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["questionReferenceTabExcerpt"].exists)
+        app.buttons["questionReferenceClose"].tap()
+        toggle.tap()
+        reveal(open, in: app, scrollingUp: false)
+        open.tap()
+        XCTAssertTrue(app.buttons["questionReferenceTabExcerpt"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["questionReferenceTabSynopsis"].exists)
+        attachScreenshot(named: "발췌만 있는 자료 패널")
+        app.buttons["questionReferenceClose"].tap()
+        toggle.tap()
+        XCTAssertFalse(open.exists)
+        XCTAssertTrue(app.buttons["questionReviewOpen"].exists)
+        attachScreenshot(named: "자료 없는 질문")
+    }
+
+    @MainActor
+    func testQuestionApiTraversesActualNavigationAndOpensReview() throws {
+        let fixture = try BookQuestionFixtureServer()
+        defer { fixture.stop() }
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingGuest", "-uiTestingExistingInstallation", "-uiTestingRefresh"]
+        app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = fixture.baseURL
+        app.launch()
+        let book = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "질문 API 검증 도서 표지")).firstMatch
+        XCTAssertTrue(book.waitForExistence(timeout: 20), app.debugDescription)
+        book.tap()
+        let open = app.buttons["questionReferenceOpen"]
+        reveal(open, in: app)
+        XCTAssertTrue(open.exists, app.debugDescription)
+        XCTAssertFalse(app.buttons["questionReactionOpen"].exists)
+        XCTAssertTrue(fixture.detailRequested)
+        attachScreenshot(named: "API 응답에서 실제 Navigation을 거친 질문")
+        open.tap()
+        XCTAssertTrue(app.buttons["questionReferenceTabSynopsis"].waitForExistence(timeout: 5))
+        app.buttons["questionReferenceTabExcerpt"].tap()
+        XCTAssertTrue(app.staticTexts["API 발췌 검증 문장"].waitForExistence(timeout: 5))
+        app.buttons["questionReferenceClose"].tap()
+        let compose = app.buttons["questionReviewOpen"]
+        reveal(compose, in: app)
+        compose.tap()
+        XCTAssertTrue(app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 (필수)")).firstMatch.waitForExistence(timeout: 5))
+        attachScreenshot(named: "실제 질문에서 기존 감상 작성 진입")
+    }
+
+    @MainActor
+    func testDevelopmentApiQuestionFromActualBookDetail() throws {
+        guard ProcessInfo.processInfo.environment["CHAEKCHAEK_QUESTION_DEV_TEST"] == "1" else {
+            throw XCTSkip("개발 서버 빌드와 명시적 실행이 필요한 실제 API 확인")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingGuest", "-uiTestingExistingInstallation"]
+        app.launch()
+        XCTAssertTrue(app.buttons["발견"].waitForExistence(timeout: 20))
+        app.buttons["발견"].tap()
+        let field = app.textViews["search-query-field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("9788932923918\n")
+        let book = app.staticTexts["마음"].firstMatch
+        XCTAssertTrue(book.waitForExistence(timeout: 20), app.debugDescription)
+        book.tap()
+        let open = app.buttons["questionReferenceOpen"]
+        reveal(open, in: app)
+        XCTAssertTrue(open.exists, app.debugDescription)
+        XCTAssertFalse(app.buttons["questionReactionOpen"].exists)
+        attachScreenshot(named: "개발 API 마음 실제 책 상세 질문")
+        open.tap()
+        XCTAssertTrue(app.buttons["questionReferenceTabSynopsis"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["questionReferenceTabExcerpt"].exists)
+        app.buttons["questionReferenceTabExcerpt"].tap()
+        attachScreenshot(named: "개발 API 마음 실제 발췌")
+        app.buttons["questionReferenceClose"].tap()
+        let compose = app.buttons["questionReviewOpen"]
+        reveal(compose, in: app)
+        compose.tap()
+        XCTAssertTrue(app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 (필수)")).firstMatch.waitForExistence(timeout: 5))
+        attachScreenshot(named: "실제 질문에서 감상 작성 진입")
+    }
+
+    @MainActor
     private func launchPreview(contentOnly: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.terminate()
@@ -598,5 +678,65 @@ final class QuestionAPreviewUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+}
+
+/// 실제 앱의 HTTP 조회와 Navigation 연결을 확인하며 감상 저장 요청은 받지 않는다.
+private final class BookQuestionFixtureServer: @unchecked Sendable {
+    private let listener: NWListener
+    private let queue = DispatchQueue(label: "chaekchaek.question-api-test")
+    private let lock = NSLock()
+    private var requested = false
+    var detailRequested: Bool { lock.lock(); defer { lock.unlock() }; return requested }
+    var baseURL: String { "http://127.0.0.1:\(listener.port!.rawValue)" }
+
+    init() throws {
+        listener = try NWListener(using: .tcp, on: .any)
+        let ready = XCTestExpectation(description: "질문 검증 API 준비")
+        listener.stateUpdateHandler = { if case .ready = $0 { ready.fulfill() } }
+        listener.newConnectionHandler = { [weak self] connection in
+            connection.start(queue: self?.queue ?? .global())
+            self?.receive(connection, buffer: Data())
+        }
+        listener.start(queue: queue)
+        guard XCTWaiter.wait(for: [ready], timeout: 5) == .completed else {
+            listener.cancel()
+            throw NSError(domain: "BookQuestionFixtureServer", code: 1)
+        }
+    }
+    func stop() { listener.cancel() }
+    private func receive(_ connection: NWConnection, buffer: Data) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, complete, error in
+            guard let self else { connection.cancel(); return }
+            var accumulated = buffer
+            if let data { accumulated.append(data) }
+            guard let request = String(data: accumulated, encoding: .utf8), request.contains("\r\n\r\n") else {
+                if complete || error != nil { connection.cancel() }
+                else { self.receive(connection, buffer: accumulated) }
+                return
+            }
+            let path = String(request.split(separator: " ").dropFirst().first ?? "").split(separator: "?").first.map(String.init) ?? ""
+            let method = request.split(separator: " ").first.map(String.init) ?? ""
+            let status = method == "GET" || (method == "POST" && path == "/api/v1/auth/guest-token") ? "200 OK" : "405 Method Not Allowed"
+            let body: String
+            switch path {
+            case "/api/v1/auth/guest-token":
+                body = "{\"guestToken\":\"\(UUID().uuidString)\",\"nickname\":\"검증 독자\",\"expiresAt\":\"2099-01-01T00:00:00Z\"}"
+
+            case "/api/v1/home/popular-books":
+                body = #"{"books":[{"bookId":616,"isbn13":"9780000000616","title":"질문 API 검증 도서","coverImageUrl":"","reviewCount":0,"replyCount":0}]}"#
+            case "/api/v1/books/by-isbn/9780000000616":
+                self.lock.lock(); self.requested = true; self.lock.unlock()
+                body = #"{"bookId":616,"isbn13":"9780000000616","title":"질문 API 검증 도서","authors":[],"translators":[],"publisher":"검증 출판사","category":"소설","coverImageUrl":"","bookQuestion":{"question":"API로 연결된 **질문**입니다.","plot":"API 줄거리 검증 문장","extract":"API 발췌 검증 문장"}}"#
+            case "/api/v1/books/616/reviews":
+                body = #"{"items":[],"totalCount":0,"nextPage":null}"#
+            default:
+                body = #"{"reviews":[],"items":[],"totalCount":0,"nextPage":null}"#
+            }
+            let payload = Data(body.utf8)
+            var response = Data("HTTP/1.1 \(status)\r\nContent-Type: application/json\r\nContent-Length: \(payload.count)\r\nConnection: close\r\n\r\n".utf8)
+            response.append(payload)
+            connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
+        }
     }
 }

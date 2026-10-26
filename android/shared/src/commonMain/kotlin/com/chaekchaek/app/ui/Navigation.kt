@@ -54,6 +54,7 @@ import com.chaekchaek.app.presentation.home.HomeViewModel
 import com.chaekchaek.app.ui.archive.LibrarySaveViewModel
 import com.chaekchaek.app.ui.archive.MemberSettingsViewModel
 import com.chaekchaek.app.ui.archive.MyPageScreen
+import com.chaekchaek.app.ui.bookdetail.toUiModel
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailAuthenticatedAction
 import com.chaekchaek.app.ui.bookdetail.toReviewRequest
@@ -508,6 +509,7 @@ private fun AppNavigationContent(
                     } else CompositionLocalProvider(LocalOpenAuthorLibrary provides { profile -> openAuthorLibrary(key, profile) }) {
                         BookDetailScreen(
                             state = state,
+                            question = state.detail?.bookQuestion?.toUiModel(displayBook.isbn13),
                             onBack = { bookshelfViewModel.refresh(); backStack.popDestinationIfCurrent(key) },
                             modifier = safeContent,
                             savedToLibrary = state.detail?.isRegisteredInMyLibrary ?: bookshelfState.shelves.any { shelf -> shelf.items.any { it.isbn13 == displayBook.isbn13 } },

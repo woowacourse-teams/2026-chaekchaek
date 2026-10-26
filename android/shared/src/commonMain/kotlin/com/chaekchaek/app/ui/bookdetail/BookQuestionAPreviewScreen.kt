@@ -31,9 +31,9 @@ fun BookQuestionAPreviewScreen(showControls: Boolean = true, onExit: () -> Unit 
     var savedToLibrary by rememberSaveable { mutableStateOf(false) }
     var reviewScope by rememberSaveable { mutableStateOf(com.chaekchaek.app.data.remote.ReviewScope.ALL) }
     var hasQuestion by rememberSaveable { mutableStateOf(true) }
+    var referenceMode by rememberSaveable { mutableStateOf(0) }
     var signedIn by rememberSaveable { mutableStateOf(true) }
     var anonymousReviews by rememberSaveable { mutableStateOf(true) }
-    var reaction by rememberSaveable { mutableStateOf<String?>(null) }
     var submission by remember { mutableStateOf(ReviewSubmissionState.Idle) }
     var savedRating by rememberSaveable { mutableStateOf<Double?>(null) }
     var savedContent by rememberSaveable { mutableStateOf("") }
@@ -69,6 +69,9 @@ fun BookQuestionAPreviewScreen(showControls: Boolean = true, onExit: () -> Unit 
                     TextButton(onClick = { failNext = !failNext }) { Text(if (failNext) "저장 실패 켜짐" else "저장 실패") }
                     TextButton(onClick = onExit) { Text("나가기") }
                 }
+                TextButton(onClick = { referenceMode = (referenceMode + 1) % 4 }, modifier = Modifier.testTag("previewReferenceModeToggle")) {
+                    Text(listOf("자료 둘 다", "줄거리만", "발췌만", "자료 없음")[referenceMode])
+                }
                 Text(previewNotice.ifBlank { "서버 저장 없음 | 별점: ${savedRating?.let { "${it}점" } ?: "미선택"}" }, style = MaterialTheme.typography.labelSmall)
             }
         }
@@ -92,11 +95,11 @@ fun BookQuestionAPreviewScreen(showControls: Boolean = true, onExit: () -> Unit 
             nickname = "프리뷰 독자",
             anonymousReviews = anonymousReviews,
             onAnonymousReviewsChange = { anonymousReviews = it },
-            question = question.takeIf { hasQuestion },
+            question = question.copy(
+                synopsisMarkdown = question.synopsisMarkdown.takeIf { referenceMode == 0 || referenceMode == 1 }.orEmpty(),
+                excerptMarkdown = question.excerptMarkdown.takeIf { referenceMode == 0 || referenceMode == 2 }.orEmpty(),
+            ).takeIf { hasQuestion },
             allowZeroReviewRating = true,
-            selectedQuestionReaction = reaction,
-            onQuestionReactionSelected = { reaction = it },
-            onQuestionReactionClear = { reaction = null },
             onLoginRequired = { showPreviewLogin = true },
             onReviewOpen = { open -> submission = ReviewSubmissionState.Idle; open() },
             onQuestionAReviewCreate = { draft ->

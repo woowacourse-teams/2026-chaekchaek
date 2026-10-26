@@ -85,9 +85,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chaekchaek.shared.generated.resources.Res
@@ -195,10 +192,6 @@ fun BookDetailScreen(
     onRefresh: () -> Unit = {},
     errorRecovery: com.chaekchaek.app.presentation.common.ErrorRecoveryState? = null,
     question: BookQuestionUiModel? = null,
-    selectedQuestionReaction: String? = null,
-    onQuestionReactionClick: () -> Unit = {},
-    onQuestionReactionSelected: (String) -> Unit = {},
-    onQuestionReactionClear: () -> Unit = {},
     allowZeroReviewRating: Boolean = false,
     onQuestionAReviewCreate: ((QuestionAReviewDraft) -> Unit)? = null,
     onQuestionAReviewUpdate: ((Long, QuestionAReviewDraft, ReviewCreateRequest) -> Unit)? = null,
@@ -223,10 +216,10 @@ fun BookDetailScreen(
     var showRatingDialog by rememberSaveable { mutableStateOf(false) }
     var showPageDialog by rememberSaveable { mutableStateOf(false) }
     var showReviewSheet by rememberSaveable { mutableStateOf(false) }
-    var showReactionPicker by rememberSaveable(book.id, question?.id) { mutableStateOf(false) }
     var showQuestionReference by rememberSaveable(book.id, question?.id) { mutableStateOf(false) }
-    val activeOverlayBounds = if (showQuestionReference && question != null) referenceOverlayBounds else Rect.Zero
-    var referenceTab by rememberSaveable(book.id, question?.id) { mutableStateOf(BookQuestionReferenceTab.Synopsis) }
+    val hasQuestionReference = question?.referenceTabs?.isNotEmpty() == true
+    val activeOverlayBounds = if (showQuestionReference && hasQuestionReference) referenceOverlayBounds else Rect.Zero
+    var referenceTab by rememberSaveable(book.id, question?.id) { mutableStateOf(question?.referenceTabs?.firstOrNull() ?: BookQuestionReferenceTab.Synopsis) }
     var submittedReviewDraft by rememberSaveable(book.id, stateSaver = SubmittedQuestionAReviewSaver) {
         mutableStateOf<QuestionAReviewDraft?>(null)
     }
@@ -339,24 +332,10 @@ fun BookDetailScreen(
                             viewport = reviewViewport,
                             referenceOverlayBounds = activeOverlayBounds,
                             question = question,
-                            selectedReaction = selectedQuestionReaction,
                             onOpenReference = { showQuestionReference = true },
                             onWriteReview = { onReviewOpen { showReviewSheet = true } },
-                            onReactionClick = { showReactionPicker = true; onQuestionReactionClick() },
-                            onReactionClear = onQuestionReactionClear,
                             modifier = Modifier.testTag("bookQuestionCard"),
                         )
-                        if (showReactionPicker) Popup(
-                            alignment = Alignment.BottomEnd,
-                            offset = IntOffset(0, with(density) { 58.dp.roundToPx() }),
-                            onDismissRequest = { showReactionPicker = false },
-                            properties = PopupProperties(focusable = true),
-                        ) {
-                            BookQuestionReactionPicker(selectedQuestionReaction, onReactionSelected = {
-                                onQuestionReactionSelected(it)
-                                showReactionPicker = false
-                            })
-                        }
                     }
                 }
                 item { Spacer(Modifier.height(23.dp)) }
@@ -427,7 +406,7 @@ fun BookDetailScreen(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
             )
         }
-        if (showQuestionReference && question != null) {
+        if (showQuestionReference && question != null && hasQuestionReference) {
             // 패널은 목록과 별개로 그린다. 바깥 영역의 스크롤과 기존 위치를 유지한다.
             val layout = bookQuestionOverlayLayout(maxHeight.value, (maxHeight - composeBarHeight).value.coerceAtLeast(0f))
             BookQuestionReferenceOverlay(

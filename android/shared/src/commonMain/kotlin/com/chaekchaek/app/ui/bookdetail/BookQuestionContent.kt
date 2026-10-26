@@ -1,6 +1,5 @@
 package com.chaekchaek.app.ui.bookdetail
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,8 +25,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
@@ -45,12 +42,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import chaekchaek.shared.generated.resources.Res
-import chaekchaek.shared.generated.resources.question_reaction_bubble
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekInk
 import com.chaekchaek.app.ui.theme.ChaekInkSecondary
@@ -58,7 +51,6 @@ import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
 import com.chaekchaek.app.ui.theme.ChaekSurface
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 import com.mikepenz.markdown.model.rememberMarkdownState
-import org.jetbrains.compose.resources.painterResource
 
 // Figma 1338:2990, 1358:3683의 승인된 변수 값. 기존 테마의 border 값과 다르다.
 private val QuestionDivider = Color(0xFFDDDDE1)
@@ -70,11 +62,8 @@ fun BookQuestionCard(
     viewport: Rect,
     referenceOverlayBounds: Rect,
     question: BookQuestionUiModel,
-    selectedReaction: String?,
     onOpenReference: () -> Unit,
     onWriteReview: () -> Unit,
-    onReactionClick: () -> Unit,
-    onReactionClear: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -95,7 +84,7 @@ fun BookQuestionCard(
                 .background(ChaekSurfaceMuted)
                 .padding(16.dp),
         )
-        Row(
+        if (question.referenceTabs.isNotEmpty()) Row(
             modifier = Modifier.fillMaxWidth().height(44.dp)
                 .clip(ChaekOverlayTokens.cardShape)
                 .border(1.dp, QuestionDivider, ChaekOverlayTokens.cardShape)
@@ -153,106 +142,6 @@ fun BookQuestionCard(
                     )
                 }
             }
-            if (selectedReaction != null) {
-                BookQuestionSelectedReaction(selectedReaction, onReactionClear, viewport, referenceOverlayBounds)
-            }
-            Box(
-                modifier = Modifier.size(44.dp)
-                    .semantics {
-                        contentDescription = "질문에 이모지 달기"
-                    }
-                    .testTag("questionReactionOpen")
-                    .questionClick(onReactionClick).accessibilityWhenFullyVisible(viewport, referenceOverlayBounds),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier = Modifier.size(width = 32.dp, height = 24.dp)
-                        .clip(ChaekOverlayTokens.cardShape)
-                        .background(ChaekSurfaceMuted),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Image(
-                        painter = painterResource(Res.drawable.question_reaction_bubble),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** Figma 1416:5812. 열기와 닫기는 호출 화면이 관리하며 배경을 차단하지 않는다. */
-enum class BookQuestionReaction(val type: String, val emoji: String, val displayName: String) {
-    Good("good", "👍", "좋아요"), Heart("heart", "❤️", "마음에 남아요"),
-    Think("think", "🤔", "생각하게 돼요"), Calm("calm", "😌", "편안해요"), Sad("sad", "🥲", "뭉클해요"),
-}
-
-@Composable
-fun BookQuestionReactionPicker(
-    selectedReaction: String?,
-    onReactionSelected: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val choices = BookQuestionReaction.entries.map { it.emoji to it.displayName }
-    Row(
-        modifier = modifier.width(230.dp).height(54.dp)
-            .clip(ChaekOverlayTokens.cardShape)
-            .background(ChaekSurface)
-            .border(1.dp, QuestionDivider, ChaekOverlayTokens.cardShape)
-            .padding(5.dp)
-            .testTag("questionReactionPicker"),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        choices.forEach { (emoji, label) ->
-            Box(
-                modifier = Modifier.size(44.dp)
-                    .semantics {
-                        contentDescription = label
-                        selected = selectedReaction == emoji
-                    }
-                    .testTag("questionReactionChoice$emoji")
-                    .questionClick { onReactionSelected(emoji) },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = emoji,
-                    fontFamily = ChaekIconFontFamily(),
-                    fontSize = 18.sp,
-                    lineHeight = 22.sp,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun BookQuestionSelectedReaction(emoji: String, onClear: () -> Unit, viewport: Rect, overlay: Rect) {
-    Box(
-        modifier = Modifier.size(44.dp)
-            .semantics {
-                contentDescription = "이모지 반응 $emoji"
-                stateDescription = "눌러서 내 반응 취소"
-                selected = true
-            }
-            .testTag("questionReactionClear")
-            .questionClick(onClear).accessibilityWhenFullyVisible(viewport, overlay),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(
-            modifier = Modifier.size(width = 40.dp, height = 24.dp)
-                .clip(ChaekOverlayTokens.cardShape)
-                .background(ChaekSurfaceMuted),
-            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text = emoji, fontFamily = ChaekIconFontFamily(), fontSize = 16.sp, lineHeight = 20.sp)
-            // HTML 시안의 내 반응 한 개다. 서버 반응 집계값을 표시하는 필드가 아니다.
-            Text(
-                text = "1",
-                color = ChaekInk,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 19.5.sp),
-            )
         }
     }
 }
@@ -267,11 +156,13 @@ fun BookQuestionReferenceOverlay(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val availableTabs = question.referenceTabs
+    val activeTab = selectedTab.takeIf { it in availableTabs } ?: availableTabs.firstOrNull() ?: return
     val synopsisScroll = rememberSaveable(question.id, saver = ScrollState.Saver) { ScrollState(0) }
     val excerptScroll = rememberSaveable(question.id, saver = ScrollState.Saver) { ScrollState(0) }
     val synopsisMarkdown = rememberMarkdownState(question.synopsisMarkdown)
     val excerptMarkdown = rememberMarkdownState(question.excerptMarkdown)
-    val scrollState = when (selectedTab) {
+    val scrollState = when (activeTab) {
         BookQuestionReferenceTab.Synopsis -> synopsisScroll
         BookQuestionReferenceTab.Excerpt -> excerptScroll
     }
@@ -322,13 +213,13 @@ fun BookQuestionReferenceOverlay(
                 .clip(ChaekOverlayTokens.cardShape)
                 .background(ChaekSurfaceMuted),
         ) {
-            BookQuestionReferenceTab.entries.forEach { tab ->
+            availableTabs.forEach { tab ->
                 Box(
                     modifier = Modifier.weight(1f).heightIn(min = 44.dp).testTag(if (tab == BookQuestionReferenceTab.Synopsis) "questionReferenceTabSynopsis" else "questionReferenceTabExcerpt")
                         .clip(ChaekOverlayTokens.cardShape)
-                        .background(if (selectedTab == tab) ChaekSurface else Color.Transparent)
+                        .background(if (activeTab == tab) ChaekSurface else Color.Transparent)
                         .selectable(
-                            selected = selectedTab == tab,
+                            selected = activeTab == tab,
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             role = Role.Tab,
@@ -338,7 +229,7 @@ fun BookQuestionReferenceOverlay(
                 ) {
                     Text(
                         text = if (tab == BookQuestionReferenceTab.Synopsis) "줄거리" else "본문 발췌",
-                        color = if (selectedTab == tab) ChaekInk else ChaekInkSecondary,
+                        color = if (activeTab == tab) ChaekInk else ChaekInkSecondary,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 14.sp,
                             lineHeight = 22.sp,
@@ -357,15 +248,15 @@ fun BookQuestionReferenceOverlay(
             ),
         ) {
             // 다른 탭의 파싱 결과를 현재 탭의 ScrollState로 잠깐 측정하지 않는다.
-            key(question.id, selectedTab) {
+            key(question.id, activeTab) {
                 BookQuestionMarkdown(
-                    markdown = when (selectedTab) {
+                    markdown = when (activeTab) {
                         BookQuestionReferenceTab.Synopsis -> question.synopsisMarkdown
                         BookQuestionReferenceTab.Excerpt -> question.excerptMarkdown
                     },
                     modifier = Modifier.weight(1f).fillMaxWidth().testTag("book-question-reference-body"),
                     scrollState = scrollState,
-                    parsedState = when (selectedTab) {
+                    parsedState = when (activeTab) {
                         BookQuestionReferenceTab.Synopsis -> synopsisMarkdown
                         BookQuestionReferenceTab.Excerpt -> excerptMarkdown
                     },
