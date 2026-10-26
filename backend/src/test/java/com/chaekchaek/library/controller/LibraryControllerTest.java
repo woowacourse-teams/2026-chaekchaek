@@ -1127,7 +1127,7 @@ class LibraryControllerTest {
                         resource(ResourceSnippetParameters.builder()
                                 .summary(LIBRARY_REMOVE_RATING_SUMMARY)
                                 .description(LIBRARY_REMOVE_RATING_DESCRIPTION)
-                                .tag(LIBRARY_TAG)
+                                .tag("별점")
                                 .pathParameters(bookIdResourcePathParameter())
                                 .build())
                 ));
@@ -2096,7 +2096,7 @@ class LibraryControllerTest {
         return switch (summary) {
             case LIBRARY_CREATE_SUMMARY, LIBRARY_RENAME_SUMMARY, LIBRARY_DELETE_LIBRARY_SUMMARY -> "책장";
             case LIBRARY_BOOK_ADD_SUMMARY, LIBRARY_BOOK_DELETE_SUMMARY -> "책장 도서";
-            case ISBN_RATE_SUMMARY -> "별점";
+            case ISBN_RATE_SUMMARY, LIBRARY_REMOVE_RATING_SUMMARY -> "별점";
             default -> LIBRARY_TAG;
         };
     }
