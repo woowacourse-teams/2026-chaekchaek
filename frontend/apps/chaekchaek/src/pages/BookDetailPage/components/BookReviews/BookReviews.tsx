@@ -109,18 +109,16 @@ export const BookReviews = ({
         </Text>
       </Button>
 
-      {reviews
-        ?.filter((review) => !review.deleted)
-        .map((review) => {
-          return (
-            <BookReview
-              key={review.reviewId}
-              isbn={isbn}
-              review={review}
-              onReviewsRefresh={onReviewsRefresh}
-            />
-          );
-        })}
+      {reviews.map((review) => {
+        return (
+          <BookReview
+            key={review.reviewId}
+            isbn={isbn}
+            review={review}
+            onReviewsRefresh={onReviewsRefresh}
+          />
+        );
+      })}
 
       {dialogElement}
     </>

@@ -35,7 +35,6 @@ export type PatchReviewsReviewId = (
   recentReplies: {
     createdAt: string;
     likedByMe: boolean;
-    deleted: boolean;
     author: {
       mine: boolean;
       displayName: string;
@@ -49,7 +48,6 @@ export type PatchReviewsReviewId = (
   replyCount: number;
   isSpoiler: boolean;
   likedByMe: boolean;
-  deleted: boolean;
   quote: string;
   currentPage: number;
   reviewId: number;
