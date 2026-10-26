@@ -6,9 +6,12 @@ import { Button, Checkbox, Icon, ImgBox, Input, List, ScrollArea } from '@chaekc
 import { getBooks } from '@/services/apis/books/repository';
 import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
+import { getLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repository';
+import { useLoadData } from '@/services/core/useLoadData';
+
 import type { SearchPanelProps } from './SearchPanel.types';
 
-export const SearchPanel = ({ onSubmit }: SearchPanelProps) => {
+export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
   const [query, setQuery] = useState('');
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
@@ -62,6 +65,18 @@ export const SearchPanel = ({ onSubmit }: SearchPanelProps) => {
     scrollAreaRef.current?.scrollTo({ top: 0 });
   }, [query]);
 
+  const getLibrariesLibraryIdLoadData = useCallback(async () => {
+    return await getLibrariesLibraryId({
+      libraryId,
+    });
+  }, [libraryId]);
+
+  const {
+    status: { data: currentLibraryBooks },
+  } = useLoadData({
+    queryFn: getLibrariesLibraryIdLoadData,
+  });
+
   const [selection, setSelection] = useState<string[]>([]);
   const handleChangeSelection = (e: ChangeEvent<HTMLInputElement>) => {
     const isbn = e.target.value;
@@ -92,13 +107,17 @@ export const SearchPanel = ({ onSubmit }: SearchPanelProps) => {
           {booksData?.map((item) => {
             const isIncluded = selection.includes(item.isbn13);
 
+            const isRegisteredInCurrentLibrary = !!currentLibraryBooks?.items.find(
+              (currentLibraryBook) => currentLibraryBook.isbn13 === item.isbn13,
+            );
+
             return (
               <List.Item key={item.isbn13}>
                 <List.Item.Leading>
                   <Checkbox
                     value={item.isbn13}
                     checked={isIncluded}
-                    disabled={item.isRegisteredInMyLibrary}
+                    disabled={isRegisteredInCurrentLibrary}
                     onChange={handleChangeSelection}
                   />
                   <ImgBox img={item.coverImageUrl} size="x-small" />
@@ -108,7 +127,7 @@ export const SearchPanel = ({ onSubmit }: SearchPanelProps) => {
                   title={<>{item.title}</>}
                   content={item.authors.join(' · ')}
                 />
-                {item.isRegisteredInMyLibrary && <List.Item.Trailing>담긴 책</List.Item.Trailing>}
+                {isRegisteredInCurrentLibrary && <List.Item.Trailing>담긴 책</List.Item.Trailing>}
               </List.Item>
             );
           })}

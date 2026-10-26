@@ -60,7 +60,7 @@ export const AddBooksToLibraryDialog = ({
               {
                 text: '책 검색',
                 value: 'search',
-                panel: <SearchPanel onSubmit={addBookToLibrary} />,
+                panel: <SearchPanel libraryId={libraryId} onSubmit={addBookToLibrary} />,
               },
             ]}
             onChange={handleChange}
