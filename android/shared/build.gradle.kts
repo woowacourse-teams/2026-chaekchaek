@@ -94,6 +94,8 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
         }
         androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.activity.compose)
             implementation(libs.coil.network.okhttp)
             implementation(libs.ktor.client.okhttp)
         }

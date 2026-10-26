@@ -301,7 +301,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
             let shelf = app.buttons["내 서재"]
             XCTAssertTrue(shelf.waitForExistence(timeout: 15))
             shelf.tap()
-            let edit = app.buttons["편집"]
+            let edit = app.buttons["로그인"]
             XCTAssertTrue(edit.waitForExistence(timeout: 10))
             edit.tap()
             let google = app.buttons["GIDSignInButton"]
@@ -341,7 +341,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
                 let shelf = app.buttons["내 서재"]
                 XCTAssertTrue(shelf.waitForExistence(timeout: 15))
                 shelf.tap()
-                app.buttons["편집"].tap()
+                app.buttons["로그인"].tap()
                 let google = app.buttons["GIDSignInButton"]
                 XCTAssertTrue(google.waitForExistence(timeout: 5))
                 google.tap()
@@ -440,7 +440,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
         XCTAssertTrue(shelfTab.waitForExistence(timeout: 10))
         shelfTab.tap()
 
-        let editButton = app.buttons["편집"]
+        let editButton = app.buttons["로그인"]
         XCTAssertTrue(editButton.waitForExistence(timeout: 10))
         editButton.tap()
 
@@ -965,6 +965,7 @@ private final class NicknameFixtureServer: @unchecked Sendable {
                     body = self.profile()
                 }
             case "/api/v1/members/me": body = self.profile()
+            case "/api/v1/libraries": body = "{\"memberId\":1,\"libraries\":[]}"
             case "/api/v1/home/popular-books": body = "{\"books\":[]}"
             case "/api/v1/home/latest-reviews": body = "{\"reviews\":[]}"
             case "/api/v1/feed/reviews": body = "{\"reviews\":[],\"totalCount\":0,\"nextPage\":null}"
@@ -978,5 +979,143 @@ private final class NicknameFixtureServer: @unchecked Sendable {
     }
     private func profile() -> String {
         "{\"memberId\":1,\"nickname\":\"\(nickname)\",\"anonymousNickname\":\"참새\",\"displayAnonymous\":true}"
+    }
+}
+
+
+final class BookshelfContractUITests: XCTestCase {
+    private let origin = "http://127.0.0.1:19068"
+
+    @MainActor
+    func testShelfCreateRenameAddRemoveAndImagePreview() async throws {
+        let marker = try? await request("/__bookshelf")
+        guard marker != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
+        _ = try await request("/__bookshelf/reset", method: "POST")
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingGuest", "-uiTestingNicknameRestore", "-uiTestingRefresh"]
+        app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = origin
+        app.launch()
+        let shelfTab = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "내 서재")).firstMatch
+        guard shelfTab.waitForExistence(timeout: 15) else {
+            let screen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            screen.name = "책장 시작 화면 실패"
+            screen.lifetime = .keepAlways
+            add(screen)
+            XCTFail("내 서재 진입 버튼이 표시되지 않았어요: \(app.debugDescription)")
+            return
+        }
+        shelfTab.tap()
+        let firstShelf = app.buttons["bookshelf-1"]
+        XCTAssertTrue(firstShelf.waitForExistence(timeout: 10))
+        app.buttons["bookshelf-menu-1"].tap()
+        element("이름 바꾸기", app).tap()
+        let input = app.textViews["bookshelfName"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.tap()
+        input.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 20))
+        input.typeText("나의 책장")
+        element("저장", app).tap()
+        XCTAssertTrue(input.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(element("나의 책장", app).waitForExistence(timeout: 10))
+        app.buttons["bookshelf-create"].tap()
+        let newName = app.textViews["bookshelfName"]
+        XCTAssertTrue(newName.waitForExistence(timeout: 5))
+        newName.tap()
+        newName.typeText("올해읽을책")
+        element("만들기", app).tap()
+        XCTAssertTrue(newName.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(firstShelf.waitForExistence(timeout: 10))
+        firstShelf.tap()
+        let addButton = element("+ 책 담기", app)
+        XCTAssertTrue(addButton.waitForExistence(timeout: 10))
+        addButton.tap()
+        let selectedBook = element("검증 도서 3", app)
+        guard selectedBook.waitForExistence(timeout: 10) else {
+            XCTFail("내 서재의 책 목록을 찾지 못했어요: \(app.debugDescription)")
+            return
+        }
+        selectedBook.tap()
+        XCTAssertTrue(element("담을 책장 고르기", app).waitForExistence(timeout: 5))
+        let confirmAdd = element("이 책장에 담기", app)
+        for _ in 0..<4 {
+            if confirmAdd.exists && confirmAdd.isHittable { break }
+            app.swipeUp()
+        }
+        guard confirmAdd.waitForExistence(timeout: 5) else {
+            let screen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            screen.name = "책장 선택 확인 버튼 실패"
+            screen.lifetime = .keepAlways
+            add(screen)
+            XCTFail("책장 선택을 확인할 수 없어요: \(app.debugDescription)")
+            return
+        }
+        confirmAdd.tap()
+        XCTAssertTrue(confirmAdd.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(addButton.waitForExistence(timeout: 10))
+        element("편집", app).tap()
+        let remove = app.buttons.matching(NSPredicate(format: "label == %@", "빼기")).firstMatch
+        for _ in 0..<4 {
+            if remove.exists && remove.isHittable { break }
+            app.swipeUp()
+        }
+        guard remove.waitForExistence(timeout: 5) else {
+            XCTFail("책 빼기 버튼을 찾지 못했어요: \(app.debugDescription)")
+            return
+        }
+        remove.tap()
+        element("완료", app).tap()
+        let imageShare = element("이미지 공유", app)
+        let enabled = NSPredicate(format: "enabled == true")
+        let imageReady = expectation(for: enabled, evaluatedWith: imageShare)
+        await fulfillment(of: [imageReady], timeout: 15)
+        imageShare.tap()
+        XCTAssertTrue(element("책장을 이미지로", app).waitForExistence(timeout: 10))
+        let saveImage = element("이미지 저장", app)
+        XCTAssertTrue(saveImage.exists)
+        let saveReady = expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: saveImage)
+        await fulfillment(of: [saveReady], timeout: 15)
+        saveImage.tap()
+        let permission = XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.firstMatch
+        if permission.waitForExistence(timeout: 5) { permission.buttons.allElementsBoundByIndex.last?.tap() }
+        XCTAssertTrue(element("이미지 저장을 완료했어요", app).waitForExistence(timeout: 15))
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "책장 이미지 미리보기"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        element("이미지 공유", app).tap()
+        let copyAction = app.cells.matching(NSPredicate(format: "label == %@ OR label == %@", "복사", "Copy")).firstMatch
+        guard copyAction.waitForExistence(timeout: 15) else {
+            let failure = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            failure.name = "네이티브 공유창 표시 실패"
+            failure.lifetime = .keepAlways
+            add(failure)
+            XCTFail("네이티브 이미지 공유창이 표시되지 않았어요: \(app.debugDescription)")
+            return
+        }
+        let nativeShare = XCTAttachment(screenshot: app.screenshot())
+        nativeShare.name = "네이티브 이미지 공유"
+        nativeShare.lifetime = .keepAlways
+        add(nativeShare)
+        let data = try await request("/__bookshelf/state")
+        let state = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let shelves = try XCTUnwrap(state["shelves"] as? [[String: Any]])
+        XCTAssertTrue(shelves.contains { $0["name"] as? String == "올해읽을책" })
+        let calls = try XCTUnwrap(state["requests"] as? [[String: Any]])
+        XCTAssertTrue(calls.contains { $0["method"] as? String == "POST" && $0["path"] as? String == "/api/v1/libraries/1" })
+        XCTAssertTrue(calls.contains { ($0["path"] as? String)?.hasPrefix("/api/v1/books/3/reviews") == true })
+        XCTAssertTrue(calls.contains { $0["method"] as? String == "DELETE" && ($0["path"] as? String)?.contains("/books/") == true })
+    }
+
+    @MainActor
+    private func element(_ text: String, _ app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", text)).firstMatch
+    }
+
+    @MainActor
+    private func request(_ path: String, method: String = "GET") async throws -> Data {
+        var request = URLRequest(url: URL(string: origin + path)!)
+        request.httpMethod = method
+        request.timeoutInterval = 3
+        return try await URLSession.shared.data(for: request).0
     }
 }

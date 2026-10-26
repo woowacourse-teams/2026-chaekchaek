@@ -67,5 +67,7 @@
 	</dict>
 	<key>UILaunchScreen</key>
 	<dict/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>책장 이미지를 사진 보관함에 저장해요.</string>
 </dict>
 </plist>

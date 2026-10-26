@@ -62,6 +62,34 @@ class MemberSettingsViewModelTest {
     }
 
     @Test
+    fun differentMemberClearsProfileEvenWhenNewLookupFails() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val client = testClient { request ->
+            if (request.headers[HttpHeaders.Authorization] == "Bearer member-a") {
+                respondJson("""{"memberId":9,"nickname":"회원 A","anonymousNickname":"A 참새","displayAnonymous":false}""")
+            } else respondJson("{}", HttpStatusCode.InternalServerError)
+        }
+        try {
+            val vm = MemberSettingsViewModel(MemberRemoteRepository(client))
+            vm.authenticate("member-a", 9)
+            vm.uiState.first { it.nickname == "회원 A" }
+            vm.authenticate("member-b", 10)
+            assertEquals("", vm.uiState.value.nickname)
+            assertEquals(true, vm.uiState.value.anonymousReviews)
+            vm.uiState.first { it.errorMessage != null }
+            assertEquals("", vm.uiState.value.nickname)
+            assertEquals("", vm.uiState.value.anonymousNickname)
+            assertEquals(true, vm.uiState.value.signedIn)
+            vm.authenticate(null)
+        } finally {
+            runCurrent()
+            client.close()
+            runCurrent()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
     fun withdrawalFailureKeepsSessionAndCanRetry() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         var withdrawalRequests = 0

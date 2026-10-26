@@ -29,7 +29,7 @@ class FirstLibraryOnboardingViewModelTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val conflict = io.ktor.client.HttpClient(io.ktor.client.engine.mock.MockEngine(io.ktor.client.engine.mock.MockEngineConfig().apply {
             dispatcher = StandardTestDispatcher(testScheduler)
-            addHandler { respond("{}", io.ktor.http.HttpStatusCode.Conflict) }
+            addHandler { respond("""{"code":"LIBRARY_ITEM_ALREADY_EXISTS"}""", io.ktor.http.HttpStatusCode.Conflict) }
         })) { expectSuccess = true }
         val attempts = mutableListOf<Pair<String, String>>()
         var expired = true
@@ -62,6 +62,28 @@ class FirstLibraryOnboardingViewModelTest {
             runCurrent()
             Dispatchers.resetMain()
         }
+    }
+
+    @Test
+    fun capacityConflictDoesNotCompleteOnboardingOrDropSelectedBooks() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val conflict = io.ktor.client.HttpClient(io.ktor.client.engine.mock.MockEngine(io.ktor.client.engine.mock.MockEngineConfig().apply {
+            dispatcher = StandardTestDispatcher(testScheduler)
+            addHandler { respond("""{"code":"LIBRARY_ITEM_LIMIT_EXCEEDED"}""", io.ktor.http.HttpStatusCode.Conflict) }
+        })) { expectSuccess = true }
+        try {
+            val selected = book("1", "첫 책")
+            val vm = FirstLibraryOnboardingViewModel(
+                searchRepository = BookSearchRepository { _, _, _ -> BookSearchPage(0, null, emptyList()) },
+                addBook = { _, _ -> conflict.get("https://fixture.invalid/full") },
+            )
+            vm.toggle(selected)
+            vm.save("token")
+            advanceUntilIdle()
+            assertFalse(vm.state.value.saveCompleted)
+            assertEquals(listOf(selected), vm.state.value.selectedBooks)
+            assertEquals(OnboardingStep.SAVE_ERROR, vm.state.value.step)
+        } finally { conflict.close(); Dispatchers.resetMain() }
     }
 
     @Test

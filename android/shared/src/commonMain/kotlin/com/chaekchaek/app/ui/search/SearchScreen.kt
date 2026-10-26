@@ -785,7 +785,7 @@ private fun SearchResultRow(
           Modifier
             .align(Alignment.End)
             .height(32.dp)
-            .clickable(enabled = !isReading, role = Role.Button, onClick = onRegister),
+            .clickable(role = Role.Button, onClick = onRegister),
         shape = RoundedCornerShape(6.dp),
         color = if (isReading) ChaekSurfaceMuted else MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, if (isReading) ChaekBorder else MaterialTheme.colorScheme.onSurface),
@@ -801,7 +801,7 @@ private fun SearchResultRow(
             fontFamily = ChaekIconFontFamily(),
           )
           Text(
-            if (isReading) "읽는 중" else "읽는 중 시작",
+            if (isReading) "담았어요" else "책 담기",
             style = MaterialTheme.typography.labelMedium,
             color = if (isReading) ChaekInkSecondary else MaterialTheme.colorScheme.onSurface,
           )
