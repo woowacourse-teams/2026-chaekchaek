@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -94,8 +93,11 @@ class LibraryServiceTest {
     @Mock
     private PlatformTransactionManager transactionManager;
 
+    private LibraryService service;
+
     @BeforeEach
     void setUp() {
+        service = createService();
         appender.start();
         logger.addAppender(appender);
     }
@@ -115,7 +117,7 @@ class LibraryServiceTest {
         BigDecimal rating = value == null ? null : new BigDecimal(value);
 
         // when & then
-        assertThatThrownBy(() -> service().rateByIsbn13(1L, ISBN13, rating))
+        assertThatThrownBy(() -> service.rateByIsbn13(1L, ISBN13, rating))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST));
         verifyNoInteractions(memberRepository, bookResolver, transactionManager);
@@ -125,14 +127,11 @@ class LibraryServiceTest {
     @DisplayName("닉네임이 있는 활성 회원의 맨 뒤에 빈 일반 책장을 생성한다")
     void should_ReturnSavedLibrary_When_Created() {
         // given
-        Library saved = mock(Library.class);
-        when(saved.getId()).thenReturn(7L);
-        when(saved.getName()).thenReturn("올해읽을책");
-        when(saved.isDefault()).thenReturn(false);
+        Library saved = Library.create(1L, "올해읽을책", CLOCK.instant());
+        ReflectionTestUtils.setField(saved, "id", 7L);
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
         when(libraryRepository.findMaxDisplayOrderByMemberId(1L)).thenReturn(4L);
         when(libraryRepository.create(any(Library.class))).thenReturn(saved);
-        LibraryService service = service();
 
         // when
         LibraryResponse actual = service.create(1L, "올해읽을책");
@@ -149,11 +148,14 @@ class LibraryServiceTest {
         assertThat(created.isDefault()).isFalse();
         assertThat(created.getDisplayOrder()).isEqualTo(5L);
         assertThat(created.getCreatedAt()).isEqualTo(CLOCK.instant());
-        assertThat(actual.libraryId()).isEqualTo(7L);
-        assertThat(actual.name()).isEqualTo("올해읽을책");
-        assertThat(actual.isDefault()).isFalse();
-        assertThat(actual.totalCount()).isZero();
-        assertThat(actual.items()).isEmpty();
+        LibraryResponse expected = new LibraryResponse(
+                7L,
+                "올해읽을책",
+                false,
+                0,
+                List.of()
+        );
+        assertThat(actual).isEqualTo(expected);
         assertThat(appender.list).singleElement()
                 .satisfies(event -> assertThat(event.getKeyValuePairs())
                         .extracting(pair -> pair.key, pair -> pair.value)
@@ -170,7 +172,6 @@ class LibraryServiceTest {
     void should_NotSaveLibrary_When_NameIsInvalid() {
         // given
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
-        LibraryService service = service();
 
         // when & then
         assertThatThrownBy(() -> service.create(1L, "   "))
@@ -187,7 +188,6 @@ class LibraryServiceTest {
     void should_RequireNickname_BeforeCreatingLibrary() {
         // given
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
-        LibraryService service = service();
 
         // when & then
         assertThatThrownBy(() -> service.create(1L, "올해읽을책"))
@@ -206,7 +206,6 @@ class LibraryServiceTest {
         Member inactiveMember = memberWithoutNickname();
         inactiveMember.withdraw(LocalDateTime.now());
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(inactiveMember));
-        LibraryService service = service();
 
         // when & then
         assertThatThrownBy(() -> service.create(1L, "올해읽을책"))
@@ -225,7 +224,6 @@ class LibraryServiceTest {
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
         when(libraryRepository.create(any(Library.class)))
                 .thenThrow(new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS));
-        LibraryService service = service();
 
         // when & then
         assertThatThrownBy(() -> service.create(1L, "올해읽을책"))
@@ -241,7 +239,6 @@ class LibraryServiceTest {
         ReflectionTestUtils.setField(library, "id", 7L);
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
         when(libraryRepository.findById(7L)).thenReturn(Optional.of(library));
-        LibraryService service = service();
 
         // when
         service.rename(1L, 7L, "읽을책");
@@ -277,7 +274,6 @@ class LibraryServiceTest {
         ReflectionTestUtils.setField(library, "id", 7L);
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
         when(libraryRepository.findById(7L)).thenReturn(Optional.of(library));
-        LibraryService service = service();
 
         // when
         service.rename(1L, 7L, "올해읽을책");
@@ -294,7 +290,7 @@ class LibraryServiceTest {
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
         when(libraryRepository.findById(7L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service().rename(1L, 7L, "읽을책"))
+        assertThatThrownBy(() -> service.rename(1L, 7L, "읽을책"))
                 .isInstanceOfSatisfying(
                         BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND)
@@ -311,7 +307,7 @@ class LibraryServiceTest {
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
         when(libraryRepository.findById(7L)).thenReturn(Optional.of(library));
 
-        assertThatThrownBy(() -> service().rename(1L, 7L, "읽을책"))
+        assertThatThrownBy(() -> service.rename(1L, 7L, "읽을책"))
                 .isInstanceOfSatisfying(
                         BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
@@ -328,7 +324,7 @@ class LibraryServiceTest {
         inactiveMember.withdraw(LocalDateTime.now());
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(inactiveMember));
 
-        assertThatThrownBy(() -> service().rename(1L, 7L, "읽을책"))
+        assertThatThrownBy(() -> service.rename(1L, 7L, "읽을책"))
                 .isInstanceOfSatisfying(
                         BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN)
@@ -350,7 +346,6 @@ class LibraryServiceTest {
                 .thenReturn(List.of(knownItem, unknownItem));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book(100)));
         when(bookRepository.findByIdForUpdate(3L)).thenReturn(Optional.of(book(null)));
-        LibraryService service = service();
 
         // when & then
         assertThatThrownBy(() -> service.bulkChangeStatus(1L, List.of(2L, 3L), ReadingStatus.FINISHED))
@@ -374,7 +369,6 @@ class LibraryServiceTest {
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book(100)));
         when(libraryItemRepository.findAllByMemberIdAndBookIdInForUpdate(1L, List.of(2L)))
                 .thenReturn(List.of(item));
-        LibraryService service = service();
 
         // when
         service.bulkChangeStatus(1L, List.of(2L), ReadingStatus.FINISHED);
@@ -392,8 +386,7 @@ class LibraryServiceTest {
     @DisplayName("같은 별점을 준 책이 없다면 current를 null로 반환한다")
     void should_ReturnNullCurrent_When_NoBookHasCriterionRating() {
         // given
-        Book targetBook = mock(Book.class);
-        when(targetBook.getId()).thenReturn(10L);
+        Book targetBook = bookWithId(10L);
         when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(targetBook));
         when(libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingLessThanOrderByRatingDescRatingUpdatedAtDescBookIdDesc(
@@ -409,7 +402,6 @@ class LibraryServiceTest {
                 new BigDecimal("4.5")
         ))
                 .thenReturn(Optional.empty());
-        LibraryService service = service();
 
         // when
         var response = service.compareRatingsByIsbn13(1L, ISBN13, new BigDecimal("4.5"));
@@ -422,8 +414,7 @@ class LibraryServiceTest {
     @DisplayName("같은 별점을 준 책 중 최근 별점 도서를 current로 반환한다")
     void should_ReturnMostRecentlyRatedBookAsCurrent_When_BooksHaveCriterionRating() {
         // given
-        Book targetBook = mock(Book.class);
-        when(targetBook.getId()).thenReturn(10L);
+        Book targetBook = bookWithId(10L);
         LibraryItem sameRatedItem = LibraryItem.create(
                 1L,
                 9L,
@@ -432,11 +423,7 @@ class LibraryServiceTest {
                 CLOCK.instant()
         );
         sameRatedItem.rate(new BigDecimal("4.5"), CLOCK.instant().plusSeconds(10));
-        Book sameRatedBook = mock(Book.class);
-        when(sameRatedBook.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
-        when(sameRatedBook.getTitle()).thenReturn("같은 별점 도서");
-        when(sameRatedBook.getCoverImageUrl()).thenReturn("https://example.com/cover.jpg");
-        when(sameRatedBook.getAuthors()).thenReturn(List.of("작가"));
+        Book sameRatedBook = bookWithId(9L);
         when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(targetBook));
         when(libraryItemRepository
                 .findFirstByMemberIdAndBookIdNotAndRatingOrderByRatingUpdatedAtDescBookIdDesc(
@@ -446,7 +433,6 @@ class LibraryServiceTest {
         ))
                 .thenReturn(Optional.of(sameRatedItem));
         when(bookRepository.findById(9L)).thenReturn(Optional.of(sameRatedBook));
-        LibraryService service = service();
 
         // when
         var response = service.compareRatingsByIsbn13(1L, ISBN13, new BigDecimal("4.5"));
@@ -492,17 +478,12 @@ class LibraryServiceTest {
                 null,
                 CLOCK.instant()
         );
-        Book firstBook = mock(Book.class);
-        Book secondBook = mock(Book.class);
-        when(firstBook.getId()).thenReturn(2L);
-        when(secondBook.getId()).thenReturn(3L);
-        when(firstBook.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
-        when(secondBook.getIsbn13()).thenReturn(new Isbn13("9788936433598"));
+        Book firstBook = bookWithId(2L);
+        Book secondBook = bookWithId(3L, new Isbn13("9788936433598"));
         defaultItems(List.of(firstItem, secondItem));
         when(bookRepository.findAllById(List.of(2L, 3L))).thenReturn(List.of(firstBook, secondBook));
         when(commentCountReader.getCommentCounts(anyCollection()))
                 .thenReturn(Map.of(2L, 1L, 3L, 5L));
-        LibraryService service = service();
 
         // when
         var response = service.getLibrary(1L, 1, null, LibrarySort.COMMENT);
@@ -523,7 +504,7 @@ class LibraryServiceTest {
         when(commentCountReader.getCommentCounts(anyCollection())).thenReturn(Map.of());
 
         // when
-        var response = service().getLibrary(1L, 1, null, LibrarySort.RECENT);
+        var response = service.getLibrary(1L, 1, null, LibrarySort.RECENT);
 
         // then
         assertThat(response.totalCount()).isEqualTo(1L);
@@ -531,8 +512,8 @@ class LibraryServiceTest {
     }
 
     private void defaultItems(List<LibraryItem> items) {
-        Library library = mock(Library.class);
-        when(library.getId()).thenReturn(7L);
+        Library library = Library.createDefault(1L, "기본 책장", 1L, CLOCK.instant());
+        ReflectionTestUtils.setField(library, "id", 7L);
         when(libraryRepository.findByMemberIdAndIsDefaultTrue(1L)).thenReturn(Optional.of(library));
         List<LibraryBook> placements = items
                 .stream()
@@ -550,16 +531,15 @@ class LibraryServiceTest {
     @DisplayName("활성 회원의 빈 공개 서재는 빈 목록을 반환한다")
     void should_ReturnEmptyPublicLibrary_When_ActiveMemberHasNoItems() {
         // given
-        Member member = mock(Member.class);
-        when(member.getId()).thenReturn(1L);
-        when(member.getDisplayName()).thenReturn("책책이");
-        when(member.getProfileImageUrl()).thenReturn("https://example.com/profile.jpg");
-        when(member.getAccountStatus()).thenReturn(AccountStatus.ACTIVE);
+        Member member = Member.create("익명", "https://example.com/profile.jpg", LocalDateTime.of(2026, 8, 14, 0, 0));
+        member.updateNickname("책책이");
+        member.disableAnonymousDisplay();
+        ReflectionTestUtils.setField(member, "id", 1L);
         when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
         when(commentCountReader.getCommentCounts(Set.of())).thenReturn(Map.of());
 
         // when
-        var response = service().getPublicLibrary(1L, 1, null, LibrarySort.RECENT);
+        var response = service.getPublicLibrary(1L, 1, null, LibrarySort.RECENT);
 
         // then
         assertThat(response.totalCount()).isZero();
@@ -579,8 +559,12 @@ class LibraryServiceTest {
         assertLibraryNotFound(1L);
 
         for (AccountStatus status : List.of(AccountStatus.WITHDRAWN, AccountStatus.SUSPENDED)) {
-            Member member = mock(Member.class);
-            when(member.getAccountStatus()).thenReturn(status);
+            Member member = activeMember();
+            if (status == AccountStatus.WITHDRAWN) {
+                member.withdraw(LocalDateTime.ofInstant(CLOCK.instant(), ZoneOffset.UTC));
+            } else {
+                ReflectionTestUtils.setField(member, "accountStatus", status);
+            }
             when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
             assertLibraryNotFound(1L);
         }
@@ -600,7 +584,7 @@ class LibraryServiceTest {
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 10L)).thenReturn(Optional.of(item));
 
         // when
-        service().removeRatingByIsbn13(1L, ISBN13);
+        service.removeRatingByIsbn13(1L, ISBN13);
 
         // then
         assertThat(item.getRating()).isNull();
@@ -622,7 +606,7 @@ class LibraryServiceTest {
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
 
         // when & then
-        assertThatThrownBy(() -> service().removeRatingByIsbn13(1L, ISBN13))
+        assertThatThrownBy(() -> service.removeRatingByIsbn13(1L, ISBN13))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.BOOK_NOT_FOUND);
         verifyNoInteractions(bookResolver, libraryItemRepository);
@@ -638,7 +622,7 @@ class LibraryServiceTest {
         when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(book));
 
         // when
-        service().removeRatingByIsbn13(1L, ISBN13);
+        service.removeRatingByIsbn13(1L, ISBN13);
 
         // then
         verify(libraryItemRepository).findByMemberIdAndBookIdForUpdate(1L, 10L);
@@ -655,14 +639,14 @@ class LibraryServiceTest {
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(member));
 
         // when & then
-        assertThatThrownBy(() -> service().removeRatingByIsbn13(1L, ISBN13))
+        assertThatThrownBy(() -> service.removeRatingByIsbn13(1L, ISBN13))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(ErrorCode.FORBIDDEN);
         verifyNoInteractions(bookRepository, bookResolver, libraryItemRepository);
     }
 
     private void assertLibraryNotFound(long memberId) {
-        assertThatThrownBy(() -> service().getPublicLibrary(memberId, 1, null, LibrarySort.RECENT))
+        assertThatThrownBy(() -> service.getPublicLibrary(memberId, 1, null, LibrarySort.RECENT))
                 .isInstanceOfSatisfying(
                 BusinessException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND)
@@ -673,7 +657,7 @@ class LibraryServiceTest {
         return Member.create("익명", null, LocalDateTime.of(2026, 10, 23, 12, 0));
     }
 
-    private LibraryService service() {
+    private LibraryService createService() {
         return new LibraryService(
                 libraryRepository,
                 libraryItemRepository,
@@ -688,8 +672,12 @@ class LibraryServiceTest {
     }
 
     private Book book(Integer totalPages) {
+        return book(totalPages, ISBN13);
+    }
+
+    private Book book(Integer totalPages, Isbn13 isbn13) {
         return Book.create(
-                new Isbn13("9788925568683"),
+                isbn13,
                 "마션",
                 "https://example.com/cover.jpg",
                 "https://example.com/cover.jpg/side",
@@ -707,12 +695,12 @@ class LibraryServiceTest {
     }
 
     private Book bookWithId(long bookId) {
-        Book book = mock(Book.class);
-        when(book.getId()).thenReturn(bookId);
-        when(book.getIsbn13()).thenReturn(ISBN13);
-        when(book.getTitle()).thenReturn("마션");
-        when(book.getAuthors()).thenReturn(List.of());
-        when(book.getTranslators()).thenReturn(List.of());
+        return bookWithId(bookId, ISBN13);
+    }
+
+    private Book bookWithId(long bookId, Isbn13 isbn13) {
+        Book book = book(null, isbn13);
+        ReflectionTestUtils.setField(book, "id", bookId);
         return book;
     }
 
