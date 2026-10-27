@@ -24,13 +24,14 @@ class BookResolverTest {
 
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
 
+    private final BookDetailClient client = mock(BookDetailClient.class);
+    private final BookRepository repository = mock(BookRepository.class);
+    private final BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+
     @Test
     @DisplayName("등록된 ISBN13으로 책을 조회하거나 생성하면 기존 책을 반환한다")
     void should_ReturnStoredBookWithoutCallingClient_When_BookIsRegistered() {
         // given
-        BookDetailClient client = mock(BookDetailClient.class);
-        BookRepository repository = mock(BookRepository.class);
-        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         Book storedBook = mock(Book.class);
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.of(storedBook));
 
@@ -47,9 +48,6 @@ class BookResolverTest {
     @DisplayName("미등록 ISBN13을 조회하면 외부 상세 결과를 저장하지 않고 반환한다")
     void should_ReturnUnpersistedBookWithoutSaving_When_LookingUpUnregisteredIsbn13() {
         // given
-        BookDetailClient client = mock(BookDetailClient.class);
-        BookRepository repository = mock(BookRepository.class);
-        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
         when(client.findBookByIsbn13(ISBN13)).thenReturn(bookDetailItem());
 
@@ -70,9 +68,6 @@ class BookResolverTest {
     @DisplayName("외부 상세 결과의 책등과 책뒷면 이미지 URL을 책에 전달한다")
     void should_PreserveSpineAndBackImageUrls_When_LookingUpUnregisteredBook() {
         // given
-        BookDetailClient client = mock(BookDetailClient.class);
-        BookRepository repository = mock(BookRepository.class);
-        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
         when(client.findBookByIsbn13(ISBN13)).thenReturn(new BookDetailItem(
                 "마션",
@@ -107,9 +102,6 @@ class BookResolverTest {
     @DisplayName("외부 도서 설명에 HTML 엔티티가 있으면 디코딩해서 반환한다")
     void should_UnescapeHtmlEntities_When_DescriptionContainsHtmlEntities() {
         // given
-        BookDetailClient client = mock(BookDetailClient.class);
-        BookRepository repository = mock(BookRepository.class);
-        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
         when(client.findBookByIsbn13(ISBN13)).thenReturn(
                 bookDetailItem("&lt;프리즘&gt;은 &quot;빛&quot;을 나눈다 &amp; 다시 합친다. &#39;끝&#39;"));
@@ -125,9 +117,6 @@ class BookResolverTest {
     @DisplayName("외부 도서 설명에 HTML 엔티티가 없으면 원문을 그대로 반환한다")
     void should_KeepDescriptionAsIs_When_DescriptionHasNoHtmlEntities() {
         // given
-        BookDetailClient client = mock(BookDetailClient.class);
-        BookRepository repository = mock(BookRepository.class);
-        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
         when(client.findBookByIsbn13(ISBN13)).thenReturn(bookDetailItem("화성에 홀로 남은 식물학자의 이야기"));
 
@@ -142,9 +131,6 @@ class BookResolverTest {
     @DisplayName("외부 도서 설명이 없으면 설명 없이 책을 반환한다")
     void should_ReturnBookWithoutDescription_When_ExternalDescriptionIsNull() {
         // given
-        BookDetailClient client = mock(BookDetailClient.class);
-        BookRepository repository = mock(BookRepository.class);
-        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
         when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
         when(client.findBookByIsbn13(ISBN13)).thenReturn(bookDetailItem(null));
 
