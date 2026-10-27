@@ -56,13 +56,7 @@ export const RegisterBookToLibraryDialog = ({
     });
   };
 
-  const addBookToLibrary = async () => {
-    const addedLibraries = selection?.filter((libraryId) => {
-      return !initialSelection?.includes(libraryId);
-    });
-
-    if (!addedLibraries) return;
-
+  const addBookToLibrary = async (addedLibraries: number[]) => {
     return await Promise.all(
       addedLibraries.map((libraryId) =>
         postLibrariesLibraryId({
@@ -74,15 +68,9 @@ export const RegisterBookToLibraryDialog = ({
     );
   };
 
-  const deleteBookToLibrary = async () => {
+  const deleteBookToLibrary = async (deletedLibraries: number[]) => {
     const bookId = book.bookId;
     if (!bookId) return;
-
-    const deletedLibraries = initialSelection?.filter((libraryId) => {
-      return !selection.includes(libraryId);
-    });
-
-    if (!deletedLibraries) return;
 
     return await Promise.all(
       deletedLibraries.map((libraryId) =>
@@ -103,10 +91,26 @@ export const RegisterBookToLibraryDialog = ({
   });
 
   const handleSubmit = async () => {
-    await Promise.all([
-      postLibrariesLibraryIdMutate(),
-      deleteLibrariesLibraryIdBooksBookIdMutate(),
-    ]);
+    const initialLibraryIds = initialSelection ?? [];
+    const addedLibraries = selection?.filter((libraryId) => {
+      return !initialLibraryIds.includes(libraryId);
+    });
+
+    const deletedLibraries = initialLibraryIds.filter((libraryId) => {
+      return !selection.includes(libraryId);
+    });
+
+    const requests: Promise<unknown>[] = [];
+
+    if (addedLibraries.length > 0) {
+      requests.push(postLibrariesLibraryIdMutate(addedLibraries));
+    }
+
+    if (deletedLibraries.length > 0) {
+      requests.push(deleteLibrariesLibraryIdBooksBookIdMutate(deletedLibraries));
+    }
+
+    await Promise.all(requests);
 
     onClose();
   };
