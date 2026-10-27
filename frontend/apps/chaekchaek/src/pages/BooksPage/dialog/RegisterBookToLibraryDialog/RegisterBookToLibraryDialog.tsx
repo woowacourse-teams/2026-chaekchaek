@@ -1,10 +1,28 @@
+import { useCallback } from 'react';
+
 import { Button, Checkbox, ConstrainedImgBox, Dialog, List } from '@chaekchaek/design-system';
+
+import { useLoadData } from '@/services/core/useLoadData';
+import { getLibraries } from '@/services/apis/libraries/repository';
+
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import type { RegisterBookToLibraryDialogProps } from './RegisterBookToLibraryDialog.types';
 
-import DummyImg1 from '../../../../../../../packages/design-system/src/components/ConstrainedImgBox/imgs/dummy1.jpg';
-
 export const RegisterBookToLibraryDialog = ({ onClose }: RegisterBookToLibraryDialogProps) => {
+  const { user } = useAuthContext();
+
+  const getLibrariesLoadData = useCallback(async () => {
+    if (!user?.memberId) return;
+    return await getLibraries({ memberId: user?.memberId });
+  }, [user?.memberId]);
+
+  const {
+    status: { data: librariesData },
+  } = useLoadData({
+    queryFn: getLibrariesLoadData,
+  });
+
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
@@ -13,15 +31,9 @@ export const RegisterBookToLibraryDialog = ({ onClose }: RegisterBookToLibraryDi
         </Dialog.Header>
         <Dialog.Body>
           <List>
-            {Array.from({ length: 4 }).map((_, index) => {
-              const library = {
-                name: 'name' + index,
-                items: Array.from({ length: 10 }).map(() => ({
-                  spineImageUrl: DummyImg1,
-                })),
-              };
+            {librariesData?.libraries.map((library) => {
               return (
-                <List.Item>
+                <List.Item key={library.libraryId}>
                   <List.Item.Leading>
                     {library.items.map((item) => {
                       return <ConstrainedImgBox img={item.spineImageUrl} height="40px" />;
