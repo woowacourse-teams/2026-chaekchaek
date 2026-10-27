@@ -298,3 +298,43 @@ export const libraryAfterBookRegistrationResponse = {
   totalCount: 1,
   items: [registeredBookResponse],
 };
+
+export const bookToRemove = {
+  ...registeredBookResponse,
+  isRegisteredInMyLibrary: true,
+};
+
+export const bookRemovalSearchResponse = {
+  totalCount: 1,
+  nextPage: null,
+  items: [bookToRemove],
+};
+
+export const selectedLibraryResponse = {
+  ...unselectedLibraryResponse,
+  totalCount: 1,
+  items: [bookToRemove],
+};
+
+const defaultLibraryForBookRemoval = {
+  ...selectedLibraryResponse,
+  libraryId: 1,
+  name: '내 서재',
+  isDefault: true,
+};
+
+export const libraryAfterBookRemovalResponse = {
+  ...selectedLibraryResponse,
+  totalCount: 0,
+  items: [],
+};
+
+export const librariesBeforeBookRemovalResponse = {
+  memberId: selectedLibraryResponse.memberId,
+  libraries: [defaultLibraryForBookRemoval, selectedLibraryResponse],
+};
+
+export const librariesAfterBookRemovalResponse = {
+  memberId: selectedLibraryResponse.memberId,
+  libraries: [defaultLibraryForBookRemoval, libraryAfterBookRemovalResponse],
+};

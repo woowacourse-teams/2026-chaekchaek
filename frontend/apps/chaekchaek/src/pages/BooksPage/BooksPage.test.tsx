@@ -17,13 +17,19 @@ import { BooksPage } from './BooksPage';
 
 import {
   bookRegistrationSearchResponse,
+  bookRemovalSearchResponse,
   bookToRegister,
+  bookToRemove,
   harrySearchPage1,
   harrySearchPage2,
   librariesBeforeBookRegistrationResponse,
+  librariesAfterBookRemovalResponse,
+  librariesBeforeBookRemovalResponse,
   libraryAfterBookRegistrationResponse,
+  libraryAfterBookRemovalResponse,
   martianSearchPage,
   registeredBookResponse,
+  selectedLibraryResponse,
   unselectedLibraryResponse,
 } from './BooksPage.fixtures';
 
@@ -239,6 +245,82 @@ describe('BooksPage', () => {
     // 선택한 책장에 등록한 책이 표시되는지 확인한다.
     expect(await screen.findByText(unselectedLibraryResponse.name)).toBeVisible();
     expect(await screen.findByText(bookToRegister.title)).toBeVisible();
+  });
+
+  it('선택되어 있던 책장을 해제하고 완료하면 해당 책장에서 책이 제거된다', async () => {
+    const user = userEvent.setup();
+    let isBookRemoved = false;
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, () => {
+        return HttpResponse.json(structuredClone(bookRemovalSearchResponse));
+      }),
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
+        return HttpResponse.json(
+          structuredClone(
+            isBookRemoved ? librariesAfterBookRemovalResponse : librariesBeforeBookRemovalResponse,
+          ),
+        );
+      }),
+      http.delete(
+        `${ENV.APP_API_URL}/api/v1/libraries/${selectedLibraryResponse.libraryId}/books/${bookToRemove.bookId}`,
+        () => {
+          isBookRemoved = true;
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${selectedLibraryResponse.libraryId}`, () => {
+        return HttpResponse.json(
+          structuredClone(
+            isBookRemoved ? libraryAfterBookRemovalResponse : selectedLibraryResponse,
+          ),
+        );
+      }),
+    );
+
+    const { unmount } = renderProvider(<BooksPage />, { auth: defaultLoggedAuthContextValue });
+
+    // 책장에 등록되어 있는 책의 제목을 검색한다.
+    await user.type(screen.getByRole('textbox', { name: '책 검색' }), bookToRemove.title);
+    const bookTitle = await screen.findByText(bookToRemove.title);
+
+    // 검색한 책의 내 서재 담기 버튼을 눌러 책장 선택 팝업을 연다.
+    const bookItem = bookTitle.closest('li');
+    if (!bookItem) throw new Error('검색한 책의 목록 항목을 찾을 수 없습니다.');
+    await user.click(within(bookItem).getByRole('button', { name: '내 서재 담기' }));
+
+    // 책이 등록된 책장이 선택되어 있는지 확인한다.
+    const libraryName = await screen.findByText(selectedLibraryResponse.name);
+    const libraryItem = libraryName.closest('li');
+    if (!libraryItem) throw new Error('선택을 해제할 책장의 목록 항목을 찾을 수 없습니다.');
+    const checkbox = within(libraryItem).getByRole('checkbox');
+    expect(checkbox).toBeChecked();
+
+    // 선택되어 있던 책장을 눌러 선택을 해제한다.
+    await user.click(checkbox);
+    expect(checkbox).not.toBeChecked();
+
+    // 담기 버튼을 눌러 선택 변경을 완료하고 팝업이 닫히는지 확인한다.
+    await user.click(screen.getByRole('button', { name: '담기' }));
+    await waitFor(() => {
+      expect(screen.queryByText('저장할 책장 고르기')).not.toBeInTheDocument();
+    });
+
+    // 선택을 해제한 책장 페이지에 방문한다.
+    unmount();
+    renderProvider(
+      <Routes>
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+      </Routes>,
+      {
+        auth: defaultLoggedAuthContextValue,
+        initialEntries: [`/libraries/${selectedLibraryResponse.libraryId}`],
+      },
+    );
+
+    // 해당 책장에서 책이 제거되어 더 이상 표시되지 않는지 확인한다.
+    expect(await screen.findByText(selectedLibraryResponse.name)).toBeVisible();
+    expect(screen.queryByText(bookToRemove.title)).not.toBeInTheDocument();
   });
 
   it('비로그인 사용자가 내서재에 넣기 버튼 클릭시 로그인 팝업이 뜬다', async () => {
