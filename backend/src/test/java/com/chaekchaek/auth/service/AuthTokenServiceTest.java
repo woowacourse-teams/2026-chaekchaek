@@ -3,9 +3,6 @@ package com.chaekchaek.auth.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -22,18 +19,20 @@ import com.chaekchaek.auth.token.refresh.RefreshTokenHasher;
 import com.chaekchaek.auth.token.refresh.RefreshTokenProvider;
 import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
 import com.chaekchaek.common.exception.BusinessException;
-import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
@@ -41,39 +40,8 @@ import org.slf4j.LoggerFactory;
 @ExtendWith(MockitoExtension.class)
 public class AuthTokenServiceTest {
 
-    @Test
-    @DisplayName("탈퇴 회원의 새 토큰 발급을 거부한다")
-    void should_RejectTokenIssue_When_MemberIsWithdrawn() {
-        // given
-        Member member = Member.create("익명", null, LocalDateTime.now());
-        member.withdraw(LocalDateTime.now());
-        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
-
-        // when & then
-        assertThatThrownBy(() -> authTokenService.issue(1L))
-                .isInstanceOf(BusinessException.class);
-        verifyNoInteractions(accessTokenProvider, refreshTokenProvider);
-    }
-
-    @Test
-    @DisplayName("탈퇴 회원은 남아 있는 유효 리프레시 토큰으로도 재발급할 수 없다")
-    void should_RejectTokenReissue_When_MemberIsWithdrawn() {
-        // given
-        Instant now = Instant.parse("2026-08-13T00:00:00Z");
-        Member member = Member.create("익명", null, LocalDateTime.now());
-        member.withdraw(LocalDateTime.now());
-        RefreshToken token = mock(RefreshToken.class);
-        when(clock.instant()).thenReturn(now);
-        when(refreshTokenHasher.hash("token")).thenReturn("hash");
-        when(refreshTokenRepository.findByTokenHash("hash")).thenReturn(Optional.of(token));
-        when(token.isUsable(LocalDateTime.ofInstant(now, ZoneOffset.UTC))).thenReturn(true);
-        when(token.getMember()).thenReturn(member);
-
-        // when & then
-        assertThatThrownBy(() -> authTokenService.reissue("token"))
-                .isInstanceOf(BusinessException.class);
-        verifyNoInteractions(accessTokenProvider, refreshTokenProvider);
-    }
+    private static final Instant NOW = Instant.parse("2026-08-13T00:00:00Z");
+    private static final LocalDateTime NOW_DATE_TIME = LocalDateTime.ofInstant(NOW, ZoneOffset.UTC);
 
     @Mock
     private MemberRepository memberRepository;
@@ -90,18 +58,55 @@ public class AuthTokenServiceTest {
     @Mock
     private RefreshTokenHasher refreshTokenHasher;
 
-    @Mock
-    private Clock clock;
-
-    @InjectMocks
     private AuthTokenService authTokenService;
+
+    @BeforeEach
+    void setUp() {
+        authTokenService = new AuthTokenService(
+                memberRepository,
+                accessTokenProvider,
+                refreshTokenProvider,
+                refreshTokenRepository,
+                refreshTokenHasher,
+                Clock.fixed(NOW, ZoneOffset.UTC)
+        );
+    }
+
+    @Test
+    @DisplayName("탈퇴 회원의 새 토큰 발급을 거부한다")
+    void should_RejectTokenIssue_When_MemberIsWithdrawn() {
+        // given
+        Member member = MemberFixture.member();
+        member.withdraw(NOW_DATE_TIME);
+        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> authTokenService.issue(1L))
+                .isInstanceOf(BusinessException.class);
+        verifyNoInteractions(accessTokenProvider, refreshTokenProvider);
+    }
+
+    @Test
+    @DisplayName("탈퇴 회원은 남아 있는 유효 리프레시 토큰으로도 재발급할 수 없다")
+    void should_RejectTokenReissue_When_MemberIsWithdrawn() {
+        // given
+        Member member = MemberFixture.member();
+        member.withdraw(NOW_DATE_TIME);
+        RefreshToken token = token(member, "hash");
+        when(refreshTokenHasher.hash("token")).thenReturn("hash");
+        when(refreshTokenRepository.findByTokenHash("hash")).thenReturn(Optional.of(token));
+
+        // when & then
+        assertThatThrownBy(() -> authTokenService.reissue("token"))
+                .isInstanceOf(BusinessException.class);
+        verifyNoInteractions(accessTokenProvider, refreshTokenProvider);
+    }
 
     @Test
     @DisplayName("회원에게 AccessToken과 RefreshToken을 발급한다")
     void should_IssueTokens_When_MemberExists() {
         // given
-        Member member = mock(Member.class);
-        when(member.getAccountStatus()).thenReturn(AccountStatus.ACTIVE);
+        Member member = MemberFixture.savedMember(1L);
 
         when(memberRepository.findById(1L))
                 .thenReturn(Optional.of(member));
@@ -135,21 +140,13 @@ public class AuthTokenServiceTest {
         String oldTokenValue = "old-refresh-token";
         String oldTokenHash = "old-refresh-token-hash";
 
-        Member member = mock(Member.class);
-        when(member.getAccountStatus()).thenReturn(AccountStatus.ACTIVE);
-        RefreshToken savedToken = mock(RefreshToken.class);
+        Member member = MemberFixture.savedMember(1L);
+        RefreshToken savedToken = token(member, oldTokenHash);
 
-        Instant now = Instant.parse("2026-08-13T00:00:00Z");
-        LocalDateTime nowDateTime =
-                LocalDateTime.ofInstant(now, ZoneOffset.UTC);
-
-        when(clock.instant()).thenReturn(now);
         when(refreshTokenHasher.hash(oldTokenValue))
                 .thenReturn(oldTokenHash);
         when(refreshTokenRepository.findByTokenHash(oldTokenHash))
                 .thenReturn(Optional.of(savedToken));
-        when(savedToken.isUsable(nowDateTime)).thenReturn(true);
-        when(savedToken.getMember()).thenReturn(member);
 
         when(accessTokenProvider.issue(member))
                 .thenReturn("new-access-token");
@@ -157,7 +154,7 @@ public class AuthTokenServiceTest {
         IssuedRefreshToken newRefreshToken =
                 new IssuedRefreshToken(
                         "new-refresh-token",
-                        nowDateTime.plusDays(14)
+                        NOW_DATE_TIME.plusDays(14)
                 );
 
         when(refreshTokenProvider.issue(member))
@@ -171,7 +168,7 @@ public class AuthTokenServiceTest {
         assertThat(result.accessToken()).isEqualTo("new-access-token");
         assertThat(result.refreshToken()).isSameAs(newRefreshToken);
 
-        verify(savedToken).revoke(nowDateTime);
+        assertThat(savedToken.getRevokedAt()).isEqualTo(NOW_DATE_TIME);
         verify(accessTokenProvider).issue(member);
         verify(refreshTokenProvider).issue(member);
     }
@@ -196,25 +193,32 @@ public class AuthTokenServiceTest {
         );
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
     @DisplayName("폐기되거나 만료된 Refresh Token 재발급은 거부한다")
-    void should_ThrowException_When_RefreshTokenIsUnusable() {
+    void should_ThrowException_When_RefreshTokenIsUnusable(boolean expired) {
         // given
-        RefreshToken savedToken = mock(RefreshToken.class);
-        Instant now = Instant.parse("2026-08-13T00:00:00Z");
-        LocalDateTime nowDateTime =
-                LocalDateTime.ofInstant(now, ZoneOffset.UTC);
+        RefreshToken savedToken;
+        if (expired) {
+            savedToken = RefreshToken.issue(
+                    MemberFixture.member(),
+                    "unusable-hash",
+                    NOW_DATE_TIME.minusDays(14),
+                    NOW_DATE_TIME
+            );
+        } else {
+            savedToken = token(MemberFixture.member(), "unusable-hash");
+            savedToken.revoke(NOW_DATE_TIME.minusSeconds(1));
+        }
 
-        when(refreshTokenHasher.hash("expired-token"))
-                .thenReturn("expired-hash");
-        when(refreshTokenRepository.findByTokenHash("expired-hash"))
+        when(refreshTokenHasher.hash("unusable-token"))
+                .thenReturn("unusable-hash");
+        when(refreshTokenRepository.findByTokenHash("unusable-hash"))
                 .thenReturn(Optional.of(savedToken));
-        when(clock.instant()).thenReturn(now);
-        when(savedToken.isUsable(nowDateTime)).thenReturn(false);
 
         // when & then
         assertThatThrownBy(
-                () -> authTokenService.reissue("expired-token")
+                () -> authTokenService.reissue("unusable-token")
         ).isInstanceOf(InvalidRefreshTokenException.class);
 
         verifyNoInteractions(
@@ -227,41 +231,30 @@ public class AuthTokenServiceTest {
     @DisplayName("로그아웃하면 Refresh Token을 폐기한다")
     void should_RevokeRefreshToken_When_Logout() {
         // given
-        RefreshToken savedToken = mock(RefreshToken.class);
-
-        Instant instant = Instant.parse("2026-08-13T00:00:00Z");
-        LocalDateTime now =
-                LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+        RefreshToken savedToken = token(MemberFixture.member());
 
         when(refreshTokenHasher.hash("refresh-token"))
                 .thenReturn("refresh-token-hash");
         when(refreshTokenRepository.findByTokenHash("refresh-token-hash"))
                 .thenReturn(Optional.of(savedToken));
-        when(savedToken.isRevoked()).thenReturn(false);
-        when(savedToken.getMember()).thenReturn(mock(Member.class));
-        when(clock.instant()).thenReturn(instant);
 
         // when
         authTokenService.logout("refresh-token");
 
         // then
-        verify(savedToken).revoke(now);
+        assertThat(savedToken.getRevokedAt()).isEqualTo(NOW_DATE_TIME);
     }
 
     @Test
     @DisplayName("로그아웃하면 회원 ID와 함께 로그아웃 이벤트를 기록한다")
     void should_LogLogoutEvent_When_Logout() {
         // given
-        RefreshToken savedToken = mock(RefreshToken.class);
-        Member member = mock(Member.class);
-        when(member.getId()).thenReturn(7L);
+        Member member = MemberFixture.savedMember(7L);
+        RefreshToken savedToken = token(member);
         when(refreshTokenHasher.hash("refresh-token"))
                 .thenReturn("refresh-token-hash");
         when(refreshTokenRepository.findByTokenHash("refresh-token-hash"))
                 .thenReturn(Optional.of(savedToken));
-        when(savedToken.isRevoked()).thenReturn(false);
-        when(savedToken.getMember()).thenReturn(member);
-        when(clock.instant()).thenReturn(Instant.parse("2026-08-13T00:00:00Z"));
 
         Logger logger = (Logger) LoggerFactory.getLogger(AuthTokenService.class);
         ListAppender<ILoggingEvent> appender = new ListAppender<>();
@@ -300,18 +293,27 @@ public class AuthTokenServiceTest {
     @DisplayName("이미 폐기된 Refresh Token으로 로그아웃해도 다시 폐기하지 않는다")
     void should_NotRevokeAgain_When_RefreshTokenIsAlreadyRevoked() {
         // given
-        RefreshToken savedToken = mock(RefreshToken.class);
+        RefreshToken savedToken = token(MemberFixture.member());
+        LocalDateTime revokedAt = NOW_DATE_TIME.minusSeconds(1);
+        savedToken.revoke(revokedAt);
 
         when(refreshTokenHasher.hash("refresh-token"))
                 .thenReturn("refresh-token-hash");
         when(refreshTokenRepository.findByTokenHash("refresh-token-hash"))
                 .thenReturn(Optional.of(savedToken));
-        when(savedToken.isRevoked()).thenReturn(true);
 
         // when
         authTokenService.logout("refresh-token");
 
         // then
-        verify(savedToken, never()).revoke(any());
+        assertThat(savedToken.getRevokedAt()).isEqualTo(revokedAt);
+    }
+
+    private RefreshToken token(Member member) {
+        return token(member, "refresh-token-hash");
+    }
+
+    private RefreshToken token(Member member, String hash) {
+        return RefreshToken.issue(member, hash, NOW_DATE_TIME.minusDays(1), NOW_DATE_TIME.plusDays(14));
     }
 }
