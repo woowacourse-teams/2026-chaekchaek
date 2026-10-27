@@ -33,32 +33,34 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class LibraryReadingRecordCoordinatorTest {
 
     private static final Instant NOW = Instant.parse("2026-08-14T00:00:00Z");
     private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
 
+    private final BookRepository bookRepository = mock(BookRepository.class);
+    private final LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+    private final MemberRepository memberRepository = mock(MemberRepository.class);
+    private final LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
+            bookRepository,
+            libraryItemRepository,
+            memberRepository,
+            CLOCK
+    );
+
     @Test
     @DisplayName("감상 작성 시 서재가 없으면 생성하고 입력한 페이지까지 진도를 전진한다")
     void should_CreateLibraryItemAndAdvanceProgress_When_RecordingReview() {
         // given
         Book book = book(null);
-        BookRepository bookRepository = mock(BookRepository.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        MemberRepository memberRepository = mock(MemberRepository.class);
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book));
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
                 .thenReturn(Optional.empty());
         when(libraryItemRepository.save(any(LibraryItem.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-        LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
-                bookRepository,
-                libraryItemRepository,
-                memberRepository,
-                CLOCK
-        );
 
         // when
         coordinator.recordReview(1L, 2L, 120, 308);
@@ -83,19 +85,10 @@ class LibraryReadingRecordCoordinatorTest {
         Book book = book(308);
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 308, NOW.minusSeconds(60));
         item.changeCurrentPage(200, 308, NOW.minusSeconds(60));
-        BookRepository bookRepository = mock(BookRepository.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        MemberRepository memberRepository = mock(MemberRepository.class);
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book));
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
                 .thenReturn(Optional.of(item));
-        LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
-                bookRepository,
-                libraryItemRepository,
-                memberRepository,
-                CLOCK
-        );
 
         // when
         coordinator.recordReview(1L, 2L, 120, 308);
@@ -113,19 +106,10 @@ class LibraryReadingRecordCoordinatorTest {
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 308, NOW.minusSeconds(60));
         item.rate(new BigDecimal("4.5"), NOW.minusSeconds(60));
         item.clearReadingState();
-        BookRepository bookRepository = mock(BookRepository.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        MemberRepository memberRepository = mock(MemberRepository.class);
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book));
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
                 .thenReturn(Optional.of(item));
-        LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
-                bookRepository,
-                libraryItemRepository,
-                memberRepository,
-                CLOCK
-        );
 
         // when
         coordinator.recordReview(1L, 2L, 120, 308);
@@ -141,17 +125,8 @@ class LibraryReadingRecordCoordinatorTest {
     @DisplayName("감상 페이지가 전체 페이지를 초과하면 독서 상태 오류를 반환한다")
     void should_ThrowInvalidReadingState_When_ReviewPageExceedsTotalPages() {
         // given
-        BookRepository bookRepository = mock(BookRepository.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        MemberRepository memberRepository = mock(MemberRepository.class);
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book(308)));
-        LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
-                bookRepository,
-                libraryItemRepository,
-                memberRepository,
-                CLOCK
-        );
 
         // when & then
         assertThatThrownBy(() -> coordinator.validateReviewPage(1L, 2L, 309, 308))
@@ -167,18 +142,13 @@ class LibraryReadingRecordCoordinatorTest {
     @DisplayName("회원 잠금 후 비활성 상태면 감상 독서 기록을 변경하지 않는다")
     void should_RejectReadingChanges_When_LockedMemberIsInactive(AccountStatus status) {
         // given
-        Member member = mock(Member.class);
-        when(member.getAccountStatus()).thenReturn(status);
-        MemberRepository memberRepository = mock(MemberRepository.class);
+        Member member = activeMember();
+        if (status == AccountStatus.WITHDRAWN) {
+            member.withdraw(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC));
+        } else {
+            ReflectionTestUtils.setField(member, "accountStatus", status);
+        }
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(member));
-        BookRepository bookRepository = mock(BookRepository.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        LibraryReadingRecordCoordinator coordinator = new LibraryReadingRecordCoordinator(
-                bookRepository,
-                libraryItemRepository,
-                memberRepository,
-                CLOCK
-        );
 
         // when & then
         assertThatThrownBy(() -> coordinator.recordReview(1L, 2L, null, null))
