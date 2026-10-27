@@ -1,4 +1,5 @@
-import { useCallback, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import type { ChangeEvent } from 'react';
 
 import { Button, Checkbox, ConstrainedImgBox, Dialog, List } from '@chaekchaek/design-system';
 
@@ -11,7 +12,10 @@ import type { RegisterBookToLibraryDialogProps } from './RegisterBookToLibraryDi
 
 type LibraryId = number;
 
-export const RegisterBookToLibraryDialog = ({ onClose }: RegisterBookToLibraryDialogProps) => {
+export const RegisterBookToLibraryDialog = ({
+  book,
+  onClose,
+}: RegisterBookToLibraryDialogProps) => {
   const { user } = useAuthContext();
 
   const getLibrariesLoadData = useCallback(async () => {
@@ -24,6 +28,17 @@ export const RegisterBookToLibraryDialog = ({ onClose }: RegisterBookToLibraryDi
   } = useLoadData({
     queryFn: getLibrariesLoadData,
   });
+
+  useEffect(() => {
+    if (!librariesData) return;
+    const selection = librariesData.libraries
+      .filter((library) => {
+        return library.items.find((item) => book.isbn === item.isbn13);
+      })
+      .map((library) => library.libraryId);
+
+    setSelection(selection);
+  }, [librariesData]);
 
   const [selection, setSelection] = useState<LibraryId[]>([]);
   const handleChangeSelection = (e: ChangeEvent<HTMLInputElement>) => {

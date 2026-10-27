@@ -101,9 +101,14 @@ export const BooksPage = () => {
     navigation(`/books/${isbn}`);
   };
 
-  const handleRegisterLibrary = async (isbn: string) => {
+  const [selectedBook, setSelectedBook] = useState<{
+    isbn: string;
+    bookId?: number | undefined;
+  } | null>(null);
+  const handleRegisterLibrary = async (book: { isbn: string; bookId?: number | undefined }) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
 
+    setSelectedBook(book);
     handleOpenDialog('RegisterBookToLibraryDialog');
   };
 
@@ -132,7 +137,11 @@ export const BooksPage = () => {
   const renderDialog = (dialog: 'RegisterBookToLibraryDialog' | null) => {
     switch (dialog) {
       case 'RegisterBookToLibraryDialog':
-        return <RegisterBookToLibraryDialog onClose={handleCloseDialog} />;
+        return (
+          selectedBook && (
+            <RegisterBookToLibraryDialog book={selectedBook} onClose={handleCloseDialog} />
+          )
+        );
       default:
         return null;
     }
@@ -209,7 +218,10 @@ export const BooksPage = () => {
                               size="x-small"
                               variant="primary"
                               onClick={() => {
-                                handleRegisterLibrary(item?.isbn13);
+                                handleRegisterLibrary({
+                                  isbn: item.isbn13,
+                                  bookId: item.bookId,
+                                });
                               }}
                             >
                               내 서재 담기
