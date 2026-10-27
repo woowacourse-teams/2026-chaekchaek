@@ -586,6 +586,81 @@ class LibraryServiceTest {
         }
     }
 
+    @Test
+    @DisplayName("ISBN으로 내 별점만 삭제하고 독서 기록을 보존한다")
+    void should_RemoveOnlyMyRating_When_DeletingRatingByIsbn() {
+        // given
+        Book book = book(240);
+        ReflectionTestUtils.setField(book, "id", 10L);
+        LibraryItem item = LibraryItem.create(1L, 10L, ReadingStatus.READING, 240, CLOCK.instant());
+        item.changeCurrentPage(23, 240, CLOCK.instant());
+        item.rate(new BigDecimal("4.5"), CLOCK.instant());
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
+        when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(book));
+        when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 10L)).thenReturn(Optional.of(item));
+
+        // when
+        service().removeRatingByIsbn13(1L, ISBN13);
+
+        // then
+        assertThat(item.getRating()).isNull();
+        assertThat(item.getRatingUpdatedAt()).isNull();
+        assertThat(item.getStatus()).isEqualTo(ReadingStatus.READING);
+        assertThat(item.getCurrentPage()).isEqualTo(23);
+        assertThat(item.getReadingUpdatedAt()).isEqualTo(CLOCK.instant());
+        InOrder order = inOrder(memberRepository, bookRepository, libraryItemRepository);
+        order.verify(memberRepository).findByIdForUpdate(1L);
+        order.verify(bookRepository).findByIsbn13(ISBN13);
+        order.verify(libraryItemRepository).findByMemberIdAndBookIdForUpdate(1L, 10L);
+        verifyNoInteractions(bookResolver, libraryBookRepository);
+    }
+
+    @Test
+    @DisplayName("미등록 ISBN은 외부 조회나 생성 없이 도서 없음 오류를 반환한다")
+    void should_RejectWithoutResolvingBook_When_DeletingUnregisteredIsbnRating() {
+        // given
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
+
+        // when & then
+        assertThatThrownBy(() -> service().removeRatingByIsbn13(1L, ISBN13))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.BOOK_NOT_FOUND);
+        verifyNoInteractions(bookResolver, libraryItemRepository);
+    }
+
+    @Test
+    @DisplayName("공유 기록이 없는 도서의 ISBN 별점 삭제는 기록을 만들지 않는다")
+    void should_LeaveRecordsEmpty_When_DeletingRatingWithoutRecord() {
+        // given
+        Book book = book(240);
+        ReflectionTestUtils.setField(book, "id", 10L);
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
+        when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(book));
+
+        // when
+        service().removeRatingByIsbn13(1L, ISBN13);
+
+        // then
+        verify(libraryItemRepository).findByMemberIdAndBookIdForUpdate(1L, 10L);
+        verify(libraryItemRepository, never()).saveAndFlush(any());
+        verifyNoInteractions(bookResolver, libraryBookRepository);
+    }
+
+    @Test
+    @DisplayName("비활성 회원은 ISBN 조회 전에 별점 삭제를 거절한다")
+    void should_RejectBeforeLookup_When_InactiveMemberDeletesIsbnRating() {
+        // given
+        Member member = memberWithoutNickname();
+        ReflectionTestUtils.setField(member, "accountStatus", AccountStatus.SUSPENDED);
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> service().removeRatingByIsbn13(1L, ISBN13))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(ErrorCode.FORBIDDEN);
+        verifyNoInteractions(bookRepository, bookResolver, libraryItemRepository);
+    }
+
     private void assertLibraryNotFound(long memberId) {
         assertThatThrownBy(() -> service().getPublicLibrary(memberId, 1, null, LibrarySort.RECENT))
                 .isInstanceOfSatisfying(

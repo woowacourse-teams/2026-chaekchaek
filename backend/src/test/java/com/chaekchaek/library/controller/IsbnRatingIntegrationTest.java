@@ -20,6 +20,8 @@ import com.chaekchaek.book.client.yes24.Yes24BookClient;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.repository.BookRepository;
+import com.chaekchaek.library.domain.Library;
+import com.chaekchaek.library.domain.LibraryBook;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.LibraryItemResponse;
@@ -32,9 +34,11 @@ import com.chaekchaek.member.repository.MemberRepository;
 import jakarta.servlet.http.Cookie;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -42,6 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -227,6 +232,98 @@ class IsbnRatingIntegrationTest {
     }
 
     @ParameterizedTest
+    @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+    @DisplayName("ISBN 별점 삭제는 내 별점만 지우고 독서 기록과 책장 배치를 유지한다")
+    void should_RemoveOnlyMyRating_When_DeletingByIsbn(boolean cookie, boolean reading) throws Exception {
+        // given
+        Book book = book();
+        LibraryItem item = LibraryItem.createForRating(member.getId(), book.getId(), new BigDecimal("4.5"), NOW);
+        if (reading) {
+            item = LibraryItem.create(member.getId(), book.getId(), ReadingStatus.READING, 240, NOW);
+            item.changeCurrentPage(23, 240, NOW);
+            item.rate(new BigDecimal("4.5"), NOW);
+            Library library = libraries.saveAndFlush(Library.create(member.getId(), "읽는 책", NOW));
+            placements.saveAndFlush(LibraryBook.create(library.getId(), book.getId(), 1L));
+        }
+        long recordId = records.saveAndFlush(item).getId();
+        Member other = members.saveAndFlush(Member.create("다른 회원", null, LocalDateTime.ofInstant(NOW, ZoneOffset.UTC)));
+        records.saveAndFlush(LibraryItem.createForRating(other.getId(), book.getId(), new BigDecimal("3.5"), NOW));
+        MockHttpServletRequestBuilder request = delete("/api/v1/books/by-isbn/{isbn13}/rating", ISBN13.value());
+        if (cookie) {
+            request.cookie(new Cookie(AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME, token));
+        } else {
+            authenticated(request);
+        }
+
+        // when
+        mockMvc.perform(request).andExpect(status().isNoContent());
+        mockMvc.perform(authenticated(delete("/api/v1/books/by-isbn/{isbn13}/rating", ISBN13.value())))
+                .andExpect(status().isNoContent());
+
+        // then
+        LibraryItem saved = records.findByMemberIdAndBookId(member.getId(), book.getId()).orElseThrow();
+        assertThat(saved.getId()).isEqualTo(recordId);
+        assertThat(saved.getRating()).isNull();
+        assertThat(saved.getRatingUpdatedAt()).isNull();
+        assertThat(saved.getStatus()).isEqualTo(reading ? ReadingStatus.READING : null);
+        assertThat(saved.getCurrentPage()).isEqualTo(reading ? 23 : null);
+        assertThat(saved.getReadingUpdatedAt()).isEqualTo(reading ? NOW : null);
+        assertThat(records.findByMemberIdAndBookId(other.getId(), book.getId()).orElseThrow().getRating())
+                .isEqualByComparingTo("3.5");
+        assertThat(records.count()).isEqualTo(2L);
+        assertThat(placements.count()).isEqualTo(reading ? 1L : 0L);
+        assertThat(books.count()).isEqualTo(1L);
+        assertThat(records.findRatingStatisticsByBookIdIn(List.of(book.getId()))).singleElement()
+                .satisfies(statistics -> assertThat(statistics.getRatingCount()).isEqualTo(1L));
+        verifyNoInteractions(bookClient);
+    }
+
+    @Test
+    @DisplayName("ISBN 별점 삭제는 내 공유 기록이 없으면 새 기록 없이 성공한다")
+    void should_ReturnNoContentWithoutCreatingRecord_When_DeletingWithoutRecord() throws Exception {
+        // given
+        book();
+
+        // when & then
+        mockMvc.perform(authenticated(delete("/api/v1/books/by-isbn/{isbn13}/rating", ISBN13.value())))
+                .andExpect(status().isNoContent());
+        assertThat(records.count()).isZero();
+        assertThat(books.count()).isEqualTo(1L);
+        verifyNoInteractions(bookClient);
+    }
+
+    @Test
+    @DisplayName("미등록 ISBN 삭제는 외부 조회와 도서 생성 없이 도서 없음 오류를 반환한다")
+    void should_ReturnNotFoundWithoutCreatingBook_When_DeletingUnregisteredIsbn() throws Exception {
+        // when & then
+        mockMvc.perform(authenticated(delete("/api/v1/books/by-isbn/{isbn13}/rating", ISBN13.value())))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("BOOK_NOT_FOUND"));
+        assertThat(books.count()).isZero();
+        assertThat(records.count()).isZero();
+        verifyNoInteractions(bookClient);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = AccountStatus.class, names = {"SUSPENDED", "WITHDRAWN"})
+    @DisplayName("비활성 회원의 ISBN 삭제 요청은 기존 별점을 보존한다")
+    void should_PreserveRating_When_InactiveMemberDeletesByIsbn(AccountStatus accountStatus) throws Exception {
+        // given
+        Book book = book();
+        records.saveAndFlush(LibraryItem.createForRating(member.getId(), book.getId(), new BigDecimal("4.5"), NOW));
+        ReflectionTestUtils.setField(member, "accountStatus", accountStatus);
+        members.saveAndFlush(member);
+
+        // when & then
+        mockMvc.perform(authenticated(delete("/api/v1/books/by-isbn/{isbn13}/rating", ISBN13.value())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        assertThat(records.findByMemberIdAndBookId(member.getId(), book.getId()).orElseThrow().getRating())
+                .isEqualByComparingTo("4.5");
+        verifyNoInteractions(bookClient);
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"0", "5.1", "4.55", "null"})
     @DisplayName("잘못된 별점은 도서 조회 전에 기존 API와 같은 오류로 거절한다")
     void should_RejectInvalidRatingBeforeLookup_When_RatingIsInvalid(String rating) throws Exception {
@@ -297,13 +394,20 @@ class IsbnRatingIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"NONE", "INVALID", "GUEST"})
+    @CsvSource({"NONE,false", "INVALID,false", "GUEST,false", "NONE,true", "INVALID,true", "GUEST,true"})
     @DisplayName("인증 실패는 ID 경로와 ISBN 경로에서 같은 상태와 오류 본문을 반환한다")
-    void should_ReturnSameAuthenticationError_When_CredentialsAreInvalid(String credential) throws Exception {
+    void should_ReturnSameAuthenticationError_When_CredentialsAreInvalid(
+            String credential,
+            boolean deleting
+    ) throws Exception {
         // given
         MockHttpServletRequestBuilder legacy = put("/api/v1/library/1/rating")
                 .contentType(MediaType.APPLICATION_JSON).content("{\"rating\":4.5}");
         MockHttpServletRequestBuilder isbn = isbnRating("4.5");
+        if (deleting) {
+            legacy = delete("/api/v1/library/1/rating");
+            isbn = delete("/api/v1/books/by-isbn/{isbn13}/rating", ISBN13.value());
+        }
         if (credential.equals("INVALID")) {
             legacy.header(HttpHeaders.AUTHORIZATION, "Bearer invalid");
             isbn.header(HttpHeaders.AUTHORIZATION, "Bearer invalid");

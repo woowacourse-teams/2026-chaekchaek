@@ -200,6 +200,12 @@ public class LibraryController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/books/by-isbn/{isbn13}/rating")
+    public ResponseEntity<Void> removeRatingByIsbn13(@PathVariable String isbn13) {
+        libraryService.removeRatingByIsbn13(writeMemberId(), new Isbn13(isbn13));
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/members/me/ratings/comparison")
     public ResponseEntity<RatingComparisonResponse> compareRatings(
             @RequestParam @NotBlank String isbn13,
