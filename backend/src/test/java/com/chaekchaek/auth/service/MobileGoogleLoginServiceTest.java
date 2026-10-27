@@ -1,7 +1,6 @@
 package com.chaekchaek.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -101,13 +100,14 @@ class MobileGoogleLoginServiceTest {
                 );
 
         // then
-        assertAll(
-                () -> assertThat(response.accessToken()).isEqualTo("access-token"),
-                () -> assertThat(response.refreshToken()).isEqualTo("refresh-token"),
-                () -> assertThat(response.tokenType()).isEqualTo("Bearer"),
-                () -> assertThat(response.accessTokenExpiresIn()).isEqualTo(1_800),
-                () -> assertThat(response.refreshTokenExpiresIn()).isEqualTo(1_209_600)
+        MobileTokenResponse expected = new MobileTokenResponse(
+                "access-token",
+                "refresh-token",
+                "Bearer",
+                1_800,
+                1_209_600
         );
+        assertThat(response).isEqualTo(expected);
 
         verify(googleIdTokenVerifier).verify("google-id-token");
         verify(socialLoginService).loginOrSignUp(profile);
