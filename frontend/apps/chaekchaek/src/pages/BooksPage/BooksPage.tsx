@@ -213,20 +213,18 @@ export const BooksPage = () => {
                               감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
                             </Chip>
                           )}
-                          {!item.isRegisteredInMyLibrary && (
-                            <Button
-                              size="x-small"
-                              variant="primary"
-                              onClick={() => {
-                                handleRegisterLibrary({
-                                  isbn: item.isbn13,
-                                  bookId: item.bookId,
-                                });
-                              }}
-                            >
-                              내 서재 담기
-                            </Button>
-                          )}
+                          <Button
+                            size="x-small"
+                            variant="primary"
+                            onClick={() => {
+                              handleRegisterLibrary({
+                                isbn: item.isbn13,
+                                bookId: item.bookId,
+                              });
+                            }}
+                          >
+                            내 서재 담기
+                          </Button>
                         </List.Item.Trailing>
                       </List.Item>
                     );
