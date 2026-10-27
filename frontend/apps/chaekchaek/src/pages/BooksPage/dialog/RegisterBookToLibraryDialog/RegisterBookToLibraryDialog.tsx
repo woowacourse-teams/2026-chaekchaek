@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
-import { Button, Checkbox, ConstrainedImgBox, Dialog, List } from '@chaekchaek/design-system';
+import {
+  Button,
+  ButtonStack,
+  Checkbox,
+  ConstrainedImgBox,
+  Dialog,
+  List,
+} from '@chaekchaek/design-system';
 
 import { useLoadData } from '@/services/core/useLoadData';
 import { getLibraries } from '@/services/apis/libraries/repository';
@@ -118,7 +125,9 @@ export const RegisterBookToLibraryDialog = ({
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
-        <Dialog.Header subTitle={`책을 보관할 책장을 선택해 주세요.`}>책장 선택하기</Dialog.Header>
+        <Dialog.Header subTitle={`최근 담은 책장이 선택되어 있어요.`}>
+          담을 책장 고르기
+        </Dialog.Header>
         <Dialog.Body>
           <List>
             {librariesData?.libraries.map((library) => {
@@ -146,9 +155,14 @@ export const RegisterBookToLibraryDialog = ({
           </List>
         </Dialog.Body>
         <Dialog.Footer>
-          <Button block variant="primary" onClick={handleSubmit}>
-            완료
-          </Button>
+          <ButtonStack>
+            <Button block variant="ghost" onClick={onClose}>
+              닫기
+            </Button>
+            <Button block variant="primary" onClick={handleSubmit}>
+              이 책장에 담기
+            </Button>
+          </ButtonStack>
         </Dialog.Footer>
       </Dialog.Container>
     </Dialog>
