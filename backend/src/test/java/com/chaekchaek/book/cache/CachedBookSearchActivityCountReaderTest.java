@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -11,8 +12,11 @@ import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -70,6 +74,60 @@ class CachedBookSearchActivityCountReaderTest {
 
         verify(databaseReader).getActivityCounts(List.of(2L, 3L));
         assertThat(cache.getIfPresent(3L)).isEqualTo(ActivityCounts.ZERO);
+    }
+
+    @Test
+    @DisplayName("여러 검색 결과에 공통으로 포함된 책은 재사용하고 새 책만 조회한다")
+    void should_ReuseCommonBookAndLoadOnlyNewBook_When_SearchResultsOverlap() {
+        BookActivityCountReader databaseReader = mock(BookActivityCountReader.class);
+        Cache<Long, ActivityCounts> cache = newCache();
+        CachedBookSearchActivityCountReader reader = reader(databaseReader, cache);
+        ActivityCounts firstBookCounts = new ActivityCounts(2L, 3L);
+        ActivityCounts secondBookCounts = new ActivityCounts(4L, 5L);
+        ActivityCounts thirdBookCounts = new ActivityCounts(0L, 0L);
+        when(databaseReader.getActivityCounts(List.of(1L, 2L)))
+                .thenReturn(Map.of(1L, firstBookCounts, 2L, secondBookCounts));
+        when(databaseReader.getActivityCounts(List.of(3L)))
+                .thenReturn(Map.of(3L, thirdBookCounts));
+
+        assertThat(reader.getActivityCounts(List.of(1L, 2L)))
+                .containsExactlyInAnyOrderEntriesOf(Map.of(
+                        1L, firstBookCounts,
+                        2L, secondBookCounts
+                ));
+        assertThat(reader.getActivityCounts(List.of(2L, 3L)))
+                .containsExactlyInAnyOrderEntriesOf(Map.of(
+                        2L, secondBookCounts,
+                        3L, thirdBookCounts
+                ));
+
+        verify(databaseReader).getActivityCounts(List.of(1L, 2L));
+        verify(databaseReader).getActivityCounts(List.of(3L));
+        verifyNoMoreInteractions(databaseReader);
+    }
+
+    @Test
+    @DisplayName("TTL이 지나면 캐시 미스로 DB를 다시 조회한다")
+    void should_QueryDatabaseAgain_When_CacheEntryExpires() {
+        BookActivityCountCacheConfiguration configuration = new BookActivityCountCacheConfiguration();
+        AtomicLong tickerNanos = new AtomicLong();
+        Cache<Long, ActivityCounts> cache = configuration.createCache(tickerNanos::get);
+        BookActivityCountReader databaseReader = mock(BookActivityCountReader.class);
+        ActivityCounts firstCounts = new ActivityCounts(1L, 2L);
+        ActivityCounts refreshedCounts = new ActivityCounts(3L, 4L);
+        AtomicInteger databaseCallCount = new AtomicInteger();
+        when(databaseReader.getActivityCounts(List.of(1L)))
+                .thenAnswer(invocation -> databaseCallCount.getAndIncrement() == 0
+                        ? Map.of(1L, firstCounts)
+                        : Map.of(1L, refreshedCounts));
+        CachedBookSearchActivityCountReader reader = reader(databaseReader, cache);
+
+        assertThat(reader.getActivityCounts(List.of(1L))).containsEntry(1L, firstCounts);
+
+        tickerNanos.addAndGet(BookActivityCountCacheConfiguration.CACHE_TTL.plusNanos(1).toNanos());
+
+        assertThat(reader.getActivityCounts(List.of(1L))).containsEntry(1L, refreshedCounts);
+        verify(databaseReader, org.mockito.Mockito.times(2)).getActivityCounts(List.of(1L));
     }
 
     private CachedBookSearchActivityCountReader reader(
