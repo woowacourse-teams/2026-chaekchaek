@@ -114,9 +114,7 @@ export const RegisterBookToLibraryDialog = ({
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
-        <Dialog.Header subTitle={`저장할 책장 하나 이상을 선택해 주세요.`}>
-          저장할 책장 고르기
-        </Dialog.Header>
+        <Dialog.Header subTitle={`책을 보관할 책장을 선택해 주세요.`}>책장 선택하기</Dialog.Header>
         <Dialog.Body>
           <List>
             {librariesData?.libraries.map((library) => {
@@ -145,7 +143,7 @@ export const RegisterBookToLibraryDialog = ({
         </Dialog.Body>
         <Dialog.Footer>
           <Button block variant="primary" onClick={handleSubmit}>
-            담기
+            완료
           </Button>
         </Dialog.Footer>
       </Dialog.Container>
