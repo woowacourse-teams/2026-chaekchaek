@@ -8,9 +8,9 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
@@ -61,8 +61,7 @@ class RefreshTokenProviderTest {
     @DisplayName("저장된 회원에게 Refresh Token을 발급한다")
     void should_IssueRefreshToken_When_MemberIsSaved() {
         // given
-        Member member = mock(Member.class);
-        when(member.getId()).thenReturn(1L);
+        Member member = MemberFixture.savedMember(1L);
 
         doAnswer(invocation -> {
             byte[] bytes = invocation.getArgument(0);
@@ -100,8 +99,7 @@ class RefreshTokenProviderTest {
     @DisplayName("Refresh Token 원문 대신 해시를 저장한다")
     void should_SaveTokenHash_When_RefreshTokenIsIssued() {
         // given
-        Member member = mock(Member.class);
-        when(member.getId()).thenReturn(1L);
+        Member member = MemberFixture.savedMember(1L);
 
         doAnswer(invocation -> {
             byte[] bytes = invocation.getArgument(0);
@@ -129,8 +127,7 @@ class RefreshTokenProviderTest {
     @DisplayName("저장되지 않은 회원에게 Refresh Token을 발급하지 않는다")
     void should_ThrowException_When_MemberIsUnsaved() {
         // given
-        Member member = mock(Member.class);
-        when(member.getId()).thenReturn(null);
+        Member member = MemberFixture.member();
 
         // when & then
         assertThatThrownBy(() ->
@@ -145,8 +142,7 @@ class RefreshTokenProviderTest {
     @DisplayName("Refresh Token을 발급할 때마다 다른 원문을 생성한다")
     void should_IssueDifferentToken_When_IssuedRepeatedly() {
         // given
-        Member member = mock(Member.class);
-        when(member.getId()).thenReturn(1L);
+        Member member = MemberFixture.savedMember(1L);
 
         doAnswer(invocation -> {
             byte[] bytes = invocation.getArgument(0);
