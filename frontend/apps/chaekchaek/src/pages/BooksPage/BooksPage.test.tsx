@@ -148,7 +148,7 @@ describe('BooksPage', () => {
     );
   });
 
-  it('로그인 사용자가 내 서재 담기 버튼 클릭하면 책장 선택하기 팝업이 나타난다', async () => {
+  it('로그인 사용자가 내 서재 담기 버튼 클릭하면 담을 책장 고르기 팝업이 나타난다', async () => {
     server.use(
       http.get(`${ENV.APP_API_URL}/api/v1/books`, () => HttpResponse.json(harrySearchPage1)),
     );
@@ -165,13 +165,14 @@ describe('BooksPage', () => {
     expect(book).not.toBeNull();
     await user.click(within(book!).getByRole('button', { name: '내 서재 담기' }));
 
-    // 책장을 선택할 수 있는 팝업과 담기 버튼이 표시되는지 확인한다.
-    expect(await screen.findByText('책장 선택하기')).toBeVisible();
-    expect(screen.getByText('책을 보관할 책장을 선택해 주세요.')).toBeVisible();
+    // 담을 책장 고르기 팝업의 안내 문구, 책장 선택 항목과 버튼이 표시되는지 확인한다.
+    expect(await screen.findByText('담을 책장 고르기')).toBeVisible();
+    expect(screen.getByText('최근 담은 책장이 선택되어 있어요.')).toBeVisible();
     const checkboxes = screen.getAllByRole('checkbox');
     expect(checkboxes.length).toBeGreaterThan(0);
     checkboxes.forEach((checkbox) => expect(checkbox).toBeVisible());
-    expect(screen.getByRole('button', { name: '완료' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '닫기' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '이 책장에 담기' })).toBeVisible();
   });
 
   it('선택하지 않았던 책장을 선택하고 완료하면 해당 책장에 책이 등록된다', async () => {
@@ -227,10 +228,10 @@ describe('BooksPage', () => {
     await user.click(checkbox);
     expect(checkbox).toBeChecked();
 
-    // 담기 버튼을 눌러 선택을 완료하고 팝업이 닫히는지 확인한다.
-    await user.click(screen.getByRole('button', { name: '완료' }));
+    // 이 책장에 담기 버튼을 눌러 선택을 완료하고 팝업이 닫히는지 확인한다.
+    await user.click(screen.getByRole('button', { name: '이 책장에 담기' }));
     await waitFor(() => {
-      expect(screen.queryByText('저장할 책장 고르기')).not.toBeInTheDocument();
+      expect(screen.queryByText('담을 책장 고르기')).not.toBeInTheDocument();
     });
 
     // 선택한 책장 페이지에 방문한다.
@@ -303,10 +304,10 @@ describe('BooksPage', () => {
     await user.click(checkbox);
     expect(checkbox).not.toBeChecked();
 
-    // 담기 버튼을 눌러 선택 변경을 완료하고 팝업이 닫히는지 확인한다.
-    await user.click(screen.getByRole('button', { name: '완료' }));
+    // 이 책장에 담기 버튼을 눌러 선택 변경을 완료하고 팝업이 닫히는지 확인한다.
+    await user.click(screen.getByRole('button', { name: '이 책장에 담기' }));
     await waitFor(() => {
-      expect(screen.queryByText('책장 선택하기')).not.toBeInTheDocument();
+      expect(screen.queryByText('담을 책장 고르기')).not.toBeInTheDocument();
     });
 
     // 선택을 해제한 책장 페이지에 방문한다.
@@ -393,10 +394,10 @@ describe('BooksPage', () => {
       throw new Error('선택되지 않은 책장의 목록 항목을 찾을 수 없습니다.');
     expect(within(unselectedLibraryItem).getByRole('checkbox')).not.toBeChecked();
 
-    // 책장 선택을 변경하지 않고 담기 버튼을 눌러 완료한다.
-    await user.click(screen.getByRole('button', { name: '완료' }));
+    // 책장 선택을 변경하지 않고 이 책장에 담기 버튼을 눌러 완료한다.
+    await user.click(screen.getByRole('button', { name: '이 책장에 담기' }));
     await waitFor(() => {
-      expect(screen.queryByText('책장 선택하기')).not.toBeInTheDocument();
+      expect(screen.queryByText('담을 책장 고르기')).not.toBeInTheDocument();
     });
 
     // 각 책장에 방문해 기존의 책 등록 상태가 유지되는지 확인한다.
