@@ -21,11 +21,11 @@ import { track } from '@/analytics/track';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { getBooks } from '@/services/apis/books/repository';
-import { postLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
-import { useExecute } from '@/services/core/useExecute';
 
 import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
+
+import { RegisterBookToLibraryDialog } from './dialog/RegisterBookToLibraryDialog';
 
 export const BooksPage = () => {
   const { isAuthenticated } = useAuthContext();
@@ -101,20 +101,10 @@ export const BooksPage = () => {
     navigation(`/books/${isbn}`);
   };
 
-  const { mutate } = useExecute({
-    executeFn: postLibrary,
-  });
   const handleRegisterLibrary = async (isbn: string) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
 
-    await mutate({ isbn13: isbn, status: 'WANT_TO_READ' });
-
-    track('library_add', {
-      source: 'search',
-      status: 'want_to_read',
-    });
-
-    handleMove(isbn);
+    handleOpenDialog('RegisterBookToLibraryDialog');
   };
 
   useEffect(() => {
@@ -129,6 +119,26 @@ export const BooksPage = () => {
       clearTimeout(timeoutId);
     };
   }, [query]);
+
+  const [dialog, setDialog] = useState<'RegisterBookToLibraryDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'RegisterBookToLibraryDialog') => {
+    if (!isAuthenticated) return handleOpenLoginDialog();
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (dialog: 'RegisterBookToLibraryDialog' | null) => {
+    switch (dialog) {
+      case 'RegisterBookToLibraryDialog':
+        return <RegisterBookToLibraryDialog onClose={handleCloseDialog} />;
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
 
   return (
     <Layout>
@@ -222,6 +232,7 @@ export const BooksPage = () => {
           </Split>
         </Container>
 
+        {dialogElement}
         {openLoginDialog && <LoginDialog onClose={handleCloseLoginDialog} />}
       </Main>
     </Layout>
