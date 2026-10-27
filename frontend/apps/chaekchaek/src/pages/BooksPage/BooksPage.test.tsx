@@ -166,12 +166,12 @@ describe('BooksPage', () => {
     await user.click(within(book!).getByRole('button', { name: '내 서재 담기' }));
 
     // 책장을 선택할 수 있는 팝업과 담기 버튼이 표시되는지 확인한다.
-    expect(await screen.findByText('저장할 책장 고르기')).toBeVisible();
-    expect(screen.getByText('저장할 책장 하나 이상을 선택해 주세요.')).toBeVisible();
+    expect(await screen.findByText('책장 선택하기')).toBeVisible();
+    expect(screen.getByText('책을 보관할 책장을 선택해 주세요.')).toBeVisible();
     const checkboxes = screen.getAllByRole('checkbox');
     expect(checkboxes.length).toBeGreaterThan(0);
     checkboxes.forEach((checkbox) => expect(checkbox).toBeVisible());
-    expect(screen.getByRole('button', { name: '담기' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '완료' })).toBeVisible();
   });
 
   it('선택하지 않았던 책장을 선택하고 완료하면 해당 책장에 책이 등록된다', async () => {
@@ -228,7 +228,7 @@ describe('BooksPage', () => {
     expect(checkbox).toBeChecked();
 
     // 담기 버튼을 눌러 선택을 완료하고 팝업이 닫히는지 확인한다.
-    await user.click(screen.getByRole('button', { name: '담기' }));
+    await user.click(screen.getByRole('button', { name: '완료' }));
     await waitFor(() => {
       expect(screen.queryByText('저장할 책장 고르기')).not.toBeInTheDocument();
     });
@@ -304,9 +304,9 @@ describe('BooksPage', () => {
     expect(checkbox).not.toBeChecked();
 
     // 담기 버튼을 눌러 선택 변경을 완료하고 팝업이 닫히는지 확인한다.
-    await user.click(screen.getByRole('button', { name: '담기' }));
+    await user.click(screen.getByRole('button', { name: '완료' }));
     await waitFor(() => {
-      expect(screen.queryByText('저장할 책장 고르기')).not.toBeInTheDocument();
+      expect(screen.queryByText('책장 선택하기')).not.toBeInTheDocument();
     });
 
     // 선택을 해제한 책장 페이지에 방문한다.
@@ -394,9 +394,9 @@ describe('BooksPage', () => {
     expect(within(unselectedLibraryItem).getByRole('checkbox')).not.toBeChecked();
 
     // 책장 선택을 변경하지 않고 담기 버튼을 눌러 완료한다.
-    await user.click(screen.getByRole('button', { name: '담기' }));
+    await user.click(screen.getByRole('button', { name: '완료' }));
     await waitFor(() => {
-      expect(screen.queryByText('저장할 책장 고르기')).not.toBeInTheDocument();
+      expect(screen.queryByText('책장 선택하기')).not.toBeInTheDocument();
     });
 
     // 각 책장에 방문해 기존의 책 등록 상태가 유지되는지 확인한다.
