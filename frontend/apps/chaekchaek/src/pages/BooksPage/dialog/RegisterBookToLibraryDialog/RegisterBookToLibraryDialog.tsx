@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { Button, Checkbox, ConstrainedImgBox, Dialog, List } from '@chaekchaek/design-system';
@@ -11,6 +11,7 @@ import { postLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repos
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import type { RegisterBookToLibraryDialogProps } from './RegisterBookToLibraryDialog.types';
+import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLibraryIdBooksBookId/repository';
 
 type LibraryId = number;
 
@@ -31,16 +32,19 @@ export const RegisterBookToLibraryDialog = ({
     queryFn: getLibrariesLoadData,
   });
 
-  useEffect(() => {
-    if (!librariesData) return;
-    const selection = librariesData.libraries
+  const initialSelection = useMemo(() => {
+    return librariesData?.libraries
       .filter((library) => {
         return library.items.find((item) => book.isbn === item.isbn13);
       })
       .map((library) => library.libraryId);
+  }, [librariesData, book.bookId]);
 
-    setSelection(selection);
-  }, [librariesData]);
+  useEffect(() => {
+    if (!initialSelection) return;
+
+    setSelection(initialSelection);
+  }, [initialSelection]);
 
   const [selection, setSelection] = useState<LibraryId[]>([]);
   const handleChangeSelection = (e: ChangeEvent<HTMLInputElement>) => {
@@ -64,12 +68,39 @@ export const RegisterBookToLibraryDialog = ({
     );
   };
 
+  const deleteBookToLibrary = async () => {
+    const bookId = book.bookId;
+    if (!bookId) return;
+
+    const deletedLibraries = initialSelection?.filter((libraryId) => {
+      return !selection.includes(libraryId);
+    });
+
+    if (!deletedLibraries) return;
+
+    return await Promise.all(
+      deletedLibraries.map((libraryId) =>
+        deleteLibrariesLibraryIdBooksBookId({
+          libraryId,
+          bookId,
+        }),
+      ),
+    );
+  };
+
   const { mutate: postLibrariesLibraryIdMutate } = useExecute({
     executeFn: addBookToLibrary,
   });
 
+  const { mutate: deleteLibrariesLibraryIdBooksBookIdMutate } = useExecute({
+    executeFn: deleteBookToLibrary,
+  });
+
   const handleSubmit = async () => {
-    await postLibrariesLibraryIdMutate();
+    await Promise.all([
+      postLibrariesLibraryIdMutate(),
+      deleteLibrariesLibraryIdBooksBookIdMutate(),
+    ]);
 
     onClose();
   };
