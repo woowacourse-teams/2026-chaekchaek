@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
@@ -165,12 +166,23 @@ class AdminServiceAuthorizationTest {
     }
 
     private Book book() {
-        Book book = mock(Book.class);
-        when(book.getId()).thenReturn(BOOK_ID);
-        when(book.getIsbn13()).thenReturn(ISBN13);
-        when(book.getTitle()).thenReturn("마션");
-        when(book.getCoverImageUrl()).thenReturn("https://example.com/martian.jpg");
-        when(book.getAuthors()).thenReturn(List.of("앤디 위어"));
+        Book book = Book.create(
+                ISBN13,
+                "마션",
+                "https://example.com/martian.jpg",
+                null,
+                null,
+                null,
+                List.of("앤디 위어"),
+                List.of(),
+                "출판사",
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(book, "id", BOOK_ID);
         return book;
     }
 

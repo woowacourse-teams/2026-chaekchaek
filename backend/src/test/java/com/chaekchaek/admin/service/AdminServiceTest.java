@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.admin.domain.RecommendedBook;
@@ -17,8 +16,6 @@ import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
-import com.chaekchaek.common.auth.CurrentActor;
-import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import java.time.Clock;
@@ -29,19 +26,28 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class AdminServiceTest {
 
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-08-28T00:00:00Z"), ZoneOffset.UTC);
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
 
+    private final RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
+    private final BookRepository bookRepository = mock(BookRepository.class);
+    private final BookResolver bookResolver = mock(BookResolver.class);
+    private final AdminService adminService = new AdminService(
+            recommendedBookRepository,
+            bookRepository,
+            bookResolver,
+            CLOCK,
+            mock(PlatformTransactionManager.class)
+    );
+
     @Test
     @DisplayName("최근에 추천한 순서로 책 정보를 반환한다")
     void should_ReturnBooksInLatestRecommendedOrder_When_FindingRecommendedBooks() {
         // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        BookRepository bookRepository = mock(BookRepository.class);
-        AdminService adminService = adminService(recommendedBookRepository, bookRepository, mock(BookResolver.class));
         List<RecommendedBook> recommendedBooks = List.of(
                 recommendedBook(3L, "2026-08-28T00:00:00Z"),
                 recommendedBook(1L, "2026-08-27T00:00:00Z")
@@ -54,21 +60,31 @@ class AdminServiceTest {
         List<RecommendedBookResponse> result = adminService.getRecommendedBooks().books();
 
         // then
-        assertThat(result).extracting(RecommendedBookResponse::bookId).containsExactly(3L, 1L);
-        assertThat(result).extracting(RecommendedBookResponse::title).containsExactly("세 번째 책", "첫 번째 책");
-        assertThat(result).extracting(RecommendedBookResponse::isbn13)
-                .containsExactly("9780000000026", "9780000000002");
-        assertThat(result).extracting(RecommendedBookResponse::createdAt)
-                .containsExactly(Instant.parse("2026-08-28T00:00:00Z"), Instant.parse("2026-08-27T00:00:00Z"));
+        List<RecommendedBookResponse> expected = List.of(
+                new RecommendedBookResponse(
+                        3L,
+                        "9780000000026",
+                        "세 번째 책",
+                        "https://example.com/3.jpg",
+                        List.of("저자 3"),
+                        Instant.parse("2026-08-28T00:00:00Z")
+                ),
+                new RecommendedBookResponse(
+                        1L,
+                        "9780000000002",
+                        "첫 번째 책",
+                        "https://example.com/1.jpg",
+                        List.of("저자 1"),
+                        Instant.parse("2026-08-27T00:00:00Z")
+                )
+        );
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("추천한 책이 없으면 빈 목록을 반환한다")
     void should_ReturnEmptyBooks_When_NoBookIsRecommended() {
         // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        BookRepository bookRepository = mock(BookRepository.class);
-        AdminService adminService = adminService(recommendedBookRepository, bookRepository, mock(BookResolver.class));
         when(recommendedBookRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(List.of());
 
         // when
@@ -83,10 +99,6 @@ class AdminServiceTest {
     @DisplayName("ISBN13으로 조회한 책을 추천 도서로 등록한다")
     void should_SaveRecommendedBook_When_AddingByIsbn13() {
         // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        BookRepository bookRepository = mock(BookRepository.class);
-        BookResolver bookResolver = mock(BookResolver.class);
-        AdminService adminService = adminService(recommendedBookRepository, bookRepository, bookResolver);
         Book book = book(3L, "세 번째 책");
         when(bookResolver.findOrCreate(ISBN13)).thenReturn(book);
         when(bookRepository.findDetailById(3L)).thenReturn(Optional.of(book));
@@ -99,9 +111,15 @@ class AdminServiceTest {
         RecommendedBookResponse result = adminService.addRecommendedBookByIsbn13(ISBN13);
 
         // then
-        assertThat(result.bookId()).isEqualTo(3L);
-        assertThat(result.title()).isEqualTo("세 번째 책");
-        assertThat(result.createdAt()).isEqualTo(CLOCK.instant());
+        RecommendedBookResponse expected = new RecommendedBookResponse(
+                3L,
+                "9780000000026",
+                "세 번째 책",
+                "https://example.com/3.jpg",
+                List.of("저자 3"),
+                CLOCK.instant()
+        );
+        assertThat(result).isEqualTo(expected);
         verify(recommendedBookRepository).saveAndFlush(any(RecommendedBook.class));
     }
 
@@ -109,10 +127,6 @@ class AdminServiceTest {
     @DisplayName("이미 추천 중인 책이라면 추천 도서로 등록하지 않는다")
     void should_NotSaveRecommendedBook_When_BookIsAlreadyRecommended() {
         // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        BookRepository bookRepository = mock(BookRepository.class);
-        BookResolver bookResolver = mock(BookResolver.class);
-        AdminService adminService = adminService(recommendedBookRepository, bookRepository, bookResolver);
         Book book = book(3L, "세 번째 책");
         when(bookResolver.findOrCreate(ISBN13)).thenReturn(book);
         when(bookRepository.findDetailById(3L)).thenReturn(Optional.of(book));
@@ -132,10 +146,6 @@ class AdminServiceTest {
     @DisplayName("이미 10권을 추천했다면 추천 도서로 등록하지 않는다")
     void should_NotSaveRecommendedBook_When_RecommendedBookLimitIsReached() {
         // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        BookRepository bookRepository = mock(BookRepository.class);
-        BookResolver bookResolver = mock(BookResolver.class);
-        AdminService adminService = adminService(recommendedBookRepository, bookRepository, bookResolver);
         Book book = book(3L, "세 번째 책");
         when(bookResolver.findOrCreate(ISBN13)).thenReturn(book);
         when(bookRepository.findDetailById(3L)).thenReturn(Optional.of(book));
@@ -156,10 +166,6 @@ class AdminServiceTest {
     @DisplayName("조회한 책이 저장되어 있지 않다면 추천 도서로 등록하지 않는다")
     void should_NotSaveRecommendedBook_When_BookIsNotStored() {
         // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        BookRepository bookRepository = mock(BookRepository.class);
-        BookResolver bookResolver = mock(BookResolver.class);
-        AdminService adminService = adminService(recommendedBookRepository, bookRepository, bookResolver);
         Book book = book(3L, "세 번째 책");
         when(bookResolver.findOrCreate(ISBN13)).thenReturn(book);
         when(bookRepository.findDetailById(3L)).thenReturn(Optional.empty());
@@ -174,12 +180,6 @@ class AdminServiceTest {
     @DisplayName("추천 중인 책이라면 추천 도서에서 삭제한다")
     void should_DeleteRecommendedBook_When_BookIsRecommended() {
         // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        AdminService adminService = adminService(
-                recommendedBookRepository,
-                mock(BookRepository.class),
-                mock(BookResolver.class)
-        );
         RecommendedBook recommendedBook = recommendedBook(3L, "2026-08-28T00:00:00Z");
         when(recommendedBookRepository.findByBookId(3L)).thenReturn(Optional.of(recommendedBook));
 
@@ -194,12 +194,6 @@ class AdminServiceTest {
     @DisplayName("추천 중인 책이 아니라면 삭제하지 않는다")
     void should_NotDeleteRecommendedBook_When_BookIsNotRecommended() {
         // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        AdminService adminService = adminService(
-                recommendedBookRepository,
-                mock(BookRepository.class),
-                mock(BookResolver.class)
-        );
         when(recommendedBookRepository.findByBookId(3L)).thenReturn(Optional.empty());
 
         // when & then
@@ -216,13 +210,6 @@ class AdminServiceTest {
     @DisplayName("인증 없이 추천 도서를 조회한다")
     void should_ReturnRecommendedBooks_When_ActorIsNotAuthenticated() {
         // given
-        RecommendedBookRepository recommendedBookRepository = mock(RecommendedBookRepository.class);
-        CurrentActorProvider currentActorProvider = mock(CurrentActorProvider.class);
-        AdminService adminService = adminService(
-                recommendedBookRepository,
-                mock(BookRepository.class),
-                mock(BookResolver.class)
-        );
         when(recommendedBookRepository.findAllByOrderByCreatedAtDescIdDesc()).thenReturn(List.of());
 
         // when
@@ -230,21 +217,6 @@ class AdminServiceTest {
 
         // then
         assertThat(result).isEmpty();
-        verifyNoInteractions(currentActorProvider);
-    }
-
-    private static AdminService adminService(
-            RecommendedBookRepository recommendedBookRepository,
-            BookRepository bookRepository,
-            BookResolver bookResolver
-    ) {
-        return new AdminService(
-                recommendedBookRepository,
-                bookRepository,
-                bookResolver,
-                CLOCK,
-                mock(PlatformTransactionManager.class)
-        );
     }
 
     private static RecommendedBook recommendedBook(long bookId, String createdAt) {
@@ -252,12 +224,23 @@ class AdminServiceTest {
     }
 
     private static Book book(long id, String title) {
-        Book book = mock(Book.class);
-        when(book.getId()).thenReturn(id);
-        when(book.getIsbn13()).thenReturn(isbn13(id));
-        when(book.getTitle()).thenReturn(title);
-        when(book.getCoverImageUrl()).thenReturn("https://example.com/" + id + ".jpg");
-        when(book.getAuthors()).thenReturn(List.of("저자 " + id));
+        Book book = Book.create(
+                isbn13(id),
+                title,
+                "https://example.com/" + id + ".jpg",
+                null,
+                null,
+                null,
+                List.of("저자 " + id),
+                List.of(),
+                "출판사",
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(book, "id", id);
         return book;
     }
 
