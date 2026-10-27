@@ -52,7 +52,7 @@ export const RegisterBookToLibraryDialog = ({
 
     setSelection((prev) => {
       const isIncluded = selection.includes(libraryId);
-      return isIncluded ? prev.filter((item) => item === libraryId) : [...prev, libraryId];
+      return isIncluded ? prev.filter((item) => item !== libraryId) : [...prev, libraryId];
     });
   };
 
