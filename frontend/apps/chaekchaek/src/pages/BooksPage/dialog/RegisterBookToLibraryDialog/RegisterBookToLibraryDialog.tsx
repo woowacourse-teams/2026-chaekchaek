@@ -57,8 +57,14 @@ export const RegisterBookToLibraryDialog = ({
   };
 
   const addBookToLibrary = async () => {
+    const addedLibraries = selection?.filter((libraryId) => {
+      return !initialSelection?.includes(libraryId);
+    });
+
+    if (!addedLibraries) return;
+
     return await Promise.all(
-      selection.map((libraryId) =>
+      addedLibraries.map((libraryId) =>
         postLibrariesLibraryId({
           libraryId,
           isbn13: book.isbn,
