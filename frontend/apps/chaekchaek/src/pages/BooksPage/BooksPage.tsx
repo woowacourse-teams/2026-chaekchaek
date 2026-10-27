@@ -189,7 +189,7 @@ export const BooksPage = () => {
                           description={`${item.publisher} · ${item.publishedDate}`}
                         />
                         <List.Item.Trailing>
-                          {(item.reviewCount || item.replyCount) && (
+                          {!!(item.reviewCount || item.replyCount) && (
                             <Chip variant="ghost">
                               감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
                             </Chip>
