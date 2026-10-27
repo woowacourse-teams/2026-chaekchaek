@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState, type ChangeEvent } from 'react';
 
 import { Button, Checkbox, ConstrainedImgBox, Dialog, List } from '@chaekchaek/design-system';
 
@@ -8,6 +8,8 @@ import { getLibraries } from '@/services/apis/libraries/repository';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import type { RegisterBookToLibraryDialogProps } from './RegisterBookToLibraryDialog.types';
+
+type LibraryId = number;
 
 export const RegisterBookToLibraryDialog = ({ onClose }: RegisterBookToLibraryDialogProps) => {
   const { user } = useAuthContext();
@@ -23,6 +25,16 @@ export const RegisterBookToLibraryDialog = ({ onClose }: RegisterBookToLibraryDi
     queryFn: getLibrariesLoadData,
   });
 
+  const [selection, setSelection] = useState<LibraryId[]>([]);
+  const handleChangeSelection = (e: ChangeEvent<HTMLInputElement>) => {
+    const libraryId = Number(e.target.value);
+
+    setSelection((prev) => {
+      const isIncluded = selection.includes(libraryId);
+      return isIncluded ? prev.filter((item) => item === libraryId) : [...prev, libraryId];
+    });
+  };
+
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
@@ -32,6 +44,8 @@ export const RegisterBookToLibraryDialog = ({ onClose }: RegisterBookToLibraryDi
         <Dialog.Body>
           <List>
             {librariesData?.libraries.map((library) => {
+              const isIncluded = selection.includes(library.libraryId);
+
               return (
                 <List.Item key={library.libraryId}>
                   <List.Item.Leading>
@@ -41,7 +55,12 @@ export const RegisterBookToLibraryDialog = ({ onClose }: RegisterBookToLibraryDi
                   </List.Item.Leading>
                   <List.Item.Content title={library.name} content={`${library.items.length}권`} />
                   <List.Item.Trailing>
-                    <Checkbox size="large" />
+                    <Checkbox
+                      size="large"
+                      checked={isIncluded}
+                      value={library.libraryId}
+                      onChange={handleChangeSelection}
+                    />
                   </List.Item.Trailing>
                 </List.Item>
               );
