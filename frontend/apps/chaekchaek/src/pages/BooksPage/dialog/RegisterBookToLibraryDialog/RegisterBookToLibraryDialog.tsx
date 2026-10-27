@@ -5,6 +5,8 @@ import { Button, Checkbox, ConstrainedImgBox, Dialog, List } from '@chaekchaek/d
 
 import { useLoadData } from '@/services/core/useLoadData';
 import { getLibraries } from '@/services/apis/libraries/repository';
+import { useExecute } from '@/services/core/useExecute';
+import { postLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repository';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
@@ -50,6 +52,28 @@ export const RegisterBookToLibraryDialog = ({
     });
   };
 
+  const addBookToLibrary = async () => {
+    return await Promise.all(
+      selection.map((libraryId) =>
+        postLibrariesLibraryId({
+          libraryId,
+          isbn13: book.isbn,
+          status: 'READING',
+        }),
+      ),
+    );
+  };
+
+  const { mutate: postLibrariesLibraryIdMutate } = useExecute({
+    executeFn: addBookToLibrary,
+  });
+
+  const handleSubmit = async () => {
+    await postLibrariesLibraryIdMutate();
+
+    onClose();
+  };
+
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
@@ -83,11 +107,10 @@ export const RegisterBookToLibraryDialog = ({
           </List>
         </Dialog.Body>
         <Dialog.Footer>
-          <Button block variant="primary">
+          <Button block variant="primary" onClick={handleSubmit}>
             담기
           </Button>
         </Dialog.Footer>
-        ;
       </Dialog.Container>
     </Dialog>
   );
