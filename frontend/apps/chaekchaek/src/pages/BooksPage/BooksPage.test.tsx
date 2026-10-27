@@ -126,6 +126,32 @@ describe('BooksPage', () => {
     );
   });
 
+  it('로그인 사용자가 내 서재 담기 버튼 클릭하면 책장 선택하기 팝업이 나타난다', async () => {
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, () => HttpResponse.json(harrySearchPage1)),
+    );
+
+    renderProvider(<BooksPage />, { auth: defaultLoggedAuthContextValue });
+    const user = userEvent.setup();
+
+    // 책 제목을 검색한다.
+    await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+    const bookTitle = await screen.findByText('개소리에 대하여');
+
+    // 검색 결과에서 책의 내 서재 담기 버튼을 클릭한다.
+    const book = bookTitle.closest('li');
+    expect(book).not.toBeNull();
+    await user.click(within(book!).getByRole('button', { name: '내 서재 담기' }));
+
+    // 책장을 선택할 수 있는 팝업과 담기 버튼이 표시되는지 확인한다.
+    expect(await screen.findByText('저장할 책장 고르기')).toBeVisible();
+    expect(screen.getByText('저장할 책장 하나 이상을 선택해 주세요.')).toBeVisible();
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes.length).toBeGreaterThan(0);
+    checkboxes.forEach((checkbox) => expect(checkbox).toBeVisible());
+    expect(screen.getByRole('button', { name: '담기' })).toBeVisible();
+  });
+
   it('비로그인 사용자가 내서재에 넣기 버튼 클릭시 로그인 팝업이 뜬다', async () => {
     renderProvider(<BooksPage />);
 
