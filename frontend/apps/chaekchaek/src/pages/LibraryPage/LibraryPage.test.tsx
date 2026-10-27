@@ -302,6 +302,9 @@ describe('LibraryPage', () => {
     let isBookAdded = false;
 
     server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
+        return HttpResponse.json(structuredClone(myLibraryResponse));
+      }),
       http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
         return HttpResponse.json(
           structuredClone(isBookAdded ? libraryAfterAddResponse : libraryResponse),
@@ -336,7 +339,6 @@ describe('LibraryPage', () => {
     });
 
     try {
-
       // 책장 페이지에 진입한다.
       const { container } = renderProvider(
         <Routes>
