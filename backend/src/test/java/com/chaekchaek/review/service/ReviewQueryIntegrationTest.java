@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.chaekchaek.book.cache.CachedBookSearchActivityCountReader;
+import com.chaekchaek.book.service.BookSearchActivityCountReader;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActor;
@@ -26,12 +28,18 @@ import com.chaekchaek.review.repository.ReviewReactionRepository;
 import com.chaekchaek.review.repository.ReviewRepository;
 import com.chaekchaek.review.service.ReviewService.Feed;
 import com.chaekchaek.review.service.ReviewService.ReviewSort;
+import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,7 +50,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 
-@DataJpaTest
+@DataJpaTest(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @ActiveProfiles("test")
 class ReviewQueryIntegrationTest {
 
@@ -215,6 +223,53 @@ class ReviewQueryIntegrationTest {
         assertThat(response.totalCount()).isZero();
         assertThat(response.items()).isEmpty();
         assertThat(response.nextPage()).isNull();
+    }
+
+    @Test
+    @DisplayName("검색 캐시는 첫 조회에서 감상·답글 집계 SQL을 실행하고 재조회와 공통 책은 재사용한다")
+    void should_QueryTwoAggregateStatementsForMissesAndReuseCachedBookCounts() {
+        // given
+        long firstBookId = BOOK_ID;
+        long secondBookId = 43L;
+        long thirdBookId = 44L;
+        Review firstBookReview = saveReview(firstBookId, ACTOR_ID, null);
+        addReplies(firstBookReview, 2);
+        saveReview(secondBookId, ACTOR_ID, null);
+        flushAndClear();
+
+        Cache<Long, ActivityCounts> cache = Caffeine.<Long, ActivityCounts>newBuilder()
+                .maximumSize(500)
+                .expireAfterWrite(java.time.Duration.ofMinutes(30))
+                .recordStats()
+                .build();
+        BookSearchActivityCountReader cachedReader =
+                new CachedBookSearchActivityCountReader(service, cache);
+        Statistics statistics = entityManager.getEntityManagerFactory()
+                .unwrap(SessionFactory.class)
+                .getStatistics();
+        statistics.clear();
+
+        // when: 검색어 A 결과에 해당하는 책들을 처음 조회
+        var firstSearchCounts = cachedReader.getActivityCounts(List.of(firstBookId, secondBookId));
+
+        // then: 감상 집계와 답글 집계 SQL이 각각 한 번 실행되고, 활동이 없는 책은 0으로 반환
+        assertThat(firstSearchCounts).containsExactlyInAnyOrderEntriesOf(Map.of(
+                firstBookId, new ActivityCounts(1L, 2L),
+                secondBookId, new ActivityCounts(1L, 0L)
+        ));
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(2);
+
+        // when: 같은 결과를 다시 조회하고, 검색어 B에서 공통 책과 새 책을 조회
+        var repeatedSearchCounts = cachedReader.getActivityCounts(List.of(firstBookId, secondBookId));
+        var mixedSearchCounts = cachedReader.getActivityCounts(List.of(secondBookId, thirdBookId));
+
+        // then: 재조회는 SQL을 실행하지 않고, 새 책 ID에 대해서만 두 집계 SQL이 실행됨
+        assertThat(repeatedSearchCounts).isEqualTo(firstSearchCounts);
+        assertThat(mixedSearchCounts).containsExactlyInAnyOrderEntriesOf(Map.of(
+                secondBookId, new ActivityCounts(1L, 0L),
+                thirdBookId, ActivityCounts.ZERO
+        ));
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(4);
     }
 
     @Test

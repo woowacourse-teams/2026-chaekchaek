@@ -15,7 +15,6 @@ import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.repository.LibraryBookRepository;
-import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.time.LocalDate;
 import java.util.List;
@@ -33,8 +32,8 @@ class BookSearchServiceTest {
         // given
         BookSearchClient bookClient = mock(BookSearchClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
+        BookSearchActivityCountReader searchActivityCountReader = mock(BookSearchActivityCountReader.class);
+        BookSearchService service = guestService(bookClient, bookRepository, searchActivityCountReader);
         BookSearchResult searchResult = new BookSearchResult(
                 21,
                 2,
@@ -43,7 +42,7 @@ class BookSearchServiceTest {
         when(bookClient.search("마션", 1)).thenReturn(searchResult);
         when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
+        when(searchActivityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -59,8 +58,8 @@ class BookSearchServiceTest {
         // given
         BookSearchClient bookClient = mock(BookSearchClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
+        BookSearchActivityCountReader searchActivityCountReader = mock(BookSearchActivityCountReader.class);
+        BookSearchService service = guestService(bookClient, bookRepository, searchActivityCountReader);
         BookSearchResult searchResult = new BookSearchResult(
                 21,
                 null,
@@ -69,7 +68,7 @@ class BookSearchServiceTest {
         when(bookClient.search("마션", 1)).thenReturn(searchResult);
         when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
+        when(searchActivityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -85,8 +84,8 @@ class BookSearchServiceTest {
         // given
         BookSearchClient bookClient = mock(BookSearchClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
+        BookSearchActivityCountReader searchActivityCountReader = mock(BookSearchActivityCountReader.class);
+        BookSearchService service = guestService(bookClient, bookRepository, searchActivityCountReader);
         BookSearchItem searchedBook = new BookSearchItem(
                 "클린 코드",
                 "https://example.com/books/cover.jpg",
@@ -105,7 +104,7 @@ class BookSearchServiceTest {
         when(bookClient.search("클린 코드", 1)).thenReturn(searchResult);
         when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
+        when(searchActivityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -129,8 +128,8 @@ class BookSearchServiceTest {
         // given
         BookSearchClient bookClient = mock(BookSearchClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        BookSearchService service = guestService(bookClient, bookRepository, activityCountReader);
+        BookSearchActivityCountReader searchActivityCountReader = mock(BookSearchActivityCountReader.class);
+        BookSearchService service = guestService(bookClient, bookRepository, searchActivityCountReader);
         BookSearchItem searchedBook = new BookSearchItem(
                 "마션",
                 "https://image.example/martian.jpg",
@@ -151,7 +150,7 @@ class BookSearchServiceTest {
         ));
         when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683"))))
                 .thenReturn(List.of(registeredBook));
-        when(activityCountReader.getActivityCounts(List.of(42L)))
+        when(searchActivityCountReader.getActivityCounts(List.of(42L)))
                 .thenReturn(Map.of(42L, new ActivityCounts(2L, 5L)));
 
         // when
@@ -192,13 +191,13 @@ class BookSearchServiceTest {
         // given
         BookSearchClient bookClient = mock(BookSearchClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        BookSearchActivityCountReader searchActivityCountReader = mock(BookSearchActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryBookRepository libraryBookRepository = mock(LibraryBookRepository.class);
         BookSearchService service = new BookSearchService(
                 bookClient,
                 bookRepository,
-                activityCountReader,
+                searchActivityCountReader,
                 currentMemberIdProvider,
                 libraryBookRepository
         );
@@ -209,8 +208,9 @@ class BookSearchServiceTest {
                 null,
                 List.of(searchedBook)
         ));
-        when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(List.of(registeredBook));
-        when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
+        when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(
+                List.of(registeredBook));
+        when(searchActivityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
         when(libraryBookRepository.findPlacedBookIdsByMemberIdAndBookIdIn(1L, List.of(42L)))
                 .thenReturn(List.of(42L));
@@ -289,26 +289,26 @@ class BookSearchServiceTest {
     ) {
         BookSearchClient bookClient = mock(BookSearchClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        BookSearchActivityCountReader searchActivityCountReader = mock(BookSearchActivityCountReader.class);
         when(bookClient.search("책", 1)).thenReturn(response);
         when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of(registeredBooks));
-        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
+        when(searchActivityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(activityCounts);
-        return guestService(bookClient, bookRepository, activityCountReader);
+        return guestService(bookClient, bookRepository, searchActivityCountReader);
     }
 
     private BookSearchService guestService(
             BookSearchClient bookClient,
             BookRepository bookRepository,
-            BookActivityCountReader activityCountReader
+            BookSearchActivityCountReader searchActivityCountReader
     ) {
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
         return new BookSearchService(
                 bookClient,
                 bookRepository,
-                activityCountReader,
+                searchActivityCountReader,
                 currentMemberIdProvider,
                 mock(LibraryBookRepository.class)
         );
@@ -317,13 +317,13 @@ class BookSearchServiceTest {
     private BookItem searchRegisteredBook(OptionalLong memberId, List<Long> placedBookIds) {
         BookSearchClient bookClient = mock(BookSearchClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+        BookSearchActivityCountReader searchActivityCountReader = mock(BookSearchActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
         LibraryBookRepository libraryBookRepository = mock(LibraryBookRepository.class);
         BookSearchService service = new BookSearchService(
                 bookClient,
                 bookRepository,
-                activityCountReader,
+                searchActivityCountReader,
                 currentMemberIdProvider,
                 libraryBookRepository
         );
@@ -334,8 +334,9 @@ class BookSearchServiceTest {
                 null,
                 List.of(searchedBook)
         ));
-        when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(List.of(registeredBook));
-        when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
+        when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(
+                List.of(registeredBook));
+        when(searchActivityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(memberId);
         if (memberId.isPresent()) {
             when(libraryBookRepository.findPlacedBookIdsByMemberIdAndBookIdIn(memberId.getAsLong(), List.of(42L)))
