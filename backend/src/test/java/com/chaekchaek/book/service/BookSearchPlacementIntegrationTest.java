@@ -56,7 +56,7 @@ class BookSearchPlacementIntegrationTest {
     private BookSearchClient bookSearchClient;
 
     @MockitoBean
-    private BookActivityCountReader activityCountReader;
+    private BookSearchActivityCountReader searchActivityCountReader;
 
     @MockitoBean
     private CurrentMemberIdProvider currentMemberIdProvider;
@@ -92,7 +92,7 @@ class BookSearchPlacementIntegrationTest {
         libraryItemRepository.saveAndFlush(LibraryItem.create(2L, book.getId(), ReadingStatus.READING, 300, now));
         libraryBookRepository.create(LibraryBook.create(foreign.getId(), book.getId(), 1L));
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
-        when(activityCountReader.getActivityCounts(anyCollection())).thenReturn(Map.of());
+        when(searchActivityCountReader.getActivityCounts(anyCollection())).thenReturn(Map.of());
         when(bookSearchClient.search("책", 1)).thenReturn(new BookSearchResult(
                 1,
                 null,
