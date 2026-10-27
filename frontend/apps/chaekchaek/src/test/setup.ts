@@ -6,9 +6,10 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 import { server } from '@/mocks/msw/server';
 
 configure({
-  getElementError: (message) => {
+  getElementError: function getElementError(message) {
     const error = new Error(message?.trim().split('\n')[0] ?? '');
     error.name = 'TestingLibraryElementError';
+    Error.captureStackTrace(error, getElementError);
     return error;
   },
 });
