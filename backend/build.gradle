@@ -713,7 +713,7 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/library/bulk-status'             : ['patch': ['204', '400', '401', '403', '404', '422']],
 			'/api/v1/library/{bookId}'                : ['patch': ['200', '400', '401', '403', '404', '409', '422'], 'delete': ['204', '401', '403', '404']],
 			'/api/v1/library/{bookId}/rating'         : ['put': ['200', '400', '401', '403', '404'], 'delete': ['204', '401', '403', '404']],
-			'/api/v1/books/by-isbn/{isbn13}/rating'   : ['put': ['200', '400', '401', '403', '404', '500', '502']],
+			'/api/v1/books/by-isbn/{isbn13}/rating'   : ['put': ['200', '400', '401', '403', '404', '500', '502'], 'delete': ['204', '401', '403', '404']],
 			'/api/v1/members/me/ratings/comparison'   : ['get': ['200', '400', '401', '404']]
 		]
 		requiredLibraryOperations.each { path, expectedOperations ->
@@ -889,7 +889,7 @@ tasks.register('verifyOpenApi') {
 			'/api/v1/library/bulk-status'             : ['patch': ['400', '401', '403', '404', '422']],
 			'/api/v1/library/{bookId}'                : ['patch': ['400', '401', '403', '404', '409', '422'], 'delete': ['401', '403', '404']],
 			'/api/v1/library/{bookId}/rating'         : ['put': ['400', '401', '403', '404'], 'delete': ['401', '403', '404']],
-			'/api/v1/books/by-isbn/{isbn13}/rating'   : ['put': ['400', '401', '403', '404', '500', '502']],
+			'/api/v1/books/by-isbn/{isbn13}/rating'   : ['put': ['400', '401', '403', '404', '500', '502'], 'delete': ['401', '403', '404']],
 			'/api/v1/members/me/ratings/comparison'   : ['get': ['400', '401', '404']]
 		]
 		problemResponseCodes.each { path, operations ->
@@ -1409,6 +1409,19 @@ tasks.register('verifyOpenApi') {
 				|| responseSchema('/api/v1/books/by-isbn/{isbn13}/rating', 'put', '200') != legacyRatingResponse
 				|| isbnRatingOperation?.get('security') != legacyRatingOperation?.get('security')) {
 			throw new GradleException('OpenAPI ISBN and ID rating operations must share request, response, and authentication contracts')
+		}
+		def isbnRemoveRatingOperation = (paths.get('/api/v1/books/by-isbn/{isbn13}/rating') as Map)?.get('delete') as Map
+		def isbnRemoveRatingParameter = (isbnRemoveRatingOperation?.get('parameters') as List)?.find {
+			it.name == 'isbn13' && it.in == 'path'
+		} as Map
+		if (isbnRemoveRatingParameter?.get('required') != true
+				|| (isbnRemoveRatingParameter?.get('schema') as Map)?.get('type') != 'string'
+				|| isbnRemoveRatingOperation?.get('security') != removeRatingOperation?.get('security')
+				|| isbnRemoveRatingOperation?.get('requestBody') != null
+				|| isbnRemoveRatingOperation?.get('deprecated') == true
+				|| isbnRemoveRatingOperation?.get('tags') != ['별점']
+				|| ((isbnRemoveRatingOperation?.get('responses') as Map)?.get('204') as Map)?.get('content') != null) {
+			throw new GradleException('OpenAPI ISBN rating deletion must require a member and ISBN string without request or success bodies')
 		}
 		if (!['status', 'currentPage', 'readingUpdatedAt'].every { name -> requiredNullable(legacyRatingResponse, name) }
 				|| ((legacyRatingResponse?.get('properties') as Map)?.get('rating') as Map)?.get('nullable') == true) {

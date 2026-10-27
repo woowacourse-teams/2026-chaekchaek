@@ -169,9 +169,17 @@ class LibraryControllerTest {
             - 기존 독서 상태, 현재 페이지와 독서 갱신 시각은 유지하고 초기화된 기록도 되살리지 않는다.
             - 등록, 수정과 같은 값 재요청 모두 `200`이며 기존 `PUT /api/v1/library/{bookId}/rating`과
               응답 필드, 타입, nullable 조건과 의미가 같다. 별점만 있으면 `status`, `currentPage`, `readingUpdatedAt`은 `null`이다.
-            - 응답의 `bookId`로 기존 `DELETE /api/v1/library/{bookId}/rating`을 호출할 수 있다.
+            - 삭제는 `DELETE /api/v1/books/by-isbn/{isbn13}/rating`을 사용하며,
+              응답의 `bookId`로 기존 `DELETE /api/v1/library/{bookId}/rating`도 호출할 수 있다.
             - 미등록 도서의 외부 조회 결과가 없으면 `404`, `BOOK_NOT_FOUND`, 외부 조회 실패는 `502`, `EXTERNAL_API_ERROR`다.
             - 도서 확보 후 별점 저장에 실패하면 도서만 남을 수 있다. 같은 요청을 다시 보내면 기존 도서를 재사용한다.
+            """;
+    private static final String ISBN_REMOVE_RATING_SUMMARY = "ISBN으로 도서 별점 삭제";
+    private static final String ISBN_REMOVE_RATING_DESCRIPTION = """
+            인증된 활성 회원이 ISBN으로 내 별점을 삭제한다. 요청 본문 없이 호출하며 성공 시 `204`를 반환한다.
+            독서 기록과 책장 배치는 유지한다. 별점이나 내 공유 기록이 없거나 반복 삭제해도 성공한다.
+            DB에 저장되지 않은 ISBN은 외부 조회나 도서 생성 없이 `404`, `BOOK_NOT_FOUND`를 반환한다.
+            기존 `DELETE /api/v1/library/{bookId}/rating`도 계속 지원한다.
             """;
     private static final String LIBRARY_REMOVE_RATING_SUMMARY = "도서 별점 삭제";
     private static final String LIBRARY_REMOVE_RATING_DESCRIPTION = "인증된 사용자가 내 별점을 삭제한다";
@@ -1136,6 +1144,54 @@ class LibraryControllerTest {
     }
 
     @Test
+    @DisplayName("ISBN으로 내 별점을 삭제하고 빈 응답을 반환한다")
+    void should_RemoveRating_When_DeletingByIsbn() throws Exception {
+        // when & then
+        mockMvc.perform(delete("/api/v1/books/by-isbn/{isbn13}/rating", ISBN13))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""))
+                .andDo(document(
+                        "books-remove-rating-by-isbn",
+                        pathParameters(parameterWithName("isbn13").description("검색, 상세 응답의 ISBN 문자열")),
+                        resource(ResourceSnippetParameters.builder()
+                                .summary(ISBN_REMOVE_RATING_SUMMARY)
+                                .description(ISBN_REMOVE_RATING_DESCRIPTION)
+                                .tag("별점")
+                                .pathParameters(isbnRatingPathParameters())
+                                .build())
+                ));
+        verify(libraryService).removeRatingByIsbn13(MEMBER_ID, new Isbn13(ISBN13));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ErrorCode.class, names = {"UNAUTHORIZED", "FORBIDDEN", "BOOK_NOT_FOUND"})
+    @DisplayName("ISBN 별점 삭제의 인증과 도서 없음 오류를 문서화한다")
+    void should_DocumentProblemDetails_When_DeletingRatingByIsbnFails(ErrorCode errorCode) throws Exception {
+        // given
+        HttpStatus expectedStatus = switch (errorCode) {
+            case UNAUTHORIZED -> HttpStatus.UNAUTHORIZED;
+            case FORBIDDEN -> HttpStatus.FORBIDDEN;
+            case BOOK_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            default -> throw new IllegalArgumentException("지원하지 않는 별점 삭제 오류 코드");
+        };
+        doThrow(new BusinessException(errorCode)).when(libraryService)
+                .removeRatingByIsbn13(MEMBER_ID, new Isbn13(ISBN13));
+
+        // when & then
+        documentProblemDetail(
+                mockMvc.perform(delete("/api/v1/books/by-isbn/{isbn13}/rating", ISBN13)),
+                expectedStatus,
+                errorCode,
+                "/api/v1/books/by-isbn/" + ISBN13 + "/rating",
+                "books-remove-rating-by-isbn-" + errorCode.name().toLowerCase(Locale.ROOT).replace('_', '-'),
+                ISBN_REMOVE_RATING_SUMMARY,
+                ISBN_REMOVE_RATING_DESCRIPTION,
+                isbnRatingPathParameters(),
+                noQueryParameters()
+        );
+    }
+
+    @Test
     @DisplayName("유효한 요청이라면 기준 별점과 가까운 도서를 비교한다")
     void should_ReturnRatingComparison_When_RequestIsValid() throws Exception {
         // given
@@ -2096,7 +2152,7 @@ class LibraryControllerTest {
         return switch (summary) {
             case LIBRARY_CREATE_SUMMARY, LIBRARY_RENAME_SUMMARY, LIBRARY_DELETE_LIBRARY_SUMMARY -> "책장";
             case LIBRARY_BOOK_ADD_SUMMARY, LIBRARY_BOOK_DELETE_SUMMARY -> "책장 도서";
-            case ISBN_RATE_SUMMARY, LIBRARY_REMOVE_RATING_SUMMARY -> "별점";
+            case ISBN_RATE_SUMMARY, ISBN_REMOVE_RATING_SUMMARY, LIBRARY_REMOVE_RATING_SUMMARY -> "별점";
             default -> LIBRARY_TAG;
         };
     }
