@@ -13,7 +13,7 @@ import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.feed.dto.FeedReviewListResponse;
-import com.chaekchaek.member.domain.AccountStatus;
+import com.chaekchaek.feed.dto.FeedReviewResponse;
 import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.dto.AuthorProfileStatus;
 import com.chaekchaek.review.dto.AuthorResponse;
@@ -35,25 +35,26 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class FeedServiceTest {
+
+    private static final Instant CREATED_AT = Instant.parse("2026-09-28T10:00:00Z");
+
+    private final ReviewRepository reviewRepository = mock(ReviewRepository.class);
+    private final ReviewSummaryReader summaryReader = mock(ReviewSummaryReader.class);
+    private final FeedService service = new FeedService(reviewRepository, summaryReader);
 
     @Test
     @DisplayName("전체 피드의 탈퇴 회원 공개 감상은 기존 익명 닉네임으로 표시한다")
     void should_DisplayAnonymousNickname_When_PublicReviewAuthorIsWithdrawn() {
         // given
-        ReviewRepository reviews = mock(ReviewRepository.class);
         BookRepository books = mock(BookRepository.class);
         CurrentActorProvider currentActor = mock(CurrentActorProvider.class);
         ReviewMemberReader members = mock(ReviewMemberReader.class);
-        Review review = mock(Review.class);
-        Book book = mock(Book.class);
-        when(review.getId()).thenReturn(10L);
-        when(review.getBookId()).thenReturn(42L);
-        when(review.getActorId()).thenReturn(7L);
-        when(book.getId()).thenReturn(42L);
-        when(book.getIsbn13()).thenReturn(new Isbn13("9788936433598"));
-        when(reviews.findFeedReviews(any(Pageable.class)))
+        Review review = review(10L, 7L, "탈퇴 회원 감상", false);
+        Book book = book();
+        when(reviewRepository.findFeedReviews(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(review)));
         when(books.findAllWithAuthorsByIdIn(List.of(42L))).thenReturn(List.of(book));
         when(currentActor.findCurrentActor()).thenReturn(Optional.empty());
@@ -78,7 +79,7 @@ class FeedServiceTest {
         );
 
         // when
-        AuthorResponse author = new FeedService(reviews, reader).getReviews(1).reviews().getFirst().author();
+        AuthorResponse author = new FeedService(reviewRepository, reader).getReviews(1).reviews().getFirst().author();
 
         // then
         assertThat(author.displayName()).isEqualTo("탈퇴 전 익명 이름");
@@ -92,11 +93,8 @@ class FeedServiceTest {
     @DisplayName("다음 페이지가 있으면 스포일러와 작성자·책·답글 정보를 함께 반환한다")
     void should_ReturnReviewDetailsAndNextPage_When_MoreReviewsExist() {
         // given
-        ReviewRepository reviewRepository = mock(ReviewRepository.class);
-        ReviewSummaryReader summaryReader = mock(ReviewSummaryReader.class);
-        FeedService service = new FeedService(reviewRepository, summaryReader);
-        Review review = mock(Review.class);
-        Book book = mock(Book.class);
+        Review review = review(123L, 1L, "스포일러 감상", true);
+        Book book = book();
         AuthorResponse author = new AuthorResponse(
                 1L,
                 "독자",
@@ -106,14 +104,6 @@ class FeedServiceTest {
                 ActorType.MEMBER,
                 AuthorProfileStatus.AVAILABLE
         );
-        when(review.getId()).thenReturn(123L);
-        when(review.getContent()).thenReturn("스포일러 감상");
-        when(review.isSpoiler()).thenReturn(true);
-        when(review.getCreatedAt()).thenReturn(Instant.parse("2026-09-28T10:00:00Z"));
-        when(book.getId()).thenReturn(42L);
-        when(book.getIsbn13()).thenReturn(new Isbn13("9788936433598"));
-        when(book.getTitle()).thenReturn("도서 제목");
-        when(book.getCoverImageUrl()).thenReturn("https://example.com/cover.jpg");
         when(reviewRepository.findFeedReviews(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(review), PageRequest.of(0, 20), 21));
         when(summaryReader.read(List.of(review)))
@@ -130,20 +120,28 @@ class FeedServiceTest {
         FeedReviewListResponse result = service.getReviews(1);
 
         // then
-        assertThat(result.totalCount()).isEqualTo(21);
-        assertThat(result.nextPage()).isEqualTo(2);
-        assertThat(result.reviews()).singleElement().satisfies(item -> {
-            assertThat(item.reviewId()).isEqualTo(123L);
-            assertThat(item.content()).isEqualTo("스포일러 감상");
-            assertThat(item.isSpoiler()).isTrue();
-            assertThat(item.createdAt()).isEqualTo(Instant.parse("2026-09-28T10:00:00Z"));
-            assertThat(item.author()).isEqualTo(author);
-            assertThat(item.replyCount()).isEqualTo(3);
-            assertThat(item.bookId()).isEqualTo(42L);
-            assertThat(item.isbn13()).isEqualTo("9788936433598");
-            assertThat(item.bookTitle()).isEqualTo("도서 제목");
-            assertThat(item.bookCoverImageUrl()).isEqualTo("https://example.com/cover.jpg");
-        });
+        FeedReviewListResponse expected = new FeedReviewListResponse(
+                21,
+                2,
+                List.of(new FeedReviewResponse(
+                        123L,
+                        "스포일러 감상",
+                        null,
+                        null,
+                        true,
+                        CREATED_AT,
+                        author,
+                        0,
+                        false,
+                        3,
+                        42L,
+                        "9788936433598",
+                        "도서 제목",
+                        List.of("작가"),
+                        "https://example.com/cover.jpg"
+                ))
+        );
+        assertThat(result).isEqualTo(expected);
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(reviewRepository).findFeedReviews(pageable.capture());
         assertThat(pageable.getValue().getPageNumber()).isZero();
@@ -158,9 +156,6 @@ class FeedServiceTest {
     @DisplayName("범위를 벗어난 페이지는 전체 개수와 빈 목록을 반환한다")
     void should_ReturnEmptyReviewsAndNoNextPage_When_PageIsOutOfRange() {
         // given
-        ReviewRepository reviewRepository = mock(ReviewRepository.class);
-        ReviewSummaryReader summaryReader = mock(ReviewSummaryReader.class);
-        FeedService service = new FeedService(reviewRepository, summaryReader);
         when(reviewRepository.findFeedReviews(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(2, 20), 21));
         when(summaryReader.read(List.of())).thenReturn(List.of());
@@ -172,5 +167,33 @@ class FeedServiceTest {
         assertThat(result.totalCount()).isEqualTo(21);
         assertThat(result.nextPage()).isNull();
         assertThat(result.reviews()).isEmpty();
+    }
+
+    private Book book() {
+        Book book = Book.create(
+                new Isbn13("9788936433598"),
+                "도서 제목",
+                "https://example.com/cover.jpg",
+                null,
+                null,
+                null,
+                List.of("작가"),
+                List.of(),
+                "출판사",
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(book, "id", 42L);
+        return book;
+    }
+
+    private Review review(long id, long actorId, String content, boolean spoiler) {
+        Review review = Review.create(42L, actorId, content, null, null, null, spoiler, false);
+        ReflectionTestUtils.setField(review, "id", id);
+        ReflectionTestUtils.setField(review, "createdAt", CREATED_AT);
+        return review;
     }
 }
