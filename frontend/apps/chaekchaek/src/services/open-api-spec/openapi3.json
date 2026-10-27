@@ -386,7 +386,7 @@
           "서재"
         ],
         "summary": "회원의 전체 책장과 도서 요약 조회",
-        "description": "회원의 모든 책장과 각 책장에 담긴 도서 목록을 조회한다. 로그인 없이 이용할 수 있다.\n책장과 도서는 설정한 순서대로 반환한다. 같은 도서가 여러 책장에 있으면 각 책장에 포함한다.\n빈 책장도 반환하며, 책장이 없으면 libraries는 빈 배열이다.\n책장 수나 도서 수로 결과를 제한하지 않는다. 기존 책장 이름도 그대로 반환한다.\n없는 회원이나 비활성 회원을 조회하면 `404`, `MEMBER_NOT_FOUND`를 반환한다.\n",
+        "description": "회원의 모든 책장과 각 책장에 담긴 도서 목록을 조회한다. 로그인 없이 이용할 수 있다.\n책장과 도서는 설정한 순서대로 반환한다. 같은 도서가 여러 책장에 있으면 각 책장에 포함한다.\n도서별 표지와 저자를 포함하며, 저자가 없으면 authors는 빈 배열이다.\n빈 책장도 반환하며, 책장이 없으면 libraries는 빈 배열이다.\n책장 수나 도서 수로 결과를 제한하지 않는다. 기존 책장 이름도 그대로 반환한다.\n없는 회원이나 비활성 회원을 조회하면 `404`, `MEMBER_NOT_FOUND`를 반환한다.\n",
         "operationId": "libraries-public-collection",
         "parameters": [
           {
@@ -452,13 +452,19 @@
                             "description": "설정한 순서의 도서 목록",
                             "items": {
                               "required": [
+                                "authors",
                                 "bookId",
+                                "coverImageUrl",
                                 "isbn13",
                                 "title",
                                 "spineImageUrl"
                               ],
                               "type": "object",
                               "properties": {
+                                "coverImageUrl": {
+                                  "type": "string",
+                                  "description": "도서 표지 이미지 URL"
+                                },
                                 "isbn13": {
                                   "type": "string",
                                   "description": "상세 조회에 사용하는 ISBN-13",
@@ -473,6 +479,13 @@
                                 "title": {
                                   "type": "string",
                                   "description": "도서 제목"
+                                },
+                                "authors": {
+                                  "type": "array",
+                                  "description": "저자 이름 목록, 없으면 빈 배열",
+                                  "items": {
+                                    "type": "string"
+                                  }
                                 },
                                 "bookId": {
                                   "type": "integer",
@@ -496,7 +509,7 @@
                 },
                 "examples": {
                   "libraries-public-collection": {
-                    "value": "{\"memberId\":1,\"libraries\":[{\"libraryId\":7,\"name\":\"기존의 긴 책장 이름 !\",\"isDefault\":true,\"totalCount\":1,\"items\":[{\"bookId\":42,\"title\":\"책 제목\",\"spineImageUrl\":null,\"isbn13\":\"9788925568683\"}]}]}"
+                    "value": "{\"memberId\":1,\"libraries\":[{\"libraryId\":7,\"name\":\"기존의 긴 책장 이름 !\",\"isDefault\":true,\"totalCount\":1,\"items\":[{\"bookId\":42,\"title\":\"책 제목\",\"coverImageUrl\":\"https://example.com/cover.jpg\",\"spineImageUrl\":null,\"isbn13\":\"9788925568683\",\"authors\":[\"두 번째 저자\",\"첫 번째 저자\"]}]}]}"
                   }
                 }
               }
@@ -607,12 +620,13 @@
           "책장"
         ],
         "summary": "내 서재에 책장 추가",
-        "description": "인증된 회원의 내 서재 맨 뒤에 일반 책장을 추가한다.\n\n- `name`: 1~10자이며 한글, 영문, 숫자, `-`, `_`만 허용한다. 공백은 허용하지 않는다.\n- 같은 회원의 다른 책장과 이름이 중복되면 대소문자를 구분하지 않고 `409`, `LIBRARY_NAME_ALREADY_EXISTS`를 반환한다.\n- 닉네임을 설정하지 않은 회원은 `422`, `NICKNAME_REQUIRED`를 반환한다.\n- `SUSPENDED`, `WITHDRAWN` 회원은 `403`, `FORBIDDEN`을 반환한다.\n- 회원당 책장 수 제한은 없으며 새 책장은 맨 뒤에 추가한다.\n- 성공 응답에는 `isDefault: false`, `totalCount: 0`, `items: []`가 포함된다.\n- 새 이름 규칙은 생성 요청에만 적용하며 기존 책장 이름은 보존한다.\n\n기존 `POST /api/v1/library`는 기본 책장에 도서를 추가한다.\n",
+        "description": "인증된 회원의 내 서재 맨 뒤에 일반 책장을 추가한다.\n\n- `name`: 닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다.\n- 같은 회원의 다른 책장과 이름이 중복되면 대소문자를 구분하지 않고 `409`, `LIBRARY_NAME_ALREADY_EXISTS`를 반환한다.\n- 닉네임을 설정하지 않은 회원은 `422`, `NICKNAME_REQUIRED`를 반환한다.\n- `SUSPENDED`, `WITHDRAWN` 회원은 `403`, `FORBIDDEN`을 반환한다.\n- 회원당 책장 수 제한은 없으며 새 책장은 맨 뒤에 추가한다.\n- 성공 응답에는 `isDefault: false`, `totalCount: 0`, `items: []`가 포함된다.\n- 새 이름 규칙은 생성 요청에만 적용하며 기존 책장 이름은 보존한다.\n\n기존 `POST /api/v1/library`는 기본 책장에 도서를 추가한다.\n",
         "operationId": "library-create",
         "requestBody": {
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
+                "title": "CreateLibraryRequest",
                 "required": [
                   "name"
                 ],
@@ -620,15 +634,17 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "description": "1~10자. 한글, 영문, 숫자, 하이픈(-), 밑줄(_)만 허용하며 공백은 허용하지 않는다",
+                    "description": "닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다",
                     "minLength": 1,
-                    "maxLength": 10,
-                    "pattern": "^[가-힣A-Za-z0-9_-]+$"
+                    "maxLength": 10
                   }
                 }
               },
               "examples": {
                 "library-create": {
+                  "value": "{\"name\":\"올해읽을책\"}\n"
+                },
+                "library-create-unauthorized": {
                   "value": "{\"name\":\"올해읽을책\"}\n"
                 },
                 "library-create-nickname-required": {
@@ -637,13 +653,10 @@
                 "library-create-invalid-request": {
                   "value": "{}"
                 },
-                "library-create-unauthorized": {
+                "library-create-forbidden": {
                   "value": "{\"name\":\"올해읽을책\"}\n"
                 },
                 "library-create-internal-server-error": {
-                  "value": "{\"name\":\"올해읽을책\"}\n"
-                },
-                "library-create-forbidden": {
                   "value": "{\"name\":\"올해읽을책\"}\n"
                 },
                 "library-create-name-already-exists": {
@@ -1392,34 +1405,34 @@
                 }
               },
               "examples": {
-                "library-add-already-exists": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
                 "library-add-book-not-found": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
-                "library-add": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-add-invalid-reading-state": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-add-nickname-required": {
+                "library-add-already-exists": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
                 "library-add-unauthorized": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
-                "library-add-total-pages-conflict": {
+                "library-add-invalid-request": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
                 "library-add-limit-exceeded": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
+                "library-add-invalid-reading-state": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-add": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
                 "library-add-forbidden": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
-                "library-add-invalid-request": {
+                "library-add-nickname-required": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-add-total-pages-conflict": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 }
               }
@@ -1791,11 +1804,11 @@
                   "library-add-already-exists": {
                     "value": "{\"detail\":\"이미 책장에 담긴 책입니다.\",\"instance\":\"/api/v1/library\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"LIBRARY_ITEM_ALREADY_EXISTS\"}"
                   },
-                  "library-add-total-pages-conflict": {
-                    "value": "{\"detail\":\"전체 페이지 수가 기존 정보와 다릅니다.\",\"instance\":\"/api/v1/library\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"TOTAL_PAGES_CONFLICT\"}"
-                  },
                   "library-add-limit-exceeded": {
                     "value": "{\"detail\":\"책장에는 최대 30권까지 등록할 수 있습니다.\",\"instance\":\"/api/v1/library\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"LIBRARY_ITEM_LIMIT_EXCEEDED\"}"
+                  },
+                  "library-add-total-pages-conflict": {
+                    "value": "{\"detail\":\"전체 페이지 수가 기존 정보와 다릅니다.\",\"instance\":\"/api/v1/library\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"TOTAL_PAGES_CONFLICT\"}"
                   }
                 }
               }
@@ -1950,7 +1963,6 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
-                "title": "AddRecommendedBookRequest",
                 "required": [
                   "isbn13"
                 ],
@@ -1963,13 +1975,13 @@
                 }
               },
               "examples": {
-                "recommended-book-add": {
-                  "value": "{\"isbn13\":\"9788925568683\"}"
-                },
                 "recommended-book-add-forbidden": {
                   "value": "{\"isbn13\":\"9788925568683\"}"
                 },
                 "recommended-book-add-limit-exceeded": {
+                  "value": "{\"isbn13\":\"9788925568683\"}"
+                },
+                "recommended-book-add": {
                   "value": "{\"isbn13\":\"9788925568683\"}"
                 }
               }
@@ -2727,7 +2739,6 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
-                "title": "LibraryOrderRequest",
                 "required": [
                   "libraryIds"
                 ],
@@ -2747,20 +2758,20 @@
                 }
               },
               "examples": {
+                "library-order-forbidden": {
+                  "value": "{\"libraryIds\":[20,10]}"
+                },
                 "library-order": {
                   "value": "{\"libraryIds\":[2,1]}"
                 },
-                "library-order-unauthorized": {
-                  "value": "{\"libraryIds\":[20,10]}"
-                },
-                "library-order-forbidden": {
-                  "value": "{\"libraryIds\":[20,10]}"
+                "library-order-invalid": {
+                  "value": "{}"
                 },
                 "library-order-conflict": {
                   "value": "{\"libraryIds\":[20,10]}"
                 },
-                "library-order-invalid": {
-                  "value": "{}"
+                "library-order-unauthorized": {
+                  "value": "{\"libraryIds\":[20,10]}"
                 },
                 "library-order-empty": {
                   "value": "{\"libraryIds\":[]}"
@@ -3262,7 +3273,6 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
-                "title": "AddLibraryItemRequest",
                 "required": [
                   "isbn13",
                   "status"
@@ -3276,37 +3286,40 @@
                   "totalPages": {
                     "type": "number",
                     "description": "전체 페이지 수",
-                    "nullable": true
+                    "nullable": true,
+                    "minimum": 1
                   },
                   "status": {
                     "type": "string",
-                    "description": "초기 읽기 상태"
+                    "description": "초기 읽기 상태",
+                    "enum": [
+                      "WANT_TO_READ",
+                      "READING",
+                      "FINISHED"
+                    ]
                   }
                 }
               },
               "examples": {
-                "library-book-add": {
+                "library-book-add-external-api-error": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-book-add-invalid-request": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":0}\n"
                 },
                 "library-book-add-limit-exceeded": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
-                },
-                "library-book-add-total-pages-conflict": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
                 "library-book-add-library-not-found": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
+                "library-book-add": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
                 "library-book-add-invalid-reading-state": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
-                "library-book-add-already-exists": {
-                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                "library-book-add-invalid-request": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":0}\n"
                 },
-                "library-book-add-book-not-found": {
+                "library-book-add-already-exists": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
                 "library-book-add-forbidden": {
@@ -3315,7 +3328,10 @@
                 "library-book-add-unauthorized": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 },
-                "library-book-add-external-api-error": {
+                "library-book-add-total-pages-conflict": {
+                  "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
+                },
+                "library-book-add-book-not-found": {
                   "value": "{\"isbn13\":\"9788936433598\",\"status\":\"READING\",\"totalPages\":368}\n"
                 }
               }
@@ -3690,11 +3706,11 @@
                   "library-book-add-limit-exceeded": {
                     "value": "{\"detail\":\"책장에는 최대 30권까지 등록할 수 있습니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"LIBRARY_ITEM_LIMIT_EXCEEDED\"}"
                   },
-                  "library-book-add-total-pages-conflict": {
-                    "value": "{\"detail\":\"전체 페이지 수가 기존 정보와 다릅니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"TOTAL_PAGES_CONFLICT\"}"
-                  },
                   "library-book-add-already-exists": {
                     "value": "{\"detail\":\"이미 책장에 담긴 책입니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"LIBRARY_ITEM_ALREADY_EXISTS\"}"
+                  },
+                  "library-book-add-total-pages-conflict": {
+                    "value": "{\"detail\":\"전체 페이지 수가 기존 정보와 다릅니다.\",\"instance\":\"/api/v1/libraries/7\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"TOTAL_PAGES_CONFLICT\"}"
                   }
                 }
               }
@@ -4091,7 +4107,7 @@
           "책장"
         ],
         "summary": "책장 이름 변경",
-        "description": "인증된 회원이 소유한 책장의 이름을 변경한다. 기본 책장도 변경할 수 있으며 기본 여부, 순서와 도서 배치는 유지한다.\n\n- `name`: 1~10자이며 한글, 영문, 숫자, `-`, `_`만 허용한다. 공백은 허용하지 않는다.\n- 같은 회원의 다른 책장과 이름이 중복되면 대소문자를 구분하지 않고 `409`, `LIBRARY_NAME_ALREADY_EXISTS`를 반환한다.\n- 다른 책장과 중복되지 않으면 현재 이름의 대소문자만 바꾸는 요청도 허용한다.\n- 현재와 같은 이름이면 수정 시각과 변경 이벤트를 갱신하지 않고 성공한다.\n- 기본 책장 이름 변경은 회원 닉네임을 변경하지 않는다.\n- 성공 응답은 본문 없는 `204`다.\n",
+        "description": "인증된 회원이 소유한 책장의 이름을 변경한다. 기본 책장도 변경할 수 있으며 기본 여부, 순서와 도서 배치는 유지한다.\n\n- `name`: 닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다.\n- 같은 회원의 다른 책장과 이름이 중복되면 대소문자를 구분하지 않고 `409`, `LIBRARY_NAME_ALREADY_EXISTS`를 반환한다.\n- 다른 책장과 중복되지 않으면 현재 이름의 대소문자만 바꾸는 요청도 허용한다.\n- 현재와 같은 이름이면 수정 시각과 변경 이벤트를 갱신하지 않고 성공한다.\n- 기본 책장 이름 변경은 회원 닉네임을 변경하지 않는다.\n- 성공 응답은 본문 없는 `204`다.\n",
         "operationId": "library-rename",
         "parameters": [
           {
@@ -4117,33 +4133,32 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "description": "1~10자. 한글, 영문, 숫자, 하이픈(-), 밑줄(_)만 허용하며 공백은 허용하지 않는다",
+                    "description": "닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다",
                     "minLength": 1,
-                    "maxLength": 10,
-                    "pattern": "^[가-힣A-Za-z0-9_-]+$"
+                    "maxLength": 10
                   }
                 }
               },
               "examples": {
+                "library-rename-forbidden": {
+                  "value": "{\"name\":\"읽을책\"}\n"
+                },
+                "library-rename-library-not-found": {
+                  "value": "{\"name\":\"읽을책\"}\n"
+                },
                 "library-rename-unauthorized": {
                   "value": "{\"name\":\"읽을책\"}\n"
                 },
                 "library-rename-internal-server-error": {
                   "value": "{\"name\":\"읽을책\"}\n"
                 },
-                "library-rename-forbidden": {
-                  "value": "{\"name\":\"읽을책\"}\n"
-                },
-                "library-rename": {
-                  "value": "{\"name\":\"읽을책\"}\n"
-                },
-                "library-rename-invalid-request": {
-                  "value": "{\"name\":\"읽을책\"}\n"
-                },
                 "library-rename-name-already-exists": {
                   "value": "{\"name\":\"읽을책\"}\n"
                 },
-                "library-rename-library-not-found": {
+                "library-rename": {
+                  "value": "{\"name\":\"읽을 책\"}\n"
+                },
+                "library-rename-invalid-request": {
                   "value": "{\"name\":\"읽을책\"}\n"
                 }
               }
@@ -4494,13 +4509,13 @@
                 "library-bulk-delete-unauthorized": {
                   "value": "{\"bookIds\":[10,20]}\n"
                 },
+                "library-bulk-delete": {
+                  "value": "{\"bookIds\":[10,20]}\n"
+                },
                 "library-bulk-delete-forbidden": {
                   "value": "{\"bookIds\":[10,20]}\n"
                 },
                 "library-bulk-delete-invalid-request": {
-                  "value": "{\"bookIds\":[10,20]}\n"
-                },
-                "library-bulk-delete": {
                   "value": "{\"bookIds\":[10,20]}\n"
                 },
                 "library-bulk-delete-not-found": {
@@ -4733,6 +4748,7 @@
           "content": {
             "application/json;charset=UTF-8": {
               "schema": {
+                "title": "BulkUpdateLibraryStatusRequest",
                 "required": [
                   "bookIds",
                   "status"
@@ -4762,22 +4778,22 @@
                 }
               },
               "examples": {
+                "library-bulk-status": {
+                  "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
+                },
+                "library-bulk-status-invalid-request": {
+                  "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
+                },
                 "library-bulk-status-forbidden": {
                   "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
                 },
                 "library-bulk-status-invalid-reading-state": {
                   "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
                 },
-                "library-bulk-status-not-found": {
-                  "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
-                },
                 "library-bulk-status-unauthorized": {
                   "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
                 },
-                "library-bulk-status-invalid-request": {
-                  "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
-                },
-                "library-bulk-status": {
+                "library-bulk-status-not-found": {
                   "value": "{\"bookIds\":[10,20],\"status\":\"WANT_TO_READ\"}\n"
                 }
               }
@@ -5275,25 +5291,25 @@
                 }
               },
               "examples": {
-                "library-update-invalid-reading-state": {
+                "library-update-total-pages-conflict": {
                   "value": "{\"currentPage\":150,\"totalPages\":368}\n"
                 },
-                "library-update-invalid-request": {
+                "library-update-forbidden": {
+                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
+                },
+                "library-update-invalid-reading-state": {
                   "value": "{\"currentPage\":150,\"totalPages\":368}\n"
                 },
                 "library-update-not-found": {
                   "value": "{\"currentPage\":150,\"totalPages\":368}\n"
                 },
-                "library-update-unauthorized": {
-                  "value": "{\"currentPage\":150,\"totalPages\":368}\n"
-                },
-                "library-update-total-pages-conflict": {
+                "library-update-invalid-request": {
                   "value": "{\"currentPage\":150,\"totalPages\":368}\n"
                 },
                 "library-update": {
                   "value": "{\"currentPage\":150,\"totalPages\":368}\n"
                 },
-                "library-update-forbidden": {
+                "library-update-unauthorized": {
                   "value": "{\"currentPage\":150,\"totalPages\":368}\n"
                 }
               }
@@ -5856,7 +5872,7 @@
           "회원"
         ],
         "summary": "회원 탈퇴",
-        "description": "유효한 Access Token이 없으면 인증 오류를 반환한다",
+        "description": "회원을 탈퇴 처리하고 인증 토큰을 폐기한다. 기존 감상과 댓글은 유지된다",
         "operationId": "member-withdraw",
         "responses": {
           "204": {
@@ -6227,11 +6243,11 @@
                   }
                 },
                 "examples": {
-                  "reply-delete-deleted-reply": {
-                    "value": "{\"detail\":\"답글을 찾을 수 없습니다.\",\"instance\":\"/api/v1/replies/409\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"REPLY_NOT_FOUND\"}"
-                  },
                   "reply-delete-not-found": {
                     "value": "{\"detail\":\"답글을 찾을 수 없습니다.\",\"instance\":\"/api/v1/replies/404\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"REPLY_NOT_FOUND\"}"
+                  },
+                  "reply-delete-deleted-reply": {
+                    "value": "{\"detail\":\"답글을 찾을 수 없습니다.\",\"instance\":\"/api/v1/replies/409\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"REPLY_NOT_FOUND\"}"
                   }
                 }
               }
@@ -6289,17 +6305,17 @@
                 "reply-update-not-found": {
                   "value": "{\"content\":\"답글\"}"
                 },
-                "reply-update-deleted-reply": {
-                  "value": "{\"content\":\"답글\"}"
+                "reply-update-invalid-request": {
+                  "value": "{}"
                 },
                 "reply-update-forbidden": {
                   "value": "{\"content\":\"답글\"}"
                 },
-                "reply-update-unauthorized": {
+                "reply-update-deleted-reply": {
                   "value": "{\"content\":\"답글\"}"
                 },
-                "reply-update-invalid-request": {
-                  "value": "{}"
+                "reply-update-unauthorized": {
+                  "value": "{\"content\":\"답글\"}"
                 },
                 "reply-update": {
                   "value": "{\"content\":\"수정한 답글\"}"
@@ -6907,29 +6923,29 @@
                 }
               },
               "examples": {
-                "review-update-forbidden": {
-                  "value": "{\"content\":\"수정\"}"
+                "review-update-invalid-reading-state": {
+                  "value": "{\"currentPage\":100}"
                 },
                 "review-update": {
                   "value": "{\"content\":\"수정한 감상\",\"isSpoiler\":true}"
                 },
-                "review-update-unauthorized": {
+                "review-update-not-found": {
                   "value": "{\"content\":\"감상\"}"
                 },
                 "review-update-deleted-resource": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-update-total-pages-conflict": {
-                  "value": "{\"currentPage\":100}"
-                },
                 "review-update-invalid-request": {
                   "value": "{}"
                 },
-                "review-update-not-found": {
-                  "value": "{\"content\":\"감상\"}"
-                },
-                "review-update-invalid-reading-state": {
+                "review-update-total-pages-conflict": {
                   "value": "{\"currentPage\":100}"
+                },
+                "review-update-forbidden": {
+                  "value": "{\"content\":\"수정\"}"
+                },
+                "review-update-unauthorized": {
+                  "value": "{\"content\":\"감상\"}"
                 }
               }
             }
@@ -7631,7 +7647,7 @@
           "인증"
         ],
         "summary": "모바일 Apple 로그인",
-        "description": "Apple 인증 필수값이 없거나 비어 있으면 요청을 거부한다",
+        "description": "Apple 인증 정보로 자체 Access Token과 Refresh Token을 발급한다",
         "operationId": "mobile-apple-login",
         "requestBody": {
           "content": {
@@ -7659,11 +7675,11 @@
                 }
               },
               "examples": {
-                "mobile-apple-login-invalid-request": {
-                  "value": "{\n  \"identityToken\": \"\",\n  \"authorizationCode\": \"\",\n  \"nonce\": \"\"\n}\n"
-                },
                 "mobile-apple-login": {
                   "value": "{\n  \"identityToken\": \"apple-identity-token\",\n  \"authorizationCode\": \"apple-authorization-code\",\n  \"nonce\": \"raw-nonce\"\n}\n"
+                },
+                "mobile-apple-login-invalid-request": {
+                  "value": "{\n  \"identityToken\": \"\",\n  \"authorizationCode\": \"\",\n  \"nonce\": \"\"\n}\n"
                 }
               }
             }
@@ -7925,7 +7941,7 @@
           "인증"
         ],
         "summary": "모바일 로그아웃",
-        "description": "Refresh Token을 폐기한다. 클라이언트는 저장한 Access Token과 Refresh Token을 함께 삭제한다",
+        "description": "Refresh Token이 없거나 비어 있으면 요청을 거부한다",
         "operationId": "mobile-logout",
         "requestBody": {
           "content": {
@@ -7943,11 +7959,11 @@
                 }
               },
               "examples": {
-                "mobile-logout": {
-                  "value": "{\n  \"refreshToken\": \"refresh-token\"\n}\n"
-                },
                 "mobile-logout-invalid-request": {
                   "value": "{\n  \"refreshToken\": \"\"\n}\n"
+                },
+                "mobile-logout": {
+                  "value": "{\n  \"refreshToken\": \"refresh-token\"\n}\n"
                 }
               }
             }
@@ -8015,7 +8031,7 @@
           "인증"
         ],
         "summary": "모바일 토큰 재발급",
-        "description": "Refresh Token으로 새 Access Token과 Refresh Token을 발급한다. 기존 Refresh Token은 재발급 후 폐기되며 만료 값의 단위는 초다",
+        "description": "Refresh Token이 없거나 비어 있으면 요청을 거부한다",
         "operationId": "mobile-token-reissue",
         "requestBody": {
           "content": {
@@ -8033,11 +8049,11 @@
                 }
               },
               "examples": {
-                "mobile-token-reissue": {
-                  "value": "{\n  \"refreshToken\": \"old-refresh-token\"\n}\n"
-                },
                 "mobile-token-reissue-invalid-request": {
                   "value": "{\n  \"refreshToken\": \"\"\n}\n"
+                },
+                "mobile-token-reissue": {
+                  "value": "{\n  \"refreshToken\": \"old-refresh-token\"\n}\n"
                 }
               }
             }
@@ -8145,19 +8161,19 @@
         "tags": [
           "인증"
         ],
-        "summary": "웹 OAuth 게스트 컨텍스트 저장",
-        "description": "브라우저가 OAuth 링크로 이동하기 전에 게스트 토큰을 검증하고 로그인 세션에 게스트 Actor를 임시 저장한다",
+        "summary": "웹 OAuth 게스트 컨텍스트 저장 실패",
+        "description": "유효하지 않거나 만료된 게스트 토큰은 OAuth 로그인 컨텍스트로 저장하지 않는다",
         "operationId": "oauth2-guest-context",
         "parameters": [
           {
             "name": "X-Guest-Token",
             "in": "header",
-            "description": "OAuth 로그인 후 기록 이전에 사용할 현재 게스트 토큰",
+            "description": "검증할 게스트 토큰",
             "required": true,
             "schema": {
               "type": "string"
             },
-            "example": "guest-token"
+            "example": "invalid-token"
           }
         ],
         "responses": {
@@ -9106,20 +9122,20 @@
                 }
               },
               "examples": {
-                "review-create-book-not-found": {
+                "review-create-total-pages-conflict": {
                   "value": "{\"content\":\"감상\"}"
                 },
                 "review-create-unauthorized": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-create-total-pages-conflict": {
+                "review-create-book-not-found": {
+                  "value": "{\"content\":\"감상\"}"
+                },
+                "review-create-invalid-reading-state": {
                   "value": "{\"content\":\"감상\"}"
                 },
                 "review-create": {
                   "value": "{\"content\":\"인상 깊었다.\",\"quote\":\"화성에서 살아남아야 한다.\",\"chapter\":\"3장\",\n\"currentPage\":120,\"totalPages\":308,\"isSpoiler\":false}\n"
-                },
-                "review-create-invalid-reading-state": {
-                  "value": "{\"content\":\"감상\"}"
                 },
                 "review-create-invalid-request": {
                   "value": "{}"
@@ -9606,7 +9622,7 @@
           "기존 서재 API"
         ],
         "summary": "도서 별점 등록",
-        "description": "인증된 회원이 도서에 0.1부터 5.0까지 별점을 등록한다. 책장 배치와 독서 기록을 새로 만들지 않으며\n기존 독서 기록은 유지하고 초기화된 기록도 되살리지 않는다. 책장 한도와 닉네임 설정 여부에 영향을 받지 않는다.\n별점만 있는 응답의 status, currentPage, readingUpdatedAt은 null이다. 기존 URI와 응답 필드 구조를 유지한다.\n",
+        "description": "사용 중단 권고 대상이다. `PUT /api/v1/books/by-isbn/{isbn13}/rating`으로 전환한다.\n요청 본문과 성공 응답은 같으며 기존 ID 경로도 계속 지원한다. 삭제 API는 사용 중단 권고 대상이 아니다.\n\n인증된 회원이 도서에 0.1부터 5.0까지 별점을 등록한다. 책장 배치와 독서 기록을 새로 만들지 않으며\n기존 독서 기록은 유지하고 초기화된 기록도 되살리지 않는다. 책장 한도와 닉네임 설정 여부에 영향을 받지 않는다.\n별점만 있는 응답의 status, currentPage, readingUpdatedAt은 null이다. 기존 URI와 응답 필드 구조를 유지한다.\n",
         "operationId": "library-rate",
         "parameters": [
           {
@@ -9640,16 +9656,10 @@
                 }
               },
               "examples": {
-                "library-rate": {
-                  "value": "{\"rating\":4.5}\n"
-                },
                 "library-rate-unauthorized": {
                   "value": "{\"rating\":4.5}\n"
                 },
-                "library-rate-invalid-request": {
-                  "value": "{\"rating\":4.5}\n"
-                },
-                "library-rate-book-not-found": {
+                "library-rate": {
                   "value": "{\"rating\":4.5}\n"
                 },
                 "library-rate-forbidden": {
@@ -9657,6 +9667,12 @@
                 },
                 "library-rate-without-reading-state": {
                   "value": "{\"rating\":4.5}"
+                },
+                "library-rate-book-not-found": {
+                  "value": "{\"rating\":4.5}\n"
+                },
+                "library-rate-invalid-request": {
+                  "value": "{\"rating\":4.5}\n"
                 }
               }
             }
@@ -9982,6 +9998,7 @@
             }
           }
         },
+        "deprecated": true,
         "security": [
           {
             "bearerAuth": []
@@ -9993,7 +10010,7 @@
       },
       "delete": {
         "tags": [
-          "기존 서재 API"
+          "별점"
         ],
         "summary": "도서 별점 삭제",
         "description": "인증된 사용자가 내 별점을 삭제한다",
@@ -10199,13 +10216,13 @@
                 "member-anonymity-update-unauthorized": {
                   "value": "{\"displayAnonymous\":true}"
                 },
-                "member-anonymity-update-nickname-required": {
+                "member-anonymity-update": {
                   "value": "{\"displayAnonymous\":false}"
                 },
                 "member-anonymity-update-invalid": {
                   "value": "{}"
                 },
-                "member-anonymity-update": {
+                "member-anonymity-update-nickname-required": {
                   "value": "{\"displayAnonymous\":false}"
                 }
               }
@@ -10427,7 +10444,7 @@
           "회원"
         ],
         "summary": "닉네임 설정",
-        "description": "중복되지 않은 공개 닉네임을 설정한다. 첫 닉네임은 1~10자이며 한글 완성형, 영문,\n숫자, _, -만 허용한다. 첫 저장과 기본 책장 생성은 함께 완료되며 같은 이름의 내 책장이\n있으면 이름과 순서를 유지해 기본으로 승격한다. 기본 책장이 이미 있거나 이후 닉네임을\n변경하면 책장을 새로 만들거나 이름을 바꾸지 않는다. 익명 표시 여부는 유지한다.\n별도 CSRF 토큰 없이 Bearer 또는 Access Token 쿠키로 인증한다.\n",
+        "description": "중복되지 않은 공개 닉네임을 설정한다. 닉네임은 공백뿐이 아닌 1~10자를 허용한다.\n첫 저장과 기본 책장 생성은 함께 완료되며 같은 이름의 내 책장이\n있으면 이름과 순서를 유지해 기본으로 승격한다. 기본 책장이 이미 있거나 이후 닉네임을\n변경하면 책장을 새로 만들거나 이름을 바꾸지 않는다. 익명 표시 여부는 유지한다.\n별도 CSRF 토큰 없이 Bearer 또는 Access Token 쿠키로 인증한다.\n",
         "operationId": "member-nickname-update",
         "requestBody": {
           "content": {
@@ -10440,30 +10457,30 @@
                 "properties": {
                   "nickname": {
                     "type": "string",
-                    "description": "공개 닉네임, 최대 10자. 첫 저장은 한글 완성형, 영문, 숫자, _, -만 허용하며 공백을 제거하지 않는다",
+                    "description": "공개 닉네임, 공백뿐이 아닌 1~10자",
                     "minLength": 1,
                     "maxLength": 10
                   }
                 }
               },
               "examples": {
-                "member-nickname-update-conflict": {
+                "member-nickname-update-unauthorized": {
+                  "value": "{\"nickname\":\"책책이\"}"
+                },
+                "member-nickname-update": {
                   "value": "{\"nickname\":\"책책이\"}"
                 },
                 "member-nickname-update-forbidden": {
                   "value": "{\"nickname\":\"책책이\"}"
                 },
-                "member-nickname-update-unauthorized": {
-                  "value": "{\"nickname\":\"책책이\"}"
-                },
                 "member-nickname-update-first-invalid": {
-                  "value": "{\"nickname\":\"책 책\"}"
+                  "value": "{\"nickname\":\"책책책책책책책책책책책\"}"
+                },
+                "member-nickname-update-conflict": {
+                  "value": "{\"nickname\":\"책책이\"}"
                 },
                 "member-nickname-update-invalid": {
                   "value": "{\"nickname\":\" \"}"
-                },
-                "member-nickname-update": {
-                  "value": "{\"nickname\":\"책책이\"}"
                 }
               }
             }
@@ -11533,11 +11550,11 @@
                   }
                 },
                 "examples": {
-                  "review-reaction-create-deleted-resource": {
-                    "value": "{\"detail\":\"삭제된 리소스입니다.\",\"instance\":\"/api/v1/reviews/409/reactions\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"DELETED_RESOURCE\"}"
-                  },
                   "review-reaction-create-conflict": {
                     "value": "{\"detail\":\"이미 좋아요를 남겼습니다.\",\"instance\":\"/api/v1/reviews/101/reactions\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"REACTION_ALREADY_EXISTS\"}"
+                  },
+                  "review-reaction-create-deleted-resource": {
+                    "value": "{\"detail\":\"삭제된 리소스입니다.\",\"instance\":\"/api/v1/reviews/409/reactions\",\"status\":409,\"title\":\"Conflict\",\"type\":\"about:blank\",\"code\":\"DELETED_RESOURCE\"}"
                   }
                 }
               }
@@ -11977,17 +11994,17 @@
                 "reply-create-review-not-found": {
                   "value": "{\"content\":\"답글\"}"
                 },
-                "reply-create": {
-                  "value": "{\"content\":\"저도 그 부분이 좋았어요.\"}"
-                },
-                "reply-create-unauthorized": {
-                  "value": "{\"content\":\"답글\"}"
-                },
                 "reply-create-invalid-request": {
                   "value": "{}"
                 },
                 "reply-create-deleted-resource": {
                   "value": "{\"content\":\"답글\"}"
+                },
+                "reply-create-unauthorized": {
+                  "value": "{\"content\":\"답글\"}"
+                },
+                "reply-create": {
+                  "value": "{\"content\":\"저도 그 부분이 좋았어요.\"}"
                 }
               }
             }
@@ -12305,6 +12322,864 @@
         ]
       }
     },
+    "/api/v2/books/by-isbn/{isbn13}": {
+      "get": {
+        "tags": [
+          "도서"
+        ],
+        "summary": "도서 상세 조회 v2",
+        "description": "도서 메타데이터와 집계를 조회하며 myRecord에는 내 별점만 제공한다. 별점이 없으면 독서 기록 유무와 관계없이 myRecord는 null이다. 독서 상태와 현재 페이지는 제공하지 않는다. 비로그인 조회를 지원한다.",
+        "operationId": "book-detail-v2-",
+        "parameters": [
+          {
+            "name": "isbn13",
+            "in": "path",
+            "description": "ISBN-13",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "required": [
+                    "authors",
+                    "bookId",
+                    "category",
+                    "coverImageUrl",
+                    "isbn13",
+                    "publisher",
+                    "ratingCount",
+                    "replyCount",
+                    "reviewCount",
+                    "source",
+                    "title",
+                    "translators",
+                    "averageRating",
+                    "myRatingCount",
+                    "myRecord",
+                    "totalPages",
+                    "isRegisteredInMyLibrary"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "myRecord": {
+                      "type": "object",
+                      "properties": {
+                        "myRating": {
+                          "type": "number",
+                          "description": "내 별점. myRecord 객체가 있으면 반드시 숫자로 제공한다"
+                        }
+                      },
+                      "description": "내 별점. 비로그인이거나 별점이 없으면 null",
+                      "nullable": true,
+                      "required": [
+                        "myRating"
+                      ]
+                    },
+                    "coverImageUrl": {
+                      "type": "string",
+                      "description": "표지 이미지 URL"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "도서 상세 설명",
+                      "nullable": true
+                    },
+                    "source": {
+                      "type": "string",
+                      "description": "도서 정보 출처"
+                    },
+                    "ratingCount": {
+                      "type": "number",
+                      "description": "별점 수",
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "도서 제목"
+                    },
+                    "myRatingCount": {
+                      "type": "number",
+                      "description": "내가 별점을 등록한 도서 수",
+                      "nullable": true
+                    },
+                    "bookId": {
+                      "type": "number",
+                      "description": "도서 ID",
+                      "nullable": true
+                    },
+                    "purchaseUrl": {
+                      "type": "string",
+                      "description": "구매 링크",
+                      "nullable": true
+                    },
+                    "replyCount": {
+                      "type": "number",
+                      "description": "답글 수",
+                      "nullable": true
+                    },
+                    "translators": {
+                      "type": "array",
+                      "description": "옮긴이 목록",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "object"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      }
+                    },
+                    "reviewCount": {
+                      "type": "number",
+                      "description": "감상 수",
+                      "nullable": true
+                    },
+                    "bookQuestion": {
+                      "type": "object",
+                      "properties": {
+                        "extract": {
+                          "type": "string",
+                          "description": "질문과 관련된 책 속 발췌문",
+                          "nullable": true
+                        },
+                        "question": {
+                          "type": "string",
+                          "description": "질문",
+                          "nullable": true
+                        },
+                        "plot": {
+                          "type": "string",
+                          "description": "질문의 맥락이 되는 줄거리",
+                          "nullable": true
+                        }
+                      },
+                      "description": "책에 대한 질문. 등록된 질문이 없으면 null"
+                    },
+                    "averageRating": {
+                      "type": "number",
+                      "description": "평균 별점",
+                      "nullable": true
+                    },
+                    "isbn13": {
+                      "type": "string",
+                      "description": "ISBN13"
+                    },
+                    "totalPages": {
+                      "type": "number",
+                      "description": "전체 페이지 수",
+                      "nullable": true
+                    },
+                    "publisher": {
+                      "type": "string",
+                      "description": "출판사"
+                    },
+                    "publishedDate": {
+                      "type": "string",
+                      "description": "출간일",
+                      "nullable": true
+                    },
+                    "isRegisteredInMyLibrary": {
+                      "type": "boolean",
+                      "description": "내 책장 배치가 하나 이상이면 true, 없으면 false, 비회원은 null",
+                      "nullable": true
+                    },
+                    "category": {
+                      "type": "string",
+                      "description": "카테고리"
+                    },
+                    "authors": {
+                      "type": "array",
+                      "description": "저자 목록",
+                      "items": {
+                        "oneOf": [
+                          {
+                            "type": "object"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "book-detail-v2-with-rating": {
+                    "value": "{\"bookId\":42,\"isbn13\":\"9788925568683\",\"title\":\"마션\",\"coverImageUrl\":\"https://example.com/books/cover.jpg\",\"description\":\"책 설명\",\"authors\":[\"앤디 위어\"],\"translators\":[\"박아람\"],\"publisher\":\"알에이치코리아(RHK)\",\"category\":\"SF\",\"publishedDate\":\"2026-01-01\",\"totalPages\":308,\"reviewCount\":22,\"replyCount\":24,\"averageRating\":4.3,\"ratingCount\":21,\"myRatingCount\":12,\"myRecord\":{\"myRating\":4.2},\"isRegisteredInMyLibrary\":true,\"purchaseUrl\":\"https://www.yes24.com/product/goods/101375809\",\"source\":\"yes24\",\"bookQuestion\":{\"question\":\"화성에 홀로 남는다면 무엇부터 하시겠어요?\",\"plot\":\"줄거리\",\"extract\":\"발췌문\"}}"
+                  },
+                  "book-detail-v2-without-rating": {
+                    "value": "{\"bookId\":42,\"isbn13\":\"9788925568683\",\"title\":\"마션\",\"coverImageUrl\":\"https://example.com/books/cover.jpg\",\"description\":\"책 설명\",\"authors\":[\"앤디 위어\"],\"translators\":[\"박아람\"],\"publisher\":\"알에이치코리아(RHK)\",\"category\":\"SF\",\"publishedDate\":\"2026-01-01\",\"totalPages\":308,\"reviewCount\":22,\"replyCount\":24,\"averageRating\":4.3,\"ratingCount\":21,\"myRatingCount\":12,\"myRecord\":null,\"isRegisteredInMyLibrary\":true,\"purchaseUrl\":\"https://www.yes24.com/product/goods/101375809\",\"source\":\"yes24\",\"bookQuestion\":{\"question\":\"화성에 홀로 남는다면 무엇부터 하시겠어요?\",\"plot\":\"줄거리\",\"extract\":\"발췌문\"}}"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "book-detail-v2-error-401": {
+                    "value": "{\"detail\":\"인증이 필요합니다.\",\"instance\":\"/api/v2/books/by-isbn/9788925568683\",\"status\":401,\"title\":\"Unauthorized\",\"type\":\"about:blank\",\"code\":\"UNAUTHORIZED\"}"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "book-detail-v2-error-404": {
+                    "value": "{\"detail\":\"책을 찾을 수 없습니다.\",\"instance\":\"/api/v2/books/by-isbn/9788925568683\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"BOOK_NOT_FOUND\"}"
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "502",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "book-detail-v2-error-502": {
+                    "value": "{\"detail\":\"외부 서비스 호출에 실패했습니다.\",\"instance\":\"/api/v2/books/by-isbn/9788925568683\",\"status\":502,\"title\":\"Bad Gateway\",\"type\":\"about:blank\",\"code\":\"EXTERNAL_API_ERROR\"}"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/books/by-isbn/{isbn13}/rating": {
+      "put": {
+        "tags": [
+          "별점"
+        ],
+        "summary": "ISBN으로 도서 별점 등록, 수정",
+        "description": "인증된 활성 회원이 ISBN으로 도서에 별점을 등록하거나 기존 별점을 변경한다.\n\n- `isbn13`: 검색, 상세 응답의 ISBN 문자열을 그대로 전달한다. `bookId` 확보 요청은 필요하지 않다.\n- `rating`: 기존 ID 경로와 같은 `0.1`부터 `5.0`까지 소수 첫째 자리의 별점이다.\n- DB에 있는 도서는 그대로 사용하고, 미등록 도서만 외부 상세 조회 후 저장한다.\n- 책장, 닉네임과 감상 등록을 요구하지 않으며 책장 배치와 독서 기록을 만들지 않는다.\n- 기존 독서 상태, 현재 페이지와 독서 갱신 시각은 유지하고 초기화된 기록도 되살리지 않는다.\n- 등록, 수정과 같은 값 재요청 모두 `200`이며 기존 `PUT /api/v1/library/{bookId}/rating`과\n  응답 필드, 타입, nullable 조건과 의미가 같다. 별점만 있으면 `status`, `currentPage`, `readingUpdatedAt`은 `null`이다.\n- 응답의 `bookId`로 기존 `DELETE /api/v1/library/{bookId}/rating`을 호출할 수 있다.\n- 미등록 도서의 외부 조회 결과가 없으면 `404`, `BOOK_NOT_FOUND`, 외부 조회 실패는 `502`, `EXTERNAL_API_ERROR`다.\n- 도서 확보 후 별점 저장에 실패하면 도서만 남을 수 있다. 같은 요청을 다시 보내면 기존 도서를 재사용한다.\n",
+        "operationId": "books-rate-by-isbn",
+        "parameters": [
+          {
+            "name": "isbn13",
+            "in": "path",
+            "description": "검색, 상세 응답의 ISBN 문자열",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json;charset=UTF-8": {
+              "schema": {
+                "title": "RateBookRequest",
+                "required": [
+                  "rating"
+                ],
+                "type": "object",
+                "properties": {
+                  "rating": {
+                    "type": "number",
+                    "description": "0.1부터 5.0까지 0.1 단위의 별점",
+                    "minimum": 0.1,
+                    "maximum": 5,
+                    "multipleOf": 0.1
+                  }
+                }
+              },
+              "examples": {
+                "books-rate-by-isbn-internal-server-error": {
+                  "value": "{\"rating\":4.5}"
+                },
+                "books-rate-by-isbn-invalid-request": {
+                  "value": "{\"rating\":4.5}"
+                },
+                "books-rate-by-isbn-without-reading-state": {
+                  "value": "{\"rating\":4.5}"
+                },
+                "books-rate-by-isbn-forbidden": {
+                  "value": "{\"rating\":4.5}"
+                },
+                "books-rate-by-isbn": {
+                  "value": "{\"rating\":4.5}"
+                },
+                "books-rate-by-isbn-external-api-error": {
+                  "value": "{\"rating\":4.5}"
+                },
+                "books-rate-by-isbn-book-not-found": {
+                  "value": "{\"rating\":4.5}"
+                },
+                "books-rate-by-isbn-unauthorized": {
+                  "value": "{\"rating\":4.5}"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "200",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "LegacyRatingResponse",
+                  "required": [
+                    "addedAt",
+                    "authors",
+                    "bookId",
+                    "category",
+                    "commentCount",
+                    "coverImageUrl",
+                    "isbn13",
+                    "publishedDate",
+                    "publisher",
+                    "rating",
+                    "title",
+                    "translators",
+                    "status",
+                    "currentPage",
+                    "readingUpdatedAt"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "addedAt": {
+                      "type": "string",
+                      "description": "서재 추가 시각"
+                    },
+                    "coverImageUrl": {
+                      "type": "string",
+                      "description": "표지 이미지 URL"
+                    },
+                    "rating": {
+                      "type": "number",
+                      "description": "저장한 내 별점"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "도서 제목"
+                    },
+                    "readingUpdatedAt": {
+                      "type": "string",
+                      "description": "기존 독서 갱신 시각, 없으면 null",
+                      "nullable": true
+                    },
+                    "commentCount": {
+                      "type": "number",
+                      "description": "감상과 답글 수"
+                    },
+                    "bookId": {
+                      "type": "number",
+                      "description": "도서 ID"
+                    },
+                    "translators": {
+                      "type": "array",
+                      "description": "옮긴이 이름 목록",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "isbn13": {
+                      "type": "string",
+                      "description": "ISBN-13"
+                    },
+                    "totalPages": {
+                      "type": "number",
+                      "description": "전체 페이지 수",
+                      "nullable": true
+                    },
+                    "publisher": {
+                      "type": "string",
+                      "description": "출판사"
+                    },
+                    "spineImageUrl": {
+                      "type": "string",
+                      "description": "책등 이미지 URL",
+                      "nullable": true
+                    },
+                    "publishedDate": {
+                      "type": "string",
+                      "description": "출판일"
+                    },
+                    "currentPage": {
+                      "type": "number",
+                      "description": "기존 현재 페이지, 없으면 null",
+                      "nullable": true
+                    },
+                    "category": {
+                      "type": "string",
+                      "description": "도서 카테고리"
+                    },
+                    "backImageUrl": {
+                      "type": "string",
+                      "description": "책뒷면 이미지 URL",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "기존 독서 상태, 없으면 null",
+                      "nullable": true
+                    },
+                    "authors": {
+                      "type": "array",
+                      "description": "저자 이름 목록",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "books-rate-by-isbn-without-reading-state": {
+                    "value": "{\"bookId\":10,\"isbn13\":\"9788936433598\",\"title\":\"채식주의자\",\"coverImageUrl\":\"https://image.yes24.com/goods/118578901/xL\",\"spineImageUrl\":\"https://image.yes24.com/goods/118578901/side\",\"backImageUrl\":\"https://image.yes24.com/goods/118578901/back\",\"authors\":[\"한강\"],\"translators\":[],\"publisher\":\"창비\",\"category\":\"국내도서>소설\",\"publishedDate\":\"2007-10-30\",\"totalPages\":368,\"commentCount\":2,\"status\":null,\"currentPage\":null,\"rating\":4.5,\"addedAt\":\"2026-08-14T03:00:00Z\",\"readingUpdatedAt\":null}"
+                  },
+                  "books-rate-by-isbn": {
+                    "value": "{\"bookId\":10,\"isbn13\":\"9788936433598\",\"title\":\"채식주의자\",\"coverImageUrl\":\"https://image.yes24.com/goods/118578901/xL\",\"spineImageUrl\":\"https://image.yes24.com/goods/118578901/side\",\"backImageUrl\":\"https://image.yes24.com/goods/118578901/back\",\"authors\":[\"한강\"],\"translators\":[],\"publisher\":\"창비\",\"category\":\"국내도서>소설\",\"publishedDate\":\"2007-10-30\",\"totalPages\":368,\"commentCount\":2,\"status\":\"READING\",\"currentPage\":100,\"rating\":4.5,\"addedAt\":\"2026-08-14T03:00:00Z\",\"readingUpdatedAt\":\"2026-08-14T03:30:00Z\"}"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "books-rate-by-isbn-invalid-request": {
+                    "value": "{\"detail\":\"요청값이 올바르지 않습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788936433598/rating\",\"status\":400,\"title\":\"Bad Request\",\"type\":\"about:blank\",\"code\":\"INVALID_REQUEST\"}"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "401",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "books-rate-by-isbn-unauthorized": {
+                    "value": "{\"detail\":\"인증이 필요합니다.\",\"instance\":\"/api/v1/books/by-isbn/9788936433598/rating\",\"status\":401,\"title\":\"Unauthorized\",\"type\":\"about:blank\",\"code\":\"UNAUTHORIZED\"}"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "403",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "books-rate-by-isbn-forbidden": {
+                    "value": "{\"detail\":\"요청한 작업을 수행할 권한이 없습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788936433598/rating\",\"status\":403,\"title\":\"Forbidden\",\"type\":\"about:blank\",\"code\":\"FORBIDDEN\"}"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "books-rate-by-isbn-book-not-found": {
+                    "value": "{\"detail\":\"책을 찾을 수 없습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788936433598/rating\",\"status\":404,\"title\":\"Not Found\",\"type\":\"about:blank\",\"code\":\"BOOK_NOT_FOUND\"}"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "500",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "books-rate-by-isbn-internal-server-error": {
+                    "value": "{\"detail\":\"서버 내부 오류가 발생했습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788936433598/rating\",\"status\":500,\"title\":\"Internal Server Error\",\"type\":\"about:blank\",\"code\":\"INTERNAL_SERVER_ERROR\"}"
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "502",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "title": "ProblemDetail",
+                  "required": [
+                    "code",
+                    "detail",
+                    "status",
+                    "title",
+                    "type"
+                  ],
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "description": "애플리케이션 오류 코드"
+                    },
+                    "instance": {
+                      "type": "string",
+                      "description": "오류가 발생한 요청 경로"
+                    },
+                    "detail": {
+                      "type": "string",
+                      "description": "오류 상세 메시지"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "HTTP 상태 설명"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "문제 유형 URI"
+                    },
+                    "status": {
+                      "type": "number",
+                      "description": "HTTP 상태 코드"
+                    }
+                  }
+                },
+                "examples": {
+                  "books-rate-by-isbn-external-api-error": {
+                    "value": "{\"detail\":\"외부 서비스 호출에 실패했습니다.\",\"instance\":\"/api/v1/books/by-isbn/9788936433598/rating\",\"status\":502,\"title\":\"Bad Gateway\",\"type\":\"about:blank\",\"code\":\"EXTERNAL_API_ERROR\"}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "accessTokenCookie": []
+          }
+        ]
+      }
+    },
     "/api/v1/books/by-isbn/{isbn13}/reviews": {
       "post": {
         "tags": [
@@ -12369,28 +13244,28 @@
                 }
               },
               "examples": {
-                "review-create-by-isbn-unauthorized": {
+                "review-create-by-isbn-total-pages-conflict": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-create-by-isbn-external-api-error": {
+                "review-create-by-isbn-invalid-reading-state": {
                   "value": "{\"content\":\"감상\"}"
                 },
                 "review-create-by-isbn-invalid-request": {
                   "value": "{}"
                 },
-                "review-create-by-isbn-invalid-reading-state": {
+                "review-create-by-isbn-forbidden": {
                   "value": "{\"content\":\"감상\"}"
                 },
                 "review-create-by-isbn": {
                   "value": "{\"content\":\"인상 깊었다.\"}"
                 },
+                "review-create-by-isbn-unauthorized": {
+                  "value": "{\"content\":\"감상\"}"
+                },
                 "review-create-by-isbn-book-not-found": {
                   "value": "{\"content\":\"감상\"}"
                 },
-                "review-create-by-isbn-forbidden": {
-                  "value": "{\"content\":\"감상\"}"
-                },
-                "review-create-by-isbn-total-pages-conflict": {
+                "review-create-by-isbn-external-api-error": {
                   "value": "{\"content\":\"감상\"}"
                 }
               }
@@ -13025,19 +13900,10 @@
                 }
               },
               "examples": {
-                "library-book-order-conflict": {
+                "library-book-order-not-found": {
                   "value": "{\"bookIds\":[20,10]}"
-                },
-                "library-book-order-empty": {
-                  "value": "{\"bookIds\":[]}"
                 },
                 "library-book-order-forbidden": {
-                  "value": "{\"bookIds\":[20,10]}"
-                },
-                "library-book-order": {
-                  "value": "{\"bookIds\":[20,10]}"
-                },
-                "library-book-order-unauthorized": {
                   "value": "{\"bookIds\":[20,10]}"
                 },
                 "library-book-order-invalid": {
@@ -13046,7 +13912,16 @@
                 "library-book-order-migrated-35": {
                   "value": "{\"bookIds\":[35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]}"
                 },
-                "library-book-order-not-found": {
+                "library-book-order-unauthorized": {
+                  "value": "{\"bookIds\":[20,10]}"
+                },
+                "library-book-order-empty": {
+                  "value": "{\"bookIds\":[]}"
+                },
+                "library-book-order-conflict": {
+                  "value": "{\"bookIds\":[20,10]}"
+                },
+                "library-book-order": {
                   "value": "{\"bookIds\":[20,10]}"
                 }
               }
@@ -13682,7 +14557,7 @@
                           "description": "도서 ID"
                         }
                       },
-                      "description": "기준보다 낮은 별점 중 가장 가까운 도서",
+                      "description": "기준보다 낮은 별점 중 가장 가까운 도서. 없으면 null",
                       "nullable": true
                     },
                     "higher": {
@@ -13729,17 +14604,17 @@
                           "description": "도서 ID"
                         }
                       },
-                      "description": "기준보다 높은 별점 중 가장 가까운 도서",
+                      "description": "기준보다 높은 별점 중 가장 가까운 도서. 없으면 null",
                       "nullable": true
                     }
                   }
                 },
                 "examples": {
-                  "library-rating-comparison-null-boundary": {
-                    "value": "{\"lower\":null,\"current\":null,\"higher\":null}"
-                  },
                   "library-rating-comparison": {
                     "value": "{\"lower\":{\"bookId\":9,\"isbn13\":\"9788954699919\",\"title\":\"파친코\",\"coverImageUrl\":\"https://example.com/books/9.jpg\",\"authors\":[\"이민진\"],\"myRating\":4.0,\"ratingUpdatedAt\":\"2026-08-01T00:00:00Z\"},\"current\":{\"bookId\":12,\"isbn13\":\"9788965746829\",\"title\":\"아몬드\",\"coverImageUrl\":\"https://example.com/books/12.jpg\",\"authors\":[\"손원평\"],\"myRating\":4.5,\"ratingUpdatedAt\":\"2026-08-03T00:00:00Z\"},\"higher\":{\"bookId\":11,\"isbn13\":\"9788956609959\",\"title\":\"불편한 편의점\",\"coverImageUrl\":\"https://example.com/books/11.jpg\",\"authors\":[\"김호연\"],\"myRating\":4.8,\"ratingUpdatedAt\":\"2026-08-05T00:00:00Z\"}}"
+                  },
+                  "library-rating-comparison-null-boundary": {
+                    "value": "{\"lower\":null,\"current\":null,\"higher\":null}"
                   }
                 }
               }
@@ -13920,6 +14795,48 @@
           "likeCount": {
             "type": "number",
             "description": "좋아요 수"
+          }
+        }
+      },
+      "BulkUpdateLibraryStatusRequest": {
+        "title": "BulkUpdateLibraryStatusRequest",
+        "required": [
+          "bookIds",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "bookIds": {
+            "type": "array",
+            "description": "상태를 변경할 도서 ID 목록. 최대 10개",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "minItems": 1,
+            "maxItems": 10,
+            "uniqueItems": true
+          },
+          "status": {
+            "type": "string",
+            "description": "변경할 읽기 상태",
+            "enum": [
+              "WANT_TO_READ",
+              "READING",
+              "FINISHED"
+            ]
+          }
+        }
+      },
+      "api-v1-recommended-books-1231260270": {
+        "required": [
+          "isbn13"
+        ],
+        "type": "object",
+        "properties": {
+          "isbn13": {
+            "type": "string",
+            "description": "추천할 도서의 ISBN-13"
           }
         }
       },
@@ -14310,26 +15227,6 @@
                 }
               }
             }
-          }
-        }
-      },
-      "LibraryOrderRequest": {
-        "title": "LibraryOrderRequest",
-        "required": [
-          "libraryIds"
-        ],
-        "type": "object",
-        "properties": {
-          "libraryIds": {
-            "type": "array",
-            "description": "원하는 순서로 나열한 전체 ID 목록",
-            "items": {
-              "type": "integer",
-              "format": "int64",
-              "minimum": 1
-            },
-            "uniqueItems": true,
-            "minItems": 0
           }
         }
       },
@@ -14900,6 +15797,22 @@
           }
         }
       },
+      "RateBookRequest": {
+        "title": "RateBookRequest",
+        "required": [
+          "rating"
+        ],
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "description": "0.1부터 5.0까지 0.1 단위의 별점",
+            "minimum": 0.1,
+            "maximum": 5,
+            "multipleOf": 0.1
+          }
+        }
+      },
       "api-v1-reviews-reviewId-1466917339": {
         "type": "object",
         "properties": {
@@ -14933,22 +15846,6 @@
             "type": "string",
             "description": "변경할 감상 내용",
             "maxLength": 1000
-          }
-        }
-      },
-      "RateBookRequest": {
-        "title": "RateBookRequest",
-        "required": [
-          "rating"
-        ],
-        "type": "object",
-        "properties": {
-          "rating": {
-            "type": "number",
-            "description": "0.1부터 5.0까지 0.1 단위의 별점",
-            "minimum": 0.1,
-            "maximum": 5,
-            "multipleOf": 0.1
           }
         }
       },
@@ -15167,56 +16064,6 @@
           }
         }
       },
-      "AddLibraryItemRequest": {
-        "title": "AddLibraryItemRequest",
-        "required": [
-          "isbn13",
-          "status"
-        ],
-        "type": "object",
-        "properties": {
-          "isbn13": {
-            "type": "string",
-            "description": "추가할 도서의 ISBN-13"
-          },
-          "totalPages": {
-            "type": "number",
-            "description": "전체 페이지 수",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "description": "초기 읽기 상태"
-          }
-        }
-      },
-      "AddRecommendedBookRequest": {
-        "title": "AddRecommendedBookRequest",
-        "required": [
-          "isbn13"
-        ],
-        "type": "object",
-        "properties": {
-          "isbn13": {
-            "type": "string",
-            "description": "추천할 도서의 ISBN-13"
-          }
-        }
-      },
-      "api-v1-members-me-nickname-935230333": {
-        "required": [
-          "nickname"
-        ],
-        "type": "object",
-        "properties": {
-          "nickname": {
-            "type": "string",
-            "description": "공개 닉네임, 최대 10자. 첫 저장은 한글 완성형, 영문, 숫자, _, -만 허용하며 공백을 제거하지 않는다",
-            "minLength": 1,
-            "maxLength": 10
-          }
-        }
-      },
       "api-v1-feed-reviews1780686823": {
         "required": [
           "reviews",
@@ -15373,6 +16220,21 @@
           "totalCount": {
             "type": "number",
             "description": "삭제되지 않고 책이 있는 감상 전체 개수"
+          }
+        }
+      },
+      "CreateLibraryRequest": {
+        "title": "CreateLibraryRequest",
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다",
+            "minLength": 1,
+            "maxLength": 10
           }
         }
       },
@@ -15721,13 +16583,19 @@
                   "description": "설정한 순서의 도서 목록",
                   "items": {
                     "required": [
+                      "authors",
                       "bookId",
+                      "coverImageUrl",
                       "isbn13",
                       "title",
                       "spineImageUrl"
                     ],
                     "type": "object",
                     "properties": {
+                      "coverImageUrl": {
+                        "type": "string",
+                        "description": "도서 표지 이미지 URL"
+                      },
                       "isbn13": {
                         "type": "string",
                         "description": "상세 조회에 사용하는 ISBN-13",
@@ -15742,6 +16610,13 @@
                       "title": {
                         "type": "string",
                         "description": "도서 제목"
+                      },
+                      "authors": {
+                        "type": "array",
+                        "description": "저자 이름 목록, 없으면 빈 배열",
+                        "items": {
+                          "type": "string"
+                        }
                       },
                       "bookId": {
                         "type": "integer",
@@ -16156,7 +17031,7 @@
           }
         }
       },
-      "api-v1-libraries-libraryId-170754554": {
+      "api-v1-library-bookId-170754554": {
         "required": [
           "addedAt",
           "authors",
@@ -16259,36 +17134,232 @@
           }
         }
       },
-      "api-v1-library-bulk-status1159375813": {
+      "api-v1-libraries-libraryId-571918913": {
         "required": [
-          "bookIds",
-          "status"
+          "name"
         ],
         "type": "object",
         "properties": {
-          "bookIds": {
-            "type": "array",
-            "description": "상태를 변경할 도서 ID 목록. 최대 10개",
-            "items": {
-              "type": "integer",
-              "format": "int64"
-            },
-            "minItems": 1,
-            "maxItems": 10,
-            "uniqueItems": true
-          },
-          "status": {
+          "name": {
             "type": "string",
-            "description": "변경할 읽기 상태",
-            "enum": [
-              "WANT_TO_READ",
-              "READING",
-              "FINISHED"
-            ]
+            "description": "닉네임과 같은 규칙으로 공백뿐이 아닌 1~10자를 허용한다",
+            "minLength": 1,
+            "maxLength": 10
           }
         }
       },
-      "api-v1-members-me-ratings-comparison-1836106770": {
+      "api-v2-books-by-isbn-isbn13-2114361181": {
+        "required": [
+          "authors",
+          "bookId",
+          "category",
+          "coverImageUrl",
+          "isbn13",
+          "publisher",
+          "ratingCount",
+          "replyCount",
+          "reviewCount",
+          "source",
+          "title",
+          "translators",
+          "averageRating",
+          "myRatingCount",
+          "myRecord",
+          "totalPages",
+          "isRegisteredInMyLibrary"
+        ],
+        "type": "object",
+        "properties": {
+          "myRecord": {
+            "type": "object",
+            "properties": {
+              "myRating": {
+                "type": "number",
+                "description": "내 별점. myRecord 객체가 있으면 반드시 숫자로 제공한다"
+              }
+            },
+            "description": "내 별점. 비로그인이거나 별점이 없으면 null",
+            "nullable": true,
+            "required": [
+              "myRating"
+            ]
+          },
+          "coverImageUrl": {
+            "type": "string",
+            "description": "표지 이미지 URL"
+          },
+          "description": {
+            "type": "string",
+            "description": "도서 상세 설명",
+            "nullable": true
+          },
+          "source": {
+            "type": "string",
+            "description": "도서 정보 출처"
+          },
+          "ratingCount": {
+            "type": "number",
+            "description": "별점 수",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "description": "도서 제목"
+          },
+          "myRatingCount": {
+            "type": "number",
+            "description": "내가 별점을 등록한 도서 수",
+            "nullable": true
+          },
+          "bookId": {
+            "type": "number",
+            "description": "도서 ID",
+            "nullable": true
+          },
+          "purchaseUrl": {
+            "type": "string",
+            "description": "구매 링크",
+            "nullable": true
+          },
+          "replyCount": {
+            "type": "number",
+            "description": "답글 수",
+            "nullable": true
+          },
+          "translators": {
+            "type": "array",
+            "description": "옮긴이 목록",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          },
+          "reviewCount": {
+            "type": "number",
+            "description": "감상 수",
+            "nullable": true
+          },
+          "bookQuestion": {
+            "type": "object",
+            "properties": {
+              "extract": {
+                "type": "string",
+                "description": "질문과 관련된 책 속 발췌문",
+                "nullable": true
+              },
+              "question": {
+                "type": "string",
+                "description": "질문",
+                "nullable": true
+              },
+              "plot": {
+                "type": "string",
+                "description": "질문의 맥락이 되는 줄거리",
+                "nullable": true
+              }
+            },
+            "description": "책에 대한 질문. 등록된 질문이 없으면 null"
+          },
+          "averageRating": {
+            "type": "number",
+            "description": "평균 별점",
+            "nullable": true
+          },
+          "isbn13": {
+            "type": "string",
+            "description": "ISBN13"
+          },
+          "totalPages": {
+            "type": "number",
+            "description": "전체 페이지 수",
+            "nullable": true
+          },
+          "publisher": {
+            "type": "string",
+            "description": "출판사"
+          },
+          "publishedDate": {
+            "type": "string",
+            "description": "출간일",
+            "nullable": true
+          },
+          "isRegisteredInMyLibrary": {
+            "type": "boolean",
+            "description": "내 책장 배치가 하나 이상이면 true, 없으면 false, 비회원은 null",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "description": "카테고리"
+          },
+          "authors": {
+            "type": "array",
+            "description": "저자 목록",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "api-v1-libraries-order262032579": {
+        "required": [
+          "libraryIds"
+        ],
+        "type": "object",
+        "properties": {
+          "libraryIds": {
+            "type": "array",
+            "description": "원하는 순서로 나열한 전체 ID 목록",
+            "items": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "uniqueItems": true,
+            "minItems": 0
+          }
+        }
+      },
+      "api-v1-members-me-nickname-1280909959": {
+        "required": [
+          "nickname"
+        ],
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "description": "공개 닉네임, 공백뿐이 아닌 1~10자",
+            "minLength": 1,
+            "maxLength": 10
+          }
+        }
+      },
+      "api-v1-members-me-ratings-comparison-1689179728": {
         "type": "object",
         "properties": {
           "current": {
@@ -16382,7 +17453,7 @@
                 "description": "도서 ID"
               }
             },
-            "description": "기준보다 낮은 별점 중 가장 가까운 도서",
+            "description": "기준보다 낮은 별점 중 가장 가까운 도서. 없으면 null",
             "nullable": true
           },
           "higher": {
@@ -16429,7 +17500,7 @@
                 "description": "도서 ID"
               }
             },
-            "description": "기준보다 높은 별점 중 가장 가까운 도서",
+            "description": "기준보다 높은 별점 중 가장 가까운 도서. 없으면 null",
             "nullable": true
           }
         }
@@ -16685,21 +17756,6 @@
           }
         }
       },
-      "api-v1-libraries-libraryId111094256": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "1~10자. 한글, 영문, 숫자, 하이픈(-), 밑줄(_)만 허용하며 공백은 허용하지 않는다",
-            "minLength": 1,
-            "maxLength": 10,
-            "pattern": "^[가-힣A-Za-z0-9_-]+$"
-          }
-        }
-      },
       "LibraryDetailResponse": {
         "title": "LibraryDetailResponse",
         "required": [
@@ -16919,7 +17975,7 @@
           }
         }
       },
-      "api-v1-library923669369": {
+      "api-v1-libraries-libraryId923669369": {
         "required": [
           "isbn13",
           "status"
