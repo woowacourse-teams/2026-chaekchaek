@@ -338,3 +338,19 @@ export const librariesAfterBookRemovalResponse = {
   memberId: selectedLibraryResponse.memberId,
   libraries: [defaultLibraryForBookRemoval, libraryAfterBookRemovalResponse],
 };
+
+export const unchangedBookSelectionSearchResponse = {
+  ...bookRegistrationSearchResponse,
+  items: [{ ...registeredBookResponse, isRegisteredInMyLibrary: true }],
+};
+
+export const unselectedLibraryForUnchangedSelectionResponse = {
+  ...unselectedLibraryResponse,
+  libraryId: 3,
+  name: '나중에 읽을 책',
+};
+
+export const unchangedBookSelectionLibrariesResponse = {
+  memberId: selectedLibraryResponse.memberId,
+  libraries: [selectedLibraryResponse, unselectedLibraryForUnchangedSelectionResponse],
+};
