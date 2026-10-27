@@ -1,5 +1,6 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Route, Routes } from 'react-router-dom';
 
 import { describe, it, expect, vi } from 'vitest';
 
@@ -10,9 +11,21 @@ import { ENV } from '@/configs/env';
 
 import { defaultLoggedAuthContextValue, renderProvider } from '@/test/utils/render';
 
+import { LibraryPage } from '@/pages/LibraryPage';
+
 import { BooksPage } from './BooksPage';
 
-import { harrySearchPage1, harrySearchPage2, martianSearchPage } from './BooksPage.fixtures';
+import {
+  bookRegistrationSearchResponse,
+  bookToRegister,
+  harrySearchPage1,
+  harrySearchPage2,
+  librariesBeforeBookRegistrationResponse,
+  libraryAfterBookRegistrationResponse,
+  martianSearchPage,
+  registeredBookResponse,
+  unselectedLibraryResponse,
+} from './BooksPage.fixtures';
 
 describe('BooksPage', () => {
   it('기본 렌더링이 된다', () => {
@@ -150,6 +163,82 @@ describe('BooksPage', () => {
     expect(checkboxes.length).toBeGreaterThan(0);
     checkboxes.forEach((checkbox) => expect(checkbox).toBeVisible());
     expect(screen.getByRole('button', { name: '담기' })).toBeVisible();
+  });
+
+  it('선택하지 않았던 책장을 선택하고 완료하면 해당 책장에 책이 등록된다', async () => {
+    const user = userEvent.setup();
+    let isBookRegistered = false;
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, () => {
+        return HttpResponse.json(structuredClone(bookRegistrationSearchResponse));
+      }),
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
+        return HttpResponse.json(structuredClone(librariesBeforeBookRegistrationResponse));
+      }),
+      http.post(
+        `${ENV.APP_API_URL}/api/v1/libraries/${unselectedLibraryResponse.libraryId}`,
+        async ({ request }) => {
+          const { isbn13 } = (await request.json()) as { isbn13: string };
+          if (isbn13 !== bookToRegister.isbn13) {
+            return new HttpResponse(null, { status: 400 });
+          }
+          isBookRegistered = true;
+          return HttpResponse.json(structuredClone(registeredBookResponse), { status: 201 });
+        },
+      ),
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${unselectedLibraryResponse.libraryId}`, () => {
+        return HttpResponse.json(
+          structuredClone(
+            isBookRegistered ? libraryAfterBookRegistrationResponse : unselectedLibraryResponse,
+          ),
+        );
+      }),
+    );
+
+    const { unmount } = renderProvider(<BooksPage />, { auth: defaultLoggedAuthContextValue });
+
+    // 책 제목을 검색한다.
+    await user.type(screen.getByRole('textbox', { name: '책 검색' }), bookToRegister.title);
+    const bookTitle = await screen.findByText(bookToRegister.title);
+
+    // 검색 결과에서 책의 내 서재 담기 버튼을 클릭한다.
+    const bookItem = bookTitle.closest('li');
+    if (!bookItem) throw new Error('검색한 책의 목록 항목을 찾을 수 없습니다.');
+    await user.click(within(bookItem).getByRole('button', { name: '내 서재 담기' }));
+
+    // 책장 선택 팝업에서 아직 선택하지 않은 책장을 확인한다.
+    const libraryName = await screen.findByText(unselectedLibraryResponse.name);
+    const libraryItem = libraryName.closest('li');
+    if (!libraryItem) throw new Error('선택할 책장의 목록 항목을 찾을 수 없습니다.');
+    const checkbox = within(libraryItem).getByRole('checkbox');
+    expect(checkbox).not.toBeChecked();
+
+    // 책장을 선택하고 선택 상태가 표시되는지 확인한다.
+    await user.click(checkbox);
+    expect(checkbox).toBeChecked();
+
+    // 담기 버튼을 눌러 선택을 완료하고 팝업이 닫히는지 확인한다.
+    await user.click(screen.getByRole('button', { name: '담기' }));
+    await waitFor(() => {
+      expect(screen.queryByText('저장할 책장 고르기')).not.toBeInTheDocument();
+    });
+
+    // 선택한 책장 페이지에 방문한다.
+    unmount();
+    renderProvider(
+      <Routes>
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+      </Routes>,
+      {
+        auth: defaultLoggedAuthContextValue,
+        initialEntries: [`/libraries/${unselectedLibraryResponse.libraryId}`],
+      },
+    );
+
+    // 선택한 책장에 등록한 책이 표시되는지 확인한다.
+    expect(await screen.findByText(unselectedLibraryResponse.name)).toBeVisible();
+    expect(await screen.findByText(bookToRegister.title)).toBeVisible();
   });
 
   it('비로그인 사용자가 내서재에 넣기 버튼 클릭시 로그인 팝업이 뜬다', async () => {

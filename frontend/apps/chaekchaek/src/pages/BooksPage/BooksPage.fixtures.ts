@@ -260,3 +260,41 @@ export const martianSearchPage = {
   nextPage: 2,
   items: harrySearchBooks.slice(0, 10),
 };
+
+export const bookToRegister = harrySearchBooks[0];
+
+export const bookRegistrationSearchResponse = {
+  totalCount: 1,
+  nextPage: null,
+  items: [bookToRegister],
+};
+
+export const unselectedLibraryResponse = {
+  libraryId: 2,
+  memberId: 3,
+  name: '다시 읽고 싶은 책',
+  isDefault: false,
+  totalCount: 0,
+  items: [],
+};
+
+export const librariesBeforeBookRegistrationResponse = {
+  memberId: unselectedLibraryResponse.memberId,
+  libraries: [unselectedLibraryResponse],
+};
+
+export const registeredBookResponse = {
+  ...bookToRegister,
+  spineImageUrl: 'https://static.example.com/books/47/spine.webp',
+  totalPages: 144,
+  currentPage: 0,
+  status: 'WANT_TO_READ',
+  addedAt: '2026-10-27T09:00:00',
+  readingUpdatedAt: '2026-10-27T09:00:00',
+};
+
+export const libraryAfterBookRegistrationResponse = {
+  ...unselectedLibraryResponse,
+  totalCount: 1,
+  items: [registeredBookResponse],
+};
