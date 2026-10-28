@@ -22,6 +22,7 @@ export type ContentOwnProps = {
   title?: ReactNode;
   content?: ReactNode;
   description?: ReactNode;
+  ellipsis?: boolean;
 };
 
 export type ContentProps<T extends ElementType = AS> = PolymorphicProps<T, ContentOwnProps>;

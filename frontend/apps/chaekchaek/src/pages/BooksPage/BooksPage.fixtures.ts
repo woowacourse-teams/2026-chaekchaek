@@ -1,19 +1,21 @@
+const firstHarrySearchBook = {
+  bookId: 47,
+  title: '개소리에 대하여',
+  coverImageUrl: 'https://image.yes24.com/goods/171435916/L',
+  authors: ['해리 G. 프랭크퍼트'],
+  translators: ['이윤'],
+  publishedDate: '2026-01-02',
+  isbn13: '9791157833870',
+  category: '국내도서-인문',
+  publisher: '필로소픽',
+  reviewCount: 0,
+  replyCount: 0,
+  isRegisteredInMyLibrary: false,
+};
+
 /* length: 11 */
 const harrySearchBooks = [
-  {
-    bookId: 47,
-    title: '개소리에 대하여',
-    coverImageUrl: 'https://image.yes24.com/goods/171435916/L',
-    authors: ['해리 G. 프랭크퍼트'],
-    translators: ['이윤'],
-    publishedDate: '2026-01-02',
-    isbn13: '9791157833870',
-    category: '국내도서-인문',
-    publisher: '필로소픽',
-    reviewCount: 0,
-    replyCount: 0,
-    isRegisteredInMyLibrary: false,
-  },
+  firstHarrySearchBook,
   {
     bookId: 33,
     title: '해리 포터와 마법사의 돌 1',

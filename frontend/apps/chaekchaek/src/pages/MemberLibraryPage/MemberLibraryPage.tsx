@@ -19,49 +19,6 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
 
-import { getMembersMemberIdLibrary } from '@/services/apis/membersMemberIdLibrary/repository';
-import { useLoadData } from '@/services/core/useLoadData';
-
-import { ROUTES } from '@/constants/routes';
-
-import { Book3D } from './components/Book3D';
-
-import styles from './MemberLibraryPage.module.css';
-
-export const READING_STATUS = {
-  ALL: 'ALL',
-  WANT_TO_READ: 'WANT_TO_READ',
-  READING: 'READING',
-  FINISHED: 'FINISHED',
-} as const;
-
-export type ReadingStatus = (typeof READING_STATUS)[keyof typeof READING_STATUS];
-
-export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
-  [READING_STATUS.ALL]: '전체',
-  [READING_STATUS.WANT_TO_READ]: '읽고 싶어요',
-  [READING_STATUS.READING]: '읽는 중',
-  [READING_STATUS.FINISHED]: '다 읽음',
-};
-
-const READING_SORT = {
-  RECENT: 'RECENT',
-  OLDEST: 'OLDEST',
-  COMMENT: 'COMMENT',
-  RATING: 'RATING',
-  TITLE: 'TITLE',
-} as const;
-
-type ReadingSort = (typeof READING_SORT)[keyof typeof READING_SORT];
-
-const READING_SORT_LABELS = {
-  RECENT: '최근순',
-  OLDEST: '오래된순',
-  COMMENT: '감상순',
-  RATING: '별점순',
-  TITLE: '제목순',
-} as const;
-
 export const MemberLibraryPage = () => {
   const { memberId: memberIdString } = useParams<{ memberId: string }>();
   const memberId = Number(memberIdString);

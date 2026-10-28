@@ -12,6 +12,8 @@ export const BookInfo = ({
   isbn13,
   authors,
   translators,
+  isRegisteredInMyLibrary,
+  onRegisterBookToLibrary,
   purchaseUrl,
 }: BookInfoProps) => {
   const formattedCategory = category?.replace(/\s*>\s*/g, ' > ');
@@ -19,7 +21,21 @@ export const BookInfo = ({
   return (
     <>
       <Surface variant="outlined" spacing="medium">
-        <Title level="main">내 독서 기록</Title>
+       {isRegisteredInMyLibrary ? (
+          <Button
+            sx={{ mt: 4 }}
+            block
+            variant="accent"
+            leading={<Icon.CheckIcon />}
+            onClick={onRegisterBookToLibrary}
+          >
+            담았어요
+          </Button>
+        ) : (
+          <Button sx={{ mt: 4 }} block variant="primary" onClick={onRegisterBookToLibrary}>
+            내 서재에 담기
+          </Button>
+        )}
       </Surface>
       <DataInfo sx={{ mt: 4 }} heading="책 정보">
         {formattedCategory && <DataInfo.Item title="장르" content={formattedCategory} />}

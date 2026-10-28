@@ -141,6 +141,18 @@ export type { Props as ChoiceProps } from './components/Choice';
 export { InfoMessage } from './components/InfoMessage';
 export type { Props as InfoMessageProps } from './components/InfoMessage';
 
+export { Tabs } from './components/Tabs';
+export type { Props as TabsProps } from './components/Tabs';
+
+export { Showcase } from './components/Showcase';
+export type { Props as ShowcaseProps } from './components/Showcase';
+
+export { DisplayCard } from './components/DisplayCard';
+export type { Props as DisplayCardProps } from './components/DisplayCard';
+
+export { ScrollArea } from './components/ScrollArea';
+export type { Props as ScrollAreaProps } from './components/ScrollArea';
+
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';
 

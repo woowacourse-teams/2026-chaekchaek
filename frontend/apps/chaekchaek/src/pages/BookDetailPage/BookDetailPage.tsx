@@ -15,10 +15,13 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { getBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
+import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 import { useLoadData } from '@/services/core/useLoadData';
 import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
 import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
+
+import { RegisterBookToLibraryDialog } from '@/shared/RegisterBookToLibrary';
 
 import { BookOverview } from './components/BookOverview';
 import { BookInfo } from './components/BookInfo';
@@ -47,6 +50,12 @@ export const BookDetailPage = () => {
   };
   const handleCloseLoginDialog = () => {
     setOpenLoginDialog(false);
+  };
+
+  const handleRegisterBookToLibrary = () => {
+    if (!isAuthenticated) return handleOpenLoginDialog();
+
+    handleOpenDialog('RegisterBookToLibraryDialog');
   };
 
   const [reviewsRequestParams, setReviewsRequestParams] = useState<{
@@ -131,6 +140,56 @@ export const BookDetailPage = () => {
     };
   }, [reviewsDataAll]);
 
+  const handleBookRegistered = async () => {
+    track('library_add', {
+      source: 'detail_info',
+      status: 'reading',
+    });
+
+    refetchGetBooksIsbnLoadData();
+  };
+
+  const [dialog, setDialog] = useState<
+    | 'RegisterBookToLibraryDialog'
+    | null
+  >(null);
+  const handleOpenDialog = (
+    dialog:
+      | 'RegisterBookToLibraryDialog',
+  ) => {
+    if (!isAuthenticated) return handleOpenLoginDialog();
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (
+    dialog:
+      | 'RegisterBookToLibraryDialog'
+      | null,
+  ) => {
+    switch (dialog) {
+      case 'RegisterBookToLibraryDialog':
+        return (
+          data && (
+            <RegisterBookToLibraryDialog
+              book={{
+                isbn: data.isbn13,
+                bookId: data.bookId,
+              }}
+              onBookRegistered={handleBookRegistered}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
+
   return (
     <Layout>
       <Header />
@@ -144,6 +203,8 @@ export const BookDetailPage = () => {
                 isbn13={data?.isbn13}
                 authors={data?.authors}
                 translators={data?.translators}
+                isRegisteredInMyLibrary={data?.isRegisteredInMyLibrary}
+                onRegisterBookToLibrary={handleRegisterBookToLibrary}
                 purchaseUrl={data?.purchaseUrl}
               />
             </Split.Side>

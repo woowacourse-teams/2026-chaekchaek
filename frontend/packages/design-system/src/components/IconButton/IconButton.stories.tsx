@@ -13,6 +13,7 @@ const meta = {
     shape: 'default',
     variant: 'default',
     size: 'medium',
+    edge: 'center',
   },
   argTypes: {
     shape: {
@@ -35,6 +36,10 @@ const meta = {
     size: {
       control: 'inline-radio',
       options: ['small', 'medium', 'large'],
+    },
+    edge: {
+      control: 'inline-radio',
+      options: ['start', 'center', 'end'],
     },
   },
 } satisfies Meta<typeof IconButton>;
@@ -81,6 +86,14 @@ export const SmallSize: Story = {
 
 export const LargeSize: Story = {
   args: { size: 'large' },
+};
+
+export const StartEdge: Story = {
+  args: { edge: 'start' },
+};
+
+export const EndEdge: Story = {
+  args: { edge: 'end' },
 };
 
 export const NormalShape: Story = {

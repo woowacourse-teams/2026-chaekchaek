@@ -36,6 +36,7 @@ export type GetBooksIsbnResponseDto = ResponseDto<{
   reviewCount: number;
   replyCount: number;
   myRatingCount: number;
+  isRegisteredInMyLibrary: boolean;
   bookQuestion: {
     question: string | null;
     plot: string | null;

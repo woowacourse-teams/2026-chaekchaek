@@ -17,5 +17,6 @@ module.exports = {
       { ts: 'never', tsx: 'never', js: 'never', jsx: 'never' },
     ],
     'react/jsx-props-no-spreading': 'off',
+    'react/jsx-no-leaked-render': ['error', { validStrategies: ['coerce', 'ternary'] }],
   },
 };
