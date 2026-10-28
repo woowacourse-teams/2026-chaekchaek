@@ -29,6 +29,8 @@ import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
 
+import { ROUTES } from '@/constants/routes';
+
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
 import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
 import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
@@ -229,6 +231,8 @@ export const LibraryPage = () => {
                 {libraryItemsData?.items.map((item, index) => {
                   return (
                     <ConstrainedImgBox
+                      as={Link}
+                      to={`${ROUTES.BOOK_DETAIL}/${item.isbn13}`}
                       img={item.spineImageUrl}
                       maxWidth="80px"
                       maxHeight={`${booksHeight[index]}px`}
