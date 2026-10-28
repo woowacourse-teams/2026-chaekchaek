@@ -1030,6 +1030,38 @@ final class BookshelfContractUITests: XCTestCase {
     }
 
     @MainActor
+    func testShelfHandleDropSavesOrderOnce() async throws {
+        continueAfterFailure = false
+        guard (try? await request("/__bookshelf")) != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
+        _ = try await request("/__bookshelf/reset", method: "POST")
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingGuest", "-uiTestingNicknameRestore", "-uiTestingRefresh"]
+        app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = origin
+        app.launch()
+        XCTAssertTrue(element("내 서재", app).waitForExistence(timeout: 15))
+        element("내 서재", app).tap()
+        let first = app.descendants(matching: .any)["bookshelf-reorder-1"].firstMatch
+        let second = app.descendants(matching: .any)["bookshelf-reorder-2"].firstMatch
+        XCTAssertTrue(first.waitForExistence(timeout: 10))
+        XCTAssertTrue(second.waitForExistence(timeout: 10))
+        second.press(forDuration: 0.05, thenDragTo: first)
+        var state: [String: Any] = [:]
+        for _ in 0..<30 {
+            state = try XCTUnwrap(JSONSerialization.jsonObject(with: try await request("/__bookshelf/state")) as? [String: Any])
+            if (state["shelves"] as? [[String: Any]])?.first?["libraryId"] as? Int == 2 { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let shelves = try XCTUnwrap(state["shelves"] as? [[String: Any]])
+        XCTAssertEqual(shelves.compactMap { $0["libraryId"] as? Int }, [2, 1, 3])
+        let calls = try XCTUnwrap(state["requests"] as? [[String: Any]])
+        XCTAssertEqual(calls.filter { $0["method"] as? String == "PATCH" && $0["path"] as? String == "/api/v1/libraries/order" }.count, 1)
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "핸들 드래그 후 책장 순서"
+        capture.lifetime = .keepAlways
+        add(capture)
+    }
+
+    @MainActor
     func testShelfCreateRenameAddRemoveAndImagePreview() async throws {
         let marker = try? await request("/__bookshelf")
         guard marker != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
@@ -1051,7 +1083,7 @@ final class BookshelfContractUITests: XCTestCase {
         let firstShelf = app.buttons["bookshelf-1"]
         XCTAssertTrue(firstShelf.waitForExistence(timeout: 10))
         app.buttons["bookshelf-menu-1"].tap()
-        element("이름 바꾸기", app).tap()
+        element("책장 이름 바꾸기", app).tap()
         let input = app.textViews["bookshelfName"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()

@@ -61,7 +61,7 @@ class BookshelfContractTest {
         compose.onNodeWithText("내 서재").performClick()
         waitTag("bookshelf-1")
         compose.onNodeWithTag("bookshelf-menu-1").performClick()
-        compose.onNodeWithText("이름 바꾸기").performClick()
+        compose.onNodeWithText("책장 이름 바꾸기").performClick()
         compose.onNodeWithTag("bookshelfName").performTextReplacement("나의 책장")
         compose.onNodeWithText("저장").performScrollTo().performClick()
         waitNameSheetClosed()
@@ -92,6 +92,38 @@ class BookshelfContractTest {
         val calls = (0 until requests.length()).map { requests.getJSONObject(it) }
         assertTrue(calls.any { it.getString("method") == "POST" && it.getString("path") == "/api/v1/libraries/1" })
         assertTrue(calls.any { it.getString("method") == "DELETE" && it.getString("path").contains("/books/") })
+    }
+
+    @Test fun shelfHandleDragCancelRestoresAndDropSavesOnce() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
+        request("/__bookshelf/reset", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("내 서재")
+        compose.onNodeWithText("내 서재").performClick()
+        waitTag("bookshelf-reorder-2")
+        val first = compose.onNodeWithTag("bookshelf-reorder-1").fetchSemanticsNode().boundsInRoot.center
+        val second = compose.onNodeWithTag("bookshelf-reorder-2").fetchSemanticsNode().boundsInRoot.center
+        val delta = first - second
+        compose.onNodeWithTag("bookshelf-reorder-2").performTouchInput {
+            down(center)
+            moveBy(delta, durationMillis = 500)
+            cancel()
+        }
+        compose.waitForIdle()
+        assertFalse("드래그 취소는 서버 순서를 바꾸지 않음", requested("PATCH", "/api/v1/libraries/order"))
+        compose.onNodeWithTag("bookshelf-reorder-2").performTouchInput {
+            down(center)
+            moveBy(delta, durationMillis = 500)
+            up()
+        }
+        compose.waitUntil(15_000) { requested("PATCH", "/api/v1/libraries/order") }
+        val state = JSONObject(request("/__bookshelf/state"))
+        val shelves = state.getJSONArray("shelves")
+        assertEquals(listOf(2, 1, 3), (0 until shelves.length()).map { shelves.getJSONObject(it).getInt("libraryId") })
+        val calls = state.getJSONArray("requests")
+        assertEquals("드롭 저장은 1회", 1, (0 until calls.length()).count {
+            calls.getJSONObject(it).getString("method") == "PATCH" && calls.getJSONObject(it).getString("path") == "/api/v1/libraries/order"
+        })
     }
 
     @Test fun nativeImageSaveAndShare() {
