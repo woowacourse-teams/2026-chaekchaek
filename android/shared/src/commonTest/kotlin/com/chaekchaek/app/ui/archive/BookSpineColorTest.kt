@@ -18,6 +18,19 @@ class BookSpineColorTest {
     }
 
     @Test
+    fun `결합 악센트와 분해 한글은 각각 한 칸을 차지한다`() {
+        assertEquals(listOf("C", "a", "f", "e\u0301"), spineTitleGlyphs("Cafe\u0301", 4))
+        assertEquals(listOf("\u1112\u1161\u11ab", "글"), spineTitleGlyphs("\u1112\u1161\u11ab글", 2))
+    }
+
+    @Test
+    fun `연결 이모지와 피부색과 국기는 한 칸에서 보존한다`() {
+        val glyphs = listOf("👩‍👩‍👧‍👦", "👍🏽", "🇰🇷", "1️⃣")
+        assertEquals(glyphs, spineTitleGlyphs(glyphs.joinToString(" "), 4))
+        assertEquals(listOf(glyphs.first(), "…"), spineTitleGlyphs(glyphs.joinToString(""), 2))
+    }
+
+    @Test
     fun `표지 왼쪽의 상중하 색은 오른쪽 제목과 작은 잡음에 바뀌지 않는다`() {
         val top = Color(0xFF253C5E)
         val middle = Color(0xFF977F76)

@@ -68,17 +68,12 @@ internal fun spineGlyphInk(background: Color): Color {
     return if (whiteContrast > inkContrast) Color.White else ink
 }
 
-/** 제목은 축소 없이 한 열로 표시하고 마지막 칸만 말줄임한다. UTF-16 쌍은 나누지 않는다. */
+/** 제목은 축소 없이 한 열로 표시하며 결합 문자와 이모지 묶음을 나누지 않는다. */
 internal fun spineTitleGlyphs(title: String, capacity: Int): List<String> {
     if (capacity <= 0) return emptyList()
-    val glyphs = mutableListOf<String>()
-    var index = 0
-    while (index < title.length) {
-        val first = title[index++]
-        if (first.isWhitespace()) continue
-        glyphs += if (first.isHighSurrogate() && index < title.length && title[index].isLowSurrogate()) {
-            "$first${title[index++]}"
-        } else first.toString()
-    }
+    val glyphs = spineTitleGraphemes(title).filterNot { glyph -> glyph.all(Char::isWhitespace) }
     return if (glyphs.size > capacity) glyphs.take(capacity - 1) + "…" else glyphs
 }
+
+/** 플랫폼의 문자 경계를 사용해 UTF-16 코드 단위가 아닌 표시 문자로 나눈다. */
+internal expect fun spineTitleGraphemes(title: String): List<String>
