@@ -87,16 +87,17 @@ private fun GeneratedBookSpine(book: ArchiveBookUiModel, modifier: Modifier, sca
         modifier.background(Brush.verticalGradient(colorStops = palette.stops))
             .clearAndSetSemantics { contentDescription = "${book.title} 책등" },
     ) {
+        val spineHeight = maxHeight.value
         val fontScale = LocalDensity.current.fontScale
         val padding = 14f * scale
         val rowHeight = 21f * scale * fontScale
         val glyphWidth = 14f * scale * fontScale
         val capacity = if (maxWidth.value < glyphWidth) 0 else
-            floor((maxHeight.value - padding * 2) / rowHeight).toInt().coerceAtLeast(0)
+            floor((spineHeight - padding * 2) / rowHeight).toInt().coerceAtLeast(0)
         val glyphs = remember(book.title, capacity) { spineTitleGlyphs(book.title, capacity) }
         Column(Modifier.align(Alignment.TopCenter).padding(top = padding.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             glyphs.forEachIndexed { index, glyph ->
-                val center = (padding + rowHeight * (index + .5f)) / maxHeight.value
+                val center = (padding + rowHeight * (index + .5f)) / spineHeight
                 Text(
                     glyph,
                     modifier = Modifier.width(glyphWidth.dp).height(rowHeight.dp),
