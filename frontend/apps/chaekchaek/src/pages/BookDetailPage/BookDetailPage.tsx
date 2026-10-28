@@ -173,6 +173,15 @@ export const BookDetailPage = () => {
     };
   }, [reviewsDataAll]);
 
+  const handleBookRegistered = async () => {
+    track('library_add', {
+      source: 'detail_info',
+      status: 'reading',
+    });
+
+    refetchGetBooksIsbnLoadData();
+  };
+
   const [dialog, setDialog] = useState<
     | 'RegisterLibraryDialog'
     | 'UpdateCurrentPageDialog'
@@ -250,9 +259,7 @@ export const BookDetailPage = () => {
                 isbn: data.isbn13,
                 bookId: data.bookId,
               }}
-              onBookRegistered={() => {
-                refetchGetBooksIsbnLoadData();
-              }}
+              onBookRegistered={handleBookRegistered}
               onClose={handleCloseDialog}
             />
           )
