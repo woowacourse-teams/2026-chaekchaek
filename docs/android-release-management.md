@@ -6,13 +6,13 @@
 
 ## 현재 상태
 
-확인일: 2026-10-21
+확인일: 2026-10-28
 
 | 구분 | `versionName` | `versionCode` | Git 태그 | 상태 |
 | --- | --- | --- | --- | --- |
 | 1.3.0 준비 당시 스토어 사용 버전(사용자 확인) | `1.2.2` | `8` | 미확인 | 과거 사용자 확인값. 당시 Play API의 번들 최대 코드는 `7`이었음 |
 | 직전 Android 내부 테스트 | `1.3.0` | `9` | 없음 | 2026-10-16 API로 내부 테스트 completed 확인 |
-| 현재 소스 및 Android 내부 테스트 | `1.3.1` | `10` | `android-v1.3.1-code10` | Play API internal completed 및 App Store Connect CLI 업로드 성공, Apple 처리 시작 확인 |
+| 현재 소스 및 Android 내부 테스트 | `1.3.2` | `12` | `android-v1.3.2-code12` | Play API internal completed 및 TestFlight 업로드 성공, Apple 처리 시작 확인 |
 
 직전 1.3.0 작업의 기준은 `origin/an-develop`의 `6b3d02276516617d755445cf7579fb586f39e9c0`이다.
 Android와 iOS의 마지막 스토어 사용 버전 `1.2.2 (8)`은 사용자가 확인했다.
@@ -63,6 +63,25 @@ QA는 테스트를 시작하기 전에 앱의 설정 화면이나 설치 파일 
    큰 값이 있으면 그 값 다음 번호를 사용한다.
 
 ## 릴리스 기록
+
+### 1.3.2 (12)
+
+- 상태: Android 내부 테스트 배포 완료. TestFlight 업로드 성공, Apple 처리 시작 확인. TestFlight 처리 완료와 테스터 설치 가능 여부는 미확인
+- 기준 소스 커밋: `6824ca2750b86e070919e09546f6befda4e23e12`
+- 버전: 사용자 지정 `1.3.2 (12)`, Android와 iOS 공통
+- Android 산출물: `android/app/release/chaekchaek-1.3.2-code12.aab`
+- iOS 산출물: `android/iosApp/release/Chaekchaek-1.3.2-12.xcarchive`
+- Android 검증: production 환경의 서명 AAB 빌드, `lintVitalRelease`, `:shared:testAndroidHostTest :app:lintDebug` 성공. 공유 테스트 487개, 실패와 건너뜀 0개. Debug Lint 오류 0개, 경고 70개
+- Android 서명과 패키지: `jarsigner -verify` 성공. bundletool 1.18.3으로 패키지 `com.chamsae.chaekchaek`, 버전 `1.3.2 (12)`, target SDK 36, cleartext 비활성 확인
+- AAB SHA-256: `f99c3a3d3fb2c7a163a9d0c292bbfb0f2a9e6c18509fff716eee91fcfce9e002`
+- Android 배포: 2026-10-28 Play API로 업로드 후 internal 트랙 `1.3.2 (12)`, `completed` 설정. 별도 조회 edit에서 버전, 상태와 SHA-256 일치 및 production, alpha, beta 트랙 불변 확인
+- Android UI 실행: 플리파 서버 오프라인을 확인하고 로컬 Jev로 전환했으나 AVD 하나는 유실된 경로를 참조했고, 대체 AVD는 최신 `apksigner` 출력과 설치 사전 검사 정규식이 맞지 않아 `inspection_failed`로 중단했다. 안전 검사를 우회하지 않았으며 실제 UI 시나리오는 미실행
+- iOS Release Archive 생성과 `codesign --verify --deep --strict` 성공. Apple 로그인 entitlement 및 앱과 dSYM UUID `4E5360CF-F662-3291-A156-AA403DC1F898` 일치 확인
+- iOS 앱 바이너리 SHA-256: `ab610be2950a85d9e5b649afc6194f8c6b8df23b9a7d28471b48ee0b580d9c94`
+- iOS 업로드: 2026-10-28 19:44 KST `xcodebuild -exportArchive`의 App Store Connect 경로로 성공. `manageAppVersionAndBuildNumber=false`로 빌드 12 유지. CLI에서 `Upload succeeded`, `EXPORT SUCCEEDED`, `Uploaded package is processing` 확인
+- iOS 업로드 경고: FirebaseAnalytics, GoogleAdsOnDeviceConversion, GoogleAppMeasurement, GoogleAppMeasurementIdentitySupport 프레임워크 dSYM 누락 4건. 앱 자체 dSYM UUID는 일치
+- iOS Simulator UI 테스트: 기존 개인 scheme과 같은 이름의 공유 scheme이 가려지는 문제를 피해 임시 검증 scheme로 50개 전체 회귀를 시작했다. fixture 서버가 필요한 책장 계약 테스트 2개는 건너뛰었고 `FirstLibraryOnboardingUITests/testAnalyticsLoginFailureAndCancellationKeepSignInSheet` 1개가 기대 화면을 찾지 못해 실패했다. 배포 요청에 비해 범위가 과도해 사용자 확인 후 전체 실행을 중단했으므로 나머지는 미검증
+- App Store 심사 제출과 Google Play 프로덕션 게시는 수행하지 않음
 
 ### 1.3.1 (10)
 
