@@ -11,9 +11,10 @@ internal actual fun spineTitleGraphemes(title: String): List<String> {
     return buildList {
         var start = 0
         while (start < title.length) {
-            val end = text.rangeOfComposedCharacterSequenceAtIndex(start.toULong()).useContents {
-                (location + length).toInt()
-            }
+            val range = text.rangeOfComposedCharacterSequenceAtIndex(start.toULong())
+            val location = range.useContents { location }
+            val length = range.useContents { length }
+            val end = (location + length).toInt()
             add(title.substring(start, end))
             start = end
         }
