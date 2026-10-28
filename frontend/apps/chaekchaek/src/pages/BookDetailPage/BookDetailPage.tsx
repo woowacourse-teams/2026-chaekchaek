@@ -249,6 +249,9 @@ export const BookDetailPage = () => {
                 isbn: data.isbn13,
                 bookId: data.bookId,
               }}
+              onBookRegistered={() => {
+                refetchGetBooksIsbnLoadData();
+              }}
               onClose={handleCloseDialog}
             />
           )

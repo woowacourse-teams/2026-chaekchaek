@@ -24,6 +24,7 @@ type LibraryId = number;
 
 export const RegisterBookToLibraryDialog = ({
   book,
+  onBookRegistered,
   onClose,
 }: RegisterBookToLibraryDialogProps) => {
   const { user } = useAuthContext();
@@ -117,7 +118,10 @@ export const RegisterBookToLibraryDialog = ({
       requests.push(deleteLibrariesLibraryIdBooksBookIdMutate(deletedLibraries));
     }
 
-    await Promise.all(requests);
+    if (requests.length) {
+      await Promise.all(requests);
+      await onBookRegistered?.();
+    }
 
     onClose();
   };
