@@ -24,7 +24,7 @@
   align-items: center;
 }
 
-.size-medium .stars {
+.size-large .stars {
   gap: 10px;
 }
 
@@ -41,4 +41,8 @@
   font-weight: 700;
   line-height: normal;
   white-space: nowrap;
+}
+
+.size-medium .stars {
+  gap: 4px;
 }

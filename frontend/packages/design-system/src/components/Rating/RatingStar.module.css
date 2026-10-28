@@ -7,23 +7,23 @@
   background-repeat: no-repeat;
 }
 
-.size-medium {
+.active {
+  background-image: url('./imgs/star-filled.svg');
+}
+
+.inactive {
+  background-image: url('./imgs/star-empty.svg');
+}
+
+.half {
+  background-image: url('./imgs/star-half.svg');
+}
+
+.size-large {
   width: 56px;
   height: 56px;
   flex: 0 0 56px;
   background-size: 56px 56px;
-}
-
-.size-medium.active {
-  background-image: url('./imgs/icon-star-medium-on.svg');
-}
-
-.size-medium.inactive {
-  background-image: url('./imgs/icon-star-medium-off.svg');
-}
-
-.size-medium.half {
-  background-image: url('./imgs/icon-star-medium-half.svg');
 }
 
 .size-small {
@@ -33,14 +33,9 @@
   background-size: 14px 13.5px;
 }
 
-.size-small.active {
-  background-image: url('./imgs/icon-star-on.svg');
-}
-
-.size-small.inactive {
-  background-image: url('./imgs/icon-star-active.svg');
-}
-
-.size-small.half {
-  background-image: url('./imgs/icon-star-half.svg');
+.size-medium {
+  width: 32px;
+  height: 44px;
+  flex: 0 0 32px;
+  background-size: 28px 28px;
 }

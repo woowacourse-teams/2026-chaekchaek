@@ -11,18 +11,15 @@ export type DeleteReviewsReviewIdResponseDto = ResponseDto<undefined>;
 export interface PatchReviewsReviewIdRequestDto {
   pathParams: [{ name: 'reviewId'; value: number }];
   data: {
-    chapter?: string | undefined;
     isSpoiler?: boolean | undefined;
     quote?: string | undefined;
     totalPages?: number | undefined;
-    currentPage?: number | undefined;
     content: string;
   };
   headers?: RequestHeaders;
 }
 
 export type PatchReviewsReviewIdResponseDto = ResponseDto<{
-  chapter: string;
   author: {
     mine: boolean;
     displayName: string;
@@ -51,6 +48,5 @@ export type PatchReviewsReviewIdResponseDto = ResponseDto<{
   likedByMe: boolean;
   deleted: boolean;
   quote: string;
-  currentPage: number;
   reviewId: number;
 }>;

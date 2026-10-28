@@ -1,5 +1,8 @@
 import './styles/index.css';
 
+export { Accordion } from './components/Accordion';
+export type { Props as AccordionProps } from './components/Accordion';
+
 export { Avatar } from './components/Avatar';
 export type { Props as AvatarProps } from './components/Avatar';
 
