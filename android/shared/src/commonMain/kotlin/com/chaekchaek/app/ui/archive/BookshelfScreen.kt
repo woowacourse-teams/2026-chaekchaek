@@ -128,7 +128,7 @@ internal fun BookshelfRoute(
                         Spacer(Modifier.height(8.dp))
                         Text("${detail.totalCount}권", style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
                         Spacer(Modifier.height(16.dp))
-                        BookshelfSpineRow(detail.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = if (!canOrder) null else { viewModel.orderBooks(detail.libraryId, it) })
+                        BookshelfSpineRow(detail.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = if (!canOrder) null else ({ ids: List<Long> -> viewModel.orderBooks(detail.libraryId, ids) }))
                         HorizontalDivider(thickness = 3.dp, color = ChaekBorder)
                         Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             ChaekOverlayButton("+ 책 담기", { adding = true }, modifier = Modifier.weight(1f), enabled = !state.mutating)
