@@ -71,8 +71,10 @@ class BookshelfContractTest {
         compose.onNodeWithText("만들기").performScrollTo().performClick()
         waitNameSheetClosed()
         waitTag("bookshelf-1")
+        capture("bookshelf-fallback-library.png")
         compose.onNodeWithTag("bookshelf-1").performClick()
         waitText("+ 책 담기")
+        capture("bookshelf-fallback-playlist.png")
         compose.onNodeWithText("+ 책 담기").performScrollTo().performClick()
         compose.onNodeWithText("검증 도서 3").performScrollTo().performClick()
         waitText("담을 책장 고르기")
@@ -238,6 +240,16 @@ class BookshelfContractTest {
     private fun waitNameSheetClosed() = compose.waitUntil(15_000) { compose.onAllNodesWithTag("bookshelfName").fetchSemanticsNodes().isEmpty() }
     private fun waitText(text: String) = compose.waitUntil(15_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
     private fun waitTag(tag: String) = compose.waitUntil(15_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
+    private fun capture(name: String) {
+        compose.waitForIdle()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val bitmap = instrumentation.uiAutomation.takeScreenshot()
+        assertNotNull("대체 책등 시각 검증 캡처", bitmap)
+        File(instrumentation.targetContext.getExternalFilesDir(null), name).outputStream().use {
+            assertTrue(bitmap!!.compress(Bitmap.CompressFormat.PNG, 100, it))
+        }
+    }
+
     private fun requested(method: String, pathPrefix: String): Boolean {
         val calls = JSONObject(request("/__bookshelf/state")).getJSONArray("requests")
         return (0 until calls.length()).any {

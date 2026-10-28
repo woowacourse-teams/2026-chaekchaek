@@ -1102,9 +1102,17 @@ final class BookshelfContractUITests: XCTestCase {
         element("만들기", app).tap()
         XCTAssertTrue(newName.waitForNonExistence(timeout: 10))
         XCTAssertTrue(firstShelf.waitForExistence(timeout: 10))
+        let libraryFallback = XCTAttachment(screenshot: app.screenshot())
+        libraryFallback.name = "QA2 대체 책등 내 서재"
+        libraryFallback.lifetime = .keepAlways
+        add(libraryFallback)
         firstShelf.tap()
         let addButton = element("+ 책 담기", app)
         XCTAssertTrue(addButton.waitForExistence(timeout: 10))
+        let playlistFallback = XCTAttachment(screenshot: app.screenshot())
+        playlistFallback.name = "QA2 대체 책등 책 플레이리스트"
+        playlistFallback.lifetime = .keepAlways
+        add(playlistFallback)
         addButton.tap()
         let selectedBook = element("검증 도서 3", app)
         guard selectedBook.waitForExistence(timeout: 10) else {
