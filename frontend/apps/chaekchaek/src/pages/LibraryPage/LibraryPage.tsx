@@ -97,7 +97,10 @@ export const LibraryPage = () => {
       const userWithAnonymityDisabled = await updateAnonymity({ displayAnonymous: false });
       if (!userWithAnonymityDisabled) return;
 
-      updateAccount(userWithAnonymityDisabled);
+      updateAccount({
+        ...user,
+        ...userWithAnonymityDisabled,
+      });
 
       return;
     }
@@ -105,7 +108,10 @@ export const LibraryPage = () => {
     const updatedUser = await updateAnonymity({ displayAnonymous: true });
     if (!updatedUser) return;
 
-    updateAccount(updatedUser);
+    updateAccount({
+      ...user,
+      ...updatedUser,
+    });
   };
 
   const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
