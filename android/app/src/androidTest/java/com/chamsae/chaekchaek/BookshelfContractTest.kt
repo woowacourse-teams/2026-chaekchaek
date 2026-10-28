@@ -106,14 +106,14 @@ class BookshelfContractTest {
         val delta = first - second
         compose.onNodeWithTag("bookshelf-reorder-2").performTouchInput {
             down(center)
-            moveBy(delta, durationMillis = 500)
+            moveBy(delta, delayMillis = 500)
             cancel()
         }
         compose.waitForIdle()
         assertFalse("드래그 취소는 서버 순서를 바꾸지 않음", requested("PATCH", "/api/v1/libraries/order"))
         compose.onNodeWithTag("bookshelf-reorder-2").performTouchInput {
             down(center)
-            moveBy(delta, durationMillis = 500)
+            moveBy(delta, delayMillis = 500)
             up()
         }
         compose.waitUntil(15_000) { requested("PATCH", "/api/v1/libraries/order") }
