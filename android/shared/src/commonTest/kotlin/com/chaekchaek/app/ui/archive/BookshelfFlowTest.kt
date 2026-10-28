@@ -241,6 +241,76 @@ class BookshelfFlowTest {
         } finally { Dispatchers.resetMain() }
     }
 
+    @Test fun `정렬 거절은 인증 없음과 잘못된 항목에도 실패 완료를 한 번 알린다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = FakeShelves(listOf(shelf(1), shelf(2)))
+            val vm = BookshelfViewModel(repo)
+            val results = mutableListOf<Boolean>()
+            vm.orderShelves(listOf(2, 1)) { results += it }
+            vm.orderBooks(1, emptyList()) { results += it }
+            vm.authenticate("token"); advanceUntilIdle()
+            vm.orderShelves(listOf(1, 1)) { results += it }
+            vm.orderBooks(99, emptyList()) { results += it }
+            assertEquals(List(4) { false }, results)
+            assertTrue(repo.orders.isEmpty())
+            assertTrue(repo.bookOrders.isEmpty())
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test fun `정렬 성공은 재조회가 끝나기 전에도 저장한 순서를 유지한다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = FakeShelves(listOf(shelf(1), shelf(2)))
+            val vm = BookshelfViewModel(repo)
+            vm.authenticate("token"); advanceUntilIdle()
+            val refresh = CompletableDeferred<Unit>(); repo.mineGate = refresh
+            val results = mutableListOf<Boolean>()
+            vm.orderShelves(listOf(2, 1)) { results += it }; runCurrent()
+            assertEquals(listOf(true), results)
+            assertEquals(listOf(2L, 1L), vm.uiState.value.shelves.map { it.libraryId })
+            assertTrue(vm.uiState.value.refreshing)
+            refresh.complete(Unit); advanceUntilIdle()
+            assertEquals(listOf(true), results)
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test fun `정렬 중 중복 요청과 즉시 실패는 각각 완료하고 재시도는 이전 콜백을 반복하지 않는다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = FakeShelves(listOf(shelf(1), shelf(2)))
+            val vm = BookshelfViewModel(repo)
+            vm.authenticate("token"); advanceUntilIdle()
+            val save = CompletableDeferred<Unit>(); repo.orderGate = save; repo.fail = true
+            val first = mutableListOf<Boolean>(); val second = mutableListOf<Boolean>()
+            vm.orderShelves(listOf(2, 1)) { first += it }; runCurrent()
+            vm.orderShelves(listOf(2, 1)) { second += it }
+            assertTrue(first.isEmpty()); assertEquals(listOf(false), second)
+            save.complete(Unit); advanceUntilIdle()
+            assertEquals(listOf(false), first)
+            assertEquals(listOf(1L, 2L), vm.uiState.value.shelves.map { it.libraryId })
+            repo.fail = false
+            vm.errors.takeRecovery(vm.errors.notice.value!!.id)?.invoke(null); advanceUntilIdle()
+            assertEquals(listOf(false), first)
+            assertEquals(2, repo.orders.size)
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test fun `계정 변경은 진행 중 정렬을 실패 완료하고 이전 계정의 순서를 복원하지 않는다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = FakeShelves(listOf(shelf(1), shelf(2)))
+            val vm = BookshelfViewModel(repo)
+            vm.authenticate("token", 9); advanceUntilIdle()
+            repo.orderGate = CompletableDeferred()
+            val results = mutableListOf<Boolean>()
+            vm.orderShelves(listOf(2, 1)) { results += it }; runCurrent()
+            vm.authenticate(null); advanceUntilIdle()
+            assertEquals(listOf(false), results)
+            assertTrue(vm.uiState.value.shelves.isEmpty())
+        } finally { Dispatchers.resetMain() }
+    }
+
     @Test fun `이름과 순서는 기존 긴 이름과 35권 이전 데이터를 임의로 자르지 않는다`() {
         assertNotNull(bookshelfNameError(" ", emptyList()))
         assertNotNull(bookshelfNameError("12345678901", emptyList()))
@@ -255,6 +325,7 @@ class BookshelfFlowTest {
 
 private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
     var fail = false
+    var orderGate: CompletableDeferred<Unit>? = null
     var createGate: CompletableDeferred<Unit>? = null
     var detailGate: CompletableDeferred<Unit>? = null
     var detailFails = false
@@ -289,6 +360,6 @@ private class FakeShelves(val shelves: List<Bookshelf>) : BookshelfRepository {
     override suspend fun rename(libraryId: Long, name: String, token: String) {}
     override suspend fun delete(libraryId: Long, token: String) {}
     override suspend fun remove(libraryId: Long, bookId: Long, token: String) {}
-    override suspend fun orderShelves(ids: List<Long>, token: String) { orders += ids; if (fail) error("offline") }
+    override suspend fun orderShelves(ids: List<Long>, token: String) { orders += ids; orderGate?.await(); if (fail) error("offline") }
     override suspend fun orderBooks(libraryId: Long, ids: List<Long>, token: String) { bookOrders += ids; if (fail) error("offline") }
 }

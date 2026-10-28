@@ -35,6 +35,40 @@ internal class BookshelfReorder {
     }
 }
 
+/** Keeps a dropped order visible until its own save resolves or authoritative items change. */
+internal class BookshelfOrderSubmission {
+    var order: List<Long>? = null
+        private set
+    private var original: List<Long> = emptyList()
+    private var serial = 0L
+    private var activeRequest: Long? = null
+
+    fun submit(source: List<Long>, candidate: List<Long>): Long {
+        original = source.toList()
+        order = candidate.toList()
+        return (++serial).also { activeRequest = it }
+    }
+
+    fun complete(request: Long, success: Boolean): Boolean {
+        if (activeRequest != request) return false
+        activeRequest = null
+        if (!success) clear()
+        return true
+    }
+
+    fun displayOrder(source: List<Long>): List<Long> = order?.takeIf { source == original } ?: source
+
+    fun reconcile(source: List<Long>) {
+        if (order != null && source != original) clear()
+    }
+
+    fun clear() {
+        order = null
+        original = emptyList()
+        activeRequest = null
+    }
+}
+
 /** Uses measured item bounds, so variable widths and heights do not change the drop semantics. */
 internal fun reorderTarget(position: Float, bounds: List<ReorderItemBounds>): Long? =
     bounds.firstOrNull { position >= it.start && position <= it.end }?.id

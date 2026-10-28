@@ -38,4 +38,38 @@ class BookshelfReorderTest {
         assertEquals(0f, reorderEdgeScroll(150f, 0f, 300f, 48f, 12f))
         assertEquals(6f, reorderEdgeScroll(276f, 0f, 300f, 48f, 12f))
     }
+    @Test fun `dropped order stays visible through save completion until server state arrives`() {
+        val submission = BookshelfOrderSubmission()
+        val request = submission.submit(listOf(1, 2), listOf(2, 1))
+        submission.reconcile(listOf(1, 2))
+        assertEquals(listOf(2L, 1L), submission.order)
+        assertTrue(submission.complete(request, success = true))
+        assertEquals(listOf(2L, 1L), submission.order)
+        submission.reconcile(listOf(2, 1))
+        assertNull(submission.order)
+        assertFalse(submission.complete(request, success = false))
+    }
+
+    @Test fun `immediate save rejection rolls back without observing a busy frame`() {
+        val submission = BookshelfOrderSubmission()
+        val request = submission.submit(listOf(1, 2), listOf(2, 1))
+        assertTrue(submission.complete(request, success = false))
+        assertNull(submission.order)
+        assertFalse(submission.complete(request, success = true))
+    }
+
+    @Test fun `external order or disposal invalidates an old save callback`() {
+        val submission = BookshelfOrderSubmission()
+        val first = submission.submit(listOf(1, 2, 3), listOf(2, 1, 3))
+        assertEquals(listOf(3L, 2L, 1L), submission.displayOrder(listOf(3, 2, 1)))
+        submission.reconcile(listOf(3, 2, 1))
+        assertNull(submission.order)
+        val second = submission.submit(listOf(3, 2, 1), listOf(2, 3, 1))
+        assertFalse(submission.complete(first, success = false))
+        assertEquals(listOf(2L, 3L, 1L), submission.order)
+        submission.clear()
+        assertFalse(submission.complete(second, success = true))
+        assertNull(submission.order)
+    }
+
 }

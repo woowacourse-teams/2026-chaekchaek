@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
-import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -37,13 +36,15 @@ import kotlin.math.roundToInt
 @Composable
 internal fun <T> BookshelfReorderList(
     values: List<T>, key: (T) -> Long, enabled: Boolean, state: LazyListState,
-    onOrder: (List<Long>) -> Unit, modifier: Modifier = Modifier,
+    onOrder: (List<Long>, (Boolean) -> Unit) -> Unit, modifier: Modifier = Modifier,
     horizontal: Boolean = false, longPress: Boolean = false, tagPrefix: String = "books",
     header: @Composable () -> Unit = {}, footer: @Composable () -> Unit = {},
     item: @Composable (T, Int, Modifier) -> Unit,
 ) {
     val sourceIds = values.map(key)
     val session = remember { BookshelfReorder() }
+    val submission = remember { BookshelfOrderSubmission() }
+    var submittedOrder by remember { mutableStateOf<List<Long>?>(null) }
     var heldId by remember { mutableStateOf<Long?>(null) }
     var preview by remember { mutableStateOf(sourceIds) }
     var pointer by remember { mutableStateOf(Offset.Zero) }
@@ -57,7 +58,7 @@ internal fun <T> BookshelfReorderList(
     val latestOrder by rememberUpdatedState(onOrder)
     val density = LocalDensity.current
     val byId = values.associateBy(key)
-    val order = if (heldId != null) preview else sourceIds
+    val order = if (heldId != null) preview else if (submittedOrder != null) submission.displayOrder(sourceIds) else sourceIds
     fun movePointer(position: Offset) {
         pointer = position
         val available = bounds.filterKeys { it in preview }.map { (id, rect) ->
@@ -68,14 +69,23 @@ internal fun <T> BookshelfReorderList(
         }
     }
     fun finish(cancelled: Boolean) {
+        val original = session.original
         val result = session.finish(cancelled)
         heldId = null
-        if (result != null) latestOrder(result)
+        if (result != null) {
+            val request = submission.submit(original, result)
+            submittedOrder = submission.order
+            latestOrder(result) { success ->
+                if (submission.complete(request, success)) submittedOrder = submission.order
+            }
+        }
     }
     LaunchedEffect(sourceIds, enabled) {
         if (heldId != null && (!enabled || sourceIds != session.original)) finish(true)
+        submission.reconcile(sourceIds)
+        submittedOrder = submission.order
     }
-    DisposableEffect(Unit) { onDispose { session.finish(cancelled = true) } }
+    DisposableEffect(Unit) { onDispose { session.finish(cancelled = true); submission.clear() } }
     LaunchedEffect(heldId) {
         if (heldId == null) return@LaunchedEffect
         val edge = with(density) { (if (horizontal) 36.dp else 48.dp).toPx() }
@@ -92,7 +102,7 @@ internal fun <T> BookshelfReorderList(
     Box(modifier.onGloballyPositioned { viewport = it.boundsInRoot() }.pointerInput(horizontal, longPress) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-            if (!latestEnabled || down.isConsumed) return@awaitEachGesture
+            if (!latestEnabled || submittedOrder != null || down.isConsumed) return@awaitEachGesture
             val position = down.position + viewport.topLeft
             val hit = (if (longPress) bounds else handles).entries.firstOrNull { (id, rect) -> id in latestIds && rect.contains(position) }
                 ?: return@awaitEachGesture
@@ -106,9 +116,23 @@ internal fun <T> BookshelfReorderList(
             preview = session.candidate
             heldId = hit.key
             try {
-                val completed = drag(pressed.id) { change ->
-                    change.consume()
-                    movePointer(change.position + viewport.topLeft)
+                var activePointer = pressed.id
+                var completed = false
+                while (heldId != null) {
+                    // Initial runs before the lazy child's scroll recognizer, including a fast first move.
+                    val event = awaitPointerEvent(PointerEventPass.Initial)
+                    val change = event.changes.firstOrNull { it.id == activePointer } ?: break
+                    if (change.isConsumed) break
+                    if (!change.pressed) {
+                        val replacement = event.changes.firstOrNull { it.pressed }
+                        event.changes.forEach { it.consume() }
+                        if (replacement == null) { completed = true; break }
+                        activePointer = replacement.id
+                        movePointer(replacement.position + viewport.topLeft)
+                    } else {
+                        event.changes.forEach { it.consume() }
+                        movePointer(change.position + viewport.topLeft)
+                    }
                 }
                 if (heldId != null) finish(!completed)
             } finally {
@@ -127,10 +151,10 @@ internal fun <T> BookshelfReorderList(
                 item(value, index, Modifier.onGloballyPositioned { handles[id] = it.boundsInRoot() })
             }
         }
-        if (horizontal) LazyRow(state = state, modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.Bottom,
+        if (horizontal) LazyRow(state = state, modifier = Modifier.fillMaxSize(), userScrollEnabled = heldId == null, verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             items(order, key = { it }) { lazyItem(it) }
-        } else LazyColumn(state = state, modifier = Modifier.fillMaxSize()) {
+        } else LazyColumn(state = state, modifier = Modifier.fillMaxSize(), userScrollEnabled = heldId == null) {
             item(key = "bookshelf-header") { header() }
             items(order, key = { it }) { lazyItem(it) }
             item(key = "bookshelf-footer") { footer() }

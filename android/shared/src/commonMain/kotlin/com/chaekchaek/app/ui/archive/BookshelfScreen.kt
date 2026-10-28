@@ -109,7 +109,7 @@ internal fun BookshelfRoute(
                         ShelfMenu(shelf, { namingId = shelf.libraryId }, { viewModel.open(shelf.libraryId); editing = true }, { viewModel.open(shelf.libraryId); sharing = true }, { deleting = shelf }, !state.mutating)
                     }
                     Spacer(Modifier.height(7.dp))
-                    BookshelfSpineRow(shelf.items.map { it.asArchive() }, onBook = { viewModel.open(shelf.libraryId) }, onMove = if (!canOrder) null else { ids -> viewModel.orderBooks(shelf.libraryId, ids) })
+                    BookshelfSpineRow(shelf.items.map { it.asArchive() }, onBook = { viewModel.open(shelf.libraryId) }, onMove = if (!canOrder) null else { ids: List<Long>, done: (Boolean) -> Unit -> viewModel.orderBooks(shelf.libraryId, ids, done) })
                     HorizontalDivider(thickness = 3.dp, color = ChaekBorder)
                 }
             }
@@ -121,14 +121,14 @@ internal fun BookshelfRoute(
             ) {
             BookshelfReorderList(
                 values = detail.items, key = { it.bookId }, enabled = canOrder && !editing, state = detailListState,
-                onOrder = { viewModel.orderBooks(detail.libraryId, it) }, modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                onOrder = { ids, done -> viewModel.orderBooks(detail.libraryId, ids, done) }, modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
                 header = {
                     Column(Modifier.padding(top = 24.dp)) {
                         Text(detail.name, style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp))
                         Spacer(Modifier.height(8.dp))
                         Text("${detail.totalCount}권", style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
                         Spacer(Modifier.height(16.dp))
-                        BookshelfSpineRow(detail.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = if (!canOrder) null else ({ ids: List<Long> -> viewModel.orderBooks(detail.libraryId, ids) }))
+                        BookshelfSpineRow(detail.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = if (!canOrder) null else ({ ids: List<Long>, done: (Boolean) -> Unit -> viewModel.orderBooks(detail.libraryId, ids, done) }))
                         HorizontalDivider(thickness = 3.dp, color = ChaekBorder)
                         Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             ChaekOverlayButton("+ 책 담기", { adding = true }, modifier = Modifier.weight(1f), enabled = !state.mutating)
@@ -279,7 +279,7 @@ internal fun BookShelfRow(title: String, author: String, cover: String, modifier
 
 @Composable
 internal fun BookshelfSpineRow(books: List<ArchiveBookUiModel>, onBook: (ArchiveBookUiModel) -> Unit,
-    onMove: ((List<Long>) -> Unit)? = null, modifier: Modifier = Modifier) {
+    onMove: ((List<Long>, (Boolean) -> Unit) -> Unit)? = null, modifier: Modifier = Modifier) {
     val scroll = rememberLazyListState()
     if (books.isEmpty()) {
         Box(modifier.fillMaxWidth().height(BookshelfSpineRowHeight), contentAlignment = Alignment.BottomStart) {
@@ -287,7 +287,7 @@ internal fun BookshelfSpineRow(books: List<ArchiveBookUiModel>, onBook: (Archive
         }
         return
     }
-    BookshelfReorderList(books, { it.bookId }, onMove != null, scroll, { onMove?.invoke(it) },
+    BookshelfReorderList(books, { it.bookId }, onMove != null, scroll, { ids, done -> if (onMove != null) onMove(ids, done) else done(false) },
         modifier.fillMaxWidth().height(BookshelfSpineRowHeight), horizontal = true, longPress = true, tagPrefix = "spines") { book, index, _ ->
         LibraryBookSpine(book, Modifier.height(bookshelfSpineHeight(index)).widthIn(min = 6.dp, max = 48.dp).clickable { onBook(book) })
     }
