@@ -86,19 +86,21 @@ internal fun BookshelfImageSheet(detail: BookshelfDetail, onDismiss: () -> Unit)
         BoxWithConstraints(Modifier.fillMaxWidth().heightIn(max = 380.dp).background(ChaekSurfaceMuted)
             .verticalScroll(rememberScrollState(), enabled = !exporting)) {
             val canvasScale = maxWidth.value / 1080f
-            Column(Modifier.fillMaxWidth().background(ChaekSurface).testTag("bookshelf-image-preview")) {
-                ImageSection(0, layers) {
-                    Row(Modifier.fillMaxWidth()) {
-                        Text(detail.name, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
-                        Text("책췍", style = MaterialTheme.typography.titleMedium)
+            key(detail) {
+                Column(Modifier.fillMaxWidth().background(ChaekSurface).testTag("bookshelf-image-preview")) {
+                    ImageSection(0, layers) {
+                        Row(Modifier.fillMaxWidth()) {
+                            Text(detail.name, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+                            Text("책췍", style = MaterialTheme.typography.titleMedium)
+                        }
+                        Text("${detail.totalCount}권", style = MaterialTheme.typography.bodySmall)
                     }
-                    Text("${detail.totalCount}권", style = MaterialTheme.typography.bodySmall)
-                }
-                ImageSection(1, layers) {
-                    ExportSpineRows(rowGap = (40 * canvasScale).dp, lineThickness = (5 * canvasScale).dp) {
-                        detail.items.forEachIndexed { index, book ->
-                            ExportSpine(book, index, percent / 100f * 2.6f * canvasScale) {
-                                readyBooks[book.bookId] = true
+                    ImageSection(1, layers) {
+                        ExportSpineRows(rowGap = (40 * canvasScale).dp, lineThickness = (5 * canvasScale).dp) {
+                            detail.items.forEachIndexed { index, book ->
+                                ExportSpine(book, index, percent / 100f * 2.6f * canvasScale) {
+                                    readyBooks[book.bookId] = true
+                                }
                             }
                         }
                     }
@@ -129,7 +131,7 @@ private fun ExportSpine(book: BookshelfBook, index: Int, scale: Float, onReady: 
         val fittedHeight = minOf(height, maxWidth / ratio)
         val dimensions = Modifier.width(fittedHeight * ratio).height(fittedHeight)
         if (generated) {
-            LibraryBookSpine(book.asArchive().copy(spineUrl = null), dimensions, onReady = { ready() })
+            LibraryBookSpine(book.asArchive().copy(spineUrl = null), dimensions, onReady = { ready() }, generatedScale = scale / 1.4f)
         } else {
             Image(painter, "${book.title} 책등", dimensions, contentScale = ContentScale.Fit)
             LaunchedEffect(state) { if (state is AsyncImagePainter.State.Success) ready() }

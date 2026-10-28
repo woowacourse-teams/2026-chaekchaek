@@ -14,7 +14,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.*
@@ -26,6 +25,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import org.jetbrains.compose.resources.Font
+import kotlin.math.floor
 
 @Composable
 internal fun LibraryBookSpine(
@@ -34,11 +34,12 @@ internal fun LibraryBookSpine(
     showGeneratedSpine: Boolean = true,
     onSpineImageLoadFailed: (String) -> Unit = {},
     onReady: () -> Unit = {},
+    generatedScale: Float = 1f,
 ) {
     val ready by rememberUpdatedState(onReady)
     var imageFailed by remember(book.spineUrl) { mutableStateOf(false) }
     if (book.spineUrl.isNullOrBlank() || imageFailed) {
-        if (showGeneratedSpine) GeneratedBookSpine(book, modifier.width(30.dp), onReady = { ready() })
+        if (showGeneratedSpine) GeneratedBookSpine(book, modifier.width(30.dp * generatedScale), generatedScale, onReady = { ready() })
     } else {
         AsyncImage(
             model = book.spineUrl,
@@ -55,7 +56,7 @@ internal fun LibraryBookSpine(
 }
 
 @Composable
-private fun GeneratedBookSpine(book: ArchiveBookUiModel, modifier: Modifier, onReady: () -> Unit) {
+private fun GeneratedBookSpine(book: ArchiveBookUiModel, modifier: Modifier, scale: Float, onReady: () -> Unit) {
     val ready by rememberUpdatedState(onReady)
     val context = LocalPlatformContext.current
     val request = remember(context, book.coverUrl) {
@@ -63,102 +64,51 @@ private fun GeneratedBookSpine(book: ArchiveBookUiModel, modifier: Modifier, onR
     }
     val painter = rememberAsyncImagePainter(request)
     val state by painter.state.collectAsState()
-    var color by remember(book.coverUrl) { mutableStateOf(NeutralSpineColor) }
-    LaunchedEffect(state, book.coverUrl) {
+    var palette by remember(book.coverUrl) { mutableStateOf(NeutralSpinePalette) }
+    LaunchedEffect(state, book.bookId, book.coverUrl) {
         if (book.coverUrl.isBlank() || state is AsyncImagePainter.State.Error) {
+            palette = NeutralSpinePalette
             ready()
             return@LaunchedEffect
         }
         val success = state as? AsyncImagePainter.State.Success ?: return@LaunchedEffect
-        color = runCatching {
+        palette = runCatching {
             val bitmap = ImageBitmap(48, 48)
             CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, Canvas(bitmap), Size(48f, 48f)) {
                 with(success.painter) { draw(size) }
             }
             val pixels = bitmap.toPixelMap()
-            dominantCoverColor(List(48 * 48) { index -> pixels[index % 48, index / 48] })
-        }.getOrDefault(NeutralSpineColor)
+            coverSpinePalette(List(48 * 48) { index -> pixels[index % 48, index / 48] }, 48, 48)
+        }.getOrDefault(NeutralSpinePalette)
         ready()
     }
     val font = FontFamily(Font(Res.font.gowun_dodum_regular, FontWeight.Normal))
-    val ink = if (color.luminance() > 0.179f) Color(0xFF171713) else Color.White
-    val bandColor = lerp(Color(0xFFFFFAF0), color, 0.15f)
     BoxWithConstraints(
-        modifier.background(color).clearAndSetSemantics { contentDescription = "${book.title} 책등" },
+        modifier.background(Brush.verticalGradient(colorStops = palette.stops))
+            .clearAndSetSemantics { contentDescription = "${book.title} 책등" },
     ) {
-        val bandHeight = maxHeight * 0.235f
         val fontScale = LocalDensity.current.fontScale
-        val rowHeight = 13f * fontScale
-        val capacity = ((maxHeight.value - bandHeight.value - 24f) / rowHeight).toInt().coerceAtLeast(1)
-        val columns = remember(book.title, capacity) { spineTitleColumns(book.title, capacity) }
-        Row(
-            Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            columns.reversed().forEach { letters ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    letters.forEach { letter ->
-                        Text(
-                            letter.toString(),
-                            modifier = Modifier.height(rowHeight.dp),
-                            style = TextStyle(fontFamily = font, fontWeight = FontWeight.Normal,
-                                fontSize = 10.sp, lineHeight = 12.sp, color = ink),
-                        )
-                    }
-                }
+        val padding = 14f * scale
+        val rowHeight = 21f * scale * fontScale
+        val glyphWidth = 14f * scale * fontScale
+        val capacity = if (maxWidth.value < glyphWidth) 0 else
+            floor((maxHeight.value - padding * 2) / rowHeight).toInt().coerceAtLeast(0)
+        val glyphs = remember(book.title, capacity) { spineTitleGlyphs(book.title, capacity) }
+        Column(Modifier.align(Alignment.TopCenter).padding(top = padding.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            glyphs.forEachIndexed { index, glyph ->
+                val center = (padding + rowHeight * (index + .5f)) / maxHeight.value
+                Text(
+                    glyph,
+                    modifier = Modifier.width(glyphWidth.dp).height(rowHeight.dp),
+                    style = TextStyle(fontFamily = font, fontWeight = FontWeight.Normal,
+                        fontSize = (14f * scale).sp, lineHeight = (21f * scale).sp,
+                        color = spineGlyphInk(palette.backgroundAt(center))),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    maxLines = 1,
+                )
             }
         }
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(bandHeight).background(bandColor)) {
-            Text(
-                book.creator.substringBefore(","),
-                modifier = Modifier.align(Alignment.Center).padding(horizontal = 3.dp),
-                fontFamily = font, fontSize = 6.sp, lineHeight = 8.sp,
-                color = lerp(Color.Black, color, 0.45f), maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-            Box(
-                Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp)
-                    .width(10.dp).height(0.5.dp).background(color.copy(alpha = 0.5f)),
-            )
-        }
-        Box(
-            Modifier.matchParentSize().background(
-                Brush.horizontalGradient(listOf(Color.Black.copy(alpha = 0.06f), Color.Transparent, Color.Black.copy(alpha = 0.06f))),
-            ),
-        )
     }
-}
-
-internal val NeutralSpineColor = Color(0xFFAEA999)
-
-internal fun spineTitleColumns(title: String, capacity: Int): List<List<Char>> {
-    val letters = title.filterNot(Char::isWhitespace).toList()
-    val limit = capacity.coerceAtLeast(1) * 2
-    val visible = if (letters.size > limit) letters.take(limit - 1) + '…' else letters
-    return visible.chunked(capacity.coerceAtLeast(1))
-}
-
-/** 밝은 종이 바탕과 검은 글자를 제외한 가장 큰 색군을 표지의 대표색으로 사용한다. */
-internal fun dominantCoverColor(pixels: List<Color>): Color {
-    val groups = mutableMapOf<Int, MutableList<Color>>()
-    pixels.filter { it.alpha > 0.5f }.forEach { color ->
-        val r = (color.red * 255).toInt()
-        val g = (color.green * 255).toInt()
-        val b = (color.blue * 255).toInt()
-        val max = maxOf(r, g, b)
-        val min = minOf(r, g, b)
-        if (max - min >= 24 && !(max > 244 && min > 215) && max >= 28) {
-            val key = ((r / 32) shl 6) or ((g / 32) shl 3) or (b / 32)
-            groups.getOrPut(key) { mutableListOf() }.add(color)
-        }
-    }
-    val colors = groups.values.maxByOrNull { it.size }
-        ?: pixels.filter { it.alpha > 0.5f }.takeIf { it.isNotEmpty() }
-        ?: return NeutralSpineColor
-    return Color(
-        colors.map { it.red }.average().toFloat(),
-        colors.map { it.green }.average().toFloat(),
-        colors.map { it.blue }.average().toFloat(),
-    )
 }
 
 internal expect fun ImageRequest.Builder.readableCover(): ImageRequest.Builder
