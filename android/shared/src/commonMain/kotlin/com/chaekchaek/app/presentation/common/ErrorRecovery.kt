@@ -14,7 +14,7 @@ enum class ErrorOperation(val failureTitle: String) {
     Search("검색을 완료하지 못했어요"), LibraryLoad("서재를 불러오지 못했어요"),
     LibrarySave("책을 담지 못했어요"), Request("요청을 처리하지 못했어요"),
     SignIn("로그인하지 못했어요"), Settings("설정을 변경하지 못했어요"),
-    Withdrawal("회원 탈퇴를 완료하지 못했어요"),
+    Withdrawal("회원 탈퇴를 완료하지 못했어요"), ImageExport("이미지를 만들지 못했어요"),
 }
 
 data class ErrorNotice(val id: Long, val title: String, val message: String, val action: ErrorAction)
@@ -54,6 +54,7 @@ class ErrorRecoveryState(
             status == 404 -> "요청한 내용을 찾을 수 없어요."
             status == 409 -> "현재 상태에서는 이 작업을 완료할 수 없어요."
             operation == ErrorOperation.SignIn -> "로그인을 완료하지 못했어요. 다시 시도해 주세요."
+            operation == ErrorOperation.ImageExport -> "다시 시도해 주세요."
             action == ErrorAction.Confirm -> "요청을 완료하지 못했어요."
             else -> "연결 상태를 확인한 뒤 다시 시도해 주세요."
         }

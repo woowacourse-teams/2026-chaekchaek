@@ -33,16 +33,19 @@ internal fun LibraryBookSpine(
     modifier: Modifier = Modifier,
     showGeneratedSpine: Boolean = true,
     onSpineImageLoadFailed: (String) -> Unit = {},
+    onReady: () -> Unit = {},
 ) {
+    val ready by rememberUpdatedState(onReady)
     var imageFailed by remember(book.spineUrl) { mutableStateOf(false) }
     if (book.spineUrl.isNullOrBlank() || imageFailed) {
-        if (showGeneratedSpine) GeneratedBookSpine(book, modifier.width(30.dp))
+        if (showGeneratedSpine) GeneratedBookSpine(book, modifier.width(30.dp), onReady = { ready() })
     } else {
         AsyncImage(
             model = book.spineUrl,
             contentDescription = "${book.title} 책등",
             modifier = modifier,
             contentScale = ContentScale.Fit,
+            onSuccess = { ready() },
             onError = {
                 imageFailed = true
                 onSpineImageLoadFailed(book.spineUrl)
@@ -52,7 +55,8 @@ internal fun LibraryBookSpine(
 }
 
 @Composable
-private fun GeneratedBookSpine(book: ArchiveBookUiModel, modifier: Modifier) {
+private fun GeneratedBookSpine(book: ArchiveBookUiModel, modifier: Modifier, onReady: () -> Unit) {
+    val ready by rememberUpdatedState(onReady)
     val context = LocalPlatformContext.current
     val request = remember(context, book.coverUrl) {
         ImageRequest.Builder(context).data(book.coverUrl).size(48, 48).readableCover().build()
@@ -60,7 +64,11 @@ private fun GeneratedBookSpine(book: ArchiveBookUiModel, modifier: Modifier) {
     val painter = rememberAsyncImagePainter(request)
     val state by painter.state.collectAsState()
     var color by remember(book.coverUrl) { mutableStateOf(NeutralSpineColor) }
-    LaunchedEffect(state) {
+    LaunchedEffect(state, book.coverUrl) {
+        if (book.coverUrl.isBlank() || state is AsyncImagePainter.State.Error) {
+            ready()
+            return@LaunchedEffect
+        }
         val success = state as? AsyncImagePainter.State.Success ?: return@LaunchedEffect
         color = runCatching {
             val bitmap = ImageBitmap(48, 48)
@@ -70,6 +78,7 @@ private fun GeneratedBookSpine(book: ArchiveBookUiModel, modifier: Modifier) {
             val pixels = bitmap.toPixelMap()
             dominantCoverColor(List(48 * 48) { index -> pixels[index % 48, index / 48] })
         }.getOrDefault(NeutralSpineColor)
+        ready()
     }
     val font = FontFamily(Font(Res.font.gowun_dodum_regular, FontWeight.Normal))
     val ink = if (color.luminance() > 0.179f) Color(0xFF171713) else Color.White
