@@ -209,22 +209,41 @@ export const BooksPage = () => {
                         />
                         <List.Item.Trailing>
                           {!!(item.reviewCount || item.replyCount) && (
-                            <Chip variant="ghost">
+                            <Chip variant="ghost" sx={{ mr: 4 }}>
                               감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
                             </Chip>
                           )}
-                          <Button
-                            size="x-small"
-                            variant="primary"
-                            onClick={() => {
-                              handleRegisterLibrary({
-                                isbn: item.isbn13,
-                                bookId: item.bookId,
-                              });
-                            }}
-                          >
-                            내 서재 담기
-                          </Button>
+
+                          {item.isRegisteredInMyLibrary ? (
+                            <Button
+                              size="x-small"
+                              block
+                              variant="accent"
+                              leading={<Icon.CheckIcon />}
+                              onClick={() => {
+                                handleRegisterLibrary({
+                                  isbn: item.isbn13,
+                                  bookId: item.bookId,
+                                });
+                              }}
+                            >
+                              담았어요
+                            </Button>
+                          ) : (
+                            <Button
+                              size="x-small"
+                              block
+                              variant="primary"
+                              onClick={() => {
+                                handleRegisterLibrary({
+                                  isbn: item.isbn13,
+                                  bookId: item.bookId,
+                                });
+                              }}
+                            >
+                              내 서재에 담기
+                            </Button>
+                          )}
                         </List.Item.Trailing>
                       </List.Item>
                     );
