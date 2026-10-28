@@ -126,6 +126,42 @@ describe('BooksPage', () => {
     );
   });
 
+  it('하나 이상의 책장에 담긴 책은 담겼어요 버튼을 표시한다', async () => {
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, () => HttpResponse.json(harrySearchPage1)),
+    );
+
+    renderProvider(<BooksPage />, { auth: defaultLoggedAuthContextValue });
+    const user = userEvent.setup();
+
+    // 책 제목을 검색한다.
+    await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+    const bookTitle = await screen.findByText('해리 포터와 마법사의 돌 1');
+
+    // 검색 결과에서 책장에 담긴 책에 담겼어요 버튼이 표시되는지 확인한다.
+    const book = bookTitle.closest('li');
+    expect(book).not.toBeNull();
+    expect(within(book!).getByRole('button', { name: '담겼어요' })).toBeVisible();
+  });
+
+  it('어떤 책장에도 담기지 않은 책은 내 서재에 담기 버튼을 표시한다', async () => {
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/books`, () => HttpResponse.json(harrySearchPage1)),
+    );
+
+    renderProvider(<BooksPage />, { auth: defaultLoggedAuthContextValue });
+    const user = userEvent.setup();
+
+    // 책 제목을 검색한다.
+    await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+    const bookTitle = await screen.findByText('개소리에 대하여');
+
+    // 검색 결과에서 어떤 책장에도 담기지 않은 책에 내 서재에 담기 버튼이 표시되는지 확인한다.
+    const book = bookTitle.closest('li');
+    expect(book).not.toBeNull();
+    expect(within(book!).getByRole('button', { name: '내 서재에 담기' })).toBeVisible();
+  });
+
   it('로그인 사용자가 내 서재 담기 버튼 클릭하면 담을 책장 고르기 팝업이 나타난다', async () => {
     server.use(
       http.get(`${ENV.APP_API_URL}/api/v1/books`, () => HttpResponse.json(harrySearchPage1)),
