@@ -112,6 +112,13 @@ export const BooksPage = () => {
     handleOpenDialog('RegisterBookToLibraryDialog');
   };
 
+  const handleBookRegistered = () => {
+    track('library_add', {
+      source: 'search',
+      status: 'reading',
+    });
+  };
+
   useEffect(() => {
     if (!query.length) return;
 
@@ -139,7 +146,11 @@ export const BooksPage = () => {
       case 'RegisterBookToLibraryDialog':
         return (
           selectedBook && (
-            <RegisterBookToLibraryDialog book={selectedBook} onClose={handleCloseDialog} />
+            <RegisterBookToLibraryDialog
+              book={selectedBook}
+              onBookRegistered={handleBookRegistered}
+              onClose={handleCloseDialog}
+            />
           )
         );
       default:
