@@ -162,7 +162,7 @@ describe('BooksPage', () => {
     expect(within(book!).getByRole('button', { name: '내 서재에 담기' })).toBeVisible();
   });
 
-  it('로그인 사용자가 내 서재 담기 버튼 클릭하면 담을 책장 고르기 팝업이 나타난다', async () => {
+  it('로그인 사용자가 내 서재에 담기 버튼 클릭하면 담을 책장 고르기 팝업이 나타난다', async () => {
     server.use(
       http.get(`${ENV.APP_API_URL}/api/v1/books`, () => HttpResponse.json(harrySearchPage1)),
     );
@@ -174,10 +174,10 @@ describe('BooksPage', () => {
     await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
     const bookTitle = await screen.findByText('개소리에 대하여');
 
-    // 검색 결과에서 책의 내 서재 담기 버튼을 클릭한다.
+    // 검색 결과에서 책의 내 서재에 담기 버튼을 클릭한다.
     const book = bookTitle.closest('li');
     expect(book).not.toBeNull();
-    await user.click(within(book!).getByRole('button', { name: '내 서재 담기' }));
+    await user.click(within(book!).getByRole('button', { name: '내 서재에 담기' }));
 
     // 담을 책장 고르기 팝업의 안내 문구, 책장 선택 항목과 버튼이 표시되는지 확인한다.
     expect(await screen.findByText('담을 책장 고르기')).toBeVisible();
@@ -189,14 +189,14 @@ describe('BooksPage', () => {
     expect(screen.getByRole('button', { name: '이 책장에 담기' })).toBeVisible();
   });
 
-  it('비로그인 사용자가 내서재에 넣기 버튼 클릭시 로그인 팝업이 뜬다', async () => {
+  it('비로그인 사용자가 내 서재에 담기 버튼 클릭시 로그인 팝업이 뜬다', async () => {
     renderProvider(<BooksPage />);
 
     const user = userEvent.setup();
 
     await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
 
-    await user.click(screen.getByRole('button', { name: '내 서재 담기' }));
+    await user.click(screen.getByRole('button', { name: '내 서재에 담기' }));
 
     expect(screen.getByText(/로 로그인/)).toBeInTheDocument();
   });
