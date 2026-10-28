@@ -214,6 +214,7 @@ export const LibraryPage = () => {
                   )}
 
                   <IconButton
+                    aria-label="책장 더보기"
                     variant="secondary"
                     onClick={() => {
                       handleOpenDialog('ManageLibraryDialog');

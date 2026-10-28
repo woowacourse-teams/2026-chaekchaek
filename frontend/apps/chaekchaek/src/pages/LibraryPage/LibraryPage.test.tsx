@@ -122,7 +122,7 @@ describe('LibraryPage', () => {
     // 책장 제목 옆의 더보기 버튼을 클릭한다.
     const libraryTitle = libraryName.closest('.ui-Title');
     expect(libraryTitle).not.toBeNull();
-    await user.click(within(libraryTitle as HTMLElement).getByRole('button'));
+    await user.click(within(libraryTitle as HTMLElement).getByRole('button', { name: '책장 더보기' }));
 
     // 책장 이름 바꾸기 버튼이 표시되는지 확인하고 클릭한다.
     const renameButton = screen.getByRole('button', { name: '책장 이름 바꾸기' });
@@ -184,7 +184,7 @@ describe('LibraryPage', () => {
     const libraryName = await screen.findByText(libraryResponse.name);
     const libraryTitle = libraryName.closest('.ui-Title');
     expect(libraryTitle).not.toBeNull();
-    await user.click(within(libraryTitle as HTMLElement).getByRole('button'));
+    await user.click(within(libraryTitle as HTMLElement).getByRole('button', { name: '책장 더보기' }));
 
     // 이미지 저장 메뉴를 클릭한다.
     await user.click(screen.getByRole('button', { name: '이미지 저장' }));
