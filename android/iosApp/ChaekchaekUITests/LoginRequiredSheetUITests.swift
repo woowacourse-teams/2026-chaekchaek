@@ -1040,14 +1040,15 @@ final class BookshelfContractUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(element("내 서재", app).waitForExistence(timeout: 15))
         element("내 서재", app).tap()
-        let first = app.descendants(matching: .any)["bookshelf-reorder-1"].firstMatch
-        let second = app.descendants(matching: .any)["bookshelf-reorder-2"].firstMatch
+        let first = app.descendants(matching: .any).matching(identifier: "bookshelf-reorder-1").firstMatch
+        let second = app.descendants(matching: .any).matching(identifier: "bookshelf-reorder-2").firstMatch
         XCTAssertTrue(first.waitForExistence(timeout: 10))
         XCTAssertTrue(second.waitForExistence(timeout: 10))
         second.press(forDuration: 0.05, thenDragTo: first)
         var state: [String: Any] = [:]
         for _ in 0..<30 {
-            state = try XCTUnwrap(JSONSerialization.jsonObject(with: try await request("/__bookshelf/state")) as? [String: Any])
+            let data = try await request("/__bookshelf/state")
+            state = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
             if (state["shelves"] as? [[String: Any]])?.first?["libraryId"] as? Int == 2 { break }
             try await Task.sleep(for: .milliseconds(100))
         }
