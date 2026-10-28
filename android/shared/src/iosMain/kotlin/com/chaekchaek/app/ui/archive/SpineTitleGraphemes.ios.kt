@@ -3,6 +3,7 @@ package com.chaekchaek.app.ui.archive
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import platform.Foundation.NSString
+import platform.Foundation.rangeOfComposedCharacterSequenceAtIndex
 
 @OptIn(ExperimentalForeignApi::class)
 internal actual fun spineTitleGraphemes(title: String): List<String> {
