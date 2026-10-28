@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import { Button, DataInfo, Surface, Title } from '@chaekchaek/design-system';
+import { Button, DataInfo, Surface, Icon } from '@chaekchaek/design-system';
 
 import Yes24LogoImg from './imgs/yes24.svg';
 
@@ -21,7 +21,7 @@ export const BookInfo = ({
   return (
     <>
       <Surface variant="outlined" spacing="medium">
-       {isRegisteredInMyLibrary ? (
+        {isRegisteredInMyLibrary ? (
           <Button
             sx={{ mt: 4 }}
             block
