@@ -26,6 +26,8 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { getLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repository';
 import { useLoadData } from '@/services/core/useLoadData';
+import { useExecute } from '@/services/core/useExecute';
+import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
 
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
 import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
@@ -38,7 +40,8 @@ export type LibraryPageDialogType =
   | 'ManageLibraryDialog'
   | 'ShareLibraryImageDialog'
   | 'RenameLibraryDialog'
-  | 'DeleteLibraryDialog';
+  | 'DeleteLibraryDialog'
+  | 'UpdateNicknameDialog';
 
 const booksHeight = [
   ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
@@ -47,7 +50,7 @@ const booksHeight = [
 ];
 
 export const LibraryPage = () => {
-  const { user } = useAuthContext();
+  const { user, updateAccount } = useAuthContext();
 
   const { libraryId } = useParams<{ libraryId: string }>();
 
@@ -79,6 +82,30 @@ export const LibraryPage = () => {
     await navigator.clipboard.writeText(memberLibraryLink);
 
     setIsCopied(true);
+  };
+
+  const { status: anonymityStatus, mutate: updateAnonymity } = useExecute({
+    executeFn: patchMembersMeAnonymity,
+  });
+
+  const handleToggleAnonymous = async () => {
+    if (!user) return;
+
+    if (user.displayAnonymous) {
+      if (!user.nickname) return handleOpenDialog('UpdateNicknameDialog');
+
+      const userWithAnonymityDisabled = await updateAnonymity({ displayAnonymous: false });
+      if (!userWithAnonymityDisabled) return;
+
+      updateAccount(userWithAnonymityDisabled);
+
+      return;
+    }
+
+    const updatedUser = await updateAnonymity({ displayAnonymous: true });
+    if (!updatedUser) return;
+
+    updateAccount(updatedUser);
   };
 
   const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
@@ -150,14 +177,43 @@ export const LibraryPage = () => {
               sx={{ mb: 14 }}
               description={`${libraryItemsData?.name} 책장 ${libraryItemsData?.totalCount}권`}
               trailing={
-                <IconButton
-                  variant="secondary"
-                  onClick={() => {
-                    handleOpenDialog('ManageLibraryDialog');
-                  }}
-                >
-                  <Icon.EllipsisIcon />
-                </IconButton>
+                <>
+                  {user !== null && (
+                    <>
+                      {user?.displayAnonymous && (
+                        <Button
+                          leading={<Icon.CheckboxOnIcon color="secondary" />}
+                          variant="ghost"
+                          size="small"
+                          disabled={anonymityStatus.status === 'loading'}
+                          onClick={handleToggleAnonymous}
+                        >
+                          익명으로 감상 공개
+                        </Button>
+                      )}
+                      {!user?.displayAnonymous && (
+                        <Button
+                          leading={<Icon.CheckboxOffIcon color="secondary" />}
+                          variant="ghost"
+                          size="small"
+                          disabled={anonymityStatus.status === 'loading'}
+                          onClick={handleToggleAnonymous}
+                        >
+                          익명으로 감상 공개
+                        </Button>
+                      )}
+                    </>
+                  )}
+
+                  <IconButton
+                    variant="secondary"
+                    onClick={() => {
+                      handleOpenDialog('ManageLibraryDialog');
+                    }}
+                  >
+                    <Icon.EllipsisIcon />
+                  </IconButton>
+                </>
               }
             >
               {libraryItemsData?.name}
