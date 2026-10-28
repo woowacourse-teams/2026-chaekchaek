@@ -26,7 +26,6 @@ export type GetFeedReviews = (params: GetFeedReviewsParams) => Promise<{
     bookId: number;
     likeCount: number;
     likedByMe: boolean;
-    currentPage?: number;
   }[];
   nextPage: number;
   totalCount: number;

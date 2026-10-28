@@ -1,9 +1,8 @@
-import { useState, type MouseEvent } from 'react';
+import { memo, useState, type MouseEvent } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 
 import {
   Avatar,
-  Badge,
   Button,
   Dialog,
   Divider,
@@ -38,7 +37,7 @@ import type { BookFeedProps } from './BookFeed.types';
 
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 
-export const BookFeed = (props: BookFeedProps) => {
+export const BookFeed = memo((props: BookFeedProps) => {
   const { review, onFeedRefresh } = props;
 
   const { isAuthenticated } = useAuthContext();
@@ -156,16 +155,7 @@ export const BookFeed = (props: BookFeedProps) => {
                     />
                   </Shell.Leading>
                   <Shell.Content
-                    title={
-                      <>
-                        {review.author.displayName}{' '}
-                        {review.currentPage && (
-                          <Badge variant="subtle" size="x-small" sx={{ ml: 2 }}>
-                            P. {review.currentPage} 까지
-                          </Badge>
-                        )}
-                      </>
-                    }
+                    title={review.author.displayName}
                     content={new Date(review.createdAt).toLocaleDateString('ko-KR')}
                   />
                 </Shell>
@@ -223,4 +213,4 @@ export const BookFeed = (props: BookFeedProps) => {
       {dialogElement}
     </>
   );
-};
+});

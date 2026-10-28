@@ -4,7 +4,7 @@ export interface GetBooksBookIdReviewsParams {
   bookId: number;
   page: number;
   feed: string;
-  sort: string;
+  sort: 'LATEST' | 'OLDEST' | 'POPULAR';
 }
 
 export type GetBooksBookIdReviews = (
@@ -46,18 +46,18 @@ export type GetBooksBookIdReviews = (
     likedByMe: boolean;
     deleted: boolean;
     quote?: string;
-    currentPage: number;
     reviewId: number;
   }[];
 }>;
 export interface PostBooksBookIdReviewsCommand {
   bookId: number;
   content: string;
-  chapter?: string | undefined;
   isSpoiler?: boolean | undefined;
   quote?: string | undefined;
   totalPages?: number | undefined;
-  currentPage?: number | undefined;
 }
 
-export type PostBooksBookIdReviews = (command: PostBooksBookIdReviewsCommand) => Promise<undefined>;
+export type PostBooksBookIdReviews = (
+  command: PostBooksBookIdReviewsCommand,
+  context?: RequestContext,
+) => Promise<undefined>;
