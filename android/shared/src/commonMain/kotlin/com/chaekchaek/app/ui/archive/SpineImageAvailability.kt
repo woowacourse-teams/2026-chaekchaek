@@ -2,15 +2,14 @@ package com.chaekchaek.app.ui.archive
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
 internal const val SpineAvailabilitySampleWidth = 42
 internal const val SpineAvailabilitySampleHeight = 60
 
-private const val Yes24PreparingImageWidth = 420f
-private const val Yes24PreparingImageHeight = 600f
+private const val PreparingImageMinAspectRatio = .45f
+private const val PreparingImageMaxAspectRatio = 1.05f
 
 /** YES24가 성공 응답으로 돌려주는 `이미지 준비중` 비트맵을 실제 책등과 구분한다. */
 internal fun isKnownImagePreparingSpine(
@@ -20,9 +19,11 @@ internal fun isKnownImagePreparingSpine(
     sampleWidth: Int = SpineAvailabilitySampleWidth,
     sampleHeight: Int = SpineAvailabilitySampleHeight,
 ): Boolean {
+    val sourceAspectRatio = sourceWidth / sourceHeight
     if (!sourceWidth.isFinite() || !sourceHeight.isFinite() ||
-        abs(sourceWidth - Yes24PreparingImageWidth) > 1f ||
-        abs(sourceHeight - Yes24PreparingImageHeight) > 1f ||
+        sourceWidth <= 0f || sourceHeight <= 0f ||
+        !sourceAspectRatio.isFinite() ||
+        sourceAspectRatio !in PreparingImageMinAspectRatio..PreparingImageMaxAspectRatio ||
         sampleWidth <= 0 || sampleHeight <= 0 ||
         sampleWidth.toLong() * sampleHeight != pixels.size.toLong()
     ) return false

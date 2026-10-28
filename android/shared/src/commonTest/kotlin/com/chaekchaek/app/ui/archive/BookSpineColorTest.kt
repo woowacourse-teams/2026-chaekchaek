@@ -82,6 +82,7 @@ class BookSpineColorTest {
         }
 
         assertTrue(isKnownImagePreparingSpine(420f, 600f, pixels))
+        assertTrue(isKnownImagePreparingSpine(42f, 60f, pixels))
         assertFalse(isKnownImagePreparingSpine(76f, 1200f, pixels))
         assertFalse(isKnownImagePreparingSpine(420f, 600f, List(pixels.size) { Color.White }))
         assertFalse(isKnownImagePreparingSpine(420f, 600f, List(pixels.size) { Color(0xFF80CDB2) }))
