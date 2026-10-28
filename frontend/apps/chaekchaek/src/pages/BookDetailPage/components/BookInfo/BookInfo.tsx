@@ -24,6 +24,7 @@ export const BookInfo = ({
   isbn13,
   authors,
   translators,
+  isRegisteredInMyLibrary,
   onRegistryLibrary,
   onRatingCreate,
   onReadingStatusChange,
@@ -79,6 +80,15 @@ export const BookInfo = ({
           ]}
           onChange={onReadingStatusChange}
         />
+        {isRegisteredInMyLibrary ? (
+          <Button sx={{ mt: 4 }} block variant="accent" leading={<Icon.CheckIcon />}>
+            담았어요
+          </Button>
+        ) : (
+          <Button sx={{ mt: 4 }} block variant="primary">
+            내 서재에 담기
+          </Button>
+        )}
         <Banner sx={{ mt: 4 }}>
           <Banner.Content
             title="내 별점"
