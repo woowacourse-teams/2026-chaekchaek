@@ -1,20 +1,18 @@
 import { Link } from 'react-router-dom';
 
-import { Button, Choice, DataInfo, Surface, Title } from '@chaekchaek/design-system';
+import { Button, DataInfo, Surface, Title } from '@chaekchaek/design-system';
 
 import Yes24LogoImg from './imgs/yes24.svg';
 
 import type { BookInfoProps } from './BookInfo.types';
 
 export const BookInfo = ({
-  readingStatus,
   category,
   publishedDate,
   isbn13,
   authors,
   translators,
   purchaseUrl,
-  onReadingStatusChange,
 }: BookInfoProps) => {
   const formattedCategory = category?.replace(/\s*>\s*/g, ' > ');
 
@@ -22,17 +20,6 @@ export const BookInfo = ({
     <>
       <Surface variant="outlined" spacing="medium">
         <Title level="main">내 독서 기록</Title>
-        <Choice
-          sx={{ mt: 4 }}
-          shape="normal"
-          value={readingStatus}
-          options={[
-            { value: 'WANT_TO_READ', text: '읽고 싶어요' },
-            { value: 'READING', text: '읽는 중' },
-            { value: 'FINISHED', text: '다 읽음' },
-          ]}
-          onChange={onReadingStatusChange}
-        />
       </Surface>
       <DataInfo sx={{ mt: 4 }} heading="책 정보">
         {formattedCategory && <DataInfo.Item title="장르" content={formattedCategory} />}

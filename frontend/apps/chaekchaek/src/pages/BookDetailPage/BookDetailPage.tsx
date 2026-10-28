@@ -14,12 +14,9 @@ import { track } from '@/analytics/track';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
-import { postLibrary } from '@/services/apis/library/repository';
-import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
 import { getBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
-import { useExecute } from '@/services/core/useExecute';
 
 import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
 
@@ -49,34 +46,6 @@ export const BookDetailPage = () => {
   };
   const handleCloseLoginDialog = () => {
     setOpenLoginDialog(false);
-  };
-
-  const { mutate: mutatePatchLibraryBookId } = useExecute({
-    executeFn: patchLibraryBookId,
-    onSuccess: refetchGetBooksIsbnLoadData,
-  });
-  const { mutate: mutatePostLibrary } = useExecute({
-    executeFn: postLibrary,
-    onSuccess: refetchGetBooksIsbnLoadData,
-  });
-  const handleRegisterLibrary = async (status: string) => {
-    if (!isAuthenticated) return handleOpenLoginDialog();
-    if (!data?.myRecord) {
-      await mutatePostLibrary({ isbn13: isbn, status });
-
-      track('library_add', {
-        source: 'detail_info',
-        status:
-          status === 'WANT_TO_READ'
-            ? 'want_to_read'
-            : status === 'READING'
-              ? 'reading'
-              : 'finished',
-      });
-
-      return;
-    }
-    await mutatePatchLibraryBookId({ bookId: data?.bookId, status });
   };
 
   const [reviewsRequestParams, setReviewsRequestParams] = useState<{
@@ -169,14 +138,12 @@ export const BookDetailPage = () => {
           <Split>
             <Split.Side>
               <BookInfo
-                readingStatus={data?.myRecord?.status}
                 category={data?.category}
                 publishedDate={data?.publishedDate}
                 isbn13={data?.isbn13}
                 authors={data?.authors}
                 translators={data?.translators}
                 purchaseUrl={data?.purchaseUrl}
-                onReadingStatusChange={handleRegisterLibrary}
               />
             </Split.Side>
             <Split.Content>
