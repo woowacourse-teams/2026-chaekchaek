@@ -17,7 +17,6 @@ import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { getBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
 import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 import { useLoadData } from '@/services/core/useLoadData';
-import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
 import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
 
@@ -149,14 +148,8 @@ export const BookDetailPage = () => {
     refetchGetBooksIsbnLoadData();
   };
 
-  const [dialog, setDialog] = useState<
-    | 'RegisterBookToLibraryDialog'
-    | null
-  >(null);
-  const handleOpenDialog = (
-    dialog:
-      | 'RegisterBookToLibraryDialog',
-  ) => {
+  const [dialog, setDialog] = useState<'RegisterBookToLibraryDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'RegisterBookToLibraryDialog') => {
     if (!isAuthenticated) return handleOpenLoginDialog();
     setDialog(dialog);
   };
@@ -164,11 +157,7 @@ export const BookDetailPage = () => {
     setDialog(null);
   };
 
-  const renderDialog = (
-    dialog:
-      | 'RegisterBookToLibraryDialog'
-      | null,
-  ) => {
+  const renderDialog = (dialog: 'RegisterBookToLibraryDialog' | null) => {
     switch (dialog) {
       case 'RegisterBookToLibraryDialog':
         return (
