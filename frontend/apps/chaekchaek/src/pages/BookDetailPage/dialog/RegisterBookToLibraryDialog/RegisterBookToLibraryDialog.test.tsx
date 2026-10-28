@@ -16,7 +16,7 @@ import {
   unselectedLibraryResponse,
   unchangedBookSelectionLibrariesResponse,
   unselectedLibraryForUnchangedSelectionResponse,
-} from '../../BooksPage.fixtures';
+} from '../../BookDetailPage.fixtures';
 import { RegisterBookToLibraryDialog } from './RegisterBookToLibraryDialog';
 
 it('선택하지 않았던 책장을 선택하고 완료하면 해당 책장에 책이 등록된다', async () => {

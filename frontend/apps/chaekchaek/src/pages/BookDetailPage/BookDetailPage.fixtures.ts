@@ -34,3 +34,64 @@ export const emptyBookReviewsResponse = {
   nextPage: null,
   items: [],
 };
+
+// RegisterBookToLibraryDialog 테스트용 fixture: 책장 추가·제거·선택 유지
+export const bookToRegister = bookNotInLibraryResponse;
+
+export const unselectedLibraryResponse = {
+  libraryId: 2,
+  memberId: 3,
+  name: '다시 읽고 싶은 책',
+  isDefault: false,
+  totalCount: 0,
+  items: [],
+};
+
+export const librariesBeforeBookRegistrationResponse = {
+  memberId: unselectedLibraryResponse.memberId,
+  libraries: [unselectedLibraryResponse],
+};
+
+export const registeredBookResponse = {
+  ...bookToRegister,
+  spineImageUrl: 'https://static.example.com/books/47/spine.webp',
+  currentPage: 0,
+  status: 'WANT_TO_READ',
+  addedAt: '2026-10-27T09:00:00',
+  readingUpdatedAt: '2026-10-27T09:00:00',
+};
+
+export const bookToRemove = {
+  ...registeredBookResponse,
+  isRegisteredInMyLibrary: true,
+};
+
+export const selectedLibraryResponse = {
+  ...unselectedLibraryResponse,
+  totalCount: 1,
+  items: [bookToRemove],
+};
+
+const defaultLibraryForBookRemoval = {
+  ...selectedLibraryResponse,
+  libraryId: 1,
+  name: '내 서재',
+  isDefault: true,
+};
+
+export const librariesBeforeBookRemovalResponse = {
+  memberId: selectedLibraryResponse.memberId,
+  libraries: [defaultLibraryForBookRemoval, selectedLibraryResponse],
+};
+
+export const unselectedLibraryForUnchangedSelectionResponse = {
+  ...unselectedLibraryResponse,
+  libraryId: 3,
+  name: '나중에 읽을 책',
+};
+
+export const unchangedBookSelectionLibrariesResponse = {
+  memberId: selectedLibraryResponse.memberId,
+  libraries: [selectedLibraryResponse, unselectedLibraryForUnchangedSelectionResponse],
+};
+// RegisterBookToLibraryDialog 테스트용 fixture 끝
