@@ -11,7 +11,6 @@ import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.repository.LibraryItemRepository;
-import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,7 +31,7 @@ public class BookSearchService {
 
     private final BookSearchClient bookClient;
     private final BookRepository bookRepository;
-    private final BookActivityCountReader activityCountReader;
+    private final BookSearchActivityCountReader searchActivityCountReader;
     private final CurrentMemberIdProvider currentMemberIdProvider;
     private final LibraryItemRepository libraryItemRepository;
 
@@ -48,7 +47,7 @@ public class BookSearchService {
         Map<Isbn13, Book> registeredBooksByIsbn13 = registeredBooks.stream()
                 .collect(Collectors.toMap(Book::getIsbn13, Function.identity()));
 
-        Map<Long, ActivityCounts> activityCountsByBookId = activityCountReader.getActivityCounts(
+        Map<Long, ActivityCounts> activityCountsByBookId = searchActivityCountReader.getActivityCounts(
                 registeredBooks.stream()
                         .map(Book::getId)
                         .toList()
