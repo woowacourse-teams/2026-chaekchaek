@@ -1064,6 +1064,7 @@ final class BookshelfContractUITests: XCTestCase {
 
     @MainActor
     func testShelfCreateRenameAddRemoveAndImagePreview() async throws {
+        continueAfterFailure = false
         let marker = try? await request("/__bookshelf")
         guard marker != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
         _ = try await request("/__bookshelf/reset", method: "POST")
@@ -1112,6 +1113,11 @@ final class BookshelfContractUITests: XCTestCase {
         }
         selectedBook.tap()
         XCTAssertTrue(element("담을 책장 고르기", app).waitForExistence(timeout: 5))
+        // 최근 선택은 앱 설치 데이터에 남으므로 fixture 초기화만으로 담을 책장을 가정하지 않는다.
+        let destination = try XCTUnwrap(app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "나의 책장"))
+            .allElementsBoundByIndex.last(where: { $0.isHittable }), "검증 대상 책장 1을 선택해야 해요")
+        destination.tap()
         let confirmAdd = element("이 책장에 담기", app)
         for _ in 0..<4 {
             if confirmAdd.exists && confirmAdd.isHittable { break }

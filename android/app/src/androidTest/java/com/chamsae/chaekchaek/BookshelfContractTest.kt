@@ -76,6 +76,8 @@ class BookshelfContractTest {
         compose.onNodeWithText("+ 책 담기").performScrollTo().performClick()
         compose.onNodeWithText("검증 도서 3").performScrollTo().performClick()
         waitText("담을 책장 고르기")
+        // 설치 데이터의 최근 선택과 무관하게 이 시나리오가 검증할 책장 1을 명시한다.
+        compose.onAllNodesWithText("나의 책장").onLast().performScrollTo().performClick()
         compose.onNodeWithText("이 책장에 담기").performScrollTo().performClick()
         compose.waitUntil(15_000) { compose.onAllNodesWithText("담을 책장 고르기").fetchSemanticsNodes().isEmpty() }
         waitText("3권")
