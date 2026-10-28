@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.archive
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
@@ -19,7 +20,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.*
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.gowun_dodum_regular
-import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
@@ -31,27 +31,45 @@ import kotlin.math.floor
 internal fun LibraryBookSpine(
     book: ArchiveBookUiModel,
     modifier: Modifier = Modifier,
+    fixedHeight: Dp? = null,
     showGeneratedSpine: Boolean = true,
     onSpineImageLoadFailed: (String) -> Unit = {},
     onReady: () -> Unit = {},
     generatedScale: Float = 1f,
 ) {
     val ready by rememberUpdatedState(onReady)
+    val painter = rememberAsyncImagePainter(book.spineUrl)
+    val state by painter.state.collectAsState()
     var imageFailed by remember(book.spineUrl) { mutableStateOf(false) }
+    val dimensions = fixedHeight?.let { height ->
+        val intrinsic = painter.intrinsicSize
+        val fallback = 30.dp * generatedScale
+        Modifier.width(bookshelfSpineThickness(height, intrinsic.width, intrinsic.height, fallback)).height(height)
+    } ?: Modifier
     if (book.spineUrl.isNullOrBlank() || imageFailed) {
-        if (showGeneratedSpine) GeneratedBookSpine(book, modifier.width(30.dp * generatedScale), generatedScale, onReady = { ready() })
-    } else {
-        AsyncImage(
-            model = book.spineUrl,
-            contentDescription = "${book.title} 책등",
-            modifier = modifier,
-            contentScale = ContentScale.Fit,
-            onSuccess = { ready() },
-            onError = {
-                imageFailed = true
-                onSpineImageLoadFailed(book.spineUrl)
-            },
+        if (showGeneratedSpine) GeneratedBookSpine(
+            book,
+            modifier.then(dimensions).width(30.dp * generatedScale),
+            generatedScale,
+            onReady = { ready() },
         )
+    } else {
+        Image(
+            painter = painter,
+            contentDescription = "${book.title} 책등",
+            modifier = modifier.then(dimensions),
+            contentScale = ContentScale.Fit,
+        )
+        LaunchedEffect(state, book.spineUrl) {
+            when (state) {
+                is AsyncImagePainter.State.Success -> ready()
+                is AsyncImagePainter.State.Error -> {
+                    imageFailed = true
+                    onSpineImageLoadFailed(book.spineUrl)
+                }
+                else -> Unit
+            }
+        }
     }
 }
 

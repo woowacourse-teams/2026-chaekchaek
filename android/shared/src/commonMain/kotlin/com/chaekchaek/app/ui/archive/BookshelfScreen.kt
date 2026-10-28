@@ -289,9 +289,9 @@ internal fun BookshelfSpineRow(books: List<ArchiveBookUiModel>, onBook: (Archive
     }
     BookshelfReorderList(books, { it.bookId }, onMove != null, scroll, { ids, done -> if (onMove != null) onMove(ids, done) else done(false) },
         modifier.fillMaxWidth().height(BookshelfSpineRowHeight), horizontal = true, longPress = true, tagPrefix = "spines",
-        onItemTap = if (onMove != null) onBook else null) { book, index, _ ->
-        val spine = Modifier.height(bookshelfSpineHeight(index)).widthIn(min = 6.dp, max = 48.dp)
-        LibraryBookSpine(book, if (onMove == null) spine.clickable { onBook(book) } else spine)
+        onItemTap = if (onMove != null) onBook else null) { book, _, _ ->
+        val spine = if (onMove == null) Modifier.clickable { onBook(book) } else Modifier
+        LibraryBookSpine(book, spine, fixedHeight = BookshelfSpineHeight)
     }
 }
 
@@ -330,7 +330,11 @@ private fun ShelfThumbnail(shelf: Bookshelf) {
     Column(Modifier.size(65.dp, 48.dp)) {
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(1.dp), verticalAlignment = Alignment.Bottom) {
             shelf.items.take(5).forEach { book ->
-                LibraryBookSpine(book.asArchive(), Modifier.height(44.dp).widthIn(min = 3.dp, max = 12.dp))
+                LibraryBookSpine(
+                    book.asArchive(),
+                    fixedHeight = 44.dp,
+                    generatedScale = 44f / BookshelfSpineHeight.value,
+                )
             }
         }
         HorizontalDivider(thickness = 2.dp, color = ChaekBorder)

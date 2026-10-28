@@ -3,8 +3,24 @@ package com.chaekchaek.app.ui.archive
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** Approved HTML spine proportions shared by own, public and exported shelves. */
-internal fun bookshelfSpineHeight(index: Int, scale: Float = 1.4f): Dp =
-    listOf(156.928f, 177f, 144.155f, 135.031f, 157.84f, 135.031f, 159.665f, 173.351f, 148.716f, 133.206f, 149.629f, 166.964f, 125.907f, 169.701f)[index.mod(14)].times(scale).dp
+/** All shelves share one book height. Only the source image ratio changes thickness. */
+internal val BookshelfSpineHeight = 220.dp
+internal const val BookshelfSpineDefaultScale = 1.4f
+
+internal fun scaledBookshelfSpineHeight(scale: Float): Dp =
+    BookshelfSpineHeight * (scale / BookshelfSpineDefaultScale)
+
+internal fun bookshelfSpineThickness(
+    height: Dp,
+    intrinsicWidth: Float,
+    intrinsicHeight: Float,
+    fallback: Dp,
+): Dp = if (
+    intrinsicWidth.isFinite() && intrinsicHeight.isFinite() && intrinsicWidth > 0f && intrinsicHeight > 0f
+) {
+    height * (intrinsicWidth / intrinsicHeight)
+} else {
+    fallback
+}
 
 internal val BookshelfSpineRowHeight = 269.dp

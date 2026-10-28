@@ -97,8 +97,8 @@ internal fun BookshelfImageSheet(detail: BookshelfDetail, onDismiss: () -> Unit)
                     }
                     ImageSection(1, layers) {
                         ExportSpineRows(rowGap = (40 * canvasScale).dp, lineThickness = (5 * canvasScale).dp) {
-                            detail.items.forEachIndexed { index, book ->
-                                ExportSpine(book, index, percent / 100f * 2.6f * canvasScale) {
+                            detail.items.forEach { book ->
+                                ExportSpine(book, percent / 100f * 2.6f * canvasScale) {
                                     readyBooks[book.bookId] = true
                                 }
                             }
@@ -117,25 +117,26 @@ internal fun BookshelfImageSheet(detail: BookshelfDetail, onDismiss: () -> Unit)
 }
 
 @Composable
-private fun ExportSpine(book: BookshelfBook, index: Int, scale: Float, onReady: () -> Unit) {
+private fun ExportSpine(book: BookshelfBook, scale: Float, onReady: () -> Unit) {
     val painter = rememberAsyncImagePainter(book.spineImageUrl)
     val state by painter.state.collectAsState()
     val ready by rememberUpdatedState(onReady)
-    val height = bookshelfSpineHeight(index, scale)
-    BoxWithConstraints {
-        val generated = book.spineImageUrl.isNullOrBlank() || state is AsyncImagePainter.State.Error
-        val intrinsic = painter.intrinsicSize
-        val ratio = if (!generated && intrinsic.width.isFinite() && intrinsic.height.isFinite() && intrinsic.width > 0 && intrinsic.height > 0) {
-            intrinsic.width / intrinsic.height
-        } else (30f / 1.4f) / bookshelfSpineHeight(index, 1f).value
-        val fittedHeight = minOf(height, maxWidth / ratio)
-        val dimensions = Modifier.width(fittedHeight * ratio).height(fittedHeight)
-        if (generated) {
-            LibraryBookSpine(book.asArchive().copy(spineUrl = null), dimensions, onReady = { ready() }, generatedScale = scale / 1.4f)
-        } else {
-            Image(painter, "${book.title} 책등", dimensions, contentScale = ContentScale.Fit)
-            LaunchedEffect(state) { if (state is AsyncImagePainter.State.Success) ready() }
-        }
+    val height = scaledBookshelfSpineHeight(scale)
+    val generated = book.spineImageUrl.isNullOrBlank() || state is AsyncImagePainter.State.Error
+    val intrinsic = painter.intrinsicSize
+    val fallback = 30.dp * (scale / BookshelfSpineDefaultScale)
+    val width = bookshelfSpineThickness(height, intrinsic.width, intrinsic.height, fallback)
+    val dimensions = Modifier.width(width).height(height)
+    if (generated) {
+        LibraryBookSpine(
+            book.asArchive().copy(spineUrl = null),
+            dimensions,
+            onReady = { ready() },
+            generatedScale = scale / BookshelfSpineDefaultScale,
+        )
+    } else {
+        Image(painter, "${book.title} 책등", dimensions, contentScale = ContentScale.Fit)
+        LaunchedEffect(state) { if (state is AsyncImagePainter.State.Success) ready() }
     }
 }
 
