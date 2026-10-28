@@ -3,17 +3,14 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import {
   Avatar,
-  Badge,
   Icon,
   IconButton,
   ImgBox,
   List,
   Notice,
-  OptionList,
   Pagination,
   Select,
   Split,
-  Tag,
   Title,
 } from '@chaekchaek/design-system';
 
@@ -71,22 +68,12 @@ export const MemberLibraryPage = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
-  const status = (searchParams.get('status') ?? READING_STATUS.ALL) as ReadingStatus;
   const sort = (searchParams.get('sort') ?? READING_SORT.RECENT) as ReadingSort;
 
   const handleChangeDefaultPage = (defaultPage: number) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('page', String(defaultPage));
-      return next;
-    });
-  };
-
-  const handleChangeStatus = (status: ReadingStatus) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('status', status);
-      next.set('page', '1');
       return next;
     });
   };
@@ -105,9 +92,9 @@ export const MemberLibraryPage = () => {
       memberId,
       page: defaultPage,
       sort,
-      status,
+      status: READING_STATUS.ALL,
     });
-  }, [defaultPage, status, sort]);
+  }, [defaultPage, sort]);
   const {
     status: { data: libraryData, error },
   } = useLoadData({ queryFn: getMembersMemberIdLibraryLoadData });
@@ -163,28 +150,7 @@ export const MemberLibraryPage = () => {
               </Title>
             </Split.Top>
             <Split.Side>
-              <Title
-                style={{ height: '800px' }}
-                level="main"
-                orientation="vertical"
-                trailing={
-                  <>
-                    <OptionList
-                      sx={{ mt: 3 }}
-                      value={status}
-                      options={Object.entries(READING_STATUS_LABELS).map(
-                        ([labelKey, labelValue]) => {
-                          return {
-                            value: labelKey,
-                            text: labelValue,
-                          };
-                        },
-                      )}
-                      onChange={handleChangeStatus}
-                    />
-                  </>
-                }
-              >
+              <Title style={{ height: '800px' }} level="main" orientation="vertical">
                 독서 상태
               </Title>
             </Split.Side>
@@ -242,24 +208,7 @@ export const MemberLibraryPage = () => {
                       <List.Item.Content
                         as={Link}
                         to={`/books/${item.isbn13}`}
-                        title={
-                          <>
-                            <Badge
-                              sx={{ mb: 2 }}
-                              variant={
-                                item.status === READING_STATUS.READING
-                                  ? 'primary'
-                                  : item.status === READING_STATUS.WANT_TO_READ
-                                    ? 'subtle'
-                                    : 'soft'
-                              }
-                            >
-                              {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
-                            </Badge>
-                            <br />
-                            {item.title}
-                          </>
-                        }
+                        title={<>{item.title}</>}
                         content={item.authors.join(' · ')}
                       />
                       <List.Item.Trailing>
