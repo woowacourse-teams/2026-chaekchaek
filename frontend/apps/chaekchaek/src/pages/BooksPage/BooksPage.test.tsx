@@ -126,7 +126,7 @@ describe('BooksPage', () => {
     );
   });
 
-  it('하나 이상의 책장에 담긴 책은 담겼어요 버튼을 표시한다', async () => {
+  it('하나 이상의 책장에 담긴 책은 담았어요 버튼을 표시한다', async () => {
     server.use(
       http.get(`${ENV.APP_API_URL}/api/v1/books`, () => HttpResponse.json(harrySearchPage1)),
     );
@@ -138,10 +138,10 @@ describe('BooksPage', () => {
     await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
     const bookTitle = await screen.findByText('해리 포터와 마법사의 돌 1');
 
-    // 검색 결과에서 책장에 담긴 책에 담겼어요 버튼이 표시되는지 확인한다.
+    // 검색 결과에서 책장에 담긴 책에 담았어요 버튼이 표시되는지 확인한다.
     const book = bookTitle.closest('li');
     expect(book).not.toBeNull();
-    expect(within(book!).getByRole('button', { name: '담겼어요' })).toBeVisible();
+    expect(within(book!).getByRole('button', { name: '담았어요' })).toBeVisible();
   });
 
   it('어떤 책장에도 담기지 않은 책은 내 서재에 담기 버튼을 표시한다', async () => {
