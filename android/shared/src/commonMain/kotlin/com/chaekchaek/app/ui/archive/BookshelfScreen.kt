@@ -1,7 +1,6 @@
 package com.chaekchaek.app.ui.archive
 
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,8 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -26,8 +23,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -78,7 +75,7 @@ internal fun BookshelfRoute(
         ) {
             ShelfIconButton(Res.drawable.bookshelf_back, "책장 목록으로", { viewModel.close(); editing = false })
             Text("책 플레이리스트", Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
-            selected?.let { shelf -> ShelfMenu(shelf, { namingId = shelf.libraryId }, { deleting = shelf }) }
+            selected?.let { shelf -> ShelfMenu(shelf, { namingId = shelf.libraryId }, { editing = true }, { sharing = true }, { deleting = shelf }, !state.mutating) }
         }
         if (!signedIn) {
             Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
@@ -99,25 +96,22 @@ internal fun BookshelfRoute(
                 com.chaekchaek.app.presentation.common.RefreshUiState(isRefreshing = state.refreshing, enabled = !state.mutating),
                 viewModel::refresh, Modifier.weight(1f),
             ) {
-            LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(bottom = 32.dp)) {
-                itemsIndexed(state.shelves, key = { _, it -> it.libraryId }) { index, shelf ->
-                    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 25.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            ReorderHandle(index, state.shelves.size, canOrder, "bookshelf-reorder-${shelf.libraryId}", 345f, compact = true) { from, to ->
-                                viewModel.orderShelves(state.shelves.map { it.libraryId }.moved(from, to))
-                            }
-                            Text(shelf.name, Modifier.weight(1f).heightIn(min = 44.dp).wrapContentHeight().testTag("bookshelf-${shelf.libraryId}").clickable(role = Role.Button) { viewModel.open(shelf.libraryId) }, color = ChaekInk, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, lineHeight = 23.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text("${shelf.totalCount}권", style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp), color = ChaekInkSecondary)
-                            ShelfMenu(shelf, { namingId = shelf.libraryId }, { deleting = shelf })
-                        }
-                        Spacer(Modifier.height(7.dp))
-                        SpineRow(shelf.items.map { it.asArchive() }, onBook = { viewModel.open(shelf.libraryId) }, onMove = if (!canOrder) null else { from, to ->
-                            viewModel.orderBooks(shelf.libraryId, shelf.items.map { it.bookId }.moved(from, to))
-                        })
-                        HorizontalDivider(thickness = 3.dp, color = ChaekBorder)
+            BookshelfReorderList(
+                values = state.shelves, key = { it.libraryId }, enabled = canOrder, state = listState,
+                onOrder = viewModel::orderShelves, modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp), tagPrefix = "shelves",
+                footer = { CreateShelfButton({ creating = true }, !state.mutating, Modifier.padding(bottom = 32.dp)) },
+            ) { shelf, _, handle ->
+                Column(Modifier.fillMaxWidth().padding(bottom = 25.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        ReorderHandle("bookshelf-reorder-${shelf.libraryId}", handle, canOrder, compact = true)
+                        Text(shelf.name, Modifier.weight(1f).heightIn(min = 44.dp).wrapContentHeight().testTag("bookshelf-${shelf.libraryId}").clickable(role = Role.Button) { viewModel.open(shelf.libraryId) }, color = ChaekInk, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, lineHeight = 23.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("${shelf.totalCount}권", style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp), color = ChaekInkSecondary)
+                        ShelfMenu(shelf, { namingId = shelf.libraryId }, { viewModel.open(shelf.libraryId); editing = true }, { viewModel.open(shelf.libraryId); sharing = true }, { deleting = shelf }, !state.mutating)
                     }
+                    Spacer(Modifier.height(7.dp))
+                    BookshelfSpineRow(shelf.items.map { it.asArchive() }, onBook = { viewModel.open(shelf.libraryId) }, onMove = if (!canOrder) null else { ids -> viewModel.orderBooks(shelf.libraryId, ids) })
+                    HorizontalDivider(thickness = 3.dp, color = ChaekBorder)
                 }
-                item { CreateShelfButton({ creating = true }, !state.mutating, Modifier.padding(horizontal = 24.dp)) }
             }
             }
         } else if (detail != null) {
@@ -125,32 +119,32 @@ internal fun BookshelfRoute(
                 com.chaekchaek.app.presentation.common.RefreshUiState(isRefreshing = state.refreshing || state.detailRefreshing, enabled = !state.mutating && !editing),
                 viewModel::refresh, Modifier.weight(1f),
             ) {
-            LazyColumn(Modifier.fillMaxSize(), state = detailListState, contentPadding = PaddingValues(24.dp)) {
-                item {
-                    Text(detail.name, style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp))
-                    Spacer(Modifier.height(8.dp))
-                    Text("${detail.totalCount}권", style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
-                }
-                item { Spacer(Modifier.height(16.dp)); SpineRow(detail.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = if (!canOrder) null else { from, to ->
-                    viewModel.orderBooks(detail.libraryId, detail.items.map { it.bookId }.moved(from, to))
-                }); HorizontalDivider(thickness = 3.dp, color = ChaekBorder) }
-                item {
-                    Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ChaekOverlayButton("+ 책 담기", { adding = true }, modifier = Modifier.weight(1f), enabled = !state.mutating)
-                        ShelfIconButton(Res.drawable.bookshelf_share, "이미지 공유", { sharing = true }, enabled = !state.mutating && !state.refreshing && !state.detailRefreshing && !state.detailStale, outlined = true)
-                        ShelfIconButton(Res.drawable.bookshelf_download, "이미지 저장", { sharing = true }, enabled = !state.mutating && !state.refreshing && !state.detailRefreshing && !state.detailStale, outlined = true)
+            BookshelfReorderList(
+                values = detail.items, key = { it.bookId }, enabled = canOrder && !editing, state = detailListState,
+                onOrder = { viewModel.orderBooks(detail.libraryId, it) }, modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                header = {
+                    Column(Modifier.padding(top = 24.dp)) {
+                        Text(detail.name, style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp))
+                        Spacer(Modifier.height(8.dp))
+                        Text("${detail.totalCount}권", style = MaterialTheme.typography.bodySmall, color = ChaekInkSecondary)
+                        Spacer(Modifier.height(16.dp))
+                        BookshelfSpineRow(detail.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = if (!canOrder) null else { viewModel.orderBooks(detail.libraryId, it) })
+                        HorizontalDivider(thickness = 3.dp, color = ChaekBorder)
+                        Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ChaekOverlayButton("+ 책 담기", { adding = true }, modifier = Modifier.weight(1f), enabled = !state.mutating)
+                            ShelfIconButton(Res.drawable.bookshelf_share, "이미지 공유", { sharing = true }, enabled = !state.mutating && !state.refreshing && !state.detailRefreshing && !state.detailStale, outlined = true)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("이 책장에 담긴 책", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                            TextButton(onClick = { editing = !editing }) { Text(if (editing) "완료" else "편집") }
+                        }
                     }
-                }
-                item { Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("이 책장에 담긴 책", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                    TextButton(onClick = { editing = !editing }) { Text(if (editing) "완료" else "편집") }
-                } }
-                itemsIndexed(detail.items, key = { _, it -> it.bookId }) { index, book ->
+                },
+            ) { book, _, handle ->
+                Column {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         BookShelfRow(book.title, book.authors.joinToString(", "), book.coverImageUrl, Modifier.weight(1f)) { onBook(book.asArchive().asArgs()) }
-                        if (!editing) ReorderHandle(index, detail.items.size, canOrder, "bookshelf-book-reorder-${book.bookId}") { from, to ->
-                            viewModel.orderBooks(detail.libraryId, detail.items.map { it.bookId }.moved(from, to))
-                        }
+                        if (!editing) ReorderHandle("bookshelf-book-reorder-${book.bookId}", handle, canOrder)
                         if (editing) TextButton(onClick = { viewModel.remove(detail.libraryId, book.bookId) }, enabled = !state.mutating) { Text("빼기") }
                     }
                     HorizontalDivider(color = ChaekBorder)
@@ -176,18 +170,35 @@ internal fun BookshelfRoute(
         }
     }
     if (adding) ShelfAddSheet(state.shelves, onDismiss = { adding = false }, onAdd = { adding = false; onAdd(it) })
-    if (sharing && detail != null && token != null && !state.detailStale) BookshelfImageSheet(detail, token, onDismiss = { sharing = false })
+    if (sharing && detail != null && token != null && !state.detailStale) BookshelfImageSheet(detail, onDismiss = { sharing = false })
 }
 
 @Composable
-private fun ShelfMenu(shelf: Bookshelf, rename: () -> Unit, delete: () -> Unit) {
+private fun ShelfMenu(shelf: Bookshelf, rename: () -> Unit, editBooks: () -> Unit, share: () -> Unit, delete: () -> Unit, enabled: Boolean) {
     var expanded by remember { mutableStateOf(false) }
-    Box {
-        ShelfIconButton(Res.drawable.bookshelf_more, "${shelf.name} 더보기", { expanded = true }, modifier = Modifier.testTag("bookshelf-menu-${shelf.libraryId}"))
-        DropdownMenu(expanded, { expanded = false }) {
-            DropdownMenuItem(text = { Text("이름 바꾸기") }, onClick = { expanded = false; rename() })
-            if (!shelf.isDefault) DropdownMenuItem(text = { Text("책장 삭제") }, onClick = { expanded = false; delete() })
+    ShelfIconButton(Res.drawable.bookshelf_more, "${shelf.name} 더보기", { expanded = true }, modifier = Modifier.testTag("bookshelf-menu-${shelf.libraryId}"), enabled = enabled)
+    if (expanded) ShelfSheet(shelf.name, { expanded = false }, contentSpacing = 8.dp) {
+        Column {
+            ShelfMenuAction("책장 이름 바꾸기", Res.drawable.bookshelf_edit) { expanded = false; rename() }
+            ShelfMenuAction("책 삭제", Res.drawable.bookshelf_grip) { expanded = false; editBooks() }
+            ShelfMenuAction("이미지 공유", Res.drawable.bookshelf_share, divider = !shelf.isDefault) { expanded = false; share() }
+            if (!shelf.isDefault) {
+                ShelfMenuAction("책장 삭제", Res.drawable.bookshelf_trash, destructive = true, divider = false) { expanded = false; delete() }
+            }
         }
+    }
+}
+
+@Composable
+private fun ShelfMenuAction(label: String, icon: DrawableResource, destructive: Boolean = false, divider: Boolean = true, onClick: () -> Unit) {
+    val color = if (destructive) Color(0xFFB93228) else ChaekInk
+    val border = ChaekBorder
+    Row(Modifier.fillMaxWidth().height(56.dp).drawBehind {
+        if (divider) drawLine(border, androidx.compose.ui.geometry.Offset(0f, size.height), androidx.compose.ui.geometry.Offset(size.width, size.height), strokeWidth = 1.dp.toPx())
+    }.clickable(role = Role.Button, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Icon(painterResource(icon), null, Modifier.size(22.dp), tint = color)
+        Text(label, color = color, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp))
     }
 }
 
@@ -203,14 +214,15 @@ private fun ShelfNameSheet(initial: String, rename: Boolean, saving: Boolean, on
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun ShelfSheet(title: String, onDismiss: () -> Unit, dismissEnabled: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
-    ModalBottomSheet(onDismissRequest = { if (dismissEnabled) onDismiss() }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { dismissEnabled || it != SheetValue.Hidden }), containerColor = ChaekSurface, shape = ChaekOverlayTokens.sheetShape, dragHandle = {
+internal fun ShelfSheet(title: String, onDismiss: () -> Unit, dismissEnabled: Boolean = true, contentSpacing: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
+    val canDismiss by rememberUpdatedState(dismissEnabled)
+    ModalBottomSheet(onDismissRequest = { if (canDismiss) onDismiss() }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { canDismiss || it != SheetValue.Hidden }), containerColor = ChaekSurface, scrimColor = Color.Black.copy(alpha = .25f), shape = ChaekOverlayTokens.sheetShape, dragHandle = {
         Box(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 9.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(36.dp, 4.dp).background(Color(0xFFDCDCE0), CircleShape))
         }
     }) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(contentSpacing)) {
+            Row(Modifier.height(44.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium.copy(lineHeight = 29.sp))
                 ChaekCloseButton({ if (dismissEnabled) onDismiss() })
             }
@@ -266,32 +278,28 @@ internal fun BookShelfRow(title: String, author: String, cover: String, modifier
 }
 
 @Composable
-private fun SpineRow(books: List<ArchiveBookUiModel>, onBook: (ArchiveBookUiModel) -> Unit, onMove: ((Int, Int) -> Unit)? = null) {
-    val threshold = with(LocalDensity.current) { 40.dp.toPx() }
-    LazyRow(Modifier.fillMaxWidth().height(269.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        itemsIndexed(books, key = { _, it -> it.bookId }) { index, book ->
-            LibraryBookSpine(book, Modifier.height(bookshelfSpineHeight(index)).widthIn(min = 6.dp, max = 48.dp).clickable { onBook(book) }.then(if (onMove == null) Modifier else Modifier.pointerInput(index, books) {
-                var delta = 0f
-                detectDragGesturesAfterLongPress(onDragStart = { delta = 0f }, onDragEnd = {
-                    val target = (index + (delta / threshold).toInt()).coerceIn(books.indices)
-                    if (target != index) onMove(index, target)
-                }, onDrag = { change, amount -> change.consume(); delta += amount.x })
-            }))
+internal fun BookshelfSpineRow(books: List<ArchiveBookUiModel>, onBook: (ArchiveBookUiModel) -> Unit,
+    onMove: ((List<Long>) -> Unit)? = null, modifier: Modifier = Modifier) {
+    val scroll = rememberLazyListState()
+    if (books.isEmpty()) {
+        Box(modifier.fillMaxWidth().height(BookshelfSpineRowHeight), contentAlignment = Alignment.BottomStart) {
+            Text("책을 담아 책장을 채워 보세요", Modifier.padding(vertical = 24.dp), color = ChaekInkSecondary)
         }
-        if (books.isEmpty()) item { Text("책을 담아 책장을 채워 보세요", Modifier.padding(vertical = 24.dp), color = ChaekInkSecondary) }
+        return
+    }
+    BookshelfReorderList(books, { it.bookId }, onMove != null, scroll, { onMove?.invoke(it) },
+        modifier.fillMaxWidth().height(BookshelfSpineRowHeight), horizontal = true, longPress = true, tagPrefix = "spines") { book, index, _ ->
+        LibraryBookSpine(book, Modifier.height(bookshelfSpineHeight(index)).widthIn(min = 6.dp, max = 48.dp).clickable { onBook(book) })
     }
 }
 
 @Composable
-private fun ReorderHandle(index: Int, count: Int, enabled: Boolean, tag: String, rowHeight: Float = 88f, compact: Boolean = false, move: (Int, Int) -> Unit) {
-    val threshold = with(LocalDensity.current) { rowHeight.dp.toPx() }
-    val currentMove by rememberUpdatedState(move)
-    Box(Modifier.width(if (compact) 32.dp else 44.dp).height(44.dp).testTag(tag).semantics { contentDescription = "길게 눌러 순서 변경" }.pointerInput(index, count, enabled) {
-        var delta = 0f
-        detectDragGesturesAfterLongPress(onDragStart = { delta = 0f }, onDragEnd = {
-            if (enabled) { val target = (index + (delta / threshold).toInt()).coerceIn(0, count - 1); if (target != index) currentMove(index, target) }
-        }, onDrag = { change, amount -> change.consume(); delta += amount.y })
-    }, contentAlignment = if (compact) Alignment.CenterStart else Alignment.Center) { Icon(painterResource(Res.drawable.bookshelf_grip), null, Modifier.size(20.dp, 24.dp), tint = Color(0xFF777777)) }
+private fun ReorderHandle(tag: String, modifier: Modifier, enabled: Boolean, compact: Boolean = false) {
+    Box(modifier.width(if (compact) 32.dp else 44.dp).height(44.dp).testTag(tag)
+        .semantics { contentDescription = "드래그해서 순서 변경" },
+        contentAlignment = if (compact) Alignment.CenterStart else Alignment.Center) {
+        Icon(painterResource(Res.drawable.bookshelf_grip), null, Modifier.size(20.dp, 24.dp), tint = Color(0xFF777777).copy(alpha = if (enabled) 1f else .4f))
+    }
 }
 
 @Composable
