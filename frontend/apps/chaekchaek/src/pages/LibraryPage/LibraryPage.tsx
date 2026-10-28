@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import {
-  Badge,
   Button,
   Checkbox,
   ConstrainedImgBox,
@@ -364,18 +363,6 @@ export const LibraryPage = () => {
                         {...(!isEditing && { to: `/books/${item.isbn13}` })}
                         title={
                           <>
-                            <Badge
-                              sx={{ mb: 1 }}
-                              variant={
-                                item.status === READING_STATUS.READING
-                                  ? 'primary'
-                                  : item.status === READING_STATUS.WANT_TO_READ
-                                    ? 'subtle'
-                                    : 'soft'
-                              }
-                            >
-                              {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
-                            </Badge>
                             <br />
                             {item.title}
                           </>
