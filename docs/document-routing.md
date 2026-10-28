@@ -34,6 +34,7 @@
 | 디자인 원본 수집, 화면 대조, 검증 근거 작성 | [디자인 검증 시작점](../android/visual-contracts/README.md) | 작업별 원본, 상태, 플랫폼, 뷰포트를 지정한다. |
 | 추가 화면 재디자인의 기존 검증 범위 확인 | [추가 화면 근거](../android/visual-contracts/418-additional-evidence.md) | 해당 작업의 Android 근거이며 iOS 실행 증거로 확대하지 않는다. |
 | QA2차 지적 사항의 처리 이력과 회귀 항목 확인 | [QA2차 체크리스트](qa2-implementation-checklist.md) | 기준 브랜치와 당시 검증 기록이다. 현재 코드의 통과를 보장하지 않는다. |
+| 2026-10-28 모바일 QA 범위 준비와 플랫폼별 수동 결과 기록 | [Notion QA 적용 범위·체크리스트](https://www.notion.so/4079e8272129810f86c2c62c37adaffe) | 10월 페이지 하위의 실행용 55항목. 기준 `6c9830d3`와 통합 `e220078b`의 차이, 실제 서버·스토어 미검증 및 정책 미확정 항목을 구분한다. |
 | 피드와 서재의 책등 이미지 또는 표지 대체 검토 | [책등 이미지 메모](book-spine-images.md) | YES24 상품번호 기반 과거 테스트이며 전체 도서 지원이나 서버 API 구현 증거가 아니다. |
 
 <a id="delivery"></a>
