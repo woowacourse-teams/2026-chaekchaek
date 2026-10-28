@@ -23,6 +23,8 @@ import { useExecute } from '@/services/core/useExecute';
 
 import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
 
+import { RegisterBookToLibraryDialog } from '@/shared/RegisterBookToLibrary';
+
 import { BookOverview } from './components/BookOverview';
 import { BookInfo } from './components/BookInfo';
 import { BookReviews } from './components/BookReviews';
@@ -30,7 +32,6 @@ import { BookReviews } from './components/BookReviews';
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
 import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
-import { RegisterBookToLibraryDialog } from './dialog/RegisterBookToLibraryDialog';
 
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();

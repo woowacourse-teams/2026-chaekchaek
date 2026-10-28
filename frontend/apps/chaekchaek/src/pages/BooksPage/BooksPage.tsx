@@ -25,7 +25,7 @@ import { useLoadData } from '@/services/core/useLoadData';
 
 import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
 
-import { RegisterBookToLibraryDialog } from './dialog/RegisterBookToLibraryDialog';
+import { RegisterBookToLibraryDialog } from '@/shared/RegisterBookToLibrary';
 
 export const BooksPage = () => {
   const { isAuthenticated } = useAuthContext();
