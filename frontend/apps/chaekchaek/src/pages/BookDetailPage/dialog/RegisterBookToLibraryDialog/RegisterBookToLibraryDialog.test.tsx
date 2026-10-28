@@ -16,7 +16,7 @@ import {
   unselectedLibraryResponse,
   unchangedBookSelectionLibrariesResponse,
   unselectedLibraryForUnchangedSelectionResponse,
-} from '../../BookDetailPage.fixtures';
+} from '@/shared/RegisterBookToLibrary/RegisterBookToLibraryDialog.fixtures';
 import { RegisterBookToLibraryDialog } from './RegisterBookToLibraryDialog';
 
 it('선택하지 않았던 책장을 선택하고 완료하면 해당 책장에 책이 등록된다', async () => {
@@ -99,7 +99,7 @@ it('선택되어 있던 책장을 해제하고 완료하면 해당 책장에서 
   const libraryItem = libraryName.closest('li');
   if (!libraryItem) throw new Error('선택을 해제할 책장의 목록 항목을 찾을 수 없습니다.');
   const checkbox = within(libraryItem).getByRole('checkbox');
-  expect(checkbox).toBeChecked();
+  await waitFor(() => expect(checkbox).toBeChecked());
 
   // 선택되어 있던 책장을 눌러 선택을 해제한다.
   await user.click(checkbox);
@@ -147,7 +147,7 @@ it('책장 선택을 변경하지 않고 완료하면 기존 상태가 유지된
   const selectedLibraryName = await screen.findByText(selectedLibraryResponse.name);
   const selectedLibraryItem = selectedLibraryName.closest('li');
   if (!selectedLibraryItem) throw new Error('선택된 책장의 목록 항목을 찾을 수 없습니다.');
-  expect(within(selectedLibraryItem).getByRole('checkbox')).toBeChecked();
+  await waitFor(() => expect(within(selectedLibraryItem).getByRole('checkbox')).toBeChecked());
   const unselectedLibraryName = await screen.findByText(
     unselectedLibraryForUnchangedSelectionResponse.name,
   );
