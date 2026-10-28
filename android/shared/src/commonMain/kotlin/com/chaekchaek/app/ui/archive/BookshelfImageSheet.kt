@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
@@ -25,7 +27,9 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.math.ceil
 import androidx.compose.ui.window.Popup
@@ -121,9 +125,10 @@ private fun ExportSpine(book: BookshelfBook, index: Int, scale: Float, onReady: 
     val painter = rememberAsyncImagePainter(book.spineImageUrl)
     val state by painter.state.collectAsState()
     val ready by rememberUpdatedState(onReady)
+    var preparingImage by remember(book.spineImageUrl) { mutableStateOf(false) }
     val height = bookshelfSpineHeight(index, scale)
     BoxWithConstraints {
-        val generated = book.spineImageUrl.isNullOrBlank() || state is AsyncImagePainter.State.Error
+        val generated = book.spineImageUrl.isNullOrBlank() || state is AsyncImagePainter.State.Error || preparingImage
         val intrinsic = painter.intrinsicSize
         val ratio = if (!generated && intrinsic.width.isFinite() && intrinsic.height.isFinite() && intrinsic.width > 0 && intrinsic.height > 0) {
             intrinsic.width / intrinsic.height
@@ -134,10 +139,34 @@ private fun ExportSpine(book: BookshelfBook, index: Int, scale: Float, onReady: 
             LibraryBookSpine(book.asArchive().copy(spineUrl = null), dimensions, onReady = { ready() }, generatedScale = scale / 1.4f)
         } else {
             Image(painter, "${book.title} 책등", dimensions, contentScale = ContentScale.Fit)
-            LaunchedEffect(state) { if (state is AsyncImagePainter.State.Success) ready() }
+            LaunchedEffect(state, book.spineImageUrl) {
+                val success = state as? AsyncImagePainter.State.Success ?: return@LaunchedEffect
+                if (success.isKnownImagePreparingSpine()) preparingImage = true else ready()
+            }
         }
     }
 }
+
+private fun AsyncImagePainter.State.Success.isKnownImagePreparingSpine(): Boolean = runCatching {
+    val sourceSize = painter.intrinsicSize
+    val bitmap = ImageBitmap(SpineAvailabilitySampleWidth, SpineAvailabilitySampleHeight)
+    CanvasDrawScope().draw(
+        Density(1f),
+        LayoutDirection.Ltr,
+        Canvas(bitmap),
+        androidx.compose.ui.geometry.Size(SpineAvailabilitySampleWidth.toFloat(), SpineAvailabilitySampleHeight.toFloat()),
+    ) {
+        with(painter) { draw(size) }
+    }
+    val pixelMap = bitmap.toPixelMap()
+    isKnownImagePreparingSpine(
+        sourceWidth = sourceSize.width,
+        sourceHeight = sourceSize.height,
+        pixels = List(SpineAvailabilitySampleWidth * SpineAvailabilitySampleHeight) { index ->
+            pixelMap[index % SpineAvailabilitySampleWidth, index / SpineAvailabilitySampleWidth]
+        },
+    )
+}.getOrDefault(false)
 
 /** Each wrapped row touches edge to edge and shares the original canvas baseline. */
 @Composable
