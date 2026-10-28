@@ -311,6 +311,21 @@ class BookshelfFlowTest {
         } finally { Dispatchers.resetMain() }
     }
 
+    @Test fun `정렬 코루틴 시작 전 계정 변경도 실패 완료를 알린다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = FakeShelves(listOf(shelf(1), shelf(2)))
+            val vm = BookshelfViewModel(repo)
+            vm.authenticate("token", 9); advanceUntilIdle()
+            val results = mutableListOf<Boolean>()
+            vm.orderShelves(listOf(2, 1)) { results += it }
+            vm.authenticate(null); advanceUntilIdle()
+            assertEquals(listOf(false), results)
+            assertTrue(repo.orders.isEmpty())
+            assertTrue(vm.uiState.value.shelves.isEmpty())
+        } finally { Dispatchers.resetMain() }
+    }
+
     @Test fun `이름과 순서는 기존 긴 이름과 35권 이전 데이터를 임의로 자르지 않는다`() {
         assertNotNull(bookshelfNameError(" ", emptyList()))
         assertNotNull(bookshelfNameError("12345678901", emptyList()))

@@ -191,6 +191,9 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
                 if (session == generation) report(e) { mutate(done, action = action) }
             }
             finally { if (session == generation) state.value = state.value.copy(mutating = false, loading = false) }
+        }.also { job ->
+            // A cancelled scope can reject launch before its body starts, so the body cannot acknowledge it.
+            job.invokeOnCompletion { cause -> if (cause != null) complete(false) }
         }
     }
 
