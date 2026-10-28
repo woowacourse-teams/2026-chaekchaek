@@ -17,6 +17,7 @@ export const BookReviews = ({
   sort,
   feed,
   count,
+  myRating,
   reviews,
   onReviewsRefresh,
   onSortChange,
@@ -47,6 +48,7 @@ export const BookReviews = ({
             <WriteReviewDialog
               bookId={bookId}
               isbn={isbn}
+              myRating={myRating}
               onReviewWritten={onReviewsRefresh}
               onClose={handleCloseDialog}
             />
@@ -73,7 +75,6 @@ export const BookReviews = ({
                 { value: 'LATEST', text: '최신순' },
                 { value: 'OLDEST', text: '오래된순' },
                 { value: 'POPULAR', text: '인기순' },
-                { value: 'PAGE', text: '페이지순' },
               ]}
               onChange={onSortChange}
             />
@@ -115,7 +116,9 @@ export const BookReviews = ({
           return (
             <BookReview
               key={review.reviewId}
+              bookId={bookId}
               isbn={isbn}
+              myRating={myRating}
               review={review}
               onReviewsRefresh={onReviewsRefresh}
             />
