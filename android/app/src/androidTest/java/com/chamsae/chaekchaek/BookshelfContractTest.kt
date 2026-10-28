@@ -2,6 +2,7 @@ package com.chamsae.chaekchaek
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.os.Bundle
@@ -127,6 +128,41 @@ class BookshelfContractTest {
         val calls = state.getJSONArray("requests")
         assertEquals("드롭 저장은 1회", 1, (0 until calls.length()).count {
             calls.getJSONObject(it).getString("method") == "PATCH" && calls.getJSONObject(it).getString("path") == "/api/v1/libraries/order"
+        })
+    }
+
+    @Test fun bookSpineHoldShowsPreviewAndDropSavesOnce() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
+        request("/__bookshelf/reset", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("내 서재")
+        compose.onNodeWithText("내 서재").performClick()
+        waitTag("bookshelf-1")
+        compose.onNodeWithTag("bookshelf-1").performClick()
+        waitTag("bookshelf-drag-source-spines-1")
+        waitTag("bookshelf-drag-source-spines-2")
+        val first = compose.onNodeWithTag("bookshelf-drag-source-spines-1").fetchSemanticsNode().boundsInRoot.center
+        val second = compose.onNodeWithTag("bookshelf-drag-source-spines-2").fetchSemanticsNode().boundsInRoot.center
+        val delta = second - first
+        val source = compose.onNodeWithTag("bookshelf-drag-source-spines-1")
+        source.performTouchInput { down(center) }
+        compose.waitUntil(2_000) {
+            compose.onAllNodesWithTag("bookshelf-drag-ghost-spines-1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        source.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "놓을 위치 미리보기"))
+        source.performTouchInput {
+            moveBy(delta, delayMillis = 64)
+            up()
+        }
+        compose.waitUntil(15_000) { requested("PATCH", "/api/v1/libraries/1/books/order") }
+        val state = JSONObject(request("/__bookshelf/state"))
+        val shelf = (0 until state.getJSONArray("shelves").length())
+            .map { state.getJSONArray("shelves").getJSONObject(it) }
+            .single { it.getInt("libraryId") == 1 }
+        assertEquals(listOf(2, 1), (0 until shelf.getJSONArray("books").length()).map { shelf.getJSONArray("books").getInt(it) })
+        val calls = state.getJSONArray("requests")
+        assertEquals("책등 드롭 저장은 1회", 1, (0 until calls.length()).count {
+            calls.getJSONObject(it).getString("method") == "PATCH" && calls.getJSONObject(it).getString("path") == "/api/v1/libraries/1/books/order"
         })
     }
 

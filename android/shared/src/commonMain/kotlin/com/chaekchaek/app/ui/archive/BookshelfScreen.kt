@@ -288,8 +288,10 @@ internal fun BookshelfSpineRow(books: List<ArchiveBookUiModel>, onBook: (Archive
         return
     }
     BookshelfReorderList(books, { it.bookId }, onMove != null, scroll, { ids, done -> if (onMove != null) onMove(ids, done) else done(false) },
-        modifier.fillMaxWidth().height(BookshelfSpineRowHeight), horizontal = true, longPress = true, tagPrefix = "spines") { book, index, _ ->
-        LibraryBookSpine(book, Modifier.height(bookshelfSpineHeight(index)).widthIn(min = 6.dp, max = 48.dp).clickable { onBook(book) })
+        modifier.fillMaxWidth().height(BookshelfSpineRowHeight), horizontal = true, longPress = true, tagPrefix = "spines",
+        onItemTap = if (onMove != null) onBook else null) { book, index, _ ->
+        val spine = Modifier.height(bookshelfSpineHeight(index)).widthIn(min = 6.dp, max = 48.dp)
+        LibraryBookSpine(book, if (onMove == null) spine.clickable { onBook(book) } else spine)
     }
 }
 

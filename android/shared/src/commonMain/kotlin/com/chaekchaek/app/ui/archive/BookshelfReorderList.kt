@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -17,12 +16,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
+import androidx.compose.ui.input.pointer.isOutOfBounds
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.IntOffset
@@ -38,6 +43,7 @@ internal fun <T> BookshelfReorderList(
     values: List<T>, key: (T) -> Long, enabled: Boolean, state: LazyListState,
     onOrder: (List<Long>, (Boolean) -> Unit) -> Unit, modifier: Modifier = Modifier,
     horizontal: Boolean = false, longPress: Boolean = false, tagPrefix: String = "books",
+    onItemTap: ((T) -> Unit)? = null,
     header: @Composable () -> Unit = {}, footer: @Composable () -> Unit = {},
     item: @Composable (T, Int, Modifier) -> Unit,
 ) {
@@ -53,11 +59,13 @@ internal fun <T> BookshelfReorderList(
     var viewport by remember { mutableStateOf(Rect.Zero) }
     val bounds = remember { mutableMapOf<Long, Rect>() }
     val handles = remember { mutableMapOf<Long, Rect>() }
+    val byId = values.associateBy(key)
     val latestIds by rememberUpdatedState(sourceIds)
     val latestEnabled by rememberUpdatedState(enabled)
     val latestOrder by rememberUpdatedState(onOrder)
+    val latestItemTap by rememberUpdatedState(onItemTap)
+    val latestValues by rememberUpdatedState(byId)
     val density = LocalDensity.current
-    val byId = values.associateBy(key)
     val order = if (heldId != null) preview else if (submittedOrder != null) submission.displayOrder(sourceIds) else sourceIds
     fun movePointer(position: Offset) {
         pointer = position
@@ -106,7 +114,18 @@ internal fun <T> BookshelfReorderList(
             val position = down.position + viewport.topLeft
             val hit = (if (longPress) bounds else handles).entries.firstOrNull { (id, rect) -> id in latestIds && rect.contains(position) }
                 ?: return@awaitEachGesture
-            val pressed = if (longPress) awaitLongPressOrCancellation(down.id) ?: return@awaitEachGesture else down
+            val pressed = if (longPress) {
+                when (val press = awaitBookshelfHoldOrRelease(down.id)) {
+                    is BookshelfPress.Held -> press.change
+                    BookshelfPress.Released -> {
+                        latestValues[hit.key]?.let { latestItemTap?.invoke(it) }
+                        return@awaitEachGesture
+                    }
+                    BookshelfPress.Cancelled -> return@awaitEachGesture
+                }
+            } else {
+                down
+            }
             val rect = bounds[hit.key] ?: return@awaitEachGesture
             if (!session.begin(latestIds, hit.key)) return@awaitEachGesture
             pressed.consume()
@@ -146,7 +165,13 @@ internal fun <T> BookshelfReorderList(
             DisposableEffect(id) { onDispose { bounds.remove(id); handles.remove(id) } }
             Box(Modifier.onGloballyPositioned { bounds[id] = it.boundsInRoot() }
                 .testTag("bookshelf-drag-source-$tagPrefix-$id")
-                .semantics { if (heldId == id) stateDescription = "놓을 위치 미리보기" }
+                .semantics {
+                    if (heldId == id) stateDescription = "놓을 위치 미리보기"
+                    if (onItemTap != null) onClick {
+                        onItemTap(value)
+                        true
+                    }
+                }
                 .alpha(if (heldId == id) .25f else 1f)) {
                 item(value, index, Modifier.onGloballyPositioned { handles[id] = it.boundsInRoot() })
             }
@@ -176,4 +201,37 @@ internal fun <T> BookshelfReorderList(
             }
         }
     }
+}
+
+private const val BookshelfHoldMillis = 420L
+
+private sealed interface BookshelfPress {
+    data class Held(val change: PointerInputChange) : BookshelfPress
+    data object Released : BookshelfPress
+    data object Cancelled : BookshelfPress
+}
+
+/** Owns spine tap and hold detection so a nested click recognizer cannot cancel the hold. */
+private suspend fun AwaitPointerEventScope.awaitBookshelfHoldOrRelease(pointerId: PointerId): BookshelfPress {
+    val initial = currentEvent.changes.firstOrNull { it.id == pointerId } ?: return BookshelfPress.Cancelled
+    var current = initial
+    val completed = withTimeoutOrNull(BookshelfHoldMillis) {
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Main)
+            val change = event.changes.firstOrNull { it.id == current.id }
+                ?: return@withTimeoutOrNull BookshelfPress.Cancelled
+            if (change.changedToUpIgnoreConsumed()) {
+                return@withTimeoutOrNull if (change.isConsumed) BookshelfPress.Cancelled else BookshelfPress.Released
+            }
+            if (change.isConsumed || change.isOutOfBounds(size, extendedTouchPadding)) {
+                return@withTimeoutOrNull BookshelfPress.Cancelled
+            }
+            val final = awaitPointerEvent(PointerEventPass.Final)
+            if (final.changes.any { it.isConsumed }) return@withTimeoutOrNull BookshelfPress.Cancelled
+            current = change
+        }
+        @Suppress("UNREACHABLE_CODE")
+        BookshelfPress.Cancelled
+    }
+    return completed ?: BookshelfPress.Held(current)
 }
