@@ -28,7 +28,6 @@ import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repo
 import { useExecute } from '@/services/core/useExecute';
 import { useLoadData } from '@/services/core/useLoadData';
 
-import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
 import { DeleteBooksDialog } from './dialog/DeleteBooksDialog';
 import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
@@ -203,30 +202,16 @@ export const LibraryPage = () => {
     setIsCopied(true);
   };
 
-  const [dialog, setDialog] = useState<
-    'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null
-  >(null);
-  const handleOpenDialog = (
-    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog',
-  ) => {
+  const [dialog, setDialog] = useState<'DeleteBooksDialog' | 'UpdateNicknameDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'DeleteBooksDialog' | 'UpdateNicknameDialog') => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (
-    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null,
-  ) => {
+  const renderDialog = (dialog: 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null) => {
     switch (dialog) {
-      case 'UpdateBookStatusDialog':
-        return (
-          <UpdateBookStatusDialog
-            bookSelection={bookSelection}
-            onBookStatusUpdated={handleBookStatusUpdated}
-            onClose={handleCloseDialog}
-          />
-        );
       case 'DeleteBooksDialog':
         return (
           <DeleteBooksDialog
@@ -284,14 +269,6 @@ export const LibraryPage = () => {
                     )}
                     {isEditing && (
                       <>
-                        <Button
-                          variant="ghost"
-                          size="small"
-                          disabled={!isAbleUpdateStatus}
-                          onClick={() => handleOpenDialog('UpdateBookStatusDialog')}
-                        >
-                          상태 변경
-                        </Button>
                         <Button
                           leading={<Icon.TrashIcon color="error" />}
                           variant="danger-weak"
