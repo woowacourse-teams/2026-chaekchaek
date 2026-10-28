@@ -19,6 +19,16 @@ export const bookNotInLibraryResponse = {
   myRecord: null,
 };
 
+export const bookInLibraryResponse = {
+  ...bookNotInLibraryResponse,
+  isRegisteredInMyLibrary: true,
+  myRecord: {
+    status: 'WANT_TO_READ',
+    currentPage: 0,
+    myRating: 0,
+  },
+};
+
 export const emptyBookReviewsResponse = {
   totalCount: 0,
   nextPage: null,
