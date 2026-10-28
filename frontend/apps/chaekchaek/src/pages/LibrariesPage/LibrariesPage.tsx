@@ -102,15 +102,10 @@ export const LibrariesPage = () => {
               나의 책장
             </Title>
 
-            <Partition>
-              {librariesData?.libraries.map((library, index) => {
-                const odd = index % 2 == 0;
+            <Partition columns={2}>
+              {librariesData?.libraries.map((library) => {
                 return (
-                  <Partition.Item
-                    key={library.libraryId}
-                    sx={odd ? { mr: 4 } : { ml: 4 }}
-                    style={{ width: '50%' }}
-                  >
+                  <Partition.Item key={library.libraryId}>
                     <div>
                       <Title
                         level="content"
