@@ -16,9 +16,13 @@ BOOKS = {i: dict(bookId=i, isbn13=f'97800000000{i:02}', title=f'검증 도서 {i
                 readingUpdatedAt='2026-10-23T00:00:00Z', publisher='검증 출판', category='소설') for i in range(1, 37)}
 
 
-def cover_png():
+def cover_png(variant=0, width=48):
     """표지색 추출을 확인하는 합성 표지. 첨부 원본 이미지와는 별개다."""
     stops = [(0.08, (37, 60, 94)), (0.38, (151, 127, 118)), (0.90, (214, 167, 131))]
+    if variant == 1:
+        stops = [(0.08, (24, 85, 52)), (0.38, (99, 164, 111)), (0.90, (224, 230, 173))]
+    elif variant == 2:
+        stops = [(0.08, (150, 30, 45)), (0.38, (230, 120, 95)), (0.90, (252, 220, 190))]
     rows = []
     for y in range(96):
         position = y / 95
@@ -26,14 +30,15 @@ def cover_png():
         upper = min((stop for stop in stops if stop[0] >= position), default=stops[-1])
         amount = 0 if lower[0] == upper[0] else (position - lower[0]) / (upper[0] - lower[0])
         rgb = bytes(round(a + (b - a) * amount) for a, b in zip(lower[1], upper[1]))
-        rows.append(b'\x00' + rgb * 48)
+        rows.append(b'\x00' + rgb * width)
     def chunk(kind, data):
         return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))
-    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 48, 96, 8, 2, 0, 0, 0))
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, 96, 8, 2, 0, 0, 0))
             + chunk(b'IDAT', zlib.compress(b''.join(rows))) + chunk(b'IEND', b''))
 
 
-COVER_PNG = cover_png()
+COVERS = {f'/assets/cover-{i}.png': cover_png(i) for i in range(3)}
+COVERS['/assets/original-spine.png'] = cover_png(2, width=12)
 
 
 def reset():
@@ -63,15 +68,18 @@ class Handler(BaseHTTPRequestHandler):
             path = urlparse(self.path).path
             query = parse_qs(urlparse(self.path).query)
             method = self.command
-            if path == '/assets/cover.png':
+            if path in COVERS:
+                data = COVERS[path]
                 self.send_response(200)
                 self.send_header('Content-Type', 'image/png')
-                self.send_header('Content-Length', str(len(COVER_PNG)))
+                self.send_header('Content-Length', str(len(data)))
                 self.end_headers()
-                self.wfile.write(COVER_PNG)
+                self.wfile.write(data)
                 return
             for book in BOOKS.values():
-                book['coverImageUrl'] = f'http://{self.headers.get("Host")}/assets/cover.png'
+                origin = f'http://{self.headers.get("Host")}'
+                book['coverImageUrl'] = f'{origin}/assets/cover-{(book["bookId"] - 1) % 3}.png'
+                book['spineImageUrl'] = f'{origin}/assets/original-spine.png' if book['bookId'] % 3 == 0 else None
             body = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))) or '{}')
             if path == '/__bookshelf/reset':
                 reset()
