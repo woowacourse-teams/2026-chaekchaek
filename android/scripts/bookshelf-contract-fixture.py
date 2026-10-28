@@ -37,25 +37,8 @@ def cover_png(variant=0, width=48):
             + chunk(b'IDAT', zlib.compress(b''.join(rows))) + chunk(b'IEND', b''))
 
 
-def preparing_spine_png():
-    """HTTP 200으로 내려오는 YES24 이미지 준비중 책등을 재현하는 합성 이미지."""
-    width, height = 420, 600
-    rows = []
-    for y in range(height):
-        row = bytearray()
-        for x in range(width):
-            rgb = (208, 208, 208) if 140 <= x <= 280 and 240 <= y <= 360 else (255, 255, 255)
-            row.extend(rgb)
-        rows.append(b'\x00' + bytes(row))
-    def chunk(kind, data):
-        return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))
-    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0))
-            + chunk(b'IDAT', zlib.compress(b''.join(rows))) + chunk(b'IEND', b''))
-
-
 COVERS = {f'/assets/cover-{i}.png': cover_png(i) for i in range(3)}
 COVERS['/assets/original-spine.png'] = cover_png(2, width=12)
-COVERS['/assets/preparing-spine.png'] = preparing_spine_png()
 
 
 def reset():
@@ -96,8 +79,7 @@ class Handler(BaseHTTPRequestHandler):
             for book in BOOKS.values():
                 origin = f'http://{self.headers.get("Host")}'
                 book['coverImageUrl'] = f'{origin}/assets/cover-{(book["bookId"] - 1) % 3}.png'
-                book['spineImageUrl'] = (f'{origin}/assets/preparing-spine.png' if book['bookId'] == 1 else
-                                         f'{origin}/assets/original-spine.png' if book['bookId'] % 3 == 0 else None)
+                book['spineImageUrl'] = f'{origin}/assets/original-spine.png' if book['bookId'] % 3 == 0 else None
             body = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))) or '{}')
             if path == '/__bookshelf/reset':
                 reset()

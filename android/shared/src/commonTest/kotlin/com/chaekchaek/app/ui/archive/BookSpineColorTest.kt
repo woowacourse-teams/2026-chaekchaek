@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Color
 import com.chaekchaek.app.ui.theme.LightChaekColors
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class BookSpineColorTest {
@@ -72,20 +71,6 @@ class BookSpineColorTest {
         assertEquals(NeutralSpinePalette, coverSpinePalette(listOf(Color.Red), 48, 48))
         assertEquals(NeutralSpinePalette, coverSpinePalette(List(48 * 48) { Color.Red.copy(alpha = .3f) }, 48, 48))
         assertEquals(SpinePalette(Color.Red, Color.Red, Color.Red), coverSpinePalette(listOf(Color.Red.copy(alpha = .5f)), 1, 1))
-    }
-
-    @Test
-    fun `YES24 이미지 준비중 비트맵은 실제 책등이 아니다`() {
-        val pixels = MutableList(SpineAvailabilitySampleWidth * SpineAvailabilitySampleHeight) { Color.White }
-        for (y in 24..35) for (x in 14..27) {
-            pixels[y * SpineAvailabilitySampleWidth + x] = Color(0xFFD0D0D0)
-        }
-
-        assertTrue(isKnownImagePreparingSpine(420f, 600f, pixels))
-        assertTrue(isKnownImagePreparingSpine(42f, 60f, pixels))
-        assertFalse(isKnownImagePreparingSpine(76f, 1200f, pixels))
-        assertFalse(isKnownImagePreparingSpine(420f, 600f, List(pixels.size) { Color.White }))
-        assertFalse(isKnownImagePreparingSpine(420f, 600f, List(pixels.size) { Color(0xFF80CDB2) }))
     }
 
     @Test
