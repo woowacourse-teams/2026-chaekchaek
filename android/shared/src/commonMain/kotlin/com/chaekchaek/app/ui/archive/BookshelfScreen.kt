@@ -203,8 +203,8 @@ private fun ShelfNameSheet(initial: String, rename: Boolean, saving: Boolean, on
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun ShelfSheet(title: String, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = ChaekSurface, shape = ChaekOverlayTokens.sheetShape, dragHandle = {
+internal fun ShelfSheet(title: String, onDismiss: () -> Unit, dismissEnabled: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
+    ModalBottomSheet(onDismissRequest = { if (dismissEnabled) onDismiss() }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { dismissEnabled || it != SheetValue.Hidden }), containerColor = ChaekSurface, shape = ChaekOverlayTokens.sheetShape, dragHandle = {
         Box(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 9.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(36.dp, 4.dp).background(Color(0xFFDCDCE0), CircleShape))
         }
@@ -212,7 +212,7 @@ internal fun ShelfSheet(title: String, onDismiss: () -> Unit, content: @Composab
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium.copy(lineHeight = 29.sp))
-                ChaekCloseButton(onDismiss)
+                ChaekCloseButton({ if (dismissEnabled) onDismiss() })
             }
             content()
         }
@@ -327,8 +327,6 @@ private fun ShelfThumbnail(shelf: Bookshelf) {
     }
 }
 
-// 승인 A HTML의 책등 높이와 140% 배율을 유지한다. 표지 대체와 실제 책등 모두 같은 배치를 사용한다.
-private fun bookshelfSpineHeight(index: Int): Dp = listOf(156.928f, 177f, 144.155f, 135.031f, 157.84f, 135.031f, 159.665f, 173.351f, 148.716f, 133.206f, 149.629f, 166.964f, 125.907f, 169.701f)[index % 14].times(1.4f).dp
 
 internal fun <T> List<T>.moved(from: Int, to: Int): List<T> = toMutableList().apply { add(to, removeAt(from)) }
 internal fun BookshelfBookSummary.asArchive() = ArchiveBookUiModel(isbn13, bookId, title, "", "", "", "", spineImageUrl, ReadingStatus.READING, 0, 0, 0)
