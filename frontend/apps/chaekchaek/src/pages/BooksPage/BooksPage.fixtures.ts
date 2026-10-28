@@ -1,4 +1,4 @@
-export const bookToRegister = {
+const firstHarrySearchBook = {
   bookId: 47,
   title: '개소리에 대하여',
   coverImageUrl: 'https://image.yes24.com/goods/171435916/L',
@@ -15,7 +15,7 @@ export const bookToRegister = {
 
 /* length: 11 */
 const harrySearchBooks = [
-  bookToRegister,
+  firstHarrySearchBook,
   {
     bookId: 33,
     title: '해리 포터와 마법사의 돌 1',
@@ -261,96 +261,4 @@ export const martianSearchPage = {
   totalCount: 11,
   nextPage: 2,
   items: harrySearchBooks.slice(0, 10),
-};
-
-export const bookRegistrationSearchResponse = {
-  totalCount: 1,
-  nextPage: null,
-  items: [bookToRegister],
-};
-
-export const unselectedLibraryResponse = {
-  libraryId: 2,
-  memberId: 3,
-  name: '다시 읽고 싶은 책',
-  isDefault: false,
-  totalCount: 0,
-  items: [],
-};
-
-export const librariesBeforeBookRegistrationResponse = {
-  memberId: unselectedLibraryResponse.memberId,
-  libraries: [unselectedLibraryResponse],
-};
-
-export const registeredBookResponse = {
-  ...bookToRegister,
-  spineImageUrl: 'https://static.example.com/books/47/spine.webp',
-  totalPages: 144,
-  currentPage: 0,
-  status: 'WANT_TO_READ',
-  addedAt: '2026-10-27T09:00:00',
-  readingUpdatedAt: '2026-10-27T09:00:00',
-};
-
-export const libraryAfterBookRegistrationResponse = {
-  ...unselectedLibraryResponse,
-  totalCount: 1,
-  items: [registeredBookResponse],
-};
-
-export const bookToRemove = {
-  ...registeredBookResponse,
-  isRegisteredInMyLibrary: true,
-};
-
-export const bookRemovalSearchResponse = {
-  totalCount: 1,
-  nextPage: null,
-  items: [bookToRemove],
-};
-
-export const selectedLibraryResponse = {
-  ...unselectedLibraryResponse,
-  totalCount: 1,
-  items: [bookToRemove],
-};
-
-const defaultLibraryForBookRemoval = {
-  ...selectedLibraryResponse,
-  libraryId: 1,
-  name: '내 서재',
-  isDefault: true,
-};
-
-export const libraryAfterBookRemovalResponse = {
-  ...selectedLibraryResponse,
-  totalCount: 0,
-  items: [],
-};
-
-export const librariesBeforeBookRemovalResponse = {
-  memberId: selectedLibraryResponse.memberId,
-  libraries: [defaultLibraryForBookRemoval, selectedLibraryResponse],
-};
-
-export const librariesAfterBookRemovalResponse = {
-  memberId: selectedLibraryResponse.memberId,
-  libraries: [defaultLibraryForBookRemoval, libraryAfterBookRemovalResponse],
-};
-
-export const unchangedBookSelectionSearchResponse = {
-  ...bookRegistrationSearchResponse,
-  items: [{ ...registeredBookResponse, isRegisteredInMyLibrary: true }],
-};
-
-export const unselectedLibraryForUnchangedSelectionResponse = {
-  ...unselectedLibraryResponse,
-  libraryId: 3,
-  name: '나중에 읽을 책',
-};
-
-export const unchangedBookSelectionLibrariesResponse = {
-  memberId: selectedLibraryResponse.memberId,
-  libraries: [selectedLibraryResponse, unselectedLibraryForUnchangedSelectionResponse],
 };
