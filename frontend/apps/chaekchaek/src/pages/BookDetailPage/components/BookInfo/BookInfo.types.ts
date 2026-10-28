@@ -16,6 +16,7 @@ export type BookInfoProps = {
   translators: readonly unknown[] | undefined;
   isRegisteredInMyLibrary: boolean | undefined;
   onRegistryLibrary: () => void;
+  onRegisterBookToLibrary: () => void;
   onRatingCreate: () => void;
   onReadingStatusChange: (readingStatus: string) => void;
   onCurrentPageUpdate: () => void;

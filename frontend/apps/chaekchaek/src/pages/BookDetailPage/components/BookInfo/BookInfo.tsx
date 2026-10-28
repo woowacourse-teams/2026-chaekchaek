@@ -26,6 +26,7 @@ export const BookInfo = ({
   translators,
   isRegisteredInMyLibrary,
   onRegistryLibrary,
+  onRegisterBookToLibrary,
   onRatingCreate,
   onReadingStatusChange,
   onCurrentPageUpdate,
@@ -81,11 +82,17 @@ export const BookInfo = ({
           onChange={onReadingStatusChange}
         />
         {isRegisteredInMyLibrary ? (
-          <Button sx={{ mt: 4 }} block variant="accent" leading={<Icon.CheckIcon />}>
+          <Button
+            sx={{ mt: 4 }}
+            block
+            variant="accent"
+            leading={<Icon.CheckIcon />}
+            onClick={onRegisterBookToLibrary}
+          >
             담았어요
           </Button>
         ) : (
-          <Button sx={{ mt: 4 }} block variant="primary">
+          <Button sx={{ mt: 4 }} block variant="primary" onClick={onRegisterBookToLibrary}>
             내 서재에 담기
           </Button>
         )}

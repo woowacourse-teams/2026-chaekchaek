@@ -17,6 +17,7 @@ import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
 import { postLibrary } from '@/services/apis/library/repository';
 import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
 import { getBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
+import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 
@@ -29,7 +30,7 @@ import { BookReviews } from './components/BookReviews';
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
 import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
 import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
-import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
+import { RegisterBookToLibraryDialog } from './dialog/RegisterBookToLibraryDialog';
 
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
@@ -81,6 +82,12 @@ export const BookDetailPage = () => {
       return;
     }
     await mutatePatchLibraryBookId({ bookId: data?.bookId, status });
+  };
+
+  const handleRegisterBookToLibrary = () => {
+    if (!isAuthenticated) return handleOpenLoginDialog();
+
+    handleOpenDialog('RegisterBookToLibraryDialog');
   };
 
   const [reviewsRequestParams, setReviewsRequestParams] = useState<{
@@ -166,10 +173,18 @@ export const BookDetailPage = () => {
   }, [reviewsDataAll]);
 
   const [dialog, setDialog] = useState<
-    'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null
+    | 'RegisterLibraryDialog'
+    | 'UpdateCurrentPageDialog'
+    | 'UpdateRatingDialog'
+    | 'RegisterBookToLibraryDialog'
+    | null
   >(null);
   const handleOpenDialog = (
-    dialog: 'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog',
+    dialog:
+      | 'RegisterLibraryDialog'
+      | 'UpdateCurrentPageDialog'
+      | 'UpdateRatingDialog'
+      | 'RegisterBookToLibraryDialog',
   ) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
     setDialog(dialog);
@@ -179,7 +194,12 @@ export const BookDetailPage = () => {
   };
 
   const renderDialog = (
-    dialog: 'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null,
+    dialog:
+      | 'RegisterLibraryDialog'
+      | 'UpdateCurrentPageDialog'
+      | 'UpdateRatingDialog'
+      | 'RegisterBookToLibraryDialog'
+      | null,
   ) => {
     switch (dialog) {
       case 'RegisterLibraryDialog':
@@ -221,6 +241,18 @@ export const BookDetailPage = () => {
             />
           )
         );
+      case 'RegisterBookToLibraryDialog':
+        return (
+          data && (
+            <RegisterBookToLibraryDialog
+              book={{
+                isbn: data.isbn13,
+                bookId: data.bookId,
+              }}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
       default:
         return null;
     }
@@ -249,6 +281,7 @@ export const BookDetailPage = () => {
                 onRegistryLibrary={() => {
                   handleOpenDialog('RegisterLibraryDialog');
                 }}
+                onRegisterBookToLibrary={handleRegisterBookToLibrary}
                 onRatingCreate={() => {
                   handleOpenDialog('UpdateRatingDialog');
                 }}
