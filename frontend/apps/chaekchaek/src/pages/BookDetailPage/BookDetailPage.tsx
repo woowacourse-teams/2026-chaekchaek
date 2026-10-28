@@ -23,6 +23,7 @@ import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
 import { BookOverview } from './components/BookOverview';
 import { BookInfo } from './components/BookInfo';
 import { BookReviews } from './components/BookReviews';
+import { BookQuestion } from './components/BookQuestion';
 
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
@@ -160,6 +161,8 @@ export const BookDetailPage = () => {
                 replyCount={data?.replyCount}
                 coverImageUrl={data?.coverImageUrl}
               />
+
+              {data?.bookQuestion && <BookQuestion {...data?.bookQuestion} />}
 
               <BookReviews
                 isbn={isbn}

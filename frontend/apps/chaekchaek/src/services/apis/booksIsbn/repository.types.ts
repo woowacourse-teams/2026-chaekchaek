@@ -30,4 +30,13 @@ export type GetBooksIsbn = (params: GetBooksIsbnParams) => Promise<{
   isRegisteredInMyLibrary: boolean;
   category: string;
   authors: undefined[];
+  description: string;
+  reviewCount: number;
+  replyCount: number;
+  myRatingCount: number;
+  bookQuestion: {
+    question: string | null;
+    plot: string | null;
+    extract: string | null;
+  } | null;
 }>;
