@@ -85,7 +85,7 @@ class BookshelfFlowTest {
     @Test fun `중복은 같은 책장에만 막고 30권 이상 책장의 추가를 막는다`() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {
-            val repo = FakeShelves(listOf(shelf(1, listOf(BookshelfBookSummary(42, "isbn", "책"))), shelf(2), shelf(3, count = 35)))
+            val repo = FakeShelves(listOf(shelf(1, listOf(BookshelfBookSummary(42, "isbn", "책", "cover"))), shelf(2), shelf(3, count = 35)))
             val vm = LibrarySaveViewModel({ _, _, _ -> error("legacy") }, { _, _ -> }, shelves = repo)
             vm.authenticate("token"); vm.save(book); advanceUntilIdle()
             vm.confirmShelf(); advanceUntilIdle()

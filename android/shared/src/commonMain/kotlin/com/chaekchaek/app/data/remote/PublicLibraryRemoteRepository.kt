@@ -20,7 +20,7 @@ class PublicLibraryRemoteRepository(
         check(response.memberId == memberId) { "서재 소유자가 일치하지 않아요" }
         return PublicLibrary(response.memberId, response.libraries.map { shelf ->
             PublicBookshelf(shelf.libraryId, shelf.name, shelf.isDefault, shelf.totalCount,
-                shelf.items.map { PublicSpineBook(it.bookId, it.isbn13, it.title, it.spineImageUrl) })
+                shelf.items.map { PublicSpineBook(it.bookId, it.isbn13, it.title, it.spineImageUrl, it.coverImageUrl, it.authors) })
         })
     }
     override suspend fun bookshelf(libraryId: Long): PublicBookshelfDetail {
@@ -42,7 +42,7 @@ private data class PublicShelfSummaryDto(
     val items: List<PublicSpineDto>,
 )
 @Serializable
-private data class PublicSpineDto(val bookId: Long, val isbn13: String, val title: String, val spineImageUrl: String? = null)
+private data class PublicSpineDto(val bookId: Long, val isbn13: String, val title: String, val coverImageUrl: String, val spineImageUrl: String? = null, val authors: List<String> = emptyList())
 @Serializable
 private data class PublicBookshelfDto(
     val libraryId: Long, val memberId: Long, val name: String, val isDefault: Boolean,

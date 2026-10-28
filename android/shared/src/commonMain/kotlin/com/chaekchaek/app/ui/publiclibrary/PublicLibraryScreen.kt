@@ -51,7 +51,7 @@ internal fun PublicLibraryScreen(
                         if (shelf.items.isEmpty()) Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
                             Text("아직 담은 책이 없어요", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         } else BookshelfSpineRow(shelf.items.map { book ->
-                            ArchiveBookUiModel(book.isbn13, book.bookId, book.title, "", "", "", "", book.spineImageUrl, ReadingStatus.WANT_TO_READ, 0, 0, 0)
+                            ArchiveBookUiModel(book.isbn13, book.bookId, book.title, book.authors.joinToString(", "), "", "", book.coverImageUrl, book.spineImageUrl, ReadingStatus.WANT_TO_READ, 0, 0, 0)
                         }, onBook = { onBookshelf(shelf) })
                         HorizontalDivider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline)
                     }

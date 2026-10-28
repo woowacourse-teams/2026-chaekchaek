@@ -337,6 +337,6 @@ private fun ShelfThumbnail(shelf: Bookshelf) {
 
 
 internal fun <T> List<T>.moved(from: Int, to: Int): List<T> = toMutableList().apply { add(to, removeAt(from)) }
-internal fun BookshelfBookSummary.asArchive() = ArchiveBookUiModel(isbn13, bookId, title, "", "", "", "", spineImageUrl, ReadingStatus.READING, 0, 0, 0)
+internal fun BookshelfBookSummary.asArchive() = ArchiveBookUiModel(isbn13, bookId, title, authors.joinToString(", "), "", "", coverImageUrl, spineImageUrl, ReadingStatus.READING, 0, 0, 0)
 internal fun BookshelfBook.asArchive() = ArchiveBookUiModel(isbn13, bookId, title, authors.joinToString(", "), "", "", coverImageUrl, spineImageUrl, ReadingStatus.entries.firstOrNull { it.apiValue == status } ?: ReadingStatus.READING, currentPage, totalPages ?: 0, 0)
 internal fun ArchiveBookUiModel.asArgs() = BookDetailArgs(id = id, isbn13 = id, bookId = bookId, title = title, creator = creator, coverUrl = coverUrl, totalPages = totalPages)

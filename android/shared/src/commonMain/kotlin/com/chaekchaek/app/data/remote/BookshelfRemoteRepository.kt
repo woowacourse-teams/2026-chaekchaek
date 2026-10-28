@@ -91,7 +91,9 @@ data class BookshelfBookSummary(
     val bookId: Long,
     val isbn13: String,
     val title: String,
+    val coverImageUrl: String,
     val spineImageUrl: String? = null,
+    val authors: List<String> = emptyList(),
 )
 
 @Serializable

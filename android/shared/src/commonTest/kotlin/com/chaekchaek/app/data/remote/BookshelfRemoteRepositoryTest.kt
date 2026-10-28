@@ -25,7 +25,7 @@ class BookshelfRemoteRepositoryTest {
             val body = when {
                 request.method == HttpMethod.Get && request.url.encodedPath.endsWith("/libraries") -> {
                     assertEquals("9", request.url.parameters["memberId"])
-                    """{"memberId":9,"libraries":[{"libraryId":2,"name":"기존의 긴 책장 이름","isDefault":true,"totalCount":35,"items":[]}]}"""
+                    """{"memberId":9,"libraries":[{"libraryId":2,"name":"기존의 긴 책장 이름","isDefault":true,"totalCount":35,"items":[{"bookId":42,"isbn13":"isbn","title":"책","coverImageUrl":"cover","authors":["저자"],"spineImageUrl":null}]}]}"""
                 }
                 request.method == HttpMethod.Get -> """{"libraryId":2,"memberId":9,"name":"책장","isDefault":true,"totalCount":1,"items":[{"bookId":42,"isbn13":"isbn","title":"책","coverImageUrl":"cover","authors":[],"totalPages":null,"status":"READING","currentPage":23}]}"""
                 request.method == HttpMethod.Post && request.url.encodedPath.endsWith("/2") -> """{"bookId":42,"status":"FINISHED","currentPage":100,"rating":4.5}"""
@@ -35,7 +35,10 @@ class BookshelfRemoteRepositoryTest {
             respond(body, if (body.isEmpty()) HttpStatusCode.NoContent else HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
         }) { expectSuccess = true; install(ContentNegotiation) { json() } }
         val repo = BookshelfRemoteRepository(client)
-        assertEquals(35, repo.collection(9).libraries.single().totalCount)
+        val shelf = repo.collection(9).libraries.single()
+        assertEquals(35, shelf.totalCount)
+        assertEquals("cover", shelf.items.single().coverImageUrl)
+        assertEquals(listOf("저자"), shelf.items.single().authors)
         val detail = repo.detail(2)
         assertTrue(detail.items.single().authors.isEmpty())
         assertNull(detail.items.single().totalPages)
