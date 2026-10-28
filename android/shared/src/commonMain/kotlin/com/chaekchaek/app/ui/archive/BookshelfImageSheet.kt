@@ -21,10 +21,13 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.ceil
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import coil3.compose.AsyncImagePainter
@@ -80,8 +83,9 @@ internal fun BookshelfImageSheet(detail: BookshelfDetail, onDismiss: () -> Unit)
 
     ShelfSheet("책장을 이미지로", onDismiss, dismissEnabled = !exporting) {
         BookshelfImageScale(percent, enabled = !exporting) { percent = it }
-        Box(Modifier.fillMaxWidth().heightIn(max = 380.dp).background(ChaekSurfaceMuted)
+        BoxWithConstraints(Modifier.fillMaxWidth().heightIn(max = 380.dp).background(ChaekSurfaceMuted)
             .verticalScroll(rememberScrollState(), enabled = !exporting)) {
+            val canvasScale = maxWidth.value / 1080f
             Column(Modifier.fillMaxWidth().background(ChaekSurface).testTag("bookshelf-image-preview")) {
                 ImageSection(0, layers) {
                     Row(Modifier.fillMaxWidth()) {
@@ -91,9 +95,9 @@ internal fun BookshelfImageSheet(detail: BookshelfDetail, onDismiss: () -> Unit)
                     Text("${detail.totalCount}권", style = MaterialTheme.typography.bodySmall)
                 }
                 ImageSection(1, layers) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(0.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    ExportSpineRows(rowGap = (40 * canvasScale).dp, lineThickness = (5 * canvasScale).dp) {
                         detail.items.forEachIndexed { index, book ->
-                            ExportSpine(book, index, percent / 100f, Modifier.align(Alignment.Bottom)) {
+                            ExportSpine(book, index, percent / 100f * 2.6f * canvasScale) {
                                 readyBooks[book.bookId] = true
                             }
                         }
@@ -111,21 +115,72 @@ internal fun BookshelfImageSheet(detail: BookshelfDetail, onDismiss: () -> Unit)
 }
 
 @Composable
-private fun ExportSpine(book: BookshelfBook, index: Int, scale: Float, modifier: Modifier, onReady: () -> Unit) {
+private fun ExportSpine(book: BookshelfBook, index: Int, scale: Float, onReady: () -> Unit) {
     val painter = rememberAsyncImagePainter(book.spineImageUrl)
     val state by painter.state.collectAsState()
     val ready by rememberUpdatedState(onReady)
     val height = bookshelfSpineHeight(index, scale)
-    if (book.spineImageUrl.isNullOrBlank() || state is AsyncImagePainter.State.Error) {
-        // Reuse the same generated spine used in the owner's shelf, including its cover colour.
-        LibraryBookSpine(book.asArchive().copy(spineUrl = null), modifier.width(30.dp * (scale / 1.4f)).height(height), onReady = { ready() })
-    } else {
+    BoxWithConstraints {
+        val generated = book.spineImageUrl.isNullOrBlank() || state is AsyncImagePainter.State.Error
         val intrinsic = painter.intrinsicSize
-        val ratio = if (intrinsic.width.isFinite() && intrinsic.height.isFinite() && intrinsic.width > 0 && intrinsic.height > 0) {
+        val ratio = if (!generated && intrinsic.width.isFinite() && intrinsic.height.isFinite() && intrinsic.width > 0 && intrinsic.height > 0) {
             intrinsic.width / intrinsic.height
-        } else 30f / height.value
-        Image(painter, "${book.title} 책등", modifier.width(height * ratio).height(height), contentScale = ContentScale.Fit)
-        LaunchedEffect(state) { if (state is AsyncImagePainter.State.Success) ready() }
+        } else (30f / 1.4f) / bookshelfSpineHeight(index, 1f).value
+        val fittedHeight = minOf(height, maxWidth / ratio)
+        val dimensions = Modifier.width(fittedHeight * ratio).height(fittedHeight)
+        if (generated) {
+            LibraryBookSpine(book.asArchive().copy(spineUrl = null), dimensions, onReady = { ready() })
+        } else {
+            Image(painter, "${book.title} 책등", dimensions, contentScale = ContentScale.Fit)
+            LaunchedEffect(state) { if (state is AsyncImagePainter.State.Success) ready() }
+        }
+    }
+}
+
+/** Each wrapped row touches edge to edge and shares the original canvas baseline. */
+@Composable
+private fun ExportSpineRows(rowGap: Dp, lineThickness: Dp, content: @Composable () -> Unit) {
+    var baselines by remember { mutableStateOf(emptyList<Int>()) }
+    Layout(content, Modifier.fillMaxWidth().drawWithContent {
+        drawContent()
+        baselines.forEach { baseline ->
+            // Figma color/border/shelf (901:137), original HTML #dddde1.
+            drawRect(Color(0xFFDDDDE1), Offset(0f, baseline.toFloat()), androidx.compose.ui.geometry.Size(size.width, lineThickness.toPx()))
+        }
+    }) { measurables, constraints ->
+        val children = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0)) }
+        val rows = mutableListOf<List<androidx.compose.ui.layout.Placeable>>()
+        var row = mutableListOf<androidx.compose.ui.layout.Placeable>()
+        var width = 0
+        children.forEach { child ->
+            if (row.isNotEmpty() && width + child.width > constraints.maxWidth) {
+                rows.add(row)
+                row = mutableListOf()
+                width = 0
+            }
+            row.add(child)
+            width += child.width
+        }
+        if (row.isNotEmpty()) rows.add(row)
+        val heights = rows.map { items -> items.maxOf { it.height } }
+        var baseline = 0
+        val rowBaselines = heights.mapIndexed { index, height ->
+            baseline += height
+            val result = baseline
+            if (index < heights.lastIndex) baseline += rowGap.roundToPx()
+            result
+        }
+        baselines = rowBaselines
+        val totalHeight = baseline + if (rows.isEmpty()) 0 else ceil(lineThickness.toPx()).toInt()
+        layout(constraints.maxWidth, totalHeight.coerceIn(constraints.minHeight, constraints.maxHeight)) {
+            rows.forEachIndexed { index, items ->
+                var x = 0
+                items.forEach { child ->
+                    child.placeRelative(x, rowBaselines[index] - child.height)
+                    x += child.width
+                }
+            }
+        }
     }
 }
 
