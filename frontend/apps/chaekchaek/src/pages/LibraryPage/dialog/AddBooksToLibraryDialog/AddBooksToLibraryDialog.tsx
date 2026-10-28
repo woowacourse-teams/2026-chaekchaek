@@ -5,6 +5,8 @@ import { Dialog, Tabs } from '@chaekchaek/design-system';
 import { postLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repository';
 import { useExecute } from '@/services/core/useExecute';
 
+import { track } from '@/analytics/track';
+
 import { MyLibraryPanel } from './components/MyLibraryPanel';
 import { SearchPanel } from './components/SearchPanel';
 
@@ -36,6 +38,11 @@ export const AddBooksToLibraryDialog = ({
         }),
       ),
     );
+
+    track('library_add', {
+      source: 'library',
+      status: 'reading',
+    });
 
     await onBookAdded();
 
