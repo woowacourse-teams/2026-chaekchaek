@@ -125,7 +125,7 @@ class BookshelfContractTest {
         val screenshot = File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-image-preview.png")
         automation.takeScreenshot()?.let { bitmap -> screenshot.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } }
 
-        compose.waitUntil(10_000) { requested("GET", "/api/v1/books/1/reviews?") }
+        assertFalse("공유 준비에서 감상 API를 호출하지 않음", requested("GET", "/api/v1/books/1/reviews"))
         compose.onNodeWithTag("bookshelf-image-share", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitUntil(60_000) {
             automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver")
@@ -135,7 +135,7 @@ class BookshelfContractTest {
         val dimensions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(exported!!.absolutePath, dimensions)
         assertTrue("전체 책장 이미지 너비", dimensions.outWidth > 0)
-        assertTrue("두 책의 감상 영역까지 포함한 이미지 높이", dimensions.outHeight > dimensions.outWidth * 2)
+        assertTrue("감상 칼럼을 제외한 두 권 책장 이미지 높이", dimensions.outHeight < dimensions.outWidth * 2)
         automation.takeScreenshot()?.let { bitmap ->
             File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-native-share.png").outputStream().use {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
@@ -178,7 +178,8 @@ class BookshelfContractTest {
         val dimensions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(exported!!.absolutePath, dimensions)
         assertTrue("책장 이미지 너비", dimensions.outWidth > 0)
-        assertTrue("두 책과 감상 영역을 포함한 이미지 높이", dimensions.outHeight > dimensions.outWidth * 2)
+        assertTrue("감상 칼럼을 제외한 두 권 책장 이미지 높이", dimensions.outHeight < dimensions.outWidth * 2)
+        assertFalse("직접 공유에서 감상 API를 호출하지 않음", requested("GET", "/api/v1/books/1/reviews"))
         automation.takeScreenshot()?.let { bitmap ->
             File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-native-share.png").outputStream().use {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)

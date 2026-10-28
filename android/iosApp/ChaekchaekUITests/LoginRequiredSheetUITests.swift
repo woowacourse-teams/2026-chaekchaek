@@ -1145,7 +1145,7 @@ final class BookshelfContractUITests: XCTestCase {
         XCTAssertTrue(shelves.contains { $0["name"] as? String == "올해읽을책" })
         let calls = try XCTUnwrap(state["requests"] as? [[String: Any]])
         XCTAssertTrue(calls.contains { $0["method"] as? String == "POST" && $0["path"] as? String == "/api/v1/libraries/1" })
-        XCTAssertTrue(calls.contains { ($0["path"] as? String)?.hasPrefix("/api/v1/books/3/reviews") == true })
+        XCTAssertFalse(calls.contains { ($0["path"] as? String)?.hasPrefix("/api/v1/books/3/reviews") == true }, "이미지 공유에서 감상을 조회하지 않아요")
         XCTAssertTrue(calls.contains { $0["method"] as? String == "DELETE" && ($0["path"] as? String)?.contains("/books/") == true })
     }
 
