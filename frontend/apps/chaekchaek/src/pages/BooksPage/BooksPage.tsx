@@ -192,7 +192,7 @@ export const BooksPage = () => {
                       value={query}
                       onChange={handleChangeQuery}
                     />
-                    <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+                    <p role="status" className="sr-only">
                       {searchAnnouncement}
                     </p>
                   </>
