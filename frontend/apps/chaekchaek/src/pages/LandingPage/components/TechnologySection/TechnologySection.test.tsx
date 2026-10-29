@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -26,6 +26,23 @@ describe('기술 소개 캐러셀', () => {
     expect(screen.getByRole('tabpanel')).toHaveTextContent('캐시 적중률 100%');
     await user.click(screen.getByRole('tab', { name: /AUTH/ }));
     expect(screen.getByRole('tabpanel')).toHaveTextContent('게스트 토큰');
+  });
+
+  it('AUTH는 Google과 게스트 인증을 설명하며 로그인 동작과 미확인 정책을 포함하지 않는다', async () => {
+    const user = userEvent.setup();
+    render(<TechnologySection />);
+    await user.click(screen.getByRole('tab', { name: /AUTH/ }));
+    const panel = within(screen.getByRole('tabpanel'));
+    expect(panel.getByRole('heading', { name: '로그인 사용자' })).toBeInTheDocument();
+    expect(panel.getByRole('heading', { name: '게스트 사용자' })).toBeInTheDocument();
+    expect(panel.getByText('Google')).toBeInTheDocument();
+    expect(panel.getByText('게스트 토큰 발급')).toBeInTheDocument();
+    expect(panel.queryByText(/Kakao|카카오|90일/)).not.toBeInTheDocument();
+    expect(panel.queryByRole('button')).not.toBeInTheDocument();
+    expect(panel.queryByRole('link')).not.toBeInTheDocument();
+    expect(
+      panel.getByText('이용 가능한 기능과 UI는 인증 상태에 따라 달라집니다.'),
+    ).toBeInTheDocument();
   });
 
   it('방향키와 Home·End로 탭 선택 및 포커스를 함께 이동한다', () => {

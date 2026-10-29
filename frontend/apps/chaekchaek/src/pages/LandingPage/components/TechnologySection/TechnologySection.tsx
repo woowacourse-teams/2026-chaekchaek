@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 
 import { landingImages } from '../../imgs';
+import { AuthStory } from './AuthStory';
 import { CacheStory } from './CacheStory';
 import { FeedStory } from './FeedStory';
 import { feedCovers } from './feedCollage';
@@ -92,73 +93,9 @@ export const TechnologySection = () => {
               aria-hidden={current !== index}
               inert={current !== index}
               tabIndex={current === index ? 0 : -1}
-              className={`${styles.panel} ${index !== 2 ? styles.cachePanel : styles.slide} ${current === index ? styles.active : ''}`}
+              className={`${styles.panel} ${styles.cachePanel} ${current === index ? styles.active : ''}`}
             >
-              {index === 0 ? (
-                <CacheStory />
-              ) : index === 1 ? (
-                <FeedStory />
-              ) : (
-                <>
-                  <div className={styles.copy}>
-                    <div className={styles.intro}>
-                      <p className={styles.eyebrow}>
-                        {number(index)} / {item.id.toUpperCase()}
-                      </p>
-                      <h3>{item.title}</h3>
-                      <p className={styles.label}>문제 상황</p>
-                      <p className={styles.body}>{item.problem}</p>
-                    </div>
-                    <div className={styles.solution}>
-                      <p className={styles.label}>기술적 해결</p>
-                      <p className={styles.solutionTitle}>{item.solution}</p>
-                      <ul>
-                        {item.details.map((detail) => (
-                          <li key={detail}>{detail}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  <div className={styles.results}>
-                    <p className={styles.label}>달라진 경험</p>
-                    {item.before && item.after && (
-                      <div className={styles.comparison}>
-                        <div>
-                          <span className={styles.caption}>BEFORE</span>
-                          <strong>{item.before.value}</strong>
-                          <p>{item.before.description}</p>
-                        </div>
-                        <span className={styles.arrow} aria-hidden="true">
-                          →
-                        </span>
-                        <div className={styles.after}>
-                          <span className={styles.caption}>AFTER</span>
-                          <strong>{item.after.value}</strong>
-                          <p>{item.after.description}</p>
-                        </div>
-                      </div>
-                    )}
-                    {item.flows && (
-                      <div className={styles.flows}>
-                        {item.flows.map((flow) => (
-                          <div key={flow.label}>
-                            <strong>{flow.label}</strong>
-                            <ol>
-                              {flow.steps.map((step) => (
-                                <li key={step}>{step}</li>
-                              ))}
-                            </ol>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className={styles.resultNotes}>
-                      <p className={styles.outcome}>{item.outcome}</p>
-                      {item.note && <p className={styles.note}>{item.note}</p>}
-                    </div>
-                  </div>
-                </>
-              )}
+              {index === 0 ? <CacheStory /> : index === 1 ? <FeedStory /> : <AuthStory />}
             </article>
           ))}
         </div>
