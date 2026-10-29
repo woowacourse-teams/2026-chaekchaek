@@ -145,7 +145,7 @@
 .panels {
   display: grid;
   min-width: 0;
-  padding-left: clamp(24px, 2.7vw, 44px);
+  padding-left: clamp(20px, 2vw, 32px);
   border-left: 1px solid #dedad3;
 }
 .panel {
@@ -159,13 +159,12 @@
   animation: appear 180ms ease-out;
 }
 .cachePanel {
-  padding-top: 10px;
+  padding-top: 6px;
 }
 .cacheStory {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-  column-gap: 32px;
-  row-gap: 32px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 260px);
+  gap: 22px 24px;
 }
 .cacheCopy {
   min-width: 0;
@@ -173,15 +172,17 @@
 .bookVisual {
   position: relative;
   min-width: 0;
-  min-height: 300px;
+  width: 100%;
+  aspect-ratio: 1;
+  align-self: center;
 }
 .searchPreview {
   position: absolute;
-  top: -92px;
-  left: 8%;
-  width: 94%;
-  height: 155px;
-  padding: 22px 16px;
+  top: -16px;
+  left: 4%;
+  width: 92%;
+  height: 100px;
+  padding: 16px 12px;
   border: 1px solid #ffffff;
   border-radius: 14px;
   background: linear-gradient(150deg, #fff, #ffffff30);
@@ -193,9 +194,9 @@
 .searchPreview::after {
   content: '';
   position: absolute;
-  inset: 14px 10px auto;
-  height: 38px;
-  border-radius: 10px;
+  inset: 10px 8px auto;
+  height: 28px;
+  border-radius: 8px;
   background: #dfdedb33;
 }
 .searchPreview span {
@@ -204,7 +205,7 @@
 }
 .bookStack {
   position: absolute;
-  inset: -4px -2px 18px 0;
+  inset: 32px 4px 0 0;
   display: flex;
   align-items: end;
   isolation: isolate;
@@ -254,10 +255,10 @@
 }
 .cacheComparison {
   display: grid;
-  grid-template-columns: 1fr 48px 1fr;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr);
+  gap: 16px;
   align-items: center;
-  padding: 18px 28px;
+  padding: 12px 20px;
   border-radius: 12px;
   background: #f0eee880;
 }
@@ -270,9 +271,9 @@
   display: block;
   font-size: clamp(60px, 5.2vw, 84px);
   font-weight: 400;
-  line-height: 1.15;
+  line-height: 1.1;
   letter-spacing: -3px;
-  margin: 4px 0 8px;
+  margin: 2px 0 4px;
 }
 .cacheComparison p {
   font-size: 12px;
@@ -292,16 +293,16 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px 20px;
-  margin-top: 16px;
+  gap: 8px 12px;
+  margin-top: 10px;
 }
 .cacheBadges {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 .cacheBadges span {
-  padding: 7px 14px;
+  padding: 5px 10px;
   border-radius: 24px;
   background: #f0eee880;
   font-size: 12px;
@@ -349,7 +350,7 @@
     display: none;
   }
   .cacheComparison {
-    padding: 20px;
+    padding: 12px 16px;
     gap: 12px;
   }
 }
@@ -425,19 +426,18 @@
   }
   .cacheStory {
     grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
+    gap: 18px;
   }
   .bookVisual {
-    min-height: 235px;
-    width: 230px;
-    margin: 28px auto 0;
+    width: min(100%, 200px);
+    margin: 4px auto 0;
   }
   .searchPreview {
-    top: -28px;
-    height: 130px;
+    top: 0;
+    height: 90px;
   }
   .bookStack {
-    top: 12px;
+    top: 32px;
     bottom: 0;
   }
   .frontBook {
@@ -448,7 +448,7 @@
     right: 12%;
   }
   .cacheComparison {
-    padding: 20px 16px;
+    padding: 12px 14px;
     grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr);
     gap: 10px;
   }
@@ -471,7 +471,7 @@
   }
   .cacheBadges span {
     font-size: 11px;
-    padding: 6px 10px;
+    padding: 5px 10px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -483,8 +483,8 @@
 /* FEED: flat book covers and reader typography, without simulated product UI. */
 .feedStory {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  gap: 28px 32px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  gap: 22px 24px;
 }
 .feedCopy {
   min-width: 0;
@@ -492,7 +492,7 @@
 .feedCollage {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto auto;
   min-width: 0;
   align-self: center;
 }
@@ -505,7 +505,7 @@
 }
 .feedCollage blockquote p {
   font-size: 12px;
-  line-height: 1.8;
+  line-height: 1.7;
   color: #68625a;
 }
 .quoteMark {
@@ -517,16 +517,16 @@
   line-height: 1;
 }
 .thoughtAbove {
-  grid-area: 1 / 1 / 2 / 10;
+  grid-area: 1 / 1 / 2 / 12;
   align-self: start;
 }
 .collageCovers {
-  grid-area: 1 / 1 / 4 / -1;
+  grid-area: 2 / 1 / 3 / -1;
   display: grid;
   grid-template-columns: 0.7fr 1fr 0.7fr;
   align-items: start;
-  gap: 8px;
-  margin: 80px 0 84px;
+  gap: 6px;
+  margin: 4px 0;
 }
 .collageCovers img {
   display: block;
@@ -539,21 +539,21 @@
 }
 .collageCovers img:nth-child(2) {
   grid-area: 1 / 1;
-  margin-top: 32px;
+  margin-top: 24px;
 }
 .collageCovers img:nth-child(3) {
   grid-area: 1 / 3;
-  margin-top: 56px;
+  margin-top: 40px;
 }
 .thoughtBelow {
-  grid-area: 3 / 4 / 4 / -1;
+  grid-area: 3 / 3 / 4 / -1;
   align-self: end;
 }
 .thoughtContinuation {
   grid-area: 4 / 10 / 5 / 11;
   display: flex;
   gap: 6px;
-  padding-top: 8px;
+  padding-top: 4px;
   color: #bcb4a9;
   line-height: 1;
 }
@@ -567,10 +567,10 @@
   grid-column: 1 / -1;
 }
 .feedOutcome {
-  margin-top: 16px !important;
+  margin-top: 10px !important;
   color: var(--muted);
   font-size: 13px;
-  line-height: 1.8;
+  line-height: 1.7;
 }
 .feedResults .cacheComparison strong {
   font-size: clamp(40px, 3.6vw, 64px);
@@ -582,26 +582,22 @@
   }
   .feedCollage {
     width: 100%;
-    max-width: 430px;
+    max-width: 300px;
     justify-self: center;
   }
 }
 @media (max-width: 767px) {
   .feedStory {
     grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
+    gap: 18px;
   }
   .feedCollage {
     width: 100%;
-    max-width: 390px;
+    max-width: 300px;
     justify-self: center;
   }
   .feedCollage blockquote p {
     font-size: 12px;
-  }
-  .collageCovers {
-    gap: 10px;
-    margin: 84px 0 110px;
   }
   .feedResults .cacheComparison strong {
     font-size: clamp(28px, 8vw, 42px);
