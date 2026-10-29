@@ -152,19 +152,16 @@ class BookSearchRemoteRepositoryTest {
     }
 
     @Test
-    fun `bookId 없는 검색 결과를 제외하고 다음 페이지에서 유효한 책을 찾는다`() = runTest {
-        val requests = mutableListOf<Int>()
-        val client = searchClient { page ->
-            requests += page
-            if (page == 1) response(3, 2,
-                item("ID null", "9788937460449", null).replace("\"bookId\":42", "\"bookId\":null"),
-                item("ID 누락", "9788936433598", null).replace("\"bookId\":42,", ""))
-            else response(3, null, item("정상 도서", "9788925568683", null))
-        }
+    fun `서버에 아직 등록되지 않은 ISBN 도서와 null 또는 누락 분류도 검색에 표시한다`() = runTest {
+        val client = searchClient { response(3, null,
+            item("ID null", "9788937460449", null).replace("\"bookId\":42", "\"bookId\":null").replace("\"category\":\"소설\"", "\"category\":null"),
+            item("ID 누락", "9788936433598", null).replace("\"bookId\":42,", "").replace("\"category\":\"소설\",", ""),
+            item("정상 도서", "9788925568683", null)) }
         try {
             val result = BookSearchRemoteRepository(client).search("책", BookSearchSort.LATEST, 1)
-            assertEquals(listOf(1, 2), requests)
-            assertEquals(listOf("정상 도서"), result.items.map { it.title })
+            assertEquals(listOf("ID null", "ID 누락", "정상 도서"), result.items.map { it.title })
+            assertEquals(listOf(null, null, 42L), result.items.map { it.bookId })
+            assertEquals(listOf("", "", "소설"), result.items.map { it.category })
             assertEquals(3, result.totalCount)
         } finally { client.close() }
     }

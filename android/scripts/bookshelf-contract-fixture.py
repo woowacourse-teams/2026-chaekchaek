@@ -3,6 +3,8 @@
 import argparse
 import json
 import re
+import struct
+import zlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import RLock
 from urllib.parse import urlparse, parse_qs
@@ -12,6 +14,31 @@ STATE = {}
 BOOKS = {i: dict(bookId=i, isbn13=f'97800000000{i:02}', title=f'검증 도서 {i}', authors=['검증 저자'],
                 coverImageUrl='', spineImageUrl=None, totalPages=200, status='READING', currentPage=20,
                 readingUpdatedAt='2026-10-23T00:00:00Z', publisher='검증 출판', category='소설') for i in range(1, 37)}
+
+
+def cover_png(variant=0, width=48):
+    """표지색 추출을 확인하는 합성 표지. 첨부 원본 이미지와는 별개다."""
+    stops = [(0.08, (37, 60, 94)), (0.38, (151, 127, 118)), (0.90, (214, 167, 131))]
+    if variant == 1:
+        stops = [(0.08, (24, 85, 52)), (0.38, (99, 164, 111)), (0.90, (224, 230, 173))]
+    elif variant == 2:
+        stops = [(0.08, (150, 30, 45)), (0.38, (230, 120, 95)), (0.90, (252, 220, 190))]
+    rows = []
+    for y in range(96):
+        position = y / 95
+        lower = max((stop for stop in stops if stop[0] <= position), default=stops[0])
+        upper = min((stop for stop in stops if stop[0] >= position), default=stops[-1])
+        amount = 0 if lower[0] == upper[0] else (position - lower[0]) / (upper[0] - lower[0])
+        rgb = bytes(round(a + (b - a) * amount) for a, b in zip(lower[1], upper[1]))
+        rows.append(b'\x00' + rgb * width)
+    def chunk(kind, data):
+        return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data))
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, 96, 8, 2, 0, 0, 0))
+            + chunk(b'IDAT', zlib.compress(b''.join(rows))) + chunk(b'IEND', b''))
+
+
+COVERS = {f'/assets/cover-{i}.png': cover_png(i) for i in range(3)}
+COVERS['/assets/original-spine.png'] = cover_png(2, width=12)
 
 
 def reset():
@@ -24,7 +51,7 @@ def reset():
 
 def summary(shelf):
     return dict(libraryId=shelf['libraryId'], name=shelf['name'], isDefault=shelf['isDefault'],
-                totalCount=len(shelf['books']), items=[{k: BOOKS[i][k] for k in ('bookId', 'isbn13', 'title', 'spineImageUrl')} for i in shelf['books']])
+                totalCount=len(shelf['books']), items=[{k: BOOKS[i][k] for k in ('bookId', 'isbn13', 'title', 'coverImageUrl', 'authors', 'spineImageUrl')} for i in shelf['books']])
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -41,6 +68,18 @@ class Handler(BaseHTTPRequestHandler):
             path = urlparse(self.path).path
             query = parse_qs(urlparse(self.path).query)
             method = self.command
+            if path in COVERS:
+                data = COVERS[path]
+                self.send_response(200)
+                self.send_header('Content-Type', 'image/png')
+                self.send_header('Content-Length', str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return
+            for book in BOOKS.values():
+                origin = f'http://{self.headers.get("Host")}'
+                book['coverImageUrl'] = f'{origin}/assets/cover-{(book["bookId"] - 1) % 3}.png'
+                book['spineImageUrl'] = f'{origin}/assets/original-spine.png' if book['bookId'] % 3 == 0 else None
             body = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))) or '{}')
             if path == '/__bookshelf/reset':
                 reset()
@@ -65,7 +104,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/v1/home/reading-books': return self.send_json({'books': []})
             if path == '/api/v1/feed/reviews': return self.send_json(dict(reviews=[], totalCount=0, nextPage=None))
             if path in ('/api/v1/reviews', '/api/v1/feed'): return self.send_json(dict(items=[], totalCount=0, nextPage=None))
-            if path == '/api/v1/books': return self.send_json(dict(items=[dict(BOOKS[36], publishedDate=None)], totalCount=1, nextPage=None))
+            if path == '/api/v1/books': return self.send_json(dict(items=[dict(BOOKS[36], translators=[], bookId=None, category=None, publishedDate=None)], totalCount=1, nextPage=None))
             if path.startswith('/api/v1/books/by-isbn/'):
                 book = next((b for b in BOOKS.values() if b['isbn13'] == path.rsplit('/', 1)[1]), BOOKS[36])
                 return self.send_json(dict(book, translators=[], myRecord=dict(bookId=book['bookId'], status='READING', currentPage=20, rating=None)))

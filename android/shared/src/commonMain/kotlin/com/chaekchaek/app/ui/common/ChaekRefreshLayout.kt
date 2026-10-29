@@ -239,7 +239,7 @@ private fun RefreshIndicator(refreshing: Boolean, ready: Boolean, modifier: Modi
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (refreshing) RefreshSpinner(Modifier.testTag("pull-refresh-spinner"))
+            if (refreshing) ChaekInlineProgress(Modifier.testTag("pull-refresh-spinner"))
             Text(
                 label,
                 modifier = Modifier.weight(1f, fill = false),
@@ -253,7 +253,7 @@ private fun RefreshIndicator(refreshing: Boolean, ready: Boolean, modifier: Modi
 }
 
 @Composable
-private fun RefreshSpinner(modifier: Modifier = Modifier) {
+internal fun ChaekInlineProgress(modifier: Modifier = Modifier) {
     val transition = rememberInfiniteTransition()
     val rotation by transition.animateFloat(0f, 360f, infiniteRepeatable(tween(900, easing = LinearEasing), RepeatMode.Restart))
     Image(painterResource(Res.drawable.ic_refresh_loader), contentDescription = null,
@@ -280,7 +280,7 @@ fun ListBoundary(
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (loading && showLoading) RefreshSpinner()
+        if (loading && showLoading) ChaekInlineProgress()
         Text(
             label,
             modifier = Modifier.weight(1f, fill = false),

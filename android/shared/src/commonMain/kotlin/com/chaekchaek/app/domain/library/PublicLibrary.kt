@@ -6,7 +6,7 @@ data class PublicBookshelf(
     val libraryId: Long, val name: String, val isDefault: Boolean,
     val totalCount: Long, val items: List<PublicSpineBook>,
 )
-data class PublicSpineBook(val bookId: Long, val isbn13: String, val title: String, val spineImageUrl: String?)
+data class PublicSpineBook(val bookId: Long, val isbn13: String, val title: String, val spineImageUrl: String?, val coverImageUrl: String, val authors: List<String>)
 data class PublicBookshelfDetail(
     val libraryId: Long, val memberId: Long, val name: String, val isDefault: Boolean,
     val totalCount: Long, val items: List<PublicLibraryBook>,

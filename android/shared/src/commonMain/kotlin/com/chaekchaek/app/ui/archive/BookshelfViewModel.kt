@@ -114,19 +114,47 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
 
     fun remove(libraryId: Long, bookId: Long) = mutate { repository.remove(libraryId, bookId, it) }
 
-    fun orderShelves(ids: List<Long>) {
-        if (state.value.refreshing || state.value.collectionStale || !state.value.loaded) return
-        if (!sameIds(ids, state.value.shelves.map { it.libraryId })) return
-        mutate { repository.orderShelves(ids, it) }
+    fun orderShelves(ids: List<Long>, onResult: (Boolean) -> Unit = {}) {
+        if (state.value.refreshing || state.value.collectionStale || !state.value.loaded ||
+            !sameIds(ids, state.value.shelves.map { it.libraryId })) {
+            onResult(false)
+            return
+        }
+        mutate(done = {
+            val current = state.value
+            if (sameIds(ids, current.shelves.map { it.libraryId })) {
+                val byId = current.shelves.associateBy { it.libraryId }
+                state.value = current.copy(shelves = ids.map { byId.getValue(it) })
+            }
+        }, onResult = onResult) { repository.orderShelves(ids, it) }
     }
 
-    fun orderBooks(libraryId: Long, ids: List<Long>) {
-        if (state.value.refreshing || state.value.collectionStale || state.value.detailRefreshing ||
-            (state.value.selectedId == libraryId && state.value.detailStale)) return
-        val existing = state.value.detail?.takeIf { it.libraryId == libraryId }?.items?.map { it.bookId }
-            ?: state.value.shelves.firstOrNull { it.libraryId == libraryId }?.items?.map { it.bookId } ?: return
-        if (!sameIds(ids, existing)) return
-        mutate { repository.orderBooks(libraryId, ids, it) }
+    fun orderBooks(libraryId: Long, ids: List<Long>, onResult: (Boolean) -> Unit = {}) {
+        val current = state.value
+        val existing = current.detail?.takeIf { it.libraryId == libraryId }?.items?.map { it.bookId }
+            ?: current.shelves.firstOrNull { it.libraryId == libraryId }?.items?.map { it.bookId }
+        if (current.refreshing || current.collectionStale || current.detailRefreshing ||
+            (current.selectedId == libraryId && current.detailStale) || existing == null || !sameIds(ids, existing)) {
+            onResult(false)
+            return
+        }
+        mutate(done = {
+            val latest = state.value
+            state.value = latest.copy(
+                shelves = latest.shelves.map { shelf ->
+                    if (shelf.libraryId == libraryId && sameIds(ids, shelf.items.map { it.bookId })) {
+                        val byId = shelf.items.associateBy { it.bookId }
+                        shelf.copy(items = ids.map { byId.getValue(it) })
+                    } else shelf
+                },
+                detail = latest.detail?.let { detail ->
+                    if (detail.libraryId == libraryId && sameIds(ids, detail.items.map { it.bookId })) {
+                        val byId = detail.items.associateBy { it.bookId }
+                        detail.copy(items = ids.map { byId.getValue(it) })
+                    } else detail
+                },
+            )
+        }, onResult = onResult) { repository.orderBooks(libraryId, ids, it) }
     }
 
     private fun validateName(name: String, id: Long? = null): Boolean {
@@ -135,8 +163,12 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
         return error == null
     }
 
-    private fun mutate(done: () -> Unit = {}, action: suspend (String) -> Unit) {
-        if (token == null || state.value.mutating) return
+    private fun mutate(done: () -> Unit = {}, onResult: (Boolean) -> Unit = {}, action: suspend (String) -> Unit) {
+        if (token == null || state.value.mutating) { onResult(false); return }
+        var resultDelivered = false
+        fun complete(success: Boolean) {
+            if (!resultDelivered) { resultDelivered = true; onResult(success) }
+        }
         val session = generation
         readJob?.cancel()
         detailGeneration++
@@ -145,16 +177,23 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
         mutationJob = viewModelScope.launch {
             try {
                 withDelayedLoading({ if (session == generation) state.value = state.value.copy(loading = it) }) {
-                    action(token ?: return@withDelayedLoading)
+                    action(token ?: throw CancellationException("책장 저장 인증이 변경됨"))
                 }.getOrThrow()
                 if (session == generation) {
                     done()
                     state.value = state.value.copy(mutating = false, detailStale = true, collectionStale = true)
+                    complete(true)
                     refresh()
-                }
-            } catch (e: CancellationException) { throw e }
-            catch (e: Throwable) { if (session == generation) report(e) { mutate(done, action) } }
+                } else complete(false)
+            } catch (e: CancellationException) { complete(false); throw e }
+            catch (e: Throwable) {
+                complete(false)
+                if (session == generation) report(e) { mutate(done, action = action) }
+            }
             finally { if (session == generation) state.value = state.value.copy(mutating = false, loading = false) }
+        }.also { job ->
+            // A cancelled scope can reject launch before its body starts, so the body cannot acknowledge it.
+            job.invokeOnCompletion { cause -> if (cause != null) complete(false) }
         }
     }
 

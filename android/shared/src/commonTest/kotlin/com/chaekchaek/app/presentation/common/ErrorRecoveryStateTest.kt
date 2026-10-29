@@ -23,6 +23,20 @@ class ErrorRecoveryStateTest {
     }
 
     @Test
+    fun imageExportFailureRetriesTheSamePendingActionOnce() {
+        val errors = ErrorRecoveryState()
+        var attempts = 0
+        errors.report(IllegalStateException("private native error"), ErrorOperation.ImageExport) { attempts++ }
+        val notice = assertNotNull(errors.notice.value)
+        assertEquals("이미지를 만들지 못했어요", notice.title)
+        assertEquals("다시 시도해 주세요.", notice.message)
+        assertEquals(ErrorAction.Retry, notice.action)
+        errors.takeRecovery(notice.id)?.invoke(null)
+        errors.takeRecovery(notice.id)?.invoke(null)
+        assertEquals(1, attempts)
+    }
+
+    @Test
     fun staleOrRepeatedActionsCannotRunAnotherPendingRequest() {
         val errors = ErrorRecoveryState()
         val resumed = mutableListOf<String?>()

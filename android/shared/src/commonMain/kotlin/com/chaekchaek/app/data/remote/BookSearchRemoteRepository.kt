@@ -49,7 +49,7 @@ internal data class BookSearchItemDto(
     val translators: List<String>,
     val publishedDate: String? = null,
     val isbn13: String? = null,
-    val category: String,
+    val category: String? = null,
     val publisher: String,
 )
 
@@ -62,7 +62,7 @@ internal fun BookSearchItemDto.toSearchResult(): BookSearchResult =
         year = publishedDate?.take(4).orEmpty(),
         coverUrl = coverImageUrl,
         isbn13 = isbn13.orEmpty(),
-        category = category.substringAfterLast('>'),
+        category = category.orEmpty().substringAfterLast('>'),
     )
 
 private fun BookSearchResponseDto.toSearchPage(page: Int): BookSearchPage =
@@ -70,5 +70,5 @@ private fun BookSearchResponseDto.toSearchPage(page: Int): BookSearchPage =
         totalCount = totalCount,
         lastLoadedPage = page,
         nextPage = nextPage,
-        items = items.filter { it.bookId != null && !it.isbn13.isNullOrBlank() }.map(BookSearchItemDto::toSearchResult),
+        items = items.filter { !it.isbn13.isNullOrBlank() }.map(BookSearchItemDto::toSearchResult),
     )

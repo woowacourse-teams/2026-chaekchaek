@@ -16,7 +16,7 @@ import kotlin.test.*
 class PublicLibraryRemoteRepositoryTest {
     @Test fun publicCollectionKeepsOwnerOrderEmptyShelvesAndCrossShelfDuplicates() = runTest {
         var captured: HttpRequestData? = null
-        val item = """{"bookId":7,"isbn13":"9780000000007","title":"책","spineImageUrl":null}"""
+        val item = """{"bookId":7,"isbn13":"9780000000007","title":"책","coverImageUrl":"cover","authors":["저자"],"spineImageUrl":null}"""
         val client = client("""{"memberId":42,"libraries":[
             {"libraryId":9,"name":"독자","isDefault":true,"totalCount":1,"items":[$item]},
             {"libraryId":3,"name":"빈 책장","isDefault":false,"totalCount":0,"items":[]},
@@ -31,6 +31,8 @@ class PublicLibraryRemoteRepositoryTest {
         assertTrue(result.libraries[1].items.isEmpty())
         assertEquals(7L, result.libraries.last().items.single().bookId)
         assertNull(result.libraries.first().items.single().spineImageUrl)
+        assertEquals("cover", result.libraries.first().items.single().coverImageUrl)
+        assertEquals(listOf("저자"), result.libraries.first().items.single().authors)
     }
     @Test fun detailReadsAllLegacyBooksAndOwnerReadingStateWithoutLogin() = runTest {
         val books = (31 downTo 1).joinToString(",") { id ->

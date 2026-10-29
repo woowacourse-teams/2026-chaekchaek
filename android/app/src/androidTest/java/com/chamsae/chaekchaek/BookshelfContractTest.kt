@@ -2,6 +2,7 @@ package com.chamsae.chaekchaek
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import android.os.Bundle
@@ -25,6 +26,34 @@ class BookshelfContractTest {
     @get:Rule val compose = createComposeRule()
     private val origin = ApiConfiguration.current.baseUrl
 
+    @Test fun searchAndCreateShelfWhileChoosingDestination() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
+        request("/__bookshelf/reset", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("발견")
+        compose.onNodeWithText("발견").performClick()
+        waitTag("search-query-field")
+        compose.onNodeWithTag("search-query-field").performTextInput("검증")
+        compose.onNodeWithTag("search-query-field").performImeAction()
+        waitText("검증 도서 36")
+        waitText("책 담기")
+        compose.onNodeWithText("책 담기").performClick()
+        waitText("담을 책장 고르기")
+        compose.onNodeWithTag("shelf-choice-create").performScrollTo().performClick()
+        waitTag("bookshelfName")
+        compose.onNodeWithTag("bookshelfName").performTextInput("담기 중 생성")
+        compose.onNodeWithText("만들기").performScrollTo().performClick()
+        waitNameSheetClosed()
+        waitText("담을 책장 고르기")
+        compose.onNodeWithText("담기 중 생성").assertExists()
+        assertFalse(requested("POST", "/api/v1/libraries/4"))
+        compose.onNodeWithText("이 책장에 담기").performScrollTo().performClick()
+        compose.waitUntil(15_000) { requested("POST", "/api/v1/libraries/4") }
+        val shelves = JSONObject(request("/__bookshelf/state")).getJSONArray("shelves")
+        val created = (0 until shelves.length()).map { shelves.getJSONObject(it) }.single { it.getString("name") == "담기 중 생성" }
+        assertEquals(36, created.getJSONArray("books").getInt(0))
+    }
+
     @Test fun createRenameAddRemove() {
         Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
         request("/__bookshelf/reset", "POST")
@@ -33,7 +62,7 @@ class BookshelfContractTest {
         compose.onNodeWithText("내 서재").performClick()
         waitTag("bookshelf-1")
         compose.onNodeWithTag("bookshelf-menu-1").performClick()
-        compose.onNodeWithText("이름 바꾸기").performClick()
+        compose.onNodeWithText("책장 이름 바꾸기").performClick()
         compose.onNodeWithTag("bookshelfName").performTextReplacement("나의 책장")
         compose.onNodeWithText("저장").performScrollTo().performClick()
         waitNameSheetClosed()
@@ -43,11 +72,15 @@ class BookshelfContractTest {
         compose.onNodeWithText("만들기").performScrollTo().performClick()
         waitNameSheetClosed()
         waitTag("bookshelf-1")
+        capture("bookshelf-fallback-library.png")
         compose.onNodeWithTag("bookshelf-1").performClick()
         waitText("+ 책 담기")
+        capture("bookshelf-fallback-playlist.png")
         compose.onNodeWithText("+ 책 담기").performScrollTo().performClick()
         compose.onNodeWithText("검증 도서 3").performScrollTo().performClick()
         waitText("담을 책장 고르기")
+        // 설치 데이터의 최근 선택과 무관하게 이 시나리오가 검증할 책장 1을 명시한다.
+        compose.onAllNodesWithText("나의 책장").onLast().performScrollTo().performClick()
         compose.onNodeWithText("이 책장에 담기").performScrollTo().performClick()
         compose.waitUntil(15_000) { compose.onAllNodesWithText("담을 책장 고르기").fetchSemanticsNodes().isEmpty() }
         waitText("3권")
@@ -66,6 +99,73 @@ class BookshelfContractTest {
         assertTrue(calls.any { it.getString("method") == "DELETE" && it.getString("path").contains("/books/") })
     }
 
+    @Test fun shelfHandleDragCancelRestoresAndDropSavesOnce() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
+        request("/__bookshelf/reset", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("내 서재")
+        compose.onNodeWithText("내 서재").performClick()
+        waitTag("bookshelf-reorder-2")
+        val first = compose.onNodeWithTag("bookshelf-reorder-1").fetchSemanticsNode().boundsInRoot.center
+        val second = compose.onNodeWithTag("bookshelf-reorder-2").fetchSemanticsNode().boundsInRoot.center
+        val delta = first - second
+        compose.onNodeWithTag("bookshelf-reorder-2").performTouchInput {
+            down(center)
+            moveBy(delta, delayMillis = 500)
+            cancel()
+        }
+        compose.waitForIdle()
+        assertFalse("드래그 취소는 서버 순서를 바꾸지 않음", requested("PATCH", "/api/v1/libraries/order"))
+        compose.onNodeWithTag("bookshelf-reorder-2").performTouchInput {
+            down(center)
+            moveBy(delta, delayMillis = 500)
+            up()
+        }
+        compose.waitUntil(15_000) { requested("PATCH", "/api/v1/libraries/order") }
+        val state = JSONObject(request("/__bookshelf/state"))
+        val shelves = state.getJSONArray("shelves")
+        assertEquals(listOf(2, 1, 3), (0 until shelves.length()).map { shelves.getJSONObject(it).getInt("libraryId") })
+        val calls = state.getJSONArray("requests")
+        assertEquals("드롭 저장은 1회", 1, (0 until calls.length()).count {
+            calls.getJSONObject(it).getString("method") == "PATCH" && calls.getJSONObject(it).getString("path") == "/api/v1/libraries/order"
+        })
+    }
+
+    @Test fun bookSpineHoldShowsPreviewAndDropSavesOnce() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
+        request("/__bookshelf/reset", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("내 서재")
+        compose.onNodeWithText("내 서재").performClick()
+        waitTag("bookshelf-1")
+        compose.onNodeWithTag("bookshelf-1").performClick()
+        waitTag("bookshelf-drag-source-spines-1")
+        waitTag("bookshelf-drag-source-spines-2")
+        val first = compose.onNodeWithTag("bookshelf-drag-source-spines-1").fetchSemanticsNode().boundsInRoot.center
+        val second = compose.onNodeWithTag("bookshelf-drag-source-spines-2").fetchSemanticsNode().boundsInRoot.center
+        val delta = second - first
+        val source = compose.onNodeWithTag("bookshelf-drag-source-spines-1")
+        source.performTouchInput { down(center) }
+        compose.waitUntil(2_000) {
+            compose.onAllNodesWithTag("bookshelf-drag-ghost-spines-1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        source.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "놓을 위치 미리보기"))
+        source.performTouchInput {
+            moveBy(delta, delayMillis = 64)
+            up()
+        }
+        compose.waitUntil(15_000) { requested("PATCH", "/api/v1/libraries/1/books/order") }
+        val state = JSONObject(request("/__bookshelf/state"))
+        val shelf = (0 until state.getJSONArray("shelves").length())
+            .map { state.getJSONArray("shelves").getJSONObject(it) }
+            .single { it.getInt("libraryId") == 1 }
+        assertEquals(listOf(2, 1), (0 until shelf.getJSONArray("books").length()).map { shelf.getJSONArray("books").getInt(it) })
+        val calls = state.getJSONArray("requests")
+        assertEquals("책등 드롭 저장은 1회", 1, (0 until calls.length()).count {
+            calls.getJSONObject(it).getString("method") == "PATCH" && calls.getJSONObject(it).getString("path") == "/api/v1/libraries/1/books/order"
+        })
+    }
+
     @Test fun nativeImageSaveAndShare() {
         Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
         request("/__bookshelf/reset", "POST")
@@ -74,8 +174,8 @@ class BookshelfContractTest {
         compose.onNodeWithText("내 서재").performClick()
         waitTag("bookshelf-1")
         compose.onNodeWithTag("bookshelf-1").performClick()
-        compose.waitUntil(15_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
+        compose.waitUntil(15_000) { compose.onAllNodes(hasContentDescription("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("이미지 공유").performScrollTo().performClick()
         waitText("책장을 이미지로")
         compose.onNodeWithText("이미지 저장").performScrollTo().assertIsDisplayed()
         compose.waitUntil(15_000) { compose.onAllNodes(hasText("이미지 저장") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
@@ -97,7 +197,7 @@ class BookshelfContractTest {
         val screenshot = File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-image-preview.png")
         automation.takeScreenshot()?.let { bitmap -> screenshot.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) } }
 
-        compose.waitUntil(10_000) { requested("GET", "/api/v1/books/1/reviews?") }
+        assertFalse("공유 준비에서 감상 API를 호출하지 않음", requested("GET", "/api/v1/books/1/reviews"))
         compose.onNodeWithTag("bookshelf-image-share", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitUntil(60_000) {
             automation.rootInActiveWindow?.packageName?.toString() in setOf("android", "com.android.intentresolver")
@@ -107,7 +207,7 @@ class BookshelfContractTest {
         val dimensions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(exported!!.absolutePath, dimensions)
         assertTrue("전체 책장 이미지 너비", dimensions.outWidth > 0)
-        assertTrue("두 책의 감상 영역까지 포함한 이미지 높이", dimensions.outHeight > dimensions.outWidth * 2)
+        assertTrue("감상 칼럼을 제외한 두 권 책장 이미지 높이", dimensions.outHeight < dimensions.outWidth * 2)
         automation.takeScreenshot()?.let { bitmap ->
             File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-native-share.png").outputStream().use {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
@@ -123,8 +223,8 @@ class BookshelfContractTest {
         compose.onNodeWithText("내 서재").performClick()
         waitTag("bookshelf-1")
         compose.onNodeWithTag("bookshelf-1").performClick()
-        compose.waitUntil(30_000) { compose.onAllNodes(hasText("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("이미지 공유").performScrollTo().performClick()
+        compose.waitUntil(30_000) { compose.onAllNodes(hasContentDescription("이미지 공유") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("이미지 공유").performScrollTo().performClick()
         waitText("책장을 이미지로")
         compose.onNodeWithTag("bookshelf-image-share", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         compose.waitForIdle()
@@ -150,7 +250,8 @@ class BookshelfContractTest {
         val dimensions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(exported!!.absolutePath, dimensions)
         assertTrue("책장 이미지 너비", dimensions.outWidth > 0)
-        assertTrue("두 책과 감상 영역을 포함한 이미지 높이", dimensions.outHeight > dimensions.outWidth * 2)
+        assertTrue("감상 칼럼을 제외한 두 권 책장 이미지 높이", dimensions.outHeight < dimensions.outWidth * 2)
+        assertFalse("직접 공유에서 감상 API를 호출하지 않음", requested("GET", "/api/v1/books/1/reviews"))
         automation.takeScreenshot()?.let { bitmap ->
             File(instrumentation.targetContext.getExternalFilesDir(null), "bookshelf-native-share.png").outputStream().use {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
@@ -175,6 +276,16 @@ class BookshelfContractTest {
     private fun waitNameSheetClosed() = compose.waitUntil(15_000) { compose.onAllNodesWithTag("bookshelfName").fetchSemanticsNodes().isEmpty() }
     private fun waitText(text: String) = compose.waitUntil(15_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
     private fun waitTag(tag: String) = compose.waitUntil(15_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
+    private fun capture(name: String) {
+        compose.waitForIdle()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val bitmap = instrumentation.uiAutomation.takeScreenshot()
+        assertNotNull("대체 책등 시각 검증 캡처", bitmap)
+        File(instrumentation.targetContext.getExternalFilesDir(null), name).outputStream().use {
+            assertTrue(bitmap!!.compress(Bitmap.CompressFormat.PNG, 100, it))
+        }
+    }
+
     private fun requested(method: String, pathPrefix: String): Boolean {
         val calls = JSONObject(request("/__bookshelf/state")).getJSONArray("requests")
         return (0 until calls.length()).any {

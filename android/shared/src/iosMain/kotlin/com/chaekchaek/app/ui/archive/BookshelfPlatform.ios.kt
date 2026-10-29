@@ -5,6 +5,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import kotlinx.cinterop.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.EncodedImageFormat
@@ -20,8 +22,10 @@ internal actual fun rememberBookshelfPlatform(): BookshelfPlatform = remember {
         private val defaults = NSUserDefaults.standardUserDefaults
         override fun readRecent(memberId: Long): Long? = if (defaults.objectForKey("bookshelf-recent-$memberId") == null) null else defaults.integerForKey("bookshelf-recent-$memberId")
         override fun writeRecent(memberId: Long, shelfId: Long) = defaults.setInteger(shelfId, "bookshelf-recent-$memberId")
-        private fun nativeImage(image: ImageBitmap): UIImage {
-            val bytes = checkNotNull(Image.makeFromBitmap(image.asSkiaBitmap()).encodeToData(EncodedImageFormat.PNG)).bytes
+        private suspend fun nativeImage(image: ImageBitmap): UIImage {
+            val bytes = withContext(Dispatchers.Default) {
+                checkNotNull(Image.makeFromBitmap(image.asSkiaBitmap()).encodeToData(EncodedImageFormat.PNG)).bytes
+            }
             val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
             return checkNotNull(UIImage(data = data))
         }
@@ -34,7 +38,16 @@ internal actual fun rememberBookshelfPlatform(): BookshelfPlatform = remember {
             }
             val activity = UIActivityViewController(listOf(nativeImage(image)), null)
             activity.popoverPresentationController?.sourceView = controller.view
-            controller.presentViewController(activity, animated = true, completion = null)
+            suspendCancellableCoroutine<Unit> { continuation ->
+                activity.completionWithItemsHandler = { _, _, _, error ->
+                    if (continuation.isActive) {
+                        if (error == null) continuation.resume(Unit)
+                        else continuation.resumeWithException(IllegalStateException(error.localizedDescription))
+                    }
+                }
+                continuation.invokeOnCancellation { activity.dismissViewControllerAnimated(false, completion = null) }
+                controller.presentViewController(activity, animated = true, completion = null)
+            }
         }
         override suspend fun save(image: ImageBitmap): Boolean {
             val native = nativeImage(image)

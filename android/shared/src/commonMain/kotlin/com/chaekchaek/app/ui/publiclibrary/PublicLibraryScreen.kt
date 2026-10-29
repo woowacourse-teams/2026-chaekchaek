@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -25,7 +24,7 @@ import com.chaekchaek.app.domain.library.*
 import com.chaekchaek.app.domain.shelf.ReadingStatus
 import com.chaekchaek.app.ui.RemoteBookImage
 import com.chaekchaek.app.ui.archive.ArchiveBookUiModel
-import com.chaekchaek.app.ui.archive.LibraryBookSpine
+import com.chaekchaek.app.ui.archive.BookshelfSpineRow
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.common.ChaekFilterChip
 import kotlinx.coroutines.launch
@@ -51,14 +50,9 @@ internal fun PublicLibraryScreen(
                         Spacer(Modifier.height(16.dp))
                         if (shelf.items.isEmpty()) Box(Modifier.fillMaxWidth().height(160.dp), contentAlignment = Alignment.Center) {
                             Text("아직 담은 책이 없어요", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        } else LazyRow(
-                            modifier = Modifier.fillMaxWidth().height(260.dp),
-                            verticalAlignment = Alignment.Bottom,
-                        ) {
-                            items(shelf.items, key = { it.bookId }) { book ->
-                                PublicSpine(book.bookId, book.isbn13, book.title, book.spineImageUrl)
-                            }
-                        }
+                        } else BookshelfSpineRow(shelf.items.map { book ->
+                            ArchiveBookUiModel(book.isbn13, book.bookId, book.title, book.authors.joinToString(", "), "", "", book.coverImageUrl, book.spineImageUrl, ReadingStatus.WANT_TO_READ, 0, 0, 0)
+                        }, onBook = { onBookshelf(shelf) })
                         HorizontalDivider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline)
                     }
                 }
@@ -84,12 +78,9 @@ internal fun PublicBookshelfScreen(
                     Text("$ownerName   ${shelf.totalCount}권", modifier = Modifier.padding(top = 6.dp), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(24.dp))
                     if (shelf.items.isNotEmpty()) {
-                        LazyRow(Modifier.fillMaxWidth().height(260.dp), verticalAlignment = Alignment.Bottom) {
-                            items(shelf.items, key = { it.bookId }) { book ->
-                                PublicSpine(book.bookId, book.isbn13, book.title, book.spineImageUrl, book.coverImageUrl,
-                                    Modifier.clickable(role = Role.Button) { onBook(book.toDetailArgs()) })
-                            }
-                        }
+                        BookshelfSpineRow(shelf.items.map { book ->
+                            ArchiveBookUiModel(book.isbn13, book.bookId, book.title, book.authors.joinToString(", "), "", "", book.coverImageUrl, book.spineImageUrl, ReadingStatus.WANT_TO_READ, book.currentPage, book.totalPages ?: 0, 0)
+                        }, onBook = { book -> shelf.items.firstOrNull { it.bookId == book.bookId }?.let { onBook(it.toDetailArgs()) } })
                         HorizontalDivider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline)
                     }
                     Spacer(Modifier.height(16.dp))
@@ -141,12 +132,6 @@ private fun PublicLibraryLayout(title: String, loading: Boolean, onBack: () -> U
 @Composable
 private fun EmptyLibrary(message: String) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-}
-
-@Composable
-private fun PublicSpine(bookId: Long, isbn: String, title: String, spine: String?, cover: String = "", modifier: Modifier = Modifier) {
-    val book = ArchiveBookUiModel(isbn, bookId, title, "", "", "", cover, spine, ReadingStatus.WANT_TO_READ, 0, 0, 0)
-    LibraryBookSpine(book, modifier.height(260.dp).widthIn(min = 18.dp, max = 64.dp))
 }
 
 internal fun PublicLibraryBook.toDetailArgs() = BookDetailArgs(
