@@ -235,4 +235,3 @@ shasum -a 256 /tmp/chaekchaek-prod-openapi.yaml /tmp/chaekchaek-dev-openapi.yaml
 - `backend/src/main/resources/db/migration/V8__add_library_book_placement_storage.sql`
 - `backend/src/main/resources/db/backfill/library_shelves_after_v8.sql`
 - `backend/src/test/java/com/chaekchaek/library/service/LegacyLibraryServiceIntegrationTest.java`
-
