@@ -18,7 +18,6 @@ import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
-import com.chaekchaek.library.service.BookActivityCountReader;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
