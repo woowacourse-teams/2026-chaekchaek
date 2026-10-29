@@ -1,5 +1,6 @@
 package com.chaekchaek.library.service;
 
+import static com.chaekchaek.library.fixture.LibraryFixture.savedLibrary;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.inOrder;
@@ -30,7 +31,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.SimpleTransactionStatus;
@@ -47,7 +47,7 @@ class LibraryBookDeletionServiceTest {
     @DisplayName("책장 소유권을 확인하기 전에 배치 존재 여부를 조회하지 않는다")
     void should_RejectForeignLibraryBeforeCheckingPlacement() {
         // given
-        TestContext context = context(library(2L), Optional.empty(), 0L, null);
+        TestContext context = context(savedLibrary(LIBRARY_ID, 2L, NOW), Optional.empty(), 0L, null);
 
         // when & then
         assertThatThrownBy(() -> context.service().delete(MEMBER_ID, LIBRARY_ID, BOOK_ID))
@@ -80,7 +80,7 @@ class LibraryBookDeletionServiceTest {
     @DisplayName("배치가 없으면 공유 독서 기록을 바꾸지 않고 종료한다")
     void should_DoNothing_When_PlacementDoesNotExist() {
         // given
-        TestContext context = context(library(MEMBER_ID), Optional.empty(), 0L, null);
+        TestContext context = context(savedLibrary(LIBRARY_ID, MEMBER_ID, NOW), Optional.empty(), 0L, null);
 
         // when
         context.service().delete(MEMBER_ID, LIBRARY_ID, BOOK_ID);
@@ -96,7 +96,7 @@ class LibraryBookDeletionServiceTest {
     void should_PreserveSharedReadingRecord_When_AnotherPlacementRemains() {
         // given
         LibraryBook placement = LibraryBook.create(LIBRARY_ID, BOOK_ID, 1L);
-        TestContext context = context(library(MEMBER_ID), Optional.of(placement), 1L, null);
+        TestContext context = context(savedLibrary(LIBRARY_ID, MEMBER_ID, NOW), Optional.of(placement), 1L, null);
 
         // when
         context.service().delete(MEMBER_ID, LIBRARY_ID, BOOK_ID);
@@ -119,7 +119,7 @@ class LibraryBookDeletionServiceTest {
         item.rate(new BigDecimal("4.5"), NOW.minusSeconds(30));
         Instant addedAt = item.getAddedAt();
         Instant ratingUpdatedAt = item.getRatingUpdatedAt();
-        TestContext context = context(library(MEMBER_ID), Optional.of(placement), 0L, item);
+        TestContext context = context(savedLibrary(LIBRARY_ID, MEMBER_ID, NOW), Optional.of(placement), 0L, item);
 
         // when
         context.service().delete(MEMBER_ID, LIBRARY_ID, BOOK_ID);
@@ -182,12 +182,6 @@ class LibraryBookDeletionServiceTest {
         when(transactionManager.getTransaction(org.mockito.ArgumentMatchers.any(TransactionDefinition.class)))
                 .thenAnswer(invocation -> new SimpleTransactionStatus());
         return transactionManager;
-    }
-
-    private Library library(long memberId) {
-        Library library = Library.create(memberId, "가을책장", NOW);
-        ReflectionTestUtils.setField(library, "id", LIBRARY_ID);
-        return library;
     }
 
     private record TestContext(

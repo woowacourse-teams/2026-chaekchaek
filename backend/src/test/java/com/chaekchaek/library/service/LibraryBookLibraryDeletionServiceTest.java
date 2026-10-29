@@ -1,5 +1,6 @@
 package com.chaekchaek.library.service;
 
+import static com.chaekchaek.library.fixture.LibraryFixture.savedLibrary;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.inOrder;
@@ -66,7 +67,7 @@ class LibraryBookLibraryDeletionServiceTest {
     @DisplayName("다른 회원의 책장이면 배치 조회 전에 소유권 오류를 반환한다")
     void should_RejectForeignLibraryBeforeReadingPlacements() {
         // given
-        TestContext context = context(library(2L, false), List.of(), List.of(), List.of());
+        TestContext context = context(savedLibrary(LIBRARY_ID, 2L, NOW), List.of(), List.of(), List.of());
 
         // when & then
         assertThatThrownBy(() -> context.service().deleteLibrary(MEMBER_ID, LIBRARY_ID))
@@ -82,7 +83,9 @@ class LibraryBookLibraryDeletionServiceTest {
     @DisplayName("기본 책장 삭제를 배치 조회 전에 거부한다")
     void should_RejectDefaultLibraryDeletionBeforeReadingPlacements() {
         // given
-        TestContext context = context(library(MEMBER_ID, true), List.of(), List.of(), List.of());
+        Library library = savedLibrary(LIBRARY_ID, MEMBER_ID, NOW);
+        library.promoteToDefault();
+        TestContext context = context(library, List.of(), List.of(), List.of());
 
         // when & then
         assertThatThrownBy(() -> context.service().deleteLibrary(MEMBER_ID, LIBRARY_ID))
@@ -99,7 +102,7 @@ class LibraryBookLibraryDeletionServiceTest {
     @DisplayName("활성 회원이 아니면 책장 조회 전에 삭제를 거부한다")
     void should_RejectInactiveMemberBeforeLookingUpLibrary() {
         // given
-        TestContext context = context(library(MEMBER_ID, false), List.of(), List.of(), List.of());
+        TestContext context = context(savedLibrary(LIBRARY_ID, MEMBER_ID, NOW), List.of(), List.of(), List.of());
         Member inactiveMember = MemberFixture.member();
         ReflectionTestUtils.setField(inactiveMember, "accountStatus", AccountStatus.SUSPENDED);
         when(context.memberRepository().findByIdForUpdate(MEMBER_ID)).thenReturn(Optional.of(inactiveMember));
@@ -117,7 +120,7 @@ class LibraryBookLibraryDeletionServiceTest {
     @DisplayName("비어 있는 일반 책장을 삭제한다")
     void should_DeleteEmptyLibrary_When_NoPlacementsExist() {
         // given
-        Library library = library(MEMBER_ID, false);
+        Library library = savedLibrary(LIBRARY_ID, MEMBER_ID, NOW);
         TestContext context = context(library, List.of(), List.of(), List.of());
 
         // when
@@ -136,7 +139,7 @@ class LibraryBookLibraryDeletionServiceTest {
     @DisplayName("책장 배치를 일괄 삭제하고 마지막 배치 도서의 독서 상태만 초기화한다")
     void should_DeletePlacementsAndClearOnlyLastReadingStates() {
         // given
-        Library library = library(MEMBER_ID, false);
+        Library library = savedLibrary(LIBRARY_ID, MEMBER_ID, NOW);
         List<LibraryBook> placements = List.of(
                 LibraryBook.create(LIBRARY_ID, 10L, 1L),
                 LibraryBook.create(LIBRARY_ID, 20L, 2L),
@@ -220,13 +223,6 @@ class LibraryBookLibraryDeletionServiceTest {
         when(transactionManager.getTransaction(org.mockito.ArgumentMatchers.any(TransactionDefinition.class)))
                 .thenAnswer(invocation -> new SimpleTransactionStatus());
         return transactionManager;
-    }
-
-    private Library library(long memberId, boolean isDefault) {
-        Library library = Library.create(memberId, "가을책장", NOW);
-        ReflectionTestUtils.setField(library, "id", LIBRARY_ID);
-        ReflectionTestUtils.setField(library, "isDefault", isDefault);
-        return library;
     }
 
     private LibraryItem libraryItem(long bookId) {

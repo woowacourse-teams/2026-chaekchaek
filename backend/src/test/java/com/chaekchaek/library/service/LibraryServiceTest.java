@@ -1,5 +1,6 @@
 package com.chaekchaek.library.service;
 
+import static com.chaekchaek.library.fixture.LibraryFixture.savedLibrary;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
@@ -129,8 +130,7 @@ class LibraryServiceTest {
     @DisplayName("닉네임이 있는 활성 회원의 맨 뒤에 빈 일반 책장을 생성한다")
     void should_ReturnSavedLibrary_When_Created() {
         // given
-        Library saved = Library.create(1L, "올해읽을책", CLOCK.instant());
-        ReflectionTestUtils.setField(saved, "id", 7L);
+        Library saved = savedLibrary(7L, Library.create(1L, "올해읽을책", CLOCK.instant()));
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
         when(libraryRepository.findMaxDisplayOrderByMemberId(1L)).thenReturn(4L);
         when(libraryRepository.create(any(Library.class))).thenReturn(saved);
@@ -237,8 +237,7 @@ class LibraryServiceTest {
     @DisplayName("책장 이름을 변경하고 기본 여부와 순서를 보존한 이벤트를 기록한다")
     void should_RenameOwnedLibraryAndLogEvent_When_NameChanges() {
         // given
-        Library library = Library.createDefault(1L, "올해읽을책", 5L, CLOCK.instant());
-        ReflectionTestUtils.setField(library, "id", 7L);
+        Library library = savedLibrary(7L, Library.createDefault(1L, "올해읽을책", 5L, CLOCK.instant()));
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
         when(libraryRepository.findById(7L)).thenReturn(Optional.of(library));
 
@@ -272,8 +271,7 @@ class LibraryServiceTest {
     @DisplayName("현재 이름을 다시 요청하면 저장과 이벤트 없이 성공한다")
     void should_NotPersistOrLog_When_RenamingToCurrentName() {
         // given
-        Library library = Library.create(1L, "올해읽을책", CLOCK.instant());
-        ReflectionTestUtils.setField(library, "id", 7L);
+        Library library = savedLibrary(7L, Library.create(1L, "올해읽을책", CLOCK.instant()));
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
         when(libraryRepository.findById(7L)).thenReturn(Optional.of(library));
 
@@ -304,8 +302,7 @@ class LibraryServiceTest {
     @Test
     @DisplayName("다른 회원의 책장은 이름을 변경할 수 없다")
     void should_RejectRename_When_LibraryBelongsToAnotherMember() {
-        Library library = Library.create(2L, "다른사람", CLOCK.instant());
-        ReflectionTestUtils.setField(library, "id", 7L);
+        Library library = savedLibrary(7L, Library.create(2L, "다른사람", CLOCK.instant()));
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithNickname()));
         when(libraryRepository.findById(7L)).thenReturn(Optional.of(library));
 
@@ -514,8 +511,7 @@ class LibraryServiceTest {
     }
 
     private void defaultItems(List<LibraryItem> items) {
-        Library library = Library.createDefault(1L, "기본 책장", 1L, CLOCK.instant());
-        ReflectionTestUtils.setField(library, "id", 7L);
+        Library library = savedLibrary(7L, Library.createDefault(1L, "기본 책장", 1L, CLOCK.instant()));
         when(libraryRepository.findByMemberIdAndIsDefaultTrue(1L)).thenReturn(Optional.of(library));
         List<LibraryBook> placements = items
                 .stream()

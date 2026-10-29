@@ -1,5 +1,6 @@
 package com.chaekchaek.library.service;
 
+import static com.chaekchaek.library.fixture.LibraryFixture.savedLibrary;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -59,7 +60,7 @@ class LibraryBookServiceTest {
     @DisplayName("도서를 소유한 책장의 맨 뒤에 배치하고 독서 기록을 함께 생성한다")
     void should_CreatePlacementAndReadingRecord_When_BookIsAdded() {
         // given
-        Library library = library(MEMBER_ID);
+        Library library = savedLibrary(LIBRARY_ID, MEMBER_ID, NOW);
         Book book = book(368);
         MemberRepository memberRepository = mock(MemberRepository.class);
         LibraryRepository libraryRepository = mock(LibraryRepository.class);
@@ -120,7 +121,7 @@ class LibraryBookServiceTest {
         LibraryItem item = LibraryItem.create(MEMBER_ID, BOOK_ID, ReadingStatus.READING, 368, NOW.minusSeconds(60));
         item.changeCurrentPage(120, 368, NOW.minusSeconds(60));
         item.rate(new BigDecimal("4.5"), NOW.minusSeconds(60));
-        TestContext context = context(library(MEMBER_ID), book(368), item, 0L);
+        TestContext context = context(savedLibrary(LIBRARY_ID, MEMBER_ID, NOW), book(368), item, 0L);
 
         // when
         var response = context.service().addByIsbn13(
@@ -146,7 +147,7 @@ class LibraryBookServiceTest {
         LibraryItem item = LibraryItem.create(MEMBER_ID, BOOK_ID, ReadingStatus.READING, 368, NOW.minusSeconds(60));
         item.rate(new BigDecimal("4.5"), NOW.minusSeconds(60));
         item.clearReadingState();
-        TestContext context = context(library(MEMBER_ID), book(368), item, 0L);
+        TestContext context = context(savedLibrary(LIBRARY_ID, MEMBER_ID, NOW), book(368), item, 0L);
 
         // when
         var response = context.service().addByIsbn13(
@@ -168,7 +169,7 @@ class LibraryBookServiceTest {
     @DisplayName("책장에 이미 같은 도서가 있으면 배치 중복 오류를 반환한다")
     void should_RejectDuplicatePlacement_When_BookIsAlreadyInLibrary() {
         // given
-        TestContext context = context(library(MEMBER_ID), book(368), null, 4L);
+        TestContext context = context(savedLibrary(LIBRARY_ID, MEMBER_ID, NOW), book(368), null, 4L);
         when(context.libraryBookRepository().existsByLibraryIdAndBookId(LIBRARY_ID, BOOK_ID)).thenReturn(true);
 
         // when & then
@@ -190,7 +191,7 @@ class LibraryBookServiceTest {
     @DisplayName("책장에 30권이 있으면 새 배치를 거절한다")
     void should_RejectPlacement_When_LibraryIsAtCapacity() {
         // given
-        TestContext context = context(library(MEMBER_ID), book(368), null, 30L);
+        TestContext context = context(savedLibrary(LIBRARY_ID, MEMBER_ID, NOW), book(368), null, 30L);
 
         // when & then
         assertThatThrownBy(() -> context.service().addByIsbn13(
@@ -212,7 +213,7 @@ class LibraryBookServiceTest {
     @DisplayName("책장에 29권이 있으면 30번째 도서를 배치할 수 있다")
     void should_AllowPlacement_When_LibraryHas29Books() {
         // given
-        TestContext context = context(library(MEMBER_ID), book(368), null, 29L);
+        TestContext context = context(savedLibrary(LIBRARY_ID, MEMBER_ID, NOW), book(368), null, 29L);
 
         // when
         var response = context.service().addByIsbn13(
@@ -232,7 +233,7 @@ class LibraryBookServiceTest {
     @DisplayName("다른 회원의 책장이라면 도서를 조회하거나 생성하지 않는다")
     void should_RejectForeignLibraryBeforeResolvingBook() {
         // given
-        TestContext context = context(library(2L), book(368), null, 0L);
+        TestContext context = context(savedLibrary(LIBRARY_ID, 2L, NOW), book(368), null, 0L);
 
         // when & then
         assertThatThrownBy(() -> context.service().addByIsbn13(
@@ -307,12 +308,6 @@ class LibraryBookServiceTest {
         when(transactionManager.getTransaction(any(TransactionDefinition.class)))
                 .thenAnswer(invocation -> new SimpleTransactionStatus());
         return transactionManager;
-    }
-
-    private Library library(long memberId) {
-        Library library = Library.create(memberId, "가을책장", NOW);
-        ReflectionTestUtils.setField(library, "id", LIBRARY_ID);
-        return library;
     }
 
     private Book book(Integer totalPages) {
