@@ -7,7 +7,7 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
 
-import { Chip, Icon, Notice, Split } from '@chaekchaek/design-system';
+import { Chip, Icon, Notice, Split, VisuallyHidden } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
 import { List } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
@@ -192,9 +192,7 @@ export const BooksPage = () => {
                       value={query}
                       onChange={handleChangeQuery}
                     />
-                    <p role="status" className="sr-only">
-                      {searchAnnouncement}
-                    </p>
+                    <VisuallyHidden role="status">{searchAnnouncement}</VisuallyHidden>
                   </>
                 }
               >
