@@ -8,11 +8,11 @@ export const technologySlides: TechnologySlide[] = [
     title: '반복되는 계산은 줄이고, 더 효율적인 책 검색으로',
     problem:
       '책 검색 시 감상 수와 답글 수를 조회하기 위해 동일한 집계 쿼리가 반복적으로 실행되었습니다.',
-    solution: 'Caffeine을 활용해 책별 감상 수와 답글 수를 메모리에 캐싱했습니다.',
+    solution: 'Caffeine 캐시로 반복되는 집계 쿼리를 최적화했습니다.',
     details: [
       '검색 결과 전체가 아닌 감상 수와 답글 수만 캐싱',
       '캐시 미스가 발생한 책만 모아서 일괄 조회',
-      'TTL 30분 · 최대 500개 항목',
+      'TTL 30분, 최대 500개 항목으로 설정',
     ],
     before: { value: '100회', description: '감상 수·답글 수 집계 쿼리 각각 실행' },
     after: { value: '0회', description: '감상 수·답글 수 집계 쿼리 각각 실행' },
