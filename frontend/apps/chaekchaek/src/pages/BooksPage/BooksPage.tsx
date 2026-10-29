@@ -78,9 +78,22 @@ export const BooksPage = () => {
     );
   };
 
+  const [searchAnnouncement, setSearchAnnouncement] = useState('');
+
   const getBooksLoadData = useCallback(async () => {
-    if (!keywordQuery.length) return null;
-    return await getBooks({ page: defaultPage, query: keywordQuery });
+    if (!keywordQuery.length) {
+      setSearchAnnouncement(`입력한 키워드가 없습니다`);
+      return null;
+    }
+    const data = await getBooks({ page: defaultPage, query: keywordQuery });
+
+    setSearchAnnouncement(
+      data.items.length
+        ? `'${keywordQuery}' 검색 결과가 표시되었습니다.`
+        : `'${keywordQuery}' 검색 결과가 없습니다.`,
+    );
+
+    return data;
   }, [keywordQuery, defaultPage]);
 
   const {
@@ -180,6 +193,9 @@ export const BooksPage = () => {
                       value={query}
                       onChange={handleChangeQuery}
                     />
+                    <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+                      {searchAnnouncement}
+                    </p>
                   </>
                 }
               >
