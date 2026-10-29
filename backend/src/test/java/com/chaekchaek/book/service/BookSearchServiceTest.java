@@ -16,7 +16,6 @@ import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.repository.LibraryBookRepository;
-import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.time.LocalDate;
 import java.util.List;
@@ -30,13 +29,13 @@ class BookSearchServiceTest {
 
     private final BookSearchClient bookClient = mock(BookSearchClient.class);
     private final BookRepository bookRepository = mock(BookRepository.class);
-    private final BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+    private final BookSearchActivityCountReader searchActivityCountReader = mock(BookSearchActivityCountReader.class);
     private final CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
     private final LibraryBookRepository libraryBookRepository = mock(LibraryBookRepository.class);
     private final BookSearchService service = new BookSearchService(
             bookClient,
             bookRepository,
-            activityCountReader,
+            searchActivityCountReader,
             currentMemberIdProvider,
             libraryBookRepository
     );
@@ -53,7 +52,7 @@ class BookSearchServiceTest {
         when(bookClient.search("마션", 1)).thenReturn(searchResult);
         when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
+        when(searchActivityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -75,7 +74,7 @@ class BookSearchServiceTest {
         when(bookClient.search("마션", 1)).thenReturn(searchResult);
         when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
+        when(searchActivityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -107,7 +106,7 @@ class BookSearchServiceTest {
         when(bookClient.search("클린 코드", 1)).thenReturn(searchResult);
         when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of());
-        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
+        when(searchActivityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(Map.of());
 
         // when
@@ -157,7 +156,7 @@ class BookSearchServiceTest {
         ));
         when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683"))))
                 .thenReturn(List.of(registeredBook));
-        when(activityCountReader.getActivityCounts(List.of(42L)))
+        when(searchActivityCountReader.getActivityCounts(List.of(42L)))
                 .thenReturn(Map.of(42L, new ActivityCounts(2L, 5L)));
 
         // when
@@ -204,7 +203,7 @@ class BookSearchServiceTest {
                 List.of(searchedBook)
         ));
         when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(List.of(registeredBook));
-        when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
+        when(searchActivityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
         when(libraryBookRepository.findPlacedBookIdsByMemberIdAndBookIdIn(1L, List.of(42L)))
                 .thenReturn(List.of(42L));
@@ -294,7 +293,7 @@ class BookSearchServiceTest {
         when(bookClient.search("책", 1)).thenReturn(response);
         when(bookRepository.findAllByIsbn13In(ArgumentMatchers.anyCollection()))
                 .thenReturn(List.of(registeredBooks));
-        when(activityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
+        when(searchActivityCountReader.getActivityCounts(ArgumentMatchers.anyCollection()))
                 .thenReturn(activityCounts);
     }
 
@@ -307,7 +306,7 @@ class BookSearchServiceTest {
                 List.of(searchedBook)
         ));
         when(bookRepository.findAllByIsbn13In(List.of(new Isbn13("9788925568683")))).thenReturn(List.of(registeredBook));
-        when(activityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
+        when(searchActivityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
 
     }
 
