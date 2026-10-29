@@ -1,5 +1,6 @@
 package com.chaekchaek.review.service;
 
+import static com.chaekchaek.review.fixture.ReviewFixture.savedReview;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -74,11 +75,8 @@ class ReviewServiceTest {
                         ActorType.GUEST
                 )
         ));
-        when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
-            Review review = invocation.getArgument(0);
-            ReflectionTestUtils.setField(review, "id", 10L);
-            return review;
-        });
+        when(reviewRepository.save(any(Review.class)))
+                .thenAnswer(invocation -> savedReview(10L, invocation.getArgument(0)));
         ReviewService service = reviewService(CurrentActor.guest(7L), memberReader);
 
         // when
@@ -141,8 +139,7 @@ class ReviewServiceTest {
     @DisplayName("게스트는 기존 감상의 개인 독서 쪽수를 수정할 수 없다")
     void should_RejectReadingPage_When_GuestUpdatesReview() {
         // given
-        Review review = Review.create(5L, 7L, "게스트 감상", null, null, null, false, true);
-        ReflectionTestUtils.setField(review, "id", 10L);
+        Review review = savedReview(10L, Review.create(5L, 7L, "게스트 감상", null, null, null, false, true));
         when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
         ReviewService service = reviewService(CurrentActor.guest(7L), memberReader(true));
         ReviewUpdateRequest request = new ReviewUpdateRequest();
@@ -161,9 +158,8 @@ class ReviewServiceTest {
     @DisplayName("감상과 답글 좋아요는 현재 Actor에 귀속된다")
     void should_AssignReactions_When_CurrentActorLikesReviewOrReply() {
         // given
-        Review review = Review.create(5L, 1L, "감상", null, null, null, false, false);
+        Review review = savedReview(10L, Review.create(5L, 1L, "감상", null, null, null, false, false));
         Reply reply = Reply.create(10L, 1L, "답글", false);
-        ReflectionTestUtils.setField(review, "id", 10L);
         ReflectionTestUtils.setField(reply, "id", 20L);
         when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
         when(replyRepository.findById(20L)).thenReturn(Optional.of(reply));
@@ -201,11 +197,8 @@ class ReviewServiceTest {
                 )
         ));
         ReviewService reviewService = reviewService(CurrentActor.member(1L, 1L), memberReader);
-        when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
-            Review review = invocation.getArgument(0);
-            ReflectionTestUtils.setField(review, "id", 10L);
-            return review;
-        });
+        when(reviewRepository.save(any(Review.class)))
+                .thenAnswer(invocation -> savedReview(10L, invocation.getArgument(0)));
 
         // when
         ReviewResponse actual = reviewService.createReview(
@@ -237,11 +230,8 @@ class ReviewServiceTest {
         Book book = book();
         Isbn13 isbn13 = new Isbn13("9788925568683");
         when(bookResolver.findOrCreate(isbn13)).thenReturn(book);
-        when(reviewRepository.save(any(Review.class))).thenAnswer(invocation -> {
-            Review review = invocation.getArgument(0);
-            ReflectionTestUtils.setField(review, "id", 10L);
-            return review;
-        });
+        when(reviewRepository.save(any(Review.class)))
+                .thenAnswer(invocation -> savedReview(10L, invocation.getArgument(0)));
         ReviewService reviewService = reviewService(CurrentActor.member(1L, 1L), memberReader(false));
 
         // when
@@ -294,8 +284,7 @@ class ReviewServiceTest {
     void should_DelegateStoredTotalPagesValidation_When_UpdatingReviewPage() {
         // given
         ReviewService reviewService = reviewService(CurrentActor.member(1L, 1L), memberReader(false));
-        Review review = Review.create(5L, 1L, "감상", null, null, 10, false, false);
-        ReflectionTestUtils.setField(review, "id", 10L);
+        Review review = savedReview(10L, Review.create(5L, 1L, "감상", null, null, 10, false, false));
         when(reviewRepository.findById(10L)).thenReturn(Optional.of(review));
         ReviewUpdateRequest request = new ReviewUpdateRequest();
         request.setCurrentPage(50);

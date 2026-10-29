@@ -1,5 +1,6 @@
 package com.chaekchaek.feed.service;
 
+import static com.chaekchaek.review.fixture.ReviewFixture.savedReview;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -36,7 +37,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class FeedServiceTest {
 
@@ -182,8 +182,6 @@ class FeedServiceTest {
 
     private Review review(long id, long actorId, String content, boolean spoiler) {
         Review review = Review.create(42L, actorId, content, null, null, null, spoiler, false);
-        ReflectionTestUtils.setField(review, "id", id);
-        ReflectionTestUtils.setField(review, "createdAt", CREATED_AT);
-        return review;
+        return savedReview(id, review, CREATED_AT);
     }
 }

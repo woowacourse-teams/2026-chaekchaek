@@ -1,5 +1,6 @@
 package com.chaekchaek.home.service;
 
+import static com.chaekchaek.review.fixture.ReviewFixture.savedReview;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
@@ -29,7 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class HomeServiceTest {
 
@@ -259,8 +259,6 @@ class HomeServiceTest {
             Instant createdAt
     ) {
         Review review = Review.create(bookId, actorId, content, null, null, null, false, actorId == 2L);
-        ReflectionTestUtils.setField(review, "id", id);
-        ReflectionTestUtils.setField(review, "createdAt", createdAt);
-        return review;
+        return savedReview(id, review, createdAt);
     }
 }
