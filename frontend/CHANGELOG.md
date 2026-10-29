@@ -56,3 +56,44 @@
 
 #### 로딩 성능 개선 
 - intro 페이지에 대한 로딩 성능 개선 [#501][https://github.com/woowacourse-teams/2026-chaekchaek/pull/501), [#503][https://github.com/woowacourse-teams/2026-chaekchaek/pull/503), [#504][https://github.com/woowacourse-teams/2026-chaekchaek/pull/504), [#506][https://github.com/woowacourse-teams/2026-chaekchaek/pull/506)
+
+## 1.3.0
+
+### Added
+
+- 책장 그룹핑 기능 추가 [#639](https://github.com/woowacourse-teams/2026-chaekchaek/pull/639)
+  - 책장 생성 및 이름 수정
+  - 책장에 책 추가
+  - 책장 이미지 저장
+- 책 상세 페이지에 질문, 줄거리, 본문 발췌 기능 추가 [#638](https://github.com/woowacourse-teams/2026-chaekchaek/pull/638)
+- 답글 수정 및 삭제 기능 추가 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+- 리뷰 및 답글 목록에 무한 스크롤 기능 추가 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+- 책 소개가 4줄을 초과하는 경우 더보기 기능 추가 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+- 책 상세 페이지에 YES24 링크 추가 [#573](https://github.com/woowacourse-teams/2026-chaekchaek/pull/573)
+- 랜딩 페이지에 기술 소개 영역 추가 [#649](https://github.com/woowacourse-teams/2026-chaekchaek/pull/649)
+
+### Changed
+
+- 감상 작성 기능 개편 [#637](https://github.com/woowacourse-teams/2026-chaekchaek/pull/637)
+  - 쪽수 및 챕터 입력 제거
+  - 감상 작성 화면에서 별점 설정하도록 변경
+  - 독서 상태 및 현재 쪽수 관련 UI 제거
+- 책 검색 및 상세 페이지의 서재 담기 기능을 책장 선택 방식으로 변경 [#639](https://github.com/woowacourse-teams/2026-chaekchaek/pull/639)
+- 리뷰 및 답글의 수정·삭제 메뉴를 더보기(`...`) 버튼으로 변경 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+- 스포일러 표시 UI 디자인 개선 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+- 최근 감상 영역에 외부 링크 아이콘 추가 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+- 내 서재 편집 중 책을 클릭했을 때 상세 페이지로 이동 못하도록 변경 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+- 내비게이션에서 기록 메뉴 제거 및 '발견'을 '피드'로 변경 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537), [#615](https://github.com/woowacourse-teams/2026-chaekchaek/pull/615)
+
+### Fixed
+
+- 리뷰 및 답글 무한 스크롤에서 페이지 요청이 올바르게 처리되지 않는 문제 수정 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+- 로그인하지 않은 사용자가 피드 페이지에 접근할 수 없는 문제 수정 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+- 감상이나 서재 기록이 없는 책에서 감상 영역이 표시되지 않는 문제 수정 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+- 인기 책 영역의 서비스명 오타 수정 [#537](https://github.com/woowacourse-teams/2026-chaekchaek/pull/537)
+
+### Improved
+
+- 피드 무한 스크롤 시 불필요한 컴포넌트 리렌더링 및 스크롤 이벤트 계산 최적화 [#571](https://github.com/woowacourse-teams/2026-chaekchaek/pull/571)
+- 책 검색 결과 변경 시 스크린 리더에 검색 결과 유무를 안내하도록 접근성 개선 [#654](https://github.com/woowacourse-teams/2026-chaekchaek/pull/654)
+- CSR 환경에서 검색 엔진 최적화(SEO) 개선: HTML 기본 언어를 ko로 변경, robots.txt 추가, sitemap.xml 추가 <!-- PR 확인 필요 -->
