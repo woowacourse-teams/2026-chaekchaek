@@ -636,3 +636,139 @@
     animation: none;
   }
 }
+
+/* FEED: flat book covers and reader typography, without simulated product UI. */
+.feedStory {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 28px 32px;
+}
+.feedCopy {
+  min-width: 0;
+}
+.section .feedCopy h3 {
+  font-size: clamp(26px, 2.1vw, 36px);
+}
+.feedCopy h3 > span {
+  display: block;
+}
+.feedCollage {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-top: 2px;
+  align-self: center;
+}
+.feedCollage blockquote {
+  position: relative;
+  margin: 0;
+  padding: 4px 0 4px 22px;
+}
+.feedCollage blockquote p {
+  font-size: 13px;
+  line-height: 1.85;
+  color: #5f5b55;
+}
+.quoteMark {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  color: var(--orange);
+  font-family: 'Noto Serif KR', serif;
+  font-size: 30px;
+  line-height: 1;
+}
+.thoughtAbove {
+  width: 84%;
+  align-self: flex-end;
+}
+.collageCovers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 10px;
+  margin: 24px 0;
+}
+.collageCovers img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.collageCovers img:nth-child(1) {
+  margin-top: 24px;
+}
+.collageCovers img:nth-child(3) {
+  margin-top: 46px;
+}
+.thoughtBelow {
+  width: 90%;
+  align-self: flex-start;
+}
+.thoughtContinuation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 14px 0 0 22%;
+  width: 1px;
+  color: #bcb4a9;
+  line-height: 0.8;
+}
+.thoughtContinuation span:nth-child(2) {
+  opacity: 0.6;
+}
+.thoughtContinuation span:nth-child(3) {
+  opacity: 0.25;
+}
+.feedResults {
+  grid-column: 1 / -1;
+}
+.feedOutcome {
+  margin-top: 16px !important;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.feedResults .cacheComparison strong {
+  font-size: clamp(40px, 3.6vw, 64px);
+  white-space: nowrap;
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .feedStory {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .feedCollage {
+    width: 100%;
+    max-width: 430px;
+    justify-self: center;
+  }
+}
+@media (max-width: 767px) {
+  .feedStory {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .section .feedCopy h3 {
+    font-size: clamp(23px, 6.1vw, 28px);
+  }
+  .feedCollage {
+    width: 100%;
+    max-width: 390px;
+    justify-self: center;
+  }
+  .feedCollage blockquote p {
+    font-size: 12px;
+  }
+  .collageCovers {
+    gap: 10px;
+    margin: 20px 0;
+  }
+  .feedResults .cacheComparison strong {
+    font-size: clamp(28px, 8vw, 42px);
+    letter-spacing: -1px;
+  }
+  .feedOutcome {
+    font-size: 12px;
+  }
+}

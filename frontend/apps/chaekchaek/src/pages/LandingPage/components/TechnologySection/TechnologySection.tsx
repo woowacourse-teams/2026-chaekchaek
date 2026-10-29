@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 
 import { landingImages } from '../../imgs';
 import { CacheStory } from './CacheStory';
+import { FeedStory } from './FeedStory';
+import { feedCovers } from './feedCollage';
 import { technologySlides } from './technologySlides';
 import styles from './TechnologySection.module.css';
 
@@ -62,18 +64,15 @@ export const TechnologySection = () => {
               }}
             >
               <span className={styles.menuNumber}>{number(index)}</span>
-              {index === 0 ? (
-                <img className={styles.menuBook} src={landingImages.stranger} alt="" />
+              {index !== 2 ? (
+                <img
+                  className={styles.menuBook}
+                  src={index === 0 ? landingImages.stranger : feedCovers[0].src}
+                  alt=""
+                />
               ) : (
-                <span
-                  className={`${styles.menuPreview} ${index === 1 ? styles.feedPreview : styles.authPreview}`}
-                  aria-hidden="true"
-                >
-                  <img
-                    src={index === 1 ? landingImages.mobileReview : landingImages.mobileLibrary}
-                    alt=""
-                    loading="lazy"
-                  />
+                <span className={`${styles.menuPreview} ${styles.authPreview}`} aria-hidden="true">
+                  <img src={landingImages.mobileLibrary} alt="" loading="lazy" />
                 </span>
               )}
               <span className={styles.menuCopy}>
@@ -93,10 +92,12 @@ export const TechnologySection = () => {
               aria-hidden={current !== index}
               inert={current !== index}
               tabIndex={current === index ? 0 : -1}
-              className={`${styles.panel} ${index === 0 ? styles.cachePanel : styles.slide} ${current === index ? styles.active : ''}`}
+              className={`${styles.panel} ${index !== 2 ? styles.cachePanel : styles.slide} ${current === index ? styles.active : ''}`}
             >
               {index === 0 ? (
                 <CacheStory />
+              ) : index === 1 ? (
+                <FeedStory />
               ) : (
                 <>
                   <div className={styles.copy}>
