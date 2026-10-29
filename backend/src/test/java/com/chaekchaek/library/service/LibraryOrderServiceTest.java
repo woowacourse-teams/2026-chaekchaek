@@ -15,9 +15,9 @@ import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.LongStream;
@@ -36,9 +36,7 @@ class LibraryOrderServiceTest {
 
     @BeforeEach
     void setUp() {
-        when(members.findByIdForUpdate(1L)).thenReturn(Optional.of(
-                Member.create("익명", null, LocalDateTime.of(2026, 10, 23, 0, 0))
-        ));
+        when(members.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
     }
 
     @Test
@@ -148,7 +146,7 @@ class LibraryOrderServiceTest {
     @DisplayName("비활성 회원은 책장 조회 전에 거절한다")
     void should_RejectInactiveMember_When_ReorderingLibraries() {
         // given
-        Member member = Member.create("익명", null, LocalDateTime.of(2026, 10, 23, 0, 0));
+        Member member = MemberFixture.member();
         ReflectionTestUtils.setField(member, "accountStatus", AccountStatus.SUSPENDED);
         when(members.findByIdForUpdate(1L)).thenReturn(Optional.of(member));
 

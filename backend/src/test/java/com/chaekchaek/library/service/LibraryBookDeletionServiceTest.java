@@ -20,12 +20,11 @@ import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
-import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -154,7 +153,7 @@ class LibraryBookDeletionServiceTest {
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         MemberRepository memberRepository = mock(MemberRepository.class);
         when(libraryRepository.findById(LIBRARY_ID)).thenReturn(Optional.ofNullable(library));
-        when(memberRepository.findByIdForUpdate(MEMBER_ID)).thenReturn(Optional.of(activeMember()));
+        when(memberRepository.findByIdForUpdate(MEMBER_ID)).thenReturn(Optional.of(MemberFixture.member()));
         when(libraryBookRepository.findByLibraryIdAndBookId(LIBRARY_ID, BOOK_ID)).thenReturn(placement);
         when(libraryBookRepository.countByMemberIdAndBookId(MEMBER_ID, BOOK_ID)).thenReturn(remainingPlacements);
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(MEMBER_ID, BOOK_ID))
@@ -189,10 +188,6 @@ class LibraryBookDeletionServiceTest {
         Library library = Library.create(memberId, "가을책장", NOW);
         ReflectionTestUtils.setField(library, "id", LIBRARY_ID);
         return library;
-    }
-
-    private Member activeMember() {
-        return Member.create("활성 삭제 테스트 회원", null, LocalDateTime.of(2026, 10, 23, 2, 0));
     }
 
     private record TestContext(

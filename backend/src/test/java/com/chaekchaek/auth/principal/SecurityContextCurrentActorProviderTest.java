@@ -14,6 +14,7 @@ import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
 import java.time.Instant;
@@ -72,8 +73,7 @@ class SecurityContextCurrentActorProviderTest {
     void should_PreferMemberActor_When_MemberAndGuestTokenAreProvided() {
         // given
         Fixtures fixtures = new Fixtures();
-        Member member = Member.create("회원", null, LocalDateTime.now(CLOCK));
-        ReflectionTestUtils.setField(member, "id", 3L);
+        Member member = MemberFixture.savedMember(3L);
         Actor memberActor = Actor.member(member, LocalDateTime.now(CLOCK));
         ReflectionTestUtils.setField(memberActor, "id", 4L);
         when(fixtures.memberProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(3L));
@@ -89,8 +89,7 @@ class SecurityContextCurrentActorProviderTest {
     void should_ResolveAdminActor_When_MemberIsAdmin() {
         // given
         Fixtures fixtures = new Fixtures();
-        Member member = Member.create("관리자", null, LocalDateTime.now(CLOCK));
-        ReflectionTestUtils.setField(member, "id", 3L);
+        Member member = MemberFixture.savedMember(3L);
         Actor adminActor = Actor.member(member, LocalDateTime.now(CLOCK));
         adminActor.grantAdmin();
         ReflectionTestUtils.setField(adminActor, "id", 4L);

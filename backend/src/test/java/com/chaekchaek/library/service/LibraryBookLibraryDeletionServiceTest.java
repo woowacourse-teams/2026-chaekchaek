@@ -22,11 +22,11 @@ import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
@@ -100,7 +100,7 @@ class LibraryBookLibraryDeletionServiceTest {
     void should_RejectInactiveMemberBeforeLookingUpLibrary() {
         // given
         TestContext context = context(library(MEMBER_ID, false), List.of(), List.of(), List.of());
-        Member inactiveMember = activeMember();
+        Member inactiveMember = MemberFixture.member();
         ReflectionTestUtils.setField(inactiveMember, "accountStatus", AccountStatus.SUSPENDED);
         when(context.memberRepository().findByIdForUpdate(MEMBER_ID)).thenReturn(Optional.of(inactiveMember));
 
@@ -190,7 +190,7 @@ class LibraryBookLibraryDeletionServiceTest {
         LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
         MemberRepository memberRepository = mock(MemberRepository.class);
         when(libraryRepository.findById(LIBRARY_ID)).thenReturn(Optional.ofNullable(library));
-        when(memberRepository.findByIdForUpdate(MEMBER_ID)).thenReturn(Optional.of(activeMember()));
+        when(memberRepository.findByIdForUpdate(MEMBER_ID)).thenReturn(Optional.of(MemberFixture.member()));
         when(libraryBookRepository.findAllByLibraryId(LIBRARY_ID)).thenReturn(placements);
         when(libraryBookRepository.findPlacedBookIdsByMemberIdAndBookIdIn(MEMBER_ID, List.of(10L, 20L, 30L)))
                 .thenReturn(remainingBookIds);
@@ -234,10 +234,6 @@ class LibraryBookLibraryDeletionServiceTest {
         item.changeCurrentPage(120, 368, NOW.minusSeconds(60));
         item.rate(new BigDecimal("4.5"), NOW.minusSeconds(30));
         return item;
-    }
-
-    private Member activeMember() {
-        return Member.create("활성 책장 삭제 회원", null, LocalDateTime.of(2026, 10, 23, 3, 0));
     }
 
     private record TestContext(

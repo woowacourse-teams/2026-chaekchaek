@@ -20,6 +20,7 @@ import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -55,7 +56,7 @@ class LibraryReadingRecordCoordinatorTest {
     void should_CreateLibraryItemAndAdvanceProgress_When_RecordingReview() {
         // given
         Book book = book(null);
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book));
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
                 .thenReturn(Optional.empty());
@@ -85,7 +86,7 @@ class LibraryReadingRecordCoordinatorTest {
         Book book = book(308);
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 308, NOW.minusSeconds(60));
         item.changeCurrentPage(200, 308, NOW.minusSeconds(60));
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book));
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
                 .thenReturn(Optional.of(item));
@@ -106,7 +107,7 @@ class LibraryReadingRecordCoordinatorTest {
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 308, NOW.minusSeconds(60));
         item.rate(new BigDecimal("4.5"), NOW.minusSeconds(60));
         item.clearReadingState();
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book));
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 2L))
                 .thenReturn(Optional.of(item));
@@ -125,7 +126,7 @@ class LibraryReadingRecordCoordinatorTest {
     @DisplayName("감상 페이지가 전체 페이지를 초과하면 독서 상태 오류를 반환한다")
     void should_ThrowInvalidReadingState_When_ReviewPageExceedsTotalPages() {
         // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
         when(bookRepository.findByIdForUpdate(2L)).thenReturn(Optional.of(book(308)));
 
         // when & then
@@ -142,7 +143,7 @@ class LibraryReadingRecordCoordinatorTest {
     @DisplayName("회원 잠금 후 비활성 상태면 감상 독서 기록을 변경하지 않는다")
     void should_RejectReadingChanges_When_LockedMemberIsInactive(AccountStatus status) {
         // given
-        Member member = activeMember();
+        Member member = MemberFixture.member();
         if (status == AccountStatus.WITHDRAWN) {
             member.withdraw(LocalDateTime.ofInstant(NOW, ZoneOffset.UTC));
         } else {
@@ -158,10 +159,6 @@ class LibraryReadingRecordCoordinatorTest {
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FORBIDDEN));
         verifyNoInteractions(bookRepository, libraryItemRepository);
-    }
-
-    private Member activeMember() {
-        return Member.create("익명회원", null, LocalDateTime.ofInstant(NOW, ZoneOffset.UTC));
     }
 
     private Book book(Integer totalPages) {

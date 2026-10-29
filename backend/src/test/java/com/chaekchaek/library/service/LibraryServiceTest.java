@@ -32,6 +32,7 @@ import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -188,7 +189,7 @@ class LibraryServiceTest {
     @DisplayName("닉네임이 없으면 책장을 조회하거나 저장하지 않는다")
     void should_RequireNickname_BeforeCreatingLibrary() {
         // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
 
         // when & then
         assertThatThrownBy(() -> service.create(1L, "올해읽을책"))
@@ -204,7 +205,7 @@ class LibraryServiceTest {
     @DisplayName("비활성 회원은 책장을 조회하거나 저장할 수 없다")
     void should_RejectCreatingLibrary_When_MemberIsInactive() {
         // given
-        Member inactiveMember = memberWithoutNickname();
+        Member inactiveMember = MemberFixture.member();
         inactiveMember.withdraw(LocalDateTime.now());
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(inactiveMember));
 
@@ -321,7 +322,7 @@ class LibraryServiceTest {
     @Test
     @DisplayName("비활성 회원의 책장 이름 변경은 책장을 조회하기 전에 거절한다")
     void should_RejectRename_When_MemberIsInactive() {
-        Member inactiveMember = memberWithoutNickname();
+        Member inactiveMember = MemberFixture.member();
         inactiveMember.withdraw(LocalDateTime.now());
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(inactiveMember));
 
@@ -338,7 +339,7 @@ class LibraryServiceTest {
     @DisplayName("일괄 완독 대상 중 전체 페이지가 없는 책이 있으면 어느 항목도 변경하지 않는다")
     void should_NotChangeAnyItem_When_BulkFinishContainsUnknownTotalPages() {
         // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
         LibraryItem knownItem = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, CLOCK.instant());
         LibraryItem unknownItem = LibraryItem.create(1L, 3L, ReadingStatus.READING, null, CLOCK.instant());
         when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(2L, 3L)))
@@ -363,7 +364,7 @@ class LibraryServiceTest {
     @DisplayName("일괄 완독은 책을 먼저 잠근 뒤 서재 항목을 잠근다")
     void should_LockBooksBeforeLibraryItems_When_BulkFinishing() {
         // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(activeMember()));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, 100, CLOCK.instant());
         when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(2L)))
                 .thenReturn(List.of(item));
@@ -560,7 +561,7 @@ class LibraryServiceTest {
         assertLibraryNotFound(1L);
 
         for (AccountStatus status : List.of(AccountStatus.WITHDRAWN, AccountStatus.SUSPENDED)) {
-            Member member = activeMember();
+            Member member = MemberFixture.member();
             if (status == AccountStatus.WITHDRAWN) {
                 member.withdraw(LocalDateTime.ofInstant(CLOCK.instant(), ZoneOffset.UTC));
             } else {
@@ -580,7 +581,7 @@ class LibraryServiceTest {
         LibraryItem item = LibraryItem.create(1L, 10L, ReadingStatus.READING, 240, CLOCK.instant());
         item.changeCurrentPage(23, 240, CLOCK.instant());
         item.rate(new BigDecimal("4.5"), CLOCK.instant());
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
         when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(book));
         when(libraryItemRepository.findByMemberIdAndBookIdForUpdate(1L, 10L)).thenReturn(Optional.of(item));
 
@@ -604,7 +605,7 @@ class LibraryServiceTest {
     @DisplayName("미등록 ISBN은 외부 조회나 생성 없이 도서 없음 오류를 반환한다")
     void should_RejectWithoutResolvingBook_When_DeletingUnregisteredIsbnRating() {
         // given
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
 
         // when & then
         assertThatThrownBy(() -> service.removeRatingByIsbn13(1L, ISBN13))
@@ -619,7 +620,7 @@ class LibraryServiceTest {
         // given
         Book book = book(240);
         ReflectionTestUtils.setField(book, "id", 10L);
-        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(memberWithoutNickname()));
+        when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(MemberFixture.member()));
         when(bookRepository.findByIsbn13(ISBN13)).thenReturn(Optional.of(book));
 
         // when
@@ -635,7 +636,7 @@ class LibraryServiceTest {
     @DisplayName("비활성 회원은 ISBN 조회 전에 별점 삭제를 거절한다")
     void should_RejectBeforeLookup_When_InactiveMemberDeletesIsbnRating() {
         // given
-        Member member = memberWithoutNickname();
+        Member member = MemberFixture.member();
         ReflectionTestUtils.setField(member, "accountStatus", AccountStatus.SUSPENDED);
         when(memberRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(member));
 
@@ -652,10 +653,6 @@ class LibraryServiceTest {
                 BusinessException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.LIBRARY_NOT_FOUND)
         );
-    }
-
-    private Member activeMember() {
-        return Member.create("익명", null, LocalDateTime.of(2026, 10, 23, 12, 0));
     }
 
     private LibraryService createService() {
@@ -686,12 +683,8 @@ class LibraryServiceTest {
     }
 
     private Member memberWithNickname() {
-        Member member = memberWithoutNickname();
+        Member member = MemberFixture.member();
         member.updateNickname("책읽는사람");
         return member;
-    }
-
-    private Member memberWithoutNickname() {
-        return Member.create("익명 회원", null, LocalDateTime.of(2026, 8, 14, 0, 0));
     }
 }

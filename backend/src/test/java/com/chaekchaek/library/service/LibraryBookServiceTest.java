@@ -25,12 +25,11 @@ import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.repository.LibraryItemRepository;
 import com.chaekchaek.library.repository.LibraryRepository;
-import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import com.chaekchaek.member.repository.MemberRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +70,7 @@ class LibraryBookServiceTest {
         BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
         PlatformTransactionManager transactionManager = transactionManager();
         when(libraryRepository.findById(LIBRARY_ID)).thenReturn(Optional.of(library));
-        when(memberRepository.findByIdForUpdate(MEMBER_ID)).thenReturn(Optional.of(activeMember()));
+        when(memberRepository.findByIdForUpdate(MEMBER_ID)).thenReturn(Optional.of(MemberFixture.member()));
         when(bookResolver.findOrCreate(ISBN13)).thenReturn(book);
         when(bookRepository.findByIdForUpdate(BOOK_ID)).thenReturn(Optional.of(book));
         when(libraryBookRepository.existsByLibraryIdAndBookId(LIBRARY_ID, BOOK_ID)).thenReturn(false);
@@ -259,7 +258,7 @@ class LibraryBookServiceTest {
         BookCommentCountReader commentCountReader = mock(BookCommentCountReader.class);
         MemberRepository memberRepository = mock(MemberRepository.class);
         lenient().when(libraryRepository.findById(LIBRARY_ID)).thenReturn(Optional.of(library));
-        lenient().when(memberRepository.findByIdForUpdate(MEMBER_ID)).thenReturn(Optional.of(activeMember()));
+        lenient().when(memberRepository.findByIdForUpdate(MEMBER_ID)).thenReturn(Optional.of(MemberFixture.member()));
         lenient().when(bookResolver.findOrCreate(ISBN13)).thenReturn(book);
         lenient().when(bookRepository.findByIdForUpdate(BOOK_ID)).thenReturn(Optional.of(book));
         lenient().when(libraryBookRepository.existsByLibraryIdAndBookId(LIBRARY_ID, BOOK_ID)).thenReturn(false);
@@ -335,10 +334,6 @@ class LibraryBookServiceTest {
         );
         ReflectionTestUtils.setField(book, "id", BOOK_ID);
         return book;
-    }
-
-    private Member activeMember() {
-        return Member.create("활성 테스트 회원", null, LocalDateTime.of(2026, 10, 23, 0, 0));
     }
 
     private record TestContext(
