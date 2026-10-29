@@ -78,20 +78,11 @@ export const BooksPage = () => {
     );
   };
 
-  const [searchAnnouncement, setSearchAnnouncement] = useState('');
-
   const getBooksLoadData = useCallback(async () => {
     if (!keywordQuery.length) {
-      setSearchAnnouncement(`입력한 키워드가 없습니다`);
       return null;
     }
     const data = await getBooks({ page: defaultPage, query: keywordQuery });
-
-    setSearchAnnouncement(
-      data.items.length
-        ? `'${keywordQuery}' 검색 결과가 표시되었습니다.`
-        : `'${keywordQuery}' 검색 결과가 없습니다.`,
-    );
 
     return data;
   }, [keywordQuery, defaultPage]);
@@ -101,6 +92,14 @@ export const BooksPage = () => {
   } = useLoadData({
     queryFn: getBooksLoadData,
   });
+
+  const searchAnnouncement = keywordQuery.length
+    ? `입력한 키워드가 없습니다`
+    : data
+      ? data.items.length
+        ? `'${keywordQuery}' 검색 결과가 표시되었습니다.`
+        : `'${keywordQuery}' 검색 결과가 없습니다.`
+      : '';
 
   const totalPages = data ? Math.ceil(data.totalCount / 10) : 1;
 
