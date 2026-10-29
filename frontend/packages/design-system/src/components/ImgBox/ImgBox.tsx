@@ -11,7 +11,17 @@ import type { Props } from './';
 const classnameDefault = 'ui-ImgBox';
 
 export const ImgBox = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, img, size, reverse = false, sx, style, ...restProps } = props;
+  const {
+    as = 'div',
+    className,
+    img,
+    alt = '',
+    size,
+    reverse = false,
+    sx,
+    style,
+    ...restProps
+  } = props;
 
   const modifiers = {
     size: styles[`size-${size}`],
@@ -31,7 +41,7 @@ export const ImgBox = <T extends ElementType>(props: Props<T>) => {
 
   return (
     <View as={as} className={classname} style={customStyles} {...restProps}>
-      <img src={img} />
+      <img src={img} alt={alt} />
     </View>
   );
 };
