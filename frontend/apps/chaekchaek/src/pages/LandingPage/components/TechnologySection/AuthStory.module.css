@@ -1,0 +1,151 @@
+.story {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 32px;
+}
+.copy {
+  min-width: 0;
+}
+.eyebrow {
+  color: var(--orange);
+  font-size: 12px;
+  letter-spacing: 1.4px;
+  line-height: 1.8;
+}
+.diagram {
+  align-self: center;
+  min-width: 0;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.card {
+  min-width: 0;
+  padding: 20px 0;
+  border-top: 1px solid #d8d4cc;
+  text-align: center;
+}
+.card h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.steps {
+  list-style: none;
+  padding: 0;
+  margin: 22px 0 0;
+  color: #68625a;
+  font-size: 13px;
+  line-height: 1.85;
+}
+.steps li + li::before {
+  content: '↓';
+  display: block;
+  margin: 16px 0;
+  color: #b2aba0;
+  font-size: 22px;
+}
+.provider,
+.token {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.8;
+}
+.provider img {
+  display: block;
+  flex-shrink: 0;
+}
+.steps li > p {
+  max-width: 12em;
+  margin: 0 auto !important;
+  text-wrap: balance;
+}
+.diagramNote {
+  margin-top: 12px !important;
+  color: #8a857e;
+  font-size: 11px;
+  line-height: 1.8;
+  text-align: center;
+}
+.message {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 28px;
+  border-radius: 12px;
+  background: #f0eee880;
+}
+.message p {
+  max-width: 580px;
+  color: #5f5b55;
+  font-size: 16px;
+  line-height: 1.9;
+}
+.message img {
+  display: block;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .story {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .diagram {
+    width: 100%;
+    max-width: 460px;
+    justify-self: center;
+  }
+}
+@media (max-width: 767px) {
+  .story {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+  .eyebrow {
+    font-size: 10px;
+  }
+  .diagram {
+    width: 100%;
+    max-width: 390px;
+    justify-self: center;
+  }
+  .cards {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .card {
+    padding: 18px 0;
+  }
+  .steps {
+    margin-top: 16px;
+  }
+  .steps li + li::before {
+    margin: 12px 0;
+  }
+  .message {
+    gap: 12px;
+    padding: 20px 16px;
+  }
+  .message p {
+    font-size: 13px;
+    line-height: 1.85;
+  }
+  .message img {
+    width: 56px;
+    height: 56px;
+  }
+}
