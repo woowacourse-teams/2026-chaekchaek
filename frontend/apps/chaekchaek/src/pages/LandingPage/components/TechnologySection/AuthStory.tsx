@@ -1,6 +1,7 @@
 import googleIcon from '@/pages/LoginPage/components/SocialLoginButton/assets/google.svg';
 
 import { landingImages } from '../../imgs';
+import typography from './StoryTypography.module.css';
 import { technologySlides } from './technologySlides';
 import styles from './AuthStory.module.css';
 
@@ -10,13 +11,13 @@ export const AuthStory = () => {
 
   return (
     <div className={styles.story}>
-      <div className={styles.copy}>
+      <div className={`${styles.copy} ${typography.copy}`}>
         <p className={styles.eyebrow}>03 / AUTH</p>
         <h3>
           <span>{opening},</span> <span>{closing}</span>
         </h3>
-        <p className={styles.problem}>{auth.problem}</p>
-        <div className={styles.solution}>
+        <p className={typography.problem}>{auth.problem}</p>
+        <div className={typography.solution}>
           <h4>{auth.solution}</h4>
           <ul>
             {auth.details.map((detail) => (
@@ -30,49 +31,29 @@ export const AuthStory = () => {
         role="group"
         aria-label="로그인 사용자와 게스트 사용자의 인증 방식 비교"
       >
-        <p className={styles.diagramHeading}>사용자 상태에 따라 다른 인증 방식</p>
-        <div className={styles.branches} aria-hidden="true">
-          <span />
-          <span />
-        </div>
         <div className={styles.cards}>
           <section className={styles.card} aria-labelledby="auth-member-heading">
             <h4 id="auth-member-heading">로그인 사용자</h4>
-            <p className={styles.method}>Google OAuth</p>
             <ol className={styles.steps}>
               <li>
                 <div className={styles.provider}>
                   <img src={googleIcon} width="18" height="18" alt="" />
-                  <span>Google</span>
+                  <span>Google OAuth</span>
                 </div>
-                <p>OAuth 기반 인증</p>
               </li>
               <li>
-                <p>
-                  로그인 인증 정보로
-                  <br />
-                  API 요청
-                </p>
+                <p>인증 정보로 API 요청</p>
               </li>
             </ol>
           </section>
-          <section
-            className={`${styles.card} ${styles.guestCard}`}
-            aria-labelledby="auth-guest-heading"
-          >
+          <section className={styles.card} aria-labelledby="auth-guest-heading">
             <h4 id="auth-guest-heading">게스트 사용자</h4>
-            <p className={styles.method}>게스트 토큰</p>
             <ol className={styles.steps}>
               <li>
-                <div className={styles.token}>게스트 토큰 발급</div>
-                <p>별도의 인증 정보 사용</p>
+                <div className={styles.token}>게스트 토큰</div>
               </li>
               <li>
-                <p>
-                  게스트 토큰으로
-                  <br />
-                  API 요청
-                </p>
+                <p>게스트 인증 정보로 API 요청</p>
               </li>
             </ol>
           </section>

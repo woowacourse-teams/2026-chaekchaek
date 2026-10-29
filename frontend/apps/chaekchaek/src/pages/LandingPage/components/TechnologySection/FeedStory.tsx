@@ -1,4 +1,5 @@
 import { feedCovers, feedThoughts } from './feedCollage';
+import typography from './StoryTypography.module.css';
 import { technologySlides } from './technologySlides';
 import styles from './TechnologySection.module.css';
 
@@ -8,18 +9,16 @@ export const FeedStory = () => {
 
   return (
     <div className={styles.feedStory}>
-      <div className={styles.feedCopy}>
-        <div className={styles.intro}>
+      <div className={`${styles.feedCopy} ${typography.copy}`}>
+        <div>
           <p className={styles.eyebrow}>02 / FEED</p>
           <h3>
             <span>{opening},</span> <span>{closing}</span>
           </h3>
-          <p className={styles.label}>문제 상황</p>
-          <p className={styles.body}>{feed.problem}</p>
+          <p className={typography.problem}>{feed.problem}</p>
         </div>
-        <div className={styles.solution}>
-          <p className={styles.label}>기술적 해결</p>
-          <p className={styles.solutionTitle}>{feed.solution}</p>
+        <div className={typography.solution}>
+          <h4>{feed.solution}</h4>
           <ul>
             {feed.details.map((detail) => (
               <li key={detail}>{detail}</li>

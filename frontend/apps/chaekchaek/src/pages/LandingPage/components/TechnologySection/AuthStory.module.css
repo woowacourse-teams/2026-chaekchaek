@@ -1,7 +1,7 @@
 .story {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  gap: 28px 32px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 32px;
 }
 .copy {
   min-width: 0;
@@ -12,155 +12,72 @@
   letter-spacing: 1.4px;
   line-height: 1.8;
 }
-.copy h3 {
-  margin: 16px 0 20px !important;
-  font-size: clamp(26px, 2.1vw, 36px);
-  line-height: 1.5;
-  font-weight: 400;
-  letter-spacing: -0.8px;
-}
-.copy h3 span {
-  display: block;
-}
-.problem {
-  color: #5f5b55;
-  font-size: 15px;
-  line-height: 1.85;
-}
-.solution {
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid #dedad3;
-}
-.solution h4 {
-  margin: 0;
-  font-size: 17px;
-  line-height: 1.7;
-  font-weight: 600;
-  letter-spacing: -0.4px;
-}
-.solution ul {
-  padding-left: 20px;
-  margin: 12px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 2;
-}
-.solution li::marker {
-  color: var(--orange);
-}
 .diagram {
   align-self: center;
   min-width: 0;
 }
-.diagramHeading {
-  width: fit-content;
-  max-width: 100%;
-  margin: 0 auto !important;
-  padding: 10px 16px;
-  border-radius: 10px;
-  background: #f0eee8a0;
-  text-align: center;
-  color: #5f5b55;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.branches {
-  display: flex;
-  justify-content: center;
-  height: 30px;
-  margin: 0 25%;
-}
-.branches span {
-  width: 50%;
-  border-top: 1px dashed #b9b3a9;
-  margin-top: 12px;
-}
-.branches span:first-child {
-  border-left: 1px dashed #b9b3a9;
-  border-top-left-radius: 14px;
-}
-.branches span:last-child {
-  border-right: 1px dashed #b9b3a9;
-  border-top-right-radius: 14px;
-}
 .cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 24px;
 }
 .card {
   min-width: 0;
-  padding: 22px 14px 18px;
-  border: 1px solid #e8e3da;
-  border-top: 2px solid #f15a2466;
-  border-radius: 12px;
-  background: #ffffff70;
+  padding: 20px 0;
+  border-top: 1px solid #d8d4cc;
   text-align: center;
-}
-.guestCard {
-  border-top-color: #b3c6cb;
 }
 .card h4 {
   margin: 0;
+  color: var(--ink);
   font-size: 17px;
-  line-height: 1.5;
-  font-weight: 600;
-}
-.method {
-  margin-top: 8px !important;
-  font-size: 12px;
-  line-height: 1.7;
-  color: var(--muted);
+  font-weight: 400;
+  line-height: 1.6;
 }
 .steps {
   list-style: none;
   padding: 0;
-  margin: 16px 0 0;
-  font-size: 12px;
-  line-height: 1.8;
-  color: #5f5b55;
+  margin: 22px 0 0;
+  color: #68625a;
+  font-size: 13px;
+  line-height: 1.85;
 }
 .steps li + li::before {
   content: '↓';
   display: block;
-  margin: 12px 0;
-  color: #aaa49b;
-  font-size: 20px;
+  margin: 16px 0;
+  color: #b2aba0;
+  font-size: 22px;
 }
 .provider,
 .token {
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
-  min-height: 40px;
-  padding: 8px;
-  border-radius: 8px;
-  background: #f0eee880;
   color: var(--ink);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.8;
 }
 .provider img {
   display: block;
   flex-shrink: 0;
 }
 .steps li > p {
-  margin-top: 8px !important;
-}
-.steps li:last-child {
-  padding-bottom: 12px;
+  max-width: 12em;
+  margin: 0 auto !important;
+  text-wrap: balance;
 }
 .diagramNote {
-  margin-top: 14px !important;
+  margin-top: 12px !important;
+  color: #8a857e;
   font-size: 11px;
   line-height: 1.8;
-  color: var(--muted);
   text-align: center;
 }
 .message {
-  grid-column: 1 / -1;
+  grid-column: 1/-1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -171,14 +88,14 @@
 }
 .message p {
   max-width: 580px;
+  color: #5f5b55;
   font-size: 16px;
   line-height: 1.9;
-  color: #5f5b55;
 }
 .message img {
   display: block;
-  width: 96px;
-  height: 96px;
+  width: 80px;
+  height: 80px;
   flex-shrink: 0;
   object-fit: contain;
   mix-blend-mode: multiply;
@@ -196,46 +113,28 @@
 @media (max-width: 767px) {
   .story {
     grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
+    gap: 32px;
   }
   .eyebrow {
     font-size: 10px;
-  }
-  .copy h3 {
-    font-size: clamp(23px, 6.1vw, 28px);
-    margin: 12px 0 18px !important;
-  }
-  .problem {
-    font-size: 14px;
-  }
-  .solution h4 {
-    font-size: 16px;
-  }
-  .solution ul {
-    font-size: 12px;
   }
   .diagram {
     width: 100%;
     max-width: 390px;
     justify-self: center;
   }
-  .branches {
-    display: none;
-  }
   .cards {
     grid-template-columns: minmax(0, 1fr);
-    margin-top: 16px;
+    gap: 12px;
   }
   .card {
-    padding: 20px;
+    padding: 18px 0;
   }
   .steps {
-    margin-top: 14px;
+    margin-top: 16px;
   }
-  .provider,
-  .token {
-    max-width: 220px;
-    margin: 0 auto;
+  .steps li + li::before {
+    margin: 12px 0;
   }
   .message {
     gap: 12px;

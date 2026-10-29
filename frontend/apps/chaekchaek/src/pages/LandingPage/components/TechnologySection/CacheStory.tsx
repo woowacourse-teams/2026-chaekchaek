@@ -1,6 +1,7 @@
 import { landingImages } from '../../imgs';
 // Same cover as the supplied reference: https://image.yes24.com/goods/143911524/XL
 import honmono from './imgs/honmono.jpg';
+import typography from './StoryTypography.module.css';
 import { technologySlides } from './technologySlides';
 import styles from './TechnologySection.module.css';
 
@@ -10,13 +11,13 @@ export const CacheStory = () => {
 
   return (
     <div className={styles.cacheStory}>
-      <div className={styles.cacheCopy}>
+      <div className={`${styles.cacheCopy} ${typography.copy}`}>
         <p className={styles.eyebrow}>01 / CACHE</p>
         <h3>
           <span>{opening},</span> <span>{closing}</span>
         </h3>
-        <p className={styles.body}>{cache.problem}</p>
-        <div className={styles.cacheSolution}>
+        <p className={typography.problem}>{cache.problem}</p>
+        <div className={typography.solution}>
           <h4>{cache.solution}</h4>
           <ul>
             {cache.details.map((detail) => (

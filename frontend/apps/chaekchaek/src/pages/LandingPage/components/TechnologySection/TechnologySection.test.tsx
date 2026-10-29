@@ -35,8 +35,8 @@ describe('기술 소개 캐러셀', () => {
     const panel = within(screen.getByRole('tabpanel'));
     expect(panel.getByRole('heading', { name: '로그인 사용자' })).toBeInTheDocument();
     expect(panel.getByRole('heading', { name: '게스트 사용자' })).toBeInTheDocument();
-    expect(panel.getByText('Google')).toBeInTheDocument();
-    expect(panel.getByText('게스트 토큰 발급')).toBeInTheDocument();
+    expect(panel.getByText('Google OAuth')).toBeInTheDocument();
+    expect(panel.getByText('게스트 토큰')).toBeInTheDocument();
     expect(panel.queryByText(/Kakao|카카오|90일/)).not.toBeInTheDocument();
     expect(panel.queryByRole('button')).not.toBeInTheDocument();
     expect(panel.queryByRole('link')).not.toBeInTheDocument();

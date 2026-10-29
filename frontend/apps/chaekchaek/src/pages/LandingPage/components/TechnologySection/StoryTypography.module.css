@@ -1,0 +1,68 @@
+.copy {
+  min-width: 0;
+  container-type: inline-size;
+}
+.copy h3 {
+  margin: 14px 0 16px !important;
+  max-width: 24ch;
+  color: var(--ink);
+  font-size: clamp(23px, 6.5cqw, 34px);
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: -0.7px;
+  text-wrap: balance;
+}
+.copy h3 span {
+  display: inline-block;
+  max-width: 100%;
+}
+.problem {
+  color: #68625a;
+  font-size: 14px;
+  line-height: 1.85;
+}
+.solution {
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid #dedad3;
+}
+.solution h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: -0.4px;
+}
+.solution ul {
+  padding-left: 18px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 2;
+}
+.solution li + li {
+  margin-top: 3px;
+}
+.solution li::marker {
+  color: #f15a2499;
+  font-size: 0.75em;
+}
+@media (max-width: 767px) {
+  .copy h3 {
+    margin: 12px 0 14px !important;
+  }
+  .problem {
+    font-size: 13px;
+  }
+  .solution {
+    margin-top: 24px;
+    padding-top: 18px;
+  }
+  .solution h4 {
+    font-size: 18px;
+  }
+  .solution ul {
+    font-size: 12px;
+  }
+}
