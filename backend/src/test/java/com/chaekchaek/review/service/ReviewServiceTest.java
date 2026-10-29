@@ -376,7 +376,7 @@ class ReviewServiceTest {
         reviewService.updateReview(10L, request);
 
         // then
-        verify(readingRecordCoordinator).validateReviewPage(5L, 50, 100);
+        verify(readingRecordCoordinator).validateReviewPage(1L, 5L, 50, 100);
     }
 
     @Test

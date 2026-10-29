@@ -2,17 +2,23 @@ package com.chaekchaek.library.controller;
 
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.domain.LibrarySort;
 import com.chaekchaek.library.domain.ReadingStatus;
 import com.chaekchaek.library.dto.AddLibraryItemRequest;
 import com.chaekchaek.library.dto.BulkDeleteLibraryItemsRequest;
 import com.chaekchaek.library.dto.BulkUpdateLibraryStatusRequest;
+import com.chaekchaek.library.dto.CreateLibraryRequest;
 import com.chaekchaek.library.dto.LibraryItemResponse;
 import com.chaekchaek.library.dto.LibraryListResponse;
+import com.chaekchaek.library.dto.LibraryResponse;
 import com.chaekchaek.library.dto.PublicLibraryListResponse;
 import com.chaekchaek.library.dto.RateBookRequest;
 import com.chaekchaek.library.dto.RatingComparisonResponse;
+import com.chaekchaek.library.dto.RenameLibraryRequest;
 import com.chaekchaek.library.dto.UpdateLibraryItemRequest;
+import com.chaekchaek.library.service.LibraryBookService;
 import com.chaekchaek.library.service.LibraryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -42,7 +48,61 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class LibraryController {
 
     private final LibraryService libraryService;
+    private final LibraryBookService libraryBookService;
     private final CurrentMemberIdProvider currentMemberIdProvider;
+
+    @PostMapping("/libraries")
+    public ResponseEntity<LibraryResponse> create(@Valid @RequestBody CreateLibraryRequest request) {
+        LibraryResponse response = libraryService.create(writeMemberId(), request.name());
+        return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
+                        .path("/{libraryId}")
+                        .buildAndExpand(response.libraryId())
+                        .toUri())
+                .body(response);
+    }
+
+    @PatchMapping("/libraries/{libraryId}")
+    public ResponseEntity<Void> rename(
+            @PathVariable @Positive long libraryId,
+            @Valid @RequestBody RenameLibraryRequest request
+    ) {
+        libraryService.rename(writeMemberId(), libraryId, request.name());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/libraries/{libraryId}")
+    public ResponseEntity<LibraryItemResponse> addToLibrary(
+            @PathVariable @Positive long libraryId,
+            @Valid @RequestBody AddLibraryItemRequest request
+    ) {
+        LibraryItemResponse response = libraryBookService.addByIsbn13(
+                writeMemberId(),
+                libraryId,
+                new Isbn13(request.isbn13()),
+                request.status(),
+                request.totalPages()
+        );
+        return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest()
+                        .path("/books/{bookId}")
+                        .buildAndExpand(response.bookId())
+                        .toUri())
+                .body(response);
+    }
+
+    @DeleteMapping("/libraries/{libraryId}")
+    public ResponseEntity<Void> deleteLibrary(@PathVariable @Positive long libraryId) {
+        libraryBookService.deleteLibrary(writeMemberId(), libraryId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/libraries/{libraryId}/books/{bookId}")
+    public ResponseEntity<Void> removeFromLibrary(
+            @PathVariable @Positive long libraryId,
+            @PathVariable @Positive long bookId
+    ) {
+        libraryBookService.delete(writeMemberId(), libraryId, bookId);
+        return ResponseEntity.noContent().build();
+    }
 
     @GetMapping("/library")
     public ResponseEntity<LibraryListResponse> getLibrary(
@@ -66,7 +126,7 @@ public class LibraryController {
     @PostMapping("/library")
     public ResponseEntity<LibraryItemResponse> add(@Valid @RequestBody AddLibraryItemRequest request) {
         LibraryItemResponse response = libraryService.addByIsbn13(
-                memberId(),
+                writeMemberId(),
                 new Isbn13(request.isbn13()),
                 request.status(),
                 request.totalPages()
@@ -82,7 +142,7 @@ public class LibraryController {
             @Valid @RequestBody UpdateLibraryItemRequest request
     ) {
         return ResponseEntity.ok(libraryService.update(
-                memberId(),
+                writeMemberId(),
                 bookId,
                 request.status(),
                 request.currentPage(),
@@ -92,25 +152,25 @@ public class LibraryController {
 
     @DeleteMapping("/library/{bookId}")
     public ResponseEntity<Void> delete(@PathVariable long bookId) {
-        libraryService.delete(memberId(), bookId);
+        libraryService.delete(writeMemberId(), bookId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/library/bulk-delete")
     public ResponseEntity<Void> bulkDelete(@Valid @RequestBody BulkDeleteLibraryItemsRequest request) {
         if (request.hasDuplicateBookIds()) {
-            throw new IllegalArgumentException("Book IDs must not be duplicated");
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
-        libraryService.bulkDelete(memberId(), request.bookIds());
+        libraryService.bulkDelete(writeMemberId(), request.bookIds());
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/library/bulk-status")
     public ResponseEntity<Void> bulkChangeStatus(@Valid @RequestBody BulkUpdateLibraryStatusRequest request) {
         if (request.hasDuplicateBookIds()) {
-            throw new IllegalArgumentException("Book IDs must not be duplicated");
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
-        libraryService.bulkChangeStatus(memberId(), request.bookIds(), request.status());
+        libraryService.bulkChangeStatus(writeMemberId(), request.bookIds(), request.status());
         return ResponseEntity.noContent().build();
     }
 
@@ -119,12 +179,12 @@ public class LibraryController {
             @PathVariable long bookId,
             @Valid @RequestBody RateBookRequest request
     ) {
-        return ResponseEntity.ok(libraryService.rate(memberId(), bookId, request.rating()));
+        return ResponseEntity.ok(libraryService.rate(writeMemberId(), bookId, request.rating()));
     }
 
     @DeleteMapping("/library/{bookId}/rating")
     public ResponseEntity<Void> removeRating(@PathVariable long bookId) {
-        libraryService.removeRating(memberId(), bookId);
+        libraryService.removeRating(writeMemberId(), bookId);
         return ResponseEntity.noContent().build();
     }
 
@@ -135,6 +195,10 @@ public class LibraryController {
             BigDecimal criterion
     ) {
         return ResponseEntity.ok(libraryService.compareRatingsByIsbn13(memberId(), new Isbn13(isbn13), criterion));
+    }
+
+    private long writeMemberId() {
+        return currentMemberIdProvider.getCurrentMemberIdForWrite();
     }
 
     private long memberId() {

@@ -1,0 +1,42 @@
+package com.chaekchaek.library.repository;
+
+import com.chaekchaek.library.domain.Library;
+import java.util.Optional;
+import java.util.List;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface LibraryRepository extends JpaRepository<Library, Long> {
+
+    boolean existsByMemberIdAndIsDefaultTrue(long memberId);
+
+    Optional<Library> findByMemberIdAndIsDefaultTrue(long memberId);
+
+    Optional<Library> findByMemberIdAndName(long memberId, String name);
+    List<Library> findAllByMemberIdOrderByDisplayOrderAscIdAsc(long memberId);
+
+    @Query("""
+            select coalesce(max(l.displayOrder), 0)
+            from Library l
+            where l.memberId = :memberId
+            """)
+    long findMaxDisplayOrderByMemberId(@Param("memberId") long memberId);
+
+    default Library create(Library library) {
+        try {
+            return saveAndFlush(library);
+        } catch (DataIntegrityViolationException exception) {
+            throw LibraryNameExceptionTranslator.translate(exception);
+        }
+    }
+
+    default void rename(Library library) {
+        try {
+            saveAndFlush(library);
+        } catch (DataIntegrityViolationException exception) {
+            throw LibraryNameExceptionTranslator.translate(exception);
+        }
+    }
+}

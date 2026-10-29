@@ -77,7 +77,7 @@ class BookControllerTest {
                     .description("등록된 도서 ID. 미등록 도서라면 null")
                     .optional(),
             fieldWithPath("items[].isRegisteredInMyLibrary").type(JsonFieldType.BOOLEAN)
-                    .description("로그인 회원의 내 서재 등록 여부. 등록되어 있으면 true, 미등록이면 false, 비로그인 요청이면 null")
+                    .description("로그인 회원이 소유한 책장에 배치돼 있으면 true, 공유 기록이나 별점만 있으면 false, 비로그인이면 null")
                     .optional().attributes(key("nullable").value(true)),
             fieldWithPath("items[].title").type(JsonFieldType.STRING)
                     .description("도서 제목"),
@@ -130,11 +130,21 @@ class BookControllerTest {
             fieldWithPath("replyCount").type(JsonFieldType.NUMBER).description("답글 수"),
             fieldWithPath("averageRating").type(JsonFieldType.NUMBER).description("평균 별점").optional(),
             fieldWithPath("ratingCount").type(JsonFieldType.NUMBER).description("별점 수"),
+            fieldWithPath("isRegisteredInMyLibrary").type(JsonFieldType.BOOLEAN)
+                    .description("내 책장 배치가 하나 이상이면 true, 없으면 false, 비회원은 null").optional(),
             fieldWithPath("myRatingCount").type(JsonFieldType.NUMBER).description("내가 별점을 등록한 도서 수").optional(),
-            fieldWithPath("myRecord").type(JsonFieldType.OBJECT).description("내 서재 기록").optional(),
-            fieldWithPath("myRecord.status").type(JsonFieldType.STRING).description("읽기 상태").optional(),
-            fieldWithPath("myRecord.currentPage").type(JsonFieldType.NUMBER).description("현재 페이지").optional(),
-            fieldWithPath("myRecord.myRating").type(JsonFieldType.NUMBER).description("내 별점").optional(),
+            fieldWithPath("myRecord").type(JsonFieldType.OBJECT)
+                    .description("독서 기록과 별점이 모두 없으면 null")
+                    .optional().attributes(key("nullable").value(true)),
+            fieldWithPath("myRecord.status").type(JsonFieldType.STRING)
+                    .description("읽기 상태. 마지막 배치 삭제 뒤 독서 기록이 없으면 null")
+                    .optional().attributes(key("nullable").value(true)),
+            fieldWithPath("myRecord.currentPage").type(JsonFieldType.NUMBER)
+                    .description("현재 페이지. 마지막 배치 삭제 뒤 독서 기록이 없으면 null")
+                    .optional().attributes(key("nullable").value(true)),
+            fieldWithPath("myRecord.myRating").type(JsonFieldType.NUMBER)
+                    .description("내 별점. 별점이 없으면 null")
+                    .optional().attributes(key("nullable").value(true)),
             fieldWithPath("purchaseUrl").type(JsonFieldType.STRING).description("구매 링크").optional(),
             fieldWithPath("source").type(JsonFieldType.STRING).description("도서 정보 출처"),
             fieldWithPath("bookQuestion").type(JsonFieldType.OBJECT).description("책에 대한 질문. 등록된 질문이 없으면 null").optional(),
@@ -461,6 +471,7 @@ class BookControllerTest {
                         120,
                         new BigDecimal("4.2")
                 ),
+                true,
                 "https://www.yes24.com/product/goods/101375809",
                 "yes24",
                 new BookQuestionResponse(

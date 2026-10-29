@@ -4,13 +4,19 @@ import com.chaekchaek.actor.domain.Actor;
 import com.chaekchaek.actor.repository.ActorRepository;
 import com.chaekchaek.auth.service.AppleAccountService;
 import com.chaekchaek.auth.token.refresh.RefreshTokenRepository;
+import com.chaekchaek.common.exception.BusinessException;
+import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.common.exception.MemberNotFoundException;
 import com.chaekchaek.common.exception.NicknameAlreadyExistsException;
 import com.chaekchaek.common.exception.NicknameRequiredException;
+import com.chaekchaek.library.domain.Library;
+import com.chaekchaek.library.repository.LibraryRepository;
+import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.dto.MemberResponse;
 import com.chaekchaek.member.dto.MyInfoResponse;
 import com.chaekchaek.member.repository.MemberRepository;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -29,6 +35,8 @@ public class MemberService {
     private final ActorRepository actorRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final AppleAccountService appleAccountService;
+    private final LibraryRepository libraryRepository;
+    private final Clock clock;
 
     public MyInfoResponse getMyInfo(Long memberId) {
         Member member = getMember(memberId);
@@ -40,11 +48,21 @@ public class MemberService {
 
     @Transactional
     public MemberResponse updateNickname(Long memberId, String nickname) {
-        Member member = getMember(memberId);
+        Member member = memberRepository.findByIdForUpdate(memberId)
+                .orElseThrow(MemberNotFoundException::new);
+        if (member.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        boolean firstNickname = member.getNickname() == null;
+        if (firstNickname) {
+            Library.validateNewName(nickname);
+        }
         if (memberRepository.existsByNicknameAndIdNot(nickname, memberId)) {
             throw new NicknameAlreadyExistsException();
         }
-
+        if (firstNickname) {
+            ensureDefaultLibrary(memberId, nickname);
+        }
         member.updateNickname(nickname);
         log.atInfo()
                 .addKeyValue("type", "event")
@@ -52,6 +70,22 @@ public class MemberService {
                 .addKeyValue("memberId", memberId)
                 .log("Nickname updated");
         return MemberResponse.from(member);
+    }
+
+    private void ensureDefaultLibrary(long memberId, String nickname) {
+        if (libraryRepository.existsByMemberIdAndIsDefaultTrue(memberId)) {
+            return;
+        }
+        libraryRepository.findByMemberIdAndName(memberId, nickname)
+                .ifPresentOrElse(Library::promoteToDefault, () -> {
+                    long displayOrder = libraryRepository.findMaxDisplayOrderByMemberId(memberId) + 1;
+                    libraryRepository.create(Library.createDefault(
+                            memberId,
+                            nickname,
+                            displayOrder,
+                            clock.instant()
+                    ));
+                });
     }
 
     @Transactional

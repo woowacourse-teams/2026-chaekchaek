@@ -78,6 +78,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
                         "/api/v1/auth/**",
+                        "/api/v1/members/me/nickname",
+                        "/api/v1/libraries/order",
+                        "/api/v1/libraries/*/books/order",
                         "/api/v1/admin/**",
                         "/api/v1/recommended-books",
                         "/api/v1/recommended-books/*",
@@ -87,7 +90,9 @@ public class SecurityConfig {
                         "/api/v1/reviews/*/replies",
                         "/api/v1/reviews/*/reactions",
                         "/api/v1/replies/*",
-                        "/api/v1/replies/*/reactions"
+                        "/api/v1/replies/*/reactions",
+                        "/api/v1/libraries",
+                        "/api/v1/libraries/**"
                 ))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(

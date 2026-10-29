@@ -15,6 +15,6 @@ public interface ReadingRecordCoordinator {
      * request value. Implementations must reject a missing required total, conflicts, and pages
      * beyond the effective total with the appropriate business error.
      */
-    default void validateReviewPage(long bookId, Integer currentPage, Integer totalPages) {
+    default void validateReviewPage(long memberId, long bookId, Integer currentPage, Integer totalPages) {
     }
 }

@@ -14,8 +14,7 @@ import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
-import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.time.LocalDate;
 import java.util.List;
@@ -194,18 +193,16 @@ class BookSearchServiceTest {
         BookRepository bookRepository = mock(BookRepository.class);
         BookSearchActivityCountReader searchActivityCountReader = mock(BookSearchActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        LibraryBookRepository libraryBookRepository = mock(LibraryBookRepository.class);
         BookSearchService service = new BookSearchService(
                 bookClient,
                 bookRepository,
                 searchActivityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryBookRepository
         );
         BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
         Book registeredBook = registeredBook(42L, searchedBook.isbn13());
-        LibraryItem libraryItem = mock(LibraryItem.class);
-        when(libraryItem.getBookId()).thenReturn(42L);
         when(bookClient.search("마션", 1)).thenReturn(new BookSearchResult(
                 1,
                 null,
@@ -215,8 +212,8 @@ class BookSearchServiceTest {
                 List.of(registeredBook));
         when(searchActivityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(1L));
-        when(libraryItemRepository.findAllByMemberIdAndBookIdIn(1L, List.of(42L)))
-                .thenReturn(List.of(libraryItem));
+        when(libraryBookRepository.findPlacedBookIdsByMemberIdAndBookIdIn(1L, List.of(42L)))
+                .thenReturn(List.of(42L));
 
         // when
         BookItem item = service.search("마션", 1).items().getFirst();
@@ -313,22 +310,22 @@ class BookSearchServiceTest {
                 bookRepository,
                 searchActivityCountReader,
                 currentMemberIdProvider,
-                mock(LibraryItemRepository.class)
+                mock(LibraryBookRepository.class)
         );
     }
 
-    private BookItem searchRegisteredBook(OptionalLong memberId, List<LibraryItem> libraryItems) {
+    private BookItem searchRegisteredBook(OptionalLong memberId, List<Long> placedBookIds) {
         BookSearchClient bookClient = mock(BookSearchClient.class);
         BookRepository bookRepository = mock(BookRepository.class);
         BookSearchActivityCountReader searchActivityCountReader = mock(BookSearchActivityCountReader.class);
         CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        LibraryBookRepository libraryBookRepository = mock(LibraryBookRepository.class);
         BookSearchService service = new BookSearchService(
                 bookClient,
                 bookRepository,
                 searchActivityCountReader,
                 currentMemberIdProvider,
-                libraryItemRepository
+                libraryBookRepository
         );
         BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
         Book registeredBook = registeredBook(42L, searchedBook.isbn13());
@@ -342,8 +339,8 @@ class BookSearchServiceTest {
         when(searchActivityCountReader.getActivityCounts(List.of(42L))).thenReturn(Map.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(memberId);
         if (memberId.isPresent()) {
-            when(libraryItemRepository.findAllByMemberIdAndBookIdIn(memberId.getAsLong(), List.of(42L)))
-                    .thenReturn(libraryItems);
+            when(libraryBookRepository.findPlacedBookIdsByMemberIdAndBookIdIn(memberId.getAsLong(), List.of(42L)))
+                    .thenReturn(placedBookIds);
         }
 
         return service.search("마션", 1).items().getFirst();
