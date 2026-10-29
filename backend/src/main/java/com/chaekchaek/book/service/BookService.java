@@ -3,6 +3,7 @@ package com.chaekchaek.book.service;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.dto.BookDetailResponse;
+import com.chaekchaek.book.dto.BookDetailV2Response;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,5 +19,11 @@ public class BookService {
     public BookDetailResponse getDetail(Isbn13 isbn13) {
         Book book = bookResolver.lookup(isbn13);
         return bookDetailAssembler.assemble(book);
+    }
+
+    @Transactional(readOnly = true)
+    public BookDetailV2Response getDetailV2(Isbn13 isbn13) {
+        Book book = bookResolver.lookup(isbn13);
+        return BookDetailV2Response.from(bookDetailAssembler.assemble(book));
     }
 }
