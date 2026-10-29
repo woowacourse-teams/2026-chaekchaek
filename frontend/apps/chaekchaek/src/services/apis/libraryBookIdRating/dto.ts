@@ -18,7 +18,6 @@ export type PutLibraryBookIdRatingResponseDto = ResponseDto<{
   totalPages: number;
   publisher: string;
   publishedDate: string;
-  currentPage: number;
   category: string;
   status: string;
   authors: string[];

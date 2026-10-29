@@ -23,7 +23,6 @@ export type GetLibrary = (params: GetLibraryParams) => Promise<{
     totalPages: number;
     commentCount: number;
     status: string;
-    currentPage: number;
     rating: number;
     addedAt: string;
     readingUpdatedAt: string;

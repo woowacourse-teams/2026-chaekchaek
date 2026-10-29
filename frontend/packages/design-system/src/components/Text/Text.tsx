@@ -15,6 +15,7 @@ export const Text = <T extends ElementType>(props: Props<T>) => {
     color = 'default',
     size = 'medium',
     strong = false,
+    underline = false,
     className,
     ...restProps
   } = props;
@@ -23,6 +24,7 @@ export const Text = <T extends ElementType>(props: Props<T>) => {
     color: styles[`color-${color}`],
     size: styles[`size-${size}`],
     strong: strong && styles['is-strong'],
+    underline: underline && styles['is-underline'],
   };
 
   const classname = createClassName({

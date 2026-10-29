@@ -102,3 +102,12 @@
   font-size: 0.75rem; /* 12px */
   color: #888888;
 }
+
+.is-ellipsis .title,
+.is-ellipsis .content,
+.is-ellipsis .description {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

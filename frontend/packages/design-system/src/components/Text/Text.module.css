@@ -59,3 +59,7 @@
 .is-strong {
   font-weight: 700;
 }
+
+.is-underline {
+  text-decoration: underline;
+}

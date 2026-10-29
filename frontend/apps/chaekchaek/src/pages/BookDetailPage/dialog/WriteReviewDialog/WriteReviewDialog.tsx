@@ -1,15 +1,6 @@
-import type { ChangeEvent, SubmitEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type SubmitEvent } from 'react';
 
-import {
-  Button,
-  Dialog,
-  Field,
-  FieldGroup,
-  Input,
-  Radio,
-  Text,
-  Textarea,
-} from '@chaekchaek/design-system';
+import { Button, Dialog, Field, Radio, Rating, Text, Textarea } from '@chaekchaek/design-system';
 
 import { track } from '@/analytics/track';
 
@@ -17,6 +8,7 @@ import { useFormValues } from '@/hooks/useFormValues';
 import { useExecute } from '@/services/core/useExecute';
 import { postBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
 import { postBooksByIsbnIsbn13Reviews } from '@/services/apis/booksByIsbnIsbn13Reviews/repository';
+import { putBooksByIsbnIsbn13Rating } from '@/services/apis/booksByIsbnIsbn13Rating/repository';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
@@ -34,15 +26,31 @@ const buildReviewRequest = (formValues: ReviewFormValues) => {
     isSpoiler: formValues.isSpoiler,
     ...compact({
       quote: formValues.quote || undefined,
-      chapter: formValues.chapter || undefined,
-      currentPage: formValues.currentPage ? Number(formValues.currentPage) : undefined,
     }),
   };
+};
+
+const RatingMessages = {
+  0.5: '아쉬웠어요',
+  1.0: '별로였어요',
+  1.5: '조금 아쉬웠어요',
+  2.0: '아쉬운 점이 많았어요',
+  2.5: '그저 그랬어요',
+  3.0: '괜찮았어요',
+  3.5: '꽤 좋았어요',
+  4.0: '좋았어요',
+  4.5: '정말 좋았어요',
+  5.0: '최고였어요',
+};
+
+const getRatingMessageNumber = (rating: number) => {
+  return Math.round(rating * 2) / 2;
 };
 
 export const WriteReviewDialog = ({
   bookId,
   isbn,
+  myRating: defaultRating,
   onReviewWritten,
   onClose,
 }: WriteReviewDialogProps) => {
@@ -53,8 +61,6 @@ export const WriteReviewDialog = ({
       content: '',
       isSpoiler: false,
       quote: '',
-      currentPage: '',
-      chapter: '',
     },
     validate: validateReview,
   });
@@ -76,42 +82,72 @@ export const WriteReviewDialog = ({
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
+    await Promise.all([writeReview(), ...(isAuthenticated ? [updateRating()] : [])]);
+
+    onReviewWritten();
+    onClose();
+  };
+
+  const writeReview = async () => {
     const requestData = buildReviewRequest(values);
 
-    if (isAuthenticated) {
-      await postBookReviewMutate({
-        bookId,
-        ...requestData,
-      });
+    const guestContext =
+      !isAuthenticated && guest?.guestToken ? { guestToken: guest.guestToken } : undefined;
 
-      if (user) {
-        track('review_submit', {
-          actor_type: user.actorType,
-          actor_id: user.actorId,
-          isbn,
-        });
-      }
+    if (bookId) {
+      await postBookReviewMutate(
+        {
+          bookId,
+          ...requestData,
+        },
+        guestContext,
+      );
     } else {
-      if (!guest) return;
       await postBookReviewByIsbnMutate(
         {
           isbn13: isbn,
           ...requestData,
         },
-        {
-          guestToken: guest.guestToken,
-        },
+        guestContext,
       );
-
-      track('review_submit', {
-        actor_type: guest.actorType,
-        actor_id: guest.actorId,
-        isbn,
-      });
     }
 
-    onReviewWritten();
-    onClose();
+    const actorType = user?.actorType ?? guest?.actorType;
+    const actorId = user?.actorId ?? guest?.actorId;
+
+    if (!(actorType && actorId)) return;
+    track('review_submit', {
+      actor_type: actorType,
+      actor_id: actorId,
+      isbn,
+    });
+  };
+
+  const [rating, setRating] = useState(defaultRating || 0);
+  const hasTrackedRatingSelectRef = useRef<boolean>(false);
+
+  const handleChangeRating = (rating: number) => {
+    setRating(rating);
+
+    if (!hasTrackedRatingSelectRef.current) {
+      track('rating_select');
+      hasTrackedRatingSelectRef.current = true;
+    }
+  };
+
+  const ratingMessageNumber = getRatingMessageNumber(rating);
+  const ratingMessage = RatingMessages[ratingMessageNumber as keyof typeof RatingMessages] || '-';
+
+  const { mutate } = useExecute({
+    executeFn: putBooksByIsbnIsbn13Rating,
+  });
+
+  const updateRating = async () => {
+    if (rating === defaultRating) return;
+
+    await mutate({ isbn13: isbn, rating });
+
+    track('rating_submit');
   };
 
   return (
@@ -185,56 +221,6 @@ export const WriteReviewDialog = ({
               </Field.Content>
             </Field>
 
-            <FieldGroup sx={{ mt: 4 }}>
-              <Field>
-                <Field.Label>
-                  쪽수{' '}
-                  <Text as="span">
-                    (
-                    <Text as="span" color="muted">
-                      선택
-                    </Text>
-                    )
-                  </Text>
-                </Field.Label>
-                <Field.Content>
-                  <Input
-                    block
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="80"
-                    id="currentPage"
-                    value={values.currentPage}
-                    onChange={onChange}
-                  />
-                </Field.Content>
-                {!valids.currentPage && (
-                  <Field.Description>{errors.currentPage[0]?.message}</Field.Description>
-                )}
-              </Field>
-              <Field>
-                <Field.Label>
-                  목차 / 챕터{' '}
-                  <Text as="span">
-                    (
-                    <Text as="span" color="muted">
-                      선택
-                    </Text>
-                    )
-                  </Text>
-                </Field.Label>
-                <Field.Content>
-                  <Input
-                    block
-                    placeholder="Chapter 1"
-                    id="chapter"
-                    values={values.chapter}
-                    onChange={onChange}
-                  />
-                </Field.Content>
-              </Field>
-            </FieldGroup>
-
             <Text color="muted" sx={{ mt: 4 }}>
               {((isAuthenticated && user?.displayAnonymous) || !isAuthenticated) && (
                 <strong>익명 공개</strong>
@@ -246,9 +232,23 @@ export const WriteReviewDialog = ({
                     ? user?.nickname
                     : user?.anonymousNickname
                   : guest?.nickname}
-                ’로 표시돼요
+                ’(으)로 표시돼요
               </span>
             </Text>
+
+            {isAuthenticated && (
+              <Field sx={{ mt: 4 }}>
+                <Field.Label>별점 (선택)</Field.Label>
+                <Field.Content>
+                  <Rating
+                    value={rating}
+                    onChange={handleChangeRating}
+                    description={`${rating} · ${ratingMessage}`}
+                    block
+                  />
+                </Field.Content>
+              </Field>
+            )}
           </Dialog.Body>
 
           <Dialog.Footer>

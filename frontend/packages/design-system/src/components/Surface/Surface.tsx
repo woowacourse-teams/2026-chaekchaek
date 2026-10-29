@@ -16,6 +16,8 @@ export const Surface = <T extends ElementType>(props: Props<T>) => {
     className,
     variant = 'filled',
     spacing = 'small',
+    align = 'center',
+    verticalAlign = 'top',
     sx,
     style,
     ...restProps
@@ -24,6 +26,8 @@ export const Surface = <T extends ElementType>(props: Props<T>) => {
   const modifiers = {
     variant: variant && styles[`variant-${variant}`],
     spacing: spacing && styles[`spacing-${spacing}`],
+    align: align && styles[`align-${align}`],
+    verticalAlign: verticalAlign && styles[`vertical-align-${verticalAlign}`],
   };
 
   const classname = createClassName({

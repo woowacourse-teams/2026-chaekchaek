@@ -6,6 +6,7 @@ export type AS = 'div';
 
 export type OwnProps = {
   direction?: 'horizontal' | 'vertical';
+  columns?: number;
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;

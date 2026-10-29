@@ -1,21 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 import {
-  Badge,
   Button,
-  Checkbox,
   ConstrainedImgBox,
+  ContentArea,
+  Divider,
   Icon,
   IconButton,
   ImgBox,
   List,
   Notice,
-  OptionList,
-  Pagination,
-  ProgressBar,
-  Select,
-  Split,
+  Showcase,
+  Surface,
+  Text,
   Title,
 } from '@chaekchaek/design-system';
 
@@ -24,144 +22,70 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
 
-import { getLibrary } from '@/services/apis/library/repository';
-import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
-import { useExecute } from '@/services/core/useExecute';
-import { useLoadData } from '@/services/core/useLoadData';
-
-import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
-import { DeleteBooksDialog } from './dialog/DeleteBooksDialog';
-import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
-import styles from './LiraryPage.module.css';
+import { getLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repository';
+import { useLoadData } from '@/services/core/useLoadData';
+import { useExecute } from '@/services/core/useExecute';
+import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
 
-export const READING_STATUS = {
-  ALL: 'ALL',
-  WANT_TO_READ: 'WANT_TO_READ',
-  READING: 'READING',
-  FINISHED: 'FINISHED',
-} as const;
+import { ROUTES } from '@/constants/routes';
 
-export type ReadingStatus = (typeof READING_STATUS)[keyof typeof READING_STATUS];
+import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
+import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
+import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
+import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
+import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';
 
-export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
-  [READING_STATUS.ALL]: '전체',
-  [READING_STATUS.WANT_TO_READ]: '읽고 싶어요',
-  [READING_STATUS.READING]: '읽는 중',
-  [READING_STATUS.FINISHED]: '다 읽음',
-};
+export type LibraryPageDialogType =
+  | 'AddBooksToLibraryDialog'
+  | 'ManageLibraryDialog'
+  | 'ShareLibraryImageDialog'
+  | 'RenameLibraryDialog'
+  | 'DeleteLibraryDialog'
+  | 'UpdateNicknameDialog';
 
-const READING_SORT = {
-  RECENT: 'RECENT',
-  OLDEST: 'OLDEST',
-  COMMENT: 'COMMENT',
-  RATING: 'RATING',
-  TITLE: 'TITLE',
-} as const;
-
-type ReadingSort = (typeof READING_SORT)[keyof typeof READING_SORT];
-
-const READING_SORT_LABELS = {
-  RECENT: '최근순',
-  OLDEST: '오래된순',
-  COMMENT: '감상순',
-  RATING: '별점순',
-  TITLE: '제목순',
-} as const;
-
-const booksHeight = [286, 304, 318, 312, 296, 282, 288, 306, 320, 298];
+const booksHeight = [
+  ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
+  ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
+  ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
+];
 
 export const LibraryPage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
-  const status = (searchParams.get('status') ?? READING_STATUS.ALL) as ReadingStatus;
-  const sort = (searchParams.get('sort') ?? READING_SORT.RECENT) as ReadingSort;
-
-  const handleChangeDefaultPage = (defaultPage: number) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('page', String(defaultPage));
-      return next;
-    });
-  };
-
-  const handleChangeStatus = (status: ReadingStatus) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('status', status);
-      next.set('page', '1');
-      return next;
-    });
-  };
-
-  const handleChangeSort = (sort: ReadingSort) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('sort', sort);
-      next.set('page', '1');
-      return next;
-    });
-  };
-
-  const getLibraryLoadData = useCallback(async () => {
-    return await getLibrary({
-      page: defaultPage,
-      sort,
-      status,
-    });
-  }, [defaultPage, status, sort]);
-  const {
-    refetch: refetchGetLibrary,
-    status: { data: libraryData },
-  } = useLoadData({ queryFn: getLibraryLoadData });
-
-  const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
-
-  const [isEditing, setIsEditing] = useState(false);
-  const handleClickToggleEdit = () => {
-    setIsEditing((prev) => !prev);
-  };
-  const handleClickEndEdit = () => {
-    setIsEditing(false);
-  };
-
-  const [bookSelection, setBookSelection] = useState<number[]>([]);
-  const handleChangeBookSelection = (bookId: number) => {
-    setBookSelection((prev) =>
-      prev.includes(bookId) ? prev.filter((v) => v !== bookId) : [...prev, bookId],
-    );
-  };
-  const handleResetBookSelection = () => {
-    setBookSelection([]);
-  };
-
-  const handleBookStatusUpdated = () => {
-    refetchGetLibrary();
-
-    handleCloseDialog();
-    handleClickEndEdit();
-    handleResetBookSelection();
-    handleCloseDialog();
-  };
-
-  const handleBooksDeleted = () => {
-    refetchGetLibrary();
-
-    handleCloseDialog();
-    handleClickEndEdit();
-    handleResetBookSelection();
-  };
-
-  const handleClickDelete = (bookId: number) => {
-    handleChangeBookSelection(bookId);
-    handleOpenDialog('DeleteBooksDialog');
-  };
-
-  const isAbleUpdateStatus = bookSelection.length;
-  const isAbleDeleteStatus = bookSelection.length;
-
   const { user, updateAccount } = useAuthContext();
+
+  const { libraryId } = useParams<{ libraryId: string }>();
+
+  const getLibrariesLibraryIdLoadData = useCallback(async () => {
+    return await getLibrariesLibraryId({
+      libraryId: Number(libraryId),
+    });
+  }, [libraryId]);
+
+  const {
+    status: { data: libraryItemsData },
+    refetch: refetchGetLibrary,
+  } = useLoadData({
+    queryFn: getLibrariesLibraryIdLoadData,
+  });
+
+  const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    const TIME_OUT = 1500;
+    if (isCopied)
+      setTimeout(() => {
+        setIsCopied(false);
+      }, TIME_OUT);
+  }, [isCopied]);
+
+  const handleCopyLink = async () => {
+    const memberLibraryLink = `${window.location.origin}/members/${user?.memberId}/libraries/${libraryId}`;
+    await navigator.clipboard.writeText(memberLibraryLink);
+
+    setIsCopied(true);
+  };
+
   const { status: anonymityStatus, mutate: updateAnonymity } = useExecute({
     executeFn: patchMembersMeAnonymity,
   });
@@ -175,7 +99,10 @@ export const LibraryPage = () => {
       const userWithAnonymityDisabled = await updateAnonymity({ displayAnonymous: false });
       if (!userWithAnonymityDisabled) return;
 
-      updateAccount(userWithAnonymityDisabled);
+      updateAccount({
+        ...user,
+        ...userWithAnonymityDisabled,
+      });
 
       return;
     }
@@ -183,61 +110,62 @@ export const LibraryPage = () => {
     const updatedUser = await updateAnonymity({ displayAnonymous: true });
     if (!updatedUser) return;
 
-    updateAccount(updatedUser);
+    updateAccount({
+      ...user,
+      ...updatedUser,
+    });
   };
 
-  const [isCopied, setIsCopied] = useState(false);
-
-  useEffect(() => {
-    const TIME_OUT = 1500;
-    if (isCopied)
-      setTimeout(() => {
-        setIsCopied(false);
-      }, TIME_OUT);
-  }, [isCopied]);
-
-  const handleCopyLink = async () => {
-    if (!user?.memberId) return;
-    const memberLibraryLink = `${window.location.origin}/members/${user?.memberId}/library`;
-    await navigator.clipboard.writeText(memberLibraryLink);
-
-    setIsCopied(true);
-  };
-
-  const [dialog, setDialog] = useState<
-    'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null
-  >(null);
-  const handleOpenDialog = (
-    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog',
-  ) => {
+  const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
+  const handleOpenDialog = (dialog: LibraryPageDialogType) => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (
-    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null,
-  ) => {
+  const renderDialog = (dialog: LibraryPageDialogType | null) => {
     switch (dialog) {
-      case 'UpdateBookStatusDialog':
+      case 'AddBooksToLibraryDialog':
         return (
-          <UpdateBookStatusDialog
-            bookSelection={bookSelection}
-            onBookStatusUpdated={handleBookStatusUpdated}
+          <AddBooksToLibraryDialog
+            libraryId={Number(libraryId)}
+            onBookAdded={async () => {
+              await refetchGetLibrary();
+            }}
             onClose={handleCloseDialog}
           />
         );
-      case 'DeleteBooksDialog':
+      case 'ManageLibraryDialog':
+        return <ManageLibraryDialog onClose={handleCloseDialog} onOpenDialog={handleOpenDialog} />;
+      case 'ShareLibraryImageDialog':
         return (
-          <DeleteBooksDialog
-            bookIds={bookSelection}
-            onBooksDeleted={handleBooksDeleted}
-            onClose={handleCloseDialog}
-          />
+          libraryItemsData && (
+            <ShareLibraryImageDialog
+              libraryName={libraryItemsData.name}
+              imgs={libraryItemsData?.items.map((item) => {
+                return { title: item.title, url: item.spineImageUrl };
+              })}
+              onClose={handleCloseDialog}
+            />
+          )
         );
-      case 'UpdateNicknameDialog':
-        return <UpdateNicknameDialog onClose={handleCloseDialog} />;
+
+      case 'RenameLibraryDialog':
+        return (
+          libraryItemsData && (
+            <RenameLibraryDialog
+              libraryId={Number(libraryId)}
+              name={libraryItemsData?.name}
+              onLibraryRenamed={async () => {
+                await refetchGetLibrary();
+              }}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
+      case 'DeleteLibraryDialog':
+        return <DeleteLibraryDialog onClose={handleCloseDialog} />;
 
       default:
         return null;
@@ -251,224 +179,154 @@ export const LibraryPage = () => {
       <Header />
       <Main>
         <Container>
-          <Split>
-            <Split.Top sx={{ mb: 14 }}>
-              <Title
-                level="page"
-                trailing={
-                  <>
-                    {user !== null && (
-                      <>
-                        {user?.displayAnonymous && (
-                          <Button
-                            leading={<Icon.CheckboxOnIcon color="secondary" />}
-                            variant="ghost"
-                            size="small"
-                            disabled={anonymityStatus.status === 'loading'}
-                            onClick={handleToggleAnonymous}
-                          >
-                            익명으로 감상 공개
-                          </Button>
-                        )}
-                        {!user?.displayAnonymous && (
-                          <Button
-                            leading={<Icon.CheckboxOffIcon color="secondary" />}
-                            variant="ghost"
-                            size="small"
-                            disabled={anonymityStatus.status === 'loading'}
-                            onClick={handleToggleAnonymous}
-                          >
-                            익명으로 감상 공개
-                          </Button>
-                        )}
-                      </>
-                    )}
-                    {isEditing && (
-                      <>
+          <ContentArea spacing="large">
+            <Title
+              level="main"
+              sx={{ mb: 14 }}
+              description={`${libraryItemsData?.name} 책장 ${libraryItemsData?.totalCount}권`}
+              trailing={
+                <>
+                  {user !== null && (
+                    <>
+                      {user?.displayAnonymous && (
                         <Button
+                          leading={<Icon.CheckboxOnIcon color="secondary" />}
                           variant="ghost"
                           size="small"
-                          disabled={!isAbleUpdateStatus}
-                          onClick={() => handleOpenDialog('UpdateBookStatusDialog')}
+                          disabled={anonymityStatus.status === 'loading'}
+                          onClick={handleToggleAnonymous}
                         >
-                          상태 변경
+                          익명으로 감상 공개
                         </Button>
+                      )}
+                      {!user?.displayAnonymous && (
                         <Button
-                          leading={<Icon.TrashIcon color="error" />}
-                          variant="danger-weak"
+                          leading={<Icon.CheckboxOffIcon color="secondary" />}
+                          variant="ghost"
                           size="small"
-                          disabled={!isAbleDeleteStatus}
-                          onClick={() => handleOpenDialog('DeleteBooksDialog')}
+                          disabled={anonymityStatus.status === 'loading'}
+                          onClick={handleToggleAnonymous}
                         >
-                          {!!bookSelection.length && `${bookSelection.length}권`} 삭제
+                          익명으로 감상 공개
                         </Button>
-                      </>
-                    )}
-                    <Button variant="primary" size="small" onClick={handleClickToggleEdit}>
-                      {!isEditing ? '서재 편집' : '편집 종료'}
-                    </Button>
-                  </>
-                }
-              >
-                내 서재
-                <IconButton shape="link" size="large" onClick={handleCopyLink}>
-                  {!isCopied ? (
-                    <Icon.ShareIcon size="x-large" color="secondary" />
-                  ) : (
-                    <Icon.CheckAnimatedIcon size="x-large" color="secondary" />
+                      )}
+                    </>
                   )}
-                </IconButton>
-              </Title>
-            </Split.Top>
-            <Split.Side>
-              <Title
-                level="main"
-                orientation="vertical"
-                trailing={
-                  <OptionList
-                    sx={{ mt: 3 }}
-                    value={status}
-                    options={Object.entries(READING_STATUS_LABELS).map(([labelKey, labelValue]) => {
-                      return {
-                        value: labelKey,
-                        text: labelValue,
-                      };
-                    })}
-                    onChange={handleChangeStatus}
-                  />
-                }
-              >
-                독서 상태
-              </Title>
-            </Split.Side>
-            <Split.Content>
-              <div className={styles.bookShelf}>
-                {libraryData?.items.map((item, index) => {
+
+                  <IconButton
+                    aria-label="책장 더보기"
+                    variant="secondary"
+                    onClick={() => {
+                      handleOpenDialog('ManageLibraryDialog');
+                    }}
+                  >
+                    <Icon.EllipsisIcon />
+                  </IconButton>
+                </>
+              }
+            >
+              {libraryItemsData?.name}
+            </Title>
+            {libraryItemsData !== null && !!libraryItemsData?.items.length && (
+              <Showcase>
+                {libraryItemsData?.items.map((item, index) => {
                   return (
                     <ConstrainedImgBox
                       as={Link}
-                      to={`/books/${item.isbn13}`}
-                      className={styles.book}
-                      key={item.bookId}
-                      img={item.spineImageUrl ?? item.coverImageUrl}
+                      to={`${ROUTES.BOOK_DETAIL}/${item.isbn13}`}
+                      img={item.spineImageUrl}
                       maxWidth="80px"
-                      height={`${booksHeight[index]}px`}
+                      maxHeight={`${booksHeight[index]}px`}
                     />
                   );
                 })}
-              </div>
+              </Showcase>
+            )}
 
-              <Title
-                level="caption"
-                sx={{ mt: 8 }}
-                trailing={
-                  <>
-                    <Select
-                      size="small"
-                      value={sort}
-                      options={Object.entries(READING_SORT_LABELS).map(([labelKey, labelValue]) => {
-                        return {
-                          value: labelKey,
-                          text: labelValue,
-                        };
-                      })}
-                      onChange={handleChangeSort}
-                    />
-                  </>
-                }
+            {libraryItemsData !== null && !libraryItemsData?.items.length && (
+              <Surface
+                sx={{ mt: 14 }}
+                variant="dashed"
+                verticalAlign="center"
+                style={{ height: '320px' }}
               >
-                총 {libraryData?.filteredCount}권
-              </Title>
+                <Text color="muted">어떤 책으로 채워볼까?</Text>
+              </Surface>
+            )}
 
-              {!libraryData?.items.length && (
-                <Notice height={500}>내 서재에 등록된 책이 없습니다.</Notice>
-              )}
-              <List columns={2} sx={{ mt: 4 }}>
-                {libraryData?.items.map((item) => {
-                  const isIncluded = bookSelection.includes(item.bookId);
+            <Title sx={{ mt: 8 }} level="detail">
+              <Button
+                variant="primary"
+                sx={{ mr: 4 }}
+                onClick={() => {
+                  handleOpenDialog('AddBooksToLibraryDialog');
+                }}
+              >
+                <Icon.PlusIcon color="inverse" />책 담기
+              </Button>
+              {/* <IconButton variant="ghost" size="large" sx={{ mr: 2 }} onClick={handleCopyLink}>
+                {isCopied ? (
+                  <Icon.CheckAnimatedIcon size="large" />
+                ) : (
+                  <Icon.UploadIcon size="large" />
+                )}
+              </IconButton> */}
+              <IconButton
+                variant="ghost"
+                size="large"
+                sx={{ mr: 2 }}
+                onClick={() => {
+                  handleOpenDialog('ShareLibraryImageDialog');
+                }}
+              >
+                <Icon.DownloadIcon size="large" />
+              </IconButton>
+            </Title>
 
-                  return (
-                    <List.Item key={item.bookId}>
-                      <List.Item.Leading>
-                        {isEditing && (
-                          <Checkbox
-                            size="large"
-                            sx={{ mr: 4 }}
-                            checked={isIncluded}
-                            onChange={() => {
-                              handleChangeBookSelection(item.bookId);
-                            }}
-                          />
-                        )}
-                        <Link to={`/books/${item.isbn13}`}>
-                          <ImgBox img={item.coverImageUrl} size="small" />
-                        </Link>
-                      </List.Item.Leading>
-                      <List.Item.Content
-                        as={Link}
-                        to={`/books/${item.isbn13}`}
-                        title={
-                          <>
-                            <Badge
-                              sx={{ mb: 1 }}
-                              variant={
-                                item.status === READING_STATUS.READING
-                                  ? 'primary'
-                                  : item.status === READING_STATUS.WANT_TO_READ
-                                    ? 'subtle'
-                                    : 'soft'
-                              }
-                            >
-                              {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
-                            </Badge>
-                            <br />
-                            {item.title}
-                          </>
-                        }
-                        content={item.authors.join(' · ')}
-                        description={
-                          <>
-                            {item.totalPages > 0 && (
-                              <ProgressBar
-                                variant={item.currentPage !== item.totalPages ? 'accent' : 'subtle'}
-                                value={item.currentPage}
-                                max={item.totalPages}
-                              />
-                            )}
-                          </>
-                        }
-                      />
-                      <List.Item.Trailing>
-                        {!isEditing && <Icon.ArrowRightIcon />}
-                        {isEditing && (
-                          <>
-                            <IconButton
-                              sx={{ ml: 4 }}
-                              onClick={() => {
-                                handleClickDelete(item.bookId);
-                              }}
-                            >
-                              <Icon.TrashIcon color="error" />
-                            </IconButton>
-                          </>
-                        )}
-                      </List.Item.Trailing>
-                    </List.Item>
-                  );
-                })}
-              </List>
+            <Title
+              sx={{ mt: 8 }}
+              level="detail"
+              trailing={
+                <>
+                  <Button variant="default">편집</Button>
+                </>
+              }
+            >
+              이 책장에 담긴 책
+            </Title>
 
-              <Pagination
-                sx={{ mt: 5 }}
-                defaultPage={defaultPage}
-                totalPages={filteredTotalPages}
-                onChange={handleChangeDefaultPage}
-              />
-            </Split.Content>
-          </Split>
+            <Divider sx={{ mt: 4 }} />
+
+            {!libraryItemsData?.items.length && (
+              <Notice height={500}>이 책장에 등록된 책이 없습니다.</Notice>
+            )}
+
+            <List columns={2}>
+              {libraryItemsData?.items.map((item) => {
+                return (
+                  <List.Item key={item.bookId}>
+                    <List.Item.Leading>
+                      <IconButton edge="start">
+                        <Icon.DragHandleIcon />
+                      </IconButton>
+                      <Link to={`/books/${item.isbn13}`}>
+                        <ImgBox img={item.coverImageUrl} size="small" />
+                      </Link>
+                    </List.Item.Leading>
+                    <List.Item.Content
+                      title={<>{item.title}</>}
+                      content={item.authors?.join(' · ')}
+                    />
+                    <List.Item.Trailing></List.Item.Trailing>
+                  </List.Item>
+                );
+              })}
+            </List>
+          </ContentArea>
         </Container>
-        {dialogElement}
       </Main>
+
+      {dialogElement}
     </Layout>
   );
 };

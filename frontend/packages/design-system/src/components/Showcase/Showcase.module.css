@@ -1,0 +1,32 @@
+.ui-Showcase {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  min-height: 180px;
+  padding-bottom: 11px;
+  box-sizing: border-box;
+}
+
+.ui-Showcase::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background-color: var(--chaek-color-border-divider);
+  opacity: 0.8;
+  content: '';
+}
+
+.ui-Showcase > * {
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px 0 rgb(0 0 0 / 14%);
+}
+
+.ui-Showcase > img {
+  display: block;
+  width: auto;
+  max-height: 177px;
+  object-fit: contain;
+}

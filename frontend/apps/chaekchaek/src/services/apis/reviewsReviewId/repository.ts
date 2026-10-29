@@ -29,7 +29,7 @@ import {
 import type { PatchReviewsReviewId } from './repository.types';
 
 export const patchReviewsReviewId: PatchReviewsReviewId = async (model, context) => {
-  const { reviewId, chapter, isSpoiler, quote, totalPages, currentPage, content } =
+  const { reviewId, isSpoiler, quote, totalPages, content } =
     mapPatchReviewsReviewIdModelToRequestDTO(model);
 
   const { guestToken } = context ?? {};
@@ -37,7 +37,7 @@ export const patchReviewsReviewId: PatchReviewsReviewId = async (model, context)
 
   const responseDTO = await fetcher.patchReviewsReviewId({
     pathParams: [{ name: 'reviewId', value: reviewId }],
-    data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
+    data: { isSpoiler, quote, totalPages, content },
     headers,
   });
 

@@ -1,7 +1,16 @@
 import { createIcon } from './createIcon';
 
+import ArrowUp from './imgs/arrow-up.svg?component';
+export const ArrowUpIcon = createIcon(ArrowUp);
+
 import ArrowRight from './imgs/arrow-right.svg?component';
 export const ArrowRightIcon = createIcon(ArrowRight);
+
+import ArrowDown from './imgs/arrow-down.svg?component';
+export const ArrowDownIcon = createIcon(ArrowDown);
+
+import ArrowLeft from './imgs/arrow-left.svg?component';
+export const ArrowLeftIcon = createIcon(ArrowLeft);
 
 import Check from './imgs/check.svg?component';
 export const CheckIcon = createIcon(Check);
@@ -20,6 +29,15 @@ export const CloseIcon = createIcon(Close);
 
 import Comment from './imgs/comment.svg?component';
 export const CommentIcon = createIcon(Comment);
+
+import Ellipsis from './imgs/ellipsis.svg?component';
+export const EllipsisIcon = createIcon(Ellipsis);
+
+import ExternalLink from './imgs/external-link.svg?component';
+export const ExternalLinkIcon = createIcon(ExternalLink);
+
+import EyeOff from './imgs/eye-off.svg?component';
+export const EyeOffIcon = createIcon(EyeOff);
 
 import HeartOff from './imgs/heart-off.svg?component';
 export const HeartOffIcon = createIcon(HeartOff);
@@ -53,3 +71,15 @@ export const StartIcon = createIcon(Start);
 
 import Trash from './imgs/trash.svg?component';
 export const TrashIcon = createIcon(Trash);
+
+import DragHandle from './imgs/drag-handle.svg?component';
+export const DragHandleIcon = createIcon(DragHandle);
+
+import Upload from './imgs/upload.svg?component';
+export const UploadIcon = createIcon(Upload);
+
+import Download from './imgs/download.svg?component';
+export const DownloadIcon = createIcon(Download);
+
+import Plus from './imgs/plus.svg?component';
+export const PlusIcon = createIcon(Plus);

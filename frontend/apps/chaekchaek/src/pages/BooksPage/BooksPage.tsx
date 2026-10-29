@@ -7,7 +7,7 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
 
-import { Chip, Icon, Notice, Split } from '@chaekchaek/design-system';
+import { Chip, Icon, Notice, Split, VisuallyHidden } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
 import { List } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
@@ -21,11 +21,11 @@ import { track } from '@/analytics/track';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { getBooks } from '@/services/apis/books/repository';
-import { postLibrary } from '@/services/apis/library/repository';
 import { useLoadData } from '@/services/core/useLoadData';
-import { useExecute } from '@/services/core/useExecute';
 
 import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
+
+import { RegisterBookToLibraryDialog } from '@/shared/RegisterBookToLibrary';
 
 export const BooksPage = () => {
   const { isAuthenticated } = useAuthContext();
@@ -79,8 +79,12 @@ export const BooksPage = () => {
   };
 
   const getBooksLoadData = useCallback(async () => {
-    if (!keywordQuery.length) return null;
-    return await getBooks({ page: defaultPage, query: keywordQuery });
+    if (!keywordQuery.length) {
+      return null;
+    }
+    const data = await getBooks({ page: defaultPage, query: keywordQuery });
+
+    return data;
   }, [keywordQuery, defaultPage]);
 
   const {
@@ -88,6 +92,14 @@ export const BooksPage = () => {
   } = useLoadData({
     queryFn: getBooksLoadData,
   });
+
+  const searchAnnouncement = keywordQuery.length
+    ? `입력한 키워드가 없습니다`
+    : data
+      ? data.items.length
+        ? `'${keywordQuery}' 검색 결과가 표시되었습니다.`
+        : `'${keywordQuery}' 검색 결과가 없습니다.`
+      : '';
 
   const totalPages = data ? Math.ceil(data.totalCount / 10) : 1;
 
@@ -101,20 +113,22 @@ export const BooksPage = () => {
     navigation(`/books/${isbn}`);
   };
 
-  const { mutate } = useExecute({
-    executeFn: postLibrary,
-  });
-  const handleRegisterLibrary = async (isbn: string) => {
+  const [selectedBook, setSelectedBook] = useState<{
+    isbn: string;
+    bookId?: number | undefined;
+  } | null>(null);
+  const handleRegisterLibrary = async (book: { isbn: string; bookId?: number | undefined }) => {
     if (!isAuthenticated) return handleOpenLoginDialog();
 
-    await mutate({ isbn13: isbn, status: 'WANT_TO_READ' });
+    setSelectedBook(book);
+    handleOpenDialog('RegisterBookToLibraryDialog');
+  };
 
+  const handleBookRegistered = () => {
     track('library_add', {
       source: 'search',
-      status: 'want_to_read',
+      status: 'reading',
     });
-
-    handleMove(isbn);
   };
 
   useEffect(() => {
@@ -129,6 +143,34 @@ export const BooksPage = () => {
       clearTimeout(timeoutId);
     };
   }, [query]);
+
+  const [dialog, setDialog] = useState<'RegisterBookToLibraryDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'RegisterBookToLibraryDialog') => {
+    if (!isAuthenticated) return handleOpenLoginDialog();
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (dialog: 'RegisterBookToLibraryDialog' | null) => {
+    switch (dialog) {
+      case 'RegisterBookToLibraryDialog':
+        return (
+          selectedBook && (
+            <RegisterBookToLibraryDialog
+              book={selectedBook}
+              onBookRegistered={handleBookRegistered}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
 
   return (
     <Layout>
@@ -150,6 +192,7 @@ export const BooksPage = () => {
                       value={query}
                       onChange={handleChangeQuery}
                     />
+                    <VisuallyHidden role="status">{searchAnnouncement}</VisuallyHidden>
                   </>
                 }
               >
@@ -175,7 +218,11 @@ export const BooksPage = () => {
                               handleMove(item.isbn13);
                             }}
                           >
-                            <ImgBox img={item.coverImageUrl} size="small" />
+                            <ImgBox
+                              img={item.coverImageUrl}
+                              size="small"
+                              alt={`${item.title} 책 표지`}
+                            />
                           </Link>
                         </List.Item.Leading>
                         <List.Item.Content
@@ -189,20 +236,40 @@ export const BooksPage = () => {
                           description={`${item.publisher} · ${item.publishedDate}`}
                         />
                         <List.Item.Trailing>
-                          {(item.reviewCount || item.replyCount) && (
-                            <Chip variant="ghost">
+                          {!!(item.reviewCount || item.replyCount) && (
+                            <Chip variant="ghost" sx={{ mr: 4 }}>
                               감상 {item.reviewCount || 0} · 답글 {item.replyCount || 0}
                             </Chip>
                           )}
-                          {!item.isRegisteredInMyLibrary && (
+
+                          {item.isRegisteredInMyLibrary ? (
                             <Button
                               size="x-small"
-                              variant="primary"
+                              block
+                              variant="accent"
+                              leading={<Icon.CheckIcon />}
                               onClick={() => {
-                                handleRegisterLibrary(item?.isbn13);
+                                handleRegisterLibrary({
+                                  isbn: item.isbn13,
+                                  bookId: item.bookId,
+                                });
                               }}
                             >
-                              내 서재 담기
+                              담았어요
+                            </Button>
+                          ) : (
+                            <Button
+                              size="x-small"
+                              block
+                              variant="primary"
+                              onClick={() => {
+                                handleRegisterLibrary({
+                                  isbn: item.isbn13,
+                                  bookId: item.bookId,
+                                });
+                              }}
+                            >
+                              내 서재에 담기
                             </Button>
                           )}
                         </List.Item.Trailing>
@@ -222,6 +289,7 @@ export const BooksPage = () => {
           </Split>
         </Container>
 
+        {dialogElement}
         {openLoginDialog && <LoginDialog onClose={handleCloseLoginDialog} />}
       </Main>
     </Layout>

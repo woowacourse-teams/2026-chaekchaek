@@ -1,13 +1,15 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 
 import {
   Avatar,
-  Badge,
   Button,
   Dialog,
+  DropdownMenu,
   Entry,
   Icon,
+  IconButton,
+  InfoMessage,
   Note,
   Shell,
   Surface,
@@ -19,12 +21,8 @@ import { ROUTES } from '@/constants/routes';
 import { track } from '@/analytics/track';
 
 import { getReviewsReviewIdReplies } from '@/services/apis/reviewsReviewIdReplies/repository';
-import { useLoadData } from '@/services/core/useLoadData';
+import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 
-import {
-  deleteRepliesReplyIdReactions,
-  postRepliesReplyIdReactions,
-} from '@/services/apis/repliesReplyIdReactions/repository';
 import {
   deleteReviewsReviewIdReactions,
   postReviewsReviewIdReactions,
@@ -40,22 +38,57 @@ import { WriteReply } from './WriteReply';
 import { UpdateReviewDialog } from '../../dialog/UpdateReviewDialog';
 
 import styles from './BookReview.module.css';
+import { BookReply } from './BookReply';
 
-const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
-const SPOILER_PLACEHOLDER_REPLY = '“짹짹짹 짹짹 짹짹짹짹 짹짹.”';
-
-export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) => {
+export const BookReview = ({
+  bookId,
+  isbn,
+  myRating,
+  review,
+  onReviewsRefresh,
+}: BookReviewProps) => {
   const { isAuthenticated, user, guest } = useAuthContext();
-  const getReviewsReviewIdRepliesLoadData = useCallback(() => {
-    return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: 1 });
-  }, [review.reviewId]);
+  const getReviewsReviewIdRepliesLoadData = useCallback(
+    async ({ pageParam }: { pageParam: number }) => {
+      return getReviewsReviewIdReplies({ reviewId: review.reviewId, page: pageParam });
+    },
+    [review.reviewId],
+  );
 
   const {
+    status: { data: repliesDataAll },
     refetch: refetchGetReplies,
-    status: { data: repliesData },
-  } = useLoadData({
+    fetchNextPage,
+  } = useInfiniteLoadData({
     queryFn: getReviewsReviewIdRepliesLoadData,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage?.nextPage || 1;
+    },
   });
+
+  const repliesData = (repliesDataAll?.pages ?? []).flatMap((page) => page?.items).filter(Boolean);
+
+  const extensionRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleScroll = async () => {
+      if (!extensionRef.current) return;
+      const { bottom } = extensionRef.current.getBoundingClientRect();
+
+      if (bottom <= window.innerHeight) {
+        if (repliesDataAll?.pages?.[repliesDataAll?.pages.length - 1]?.nextPage === null) {
+          return;
+        }
+
+        await fetchNextPage();
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [repliesDataAll]);
 
   const { mutate: deleteReview } = useExecute({
     executeFn: deleteReviewsReviewId,
@@ -89,29 +122,6 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
     }
 
     await onReviewsRefresh();
-  };
-
-  const { mutate: postReplyReactionMutate } = useExecute({
-    executeFn: postRepliesReplyIdReactions,
-  });
-  const { mutate: deleteReplyReactionMutate } = useExecute({
-    executeFn: deleteRepliesReplyIdReactions,
-  });
-
-  const handleClickReplyReaction = async ({
-    replyId,
-    likedByMe,
-  }: {
-    replyId: number;
-    likedByMe: boolean;
-  }) => {
-    if (!likedByMe) {
-      await postReplyReactionMutate({ replyId });
-    } else {
-      await deleteReplyReactionMutate({ replyId });
-    }
-
-    await refetchGetReplies();
   };
 
   const [openWriteReply, setOpenWriteReply] = useState(false);
@@ -161,6 +171,8 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
       case 'UpdateReviewDialog':
         return (
           <UpdateReviewDialog
+            bookId={bookId}
+            myRating={myRating}
             review={review}
             onReviewUpdated={onReviewsRefresh}
             onClose={handleCloseDialog}
@@ -200,7 +212,7 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
               <Avatar
                 as={review.author?.memberId ? Link : 'div'}
                 {...(review.author?.memberId && {
-                  to: generatePath(ROUTES.MEMBER_LIBRARY, {
+                  to: generatePath(ROUTES.LEGACY_MEMBER_LIBRARY, {
                     memberId: review.author.memberId.toString(),
                   }),
                 })}
@@ -211,36 +223,32 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
               />
             </Shell.Leading>
             <Shell.Content
-              title={
-                <>
-                  {review.author.displayName}{' '}
-                  {review.currentPage && (
-                    <Badge variant="subtle" size="small">
-                      P. {review.currentPage} 까지
-                    </Badge>
-                  )}
-                </>
-              }
+              title={review.author.displayName}
               content={new Date(review.createdAt).toLocaleDateString('ko-KR')}
             />
             {review.author.mine && (
               <Shell.Trailing>
-                <Button
-                  shape="link"
-                  variant="ghost"
-                  onClick={() => {
-                    handleOpenDialog('UpdateReviewDialog');
-                  }}
-                >
-                  수정
-                </Button>
-                <Button
-                  shape="link"
-                  variant="ghost"
-                  onClick={() => handleClickDeleteReview(review.reviewId)}
-                >
-                  삭제
-                </Button>
+                <DropdownMenu
+                  trigger={
+                    <IconButton>
+                      <Icon.EllipsisIcon />
+                    </IconButton>
+                  }
+                  items={[
+                    {
+                      text: '수정',
+                      onClick: () => {
+                        handleOpenDialog('UpdateReviewDialog');
+                      },
+                    },
+                    {
+                      text: '식제',
+                      onClick: () => {
+                        handleClickDeleteReview(review.reviewId);
+                      },
+                    },
+                  ]}
+                />
               </Shell.Trailing>
             )}
           </Shell>
@@ -250,23 +258,18 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
           onClick={handleClickShowSpoiler}
         >
           {showSpoilerVisible ? (
-            review.content
-          ) : (
             <>
-              <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
-              <Text size="small" color="error">
-                (스포일러 · 눌러보기)
-              </Text>
+              {review.content}
+              {review.quote && <Note>{review.quote}</Note>}
             </>
-          )}
-          {review.quote && (
-            <Note variant={!showSpoilerVisible ? 'subtle' : 'plain'}>
-              {showSpoilerVisible ? (
-                review.quote
-              ) : (
-                <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
-              )}
-            </Note>
+          ) : (
+            <Surface variant="filled">
+              <InfoMessage
+                visual={<Icon.EyeOffIcon />}
+                title="스포일러가 포함된 감상이에요"
+                content={<Text underline>감상과 인용 보기</Text>}
+              />
+            </Surface>
           )}
         </Entry.Body>
         <Entry.Footer>
@@ -295,8 +298,8 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
           </Button>
         </Entry.Footer>
       </Entry.Main>
-      {(!!repliesData?.items.length || openWriteReply) && (
-        <Entry.Extension>
+      {(!!repliesData?.length || openWriteReply) && (
+        <Entry.Extension ref={extensionRef}>
           {openWriteReply && (
             <WriteReply
               isbn={isbn}
@@ -304,56 +307,20 @@ export const BookReview = ({ isbn, review, onReviewsRefresh }: BookReviewProps) 
               onReplyWritten={handleReplyWritten}
             />
           )}
-          {repliesData?.items.map((reply) => {
-            return (
-              <Surface key={reply.replyId}>
-                <Shell>
-                  <Shell.Leading>
-                    <Avatar
-                      img={reply.author.profileImageUrl}
-                      size="small"
-                      as={reply.author.memberId ? Link : 'div'}
-                      {...(reply.author.memberId && {
-                        to: generatePath(ROUTES.MEMBER_LIBRARY, {
-                          memberId: reply.author.memberId.toString(),
-                        }),
-                      })}
-                      onClick={() => {
-                        handleClickAvatar(reply.author.profileStatus !== 'AVAILABLE');
-                      }}
-                    />
-                  </Shell.Leading>
-                  <Shell.Content
-                    onClick={handleClickShowSpoiler}
-                    title={reply.author.displayName}
-                    description={
-                      showSpoilerVisible ? (
-                        reply.content
-                      ) : (
-                        <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REPLY}</span>
-                      )
-                    }
-                  />
-                  <Shell.Trailing>
-                    <Button
-                      leading={reply.likedByMe ? <Icon.HeartOnIcon /> : <Icon.HeartOffIcon />}
-                      shape="link"
-                      variant="ghost"
-                      disabled={!isAuthenticated}
-                      onClick={() => {
-                        handleClickReplyReaction({
-                          replyId: reply.replyId,
-                          likedByMe: reply.likedByMe,
-                        });
-                      }}
-                    >
-                      {reply.likeCount}
-                    </Button>
-                  </Shell.Trailing>
-                </Shell>
-              </Surface>
-            );
-          })}
+          {repliesData
+            ?.filter((reply) => !reply.deleted)
+            .map((reply) => {
+              return (
+                <BookReply
+                  key={reply.replyId}
+                  reply={reply}
+                  showSpoilerVisible={showSpoilerVisible}
+                  onShowSpoiler={handleClickShowSpoiler}
+                  onRefetchGetReplies={refetchGetReplies}
+                  onClickAvatar={handleClickAvatar}
+                />
+              );
+            })}
         </Entry.Extension>
       )}
       {dialogElement}

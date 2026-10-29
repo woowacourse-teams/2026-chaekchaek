@@ -1,19 +1,20 @@
-import { useState, type MouseEvent } from 'react';
+import { memo, useState, type MouseEvent } from 'react';
 import { generatePath, Link } from 'react-router-dom';
 
 import {
   Avatar,
-  Badge,
   Button,
   Dialog,
   Divider,
   Entry,
   Icon,
   ImgBox,
+  InfoMessage,
   Media,
   Note,
   Partition,
   Shell,
+  Surface,
   Text,
 } from '@chaekchaek/design-system';
 
@@ -36,7 +37,7 @@ import type { BookFeedProps } from './BookFeed.types';
 
 const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹짹짹 짹짹짹 짹짹짹짹 짹짹짹짹.';
 
-export const BookFeed = (props: BookFeedProps) => {
+export const BookFeed = memo((props: BookFeedProps) => {
   const { review, onFeedRefresh } = props;
 
   const { isAuthenticated } = useAuthContext();
@@ -143,7 +144,7 @@ export const BookFeed = (props: BookFeedProps) => {
                     <Avatar
                       as={review.author?.memberId ? Link : 'div'}
                       {...(review.author?.memberId && {
-                        to: generatePath(ROUTES.MEMBER_LIBRARY, {
+                        to: generatePath(ROUTES.LEGACY_MEMBER_LIBRARY, {
                           memberId: review.author.memberId.toString(),
                         }),
                       })}
@@ -154,16 +155,7 @@ export const BookFeed = (props: BookFeedProps) => {
                     />
                   </Shell.Leading>
                   <Shell.Content
-                    title={
-                      <>
-                        {review.author.displayName}{' '}
-                        {review.currentPage && (
-                          <Badge variant="subtle" size="x-small" sx={{ ml: 2 }}>
-                            P. {review.currentPage} 까지
-                          </Badge>
-                        )}
-                      </>
-                    }
+                    title={review.author.displayName}
                     content={new Date(review.createdAt).toLocaleDateString('ko-KR')}
                   />
                 </Shell>
@@ -171,23 +163,18 @@ export const BookFeed = (props: BookFeedProps) => {
               <Entry.Body>
                 <Link to={`/books/${review.isbn13}`} onClick={handleClickShowSpoiler}>
                   {showSpoilerVisible ? (
-                    review.content
-                  ) : (
                     <>
-                      <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
-                      <Text size="small" color="error">
-                        (스포일러 · 눌러보기)
-                      </Text>
+                      {review.content}
+                      {review.quote && <Note>{review.quote}</Note>}
                     </>
-                  )}
-                  {review.quote && (
-                    <Note variant="default" sx={{ mt: 2 }}>
-                      {showSpoilerVisible ? (
-                        review.quote
-                      ) : (
-                        <span className={styles.spoiler}>{SPOILER_PLACEHOLDER_REVIEW}</span>
-                      )}
-                    </Note>
+                  ) : (
+                    <Surface variant="filled">
+                      <InfoMessage
+                        visual={<Icon.EyeOffIcon />}
+                        title="스포일러가 포함된 감상이에요"
+                        content={<Text underline>감상과 인용 보기</Text>}
+                      />
+                    </Surface>
                   )}
                 </Link>
               </Entry.Body>
@@ -226,4 +213,4 @@ export const BookFeed = (props: BookFeedProps) => {
       {dialogElement}
     </>
   );
-};
+});

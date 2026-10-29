@@ -1,4 +1,5 @@
 export type Props = {
+  myRating: number | undefined;
   category: string | undefined;
   publishedDate: string | undefined;
   title: string | undefined;

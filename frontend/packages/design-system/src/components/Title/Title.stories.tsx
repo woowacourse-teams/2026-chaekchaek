@@ -43,6 +43,22 @@ export const LevelMain: Story = {
   },
 };
 
+export const LevelContent: Story = {
+  args: {
+    level: 'content',
+    children: 'Title',
+    trailing: 'trailing',
+  },
+};
+
+export const LevelDetail: Story = {
+  args: {
+    level: 'detail',
+    children: 'Title',
+    trailing: 'trailing',
+  },
+};
+
 export const LevelCaption: Story = {
   args: {
     level: 'caption',

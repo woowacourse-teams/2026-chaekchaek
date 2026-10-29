@@ -3,18 +3,14 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import {
   Avatar,
-  Badge,
   Icon,
   IconButton,
   ImgBox,
   List,
   Notice,
-  OptionList,
   Pagination,
-  ProgressBar,
   Select,
   Split,
-  Tag,
   Title,
 } from '@chaekchaek/design-system';
 
@@ -23,71 +19,18 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
 
-import { getMembersMemberIdLibrary } from '@/services/apis/membersMemberIdLibrary/repository';
-import { useLoadData } from '@/services/core/useLoadData';
-
-import { ROUTES } from '@/constants/routes';
-
-import { Book3D } from './components/Book3D';
-
-import styles from './MemberLibraryPage.module.css';
-
-export const READING_STATUS = {
-  ALL: 'ALL',
-  WANT_TO_READ: 'WANT_TO_READ',
-  READING: 'READING',
-  FINISHED: 'FINISHED',
-} as const;
-
-export type ReadingStatus = (typeof READING_STATUS)[keyof typeof READING_STATUS];
-
-export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
-  [READING_STATUS.ALL]: '전체',
-  [READING_STATUS.WANT_TO_READ]: '읽고 싶어요',
-  [READING_STATUS.READING]: '읽는 중',
-  [READING_STATUS.FINISHED]: '다 읽음',
-};
-
-const READING_SORT = {
-  RECENT: 'RECENT',
-  OLDEST: 'OLDEST',
-  COMMENT: 'COMMENT',
-  RATING: 'RATING',
-  TITLE: 'TITLE',
-} as const;
-
-type ReadingSort = (typeof READING_SORT)[keyof typeof READING_SORT];
-
-const READING_SORT_LABELS = {
-  RECENT: '최근순',
-  OLDEST: '오래된순',
-  COMMENT: '감상순',
-  RATING: '별점순',
-  TITLE: '제목순',
-} as const;
-
 export const MemberLibraryPage = () => {
   const { memberId: memberIdString } = useParams<{ memberId: string }>();
   const memberId = Number(memberIdString);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
-  const status = (searchParams.get('status') ?? READING_STATUS.ALL) as ReadingStatus;
   const sort = (searchParams.get('sort') ?? READING_SORT.RECENT) as ReadingSort;
 
   const handleChangeDefaultPage = (defaultPage: number) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('page', String(defaultPage));
-      return next;
-    });
-  };
-
-  const handleChangeStatus = (status: ReadingStatus) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('status', status);
-      next.set('page', '1');
       return next;
     });
   };
@@ -106,9 +49,9 @@ export const MemberLibraryPage = () => {
       memberId,
       page: defaultPage,
       sort,
-      status,
+      status: READING_STATUS.ALL,
     });
-  }, [defaultPage, status, sort]);
+  }, [defaultPage, sort]);
   const {
     status: { data: libraryData, error },
   } = useLoadData({ queryFn: getMembersMemberIdLibraryLoadData });
@@ -164,28 +107,7 @@ export const MemberLibraryPage = () => {
               </Title>
             </Split.Top>
             <Split.Side>
-              <Title
-                style={{ height: '800px' }}
-                level="main"
-                orientation="vertical"
-                trailing={
-                  <>
-                    <OptionList
-                      sx={{ mt: 3 }}
-                      value={status}
-                      options={Object.entries(READING_STATUS_LABELS).map(
-                        ([labelKey, labelValue]) => {
-                          return {
-                            value: labelKey,
-                            text: labelValue,
-                          };
-                        },
-                      )}
-                      onChange={handleChangeStatus}
-                    />
-                  </>
-                }
-              >
+              <Title style={{ height: '800px' }} level="main" orientation="vertical">
                 독서 상태
               </Title>
             </Split.Side>
@@ -243,36 +165,8 @@ export const MemberLibraryPage = () => {
                       <List.Item.Content
                         as={Link}
                         to={`/books/${item.isbn13}`}
-                        title={
-                          <>
-                            <Badge
-                              sx={{ mb: 2 }}
-                              variant={
-                                item.status === READING_STATUS.READING
-                                  ? 'primary'
-                                  : item.status === READING_STATUS.WANT_TO_READ
-                                    ? 'subtle'
-                                    : 'soft'
-                              }
-                            >
-                              {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
-                            </Badge>
-                            <br />
-                            {item.title}
-                          </>
-                        }
+                        title={<>{item.title}</>}
                         content={item.authors.join(' · ')}
-                        description={
-                          <>
-                            {item.totalPages > 0 && (
-                              <ProgressBar
-                                variant={item.currentPage !== item.totalPages ? 'accent' : 'subtle'}
-                                value={item.currentPage}
-                                max={item.totalPages}
-                              />
-                            )}
-                          </>
-                        }
                       />
                       <List.Item.Trailing>
                         <Icon.ArrowRightIcon />
