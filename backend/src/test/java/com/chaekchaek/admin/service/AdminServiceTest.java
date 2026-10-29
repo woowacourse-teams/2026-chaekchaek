@@ -13,6 +13,7 @@ import com.chaekchaek.admin.dto.RecommendedBookResponse;
 import com.chaekchaek.admin.repository.RecommendedBookRepository;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.fixture.BookFixture;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
@@ -26,7 +27,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class AdminServiceTest {
 
@@ -224,24 +224,13 @@ class AdminServiceTest {
     }
 
     private static Book book(long id, String title) {
-        Book book = Book.create(
+        Book book = BookFixture.book(
                 isbn13(id),
                 title,
                 "https://example.com/" + id + ".jpg",
-                null,
-                null,
-                null,
-                List.of("저자 " + id),
-                List.of(),
-                "출판사",
-                null,
-                null,
-                null,
-                null,
-                null
+                List.of("저자 " + id)
         );
-        ReflectionTestUtils.setField(book, "id", id);
-        return book;
+        return BookFixture.savedBook(id, book);
     }
 
     private static Isbn13 isbn13(long id) {

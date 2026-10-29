@@ -10,6 +10,7 @@ import com.chaekchaek.book.client.BookSearchItem;
 import com.chaekchaek.book.client.BookSearchResult;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.fixture.BookFixture;
 import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
@@ -24,7 +25,6 @@ import java.util.OptionalLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class BookSearchServiceTest {
 
@@ -324,24 +324,13 @@ class BookSearchServiceTest {
         );
     }
 
-    private Book registeredBook(Long id, String isbn13) {
-        Book book = Book.create(
+    private Book registeredBook(long id, String isbn13) {
+        Book book = BookFixture.book(
                 new Isbn13(isbn13),
                 "등록 도서",
                 "https://image.example/cover.jpg",
-                null,
-                null,
-                null,
-                List.of("작가"),
-                List.of(),
-                "출판사",
-                "소설",
-                null,
-                null,
-                null,
-                null
+                List.of("작가")
         );
-        ReflectionTestUtils.setField(book, "id", id);
-        return book;
+        return BookFixture.savedBook(id, book);
     }
 }

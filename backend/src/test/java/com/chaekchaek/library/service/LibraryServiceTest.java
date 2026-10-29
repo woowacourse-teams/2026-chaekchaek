@@ -16,6 +16,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.fixture.BookFixture;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.exception.BusinessException;
@@ -672,26 +673,7 @@ class LibraryServiceTest {
     }
 
     private Book book(Integer totalPages) {
-        return book(totalPages, ISBN13);
-    }
-
-    private Book book(Integer totalPages, Isbn13 isbn13) {
-        return Book.create(
-                isbn13,
-                "마션",
-                "https://example.com/cover.jpg",
-                "https://example.com/cover.jpg/side",
-                "https://example.com/cover.jpg/back",
-                null,
-                List.of("앤디 위어"),
-                List.of(),
-                "알에이치코리아",
-                "SF",
-                null,
-                totalPages,
-                null,
-                null
-        );
+        return BookFixture.martian(ISBN13, totalPages);
     }
 
     private Book bookWithId(long bookId) {
@@ -699,9 +681,8 @@ class LibraryServiceTest {
     }
 
     private Book bookWithId(long bookId, Isbn13 isbn13) {
-        Book book = book(null, isbn13);
-        ReflectionTestUtils.setField(book, "id", bookId);
-        return book;
+        Book book = BookFixture.martian(isbn13, null);
+        return BookFixture.savedBook(bookId, book);
     }
 
     private Member memberWithNickname() {

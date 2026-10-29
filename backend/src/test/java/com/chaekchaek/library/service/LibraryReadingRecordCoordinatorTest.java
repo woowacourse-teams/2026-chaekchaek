@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.fixture.BookFixture;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
@@ -25,7 +26,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -165,21 +165,6 @@ class LibraryReadingRecordCoordinatorTest {
     }
 
     private Book book(Integer totalPages) {
-        return Book.create(
-                new Isbn13("9788925568683"),
-                "마션",
-                "https://example.com/cover.jpg",
-                "https://example.com/cover.jpg/side",
-                "https://example.com/cover.jpg/back",
-                null,
-                List.of("앤디 위어"),
-                List.of(),
-                "알에이치코리아",
-                "SF",
-                null,
-                totalPages,
-                null,
-                null
-        );
+        return BookFixture.martian(new Isbn13("9788925568683"), totalPages);
     }
 }

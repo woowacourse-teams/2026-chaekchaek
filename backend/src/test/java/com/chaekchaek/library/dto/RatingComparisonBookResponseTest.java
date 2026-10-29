@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.fixture.BookFixture;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
 import java.math.BigDecimal;
@@ -23,21 +24,11 @@ class RatingComparisonBookResponseTest {
         // given
         LibraryItem item = LibraryItem.create(1L, 2L, ReadingStatus.READING, null, ADDED_AT);
         item.rate(new BigDecimal("4.5"), RATING_UPDATED_AT);
-        Book book = Book.create(
+        Book book = BookFixture.book(
                 new Isbn13("9788936433598"),
                 "채식주의자",
                 "https://example.com/books/cover.jpg",
-                null,
-                null,
-                null,
-                List.of("한강"),
-                List.of(),
-                "출판사",
-                null,
-                null,
-                null,
-                null,
-                null
+                List.of("한강")
         );
 
         // when

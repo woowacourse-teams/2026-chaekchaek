@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.fixture.BookFixture;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActorProvider;
@@ -225,24 +226,13 @@ class HomeServiceTest {
     }
 
     private static Book book(long id, String title) {
-        Book book = Book.create(
+        Book book = BookFixture.book(
                 isbn13(id),
                 title,
                 "https://example.com/" + id + ".jpg",
-                null,
-                null,
-                null,
-                List.of("저자 " + id),
-                List.of(),
-                "출판사",
-                null,
-                null,
-                null,
-                null,
-                null
+                List.of("저자 " + id)
         );
-        ReflectionTestUtils.setField(book, "id", id);
-        return book;
+        return BookFixture.savedBook(id, book);
     }
 
     private static Isbn13 isbn13(long id) {

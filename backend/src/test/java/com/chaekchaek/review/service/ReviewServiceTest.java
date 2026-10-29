@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.fixture.BookFixture;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActor;
@@ -394,24 +395,13 @@ class ReviewServiceTest {
     }
 
     private Book book() {
-        Book book = Book.create(
+        Book book = BookFixture.book(
                 new Isbn13("9788925568683"),
                 "마션",
                 null,
-                null,
-                null,
-                null,
-                List.of("앤디 위어"),
-                List.of(),
-                "출판사",
-                null,
-                null,
-                null,
-                null,
-                null
+                List.of("앤디 위어")
         );
-        ReflectionTestUtils.setField(book, "id", 5L);
-        return book;
+        return BookFixture.savedBook(5L, book);
     }
 
     private ReviewService reviewService(CurrentActor actor, ReviewMemberReader profileReader) {
