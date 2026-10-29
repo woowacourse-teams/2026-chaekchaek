@@ -21,6 +21,10 @@ class BookSpineColorTest {
     fun `결합 악센트와 분해 한글은 각각 한 칸을 차지한다`() {
         assertEquals(listOf("C", "a", "f", "e\u0301"), spineTitleGlyphs("Cafe\u0301", 4))
         assertEquals(listOf("\u1112\u1161\u11ab", "글"), spineTitleGlyphs("\u1112\u1161\u11ab글", 2))
+        assertEquals(
+            listOf("\u1112\u1161\u11ab", "\u1100\u1173\u11af"),
+            spineTitleGlyphs("\u1112\u1161\u11ab\u1100\u1173\u11af", 2),
+        )
     }
 
     @Test

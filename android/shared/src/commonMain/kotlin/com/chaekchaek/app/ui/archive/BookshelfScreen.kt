@@ -58,8 +58,8 @@ internal fun BookshelfRoute(
     var creating by rememberSaveable { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<Bookshelf?>(null) }
     var adding by rememberSaveable { mutableStateOf(false) }
-    var sharing by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(signedIn, state.memberId) { creating = false; namingId = null; deleting = null; adding = false; sharing = false; editing = false }
+    var sharingShelfId by rememberSaveable { mutableStateOf<Long?>(null) }
+    LaunchedEffect(signedIn, state.memberId) { creating = false; namingId = null; deleting = null; adding = false; sharingShelfId = null; editing = false }
     val listState = rememberLazyListState()
     val detailListState = rememberLazyListState()
     LaunchedEffect(scrollTopRequest) { if (state.selectedId == null) listState.scrollToItem(0) else detailListState.scrollToItem(0) }
@@ -68,14 +68,19 @@ internal fun BookshelfRoute(
     val detail = state.detail
     val selected = state.shelves.firstOrNull { it.libraryId == state.selectedId }
     val back = rememberNavigationEventState(NavigationEventInfo.None)
-    NavigationBackHandler(back, isBackEnabled = state.selectedId != null) { viewModel.close(); editing = false }
+    val closeShelf = {
+        sharingShelfId = null
+        editing = false
+        viewModel.close()
+    }
+    NavigationBackHandler(back, isBackEnabled = state.selectedId != null, onBackCompleted = closeShelf)
     Column(modifier.fillMaxSize().background(ChaekSurface)) {
         if (state.selectedId == null) BrandHeader(onProfile) else Row(
             Modifier.fillMaxWidth().height(58.dp).padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
-            ShelfIconButton(Res.drawable.bookshelf_back, "책장 목록으로", { viewModel.close(); editing = false })
+            ShelfIconButton(Res.drawable.bookshelf_back, "책장 목록으로", closeShelf)
             Text("책 플레이리스트", Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
-            selected?.let { shelf -> ShelfMenu(shelf, { namingId = shelf.libraryId }, { editing = true }, { sharing = true }, { deleting = shelf }, !state.mutating) }
+            selected?.let { shelf -> ShelfMenu(shelf, { namingId = shelf.libraryId }, { editing = true }, { sharingShelfId = shelf.libraryId }, { deleting = shelf }, !state.mutating) }
         }
         if (!signedIn) {
             Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
@@ -106,7 +111,7 @@ internal fun BookshelfRoute(
                         ReorderHandle("bookshelf-reorder-${shelf.libraryId}", handle, canOrder, compact = true)
                         Text(shelf.name, Modifier.weight(1f).heightIn(min = 44.dp).wrapContentHeight().testTag("bookshelf-${shelf.libraryId}").clickable(role = Role.Button) { viewModel.open(shelf.libraryId) }, color = ChaekInk, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, lineHeight = 23.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text("${shelf.totalCount}권", style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp), color = ChaekInkSecondary)
-                        ShelfMenu(shelf, { namingId = shelf.libraryId }, { viewModel.open(shelf.libraryId); editing = true }, { viewModel.open(shelf.libraryId); sharing = true }, { deleting = shelf }, !state.mutating)
+                        ShelfMenu(shelf, { namingId = shelf.libraryId }, { viewModel.open(shelf.libraryId); editing = true }, { viewModel.open(shelf.libraryId); sharingShelfId = shelf.libraryId }, { deleting = shelf }, !state.mutating)
                     }
                     Spacer(Modifier.height(7.dp))
                     BookshelfSpineRow(shelf.items.map { it.asArchive() }, onBook = { viewModel.open(shelf.libraryId) }, onMove = if (!canOrder) null else { ids: List<Long>, done: (Boolean) -> Unit -> viewModel.orderBooks(shelf.libraryId, ids, done) })
@@ -132,7 +137,7 @@ internal fun BookshelfRoute(
                         HorizontalDivider(thickness = 3.dp, color = ChaekBorder)
                         Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             ChaekOverlayButton("+ 책 담기", { adding = true }, modifier = Modifier.weight(1f), enabled = !state.mutating)
-                            ShelfIconButton(Res.drawable.bookshelf_share, "이미지 공유", { sharing = true }, enabled = !state.mutating && !state.refreshing && !state.detailRefreshing && !state.detailStale, outlined = true)
+                            ShelfIconButton(Res.drawable.bookshelf_share, "이미지 공유", { sharingShelfId = detail.libraryId }, enabled = !state.mutating && !state.refreshing && !state.detailRefreshing && !state.detailStale, outlined = true)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("이 책장에 담긴 책", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
@@ -170,7 +175,9 @@ internal fun BookshelfRoute(
         }
     }
     if (adding) ShelfAddSheet(state.shelves, onDismiss = { adding = false }, onAdd = { adding = false; onAdd(it) })
-    if (sharing && detail != null && token != null && !state.detailStale) BookshelfImageSheet(detail, onDismiss = { sharing = false })
+    if (detail != null && sharingShelfId == detail.libraryId && token != null && !state.detailStale) {
+        BookshelfImageSheet(detail, onDismiss = { sharingShelfId = null })
+    }
 }
 
 @Composable
@@ -205,7 +212,7 @@ private fun ShelfMenuAction(label: String, icon: DrawableResource, destructive: 
 @Composable
 private fun ShelfNameSheet(initial: String, rename: Boolean, saving: Boolean, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     val input = rememberLimitedTextFieldState(BookshelfNameInputPolicy, initial)
-    ShelfSheet(if (rename) "책장 이름 바꾸기" else "새 책장 만들기", onDismiss) {
+    ShelfSheet(if (rename) "책장 이름 바꾸기" else "새 책장 만들기", onDismiss, dismissEnabled = !saving) {
         OutlinedTextField(input, inputTransformation = BookshelfNameInputPolicy.inputTransformation,
             lineLimits = TextFieldLineLimits.SingleLine, label = { Text("책장 이름 (1-10자)") }, modifier = Modifier.fillMaxWidth().testTag("bookshelfName"))
         ChaekOverlayButton(if (rename) "저장" else "만들기", { onSave(input.text.toString()) }, enabled = !saving)

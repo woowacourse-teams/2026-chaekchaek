@@ -13,7 +13,7 @@ internal actual fun spineTitleGraphemes(title: String): List<String> {
                     current.isGraphemeExtension() ||
                         current == ZERO_WIDTH_JOINER ||
                         previous == ZERO_WIDTH_JOINER ||
-                        previous.isHangulJamo() && current.isHangulJamo() ||
+                        previous.joinsHangul(current) ||
                         previous.isRegionalIndicator() &&
                         current.isRegionalIndicator() &&
                         regionalIndicators % 2 == 1
@@ -45,8 +45,23 @@ private fun String.nextCodePointIndex(index: Int): Int =
 
 private fun Int.isRegionalIndicator(): Boolean = this in 0x1F1E6..0x1F1FF
 
-private fun Int.isHangulJamo(): Boolean =
-    this in 0x1100..0x11FF || this in 0xA960..0xA97F || this in 0xD7B0..0xD7FF
+private fun Int.joinsHangul(next: Int): Boolean = when (hangulType()) {
+    HangulType.L -> next.hangulType() in setOf(HangulType.L, HangulType.V, HangulType.LV, HangulType.LVT)
+    HangulType.LV, HangulType.V -> next.hangulType() in setOf(HangulType.V, HangulType.T)
+    HangulType.LVT, HangulType.T -> next.hangulType() == HangulType.T
+    null -> false
+}
+
+private fun Int.hangulType(): HangulType? = when {
+    this in 0x1100..0x115F || this in 0xA960..0xA97C -> HangulType.L
+    this in 0x1160..0x11A7 || this in 0xD7B0..0xD7C6 -> HangulType.V
+    this in 0x11A8..0x11FF || this in 0xD7CB..0xD7FB -> HangulType.T
+    this in 0xAC00..0xD7A3 && (this - 0xAC00) % 28 == 0 -> HangulType.LV
+    this in 0xAC00..0xD7A3 -> HangulType.LVT
+    else -> null
+}
+
+private enum class HangulType { L, V, T, LV, LVT }
 
 private fun Int.isGraphemeExtension(): Boolean =
     this in 0x0300..0x036F ||
