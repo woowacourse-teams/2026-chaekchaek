@@ -153,6 +153,9 @@ export type { Props as DisplayCardProps } from './components/DisplayCard';
 export { ScrollArea } from './components/ScrollArea';
 export type { Props as ScrollAreaProps } from './components/ScrollArea';
 
+export { VisuallyHidden } from './components/VisuallyHidden';
+export type { Props as VisuallyHiddenProps } from './components/VisuallyHidden';
+
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';
 
