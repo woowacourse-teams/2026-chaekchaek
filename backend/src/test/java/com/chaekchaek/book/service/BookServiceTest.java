@@ -55,6 +55,7 @@ class BookServiceTest {
                 0,
                 0,
                 null,
+                false,
                 "https://www.yes24.com/product/goods/101375809",
                 "yes24",
                 null

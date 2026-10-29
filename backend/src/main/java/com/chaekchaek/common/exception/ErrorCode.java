@@ -20,7 +20,7 @@ public enum ErrorCode {
     ),
     NICKNAME_REQUIRED(
             "NICKNAME_REQUIRED",
-            "닉네임을 설정해야 익명 상태를 해제할 수 있습니다."
+            "닉네임을 먼저 설정해 주세요."
     ),
     REFRESH_TOKEN_REQUIRED(
             "REFRESH_TOKEN_REQUIRED",
@@ -78,10 +78,22 @@ public enum ErrorCode {
             "서재 항목을 찾을 수 없습니다."),
     LIBRARY_NOT_FOUND(
             "LIBRARY_NOT_FOUND",
-            "공개된 회원의 서재만 접근 가능합니다."),
+            "책장을 찾을 수 없습니다."),
+    LIBRARY_NAME_ALREADY_EXISTS(
+            "LIBRARY_NAME_ALREADY_EXISTS",
+            "같은 이름의 책장이 있습니다. 다른 이름을 입력해 주세요."),
     LIBRARY_ITEM_ALREADY_EXISTS(
             "LIBRARY_ITEM_ALREADY_EXISTS",
-            "이미 서재에 등록된 책입니다."),
+            "이미 책장에 담긴 책입니다."),
+    LIBRARY_ITEM_LIMIT_EXCEEDED(
+            "LIBRARY_ITEM_LIMIT_EXCEEDED",
+            "책장에는 최대 30권까지 등록할 수 있습니다."),
+    DEFAULT_LIBRARY_DELETE_NOT_ALLOWED(
+            "DEFAULT_LIBRARY_DELETE_NOT_ALLOWED",
+            "기본 책장은 유지해야 합니다. 다른 책장을 삭제해 주세요."),
+    ORDER_CONFLICT(
+            "ORDER_CONFLICT",
+            "목록이 변경되었습니다. 다시 조회한 뒤 순서를 변경해 주세요."),
     RECOMMENDED_BOOK_NOT_FOUND(
             "RECOMMENDED_BOOK_NOT_FOUND",
             "추천 도서를 찾을 수 없습니다."),

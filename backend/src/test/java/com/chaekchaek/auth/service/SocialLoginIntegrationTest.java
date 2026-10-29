@@ -66,7 +66,7 @@ public class SocialLoginIntegrationTest {
                 "image"
         );
         Member oldMember = socialLoginService.loginOrSignUp(profile);
-        memberService.updateNickname(oldMember.getId(), "이전 공개 이름");
+        memberService.updateNickname(oldMember.getId(), "이전공개이름");
         memberService.updateAnonymity(oldMember.getId(), false);
         long oldActorId = actorRepository.findByMemberId(oldMember.getId()).orElseThrow().getId();
         String oldAnonymousName = oldMember.getAnonymousNickname();
@@ -110,14 +110,14 @@ public class SocialLoginIntegrationTest {
         assertThat(newActorId).isNotEqualTo(oldActorId);
         assertThat(rejoined.isDisplayAnonymous()).isTrue();
         assertThat(rejoined.getNickname()).isNull();
-        memberService.updateNickname(rejoined.getId(), "새 공개 이름");
+        memberService.updateNickname(rejoined.getId(), "새공개이름");
         memberService.updateAnonymity(rejoined.getId(), false);
         authenticate(rejoined.getId());
         var newReply = reviewService.createReply(
                 review.getId(),
                 new ReplyCreateRequest("재가입 공개 답글")
         );
-        assertThat(newReply.author().displayName()).isEqualTo("새 공개 이름");
+        assertThat(newReply.author().displayName()).isEqualTo("새공개이름");
         assertThat(newReply.author().memberId()).isEqualTo(rejoined.getId());
         assertThat(newReply.author().profileStatus())
                 .isEqualTo(AuthorProfileStatus.AVAILABLE);

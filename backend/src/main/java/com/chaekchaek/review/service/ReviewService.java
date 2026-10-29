@@ -311,6 +311,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         review.assertModifiableBy(actorId);
         if (request.isCurrentPagePresent() && request.getCurrentPage() != null) {
             readingRecordCoordinator.validateReviewPage(
+                    actor.memberId(),
                     review.getBookId(),
                     request.getCurrentPage(),
                     request.isTotalPagesPresent() ? request.getTotalPages() : null

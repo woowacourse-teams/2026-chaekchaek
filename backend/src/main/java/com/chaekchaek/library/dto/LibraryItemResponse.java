@@ -23,7 +23,7 @@ public record LibraryItemResponse(
         Integer totalPages,
         long commentCount,
         ReadingStatus status,
-        int currentPage,
+        Integer currentPage,
         BigDecimal rating,
         Instant addedAt,
         Instant readingUpdatedAt
