@@ -37,7 +37,7 @@ export const TechnologySection = () => {
             role="tab"
             id={`technology-tab-${item.id}`}
             aria-selected={current === index}
-            aria-controls="technology-panel"
+            aria-controls={`technology-panel-${item.id}`}
             tabIndex={current === index ? 0 : -1}
             onClick={() => move(index)}
             onKeyDown={(event) => {
@@ -58,68 +58,77 @@ export const TechnologySection = () => {
           </button>
         ))}
       </div>
-      <div
-        id="technology-panel"
-        role="tabpanel"
-        aria-labelledby={`technology-tab-${slide.id}`}
-        tabIndex={0}
-        className={styles.panel}
-      >
-        <article key={slide.id} className={styles.slide}>
-          <div className={styles.intro}>
-            <p className={styles.eyebrow}>
-              {number(current)} / {slide.category}
-            </p>
-            <h3>{slide.title}</h3>
-            <p className={styles.label}>문제 상황</p>
-            <p className={styles.body}>{slide.problem}</p>
-          </div>
-          <div className={styles.solution}>
-            <p className={styles.label}>기술적 해결</p>
-            <p className={styles.solutionTitle}>{slide.solution}</p>
-            <ul>
-              {slide.details.map((detail) => (
-                <li key={detail}>{detail}</li>
-              ))}
-            </ul>
-          </div>
-          <div className={styles.results}>
-            <p className={styles.label}>달라진 경험</p>
-            {slide.before && slide.after && (
-              <div className={styles.comparison}>
-                <div>
-                  <span className={styles.caption}>BEFORE</span>
-                  <strong>{slide.before.value}</strong>
-                  <p>{slide.before.description}</p>
-                </div>
-                <span className={styles.arrow} aria-hidden="true">
-                  →
-                </span>
-                <div className={styles.after}>
-                  <span className={styles.caption}>AFTER</span>
-                  <strong>{slide.after.value}</strong>
-                  <p>{slide.after.description}</p>
-                </div>
+      <div className={styles.panels}>
+        {technologySlides.map((item, index) => (
+          <article
+            key={item.id}
+            id={`technology-panel-${item.id}`}
+            role="tabpanel"
+            aria-labelledby={`technology-tab-${item.id}`}
+            aria-hidden={current !== index}
+            inert={current !== index}
+            tabIndex={current === index ? 0 : -1}
+            className={`${styles.panel} ${styles.slide} ${current === index ? styles.active : ''}`}
+          >
+            <div className={styles.copy}>
+              <div className={styles.intro}>
+                <p className={styles.eyebrow}>
+                  {number(index)} / {item.category}
+                </p>
+                <h3>{item.title}</h3>
+                <p className={styles.label}>문제 상황</p>
+                <p className={styles.body}>{item.problem}</p>
               </div>
-            )}
-            {slide.flows && (
-              <div className={styles.flows}>
-                {slide.flows.map((flow) => (
-                  <div key={flow.label}>
-                    <strong>{flow.label}</strong>
-                    <ol>
-                      {flow.steps.map((step) => (
-                        <li key={step}>{step}</li>
-                      ))}
-                    </ol>
+              <div className={styles.solution}>
+                <p className={styles.label}>기술적 해결</p>
+                <p className={styles.solutionTitle}>{item.solution}</p>
+                <ul>
+                  {item.details.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className={styles.results}>
+              <p className={styles.label}>달라진 경험</p>
+              {item.before && item.after && (
+                <div className={styles.comparison}>
+                  <div>
+                    <span className={styles.caption}>BEFORE</span>
+                    <strong>{item.before.value}</strong>
+                    <p>{item.before.description}</p>
                   </div>
-                ))}
+                  <span className={styles.arrow} aria-hidden="true">
+                    →
+                  </span>
+                  <div className={styles.after}>
+                    <span className={styles.caption}>AFTER</span>
+                    <strong>{item.after.value}</strong>
+                    <p>{item.after.description}</p>
+                  </div>
+                </div>
+              )}
+              {item.flows && (
+                <div className={styles.flows}>
+                  {item.flows.map((flow) => (
+                    <div key={flow.label}>
+                      <strong>{flow.label}</strong>
+                      <ol>
+                        {flow.steps.map((step) => (
+                          <li key={step}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className={styles.resultNotes}>
+                <p className={styles.outcome}>{item.outcome}</p>
+                {item.note && <p className={styles.note}>{item.note}</p>}
               </div>
-            )}
-            <p className={styles.outcome}>{slide.outcome}</p>
-            {slide.note && <p className={styles.note}>{slide.note}</p>}
-          </div>
-        </article>
+            </div>
+          </article>
+        ))}
       </div>
       <footer className={styles.controls}>
         <p aria-live="polite" aria-atomic="true">

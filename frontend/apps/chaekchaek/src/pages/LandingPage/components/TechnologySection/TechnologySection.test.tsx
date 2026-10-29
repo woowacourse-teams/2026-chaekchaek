@@ -9,9 +9,13 @@ describe('기술 소개 캐러셀', () => {
     const user = userEvent.setup();
     render(<TechnologySection />);
     expect(screen.getByRole('tabpanel')).toHaveTextContent('캐시 적중률 100%');
+    expect(screen.getAllByRole('tabpanel', { hidden: true })).toHaveLength(3);
     await user.click(screen.getByRole('button', { name: '다음 기술 소개' }));
     expect(screen.getByRole('tabpanel')).toHaveTextContent('전체 감상');
-    expect(screen.queryByText('캐시 적중률 100%')).not.toBeInTheDocument();
+    expect(screen.getByText('캐시 적중률 100%').closest('[role="tabpanel"]')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
     await user.click(screen.getByRole('tab', { name: /누구나 시작할 수 있는 경험/ }));
     expect(screen.getByRole('tabpanel')).toHaveTextContent('게스트 토큰');
     await user.click(screen.getByRole('button', { name: '다음 기술 소개' }));
