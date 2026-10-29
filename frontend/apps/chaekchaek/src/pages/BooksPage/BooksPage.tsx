@@ -7,7 +7,7 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
 
-import { Chip, Icon, Notice, Split } from '@chaekchaek/design-system';
+import { Chip, Icon, Notice, Split, VisuallyHidden } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
 import { List } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
@@ -79,8 +79,12 @@ export const BooksPage = () => {
   };
 
   const getBooksLoadData = useCallback(async () => {
-    if (!keywordQuery.length) return null;
-    return await getBooks({ page: defaultPage, query: keywordQuery });
+    if (!keywordQuery.length) {
+      return null;
+    }
+    const data = await getBooks({ page: defaultPage, query: keywordQuery });
+
+    return data;
   }, [keywordQuery, defaultPage]);
 
   const {
@@ -88,6 +92,14 @@ export const BooksPage = () => {
   } = useLoadData({
     queryFn: getBooksLoadData,
   });
+
+  const searchAnnouncement = keywordQuery.length
+    ? `입력한 키워드가 없습니다`
+    : data
+      ? data.items.length
+        ? `'${keywordQuery}' 검색 결과가 표시되었습니다.`
+        : `'${keywordQuery}' 검색 결과가 없습니다.`
+      : '';
 
   const totalPages = data ? Math.ceil(data.totalCount / 10) : 1;
 
@@ -180,6 +192,7 @@ export const BooksPage = () => {
                       value={query}
                       onChange={handleChangeQuery}
                     />
+                    <VisuallyHidden role="status">{searchAnnouncement}</VisuallyHidden>
                   </>
                 }
               >
@@ -205,7 +218,11 @@ export const BooksPage = () => {
                               handleMove(item.isbn13);
                             }}
                           >
-                            <ImgBox img={item.coverImageUrl} size="small" />
+                            <ImgBox
+                              img={item.coverImageUrl}
+                              size="small"
+                              alt={`${item.title} 책 표지`}
+                            />
                           </Link>
                         </List.Item.Leading>
                         <List.Item.Content
