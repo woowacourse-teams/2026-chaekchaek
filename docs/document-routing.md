@@ -50,6 +50,7 @@
 | KMP 모듈, Gradle 의존성, iOS 연동 변경 | [KMP 셋업](../android/docs/kmp-setup.md) | 검증 날짜가 있는 조합과 미결정 사항을 현재 빌드 설정에 대조한다. |
 | JDK, SDK, AAB, 업로드 키와 팀 서명 설정 | [빌드와 서명](android-build-signing.md) | Android 배포 절차이며 비밀값을 문서나 로그에 기록하지 않는다. |
 | production, development, local 서버 선택과 주소 변경 | [API 환경 설정](android-api-environments.md), [설정 파일 안내](../android/config/README.md) | Android Gradle과 iOS Xcode 설정을 확인한다. |
+| development 서버 변경을 production에 승격하거나 구버전 앱과 심사 빌드의 API 호환성을 조사 | [모바일 API production 승격 호환성 핸드오프](mobile-api-production-rollout-handoff-2026-10-29.md) | live OpenAPI와 서버 브랜치를 다시 조회하고, crash 증거·DB 이전·구버전 DTO·스토어 상태를 분리해 확인한다. |
 | GitHub Actions, Android 빌드, 테스트, Lint 실패 조사 | [Android CI](../android/docs/android-ci.md) | 실행과 실패 대응 절차 및 당시 관찰 기록을 확인한다. |
 | Google 로그인 실패, OAuth, 패키지명, Play 서명 변경 | [Google 로그인 운영](android-google-login.md) | 등록 정보와 실제 배포본 로그인 성공을 별도로 확인한다. |
 | R8, keep 규칙, 릴리스 크래시와 mapping 복원 | [릴리스 최적화와 Crashlytics](android-crashlytics.md) | 당시 검증과 현재 릴리스의 동작 확인을 구분한다. |

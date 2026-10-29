@@ -160,6 +160,7 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 
 - 원격 설정, 최소 지원 버전, 강제/권장 업데이트를 변경하거나 검증할 때는 [모바일 원격 설정과 업데이트 정책](docs/mobile-remote-config-updates.md)을 먼저 읽는다. Firebase 템플릿 게시, 앱 수신과 구버전 스토어 설치 검증을 구분한다.
 - 강제 업데이트 운영값을 게시하거나 일시 차단과 원복을 검증할 때는 [책췍 강제 업데이트 스킬](.agents/skills/chaekchaek-force-update/SKILL.md)을 적용한다. 게시 전 기기 준비, 승인 범위와 서버·앱 복원 확인을 따른다.
+- development 서버 변경을 production에 승격하거나 구버전 앱과 심사 빌드의 API 호환성을 조사할 때는 [모바일 API production 승격 호환성 핸드오프](docs/mobile-api-production-rollout-handoff-2026-10-29.md)를 먼저 읽는다. live OpenAPI, 실제 crash 증거, DB 이전과 스토어 상태를 다시 확인한다.
 
 - 책장 구조·담기·온보딩 저장 대상·공개·이미지 공유·작성자별 서재 이동 또는 질문 이모지를 변경할 때는 [서재·책장 확정 사항](docs/bookshelf-decisions.md)을 먼저 읽는다. 후속 결정과 과거 구현·검증 기록을 구분한다.
 - A안 책장 목록·상세·편집·이미지 저장·단일 책장 이미지 공유를 앱에 적용할 때는 [책장 A안 적용 핸드오프](handoff/handoff_261020_1019.md)도 읽는다. 과거 시안과 충돌하는 정책은 확정 사항 문서를 우선하며 링크 공유는 제외한다.
