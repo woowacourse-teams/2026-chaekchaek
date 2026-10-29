@@ -205,7 +205,11 @@ export const BooksPage = () => {
                               handleMove(item.isbn13);
                             }}
                           >
-                            <ImgBox img={item.coverImageUrl} size="small" />
+                            <ImgBox
+                              img={item.coverImageUrl}
+                              size="small"
+                              alt={`${item.title} 책 표지`}
+                            />
                           </Link>
                         </List.Item.Leading>
                         <List.Item.Content
