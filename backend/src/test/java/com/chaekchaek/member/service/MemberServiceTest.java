@@ -1,5 +1,6 @@
 package com.chaekchaek.member.service;
 
+import static com.chaekchaek.actor.fixture.ActorFixture.savedActor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -80,8 +81,7 @@ class MemberServiceTest {
                 LocalDateTime.of(2026, 8, 13, 12, 0)
         );
         ReflectionTestUtils.setField(member, "id", 7L);
-        Actor actor = Actor.member(member, LocalDateTime.of(2026, 8, 13, 12, 0));
-        ReflectionTestUtils.setField(actor, "id", 41L);
+        Actor actor = savedActor(41L, Actor.member(member, LocalDateTime.of(2026, 8, 13, 12, 0)));
 
         given(memberRepository.findById(7L))
                 .willReturn(Optional.of(member));
@@ -109,9 +109,8 @@ class MemberServiceTest {
     void should_GetAdminActorType_When_MemberIsAdmin() {
         // given
         Member member = Member.create("우아한 참새", null, CREATED_AT);
-        Actor actor = Actor.member(member, CREATED_AT);
+        Actor actor = savedActor(41L, Actor.member(member, CREATED_AT));
         actor.grantAdmin();
-        ReflectionTestUtils.setField(actor, "id", 41L);
         given(memberRepository.findById(7L)).willReturn(Optional.of(member));
         given(actorRepository.findByMemberId(7L)).willReturn(Optional.of(actor));
 
