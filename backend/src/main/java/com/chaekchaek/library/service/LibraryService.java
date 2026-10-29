@@ -489,6 +489,13 @@ public class LibraryService {
         return items;
     }
 
+    public LibraryItemResponse rateByIsbn13(long memberId, Isbn13 isbn13, BigDecimal rating) {
+        validateRating(rating);
+        Book book = bookResolver.findOrCreate(isbn13);
+        return Objects.requireNonNull(transactionTemplate.execute(transactionStatus ->
+                rate(memberId, book.getId(), rating)));
+    }
+
     @Transactional
     public LibraryItemResponse rate(long memberId, long bookId, BigDecimal rating) {
         validateRating(rating);
@@ -538,6 +545,17 @@ public class LibraryService {
     public void removeRating(long memberId, long bookId) {
         lockMember(memberId);
         getBook(bookId);
+        removeRatingForBook(memberId, bookId);
+    }
+
+    @Transactional
+    public void removeRatingByIsbn13(long memberId, Isbn13 isbn13) {
+        lockMember(memberId);
+        Book book = bookRepository.findByIsbn13(isbn13).orElseThrow(BookNotFoundException::new);
+        removeRatingForBook(memberId, book.getId());
+    }
+
+    private void removeRatingForBook(long memberId, long bookId) {
         libraryItemRepository.findByMemberIdAndBookIdForUpdate(memberId, bookId)
                 .ifPresent(item -> {
                     item.removeRating();

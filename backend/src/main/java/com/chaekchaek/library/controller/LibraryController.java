@@ -174,6 +174,10 @@ public class LibraryController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * @deprecated 별점 저장은 {@link #rateByIsbn13(String, RateBookRequest)}을 사용한다
+     */
+    @Deprecated
     @PutMapping("/library/{bookId}/rating")
     public ResponseEntity<LibraryItemResponse> rate(
             @PathVariable long bookId,
@@ -182,9 +186,23 @@ public class LibraryController {
         return ResponseEntity.ok(libraryService.rate(writeMemberId(), bookId, request.rating()));
     }
 
+    @PutMapping("/books/by-isbn/{isbn13}/rating")
+    public ResponseEntity<LibraryItemResponse> rateByIsbn13(
+            @PathVariable String isbn13,
+            @Valid @RequestBody RateBookRequest request
+    ) {
+        return ResponseEntity.ok(libraryService.rateByIsbn13(writeMemberId(), new Isbn13(isbn13), request.rating()));
+    }
+
     @DeleteMapping("/library/{bookId}/rating")
     public ResponseEntity<Void> removeRating(@PathVariable long bookId) {
         libraryService.removeRating(writeMemberId(), bookId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/books/by-isbn/{isbn13}/rating")
+    public ResponseEntity<Void> removeRatingByIsbn13(@PathVariable String isbn13) {
+        libraryService.removeRatingByIsbn13(writeMemberId(), new Isbn13(isbn13));
         return ResponseEntity.noContent().build();
     }
 
