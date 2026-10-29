@@ -437,6 +437,11 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 	}
 	def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
 	['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRatingCount', 'myRecord', 'totalPages', 'isRegisteredInMyLibrary'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
+		def detailV2Response = responseSchemaForPath('/api/v2/books/by-isbn/{isbn13}', 'get', '200')
+		['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRatingCount', 'myRecord', 'totalPages', 'isRegisteredInMyLibrary'].each { name -> markRequiredNullable(detailV2Response, name) }
+		def detailV2Record = dereferenceSchema((detailV2Response?.get('properties') as Map)?.get('myRecord'))
+		detailV2Record?.put('required', ['myRating'])
+		((detailV2Record?.get('properties') as Map)?.get('myRating') as Map)?.remove('nullable')
 		def legacyRatingResponse = responseSchemaForPath('/api/v1/library/{bookId}/rating', 'put', '200')
 		['status', 'currentPage', 'readingUpdatedAt'].each { name -> markRequiredNullable(legacyRatingResponse, name) }
 		def libraryResponse = responseSchemaForPath('/api/v1/library', 'get', '200')
@@ -536,6 +541,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 					|| path == '/api/v1/recommended-books'
 					|| path == '/api/v1/books'
 					|| path == '/api/v1/books/by-isbn/{isbn13}'
+					|| path == '/api/v2/books/by-isbn/{isbn13}'
 					|| path == '/api/v1/books/{bookId}/reviews'
 					|| path == '/api/v1/reviews/{reviewId}/replies'
 					|| path == '/api/v1/libraries'
@@ -830,6 +836,7 @@ tasks.register('verifyOpenApi') {
 					|| path.toString() == '/api/v1/recommended-books'
 					|| path.toString() == '/api/v1/books'
 					|| path.toString() == '/api/v1/books/by-isbn/{isbn13}'
+					|| path.toString() == '/api/v2/books/by-isbn/{isbn13}'
 					|| path.toString() == '/api/v1/books/{bookId}/reviews'
 					|| path.toString() == '/api/v1/reviews/{reviewId}/replies'
 					|| path.toString() == '/api/v1/libraries'
@@ -1335,6 +1342,53 @@ tasks.register('verifyOpenApi') {
 				|| !requiredNullable(detailResponse, 'myRecord') || !requiredNullable(detailResponse, 'totalPages')
 				|| !requiredNullable(detailResponse, 'isRegisteredInMyLibrary')) {
 			throw new GradleException('OpenAPI specification must describe nullable book detail state fields')
+		}
+		def detailV2Path = '/api/v2/books/by-isbn/{isbn13}'
+		def detailV2Operation = (paths.get(detailV2Path) as Map)?.get('get') as Map
+		def detailV2Responses = detailV2Operation?.get('responses') as Map
+		if (!detailV2Responses?.keySet()?.containsAll(['200', '401', '404', '502'])) {
+			throw new GradleException('OpenAPI specification is missing book detail v2 responses')
+		}
+		['401', '404', '502'].each { code ->
+			def problem = (((detailV2Responses.get(code) as Map)?.get('content') as Map)
+					?.get('application/problem+json') as Map)?.get('schema') as Map
+			if (problem?.get('$ref') != '#/components/schemas/ProblemDetail') {
+				throw new GradleException("OpenAPI book detail v2 ${code} must use ProblemDetail")
+			}
+		}
+		def detailV2Isbn = (detailV2Operation?.get('parameters') as List)?.find { it.name == 'isbn13' }
+		if (detailV2Isbn?.get('in') != 'path' || detailV2Isbn?.get('required') != true
+				|| detailV2Isbn?.get('schema')?.get('type') != 'string') {
+			throw new GradleException('OpenAPI book detail v2 must require an ISBN string path parameter')
+		}
+		def detailV2Response = responseSchema(detailV2Path, 'get', '200')
+		def detailV2Properties = detailV2Response?.get('properties') as Map
+		def detailProperties = detailResponse?.get('properties') as Map
+		if (detailV2Properties?.findAll { key, value -> key != 'myRecord' }
+				!= detailProperties?.findAll { key, value -> key != 'myRecord' }
+				|| !requiredNullable(detailV2Response, 'myRecord')
+				|| (detailV2Response?.get('required') as Set) != (detailResponse?.get('required') as Set)) {
+			throw new GradleException('OpenAPI book detail v2 must preserve metadata and nullable fields')
+		}
+		def detailV2Record = dereferenceSchema(detailV2Properties?.get('myRecord'))
+		def detailV2Rating = (detailV2Record?.get('properties') as Map)?.get('myRating') as Map
+		if ((detailV2Record?.get('properties') as Map)?.keySet() != (['myRating'] as Set)
+				|| (detailV2Record?.get('required') as Set) != (['myRating'] as Set)
+				|| detailV2Rating?.get('type') != 'number' || detailV2Rating?.get('nullable') == true
+				|| !(dereferenceSchema(detailProperties?.get('myRecord'))?.get('properties') as Map)
+						?.keySet()?.containsAll(['status', 'currentPage', 'myRating'])) {
+			throw new GradleException('OpenAPI must keep v1 reading fields and only expose required myRating in v2')
+		}
+		def detailV2Examples = ((detailV2Responses.get('200') as Map)?.get('content') as Map)
+				?.get('application/json')?.get('examples') as Map
+		['book-detail-v2-with-rating', 'book-detail-v2-without-rating'].each { name ->
+			def value = (detailV2Examples?.get(name) as Map)?.get('value')
+			def example = value instanceof String ? new JsonSlurper().parseText(value) as Map : value as Map
+			if (!example?.containsKey('myRecord') || (name.endsWith('without-rating')
+					? example.get('myRecord') != null
+					: (example.get('myRecord') as Map)?.keySet() != (['myRating'] as Set))) {
+				throw new GradleException("OpenAPI book detail v2 example ${name} has invalid myRecord")
+			}
 		}
 		def legacyRatingResponse = responseSchema('/api/v1/library/{bookId}/rating', 'put', '200')
 		def isbnRatingOperation = (paths.get('/api/v1/books/by-isbn/{isbn13}/rating') as Map)?.get('put') as Map
