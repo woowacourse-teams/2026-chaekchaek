@@ -61,12 +61,19 @@ export const TechnologySection = () => {
                 tabs.current[target]?.focus();
               }}
             >
-              <span>{number(index)}</span>
+              <span className={styles.menuNumber}>{number(index)}</span>
               {index === 0 ? (
                 <img className={styles.menuBook} src={landingImages.stranger} alt="" />
               ) : (
-                <span className={styles.menuMark} aria-hidden="true">
-                  {index === 1 ? '≡' : '↗'}
+                <span
+                  className={`${styles.menuPreview} ${index === 1 ? styles.feedPreview : styles.authPreview}`}
+                  aria-hidden="true"
+                >
+                  <img
+                    src={index === 1 ? landingImages.mobileReview : landingImages.mobileLibrary}
+                    alt=""
+                    loading="lazy"
+                  />
                 </span>
               )}
               <span className={styles.menuCopy}>
