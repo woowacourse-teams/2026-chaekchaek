@@ -234,6 +234,7 @@ export const BookDetailPage = () => {
           </Split>
         </Container>
 
+        {dialogElement}
         {openLoginDialog && <LoginDialog onClose={handleCloseLoginDialog} />}
       </Main>
     </Layout>
