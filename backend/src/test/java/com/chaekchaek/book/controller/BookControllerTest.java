@@ -101,11 +101,9 @@ class BookControllerTest {
             fieldWithPath("items[].publisher").type(JsonFieldType.STRING)
                     .description("출판사"),
             fieldWithPath("items[].reviewCount").type(JsonFieldType.NUMBER)
-                    .description("감상 수. 미등록 도서라면 null")
-                    .optional(),
+                    .description("감상 수. 미등록 도서이거나 감상이 없으면 0"),
             fieldWithPath("items[].replyCount").type(JsonFieldType.NUMBER)
-                    .description("답글 수. 미등록 도서라면 null")
-                    .optional()
+                    .description("답글 수. 미등록 도서이거나 답글이 없으면 0")
     };
 
     private static final FieldDescriptor[] PROBLEM_DETAIL_FIELDS = {
@@ -198,8 +196,8 @@ class BookControllerTest {
                 "9788925568683",
                 "국내도서>소설>과학소설",
                 "알에이치코리아(RHK)",
-                null,
-                null,
+                0,
+                0,
                 null
         );
         BookSearchResponse response = new BookSearchResponse(
@@ -219,6 +217,7 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.nextPage").value(nullValue()))
                 .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].title").value("마션"))
+                .andExpect(jsonPath("$.items[0].bookId").value(nullValue()))
                 .andExpect(jsonPath("$.items[0].coverImageUrl")
                         .value("https://example.com/books/cover.jpg"))
                 .andExpect(jsonPath("$.items[0].authors.length()").value(1))
@@ -229,8 +228,8 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.items[0].isbn13").value("9788925568683"))
                 .andExpect(jsonPath("$.items[0].category").value("국내도서>소설>과학소설"))
                 .andExpect(jsonPath("$.items[0].publisher").value("알에이치코리아(RHK)"))
-                .andExpect(jsonPath("$.items[0].reviewCount").value(nullValue()))
-                .andExpect(jsonPath("$.items[0].replyCount").value(nullValue()))
+                .andExpect(jsonPath("$.items[0].reviewCount").value(0))
+                .andExpect(jsonPath("$.items[0].replyCount").value(0))
                 .andExpect(jsonPath("$.items[0].isRegisteredInMyLibrary").value(nullValue()))
                 .andDo(document(
                         "book-search",
