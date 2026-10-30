@@ -1,7 +1,6 @@
 package com.chaekchaek.auth.oauth.google;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -10,6 +9,7 @@ import com.chaekchaek.auth.oauth.OAuthGuestContextService;
 import com.chaekchaek.auth.service.SocialLoginService;
 import jakarta.servlet.http.HttpServletRequest;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -69,8 +69,7 @@ public class GoogleOidcUserServiceTest {
                 "exUrl"
         );
 
-        Member member = mock(Member.class);
-        when(member.getId()).thenReturn(1L);
+        Member member = MemberFixture.savedMember(1L);
         when(oidcUser.getName()).thenReturn("google-user-123");
 
         when(guestContextService.findGuestActorId(request)).thenReturn(Optional.empty());
@@ -104,8 +103,7 @@ public class GoogleOidcUserServiceTest {
         when(oidcUser.getPicture()).thenReturn("exUrl");
         when(guestContextService.findGuestActorId(request)).thenReturn(Optional.of(7L));
 
-        Member member = mock(Member.class);
-        when(member.getId()).thenReturn(1L);
+        Member member = MemberFixture.savedMember(1L);
         when(socialLoginService.loginOrSignUp(
                 new GoogleProfile(
                         "google-user-123",

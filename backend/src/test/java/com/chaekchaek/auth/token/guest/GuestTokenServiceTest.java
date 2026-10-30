@@ -1,5 +1,6 @@
 package com.chaekchaek.auth.token.guest;
 
+import static com.chaekchaek.actor.fixture.ActorFixture.savedActor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,7 +26,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class GuestTokenServiceTest {
 
@@ -68,11 +68,8 @@ class GuestTokenServiceTest {
         SecureRandom secureRandom = mock(SecureRandom.class);
         Clock clock = Clock.fixed(Instant.parse("2026-08-26T09:00:00Z"), ZoneOffset.UTC);
         when(nicknameGenerator.generate()).thenReturn("다정한 파란 참새");
-        when(actorRepository.save(any(Actor.class))).thenAnswer(invocation -> {
-            Actor saved = invocation.getArgument(0);
-            ReflectionTestUtils.setField(saved, "id", 7L);
-            return saved;
-        });
+        when(actorRepository.save(any(Actor.class)))
+                .thenAnswer(invocation -> savedActor(7L, invocation.getArgument(0)));
         fillRandomBytes(secureRandom, (byte) 1);
         GuestTokenService service = new GuestTokenService(
                 actorRepository,
@@ -206,13 +203,15 @@ class GuestTokenServiceTest {
         }
 
         private Actor actorExpiringAt(LocalDateTime expiresAt) {
-            Actor actor = Actor.guest(
-                    hasher.hash("current-token"),
-                    "다정한 파란 참새",
-                    now.minusDays(80),
-                    expiresAt
+            Actor actor = savedActor(
+                    7L,
+                    Actor.guest(
+                            hasher.hash("current-token"),
+                            "다정한 파란 참새",
+                            now.minusDays(80),
+                            expiresAt
+                    )
             );
-            ReflectionTestUtils.setField(actor, "id", 7L);
             when(actorRepository.findByGuestTokenHash(hasher.hash("current-token")))
                     .thenReturn(Optional.of(actor));
             when(actorRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(actor));

@@ -15,6 +15,7 @@ import com.chaekchaek.admin.dto.RecommendedBookResponse;
 import com.chaekchaek.admin.repository.RecommendedBookRepository;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.fixture.BookFixture;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.common.auth.CurrentActor;
@@ -165,13 +166,13 @@ class AdminServiceAuthorizationTest {
     }
 
     private Book book() {
-        Book book = mock(Book.class);
-        when(book.getId()).thenReturn(BOOK_ID);
-        when(book.getIsbn13()).thenReturn(ISBN13);
-        when(book.getTitle()).thenReturn("마션");
-        when(book.getCoverImageUrl()).thenReturn("https://example.com/martian.jpg");
-        when(book.getAuthors()).thenReturn(List.of("앤디 위어"));
-        return book;
+        Book book = BookFixture.book(
+                ISBN13,
+                "마션",
+                "https://example.com/martian.jpg",
+                List.of("앤디 위어")
+        );
+        return BookFixture.savedBook(BOOK_ID, book);
     }
 
     @Test

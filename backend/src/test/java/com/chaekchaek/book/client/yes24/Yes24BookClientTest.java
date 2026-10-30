@@ -1,5 +1,6 @@
 package com.chaekchaek.book.client.yes24;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.chaekchaek.book.client.BookDetailItem;
@@ -9,6 +10,7 @@ import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.exception.BookNotFoundException;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,26 +50,23 @@ class Yes24BookClientTest {
 
         // then
         yes24Server.상세_요청을_검증한다(ISBN13.value());
-        SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(result.title()).isEqualTo("데미안");
-            softly.assertThat(result.coverImageUrl())
-                    .isEqualTo("https://image.yes24.com/goods/101375809/L");
-            softly.assertThat(result.spineImageUrl())
-                    .isEqualTo("https://image.yes24.com/goods/101375809/SIDE/L");
-            softly.assertThat(result.backImageUrl())
-                    .isEqualTo("https://image.yes24.com/goods/101375809/BACK/L");
-            softly.assertThat(result.description()).isEqualTo("내면의 길을 찾아가는 성장 소설");
-            softly.assertThat(result.authors()).containsExactly("헤르만 헤세");
-            softly.assertThat(result.translators()).containsExactly("전영애");
-            softly.assertThat(result.publishedDate()).isEqualTo(LocalDate.of(2000, 12, 20));
-            softly.assertThat(result.isbn13()).isEqualTo(ISBN13.value());
-            softly.assertThat(result.category()).isEqualTo("국내도서");
-            softly.assertThat(result.publisher()).isEqualTo("민음사");
-            softly.assertThat(result.totalPages()).isEqualTo(240);
-            softly.assertThat(result.purchaseUrl())
-                    .isEqualTo("https://www.yes24.com/product/goods/101375809");
-            softly.assertThat(result.source()).isEqualTo("yes24");
-        });
+        BookDetailItem expected = new BookDetailItem(
+                "데미안",
+                "https://image.yes24.com/goods/101375809/L",
+                "https://image.yes24.com/goods/101375809/SIDE/L",
+                "https://image.yes24.com/goods/101375809/BACK/L",
+                "내면의 길을 찾아가는 성장 소설",
+                List.of("헤르만 헤세"),
+                List.of("전영애"),
+                LocalDate.of(2000, 12, 20),
+                ISBN13.value(),
+                "국내도서",
+                "민음사",
+                240,
+                "https://www.yes24.com/product/goods/101375809",
+                "yes24"
+        );
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
