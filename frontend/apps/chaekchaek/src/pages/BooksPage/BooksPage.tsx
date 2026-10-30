@@ -85,6 +85,7 @@ export const BooksPage = () => {
 
   const {
     status: { data },
+    refetch: refetchGEtBooksLoadData,
   } = useLoadData({
     queryFn: getBooksLoadData,
   });
@@ -112,7 +113,9 @@ export const BooksPage = () => {
     handleOpenDialog('RegisterBookToLibraryDialog');
   };
 
-  const handleBookRegistered = () => {
+  const handleBookRegistered = async () => {
+    await refetchGEtBooksLoadData();
+
     track('library_add', {
       source: 'search',
       status: 'reading',
