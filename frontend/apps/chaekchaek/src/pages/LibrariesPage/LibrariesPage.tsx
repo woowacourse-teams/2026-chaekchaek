@@ -102,7 +102,7 @@ export const LibrariesPage = () => {
               나의 책장
             </Title>
 
-            <Partition columns={2}>
+            <Partition columns={1}>
               {librariesData?.libraries.map((library) => {
                 return (
                   <Partition.Item key={library.libraryId}>
