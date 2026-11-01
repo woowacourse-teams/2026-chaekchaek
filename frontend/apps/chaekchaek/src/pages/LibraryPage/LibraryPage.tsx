@@ -165,7 +165,13 @@ export const LibraryPage = () => {
           )
         );
       case 'DeleteLibraryDialog':
-        return <DeleteLibraryDialog onClose={handleCloseDialog} />;
+        return (
+          <DeleteLibraryDialog
+            libraryId={Number(libraryId)}
+            libraryName={libraryItemsData?.name ?? ''}
+            onClose={handleCloseDialog}
+          />
+        );
 
       default:
         return null;
