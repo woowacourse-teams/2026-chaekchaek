@@ -2,7 +2,11 @@ import { Button, Dialog, Divider, Icon, Text } from '@chaekchaek/design-system';
 
 import type { ManageLibraryDialogProps } from './ManageLibraryDialog.types';
 
-export const ManageLibraryDialog = ({ onOpenDialog, onClose }: ManageLibraryDialogProps) => {
+export const ManageLibraryDialog = ({
+  onStartEdit,
+  onOpenDialog,
+  onClose,
+}: ManageLibraryDialogProps) => {
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
@@ -25,6 +29,7 @@ export const ManageLibraryDialog = ({ onOpenDialog, onClose }: ManageLibraryDial
             align="left"
             size="large"
             onClick={() => {
+              onStartEdit();
               onClose();
             }}
           >
