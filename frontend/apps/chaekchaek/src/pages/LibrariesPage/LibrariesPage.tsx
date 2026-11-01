@@ -111,14 +111,16 @@ export const LibrariesPage = () => {
         );
 
       case 'ShareLibraryImageDialog':
+        const library = librariesData?.libraries.find(
+          (library) => library.libraryId === selectedLibrary?.libraryId,
+        );
+
         return (
-          selectedLibrary && (
+          selectedLibrary &&
+          library && (
             <ShareLibraryImageDialog
               libraryName={selectedLibrary.libraryName}
-              // imgs={libraryItemsData?.items.map((item) => {
-              //   return { title: item.title, url: item.spineImageUrl };
-              // })}
-              imgs={[]}
+              imgs={library.items.map((item) => ({ title: item.title, url: item.spineImageUrl }))}
               onClose={handleCloseDialog}
             />
           )
