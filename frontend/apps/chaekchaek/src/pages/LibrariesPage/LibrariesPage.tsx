@@ -24,11 +24,17 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 import { getLibraries } from '@/services/apis/libraries/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
+import { ManageLibraryDialog } from '@/shared/ManageLibrary';
+import type { ManageLibraryDialogType } from '@/shared/ManageLibrary';
+
 import { ROUTES } from '@/constants/routes';
 
 import { track } from '@/analytics/track';
 
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
+
+type LibrariesPageDialogType =
+  ManageLibraryDialogType | 'RegisterLibraryDialog' | 'ManageLibraryDialog';
 
 export const LibrariesPage = () => {
   const { user } = useAuthContext();
@@ -51,15 +57,34 @@ export const LibrariesPage = () => {
     });
   };
 
-  const [dialog, setDialog] = useState<'RegisterLibraryDialog' | null>(null);
-  const handleOpenDialog = (dialog: 'RegisterLibraryDialog') => {
+  const [selectedLibrary, setSelectedLibrary] = useState<{
+    libraryName: string;
+    libraryId: number;
+  } | null>(null);
+
+  const handleClickManageLibrary = ({
+    libraryId,
+    libraryName,
+  }: {
+    libraryId: number;
+    libraryName: string;
+  }) => {
+    setSelectedLibrary({
+      libraryId,
+      libraryName,
+    });
+    handleOpenDialog('ManageLibraryDialog');
+  };
+
+  const [dialog, setDialog] = useState<LibrariesPageDialogType | null>(null);
+  const handleOpenDialog = (dialog: LibrariesPageDialogType) => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'RegisterLibraryDialog' | null) => {
+  const renderDialog = (dialog: LibrariesPageDialogType | null) => {
     switch (dialog) {
       case 'RegisterLibraryDialog':
         return (
@@ -70,7 +95,17 @@ export const LibrariesPage = () => {
             onClose={handleCloseDialog}
           />
         );
-
+      case 'ManageLibraryDialog':
+        return (
+          selectedLibrary && (
+            <ManageLibraryDialog
+              libraryName={selectedLibrary.libraryName}
+              onStartEdit={() => {}}
+              onOpenDialog={handleOpenDialog}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
       default:
         return null;
     }
@@ -122,7 +157,14 @@ export const LibrariesPage = () => {
                             >
                               {library.items.length} 권
                             </Text>
-                            <IconButton>
+                            <IconButton
+                              onClick={() => {
+                                handleClickManageLibrary({
+                                  libraryId: library.libraryId,
+                                  libraryName: library.name,
+                                });
+                              }}
+                            >
                               <Icon.EllipsisIcon />
                             </IconButton>
                           </>
