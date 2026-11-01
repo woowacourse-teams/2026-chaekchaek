@@ -8,6 +8,7 @@ import { useExecute } from '@/services/core/useExecute';
 export const DeleteLibraryDialog = ({
   libraryId,
   libraryName,
+  onLibraryDeleted,
   onClose,
 }: DeleteLibraryDialogProps) => {
   const { mutate: deleteLibrariesLibraryIdMutate } = useExecute({
@@ -16,6 +17,8 @@ export const DeleteLibraryDialog = ({
 
   const handleClickDeleteLibrary = async () => {
     await deleteLibrariesLibraryIdMutate({ libraryId });
+
+    await onLibraryDeleted();
     onClose();
   };
   return (

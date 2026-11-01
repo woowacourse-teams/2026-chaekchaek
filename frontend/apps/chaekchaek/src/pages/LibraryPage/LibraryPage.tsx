@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import {
   Button,
@@ -116,6 +116,11 @@ export const LibraryPage = () => {
     });
   };
 
+  const navigate = useNavigate();
+  const handleGoToLibraries = async () => {
+    navigate(ROUTES.LIBRARIES);
+  };
+
   const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
   const handleOpenDialog = (dialog: LibraryPageDialogType) => {
     setDialog(dialog);
@@ -170,6 +175,7 @@ export const LibraryPage = () => {
             <DeleteLibraryDialog
               libraryId={Number(libraryId)}
               libraryName={libraryItemsData.name}
+              onLibraryDeleted={handleGoToLibraries}
               onClose={handleCloseDialog}
             />
           )
