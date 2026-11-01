@@ -3,6 +3,7 @@ import { Button, Dialog, Divider, Icon, Text } from '@chaekchaek/design-system';
 import type { ManageLibraryDialogProps } from './ManageLibraryDialog.types';
 
 export const ManageLibraryDialog = ({
+  libraryName,
   onStartEdit,
   onOpenDialog,
   onClose,
@@ -10,7 +11,7 @@ export const ManageLibraryDialog = ({
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
-        <Dialog.Header>나를 넓히는 책들</Dialog.Header>
+        <Dialog.Header>{libraryName}</Dialog.Header>
         <Dialog.Body>
           <Button
             block

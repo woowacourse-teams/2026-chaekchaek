@@ -162,11 +162,14 @@ export const LibraryPage = () => {
         );
       case 'ManageLibraryDialog':
         return (
-          <ManageLibraryDialog
-            onStartEdit={handleClickStartEdit}
-            onOpenDialog={handleOpenDialog}
-            onClose={handleCloseDialog}
-          />
+          libraryItemsData && (
+            <ManageLibraryDialog
+              libraryName={libraryItemsData.name}
+              onStartEdit={handleClickStartEdit}
+              onOpenDialog={handleOpenDialog}
+              onClose={handleCloseDialog}
+            />
+          )
         );
       case 'ShareLibraryImageDialog':
         return (
