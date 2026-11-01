@@ -32,13 +32,14 @@ import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLi
 
 import { ManageLibraryDialog } from '@/shared/ManageLibrary';
 import type { ManageLibraryDialogType } from '@/shared/ManageLibrary';
+
+import { ShareLibraryImageDialog } from '@/shared/ShareLibraryImage';
+import { RenameLibraryDialog } from '@/shared/RenameLibrary';
+import { DeleteLibraryDialog } from '@/shared/DeleteLibrary';
+
 import { ROUTES } from '@/constants/routes';
 
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
-
-import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
-import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
-import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';
 
 export type LibraryPageDialogType =
   | ManageLibraryDialogType
