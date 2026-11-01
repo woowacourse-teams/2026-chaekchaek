@@ -32,6 +32,9 @@ import { ROUTES } from '@/constants/routes';
 import { track } from '@/analytics/track';
 
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
+import { RenameLibraryDialog } from '@/shared/RenameLibrary';
+import { DeleteLibraryDialog } from '@/shared/DeleteLibrary';
+import { ShareLibraryImageDialog } from '@/shared/ShareLibraryImage';
 
 type LibrariesPageDialogType =
   ManageLibraryDialogType | 'RegisterLibraryDialog' | 'ManageLibraryDialog';
@@ -102,6 +105,42 @@ export const LibrariesPage = () => {
               libraryName={selectedLibrary.libraryName}
               onStartEdit={() => {}}
               onOpenDialog={handleOpenDialog}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
+
+      case 'ShareLibraryImageDialog':
+        return (
+          selectedLibrary && (
+            <ShareLibraryImageDialog
+              libraryName={selectedLibrary.libraryName}
+              // imgs={libraryItemsData?.items.map((item) => {
+              //   return { title: item.title, url: item.spineImageUrl };
+              // })}
+              imgs={[]}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
+      case 'RenameLibraryDialog':
+        return (
+          selectedLibrary && (
+            <RenameLibraryDialog
+              libraryId={Number(selectedLibrary.libraryId)}
+              name={selectedLibrary.libraryName}
+              onLibraryRenamed={async () => {}}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
+      case 'DeleteLibraryDialog':
+        return (
+          selectedLibrary && (
+            <DeleteLibraryDialog
+              libraryId={selectedLibrary.libraryId}
+              libraryName={selectedLibrary.libraryName}
+              onLibraryDeleted={async () => {}}
               onClose={handleCloseDialog}
             />
           )
