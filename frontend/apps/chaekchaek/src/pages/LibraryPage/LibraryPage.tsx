@@ -28,6 +28,7 @@ import { getLibrariesLibraryId } from '@/services/apis/librariesLibraryId/reposi
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
+import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLibraryIdBooksBookId/repository';
 
 import { ROUTES } from '@/constants/routes';
 
@@ -114,6 +115,24 @@ export const LibraryPage = () => {
       ...user,
       ...updatedUser,
     });
+  };
+
+  const [isEditing, setIsEditing] = useState(false);
+  const handleClickStartEdit = () => {
+    setIsEditing(true);
+  };
+  const handleClickEndEdit = () => {
+    setIsEditing(false);
+  };
+
+  const { mutate: deleteBookMutate } = useExecute({
+    executeFn: deleteLibrariesLibraryIdBooksBookId,
+  });
+
+  const handleClickDeleteBook = async (bookId: number) => {
+    await deleteBookMutate({ libraryId: Number(libraryId), bookId });
+
+    await refetchGetLibrary();
   };
 
   const navigate = useNavigate();
@@ -302,7 +321,15 @@ export const LibraryPage = () => {
               level="detail"
               trailing={
                 <>
-                  <Button variant="default">편집</Button>
+                  {!isEditing ? (
+                    <Button variant="default" onClick={handleClickStartEdit}>
+                      편집
+                    </Button>
+                  ) : (
+                    <Button variant="default" onClick={handleClickEndEdit}>
+                      완료
+                    </Button>
+                  )}
                 </>
               }
             >
@@ -331,7 +358,19 @@ export const LibraryPage = () => {
                       title={<>{item.title}</>}
                       content={item.authors?.join(' · ')}
                     />
-                    <List.Item.Trailing></List.Item.Trailing>
+
+                    {isEditing && (
+                      <List.Item.Trailing>
+                        <IconButton
+                          aria-label="삭제"
+                          onClick={() => {
+                            handleClickDeleteBook(item.bookId);
+                          }}
+                        >
+                          <Icon.CloseIcon color="error" />
+                        </IconButton>
+                      </List.Item.Trailing>
+                    )}
                   </List.Item>
                 );
               })}
