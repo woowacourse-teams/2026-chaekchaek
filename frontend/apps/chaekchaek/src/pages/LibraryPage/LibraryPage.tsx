@@ -166,11 +166,13 @@ export const LibraryPage = () => {
         );
       case 'DeleteLibraryDialog':
         return (
-          <DeleteLibraryDialog
-            libraryId={Number(libraryId)}
-            libraryName={libraryItemsData?.name ?? ''}
-            onClose={handleCloseDialog}
-          />
+          libraryItemsData && (
+            <DeleteLibraryDialog
+              libraryId={Number(libraryId)}
+              libraryName={libraryItemsData.name}
+              onClose={handleCloseDialog}
+            />
+          )
         );
 
       default:
