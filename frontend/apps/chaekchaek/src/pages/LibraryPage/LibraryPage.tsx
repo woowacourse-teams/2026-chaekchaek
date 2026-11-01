@@ -30,10 +30,12 @@ import { useExecute } from '@/services/core/useExecute';
 import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
 import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLibraryIdBooksBookId/repository';
 
+import { ManageLibraryDialog } from '@/shared/ManageLibrary';
+
 import { ROUTES } from '@/constants/routes';
 
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
-import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
+
 import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
 import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
 import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';

@@ -1,4 +1,4 @@
-import type { LibraryPageDialogType } from '../../LibraryPage';
+import type { LibraryPageDialogType } from '../../pages/LibraryPage/LibraryPage';
 
 export type ManageLibraryDialogProps = {
   onOpenDialog: (dialog: LibraryPageDialogType) => void;
