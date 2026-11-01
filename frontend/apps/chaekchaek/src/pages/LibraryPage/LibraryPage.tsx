@@ -31,7 +31,7 @@ import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repo
 import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLibraryIdBooksBookId/repository';
 
 import { ManageLibraryDialog } from '@/shared/ManageLibrary';
-
+import type { ManageLibraryDialogType } from '@/shared/ManageLibrary';
 import { ROUTES } from '@/constants/routes';
 
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
@@ -41,11 +41,9 @@ import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
 import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';
 
 export type LibraryPageDialogType =
-  | 'AddBooksToLibraryDialog'
+  | ManageLibraryDialogType
   | 'ManageLibraryDialog'
-  | 'ShareLibraryImageDialog'
-  | 'RenameLibraryDialog'
-  | 'DeleteLibraryDialog'
+  | 'AddBooksToLibraryDialog'
   | 'UpdateNicknameDialog';
 
 const booksHeight = [

@@ -1,7 +1,8 @@
-import type { LibraryPageDialogType } from '../../pages/LibraryPage/LibraryPage';
+export type ManageLibraryDialogType =
+  'ShareLibraryImageDialog' | 'RenameLibraryDialog' | 'DeleteLibraryDialog';
 
 export type ManageLibraryDialogProps = {
-  onOpenDialog: (dialog: LibraryPageDialogType) => void;
+  onOpenDialog: (dialog: ManageLibraryDialogType) => void;
   onClose: () => void;
   onStartEdit: () => void;
 };
