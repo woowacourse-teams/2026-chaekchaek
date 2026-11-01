@@ -131,7 +131,9 @@ export const LibrariesPage = () => {
             <RenameLibraryDialog
               libraryId={Number(selectedLibrary.libraryId)}
               name={selectedLibrary.libraryName}
-              onLibraryRenamed={async () => {}}
+              onLibraryRenamed={async () => {
+                await refetchGetLibraries();
+              }}
               onClose={handleCloseDialog}
             />
           )
@@ -142,7 +144,9 @@ export const LibrariesPage = () => {
             <DeleteLibraryDialog
               libraryId={selectedLibrary.libraryId}
               libraryName={selectedLibrary.libraryName}
-              onLibraryDeleted={async () => {}}
+              onLibraryDeleted={async () => {
+                await refetchGetLibraries();
+              }}
               onClose={handleCloseDialog}
             />
           )
