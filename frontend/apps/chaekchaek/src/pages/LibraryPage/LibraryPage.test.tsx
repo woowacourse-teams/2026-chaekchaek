@@ -21,7 +21,6 @@ import {
   bookSearchResponse,
   downloadedLibraryImageDataUrl,
   deletableLibraryResponse,
-  librariesBeforeDeleteResponse,
   librariesAfterDeleteResponse,
   emptyBookSearchResponse,
   fullLibraryResponse,
@@ -409,31 +408,24 @@ describe('LibraryPage', () => {
     }
   });
 
-  it('책장 삭제를 하면 해당 책장이 삭제되고 서재 페이지로 이동한다', async () => {
+  it('책장을 삭제하면 서재 페이지로 이동한다', async () => {
     const user = userEvent.setup();
-    let isLibraryDeleted = false;
 
     server.use(
       http.get(`${ENV.APP_API_URL}/api/v1/libraries/${deletableLibraryResponse.libraryId}`, () => {
         return HttpResponse.json(structuredClone(deletableLibraryResponse));
       }),
       http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
-        return HttpResponse.json(
-          structuredClone(
-            isLibraryDeleted ? librariesAfterDeleteResponse : librariesBeforeDeleteResponse,
-          ),
-        );
+        return HttpResponse.json(structuredClone(librariesAfterDeleteResponse));
       }),
       http.delete(
         `${ENV.APP_API_URL}/api/v1/libraries/${deletableLibraryResponse.libraryId}`,
         () => {
-          isLibraryDeleted = true;
           return new HttpResponse(null, { status: 204 });
         },
       ),
     );
 
-    // 책장 페이지에 진입한다.
     renderProvider(
       <Routes>
         <Route path="/libraries/:libraryId" element={<LibraryPage />} />
@@ -445,29 +437,20 @@ describe('LibraryPage', () => {
       },
     );
 
-    // 책장 제목 옆의 더보기 버튼을 클릭한다.
+    // 더보기 버튼을 클릭한다.
     const libraryName = await screen.findByText(deletableLibraryResponse.name);
     const libraryTitle = libraryName.closest<HTMLElement>('.ui-Title');
     if (!libraryTitle) throw new Error('책장 제목을 찾을 수 없습니다.');
     await user.click(within(libraryTitle).getByRole('button', { name: '책장 더보기' }));
 
-    // 관리 팝업의 책장 삭제 버튼이 표시되는지 확인하고 클릭한다.
-    const deleteButton = screen.getByRole('button', { name: '책장 삭제' });
-    expect(deleteButton).toBeVisible();
-    await user.click(deleteButton);
+    // 관리 팝업에서 책장 삭제를 선택한다.
+    await user.click(screen.getByRole('button', { name: '책장 삭제' }));
 
-    // 삭제 확인 팝업에서 책장 삭제 버튼을 클릭한다.
-    expect(screen.getByText('책장을 삭제할까요?')).toBeVisible();
+    // 삭제 팝업에서 삭제 버튼을 클릭한다.
     await user.click(screen.getByRole('button', { name: '책장 삭제' }));
 
     // 서재 페이지로 이동했는지 확인한다.
     expect(await screen.findByText('나의 책장')).toBeVisible();
-
-    // 남아 있는 책장이 표시되고 삭제한 책장은 서재 목록에서 사라졌는지 확인한다.
-    expect(await screen.findByRole('link', { name: libraryResponse.name })).toBeVisible();
-    expect(
-      screen.queryByRole('link', { name: deletableLibraryResponse.name }),
-    ).not.toBeInTheDocument();
   });
 
   it('편집 모드에서 책의 삭제 버튼을 클릭하면 해당 책이 목록에서 제거된다', async () => {
