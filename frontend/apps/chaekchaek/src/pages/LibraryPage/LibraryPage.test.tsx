@@ -195,12 +195,11 @@ describe('LibraryPage', () => {
 
     // 이름을 변경할 책장과 다른 책장이 표시되는지 확인한다.
     const targetLibrary = await screen.findByRole('link', {
-      name: libraryResponse.name,
-      exact: true,
+      name: libraryResponse.name
     });
     expect(targetLibrary).toBeVisible();
     expect(
-      screen.getByRole('link', { name: otherLibraryResponse.name, exact: true }),
+      screen.getByRole('link', { name: otherLibraryResponse.name }),
     ).toBeVisible();
 
     // 이름을 변경할 책장을 선택한다.
@@ -208,8 +207,8 @@ describe('LibraryPage', () => {
     expect(await screen.findByText(libraryResponse.name, { exact: true })).toBeVisible();
 
     // 책장 더보기 메뉴에서 책장 이름 바꾸기를 선택한다.
-    await user.click(screen.getByRole('button', { name: '책장 더보기', exact: true }));
-    await user.click(screen.getByRole('button', { name: '책장 이름 바꾸기', exact: true }));
+    await user.click(screen.getByRole('button', { name: '책장 더보기' }));
+    await user.click(screen.getByRole('button', { name: '책장 이름 바꾸기' }));
 
     // 기존 이름을 지우고 새로운 책장 이름을 입력한다.
     const nameInput = screen.getByPlaceholderText('예: 다시 펼치고 싶은 책');
@@ -217,16 +216,16 @@ describe('LibraryPage', () => {
     await user.type(nameInput, renamedLibraryName);
 
     // 저장 버튼을 클릭한다.
-    await user.click(screen.getByRole('button', { name: '저장', exact: true }));
+    await user.click(screen.getByRole('button', { name: '저장' }));
 
     // 상세 화면에 변경한 책장 이름이 표시되고 이름 변경 팝업이 닫히는지 확인한다.
     expect(await screen.findByText(renamedLibraryName, { exact: true })).toBeVisible();
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: '저장', exact: true })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: '저장' })).not.toBeInTheDocument();
     });
 
     // 서재 메뉴를 선택해 책장 목록으로 돌아간다.
-    const librariesLink = screen.getByRole('link', { name: '내 서재', exact: true });
+    const librariesLink = screen.getByRole('link', { name: '내 서재' });
     expect(librariesLink).toHaveAttribute('href', '/libraries');
     // 일반 링크의 전체 페이지 이동은 jsdom에서 지원하지 않아 목적지 화면을 새로 연다.
     unmount();
@@ -237,16 +236,15 @@ describe('LibraryPage', () => {
 
     // 선택한 책장에만 새 이름이 표시되고 다른 책장의 이름은 유지되는지 확인한다.
     const renamedLibrary = await screen.findByRole('link', {
-      name: renamedLibraryName,
-      exact: true,
+      name: renamedLibraryName
     });
     expect(renamedLibrary).toBeVisible();
     expect(renamedLibrary).toHaveAttribute('href', `/libraries/${libraryResponse.libraryId}`);
-    const otherLibrary = screen.getByRole('link', { name: otherLibraryResponse.name, exact: true });
+    const otherLibrary = screen.getByRole('link', { name: otherLibraryResponse.name });
     expect(otherLibrary).toBeVisible();
     expect(otherLibrary).toHaveAttribute('href', `/libraries/${otherLibraryResponse.libraryId}`);
     expect(
-      screen.queryByRole('link', { name: libraryResponse.name, exact: true }),
+      screen.queryByRole('link', { name: libraryResponse.name }),
     ).not.toBeInTheDocument();
   });
 
@@ -644,15 +642,15 @@ describe('LibraryPage', () => {
     await user.click(within(libraryTitle).getByRole('button', { name: '책장 더보기' }));
 
     // 관리 팝업에 책 삭제 메뉴가 표시되는지 확인한다.
-    const deleteBooksButton = screen.getByRole('button', { name: '책 삭제', exact: true });
+    const deleteBooksButton = screen.getByRole('button', { name: '책 삭제' });
     expect(deleteBooksButton).toBeVisible();
 
     // 관리 팝업에서 책 삭제 메뉴를 선택한다.
     await user.click(deleteBooksButton);
 
     // 관리 팝업이 닫히고 편집 모드의 완료 버튼이 표시되는지 확인한다.
-    expect(screen.queryByRole('button', { name: '책 삭제', exact: true })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '완료', exact: true })).toBeVisible();
+    expect(screen.queryByRole('button', { name: '책 삭제' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '완료' })).toBeVisible();
 
     // 삭제할 책의 목록 항목에 삭제 버튼이 표시되는지 확인한다.
     const bookItem = bookTitle.closest<HTMLElement>('.ui-List-Item');
@@ -697,11 +695,11 @@ describe('LibraryPage', () => {
     await user.click(within(libraryTitle).getByRole('button', { name: '책장 더보기' }));
 
     // 관리 팝업에 책장 이름 바꾸기 메뉴가 표시되는지 확인한다.
-    expect(screen.getByRole('button', { name: '책장 이름 바꾸기', exact: true })).toBeVisible();
+    expect(screen.getByRole('button', { name: '책장 이름 바꾸기' })).toBeVisible();
 
     // 기본 책장의 관리 팝업에는 책장 삭제 버튼이 표시되지 않는지 확인한다.
     expect(
-      screen.queryByRole('button', { name: '책장 삭제', exact: true }),
+      screen.queryByRole('button', { name: '책장 삭제' }),
     ).not.toBeInTheDocument();
   });
 });

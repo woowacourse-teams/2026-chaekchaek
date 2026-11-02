@@ -130,12 +130,11 @@ describe('LibrariesPage', () => {
 
     // 이름을 변경할 책장과 다른 책장이 표시되는지 확인한다.
     const libraryLink = await screen.findByRole('link', {
-      name: libraryToRename.name,
-      exact: true,
+      name: libraryToRename.name
     });
     expect(libraryLink).toBeVisible();
     for (const library of librariesResponse.libraries) {
-      expect(screen.getByRole('link', { name: library.name, exact: true })).toBeVisible();
+      expect(screen.getByRole('link', { name: library.name })).toBeVisible();
     }
 
     // 이름을 변경할 책장의 더보기 버튼을 클릭한다.
@@ -146,7 +145,7 @@ describe('LibrariesPage', () => {
     await user.click(moreButton);
 
     // 관리 팝업에서 책장 이름 바꾸기를 선택한다.
-    await user.click(screen.getByRole('button', { name: '책장 이름 바꾸기', exact: true }));
+    await user.click(screen.getByRole('button', { name: '책장 이름 바꾸기' }));
 
     // 기존 책장 이름을 지우고 새로운 이름을 입력한다.
     const nameInput = screen.getByPlaceholderText('예: 다시 펼치고 싶은 책');
@@ -155,24 +154,23 @@ describe('LibrariesPage', () => {
     await user.type(nameInput, renamedLibraryName);
 
     // 저장 버튼을 클릭한다.
-    await user.click(screen.getByRole('button', { name: '저장', exact: true }));
+    await user.click(screen.getByRole('button', { name: '저장' }));
 
     // 선택한 책장의 이름이 새 이름으로 바뀌고 기존 이름은 사라지는지 확인한다.
     const renamedLibrary = await screen.findByRole('link', {
-      name: renamedLibraryName,
-      exact: true,
+      name: renamedLibraryName
     });
     expect(renamedLibrary).toBeVisible();
     expect(renamedLibrary).toHaveAttribute('href', `/libraries/${libraryToRename.libraryId}`);
     expect(
-      screen.queryByRole('link', { name: libraryToRename.name, exact: true }),
+      screen.queryByRole('link', { name: libraryToRename.name }),
     ).not.toBeInTheDocument();
 
     // 다른 책장들의 이름과 연결된 책장이 그대로 유지되는지 확인한다.
     for (const library of librariesResponse.libraries.filter(
       (item) => item.libraryId !== libraryToRename.libraryId,
     )) {
-      const unchangedLibrary = screen.getByRole('link', { name: library.name, exact: true });
+      const unchangedLibrary = screen.getByRole('link', { name: library.name });
       expect(unchangedLibrary).toBeVisible();
       expect(unchangedLibrary).toHaveAttribute('href', `/libraries/${library.libraryId}`);
     }
@@ -197,9 +195,9 @@ describe('LibrariesPage', () => {
 
     // 여러 책장이 있는 서재 페이지에 진입한다.
     renderProvider(<LibrariesPage />, { auth: defaultLoggedAuthContextValue });
-    const libraryLink = await screen.findByRole('link', { name: libraryToShare.name, exact: true });
+    const libraryLink = await screen.findByRole('link', { name: libraryToShare.name });
     for (const library of librariesResponse.libraries) {
-      expect(screen.getByRole('link', { name: library.name, exact: true })).toBeVisible();
+      expect(screen.getByRole('link', { name: library.name })).toBeVisible();
     }
 
     // 이미지를 저장할 책장의 더보기 버튼을 클릭한다.
@@ -210,7 +208,7 @@ describe('LibrariesPage', () => {
     await user.click(moreButton);
 
     // 관리 팝업에서 이미지 저장 메뉴를 클릭한다.
-    await user.click(screen.getByRole('button', { name: '이미지 저장', exact: true }));
+    await user.click(screen.getByRole('button', { name: '이미지 저장' }));
 
     // 이미지 저장 팝업에 선택한 책장의 책등 이미지만 표시되는지 확인한다.
     const popup = screen.getByText('책장을 이미지로').closest<HTMLElement>('.ui-Dialog');
@@ -225,7 +223,7 @@ describe('LibrariesPage', () => {
     );
 
     // 이미지 저장 버튼을 클릭한다.
-    await user.click(within(popup).getByRole('button', { name: '이미지 저장', exact: true }));
+    await user.click(within(popup).getByRole('button', { name: '이미지 저장' }));
 
     // 현재 책장의 책등 이미지를 담은 PNG 파일 다운로드가 실행되는지 확인한다.
     await waitFor(() => {
@@ -236,7 +234,9 @@ describe('LibrariesPage', () => {
       );
     });
     expect(html2canvas).toHaveBeenCalledTimes(1);
-    const capturedLibrary = vi.mocked(html2canvas).mock.calls[0][0];
+    const captureCall = vi.mocked(html2canvas).mock.calls[0];
+    if (!captureCall) throw new Error('책장 이미지 캡처가 호출되지 않았습니다.');
+    const [capturedLibrary] = captureCall;
     expect(capturedLibrary).toBe(preview);
     expect(capturedLibrary).toHaveTextContent(libraryToShare.name);
     expect(
@@ -277,11 +277,11 @@ describe('LibrariesPage', () => {
     await user.click(moreButton);
 
     // 관리 팝업에서 책장 삭제를 선택한다.
-    await user.click(screen.getByRole('button', { name: '책장 삭제', exact: true }));
+    await user.click(screen.getByRole('button', { name: '책장 삭제' }));
 
     // 삭제 팝업에서 책장 삭제 버튼을 클릭한다.
     expect(screen.getByText('책장을 삭제할까요?')).toBeVisible();
-    await user.click(screen.getByRole('button', { name: '책장 삭제', exact: true }));
+    await user.click(screen.getByRole('button', { name: '책장 삭제' }));
 
     // 선택한 책장이 목록에서 제거되었는지 확인한다.
     await waitFor(() => {
@@ -312,11 +312,10 @@ describe('LibrariesPage', () => {
       { auth: defaultLoggedAuthContextValue, initialEntries: ['/libraries'] },
     );
     const libraryLink = await screen.findByRole('link', {
-      name: libraryToEditResponse.name,
-      exact: true,
+      name: libraryToEditResponse.name
     });
     for (const library of librariesResponse.libraries) {
-      expect(screen.getByRole('link', { name: library.name, exact: true })).toBeVisible();
+      expect(screen.getByRole('link', { name: library.name })).toBeVisible();
     }
 
     // 책을 삭제할 책장의 더보기 버튼을 클릭한다.
@@ -327,7 +326,7 @@ describe('LibrariesPage', () => {
     await user.click(moreButton);
 
     // 관리 팝업에 책 삭제 메뉴가 표시되는지 확인한다.
-    const deleteBooksButton = screen.getByRole('button', { name: '책 삭제', exact: true });
+    const deleteBooksButton = screen.getByRole('button', { name: '책 삭제' });
     expect(deleteBooksButton).toBeVisible();
 
     // 책 삭제 메뉴를 선택한다.
@@ -337,12 +336,12 @@ describe('LibrariesPage', () => {
     expect(await screen.findByText('이 책장에 담긴 책')).toBeVisible();
     expect(await screen.findByText(libraryToEditResponse.name, { exact: true })).toBeVisible();
     expect(
-      screen.queryByRole('link', { name: libraryToEditResponse.name, exact: true }),
+      screen.queryByRole('link', { name: libraryToEditResponse.name }),
     ).not.toBeInTheDocument();
 
     // 편집 모드의 완료 버튼과 각 책의 삭제 버튼이 표시되는지 확인한다.
-    expect(screen.getByRole('button', { name: '완료', exact: true })).toBeVisible();
-    expect(screen.queryByRole('button', { name: '편집', exact: true })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '완료' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: '편집' })).not.toBeInTheDocument();
     for (const book of libraryToEditResponse.items) {
       const bookItem = screen.getByText(book.title).closest<HTMLElement>('.ui-List-Item');
       if (!bookItem) throw new Error('책 목록 항목을 찾을 수 없습니다.');
@@ -373,11 +372,11 @@ describe('LibrariesPage', () => {
     await user.click(moreButton);
 
     // 관리 팝업에 책장 이름 바꾸기 메뉴가 표시되는지 확인한다.
-    expect(screen.getByRole('button', { name: '책장 이름 바꾸기', exact: true })).toBeVisible();
+    expect(screen.getByRole('button', { name: '책장 이름 바꾸기' })).toBeVisible();
 
     // 기본 책장의 관리 팝업에는 책장 삭제 버튼이 표시되지 않는지 확인한다.
     expect(
-      screen.queryByRole('button', { name: '책장 삭제', exact: true }),
+      screen.queryByRole('button', { name: '책장 삭제' }),
     ).not.toBeInTheDocument();
   });
 });
