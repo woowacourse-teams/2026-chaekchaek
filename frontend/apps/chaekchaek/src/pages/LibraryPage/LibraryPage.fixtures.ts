@@ -118,3 +118,14 @@ export const librariesAfterDeleteResponse = {
   memberId: libraryResponse.memberId,
   libraries: [libraryResponse],
 };
+
+export const [bookToDelete, bookToKeep] = libraryResponse.items as [
+  (typeof libraryResponse.items)[number],
+  (typeof libraryResponse.items)[number],
+];
+
+export const libraryAfterBookDeleteResponse = {
+  ...libraryResponse,
+  totalCount: 1,
+  items: [bookToKeep],
+};

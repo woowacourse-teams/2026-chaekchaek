@@ -26,6 +26,9 @@ import {
   emptyBookSearchResponse,
   fullLibraryResponse,
   libraryAfterAddResponse,
+  libraryAfterBookDeleteResponse,
+  bookToDelete,
+  bookToKeep,
   libraryResponse,
   myLibraryResponse,
   renamedLibraryName,
@@ -467,4 +470,57 @@ describe('LibraryPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('편집 모드에서 책의 삭제 버튼을 클릭하면 해당 책이 목록에서 제거된다', async () => {
+    const user = userEvent.setup();
+    let isBookDeleted = false;
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
+        return HttpResponse.json(
+          structuredClone(isBookDeleted ? libraryAfterBookDeleteResponse : libraryResponse),
+        );
+      }),
+      http.delete(
+        `${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}/books/${bookToDelete.bookId}`,
+        () => {
+          isBookDeleted = true;
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+    );
+
+    // 책장 페이지에 진입한다.
+    renderProvider(
+      <Routes>
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+      </Routes>,
+      {
+        auth: defaultLoggedAuthContextValue,
+        initialEntries: [`/libraries/${libraryResponse.libraryId}`],
+      },
+    );
+
+    // 삭제할 책과 남겨둘 책이 목록에 표시되는지 확인한다.
+    const bookTitle = await screen.findByText(bookToDelete.title);
+    expect(bookTitle).toBeVisible();
+    expect(await screen.findByText(bookToKeep.title)).toBeVisible();
+
+    // 편집 버튼을 클릭한다.
+    await user.click(screen.getByRole('button', { name: '편집' }));
+
+    // 삭제할 책의 목록 항목에 삭제 버튼이 표시되는지 확인한다.
+    const bookItem = bookTitle.closest<HTMLElement>('.ui-List-Item');
+    if (!bookItem) throw new Error('삭제할 책의 목록 항목을 찾을 수 없습니다.');
+    const deleteButton = within(bookItem).getByRole('button', { name: /삭제/ });
+    expect(deleteButton).toBeVisible();
+
+    // 해당 책의 삭제 버튼을 클릭한다.
+    await user.click(deleteButton);
+
+    // 삭제한 책은 목록에서 사라지고 다른 책은 그대로 표시되는지 확인한다.
+    await waitFor(() => {
+      expect(screen.queryByText(bookToDelete.title)).not.toBeInTheDocument();
+    });
+    expect(screen.getByText(bookToKeep.title)).toBeVisible();
+  });
 });
