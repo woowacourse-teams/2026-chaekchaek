@@ -523,4 +523,72 @@ describe('LibraryPage', () => {
     });
     expect(screen.getByText(bookToKeep.title)).toBeVisible();
   });
+
+  it('책 삭제를 선택하면 편집 모드로 전환되고, 삭제 버튼을 누르면 해당 책이 목록에서 제거된다', async () => {
+    const user = userEvent.setup();
+    let isBookDeleted = false;
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
+        return HttpResponse.json(
+          structuredClone(isBookDeleted ? libraryAfterBookDeleteResponse : libraryResponse),
+        );
+      }),
+      http.delete(
+        `${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}/books/${bookToDelete.bookId}`,
+        () => {
+          isBookDeleted = true;
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+    );
+
+    // 책장 페이지에 진입한다.
+    renderProvider(
+      <Routes>
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+      </Routes>,
+      {
+        auth: defaultLoggedAuthContextValue,
+        initialEntries: [`/libraries/${libraryResponse.libraryId}`],
+      },
+    );
+
+    // 삭제할 책과 남겨둘 책이 목록에 표시되는지 확인한다.
+    const bookTitle = await screen.findByText(bookToDelete.title);
+    expect(bookTitle).toBeVisible();
+    expect(await screen.findByText(bookToKeep.title)).toBeVisible();
+
+    // 책장 제목 옆의 더보기 버튼을 클릭한다.
+    const libraryName = screen.getByText(libraryResponse.name);
+    const libraryTitle = libraryName.closest<HTMLElement>('.ui-Title');
+    if (!libraryTitle) throw new Error('책장 제목을 찾을 수 없습니다.');
+    await user.click(within(libraryTitle).getByRole('button', { name: '책장 더보기' }));
+
+    // 관리 팝업에 책 삭제 메뉴가 표시되는지 확인한다.
+    const deleteBooksButton = screen.getByRole('button', { name: '책 삭제', exact: true });
+    expect(deleteBooksButton).toBeVisible();
+
+    // 관리 팝업에서 책 삭제 메뉴를 선택한다.
+    await user.click(deleteBooksButton);
+
+    // 관리 팝업이 닫히고 편집 모드의 완료 버튼이 표시되는지 확인한다.
+    expect(screen.queryByRole('button', { name: '책 삭제', exact: true })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '완료', exact: true })).toBeVisible();
+
+    // 삭제할 책의 목록 항목에 삭제 버튼이 표시되는지 확인한다.
+    const bookItem = bookTitle.closest<HTMLElement>('.ui-List-Item');
+    if (!bookItem) throw new Error('삭제할 책의 목록 항목을 찾을 수 없습니다.');
+    const deleteButton = within(bookItem).getByRole('button', { name: /삭제/ });
+    expect(deleteButton).toBeVisible();
+
+    // 해당 책의 삭제 버튼을 클릭한다.
+    await user.click(deleteButton);
+
+    // 삭제한 책은 목록에서 사라지고 다른 책은 그대로 표시되는지 확인한다.
+    await waitFor(() => {
+      expect(screen.queryByText(bookToDelete.title)).not.toBeInTheDocument();
+    });
+    expect(screen.getByText(bookToKeep.title)).toBeVisible();
+  });
 });
