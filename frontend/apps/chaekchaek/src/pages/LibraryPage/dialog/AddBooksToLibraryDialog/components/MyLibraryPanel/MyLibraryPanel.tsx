@@ -110,6 +110,8 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
               <List.Item key={item.bookId}>
                 <List.Item.Leading>
                   <Checkbox
+                    sx={{ mr: 2 }}
+                    size="large"
                     disabled={isCheckDisabled}
                     value={item.isbn13}
                     checked={isIncluded}

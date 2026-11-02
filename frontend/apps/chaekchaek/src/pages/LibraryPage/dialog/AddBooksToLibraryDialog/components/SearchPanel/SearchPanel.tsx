@@ -135,6 +135,8 @@ export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
               <List.Item key={item.isbn13}>
                 <List.Item.Leading>
                   <Checkbox
+                    sx={{ mr: 2 }}
+                    size="large"
                     value={item.isbn13}
                     checked={isIncluded}
                     disabled={isRegisteredInCurrentLibrary}
