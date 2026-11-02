@@ -8,6 +8,7 @@ import {
   ConstrainedImgBox,
   Dialog,
   List,
+  ScrollArea,
   Text,
 } from '@chaekchaek/design-system';
 
@@ -147,9 +148,11 @@ export const RegisterBookToLibraryDialog = ({
               return (
                 <List.Item key={library.libraryId}>
                   <List.Item.Leading>
-                    {library.items.map((item) => {
-                      return <ConstrainedImgBox img={item.spineImageUrl} height="40px" />;
-                    })}
+                    <ScrollArea height="auto" width="80px">
+                      {library.items.map((item) => {
+                        return <ConstrainedImgBox img={item.spineImageUrl} height="40px" />;
+                      })}
+                    </ScrollArea>
                   </List.Item.Leading>
                   <List.Item.Content
                     title={
