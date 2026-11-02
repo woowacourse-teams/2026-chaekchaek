@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import {
   Button,
@@ -118,7 +118,10 @@ export const LibraryPage = () => {
     });
   };
 
-  const [isEditing, setIsEditing] = useState(false);
+  const location = useLocation();
+  const state = location.state as { startEditing: boolean };
+
+  const [isEditing, setIsEditing] = useState(state?.startEditing || false);
   const handleClickStartEdit = () => {
     setIsEditing(true);
   };

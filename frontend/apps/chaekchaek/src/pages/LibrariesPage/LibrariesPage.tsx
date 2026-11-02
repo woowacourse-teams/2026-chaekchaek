@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { generatePath, Link, useNavigate } from 'react-router-dom';
 
 import styles from './LibrariesPage.module.css';
 
@@ -79,6 +79,15 @@ export const LibrariesPage = () => {
     handleOpenDialog('ManageLibraryDialog');
   };
 
+  const navigate = useNavigate();
+  const handleClickToGoLibrary = (libraryId: number) => {
+    navigate(generatePath(ROUTES.LIBRARY, { libraryId: String(libraryId) }), {
+      state: {
+        startEditing: true,
+      },
+    });
+  };
+
   const [dialog, setDialog] = useState<LibrariesPageDialogType | null>(null);
   const handleOpenDialog = (dialog: LibrariesPageDialogType) => {
     setDialog(dialog);
@@ -103,7 +112,9 @@ export const LibrariesPage = () => {
           selectedLibrary && (
             <ManageLibraryDialog
               libraryName={selectedLibrary.libraryName}
-              onStartEdit={() => {}}
+              onStartEdit={() => {
+                handleClickToGoLibrary(selectedLibrary.libraryId);
+              }}
               onOpenDialog={handleOpenDialog}
               onClose={handleCloseDialog}
             />
