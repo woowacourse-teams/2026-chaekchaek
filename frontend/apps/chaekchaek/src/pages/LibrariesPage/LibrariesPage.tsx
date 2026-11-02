@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { generatePath, Link, useNavigate } from 'react-router-dom';
 
 import styles from './LibrariesPage.module.css';
 
@@ -24,11 +24,24 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 import { getLibraries } from '@/services/apis/libraries/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
+import { ManageLibraryDialog } from '@/shared/ManageLibrary';
+import type { ManageLibraryDialogType } from '@/shared/ManageLibrary';
+
 import { ROUTES } from '@/constants/routes';
 
 import { track } from '@/analytics/track';
 
 import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
+import { RenameLibraryDialog } from '@/shared/RenameLibrary';
+import { DeleteLibraryDialog } from '@/shared/DeleteLibrary';
+import { ShareLibraryImageDialog } from '@/shared/ShareLibraryImage';
+
+const canDeleteLibrary = ({ isDefault }: { isDefault: boolean }): boolean => {
+  return !isDefault;
+};
+
+type LibrariesPageDialogType =
+  ManageLibraryDialogType | 'RegisterLibraryDialog' | 'ManageLibraryDialog';
 
 export const LibrariesPage = () => {
   const { user } = useAuthContext();
@@ -51,15 +64,47 @@ export const LibrariesPage = () => {
     });
   };
 
-  const [dialog, setDialog] = useState<'RegisterLibraryDialog' | null>(null);
-  const handleOpenDialog = (dialog: 'RegisterLibraryDialog') => {
+  const [selectedLibrary, setSelectedLibrary] = useState<{
+    libraryName: string;
+    libraryId: number;
+    isDefault: boolean;
+  } | null>(null);
+
+  const handleClickManageLibrary = ({
+    libraryId,
+    libraryName,
+    isDefault,
+  }: {
+    libraryId: number;
+    libraryName: string;
+    isDefault: boolean;
+  }) => {
+    setSelectedLibrary({
+      libraryId,
+      libraryName,
+      isDefault,
+    });
+    handleOpenDialog('ManageLibraryDialog');
+  };
+
+  const navigate = useNavigate();
+  const handleClickToGoLibrary = (libraryId: number) => {
+    navigate(generatePath(ROUTES.LIBRARY, { libraryId: String(libraryId) }), {
+      state: {
+        startEditing: true,
+      },
+    });
+  };
+
+  const [dialog, setDialog] = useState<LibrariesPageDialogType | null>(null);
+  const handleOpenDialog = (dialog: LibrariesPageDialogType) => {
     setDialog(dialog);
   };
   const handleCloseDialog = () => {
     setDialog(null);
   };
 
-  const renderDialog = (dialog: 'RegisterLibraryDialog' | null) => {
+  const renderDialog = (dialog: LibrariesPageDialogType | null) => {
     switch (dialog) {
       case 'RegisterLibraryDialog':
         return (
@@ -70,7 +115,62 @@ export const LibrariesPage = () => {
             onClose={handleCloseDialog}
           />
         );
+      case 'ManageLibraryDialog':
+        return (
+          selectedLibrary && (
+            <ManageLibraryDialog
+              canDeleteLibrary={canDeleteLibrary(selectedLibrary)}
+              libraryName={selectedLibrary.libraryName}
+              onStartEdit={() => {
+                handleClickToGoLibrary(selectedLibrary.libraryId);
+              }}
+              onOpenDialog={handleOpenDialog}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
 
+      case 'ShareLibraryImageDialog':
+        const library = librariesData?.libraries.find(
+          (library) => library.libraryId === selectedLibrary?.libraryId,
+        );
+
+        return (
+          selectedLibrary &&
+          library && (
+            <ShareLibraryImageDialog
+              libraryName={selectedLibrary.libraryName}
+              imgs={library.items.map((item) => ({ title: item.title, url: item.spineImageUrl }))}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
+      case 'RenameLibraryDialog':
+        return (
+          selectedLibrary && (
+            <RenameLibraryDialog
+              libraryId={Number(selectedLibrary.libraryId)}
+              name={selectedLibrary.libraryName}
+              onLibraryRenamed={async () => {
+                await refetchGetLibraries();
+              }}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
+      case 'DeleteLibraryDialog':
+        return (
+          selectedLibrary && (
+            <DeleteLibraryDialog
+              libraryId={selectedLibrary.libraryId}
+              libraryName={selectedLibrary.libraryName}
+              onLibraryDeleted={async () => {
+                await refetchGetLibraries();
+              }}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
       default:
         return null;
     }
@@ -102,7 +202,7 @@ export const LibrariesPage = () => {
               나의 책장
             </Title>
 
-            <Partition columns={2}>
+            <Partition columns={1}>
               {librariesData?.libraries.map((library) => {
                 return (
                   <Partition.Item key={library.libraryId}>
@@ -122,7 +222,15 @@ export const LibrariesPage = () => {
                             >
                               {library.items.length} 권
                             </Text>
-                            <IconButton>
+                            <IconButton
+                              onClick={() => {
+                                handleClickManageLibrary({
+                                  libraryId: library.libraryId,
+                                  libraryName: library.name,
+                                  isDefault: library.isDefault,
+                                });
+                              }}
+                            >
                               <Icon.EllipsisIcon />
                             </IconButton>
                           </>

@@ -8,6 +8,8 @@ import {
   ConstrainedImgBox,
   Dialog,
   List,
+  ScrollArea,
+  Text,
 } from '@chaekchaek/design-system';
 
 import { useLoadData } from '@/services/core/useLoadData';
@@ -21,6 +23,8 @@ import type { RegisterBookToLibraryDialogProps } from './RegisterBookToLibraryDi
 import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLibraryIdBooksBookId/repository';
 
 type LibraryId = number;
+
+export const LIBRARY_BOOK_MAX_LENGTH = 30;
 
 export const RegisterBookToLibraryDialog = ({
   book,
@@ -126,6 +130,8 @@ export const RegisterBookToLibraryDialog = ({
     onClose();
   };
 
+  const infoMessage = '책장이 가득 찼어요.';
+
   return (
     <Dialog onClose={onClose}>
       <Dialog.Container>
@@ -137,17 +143,35 @@ export const RegisterBookToLibraryDialog = ({
             {librariesData?.libraries.map((library) => {
               const isIncluded = selection.includes(library.libraryId);
 
+              const isLimitReached = library.items.length >= LIBRARY_BOOK_MAX_LENGTH;
+
               return (
                 <List.Item key={library.libraryId}>
                   <List.Item.Leading>
-                    {library.items.map((item) => {
-                      return <ConstrainedImgBox img={item.spineImageUrl} height="40px" />;
-                    })}
+                    <ScrollArea height="auto" width="80px">
+                      {library.items.map((item) => {
+                        return <ConstrainedImgBox img={item.spineImageUrl} height="40px" />;
+                      })}
+                    </ScrollArea>
                   </List.Item.Leading>
-                  <List.Item.Content title={library.name} content={`${library.items.length}권`} />
+                  <List.Item.Content
+                    title={
+                      <>
+                        {library.name} <br />
+                      </>
+                    }
+                    content={
+                      isLimitReached ? (
+                        <Text size="x-small">{infoMessage}</Text>
+                      ) : (
+                        `${library.items.length}권`
+                      )
+                    }
+                  />
                   <List.Item.Trailing>
                     <Checkbox
                       size="large"
+                      disabled={isLimitReached}
                       checked={isIncluded}
                       value={library.libraryId}
                       onChange={handleChangeSelection}

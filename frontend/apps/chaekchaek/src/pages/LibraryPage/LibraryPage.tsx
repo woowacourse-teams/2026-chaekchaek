@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import {
   Button,
@@ -28,21 +28,23 @@ import { getLibrariesLibraryId } from '@/services/apis/librariesLibraryId/reposi
 import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
+import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLibraryIdBooksBookId/repository';
+
+import { ManageLibraryDialog } from '@/shared/ManageLibrary';
+import type { ManageLibraryDialogType } from '@/shared/ManageLibrary';
+
+import { ShareLibraryImageDialog } from '@/shared/ShareLibraryImage';
+import { RenameLibraryDialog } from '@/shared/RenameLibrary';
+import { DeleteLibraryDialog } from '@/shared/DeleteLibrary';
 
 import { ROUTES } from '@/constants/routes';
 
 import { AddBooksToLibraryDialog } from './dialog/AddBooksToLibraryDialog';
-import { ManageLibraryDialog } from './dialog/ManageLibraryDialog';
-import { ShareLibraryImageDialog } from './dialog/ShareLibraryImageDialog';
-import { RenameLibraryDialog } from './dialog/RenameLibraryDialog';
-import { DeleteLibraryDialog } from './dialog/DeleteLibraryDialog';
 
 export type LibraryPageDialogType =
-  | 'AddBooksToLibraryDialog'
+  | ManageLibraryDialogType
   | 'ManageLibraryDialog'
-  | 'ShareLibraryImageDialog'
-  | 'RenameLibraryDialog'
-  | 'DeleteLibraryDialog'
+  | 'AddBooksToLibraryDialog'
   | 'UpdateNicknameDialog';
 
 const booksHeight = [
@@ -50,6 +52,9 @@ const booksHeight = [
   ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
   ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
 ];
+const canDeleteLibrary = ({ isDefault }: { isDefault: boolean }): boolean => {
+  return !isDefault;
+};
 
 export const LibraryPage = () => {
   const { user, updateAccount } = useAuthContext();
@@ -116,6 +121,32 @@ export const LibraryPage = () => {
     });
   };
 
+  const location = useLocation();
+  const state = location.state as { startEditing: boolean };
+
+  const [isEditing, setIsEditing] = useState(state?.startEditing || false);
+  const handleClickStartEdit = () => {
+    setIsEditing(true);
+  };
+  const handleClickEndEdit = () => {
+    setIsEditing(false);
+  };
+
+  const { mutate: deleteBookMutate } = useExecute({
+    executeFn: deleteLibrariesLibraryIdBooksBookId,
+  });
+
+  const handleClickDeleteBook = async (bookId: number) => {
+    await deleteBookMutate({ libraryId: Number(libraryId), bookId });
+
+    await refetchGetLibrary();
+  };
+
+  const navigate = useNavigate();
+  const handleGoToLibraries = async () => {
+    navigate(ROUTES.LIBRARIES);
+  };
+
   const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
   const handleOpenDialog = (dialog: LibraryPageDialogType) => {
     setDialog(dialog);
@@ -137,7 +168,17 @@ export const LibraryPage = () => {
           />
         );
       case 'ManageLibraryDialog':
-        return <ManageLibraryDialog onClose={handleCloseDialog} onOpenDialog={handleOpenDialog} />;
+        return (
+          libraryItemsData && (
+            <ManageLibraryDialog
+              canDeleteLibrary={canDeleteLibrary(libraryItemsData)}
+              libraryName={libraryItemsData.name}
+              onStartEdit={handleClickStartEdit}
+              onOpenDialog={handleOpenDialog}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
       case 'ShareLibraryImageDialog':
         return (
           libraryItemsData && (
@@ -165,7 +206,16 @@ export const LibraryPage = () => {
           )
         );
       case 'DeleteLibraryDialog':
-        return <DeleteLibraryDialog onClose={handleCloseDialog} />;
+        return (
+          libraryItemsData && (
+            <DeleteLibraryDialog
+              libraryId={Number(libraryId)}
+              libraryName={libraryItemsData.name}
+              onLibraryDeleted={handleGoToLibraries}
+              onClose={handleCloseDialog}
+            />
+          )
+        );
 
       default:
         return null;
@@ -288,7 +338,15 @@ export const LibraryPage = () => {
               level="detail"
               trailing={
                 <>
-                  <Button variant="default">편집</Button>
+                  {!isEditing ? (
+                    <Button variant="default" onClick={handleClickStartEdit}>
+                      편집
+                    </Button>
+                  ) : (
+                    <Button variant="default" onClick={handleClickEndEdit}>
+                      완료
+                    </Button>
+                  )}
                 </>
               }
             >
@@ -317,7 +375,19 @@ export const LibraryPage = () => {
                       title={<>{item.title}</>}
                       content={item.authors?.join(' · ')}
                     />
-                    <List.Item.Trailing></List.Item.Trailing>
+
+                    {isEditing && (
+                      <List.Item.Trailing>
+                        <IconButton
+                          aria-label="삭제"
+                          onClick={() => {
+                            handleClickDeleteBook(item.bookId);
+                          }}
+                        >
+                          <Icon.CloseIcon color="error" />
+                        </IconButton>
+                      </List.Item.Trailing>
+                    )}
                   </List.Item>
                 );
               })}

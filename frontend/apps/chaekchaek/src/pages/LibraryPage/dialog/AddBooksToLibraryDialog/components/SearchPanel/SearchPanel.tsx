@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
-import { Button, Checkbox, Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
+import {
+  Button,
+  Checkbox,
+  Icon,
+  ImgBox,
+  InfoMessage,
+  Input,
+  List,
+  ScrollArea,
+} from '@chaekchaek/design-system';
 
 import { getBooks } from '@/services/apis/books/repository';
 import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
@@ -9,6 +18,7 @@ import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 import { getLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
+import { LIBRARY_BOOK_MAX_LENGTH } from '../../AddBooksToLibraryDialog';
 import type { SearchPanelProps } from './SearchPanel.types';
 
 export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
@@ -91,10 +101,18 @@ export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
     onSubmit(selection);
   };
 
+  const totalBookCount = (currentLibraryBooks?.items.length ?? 0) + selection.length;
+  const remainingBookCount = LIBRARY_BOOK_MAX_LENGTH - totalBookCount;
+  const isLimitReached = remainingBookCount <= 0;
+
+  const infoMessage = isLimitReached
+    ? '책장이 가득 찼어요. 책을 추가하려면 선택을 해제해 주세요.'
+    : `${remainingBookCount}권 더 담을 수 있어요 (${totalBookCount}/${LIBRARY_BOOK_MAX_LENGTH})`;
+
   return (
     <>
       <Input
-        sx={{ mt: 2, mb: 4 }}
+        sx={{ mt: 2, mb: 1 }}
         size="small"
         leading={<Icon.SearchIcon />}
         placeholder="책 제목이나 작가를 검색하세요"
@@ -102,7 +120,9 @@ export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
         onChange={handleChange}
       />
 
-      <ScrollArea ref={scrollAreaRef} height="340px">
+      <InfoMessage title={infoMessage} />
+
+      <ScrollArea ref={scrollAreaRef} height="310px">
         <List>
           {booksData?.map((item) => {
             const isIncluded = selection.includes(item.isbn13);
@@ -115,6 +135,8 @@ export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
               <List.Item key={item.isbn13}>
                 <List.Item.Leading>
                   <Checkbox
+                    sx={{ mr: 2 }}
+                    size="large"
                     value={item.isbn13}
                     checked={isIncluded}
                     disabled={isRegisteredInCurrentLibrary}
