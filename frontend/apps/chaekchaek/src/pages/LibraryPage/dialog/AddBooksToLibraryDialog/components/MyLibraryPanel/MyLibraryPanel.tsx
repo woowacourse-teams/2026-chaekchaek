@@ -1,15 +1,23 @@
 import { useCallback, useState, type ChangeEvent } from 'react';
-import { Link } from 'react-router-dom';
 
-import { Button, Checkbox, Icon, ImgBox, Input, List, ScrollArea } from '@chaekchaek/design-system';
-
-import { getLibraries } from '@/services/apis/libraries/repository';
-
-import { useLoadData } from '@/services/core/useLoadData';
-
-import type { MyLibraryPanelProps } from './MyLibraryPanel.types';
+import {
+  Button,
+  Checkbox,
+  Icon,
+  ImgBox,
+  InfoMessage,
+  Input,
+  List,
+  ScrollArea,
+} from '@chaekchaek/design-system';
 
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
+import { getLibraries } from '@/services/apis/libraries/repository';
+import { useLoadData } from '@/services/core/useLoadData';
+
+import { LIBRARY_BOOK_MAX_LENGTH } from '../../AddBooksToLibraryDialog';
+import type { MyLibraryPanelProps } from './MyLibraryPanel.types';
 
 export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => {
   const { user } = useAuthContext();
@@ -64,10 +72,18 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
     onSubmit(selection);
   };
 
+  const totalBookCount = currentLibraryBooks.length + selection.length;
+  const remainingBookCount = LIBRARY_BOOK_MAX_LENGTH - totalBookCount;
+  const isLimitReached = remainingBookCount <= 0;
+
+  const infoMessage = isLimitReached
+    ? '책장이 가득 찼어요. 책을 추가하려면 선택을 해제해 주세요.'
+    : `${remainingBookCount}권 더 담을 수 있어요 (${totalBookCount}/${LIBRARY_BOOK_MAX_LENGTH})`;
+
   return (
     <>
       <Input
-        sx={{ mt: 2, mb: 4 }}
+        sx={{ mt: 2, mb: 1 }}
         size="small"
         leading={<Icon.SearchIcon />}
         placeholder="책 제목이나 작가를 검색하세요"
@@ -75,20 +91,26 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
         onChange={handleChange}
       />
 
-      <ScrollArea height="340px">
+      <InfoMessage title={infoMessage} />
+
+      <ScrollArea height="310px">
         <List>
           {queryFilteredBooks?.map((item) => {
             const isIncluded = selection.includes(item.isbn13);
 
             const isRegisteredInCurrentLibrary = !!currentLibraryBooks.find(
               (currentLibraryBook) => currentLibraryBook.isbn13 === item.isbn13,
-            );
+            ); // 현재 책장에 담겨 있는 책
+
+            const isSelectionDisabled = !isIncluded && isLimitReached; // 최대 권수를 채운 경우 더 추가하지 못하게
+
+            const isCheckDisabled = isRegisteredInCurrentLibrary || isSelectionDisabled;
 
             return (
               <List.Item key={item.bookId}>
                 <List.Item.Leading>
                   <Checkbox
-                    disabled={isRegisteredInCurrentLibrary}
+                    disabled={isCheckDisabled}
                     value={item.isbn13}
                     checked={isIncluded}
                     onChange={handleChangeSelection}

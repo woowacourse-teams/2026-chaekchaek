@@ -14,6 +14,8 @@ import type { AddBooksToLibraryDialogProps } from './AddBooksToLibraryDialog.typ
 
 type TabType = 'my-library' | 'search';
 
+export const LIBRARY_BOOK_MAX_LENGTH = 30;
+
 export const AddBooksToLibraryDialog = ({
   libraryId,
   onBookAdded,
