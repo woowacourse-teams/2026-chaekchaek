@@ -4,7 +4,7 @@ import type { ManageLibraryDialogProps } from './ManageLibraryDialog.types';
 
 export const ManageLibraryDialog = ({
   libraryName,
-  canLibraryDeleted,
+  canDeleteLibrary,
   onStartEdit,
   onOpenDialog,
   onClose,
@@ -61,7 +61,7 @@ export const ManageLibraryDialog = ({
             <Icon.DownloadIcon size="large" sx={{ mr: 3 }} />
             이미지 저장
           </Button>
-          {canLibraryDeleted && (
+          {canDeleteLibrary && (
             <>
               <Divider sx={{ mt: 1, mb: 1 }} />
               <Button

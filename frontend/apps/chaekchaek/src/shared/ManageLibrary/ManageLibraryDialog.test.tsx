@@ -12,7 +12,7 @@ describe('ManageLibraryDialog', () => {
     renderProvider(
       <ManageLibraryDialog
         libraryName={libraryName}
-        canLibraryDeleted={true}
+        canDeleteLibrary={true}
         onStartEdit={vi.fn()}
         onOpenDialog={vi.fn()}
         onClose={vi.fn()}
@@ -40,7 +40,7 @@ describe('ManageLibraryDialog', () => {
     renderProvider(
       <ManageLibraryDialog
         libraryName={nonDeletableLibrary.name}
-        canLibraryDeleted={nonDeletableLibrary.canLibraryDeleted}
+        canDeleteLibrary={nonDeletableLibrary.canDeleteLibrary}
         onStartEdit={vi.fn()}
         onOpenDialog={vi.fn()}
         onClose={vi.fn()}

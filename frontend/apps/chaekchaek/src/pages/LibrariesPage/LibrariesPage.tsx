@@ -115,7 +115,7 @@ export const LibrariesPage = () => {
         return (
           selectedLibrary && (
             <ManageLibraryDialog
-              canLibraryDeleted={!selectedLibrary.isDefault}
+              canDeleteLibrary={!selectedLibrary.isDefault}
               libraryName={selectedLibrary.libraryName}
               onStartEdit={() => {
                 handleClickToGoLibrary(selectedLibrary.libraryId);
