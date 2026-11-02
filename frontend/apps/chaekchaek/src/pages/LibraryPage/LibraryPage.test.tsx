@@ -669,4 +669,39 @@ describe('LibraryPage', () => {
     });
     expect(screen.getByText(bookToKeep.title)).toBeVisible();
   });
+
+  it('기본 책장의 관리 팝업에는 책장 삭제 버튼이 표시되지 않는다', async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryResponse.libraryId}`, () => {
+        return HttpResponse.json(structuredClone(libraryResponse));
+      }),
+    );
+
+    // 기본 책장 페이지에 진입한다.
+    renderProvider(
+      <Routes>
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
+      </Routes>,
+      {
+        auth: defaultLoggedAuthContextValue,
+        initialEntries: [`/libraries/${libraryResponse.libraryId}`],
+      },
+    );
+
+    // 기본 책장의 더보기 버튼을 클릭한다.
+    const libraryName = await screen.findByText(libraryResponse.name);
+    const libraryTitle = libraryName.closest<HTMLElement>('.ui-Title');
+    if (!libraryTitle) throw new Error('기본 책장의 제목을 찾을 수 없습니다.');
+    await user.click(within(libraryTitle).getByRole('button', { name: '책장 더보기' }));
+
+    // 관리 팝업에 책장 이름 바꾸기 메뉴가 표시되는지 확인한다.
+    expect(screen.getByRole('button', { name: '책장 이름 바꾸기', exact: true })).toBeVisible();
+
+    // 기본 책장의 관리 팝업에는 책장 삭제 버튼이 표시되지 않는지 확인한다.
+    expect(
+      screen.queryByRole('button', { name: '책장 삭제', exact: true }),
+    ).not.toBeInTheDocument();
+  });
 });
