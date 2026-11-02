@@ -25,6 +25,18 @@ export const libraryResponse = {
 
 export const renamedLibraryName = '다시 읽고 싶은 책';
 
+export const otherLibraryResponse = {
+  ...libraryResponse,
+  libraryId: 2,
+  name: '주말에 읽을 책',
+  isDefault: false,
+};
+
+export const librariesBeforeRenameResponse = {
+  memberId: libraryResponse.memberId,
+  libraries: [libraryResponse, otherLibraryResponse],
+};
+
 export const searchedBook = {
   bookId: 44,
   title: '마션',
