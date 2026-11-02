@@ -51,6 +51,9 @@ export const librariesAfterCreateResponse = {
 export const libraryToDelete = librariesResponse.libraries[1]!;
 export const libraryToKeep = librariesResponse.libraries[0]!;
 
+export const libraryToRename = librariesResponse.libraries[1]!;
+export const renamedLibraryName = '주말에 읽을 책';
+
 export const librariesAfterDeleteResponse = {
   ...librariesResponse,
   libraries: [libraryToKeep],

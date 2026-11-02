@@ -19,6 +19,8 @@ import {
   librariesAfterDeleteResponse,
   libraryToDelete,
   libraryToKeep,
+  libraryToRename,
+  renamedLibraryName,
 } from './LibrariesPage.fixtures';
 
 describe('LibrariesPage', () => {
@@ -94,6 +96,78 @@ describe('LibrariesPage', () => {
 
     // 4. 추가한 책장이 목록에 표시되는지 확인한다.
     expect(await screen.findByRole('link', { name: createdLibraryResponse.name })).toBeVisible();
+  });
+
+  it('특정 책장의 이름을 변경하면 해당 책장의 이름만 변경된다', async () => {
+    const user = userEvent.setup();
+    const currentLibraries = structuredClone(librariesResponse);
+
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
+        return HttpResponse.json(structuredClone(currentLibraries));
+      }),
+      http.patch(`${ENV.APP_API_URL}/api/v1/libraries/:libraryId`, async ({ params, request }) => {
+        const library = currentLibraries.libraries.find(
+          (item) => item.libraryId === Number(params.libraryId),
+        );
+        if (!library) return new HttpResponse(null, { status: 404 });
+        const { name } = (await request.json()) as { name: string };
+        library.name = name;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    // 여러 책장이 있는 서재 페이지에 진입한다.
+    renderProvider(<LibrariesPage />, { auth: defaultLoggedAuthContextValue });
+
+    // 이름을 변경할 책장과 다른 책장이 표시되는지 확인한다.
+    const libraryLink = await screen.findByRole('link', {
+      name: libraryToRename.name,
+      exact: true,
+    });
+    expect(libraryLink).toBeVisible();
+    for (const library of librariesResponse.libraries) {
+      expect(screen.getByRole('link', { name: library.name, exact: true })).toBeVisible();
+    }
+
+    // 이름을 변경할 책장의 더보기 버튼을 클릭한다.
+    const libraryTitle = libraryLink.closest<HTMLElement>('.ui-Title');
+    if (!libraryTitle) throw new Error('이름을 변경할 책장의 제목을 찾을 수 없습니다.');
+    const [, moreButton] = within(libraryTitle).getAllByRole('button');
+    if (!moreButton) throw new Error('책장 더보기 버튼을 찾을 수 없습니다.');
+    await user.click(moreButton);
+
+    // 관리 팝업에서 책장 이름 바꾸기를 선택한다.
+    await user.click(screen.getByRole('button', { name: '책장 이름 바꾸기', exact: true }));
+
+    // 기존 책장 이름을 지우고 새로운 이름을 입력한다.
+    const nameInput = screen.getByPlaceholderText('예: 다시 펼치고 싶은 책');
+    expect(nameInput).toHaveValue(libraryToRename.name);
+    await user.clear(nameInput);
+    await user.type(nameInput, renamedLibraryName);
+
+    // 저장 버튼을 클릭한다.
+    await user.click(screen.getByRole('button', { name: '저장', exact: true }));
+
+    // 선택한 책장의 이름이 새 이름으로 바뀌고 기존 이름은 사라지는지 확인한다.
+    const renamedLibrary = await screen.findByRole('link', {
+      name: renamedLibraryName,
+      exact: true,
+    });
+    expect(renamedLibrary).toBeVisible();
+    expect(renamedLibrary).toHaveAttribute('href', `/libraries/${libraryToRename.libraryId}`);
+    expect(
+      screen.queryByRole('link', { name: libraryToRename.name, exact: true }),
+    ).not.toBeInTheDocument();
+
+    // 다른 책장들의 이름과 연결된 책장이 그대로 유지되는지 확인한다.
+    for (const library of librariesResponse.libraries.filter(
+      (item) => item.libraryId !== libraryToRename.libraryId,
+    )) {
+      const unchangedLibrary = screen.getByRole('link', { name: library.name, exact: true });
+      expect(unchangedLibrary).toBeVisible();
+      expect(unchangedLibrary).toHaveAttribute('href', `/libraries/${library.libraryId}`);
+    }
   });
 
   it('책장을 삭제하면 해당 책장이 목록에서 제거된다', async () => {
