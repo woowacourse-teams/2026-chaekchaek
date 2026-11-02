@@ -47,3 +47,11 @@ export const librariesAfterCreateResponse = {
   ...librariesResponse,
   libraries: [...librariesResponse.libraries, createdLibraryResponse],
 };
+
+export const libraryToDelete = librariesResponse.libraries[1]!;
+export const libraryToKeep = librariesResponse.libraries[0]!;
+
+export const librariesAfterDeleteResponse = {
+  ...librariesResponse,
+  libraries: [libraryToKeep],
+};
