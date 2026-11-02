@@ -52,6 +52,9 @@ const booksHeight = [
   ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
   ...[286, 304, 318, 312, 296, 282, 288, 306, 320, 298], // 10
 ];
+const canDeleteLibrary = ({ isDefault }: { isDefault: boolean }): boolean => {
+  return !isDefault;
+};
 
 export const LibraryPage = () => {
   const { user, updateAccount } = useAuthContext();
@@ -168,7 +171,7 @@ export const LibraryPage = () => {
         return (
           libraryItemsData && (
             <ManageLibraryDialog
-              canDeleteLibrary={!libraryItemsData.isDefault}
+              canDeleteLibrary={canDeleteLibrary(libraryItemsData)}
               libraryName={libraryItemsData.name}
               onStartEdit={handleClickStartEdit}
               onOpenDialog={handleOpenDialog}

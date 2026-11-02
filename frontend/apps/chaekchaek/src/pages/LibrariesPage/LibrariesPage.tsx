@@ -36,6 +36,10 @@ import { RenameLibraryDialog } from '@/shared/RenameLibrary';
 import { DeleteLibraryDialog } from '@/shared/DeleteLibrary';
 import { ShareLibraryImageDialog } from '@/shared/ShareLibraryImage';
 
+const canDeleteLibrary = ({ isDefault }: { isDefault: boolean }): boolean => {
+  return !isDefault;
+};
+
 type LibrariesPageDialogType =
   ManageLibraryDialogType | 'RegisterLibraryDialog' | 'ManageLibraryDialog';
 
@@ -115,7 +119,7 @@ export const LibrariesPage = () => {
         return (
           selectedLibrary && (
             <ManageLibraryDialog
-              canDeleteLibrary={!selectedLibrary.isDefault}
+              canDeleteLibrary={canDeleteLibrary(selectedLibrary)}
               libraryName={selectedLibrary.libraryName}
               onStartEdit={() => {
                 handleClickToGoLibrary(selectedLibrary.libraryId);
