@@ -58,3 +58,8 @@ export const librariesAfterDeleteResponse = {
   ...librariesResponse,
   libraries: [libraryToKeep],
 };
+
+export const libraryToShare = librariesResponse.libraries[1]!;
+
+export const libraryImageDataUrl =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';

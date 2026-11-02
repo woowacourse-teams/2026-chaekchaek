@@ -1,7 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import html2canvas from 'html2canvas';
 
 import { http, HttpResponse } from 'msw';
 
@@ -13,6 +14,8 @@ import { defaultLoggedAuthContextValue, renderProvider } from '@/test/utils/rend
 import { LibrariesPage } from '@/pages/LibrariesPage';
 
 import {
+  libraryToShare,
+  libraryImageDataUrl,
   createdLibraryResponse,
   librariesAfterCreateResponse,
   librariesResponse,
@@ -22,6 +25,8 @@ import {
   libraryToRename,
   renamedLibraryName,
 } from './LibrariesPage.fixtures';
+
+vi.mock('html2canvas', () => ({ default: vi.fn() }));
 
 describe('LibrariesPage', () => {
   it('기본 렌더링이 된다', () => {
@@ -168,6 +173,73 @@ describe('LibrariesPage', () => {
       expect(unchangedLibrary).toBeVisible();
       expect(unchangedLibrary).toHaveAttribute('href', `/libraries/${library.libraryId}`);
     }
+  });
+
+  it('특정 책장의 이미지를 저장하면 해당 책장의 책등 이미지가 다운로드된다', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
+        return HttpResponse.json(structuredClone(librariesResponse));
+      }),
+    );
+    const canvas = document.createElement('canvas');
+    const toDataURL = vi.spyOn(canvas, 'toDataURL').mockReturnValue(libraryImageDataUrl);
+    vi.mocked(html2canvas).mockResolvedValue(canvas);
+    const downloadImage = vi.fn<(href: string, filename: string, connected: boolean) => void>();
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloadImage(this.href, this.download, this.isConnected);
+    });
+
+    // 여러 책장이 있는 서재 페이지에 진입한다.
+    renderProvider(<LibrariesPage />, { auth: defaultLoggedAuthContextValue });
+    const libraryLink = await screen.findByRole('link', { name: libraryToShare.name, exact: true });
+    for (const library of librariesResponse.libraries) {
+      expect(screen.getByRole('link', { name: library.name, exact: true })).toBeVisible();
+    }
+
+    // 이미지를 저장할 책장의 더보기 버튼을 클릭한다.
+    const libraryTitle = libraryLink.closest<HTMLElement>('.ui-Title');
+    if (!libraryTitle) throw new Error('이미지를 저장할 책장의 제목을 찾을 수 없습니다.');
+    const [, moreButton] = within(libraryTitle).getAllByRole('button');
+    if (!moreButton) throw new Error('책장 더보기 버튼을 찾을 수 없습니다.');
+    await user.click(moreButton);
+
+    // 관리 팝업에서 이미지 저장 메뉴를 클릭한다.
+    await user.click(screen.getByRole('button', { name: '이미지 저장', exact: true }));
+
+    // 이미지 저장 팝업에 선택한 책장의 책등 이미지만 표시되는지 확인한다.
+    const popup = screen.getByText('책장을 이미지로').closest<HTMLElement>('.ui-Dialog');
+    if (!popup) throw new Error('책장 이미지 저장 팝업을 찾을 수 없습니다.');
+    expect(popup).toBeVisible();
+    const preview = within(popup).getByText(libraryToShare.name).closest<HTMLElement>('.ui-DisplayCard');
+    if (!preview) throw new Error('저장할 책장 이미지 미리보기를 찾을 수 없습니다.');
+    expect(preview).toBeVisible();
+    const expectedSpines = libraryToShare.items.map((book) => book.spineImageUrl);
+    expect(Array.from(preview.querySelectorAll('img'), (image) => image.getAttribute('src'))).toEqual(
+      expectedSpines,
+    );
+
+    // 이미지 저장 버튼을 클릭한다.
+    await user.click(within(popup).getByRole('button', { name: '이미지 저장', exact: true }));
+
+    // 현재 책장의 책등 이미지를 담은 PNG 파일 다운로드가 실행되는지 확인한다.
+    await waitFor(() => {
+      expect(downloadImage).toHaveBeenCalledExactlyOnceWith(
+        libraryImageDataUrl,
+        `책췍_${defaultLoggedAuthContextValue.user.nickname}_${libraryToShare.name}.png`,
+        true,
+      );
+    });
+    expect(html2canvas).toHaveBeenCalledTimes(1);
+    const capturedLibrary = vi.mocked(html2canvas).mock.calls[0][0];
+    expect(capturedLibrary).toBe(preview);
+    expect(capturedLibrary).toHaveTextContent(libraryToShare.name);
+    expect(
+      Array.from(capturedLibrary.querySelectorAll('img'), (image) => image.getAttribute('src')),
+    ).toEqual(expectedSpines);
+    expect(toDataURL).toHaveBeenCalledExactlyOnceWith('image/png');
   });
 
   it('책장을 삭제하면 해당 책장이 목록에서 제거된다', async () => {
