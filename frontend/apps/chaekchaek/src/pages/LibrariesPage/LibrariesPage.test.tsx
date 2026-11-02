@@ -307,7 +307,7 @@ describe('LibrariesPage', () => {
     renderProvider(
       <Routes>
         <Route path="/libraries" element={<LibrariesPage />} />
-        <Route path={`/libraries/${libraryToEditResponse.libraryId}`} element={<LibraryPage />} />
+        <Route path="/libraries/:libraryId" element={<LibraryPage />} />
       </Routes>,
       { auth: defaultLoggedAuthContextValue, initialEntries: ['/libraries'] },
     );
@@ -335,7 +335,7 @@ describe('LibrariesPage', () => {
 
     // 선택한 책장 페이지로 이동해 해당 책장의 이름과 책 목록이 표시되는지 확인한다.
     expect(await screen.findByText('이 책장에 담긴 책')).toBeVisible();
-    expect(screen.getByText(libraryToEditResponse.name, { exact: true })).toBeVisible();
+    expect(await screen.findByText(libraryToEditResponse.name, { exact: true })).toBeVisible();
     expect(
       screen.queryByRole('link', { name: libraryToEditResponse.name, exact: true }),
     ).not.toBeInTheDocument();
