@@ -101,3 +101,20 @@ export const fullLibraryResponse = {
   totalCount: libraryBooks.length,
   items: libraryBooks,
 };
+
+export const deletableLibraryResponse = {
+  ...libraryResponse,
+  libraryId: 3,
+  name: '삭제할 책장',
+  isDefault: false,
+};
+
+export const librariesBeforeDeleteResponse = {
+  memberId: libraryResponse.memberId,
+  libraries: [libraryResponse, deletableLibraryResponse],
+};
+
+export const librariesAfterDeleteResponse = {
+  memberId: libraryResponse.memberId,
+  libraries: [libraryResponse],
+};
