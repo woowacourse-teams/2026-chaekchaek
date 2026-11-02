@@ -10,8 +10,6 @@ import {
   Showcase,
 } from '@chaekchaek/design-system';
 
-import ConstrainedImgBoxDummyImg1 from '../../../../../../../packages/design-system/src/components/ConstrainedImgBox/imgs/dummy1.jpg';
-
 import type { ShareLibraryImageDialogProps } from './ShareLibraryImageDialog.types';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
