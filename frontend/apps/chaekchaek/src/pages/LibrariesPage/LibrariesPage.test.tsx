@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Route, Routes } from 'react-router-dom';
 
 import { describe, expect, it, vi } from 'vitest';
 import html2canvas from 'html2canvas';
@@ -12,8 +13,10 @@ import { server } from '@/mocks/msw/server';
 import { defaultLoggedAuthContextValue, renderProvider } from '@/test/utils/render';
 
 import { LibrariesPage } from '@/pages/LibrariesPage';
+import { LibraryPage } from '@/pages/LibraryPage';
 
 import {
+  libraryToEditResponse,
   libraryToShare,
   libraryImageDataUrl,
   createdLibraryResponse,
@@ -287,5 +290,63 @@ describe('LibrariesPage', () => {
 
     // 다른 책장은 목록에 그대로 표시되는지 확인한다.
     expect(screen.getByRole('link', { name: libraryToKeep.name })).toBeVisible();
+  });
+
+  it('특정 책장의 책 삭제를 선택하면 해당 책장 페이지로 이동하고 편집 모드로 전환된다', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries`, () => {
+        return HttpResponse.json(structuredClone(librariesResponse));
+      }),
+      http.get(`${ENV.APP_API_URL}/api/v1/libraries/${libraryToEditResponse.libraryId}`, () => {
+        return HttpResponse.json(structuredClone(libraryToEditResponse));
+      }),
+    );
+
+    // 여러 책장이 표시된 서재 페이지에 진입한다.
+    renderProvider(
+      <Routes>
+        <Route path="/libraries" element={<LibrariesPage />} />
+        <Route path={`/libraries/${libraryToEditResponse.libraryId}`} element={<LibraryPage />} />
+      </Routes>,
+      { auth: defaultLoggedAuthContextValue, initialEntries: ['/libraries'] },
+    );
+    const libraryLink = await screen.findByRole('link', {
+      name: libraryToEditResponse.name,
+      exact: true,
+    });
+    for (const library of librariesResponse.libraries) {
+      expect(screen.getByRole('link', { name: library.name, exact: true })).toBeVisible();
+    }
+
+    // 책을 삭제할 책장의 더보기 버튼을 클릭한다.
+    const libraryTitle = libraryLink.closest<HTMLElement>('.ui-Title');
+    if (!libraryTitle) throw new Error('책을 삭제할 책장의 제목을 찾을 수 없습니다.');
+    const [, moreButton] = within(libraryTitle).getAllByRole('button');
+    if (!moreButton) throw new Error('책장 더보기 버튼을 찾을 수 없습니다.');
+    await user.click(moreButton);
+
+    // 관리 팝업에 책 삭제 메뉴가 표시되는지 확인한다.
+    const deleteBooksButton = screen.getByRole('button', { name: '책 삭제', exact: true });
+    expect(deleteBooksButton).toBeVisible();
+
+    // 책 삭제 메뉴를 선택한다.
+    await user.click(deleteBooksButton);
+
+    // 선택한 책장 페이지로 이동해 해당 책장의 이름과 책 목록이 표시되는지 확인한다.
+    expect(await screen.findByText('이 책장에 담긴 책')).toBeVisible();
+    expect(screen.getByText(libraryToEditResponse.name, { exact: true })).toBeVisible();
+    expect(
+      screen.queryByRole('link', { name: libraryToEditResponse.name, exact: true }),
+    ).not.toBeInTheDocument();
+
+    // 편집 모드의 완료 버튼과 각 책의 삭제 버튼이 표시되는지 확인한다.
+    expect(screen.getByRole('button', { name: '완료', exact: true })).toBeVisible();
+    expect(screen.queryByRole('button', { name: '편집', exact: true })).not.toBeInTheDocument();
+    for (const book of libraryToEditResponse.items) {
+      const bookItem = screen.getByText(book.title).closest<HTMLElement>('.ui-List-Item');
+      if (!bookItem) throw new Error('책 목록 항목을 찾을 수 없습니다.');
+      expect(within(bookItem).getByRole('button', { name: /삭제/ })).toBeVisible();
+    }
   });
 });

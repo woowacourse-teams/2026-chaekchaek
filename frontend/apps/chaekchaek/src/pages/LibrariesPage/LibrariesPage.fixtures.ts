@@ -63,3 +63,14 @@ export const libraryToShare = librariesResponse.libraries[1]!;
 
 export const libraryImageDataUrl =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+
+export const libraryToEditResponse = {
+  ...librariesResponse.libraries[1]!,
+  memberId: librariesResponse.memberId,
+  nextPage: null,
+  items: librariesResponse.libraries[1]!.items.map((book) => ({
+    ...book,
+    isbn13: '9788925588650',
+    totalPages: 600,
+  })),
+};
