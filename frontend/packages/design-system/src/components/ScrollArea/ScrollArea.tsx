@@ -11,7 +11,7 @@ import { resolveSx } from '#internal/systems/index';
 const classnameDefault = 'ui-ScrollArea';
 
 export const ScrollArea = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, height, sx, style, ...restProps } = props;
+  const { as = 'div', className, width, height, sx, style, ...restProps } = props;
 
   const modifiers = {};
 
@@ -24,7 +24,7 @@ export const ScrollArea = <T extends ElementType>(props: Props<T>) => {
 
   const spacingStyle = resolveSx({ sx });
 
-  const customStyles = { ...spacingStyle, height, ...style };
+  const customStyles = { ...spacingStyle, width, height, ...style };
 
   return <View as={as} className={classname} style={customStyles} {...restProps} />;
 };
