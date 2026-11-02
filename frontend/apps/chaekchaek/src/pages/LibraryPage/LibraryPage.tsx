@@ -168,6 +168,7 @@ export const LibraryPage = () => {
         return (
           libraryItemsData && (
             <ManageLibraryDialog
+              canLibraryDeleted={!libraryItemsData.isDefault}
               libraryName={libraryItemsData.name}
               onStartEdit={handleClickStartEdit}
               onOpenDialog={handleOpenDialog}

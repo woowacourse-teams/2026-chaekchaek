@@ -63,18 +63,22 @@ export const LibrariesPage = () => {
   const [selectedLibrary, setSelectedLibrary] = useState<{
     libraryName: string;
     libraryId: number;
+    isDefault: boolean;
   } | null>(null);
 
   const handleClickManageLibrary = ({
     libraryId,
     libraryName,
+    isDefault,
   }: {
     libraryId: number;
     libraryName: string;
+    isDefault: boolean;
   }) => {
     setSelectedLibrary({
       libraryId,
       libraryName,
+      isDefault,
     });
     handleOpenDialog('ManageLibraryDialog');
   };
@@ -111,6 +115,7 @@ export const LibrariesPage = () => {
         return (
           selectedLibrary && (
             <ManageLibraryDialog
+              canLibraryDeleted={!selectedLibrary.isDefault}
               libraryName={selectedLibrary.libraryName}
               onStartEdit={() => {
                 handleClickToGoLibrary(selectedLibrary.libraryId);
@@ -218,6 +223,7 @@ export const LibrariesPage = () => {
                                 handleClickManageLibrary({
                                   libraryId: library.libraryId,
                                   libraryName: library.name,
+                                  isDefault: library.isDefault,
                                 });
                               }}
                             >

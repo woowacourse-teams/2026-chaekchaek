@@ -3,6 +3,7 @@ export type ManageLibraryDialogType =
 
 export type ManageLibraryDialogProps = {
   libraryName: string;
+  canLibraryDeleted: boolean;
   onOpenDialog: (dialog: ManageLibraryDialogType) => void;
   onClose: () => void;
   onStartEdit: () => void;
