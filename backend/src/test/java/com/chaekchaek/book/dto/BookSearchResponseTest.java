@@ -28,8 +28,8 @@ class BookSearchResponseTest {
                 "9788925568683",
                 "국내도서>소설>과학소설",
                 "알에이치코리아(RHK)",
-                3,
-                5,
+                0,
+                0,
                 null
         );
         BookSearchResponse response = new BookSearchResponse(
@@ -61,6 +61,10 @@ class BookSearchResponseTest {
                 "replyCount",
                 "isRegisteredInMyLibrary"
         );
+        assertThat(json.at("/items/0/reviewCount").isIntegralNumber()).isTrue();
+        assertThat(json.at("/items/0/reviewCount").intValue()).isZero();
+        assertThat(json.at("/items/0/replyCount").isIntegralNumber()).isTrue();
+        assertThat(json.at("/items/0/replyCount").intValue()).isZero();
         assertThat(json.at("/items/0/isRegisteredInMyLibrary").isNull()).isTrue();
     }
 

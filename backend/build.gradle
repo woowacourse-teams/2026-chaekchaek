@@ -432,9 +432,7 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		markRequiredNullable(searchResponse, 'nextPage')
 		def searchItem = arrayItemSchema(searchResponse, 'items')
 		markRequiredNullable(searchItem, 'bookId')
-	['reviewCount', 'replyCount', 'isRegisteredInMyLibrary'].each { propertyName ->
-		markRequiredNullable(searchItem, propertyName)
-	}
+		markRequiredNullable(searchItem, 'isRegisteredInMyLibrary')
 	def detailResponse = responseSchemaForPath('/api/v1/books/by-isbn/{isbn13}', 'get', '200')
 	['bookId', 'reviewCount', 'replyCount', 'averageRating', 'ratingCount', 'myRatingCount', 'myRecord', 'totalPages', 'isRegisteredInMyLibrary'].each { propertyName -> markRequiredNullable(detailResponse, propertyName) }
 		def detailV2Response = responseSchemaForPath('/api/v2/books/by-isbn/{isbn13}', 'get', '200')
@@ -475,14 +473,14 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			 totalCount: 1, nextPage: null,
 			 items: [[bookId: null, title: '마션', coverImageUrl: 'https://example.com/book.jpg',
 				 authors: ['앤디 위어'], translators: [], publishedDate: '2015-07-10', isbn13: '9788925568683',
-				 category: '국내도서>소설', publisher: '알에이치코리아', reviewCount: null, replyCount: null,
+				 category: '국내도서>소설', publisher: '알에이치코리아', reviewCount: 0, replyCount: 0,
 				 isRegisteredInMyLibrary: false]]
 		])
 		addJsonExample('/api/v1/books', 'get', '200', 'search-guest-book', '비로그인 사용자의 도서 검색', [
 			 totalCount: 1, nextPage: null,
 			 items: [[bookId: null, title: '마션', coverImageUrl: 'https://example.com/book.jpg',
 				 authors: ['앤디 위어'], translators: [], publishedDate: '2015-07-10', isbn13: '9788925568683',
-				 category: '국내도서>소설', publisher: '알에이치코리아', reviewCount: null, replyCount: null,
+				 category: '국내도서>소설', publisher: '알에이치코리아', reviewCount: 0, replyCount: 0,
 				 isRegisteredInMyLibrary: null]]
 		])
 		addJsonExample('/api/v1/books/by-isbn/{isbn13}', 'get', '200', 'book-detail-without-library-record', '비로그인 사용자의 도서 상세', [
@@ -1313,9 +1311,16 @@ tasks.register('verifyOpenApi') {
 		def searchResponse = responseSchema('/api/v1/books', 'get', '200')
 		def searchItem = ((searchResponse?.get('properties') as Map)?.get('items') as Map)?.get('items') as Map
 		if (!requiredNullable(searchResponse, 'nextPage') || !requiredNullable(searchItem, 'bookId')
-				|| !requiredNullable(searchItem, 'reviewCount') || !requiredNullable(searchItem, 'replyCount')
 				|| !requiredNullable(searchItem, 'isRegisteredInMyLibrary')) {
 			throw new GradleException('OpenAPI specification must distinguish nullable book search fields from omitted fields')
+		}
+		['reviewCount', 'replyCount'].each { propertyName ->
+			def required = (searchItem?.get('required') as List) ?: []
+			def property = (searchItem?.get('properties') as Map)?.get(propertyName) as Map
+			if (!required.contains(propertyName) || property?.get('type') != 'number'
+					|| property?.get('nullable') == true) {
+				throw new GradleException("OpenAPI specification must require non-null numeric book search ${propertyName}")
+			}
 		}
 		def searchExamples = (((((paths.get('/api/v1/books') as Map).get('get') as Map)
 				.get('responses') as Map).get('200') as Map).get('content') as Map)
@@ -1328,6 +1333,11 @@ tasks.register('verifyOpenApi') {
 		def registeredBookExample = searchExampleItem('search-registered-book')
 		def unregisteredBookExample = searchExampleItem('search-unregistered-book')
 		def guestBookExample = searchExampleItem('search-guest-book')
+		[unregisteredBookExample, guestBookExample].each { example ->
+			if (example?.get('reviewCount') != 0 || example?.get('replyCount') != 0) {
+				throw new GradleException('OpenAPI specification must return zero activity counts for unregistered book search examples')
+			}
+		}
 		if (registeredBookExample?.get('isRegisteredInMyLibrary') != true
 				|| unregisteredBookExample?.get('isRegisteredInMyLibrary') != false
 				|| !guestBookExample?.containsKey('isRegisteredInMyLibrary')

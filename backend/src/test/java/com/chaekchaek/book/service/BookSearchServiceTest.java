@@ -163,6 +163,29 @@ class BookSearchServiceTest {
     }
 
     @Test
+    @DisplayName("미등록 도서를 검색하면 책 ID는 null이고 감상과 답글 수는 0으로 반환한다")
+    void should_ReturnNullBookIdAndZeroCounts_When_SearchResultIsUnregistered() {
+        // given
+        BookSearchItem searchedBook = searchedBook("마션", "2026-01-01", "9788925568683");
+        BookSearchService service = serviceWith(
+                new BookSearchResult(
+                        1,
+                        null,
+                        List.of(searchedBook)
+                ),
+                Map.of()
+        );
+
+        // when
+        BookItem item = service.search("책", 1).items().getFirst();
+
+        // then
+        assertThat(item.bookId()).isNull();
+        assertThat(item.reviewCount()).isZero();
+        assertThat(item.replyCount()).isZero();
+    }
+
+    @Test
     @DisplayName("등록된 도서에 감상과 답글이 없으면 각 수를 0으로 반환한다")
     void should_ReturnZeroCounts_When_RegisteredBookHasNoActivity() {
         // given
@@ -273,7 +296,7 @@ class BookSearchServiceTest {
         assertThat(response.items())
                 .extracting(BookItem::isbn13, BookItem::bookId, BookItem::reviewCount, BookItem::replyCount)
                 .containsExactly(
-                        tuple(unregistered.isbn13(), null, null, null),
+                        tuple(unregistered.isbn13(), null, 0, 0),
                         tuple(oldest.isbn13(), 42L, 2, 7),
                         tuple(newest.isbn13(), 7L, 8, 1),
                         tuple(middle.isbn13(), 99L, 1, 0)

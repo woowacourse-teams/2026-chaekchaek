@@ -58,9 +58,10 @@ public class BookSearchService {
         for (int index = 0; index < searchedBooks.size(); index++) {
             BookSearchItem searchedBook = searchedBooks.get(index);
             Book registeredBook = registeredBooksByIsbn13.get(searchResultIsbn13s.get(index));
-            ActivityCounts activityCounts = registeredBook == null
-                    ? null
-                    : activityCountsByBookId.getOrDefault(registeredBook.getId(), ActivityCounts.ZERO);
+            ActivityCounts activityCounts = ActivityCounts.ZERO;
+            if (registeredBook != null) {
+                activityCounts = activityCountsByBookId.getOrDefault(registeredBook.getId(), ActivityCounts.ZERO);
+            }
 
             items.add(toBookItem(searchedBook, registeredBook, activityCounts, memberId, libraryBookIds));
         }
@@ -101,12 +102,8 @@ public class BookSearchService {
                 source.isbn13(),
                 source.category(),
                 source.publisher(),
-                activityCounts == null
-                        ? null
-                        : Math.toIntExact(activityCounts.reviewCount()),
-                activityCounts == null
-                        ? null
-                        : Math.toIntExact(activityCounts.replyCount()),
+                Math.toIntExact(activityCounts.reviewCount()),
+                Math.toIntExact(activityCounts.replyCount()),
                 isRegisteredInMyLibrary(registeredBook, memberId, libraryBookIds)
         );
     }
