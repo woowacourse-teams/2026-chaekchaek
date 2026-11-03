@@ -8,7 +8,6 @@ import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.library.service.BookActivityCountReader;
-import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import com.chaekchaek.library.service.BookCommentCountReader;
 import com.chaekchaek.member.domain.AccountStatus;
 import com.chaekchaek.review.book.ReviewBookReader;
@@ -27,6 +26,7 @@ import com.chaekchaek.review.dto.ReviewCreateByIsbnResponse;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
+import com.chaekchaek.review.event.BookActivityChangedEvent;
 import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -71,6 +72,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     private final ReviewMemberReader reviewMemberReader;
     private final BookResolver bookResolver;
     private final TransactionTemplate transactionTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ReviewService(
             ReviewRepository reviewRepository,
@@ -82,7 +84,8 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
             ReviewBookReader reviewBookReader,
             ReviewMemberReader reviewMemberReader,
             BookResolver bookResolver,
-            PlatformTransactionManager transactionManager
+            PlatformTransactionManager transactionManager,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.reviewRepository = reviewRepository;
         this.replyRepository = replyRepository;
@@ -94,6 +97,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         this.reviewMemberReader = reviewMemberReader;
         this.bookResolver = bookResolver;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -132,14 +136,19 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private Map<Long, Long> replyCounts(Collection<Long> reviewIds) {
-        if (reviewIds.isEmpty()) return Map.of();
+        if (reviewIds.isEmpty()) {
+            return Map.of();
+        }
         return replyRepository.countByReviewIdInGroupByReviewId(reviewIds)
                 .stream()
-                .collect(Collectors.toMap(ReplyRepository.ReplyCount::getReviewId, ReplyRepository.ReplyCount::getCount));
+                .collect(Collectors.toMap(ReplyRepository.ReplyCount::getReviewId,
+                        ReplyRepository.ReplyCount::getCount));
     }
 
     private Map<Long, Long> reviewReactionCounts(Collection<Long> reviewIds) {
-        if (reviewIds.isEmpty()) return Map.of();
+        if (reviewIds.isEmpty()) {
+            return Map.of();
+        }
         return reviewReactionRepository.countByReviewIdInGroupByReviewId(reviewIds)
                 .stream()
                 .collect(Collectors.toMap(
@@ -185,7 +194,8 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 .toList();
         Map<Long, Long> replyCounts = replyCounts(reviewIds);
         Map<Long, Long> reactionCounts = reviewReactionCounts(reviewIds);
-        List<Reply> replyList = reviewIds.isEmpty() ? List.of() : replyRepository.findRecentThreeByReviewIdIn(reviewIds);
+        List<Reply> replyList =
+                reviewIds.isEmpty() ? List.of() : replyRepository.findRecentThreeByReviewIdIn(reviewIds);
         Map<Long, List<Reply>> recentReplies = replyList.stream()
                 .collect(Collectors.groupingBy(Reply::getReviewId));
         Map<Long, Long> replyReactionCounts = replyReactionCounts(replyList.stream()
@@ -215,7 +225,9 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private Set<Long> likedReviewIds(List<Long> reviewIds, Long actorId) {
-        if (actorId == null || reviewIds.isEmpty()) return Set.of();
+        if (actorId == null || reviewIds.isEmpty()) {
+            return Set.of();
+        }
         return reviewReactionRepository.findByReviewIdInAndActorId(reviewIds, actorId)
                 .stream()
                 .map(ReviewReaction::getReviewId)
@@ -282,6 +294,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 request.spoiler(),
                 memberProfile.anonymousEnabled()
         ));
+        publishBookActivityChanged(bookId);
         logEvent("review_created", "Review created", "reviewId", review.getId(), actor.actorId());
         return toReviewResponse(
                 review,
@@ -340,20 +353,33 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     private void validateReviewUpdate(ReviewUpdateRequest request) {
         if (request.isContentPresent() && (request.getContent() == null || request.getContent().isBlank()
-                || request.getContent().length() > 1000)) throw new BusinessException(ErrorCode.INVALID_REQUEST);
+                || request.getContent().length() > 1000)) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
         if (request.isQuotePresent() && request.getQuote() != null && (request.getQuote().isBlank()
-                || request.getQuote().length() > 500)) throw new BusinessException(ErrorCode.INVALID_REQUEST);
+                || request.getQuote().length() > 500)) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
         if (request.isChapterPresent() && request.getChapter() != null && (request.getChapter().isBlank()
-                || request.getChapter().length() > 255)) throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        if (request.isSpoilerPresent() && request.getIsSpoiler() == null) throw new BusinessException(ErrorCode.INVALID_REQUEST);
+                || request.getChapter().length() > 255)) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+        if (request.isSpoilerPresent() && request.getIsSpoiler() == null) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
         if (request.isCurrentPagePresent() && request.getCurrentPage() != null) {
-            validateRequestPage(request.getCurrentPage(), request.isTotalPagesPresent() ? request.getTotalPages() : null);
+            validateRequestPage(request.getCurrentPage(),
+                    request.isTotalPagesPresent() ? request.getTotalPages() : null);
         }
     }
 
     private void validateRequestPage(Integer currentPage, Integer totalPages) {
-        if (currentPage != null && currentPage < 0) throw new BusinessException(ErrorCode.INVALID_REQUEST);
-        if (totalPages != null && totalPages <= 0) throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        if (currentPage != null && currentPage < 0) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+        if (totalPages != null && totalPages <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
     }
 
     private ReviewResponse toReviewResponse(
@@ -399,7 +425,9 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     @Transactional
     public void deleteReview(long reviewId) {
         long actorId = currentActorProvider.getCurrentActor().actorId();
-        getReview(reviewId).deleteBy(actorId);
+        Review review = getReview(reviewId);
+        review.deleteBy(actorId);
+        publishBookActivityChanged(review.getBookId());
         logEvent("review_deleted", "Review deleted", "reviewId", reviewId, actorId);
     }
 
@@ -459,7 +487,9 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private Map<Long, Long> replyReactionCounts(Collection<Long> replyIds) {
-        if (replyIds.isEmpty()) return Map.of();
+        if (replyIds.isEmpty()) {
+            return Map.of();
+        }
         return replyReactionRepository.countByReplyIdInGroupByReplyId(replyIds)
                 .stream()
                 .collect(Collectors.toMap(
@@ -469,7 +499,9 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private Set<Long> likedReplyIds(List<Long> replyIds, Long actorId) {
-        if (actorId == null || replyIds.isEmpty()) return Set.of();
+        if (actorId == null || replyIds.isEmpty()) {
+            return Set.of();
+        }
         return replyReactionRepository.findByReplyIdInAndActorId(replyIds, actorId)
                 .stream()
                 .map(ReplyReaction::getReplyId)
@@ -478,11 +510,11 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
     private Map<Long, ReviewMemberProfile> memberProfilesOf(List<Review> reviews, List<Reply> replies) {
         Set<Long> actorIds = Stream.concat(
-                reviews.stream()
-                        .map(Review::getActorId),
-                replies.stream()
-                        .map(Reply::getActorId)
-        )
+                        reviews.stream()
+                                .map(Review::getActorId),
+                        replies.stream()
+                                .map(Reply::getActorId)
+                )
                 .collect(Collectors.toSet());
         return actorIds.isEmpty() ? Map.of() : reviewMemberReader.findByActorIds(actorIds);
     }
@@ -509,6 +541,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 request.content(),
                 memberProfile.anonymousEnabled()
         ));
+        publishBookActivityChanged(review.getBookId());
         logEvent("reply_created", "Reply created", "replyId", reply.getId(), actor.actorId());
         return toReplyResponse(reply, actor.actorId(), 0, false, Map.of(actor.actorId(), memberProfile));
     }
@@ -597,7 +630,9 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     @Transactional
     public void deleteReply(long replyId) {
         long actorId = currentActorProvider.getCurrentActor().actorId();
-        getReply(replyId).deleteBy(actorId);
+        Reply reply = getReply(replyId);
+        reply.deleteBy(actorId);
+        publishBookActivityChanged(getReview(reply.getReviewId()).getBookId());
         logEvent("reply_deleted", "Reply deleted", "replyId", replyId, actorId);
     }
 
@@ -701,7 +736,9 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     @Override
     @Transactional(readOnly = true)
     public Map<Long, ActivityCounts> getActivityCounts(Collection<Long> bookIds) {
-        if (bookIds.isEmpty()) return Map.of();
+        if (bookIds.isEmpty()) {
+            return Map.of();
+        }
         Map<Long, Long> reviewCounts = bookIds.stream()
                 .collect(Collectors.toMap(bookId -> bookId, bookId -> 0L));
         Map<Long, Long> replyCounts = bookIds.stream()
@@ -720,7 +757,11 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                 ));
     }
 
-    public enum Feed { ALL, MINE }
+    private void publishBookActivityChanged(long bookId) {
+        eventPublisher.publishEvent(new BookActivityChangedEvent(bookId));
+    }
+
+    public enum Feed {ALL, MINE}
 
     public enum ReviewSort {
         LATEST(Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))),
@@ -729,7 +770,12 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
 
         private final Sort springSort;
 
-        ReviewSort(Sort springSort) { this.springSort = springSort; }
-        public Sort toSpringSort() { return springSort; }
+        ReviewSort(Sort springSort) {
+            this.springSort = springSort;
+        }
+
+        public Sort toSpringSort() {
+            return springSort;
+        }
     }
 }

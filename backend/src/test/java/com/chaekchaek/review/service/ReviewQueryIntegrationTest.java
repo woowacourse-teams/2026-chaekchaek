@@ -47,6 +47,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -74,6 +75,9 @@ class ReviewQueryIntegrationTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     private CurrentActorProvider actorProvider;
     private ReviewService service;
@@ -103,7 +107,8 @@ class ReviewQueryIntegrationTest {
                 mock(ReviewBookReader.class),
                 memberReader,
                 mock(BookResolver.class),
-                transactionManager
+                transactionManager,
+                eventPublisher
         );
     }
 

@@ -31,6 +31,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +47,9 @@ class ReviewCreateByIsbnTransactionTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -91,7 +95,8 @@ class ReviewCreateByIsbnTransactionTest {
                 requireStoredBook(),
                 guestProfileReader(),
                 bookResolver,
-                transactionManager
+                transactionManager,
+                eventPublisher
         );
 
         // when & then
