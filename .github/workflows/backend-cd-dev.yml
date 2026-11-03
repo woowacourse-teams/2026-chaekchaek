@@ -88,6 +88,8 @@ jobs:
           DB_URL: ${{ secrets.DB_URL }}
           DB_USERNAME: ${{ secrets.DB_USERNAME }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          FLYWAY_ENABLED: ${{ vars.FLYWAY_ENABLED }}
+          JPA_DDL_AUTO: ${{ vars.JPA_DDL_AUTO }}
           MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
@@ -104,6 +106,7 @@ jobs:
           APPLE_PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           YES24_API_KEY: ${{ secrets.YES24_API_KEY }}
+          KAKAO_REST_API_KEY: ${{secrets.KAKAO_REST_API_KEY}}
           AUTH_COOKIE_SECURE: "true"
           AUTH_COOKIE_SAME_SITE: "None"
           LOGGING_STRUCTURED_FORMAT_CONSOLE: "logstash"
@@ -128,6 +131,8 @@ jobs:
                 "DB_URL=$DB_URL" \
                 "DB_USERNAME=$DB_USERNAME" \
                 "DB_PASSWORD=$DB_PASSWORD" \
+                "FLYWAY_ENABLED=$FLYWAY_ENABLED" \
+                "JPA_DDL_AUTO=$JPA_DDL_AUTO" \
                 "FRONTEND_BASE_URL=$FRONTEND_BASE_URL" \
                 "FRONTEND_LOCAL_BASE_URL=$FRONTEND_LOCAL_BASE_URL" \
                 "FRONTEND_DEV_BASE_URL=$FRONTEND_DEV_BASE_URL" \
@@ -140,6 +145,7 @@ jobs:
                 "APPLE_PRIVATE_KEY=$APPLE_PRIVATE_KEY" \
                 "JWT_SECRET=$JWT_SECRET" \
                 "YES24_API_KEY=$YES24_API_KEY" \
+                "KAKAO_REST_API_KEY=$KAKAO_REST_API_KEY" \
                 "AUTH_COOKIE_SECURE=$AUTH_COOKIE_SECURE" \
                 "AUTH_COOKIE_SAME_SITE=$AUTH_COOKIE_SAME_SITE" \
                 "LOGGING_STRUCTURED_FORMAT_CONSOLE=$LOGGING_STRUCTURED_FORMAT_CONSOLE" \

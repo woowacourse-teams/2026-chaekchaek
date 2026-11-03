@@ -1,21 +1,40 @@
 package com.chaekchaek.auth.token.access;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.chaekchaek.auth.token.cookie.AuthCookieProvider;
+import com.chaekchaek.book.domain.Book;
+import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
+import com.chaekchaek.library.domain.Library;
+import com.chaekchaek.library.domain.LibraryBook;
+import com.chaekchaek.library.domain.LibraryItem;
+import com.chaekchaek.library.domain.ReadingStatus;
+import com.chaekchaek.library.repository.LibraryBookRepository;
+import com.chaekchaek.library.repository.LibraryItemRepository;
+import com.chaekchaek.library.repository.LibraryRepository;
 import com.chaekchaek.member.domain.Member;
 import com.chaekchaek.member.repository.MemberRepository;
 import jakarta.servlet.http.Cookie;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.restdocs.test.autoconfigure.AutoConfigureRestDocs;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
@@ -34,6 +53,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@AutoConfigureRestDocs
 @ActiveProfiles("test")
 @Import(AccessTokenAuthenticationIntegrationTest.ProtectedTestController.class)
 @Transactional
@@ -41,6 +61,18 @@ class AccessTokenAuthenticationIntegrationTest {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private LibraryRepository libraryRepository;
+
+    @Autowired
+    private LibraryBookRepository libraryBookRepository;
+
+    @Autowired
+    private LibraryItemRepository libraryItemRepository;
+
+    @Autowired
+    private BookRepository bookRepository;
 
     private Long memberId;
 
@@ -71,6 +103,358 @@ class AccessTokenAuthenticationIntegrationTest {
 
     @Autowired
     private JwtEncoder jwtEncoder;
+
+    @Test
+    @DisplayName("Bearer 토큰으로 인증된 회원의 서재를 생성한다")
+    void should_CreateLibraryForMember_When_BearerTokenIsValid() throws Exception {
+        // given
+        memberRepository.findById(memberId).orElseThrow().updateNickname("읽는회원");
+        String token = issueAccessToken(memberId.toString());
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"올해읽을책"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.libraryId").isNumber())
+                .andExpect(jsonPath("$.name").value("올해읽을책"))
+                .andExpect(jsonPath("$.isDefault").value(false))
+                .andExpect(jsonPath("$.totalCount").value(0))
+                .andExpect(jsonPath("$.items").isEmpty());
+        assertThat(libraryRepository.findAll())
+                .filteredOn(library -> library.isOwnedBy(memberId))
+                .singleElement()
+                .satisfies(library -> assertThat(library.getName()).isEqualTo("올해읽을책"));
+    }
+
+    @Test
+    @DisplayName("Bearer 토큰으로 인증된 회원은 자신이 소유한 책장에 도서를 배치한다")
+    void should_AddBookToOwnedLibrary_When_BearerTokenIsValid() throws Exception {
+        // given
+        String token = issueAccessToken(memberId.toString());
+        Library library = libraryRepository.create(Library.create(memberId, "가을책장", Instant.now()));
+        Book book = bookRepository.saveAndFlush(Book.create(
+                new Isbn13("9788936433598"),
+                "책 제목",
+                "https://example.com/cover.jpg",
+                null,
+                null,
+                null,
+                List.of("작가"),
+                List.of(),
+                "출판사",
+                "분류",
+                null,
+                368,
+                null,
+                null
+        ));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries/{libraryId}", library.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"isbn13":"9788936433598","status":"READING","totalPages":368}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.bookId").value(book.getId()))
+                .andExpect(jsonPath("$.status").value("READING"))
+                .andExpect(jsonPath("$.currentPage").value(0))
+                .andExpect(header().exists(HttpHeaders.LOCATION));
+
+        assertThat(libraryBookRepository.findAll())
+                .filteredOn(placement -> placement.getLibraryId() == library.getId())
+                .singleElement()
+                .satisfies(placement -> assertThat(placement.getBookId()).isEqualTo(book.getId()));
+        assertThat(libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()))
+                .get()
+                .satisfies(item -> assertThat(item.getStatus()).isEqualTo(ReadingStatus.READING));
+    }
+
+    @Test
+    @DisplayName("Bearer 토큰으로 인증된 회원이 자신이 소유한 일반 책장을 삭제한다")
+    void should_DeleteOwnedLibrary_When_BearerTokenIsValid() throws Exception {
+        // given
+        String token = issueAccessToken(memberId.toString());
+        Library library = libraryRepository.create(Library.create(memberId, "삭제책장", Instant.now()));
+
+        // when & then
+        mockMvc.perform(delete("/api/v1/libraries/{libraryId}", library.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        assertThat(libraryRepository.findById(library.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("인증 정보가 없으면 책장을 삭제할 수 없다")
+    void should_RejectLibraryDeletion_When_AuthenticationIsMissing() throws Exception {
+        // given
+        Library library = libraryRepository.create(Library.create(memberId, "보존책장", Instant.now()));
+
+        // when & then
+        mockMvc.perform(delete("/api/v1/libraries/{libraryId}", library.getId()).with(csrf()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        assertThat(libraryRepository.findById(library.getId())).isPresent();
+    }
+
+    @Test
+    @DisplayName("마지막 배치 삭제는 독서 상태를 초기화하고 별점을 유지하며 멱등하게 처리한다")
+    void should_ClearReadingStateAndPreserveRating_When_LastPlacementIsDeleted() throws Exception {
+        // given
+        String token = issueAccessToken(memberId.toString());
+        Library library = libraryRepository.create(Library.create(memberId, "가을책장", Instant.now()));
+        Library anotherLibrary = libraryRepository.create(
+                Library.create(memberId, "겨울책장", Instant.now())
+        );
+        Book book = bookRepository.saveAndFlush(Book.create(
+                new Isbn13("9788936433598"),
+                "책 제목",
+                "https://example.com/cover.jpg",
+                null,
+                null,
+                null,
+                List.of("작가"),
+                List.of(),
+                "출판사",
+                "분류",
+                null,
+                368,
+                null,
+                null
+        ));
+        LibraryItem item = LibraryItem.create(memberId, book.getId(), ReadingStatus.READING, 368, Instant.now());
+        item.rate(new BigDecimal("4.5"), Instant.now());
+        Instant addedAt = item.getAddedAt();
+        Instant ratingUpdatedAt = item.getRatingUpdatedAt();
+        libraryItemRepository.saveAndFlush(item);
+        libraryBookRepository.saveAndFlush(LibraryBook.create(library.getId(), book.getId(), 1L));
+        libraryBookRepository.saveAndFlush(LibraryBook.create(anotherLibrary.getId(), book.getId(), 1L));
+
+        // when
+        mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", library.getId(), book.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        assertThat(libraryBookRepository.findByLibraryIdAndBookId(library.getId(), book.getId())).isEmpty();
+        LibraryItem savedItem = libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()).orElseThrow();
+        assertThat(savedItem.getStatus()).isEqualTo(ReadingStatus.READING);
+        assertThat(savedItem.getRating()).isEqualByComparingTo("4.5");
+
+        // and then
+        mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", anotherLibrary.getId(), book.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        assertThat(libraryBookRepository.findByLibraryIdAndBookId(anotherLibrary.getId(), book.getId())).isEmpty();
+        savedItem = libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()).orElseThrow();
+        assertThat(savedItem.getStatus()).isNull();
+        assertThat(savedItem.getCurrentPage()).isNull();
+        assertThat(savedItem.getReadingUpdatedAt()).isNull();
+        assertThat(savedItem.getRating()).isEqualByComparingTo("4.5");
+        assertThat(savedItem.getAddedAt()).isEqualTo(addedAt);
+        assertThat(savedItem.getRatingUpdatedAt()).isEqualTo(ratingUpdatedAt);
+
+        mockMvc.perform(delete("/api/v1/libraries/{libraryId}/books/{bookId}", anotherLibrary.getId(), book.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNoContent());
+        assertThat(libraryItemRepository.findByMemberIdAndBookId(memberId, book.getId()))
+                .get()
+                .satisfies(unchanged -> assertThat(unchanged.getRating()).isEqualByComparingTo("4.5"));
+    }
+
+    @Test
+    @DisplayName("인증 정보가 없으면 책장 도서 배치를 추가할 수 없다")
+    void should_RejectBookPlacement_When_AuthenticationIsMissing() throws Exception {
+        // given
+        Library library = libraryRepository.create(Library.create(memberId, "가을책장", Instant.now()));
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries/{libraryId}", library.getId())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"isbn13":"9788936433598","status":"READING"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("Access Token 쿠키로 인증된 회원의 서재를 생성한다")
+    void should_CreateLibraryForMember_When_AccessTokenCookieIsValid() throws Exception {
+        // given
+        memberRepository.findById(memberId).orElseThrow().updateNickname("읽는회원");
+        String token = issueAccessToken(memberId.toString());
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries")
+                        .cookie(new Cookie(AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME, token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"쿠키책장"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.libraryId").isNumber())
+                .andExpect(jsonPath("$.name").value("쿠키책장"))
+                .andExpect(jsonPath("$.isDefault").value(false))
+                .andExpect(jsonPath("$.totalCount").value(0))
+                .andExpect(jsonPath("$.items").isEmpty());
+        assertThat(libraryRepository.findAll())
+                .filteredOn(library -> library.isOwnedBy(memberId))
+                .singleElement()
+                .satisfies(library -> assertThat(library.getName()).isEqualTo("쿠키책장"));
+    }
+
+    @Test
+    @DisplayName("Bearer 토큰으로 기본 책장 이름을 바꾸고 책장 속성을 유지한다")
+    void should_RenameDefaultLibrary_When_BearerTokenIsValid() throws Exception {
+        // given
+        memberRepository.findById(memberId).orElseThrow().updateNickname("읽는회원");
+        Library library = libraryRepository.create(
+                Library.createDefault(memberId, "기본책장", 4L, Instant.parse("2026-10-01T00:00:00Z"))
+        );
+        LibraryBook placement = libraryBookRepository.saveAndFlush(
+                LibraryBook.create(library.getId(), 42L, 3L)
+        );
+        String token = issueAccessToken(memberId.toString());
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/libraries/{libraryId}", library.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"읽을책"}
+                                """))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+
+        Library saved = libraryRepository.findById(library.getId()).orElseThrow();
+        assertThat(saved.getName()).isEqualTo("읽을책");
+        assertThat(saved.isDefault()).isTrue();
+        assertThat(saved.getDisplayOrder()).isEqualTo(4L);
+        assertThat(saved.getCreatedAt()).isEqualTo(Instant.parse("2026-10-01T00:00:00Z"));
+        assertThat(saved.getUpdatedAt()).isNotNull();
+        assertThat(memberRepository.findById(memberId).orElseThrow().getNickname()).isEqualTo("읽는회원");
+        assertThat(libraryBookRepository.findAllByLibraryId(library.getId()))
+                .singleElement()
+                .satisfies(savedPlacement -> {
+                    assertThat(savedPlacement.getId()).isEqualTo(placement.getId());
+                    assertThat(savedPlacement.getBookId()).isEqualTo(42L);
+                    assertThat(savedPlacement.getDisplayOrder()).isEqualTo(3L);
+                });
+    }
+
+    @Test
+    @DisplayName("CSRF 토큰 없이도 인증 쿠키로 일반 책장 이름을 변경한다")
+    void should_RenameLibrary_When_AccessTokenCookieIsValid() throws Exception {
+        // given
+        Library library = libraryRepository.create(Library.create(memberId, "가을책장", Instant.now()));
+        String token = issueAccessToken(memberId.toString());
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/libraries/{libraryId}", library.getId())
+                        .cookie(new Cookie(AuthCookieProvider.ACCESS_TOKEN_COOKIE_NAME, token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"읽을책"}
+                                """))
+                .andExpect(status().isNoContent());
+
+        assertThat(libraryRepository.findById(library.getId()).orElseThrow().getName()).isEqualTo("읽을책");
+    }
+
+    @Test
+    @DisplayName("탈퇴 회원은 인증된 요청이어도 책장 이름을 변경할 수 없다")
+    void should_RejectLibraryRename_When_MemberIsWithdrawn() throws Exception {
+        // given
+        Library library = libraryRepository.create(Library.create(memberId, "가을책장", Instant.now()));
+        String token = issueAccessToken(memberId.toString());
+        memberRepository.findById(memberId).orElseThrow().withdraw(LocalDateTime.now());
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/libraries/{libraryId}", library.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"읽을책"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        assertThat(libraryRepository.findById(library.getId()).orElseThrow().getName()).isEqualTo("가을책장");
+    }
+
+    @Test
+    @DisplayName("인증 정보가 없으면 책장 이름을 변경할 수 없다")
+    void should_RejectLibraryRename_When_AuthenticationIsMissing() throws Exception {
+        // given
+        Library library = libraryRepository.create(Library.create(memberId, "가을책장", Instant.now()));
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/libraries/{libraryId}", library.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"읽을책"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        assertThat(libraryRepository.findById(library.getId()).orElseThrow().getName()).isEqualTo("가을책장");
+    }
+
+    @Test
+    @DisplayName("닉네임이 없는 회원은 일반 책장을 생성할 수 없다")
+    void should_RequireNickname_When_CreatingLibrary() throws Exception {
+        String token = issueAccessToken(memberId.toString());
+
+        mockMvc.perform(post("/api/v1/libraries")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"올해읽을책"}
+                                """))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.code").value("NICKNAME_REQUIRED"));
+        assertThat(libraryRepository.findAll()).filteredOn(library -> library.isOwnedBy(memberId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("인증 정보가 없으면 서재를 생성할 수 없다")
+    void should_RejectLibraryCreation_When_AuthenticationIsMissing() throws Exception {
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"가을에 읽을 책"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    @DisplayName("탈퇴 회원은 인증된 쓰기 요청이어도 일반 책장을 생성할 수 없다")
+    void should_RejectLibraryCreation_When_MemberIsWithdrawn() throws Exception {
+        String token = issueAccessToken(memberId.toString());
+        memberRepository.findById(memberId).orElseThrow().withdraw(LocalDateTime.now());
+
+        // when & then
+        mockMvc.perform(post("/api/v1/libraries")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"올해읽을책"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
 
     @Test
     @DisplayName("유효한 Access Token 쿠키로 보호 API에 접근한다")

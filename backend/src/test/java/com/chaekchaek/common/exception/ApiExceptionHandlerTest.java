@@ -10,7 +10,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.chaekchaek.auth.exception.AppleAuthServerException;
 import com.chaekchaek.book.client.BookClientException;
-import com.chaekchaek.book.client.Yes24ClientException;
+import com.chaekchaek.book.client.yes24.Yes24ClientException;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,6 +86,22 @@ class ApiExceptionHandlerTest {
                         ErrorCode.MEMBER_NOT_FOUND.getCode()
                 )
         );
+    }
+
+    @Test
+    @DisplayName("서재 이름 중복은 충돌 응답과 업무 오류 코드로 변환한다")
+    void should_ReturnConflict_When_LibraryNameAlreadyExists() {
+        // given
+        BusinessException exception = new BusinessException(ErrorCode.LIBRARY_NAME_ALREADY_EXISTS);
+
+        // when
+        ProblemDetail response = handler.handleBusinessException(exception, request);
+
+        // then
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
+        assertThat(response.getProperties())
+                .containsOnlyKeys("code")
+                .containsEntry("code", ErrorCode.LIBRARY_NAME_ALREADY_EXISTS.getCode());
     }
 
     @Test

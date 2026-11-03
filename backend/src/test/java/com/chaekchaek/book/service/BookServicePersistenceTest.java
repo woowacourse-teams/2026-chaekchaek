@@ -156,6 +156,38 @@ class BookServicePersistenceTest {
                 .containsExactly(isbn13);
     }
 
+    @Test
+    @DisplayName("책 질문 내용을 도서와 함께 저장한다")
+    void should_SaveQuestionContentWithBook() {
+        // given
+        Isbn13 isbn13 = new Isbn13("9781234567905");
+        Book book = Book.create(
+                isbn13,
+                "마션",
+                "https://image.example/martian.jpg",
+                null,
+                null,
+                "책 설명",
+                List.of("앤디 위어"),
+                List.of(),
+                "알에이치코리아",
+                "SF",
+                LocalDate.of(2026, 1, 1),
+                308,
+                null,
+                null
+        );
+        book.updateQuestionContent("화성에 홀로 남는다면 무엇부터 하시겠어요?", "줄거리", "발췌문");
+        bookRepository.saveAndFlush(book);
+        entityManager.clear();
+
+        // when & then
+        Book storedBook = bookRepository.findByIsbn13(isbn13).orElseThrow();
+        assertThat(storedBook.getQuestion()).isEqualTo("화성에 홀로 남는다면 무엇부터 하시겠어요?");
+        assertThat(storedBook.getPlot()).isEqualTo("줄거리");
+        assertThat(storedBook.getExtract()).isEqualTo("발췌문");
+    }
+
     private LibraryItem ratedItem(long memberId, long bookId, String rating) {
         LibraryItem item = LibraryItem.create(
                 memberId,

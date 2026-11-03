@@ -9,9 +9,7 @@ import com.chaekchaek.book.dto.BookItem;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
-import com.chaekchaek.library.domain.LibraryItem;
-import com.chaekchaek.library.repository.LibraryItemRepository;
-import com.chaekchaek.library.service.BookActivityCountReader;
+import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,9 +30,9 @@ public class BookSearchService {
 
     private final BookSearchClient bookClient;
     private final BookRepository bookRepository;
-    private final BookActivityCountReader activityCountReader;
+    private final BookSearchActivityCountReader searchActivityCountReader;
     private final CurrentMemberIdProvider currentMemberIdProvider;
-    private final LibraryItemRepository libraryItemRepository;
+    private final LibraryBookRepository libraryBookRepository;
 
     public BookSearchResponse search(String query, int page) {
         BookSearchResult source = bookClient.search(query, page);
@@ -48,7 +46,7 @@ public class BookSearchService {
         Map<Isbn13, Book> registeredBooksByIsbn13 = registeredBooks.stream()
                 .collect(Collectors.toMap(Book::getIsbn13, Function.identity()));
 
-        Map<Long, ActivityCounts> activityCountsByBookId = activityCountReader.getActivityCounts(
+        Map<Long, ActivityCounts> activityCountsByBookId = searchActivityCountReader.getActivityCounts(
                 registeredBooks.stream()
                         .map(Book::getId)
                         .toList()
@@ -81,10 +79,7 @@ public class BookSearchService {
         List<Long> bookIds = registeredBooks.stream()
                 .map(Book::getId)
                 .toList();
-        return libraryItemRepository.findAllByMemberIdAndBookIdIn(memberId.getAsLong(), bookIds)
-                .stream()
-                .map(LibraryItem::getBookId)
-                .collect(Collectors.toSet());
+        return Set.copyOf(libraryBookRepository.findPlacedBookIdsByMemberIdAndBookIdIn(memberId.getAsLong(), bookIds));
     }
 
     private BookItem toBookItem(

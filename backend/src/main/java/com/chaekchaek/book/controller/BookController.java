@@ -1,6 +1,7 @@
 package com.chaekchaek.book.controller;
 
 import com.chaekchaek.book.dto.BookDetailResponse;
+import com.chaekchaek.book.dto.BookDetailV2Response;
 import com.chaekchaek.book.dto.BookSearchResponse;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.service.BookService;
@@ -32,5 +33,10 @@ public class BookController {
     @GetMapping("/api/v1/books/by-isbn/{isbn13}")
     public ResponseEntity<BookDetailResponse> getDetail(@PathVariable String isbn13) {
         return ResponseEntity.ok(bookService.getDetail(new Isbn13(isbn13)));
+    }
+
+    @GetMapping("/api/v2/books/by-isbn/{isbn13}")
+    public ResponseEntity<BookDetailV2Response> getDetailV2(@PathVariable String isbn13) {
+        return ResponseEntity.ok(bookService.getDetailV2(new Isbn13(isbn13)));
     }
 }

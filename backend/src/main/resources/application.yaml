@@ -45,7 +45,11 @@ spring:
       auto-commit: true
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${JPA_DDL_AUTO:update}
+  flyway:
+    enabled: ${FLYWAY_ENABLED:false}
+    baseline-on-migrate: true
+    baseline-version: 0
   security:
     oauth2:
       client:
@@ -62,7 +66,11 @@ spring:
 
 yes24:
   base-url: https://apis.yes24.com
-  api-key: ${YES24_API_KEY}
+  api-key: ${YES24_API_KEY:}
+
+kakao:
+  base-url: https://dapi.kakao.com
+  rest-api-key: ${KAKAO_REST_API_KEY:}
 
 app:
   book-source: ${BOOK_SOURCE:yes24}

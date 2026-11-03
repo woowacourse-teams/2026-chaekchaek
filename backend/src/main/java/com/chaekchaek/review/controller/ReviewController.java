@@ -40,7 +40,7 @@ public class ReviewController {
             @PathVariable long bookId,
             @RequestParam @Positive int page,
             @RequestParam(defaultValue = "ALL") Feed feed,
-            @RequestParam(defaultValue = "PAGE") ReviewSort sort
+            @RequestParam(defaultValue = "LATEST") ReviewSort sort
     ) {
         return ResponseEntity.ok(reviewService.findReviews(bookId, page, feed, sort));
     }

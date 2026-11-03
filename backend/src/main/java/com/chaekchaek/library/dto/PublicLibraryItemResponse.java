@@ -20,7 +20,7 @@ public record PublicLibraryItemResponse(
         Integer totalPages,
         long commentCount,
         ReadingStatus status,
-        int currentPage,
+        Integer currentPage,
         BigDecimal rating
 ) {
     public static PublicLibraryItemResponse from(LibraryItemResponse item) {

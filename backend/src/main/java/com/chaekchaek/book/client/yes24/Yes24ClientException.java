@@ -1,4 +1,6 @@
-package com.chaekchaek.book.client;
+package com.chaekchaek.book.client.yes24;
+
+import com.chaekchaek.book.client.BookClientException;
 
 public final class Yes24ClientException extends BookClientException {
 

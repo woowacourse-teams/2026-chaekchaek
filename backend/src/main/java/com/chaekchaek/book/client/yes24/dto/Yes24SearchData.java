@@ -1,4 +1,4 @@
-package com.chaekchaek.book.client.dto;
+package com.chaekchaek.book.client.yes24.dto;
 
 import java.util.List;
 

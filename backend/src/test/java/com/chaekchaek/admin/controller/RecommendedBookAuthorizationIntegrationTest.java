@@ -180,6 +180,21 @@ class RecommendedBookAuthorizationIntegrationTest {
         assertRecommendationUnchanged(method);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"POST", "DELETE"})
+    @DisplayName("일반 회원의 Bearer 헤더로 추천 도서 변경을 요청하면 거절한다")
+    void should_RejectMutation_When_MemberBearerHeaderIsProvided(String method) throws Exception {
+        // given
+        String accessToken = issueAccessToken(false);
+
+        // when & then
+        mockMvc.perform(mutationRequest(method)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        assertRecommendationUnchanged(method);
+    }
+
     private String issueAccessToken(boolean admin) {
         LocalDateTime now = LocalDateTime.now();
         Member member = memberRepository.save(Member.create("추천 도서 인증 회원", null, now));

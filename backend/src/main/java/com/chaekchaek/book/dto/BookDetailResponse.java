@@ -21,7 +21,9 @@ public record BookDetailResponse(
         Integer ratingCount,
         Integer myRatingCount,
         BookMyRecordResponse myRecord,
+        Boolean isRegisteredInMyLibrary,
         String purchaseUrl,
-        String source
+        String source,
+        BookQuestionResponse bookQuestion
 ) {
 }

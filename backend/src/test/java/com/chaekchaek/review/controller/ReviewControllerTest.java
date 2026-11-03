@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.chaekchaek.book.client.Yes24ClientException;
+import com.chaekchaek.book.client.yes24.Yes24ClientException;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.exception.BusinessException;
@@ -74,6 +74,13 @@ import org.springframework.test.web.servlet.ResultActions;
 class ReviewControllerTest {
 
     private static final String REVIEW_TAG = "감상";
+    private static final String REVIEW_CREATE_DESCRIPTION =
+            "도서에 감상을 작성하고 필요한 경우 독서 기록을 갱신한다. "
+                    + "감상 작성은 책장에 도서를 추가하지 않는다. 회원이 페이지를 보내면 공유 독서 기록만 갱신한다.";
+    private static final String REVIEW_CREATE_BY_ISBN_DESCRIPTION =
+            "ISBN13으로 도서를 조회하고, 로컬에 없으면 등록한 뒤 감상을 작성한다. "
+                    + "응답의 bookId로 도서 상세와 감상 목록을 갱신할 수 있다. "
+                    + "감상 작성은 책장에 도서를 추가하지 않는다. 회원이 페이지를 보내면 공유 독서 기록만 갱신한다.";
     private static final AuthorResponse AUTHOR = new AuthorResponse(
             1L,
             "닉네임",
@@ -137,7 +144,7 @@ class ReviewControllerTest {
                 null,
                 List.of(reviewResponse())
         );
-        when(reviewService.findReviews(42L, 1, Feed.ALL, ReviewSort.PAGE)).thenReturn(response);
+        when(reviewService.findReviews(42L, 1, Feed.ALL, ReviewSort.LATEST)).thenReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/v1/books/{bookId}/reviews", 42L)
@@ -153,7 +160,7 @@ class ReviewControllerTest {
                                 parameterWithName("feed").optional()
                                         .description("피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL"),
                                 parameterWithName("sort").optional()
-                                        .description("정렬: PAGE, LATEST, OLDEST, POPULAR. 기본값 PAGE")
+                                        .description("정렬: LATEST, OLDEST, POPULAR. 기본값 LATEST")
                         ),
                         responseFields(pageReviewResponseFields()),
                         resource(ResourceSnippetParameters.builder()
@@ -169,13 +176,13 @@ class ReviewControllerTest {
                                                 "피드 범위: ALL 또는 MINE. MINE은 인증 필요, 기본값 ALL",
                                                 true
                                         ),
-                                        queryParameter("sort", SimpleType.STRING, "정렬 기준. 기본값 PAGE", true)
+                                        queryParameter("sort", SimpleType.STRING, "정렬 기준. 기본값 LATEST", true)
                                 )
                                 .responseFields(pageReviewResponseFields())
                                 .build())
                 ));
 
-        verify(reviewService).findReviews(42L, 1, Feed.ALL, ReviewSort.PAGE);
+        verify(reviewService).findReviews(42L, 1, Feed.ALL, ReviewSort.LATEST);
     }
 
     @Test
@@ -203,7 +210,7 @@ class ReviewControllerTest {
                         responseFields(reviewResponseFields("")),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("감상 작성")
-                                .description("도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다")
+                                .description(REVIEW_CREATE_DESCRIPTION)
                                 .tag(REVIEW_TAG)
                                 .pathParameters(pathParameter("bookId", "도서 ID"))
                                 .requestFields(REVIEW_CREATE_REQUEST_FIELDS)
@@ -246,8 +253,7 @@ class ReviewControllerTest {
                         responseFields(reviewCreateByIsbnResponseFields()),
                         resource(ResourceSnippetParameters.builder()
                                 .summary("ISBN13으로 감상 작성")
-                                .description("ISBN13으로 도서를 조회하고, 로컬에 없으면 등록한 뒤 감상을 작성한다. "
-                                        + "응답의 bookId로 도서 상세와 감상 목록을 갱신할 수 있다")
+                                .description(REVIEW_CREATE_BY_ISBN_DESCRIPTION)
                                 .tag(REVIEW_TAG)
                                 .pathParameters(isbn13PathParameter())
                                 .requestFields(REVIEW_CREATE_REQUEST_FIELDS)
@@ -515,7 +521,7 @@ class ReviewControllerTest {
                 .andDo(problemDetailDocument(
                         "review-create-unauthorized",
                         "감상 작성",
-                        "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                        REVIEW_CREATE_DESCRIPTION,
                         "bookId",
                         "도서 ID"
                 ));
@@ -594,7 +600,7 @@ class ReviewControllerTest {
     @DisplayName("내 감상 피드는 인증이 필요함을 문서화한다")
     void should_ReturnUnauthorized_When_FindingMyReviewsWithoutAuthentication() throws Exception {
         // given
-        when(reviewService.findReviews(42L, 1, Feed.MINE, ReviewSort.PAGE))
+        when(reviewService.findReviews(42L, 1, Feed.MINE, ReviewSort.LATEST))
                 .thenThrow(new BusinessException(ErrorCode.UNAUTHORIZED));
 
         // when & then
@@ -632,7 +638,7 @@ class ReviewControllerTest {
                 "/api/v1/books/42/reviews",
                 "review-create-invalid-request",
                 "감상 작성",
-                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                REVIEW_CREATE_DESCRIPTION,
                 "bookId",
                 "도서 ID"
         );
@@ -644,7 +650,7 @@ class ReviewControllerTest {
                 "/api/v1/books/404/reviews",
                 "review-create-book-not-found",
                 "감상 작성",
-                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                REVIEW_CREATE_DESCRIPTION,
                 "bookId",
                 "도서 ID"
         );
@@ -656,7 +662,7 @@ class ReviewControllerTest {
                 "/api/v1/books/409/reviews",
                 "review-create-total-pages-conflict",
                 "감상 작성",
-                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                REVIEW_CREATE_DESCRIPTION,
                 "bookId",
                 "도서 ID"
         );
@@ -668,7 +674,7 @@ class ReviewControllerTest {
                 "/api/v1/books/422/reviews",
                 "review-create-invalid-reading-state",
                 "감상 작성",
-                "도서에 감상을 작성하고 필요한 경우 서재 진도를 갱신한다",
+                REVIEW_CREATE_DESCRIPTION,
                 "bookId",
                 "도서 ID"
         );
@@ -1138,7 +1144,7 @@ class ReviewControllerTest {
     @DisplayName("목록 대상과 페이지 오류를 문서화한다")
     void should_DocumentListErrors_When_TargetOrPageIsInvalid() throws Exception {
         // given
-        when(reviewService.findReviews(404L, 1, Feed.ALL, ReviewSort.PAGE))
+        when(reviewService.findReviews(404L, 1, Feed.ALL, ReviewSort.LATEST))
                 .thenThrow(new BusinessException(ErrorCode.BOOK_NOT_FOUND));
 
         // when & then
@@ -1361,7 +1367,7 @@ class ReviewControllerTest {
                 responseFields(PROBLEM_DETAIL_FIELDS),
                 resource(ResourceSnippetParameters.builder()
                         .summary(summary)
-                        .description("ISBN13으로 도서를 조회하고, 로컬에 없으면 등록한 뒤 감상을 작성한다")
+                        .description(REVIEW_CREATE_BY_ISBN_DESCRIPTION)
                         .tag(REVIEW_TAG)
                         .pathParameters(isbn13PathParameter())
                         .responseSchema(Schema.schema("ProblemDetail"))
