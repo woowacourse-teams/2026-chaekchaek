@@ -37,6 +37,7 @@ import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
 import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLibraryIdBooksBookId/repository';
+import { patchLibrariesLibraryIdBooksOrder } from '@/services/apis/librariesLibraryIdBooksOrder/repository';
 
 import { ManageLibraryDialog } from '@/shared/ManageLibrary';
 import type { ManageLibraryDialogType } from '@/shared/ManageLibrary';
@@ -169,6 +170,10 @@ export const LibraryPage = () => {
     navigate(ROUTES.LIBRARIES);
   };
 
+  const { mutate: patchBookOrderMutate } = useExecute({
+    executeFn: patchLibrariesLibraryIdBooksOrder,
+  });
+
   const handleDragEnd = async (event: DragEndEvent) => {
     if (!libraryItemsData) return;
 
@@ -182,7 +187,10 @@ export const LibraryPage = () => {
 
     const reorderBooksId = reorderedBooks.map((item) => item.bookId);
 
-    console.log(reorderBooksId);
+    await patchBookOrderMutate({
+      libraryId: Number(libraryId),
+      bookIds: reorderBooksId,
+    });
   };
 
   const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
