@@ -174,7 +174,26 @@ export const LibraryPage = () => {
     executeFn: patchLibrariesLibraryIdBooksOrder,
   });
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEndList = async (event: DragEndEvent) => {
+    if (!libraryItemsData) return;
+
+    const { source } = event.operation;
+    if (!source || !isSortable(source)) return;
+
+    const { initialIndex, index } = source;
+    if (initialIndex === index) return;
+
+    const reorderedBooks = move(libraryItemsData?.items, initialIndex, index);
+
+    const reorderBooksId = reorderedBooks.map((item) => item.bookId);
+
+    await patchBookOrderMutate({
+      libraryId: Number(libraryId),
+      bookIds: reorderBooksId,
+    });
+  };
+
+  const handleDragEndImg = async (event: DragEndEvent) => {
     if (!libraryItemsData) return;
 
     const { source } = event.operation;
@@ -325,17 +344,19 @@ export const LibraryPage = () => {
             </Title>
             {libraryItemsData !== null && !!libraryItemsData?.items.length && (
               <Showcase>
-                {libraryItemsData?.items.map((item, index) => {
-                  return (
-                    <ConstrainedImgBox
-                      as={Link}
-                      to={`${ROUTES.BOOK_DETAIL}/${item.isbn13}`}
-                      img={item.spineImageUrl}
-                      maxWidth="80px"
-                      maxHeight={`${booksHeight[index]}px`}
-                    />
-                  );
-                })}
+                <DragDropProvider onDragEnd={handleDragEndImg}>
+                  {libraryItemsData?.items.map((item, index) => {
+                    return (
+                      <Sortable key={item.bookId} id={item.bookId} index={index}>
+                        <ConstrainedImgBox
+                          img={item.spineImageUrl}
+                          maxWidth="80px"
+                          maxHeight={`${booksHeight[index]}px`}
+                        />
+                      </Sortable>
+                    );
+                  })}
+                </DragDropProvider>
               </Showcase>
             )}
 
@@ -405,7 +426,7 @@ export const LibraryPage = () => {
               <Notice height={500}>이 책장에 등록된 책이 없습니다.</Notice>
             )}
 
-            <DragDropProvider onDragEnd={handleDragEnd}>
+            <DragDropProvider onDragEnd={handleDragEndList}>
               <List columns={2}>
                 {libraryItemsData?.items.map((item, index) => {
                   return (
