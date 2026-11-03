@@ -241,9 +241,11 @@ export const LibrariesPage = () => {
                           </>
                         }
                       >
-                        <IconButton edge="start">
-                          <Icon.DragHandleIcon />
-                        </IconButton>
+                        <Sortable.Handle>
+                          <IconButton edge="start">
+                            <Icon.DragHandleIcon />
+                          </IconButton>
+                        </Sortable.Handle>
 
                         <Link
                           to={generatePath(ROUTES.LIBRARY, {
