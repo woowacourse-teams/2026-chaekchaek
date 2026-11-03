@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ComponentProps } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
@@ -97,6 +97,23 @@ export const LibraryPage = () => {
     queryFn: getLibrariesLibraryIdLoadData,
   });
 
+  const [orderedBookIds, setOrderedBookIds] = useState<number[] | null>(null);
+
+  useEffect(() => {
+    if (!libraryItemsData) return;
+    setOrderedBookIds(libraryItemsData.items.map((item) => item.bookId));
+  }, [libraryItemsData]);
+
+  const books = useMemo(() => {
+    if (!libraryItemsData) return [];
+
+    if (!orderedBookIds) return libraryItemsData.items;
+
+    const bookMap = new Map(libraryItemsData.items.map((book) => [book.bookId, book]));
+
+    return orderedBookIds.map((id) => bookMap.get(id)).filter((book) => book !== undefined);
+  }, [libraryItemsData, orderedBookIds]);
+
   const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
@@ -191,6 +208,8 @@ export const LibraryPage = () => {
       libraryId: Number(libraryId),
       bookIds: reorderBooksId,
     });
+
+    setOrderedBookIds(reorderBooksId);
   };
 
   const handleDragEndImg = async (event: DragEndEvent) => {
@@ -210,6 +229,8 @@ export const LibraryPage = () => {
       libraryId: Number(libraryId),
       bookIds: reorderBooksId,
     });
+
+    setOrderedBookIds(reorderBooksId);
   };
 
   const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
@@ -345,7 +366,7 @@ export const LibraryPage = () => {
             {libraryItemsData !== null && !!libraryItemsData?.items.length && (
               <Showcase>
                 <DragDropProvider onDragEnd={handleDragEndImg}>
-                  {libraryItemsData?.items.map((item, index) => {
+                  {books.map((item, index) => {
                     return (
                       <Sortable key={item.bookId} id={item.bookId} index={index}>
                         <ConstrainedImgBox
@@ -428,7 +449,7 @@ export const LibraryPage = () => {
 
             <DragDropProvider onDragEnd={handleDragEndList}>
               <List columns={2}>
-                {libraryItemsData?.items.map((item, index) => {
+                {books.map((item, index) => {
                   return (
                     <Sortable key={item.bookId} id={item.bookId} index={index}>
                       <List.Item>
