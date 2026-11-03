@@ -2,8 +2,8 @@ import { createContext, useContext } from 'react';
 import type { Ref } from 'react';
 
 type SortableContextValue = {
-  ref: Ref<HTMLElement>;
-  handleRef: Ref<HTMLElement>;
+  ref: Ref<HTMLDivElement>;
+  handleRef: Ref<HTMLDivElement>;
 };
 
 export const SortableContext = createContext<SortableContextValue | null>(null);
