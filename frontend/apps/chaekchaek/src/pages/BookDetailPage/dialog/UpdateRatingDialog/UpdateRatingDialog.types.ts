@@ -1,9 +1,0 @@
-export type Props = {
-  isbn13: string;
-  bookId: number;
-  title: string;
-  rating: number;
-  myRatingCount: number;
-  onRatingUpdated: () => void | Promise<void>;
-  onClose: () => void;
-};

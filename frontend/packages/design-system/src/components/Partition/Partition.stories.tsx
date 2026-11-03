@@ -6,6 +6,9 @@ import { Partition } from './';
 const meta = {
   title: 'Partition/Partition',
   component: Partition,
+  argTypes: {
+    columns: { control: { type: 'number', min: 1, step: 1 } },
+  },
 } satisfies Meta<typeof Partition>;
 
 export default meta;
@@ -24,5 +27,23 @@ export const Example: Story = {
         </Partition.Item>
       </>
     ),
+  },
+};
+
+export const TwoColumns: Story = {
+  args: {
+    columns: 2,
+    children: Array.from({ length: 6 }, (_, index) => (
+      <Partition.Item key={index} style={{ padding: 16, border: '1px solid currentColor' }}>
+        Column item {index + 1}
+      </Partition.Item>
+    )),
+  },
+};
+
+export const ThreeColumns: Story = {
+  args: {
+    ...TwoColumns.args,
+    columns: 3,
   },
 };

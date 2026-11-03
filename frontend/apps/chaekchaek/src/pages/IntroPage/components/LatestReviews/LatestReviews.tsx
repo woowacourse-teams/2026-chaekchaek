@@ -119,7 +119,7 @@ export const LatestReviews = () => {
                                 img={review.author.profileImageUrl}
                                 as={review.author?.memberId ? Link : 'div'}
                                 {...(review.author?.memberId && {
-                                  to: generatePath(ROUTES.MEMBER_LIBRARY, {
+                                  to: generatePath(ROUTES.LEGACY_MEMBER_LIBRARY, {
                                     memberId: review.author.memberId.toString(),
                                   }),
                                 })}

@@ -1,0 +1,60 @@
+.ui-DisplayCard {
+  box-sizing: border-box;
+  width: 342px;
+  max-width: 100%;
+  padding: 18px;
+  border-radius: 16px;
+  background-color: var(--chaek-color-surface-subtle);
+  color: var(--chaek-color-text-primary);
+  font-family: var(--chaek-font-family-gowun-dodum), sans-serif;
+  font-weight: 400;
+}
+
+.content {
+  box-sizing: border-box;
+  min-height: 294.38px;
+  padding: 17.57px 23.8px 31.65px;
+  background-color: var(--chaek-color-surface-canvas);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  min-width: 0;
+  font-size: 14.167px;
+  line-height: 20.4px;
+  overflow-wrap: anywhere;
+}
+
+.extra {
+  flex-shrink: 0;
+  color: var(--chaek-color-text-muted);
+  font-size: 8.5px;
+  line-height: 12.467px;
+}
+
+.description {
+  margin-top: 14.45px;
+  font-size: 9.067px;
+  line-height: 13.033px;
+  overflow-wrap: anywhere;
+}
+
+.showcase {
+  margin-top: 13.317px;
+}
+
+.showcase > * {
+  min-height: 183.963px;
+  padding-bottom: 1.417px;
+}
+
+.showcase > *::after {
+  height: 1.417px;
+  opacity: 1;
+}

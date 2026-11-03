@@ -14,22 +14,18 @@ import { track } from '@/analytics/track';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { getBooksIsbn } from '@/services/apis/booksIsbn/repository';
-import { postLibrary } from '@/services/apis/library/repository';
-import { patchLibraryBookId } from '@/services/apis/libraryBookId/repository';
 import { getBooksBookIdReviews } from '@/services/apis/booksBookIdReviews/repository';
+import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 import { useLoadData } from '@/services/core/useLoadData';
-import { useExecute } from '@/services/core/useExecute';
 
 import { LoginDialog } from '@/pages/LoginPage/dialog/LoginDialog';
+
+import { RegisterBookToLibraryDialog } from '@/shared/RegisterBookToLibrary';
 
 import { BookOverview } from './components/BookOverview';
 import { BookInfo } from './components/BookInfo';
 import { BookReviews } from './components/BookReviews';
-
-import { RegisterLibraryDialog } from './dialog/RegisterLibraryDialog';
-import { UpdateCurrentPageDialog } from './dialog/UpdateCurrentPageDialog';
-import { UpdateRatingDialog } from './dialog/UpdateRatingDialog';
-import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
+import { BookQuestion } from './components/BookQuestion';
 
 export const BookDetailPage = () => {
   const { isbn = '' } = useParams<{ isbn: string }>();
@@ -55,38 +51,16 @@ export const BookDetailPage = () => {
     setOpenLoginDialog(false);
   };
 
-  const { mutate: mutatePatchLibraryBookId } = useExecute({
-    executeFn: patchLibraryBookId,
-    onSuccess: refetchGetBooksIsbnLoadData,
-  });
-  const { mutate: mutatePostLibrary } = useExecute({
-    executeFn: postLibrary,
-    onSuccess: refetchGetBooksIsbnLoadData,
-  });
-  const handleRegisterLibrary = async (status: string) => {
+  const handleRegisterBookToLibrary = () => {
     if (!isAuthenticated) return handleOpenLoginDialog();
-    if (!data?.myRecord) {
-      await mutatePostLibrary({ isbn13: isbn, status });
 
-      track('library_add', {
-        source: 'detail_info',
-        status:
-          status === 'WANT_TO_READ'
-            ? 'want_to_read'
-            : status === 'READING'
-              ? 'reading'
-              : 'finished',
-      });
-
-      return;
-    }
-    await mutatePatchLibraryBookId({ bookId: data?.bookId, status });
+    handleOpenDialog('RegisterBookToLibraryDialog');
   };
 
   const [reviewsRequestParams, setReviewsRequestParams] = useState<{
     page: number;
     feed: 'ALL' | 'MINE';
-    sort: 'LATEST' | 'OLDEST' | 'POPULAR' | 'PAGE';
+    sort: 'LATEST' | 'OLDEST' | 'POPULAR';
   }>({
     page: 1,
     feed: 'ALL',
@@ -165,12 +139,17 @@ export const BookDetailPage = () => {
     };
   }, [reviewsDataAll]);
 
-  const [dialog, setDialog] = useState<
-    'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null
-  >(null);
-  const handleOpenDialog = (
-    dialog: 'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog',
-  ) => {
+  const handleBookRegistered = async () => {
+    track('library_add', {
+      source: 'detail_info',
+      status: 'reading',
+    });
+
+    refetchGetBooksIsbnLoadData();
+  };
+
+  const [dialog, setDialog] = useState<'RegisterBookToLibraryDialog' | null>(null);
+  const handleOpenDialog = (dialog: 'RegisterBookToLibraryDialog') => {
     if (!isAuthenticated) return handleOpenLoginDialog();
     setDialog(dialog);
   };
@@ -178,45 +157,17 @@ export const BookDetailPage = () => {
     setDialog(null);
   };
 
-  const renderDialog = (
-    dialog: 'RegisterLibraryDialog' | 'UpdateCurrentPageDialog' | 'UpdateRatingDialog' | null,
-  ) => {
+  const renderDialog = (dialog: 'RegisterBookToLibraryDialog' | null) => {
     switch (dialog) {
-      case 'RegisterLibraryDialog':
+      case 'RegisterBookToLibraryDialog':
         return (
-          data?.isbn13 && (
-            <RegisterLibraryDialog
-              isbn={data.isbn13}
-              onLibraryRegistered={refetchGetBooksIsbnLoadData}
-              onClose={handleCloseDialog}
-            />
-          )
-        );
-      case 'UpdateCurrentPageDialog':
-        return (
-          data?.bookId && (
-            <UpdateCurrentPageDialog
-              bookId={data?.bookId}
-              currentPage={data?.myRecord?.currentPage || 0}
-              onCurrentPageUpdated={async () => {
-                await refetchGetBooksIsbnLoadData();
+          data && (
+            <RegisterBookToLibraryDialog
+              book={{
+                isbn: data.isbn13,
+                bookId: data.bookId,
               }}
-              onClose={handleCloseDialog}
-            />
-          )
-        );
-      case 'UpdateRatingDialog':
-        return (
-          data?.bookId && (
-            <UpdateRatingDialog
-              isbn13={data.isbn13}
-              bookId={data?.bookId}
-              title={data.title}
-              rating={data.myRecord?.myRating}
-              myRatingCount={data?.myRatingCount}
-              onRatingUpdated={async () => {
-                await refetchGetBooksIsbnLoadData();
-              }}
+              onBookRegistered={handleBookRegistered}
               onClose={handleCloseDialog}
             />
           )
@@ -236,29 +187,19 @@ export const BookDetailPage = () => {
           <Split>
             <Split.Side>
               <BookInfo
-                myRecord={data?.myRecord ?? null}
-                readingStatus={data?.myRecord?.status}
-                currentPage={data?.myRecord?.currentPage}
-                totalPages={data?.totalPages}
                 category={data?.category}
                 publishedDate={data?.publishedDate}
                 isbn13={data?.isbn13}
                 authors={data?.authors}
                 translators={data?.translators}
-                onRegistryLibrary={() => {
-                  handleOpenDialog('RegisterLibraryDialog');
-                }}
-                onRatingCreate={() => {
-                  handleOpenDialog('UpdateRatingDialog');
-                }}
-                onReadingStatusChange={handleRegisterLibrary}
-                onCurrentPageUpdate={() => {
-                  handleOpenDialog('UpdateCurrentPageDialog');
-                }}
+                isRegisteredInMyLibrary={data?.isRegisteredInMyLibrary}
+                onRegisterBookToLibrary={handleRegisterBookToLibrary}
+                purchaseUrl={data?.purchaseUrl}
               />
             </Split.Side>
             <Split.Content>
               <BookOverview
+                myRating={data?.myRecord?.myRating}
                 category={data?.category}
                 publishedDate={data?.publishedDate}
                 title={data?.title}
@@ -271,12 +212,15 @@ export const BookDetailPage = () => {
                 coverImageUrl={data?.coverImageUrl}
               />
 
+              {data?.bookQuestion && <BookQuestion {...data?.bookQuestion} />}
+
               <BookReviews
                 isbn={isbn}
                 {...(data?.bookId && { bookId: data?.bookId })}
                 sort={reviewsRequestParams.sort}
                 feed={reviewsRequestParams.feed}
                 count={totalCount}
+                myRating={data?.myRecord?.myRating}
                 reviews={reviewsData}
                 onSortChange={(sort) => {
                   handleChangeReviewRequestParams({ name: 'sort', value: sort });

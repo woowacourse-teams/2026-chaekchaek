@@ -28,7 +28,6 @@ export type GetFeedReviewsResponseDto = ResponseDto<{
     bookId: number;
     likeCount: number;
     likedByMe: boolean;
-    currentPage?: number;
   }[];
   nextPage: number;
   totalCount: number;

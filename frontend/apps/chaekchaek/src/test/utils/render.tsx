@@ -19,6 +19,8 @@ const user = {
   anonymousNickname: '의욕적인 희뿌연 참새',
   displayAnonymous: false,
   memberId: 3,
+  actorId: 3,
+  actorType: 'MEMBER' as const,
   nickname: '먼지',
   profileImageUrl:
     'https://lh3.googleusercontent.com/a/ACg8ocIp6Hr4YvPjE_Fi00Bw-ACYdgnl0L2W74CycWwW4dGYPjOICDk=s96-c',

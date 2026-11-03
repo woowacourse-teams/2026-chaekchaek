@@ -7,7 +7,7 @@ export interface DeleteLibraryBookIdRequestDto {
 export type DeleteLibraryBookIdResponseDto = ResponseDto<undefined>;
 export interface PatchLibraryBookIdRequestDto {
   pathParams: [{ name: 'bookId'; value: number }];
-  data: { status?: string | undefined; currentPage?: number | undefined };
+  data: { status?: string | undefined };
 }
 
 export type PatchLibraryBookIdResponseDto = ResponseDto<{
@@ -23,7 +23,6 @@ export type PatchLibraryBookIdResponseDto = ResponseDto<{
   totalPages: number;
   commentCount: number;
   status: string;
-  currentPage: number;
   rating: number;
   addedAt: string;
   readingUpdatedAt: string;

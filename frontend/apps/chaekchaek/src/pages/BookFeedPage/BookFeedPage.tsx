@@ -33,14 +33,15 @@ export const BookFeedPage = () => {
 
   useEffect(() => {
     const handleScroll = async () => {
+      if (reviewsDataAll?.pages?.[reviewsDataAll?.pages.length - 1]?.nextPage === null) {
+        return;
+      }
+
       const scrollTop = document.documentElement.scrollTop;
       const scrollHeight = document.documentElement.scrollHeight;
       const clientHeight = document.documentElement.clientHeight;
 
       if (clientHeight >= scrollHeight - scrollTop) {
-        if (reviewsDataAll?.pages?.[reviewsDataAll?.pages.length - 1]?.nextPage === null) {
-          return;
-        }
         await fetchNextPage();
       }
     };

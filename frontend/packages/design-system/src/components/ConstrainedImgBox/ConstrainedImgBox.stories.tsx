@@ -44,6 +44,9 @@ export const Example: Story = {
 };
 
 export const Examples: Story = {
+  args: {
+    img: DummyImg1,
+  },
   render: () => {
     return (
       <>

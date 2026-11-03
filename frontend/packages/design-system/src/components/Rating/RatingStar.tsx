@@ -16,7 +16,7 @@ export const RatingStar = <T extends ElementType>(props: Props<T>) => {
     active = false,
     className,
     half = false,
-    size = 'medium',
+    size = 'large',
     sx,
     style,
     ...restProps
@@ -36,5 +36,7 @@ export const RatingStar = <T extends ElementType>(props: Props<T>) => {
 
   const spacingStyle = resolveSx({ sx });
 
-  return <View as={as} className={classname} style={{ ...spacingStyle, ...style }} {...restProps} />;
+  return (
+    <View as={as} className={classname} style={{ ...spacingStyle, ...style }} {...restProps} />
+  );
 };

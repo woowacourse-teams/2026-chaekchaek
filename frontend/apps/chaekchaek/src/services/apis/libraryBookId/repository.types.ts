@@ -6,7 +6,6 @@ export type DeleteLibraryBookId = (params: DeleteLibraryBookIdParams) => Promise
 export interface PatchLibraryBookIdParams {
   bookId: number;
   status?: string;
-  currentPage?: number;
 }
 
 export type PatchLibraryBookId = (params: PatchLibraryBookIdParams) => Promise<{
@@ -22,7 +21,6 @@ export type PatchLibraryBookId = (params: PatchLibraryBookIdParams) => Promise<{
   totalPages: number;
   commentCount: number;
   status: string;
-  currentPage: number;
   rating: number;
   addedAt: string;
   readingUpdatedAt: string;

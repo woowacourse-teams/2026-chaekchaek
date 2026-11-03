@@ -1,1 +1,0 @@
-export { UpdateCurrentPageDialog } from './UpdateCurrentPageDialog';

@@ -3,7 +3,7 @@ import type { RequestHeaders } from '@/services/context/requestHeaders';
 
 export interface GetBooksBookIdReviewsRequestDto {
   pathParams: [{ name: 'bookId'; value: number }];
-  query: { page: number; feed: string; sort: string };
+  query: { page: number; feed: string; sort: 'LATEST' | 'OLDEST' | 'POPULAR' };
   headers?: RequestHeaders;
 }
 
@@ -41,7 +41,6 @@ export type GetBooksBookIdReviewsResponseDto = ResponseDto<{
     isSpoiler: boolean;
     likedByMe: boolean;
     quote?: string;
-    currentPage: number;
     reviewId: number;
   }[];
 }>;
@@ -49,11 +48,12 @@ export interface PostBooksBookIdReviewsRequestDto {
   pathParams: [{ name: 'bookId'; value: number }];
   data: {
     content: string | undefined;
-    chapter?: string | undefined;
     isSpoiler?: boolean | undefined;
     quote?: string | undefined;
     totalPages?: number | undefined;
-    currentPage?: number | undefined;
+  };
+  headers?: {
+    'X-Guest-Token'?: string;
   };
 }
 

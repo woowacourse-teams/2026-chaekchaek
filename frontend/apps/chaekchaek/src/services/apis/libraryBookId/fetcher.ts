@@ -17,12 +17,12 @@ import type { PatchLibraryBookIdRequestDto, PatchLibraryBookIdResponseDto } from
 
 export const patchLibraryBookId = async ({
   pathParams: [{ value: bookId }],
-  data: { status, currentPage },
+  data: { status },
 }: PatchLibraryBookIdRequestDto): Promise<PatchLibraryBookIdResponseDto> => {
   const response = await instance('/api/v1/library', {
     method: 'patch',
     pathParams: [{ name: 'bookId', value: bookId }],
-    data: { status, currentPage },
+    data: { status },
   });
 
   return response.data;

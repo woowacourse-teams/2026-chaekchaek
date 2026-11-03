@@ -22,7 +22,7 @@ import type { PatchReviewsReviewIdRequestDto, PatchReviewsReviewIdResponseDto } 
 
 export const patchReviewsReviewId = async ({
   pathParams: [{ value: reviewId }],
-  data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
+  data: { isSpoiler, quote, totalPages, content },
   headers: { 'X-Guest-Token': guestToken } = {},
 }: PatchReviewsReviewIdRequestDto): Promise<PatchReviewsReviewIdResponseDto> => {
   const requestHeaders = createFetcherRequestHeaders({ 'X-Guest-Token': guestToken });
@@ -30,7 +30,7 @@ export const patchReviewsReviewId = async ({
   const response = await instance(`/api/v1/reviews/${reviewId}`, {
     method: 'patch',
     // pathParams: [{ name: 'reviewId', value: reviewId }],
-    data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
+    data: { isSpoiler, quote, totalPages, content },
     headers: requestHeaders,
   });
 

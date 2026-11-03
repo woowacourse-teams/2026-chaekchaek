@@ -82,7 +82,7 @@ export const BookReply = (props: BookReplyProps) => {
             size="small"
             as={reply.author.memberId ? Link : 'div'}
             {...(reply.author.memberId && {
-              to: generatePath(ROUTES.MEMBER_LIBRARY, {
+              to: generatePath(ROUTES.LEGACY_MEMBER_LIBRARY, {
                 memberId: reply.author.memberId.toString(),
               }),
             })}

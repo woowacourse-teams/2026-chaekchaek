@@ -5,7 +5,7 @@ import type { GetBooksIsbnRequestDto, GetBooksIsbnResponseDto } from './dto';
 export const getBooksIsbn = async ({
   pathParams: [{ value: isbn }],
 }: GetBooksIsbnRequestDto): Promise<GetBooksIsbnResponseDto> => {
-  const response = await instance('/api/v1/books/by-isbn', {
+  const response = await instance('/api/v2/books/by-isbn', {
     method: 'get',
     pathParams: [{ name: 'isbn', value: isbn }],
   });

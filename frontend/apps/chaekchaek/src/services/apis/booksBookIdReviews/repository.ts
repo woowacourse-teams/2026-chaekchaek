@@ -28,13 +28,20 @@ import {
 
 import type { PostBooksBookIdReviews } from './repository.types';
 
-export const postBooksBookIdReviews: PostBooksBookIdReviews = async (model) => {
-  const { bookId, chapter, isSpoiler, quote, totalPages, currentPage, content } =
+export const postBooksBookIdReviews: PostBooksBookIdReviews = async (model, context) => {
+  const { bookId, isSpoiler, quote, totalPages, content } =
     mapPostBooksBookIdReviewsModelToRequestDTO(model);
+
+  const guestToken = context?.guestToken;
 
   const responseDTO = await fetcher.postBooksBookIdReviews({
     pathParams: [{ name: 'bookId', value: bookId }],
-    data: { chapter, isSpoiler, quote, totalPages, currentPage, content },
+    data: { isSpoiler, quote, totalPages, content },
+    ...(guestToken && {
+      headers: {
+        'X-Guest-Token': guestToken,
+      },
+    }),
   });
 
   return mapPostBooksBookIdReviewsResponseDTOToModel(responseDTO);

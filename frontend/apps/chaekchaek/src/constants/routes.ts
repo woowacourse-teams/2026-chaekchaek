@@ -8,7 +8,11 @@ export const ROUTES = {
   INTRO: '/intro',
   BOOK_SEARCH: '/books',
   BOOK_DETAIL: '/books',
-  LIBRARY: '/library',
-  MEMBER_LIBRARY: '/members/:memberId/library',
+  LEGACY_LIBRARY: '/library',
+  LEGACY_MEMBER_LIBRARY: '/members/:memberId/library',
+  LIBRARIES: '/libraries',
+  LIBRARY: '/libraries/:libraryId',
+  MEMBER_LIBRARIES: '/members/:memberId/libraries',
+  MEMBER_LIBRARY: '/members/:memberId/libraries/:libraryId',
   FEED: '/feed',
 };

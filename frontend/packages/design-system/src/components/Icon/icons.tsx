@@ -71,3 +71,15 @@ export const StartIcon = createIcon(Start);
 
 import Trash from './imgs/trash.svg?component';
 export const TrashIcon = createIcon(Trash);
+
+import DragHandle from './imgs/drag-handle.svg?component';
+export const DragHandleIcon = createIcon(DragHandle);
+
+import Upload from './imgs/upload.svg?component';
+export const UploadIcon = createIcon(Upload);
+
+import Download from './imgs/download.svg?component';
+export const DownloadIcon = createIcon(Download);
+
+import Plus from './imgs/plus.svg?component';
+export const PlusIcon = createIcon(Plus);

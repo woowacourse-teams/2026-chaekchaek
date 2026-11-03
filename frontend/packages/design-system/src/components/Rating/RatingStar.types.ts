@@ -7,7 +7,7 @@ export type AS = 'div';
 export type OwnProps = {
   active?: boolean;
   half?: boolean;
-  size?: 'small' | 'medium';
+  size?: 'small' | 'medium' | 'large';
 };
 
 export type Props<T extends ElementType = AS> = PolymorphicProps<T, OwnProps>;

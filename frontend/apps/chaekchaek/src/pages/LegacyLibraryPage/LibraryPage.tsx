@@ -1,0 +1,480 @@
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+
+import {
+  Badge,
+  Button,
+  Checkbox,
+  ConstrainedImgBox,
+  Icon,
+  IconButton,
+  ImgBox,
+  List,
+  Notice,
+  OptionList,
+  Pagination,
+  ProgressBar,
+  Select,
+  Split,
+  Title,
+} from '@chaekchaek/design-system';
+
+import { Layout } from '@/frames';
+import { Header } from '@/frames';
+import { Main } from '@/frames';
+import { Container } from '@/frames/Container';
+
+import { getLibrary } from '@/services/apis/library/repository';
+import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
+import { useExecute } from '@/services/core/useExecute';
+import { useLoadData } from '@/services/core/useLoadData';
+
+import { UpdateBookStatusDialog } from './dialog/UpdateBookStatusDialog';
+import { DeleteBooksDialog } from './dialog/DeleteBooksDialog';
+import { UpdateNicknameDialog } from './dialog/UpdateNicknameDialog';
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
+import styles from './LiraryPage.module.css';
+
+export const READING_STATUS = {
+  ALL: 'ALL',
+  WANT_TO_READ: 'WANT_TO_READ',
+  READING: 'READING',
+  FINISHED: 'FINISHED',
+} as const;
+
+export type ReadingStatus = (typeof READING_STATUS)[keyof typeof READING_STATUS];
+
+export const READING_STATUS_LABELS: Record<ReadingStatus, string> = {
+  [READING_STATUS.ALL]: '전체',
+  [READING_STATUS.WANT_TO_READ]: '읽고 싶어요',
+  [READING_STATUS.READING]: '읽는 중',
+  [READING_STATUS.FINISHED]: '다 읽음',
+};
+
+const READING_SORT = {
+  RECENT: 'RECENT',
+  OLDEST: 'OLDEST',
+  COMMENT: 'COMMENT',
+  RATING: 'RATING',
+  TITLE: 'TITLE',
+} as const;
+
+type ReadingSort = (typeof READING_SORT)[keyof typeof READING_SORT];
+
+const READING_SORT_LABELS = {
+  RECENT: '최근순',
+  OLDEST: '오래된순',
+  COMMENT: '감상순',
+  RATING: '별점순',
+  TITLE: '제목순',
+} as const;
+
+const booksHeight = [286, 304, 318, 312, 296, 282, 288, 306, 320, 298];
+
+export const LibraryPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const defaultPage = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
+  const status = (searchParams.get('status') ?? READING_STATUS.ALL) as ReadingStatus;
+  const sort = (searchParams.get('sort') ?? READING_SORT.RECENT) as ReadingSort;
+
+  const handleChangeDefaultPage = (defaultPage: number) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('page', String(defaultPage));
+      return next;
+    });
+  };
+
+  const handleChangeStatus = (status: ReadingStatus) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('status', status);
+      next.set('page', '1');
+      return next;
+    });
+  };
+
+  const handleChangeSort = (sort: ReadingSort) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('sort', sort);
+      next.set('page', '1');
+      return next;
+    });
+  };
+
+  const getLibraryLoadData = useCallback(async () => {
+    return await getLibrary({
+      page: defaultPage,
+      sort,
+      status,
+    });
+  }, [defaultPage, status, sort]);
+  const {
+    refetch: refetchGetLibrary,
+    status: { data: libraryData },
+  } = useLoadData({ queryFn: getLibraryLoadData });
+
+  const filteredTotalPages = libraryData ? Math.ceil(libraryData.filteredCount / 10) : 1;
+
+  const [isEditing, setIsEditing] = useState(false);
+  const handleClickToggleEdit = () => {
+    setIsEditing((prev) => !prev);
+  };
+  const handleClickEndEdit = () => {
+    setIsEditing(false);
+  };
+
+  const [bookSelection, setBookSelection] = useState<number[]>([]);
+  const handleChangeBookSelection = (bookId: number) => {
+    setBookSelection((prev) =>
+      prev.includes(bookId) ? prev.filter((v) => v !== bookId) : [...prev, bookId],
+    );
+  };
+  const handleResetBookSelection = () => {
+    setBookSelection([]);
+  };
+
+  const handleBookStatusUpdated = () => {
+    refetchGetLibrary();
+
+    handleCloseDialog();
+    handleClickEndEdit();
+    handleResetBookSelection();
+    handleCloseDialog();
+  };
+
+  const handleBooksDeleted = () => {
+    refetchGetLibrary();
+
+    handleCloseDialog();
+    handleClickEndEdit();
+    handleResetBookSelection();
+  };
+
+  const handleClickDelete = (bookId: number) => {
+    handleChangeBookSelection(bookId);
+    handleOpenDialog('DeleteBooksDialog');
+  };
+
+  const isAbleUpdateStatus = bookSelection.length;
+  const isAbleDeleteStatus = bookSelection.length;
+
+  const { user, updateAccount } = useAuthContext();
+  const { status: anonymityStatus, mutate: updateAnonymity } = useExecute({
+    executeFn: patchMembersMeAnonymity,
+  });
+
+  const handleToggleAnonymous = async () => {
+    if (!user) return;
+
+    if (user.displayAnonymous) {
+      if (!user.nickname) return handleOpenDialog('UpdateNicknameDialog');
+
+      const userWithAnonymityDisabled = await updateAnonymity({ displayAnonymous: false });
+      if (!userWithAnonymityDisabled) return;
+
+      updateAccount(userWithAnonymityDisabled);
+
+      return;
+    }
+
+    const updatedUser = await updateAnonymity({ displayAnonymous: true });
+    if (!updatedUser) return;
+
+    updateAccount(updatedUser);
+  };
+
+  const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    const TIME_OUT = 1500;
+    if (isCopied)
+      setTimeout(() => {
+        setIsCopied(false);
+      }, TIME_OUT);
+  }, [isCopied]);
+
+  const handleCopyLink = async () => {
+    if (!user?.memberId) return;
+    const memberLibraryLink = `${window.location.origin}/members/${user?.memberId}/library`;
+    await navigator.clipboard.writeText(memberLibraryLink);
+
+    setIsCopied(true);
+  };
+
+  const [dialog, setDialog] = useState<
+    'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null
+  >(null);
+  const handleOpenDialog = (
+    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog',
+  ) => {
+    setDialog(dialog);
+  };
+  const handleCloseDialog = () => {
+    setDialog(null);
+  };
+
+  const renderDialog = (
+    dialog: 'UpdateBookStatusDialog' | 'DeleteBooksDialog' | 'UpdateNicknameDialog' | null,
+  ) => {
+    switch (dialog) {
+      case 'UpdateBookStatusDialog':
+        return (
+          <UpdateBookStatusDialog
+            bookSelection={bookSelection}
+            onBookStatusUpdated={handleBookStatusUpdated}
+            onClose={handleCloseDialog}
+          />
+        );
+      case 'DeleteBooksDialog':
+        return (
+          <DeleteBooksDialog
+            bookIds={bookSelection}
+            onBooksDeleted={handleBooksDeleted}
+            onClose={handleCloseDialog}
+          />
+        );
+      case 'UpdateNicknameDialog':
+        return <UpdateNicknameDialog onClose={handleCloseDialog} />;
+
+      default:
+        return null;
+    }
+  };
+
+  const dialogElement = renderDialog(dialog);
+
+  return (
+    <Layout>
+      <Header />
+      <Main>
+        <Container>
+          <Split>
+            <Split.Top sx={{ mb: 14 }}>
+              <Title
+                level="page"
+                trailing={
+                  <>
+                    {user !== null && (
+                      <>
+                        {user?.displayAnonymous && (
+                          <Button
+                            leading={<Icon.CheckboxOnIcon color="secondary" />}
+                            variant="ghost"
+                            size="small"
+                            disabled={anonymityStatus.status === 'loading'}
+                            onClick={handleToggleAnonymous}
+                          >
+                            익명으로 감상 공개
+                          </Button>
+                        )}
+                        {!user?.displayAnonymous && (
+                          <Button
+                            leading={<Icon.CheckboxOffIcon color="secondary" />}
+                            variant="ghost"
+                            size="small"
+                            disabled={anonymityStatus.status === 'loading'}
+                            onClick={handleToggleAnonymous}
+                          >
+                            익명으로 감상 공개
+                          </Button>
+                        )}
+                      </>
+                    )}
+                    {isEditing && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="small"
+                          disabled={!isAbleUpdateStatus}
+                          onClick={() => handleOpenDialog('UpdateBookStatusDialog')}
+                        >
+                          상태 변경
+                        </Button>
+                        <Button
+                          leading={<Icon.TrashIcon color="error" />}
+                          variant="danger-weak"
+                          size="small"
+                          disabled={!isAbleDeleteStatus}
+                          onClick={() => handleOpenDialog('DeleteBooksDialog')}
+                        >
+                          {!!bookSelection.length && `${bookSelection.length}권`} 삭제
+                        </Button>
+                      </>
+                    )}
+                    <Button variant="primary" size="small" onClick={handleClickToggleEdit}>
+                      {!isEditing ? '서재 편집' : '편집 종료'}
+                    </Button>
+                  </>
+                }
+              >
+                내 서재
+                <IconButton shape="link" size="large" onClick={handleCopyLink}>
+                  {!isCopied ? (
+                    <Icon.ShareIcon size="x-large" color="secondary" />
+                  ) : (
+                    <Icon.CheckAnimatedIcon size="x-large" color="secondary" />
+                  )}
+                </IconButton>
+              </Title>
+            </Split.Top>
+            <Split.Side>
+              <Title
+                level="main"
+                orientation="vertical"
+                trailing={
+                  <OptionList
+                    sx={{ mt: 3 }}
+                    value={status}
+                    options={Object.entries(READING_STATUS_LABELS).map(([labelKey, labelValue]) => {
+                      return {
+                        value: labelKey,
+                        text: labelValue,
+                      };
+                    })}
+                    onChange={handleChangeStatus}
+                  />
+                }
+              >
+                독서 상태
+              </Title>
+            </Split.Side>
+            <Split.Content>
+              <div className={styles.bookShelf}>
+                {libraryData?.items.map((item, index) => {
+                  return (
+                    <ConstrainedImgBox
+                      as={Link}
+                      to={`/books/${item.isbn13}`}
+                      className={styles.book}
+                      key={item.bookId}
+                      img={item.spineImageUrl ?? item.coverImageUrl}
+                      maxWidth="80px"
+                      height={`${booksHeight[index]}px`}
+                    />
+                  );
+                })}
+              </div>
+
+              <Title
+                level="caption"
+                sx={{ mt: 8 }}
+                trailing={
+                  <>
+                    <Select
+                      size="small"
+                      value={sort}
+                      options={Object.entries(READING_SORT_LABELS).map(([labelKey, labelValue]) => {
+                        return {
+                          value: labelKey,
+                          text: labelValue,
+                        };
+                      })}
+                      onChange={handleChangeSort}
+                    />
+                  </>
+                }
+              >
+                총 {libraryData?.filteredCount}권
+              </Title>
+
+              {!libraryData?.items.length && (
+                <Notice height={500}>내 서재에 등록된 책이 없습니다.</Notice>
+              )}
+              <List columns={2} sx={{ mt: 4 }}>
+                {libraryData?.items.map((item) => {
+                  const isIncluded = bookSelection.includes(item.bookId);
+
+                  return (
+                    <List.Item key={item.bookId}>
+                      <List.Item.Leading>
+                        {isEditing && (
+                          <Checkbox
+                            size="large"
+                            sx={{ mr: 4 }}
+                            checked={isIncluded}
+                            onChange={() => {
+                              handleChangeBookSelection(item.bookId);
+                            }}
+                          />
+                        )}
+                        {!isEditing ? (
+                          <Link to={`/books/${item.isbn13}`}>
+                            <ImgBox img={item.coverImageUrl} size="small" />
+                          </Link>
+                        ) : (
+                          <div>
+                            <ImgBox img={item.coverImageUrl} size="small" />
+                          </div>
+                        )}
+                      </List.Item.Leading>
+                      <List.Item.Content
+                        as={!isEditing ? Link : 'div'}
+                        {...(!isEditing && { to: `/books/${item.isbn13}` })}
+                        title={
+                          <>
+                            <Badge
+                              sx={{ mb: 1 }}
+                              variant={
+                                item.status === READING_STATUS.READING
+                                  ? 'primary'
+                                  : item.status === READING_STATUS.WANT_TO_READ
+                                    ? 'subtle'
+                                    : 'soft'
+                              }
+                            >
+                              {READING_STATUS_LABELS?.[item.status as ReadingStatus] ?? ''}
+                            </Badge>
+                            <br />
+                            {item.title}
+                          </>
+                        }
+                        content={item.authors.join(' · ')}
+                        description={
+                          <>
+                            {item.totalPages > 0 && (
+                              <ProgressBar
+                                variant={item.currentPage !== item.totalPages ? 'accent' : 'subtle'}
+                                value={item.currentPage}
+                                max={item.totalPages}
+                              />
+                            )}
+                          </>
+                        }
+                      />
+                      <List.Item.Trailing>
+                        {!isEditing && <Icon.ArrowRightIcon />}
+                        {isEditing && (
+                          <>
+                            <IconButton
+                              sx={{ ml: 4 }}
+                              onClick={() => {
+                                handleClickDelete(item.bookId);
+                              }}
+                            >
+                              <Icon.TrashIcon color="error" />
+                            </IconButton>
+                          </>
+                        )}
+                      </List.Item.Trailing>
+                    </List.Item>
+                  );
+                })}
+              </List>
+
+              <Pagination
+                sx={{ mt: 5 }}
+                defaultPage={defaultPage}
+                totalPages={filteredTotalPages}
+                onChange={handleChangeDefaultPage}
+              />
+            </Split.Content>
+          </Split>
+        </Container>
+        {dialogElement}
+      </Main>
+    </Layout>
+  );
+};

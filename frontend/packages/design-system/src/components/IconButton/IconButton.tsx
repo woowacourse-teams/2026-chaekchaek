@@ -16,6 +16,7 @@ export const IconButton = <T extends ElementType>(props: Props<T>) => {
     shape = 'default',
     variant = 'default',
     size = 'medium',
+    edge = 'center',
     children,
     className,
     sx,
@@ -27,6 +28,7 @@ export const IconButton = <T extends ElementType>(props: Props<T>) => {
     shape: shape && styles?.[`shape-${shape}`],
     variant: variant && styles?.[`variant-${variant}`],
     size: size && styles?.[`size-${size}`],
+    edge: edge && styles?.[`edge-${edge}`],
   };
 
   const classname = createClassName({

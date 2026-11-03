@@ -3,6 +3,7 @@ import { Badge, ImgBox, Overview } from '@chaekchaek/design-system';
 import type { Props } from './BookOverview.types';
 
 export const BookOverview = ({
+  myRating,
   category,
   publishedDate,
   title,
@@ -26,7 +27,9 @@ export const BookOverview = ({
         description={description}
         meta={
           <>
-            <Badge variant="ghost">★ {averageRating || 0}</Badge>
+            <Badge variant="ghost">
+              ★ {myRating || 0} / {averageRating || 0}
+            </Badge>
             <Badge variant="ghost">
               감상 {reviewCount || 0} · 답글: {replyCount}
             </Badge>

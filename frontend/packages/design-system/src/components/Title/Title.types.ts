@@ -5,7 +5,7 @@ import type { PolymorphicProps } from '#internal/components/View';
 export type AS = 'div';
 
 export type OwnProps = {
-  level?: 'page' | 'main' | 'caption';
+  level?: 'page' | 'main' | 'content' | 'detail' | 'caption';
   children?: ReactNode;
   description?: ReactNode;
   trailing?: ReactNode;

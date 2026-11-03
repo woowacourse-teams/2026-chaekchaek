@@ -23,11 +23,11 @@ import {
 import type { PatchLibraryBookId } from './repository.types';
 
 export const patchLibraryBookId: PatchLibraryBookId = async (model) => {
-  const { bookId, status, currentPage } = mapPatchLibraryBookIdModelToRequestDTO(model);
+  const { bookId, status } = mapPatchLibraryBookIdModelToRequestDTO(model);
 
   const responseDTO = await fetcher.patchLibraryBookId({
     pathParams: [{ name: 'bookId', value: bookId }],
-    data: { status, currentPage },
+    data: { status },
   });
 
   return mapPatchLibraryBookIdResponseDTOToModel(responseDTO);

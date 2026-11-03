@@ -1,5 +1,8 @@
 import './styles/index.css';
 
+export { Accordion } from './components/Accordion';
+export type { Props as AccordionProps } from './components/Accordion';
+
 export { Avatar } from './components/Avatar';
 export type { Props as AvatarProps } from './components/Avatar';
 
@@ -137,6 +140,21 @@ export type { Props as ChoiceProps } from './components/Choice';
 
 export { InfoMessage } from './components/InfoMessage';
 export type { Props as InfoMessageProps } from './components/InfoMessage';
+
+export { Tabs } from './components/Tabs';
+export type { Props as TabsProps } from './components/Tabs';
+
+export { Showcase } from './components/Showcase';
+export type { Props as ShowcaseProps } from './components/Showcase';
+
+export { DisplayCard } from './components/DisplayCard';
+export type { Props as DisplayCardProps } from './components/DisplayCard';
+
+export { ScrollArea } from './components/ScrollArea';
+export type { Props as ScrollAreaProps } from './components/ScrollArea';
+
+export { VisuallyHidden } from './components/VisuallyHidden';
+export type { Props as VisuallyHiddenProps } from './components/VisuallyHidden';
 
 export { View } from './components/View';
 export type { Props as ViewProps } from './components/View';

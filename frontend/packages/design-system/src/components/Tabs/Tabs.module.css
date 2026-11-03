@@ -1,0 +1,58 @@
+.ui-Tabs-TabList {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  border-bottom: 1px solid var(--chaek-color-border-divider);
+}
+
+.ui-Tabs-Tab {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 2px solid transparent;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.distribution-equal {
+  height: 39px;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 0;
+}
+
+.distribution-equal .ui-Tabs-Tab {
+  min-width: 1px;
+  min-height: 38px;
+  height: 100%;
+  flex: 1 0 0;
+  padding: 0 2px;
+  color: var(--chaek-color-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.distribution-content {
+  height: 45px;
+  align-items: center;
+  gap: 24px;
+  padding: 0 22px;
+}
+
+.distribution-content .ui-Tabs-Tab {
+  height: 44px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  color: var(--chaek-color-text-inactive);
+  font-size: 14px;
+  letter-spacing: -0.1504px;
+  line-height: 21px;
+}
+
+.ui-Tabs-Tab.is-active {
+  border-bottom-color: var(--chaek-color-border-strong);
+  color: var(--chaek-color-text-primary);
+}

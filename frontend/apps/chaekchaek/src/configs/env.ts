@@ -1,9 +1,14 @@
-type AppEnv = 'local' | 'development' | 'production';
+type AppEnv = 'local' | 'development' | 'production' | 'test';
 
 const getAppEnv = (): AppEnv => {
   const appEnv = process.env.APP_ENV;
 
-  if (appEnv !== 'local' && appEnv !== 'development' && appEnv !== 'production') {
+  if (
+    appEnv !== 'local' &&
+    appEnv !== 'development' &&
+    appEnv !== 'production' &&
+    appEnv !== 'test'
+  ) {
     throw new Error(`Invalid APP_ENV: ${appEnv}`);
   }
 

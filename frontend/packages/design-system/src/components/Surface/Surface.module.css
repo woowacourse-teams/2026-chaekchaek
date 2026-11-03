@@ -13,10 +13,41 @@
   background-color: var(--chaek-color-surface-canvas);
 }
 
+.variant-dashed {
+  border: 1px dashed var(--chaek-color-border-divider);
+  border-radius: 12px;
+}
+
 .spacing-small {
   padding: 12px 14px;
 }
 
 .spacing-medium {
   padding: 18px;
+}
+
+.align-left {
+  justify-content: flex-start;
+}
+
+.align-center {
+  justify-content: center;
+}
+
+.align-right {
+  justify-content: flex-end;
+}
+
+.vertical-align-top {
+  align-items: flex-start;
+}
+
+.vertical-align-center {
+
+  display: flex;
+  align-items: center;
+}
+
+.vertical-align-bottom {
+  align-items: flex-end;
 }
