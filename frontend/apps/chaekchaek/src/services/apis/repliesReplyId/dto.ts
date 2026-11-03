@@ -13,7 +13,6 @@ export interface PatchRepliesReplyIdRequestDto {
 export type PatchRepliesReplyIdResponseDto = ResponseDto<{
   createdAt: string;
   likedByMe: boolean;
-  deleted: boolean;
   author: {
     mine: boolean;
     actorType: string;
