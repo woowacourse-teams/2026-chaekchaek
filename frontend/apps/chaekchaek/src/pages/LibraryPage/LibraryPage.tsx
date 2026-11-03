@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { ComponentProps } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+
+import { DragDropProvider } from '@dnd-kit/react';
+import { isSortable } from '@dnd-kit/react/sortable';
+
+type DragEndEvent = Parameters<
+  NonNullable<ComponentProps<typeof DragDropProvider>['onDragEnd']>
+>[0];
 
 import {
   Button,
@@ -54,6 +62,20 @@ const booksHeight = [
 ];
 const canDeleteLibrary = ({ isDefault }: { isDefault: boolean }): boolean => {
   return !isDefault;
+};
+
+import { Sortable } from './components/Sortable/Sortable';
+
+const move = <T,>(array: T[], from: number, to: number): T[] => {
+  const result = [...array];
+
+  const [item] = result.splice(from, 1);
+
+  if (item === undefined) return array;
+
+  result.splice(to, 0, item);
+
+  return result;
 };
 
 export const LibraryPage = () => {
@@ -145,6 +167,22 @@ export const LibraryPage = () => {
   const navigate = useNavigate();
   const handleGoToLibraries = async () => {
     navigate(ROUTES.LIBRARIES);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    if (!libraryItemsData) return;
+
+    const { source } = event.operation;
+    if (!source || !isSortable(source)) return;
+
+    const { initialIndex, index } = source;
+    if (initialIndex === index) return;
+
+    const reorderedBooks = move(libraryItemsData?.items, initialIndex, index);
+
+    const reorderBooksId = reorderedBooks.map((item) => item.bookId);
+
+    console.log(reorderBooksId);
   };
 
   const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
@@ -359,39 +397,45 @@ export const LibraryPage = () => {
               <Notice height={500}>이 책장에 등록된 책이 없습니다.</Notice>
             )}
 
-            <List columns={2}>
-              {libraryItemsData?.items.map((item) => {
-                return (
-                  <List.Item key={item.bookId}>
-                    <List.Item.Leading>
-                      <IconButton edge="start">
-                        <Icon.DragHandleIcon />
-                      </IconButton>
-                      <Link to={`/books/${item.isbn13}`}>
-                        <ImgBox img={item.coverImageUrl} size="small" />
-                      </Link>
-                    </List.Item.Leading>
-                    <List.Item.Content
-                      title={<>{item.title}</>}
-                      content={item.authors?.join(' · ')}
-                    />
+            <DragDropProvider onDragEnd={handleDragEnd}>
+              <List columns={2}>
+                {libraryItemsData?.items.map((item, index) => {
+                  return (
+                    <Sortable key={item.bookId} id={item.bookId} index={index}>
+                      <List.Item>
+                        <List.Item.Leading>
+                          <Sortable.Handle>
+                            <IconButton edge="start">
+                              <Icon.DragHandleIcon />
+                            </IconButton>
+                          </Sortable.Handle>
+                          <Link to={`/books/${item.isbn13}`}>
+                            <ImgBox img={item.coverImageUrl} size="small" />
+                          </Link>
+                        </List.Item.Leading>
+                        <List.Item.Content
+                          title={<>{item.title}</>}
+                          content={item.authors?.join(' · ')}
+                        />
 
-                    {isEditing && (
-                      <List.Item.Trailing>
-                        <IconButton
-                          aria-label="삭제"
-                          onClick={() => {
-                            handleClickDeleteBook(item.bookId);
-                          }}
-                        >
-                          <Icon.CloseIcon color="error" />
-                        </IconButton>
-                      </List.Item.Trailing>
-                    )}
-                  </List.Item>
-                );
-              })}
-            </List>
+                        {isEditing && (
+                          <List.Item.Trailing>
+                            <IconButton
+                              aria-label="삭제"
+                              onClick={() => {
+                                handleClickDeleteBook(item.bookId);
+                              }}
+                            >
+                              <Icon.CloseIcon color="error" />
+                            </IconButton>
+                          </List.Item.Trailing>
+                        )}
+                      </List.Item>
+                    </Sortable>
+                  );
+                })}
+              </List>
+            </DragDropProvider>
           </ContentArea>
         </Container>
       </Main>
