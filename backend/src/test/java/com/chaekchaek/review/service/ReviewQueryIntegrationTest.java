@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.chaekchaek.book.cache.BookActivityCountCacheCoordinator;
 import com.chaekchaek.book.cache.CachedBookSearchActivityCountReader;
 import com.chaekchaek.book.service.BookResolver;
 import com.chaekchaek.book.service.BookSearchActivityCountReader;
@@ -248,7 +249,10 @@ class ReviewQueryIntegrationTest {
                 .recordStats()
                 .build();
         BookSearchActivityCountReader cachedReader =
-                new CachedBookSearchActivityCountReader(service, cache);
+                new CachedBookSearchActivityCountReader(
+                        service,
+                        new BookActivityCountCacheCoordinator(cache)
+                );
         Statistics statistics = entityManager.getEntityManagerFactory()
                 .unwrap(SessionFactory.class)
                 .getStatistics();

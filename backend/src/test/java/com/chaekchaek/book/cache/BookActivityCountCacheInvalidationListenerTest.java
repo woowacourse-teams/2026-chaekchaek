@@ -20,7 +20,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @DataJpaTest
 @ActiveProfiles("test")
-@Import({BookActivityCountCacheConfiguration.class, BookActivityCountCacheInvalidationListener.class})
+@Import({
+        BookActivityCountCacheConfiguration.class,
+        BookActivityCountCacheCoordinator.class,
+        BookActivityCountCacheInvalidationListener.class
+})
 class BookActivityCountCacheInvalidationListenerTest {
 
     @Autowired
