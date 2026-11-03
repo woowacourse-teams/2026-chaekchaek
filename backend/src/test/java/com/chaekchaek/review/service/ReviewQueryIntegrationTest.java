@@ -6,13 +6,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.cache.CachedBookSearchActivityCountReader;
-import com.chaekchaek.book.service.BookSearchActivityCountReader;
 import com.chaekchaek.book.service.BookResolver;
+import com.chaekchaek.book.service.BookSearchActivityCountReader;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.auth.CurrentActorProvider;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
+import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import com.chaekchaek.review.book.ReviewBookReader;
 import com.chaekchaek.review.domain.Reply;
 import com.chaekchaek.review.domain.Review;
@@ -28,7 +29,6 @@ import com.chaekchaek.review.repository.ReviewReactionRepository;
 import com.chaekchaek.review.repository.ReviewRepository;
 import com.chaekchaek.review.service.ReviewService.Feed;
 import com.chaekchaek.review.service.ReviewService.ReviewSort;
-import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.persistence.EntityManager;
@@ -356,6 +356,27 @@ class ReviewQueryIntegrationTest {
         assertThat(response.totalCount()).isEqualTo(25);
         assertThat(response.items()).hasSize(10);
         assertThat(entityManager.unwrap(Session.class).getStatistics().getEntityCount()).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("감상을 삭제하면 감상 수에서 제외하지만 달린 답글 수는 유지한다")
+    void should_KeepReplyCount_When_ReviewIsDeleted() {
+        // given
+        Review review = saveReview(BOOK_ID, ACTOR_ID, null);
+        addReplies(review, 2);
+        flushAndClear();
+
+        assertThat(service.getActivityCounts(List.of(BOOK_ID)))
+                .containsEntry(BOOK_ID, new ActivityCounts(1L, 2L));
+
+        // when
+        Review savedReview = reviewRepository.findById(review.getId()).orElseThrow();
+        savedReview.deleteBy(ACTOR_ID);
+        flushAndClear();
+
+        // then
+        assertThat(service.getActivityCounts(List.of(BOOK_ID)))
+                .containsEntry(BOOK_ID, new ActivityCounts(0L, 2L));
     }
 
     private Review saveReview(long bookId, long actorId, Integer page) {
