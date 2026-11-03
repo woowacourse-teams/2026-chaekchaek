@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.hibernate.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -201,6 +202,33 @@ class ReviewQueryIntegrationTest {
         assertThat(response.nextPage()).isNull();
     }
 
+    @ParameterizedTest
+    @EnumSource(ReviewSort.class)
+    @DisplayName("답글 없는 삭제 감상은 페이지 항목, 전체 개수, 다음 페이지에서 제외한다")
+    void should_ExcludeHiddenDeletedReviewsFromPaging_When_HiddenReviewsAreMixed(ReviewSort sort) {
+        // given
+        List<Long> visibleIds = new ArrayList<>();
+        for (int index = 0; index < 11; index++) {
+            visibleIds.add(saveReview(BOOK_ID, ACTOR_ID, null).getId());
+            saveReview(BOOK_ID, ACTOR_ID, null).deleteBy(ACTOR_ID);
+        }
+        flushAndClear();
+
+        // when
+        PageResponse<ReviewResponse> first = service.findReviews(BOOK_ID, 1, Feed.ALL, sort);
+        PageResponse<ReviewResponse> second = service.findReviews(BOOK_ID, 2, Feed.ALL, sort);
+
+        // then
+        List<Long> pagedIds = Stream.concat(first.items().stream(), second.items().stream())
+                .map(ReviewResponse::reviewId)
+                .toList();
+        assertThat(first.items()).hasSize(10);
+        assertThat(second.items()).hasSize(1);
+        assertThat(first.totalCount()).isEqualTo(11);
+        assertThat(first.nextPage()).isEqualTo(2);
+        assertThat(pagedIds).containsExactlyInAnyOrderElementsOf(visibleIds);
+    }
+
     @Test
     @DisplayName("감상이 없으면 인기순 전체 개수와 목록이 비어 있다")
     void should_ReturnEmptyPage_When_NoPopularReviewsExist() {
@@ -302,6 +330,32 @@ class ReviewQueryIntegrationTest {
         assertThat(response.nextPage()).isNull();
         assertThat(response.items()).extracting(ReviewResponse::reviewId)
                 .containsExactly(newerFirstPage.getId(), olderFirstPage.getId(), laterPage.getId(), nullPage.getId());
+    }
+
+    @Test
+    @DisplayName("정상 답글이 남은 삭제 감상은 본문을 안내 문구로 바꾸고 인용문과 챕터를 비운다")
+    void should_HideOriginalText_When_DeletedReviewHasActiveReply() {
+        // given
+        Review deleted = reviewRepository.save(Review.create(BOOK_ID, ACTOR_ID, "삭제할 감상", "인용문", "3장", 30, true, false));
+        deleted.deleteBy(ACTOR_ID);
+        addReplies(deleted, 1);
+        saveReview(BOOK_ID, ACTOR_ID, null);
+        flushAndClear();
+
+        // when
+        PageResponse<ReviewResponse> response = service.findReviews(BOOK_ID, 1, Feed.ALL, ReviewSort.LATEST);
+
+        // then
+        ReviewResponse deletedResponse = response.items().getLast();
+        assertThat(deletedResponse.reviewId()).isEqualTo(deleted.getId());
+        assertThat(deletedResponse.content()).isEqualTo("삭제된 감상입니다.");
+        assertThat(deletedResponse.quote()).isNull();
+        assertThat(deletedResponse.chapter()).isNull();
+        assertThat(deletedResponse.currentPage()).isEqualTo(30);
+        assertThat(deletedResponse.isSpoiler()).isTrue();
+        assertThat(deletedResponse.deleted()).isTrue();
+        assertThat(deletedResponse.replyCount()).isEqualTo(1);
+        assertThat(response.items().getFirst().content()).isEqualTo("감상");
     }
 
     @ParameterizedTest

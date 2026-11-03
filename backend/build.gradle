@@ -367,7 +367,10 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 			 items: [[reviewId: 101, content: '삭제된 감상입니다.', quote: null, chapter: null, currentPage: null,
 				 isSpoiler: false, deleted: true, createdAt: '2026-08-13T15:00:00Z',
 				 author: [displayName: '닉네임', profileImageUrl: null, anonymous: false, mine: false], likeCount: 0,
-				 likedByMe: false, replyCount: 0, recentReplies: []]]
+				 likedByMe: false, replyCount: 1,
+				 recentReplies: [[replyId: 201, content: '저도 그 장면이 기억나요.', createdAt: '2026-08-14T15:00:00Z',
+					 author: [displayName: '다른 닉네임', profileImageUrl: null, anonymous: false, mine: false],
+					 likeCount: 0, likedByMe: false]]]]
 		])
 		components.put('securitySchemes', [
 			bearerAuth: [
