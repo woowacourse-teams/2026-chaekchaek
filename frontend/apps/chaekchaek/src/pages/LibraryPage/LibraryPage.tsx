@@ -191,28 +191,7 @@ export const LibraryPage = () => {
     executeFn: patchLibrariesLibraryIdBooksOrder,
   });
 
-  const handleDragEndList = async (event: DragEndEvent) => {
-    if (!libraryItemsData) return;
-
-    const { source } = event.operation;
-    if (!source || !isSortable(source)) return;
-
-    const { initialIndex, index } = source;
-    if (initialIndex === index) return;
-
-    const reorderedBooks = move(libraryItemsData?.items, initialIndex, index);
-
-    const reorderBooksId = reorderedBooks.map((item) => item.bookId);
-
-    await patchBookOrderMutate({
-      libraryId: Number(libraryId),
-      bookIds: reorderBooksId,
-    });
-
-    setOrderedBookIds(reorderBooksId);
-  };
-
-  const handleDragEndImg = async (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     if (!libraryItemsData) return;
 
     const { source } = event.operation;
@@ -365,7 +344,7 @@ export const LibraryPage = () => {
             </Title>
             {libraryItemsData !== null && !!libraryItemsData?.items.length && (
               <Showcase>
-                <DragDropProvider onDragEnd={handleDragEndImg}>
+                <DragDropProvider onDragEnd={handleDragEnd}>
                   {books.map((item, index) => {
                     return (
                       <Sortable key={item.bookId} id={item.bookId} index={index}>
@@ -447,7 +426,7 @@ export const LibraryPage = () => {
               <Notice height={500}>이 책장에 등록된 책이 없습니다.</Notice>
             )}
 
-            <DragDropProvider onDragEnd={handleDragEndList}>
+            <DragDropProvider onDragEnd={handleDragEnd}>
               <List columns={2}>
                 {books.map((item, index) => {
                   return (
