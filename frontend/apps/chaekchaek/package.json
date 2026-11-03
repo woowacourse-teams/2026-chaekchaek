@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "@chaekchaek/design-system": "^1.0.0",
+    "@dnd-kit/react": "^0.5.1",
     "@sentry/react": "^10.71.0",
     "html2canvas": "^1.4.1",
     "react": "^19.2.8",

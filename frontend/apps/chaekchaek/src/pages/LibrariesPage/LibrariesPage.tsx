@@ -1,5 +1,13 @@
 import { useCallback, useState } from 'react';
+import type { ComponentProps } from 'react';
 import { generatePath, Link, useNavigate } from 'react-router-dom';
+
+import { DragDropProvider } from '@dnd-kit/react';
+import { isSortable } from '@dnd-kit/react/sortable';
+
+type DragEndEvent = Parameters<
+  NonNullable<ComponentProps<typeof DragDropProvider>['onDragEnd']>
+>[0];
 
 import styles from './LibrariesPage.module.css';
 
@@ -23,6 +31,9 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { getLibraries } from '@/services/apis/libraries/repository';
 import { useLoadData } from '@/services/core/useLoadData';
+import { patchLibrariesOrder } from '@/services/apis/librariesOrder/repository';
+import { patchLibrariesLibraryIdBooksOrder } from '@/services/apis/librariesLibraryIdBooksOrder/repository';
+import { useExecute } from '@/services/core/useExecute';
 
 import { ManageLibraryDialog } from '@/shared/ManageLibrary';
 import type { ManageLibraryDialogType } from '@/shared/ManageLibrary';
@@ -42,6 +53,20 @@ const canDeleteLibrary = ({ isDefault }: { isDefault: boolean }): boolean => {
 
 type LibrariesPageDialogType =
   ManageLibraryDialogType | 'RegisterLibraryDialog' | 'ManageLibraryDialog';
+
+import { Sortable } from './components/Sortable/Sortable';
+
+const move = <T,>(array: T[], from: number, to: number): T[] => {
+  const result = [...array];
+
+  const [item] = result.splice(from, 1);
+
+  if (item === undefined) return array;
+
+  result.splice(to, 0, item);
+
+  return result;
+};
 
 export const LibrariesPage = () => {
   const { user } = useAuthContext();
@@ -93,6 +118,56 @@ export const LibrariesPage = () => {
       state: {
         startEditing: true,
       },
+    });
+  };
+
+  const { mutate: patchOrderMutate } = useExecute({
+    executeFn: patchLibrariesOrder,
+  });
+
+  const handleDragEndLibrary = async (event: DragEndEvent) => {
+    if (!librariesData) return;
+
+    const { source } = event.operation;
+    if (!source || !isSortable(source)) return;
+
+    const { initialIndex, index } = source;
+    if (initialIndex === index) return;
+
+    const reorderedLibraries = move(librariesData?.libraries, initialIndex, index);
+
+    const reorderLibraryIds = reorderedLibraries.map((library) => library.libraryId);
+
+    await patchOrderMutate({
+      libraryIds: reorderLibraryIds,
+    });
+  };
+
+  const { mutate: patchBookOrderMutate } = useExecute({
+    executeFn: patchLibrariesLibraryIdBooksOrder,
+  });
+
+  const handleDragEndBook = async (event: DragEndEvent, libraryId: number) => {
+    if (!librariesData) return;
+
+    const { source } = event.operation;
+    if (!source || !isSortable(source)) return;
+
+    const { initialIndex, index } = source;
+    if (initialIndex === index) return;
+
+    const libraryItemsData = librariesData.libraries.find(
+      (library) => library.libraryId === libraryId,
+    );
+    if (!libraryItemsData) return;
+
+    const reorderedBooks = move(libraryItemsData?.items, initialIndex, index);
+
+    const reorderBooksId = reorderedBooks.map((item) => item.bookId);
+
+    await patchBookOrderMutate({
+      libraryId: Number(libraryId),
+      bookIds: reorderBooksId,
     });
   };
 
@@ -202,69 +277,86 @@ export const LibrariesPage = () => {
               나의 책장
             </Title>
 
-            <Partition columns={1}>
-              {librariesData?.libraries.map((library) => {
-                return (
-                  <Partition.Item key={library.libraryId}>
-                    <div>
-                      <Title
-                        level="content"
-                        sx={{ mt: 6, mb: 5 }}
-                        trailing={
-                          <>
-                            <Text
-                              color="muted"
-                              as={Link}
-                              to={generatePath(ROUTES.LIBRARY, {
-                                libraryId: String(library.libraryId),
-                              })}
-                              onClick={handleGoToLibrary}
-                            >
-                              {library.items.length} 권
-                            </Text>
-                            <IconButton
-                              onClick={() => {
-                                handleClickManageLibrary({
-                                  libraryId: library.libraryId,
-                                  libraryName: library.name,
-                                  isDefault: library.isDefault,
-                                });
-                              }}
-                            >
-                              <Icon.EllipsisIcon />
-                            </IconButton>
-                          </>
-                        }
-                      >
-                        <IconButton edge="start">
-                          <Icon.DragHandleIcon />
-                        </IconButton>
-
-                        <Link
-                          to={generatePath(ROUTES.LIBRARY, {
-                            libraryId: String(library.libraryId),
-                          })}
-                          onClick={handleGoToLibrary}
+            <DragDropProvider onDragEnd={handleDragEndLibrary}>
+              <Partition columns={1}>
+                {librariesData?.libraries.map((library, index) => {
+                  return (
+                    <Sortable
+                      key={library.libraryId}
+                      as={Partition.Item}
+                      id={library.libraryId}
+                      index={index}
+                    >
+                      <div>
+                        <Title
+                          level="content"
+                          sx={{
+                            mt: 6,
+                            mb: 5,
+                          }}
+                          trailing={
+                            <>
+                              <Text
+                                color="muted"
+                                as={Link}
+                                to={generatePath(ROUTES.LIBRARY, {
+                                  libraryId: String(library.libraryId),
+                                })}
+                                onClick={handleGoToLibrary}
+                              >
+                                {library.items.length} 권
+                              </Text>
+                              <IconButton
+                                onClick={() => {
+                                  handleClickManageLibrary({
+                                    libraryId: library.libraryId,
+                                    libraryName: library.name,
+                                    isDefault: library.isDefault,
+                                  });
+                                }}
+                              >
+                                <Icon.EllipsisIcon />
+                              </IconButton>
+                            </>
+                          }
                         >
-                          {library.name}
-                        </Link>
-                      </Title>
-                      <Showcase>
-                        {library.items.map((item) => {
-                          return (
-                            <ConstrainedImgBox
-                              key={item.bookId}
-                              img={item.spineImageUrl}
-                              height="170px"
-                            />
-                          );
-                        })}
-                      </Showcase>
-                    </div>
-                  </Partition.Item>
-                );
-              })}
-            </Partition>
+                          <Sortable.Handle>
+                            <IconButton edge="start">
+                              <Icon.DragHandleIcon />
+                            </IconButton>
+                          </Sortable.Handle>
+
+                          <Link
+                            to={generatePath(ROUTES.LIBRARY, {
+                              libraryId: String(library.libraryId),
+                            })}
+                            onClick={handleGoToLibrary}
+                          >
+                            {library.name}
+                          </Link>
+                        </Title>
+
+                        <Showcase>
+                          <DragDropProvider
+                            onDragEnd={(event) => {
+                              handleDragEndBook(event, library.libraryId);
+                            }}
+                          >
+                            {library.items.map((item, index) => {
+                              return (
+                                <Sortable key={item.bookId} id={item.bookId} index={index}>
+                                  <ConstrainedImgBox img={item.spineImageUrl} height="170px" />
+                                </Sortable>
+                              );
+                            })}
+                          </DragDropProvider>
+                        </Showcase>
+                      </div>
+                    </Sortable>
+                  );
+                })}
+              </Partition>
+            </DragDropProvider>
           </ContentArea>
         </Container>
       </Main>

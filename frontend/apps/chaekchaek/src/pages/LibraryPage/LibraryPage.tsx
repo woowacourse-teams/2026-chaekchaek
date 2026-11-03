@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ComponentProps } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+
+import { DragDropProvider } from '@dnd-kit/react';
+import { isSortable } from '@dnd-kit/react/sortable';
+
+type DragEndEvent = Parameters<
+  NonNullable<ComponentProps<typeof DragDropProvider>['onDragEnd']>
+>[0];
 
 import {
   Button,
@@ -29,6 +37,7 @@ import { useLoadData } from '@/services/core/useLoadData';
 import { useExecute } from '@/services/core/useExecute';
 import { patchMembersMeAnonymity } from '@/services/apis/membersMeAnonymity/repository';
 import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLibraryIdBooksBookId/repository';
+import { patchLibrariesLibraryIdBooksOrder } from '@/services/apis/librariesLibraryIdBooksOrder/repository';
 
 import { ManageLibraryDialog } from '@/shared/ManageLibrary';
 import type { ManageLibraryDialogType } from '@/shared/ManageLibrary';
@@ -56,6 +65,20 @@ const canDeleteLibrary = ({ isDefault }: { isDefault: boolean }): boolean => {
   return !isDefault;
 };
 
+import { Sortable } from './components/Sortable/Sortable';
+
+const move = <T,>(array: T[], from: number, to: number): T[] => {
+  const result = [...array];
+
+  const [item] = result.splice(from, 1);
+
+  if (item === undefined) return array;
+
+  result.splice(to, 0, item);
+
+  return result;
+};
+
 export const LibraryPage = () => {
   const { user, updateAccount } = useAuthContext();
 
@@ -73,6 +96,23 @@ export const LibraryPage = () => {
   } = useLoadData({
     queryFn: getLibrariesLibraryIdLoadData,
   });
+
+  const [orderedBookIds, setOrderedBookIds] = useState<number[] | null>(null);
+
+  useEffect(() => {
+    if (!libraryItemsData) return;
+    setOrderedBookIds(libraryItemsData.items.map((item) => item.bookId));
+  }, [libraryItemsData]);
+
+  const books = useMemo(() => {
+    if (!libraryItemsData) return [];
+
+    if (!orderedBookIds) return libraryItemsData.items;
+
+    const bookMap = new Map(libraryItemsData.items.map((book) => [book.bookId, book]));
+
+    return orderedBookIds.map((id) => bookMap.get(id)).filter((book) => book !== undefined);
+  }, [libraryItemsData, orderedBookIds]);
 
   const [isCopied, setIsCopied] = useState(false);
 
@@ -145,6 +185,31 @@ export const LibraryPage = () => {
   const navigate = useNavigate();
   const handleGoToLibraries = async () => {
     navigate(ROUTES.LIBRARIES);
+  };
+
+  const { mutate: patchBookOrderMutate } = useExecute({
+    executeFn: patchLibrariesLibraryIdBooksOrder,
+  });
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    if (!libraryItemsData) return;
+
+    const { source } = event.operation;
+    if (!source || !isSortable(source)) return;
+
+    const { initialIndex, index } = source;
+    if (initialIndex === index) return;
+
+    const reorderedBooks = move(libraryItemsData?.items, initialIndex, index);
+
+    const reorderBooksId = reorderedBooks.map((item) => item.bookId);
+
+    await patchBookOrderMutate({
+      libraryId: Number(libraryId),
+      bookIds: reorderBooksId,
+    });
+
+    setOrderedBookIds(reorderBooksId);
   };
 
   const [dialog, setDialog] = useState<LibraryPageDialogType | null>(null);
@@ -279,17 +344,19 @@ export const LibraryPage = () => {
             </Title>
             {libraryItemsData !== null && !!libraryItemsData?.items.length && (
               <Showcase>
-                {libraryItemsData?.items.map((item, index) => {
-                  return (
-                    <ConstrainedImgBox
-                      as={Link}
-                      to={`${ROUTES.BOOK_DETAIL}/${item.isbn13}`}
-                      img={item.spineImageUrl}
-                      maxWidth="80px"
-                      maxHeight={`${booksHeight[index]}px`}
-                    />
-                  );
-                })}
+                <DragDropProvider onDragEnd={handleDragEnd}>
+                  {books.map((item, index) => {
+                    return (
+                      <Sortable key={item.bookId} id={item.bookId} index={index}>
+                        <ConstrainedImgBox
+                          img={item.spineImageUrl}
+                          maxWidth="80px"
+                          maxHeight={`${booksHeight[index]}px`}
+                        />
+                      </Sortable>
+                    );
+                  })}
+                </DragDropProvider>
               </Showcase>
             )}
 
@@ -359,39 +426,46 @@ export const LibraryPage = () => {
               <Notice height={500}>이 책장에 등록된 책이 없습니다.</Notice>
             )}
 
-            <List columns={2}>
-              {libraryItemsData?.items.map((item) => {
-                return (
-                  <List.Item key={item.bookId}>
-                    <List.Item.Leading>
-                      <IconButton edge="start">
-                        <Icon.DragHandleIcon />
-                      </IconButton>
-                      <Link to={`/books/${item.isbn13}`}>
-                        <ImgBox img={item.coverImageUrl} size="small" />
-                      </Link>
-                    </List.Item.Leading>
-                    <List.Item.Content
-                      title={<>{item.title}</>}
-                      content={item.authors?.join(' · ')}
-                    />
+            <DragDropProvider onDragEnd={handleDragEnd}>
+              <List columns={2}>
+                {books.map((item, index) => {
+                  return (
+                    <Sortable key={item.bookId} id={item.bookId} index={index}>
+                      <List.Item>
+                        <List.Item.Leading>
+                          <Link to={`/books/${item.isbn13}`}>
+                            <ImgBox img={item.coverImageUrl} size="small" />
+                          </Link>
+                        </List.Item.Leading>
+                        <List.Item.Content
+                          title={<>{item.title}</>}
+                          content={item.authors?.join(' · ')}
+                        />
 
-                    {isEditing && (
-                      <List.Item.Trailing>
-                        <IconButton
-                          aria-label="삭제"
-                          onClick={() => {
-                            handleClickDeleteBook(item.bookId);
-                          }}
-                        >
-                          <Icon.CloseIcon color="error" />
-                        </IconButton>
-                      </List.Item.Trailing>
-                    )}
-                  </List.Item>
-                );
-              })}
-            </List>
+                        <List.Item.Trailing>
+                          {isEditing ? (
+                            <IconButton
+                              aria-label="삭제"
+                              onClick={() => {
+                                handleClickDeleteBook(item.bookId);
+                              }}
+                            >
+                              <Icon.CloseIcon color="error" />
+                            </IconButton>
+                          ) : (
+                            <Sortable.Handle>
+                              <IconButton edge="start">
+                                <Icon.DragHandleIcon />
+                              </IconButton>
+                            </Sortable.Handle>
+                          )}
+                        </List.Item.Trailing>
+                      </List.Item>
+                    </Sortable>
+                  );
+                })}
+              </List>
+            </DragDropProvider>
           </ContentArea>
         </Container>
       </Main>

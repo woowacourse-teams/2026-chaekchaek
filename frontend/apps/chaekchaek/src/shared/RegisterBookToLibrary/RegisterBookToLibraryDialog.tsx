@@ -145,6 +145,8 @@ export const RegisterBookToLibraryDialog = ({
 
               const isLimitReached = library.items.length >= LIBRARY_BOOK_MAX_LENGTH;
 
+              const isCheckDisabled = !isIncluded && isLimitReached;
+
               return (
                 <List.Item key={library.libraryId}>
                   <List.Item.Leading>
@@ -171,7 +173,7 @@ export const RegisterBookToLibraryDialog = ({
                   <List.Item.Trailing>
                     <Checkbox
                       size="large"
-                      disabled={isLimitReached}
+                      disabled={isCheckDisabled}
                       checked={isIncluded}
                       value={library.libraryId}
                       onChange={handleChangeSelection}
