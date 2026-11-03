@@ -433,11 +433,6 @@ export const LibraryPage = () => {
                     <Sortable key={item.bookId} id={item.bookId} index={index}>
                       <List.Item>
                         <List.Item.Leading>
-                          <Sortable.Handle>
-                            <IconButton edge="start">
-                              <Icon.DragHandleIcon />
-                            </IconButton>
-                          </Sortable.Handle>
                           <Link to={`/books/${item.isbn13}`}>
                             <ImgBox img={item.coverImageUrl} size="small" />
                           </Link>
@@ -447,8 +442,8 @@ export const LibraryPage = () => {
                           content={item.authors?.join(' · ')}
                         />
 
-                        {isEditing && (
-                          <List.Item.Trailing>
+                        <List.Item.Trailing>
+                          {isEditing ? (
                             <IconButton
                               aria-label="삭제"
                               onClick={() => {
@@ -457,8 +452,14 @@ export const LibraryPage = () => {
                             >
                               <Icon.CloseIcon color="error" />
                             </IconButton>
-                          </List.Item.Trailing>
-                        )}
+                          ) : (
+                            <Sortable.Handle>
+                              <IconButton edge="start">
+                                <Icon.DragHandleIcon />
+                              </IconButton>
+                            </Sortable.Handle>
+                          )}
+                        </List.Item.Trailing>
                       </List.Item>
                     </Sortable>
                   );
