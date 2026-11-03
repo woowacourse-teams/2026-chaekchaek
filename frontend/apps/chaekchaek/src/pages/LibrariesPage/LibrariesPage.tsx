@@ -32,6 +32,7 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 import { getLibraries } from '@/services/apis/libraries/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 import { patchLibrariesOrder } from '@/services/apis/librariesOrder/repository';
+import { patchLibrariesLibraryIdBooksOrder } from '@/services/apis/librariesLibraryIdBooksOrder/repository';
 import { useExecute } from '@/services/core/useExecute';
 
 import { ManageLibraryDialog } from '@/shared/ManageLibrary';
@@ -124,7 +125,7 @@ export const LibrariesPage = () => {
     executeFn: patchLibrariesOrder,
   });
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEndLibrary = async (event: DragEndEvent) => {
     if (!librariesData) return;
 
     const { source } = event.operation;
@@ -139,6 +140,34 @@ export const LibrariesPage = () => {
 
     await patchOrderMutate({
       libraryIds: reorderLibraryIds,
+    });
+  };
+
+  const { mutate: patchBookOrderMutate } = useExecute({
+    executeFn: patchLibrariesLibraryIdBooksOrder,
+  });
+
+  const handleDragEndBook = async (event: DragEndEvent, libraryId: number) => {
+    if (!librariesData) return;
+
+    const { source } = event.operation;
+    if (!source || !isSortable(source)) return;
+
+    const { initialIndex, index } = source;
+    if (initialIndex === index) return;
+
+    const libraryItemsData = librariesData.libraries.find(
+      (library) => library.libraryId === libraryId,
+    );
+    if (!libraryItemsData) return;
+
+    const reorderedBooks = move(libraryItemsData?.items, initialIndex, index);
+
+    const reorderBooksId = reorderedBooks.map((item) => item.bookId);
+
+    await patchBookOrderMutate({
+      libraryId: Number(libraryId),
+      bookIds: reorderBooksId,
     });
   };
 
@@ -248,7 +277,7 @@ export const LibrariesPage = () => {
               나의 책장
             </Title>
 
-            <DragDropProvider onDragEnd={handleDragEnd}>
+            <DragDropProvider onDragEnd={handleDragEndLibrary}>
               <Partition columns={1}>
                 {librariesData?.libraries.map((library, index) => {
                   return (
@@ -306,16 +335,21 @@ export const LibrariesPage = () => {
                             {library.name}
                           </Link>
                         </Title>
+
                         <Showcase>
-                          {library.items.map((item) => {
-                            return (
-                              <ConstrainedImgBox
-                                key={item.bookId}
-                                img={item.spineImageUrl}
-                                height="170px"
-                              />
-                            );
-                          })}
+                          <DragDropProvider
+                            onDragEnd={(event) => {
+                              handleDragEndBook(event, library.libraryId);
+                            }}
+                          >
+                            {library.items.map((item, index) => {
+                              return (
+                                <Sortable key={item.bookId} id={item.bookId} index={index}>
+                                  <ConstrainedImgBox img={item.spineImageUrl} height="170px" />
+                                </Sortable>
+                              );
+                            })}
+                          </DragDropProvider>
                         </Showcase>
                       </div>
                     </Sortable>
