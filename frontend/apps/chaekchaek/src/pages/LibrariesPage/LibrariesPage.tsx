@@ -1,5 +1,13 @@
 import { useCallback, useState } from 'react';
+import type { ComponentProps } from 'react';
 import { generatePath, Link, useNavigate } from 'react-router-dom';
+
+import { DragDropProvider } from '@dnd-kit/react';
+import { isSortable } from '@dnd-kit/react/sortable';
+
+type DragEndEvent = Parameters<
+  NonNullable<ComponentProps<typeof DragDropProvider>['onDragEnd']>
+>[0];
 
 import styles from './LibrariesPage.module.css';
 
@@ -44,6 +52,18 @@ type LibrariesPageDialogType =
   ManageLibraryDialogType | 'RegisterLibraryDialog' | 'ManageLibraryDialog';
 
 import { Sortable } from './components/Sortable/Sortable';
+
+const move = <T,>(array: T[], from: number, to: number): T[] => {
+  const result = [...array];
+
+  const [item] = result.splice(from, 1);
+
+  if (item === undefined) return array;
+
+  result.splice(to, 0, item);
+
+  return result;
+};
 
 export const LibrariesPage = () => {
   const { user } = useAuthContext();
@@ -96,6 +116,20 @@ export const LibrariesPage = () => {
         startEditing: true,
       },
     });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (!librariesData) return;
+
+    const { source } = event.operation;
+    if (!source || !isSortable(source)) return;
+
+    const { initialIndex, index } = source;
+    if (initialIndex === index) return;
+
+    const reorderedLibraries = move(librariesData?.libraries, initialIndex, index);
+
+    console.log(reorderedLibraries);
   };
 
   const [dialog, setDialog] = useState<LibrariesPageDialogType | null>(null);
@@ -204,74 +238,81 @@ export const LibrariesPage = () => {
               나의 책장
             </Title>
 
-            <Partition columns={1}>
-              {librariesData?.libraries.map((library, index) => {
-                return (
-                  <Sortable as={Partition.Item} id={index} index={index}>
-                    <div>
-                      <Title
-                        level="content"
-                        sx={{
-                          mt: 6,
-                          mb: 5,
-                        }}
-                        trailing={
-                          <>
-                            <Text
-                              color="muted"
-                              as={Link}
-                              to={generatePath(ROUTES.LIBRARY, {
-                                libraryId: String(library.libraryId),
-                              })}
-                              onClick={handleGoToLibrary}
-                            >
-                              {library.items.length} 권
-                            </Text>
-                            <IconButton
-                              onClick={() => {
-                                handleClickManageLibrary({
-                                  libraryId: library.libraryId,
-                                  libraryName: library.name,
-                                  isDefault: library.isDefault,
-                                });
-                              }}
-                            >
-                              <Icon.EllipsisIcon />
-                            </IconButton>
-                          </>
-                        }
-                      >
-                        <Sortable.Handle>
-                          <IconButton edge="start">
-                            <Icon.DragHandleIcon />
-                          </IconButton>
-                        </Sortable.Handle>
-
-                        <Link
-                          to={generatePath(ROUTES.LIBRARY, {
-                            libraryId: String(library.libraryId),
-                          })}
-                          onClick={handleGoToLibrary}
+            <DragDropProvider onDragEnd={handleDragEnd}>
+              <Partition columns={1}>
+                {librariesData?.libraries.map((library, index) => {
+                  return (
+                    <Sortable
+                      key={library.libraryId}
+                      as={Partition.Item}
+                      id={library.libraryId}
+                      index={index}
+                    >
+                      <div>
+                        <Title
+                          level="content"
+                          sx={{
+                            mt: 6,
+                            mb: 5,
+                          }}
+                          trailing={
+                            <>
+                              <Text
+                                color="muted"
+                                as={Link}
+                                to={generatePath(ROUTES.LIBRARY, {
+                                  libraryId: String(library.libraryId),
+                                })}
+                                onClick={handleGoToLibrary}
+                              >
+                                {library.items.length} 권
+                              </Text>
+                              <IconButton
+                                onClick={() => {
+                                  handleClickManageLibrary({
+                                    libraryId: library.libraryId,
+                                    libraryName: library.name,
+                                    isDefault: library.isDefault,
+                                  });
+                                }}
+                              >
+                                <Icon.EllipsisIcon />
+                              </IconButton>
+                            </>
+                          }
                         >
-                          {library.name}
-                        </Link>
-                      </Title>
-                      <Showcase>
-                        {library.items.map((item) => {
-                          return (
-                            <ConstrainedImgBox
-                              key={item.bookId}
-                              img={item.spineImageUrl}
-                              height="170px"
-                            />
-                          );
-                        })}
-                      </Showcase>
-                    </div>
-                  </Sortable>
-                );
-              })}
-            </Partition>
+                          <Sortable.Handle>
+                            <IconButton edge="start">
+                              <Icon.DragHandleIcon />
+                            </IconButton>
+                          </Sortable.Handle>
+
+                          <Link
+                            to={generatePath(ROUTES.LIBRARY, {
+                              libraryId: String(library.libraryId),
+                            })}
+                            onClick={handleGoToLibrary}
+                          >
+                            {library.name}
+                          </Link>
+                        </Title>
+                        <Showcase>
+                          {library.items.map((item) => {
+                            return (
+                              <ConstrainedImgBox
+                                key={item.bookId}
+                                img={item.spineImageUrl}
+                                height="170px"
+                              />
+                            );
+                          })}
+                        </Showcase>
+                      </div>
+                    </Sortable>
+                  );
+                })}
+              </Partition>
+            </DragDropProvider>
           </ContentArea>
         </Container>
       </Main>
