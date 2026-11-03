@@ -31,6 +31,8 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 import { getLibraries } from '@/services/apis/libraries/repository';
 import { useLoadData } from '@/services/core/useLoadData';
+import { patchLibrariesOrder } from '@/services/apis/librariesOrder/repository';
+import { useExecute } from '@/services/core/useExecute';
 
 import { ManageLibraryDialog } from '@/shared/ManageLibrary';
 import type { ManageLibraryDialogType } from '@/shared/ManageLibrary';
@@ -118,7 +120,11 @@ export const LibrariesPage = () => {
     });
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const { mutate: patchOrderMutate } = useExecute({
+    executeFn: patchLibrariesOrder,
+  });
+
+  const handleDragEnd = async (event: DragEndEvent) => {
     if (!librariesData) return;
 
     const { source } = event.operation;
@@ -129,7 +135,11 @@ export const LibrariesPage = () => {
 
     const reorderedLibraries = move(librariesData?.libraries, initialIndex, index);
 
-    console.log(reorderedLibraries);
+    const reorderLibraryIds = reorderedLibraries.map((library) => library.libraryId);
+
+    await patchOrderMutate({
+      libraryIds: reorderLibraryIds,
+    });
   };
 
   const [dialog, setDialog] = useState<LibrariesPageDialogType | null>(null);
