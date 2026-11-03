@@ -115,16 +115,19 @@ class ReplyRepositoryTest {
     }
 
     @Test
-    @DisplayName("삭제되지 않은 감상과 답글만 책별로 집계한다")
-    void should_ExcludeDeletedReviewsAndReplies_When_CountingActiveBookActivities() {
+    @DisplayName("인기 도서는 정상 답글이 남은 삭제 감상까지 집계하고 감상별 답글 수는 삭제되지 않은 감상만 집계한다")
+    void should_IncludeDeletedReviewsWithActiveRepliesOnlyInPopularBooks_When_CountingActivities() {
         // given
         Review activeReview = reviewRepository.save(Review.create(1L, 1L, "유효 감상", null, null, null, false, false));
         Review deletedReview = reviewRepository.save(Review.create(2L, 2L, "삭제 감상", null, null, null, false, false));
+        Review hiddenReview = reviewRepository.save(Review.create(3L, 3L, "숨겨진 감상", null, null, null, false, false));
         replyRepository.save(Reply.create(activeReview.getId(), 1L, "유효 답글", false));
         Reply deletedReply = replyRepository.save(Reply.create(activeReview.getId(), 1L, "삭제 답글", false));
         replyRepository.save(Reply.create(deletedReview.getId(), 2L, "삭제된 감상의 답글", false));
+        replyRepository.save(Reply.create(hiddenReview.getId(), 3L, "숨겨진 감상의 삭제 답글", false)).deleteBy(3L);
         deletedReply.deleteBy(1L);
         deletedReview.deleteBy(2L);
+        hiddenReview.deleteBy(3L);
         replyRepository.flush();
 
         // when
@@ -133,8 +136,9 @@ class ReplyRepositoryTest {
                 replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(activeReview.getId(), deletedReview.getId()));
 
         // then
-        assertThat(popularBookCounts).singleElement().satisfies(count -> {
-            assertThat(count.getBookId()).isEqualTo(1L);
+        assertThat(popularBookCounts).extracting(ReviewRepository.PopularBookCount::getBookId)
+                .containsExactly(2L, 1L);
+        assertThat(popularBookCounts).allSatisfy(count -> {
             assertThat(count.getReviewCount()).isEqualTo(1L);
             assertThat(count.getReplyCount()).isEqualTo(1L);
         });
