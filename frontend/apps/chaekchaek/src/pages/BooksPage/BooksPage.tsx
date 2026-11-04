@@ -199,7 +199,7 @@ export const BooksPage = () => {
                       aria-label="책 검색"
                       block
                       trailing={
-                        <IconButton onClick={handleSearch} edge="end">
+                        <IconButton onClick={handleSearch} edge="end" aria-label="검색">
                           <Icon.SearchIcon size="large" />
                         </IconButton>
                       }
