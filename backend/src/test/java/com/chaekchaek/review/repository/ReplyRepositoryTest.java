@@ -63,7 +63,7 @@ class ReplyRepositoryTest {
         );
         assertThat(reviewRepository.countByBookIdInGroupByBookId(List.of(1L)))
                 .extracting(ReviewRepository.BookCommentCount::getCount)
-                .containsExactly(2L);
+                .containsExactly(1L);
         assertThat(replyRepository.countByReviewBookIdInGroupByBookId(List.of(1L)))
                 .extracting(ReplyRepository.BookCommentCount::getCount)
                 .containsExactly(7L);

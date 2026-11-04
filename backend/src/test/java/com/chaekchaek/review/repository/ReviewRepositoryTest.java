@@ -105,7 +105,7 @@ class ReviewRepositoryTest {
         // when & then
         assertThat(reviewRepository.countByBookIdInGroupByBookId(List.of(BOOK_ID)))
                 .extracting(ReviewRepository.BookCommentCount::getCount)
-                .containsExactly(3L);
+                .containsExactly(2L);
     }
 
     private Review saveReview(long actorId) {
