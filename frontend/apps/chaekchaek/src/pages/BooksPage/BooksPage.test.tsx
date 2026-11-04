@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 import { server } from '@/mocks/msw/server';
 import { http, HttpResponse } from 'msw';
@@ -21,14 +21,12 @@ describe('BooksPage', () => {
     expect(screen.getByText('책 찾기')).toBeInTheDocument();
   });
 
-  it('검색어를 입력하면 검색 결과를 보여준다', async () => {
-    server.use(
-      http.get(`${ENV.APP_API_URL}/api/v1/books`, () => {
-        return HttpResponse.json({
-          ...harrySearchPage1,
-        });
-      }),
-    );
+  it.each(['Enter', '검색 버튼'])('%s로 검색하면 검색 결과를 보여준다', async (trigger) => {
+    const searchRequest = vi.fn(({ request }: { request: Request }) => {
+      expect(new URL(request.url).searchParams.get('query')).toBe('해리');
+      return HttpResponse.json(harrySearchPage1);
+    });
+    server.use(http.get(`${ENV.APP_API_URL}/api/v1/books`, searchRequest));
 
     renderProvider(<BooksPage />);
 
@@ -36,9 +34,19 @@ describe('BooksPage', () => {
 
     await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
 
+    expect(searchRequest).not.toHaveBeenCalled();
+    expect(screen.queryByText(/^해리 포터와 마법사의 돌 1$/)).not.toBeInTheDocument();
+
+    if (trigger === 'Enter') {
+      await user.keyboard('{Enter}');
+    } else {
+      await user.click(screen.getByRole('button', { name: '검색' }));
+    }
+
     expect(await screen.findByText(/개소리에/)).toBeInTheDocument();
 
     expect(await screen.findByText(/^해리 포터와 마법사의 돌 1$/)).toBeInTheDocument();
+    expect(searchRequest).toHaveBeenCalledTimes(1);
   });
 
   it('초기 url 주소에 검색어가 있으면 그 검색어로 검색 결과를 보여준다', async () => {
@@ -58,11 +66,7 @@ describe('BooksPage', () => {
 
     renderProvider(<BooksPage />, { initialEntries: [`/books?query=${searchKeyword}`] });
 
-    const user = userEvent.setup();
-    const searchInput = screen.getByRole('textbox', { name: '책 검색' });
-
-    await user.clear(searchInput);
-    await user.type(searchInput, searchKeyword);
+    expect(screen.getByRole('textbox', { name: '책 검색' })).toHaveValue(searchKeyword);
 
     expect(await screen.findByText(/마션/)).toBeInTheDocument();
   });
@@ -83,6 +87,7 @@ describe('BooksPage', () => {
     const user = userEvent.setup();
 
     await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+    await user.keyboard('{Enter}');
 
     expect(await screen.findByText('개소리에 대하여')).toBeInTheDocument();
     expect(screen.queryByText('해리 포터 5~7부 세트')).not.toBeInTheDocument();
@@ -94,7 +99,7 @@ describe('BooksPage', () => {
     expect(screen.getByRole('button', { name: 'Page 2' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('검색어가 변경되면 1페이지로 초기화한다', async () => {
+  it('변경한 검색어로 검색하면 1페이지로 초기화한다', async () => {
     server.use(
       http.get(`${ENV.APP_API_URL}/api/v1/books`, () => {
         return HttpResponse.json({
@@ -110,6 +115,7 @@ describe('BooksPage', () => {
     const searchInput = screen.getByRole('textbox', { name: '책 검색' });
 
     await user.type(searchInput, '해리');
+    await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('button', { name: /Page 2/i }));
 
     expect(await screen.findByRole('button', { name: 'Page 2' })).toHaveAttribute(
@@ -119,6 +125,10 @@ describe('BooksPage', () => {
 
     await user.clear(searchInput);
     await user.type(searchInput, '마션');
+
+    expect(screen.getByRole('button', { name: 'Page 2' })).toHaveAttribute('aria-current', 'page');
+
+    await user.click(screen.getByRole('button', { name: '검색' }));
 
     expect(await screen.findByRole('button', { name: 'Page 1' })).toHaveAttribute(
       'aria-current',
@@ -136,6 +146,7 @@ describe('BooksPage', () => {
 
     // 책 제목을 검색한다.
     await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+    await user.keyboard('{Enter}');
     const bookTitle = await screen.findByText('해리 포터와 마법사의 돌 1');
 
     // 검색 결과에서 책장에 담긴 책에 담았어요 버튼이 표시되는지 확인한다.
@@ -154,6 +165,7 @@ describe('BooksPage', () => {
 
     // 책 제목을 검색한다.
     await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+    await user.keyboard('{Enter}');
     const bookTitle = await screen.findByText('개소리에 대하여');
 
     // 검색 결과에서 어떤 책장에도 담기지 않은 책에 내 서재에 담기 버튼이 표시되는지 확인한다.
@@ -172,6 +184,7 @@ describe('BooksPage', () => {
 
     // 책 제목을 검색한다.
     await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+    await user.keyboard('{Enter}');
     const bookTitle = await screen.findByText('개소리에 대하여');
 
     // 검색 결과에서 책의 내 서재에 담기 버튼을 클릭한다.
@@ -195,8 +208,9 @@ describe('BooksPage', () => {
     const user = userEvent.setup();
 
     await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+    await user.keyboard('{Enter}');
 
-    await user.click(screen.getByRole('button', { name: '내 서재에 담기' }));
+    await user.click(await screen.findByRole('button', { name: '내 서재에 담기' }));
 
     expect(screen.getByText(/로 로그인/)).toBeInTheDocument();
   });
