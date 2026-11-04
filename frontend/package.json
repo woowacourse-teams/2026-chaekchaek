@@ -8,7 +8,7 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "prepare": "lefthook install",
+    "prepare": "node -e \"if (!process.env.CI) require('child_process').execFileSync('lefthook', ['install'], { stdio: 'inherit' })\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "workspaces": [
