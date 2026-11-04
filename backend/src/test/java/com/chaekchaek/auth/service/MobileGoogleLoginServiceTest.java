@@ -1,7 +1,6 @@
 package com.chaekchaek.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,6 +12,7 @@ import com.chaekchaek.auth.token.dto.IssuedTokens;
 import com.chaekchaek.auth.token.refresh.IssuedRefreshToken;
 import com.chaekchaek.auth.token.refresh.RefreshTokenProperties;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,9 +33,6 @@ class MobileGoogleLoginServiceTest {
 
     @Mock
     private AuthTokenService authTokenService;
-
-    @Mock
-    private Member member;
 
     private MobileGoogleLoginService mobileGoogleLoginService;
 
@@ -67,6 +64,7 @@ class MobileGoogleLoginServiceTest {
     @DisplayName("Google ID Token으로 로그인하고 자체 토큰을 발급한다")
     void should_IssueTokens_When_GoogleIdTokenIsValid() {
         // given
+        Member member = MemberFixture.savedMember(1L);
         GoogleProfile profile = new GoogleProfile(
                 "google-user-id",
                 "member@example.com",
@@ -89,7 +87,6 @@ class MobileGoogleLoginServiceTest {
                 .thenReturn(profile);
         when(socialLoginService.loginOrSignUp(profile))
                 .thenReturn(member);
-        when(member.getId()).thenReturn(1L);
         when(authTokenService.issue(1L))
                 .thenReturn(new IssuedTokens(
                         "access-token",
@@ -103,13 +100,14 @@ class MobileGoogleLoginServiceTest {
                 );
 
         // then
-        assertAll(
-                () -> assertThat(response.accessToken()).isEqualTo("access-token"),
-                () -> assertThat(response.refreshToken()).isEqualTo("refresh-token"),
-                () -> assertThat(response.tokenType()).isEqualTo("Bearer"),
-                () -> assertThat(response.accessTokenExpiresIn()).isEqualTo(1_800),
-                () -> assertThat(response.refreshTokenExpiresIn()).isEqualTo(1_209_600)
+        MobileTokenResponse expected = new MobileTokenResponse(
+                "access-token",
+                "refresh-token",
+                "Bearer",
+                1_800,
+                1_209_600
         );
+        assertThat(response).isEqualTo(expected);
 
         verify(googleIdTokenVerifier).verify("google-id-token");
         verify(socialLoginService).loginOrSignUp(profile);

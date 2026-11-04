@@ -2,9 +2,9 @@ package com.chaekchaek.auth.token.access;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
 
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.time.Clock;
 import java.time.Duration;
@@ -16,7 +16,6 @@ import javax.crypto.spec.SecretKeySpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -97,9 +96,7 @@ class AccessTokenProviderTest {
     @DisplayName("저장된 회원에게 Access Token을 발급한다")
     void should_IssueAccessToken_When_MemberIsSaved() {
         // given
-        Member member = Mockito.mock(Member.class);
-
-        when(member.getId()).thenReturn(1L);
+        Member member = MemberFixture.savedMember(1L);
 
         // when
         String token = accessTokenProvider.issue(member);
@@ -116,9 +113,7 @@ class AccessTokenProviderTest {
     @DisplayName("저장되지 않은 회원에게는 Access Token을 발급하지 않는다")
     void should_ThrowException_When_MemberIsUnsaved() {
         // given
-        Member member = Mockito.mock(Member.class);
-
-        when(member.getId()).thenReturn(null);
+        Member member = MemberFixture.member();
 
         // when & then
         assertThatThrownBy(() -> accessTokenProvider.issue(member))
@@ -129,9 +124,7 @@ class AccessTokenProviderTest {
     @DisplayName("다른 비밀키로 Access Token을 검증하면 거부된다")
     void should_RejectAccessToken_When_SignedWithDifferentKey() {
         // given
-        Member member = Mockito.mock(Member.class);
-
-        when(member.getId()).thenReturn(1L);
+        Member member = MemberFixture.savedMember(1L);
 
         String token = accessTokenProvider.issue(member);
 
@@ -184,9 +177,7 @@ class AccessTokenProviderTest {
                         oldClock
                 );
 
-        Member member = Mockito.mock(Member.class);
-
-        when(member.getId()).thenReturn(1L);
+        Member member = MemberFixture.savedMember(1L);
 
         String expiredToken = expiredTokenProvider.issue(member);
 

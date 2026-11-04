@@ -1,5 +1,6 @@
 package com.chaekchaek.auth.controller;
 
+import static com.chaekchaek.actor.fixture.ActorFixture.savedActor;
 import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.document;
 import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -34,7 +35,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(value = GuestAuthController.class, excludeAutoConfiguration = OAuth2ClientAutoConfiguration.class)
@@ -89,13 +89,15 @@ class GuestAuthControllerTest {
     @DisplayName("기존 게스트 토큰으로 Actor 정보를 조회한다")
     void should_ReturnGuestInfo_When_ExistingTokenIsUsable() throws Exception {
         // given
-        Actor actor = Actor.guest(
-                new GuestTokenHasher().hash("existing-token"),
-                "다정한 파란 참새",
-                TOKEN_ISSUED_AT,
-                TOKEN_EXPIRES_AT
+        Actor actor = savedActor(
+                7L,
+                Actor.guest(
+                        new GuestTokenHasher().hash("existing-token"),
+                        "다정한 파란 참새",
+                        TOKEN_ISSUED_AT,
+                        TOKEN_EXPIRES_AT
+                )
         );
-        ReflectionTestUtils.setField(actor, "id", 7L);
         when(guestTokenService.findUsableActor("existing-token")).thenReturn(actor);
 
         // when & then

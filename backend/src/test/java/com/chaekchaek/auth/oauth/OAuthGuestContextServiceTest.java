@@ -1,5 +1,6 @@
 package com.chaekchaek.auth.oauth;
 
+import static com.chaekchaek.actor.fixture.ActorFixture.savedActor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class OAuthGuestContextServiceTest {
@@ -27,13 +27,15 @@ class OAuthGuestContextServiceTest {
         // given
         OAuthGuestContextService service = new OAuthGuestContextService(guestTokenService);
         MockHttpServletRequest request = new MockHttpServletRequest();
-        Actor actor = Actor.guest(
-                "a".repeat(64),
-                "게스트 참새",
-                LocalDateTime.of(2026, 9, 1, 0, 0),
-                LocalDateTime.of(2026, 12, 1, 0, 0)
+        Actor actor = savedActor(
+                7L,
+                Actor.guest(
+                        "a".repeat(64),
+                        "게스트 참새",
+                        LocalDateTime.of(2026, 9, 1, 0, 0),
+                        LocalDateTime.of(2026, 12, 1, 0, 0)
+                )
         );
-        ReflectionTestUtils.setField(actor, "id", 7L);
         when(guestTokenService.findUsableActor("guest-token")).thenReturn(actor);
 
         service.rememberGuestActor(request, "guest-token");
@@ -49,13 +51,15 @@ class OAuthGuestContextServiceTest {
         // given
         OAuthGuestContextService service = new OAuthGuestContextService(guestTokenService);
         MockHttpServletRequest request = new MockHttpServletRequest();
-        Actor actor = Actor.guest(
-                "a".repeat(64),
-                "게스트 참새",
-                LocalDateTime.of(2026, 9, 1, 0, 0),
-                LocalDateTime.of(2026, 12, 1, 0, 0)
+        Actor actor = savedActor(
+                7L,
+                Actor.guest(
+                        "a".repeat(64),
+                        "게스트 참새",
+                        LocalDateTime.of(2026, 9, 1, 0, 0),
+                        LocalDateTime.of(2026, 12, 1, 0, 0)
+                )
         );
-        ReflectionTestUtils.setField(actor, "id", 7L);
         when(guestTokenService.findUsableActor("guest-token")).thenReturn(actor);
 
         service.rememberGuestActor(request, "guest-token");

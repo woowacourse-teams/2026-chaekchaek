@@ -1,5 +1,6 @@
 package com.chaekchaek.auth.principal;
 
+import static com.chaekchaek.actor.fixture.ActorFixture.savedActor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -14,6 +15,7 @@ import com.chaekchaek.common.auth.CurrentActor;
 import com.chaekchaek.common.exception.BusinessException;
 import com.chaekchaek.common.exception.ErrorCode;
 import com.chaekchaek.member.domain.Member;
+import com.chaekchaek.member.fixture.MemberFixture;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
 import java.time.Instant;
@@ -23,7 +25,6 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class SecurityContextCurrentActorProviderTest {
 
@@ -33,8 +34,10 @@ class SecurityContextCurrentActorProviderTest {
     void should_ResolveGuestActor_When_GuestTokenIsInHeader() {
         // given
         Fixtures fixtures = new Fixtures();
-        Actor guest = Actor.guest("hash", "게스트", LocalDateTime.now(CLOCK), LocalDateTime.now(CLOCK).plusDays(1));
-        ReflectionTestUtils.setField(guest, "id", 7L);
+        Actor guest = savedActor(
+                7L,
+                Actor.guest("hash", "게스트", LocalDateTime.now(CLOCK), LocalDateTime.now(CLOCK).plusDays(1))
+        );
         when(fixtures.request.getHeader(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER)).thenReturn("token");
         when(fixtures.hasher.hash("token")).thenReturn("hash");
         when(fixtures.repository.findByGuestTokenHash("hash")).thenReturn(Optional.of(guest));
@@ -72,10 +75,8 @@ class SecurityContextCurrentActorProviderTest {
     void should_PreferMemberActor_When_MemberAndGuestTokenAreProvided() {
         // given
         Fixtures fixtures = new Fixtures();
-        Member member = Member.create("회원", null, LocalDateTime.now(CLOCK));
-        ReflectionTestUtils.setField(member, "id", 3L);
-        Actor memberActor = Actor.member(member, LocalDateTime.now(CLOCK));
-        ReflectionTestUtils.setField(memberActor, "id", 4L);
+        Member member = MemberFixture.savedMember(3L);
+        Actor memberActor = savedActor(4L, Actor.member(member, LocalDateTime.now(CLOCK)));
         when(fixtures.memberProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(3L));
         when(fixtures.repository.findByMemberId(3L)).thenReturn(Optional.of(memberActor));
         when(fixtures.request.getHeader(SecurityContextCurrentActorProvider.GUEST_TOKEN_HEADER)).thenReturn("token");
@@ -89,11 +90,9 @@ class SecurityContextCurrentActorProviderTest {
     void should_ResolveAdminActor_When_MemberIsAdmin() {
         // given
         Fixtures fixtures = new Fixtures();
-        Member member = Member.create("관리자", null, LocalDateTime.now(CLOCK));
-        ReflectionTestUtils.setField(member, "id", 3L);
-        Actor adminActor = Actor.member(member, LocalDateTime.now(CLOCK));
+        Member member = MemberFixture.savedMember(3L);
+        Actor adminActor = savedActor(4L, Actor.member(member, LocalDateTime.now(CLOCK)));
         adminActor.grantAdmin();
-        ReflectionTestUtils.setField(adminActor, "id", 4L);
         when(fixtures.memberProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(3L));
         when(fixtures.repository.findByMemberId(3L)).thenReturn(Optional.of(adminActor));
 

@@ -10,6 +10,9 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.dto.BookDetailResponse;
+import com.chaekchaek.book.dto.BookMyRecordResponse;
+import com.chaekchaek.book.dto.BookQuestionResponse;
 import com.chaekchaek.common.auth.CurrentMemberIdProvider;
 import com.chaekchaek.library.domain.LibraryItem;
 import com.chaekchaek.library.domain.ReadingStatus;
@@ -18,102 +21,110 @@ import com.chaekchaek.library.repository.LibraryBookRepository;
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import org.assertj.core.util.BigDecimalComparator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class BookDetailAssemblerTest {
 
+    private static final long BOOK_ID = 1L;
+    private static final long MEMBER_ID = 10L;
+    private static final int TOTAL_PAGES = 308;
+    private static final Instant NOW = Instant.parse("2026-10-27T00:00:00Z");
+
+    private final BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
+    private final CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
+    private final LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
     private final LibraryBookRepository libraryBookRepository = mock(LibraryBookRepository.class);
+    private final BookDetailAssembler assembler = new BookDetailAssembler(
+            activityCountReader,
+            currentMemberIdProvider,
+            libraryItemRepository,
+            libraryBookRepository
+    );
 
     @Test
-    @DisplayName("책 상세에 감상·답글 수와 반올림한 평균 별점 및 내 기록을 결합한다")
+    @DisplayName("책 정보와 활동 집계, 내 기록을 상세 응답으로 조합한다")
     void should_CombineBookStatisticsAndMyRecord_When_AssemblingDetail() {
         // given
-        Book book = book();
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
+        Book book = savedMartian();
+        book.updateQuestionContent("화성에 홀로 남는다면 무엇부터 하시겠어요?", "줄거리", "발췌문");
+        LibraryItem libraryItem = readingRecord(120);
+        libraryItem.rate(new BigDecimal("4.2"), NOW);
         LibraryItemRepository.RatingStatistics ratingStatistics = mock(
-                LibraryItemRepository.RatingStatistics.class);
-        LibraryItem libraryItem = mock(LibraryItem.class);
-        BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader,
-                currentMemberIdProvider,
-                libraryItemRepository,
-                libraryBookRepository
+                LibraryItemRepository.RatingStatistics.class
         );
-        when(activityCountReader.getActivityCounts(List.of(1L)))
+        when(activityCountReader.getActivityCounts(List.of(BOOK_ID)))
                 .thenReturn(Map.of(
-                        1L,
-                        new ActivityCounts(
-                                2L,
-                                2L
-                        )
+                        BOOK_ID, new ActivityCounts(2L, 7L)
                 ));
-        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L)))
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(BOOK_ID)))
                 .thenReturn(List.of(ratingStatistics));
         when(ratingStatistics.getAverageRating()).thenReturn(4.24);
         when(ratingStatistics.getRatingCount()).thenReturn(3L);
-        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
-        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(12L);
-        when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(libraryItem));
-        when(libraryBookRepository.countByMemberIdAndBookId(10L, 1L)).thenReturn(2L);
-        when(libraryItem.getStatus()).thenReturn(ReadingStatus.READING);
-        when(libraryItem.getCurrentPage()).thenReturn(120);
-        when(libraryItem.getRating()).thenReturn(new BigDecimal("4.2"));
-        when(book.getQuestion()).thenReturn("화성에 홀로 남는다면 무엇부터 하시겠어요?");
-        when(book.getPlot()).thenReturn("줄거리");
-        when(book.getExtract()).thenReturn("발췌문");
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(MEMBER_ID));
+        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(MEMBER_ID)).thenReturn(12L);
+        when(libraryItemRepository.findByMemberIdAndBookId(MEMBER_ID, BOOK_ID)).thenReturn(Optional.of(libraryItem));
+        when(libraryBookRepository.countByMemberIdAndBookId(MEMBER_ID, BOOK_ID)).thenReturn(2L);
+        BookDetailResponse expected = new BookDetailResponse(
+                1L,
+                "9788925568683",
+                "마션",
+                "https://image.example/martian.jpg",
+                "책 설명",
+                List.of("앤디 위어"),
+                List.of("박아람"),
+                "알에이치코리아",
+                "SF",
+                "2026-01-01",
+                308,
+                2,
+                7,
+                new BigDecimal("4.2"),
+                3,
+                12,
+                new BookMyRecordResponse(
+                        "READING",
+                        120,
+                        new BigDecimal("4.2")
+                ),
+                true,
+                "https://www.yes24.com/product/goods/101375809",
+                "yes24",
+                new BookQuestionResponse(
+                        "화성에 홀로 남는다면 무엇부터 하시겠어요?",
+                        "줄거리",
+                        "발췌문"
+                )
+        );
 
         // when
         var response = assembler.assemble(book);
 
         // then
-        assertThat(response.bookQuestion()).extracting("question", "plot", "extract")
-                .containsExactly("화성에 홀로 남는다면 무엇부터 하시겠어요?", "줄거리", "발췌문");
-        assertThat(response.reviewCount()).isEqualTo(2);
-        assertThat(response.replyCount()).isEqualTo(2);
-        assertThat(response.description()).isEqualTo("책 설명");
-        assertThat(response.purchaseUrl()).isEqualTo("https://www.yes24.com/product/goods/101375809");
-        assertThat(response.source()).isEqualTo("yes24");
-        assertThat(response.averageRating()).isEqualByComparingTo("4.2");
-        assertThat(response.ratingCount()).isEqualTo(3);
-        assertThat(response.isRegisteredInMyLibrary()).isTrue();
-        assertThat(response.myRatingCount()).isEqualTo(12);
-        assertThat(response.myRecord()).extracting("status", "currentPage", "myRating")
-                .containsExactly("READING", 120, new BigDecimal("4.2"));
+        assertThat(response)
+                .usingRecursiveComparison()
+                .withComparatorForFields(BigDecimalComparator.BIG_DECIMAL_COMPARATOR, "averageRating")
+                .isEqualTo(expected);
     }
 
     @Test
     @DisplayName("로그인했지만 서재 기록이 없으면 책 상세의 내 기록은 null이다")
     void should_ReturnNullMyRecord_When_AuthenticatedMemberHasNoLibraryItem() {
         // given
-        Book book = book();
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader,
-                currentMemberIdProvider,
-                libraryItemRepository,
-                libraryBookRepository
-        );
-        when(activityCountReader.getActivityCounts(List.of(1L)))
-                .thenReturn(Map.of(
-                        1L,
-                        new ActivityCounts(
-                                0L,
-                                0L
-                        )
-                ));
-        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
-        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
-        when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.empty());
+        Book book = savedMartian();
+        when(activityCountReader.getActivityCounts(List.of(BOOK_ID)))
+                .thenReturn(Map.of(BOOK_ID, ActivityCounts.ZERO));
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(BOOK_ID))).thenReturn(List.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(MEMBER_ID));
+        when(libraryItemRepository.findByMemberIdAndBookId(MEMBER_ID, BOOK_ID)).thenReturn(Optional.empty());
 
         // when
         var response = assembler.assemble(book);
@@ -129,23 +140,14 @@ class BookDetailAssemblerTest {
     @DisplayName("독서 기록만 초기화된 항목은 도서 상세의 내 기록에서 제외한다")
     void should_ReturnNullMyRecord_When_ReadingStateAndRatingAreMissing() {
         // given
-        Book book = book();
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        LibraryItem item = mock(LibraryItem.class);
-        BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader,
-                currentMemberIdProvider,
-                libraryItemRepository,
-                libraryBookRepository
-        );
-        when(activityCountReader.getActivityCounts(List.of(1L))).thenReturn(Map.of(1L, ActivityCounts.ZERO));
-        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
-        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
-        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(0L);
-        when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(item));
-        when(item.hasReadingState()).thenReturn(false);
+        Book book = savedMartian();
+        LibraryItem item = readingRecord(120);
+        item.clearReadingState();
+        when(activityCountReader.getActivityCounts(List.of(BOOK_ID))).thenReturn(Map.of(BOOK_ID, ActivityCounts.ZERO));
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(BOOK_ID))).thenReturn(List.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(MEMBER_ID));
+        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(MEMBER_ID)).thenReturn(0L);
+        when(libraryItemRepository.findByMemberIdAndBookId(MEMBER_ID, BOOK_ID)).thenReturn(Optional.of(item));
 
         // when
         var response = assembler.assemble(book);
@@ -159,25 +161,15 @@ class BookDetailAssemblerTest {
     @DisplayName("마지막 배치 삭제 뒤 별점만 남으면 독서 필드는 null로 반환한다")
     void should_ReturnRatingWithoutReadingState_When_ReadingStateIsCleared() {
         // given
-        Book book = book();
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        LibraryItem item = mock(LibraryItem.class);
-        BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader,
-                currentMemberIdProvider,
-                libraryItemRepository,
-                libraryBookRepository
-        );
-        when(activityCountReader.getActivityCounts(List.of(1L))).thenReturn(Map.of(1L, ActivityCounts.ZERO));
-        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
-        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
-        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(10L)).thenReturn(1L);
-        when(libraryItemRepository.findByMemberIdAndBookId(10L, 1L)).thenReturn(Optional.of(item));
-        when(item.hasReadingState()).thenReturn(false);
-        when(item.getCurrentPage()).thenReturn(null);
-        when(item.getRating()).thenReturn(new BigDecimal("4.5"));
+        Book book = savedMartian();
+        LibraryItem item = readingRecord(120);
+        item.rate(new BigDecimal("4.5"), NOW);
+        item.clearReadingState();
+        when(activityCountReader.getActivityCounts(List.of(BOOK_ID))).thenReturn(Map.of(BOOK_ID, ActivityCounts.ZERO));
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(BOOK_ID))).thenReturn(List.of());
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(MEMBER_ID));
+        when(libraryItemRepository.countByMemberIdAndRatingIsNotNull(MEMBER_ID)).thenReturn(1L);
+        when(libraryItemRepository.findByMemberIdAndBookId(MEMBER_ID, BOOK_ID)).thenReturn(Optional.of(item));
 
         // when
         var response = assembler.assemble(book);
@@ -192,16 +184,7 @@ class BookDetailAssemblerTest {
     @DisplayName("등록된 질문이 없는 책이면 상세 응답의 질문은 null이다")
     void should_ReturnNullBookQuestion_When_BookHasNoQuestion() {
         // given
-        Book book = bookWithoutId();
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader,
-                currentMemberIdProvider,
-                libraryItemRepository,
-                libraryBookRepository
-        );
+        Book book = martian(null, "책 설명");
 
         // when
         var response = assembler.assemble(book);
@@ -214,17 +197,8 @@ class BookDetailAssemblerTest {
     @DisplayName("등록되지 않은 책이어도 ISBN13으로 등록된 질문을 상세 응답에 포함한다")
     void should_IncludeBookQuestion_When_BookIsNotRegistered() {
         // given
-        Book book = bookWithoutId();
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader,
-                currentMemberIdProvider,
-                libraryItemRepository,
-                libraryBookRepository
-        );
-        when(book.getQuestion()).thenReturn("화성에 홀로 남는다면 무엇부터 하시겠어요?");
+        Book book = martian(null, "책 설명");
+        book.updateQuestionContent("화성에 홀로 남는다면 무엇부터 하시겠어요?", null, null);
 
         // when
         var response = assembler.assemble(book);
@@ -239,25 +213,10 @@ class BookDetailAssemblerTest {
     @DisplayName("비로그인 사용자의 상세 응답에는 내 별점 등록 수를 포함하지 않는다")
     void should_ReturnNullMyRatingCount_When_Unauthenticated() {
         // given
-        Book book = book();
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader,
-                currentMemberIdProvider,
-                libraryItemRepository,
-                libraryBookRepository
-        );
-        when(activityCountReader.getActivityCounts(List.of(1L)))
-                .thenReturn(Map.of(
-                        1L,
-                        new ActivityCounts(
-                                0L,
-                                0L
-                        )
-                ));
-        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(1L))).thenReturn(List.of());
+        Book book = savedMartian();
+        when(activityCountReader.getActivityCounts(List.of(BOOK_ID)))
+                .thenReturn(Map.of(BOOK_ID, ActivityCounts.ZERO));
+        when(libraryItemRepository.findRatingStatisticsByBookIdIn(List.of(BOOK_ID))).thenReturn(List.of());
         when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.empty());
 
         // when
@@ -273,16 +232,7 @@ class BookDetailAssemblerTest {
     @DisplayName("등록되지 않은 책이면 메타데이터만 상세 응답으로 조합한다")
     void should_ReturnMetadataOnly_When_BookIsNotRegistered() {
         // given
-        Book book = bookWithoutId();
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader,
-                currentMemberIdProvider,
-                libraryItemRepository,
-                libraryBookRepository
-        );
+        Book book = martian(null, "책 설명");
 
         // when
         var response = assembler.assemble(book);
@@ -303,17 +253,7 @@ class BookDetailAssemblerTest {
     @DisplayName("설명이 없는 기존 도서면 상세 응답의 설명을 null로 반환한다")
     void should_ReturnNullDescription_When_StoredBookHasNoDescription() {
         // given
-        Book book = bookWithoutId();
-        when(book.getDescription()).thenReturn(null);
-        BookActivityCountReader activityCountReader = mock(BookActivityCountReader.class);
-        CurrentMemberIdProvider currentMemberIdProvider = mock(CurrentMemberIdProvider.class);
-        LibraryItemRepository libraryItemRepository = mock(LibraryItemRepository.class);
-        BookDetailAssembler assembler = new BookDetailAssembler(
-                activityCountReader,
-                currentMemberIdProvider,
-                libraryItemRepository,
-                libraryBookRepository
-        );
+        Book book = martian(BOOK_ID, null);
 
         // when
         var response = assembler.assemble(book);
@@ -326,43 +266,51 @@ class BookDetailAssemblerTest {
     @DisplayName("저장되지 않은 도서는 로그인 회원에게 책장 미등록으로 반환한다")
     void should_ReturnFalseMembership_When_AuthenticatedBookHasNoId() {
         // given
-        CurrentMemberIdProvider provider = mock(CurrentMemberIdProvider.class);
-        when(provider.findCurrentMemberId()).thenReturn(OptionalLong.of(10L));
-        BookDetailAssembler assembler = new BookDetailAssembler(
-                mock(BookActivityCountReader.class),
-                provider,
-                mock(LibraryItemRepository.class),
-                libraryBookRepository
-        );
+        Book book = martian(null, "책 설명");
+        when(currentMemberIdProvider.findCurrentMemberId()).thenReturn(OptionalLong.of(MEMBER_ID));
 
         // when
-        var response = assembler.assemble(bookWithoutId());
+        var response = assembler.assemble(book);
 
         // then
         assertThat(response.isRegisteredInMyLibrary()).isFalse();
         verifyNoInteractions(libraryBookRepository);
     }
 
-    private Book book() {
-        Book book = mock(Book.class);
-        when(book.getId()).thenReturn(1L);
-        when(book.getIsbn13()).thenReturn(new Isbn13("9788925568683"));
-        when(book.getTitle()).thenReturn("마션");
-        when(book.getCoverImageUrl()).thenReturn("https://image.example/martian.jpg");
-        when(book.getDescription()).thenReturn("책 설명");
-        when(book.getAuthors()).thenReturn(List.of("앤디 위어"));
-        when(book.getTranslators()).thenReturn(List.of("박아람"));
-        when(book.getPublisher()).thenReturn("알에이치코리아");
-        when(book.getCategory()).thenReturn("SF");
-        when(book.getPublishedDate()).thenReturn(LocalDate.of(2026, 1, 1));
-        when(book.getTotalPages()).thenReturn(308);
-        when(book.getPurchaseUrl()).thenReturn("https://www.yes24.com/product/goods/101375809");
+    private Book savedMartian() {
+        return martian(BOOK_ID, "책 설명");
+    }
+
+    private Book martian(Long id, String description) {
+        Book book = Book.create(
+                new Isbn13("9788925568683"),
+                "마션",
+                "https://image.example/martian.jpg",
+                null,
+                null,
+                description,
+                List.of("앤디 위어"),
+                List.of("박아람"),
+                "알에이치코리아",
+                "SF",
+                LocalDate.of(2026, 1, 1),
+                TOTAL_PAGES,
+                "https://www.yes24.com/product/goods/101375809",
+                null
+        );
+        ReflectionTestUtils.setField(book, "id", id);
         return book;
     }
 
-    private Book bookWithoutId() {
-        Book book = book();
-        when(book.getId()).thenReturn(null);
-        return book;
+    private LibraryItem readingRecord(int currentPage) {
+        LibraryItem item = LibraryItem.create(
+                MEMBER_ID,
+                BOOK_ID,
+                ReadingStatus.READING,
+                TOTAL_PAGES,
+                NOW
+        );
+        item.changeCurrentPage(currentPage, TOTAL_PAGES, NOW);
+        return item;
     }
 }

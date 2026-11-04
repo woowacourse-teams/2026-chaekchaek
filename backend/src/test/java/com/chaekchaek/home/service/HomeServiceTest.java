@@ -1,5 +1,6 @@
 package com.chaekchaek.home.service;
 
+import static com.chaekchaek.review.fixture.ReviewFixture.savedReview;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
@@ -7,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
+import com.chaekchaek.book.fixture.BookFixture;
 import com.chaekchaek.book.repository.BookRepository;
 import com.chaekchaek.common.auth.ActorType;
 import com.chaekchaek.common.auth.CurrentActorProvider;
@@ -31,14 +33,24 @@ import org.junit.jupiter.api.Test;
 
 class HomeServiceTest {
 
+    private final ReviewRepository reviewRepository = mock(ReviewRepository.class);
+    private final ReplyRepository replyRepository = mock(ReplyRepository.class);
+    private final BookRepository bookRepository = mock(BookRepository.class);
+    private final CurrentActorProvider currentActorProvider = mock(CurrentActorProvider.class);
+    private final ReviewMemberReader reviewMemberReader = mock(ReviewMemberReader.class);
+    private final ReviewSummaryReader summaryReader = new ReviewSummaryReader(
+            replyRepository,
+            mock(ReviewReactionRepository.class),
+            bookRepository,
+            currentActorProvider,
+            reviewMemberReader
+    );
+    private final HomeService homeService = new HomeService(reviewRepository, bookRepository, summaryReader);
+
     @Test
     @DisplayName("집계된 인기 순서에 맞춰 책 정보를 반환한다")
     void should_ReturnBooksInPopularOrder_When_FindingPopularBooks() {
         // given
-        ReviewRepository reviewRepository = mock(ReviewRepository.class);
-        ReplyRepository replyRepository = mock(ReplyRepository.class);
-        BookRepository bookRepository = mock(BookRepository.class);
-        HomeService homeService = homeService(reviewRepository, replyRepository, bookRepository);
         List<ReviewRepository.PopularBookCount> popularBookCounts = List.of(
                 popularBookCount(3L, 2L, 8L),
                 popularBookCount(2L, 5L, 5L),
@@ -56,120 +68,42 @@ class HomeServiceTest {
         List<PopularBookResponse> result = homeService.getPopularBooks().books();
 
         // then
-        assertThat(result).extracting(PopularBookResponse::bookId).containsExactly(3L, 2L, 1L);
-        assertThat(result).extracting(PopularBookResponse::isbn13)
-                .containsExactly("9780000000026", "9780000000019", "9780000000002");
-        assertThat(result).extracting(PopularBookResponse::reviewCount).containsExactly(2L, 5L, 8L);
-        assertThat(result).extracting(PopularBookResponse::replyCount).containsExactly(8L, 5L, 1L);
+        List<PopularBookResponse> expected = List.of(
+                new PopularBookResponse(
+                        3L,
+                        "9780000000026",
+                        "세 번째 책",
+                        "https://example.com/3.jpg",
+                        List.of("저자 3"),
+                        2L,
+                        8L
+                ),
+                new PopularBookResponse(
+                        2L,
+                        "9780000000019",
+                        "두 번째 책",
+                        "https://example.com/2.jpg",
+                        List.of("저자 2"),
+                        5L,
+                        5L
+                ),
+                new PopularBookResponse(
+                        1L,
+                        "9780000000002",
+                        "첫 번째 책",
+                        "https://example.com/1.jpg",
+                        List.of("저자 1"),
+                        8L,
+                        1L
+                )
+        );
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("최신 감상에 책 정보와 유효 답글 수를 결합한다")
     void should_ReturnLatestReviewsWithBookAndReplyCount_When_FindingLatestReviews() {
         // given
-        ReviewRepository reviewRepository = mock(ReviewRepository.class);
-        ReplyRepository replyRepository = mock(ReplyRepository.class);
-        BookRepository bookRepository = mock(BookRepository.class);
-        HomeService homeService = homeService(reviewRepository, replyRepository, bookRepository);
-        Review latestReview = review(101L, 2L, 2L, "최신 감상", Instant.parse("2026-08-18T14:00:00Z"));
-        Review previousReview = review(100L, 1L, 1L, "이전 감상", Instant.parse("2026-08-18T13:00:00Z"));
-        List<ReplyRepository.ReviewCount> replyCounts = List.of(
-                replyCount(101L, 12L),
-                replyCount(100L, 3L)
-        );
-        List<Book> books = List.of(book(1L, "첫 번째 책"), book(2L, "두 번째 책"));
-        when(reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc())
-                .thenReturn(List.of(latestReview, previousReview));
-        when(replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(101L, 100L))).thenReturn(replyCounts);
-        when(bookRepository.findAllWithAuthorsByIdIn(List.of(2L, 1L))).thenReturn(books);
-
-        // when
-        List<LatestReviewResponse> result = homeService.getLatestReviews().reviews();
-
-        // then
-        assertThat(result).extracting(LatestReviewResponse::content).containsExactly("최신 감상", "이전 감상");
-        assertThat(result).extracting(LatestReviewResponse::createdAt)
-                .containsExactly(Instant.parse("2026-08-18T14:00:00Z"), Instant.parse("2026-08-18T13:00:00Z"));
-        assertThat(result).extracting(LatestReviewResponse::replyCount).containsExactly(12L, 3L);
-        assertThat(result).extracting(LatestReviewResponse::bookTitle).containsExactly("두 번째 책", "첫 번째 책");
-        assertThat(result).extracting(LatestReviewResponse::author)
-                .containsExactly(
-                new AuthorResponse(
-                        null,
-                        "다정한 참새",
-                        null,
-                        true,
-                        false,
-                        ActorType.MEMBER,
-                        AuthorProfileStatus.UNAVAILABLE
-                ),
-                new AuthorResponse(
-                        101L,
-                        "책 읽는 사람",
-                        "https://example.com/profile-1.jpg",
-                        false,
-                        false,
-                        ActorType.MEMBER,
-                        AuthorProfileStatus.AVAILABLE
-                )
-        );
-    }
-
-    @Test
-    @DisplayName("탈퇴 회원의 감상은 공개 프로필에 접근할 수 없다")
-    void should_MarkProfileUnavailable_When_ReviewAuthorIsWithdrawn() {
-        // given
-        ReviewRepository reviewRepository = mock(ReviewRepository.class);
-        ReplyRepository replyRepository = mock(ReplyRepository.class);
-        BookRepository bookRepository = mock(BookRepository.class);
-        CurrentActorProvider currentActorProvider = mock(CurrentActorProvider.class);
-        ReviewMemberReader reviewMemberReader = mock(ReviewMemberReader.class);
-        Review review = review(100L, 1L, 1L, "탈퇴 회원 감상", Instant.parse("2026-08-18T13:00:00Z"));
-        Book book = book(1L, "첫 번째 책");
-
-        when(currentActorProvider.findCurrentActor()).thenReturn(Optional.empty());
-        when(reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc())
-                .thenReturn(List.of(review));
-        when(replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(100L))).thenReturn(List.of());
-        when(bookRepository.findAllWithAuthorsByIdIn(List.of(1L))).thenReturn(List.of(book));
-        when(reviewMemberReader.findByActorIds(List.of(1L))).thenReturn(Map.of(
-                1L,
-                new ReviewMemberProfile(
-                        101L,
-                        null,
-                        null,
-                        "익명 사용자 1",
-                        true,
-                        AccountStatus.WITHDRAWN,
-                        ActorType.MEMBER
-                )
-        ));
-        ReviewSummaryReader summaryReader = new ReviewSummaryReader(
-                replyRepository,
-                mock(ReviewReactionRepository.class),
-                bookRepository,
-                currentActorProvider,
-                reviewMemberReader
-        );
-        HomeService homeService = new HomeService(reviewRepository, bookRepository, summaryReader);
-
-        // when
-        AuthorResponse author = homeService.getLatestReviews().reviews().getFirst().author();
-
-        // then
-        assertThat(author.displayName()).isEqualTo("익명 사용자 1");
-        assertThat(author.memberId()).isNull();
-        assertThat(author.profileStatus()).isEqualTo(AuthorProfileStatus.UNAVAILABLE);
-    }
-
-    private static HomeService homeService(
-            ReviewRepository reviewRepository,
-            ReplyRepository replyRepository,
-            BookRepository bookRepository
-    ) {
-        CurrentActorProvider currentActorProvider = mock(CurrentActorProvider.class);
-        ReviewMemberReader reviewMemberReader = mock(ReviewMemberReader.class);
-        when(currentActorProvider.findCurrentActor()).thenReturn(Optional.empty());
         when(reviewMemberReader.findByActorIds(anyCollection())).thenReturn(Map.of(
                 1L,
                 new ReviewMemberProfile(
@@ -192,14 +126,95 @@ class HomeServiceTest {
                         ActorType.MEMBER
                 )
         ));
-        ReviewSummaryReader summaryReader = new ReviewSummaryReader(
-                replyRepository,
-                mock(ReviewReactionRepository.class),
-                bookRepository,
-                currentActorProvider,
-                reviewMemberReader
+        Review latestReview = review(101L, 2L, 2L, "최신 감상", Instant.parse("2026-08-18T14:00:00Z"));
+        Review previousReview = review(100L, 1L, 1L, "이전 감상", Instant.parse("2026-08-18T13:00:00Z"));
+        List<ReplyRepository.ReviewCount> replyCounts = List.of(
+                replyCount(101L, 12L),
+                replyCount(100L, 3L)
         );
-        return new HomeService(reviewRepository, bookRepository, summaryReader);
+        List<Book> books = List.of(book(1L, "첫 번째 책"), book(2L, "두 번째 책"));
+        when(reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc())
+                .thenReturn(List.of(latestReview, previousReview));
+        when(replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(101L, 100L))).thenReturn(replyCounts);
+        when(bookRepository.findAllWithAuthorsByIdIn(List.of(2L, 1L))).thenReturn(books);
+
+        // when
+        List<LatestReviewResponse> result = homeService.getLatestReviews().reviews();
+
+        // then
+        List<LatestReviewResponse> expected = List.of(
+                new LatestReviewResponse(
+                        "최신 감상",
+                        Instant.parse("2026-08-18T14:00:00Z"),
+                        new AuthorResponse(
+                                null,
+                                "다정한 참새",
+                                null,
+                                true,
+                                false,
+                                ActorType.MEMBER,
+                                AuthorProfileStatus.UNAVAILABLE
+                        ),
+                        12L,
+                        2L,
+                        "9780000000019",
+                        "두 번째 책",
+                        "https://example.com/2.jpg"
+                ),
+                new LatestReviewResponse(
+                        "이전 감상",
+                        Instant.parse("2026-08-18T13:00:00Z"),
+                        new AuthorResponse(
+                                101L,
+                                "책 읽는 사람",
+                                "https://example.com/profile-1.jpg",
+                                false,
+                                false,
+                                ActorType.MEMBER,
+                                AuthorProfileStatus.AVAILABLE
+                        ),
+                        3L,
+                        1L,
+                        "9780000000002",
+                        "첫 번째 책",
+                        "https://example.com/1.jpg"
+                )
+        );
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("탈퇴 회원의 감상은 공개 프로필에 접근할 수 없다")
+    void should_MarkProfileUnavailable_When_ReviewAuthorIsWithdrawn() {
+        // given
+        Review review = review(100L, 1L, 1L, "탈퇴 회원 감상", Instant.parse("2026-08-18T13:00:00Z"));
+        Book book = book(1L, "첫 번째 책");
+
+        when(currentActorProvider.findCurrentActor()).thenReturn(Optional.empty());
+        when(reviewRepository.findTop10ByDeletedAtIsNullAndSpoilerFalseOrderByCreatedAtDescIdDesc())
+                .thenReturn(List.of(review));
+        when(replyRepository.countActiveByReviewIdInGroupByReviewId(List.of(100L))).thenReturn(List.of());
+        when(bookRepository.findAllWithAuthorsByIdIn(List.of(1L))).thenReturn(List.of(book));
+        when(reviewMemberReader.findByActorIds(List.of(1L))).thenReturn(Map.of(
+                1L,
+                new ReviewMemberProfile(
+                        101L,
+                        null,
+                        null,
+                        "익명 사용자 1",
+                        true,
+                        AccountStatus.WITHDRAWN,
+                        ActorType.MEMBER
+                )
+        ));
+
+        // when
+        AuthorResponse author = homeService.getLatestReviews().reviews().getFirst().author();
+
+        // then
+        assertThat(author.displayName()).isEqualTo("익명 사용자 1");
+        assertThat(author.memberId()).isNull();
+        assertThat(author.profileStatus()).isEqualTo(AuthorProfileStatus.UNAVAILABLE);
     }
 
     private static ReviewRepository.PopularBookCount popularBookCount(long bookId, long reviewCount, long replyCount) {
@@ -211,13 +226,13 @@ class HomeServiceTest {
     }
 
     private static Book book(long id, String title) {
-        Book book = mock(Book.class);
-        when(book.getId()).thenReturn(id);
-        when(book.getIsbn13()).thenReturn(isbn13(id));
-        when(book.getTitle()).thenReturn(title);
-        when(book.getCoverImageUrl()).thenReturn("https://example.com/" + id + ".jpg");
-        when(book.getAuthors()).thenReturn(List.of("저자 " + id));
-        return book;
+        Book book = BookFixture.book(
+                isbn13(id),
+                title,
+                "https://example.com/" + id + ".jpg",
+                List.of("저자 " + id)
+        );
+        return BookFixture.savedBook(id, book);
     }
 
     private static Isbn13 isbn13(long id) {
@@ -243,13 +258,7 @@ class HomeServiceTest {
             String content,
             Instant createdAt
     ) {
-        Review review = mock(Review.class);
-        when(review.getId()).thenReturn(id);
-        when(review.getBookId()).thenReturn(bookId);
-        when(review.getActorId()).thenReturn(actorId);
-        when(review.isAnonymous()).thenReturn(actorId == 2L);
-        when(review.getContent()).thenReturn(content);
-        when(review.getCreatedAt()).thenReturn(createdAt);
-        return review;
+        Review review = Review.create(bookId, actorId, content, null, null, null, false, actorId == 2L);
+        return savedReview(id, review, createdAt);
     }
 }

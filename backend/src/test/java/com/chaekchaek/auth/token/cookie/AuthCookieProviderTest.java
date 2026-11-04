@@ -12,25 +12,24 @@ import org.springframework.http.ResponseCookie;
 
 public class AuthCookieProviderTest {
 
+    private final AuthCookieProvider provider = new AuthCookieProvider(
+            new AccessTokenProperties(
+                    "chaekchaek",
+                    "unused",
+                    Duration.ofMinutes(30)
+            ),
+            new RefreshTokenProperties(
+                    Duration.ofDays(14)
+            ),
+            new AuthCookieProperties(
+                    false,
+                    "Lax"
+            )
+    );
+
     @Test
     @DisplayName("AccessToken 쿠키를 생성한다")
     void should_CreateAccessTokenCookie_When_AccessTokenIsProvided() {
-        // given
-        AuthCookieProvider provider = new AuthCookieProvider(
-                new AccessTokenProperties(
-                        "chaekchaek",
-                        "unused",
-                        Duration.ofMinutes(30)
-                ),
-                new RefreshTokenProperties(
-                        Duration.ofDays(14)
-                ),
-                new AuthCookieProperties(
-                        false,
-                        "Lax"
-                )
-        );
-
         // when
         ResponseCookie cookie = provider.createAccessTokenCookie("access-token");
 
@@ -49,22 +48,6 @@ public class AuthCookieProviderTest {
     @Test
     @DisplayName("Access Token 삭제 쿠키를 생성한다")
     void should_CreateAccessTokenDeletionCookie_When_Logout() {
-        // given
-        AuthCookieProvider provider = new AuthCookieProvider(
-                new AccessTokenProperties(
-                        "chaekchaek",
-                        "unused",
-                        Duration.ofMinutes(30)
-                ),
-                new RefreshTokenProperties(
-                        Duration.ofDays(14)
-                ),
-                new AuthCookieProperties(
-                        false,
-                        "Lax"
-                )
-        );
-
         // when
         ResponseCookie cookie = provider.deleteAccessTokenCookie();
 
@@ -81,22 +64,6 @@ public class AuthCookieProviderTest {
     @Test
     @DisplayName("Refresh Token 삭제 쿠키를 생성한다")
     void should_CreateRefreshTokenDeletionCookie_When_Logout() {
-        // given
-        AuthCookieProvider provider = new AuthCookieProvider(
-                new AccessTokenProperties(
-                        "chaekchaek",
-                        "unused",
-                        Duration.ofMinutes(30)
-                ),
-                new RefreshTokenProperties(
-                        Duration.ofDays(14)
-                ),
-                new AuthCookieProperties(
-                        false,
-                        "Lax"
-                )
-        );
-
         // when
         ResponseCookie cookie = provider.deleteRefreshTokenCookie();
 
