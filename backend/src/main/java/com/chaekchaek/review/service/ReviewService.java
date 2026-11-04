@@ -61,6 +61,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     private static final Logger log = LoggerFactory.getLogger(ReviewService.class);
     private static final int PAGE_SIZE = 10;
     private static final int RECENT_REPLY_LIMIT = 3;
+    private static final String DELETED_REVIEW_CONTENT = "삭제된 감상입니다.";
 
     private final ReviewRepository reviewRepository;
     private final ReplyRepository replyRepository;
@@ -166,8 +167,8 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     ) {
         Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE, sort.toSpringSort());
         Page<Review> reviews = feed == Feed.MINE
-                ? reviewRepository.findByBookIdAndActorId(bookId, actorId, pageable)
-                : reviewRepository.findByBookId(bookId, pageable);
+                ? reviewRepository.findVisibleByBookIdAndActorId(bookId, actorId, pageable)
+                : reviewRepository.findVisibleByBookId(bookId, pageable);
         return reviews.getContent();
     }
 
@@ -179,13 +180,13 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     ) {
         if (sort == ReviewSort.POPULAR) {
             return feed == Feed.MINE
-                    ? reviewRepository.countByBookIdAndActorId(bookId, actorId)
-                    : reviewRepository.countByBookId(bookId);
+                    ? reviewRepository.countVisibleByBookIdAndActorId(bookId, actorId)
+                    : reviewRepository.countVisibleByBookId(bookId);
         }
         Pageable oneItem = PageRequest.of(0, 1);
         return feed == Feed.MINE
-                ? reviewRepository.findByBookIdAndActorId(bookId, actorId, oneItem).getTotalElements()
-                : reviewRepository.findByBookId(bookId, oneItem).getTotalElements();
+                ? reviewRepository.findVisibleByBookIdAndActorId(bookId, actorId, oneItem).getTotalElements()
+                : reviewRepository.findVisibleByBookId(bookId, oneItem).getTotalElements();
     }
 
     private List<ReviewResponse> toReviewResponses(List<Review> reviews, Long actorId) {
@@ -405,11 +406,19 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
                         memberProfiles
                 ))
                 .toList();
+        String content = review.getContent();
+        String quote = review.getQuote();
+        String chapter = review.getChapter();
+        if (review.isDeleted()) {
+            content = DELETED_REVIEW_CONTENT;
+            quote = null;
+            chapter = null;
+        }
         return new ReviewResponse(
                 review.getId(),
-                review.getContent(),
-                review.getQuote(),
-                review.getChapter(),
+                content,
+                quote,
+                chapter,
                 review.getCurrentPage(),
                 review.isSpoiler(),
                 review.isDeleted(),
@@ -580,7 +589,6 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
         return new ReplyResponse(
                 reply.getId(),
                 reply.getContent(),
-                reply.isDeleted(),
                 reply.getCreatedAt(),
                 authorOf(reply.getActorId(), reply.isAnonymous(), actorId, memberProfiles),
                 likeCount,
@@ -668,7 +676,7 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private void validateReviewExists(long reviewId) {
-        if (!reviewRepository.existsById(reviewId)) {
+        if (!reviewRepository.existsVisibleById(reviewId)) {
             throw new BusinessException(ErrorCode.REVIEW_NOT_FOUND);
         }
     }
@@ -701,8 +709,12 @@ public class ReviewService implements BookCommentCountReader, BookActivityCountR
     }
 
     private Review getReview(long reviewId) {
-        return reviewRepository.findById(reviewId)
+        Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
+        if (review.isDeleted() && !reviewRepository.existsVisibleById(reviewId)) {
+            throw new BusinessException(ErrorCode.REVIEW_NOT_FOUND);
+        }
+        return review;
     }
 
     @Transactional
