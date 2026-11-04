@@ -87,7 +87,7 @@ app:
     access-token:
       issuer: chaekchaek
       secret: ${JWT_SECRET}
-      expiration: 5m
+      expiration: 30m
 
     refresh-token:
       expiration: 14d
