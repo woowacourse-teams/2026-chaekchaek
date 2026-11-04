@@ -10,11 +10,17 @@ import static org.mockito.Mockito.when;
 
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
+import com.chaekchaek.review.event.BookActivityChangedEvent;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.DisplayName;
@@ -130,11 +136,61 @@ class CachedBookSearchActivityCountReaderTest {
         verify(databaseReader, org.mockito.Mockito.times(2)).getActivityCounts(List.of(1L));
     }
 
+    @Test
+    @DisplayName("DB 조회 후 캐시 저장 전에 무효화되면 오래된 값을 캐시에 남기지 않는다")
+    void should_NotCacheStaleCounts_When_CacheIsInvalidatedAfterDatabaseRead() throws Exception {
+        // given
+        BookActivityCountReader databaseReader = mock(BookActivityCountReader.class);
+        Cache<Long, ActivityCounts> cache = newCache();
+        BookActivityCountCacheCoordinator coordinator = new BookActivityCountCacheCoordinator(cache);
+        CachedBookSearchActivityCountReader reader = new CachedBookSearchActivityCountReader(databaseReader, coordinator);
+        BookActivityCountCacheInvalidationListener listener = new BookActivityCountCacheInvalidationListener(coordinator);
+        ActivityCounts staleCounts = new ActivityCounts(1L, 2L);
+        ActivityCounts updatedCounts = new ActivityCounts(2L, 2L);
+        CountDownLatch databaseReadFinished = new CountDownLatch(1);
+        CountDownLatch continueSearch = new CountDownLatch(1);
+        AtomicInteger databaseCallCount = new AtomicInteger();
+        when(databaseReader.getActivityCounts(List.of(42L))).thenAnswer(invocation -> {
+            if (databaseCallCount.getAndIncrement() == 0) {
+                Map<Long, ActivityCounts> loadedCounts = Map.of(42L, staleCounts);
+                databaseReadFinished.countDown();
+                if (!continueSearch.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("검색 재개 신호를 받지 못했습니다");
+                }
+                return loadedCounts;
+            }
+            return Map.of(42L, updatedCounts);
+        });
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            // when
+            Future<Map<Long, ActivityCounts>> search = executor.submit(
+                    () -> reader.getActivityCounts(List.of(42L))
+            );
+            assertThat(databaseReadFinished.await(5, TimeUnit.SECONDS)).isTrue();
+            listener.invalidate(new BookActivityChangedEvent(42L));
+            continueSearch.countDown();
+            assertThat(search.get(5, TimeUnit.SECONDS)).containsEntry(42L, staleCounts);
+
+            // then
+            assertThat(cache.getIfPresent(42L)).isNull();
+            assertThat(reader.getActivityCounts(List.of(42L))).containsEntry(42L, updatedCounts);
+            verify(databaseReader, org.mockito.Mockito.times(2)).getActivityCounts(List.of(42L));
+        } finally {
+            continueSearch.countDown();
+            executor.shutdownNow();
+        }
+    }
+
     private CachedBookSearchActivityCountReader reader(
             BookActivityCountReader databaseReader,
             Cache<Long, ActivityCounts> cache
     ) {
-        return new CachedBookSearchActivityCountReader(databaseReader, cache);
+        return new CachedBookSearchActivityCountReader(
+                databaseReader,
+                new BookActivityCountCacheCoordinator(cache)
+        );
     }
 
     private Cache<Long, ActivityCounts> newCache() {

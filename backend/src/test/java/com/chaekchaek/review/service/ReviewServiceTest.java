@@ -24,10 +24,12 @@ import com.chaekchaek.review.domain.ReplyReaction;
 import com.chaekchaek.review.domain.Review;
 import com.chaekchaek.review.domain.ReviewReaction;
 import com.chaekchaek.review.dto.AuthorProfileStatus;
+import com.chaekchaek.review.dto.ReplyCreateRequest;
 import com.chaekchaek.review.dto.ReviewCreateByIsbnResponse;
 import com.chaekchaek.review.dto.ReviewCreateRequest;
 import com.chaekchaek.review.dto.ReviewResponse;
 import com.chaekchaek.review.dto.ReviewUpdateRequest;
+import com.chaekchaek.review.event.BookActivityChangedEvent;
 import com.chaekchaek.review.library.ReadingRecordCoordinator;
 import com.chaekchaek.review.member.ReviewMemberProfile;
 import com.chaekchaek.review.member.ReviewMemberReader;
@@ -43,11 +45,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
 class ReviewServiceTest {
+
+    private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
 
     @Test
     @DisplayName("게스트는 서재를 변경하지 않고 감상을 작성한다")
@@ -83,7 +88,8 @@ class ReviewServiceTest {
                 bookReader,
                 memberReader,
                 mock(BookResolver.class),
-                transactionManager()
+                transactionManager(),
+                eventPublisher
         );
 
         // when
@@ -129,7 +135,8 @@ class ReviewServiceTest {
                 mock(ReviewBookReader.class),
                 memberReader(true),
                 mock(BookResolver.class),
-                transactionManager()
+                transactionManager(),
+                eventPublisher
         );
 
         // when & then
@@ -168,7 +175,8 @@ class ReviewServiceTest {
                 mock(ReviewBookReader.class),
                 memberReader(true),
                 mock(BookResolver.class),
-                transactionManager()
+                transactionManager(),
+                eventPublisher
         );
         ReviewUpdateRequest request = new ReviewUpdateRequest();
         request.setCurrentPage(10);
@@ -209,7 +217,8 @@ class ReviewServiceTest {
                 mock(ReviewBookReader.class),
                 memberReader(false),
                 mock(BookResolver.class),
-                transactionManager()
+                transactionManager(),
+                eventPublisher
         );
 
         ArgumentCaptor<ReviewReaction> reviewReaction = ArgumentCaptor.forClass(ReviewReaction.class);
@@ -269,6 +278,7 @@ class ReviewServiceTest {
         verify(bookReader).validateBookExists(5L);
         verify(readingRecordCoordinator).recordReview(1L, 5L, 10, 100);
         verify(memberReader).findByActorIds(List.of(1L));
+        verify(eventPublisher).publishEvent(new BookActivityChangedEvent(5L));
         assertThat(actual.author().anonymous()).isTrue();
         assertThat(actual.author().displayName()).isEqualTo("참새-a1b2c3d4");
         assertThat(actual.author().memberId()).isNull();
@@ -318,6 +328,76 @@ class ReviewServiceTest {
         assertThat(actual.review().reviewId()).isEqualTo(10L);
         verify(bookResolver).findOrCreate(isbn13);
         verify(bookReader).validateBookExists(5L);
+        verify(eventPublisher).publishEvent(new BookActivityChangedEvent(5L));
+    }
+
+    @Test
+    @DisplayName("감상을 삭제하면 해당 책의 활동 수 변경 이벤트를 발행한다")
+    void should_PublishBookActivityChangedEvent_When_DeletingReview() {
+        // given
+        ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        Review review = Review.create(5L, 1L, "감상", null, null, null, false, false);
+        ReflectionTestUtils.setField(review, "id", 17L);
+        when(reviewRepository.findById(17L)).thenReturn(Optional.of(review));
+        ReviewService service = reviewService(
+                reviewRepository,
+                mock(ReviewBookReader.class),
+                mock(ReadingRecordCoordinator.class),
+                memberReader(false)
+        );
+
+        // when
+        service.deleteReview(17L);
+
+        // then
+        assertThat(review.isDeleted()).isTrue();
+        verify(eventPublisher).publishEvent(new BookActivityChangedEvent(5L));
+    }
+
+    @Test
+    @DisplayName("답글을 작성하면 부모 감상이 속한 책의 활동 수 변경 이벤트를 발행한다")
+    void should_PublishBookActivityChangedEvent_When_CreatingReply() {
+        // given
+        ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        ReplyRepository replyRepository = mock(ReplyRepository.class);
+        Review review = Review.create(5L, 1L, "감상", null, null, null, false, false);
+        ReflectionTestUtils.setField(review, "id", 17L);
+        when(reviewRepository.findById(17L)).thenReturn(Optional.of(review));
+        when(replyRepository.save(any(Reply.class))).thenAnswer(invocation -> {
+            Reply reply = invocation.getArgument(0);
+            ReflectionTestUtils.setField(reply, "id", 99L);
+            return reply;
+        });
+        ReviewService service = reviewService(reviewRepository, replyRepository);
+
+        // when
+        service.createReply(17L, new ReplyCreateRequest("답글"));
+
+        // then
+        verify(eventPublisher).publishEvent(new BookActivityChangedEvent(5L));
+    }
+
+    @Test
+    @DisplayName("답글을 삭제하면 답글 ID가 아닌 부모 감상의 ID로 책을 찾아 이벤트를 발행한다")
+    void should_PublishParentBookActivityChangedEvent_When_DeletingReply() {
+        // given
+        ReviewRepository reviewRepository = mock(ReviewRepository.class);
+        ReplyRepository replyRepository = mock(ReplyRepository.class);
+        Review review = Review.create(5L, 1L, "감상", null, null, null, false, false);
+        Reply reply = Reply.create(17L, 1L, "답글", false);
+        ReflectionTestUtils.setField(review, "id", 17L);
+        ReflectionTestUtils.setField(reply, "id", 99L);
+        when(reviewRepository.findById(17L)).thenReturn(Optional.of(review));
+        when(replyRepository.findById(99L)).thenReturn(Optional.of(reply));
+        ReviewService service = reviewService(reviewRepository, replyRepository);
+
+        // when
+        service.deleteReply(99L);
+
+        // then
+        assertThat(reply.isDeleted()).isTrue();
+        verify(reviewRepository).findById(17L);
+        verify(eventPublisher).publishEvent(new BookActivityChangedEvent(5L));
     }
 
     @Test
@@ -335,7 +415,8 @@ class ReviewServiceTest {
                 mock(ReviewBookReader.class),
                 memberReader(false),
                 bookResolver,
-                transactionManager()
+                transactionManager(),
+                eventPublisher
         );
 
         // when & then
@@ -440,7 +521,8 @@ class ReviewServiceTest {
                 mock(ReviewBookReader.class),
                 memberReader(false),
                 mock(BookResolver.class),
-                transactionManager()
+                transactionManager(),
+                eventPublisher
         );
 
         // when
@@ -476,7 +558,8 @@ class ReviewServiceTest {
                 mock(ReviewBookReader.class),
                 memberReader(false),
                 mock(BookResolver.class),
-                transactionManager()
+                transactionManager(),
+                eventPublisher
         );
 
         // when
@@ -516,6 +599,25 @@ class ReviewServiceTest {
 
     private ReviewService reviewService(
             ReviewRepository reviewRepository,
+            ReplyRepository replyRepository
+    ) {
+        return new ReviewService(
+                reviewRepository,
+                replyRepository,
+                mock(ReviewReactionRepository.class),
+                mock(ReplyReactionRepository.class),
+                currentActorProvider(),
+                mock(ReadingRecordCoordinator.class),
+                mock(ReviewBookReader.class),
+                memberReader(false),
+                mock(BookResolver.class),
+                transactionManager(),
+                eventPublisher
+        );
+    }
+
+    private ReviewService reviewService(
+            ReviewRepository reviewRepository,
             ReviewBookReader bookReader,
             ReadingRecordCoordinator readingRecordCoordinator,
             ReviewMemberReader memberReader,
@@ -531,7 +633,8 @@ class ReviewServiceTest {
                 bookReader,
                 memberReader,
                 bookResolver,
-                transactionManager()
+                transactionManager(),
+                eventPublisher
         );
     }
 

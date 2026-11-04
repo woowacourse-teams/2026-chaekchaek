@@ -3,7 +3,6 @@ package com.chaekchaek.book.cache;
 import com.chaekchaek.book.service.BookSearchActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader;
 import com.chaekchaek.library.service.BookActivityCountReader.ActivityCounts;
-import com.github.benmanes.caffeine.cache.Cache;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -19,7 +18,7 @@ import org.springframework.stereotype.Component;
 public class CachedBookSearchActivityCountReader implements BookSearchActivityCountReader {
 
     private final BookActivityCountReader databaseReader;
-    private final Cache<Long, ActivityCounts> bookActivityCountCache;
+    private final BookActivityCountCacheCoordinator cacheCoordinator;
 
     @Override
     public Map<Long, ActivityCounts> getActivityCounts(Collection<Long> bookIds) {
@@ -32,7 +31,7 @@ public class CachedBookSearchActivityCountReader implements BookSearchActivityCo
         List<Long> cacheMissBookIds = new ArrayList<>();
 
         for (Long uniqueBookId : uniqueBookIds) {
-            ActivityCounts cached = bookActivityCountCache.getIfPresent(uniqueBookId);
+            ActivityCounts cached = cacheCoordinator.getIfPresent(uniqueBookId);
             if (cached == null) {
                 cacheMissBookIds.add(uniqueBookId);
             } else {
@@ -41,16 +40,19 @@ public class CachedBookSearchActivityCountReader implements BookSearchActivityCo
         }
 
         if (!cacheMissBookIds.isEmpty()) {
+            long generation = cacheCoordinator.generation();
             Map<Long, ActivityCounts> loadedCounts = databaseReader.getActivityCounts(cacheMissBookIds);
+            Map<Long, ActivityCounts> countsToCache = new HashMap<>();
 
             for (Long cacheMissBookId : cacheMissBookIds) {
                 ActivityCounts counts = loadedCounts.getOrDefault(
                         cacheMissBookId,
                         ActivityCounts.ZERO
                 );
-                bookActivityCountCache.put(cacheMissBookId, counts);
+                countsToCache.put(cacheMissBookId, counts);
                 result.put(cacheMissBookId, counts);
             }
+            cacheCoordinator.putIfUnchanged(generation, countsToCache);
         }
 
         return Map.copyOf(result);

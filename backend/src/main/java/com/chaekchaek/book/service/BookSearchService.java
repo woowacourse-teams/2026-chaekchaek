@@ -21,11 +21,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+// 책 조회 이후 커밋된 감상 변경도 집계 쿼리에서 확인해야 오래된 값을 캐시에 저장하지 않는다.
+@Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
 public class BookSearchService {
 
     private final BookSearchClient bookClient;
