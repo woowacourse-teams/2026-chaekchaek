@@ -140,8 +140,7 @@ describe('LibrariesPage', () => {
     // 이름을 변경할 책장의 더보기 버튼을 클릭한다.
     const libraryTitle = libraryLink.closest<HTMLElement>('.ui-Title');
     if (!libraryTitle) throw new Error('이름을 변경할 책장의 제목을 찾을 수 없습니다.');
-    const [, moreButton] = within(libraryTitle).getAllByRole('button');
-    if (!moreButton) throw new Error('책장 더보기 버튼을 찾을 수 없습니다.');
+    const moreButton = within(libraryTitle).getByRole('button', { name: '책장 관리' });
     await user.click(moreButton);
 
     // 관리 팝업에서 책장 이름 바꾸기를 선택한다.
@@ -203,8 +202,7 @@ describe('LibrariesPage', () => {
     // 이미지를 저장할 책장의 더보기 버튼을 클릭한다.
     const libraryTitle = libraryLink.closest<HTMLElement>('.ui-Title');
     if (!libraryTitle) throw new Error('이미지를 저장할 책장의 제목을 찾을 수 없습니다.');
-    const [, moreButton] = within(libraryTitle).getAllByRole('button');
-    if (!moreButton) throw new Error('책장 더보기 버튼을 찾을 수 없습니다.');
+    const moreButton = within(libraryTitle).getByRole('button', { name: '책장 관리' });
     await user.click(moreButton);
 
     // 관리 팝업에서 이미지 저장 메뉴를 클릭한다.
@@ -272,8 +270,7 @@ describe('LibrariesPage', () => {
     // 삭제할 책장의 더보기 버튼을 클릭한다.
     const libraryTitle = libraryLink.closest<HTMLElement>('.ui-Title');
     if (!libraryTitle) throw new Error('삭제할 책장의 제목을 찾을 수 없습니다.');
-    const [, moreButton] = within(libraryTitle).getAllByRole('button');
-    if (!moreButton) throw new Error('책장 더보기 버튼을 찾을 수 없습니다.');
+    const moreButton = within(libraryTitle).getByRole('button', { name: '책장 관리' });
     await user.click(moreButton);
 
     // 관리 팝업에서 책장 삭제를 선택한다.
@@ -321,8 +318,7 @@ describe('LibrariesPage', () => {
     // 책을 삭제할 책장의 더보기 버튼을 클릭한다.
     const libraryTitle = libraryLink.closest<HTMLElement>('.ui-Title');
     if (!libraryTitle) throw new Error('책을 삭제할 책장의 제목을 찾을 수 없습니다.');
-    const [, moreButton] = within(libraryTitle).getAllByRole('button');
-    if (!moreButton) throw new Error('책장 더보기 버튼을 찾을 수 없습니다.');
+    const moreButton = within(libraryTitle).getByRole('button', { name: '책장 관리' });
     await user.click(moreButton);
 
     // 관리 팝업에 책 삭제 메뉴가 표시되는지 확인한다.
@@ -367,8 +363,7 @@ describe('LibrariesPage', () => {
     const libraryLink = await screen.findByRole('link', { name: defaultLibrary.name });
     const libraryTitle = libraryLink.closest<HTMLElement>('.ui-Title');
     if (!libraryTitle) throw new Error('기본 책장의 제목을 찾을 수 없습니다.');
-    const [, moreButton] = within(libraryTitle).getAllByRole('button');
-    if (!moreButton) throw new Error('책장 더보기 버튼을 찾을 수 없습니다.');
+    const moreButton = within(libraryTitle).getByRole('button', { name: '책장 관리' });
     await user.click(moreButton);
 
     // 관리 팝업에 책장 이름 바꾸기 메뉴가 표시되는지 확인한다.
