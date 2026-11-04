@@ -33,7 +33,7 @@ export const SearchBar = <T extends ElementType>(props: SearchBarProps<T>) => {
   return (
     <View as={as} className={classname} {...restProps}>
       <Input
-        leading={<Icon.SearchIcon color="secondary" />}
+        trailing={<Icon.SearchIcon color="secondary" />}
         shape="default"
         size="medium"
         reverse={reverse}

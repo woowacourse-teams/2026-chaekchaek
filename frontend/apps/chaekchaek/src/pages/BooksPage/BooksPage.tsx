@@ -7,7 +7,7 @@ import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
 
-import { Chip, Icon, Notice, Split, VisuallyHidden } from '@chaekchaek/design-system';
+import { Chip, Icon, IconButton, Notice, Split, VisuallyHidden } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
 import { List } from '@chaekchaek/design-system';
 import { ImgBox } from '@chaekchaek/design-system';
@@ -51,17 +51,21 @@ export const BooksPage = () => {
     setPage(1);
   };
 
+  const handleSearch = () => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('page', '1');
+        next.set('query', query);
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          next.set('page', '1');
-          next.set('query', query);
-          return next;
-        },
-        { replace: true },
-      );
+      handleSearch();
     }
   };
 
@@ -194,7 +198,11 @@ export const BooksPage = () => {
                     <Input
                       aria-label="책 검색"
                       block
-                      leading={<Icon.SearchIcon />}
+                      trailing={
+                        <IconButton onClick={handleSearch} edge="end" aria-label="검색">
+                          <Icon.SearchIcon size="large" />
+                        </IconButton>
+                      }
                       autoFocus
                       value={query}
                       onChange={handleChangeQuery}
