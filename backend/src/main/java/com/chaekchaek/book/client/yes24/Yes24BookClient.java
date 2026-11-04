@@ -100,9 +100,6 @@ public class Yes24BookClient implements BookDetailClient {
         }
     }
 
-    /**
-     * YES24 returns its preparing image with status 200 when a book image is missing.
-     */
     @Override
     public boolean isPreparingImage(String imageUrl) {
         try {
