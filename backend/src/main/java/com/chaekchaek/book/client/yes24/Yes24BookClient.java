@@ -6,9 +6,11 @@ import com.chaekchaek.book.client.yes24.dto.Yes24BookItem;
 import com.chaekchaek.book.client.yes24.dto.Yes24SearchResponse;
 import com.chaekchaek.book.domain.Isbn13;
 import com.chaekchaek.book.exception.BookNotFoundException;
+import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -18,6 +20,8 @@ import org.springframework.web.client.RestClientResponseException;
 
 @Component
 public class Yes24BookClient implements BookDetailClient {
+
+    private static final Set<Long> PREPARING_IMAGE_CONTENT_LENGTHS = Set.of(1_291L, 2_858L, 4_975L);
 
     private final RestClient restClient;
     private final String apiKey;
@@ -93,6 +97,24 @@ public class Yes24BookClient implements BookDetailClient {
             return exception.getResponseBodyAs(Yes24SearchResponse.class);
         } catch (RuntimeException ignored) {
             return null;
+        }
+    }
+
+    /**
+     * YES24 returns its preparing image with status 200 when a book image is missing.
+     */
+    @Override
+    public boolean isPreparingImage(String imageUrl) {
+        try {
+            long contentLength = restClient.head()
+                    .uri(URI.create(imageUrl))
+                    .retrieve()
+                    .toBodilessEntity()
+                    .getHeaders()
+                    .getContentLength();
+            return PREPARING_IMAGE_CONTENT_LENGTHS.contains(contentLength);
+        } catch (RestClientException | IllegalArgumentException exception) {
+            throw new Yes24ClientException(exception);
         }
     }
 

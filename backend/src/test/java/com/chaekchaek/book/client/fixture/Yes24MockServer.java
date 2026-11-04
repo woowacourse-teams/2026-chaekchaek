@@ -37,6 +37,10 @@ public final class Yes24MockServer implements AutoCloseable {
                 .setBody(body));
     }
 
+    public void 이미지_크기를_응답한다(long contentLength) {
+        server.enqueue(new MockResponse().setHeader("Content-Length", contentLength));
+    }
+
     public void 연결을_즉시_종료한다() {
         server.setDispatcher(new Dispatcher() {
             @Override
