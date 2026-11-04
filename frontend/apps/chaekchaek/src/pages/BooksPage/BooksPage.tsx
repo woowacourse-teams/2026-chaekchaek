@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 
 import { Layout } from '@/frames';
@@ -49,16 +49,20 @@ export const BooksPage = () => {
     const { value } = e.target;
     setQuery(value);
     setPage(1);
+  };
 
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.set('page', '1');
-        next.set('query', value);
-        return next;
-      },
-      { replace: true },
-    );
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('page', '1');
+          next.set('query', query);
+          return next;
+        },
+        { replace: true },
+      );
+    }
   };
 
   const handleChangeDefaultPage = (defaultPage: number) => {
@@ -194,6 +198,7 @@ export const BooksPage = () => {
                       autoFocus
                       value={query}
                       onChange={handleChangeQuery}
+                      onKeyDown={handleKeyDown}
                     />
                     <VisuallyHidden role="status">{searchAnnouncement}</VisuallyHidden>
                   </>
