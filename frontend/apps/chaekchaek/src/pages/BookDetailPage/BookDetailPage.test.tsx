@@ -20,7 +20,7 @@ import {
 describe('BookDetailPage', () => {
   it('책이 책장에 담겨 있지 않은 경우 내 서재에 담기 버튼이 보인다', async () => {
     server.use(
-      http.get(`${ENV.APP_API_URL}/api/v1/books/by-isbn/${bookNotInLibraryResponse.isbn13}`, () =>
+      http.get(`${ENV.APP_API_URL}/api/v2/books/by-isbn/${bookNotInLibraryResponse.isbn13}`, () =>
         HttpResponse.json(structuredClone(bookNotInLibraryResponse)),
       ),
       http.get(`${ENV.APP_API_URL}/api/v1/books/${bookNotInLibraryResponse.bookId}/reviews`, () =>
@@ -46,7 +46,7 @@ describe('BookDetailPage', () => {
 
   it('책이 책장에 담겨 있는 경우 담았어요 버튼이 보인다', async () => {
     server.use(
-      http.get(`${ENV.APP_API_URL}/api/v1/books/by-isbn/${bookInLibraryResponse.isbn13}`, () =>
+      http.get(`${ENV.APP_API_URL}/api/v2/books/by-isbn/${bookInLibraryResponse.isbn13}`, () =>
         HttpResponse.json(structuredClone(bookInLibraryResponse)),
       ),
       http.get(`${ENV.APP_API_URL}/api/v1/books/${bookInLibraryResponse.bookId}/reviews`, () =>

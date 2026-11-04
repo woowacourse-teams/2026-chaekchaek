@@ -307,6 +307,7 @@ export const LibrariesPage = () => {
                                 {library.items.length} 권
                               </Text>
                               <IconButton
+                                aria-label="책장 관리"
                                 onClick={() => {
                                   handleClickManageLibrary({
                                     libraryId: library.libraryId,
