@@ -81,7 +81,7 @@ export const LatestReviews = () => {
   return (
     <div className={`${styles['scene-latest-reviews']} ${scrollbar.dark}`}>
       <div className={styles['latest-reviews-title']}>
-        <h1>방금 남겨진 문장</h1>
+        <h1>최근 감상</h1>
         <div className={styles['latest-reviews-title-right']}>
           <IconButton as={Link} to={ROUTES.FEED} target="_blank">
             <Icon.ExternalLinkIcon color="secondary" />
