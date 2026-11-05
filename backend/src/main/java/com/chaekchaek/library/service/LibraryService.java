@@ -287,7 +287,7 @@ public class LibraryService {
         if (libraryBookRepository.existsByLibraryIdAndBookId(libraryId, bookId)) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
         }
-        library.assertCanAddBook(libraryBookRepository.countByLibraryId(libraryId));
+        library.validateCanAddBook(libraryBookRepository.countByLibraryId(libraryId));
     }
 
     private LibraryItem readingItem(long memberId, Book book, ReadingStatus status) {
