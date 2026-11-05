@@ -9,6 +9,7 @@ export type GetLibrariesLibraryIdResponseDto = ResponseDto<{
   libraryId: number;
   name: string;
   totalCount: number;
+  maxSize: number;
   items: {
     coverImageUrl: string;
     isbn13: string;
