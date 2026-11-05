@@ -72,18 +72,21 @@ final class FirstLibraryOnboardingUITests: XCTestCase {
         field.typeText(query)
         XCTAssertEqual(field.value as? String, query)
 
-        // 안내 문구와 입력란 사이의 실제 빈 여백을 접근성 프레임에서 계산한다.
-        XCTAssertGreaterThan(field.frame.minY, guidance.frame.maxY)
-        let blankY = (guidance.frame.maxY + field.frame.minY) / 2
-        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
-            dx: field.frame.midX - app.frame.minX,
-            dy: blankY - app.frame.minY
-        )).tap()
-        XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5), "빈 영역을 누르면 키보드가 닫혀야 합니다")
-        XCTAssertEqual(field.value as? String, query)
+        // 입력란 재진입이 빈 영역 탭으로 처리되지 않는지 반복 확인한다.
+        for _ in 0..<3 {
+            XCTAssertGreaterThan(field.frame.minY, guidance.frame.maxY)
+            let blankY = (guidance.frame.maxY + field.frame.minY) / 2
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+                dx: field.frame.midX - app.frame.minX,
+                dy: blankY - app.frame.minY
+            )).tap()
+            XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5), "빈 영역을 누르면 키보드가 닫혀야 합니다")
+            XCTAssertEqual(field.value as? String, query)
 
-        field.tap()
-        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+            field.tap()
+            XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+            XCTAssertEqual(field.value as? String, query)
+        }
         // IME 검색 동작으로 제출한다. API 결과는 검사하지 않는다.
         field.typeText("\n")
         XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5), "검색을 실행하면 키보드가 닫혀야 합니다")

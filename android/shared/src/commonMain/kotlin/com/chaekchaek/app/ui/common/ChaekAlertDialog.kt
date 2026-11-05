@@ -25,8 +25,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.chaekchaek.app.ui.input.dismissKeyboardOnUnconsumedTap
-import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
+import com.chaekchaek.app.ui.input.KeyboardDismissalArea
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
 
@@ -57,7 +56,6 @@ private fun ChaekAlertDialog(
     text: @Composable (() -> Unit)? = null,
     dismissKeyboardOnTap: Boolean = false,
 ) {
-    val dismissKeyboard = rememberKeyboardDismissal()
     val canDismiss = onDismissRequest != null
     Dialog(
         onDismissRequest = { onDismissRequest?.invoke() },
@@ -67,28 +65,30 @@ private fun ChaekAlertDialog(
             usePlatformDefaultWidth = false,
         ),
     ) {
-        Surface(
-            modifier = Modifier.padding(horizontal = 16.dp).widthIn(max = 358.dp).fillMaxWidth()
-                .then(if (dismissKeyboardOnTap) Modifier.dismissKeyboardOnUnconsumedTap(dismissKeyboard) else Modifier),
-            shape = ChaekOverlayTokens.containerShape,
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()).padding(ChaekOverlayTokens.contentPadding),
-                verticalArrangement = Arrangement.spacedBy(ChaekOverlayTokens.sectionSpacing),
+        KeyboardDismissalArea(enabled = dismissKeyboardOnTap) { keyboardDismissalModifier ->
+            Surface(
+                modifier = Modifier.padding(horizontal = 16.dp).widthIn(max = 358.dp).fillMaxWidth()
+                    .then(keyboardDismissalModifier),
+                shape = ChaekOverlayTokens.containerShape,
+                color = MaterialTheme.colorScheme.surface,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.weight(1f)) {
-                        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.titleMedium) {
-                            title?.invoke()
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()).padding(ChaekOverlayTokens.contentPadding),
+                    verticalArrangement = Arrangement.spacedBy(ChaekOverlayTokens.sectionSpacing),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f)) {
+                            CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.titleMedium) {
+                                title?.invoke()
+                            }
                         }
+                        onDismissRequest?.let { ChaekCloseButton(it) }
                     }
-                    onDismissRequest?.let { ChaekCloseButton(it) }
-                }
-                CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodyMedium) { text?.invoke() }
-                Box(Modifier.fillMaxWidth().heightIn(min = ChaekOverlayTokens.buttonHeight), contentAlignment = Alignment.Center) { confirmButton() }
-                dismissButton?.let {
-                    Box(Modifier.fillMaxWidth().heightIn(min = ChaekOverlayTokens.buttonHeight), contentAlignment = Alignment.Center) { it() }
+                    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodyMedium) { text?.invoke() }
+                    Box(Modifier.fillMaxWidth().heightIn(min = ChaekOverlayTokens.buttonHeight), contentAlignment = Alignment.Center) { confirmButton() }
+                    dismissButton?.let {
+                        Box(Modifier.fillMaxWidth().heightIn(min = ChaekOverlayTokens.buttonHeight), contentAlignment = Alignment.Center) { it() }
+                    }
                 }
             }
         }

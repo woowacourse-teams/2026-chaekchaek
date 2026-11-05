@@ -18,6 +18,7 @@ import com.chaekchaek.app.ui.input.TextInputPolicy
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
+import com.chaekchaek.app.ui.input.excludeFromKeyboardDismissal
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -185,7 +186,7 @@ private fun NicknameInput(nicknameState: TextFieldState, readOnly: Boolean = fal
         BasicTextField(
             state = nicknameState,
             readOnly = readOnly,
-            modifier = Modifier.weight(1f).semantics { contentDescription = "닉네임 입력" },
+            modifier = Modifier.weight(1f).excludeFromKeyboardDismissal().semantics { contentDescription = "닉네임 입력" },
             inputTransformation = NicknameInputPolicy.inputTransformation,
             lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),

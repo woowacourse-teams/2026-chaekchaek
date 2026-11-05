@@ -36,7 +36,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
-import com.chaekchaek.app.ui.input.dismissKeyboardOnUnconsumedTap
+import com.chaekchaek.app.ui.input.KeyboardDismissalArea
+import com.chaekchaek.app.ui.input.excludeFromKeyboardDismissal
 import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
 import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
 import com.chaekchaek.app.ui.search.SearchInputRules
@@ -78,45 +79,46 @@ fun FirstLibraryOnboardingScreen(
     onSkip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dismissKeyboard = rememberKeyboardDismissal()
-    Column(modifier.fillMaxSize().background(ChaekSurface).dismissKeyboardOnUnconsumedTap(dismissKeyboard)) {
-        val contentModifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp, vertical = 24.dp)
-        if (state.step == OnboardingStep.SEARCH) {
-            Column(contentModifier) {
-                OnboardingHeader(state.step, onBack)
-                Spacer(Modifier.height(28.dp))
-                SearchContent(state, onQueryChange, onSearch, onToggleBook)
-            }
-        } else {
-            Column(contentModifier.verticalScroll(rememberScrollState())) {
-                OnboardingHeader(state.step, onBack)
-                Spacer(Modifier.height(28.dp))
-                when (state.step) {
-                    OnboardingStep.INTRO -> IntroContent()
-                    OnboardingStep.SEARCH -> Unit
-                    OnboardingStep.CHOICE -> ChoiceContent(state.selectedBooks)
-                    OnboardingStep.LOGIN_ERROR -> ChoiceContent(state.selectedBooks)
-                    OnboardingStep.SAVING -> StatusContent(
-                        "내 서재에\n책을 담고 있어요",
-                        "조금만 기다려 주세요.",
-                        state.selectedBooks.firstOrNull(),
-                        loading = state.showSaveLoading,
-                    )
-                    OnboardingStep.SAVE_ERROR -> ChoiceContent(state.selectedBooks)
+    KeyboardDismissalArea { keyboardDismissalModifier ->
+        Column(modifier.fillMaxSize().background(ChaekSurface).then(keyboardDismissalModifier)) {
+            val contentModifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp, vertical = 24.dp)
+            if (state.step == OnboardingStep.SEARCH) {
+                Column(contentModifier) {
+                    OnboardingHeader(state.step, onBack)
+                    Spacer(Modifier.height(28.dp))
+                    SearchContent(state, onQueryChange, onSearch, onToggleBook)
+                }
+            } else {
+                Column(contentModifier.verticalScroll(rememberScrollState())) {
+                    OnboardingHeader(state.step, onBack)
+                    Spacer(Modifier.height(28.dp))
+                    when (state.step) {
+                        OnboardingStep.INTRO -> IntroContent()
+                        OnboardingStep.SEARCH -> Unit
+                        OnboardingStep.CHOICE -> ChoiceContent(state.selectedBooks)
+                        OnboardingStep.LOGIN_ERROR -> ChoiceContent(state.selectedBooks)
+                        OnboardingStep.SAVING -> StatusContent(
+                            "내 서재에\n책을 담고 있어요",
+                            "조금만 기다려 주세요.",
+                            state.selectedBooks.firstOrNull(),
+                            loading = state.showSaveLoading,
+                        )
+                        OnboardingStep.SAVE_ERROR -> ChoiceContent(state.selectedBooks)
+                    }
                 }
             }
+            BottomActions(
+                state = state,
+                onPrimary = when (state.step) {
+                    OnboardingStep.INTRO -> onStartSearch
+                    OnboardingStep.SEARCH -> onReviewSelection
+                    OnboardingStep.CHOICE, OnboardingStep.LOGIN_ERROR -> onLogin
+                    OnboardingStep.SAVING -> ({})
+                    OnboardingStep.SAVE_ERROR -> onRetrySave
+                },
+                onSkip = onSkip,
+            )
         }
-        BottomActions(
-            state = state,
-            onPrimary = when (state.step) {
-                OnboardingStep.INTRO -> onStartSearch
-                OnboardingStep.SEARCH -> onReviewSelection
-                OnboardingStep.CHOICE, OnboardingStep.LOGIN_ERROR -> onLogin
-                OnboardingStep.SAVING -> ({})
-                OnboardingStep.SAVE_ERROR -> onRetrySave
-            },
-            onSkip = onSkip,
-        )
     }
 }
 
@@ -199,7 +201,7 @@ private fun SearchContent(
         OutlinedTextField(
             state = input,
             inputTransformation = SearchInputRules.Policy.inputTransformation,
-            modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 20.dp).excludeFromKeyboardDismissal(),
             placeholder = { Text("책 제목이나 작가를 검색해요") },
             lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
