@@ -48,6 +48,7 @@ spring:
       ddl-auto: ${JPA_DDL_AUTO:update}
   flyway:
     enabled: ${FLYWAY_ENABLED:false}
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration,classpath:db/migration-next}
     baseline-on-migrate: true
     baseline-version: 0
   security:

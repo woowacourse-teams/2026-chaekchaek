@@ -1,63 +1,44 @@
-# Flyway DB 마이그레이션
+# 데이터베이스 스키마 이전
 
-운영 DB는 이미 데이터가 있는 MySQL 스키마이며, 기존에는 Flyway 이력이
-없습니다. 애플리케이션 시작 시 Flyway가 이 스키마를 버전 `0`으로
-베이스라인하고, `src/main/resources/db/migration`의 버전 순서대로 변경을
-적용합니다.
+MySQL 8 이상을 기준으로 Flyway가 스키마를 관리합니다. Flyway는 테이블과 제약 조건을
+변경하며 기존 DB의 행 데이터를 복사하지 않습니다.
 
-## 현재 마이그레이션
+## 빈 개발 DB 초기화
 
-1. `V1`: 복수형 테이블을 단수형으로 변경합니다.
-2. `V2`: `book`에 `question`, `plot`, `extract` 컬럼을 추가합니다.
-3. `V3`: `book_question`의 내용을 ISBN으로 연결되는 `book` 행에 복사합니다.
-4. `V4`: 이전 `book_question` 테이블을 제거합니다.
+기존 `V1`–`V8`은 과거 스키마에서 순차 업그레이드하는 migration이므로 빈 DB에 실행하지
+않습니다. 빈 DB는 `db/migration-fresh/V8__create_current_schema.sql`로 현재 스키마를
+한 번에 생성합니다. 기존 migration 파일은 배포 이력과 checksum을 위해 수정하지 않습니다.
 
-운영 DB에서 확인한 `book_questions` 행 수는 0건이었습니다. 배포 전에 다시
-확인하세요. 다른 환경에 데이터가 있다면 다음 조건을 먼저 확인해야 합니다.
+애플리케이션을 시작하기 전에 MySQL에 빈 데이터베이스를 만들고 `DB_URL`이 그 DB를
+가리키도록 설정합니다. 개발 서버 환경 변수는 다음과 같이 설정합니다.
 
-```sql
-SELECT COUNT(*) AS question_count FROM book_questions;
-
-SELECT COUNT(*) AS orphan_count
-FROM book_questions q
-LEFT JOIN books b ON b.isbn13 = q.isbn13
-WHERE b.id IS NULL;
+```text
+FLYWAY_ENABLED=true
+FLYWAY_LOCATIONS=classpath:db/migration-fresh,classpath:db/migration-next
+JPA_DDL_AUTO=validate
 ```
 
-`orphan_count`가 0이 아니면 해당 질문 데이터가 도서 테이블로 옮겨지지
-않으므로 `V4`를 적용하면 안 됩니다. 마이그레이션 계정에는 기존 테이블
-변경 권한과 새 테이블 이력·컬럼 변경에 필요한 권한이 있어야 합니다.
+애플리케이션 시작 시 Flyway가 초기 migration을 적용한 뒤 Hibernate가 매핑을 검증합니다.
+첫 적용 후 `flyway_schema_history`에 버전 `8`이 성공으로 기록됐는지 확인합니다.
 
-## 기존 운영 DB 적용
+## 기존 DB 업그레이드
 
-`baseline-on-migrate`는 비어 있지 않은 DB에 Flyway 이력이 없을 때 버전 `0`을
-등록한 다음 `V1`부터 적용합니다. 설정이 잘못된 DB에도 베이스라인을 만들 수
-있으므로, 애플리케이션을 시작하기 전에 `DB_URL`과 선택된 스키마가 운영 대상
-`chaekchaek`인지 확인하세요.
+기존 migration 경로는 `classpath:db/migration`입니다. 해당 경로의 `V1`–`V8`은 기존
+복수형 테이블에서 현재 스키마로 전환하는 migration입니다. Flyway 이력이 없는 기존 DB는
+`baseline-on-migrate`가 버전 `0`을 기록한 뒤 해당 migration을 실행합니다. 이미 현재
+스키마인 DB에 이 경로를 적용하면 안 됩니다.
 
-Flyway는 기본적으로 비활성화되어 있습니다. 운영 전환 시 `FLYWAY_ENABLED=true`
-로 켜고, Flyway 적용 뒤 Hibernate가 스키마를 별도로 수정하지 않도록
-`JPA_DDL_AUTO=validate`로 실행합니다. 그 외 환경은 기존 기본 동작인
-`ddl-auto:update`를 유지합니다.
+기존 DB의 쓰기를 멈추고 백업한 뒤, 적용 전 `DB_URL`과 스키마를 확인합니다. 마이그레이션
+실패 시 `flyway_schema_history`와 실제 DDL을 확인하고 임의로 migration 이력을 고치지
+않습니다. 데이터가 다른 DB에 있다면 데이터 덤프와 복원 절차를 별도로 진행해야 합니다.
 
-새 빈 DB에는 현재 마이그레이션을 적용할 수 없습니다. 첫 마이그레이션이
-기존 복수형 테이블을 이름 변경하는 내용이기 때문입니다. 신규 DB 초기화를
-지원하려면 별도의 초기 스키마 생성 마이그레이션을 추가해야 합니다. 테스트
-환경은 Hibernate의 `create-drop`을 사용하므로 Flyway 실행을 비활성화합니다.
+## 이후 스키마 변경
 
-## 배포 순서와 복구
+현재 기준 스키마는 V8까지입니다. 이후 버전 migration은
+`src/main/resources/db/migration-next`에 `V9__...sql`부터 추가합니다. 기존 DB와 빈 DB가
+모두 이 경로를 함께 읽으므로, 새 변경은 두 환경에 같은 순서로 적용됩니다. 이미 배포된
+`V1`–`V8` 파일은 수정하지 않습니다.
 
-1. 스테이징의 운영 복제본에서 마이그레이션을 리허설하고 데이터 백업·복구를
-   확인합니다.
-2. 점검 시간에 이전 애플리케이션 인스턴스를 모두 중지합니다. 구버전이
-   실행되면 `ddl-auto: update` 설정으로 이전 테이블 이름이 다시 만들어질
-   수 있습니다.
-3. 운영 DB 연결 정보와 스키마를 확인한 뒤 Flyway가 마이그레이션을 적용하게
-   합니다. `flyway_schema_history`에서 `V1`부터 `V4`까지 성공했는지 확인합니다.
-4. 단수형 테이블 매핑을 사용하는 새 버전만 기동합니다. 주요 조회·쓰기 기능,
-   행 수와 외래키를 확인한 뒤 트래픽을 엽니다.
-
-Flyway 이력이 기록된 뒤에는 이전 SQL을 직접 실행해 되돌리지 마세요. 되돌림은
-이력과 DB 스키마가 일치하도록 새 버전 마이그레이션으로 준비하거나, 검증된
-백업으로 복구해야 합니다. 버전이 배포된 마이그레이션 파일은 수정하지 않고
-이후 변경은 새 버전 파일로 추가합니다.
+Flyway는 설정에서 기본 비활성화되어 있어 적용할 환경에서 `FLYWAY_ENABLED=true`를
+명시해야 합니다. 운영에서는 적용 후 `JPA_DDL_AUTO=validate`를 유지하고 Hibernate의
+`ddl-auto:update`로 스키마 변경을 관리하지 않습니다.
