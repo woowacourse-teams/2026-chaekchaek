@@ -33,6 +33,7 @@ public class Library {
 
     private static final int NAME_COLUMN_LENGTH = 104;
     private static final int MAX_NAME_LENGTH = 10;
+    private static final int MAX_BOOK_COUNT = 30;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -114,6 +115,16 @@ public class Library {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
         this.displayOrder = displayOrder;
+    }
+
+    public static int maxSize() {
+        return MAX_BOOK_COUNT;
+    }
+
+    public void validateCanAddBook(long currentCount) {
+        if (currentCount >= MAX_BOOK_COUNT) {
+            throw new BusinessException(ErrorCode.LIBRARY_ITEM_LIMIT_EXCEEDED);
+        }
     }
 
     public void assertDeletable() {

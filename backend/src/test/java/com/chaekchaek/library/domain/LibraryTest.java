@@ -159,6 +159,34 @@ class LibraryTest {
         assertThat(library.getUpdatedAt()).isNull();
     }
 
+    @ParameterizedTest
+    @ValueSource(longs = {0, 29})
+    @DisplayName("수용량 미만인 책장에 도서를 추가할 수 있다")
+    void should_AllowAddingBook_When_CountIsBelowCapacity(long currentCount) {
+        // given
+        Library library = Library.create(1L, "가을책장", NOW);
+
+        // when & then
+        library.validateCanAddBook(currentCount);
+        assertThat(Library.maxSize()).isEqualTo(30);
+    }
+
+    @Test
+    @DisplayName("수용량에 도달한 책장에 도서를 추가할 수 없다")
+    void should_RejectAddingBook_When_CountReachesCapacity() {
+        // given
+        long currentCount = 30;
+        Library library = Library.create(1L, "가을책장", NOW);
+
+        // when & then
+        assertThatThrownBy(() -> library.validateCanAddBook(currentCount))
+                .isInstanceOfSatisfying(
+                        BusinessException.class,
+                        exception -> assertThat(exception.getErrorCode())
+                                .isEqualTo(ErrorCode.LIBRARY_ITEM_LIMIT_EXCEEDED)
+                );
+    }
+
     private void assertInvalidName(String name) {
         assertThatThrownBy(() -> Library.create(1L, name, NOW))
                 .isInstanceOfSatisfying(

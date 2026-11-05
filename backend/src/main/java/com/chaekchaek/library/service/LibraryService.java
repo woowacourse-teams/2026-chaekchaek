@@ -49,7 +49,6 @@ public class LibraryService {
 
     private static final Logger log = LoggerFactory.getLogger(LibraryService.class);
     private static final int PAGE_SIZE = 10;
-    private static final int LIBRARY_BOOK_LIMIT = 30;
 
     private final LibraryRepository libraryRepository;
     private final LibraryItemRepository libraryItemRepository;
@@ -161,6 +160,7 @@ public class LibraryService {
         }
         return new LibraryListResponse(
                 allItems.size(),
+                Library.maxSize(),
                 filteredItems.size(),
                 nextPage,
                 pageItems
@@ -269,7 +269,7 @@ public class LibraryService {
         lockMember(memberId);
         Book book = getBookForUpdate(bookId);
         Library library = requireDefaultLibrary(memberId);
-        validateNewPlacement(library.getId(), bookId);
+        validateNewPlacement(library, bookId);
         rememberTotalPages(book, totalPages);
         LibraryItem item = readingItem(memberId, book, status);
         savePlacement(library.getId(), bookId);
@@ -282,13 +282,12 @@ public class LibraryService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.NICKNAME_REQUIRED));
     }
 
-    private void validateNewPlacement(long libraryId, long bookId) {
+    private void validateNewPlacement(Library library, long bookId) {
+        long libraryId = library.getId();
         if (libraryBookRepository.existsByLibraryIdAndBookId(libraryId, bookId)) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
         }
-        if (libraryBookRepository.countByLibraryId(libraryId) >= LIBRARY_BOOK_LIMIT) {
-            throw new BusinessException(ErrorCode.LIBRARY_ITEM_LIMIT_EXCEEDED);
-        }
+        library.validateCanAddBook(libraryBookRepository.countByLibraryId(libraryId));
     }
 
     private LibraryItem readingItem(long memberId, Book book, ReadingStatus status) {
