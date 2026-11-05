@@ -103,6 +103,9 @@ public enum ErrorCode {
     RECOMMENDED_BOOK_LIMIT_EXCEEDED(
             "RECOMMENDED_BOOK_LIMIT_EXCEEDED",
             "추천 도서는 최대 10권까지 등록할 수 있습니다."),
+    PMF_SURVEY_ALREADY_RESPONDED(
+            "PMF_SURVEY_ALREADY_RESPONDED",
+            "이미 설문에 응답했습니다."),
     REACTION_ALREADY_EXISTS(
             "REACTION_ALREADY_EXISTS",
             "이미 좋아요를 남겼습니다."),

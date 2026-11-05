@@ -122,6 +122,7 @@ public class SecurityConfig {
                 ).authenticated()
                         .requestMatchers(
                         HttpMethod.POST,
+                        "/api/v1/pmf-survey/responses",
                         "/api/v1/books/*/reviews",
                         "/api/v1/books/by-isbn/*/reviews",
                         "/api/v1/reviews/*/replies",
