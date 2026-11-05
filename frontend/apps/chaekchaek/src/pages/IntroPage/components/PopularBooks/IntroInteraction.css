@@ -24,9 +24,9 @@
 .book-float {
   display: block;
   border-radius: 4px;
-  outline: 1px solid #ffffff2e;
-  outline-offset: -0.5px;
-  box-shadow: 18px 24px 34px #000000d9, -3px -3px 10px #ffffff14;
+  outline: 1px solid rgb(0 0 0 / 10%);
+  outline-offset: -1px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 14%), 0 8px 24px rgb(0 0 0 / 15%);
   cursor: pointer;
   will-change: transform;
 }

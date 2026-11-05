@@ -3,7 +3,8 @@
   width: 100%;
   min-height: 1100px;
   margin: 0 auto;
-  background: #090a0c;
+  background: var(--chaek-color-surface-canvas);
+  color: var(--chaek-color-text-primary);
 }
 
 .wrap {
