@@ -208,6 +208,7 @@ export const BookDetailPage = () => {
                 publisher={data?.publisher}
                 description={data?.description}
                 averageRating={data?.averageRating}
+                ratingCount={data?.ratingCount}
                 reviewCount={data?.reviewCount}
                 replyCount={data?.replyCount}
                 coverImageUrl={data?.coverImageUrl}
