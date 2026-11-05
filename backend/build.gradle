@@ -1144,7 +1144,7 @@ tasks.register('verifyOpenApi') {
 		}
 		def libraryCreationResponse = responseSchema('/api/v1/libraries', 'post', '201')
 		if ((libraryCreationResponse?.get('required') as Set)
-				!= (['libraryId', 'name', 'isDefault', 'totalCount', 'items'] as Set)) {
+				!= (['libraryId', 'name', 'isDefault', 'totalCount', 'maxSize', 'items'] as Set)) {
 			throw new GradleException('OpenAPI specification has invalid fields for POST /api/v1/libraries response')
 		}
 		def libraryIdProperty = (libraryCreationResponse?.get('properties') as Map)?.get('libraryId') as Map
@@ -1195,9 +1195,9 @@ tasks.register('verifyOpenApi') {
 		def publicBook = dereferenceSchema(((publicDetail?.get('properties') as Map)?.get('items') as Map)?.get('items'))
 		[
 			[schema: publicCollection, names: ['memberId', 'libraries']],
-			[schema: publicShelf, names: ['libraryId', 'name', 'isDefault', 'totalCount', 'items']],
+			[schema: publicShelf, names: ['libraryId', 'name', 'isDefault', 'totalCount', 'maxSize', 'items']],
 			[schema: publicPreview, names: ['bookId', 'title', 'coverImageUrl', 'spineImageUrl', 'isbn13', 'authors']],
-			[schema: publicDetail, names: ['libraryId', 'memberId', 'name', 'isDefault', 'totalCount', 'items']],
+			[schema: publicDetail, names: ['libraryId', 'memberId', 'name', 'isDefault', 'totalCount', 'maxSize', 'items']],
 			[schema: publicBook, names: ['bookId', 'title', 'coverImageUrl', 'spineImageUrl', 'isbn13', 'authors', 'totalPages', 'status', 'currentPage', 'readingUpdatedAt']]
 		].each { requirement ->
 			if ((requirement.schema?.get('required') as Set) != (requirement.names as Set)) {
