@@ -6,6 +6,7 @@ import java.util.List;
 public record PublicLibraryListResponse(
         PublicMemberResponse member,
         long totalCount,
+        int maxSize,
         long filteredCount,
         Integer nextPage,
         List<PublicLibraryItemResponse> items
@@ -14,6 +15,7 @@ public record PublicLibraryListResponse(
         return new PublicLibraryListResponse(
                 PublicMemberResponse.from(member),
                 library.totalCount(),
+                library.maxSize(),
                 library.filteredCount(),
                 library.nextPage(),
                 library.items()

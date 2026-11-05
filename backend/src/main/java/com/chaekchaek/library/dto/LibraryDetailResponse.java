@@ -8,6 +8,7 @@ public record LibraryDetailResponse(
         String name,
         boolean isDefault,
         long totalCount,
+        int maxSize,
         List<LibraryBookDetailResponse> items
 ) {
     public LibraryDetailResponse {

@@ -66,6 +66,7 @@ class LibraryQueryControllerTest {
             fieldWithPath("libraries[].name").type(JsonFieldType.STRING).description("책장 이름"),
             fieldWithPath("libraries[].isDefault").type(JsonFieldType.BOOLEAN).description("기본 책장 여부"),
             fieldWithPath("libraries[].totalCount").type(JsonFieldType.NUMBER).description("책장에 담긴 도서 수"),
+            fieldWithPath("libraries[].maxSize").type(JsonFieldType.NUMBER).description("책장에 등록 가능한 최대 도서 수"),
             fieldWithPath("libraries[].items").type(JsonFieldType.ARRAY).description("설정한 순서의 도서 목록"),
             fieldWithPath("libraries[].items[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
             fieldWithPath("libraries[].items[].title").type(JsonFieldType.STRING).description("도서 제목"),
@@ -81,6 +82,7 @@ class LibraryQueryControllerTest {
             fieldWithPath("name").type(JsonFieldType.STRING).description("책장 이름"),
             fieldWithPath("isDefault").type(JsonFieldType.BOOLEAN).description("기본 책장 여부"),
             fieldWithPath("totalCount").type(JsonFieldType.NUMBER).description("책장 전체 권수"),
+            fieldWithPath("maxSize").type(JsonFieldType.NUMBER).description("책장에 등록 가능한 최대 도서 수"),
             fieldWithPath("items").type(JsonFieldType.ARRAY).description("설정한 순서의 도서 목록"),
             fieldWithPath("items[].bookId").type(JsonFieldType.NUMBER).description("도서 ID"),
             fieldWithPath("items[].title").type(JsonFieldType.STRING).description("도서 제목"),
@@ -126,6 +128,7 @@ class LibraryQueryControllerTest {
                 "기존의 긴 책장 이름 !",
                 true,
                 1L,
+                30,
                 List.of(book)
         );
         when(service.findLibraries(1L)).thenReturn(new LibraryCollectionResponse(
@@ -176,6 +179,7 @@ class LibraryQueryControllerTest {
                 "기존의 긴 책장 이름 !",
                 true,
                 1L,
+                30,
                 List.of(book)
         ));
 
@@ -221,6 +225,7 @@ class LibraryQueryControllerTest {
                 "책장",
                 false,
                 1L,
+                30,
                 List.of(book)
         ));
 
@@ -250,6 +255,7 @@ class LibraryQueryControllerTest {
                 "빈 책장",
                 false,
                 0L,
+                30,
                 List.of()
         ));
 

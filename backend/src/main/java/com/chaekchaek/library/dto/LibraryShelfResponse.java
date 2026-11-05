@@ -7,6 +7,7 @@ public record LibraryShelfResponse(
         String name,
         boolean isDefault,
         long totalCount,
+        int maxSize,
         List<LibraryBookSummaryResponse> items
 ) {
     public LibraryShelfResponse {

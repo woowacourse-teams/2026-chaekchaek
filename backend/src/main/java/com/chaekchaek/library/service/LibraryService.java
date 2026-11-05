@@ -160,6 +160,7 @@ public class LibraryService {
         }
         return new LibraryListResponse(
                 allItems.size(),
+                Library.maxSize(),
                 filteredItems.size(),
                 nextPage,
                 pageItems
