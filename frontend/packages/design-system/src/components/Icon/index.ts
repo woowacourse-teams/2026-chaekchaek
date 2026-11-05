@@ -20,6 +20,7 @@ export {
   HeartOnIcon,
   InvisibleIcon,
   LongArrowRightIcon,
+  LongArrowUpIcon,
   PencilIcon,
   RefreshIcon,
   ShareIcon,
