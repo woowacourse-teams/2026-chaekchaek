@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import com.chaekchaek.app.ui.input.TextInputPolicy
@@ -50,6 +51,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -85,6 +88,7 @@ internal fun PageInputDialog(
     onDismiss: () -> Unit,
     onSave: (Int, () -> Unit) -> Unit,
 ) {
+    val dismissKeyboard = rememberKeyboardDismissal()
     val pageState = rememberLimitedTextFieldState(BookDetailInputRules.PagePolicy, initialPage.toString())
     val value = pageState.text.toString()
     val page = BookDetailInputRules.validPage(value, totalPages)
@@ -95,6 +99,7 @@ internal fun PageInputDialog(
     val errors = remember(errorReporter) { com.chaekchaek.app.presentation.common.ErrorRecoveryState(errorReporter) }
     ErrorRecoveryEffect(errors)
     ChaekTwoActionDialog(
+        dismissKeyboardOnTap = true,
         onDismissRequest = onDismiss,
         title = { Text("어디까지 읽으셨나요?", style = MaterialTheme.typography.titleMedium) },
         text = {
@@ -114,7 +119,8 @@ internal fun PageInputDialog(
                         accessibilityLabel = "내가 읽은 쪽수",
                         modifier = Modifier.fillMaxWidth(),
                         height = 54,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                        onKeyboardAction = KeyboardActionHandler { dismissKeyboard() },
                         suffix = "쪽",
                         endText = totalPages.takeIf { it > 0 }?.let { "/ ${it}쪽" },
                         emphasized = true,
@@ -483,6 +489,7 @@ private fun ChaekTextInput(
     height: Int,
     singleLine: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    onKeyboardAction: KeyboardActionHandler? = null,
     suffix: String? = null,
     endText: String? = null,
     emphasized: Boolean = false,
@@ -500,6 +507,7 @@ private fun ChaekTextInput(
             .padding(horizontal = 12.dp, vertical = if (singleLine || suffix != null || endText != null) 0.dp else 10.dp),
         textStyle = MaterialTheme.typography.bodyMedium.copy(color = ChaekInk),
         keyboardOptions = keyboardOptions,
+        onKeyboardAction = onKeyboardAction,
         lineLimits = if (singleLine || suffix != null || endText != null) TextFieldLineLimits.SingleLine else TextFieldLineLimits.MultiLine(),
         decorator = { innerTextField ->
             if (singleLine || suffix != null || endText != null) {

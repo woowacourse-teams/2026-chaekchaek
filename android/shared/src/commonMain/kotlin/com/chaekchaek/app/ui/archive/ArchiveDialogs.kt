@@ -15,6 +15,9 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import com.chaekchaek.app.ui.input.TextInputPolicy
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -138,6 +141,7 @@ internal fun NicknameDialog(
     val errors = remember(errorReporter) { com.chaekchaek.app.presentation.common.ErrorRecoveryState(errorReporter) }
     com.chaekchaek.app.ui.common.ErrorRecoveryEffect(errors)
     ChaekTwoActionDialog(
+        dismissKeyboardOnTap = true,
         onDismissRequest = onDismiss,
         dismissButton = if (onDismiss == null) null else ({ DialogDismissButton(onDismiss) }),
         title = { Text("닉네임 설정", style = MaterialTheme.typography.titleMedium) },
@@ -171,6 +175,7 @@ internal val NicknameInputPolicy = TextInputPolicy(Nickname.MAX_LENGTH, utf16 = 
 
 @Composable
 private fun NicknameInput(nicknameState: TextFieldState, readOnly: Boolean = false) {
+    val dismissKeyboard = rememberKeyboardDismissal()
     val nickname = nicknameState.text.toString()
     Row(
         modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp).background(MaterialTheme.colorScheme.surfaceVariant, ChaekOverlayTokens.inputShape).padding(horizontal = 12.dp),
@@ -183,6 +188,8 @@ private fun NicknameInput(nicknameState: TextFieldState, readOnly: Boolean = fal
             modifier = Modifier.weight(1f).semantics { contentDescription = "닉네임 입력" },
             inputTransformation = NicknameInputPolicy.inputTransformation,
             lineLimits = TextFieldLineLimits.SingleLine,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            onKeyboardAction = { dismissKeyboard() },
             textStyle = MaterialTheme.typography.bodyMedium.copy(
                 color = MaterialTheme.colorScheme.onSurface,
             ),

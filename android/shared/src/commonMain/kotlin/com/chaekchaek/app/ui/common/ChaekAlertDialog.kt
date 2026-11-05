@@ -25,6 +25,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.chaekchaek.app.ui.input.dismissKeyboardOnUnconsumedTap
+import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
 
@@ -43,7 +45,8 @@ internal fun ChaekTwoActionDialog(
     dismissButton: @Composable (() -> Unit)?,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
-) = ChaekAlertDialog(onDismissRequest, confirmButton, dismissButton, title, text)
+    dismissKeyboardOnTap: Boolean = false,
+) = ChaekAlertDialog(onDismissRequest, confirmButton, dismissButton, title, text, dismissKeyboardOnTap)
 
 @Composable
 private fun ChaekAlertDialog(
@@ -52,7 +55,9 @@ private fun ChaekAlertDialog(
     dismissButton: @Composable (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
+    dismissKeyboardOnTap: Boolean = false,
 ) {
+    val dismissKeyboard = rememberKeyboardDismissal()
     val canDismiss = onDismissRequest != null
     Dialog(
         onDismissRequest = { onDismissRequest?.invoke() },
@@ -63,7 +68,8 @@ private fun ChaekAlertDialog(
         ),
     ) {
         Surface(
-            modifier = Modifier.padding(horizontal = 16.dp).widthIn(max = 358.dp).fillMaxWidth(),
+            modifier = Modifier.padding(horizontal = 16.dp).widthIn(max = 358.dp).fillMaxWidth()
+                .then(if (dismissKeyboardOnTap) Modifier.dismissKeyboardOnUnconsumedTap(dismissKeyboard) else Modifier),
             shape = ChaekOverlayTokens.containerShape,
             color = MaterialTheme.colorScheme.surface,
         ) {

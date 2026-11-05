@@ -36,6 +36,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import com.chaekchaek.app.ui.input.dismissKeyboardOnUnconsumedTap
+import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
 import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
 import com.chaekchaek.app.ui.search.SearchInputRules
 import com.chaekchaek.app.ui.search.syncExternalQuery
@@ -76,7 +78,8 @@ fun FirstLibraryOnboardingScreen(
     onSkip: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier.fillMaxSize().background(ChaekSurface)) {
+    val dismissKeyboard = rememberKeyboardDismissal()
+    Column(modifier.fillMaxSize().background(ChaekSurface).dismissKeyboardOnUnconsumedTap(dismissKeyboard)) {
         val contentModifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp, vertical = 24.dp)
         if (state.step == OnboardingStep.SEARCH) {
             Column(contentModifier) {
@@ -180,7 +183,9 @@ private fun SearchContent(
             if (accepted != currentQuery) notifyQueryChange(accepted)
         }
     }
+    val dismissKeyboard = rememberKeyboardDismissal()
     val submitSearch = {
+        dismissKeyboard()
         onQueryChange(input.text.toString())
         onSearch()
     }
