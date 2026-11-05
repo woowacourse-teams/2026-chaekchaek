@@ -121,7 +121,7 @@ public class Library {
         return MAX_BOOK_COUNT;
     }
 
-    public void assertCanAddBook(long currentCount) {
+    public void validateCanAddBook(long currentCount) {
         if (currentCount >= MAX_BOOK_COUNT) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_LIMIT_EXCEEDED);
         }

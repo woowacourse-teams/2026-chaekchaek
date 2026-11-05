@@ -167,7 +167,7 @@ class LibraryTest {
         Library library = Library.create(1L, "가을책장", NOW);
 
         // when & then
-        library.assertCanAddBook(currentCount);
+        library.validateCanAddBook(currentCount);
         assertThat(Library.maxSize()).isEqualTo(30);
     }
 
@@ -179,7 +179,7 @@ class LibraryTest {
         Library library = Library.create(1L, "가을책장", NOW);
 
         // when & then
-        assertThatThrownBy(() -> library.assertCanAddBook(currentCount))
+        assertThatThrownBy(() -> library.validateCanAddBook(currentCount))
                 .isInstanceOfSatisfying(
                         BusinessException.class,
                         exception -> assertThat(exception.getErrorCode())

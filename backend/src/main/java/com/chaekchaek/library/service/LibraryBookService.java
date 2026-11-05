@@ -157,7 +157,7 @@ public class LibraryBookService {
         if (libraryBookRepository.existsByLibraryIdAndBookId(libraryId, bookId)) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
         }
-        library.assertCanAddBook(libraryBookRepository.countByLibraryId(libraryId));
+        library.validateCanAddBook(libraryBookRepository.countByLibraryId(libraryId));
         book.rememberTotalPages(totalPages);
 
         Instant now = clock.instant();
