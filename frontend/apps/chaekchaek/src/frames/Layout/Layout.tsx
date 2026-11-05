@@ -18,7 +18,7 @@ const envIndicators = {
 };
 
 export const Layout = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, ...restProps } = props;
+  const { as = 'div', className, children, floating, ...restProps } = props;
 
   const modifiers = {
     env: styles[envIndicators[ENV.APP_ENV]],
@@ -31,5 +31,10 @@ export const Layout = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
-  return <View as={as} className={classname} {...restProps} />;
+  return (
+    <View as={as} className={classname} {...restProps}>
+      {children}
+      {floating && <div className={styles.floating}>{floating}</div>}
+    </View>
+  );
 };
