@@ -9,7 +9,7 @@ export type ReviewFormValues = {
 
 export const validateReview = ({ content, isSpoiler, quote }: ReviewFormValues) => {
   const rules = {
-    content: [{ type: 'isRequired', message: '느낀점은 필수값입니다' }],
+    content: [{ type: 'isRequired', message: '감상을 입력해 주세요.' }],
     isSpoiler: [],
     quote: [],
   } satisfies FormValuesRules<ReviewFormValues>;
