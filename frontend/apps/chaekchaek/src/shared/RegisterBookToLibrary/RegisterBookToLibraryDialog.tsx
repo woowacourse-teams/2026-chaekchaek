@@ -24,8 +24,6 @@ import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLi
 
 type LibraryId = number;
 
-export const LIBRARY_BOOK_MAX_LENGTH = 30;
-
 export const RegisterBookToLibraryDialog = ({
   book,
   onBookRegistered,
@@ -143,7 +141,7 @@ export const RegisterBookToLibraryDialog = ({
             {librariesData?.libraries.map((library) => {
               const isIncluded = selection.includes(library.libraryId);
 
-              const isLimitReached = library.items.length >= LIBRARY_BOOK_MAX_LENGTH;
+              const isLimitReached = library.items.length >= library.maxSize;
 
               const isCheckDisabled = !isIncluded && isLimitReached;
 

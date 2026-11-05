@@ -18,7 +18,6 @@ import { useInfiniteLoadData } from '@/services/core/useInfiniteLoadData';
 import { getLibrariesLibraryId } from '@/services/apis/librariesLibraryId/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
-import { LIBRARY_BOOK_MAX_LENGTH } from '../../AddBooksToLibraryDialog';
 import type { SearchPanelProps } from './SearchPanel.types';
 
 export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
@@ -101,13 +100,14 @@ export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
     onSubmit(selection);
   };
 
+  const maxSize = currentLibraryBooks?.maxSize;
   const totalBookCount = (currentLibraryBooks?.items.length ?? 0) + selection.length;
-  const remainingBookCount = LIBRARY_BOOK_MAX_LENGTH - totalBookCount;
-  const isLimitReached = remainingBookCount <= 0;
+  const remainingBookCount = maxSize === undefined ? null : maxSize - totalBookCount;
+  const isLimitReached = remainingBookCount !== null && remainingBookCount <= 0;
 
   const infoMessage = isLimitReached
     ? '책장이 가득 찼어요. 책을 추가하려면 선택을 해제해 주세요.'
-    : `${remainingBookCount}권 더 담을 수 있어요 (${totalBookCount}/${LIBRARY_BOOK_MAX_LENGTH})`;
+    : `${remainingBookCount}권 더 담을 수 있어요 (${totalBookCount}/${maxSize})`;
 
   return (
     <>
