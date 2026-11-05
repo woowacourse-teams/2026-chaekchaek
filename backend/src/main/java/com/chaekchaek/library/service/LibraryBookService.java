@@ -31,8 +31,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class LibraryBookService {
 
-    private static final int LIBRARY_BOOK_LIMIT = 30;
-
     private final LibraryRepository libraryRepository;
     private final LibraryBookRepository libraryBookRepository;
     private final LibraryItemRepository libraryItemRepository;
@@ -153,15 +151,13 @@ public class LibraryBookService {
             Integer totalPages
     ) {
         lockActiveMember(memberId);
-        requireOwnedLibrary(memberId, libraryId);
+        Library library = requireOwnedLibrary(memberId, libraryId);
 
         Book book = bookRepository.findByIdForUpdate(bookId).orElseThrow(BookNotFoundException::new);
         if (libraryBookRepository.existsByLibraryIdAndBookId(libraryId, bookId)) {
             throw new BusinessException(ErrorCode.LIBRARY_ITEM_ALREADY_EXISTS);
         }
-        if (libraryBookRepository.countByLibraryId(libraryId) >= LIBRARY_BOOK_LIMIT) {
-            throw new BusinessException(ErrorCode.LIBRARY_ITEM_LIMIT_EXCEEDED);
-        }
+        library.assertCanAddBook(libraryBookRepository.countByLibraryId(libraryId));
         book.rememberTotalPages(totalPages);
 
         Instant now = clock.instant();
