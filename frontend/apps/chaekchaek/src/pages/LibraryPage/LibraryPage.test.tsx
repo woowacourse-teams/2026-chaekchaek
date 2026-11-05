@@ -587,7 +587,7 @@ describe('LibraryPage', () => {
     // 삭제할 책의 목록 항목에 삭제 버튼이 표시되는지 확인한다.
     const bookItem = bookTitle.closest<HTMLElement>('.ui-List-Item');
     if (!bookItem) throw new Error('삭제할 책의 목록 항목을 찾을 수 없습니다.');
-    const deleteButton = within(bookItem).getByRole('button', { name: /삭제/ });
+    const deleteButton = within(bookItem).getByRole('button', { name: '빼기' });
     expect(deleteButton).toBeVisible();
 
     // 해당 책의 삭제 버튼을 클릭한다.
@@ -655,7 +655,7 @@ describe('LibraryPage', () => {
     // 삭제할 책의 목록 항목에 삭제 버튼이 표시되는지 확인한다.
     const bookItem = bookTitle.closest<HTMLElement>('.ui-List-Item');
     if (!bookItem) throw new Error('삭제할 책의 목록 항목을 찾을 수 없습니다.');
-    const deleteButton = within(bookItem).getByRole('button', { name: /삭제/ });
+    const deleteButton = within(bookItem).getByRole('button', { name: '빼기' });
     expect(deleteButton).toBeVisible();
 
     // 해당 책의 삭제 버튼을 클릭한다.

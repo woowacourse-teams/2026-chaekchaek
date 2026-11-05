@@ -341,7 +341,7 @@ describe('LibrariesPage', () => {
     for (const book of libraryToEditResponse.items) {
       const bookItem = screen.getByText(book.title).closest<HTMLElement>('.ui-List-Item');
       if (!bookItem) throw new Error('책 목록 항목을 찾을 수 없습니다.');
-      expect(within(bookItem).getByRole('button', { name: /삭제/ })).toBeVisible();
+      expect(within(bookItem).getByRole('button', { name: '빼기' })).toBeVisible();
     }
   });
 

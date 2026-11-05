@@ -445,7 +445,7 @@ export const LibraryPage = () => {
                         <List.Item.Trailing>
                           {isEditing ? (
                             <IconButton
-                              aria-label="삭제"
+                              aria-label="빼기"
                               onClick={() => {
                                 handleClickDeleteBook(item.bookId);
                               }}
