@@ -35,7 +35,7 @@ describe('LibrariesPage', () => {
   it('기본 렌더링이 된다', () => {
     renderProvider(<LibrariesPage />);
 
-    expect(screen.getByText('나의 책장')).toBeInTheDocument();
+    expect(screen.getByText('내 책장')).toBeInTheDocument();
   });
 
   it('내 책장에 진입하면 등록된 책장 목록이 표시된다', async () => {

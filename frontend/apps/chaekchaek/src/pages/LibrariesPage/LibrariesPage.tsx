@@ -261,7 +261,7 @@ export const LibrariesPage = () => {
           <ContentArea spacing="large">
             <Title
               level="main"
-              description="책장 순서를 드래그로 변경하고, 책등도 순서대로 재배치할 수 있어요."
+              description="책장과 책을 드래그해 순서를 바꿀 수 있어요."
               trailing={
                 <IconButton
                   variant="secondary"
@@ -274,7 +274,7 @@ export const LibrariesPage = () => {
                 </IconButton>
               }
             >
-              나의 책장
+              내 책장
             </Title>
 
             <DragDropProvider onDragEnd={handleDragEndLibrary}>

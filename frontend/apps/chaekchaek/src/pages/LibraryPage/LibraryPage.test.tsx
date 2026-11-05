@@ -543,7 +543,7 @@ describe('LibraryPage', () => {
     await user.click(screen.getByRole('button', { name: '책장 삭제' }));
 
     // 서재 페이지로 이동했는지 확인한다.
-    expect(await screen.findByText('나의 책장')).toBeVisible();
+    expect(await screen.findByText('내 책장')).toBeVisible();
   });
 
   it('편집 모드에서 책의 삭제 버튼을 클릭하면 해당 책이 목록에서 제거된다', async () => {
