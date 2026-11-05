@@ -6,6 +6,7 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
+import { ScrollToTopButton } from '@/frames/ScrollToTopButton';
 
 import { Chip, Icon, IconButton, Notice, Split, VisuallyHidden } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
@@ -184,7 +185,7 @@ export const BooksPage = () => {
   const dialogElement = renderDialog(dialog);
 
   return (
-    <Layout>
+    <Layout floating={<ScrollToTopButton />}>
       <Header />
       <Main>
         <Container>

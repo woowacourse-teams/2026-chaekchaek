@@ -5,6 +5,7 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
+import { ScrollToTopButton } from '@/frames/ScrollToTopButton';
 
 // import DummyLargeImgBox from '../../components/ImgBox/imgs/dummy-large.png';
 import { Split } from '@chaekchaek/design-system';
@@ -180,7 +181,7 @@ export const BookDetailPage = () => {
   const dialogElement = renderDialog(dialog);
 
   return (
-    <Layout>
+    <Layout floating={<ScrollToTopButton />}>
       <Header />
       <Main>
         <Container>
