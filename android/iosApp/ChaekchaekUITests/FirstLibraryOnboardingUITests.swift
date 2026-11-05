@@ -107,7 +107,7 @@ final class FirstLibraryOnboardingUITests: XCTestCase {
         if cancelSignIn.waitForExistence(timeout: 3) {
             cancelSignIn.tap()
         }
-        for name in ["피드", "발견", "홈"] {
+        for name in ["피드", "검색", "홈"] {
             let tab = app.buttons[name]
             XCTAssertTrue(tab.exists)
             tab.tap()

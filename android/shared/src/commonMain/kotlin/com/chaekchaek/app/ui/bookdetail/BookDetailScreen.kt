@@ -2,6 +2,7 @@ package com.chaekchaek.app.ui.bookdetail
 
 import com.chaekchaek.app.ui.common.authorProfileLink
 
+import com.chaekchaek.app.ui.common.LazyListScrollTopButton
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -59,7 +60,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -139,7 +139,6 @@ import com.chaekchaek.app.ui.common.ChaekFilterChip
 import com.chaekchaek.app.ui.theme.ChaekSurface
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 import com.chaekchaek.app.ui.theme.detailBookShadow
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -195,16 +194,12 @@ fun BookDetailScreen(
     allowZeroReviewRating: Boolean = false,
     onQuestionAReviewCreate: ((QuestionAReviewDraft) -> Unit)? = null,
     onQuestionAReviewUpdate: ((Long, QuestionAReviewDraft, ReviewCreateRequest) -> Unit)? = null,
+    showOtherShelfMenu: Boolean = true,
 ) {
     errorRecovery?.let { com.chaekchaek.app.ui.common.ErrorRecoveryEffect(it) }
     val book = state.displayBook ?: return
     val listState = key(state.signedIn) { rememberLazyListState() }
-    val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
-    val threshold = remember(density) { with(density) { 240.dp.roundToPx() } }
-    val showScrollTop by remember(listState, threshold) {
-        derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset >= threshold }
-    }
     val reachedBottom by remember(listState) { derivedStateOf { !listState.canScrollForward } }
     val currentPage = state.detail?.myRecord?.currentPage ?: localCurrentPage
     val snackbarHostState = remember { SnackbarHostState() }
@@ -314,6 +309,7 @@ fun BookDetailScreen(
                         referenceOverlayBounds = activeOverlayBounds,
                         book = book,
                         saved = savedToLibrary,
+                        showOtherShelfMenu = showOtherShelfMenu,
                         averageRating = state.detail?.averageRating,
                         saving = state.isSavingLibrary || externalLibrarySaving,
                         showSaveLoading = state.isSubmitting || (externalLibrarySaving && externalLibraryLoading),
@@ -400,12 +396,10 @@ fun BookDetailScreen(
                 .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 16.dp),
         )
 
-        if (showScrollTop) {
-            ScrollTopButton(
-                onClick = { coroutineScope.launch { listState.animateScrollToItem(0) } },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
-            )
-        }
+        LazyListScrollTopButton(
+            listState = listState,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
+        )
         if (showQuestionReference && question != null && hasQuestionReference) {
             // 패널은 목록과 별개로 그린다. 바깥 영역의 스크롤과 기존 위치를 유지한다.
             val layout = bookQuestionOverlayLayout(maxHeight.value, (maxHeight - composeBarHeight).value.coerceAtLeast(0f))
@@ -608,6 +602,7 @@ private fun BookHero(
     referenceOverlayBounds: Rect,
     book: BookDetailArgs,
     saved: Boolean,
+    showOtherShelfMenu: Boolean,
     averageRating: Double?,
     saving: Boolean,
     showSaveLoading: Boolean,
@@ -646,7 +641,7 @@ private fun BookHero(
             )
             Spacer(Modifier.weight(1f))
             Box {
-                if (saved) {
+                if (saved && showOtherShelfMenu) {
                     Box(
                         modifier = Modifier.size(44.dp).clickable(
                             enabled = !saving, role = Role.Button,
@@ -1321,28 +1316,13 @@ private fun ComposeBar(onClick: () -> Unit, modifier: Modifier = Modifier) {
         color = ChaekInk,
     ) {
         Row(modifier = Modifier.padding(horizontal = 18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("✎  이 순간의 감상 남기기", color = Color.White, fontSize = 14.sp, lineHeight = 18.sp)
+            Text("✎  피드에 올리기", color = Color.White, fontSize = 14.sp, lineHeight = 18.sp)
             Spacer(Modifier.weight(1f))
             Text("↗", color = ChaekAccent, fontSize = 20.sp, lineHeight = 24.sp, fontFamily = ChaekIconFontFamily())
         }
     }
 }
 
-@Composable
-private fun ScrollTopButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.size(48.dp).shadow(6.dp, CircleShape),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text("⌃", fontSize = 15.sp, lineHeight = 12.sp, fontFamily = ChaekIconFontFamily())
-            Text("TOP", fontSize = 11.sp, fontFamily = FontFamily.Monospace)
-        }
-    }
-}
 
 internal fun QuestionAReviewDraft.toReviewRequest() = ReviewCreateRequest(
     content = content.trim(),

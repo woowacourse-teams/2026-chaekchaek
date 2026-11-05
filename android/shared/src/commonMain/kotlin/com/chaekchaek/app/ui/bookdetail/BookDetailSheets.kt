@@ -52,6 +52,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import com.chaekchaek.app.ui.common.KeyboardDismissButton
+import com.chaekchaek.app.ui.input.KeyboardDismissalArea
 import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
 import com.chaekchaek.app.ui.input.excludeFromKeyboardDismissal
 import androidx.compose.ui.text.input.KeyboardType
@@ -89,7 +91,6 @@ internal fun PageInputDialog(
     onDismiss: () -> Unit,
     onSave: (Int, () -> Unit) -> Unit,
 ) {
-    val dismissKeyboard = rememberKeyboardDismissal()
     val pageState = rememberLimitedTextFieldState(BookDetailInputRules.PagePolicy, initialPage.toString())
     val value = pageState.text.toString()
     val page = BookDetailInputRules.validPage(value, totalPages)
@@ -104,6 +105,7 @@ internal fun PageInputDialog(
         onDismissRequest = onDismiss,
         title = { Text("어디까지 읽으셨나요?", style = MaterialTheme.typography.titleMedium) },
         text = {
+            val dismissKeyboard = rememberKeyboardDismissal()
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     "지금까지 읽은 쪽수를 입력하면 독서 진행률에 반영돼요.",
@@ -135,15 +137,19 @@ internal fun PageInputDialog(
             }
         },
         dismissButton = { ChaekOverlayButton("취소", onDismiss, secondary = true) },
-        confirmButton = { ChaekOverlayButton("저장", {
-            if (page != null) {
-                val submitted = pageState.text.toString()
-                onSave(page) {
-                    if (active && pageState.text.toString() == submitted) latestOnDismiss()
+        confirmButton = {
+            val dismissKeyboard = rememberKeyboardDismissal()
+            ChaekOverlayButton("저장", {
+                dismissKeyboard()
+                if (page != null) {
+                    val submitted = pageState.text.toString()
+                    onSave(page) {
+                        if (active && pageState.text.toString() == submitted) latestOnDismiss()
+                    }
                 }
-            }
-            else errors.confirm(if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.")
-        }) },
+                else errors.confirm(if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.")
+            })
+        },
     )
 }
 
@@ -197,7 +203,9 @@ internal fun ReviewInputSheet(
         content != initialContent || quote != initialQuote || chapter != initialChapter ||
             pageValue != initialPageValue || isSpoiler != initialSpoiler
     }
+    val dismissKeyboard = rememberKeyboardDismissal()
     val requestDismiss = {
+        dismissKeyboard()
         if (!isSaving) {
             if (hasDraft) showDiscardConfirmation = true else onDismiss()
         }
@@ -216,145 +224,150 @@ internal fun ReviewInputSheet(
             )
         },
     ) {
-        Box {
-            Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding()
-                    .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                SheetHeader(title = if (initialReview == null) "감상 남기기" else "감상 수정", onDismiss = requestDismiss)
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FormLabel("감상", required = true)
-                    ChaekTextInput(
-                        state = contentState,
-                        policy = BookDetailInputRules.ContentPolicy,
-                        placeholder = "이 구간을 읽으며 든 생각을 남겨보세요",
-                        accessibilityLabel = "감상 (필수)",
-                        readOnly = isSaving,
-                        modifier = Modifier.fillMaxWidth(),
-                        height = 120,
-                        emphasized = true,
-                    )
-                    Text("감상은 반드시 입력해 주세요.", style = MaterialTheme.typography.bodySmall, color = ChaekInk)
-                    Text("${content.length} / ${BookDetailInputRules.MAX_CONTENT_LENGTH}", modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.End, style = MaterialTheme.typography.labelMedium, color = ChaekInkSecondary)
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
-                            .toggleable(value = isSpoiler, enabled = !isSaving, role = Role.Checkbox) { isSpoiler = it },
-                        shape = RoundedCornerShape(6.dp),
-                        color = ChaekSurfaceMuted,
-                    ) {
-                        Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier.size(18.dp).background(ChaekSurface, RoundedCornerShape(4.dp))
-                                    .border(1.dp, ChaekBorder, RoundedCornerShape(4.dp)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                if (isSpoiler) Text(
-                                    "✓",
-                                    color = ChaekInk,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = ChaekIconFontFamily(),
+        KeyboardDismissalArea { keyboardDismissalModifier ->
+            val dismissKeyboard = rememberKeyboardDismissal()
+            Box(keyboardDismissalModifier) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding()
+                        .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    SheetHeader(title = if (initialReview == null) "감상 남기기" else "감상 수정", onDismiss = { dismissKeyboard(); requestDismiss() })
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FormLabel("감상", required = true)
+                        ChaekTextInput(
+                            state = contentState,
+                            policy = BookDetailInputRules.ContentPolicy,
+                            placeholder = "이 구간을 읽으며 든 생각을 남겨보세요",
+                            accessibilityLabel = "감상 (필수)",
+                            readOnly = isSaving,
+                            modifier = Modifier.fillMaxWidth(),
+                            height = 120,
+                            emphasized = true,
+                        )
+                        Text("감상은 반드시 입력해 주세요.", style = MaterialTheme.typography.bodySmall, color = ChaekInk)
+                        Text("${content.length} / ${BookDetailInputRules.MAX_CONTENT_LENGTH}", modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End, style = MaterialTheme.typography.labelMedium, color = ChaekInkSecondary)
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                                .toggleable(value = isSpoiler, enabled = !isSaving, role = Role.Checkbox) { isSpoiler = it },
+                            shape = RoundedCornerShape(6.dp),
+                            color = ChaekSurfaceMuted,
+                        ) {
+                            Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier.size(18.dp).background(ChaekSurface, RoundedCornerShape(4.dp))
+                                        .border(1.dp, ChaekBorder, RoundedCornerShape(4.dp)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    if (isSpoiler) Text(
+                                        "✓",
+                                        color = ChaekInk,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = ChaekIconFontFamily(),
+                                    )
+                                }
+                                Text(
+                                    "스포일러",
+                                    modifier = Modifier.padding(start = 8.dp),
+                                    color = ChaekDanger,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
                                 )
                             }
-                            Text(
-                                "스포일러",
-                                modifier = Modifier.padding(start = 8.dp),
-                                color = ChaekDanger,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                            )
                         }
                     }
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FormLabel("인상 깊은 문구 (선택)")
-                    ChaekTextInput(
-                        state = quoteState,
-                        policy = BookDetailInputRules.QuotePolicy,
-                        placeholder = "기억하고 싶은 문장을 옮겨 적어보세요",
-                        accessibilityLabel = "인상 깊은 문구",
-                        readOnly = isSaving,
-                        modifier = Modifier.fillMaxWidth(),
-                        height = 54,
-                    )
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    if (allowReadingProgress) {
-                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            FormLabel("쪽수")
-                            ChaekTextInput(
-                                state = pageValueState,
-                                policy = BookDetailInputRules.PagePolicy,
-                                placeholder = "80",
-                                accessibilityLabel = "쪽수",
-                                readOnly = isSaving,
-                                modifier = Modifier.fillMaxWidth(),
-                                height = 54,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                suffix = "쪽",
-                            )
-                        }
-                    }
-                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FormLabel("목차 / 챕터 (선택)")
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        FormLabel("인상 깊은 문구 (선택)")
                         ChaekTextInput(
-                            state = chapterState,
-                            policy = BookDetailInputRules.ChapterPolicy,
-                            placeholder = "Chapter 1",
-                            accessibilityLabel = "목차 또는 챕터",
+                            state = quoteState,
+                            policy = BookDetailInputRules.QuotePolicy,
+                            placeholder = "기억하고 싶은 문장을 옮겨 적어보세요",
+                            accessibilityLabel = "인상 깊은 문구",
                             readOnly = isSaving,
                             modifier = Modifier.fillMaxWidth(),
                             height = 54,
-                            singleLine = true,
+                        )
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        if (allowReadingProgress) {
+                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                FormLabel("쪽수")
+                                ChaekTextInput(
+                                    state = pageValueState,
+                                    policy = BookDetailInputRules.PagePolicy,
+                                    placeholder = "80",
+                                    accessibilityLabel = "쪽수",
+                                    readOnly = isSaving,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    height = 54,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    suffix = "쪽",
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FormLabel("목차 / 챕터 (선택)")
+                            ChaekTextInput(
+                                state = chapterState,
+                                policy = BookDetailInputRules.ChapterPolicy,
+                                placeholder = "Chapter 1",
+                                accessibilityLabel = "목차 또는 챕터",
+                                readOnly = isSaving,
+                                modifier = Modifier.fillMaxWidth(),
+                                height = 54,
+                                singleLine = true,
+                            )
+                        }
+                    }
+                    Surface(modifier = Modifier.fillMaxWidth().height(40.dp), shape = RoundedCornerShape(6.dp), color = ChaekSurfaceMuted) {
+                        Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painterResource(Res.drawable.ic_eye_off),
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = ChaekInk,
+                            )
+                            Text(
+                                if (displayedAnonymously) "익명" else "공개",
+                                modifier = Modifier.padding(start = 7.dp),
+                                color = ChaekInk,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                "‘${displayedNickname.ifBlank { if (displayedAnonymously) "익명" else "닉네임 없음" }}’으로 표시돼요",
+                                modifier = Modifier.padding(start = 7.dp),
+                                color = ChaekInkSecondary,
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
+                    KeyboardDismissButton(Modifier.align(Alignment.End))
+                    SheetPrimaryButton(label = if (initialReview == null) "감상 남기기" else "수정 저장", enabled = !isSaving) {
+                        dismissKeyboard()
+                        if (isSaving) return@SheetPrimaryButton
+                        if (!canSubmit) {
+                            errors.confirm(if (content.isBlank()) "감상을 입력해 주세요." else
+                                if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.")
+                            return@SheetPrimaryButton
+                        }
+                        onSave(
+                            ReviewCreateRequest(
+                                content = content.trim(),
+                                quote = quote.trim().ifEmpty { null },
+                                chapter = chapter.trim().ifEmpty { null },
+                                currentPage = page,
+                                totalPages = totalPages.takeIf { allowReadingProgress && page != null && it > 0 },
+                                isSpoiler = isSpoiler,
+                            ),
                         )
                     }
                 }
-                Surface(modifier = Modifier.fillMaxWidth().height(40.dp), shape = RoundedCornerShape(6.dp), color = ChaekSurfaceMuted) {
-                    Row(modifier = Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            painterResource(Res.drawable.ic_eye_off),
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = ChaekInk,
-                        )
-                        Text(
-                            if (displayedAnonymously) "익명" else "공개",
-                            modifier = Modifier.padding(start = 7.dp),
-                            color = ChaekInk,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            "‘${displayedNickname.ifBlank { if (displayedAnonymously) "익명" else "닉네임 없음" }}’으로 표시돼요",
-                            modifier = Modifier.padding(start = 7.dp),
-                            color = ChaekInkSecondary,
-                            fontSize = 12.sp,
-                        )
-                    }
-                }
-                SheetPrimaryButton(label = if (initialReview == null) "감상 남기기" else "수정 저장", enabled = !isSaving) {
-                    if (isSaving) return@SheetPrimaryButton
-                    if (!canSubmit) {
-                        errors.confirm(if (content.isBlank()) "감상을 입력해 주세요." else
-                            if (totalPages > 0) "0쪽부터 ${totalPages}쪽까지 입력해 주세요." else "올바른 쪽수를 입력해 주세요.")
-                        return@SheetPrimaryButton
-                    }
-                    onSave(
-                        ReviewCreateRequest(
-                            content = content.trim(),
-                            quote = quote.trim().ifEmpty { null },
-                            chapter = chapter.trim().ifEmpty { null },
-                            currentPage = page,
-                            totalPages = totalPages.takeIf { allowReadingProgress && page != null && it > 0 },
-                            isSpoiler = isSpoiler,
-                        ),
-                    )
-                }
+                if (showLoading) RequestLoadingOverlay(Modifier.matchParentSize())
+                snackbarHostState?.let { ChaekSnackbarHost(it) }
             }
-            if (showLoading) RequestLoadingOverlay(Modifier.matchParentSize())
-            snackbarHostState?.let { ChaekSnackbarHost(it) }
         }
     }
     if (showDiscardConfirmation) {
@@ -388,6 +401,8 @@ internal fun ReplyInputSheet(
     val errorReporter = com.chaekchaek.app.analytics.LocalAnalyticsTracker.current.errors
     val errors = remember(errorReporter) { com.chaekchaek.app.presentation.common.ErrorRecoveryState(errorReporter) }
     ErrorRecoveryEffect(errors)
+    val dismissKeyboard = rememberKeyboardDismissal()
+    val closeSheet = { dismissKeyboard(); onDismiss() }
     val contentState = rememberLimitedTextFieldState(ReplyInputRules.Policy, initialContent, initialContent)
     val content = contentState.text.toString()
     val canSubmit = ReplyInputRules.canSubmit(content)
@@ -397,28 +412,33 @@ internal fun ReplyInputSheet(
         onDispose { active = false }
     }
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = closeSheet,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = ChaekSurface,
         shape = ChaekOverlayTokens.sheetShape,
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            SheetHeader(if (initialContent.isEmpty()) "답글 작성" else "답글 수정", onDismiss)
-            FormLabel("답글")
-            ChaekTextInput(contentState, ReplyInputRules.Policy, "답글을 입력하세요", "답글",
-                Modifier.fillMaxWidth(), 120)
-            Text("${content.length} / ${ReplyInputRules.MAX_LENGTH}", Modifier.fillMaxWidth(), color = ChaekInkSecondary,
-                textAlign = TextAlign.End, style = MaterialTheme.typography.labelMedium)
-            SheetPrimaryButton(if (initialContent.isEmpty()) "등록" else "수정 저장") {
-                if (canSubmit) {
-                    val submitted = contentState.text.toString()
-                    onSave(submitted.trim()) {
-                        if (active && contentState.text.toString() == submitted) latestOnSaved()
-                    }
-                } else errors.confirm("답글을 입력해 주세요.")
+        KeyboardDismissalArea { keyboardDismissalModifier ->
+            val dismissKeyboard = rememberKeyboardDismissal()
+            Column(
+                modifier = keyboardDismissalModifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                SheetHeader(if (initialContent.isEmpty()) "답글 작성" else "답글 수정", { dismissKeyboard(); closeSheet() })
+                FormLabel("답글")
+                ChaekTextInput(contentState, ReplyInputRules.Policy, "답글을 입력하세요", "답글",
+                    Modifier.fillMaxWidth(), 120)
+                Text("${content.length} / ${ReplyInputRules.MAX_LENGTH}", Modifier.fillMaxWidth(), color = ChaekInkSecondary,
+                    textAlign = TextAlign.End, style = MaterialTheme.typography.labelMedium)
+                KeyboardDismissButton(Modifier.align(Alignment.End))
+                SheetPrimaryButton(if (initialContent.isEmpty()) "등록" else "수정 저장") {
+                    dismissKeyboard()
+                    if (canSubmit) {
+                        val submitted = contentState.text.toString()
+                        onSave(submitted.trim()) {
+                            if (active && contentState.text.toString() == submitted) latestOnSaved()
+                        }
+                    } else errors.confirm("답글을 입력해 주세요.")
+                }
             }
         }
     }
@@ -497,6 +517,8 @@ private fun ChaekTextInput(
     readOnly: Boolean = false,
 ) {
     val shape = ChaekOverlayTokens.inputShape
+    val dismissKeyboard = rememberKeyboardDismissal()
+    val singleLineInput = singleLine || suffix != null || endText != null
     val value = state.text.toString()
     BasicTextField(
         state = state,
@@ -507,8 +529,8 @@ private fun ChaekTextInput(
             .semantics { contentDescription = accessibilityLabel }
             .padding(horizontal = 12.dp, vertical = if (singleLine || suffix != null || endText != null) 0.dp else 10.dp),
         textStyle = MaterialTheme.typography.bodyMedium.copy(color = ChaekInk),
-        keyboardOptions = keyboardOptions,
-        onKeyboardAction = onKeyboardAction,
+        keyboardOptions = if (singleLineInput) keyboardOptions.copy(imeAction = ImeAction.Done) else keyboardOptions,
+        onKeyboardAction = onKeyboardAction ?: if (singleLineInput) KeyboardActionHandler { dismissKeyboard() } else null,
         lineLimits = if (singleLine || suffix != null || endText != null) TextFieldLineLimits.SingleLine else TextFieldLineLimits.MultiLine(),
         decorator = { innerTextField ->
             if (singleLine || suffix != null || endText != null) {

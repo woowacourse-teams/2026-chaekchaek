@@ -159,11 +159,13 @@ internal fun NicknameDialog(
             }
         },
         confirmButton = {
+            val dismissKeyboard = rememberKeyboardDismissal()
             DialogConfirmButton(
                 label = if (saving) "저장 중" else "확인",
                 modifier = Modifier.semantics { contentDescription = if (saving) "저장 중" else "확인" },
                 enabled = !saving,
                 onClick = {
+                    dismissKeyboard()
                     if (Nickname.isValid(nickname.trim())) onConfirm()
                     else errors.confirm("공백이 아닌 최대 10자의 닉네임을 입력해 주세요.")
                 },

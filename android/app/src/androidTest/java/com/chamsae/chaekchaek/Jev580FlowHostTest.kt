@@ -86,7 +86,7 @@ class Jev580FlowHostTest {
                     )
                 }
             }
-            compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
+            compose.onNodeWithText("피드에 올리기", substring = true).performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithTag("reviewAnonymousSetting").fetchSemanticsNodes().isNotEmpty() }
             post("/__580/ready?phase=review")
             var restored = false

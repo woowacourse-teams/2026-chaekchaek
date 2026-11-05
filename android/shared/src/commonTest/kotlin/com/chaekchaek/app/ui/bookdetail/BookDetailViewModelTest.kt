@@ -529,20 +529,28 @@ class BookDetailViewModelTest {
     }
     val client = testClient(engine)
     val vm = viewModel(client, client, platform({ null }))
-    vm.open(book().copy(isbn13 = "9780000000042"), "member")
-    awaitReal { vm.uiState.first { it.detail != null } }
-    vm.addToLibrary()
-    vm.addToLibrary()
-    awaitReal { vm.uiState.first { it.detail?.myRecord != null && !it.isSavingLibrary } }
-    vm.addToLibrary()
-    runCurrent()
-    assertEquals(1, paths.count { it == "/api/v1/library" })
-    assertFalse(paths.any { it.endsWith("/bulk-delete") })
-    assertEquals("내 서재에 담았어요", vm.uiState.value.libraryMessage)
-    vm.removeFromLibrary(73)
-    awaitReal { vm.uiState.first { it.libraryMessage == "서재에서 삭제했어요" } }
-    assertNull(vm.uiState.value.detail?.myRecord)
-    assertEquals(1, paths.count { it.endsWith("/bulk-delete") })
+    val store = ViewModelStore().also { it.put("detail", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), "member")
+      awaitReal { vm.uiState.first { it.detail != null } }
+      vm.addToLibrary()
+      vm.addToLibrary()
+      awaitReal { vm.uiState.first { it.detail?.myRecord != null && !it.isSavingLibrary } }
+      vm.addToLibrary()
+      runCurrent()
+      assertEquals(1, paths.count { it == "/api/v1/library" })
+      assertFalse(paths.any { it.endsWith("/bulk-delete") })
+      assertEquals("내 서재에 담았어요", vm.uiState.value.libraryMessage)
+      vm.removeFromLibrary(73)
+      awaitReal { vm.uiState.first { it.libraryMessage == "서재에서 삭제했어요" } }
+      assertNull(vm.uiState.value.detail?.myRecord)
+      assertEquals(1, paths.count { it.endsWith("/bulk-delete") })
+    } finally {
+      // 삭제 성공 메시지 뒤 재조회가 이어지므로 Main을 해제하기 전에 VM 작업을 정리한다.
+      store.clear()
+      advanceUntilIdle()
+      client.close()
+    }
   }
 
   @Test

@@ -7,6 +7,12 @@ import com.chaekchaek.app.data.remote.BookshelfDetail
 import com.chaekchaek.app.data.remote.BookshelfRepository
 import com.chaekchaek.app.data.remote.LibraryRecord
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
+import com.chaekchaek.app.ui.BookDetailKey
+import com.chaekchaek.app.ui.ShelfSearchContext
+import com.chaekchaek.app.ui.ShelfSearchOrigin
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -121,6 +127,26 @@ class LibraryTargetShelfSaveTest {
             assertEquals(listOf(2L to "first"), repo.added)
             assertEquals(10L, vm.uiState.value.memberId)
             assertEquals(0, vm.uiState.value.savedCount)
+        } finally { Dispatchers.resetMain() }
+    }
+
+    @Test fun `검색에서 연 상세의 출발 책장은 토큰 만료와 동일 회원 로그인 후에도 유지된다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val repo = TargetShelves(listOf(shelf(1), shelf(2)))
+            val vm = LibrarySaveViewModel({ _, _, _ -> error("기본 경로 호출 금지") }, { _, _ -> }, shelves = repo)
+            val key = BookDetailKey(book, shelfSearchOrigin = ShelfSearchOrigin(2, "출발 책장", 9))
+            val restored = Json.decodeFromString<BookDetailKey>(Json.encodeToString(key))
+            val origin = assertNotNull(restored.shelfSearchOrigin)
+            val waitingContext = ShelfSearchContext(origin).authenticatedAs(null)
+            vm.authenticate("expired", 9)
+            vm.authenticate(null)
+            vm.saveToShelf(restored.book, assertNotNull(waitingContext.origin).libraryId)
+            assertEquals(2L, vm.uiState.value.pendingShelfId)
+            vm.authenticate("renewed", 9); advanceUntilIdle()
+            assertEquals(listOf(2L to "renewed"), repo.added)
+            assertEquals(origin, waitingContext.authenticatedAs(9).origin)
+            assertEquals(1, vm.uiState.value.savedCount)
         } finally { Dispatchers.resetMain() }
     }
 

@@ -171,10 +171,10 @@ final class PublicLibraryUITests: XCTestCase {
         author.tap(); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); back(app)
         XCTAssertTrue(app.buttons["홈"].isSelected)
         XCTAssertEqual(author.frame.minY, homeY, accuracy: 1)
-        app.buttons["발견"].tap()
+        app.buttons["검색"].tap()
         reveal(author, in: app); let discoverY = author.frame.minY
         author.tap(); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); back(app)
-        XCTAssertTrue(app.buttons["발견"].isSelected)
+        XCTAssertTrue(app.buttons["검색"].isSelected)
         XCTAssertEqual(author.frame.minY, discoverY, accuracy: 1)
         let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = "607-home-discover"; attachment.lifetime = .keepAlways; add(attachment)
     }
@@ -204,7 +204,7 @@ final class PublicLibraryUITests: XCTestCase {
         let completed = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5))
         edge.press(forDuration: 0.05, thenDragTo: completed, withVelocity: .slow, thenHoldForDuration: 0.3)
         XCTAssertTrue(app.buttons["피드"].waitForExistence(timeout: 10))
-        app.buttons["발견"].tap(); XCTAssertTrue(app.buttons["발견"].isSelected)
+        app.buttons["검색"].tap(); XCTAssertTrue(app.buttons["검색"].isSelected)
         // 정상 종료 후 재실행에도 루트 탭이 표시되고 프로필 진입이 다시 가능하다.
         app.terminate(); app.launch(); XCTAssertTrue(app.buttons["피드"].waitForExistence(timeout: 20)); app.buttons["피드"].tap()
         profile("독자A", in: app); XCTAssertTrue(shelf(in: app).waitForExistence(timeout: 10)); back(app)

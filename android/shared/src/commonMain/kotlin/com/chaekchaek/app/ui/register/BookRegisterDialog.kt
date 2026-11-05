@@ -11,6 +11,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import com.chaekchaek.app.ui.input.excludeFromKeyboardDismissal
+import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
 import com.chaekchaek.app.ui.input.TextInputPolicy
 import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
 import androidx.compose.material3.OutlinedTextField
@@ -28,6 +30,8 @@ fun BookRegisterDialog(
     onDismiss: () -> Unit,
     onRegister: (title: String, creator: String, publisher: String, year: String, note: String) -> Unit,
 ) {
+    val dismissKeyboard = rememberKeyboardDismissal()
+    val closeDialog = { dismissKeyboard(); onDismiss() }
     val errorReporter = com.chaekchaek.app.analytics.LocalAnalyticsTracker.current.errors
     val errors = remember(errorReporter) { com.chaekchaek.app.presentation.common.ErrorRecoveryState(errorReporter) }
     com.chaekchaek.app.ui.common.ErrorRecoveryEffect(errors)
@@ -44,7 +48,8 @@ fun BookRegisterDialog(
     val editedBook = book.copy(title = title.trim(), creator = creator.trim(), publisher = publisher.trim(), year = year.trim())
 
     ChaekTwoActionDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = closeDialog,
+        dismissKeyboardOnTap = true,
         title = {
             Column {
                 Text("ADD TO ARCHIVE", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
@@ -64,8 +69,10 @@ fun BookRegisterDialog(
             }
         },
         confirmButton = {
+            val dismissKeyboard = rememberKeyboardDismissal()
             TextButton(
                 onClick = {
+                    dismissKeyboard()
                     val error = editedBook.registrationValidationError()
                     if (error != null) errors.confirm(error)
                     else onRegister(editedBook.title, editedBook.creator, editedBook.publisher, editedBook.year, note.trim())
@@ -74,7 +81,7 @@ fun BookRegisterDialog(
                 Text("서재에 등록", color = MaterialTheme.colorScheme.primary)
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } },
+        dismissButton = { TextButton(onClick = closeDialog) { Text("취소") } },
     )
 }
 
@@ -124,7 +131,7 @@ private fun BookField(state: TextFieldState, policy: TextInputPolicy, label: Str
         state = state,
         inputTransformation = policy.inputTransformation,
         label = { Text(label) },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().excludeFromKeyboardDismissal(),
         shape = RoundedCornerShape(14.dp),
         lineLimits = TextFieldLineLimits.MultiLine(),
     )

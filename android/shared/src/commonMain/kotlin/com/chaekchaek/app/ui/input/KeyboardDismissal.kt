@@ -2,7 +2,6 @@ package com.chaekchaek.app.ui.input
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -46,9 +45,19 @@ internal fun KeyboardDismissalArea(
                 awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
                 guard.startedInInput = false
                 val downEvent = awaitPointerEvent(pass = PointerEventPass.Final)
-                if (!guard.startedInInput && downEvent.changes.none { it.isConsumed }) {
-                    val up = waitForUpOrCancellation(pass = PointerEventPass.Final)
-                    if (up != null && !up.isConsumed) dismissKeyboard()
+                if (!guard.startedInInput) {
+                    val start = downEvent.changes.first().position
+                    var moved = false
+                    // Buttons consume their tap too. Observe without consuming so they still act,
+                    // while a vertical scroll does not dismiss an input as an outside tap.
+                    while (true) {
+                        val event = awaitPointerEvent(pass = PointerEventPass.Final)
+                        if (event.changes.any { (it.position - start).getDistance() > viewConfiguration.touchSlop }) moved = true
+                        if (event.changes.none { it.pressed }) {
+                            if (!moved) dismissKeyboard()
+                            break
+                        }
+                    }
                 }
             }
         } else Modifier)

@@ -49,7 +49,7 @@ class ReviewDraftPreservationTest {
                 )
             }
         }
-        compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
+        compose.onNodeWithText("피드에 올리기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("사라지면 안 되는 감상")
         compose.onNodeWithContentDescription("인상 깊은 문구 (선택)").performScrollTo().performTextInput("기억할 문장")
         compose.onNodeWithContentDescription("목차 또는 챕터").assertDoesNotExist()
@@ -111,7 +111,7 @@ class ReviewDraftPreservationTest {
             state.value = state.value.copy(reviewSubmissionState = ReviewSubmissionState.Succeeded)
         }
         compose.onNodeWithContentDescription("감상 (필수)").assertDoesNotExist()
-        compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
+        compose.onNodeWithText("피드에 올리기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")),
         )

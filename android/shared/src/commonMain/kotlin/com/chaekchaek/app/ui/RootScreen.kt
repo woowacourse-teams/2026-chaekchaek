@@ -95,7 +95,7 @@ internal enum class RootTab(
 ) {
     Home("홈", Res.drawable.ic_nav_home_active, Res.drawable.ic_nav_home_inactive),
     Feed("피드", Res.drawable.ic_nav_feed_active, Res.drawable.ic_nav_feed_inactive),
-    Discover("발견", Res.drawable.ic_nav_discover_active, Res.drawable.ic_nav_discover_inactive),
+    Discover("검색", Res.drawable.ic_nav_discover_active, Res.drawable.ic_nav_discover_inactive),
     Shelf("내 서재", Res.drawable.ic_nav_library_active, Res.drawable.ic_nav_library_inactive),
 }
 
@@ -109,20 +109,24 @@ internal fun RootScreen(
     memberSettingsViewModel: MemberSettingsViewModel,
     authViewModel: AuthViewModel,
     analytics: AnalyticsTracker,
-    onBookClick: (BookDetailArgs) -> Unit,
+    onBookClick: (BookDetailArgs, ShelfSearchOrigin?) -> Unit,
     onMyPage: () -> Unit,
     rootBackEnabled: Boolean,
+    isShelfSearchOriginActive: (ShelfSearchOrigin) -> Boolean,
     homeHeaderAction: @Composable () -> Unit = {},
     onExitRequested: () -> Unit,
     modifier: Modifier = Modifier,
+    shelfSearchSessionRevision: Int = 0,
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(RootTab.Home) }
+    var shelfSearchContext by rememberSaveable(stateSaver = ShelfSearchContext.Saver) { mutableStateOf(ShelfSearchContext()) }
     var homeScrollTopRequest by rememberSaveable { mutableIntStateOf(0) }
     var archiveScrollTopRequest by remember { mutableIntStateOf(0) }
     var showArchiveLoginSheet by rememberSaveable { mutableStateOf(false) }
     var archiveLoginOpensMyPage by rememberSaveable { mutableStateOf(false) }
     val tokens by authViewModel.tokens.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
+    val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val pendingRegistration by searchViewModel.pendingRegistration.collectAsState()
     val librarySaveState by librarySaveViewModel.uiState.collectAsState()
     val bookshelfState by bookshelfViewModel.uiState.collectAsState()
@@ -138,6 +142,17 @@ internal fun RootScreen(
     val searchResultsListState = rememberLazyListState()
     var tabStateToClear by remember { mutableStateOf<RootTab?>(null) }
     val accessToken = tokens?.accessToken
+    val selectTab: (RootTab) -> Unit = { tab ->
+        shelfSearchContext = shelfSearchContext.selecting(tab)
+        selectedTab = tab
+    }
+    val currentMemberId = authViewModel.memberIdFor(accessToken) ?: bookshelfState.memberId
+    LaunchedEffect(accessToken, currentMemberId, restoringAuthentication) {
+        if (!restoringAuthentication) shelfSearchContext = shelfSearchContext.authenticatedAs(currentMemberId.takeIf { accessToken != null })
+    }
+    LaunchedEffect(shelfSearchSessionRevision) {
+        shelfSearchContext = shelfSearchContext.afterExplicitSessionReset(shelfSearchSessionRevision)
+    }
     val clearExitConfirmation: () -> Unit = {
         exitConfirmationDeadlineMillis = null
         exitConfirmationSnackbarJob?.cancel()
@@ -158,7 +173,7 @@ internal fun RootScreen(
         if (origin == "search") analytics.ensureFlow(origin) else analytics.startFlow(origin)
         analytics.bookSelect(analyticsBookKey(book.isbn13, book.id))
         clearExitConfirmation()
-        onBookClick(book)
+        onBookClick(book, shelfSearchContext.origin.takeIf { origin == "search" })
     }
 
     val saveBook: (BookDetailTarget) -> Unit = { book ->
@@ -181,7 +196,7 @@ internal fun RootScreen(
                     if (selectedTab == RootTab.Feed || selectedTab == RootTab.Discover) {
                         tabStateToClear = selectedTab
                     }
-                    selectedTab = RootTab.Home
+                    selectTab(RootTab.Home)
                 }
                 is RootBackAction.ConfirmExit -> {
                     exitConfirmationDeadlineMillis = action.deadlineMillis
@@ -245,8 +260,8 @@ internal fun RootScreen(
                 myDisplayName = memberSettingsState.publicNickname,
                 scrollTopRequest = homeScrollTopRequest,
                 modifier = contentModifier,
-                onSearchBook = { selectedTab = RootTab.Discover },
-                onOpenFeed = { selectedTab = RootTab.Feed },
+                onSearchBook = { selectTab(RootTab.Discover) },
+                onOpenFeed = { selectTab(RootTab.Feed) },
                 onProfileClick = openProfile,
                 homeHeaderAction = homeHeaderAction,
                 onBookClick = { openBook(it.toBookDetailArgs(), "home") },
@@ -270,15 +285,36 @@ internal fun RootScreen(
                 homeViewModel = homeViewModel,
                 accessToken = accessToken,
                 searchResultsListState = searchResultsListState,
-                registeredBookIds = savedIsbns,
+                registeredBookIds = shelfSearchContext.origin?.let { origin ->
+                    bookshelfState.shelves.firstOrNull { it.libraryId == origin.libraryId }
+                        ?.items?.mapTo(mutableSetOf()) { it.isbn13 } ?: emptySet()
+                } ?: savedIsbns,
                 modifier = contentModifier,
                 onHomeRetry = retryHome,
                 onBack = {
                     tabStateToClear = RootTab.Discover
-                    selectedTab = RootTab.Home
+                    selectTab(RootTab.Home)
                 },
                 onProfileClick = openProfile,
                 onBookClick = { openBook(it.toBookDetailArgs(), "search") },
+                originShelfName = shelfSearchContext.origin?.name,
+                onReturnToShelf = shelfSearchContext.origin?.let { origin ->
+                    {
+                        if (shelfSearchContext.isCurrentSearch(origin, selectedTab) && isShelfSearchOriginActive(origin)) {
+                            bookshelfViewModel.open(origin.libraryId)
+                            selectTab(RootTab.Shelf)
+                        }
+                    }
+                },
+                onRegisterBook = shelfSearchContext.origin?.let { origin ->
+                    { book ->
+                        if (shelfSearchContext.isCurrentSearch(origin, selectedTab) && isShelfSearchOriginActive(origin)) librarySaveViewModel.saveToShelf(
+                            BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title,
+                                creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages),
+                            origin.libraryId,
+                        )
+                    }
+                },
             )
             RootTab.Shelf -> BookshelfRoute(
                 viewModel = bookshelfViewModel,
@@ -288,7 +324,16 @@ internal fun RootScreen(
                 onLogin = { archiveLoginOpensMyPage = false; showArchiveLoginSheet = true },
                 scrollTopRequest = archiveScrollTopRequest,
                 onBook = { openBook(it, "library") },
-                onAdd = librarySaveViewModel::save,
+                onAddBooks = { shelf ->
+                    val currentShelfState = bookshelfViewModel.uiState.value
+                    currentShelfState.memberId?.takeIf { selectedTab == RootTab.Shelf && currentShelfState.selectedId == shelf.libraryId }?.let { memberId ->
+                        val origin = ShelfSearchOrigin(shelf.libraryId, shelf.name, memberId, shelfSearchSessionRevision)
+                        if (isShelfSearchOriginActive(origin)) {
+                            shelfSearchContext = ShelfSearchContext(origin)
+                            selectTab(RootTab.Discover)
+                        }
+                    }
+                },
                 modifier = contentModifier,
             )
         }
@@ -305,7 +350,7 @@ internal fun RootScreen(
                             RootTab.Feed, RootTab.Discover -> Unit
                         }
                     }
-                    selectedTab = it
+                    selectTab(it)
                 },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )

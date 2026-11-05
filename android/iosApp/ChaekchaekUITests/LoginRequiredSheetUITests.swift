@@ -196,7 +196,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
             return
         }
         book.tap()
-        let open = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "이 순간의 감상 남기기")).firstMatch
+        let open = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "피드에 올리기")).firstMatch
         XCTAssertTrue(open.waitForExistence(timeout: 10))
         open.tap()
         let content = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 (필수)")).firstMatch
@@ -532,7 +532,7 @@ final class LoginRequiredSheetUITests: XCTestCase {
         waitForRefreshIndicatorToClose(in: app)
         XCTAssertEqual(fixture.completedRequests(for: "/api/v1/home/latest-reviews"), requestsBeforePull + 1)
         XCTAssertTrue(app.buttons["내 프로필"].isHittable)
-        XCTAssertTrue(app.buttons["발견"].exists)
+        XCTAssertTrue(app.buttons["검색"].exists)
         XCTAssertTrue(app.buttons["내 서재"].exists)
         attachScreenshot(named: "홈 당김 후 기존 화면")
         // hitRegion은 시스템 홈 인디케이터에서도 실패해 별도 검증 기록으로 남긴다.
@@ -545,8 +545,8 @@ final class LoginRequiredSheetUITests: XCTestCase {
         defer { fixture.stop() }
         let app = refreshApplication(fixture)
         app.launch()
-        XCTAssertTrue(app.buttons["발견"].waitForExistence(timeout: 15))
-        app.buttons["발견"].tap()
+        XCTAssertTrue(app.buttons["검색"].waitForExistence(timeout: 15))
+        app.buttons["검색"].tap()
         let field = app.textViews["search-query-field"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap()
@@ -568,8 +568,8 @@ final class LoginRequiredSheetUITests: XCTestCase {
         defer { fixture.stop() }
         let app = refreshApplication(fixture)
         app.launch()
-        XCTAssertTrue(app.buttons["발견"].waitForExistence(timeout: 15))
-        app.buttons["발견"].tap()
+        XCTAssertTrue(app.buttons["검색"].waitForExistence(timeout: 15))
+        app.buttons["검색"].tap()
         let field = app.textViews["search-query-field"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap()
@@ -995,8 +995,8 @@ final class BookshelfContractUITests: XCTestCase {
         app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingGuest", "-uiTestingNicknameRestore", "-uiTestingRefresh"]
         app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = origin
         app.launch()
-        XCTAssertTrue(app.buttons["발견"].waitForExistence(timeout: 15))
-        app.buttons["발견"].tap()
+        XCTAssertTrue(app.buttons["검색"].waitForExistence(timeout: 15))
+        app.buttons["검색"].tap()
         let search = app.textViews["search-query-field"]
         XCTAssertTrue(search.waitForExistence(timeout: 10))
         search.tap(); search.typeText("book\n")
@@ -1114,33 +1114,20 @@ final class BookshelfContractUITests: XCTestCase {
         playlistFallback.lifetime = .keepAlways
         add(playlistFallback)
         addButton.tap()
-        let selectedBook = element("검증 도서 3", app)
-        guard selectedBook.waitForExistence(timeout: 10) else {
-            XCTFail("내 서재의 책 목록을 찾지 못했어요: \(app.debugDescription)")
-            return
-        }
-        selectedBook.tap()
-        XCTAssertTrue(element("담을 책장 고르기", app).waitForExistence(timeout: 5))
-        // 최근 선택은 앱 설치 데이터에 남으므로 fixture 초기화만으로 담을 책장을 가정하지 않는다.
-        let destination = try XCTUnwrap(app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label == %@", "나의 책장"))
-            .allElementsBoundByIndex.last(where: { $0.isHittable }), "검증 대상 책장 1을 선택해야 해요")
-        destination.tap()
-        let confirmAdd = element("이 책장에 담기", app)
-        for _ in 0..<4 {
-            if confirmAdd.exists && confirmAdd.isHittable { break }
-            app.swipeUp()
-        }
-        guard confirmAdd.waitForExistence(timeout: 5) else {
-            let screen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-            screen.name = "책장 선택 확인 버튼 실패"
-            screen.lifetime = .keepAlways
-            add(screen)
-            XCTFail("책장 선택을 확인할 수 없어요: \(app.debugDescription)")
-            return
-        }
-        confirmAdd.tap()
-        XCTAssertTrue(confirmAdd.waitForNonExistence(timeout: 10))
+        let search = app.textViews["search-query-field"]
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        XCTAssertTrue(element("나의 책장에 책 담기", app).exists)
+        search.tap(); search.typeText("book\n")
+        XCTAssertTrue(element("검증 도서 36", app).waitForExistence(timeout: 10))
+        let addResult = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "책 담기")).firstMatch
+        XCTAssertTrue(addResult.waitForExistence(timeout: 10))
+        addResult.tap()
+        try await assertDirectSave(libraryId: 1, bookId: 36)
+        XCTAssertFalse(element("담을 책장 고르기", app).exists)
+        let returnToShelf = element("책장으로", app)
+        XCTAssertTrue(returnToShelf.waitForExistence(timeout: 10))
+        returnToShelf.tap()
+        XCTAssertTrue(element("3권", app).waitForExistence(timeout: 10))
         XCTAssertTrue(addButton.waitForExistence(timeout: 10))
         element("편집", app).tap()
         let remove = app.buttons.matching(NSPredicate(format: "label == %@", "빼기")).firstMatch
@@ -1192,8 +1179,131 @@ final class BookshelfContractUITests: XCTestCase {
         XCTAssertTrue(shelves.contains { $0["name"] as? String == "올해읽을책" })
         let calls = try XCTUnwrap(state["requests"] as? [[String: Any]])
         XCTAssertTrue(calls.contains { $0["method"] as? String == "POST" && $0["path"] as? String == "/api/v1/libraries/1" })
-        XCTAssertFalse(calls.contains { ($0["path"] as? String)?.hasPrefix("/api/v1/books/3/reviews") == true }, "이미지 공유에서 감상을 조회하지 않아요")
+        XCTAssertFalse(calls.contains { ($0["path"] as? String)?.hasPrefix("/api/v1/books/36/reviews") == true }, "이미지 공유에서 감상을 조회하지 않아요")
         XCTAssertTrue(calls.contains { $0["method"] as? String == "DELETE" && ($0["path"] as? String)?.contains("/books/") == true })
+    }
+
+    @MainActor
+    func testShelfSearchDetailSavesToOriginWithoutChoosingAnotherShelf() async throws {
+        continueAfterFailure = false
+        guard (try? await request("/__bookshelf")) != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
+        _ = try await request("/__bookshelf/reset", method: "POST")
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingGuest", "-uiTestingNicknameRestore", "-uiTestingRefresh"]
+        app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = origin
+        app.launch()
+        XCTAssertTrue(app.buttons["내 서재"].waitForExistence(timeout: 15))
+        app.buttons["내 서재"].tap()
+        let shelf = app.buttons["bookshelf-2"]
+        XCTAssertTrue(shelf.waitForExistence(timeout: 10))
+        shelf.tap()
+        let addBook = element("+ 책 담기", app)
+        XCTAssertTrue(addBook.waitForExistence(timeout: 10))
+        addBook.tap()
+        let search = app.textViews["search-query-field"]
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        search.tap(); search.typeText("book\n")
+        let result = element("검증 도서 36", app)
+        XCTAssertTrue(result.waitForExistence(timeout: 10))
+        result.tap()
+        let save = app.buttons["book_detail_library_save"]
+        XCTAssertTrue(save.waitForExistence(timeout: 10))
+        let ready = expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: save)
+        await fulfillment(of: [ready], timeout: 10)
+        save.tap()
+        try await assertDirectSave(libraryId: 2, bookId: 36)
+        XCTAssertFalse(element("담을 책장 고르기", app).exists)
+        XCTAssertFalse(element("서재 관리", app).exists)
+        let back = app.buttons["book_detail_back"]
+        XCTAssertTrue(back.waitForExistence(timeout: 10))
+        back.tap()
+        let returnToShelf = element("책장으로", app)
+        XCTAssertTrue(returnToShelf.waitForExistence(timeout: 10))
+        returnToShelf.tap()
+        XCTAssertTrue(element("2권", app).waitForExistence(timeout: 10))
+        XCTAssertTrue(element("검증 도서 36", app).waitForExistence(timeout: 10))
+    }
+
+    @MainActor
+    func testMissingAndFailedSpineImagesKeepBooksVisibleAndOpenable() async throws {
+        continueAfterFailure = false
+        guard (try? await request("/__bookshelf")) != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
+        _ = try await request("/__bookshelf/reset", method: "POST")
+        _ = try await request("/__bookshelf/image-failures", method: "POST")
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingGuest", "-uiTestingNicknameRestore", "-uiTestingRefresh"]
+        app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = origin
+        app.launch()
+        XCTAssertTrue(app.buttons["내 서재"].waitForExistence(timeout: 15))
+        app.buttons["내 서재"].tap()
+        let shelf = app.buttons["bookshelf-1"]
+        XCTAssertTrue(shelf.waitForExistence(timeout: 10))
+        XCTAssertTrue(element("3권", app).exists)
+        for bookId in 1...3 {
+            let spine = element("검증 도서 \(bookId) 책등", app)
+            XCTAssertTrue(spine.waitForExistence(timeout: 10))
+            XCTAssertTrue(spine.isHittable)
+        }
+        try await assertFailedImageRequests()
+        let libraryCapture = XCTAttachment(screenshot: app.screenshot())
+        libraryCapture.name = "책등 null 빈값 404 대체 내 서재"
+        libraryCapture.lifetime = .keepAlways
+        add(libraryCapture)
+        shelf.tap()
+        XCTAssertTrue(element("+ 책 담기", app).waitForExistence(timeout: 10))
+        XCTAssertTrue(element("3권", app).exists)
+        for bookId in 1...3 {
+            let spine = element("검증 도서 \(bookId) 책등", app)
+            XCTAssertTrue(spine.waitForExistence(timeout: 10))
+            XCTAssertTrue(spine.isHittable)
+        }
+        try await assertFailedImageRequests()
+        let detailCapture = XCTAttachment(screenshot: app.screenshot())
+        detailCapture.name = "책등 null 빈값 404 대체 책장 상세"
+        detailCapture.lifetime = .keepAlways
+        add(detailCapture)
+        let firstSpine = app.descendants(matching: .any).matching(identifier: "bookshelf-drag-source-spines-1").firstMatch
+        XCTAssertTrue(firstSpine.waitForExistence(timeout: 10))
+        firstSpine.tap()
+        XCTAssertTrue(app.buttons["book_detail_back"].waitForExistence(timeout: 10))
+        XCTAssertTrue(element("검증 도서 1", app).exists)
+    }
+
+    @MainActor
+    private func assertFailedImageRequests() async throws {
+        var paths: Set<String> = []
+        for _ in 0..<100 {
+            let data = try await request("/__bookshelf/state")
+            let state = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            let calls = try XCTUnwrap(state["requests"] as? [[String: Any]])
+            paths = Set(calls.filter { $0["method"] as? String == "GET" }.compactMap { $0["path"] as? String })
+            if paths.contains("/assets/missing-spine.png") && paths.contains("/assets/missing-cover.png") { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertTrue(paths.contains("/assets/missing-spine.png"))
+        XCTAssertTrue(paths.contains("/assets/missing-cover.png"))
+    }
+
+    @MainActor
+    private func assertDirectSave(libraryId: Int, bookId: Int) async throws {
+        var state: [String: Any] = [:]
+        for _ in 0..<100 {
+            let data = try await request("/__bookshelf/state")
+            state = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            let shelves = state["shelves"] as? [[String: Any]] ?? []
+            if let target = shelves.first(where: { $0["libraryId"] as? Int == libraryId }),
+               (target["books"] as? [Int])?.contains(bookId) == true { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        let shelves = try XCTUnwrap(state["shelves"] as? [[String: Any]])
+        let target = try XCTUnwrap(shelves.first { $0["libraryId"] as? Int == libraryId })
+        XCTAssertTrue((target["books"] as? [Int])?.contains(bookId) == true)
+        let calls = try XCTUnwrap(state["requests"] as? [[String: Any]])
+        let writes = calls.filter { $0["method"] as? String == "POST" && ($0["path"] as? String)?.hasPrefix("/api/v1/libraries/") == true }
+        XCTAssertEqual(writes.count, 1, "출발 책장 직접 담기는 한 번만 요청해요")
+        XCTAssertEqual(writes.first?["path"] as? String, "/api/v1/libraries/\(libraryId)")
+        let body = try XCTUnwrap(writes.first?["body"] as? [String: Any])
+        XCTAssertEqual(body["isbn13"] as? String, String(format: "97800000000%02d", bookId))
     }
 
     @MainActor

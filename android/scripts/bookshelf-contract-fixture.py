@@ -46,7 +46,7 @@ def reset():
     STATE.update(shelves=[dict(libraryId=1, name='검증의 책장', isDefault=True, books=[1, 2]),
                           dict(libraryId=2, name='다시 읽기', isDefault=False, books=[3]),
                           dict(libraryId=3, name='이전 35권', isDefault=False, books=list(range(1, 36)))],
-                 next_id=4, requests=[], fail_next=False)
+                 next_id=4, requests=[], fail_next=False, image_failures=False)
 
 
 def summary(shelf):
@@ -80,16 +80,28 @@ class Handler(BaseHTTPRequestHandler):
                 origin = f'http://{self.headers.get("Host")}'
                 book['coverImageUrl'] = f'{origin}/assets/cover-{(book["bookId"] - 1) % 3}.png'
                 book['spineImageUrl'] = f'{origin}/assets/original-spine.png' if book['bookId'] % 3 == 0 else None
+                if STATE['image_failures'] and book['bookId'] in (1, 2, 3):
+                    book['coverImageUrl'] = ''
+                    book['spineImageUrl'] = None if book['bookId'] == 1 else ''
+                    if book['bookId'] == 3:
+                        book['spineImageUrl'] = f'{origin}/assets/missing-spine.png'
+                        book['coverImageUrl'] = f'{origin}/assets/missing-cover.png'
             body = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))) or '{}')
             if path == '/__bookshelf/reset':
                 reset()
                 return self.send_json({'fixture': 'bookshelf-contract'})
             if path == '/__bookshelf/state': return self.send_json(STATE)
+            if path == '/__bookshelf/image-failures' and method == 'POST':
+                STATE['image_failures'] = True
+                next(s for s in STATE['shelves'] if s['libraryId'] == 1)['books'] = [1, 2, 3]
+                return self.send_json({})
             if path == '/__bookshelf/fail-next':
                 STATE['fail_next'] = True
                 return self.send_json({})
             if path == '/__bookshelf': return self.send_json({'fixture': 'bookshelf-contract'})
             STATE['requests'].append(dict(method=method, path=self.path, body=body))
+            if path in ('/assets/missing-spine.png', '/assets/missing-cover.png'):
+                return self.send_json({'code': 'NOT_FOUND', 'path': path}, 404)
             if STATE['fail_next'] and method in ('POST', 'PATCH', 'DELETE') and path.startswith('/api/v1/libraries'):
                 STATE['fail_next'] = False
                 return self.send_json({'code': 'INTERNAL_SERVER_ERROR'}, 500)
