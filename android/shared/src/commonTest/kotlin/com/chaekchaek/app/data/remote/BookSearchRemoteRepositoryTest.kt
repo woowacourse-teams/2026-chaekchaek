@@ -166,6 +166,24 @@ class BookSearchRemoteRepositoryTest {
         } finally { client.close() }
     }
 
+    @Test
+    fun `한 페이지의 중복 ISBN은 첫 도서만 표시하고 서버 페이지 정보를 보존한다`() = runTest {
+        val client = searchClient { response(9, 2,
+            item("첫 판본", "9780198747291", null),
+            item("다른 도서", "9781780676197", null),
+            item("중복 판본", "9780198747291", null),
+            item("중복 다른 도서", "9781780676197", null),
+        ) }
+        try {
+            val result = BookSearchRemoteRepository(client).search("archi", BookSearchSort.LATEST, 1)
+            assertEquals(listOf("첫 판본", "다른 도서"), result.items.map { it.title })
+            assertEquals(listOf("9780198747291", "9781780676197"), result.items.map { it.isbn13 })
+            assertEquals(9, result.totalCount)
+            assertEquals(2, result.nextPage)
+            assertEquals(1, result.lastLoadedPage)
+        } finally { client.close() }
+    }
+
     private fun searchClient(body: (Int) -> String) = HttpClient(MockEngine { request ->
         respond(body(request.url.parameters["page"]!!.toInt()),
             headers = headersOf(HttpHeaders.ContentType, "application/json"))
