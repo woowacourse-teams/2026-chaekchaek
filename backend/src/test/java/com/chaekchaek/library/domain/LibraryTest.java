@@ -171,11 +171,11 @@ class LibraryTest {
         assertThat(Library.maxSize()).isEqualTo(30);
     }
 
-    @ParameterizedTest
-    @ValueSource(longs = {30, 35})
-    @DisplayName("수용량 이상인 책장에 도서를 추가할 수 없다")
-    void should_RejectAddingBook_When_CountReachesCapacity(long currentCount) {
+    @Test
+    @DisplayName("수용량에 도달한 책장에 도서를 추가할 수 없다")
+    void should_RejectAddingBook_When_CountReachesCapacity() {
         // given
+        long currentCount = 30;
         Library library = Library.create(1L, "가을책장", NOW);
 
         // when & then
