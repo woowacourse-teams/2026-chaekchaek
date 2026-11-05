@@ -52,6 +52,45 @@ final class FirstLibraryOnboardingUITests: XCTestCase {
 
 
     @MainActor
+    func testSearchKeyboardDismissalPreservesOnboardingQuery() throws {
+        app.launchArguments = ["-uiTestingResetOnboarding"]
+        app.launch()
+        let start = app.buttons["책 찾기"]
+        XCTAssertTrue(start.waitForExistence(timeout: 5))
+        start.tap()
+
+        let guidance = app.staticTexts["책 제목이나 작가로 찾아보세요."]
+        XCTAssertTrue(guidance.waitForExistence(timeout: 5), app.debugDescription)
+        // 기존 닉네임 테스트처럼 textField와 textView 노출을 모두 조회한다.
+        let field = app.textFields.firstMatch.waitForExistence(timeout: 2)
+            ? app.textFields.firstMatch : app.textViews.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 5), app.debugDescription)
+        field.tap()
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        let query = "keyboard"
+        field.typeText(query)
+        XCTAssertEqual(field.value as? String, query)
+
+        // 안내 문구와 입력란 사이의 실제 빈 여백을 접근성 프레임에서 계산한다.
+        XCTAssertGreaterThan(field.frame.minY, guidance.frame.maxY)
+        let blankY = (guidance.frame.maxY + field.frame.minY) / 2
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+            dx: field.frame.midX - app.frame.minX,
+            dy: blankY - app.frame.minY
+        )).tap()
+        XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5), "빈 영역을 누르면 키보드가 닫혀야 합니다")
+        XCTAssertEqual(field.value as? String, query)
+
+        field.tap()
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        // IME 검색 동작으로 제출한다. API 결과는 검사하지 않는다.
+        field.typeText("\n")
+        XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5), "검색을 실행하면 키보드가 닫혀야 합니다")
+        XCTAssertEqual(field.value as? String, query)
+    }
+
+    @MainActor
     func testAnalyticsNavigationKeepsTabsWorking() throws {
         app.launchArguments = ["-uiTestingExistingInstallation"]
         app.launch()
