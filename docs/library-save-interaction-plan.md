@@ -4,6 +4,8 @@
 
 ## 목적과 상태
 
+- 2026-11-05 후속 결정: 책장 상세에서 `책 담기`를 누르면 검색 탭으로 이동하고 출발한 책장에 바로 저장한다. 이 경로의 대상 보존과 해제 정책은 [서재·책장 확정 사항](bookshelf-decisions.md#책-담기와-온보딩)을 따른다. 홈·피드 등 일반 담기의 최근 책장 선택 정책은 유지한다. [#675](https://github.com/woowacourse-teams/2026-chaekchaek/issues/675), [#676](https://github.com/woowacourse-teams/2026-chaekchaek/pull/676)에서 구현·검증을 추적하며, 이 정책 기록 자체는 실행 완료 근거가 아니다.
+
 - 사용자가 책을 저장한 사실을 나중에도 알아보고, 홈·피드의 감상에서 책만 바로 저장할 수 있게 한다.
 - 관련 이슈: [#527](https://github.com/woowacourse-teams/2026-chaekchaek/issues/527)
 - 사용자 합의일: 2026-10-16
