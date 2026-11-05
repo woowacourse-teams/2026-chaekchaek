@@ -16,6 +16,7 @@ import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 import { getLibraries } from '@/services/apis/libraries/repository';
 import { useLoadData } from '@/services/core/useLoadData';
 
+import { getInfoMessage, getLibraryStatus } from '../../AddBooksToLibraryDialog';
 import type { MyLibraryPanelProps } from './MyLibraryPanel.types';
 
 export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => {
@@ -73,12 +74,9 @@ export const MyLibraryPanel = ({ libraryId, onSubmit }: MyLibraryPanelProps) => 
 
   const maxSize = currentLibrary?.maxSize;
   const totalBookCount = (currentLibrary?.items.length ?? 0) + selection.length;
-  const remainingBookCount = maxSize === undefined ? null : maxSize - totalBookCount;
-  const isLimitReached = remainingBookCount !== null && remainingBookCount <= 0;
-
-  const infoMessage = isLimitReached
-    ? '책장이 가득 찼어요. 책을 추가하려면 선택을 해제해 주세요.'
-    : `${remainingBookCount}권 더 담을 수 있어요 (${totalBookCount}/${maxSize})`;
+  const libraryStatus = getLibraryStatus(totalBookCount, maxSize);
+  const isLimitReached = libraryStatus.status === 'full';
+  const infoMessage = getInfoMessage(libraryStatus);
 
   return (
     <>
