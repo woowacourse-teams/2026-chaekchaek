@@ -88,6 +88,10 @@ final class FirstLibraryOnboardingUITests: XCTestCase {
         field.typeText("\n")
         XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5), "검색을 실행하면 키보드가 닫혀야 합니다")
         XCTAssertEqual(field.value as? String, query)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "검색 후 키보드 닫힘과 검색어 보존"
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     @MainActor
