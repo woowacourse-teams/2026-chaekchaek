@@ -96,6 +96,7 @@ class LibraryQueryRepositoryTest {
         LibraryCollectionResponse response = service.findLibraries(owner.getId());
 
         // then
+        assertThat(response.libraries()).allSatisfy(shelf -> assertThat(shelf.maxSize()).isEqualTo(30));
         assertThat(response.libraries()).extracting(shelf -> shelf.libraryId())
                 .containsExactly(first.getId(), empty.getId(), last.getId());
         assertThat(response.libraries().getFirst().name()).isEqualTo("기존의 아주 긴 책장 이름 !");
@@ -130,8 +131,10 @@ class LibraryQueryRepositoryTest {
         LibraryDetailResponse detail = service.findLibrary(library.getId());
 
         // then
+        assertThat(collection.libraries().getFirst().maxSize()).isEqualTo(30);
         assertThat(collection.libraries().getFirst().totalCount()).isEqualTo(count);
         assertThat(collection.libraries().getFirst().items()).hasSize(count);
+        assertThat(detail.maxSize()).isEqualTo(30);
         assertThat(detail.totalCount()).isEqualTo(count);
         assertThat(detail.items()).extracting(item -> item.bookId()).containsExactlyElementsOf(bookIds);
     }
@@ -181,6 +184,7 @@ class LibraryQueryRepositoryTest {
         Library library = library(owner, "빈 책장", 1L);
         flushAndClear();
         LibraryDetailResponse response = service.findLibrary(library.getId());
+        assertThat(response.maxSize()).isEqualTo(30);
         assertThat(response.totalCount()).isZero();
         assertThat(response.items()).isEmpty();
     }

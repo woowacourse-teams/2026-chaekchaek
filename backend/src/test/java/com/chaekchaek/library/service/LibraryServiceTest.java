@@ -153,6 +153,7 @@ class LibraryServiceTest {
         assertThat(actual.name()).isEqualTo("올해읽을책");
         assertThat(actual.isDefault()).isFalse();
         assertThat(actual.totalCount()).isZero();
+        assertThat(actual.maxSize()).isEqualTo(30);
         assertThat(actual.items()).isEmpty();
         assertThat(appender.list).singleElement()
                 .satisfies(event -> assertThat(event.getKeyValuePairs())
@@ -526,6 +527,7 @@ class LibraryServiceTest {
         var response = service().getLibrary(1L, 1, null, LibrarySort.RECENT);
 
         // then
+        assertThat(response.maxSize()).isEqualTo(30);
         assertThat(response.totalCount()).isEqualTo(1L);
         assertThat(response.items()).extracting("bookId").containsExactly(2L);
     }
@@ -562,6 +564,7 @@ class LibraryServiceTest {
         var response = service().getPublicLibrary(1L, 1, null, LibrarySort.RECENT);
 
         // then
+        assertThat(response.maxSize()).isEqualTo(30);
         assertThat(response.totalCount()).isZero();
         assertThat(response.filteredCount()).isZero();
         assertThat(response.items()).isEmpty();

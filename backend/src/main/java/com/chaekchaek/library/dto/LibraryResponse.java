@@ -8,6 +8,7 @@ public record LibraryResponse(
         String name,
         boolean isDefault,
         int totalCount,
+        int maxSize,
         List<LibraryBookPreviewResponse> items
 ) {
 
@@ -17,6 +18,7 @@ public record LibraryResponse(
                 library.getName(),
                 library.isDefault(),
                 0,
+                Library.maxSize(),
                 List.of()
         );
     }
