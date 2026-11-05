@@ -104,6 +104,7 @@ export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
   const maxSize = currentLibraryBooks?.maxSize;
   const totalBookCount = (currentLibraryBooks?.items.length ?? 0) + selection.length;
   const libraryStatus = getLibraryStatus(totalBookCount, maxSize);
+  const isLimitReached = libraryStatus.status === 'full';
   const infoMessage = getInfoMessage(libraryStatus);
 
   return (
@@ -128,6 +129,10 @@ export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
               (currentLibraryBook) => currentLibraryBook.isbn13 === item.isbn13,
             );
 
+            const isSelectionDisabled = !isIncluded && isLimitReached; // 최대 권수를 채운 경우 더 추가하지 못하게
+
+            const isCheckDisabled = isRegisteredInCurrentLibrary || isSelectionDisabled;
+
             return (
               <List.Item key={item.isbn13}>
                 <List.Item.Leading>
@@ -136,7 +141,7 @@ export const SearchPanel = ({ libraryId, onSubmit }: SearchPanelProps) => {
                     size="large"
                     value={item.isbn13}
                     checked={isIncluded}
-                    disabled={isRegisteredInCurrentLibrary}
+                    disabled={isCheckDisabled}
                     onChange={handleChangeSelection}
                   />
                   <ImgBox img={item.coverImageUrl} size="x-small" />
