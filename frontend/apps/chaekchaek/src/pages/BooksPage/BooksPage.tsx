@@ -97,7 +97,7 @@ export const BooksPage = () => {
   }, [keywordQuery, defaultPage]);
 
   const {
-    status: { data },
+    status: { data, status },
     refetch: refetchGEtBooksLoadData,
   } = useLoadData({
     queryFn: getBooksLoadData,
@@ -218,11 +218,11 @@ export const BooksPage = () => {
             </Split.Side>
             <Split.Content>
               <Title level="main" trailing={<></>} sx={{ mb: 5 }}>
-                '{keywordQuery}' 검색 결과
+                {keywordQuery.length
+                  ? `'${keywordQuery}' 검색 결과`
+                  : '책 제목이나 작가를 입력해 주세요.'}
               </Title>
-              {data && !data?.items?.length && (
-                <Notice height={500}>검색된 데이터가 없습니다.</Notice>
-              )}
+              {data && !data?.items?.length && <Notice height={500}>검색 결과가 없어요.</Notice>}
               <List>
                 {!!data?.items.length &&
                   data?.items.map((item) => {
