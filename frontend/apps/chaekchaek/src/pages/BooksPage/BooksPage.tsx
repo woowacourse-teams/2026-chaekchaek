@@ -213,7 +213,7 @@ export const BooksPage = () => {
                   </>
                 }
               >
-                책 찾기
+                검색
               </Title>
             </Split.Side>
             <Split.Content>
