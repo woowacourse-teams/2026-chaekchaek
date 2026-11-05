@@ -75,6 +75,9 @@ kakao:
 app:
   book-source: ${BOOK_SOURCE:yes24}
 
+  pmf-survey:
+    excluded-member-ids: ${PMF_SURVEY_EXCLUDED_MEMBER_IDS:}
+
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
     local-base-url: ${FRONTEND_LOCAL_BASE_URL:http://localhost:3000}
