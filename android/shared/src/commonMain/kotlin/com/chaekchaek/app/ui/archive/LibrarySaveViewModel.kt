@@ -23,6 +23,7 @@ data class SavedLibraryBook(val isbn13: String, val record: LibraryRecord)
 
 data class LibrarySaveUiState(
     val pendingBook: BookDetailArgs? = null,
+    val pendingShelfId: Long? = null,
     val choosingBook: BookDetailArgs? = null,
     val shelves: List<Bookshelf> = emptyList(),
     val selectedShelfId: Long? = null,
@@ -68,14 +69,14 @@ class LibrarySaveViewModel(
             accessToken = token
             return
         }
-        val pending = state.value.pendingBook.takeIf { accessToken == null && token != null }
+        val pending = state.value.takeIf { accessToken == null && token != null && !memberChanged }
         generation += 1
         errors.dismiss()
         saveJob?.cancel()
         accessToken = token
         state.value = LibrarySaveUiState(memberId = memberId)
         acknowledgedSavedCount = 0
-        pending?.let(::save)
+        pending?.let { previous -> previous.pendingBook?.let { requestSave(it, previous.pendingShelfId) } }
     }
 
     fun consumeSaveNotice(): Boolean {
@@ -86,14 +87,19 @@ class LibrarySaveViewModel(
     }
 
     fun cancelPendingSave() {
-        state.value = state.value.copy(pendingBook = null)
+        state.value = state.value.copy(pendingBook = null, pendingShelfId = null)
     }
 
     fun clearError() {
         state.value = state.value.copy(errorMessage = null, failedBook = null)
     }
 
-    fun save(book: BookDetailArgs) {
+    fun save(book: BookDetailArgs) = requestSave(book, null)
+
+    /** 출발 책장을 다시 선택하지 않고 저장한다. 삭제된 책장을 다른 책장으로 대체하지 않는다. */
+    fun saveToShelf(book: BookDetailArgs, shelfId: Long) = requestSave(book, shelfId)
+
+    private fun requestSave(book: BookDetailArgs, targetShelfId: Long?) {
         if ((shelves == null && isSaved(book.isbn13)) || state.value.savingIsbn != null || state.value.pendingBook != null || state.value.choosingBook != null) return
         if (book.isbn13.isBlank()) {
             errors.confirm("이 책의 ISBN 정보를 확인할 수 없어요")
@@ -102,11 +108,15 @@ class LibrarySaveViewModel(
         }
         val token = accessToken
         if (token == null) {
-            state.value = state.value.copy(pendingBook = book, errorMessage = null, failedBook = null)
+            state.value = state.value.copy(pendingBook = book, pendingShelfId = targetShelfId, errorMessage = null, failedBook = null)
             return
         }
         if (shelves != null) {
-            chooseShelf(book, token)
+            chooseShelf(book, token, targetShelfId)
+            return
+        }
+        if (targetShelfId != null) {
+            errors.confirm("담을 책장 정보를 확인할 수 없어요")
             return
         }
         persist(book, token, null)
@@ -177,78 +187,106 @@ class LibrarySaveViewModel(
 
     private fun tokenForSave() = accessToken
 
-    private fun chooseShelf(book: BookDetailArgs, token: String) {
+    private fun chooseShelf(book: BookDetailArgs, token: String, targetShelfId: Long? = null) {
         val requestGeneration = generation
         state.value = state.value.copy(savingIsbn = book.isbn13)
         saveJob = viewModelScope.launch {
+            var directShelf: Bookshelf? = null
             try {
                 val collection = withDelayedLoading({ loading ->
                     if (generation == requestGeneration) state.value = state.value.copy(showLoading = loading)
                 }) { shelves!!.mine(token) }.getOrThrow()
                 if (generation != requestGeneration) return@launch
-                if (collection.libraries.isEmpty()) {
+                if (targetShelfId != null) {
+                    val target = collection.libraries.firstOrNull { it.libraryId == targetShelfId }
+                    when {
+                        target == null -> errors.confirm("담으려던 책장을 찾을 수 없어요. 내 서재에서 책장을 확인해 주세요")
+                        target.items.any { it.isbn13 == book.isbn13 } -> errors.confirm("이미 이 책장에 담긴 책이에요")
+                        target.totalCount >= 30 -> errors.confirm("책장에는 최대 30권까지 담을 수 있어요")
+                        else -> {
+                            state.value = state.value.copy(memberId = collection.memberId)
+                            directShelf = target
+                        }
+                    }
+                } else if (collection.libraries.isEmpty()) {
                     errors.confirm("기본 책장이 준비되지 않았어요. 잠시 후 다시 시도해 주세요")
                     return@launch
+                } else {
+                    val recent = readRecentShelf(collection.memberId)
+                    val selected = collection.libraries.firstOrNull { it.libraryId == recent }
+                        ?: collection.libraries.firstOrNull { it.isDefault }
+                        ?: collection.libraries.first()
+                    state.value = state.value.copy(choosingBook = book, shelves = collection.libraries,
+                        selectedShelfId = selected.libraryId, memberId = collection.memberId)
                 }
-                val recent = readRecentShelf(collection.memberId)
-                val selected = collection.libraries.firstOrNull { it.libraryId == recent }
-                    ?: collection.libraries.firstOrNull { it.isDefault }
-                    ?: collection.libraries.first()
-                state.value = state.value.copy(choosingBook = book, shelves = collection.libraries,
-                    selectedShelfId = selected.libraryId, memberId = collection.memberId)
             } catch (e: CancellationException) { throw e }
             catch (e: Throwable) {
                 if (generation == requestGeneration) errors.report(e, ErrorOperation.LibrarySave) { fresh ->
-                    if (fresh != null) accessToken = fresh
-                    save(book)
+                    if (generation == requestGeneration) {
+                        if (fresh != null) accessToken = fresh
+                        requestSave(book, targetShelfId)
+                    }
                 }
             } finally {
                 if (generation == requestGeneration) state.value = state.value.copy(savingIsbn = null, showLoading = false)
+            }
+            if (generation == requestGeneration) directShelf?.let { destination ->
+                accessToken?.let { persistBook(book, it, destination.libraryId, requestGeneration) }
             }
         }
     }
 
     private fun persist(book: BookDetailArgs, token: String, shelfId: Long?) {
         val requestGeneration = generation
+        state.value = state.value.copy(savingIsbn = book.isbn13, errorMessage = null, failedBook = null)
+        saveJob = viewModelScope.launch { persistBook(book, token, shelfId, requestGeneration) }
+    }
+
+    private suspend fun persistBook(book: BookDetailArgs, token: String, shelfId: Long?, requestGeneration: Int) {
+        if (generation != requestGeneration) return
         val action = analytics.startAction("library_add")
         state.value = state.value.copy(savingIsbn = book.isbn13, errorMessage = null, failedBook = null)
-        saveJob = viewModelScope.launch {
-            try {
-                val record = withDelayedLoading(
-                    onLoadingChanged = { loading ->
-                        if (generation == requestGeneration) state.value = state.value.copy(showLoading = loading)
-                    },
-                ) {
-                    if (shelfId != null) shelves!!.add(shelfId, book.isbn13, book.totalPages.takeIf { it > 0 }, token)
-                    else addBook(book.isbn13, book.totalPages.takeIf { it > 0 }, token)
-                }.getOrThrow()
-                if (generation != requestGeneration) return@launch
-                if (shelfId != null) state.value.memberId?.let { writeRecentShelf(it, shelfId) }
-                onSaved(book, record)
-                val savedBook = SavedLibraryBook(book.isbn13, record)
-                state.value = state.value.copy(
-                    choosingBook = null,
-                    selectedShelfId = null,
-                    savedCount = state.value.savedCount + 1,
-                    lastSavedBook = savedBook,
-                )
-                completedSaves.emit(savedBook)
-                analytics.finishAction(action, "success")
-            } catch (error: CancellationException) {
-                analytics.finishAction(action, "cancelled")
-                throw error
-            } catch (error: Throwable) {
-                analytics.finishAction(action, "failure", strings = mapOf("error_category" to analyticsErrorCategory(error)))
-                if (generation == requestGeneration) {
-                    errors.report(error, ErrorOperation.LibrarySave) { freshToken ->
+        try {
+            val record = withDelayedLoading(
+                onLoadingChanged = { loading ->
+                    if (generation == requestGeneration) state.value = state.value.copy(showLoading = loading)
+                },
+            ) {
+                if (shelfId != null) shelves!!.add(shelfId, book.isbn13, book.totalPages.takeIf { it > 0 }, token)
+                else addBook(book.isbn13, book.totalPages.takeIf { it > 0 }, token)
+            }.getOrThrow()
+            if (generation != requestGeneration) return
+            if (shelfId != null) state.value.memberId?.let { writeRecentShelf(it, shelfId) }
+            onSaved(book, record)
+            val savedBook = SavedLibraryBook(book.isbn13, record)
+            state.value = state.value.copy(
+                choosingBook = null,
+                selectedShelfId = null,
+                savedCount = state.value.savedCount + 1,
+                lastSavedBook = savedBook,
+            )
+            completedSaves.emit(savedBook)
+            analytics.finishAction(action, "success")
+        } catch (error: CancellationException) {
+            analytics.finishAction(action, "cancelled")
+            throw error
+        } catch (error: Throwable) {
+            analytics.finishAction(action, "failure", strings = mapOf("error_category" to analyticsErrorCategory(error)))
+            if (generation == requestGeneration) {
+                errors.report(error, ErrorOperation.LibrarySave) { freshToken ->
+                    if (generation == requestGeneration) {
                         if (freshToken != null) accessToken = freshToken
-                        if (shelfId == null) save(book) else confirmShelf()
+                        when {
+                            shelfId == null -> save(book)
+                            state.value.choosingBook != null -> confirmShelf()
+                            else -> saveToShelf(book, shelfId)
+                        }
                     }
-                    state.value = state.value.copy(failedBook = book, errorMessage = "서재에 담지 못했어요")
                 }
-            } finally {
-                if (generation == requestGeneration) state.value = state.value.copy(savingIsbn = null, showLoading = false)
+                state.value = state.value.copy(failedBook = book, errorMessage = "서재에 담지 못했어요")
             }
+        } finally {
+            if (generation == requestGeneration) state.value = state.value.copy(savingIsbn = null, showLoading = false)
         }
     }
 }
