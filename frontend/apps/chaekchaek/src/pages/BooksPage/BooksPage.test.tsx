@@ -249,7 +249,7 @@ describe('BooksPage', () => {
     await user.click(within(book!).getByRole('button', { name: '내 서재에 담기' }));
 
     // 담을 책장 고르기 팝업의 안내 문구, 책장 선택 항목과 버튼이 표시되는지 확인한다.
-    expect(await screen.findByText('담을 책장 고르기')).toBeVisible();
+    expect(await screen.findByText('책장 선택하기')).toBeVisible();
     expect(screen.getByText('최근 담은 책장이 선택되어 있어요.')).toBeVisible();
     const checkboxes = screen.getAllByRole('checkbox');
     expect(checkboxes.length).toBeGreaterThan(0);
