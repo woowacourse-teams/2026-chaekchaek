@@ -74,6 +74,9 @@ export const PMFDialog = (props: Props) => {
                   checked={isChecked}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const value = e.target.value;
+
+                    if (value === 'NO_UNKNOWN_FEATURES') return changeAnswer(currentIndex, [value]);
+
                     const isIncluded = answer?.includes(value);
                     const newAnswer = isIncluded
                       ? answer?.filter((a) => a !== value)
