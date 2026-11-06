@@ -5,6 +5,8 @@ import { Main } from '@/frames';
 import { PopularBooks } from './components/PopularBooks';
 import { LatestReviews } from './components/LatestReviews';
 
+import { PMFSurvey } from './components/PMFSurvey';
+
 import styles from './IntroPage.module.css';
 
 export const IntroPage = () => {
@@ -17,6 +19,7 @@ export const IntroPage = () => {
         </div>
         <div className={styles[`intro-right-side`]}>
           <LatestReviews />
+          <PMFSurvey />
         </div>
       </Main>
     </Layout>
