@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -122,7 +123,7 @@ internal fun PmfSurveyDialog(state: PmfSurveyUiState, onClose: () -> Unit, onSel
                                 state.questions.forEachIndexed { index, _ -> Box(Modifier.weight(1f).height(3.dp).background(if (index <= state.questionIndex) Accent else Color(0xFFE7E7E9), CircleShape)) }
                             }
                             key(question.code) {
-                                Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 24.dp)) {
+                                Column(Modifier.weight(1f, fill = false).clipToBounds().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 24.dp)) {
                                     Text(question.title, fontSize = 20.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-.5).sp)
                                     Text(if (question.multiple) "해당하는 항목을 모두 골라 주세요." else "하나를 골라 주세요.", modifier = Modifier.padding(top = 8.dp, bottom = 20.dp), fontSize = 12.sp, lineHeight = 18.sp, color = Color(0xFF737373))
                                     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 4.dp)) {
