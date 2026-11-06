@@ -288,6 +288,19 @@ private fun AppNavigationContent(
             analytics = analytics,
         )
     }
+    val surveyDismissal = com.chaekchaek.app.ui.survey.rememberSurveyDismissalStorage()
+    val surveyViewModel = androidx.lifecycle.viewmodel.compose.viewModel {
+        com.chaekchaek.app.presentation.survey.PmfSurveyViewModel(
+            com.chaekchaek.app.data.remote.PmfSurveyRemoteRepository(), surveyDismissal, Clock.System, analytics.errors,
+        )
+    }
+    fun surveyRespondent(): com.chaekchaek.app.domain.survey.SurveyRespondent? {
+        val token = authViewModel.tokens.value?.accessToken
+        return if (token != null) authViewModel.memberIdFor(token)?.let {
+            com.chaekchaek.app.domain.survey.SurveyRespondent.Member(it, token)
+        } else authPlatform.readGuest()?.token?.let { com.chaekchaek.app.domain.survey.SurveyRespondent.Guest(it) }
+    }
+    ErrorRecoveryEffect(surveyViewModel.errors)
     val libraryRepository = remember { LibraryRemoteRepository() }
     val memberRepository = remember { MemberRemoteRepository() }
     val bookshelfRepository = remember { com.chaekchaek.app.data.remote.BookshelfRemoteRepository() }
@@ -320,6 +333,7 @@ private fun AppNavigationContent(
     }
     LaunchedEffect(authTokens?.accessToken) {
         val accessToken = authTokens?.accessToken
+        surveyViewModel.authenticate(surveyRespondent())
         homeViewModel.authenticate(accessToken)
         bookshelfViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
         librarySaveViewModel.authenticate(accessToken, authViewModel.memberIdFor(accessToken))
@@ -396,6 +410,8 @@ private fun AppNavigationContent(
                     CompositionLocalProvider(LocalOpenAuthorLibrary provides { profile -> openAuthorLibrary(Root, profile) }) {
                         RootScreen(
                             homeViewModel = homeViewModel,
+                            surveyViewModel = surveyViewModel,
+                            onSurveyHomeEntered = { surveyViewModel.authenticate(surveyRespondent()); surveyViewModel.onHomeEntered() },
                             feedViewModel = feedViewModel,
                             searchViewModel = searchViewModel,
                             librarySaveViewModel = librarySaveViewModel,

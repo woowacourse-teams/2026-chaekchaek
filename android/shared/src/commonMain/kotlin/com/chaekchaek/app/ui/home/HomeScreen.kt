@@ -139,6 +139,8 @@ val LocalRemoteBookCover = staticCompositionLocalOf<RemoteBookCover> {
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel,
+    surveyViewModel: com.chaekchaek.app.presentation.survey.PmfSurveyViewModel? = null,
+    onSurveyHomeEntered: () -> Unit = { surveyViewModel?.onHomeEntered() },
     myDisplayName: String,
     scrollTopRequest: Int = 0,
     modifier: Modifier = Modifier,
@@ -161,17 +163,25 @@ fun HomeScreen(
         onDispose { homeViewModel.onHomeHidden() }
     }
 
+    DisposableEffect(surveyViewModel) {
+        onSurveyHomeEntered()
+        onDispose { surveyViewModel?.onHomeHidden() }
+    }
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) { onSurveyHomeEntered() }
+
+    Column(modifier.fillMaxSize()) {
+    val homeModifier = Modifier.fillMaxWidth().weight(1f)
     when (val state = uiState) {
         HomeUiState.Loading -> HomeStaticStateContent(
             onProfileClick = onProfileClick,
             homeHeaderAction = homeHeaderAction,
-            modifier = modifier,
+            modifier = homeModifier,
             content = { LoadingContent(it) },
         )
         HomeUiState.Empty -> HomeStaticStateContent(
             onProfileClick = onProfileClick,
             homeHeaderAction = homeHeaderAction,
-            modifier = modifier,
+            modifier = homeModifier,
             content = { bodyModifier ->
                 ChaekRefreshLayout(refreshState, homeViewModel::refresh, modifier = bodyModifier, bottomEnabled = false) {
                     RefreshableEmptyContent { EmptyContent(Modifier) }
@@ -188,7 +198,7 @@ fun HomeScreen(
                 homeHeaderAction,
                 onBookClick,
                 scrollTopRequest,
-                modifier,
+                homeModifier,
                 refreshState,
                 homeViewModel::refresh,
                 savedIsbns,
@@ -196,6 +206,8 @@ fun HomeScreen(
                 onSaveBook,
             )
         }
+    }
+    surveyViewModel?.let { com.chaekchaek.app.ui.survey.PmfSurveyBar(it) }
     }
 }
 
@@ -286,108 +298,6 @@ private fun HomeContent(
                         is FeedSectionUiModel.OverlappedBooks -> Unit
                     }
                 }
-            }
-        }
-        val readingBook = state.readingBook
-        StickyReadingBar(
-            book = readingBook,
-            onClick = {
-                if (readingBook == null) onSearchBook()
-                else onBookClick(readingBook.toBookDetailTarget())
-            },
-            modifier = Modifier,
-        )
-    }
-}
-
-@Composable
-private fun StickyReadingBar(book: ReadingBookUiModel?, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
-            .continueReadingShadow()
-            .height(89.dp),
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        color = Color(0xFF191919),
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (book == null) {
-                Box(
-                    modifier = Modifier
-                        .size(width = 42.dp, height = 60.dp)
-                        .background(Color(0xFFF1F1F3), RoundedCornerShape(2.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "?",
-                        color = Color(0xFF555555),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium),
-                        fontFamily = ChaekIconFontFamily(),
-                    )
-                }
-            } else {
-                Cover(book.coverId, book.title, Modifier.size(width = 42.dp, height = 60.dp))
-            }
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    if (book == null) "읽고 있는 책" else "이어서 읽기",
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.labelSmall,
-                )
-                Text(
-                    book?.title ?: "지금 읽고 있는 책이 있으세요?",
-                    color = Color.White,
-                    style = if (book == null) {
-                        MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                    } else {
-                        MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (book == null) {
-                    Text(
-                        "책 제목으로 찾기",
-                        color = Color.White.copy(alpha = 0.55f),
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            "${book.currentPage} / ${book.totalPages}쪽",
-                            color = Color.White.copy(alpha = 0.7f),
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-                        Text(
-                            "새 감상 -",
-                            color = Color.White.copy(alpha = 0.55f),
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-                    }
-                }
-                Box(Modifier.fillMaxWidth().height(3.dp).background(Color.White.copy(alpha = 0.2f))) {
-                    if (book != null) {
-                        Box(
-                            Modifier.fillMaxWidth(readingProgress(book.currentPage, book.totalPages)).height(3.dp)
-                                .background(MaterialTheme.colorScheme.secondary),
-                        )
-                    }
-                }
-            }
-            Box(
-                Modifier.size(40.dp).background(MaterialTheme.colorScheme.secondary, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    "↗",
-                    color = Color.Black,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = ChaekIconFontFamily(),
-                )
             }
         }
     }

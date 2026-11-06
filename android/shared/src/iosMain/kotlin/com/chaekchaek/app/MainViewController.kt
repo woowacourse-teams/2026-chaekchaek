@@ -39,6 +39,7 @@ fun MainViewController(
   logUserError: (String) -> Unit = {},
   uiTestingMyPage: Boolean = false,
   uiTestingBookQuestionA: Boolean = false,
+  uiTestingPmfSurvey: Boolean = false,
   showQuestionAPreviewControls: Boolean = true,
   policyController: com.chaekchaek.app.config.MobilePolicyController,
   onUpdate: () -> Unit,
@@ -49,7 +50,11 @@ fun MainViewController(
   return ComposeUIViewController {
     CompositionLocalProvider(LocalGoogleSignInButtonFactory provides createGoogleSignInButton) {
       var showPolicy by remember { mutableStateOf(false) }
-      if (uiTestingBookQuestionA) {
+      if (uiTestingPmfSurvey) {
+        ChaekchaekTheme {
+          Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) { com.chaekchaek.app.ui.survey.PmfSurveyPreviewScreen() }
+        }
+      } else if (uiTestingBookQuestionA) {
         ChaekchaekTheme {
           Box(Modifier.fillMaxSize().windowInsetsPadding(
             WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),

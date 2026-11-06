@@ -79,14 +79,17 @@ private struct ComposeViewController: UIViewControllerRepresentable {
 #endif
         let appleSignIn = AppleSignInProvider()
         let uiTestingMyPage: Bool
+        let uiTestingPmfSurvey: Bool
         let uiTestingBookQuestionA: Bool
         let showQuestionAPreviewControls: Bool
 #if DEBUG
         uiTestingMyPage = launchArguments.contains("-uiTestingMyPage")
+        uiTestingPmfSurvey = launchArguments.contains("-uiTestingPmfSurvey")
         uiTestingBookQuestionA = launchArguments.contains("-uiTestingBookQuestionA")
         showQuestionAPreviewControls = !launchArguments.contains("-uiTestingBookQuestionAContentOnly")
 #else
         uiTestingMyPage = false
+        uiTestingPmfSurvey = false
         uiTestingBookQuestionA = false
         showQuestionAPreviewControls = true
 #endif
@@ -195,6 +198,7 @@ private struct ComposeViewController: UIViewControllerRepresentable {
             logUserError: { PostHogAnalyticsEventLogger.captureUserError($0) },
             uiTestingMyPage: uiTestingMyPage,
             uiTestingBookQuestionA: uiTestingBookQuestionA,
+            uiTestingPmfSurvey: uiTestingPmfSurvey,
             showQuestionAPreviewControls: showQuestionAPreviewControls,
             policyController: context.coordinator.controller,
             onUpdate: { context.coordinator.openStore() },

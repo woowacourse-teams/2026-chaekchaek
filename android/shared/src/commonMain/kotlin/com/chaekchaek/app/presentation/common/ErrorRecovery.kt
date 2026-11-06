@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 enum class ErrorAction(val label: String) { Confirm("확인"), Retry("다시 시도"), Login("로그인") }
 
 enum class ErrorOperation(val failureTitle: String) {
+    SurveyLoad("설문을 불러오지 못했어요"), SurveySubmit("설문을 제출하지 못했어요"),
     HomeLoad("홈을 불러오지 못했어요"), FeedLoad("피드를 불러오지 못했어요"),
     Search("검색을 완료하지 못했어요"), LibraryLoad("서재를 불러오지 못했어요"),
     LibrarySave("책을 담지 못했어요"), Request("요청을 처리하지 못했어요"),

@@ -21,6 +21,7 @@
 		B30000000000000000000001 /* LoginRequiredSheetUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000002 /* LoginRequiredSheetUITests.swift */; };
 		B40000000000000000000001 /* FirstLibraryOnboardingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */; };
 		B56000000000000000000001 /* QuestionAPreviewUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56000000000000000000002 /* QuestionAPreviewUITests.swift */; };
+		B68700000000000000000001 /* PmfSurveyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68700000000000000000002 /* PmfSurveyUITests.swift */; };
 		C1D48550D30C0BB273B37351 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 16BE460966AC95DE0DF319EF /* PrivacyInfo.xcprivacy */; };
 		D40000000000000000000001 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = D40000000000000000000004 /* FirebaseAnalytics */; };
 		D40000000000000000000002 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000003 /* GoogleService-Info.plist */; };
@@ -62,6 +63,7 @@
 		B30000000000000000000004 /* ChaekchaekUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ChaekchaekUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FirstLibraryOnboardingUITests.swift; sourceTree = "<group>"; };
 		B56000000000000000000002 /* QuestionAPreviewUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuestionAPreviewUITests.swift; sourceTree = "<group>"; };
+		B68700000000000000000002 /* PmfSurveyUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PmfSurveyUITests.swift; sourceTree = "<group>"; };
 		D40000000000000000000003 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D55D6C97221F513AE0BCFAAB /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		D6E97D74FA1D461A9F8FEED3 /* ChaekchaekApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChaekchaekApp.swift; sourceTree = "<group>"; };
@@ -175,6 +177,7 @@
 			children = (
 				B40000000000000000000002 /* FirstLibraryOnboardingUITests.swift */,
 				B56000000000000000000002 /* QuestionAPreviewUITests.swift */,
+				B68700000000000000000002 /* PmfSurveyUITests.swift */,
 				B60700000000000000000002 /* PublicLibraryUITests.swift */,
 				B30000000000000000000002 /* LoginRequiredSheetUITests.swift */,
 			);
@@ -355,6 +358,7 @@
 			files = (
 				B40000000000000000000001 /* FirstLibraryOnboardingUITests.swift in Sources */,
 				B56000000000000000000001 /* QuestionAPreviewUITests.swift in Sources */,
+				B68700000000000000000001 /* PmfSurveyUITests.swift in Sources */,
 				B60700000000000000000001 /* PublicLibraryUITests.swift in Sources */,
 				B30000000000000000000001 /* LoginRequiredSheetUITests.swift in Sources */,
 			);

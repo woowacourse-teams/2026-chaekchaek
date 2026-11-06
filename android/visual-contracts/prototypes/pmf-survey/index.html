@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>책췍 설문 시안</title>
+  <style>
+    @font-face{font-family:AppSans;src:url('../../../shared/src/commonMain/composeResources/font/pretendard_regular.otf') format('opentype');font-display:swap;font-weight:400}
+    @font-face{font-family:AppSans;src:url('../../../shared/src/commonMain/composeResources/font/pretendard_semibold.otf') format('opentype');font-display:swap;font-weight:600 800}
+    :root{--ink:#191919;--muted:#666;--line:#dddde1;--soft:#f3f3f5;--accent:#ff8500;--phone-width:390px}
+    *{box-sizing:border-box}body{margin:0;background:#ececef;color:var(--ink);font-family:AppSans,sans-serif;font-weight:400}
+    button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}button:disabled{cursor:default}button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+    .workspace{display:flex;justify-content:center;align-items:flex-start;gap:64px;padding:40px 24px;min-height:100vh}
+    .review{width:230px;padding-top:34px;flex-shrink:0}.review h1{font-size:24px;line-height:32px;font-weight:400;margin:0 0 16px}.review p{font-size:14px;line-height:23px;color:var(--muted);margin:0 0 24px}
+    .review-label{font-size:12px;color:var(--muted);margin-bottom:10px}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}.controls button{border:1px solid #cccdd1;background:transparent;border-radius:12px;padding:9px 13px;font-size:13px}.controls button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .scenes{display:grid;gap:8px}.scenes button{text-align:left;background:transparent;border:0;border-bottom:1px solid #d7d7dc;padding:12px 0;font-size:14px}.scenes button span{color:#777;display:block;font-size:12px;margin-top:5px}.prototype-note{font-size:12px!important;line-height:20px!important;margin-top:24px!important}
+    .phone{width:var(--phone-width);aspect-ratio:390/914;background:#fff;border-radius:24px;position:relative;overflow:hidden;flex-shrink:0;box-shadow:0 18px 55px #19191912}
+    .home-reference{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+    .reading-cover{position:absolute;inset:79% 0 0;background:white}
+    .reference-nav{position:absolute;bottom:0;left:0;right:0;height:9.63%;overflow:hidden;pointer-events:none}
+    .reference-nav img{position:absolute;bottom:0;width:100%;height:auto;display:block}
+    .phone.original .reading-cover,.phone.original .survey-slot{display:none}
+    .review h1{font-weight:600}.review p{line-height:22px}.scenes button span{line-height:18px}
+    svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+    .survey-slot{position:absolute;left:12px;right:12px;bottom:8.507%;z-index:1}.survey-slot[hidden]{display:none}.survey-bar{position:relative;width:100%;height:89px;border:1px solid #ffffff1f;border-radius:20px;background:#191919;color:#fff;text-align:left;display:flex;align-items:center;padding:12px 13px;gap:12px;touch-action:pan-y;user-select:none;box-shadow:0 6px 20px #19191933}.survey-mark{color:var(--accent);width:40px;height:56px;border-radius:8px;background:#ffffff0d;display:grid;place-items:center;flex-shrink:0}.survey-mark svg{width:25px;height:25px}.survey-copy{flex:1;min-width:0}.survey-copy .eyebrow{color:#ff8500;font-size:10px;line-height:14px;font-weight:600;margin-bottom:2px}.survey-copy .title{font-size:15px;line-height:20px;font-weight:600;letter-spacing:-.35px}.survey-copy .hint{font-size:10px;line-height:14px;color:#bdbdbd;margin-top:6px}.survey-cta{width:40px;height:40px;flex-shrink:0;display:grid;place-items:center;border-radius:50%;background:#ff8500;color:#191919}.survey-arrow{width:17px;height:17px}
+    .overlay{position:absolute;inset:0;background:#0006;display:flex;align-items:center;justify-content:center;padding:24px;z-index:10}.overlay[hidden]{display:none}.dialog{background:white;width:100%;border-radius:22px;display:flex;flex-direction:column;max-height:100%;box-shadow:0 12px 35px #0002;overflow:hidden}.dialog-top{display:flex;justify-content:space-between;align-items:center;padding:12px 12px 0 20px;flex-shrink:0}.step{display:flex;align-items:center;gap:8px;font-size:12px;color:#858585}.step strong{font-weight:600;color:var(--ink)}.step .step-name{color:#191919;font-weight:600;font-size:13px;margin-right:8px}.close{width:44px;height:44px;border:0;display:grid;place-items:center;background:transparent;padding:0}.close svg{width:18px;height:18px}.progress{display:flex;gap:4px;padding:6px 20px 0;flex-shrink:0}.progress span{height:3px;border-radius:3px;background:#e7e7e9;flex:1}.progress span.reached{background:var(--accent)}.dialog-scroll{overflow-y:auto;min-height:0;padding:24px 20px 0;overscroll-behavior:contain}.question{font-size:20px;line-height:28px;margin:0;font-weight:600;letter-spacing:-.5px;word-break:keep-all;overflow-wrap:anywhere}.selection-hint{font-size:12px;line-height:18px;color:#737373;margin:8px 0 20px}.options{display:grid;gap:8px;padding-bottom:4px}.option{display:flex;align-items:center;gap:12px;text-align:left;padding:13px 14px;width:100%;min-height:50px;border:1px solid transparent;border-radius:12px;background:#f3f3f5;font-size:14px;line-height:20px;letter-spacing:-.2px;word-break:keep-all;overflow-wrap:anywhere}.option[aria-checked=true]{border-color:#ff8500;background:#fff6eb}.choice{width:18px;height:18px;border:1.5px solid #c4c4c9;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:white}.multiple .choice{border-radius:5px}.option[aria-checked=true] .choice{background:#ff8500;border-color:#ff8500}.option[aria-checked=true] .choice:after{content:'';width:6px;height:6px;background:#191919;border-radius:50%}.multiple .option[aria-checked=true] .choice:after{width:7px;height:4px;background:transparent;border-radius:0;border-left:1.5px solid #191919;border-bottom:1.5px solid #191919;transform:translateY(-1px) rotate(-45deg)}.option-label{flex:1}.dialog-footer{padding:20px;display:flex;gap:8px;flex-shrink:0;background:white}.action{height:46px;border-radius:12px;padding:0 16px;border:0;background:#ff8500;color:#191919;flex:1;font-size:14px;font-weight:600}.action:disabled{color:#a6a6ad;background:#e9e9ed}.action.secondary{flex:0 0 72px;background:#f3f3f5;color:var(--ink);border:0;font-weight:400}
+    .success{padding:20px 24px 0;text-align:center}.success-mark{display:grid;place-items:center;background:#fff2e3;color:#c65d00;width:56px;height:56px;border-radius:50%;margin:0 auto 20px}.success-mark svg{width:28px;height:28px}.success h2{font-size:22px;line-height:30px;font-weight:600;margin:0 0 12px}.success p{font-size:14px;line-height:22px;color:var(--muted);margin:0 0 8px}.success-close{justify-content:flex-end}.error-copy{padding:4px 24px 0}.error-copy h2{font-size:20px;font-weight:600;margin:0 0 12px}.error-copy p{font-size:14px;line-height:22px;color:var(--muted);margin:0}
+    .toast{position:absolute;left:24px;right:24px;bottom:104px;background:#fff;border:1px solid #dddde1;border-radius:12px;padding:12px 16px;font-size:13px;text-align:center;box-shadow:0 4px 15px #0002;z-index:2}.toast[hidden]{display:none}
+    @media(max-width:760px){.workspace{padding:20px 12px;gap:24px;flex-direction:column;align-items:center}.review{width:min(100%,390px);padding:0}.review h1{font-size:20px;margin-bottom:8px}.review>p,.review-label,.prototype-note{display:none}.controls{display:inline-flex;margin:6px 8px 10px 0}.scenes{display:flex;gap:12px;flex-wrap:wrap}.scenes button{font-size:12px;padding:8px 0}.scenes button span{display:none}.phone{max-width:100%}.workspace{min-height:100vh}}
+    .phone.compact .survey-mark{display:none}.phone.compact .survey-bar{height:78px}.phone.compact .overlay{padding:20px}.phone.compact .question{font-size:19px;line-height:26px}.phone.compact .survey-copy .title{font-size:14px}.phone.compact .survey-copy .hint{font-size:9px}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <aside class="review" aria-label="시안 검토 도구">
+      <h1>홈에 맞춘 설문 시안</h1>
+      <p>제공한 홈 SVG의 기존 하단 카드<br>자리에 설문 바를 배치했습니다.</p>
+      <div class="review-label">화면 너비</div>
+      <div class="controls"><button class="active" data-width="390">390px</button><button data-width="320">320px</button></div>
+      <div class="review-label">상태 바로 보기</div>
+      <div class="scenes">
+        <button data-scene="original">SVG 원본 비교<span>제공한 홈 화면 그대로</span></button>
+        <button data-scene="home">홈과 설문 바<span>스와이프하면 24시간 숨김</span></button>
+        <button data-scene="first">설문 시작<span>한 문항씩 이전·다음 이동</span></button>
+        <button data-scene="multiple">복수 선택 문항<span>‘몰랐던 기능 없음’은 단독 선택</span></button>
+        <button data-scene="complete">제출 완료<span>설문 바 숨김</span></button>
+        <button data-scene="failure">제출 실패<span>선택 보존과 재시도</span></button>
+      </div>
+      <p class="prototype-note">홈은 제공된 SVG를 사용합니다.<br>설문 바와 다이얼로그를 조작할 수 있어요.<br>서버로 응답을 전송하지 않습니다.<br>상태 바로 보기는 시안을 초기화합니다.</p>
+    </aside>
+    <section class="phone" aria-label="책췍 모바일 시안">
+      <!-- User-provided 01 홈.svg, SHA-256: 5739d432f3bba3218ea0452fc6cc222ce747611d644776a0d771a0f2940dcfaf.
+           The home SVG stays unchanged. A white cover replaces the reading-card area;
+           the exact original bottom navigation is rendered above that cover. -->
+      <img class="home-reference" src="assets/home-reference.svg" alt="제공된 홈 SVG. 책췍 헤더, 책 표지 캐러셀, 최근 감상 카드와 네 개의 하단 탭">
+      <div class="reading-cover" aria-hidden="true"></div>
+      <div class="reference-nav" aria-hidden="true"><img src="assets/home-reference.svg" alt=""></div>
+      <div class="survey-slot" id="survey-slot"><button class="survey-bar" id="survey-bar" aria-label="책췍 설문 참여하기. 좌우 스와이프로 하루 동안 숨길 수 있습니다."><span class="survey-mark"><svg viewBox="0 0 24 24"><path d="M6 4h12v17H6zM9 2h6v4H9zM9 11h6M9 15h4"/></svg></span><span class="survey-copy"><span class="eyebrow" style="display:block">책췍 설문</span><span class="title" style="display:block">여러분의 의견을 들려주세요</span><span class="hint" style="display:block">밀어서 하루 동안 숨기기</span></span><span class="survey-cta"><svg class="survey-arrow" viewBox="0 0 24 24"><path d="m7 17 10-10M7 7h10v10"/></svg></span></button></div>
+      <div class="toast" id="toast" role="status" hidden>내일 다시 보여드릴게요.</div>
+      <div class="overlay" id="survey-overlay" hidden><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="question-title" tabindex="-1" id="survey-dialog"></section></div>
+      <div class="overlay" id="error-overlay" hidden style="z-index:11"><section class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="error-title"><div class="dialog-top success-close"><button class="close" aria-label="오류 안내 닫기" data-error-close><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="error-copy"><h2 id="error-title">설문을 제출하지 못했어요</h2><p>선택한 답변은 그대로 있어요.<br>잠시 후 다시 시도해 주세요.</p></div><div class="dialog-footer"><button class="action secondary" data-error-close>닫기</button><button class="action" id="retry">다시 시도</button></div></section></div>
+    </section>
+  </main>
+  <script>
+    // Questions and option labels are the development OpenAPI example, retrieved 2026-11-06.
+    const questions = [{"questionCode": "PMF_CORE", "question": "이 제품을 더 이상 쓸 수 없다면 어떻겠습니까?", "multipleSelection": false, "options": [{"answerCode": "VERY_DISAPPOINTED", "label": "매우 실망"}, {"answerCode": "SLIGHTLY_DISAPPOINTED", "label": "약간 실망"}, {"answerCode": "NOT_DISAPPOINTED", "label": "실망하지 않음"}, {"answerCode": "NO_LONGER_USING", "label": "더 이상 쓰지 않음"}]}, {"questionCode": "MOST_MISSED_FEATURE", "question": "책췍을 더 이상 사용할 수 없다면, 가장 아쉬울 기능은 무엇입니까?", "multipleSelection": false, "options": [{"answerCode": "LIBRARY_AND_SHELVES", "label": "내 서재와 책장"}, {"answerCode": "OTHERS_FEED", "label": "다른 사람들 감상 보기(피드)"}, {"answerCode": "REVIEWS_AND_REPLIES", "label": "감상, 답글 작성"}, {"answerCode": "NO_MISSING_FEATURE", "label": "특별히 아쉬운 기능 없음"}]}, {"questionCode": "UNKNOWN_FEATURES", "question": "책췍을 사용하면서 있는 줄 몰랐던 기능을 모두 골라 주세요", "multipleSelection": true, "options": [{"answerCode": "OTHERS_FEED", "label": "다른 사람들 감상 보기(피드)"}, {"answerCode": "ADD_BOOK_TO_LIBRARY", "label": "책 서재에 담기"}, {"answerCode": "WRITE_REVIEW_OR_REPLY", "label": "감상/답글 남기기"}, {"answerCode": "SEARCH_BOOKS", "label": "책 검색하기"}, {"answerCode": "CHANGE_NICKNAME", "label": "닉네임 변경하기"}, {"answerCode": "TOGGLE_REVIEW_ANONYMITY", "label": "감상/답글 익명으로 설정하고 해제하기"}, {"answerCode": "NO_UNKNOWN_FEATURES", "label": "몰랐던 기능 없음"}]}, {"questionCode": "RELAUNCH_INTENT", "question": "책췍이 다시 출시된다면 사용해 볼 의향이 있습니까?", "multipleSelection": false, "options": [{"answerCode": "YES", "label": "예"}, {"answerCode": "NO", "label": "아니요"}, {"answerCode": "UNSURE", "label": "잘 모르겠음"}]}];
+    const $ = selector => document.querySelector(selector);
+    const answers = questions.map(() => new Set());
+    const storageKey = 'chaekchaek-pmf-html-preview';
+    const dayMs = 24 * 60 * 60 * 1000;
+    let currentQuestion = 0, finished = false, failNextSubmit = false, pointerStart = null, suppressClick = false, toastTimer;
+    let visibility = {hiddenUntil: 0, submitted: false};
+    try { visibility = {...visibility, ...JSON.parse(localStorage.getItem(storageKey) || '{}')}; } catch {}
+    function saveVisibility() { try { localStorage.setItem(storageKey, JSON.stringify(visibility)); } catch {} }
+    function renderBar() { $('#survey-slot').hidden = visibility.submitted || Date.now() < visibility.hiddenUntil; }
+    const xIcon = '<svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+    function renderQuestion() {
+      finished = false;
+      const q = questions[currentQuestion], selected = answers[currentQuestion];
+      $('#survey-dialog').innerHTML = `<div class="dialog-top"><span class="step"><span class="step-name">책췍 설문</span><span><strong>${currentQuestion + 1}</strong> / ${questions.length}</span></span><button class="close" aria-label="설문 닫기">${xIcon}</button></div><div class="progress" aria-hidden="true">${questions.map((_,i) => `<span class="${i <= currentQuestion ? 'reached' : ''}"></span>`).join('')}</div><div class="dialog-scroll"><h2 class="question" id="question-title">${q.question}</h2><p class="selection-hint">${q.multipleSelection ? '해당하는 항목을 모두 골라 주세요.' : '하나를 골라 주세요.'}</p><div class="options ${q.multipleSelection ? 'multiple' : ''}" role="${q.multipleSelection ? 'group' : 'radiogroup'}" aria-labelledby="question-title">${q.options.map((o,i) => `<button class="option" role="${q.multipleSelection ? 'checkbox' : 'radio'}" aria-checked="${selected.has(o.answerCode)}" data-option="${i}"><span class="choice" aria-hidden="true"></span><span class="option-label">${o.label}</span></button>`).join('')}</div></div><div class="dialog-footer">${currentQuestion > 0 ? '<button class="action secondary" id="previous">이전</button>' : ''}<button class="action" id="next" ${selected.size ? '' : 'disabled'}>${currentQuestion === questions.length - 1 ? '제출하기' : '다음'}</button></div>`;
+      $('#survey-dialog .close').onclick = closeSurvey;
+      $('#previous')?.addEventListener('click', () => changeQuestion(-1));
+      $('#next').onclick = () => currentQuestion === questions.length - 1 ? submitSurvey() : changeQuestion(1);
+      document.querySelectorAll('[data-option]').forEach(button => button.onclick = () => selectOption(Number(button.dataset.option)));
+    }
+    function selectOption(index) {
+      const q = questions[currentQuestion], code = q.options[index].answerCode, selected = answers[currentQuestion];
+      if (!q.multipleSelection) { selected.clear(); selected.add(code); }
+      else if (selected.has(code)) selected.delete(code);
+      else { if (code === 'NO_UNKNOWN_FEATURES') selected.clear(); else selected.delete('NO_UNKNOWN_FEATURES'); selected.add(code); }
+      document.querySelectorAll('[data-option]').forEach(button => button.setAttribute('aria-checked', String(selected.has(q.options[Number(button.dataset.option)].answerCode))));
+      $('#next').disabled = selected.size === 0;
+    }
+    function changeQuestion(delta) { currentQuestion += delta; renderQuestion(); $('#survey-dialog').focus(); }
+    function openSurvey() { renderQuestion(); $('#survey-overlay').hidden = false; $('#survey-dialog').focus(); }
+    function closeSurvey() { $('#survey-overlay').hidden = true; $('#survey-bar').focus(); }
+    function renderSuccess() {
+      finished = true;
+      $('#survey-dialog').innerHTML = `<div class="dialog-top success-close"><button class="close" aria-label="완료 안내 닫기">${xIcon}</button></div><div class="success"><div class="success-mark"><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7" stroke-width="2"/></svg></div><h2 id="question-title">의견을 들려주셔서 고마워요</h2><p>여러분의 답변을 바탕으로<br>더 나은 책췍을 만들어 갈게요.</p></div><div class="dialog-footer"><button class="action" id="done">확인</button></div>`;
+      $('#done').onclick = closeSurvey; $('#survey-dialog .close').onclick = closeSurvey;
+    }
+    function submitSurvey() {
+      if (answers.some(a => !a.size)) return;
+      if (failNextSubmit) { failNextSubmit = false; $('#error-overlay').hidden = false; $('#retry').focus(); return; }
+      visibility.submitted = true; saveVisibility(); renderBar(); renderSuccess(); $('#survey-dialog').focus();
+    }
+    function dismissBar() {
+      visibility.hiddenUntil = Date.now() + dayMs; saveVisibility(); renderBar();
+      $('#toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').hidden = true, 2600);
+    }
+    $('#survey-bar').onclick = () => { if (suppressClick) { suppressClick = false; return; } openSurvey(); };
+    $('#survey-bar').onpointerdown = event => { pointerStart = {x:event.clientX,y:event.clientY}; suppressClick = false; $('#survey-bar').setPointerCapture(event.pointerId); };
+    $('#survey-bar').onpointermove = event => {
+      if (!pointerStart) return;
+      const dx = event.clientX - pointerStart.x, dy = event.clientY - pointerStart.y;
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { $('#survey-bar').style.transform = `translateX(${dx}px)`; $('#survey-bar').style.opacity = String(Math.max(.2,1-Math.abs(dx)/280)); }
+    };
+    function endSwipe(event, cancelled = false) {
+      if (!pointerStart) return;
+      const dx = event.clientX-pointerStart.x, dy = event.clientY-pointerStart.y;
+      pointerStart = null; $('#survey-bar').style.transform = ''; $('#survey-bar').style.opacity = '';
+      if (!cancelled && Math.abs(dx) >= 80 && Math.abs(dx) > Math.abs(dy)) { suppressClick = true; dismissBar(); }
+    }
+    $('#survey-bar').onpointerup = event => endSwipe(event);
+    $('#survey-bar').onpointercancel = event => endSwipe(event, true);
+    document.querySelectorAll('[data-width]').forEach(button => button.onclick = () => { document.documentElement.style.setProperty('--phone-width',button.dataset.width+'px'); $('.phone').classList.toggle('compact',button.dataset.width==='320'); document.querySelectorAll('[data-width]').forEach(b => b.classList.toggle('active',b===button)); });
+    document.querySelectorAll('[data-scene]').forEach(button => button.onclick = () => {
+      visibility = {hiddenUntil:0,submitted:false}; saveVisibility(); renderBar();
+      answers.forEach(a => a.clear()); currentQuestion = 0; failNextSubmit = false; $('#toast').hidden = true; $('#error-overlay').hidden = true; $('#survey-overlay').hidden = true;
+      $('.phone').classList.toggle('original',button.dataset.scene === 'original');
+      if (button.dataset.scene === 'home' || button.dataset.scene === 'original') return;
+      if (button.dataset.scene === 'multiple') { answers[0].add(questions[0].options[0].answerCode); answers[1].add(questions[1].options[0].answerCode); currentQuestion = 2; }
+      if (button.dataset.scene === 'failure') { questions.forEach((q,i) => answers[i].add(q.options[0].answerCode)); currentQuestion = 3; failNextSubmit = true; }
+      openSurvey();
+      if (button.dataset.scene === 'complete') { visibility.submitted = true; saveVisibility(); renderBar(); renderSuccess(); }
+      if (button.dataset.scene === 'failure') submitSurvey();
+    });
+    document.querySelectorAll('[data-error-close]').forEach(b => b.onclick = () => { $('#error-overlay').hidden = true; $('#next').focus(); });
+    $('#retry').onclick = () => { $('#error-overlay').hidden = true; submitSurvey(); };
+    document.addEventListener('keydown',event => {
+      const active = !$('#error-overlay').hidden ? $('#error-overlay') : !$('#survey-overlay').hidden ? $('#survey-overlay') : null;
+      if (!active) return;
+      if (event.key === 'Escape') { event.preventDefault(); if (active.id === 'error-overlay') { active.hidden = true; $('#next').focus(); } else closeSurvey(); }
+      if (event.key === 'Tab') {
+        const nodes = [...active.querySelectorAll('button:not(:disabled)')], first=nodes[0],last=nodes[nodes.length-1];
+        if (event.shiftKey && (document.activeElement === first || document.activeElement === $('#survey-dialog'))) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+    });
+    renderBar(); setInterval(renderBar,60000);
+  </script>
+</body>
+</html>
