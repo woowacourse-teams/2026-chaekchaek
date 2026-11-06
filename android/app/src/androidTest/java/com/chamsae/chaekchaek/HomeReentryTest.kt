@@ -9,6 +9,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.onAllNodesWithText
@@ -48,7 +49,7 @@ class HomeReentryTest {
             }
         }
 
-        compose.onNodeWithText("지금 읽고 있는 책이 있으세요?").assertIsDisplayed()
+        compose.onNodeWithText("지금 읽고 있는 책이 있으세요?").assertDoesNotExist()
         compose.runOnIdle { assertEquals(listOf<String?>(null), repository.accessTokens.toList()) }
     }
 
@@ -69,7 +70,7 @@ class HomeReentryTest {
                 }
             }
         }
-        compose.onNodeWithText("삭제 전 읽던 책").assertIsDisplayed()
+        compose.onNodeWithText("삭제 전 읽던 책").assertDoesNotExist()
         var requestsBeforeReentry = 0
         compose.runOnIdle {
             requestsBeforeReentry = repository.accessTokens.size
@@ -86,7 +87,7 @@ class HomeReentryTest {
                 (viewModel.uiState.value as? HomeUiState.Content)?.readingBook == null
         }
         compose.onAllNodesWithText("삭제 전 읽던 책").assertCountEquals(0)
-        compose.onNodeWithText("지금 읽고 있는 책이 있으세요?").assertIsDisplayed()
+        compose.onNodeWithText("지금 읽고 있는 책이 있으세요?").assertDoesNotExist()
         compose.runOnIdle { assertEquals("access-token", repository.accessTokens.last()) }
     }
 
@@ -138,7 +139,7 @@ class HomeReentryTest {
                 }
             }
         }
-        compose.onNodeWithText("삭제 전 읽던 책").assertIsDisplayed()
+        compose.onNodeWithText("삭제 전 읽던 책").assertDoesNotExist()
         val previousViewModel = viewModel
         compose.runOnIdle { showHome.value = false }
         compose.waitForIdle()
@@ -158,7 +159,7 @@ class HomeReentryTest {
                 (viewModel.uiState.value as? HomeUiState.Content)?.readingBook == null
         }
         compose.onAllNodesWithText("삭제 전 읽던 책").assertCountEquals(0)
-        compose.onNodeWithText("지금 읽고 있는 책이 있으세요?").assertIsDisplayed()
+        compose.onNodeWithText("지금 읽고 있는 책이 있으세요?").assertDoesNotExist()
         compose.runOnIdle { assertEquals("access-token", repository.accessTokens.last()) }
     }
 }
