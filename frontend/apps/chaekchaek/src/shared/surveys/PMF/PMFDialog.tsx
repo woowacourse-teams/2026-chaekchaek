@@ -16,7 +16,23 @@ export const PMFDialog = (props: Props) => {
     setCurrentIndex((prev) => prev + 1);
   };
 
+  const [answers, setAnswers] = useState<string[][]>(() =>
+    Array.from({ length: questions.length }).map(() => []),
+  );
+  const changeAnswer = (currentIndex: number, currentAnswer: string[]) => {
+    setAnswers(
+      answers.map((answer, answerIndex) => (answerIndex === currentIndex ? currentAnswer : answer)),
+    );
+  };
+
   const question = questions[currentIndex];
+  const answer = answers[currentIndex];
+
+  const isFirstQuestion = currentIndex === 0;
+  const hasNextQuestion = currentIndex !== answers.length - 1;
+  const isLastQuestion = currentIndex === answers.length - 1;
+
+  const hasNOAnswer = !(answer && answer.length > 0);
 
   return (
     <Dialog size="large" onClose={onClose}>
@@ -30,8 +46,19 @@ export const PMFDialog = (props: Props) => {
           </Title>
 
           {question?.options.map((option) => {
+            const isChecked = !!answer?.includes(option.answerCode);
             return (
-              <Radio sx={{ mt: 2 }} block size="large" id={question.questionCode}>
+              <Radio
+                sx={{ mt: 2 }}
+                block
+                size="large"
+                id={question.questionCode}
+                value={option.answerCode}
+                checked={isChecked}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                  changeAnswer(currentIndex, [e.target.value]);
+                }}
+              >
                 {option.label}
               </Radio>
             );
@@ -39,12 +66,21 @@ export const PMFDialog = (props: Props) => {
         </Dialog.Body>
         <Dialog.Footer>
           <ButtonStack>
-            <Button variant="ghost" onClick={handleClickPrev}>
-              이전
-            </Button>
-            <Button variant="primary" onClick={handleClickNext}>
-              다음
-            </Button>
+            {!isFirstQuestion && (
+              <Button variant="ghost" onClick={handleClickPrev}>
+                이전
+              </Button>
+            )}
+            {hasNextQuestion && (
+              <Button variant="primary" disabled={hasNOAnswer} onClick={handleClickNext}>
+                다음
+              </Button>
+            )}
+            {isLastQuestion && (
+              <Button variant="primary" onClick={() => {}}>
+                제출
+              </Button>
+            )}
           </ButtonStack>
         </Dialog.Footer>
       </Dialog.Container>
