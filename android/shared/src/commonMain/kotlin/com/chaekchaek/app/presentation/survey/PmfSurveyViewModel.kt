@@ -107,6 +107,10 @@ class PmfSurveyViewModel(
 
     fun dismissForDay() {
         if (!state.value.barVisible || state.value.dialogOpen) return
+        // 홈 재조회보다 사용자가 선택한 숨김을 우선하고 늦게 도착한 응답도 무시한다.
+        generation++
+        request?.cancel()
+        request = null
         dismissal.hideUntil(clock.now().toEpochMilliseconds() + HIDE_FOR_DAY_MILLIS)
         state.value = state.value.copy(barVisible = false)
         load()

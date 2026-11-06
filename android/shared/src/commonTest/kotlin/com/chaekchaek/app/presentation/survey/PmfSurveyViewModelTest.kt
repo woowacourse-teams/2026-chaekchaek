@@ -53,6 +53,27 @@ class PmfSurveyViewModelTest {
         second.onHomeHidden()
     }
 
+    @Test fun `재조회 중 숨기면 늦은 응답을 무시하고 24시간 뒤 다시 조회한다`() = scenario {
+        var now = 0L
+        var loads = 0
+        val pending = CompletableDeferred<SurveyAvailability>()
+        val repo = object : PmfSurveyRepository {
+            override suspend fun availability(respondent: SurveyRespondent): SurveyAvailability =
+                if (++loads == 2) withContext(NonCancellable) { pending.await() } else available()
+            override suspend fun submit(respondent: SurveyRespondent, submissionToken: String, answers: List<SurveyAnswer>) = Unit
+        }
+        val vm = PmfSurveyViewModel(repo, MemoryDismissal(), object : Clock { override fun now() = Instant.fromEpochMilliseconds(now) })
+        vm.authenticate(SurveyRespondent.Guest("test-guest")); vm.onHomeEntered(); runCurrent()
+        vm.onHomeEntered(); runCurrent()
+        vm.dismissForDay(); runCurrent()
+        pending.complete(available()); runCurrent()
+        assertFalse(vm.uiState.value.barVisible)
+        now = 86_400_000; advanceTimeBy(86_400_000); runCurrent()
+        assertEquals(3, loads)
+        assertTrue(vm.uiState.value.barVisible)
+        vm.onHomeHidden()
+    }
+
     @Test fun `이미 응답했거나 대상이 아니면 바를 표시하지 않는다`() = scenario {
         for (result in listOf(SurveyAvailability(false, false, null, emptyList()), SurveyAvailability(true, true, null, emptyList()))) {
             val vm = viewModel(Repository(result)); vm.authenticate(SurveyRespondent.Guest("test-guest")); vm.onHomeEntered(); runCurrent()
