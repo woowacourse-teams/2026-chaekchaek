@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -58,8 +57,7 @@ fun PmfSurveyBar(viewModel: PmfSurveyViewModel) {
             BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
                 val compact = maxWidth < 330.dp
                 Row(
-                    Modifier.testTag("pmf-survey-bar").semantics { testTagsAsResourceId = true }
-                        .fillMaxWidth().height(if (compact) 78.dp else 89.dp)
+                    Modifier.fillMaxWidth().height(if (compact) 78.dp else 89.dp)
                         .onSizeChanged { width = it.width }
                         .graphicsLayer { translationX = drag; alpha = (1f - abs(drag) / width).coerceAtLeast(.2f) }
                         .pointerInput(viewModel, width) {
