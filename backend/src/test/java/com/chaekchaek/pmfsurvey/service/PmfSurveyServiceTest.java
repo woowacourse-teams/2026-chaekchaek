@@ -77,7 +77,7 @@ class PmfSurveyServiceTest {
     void should_ReturnQuestions_When_ActorIsEligibleAndHasNotResponded() {
         when(responseRepository.existsByActorId(ACTOR_ID)).thenReturn(false);
         when(eligibilityReader.hasCoreActionSince(any(Long.class), any(Long.class), any(Instant.class)))
-                .thenReturn(true);
+                .thenReturn(1L);
         when(eligibilityTokenProvider.issue(ACTOR_ID)).thenReturn("signed-token");
 
         PmfSurveyAvailabilityResponse response = pmfSurveyService.getSurvey();
