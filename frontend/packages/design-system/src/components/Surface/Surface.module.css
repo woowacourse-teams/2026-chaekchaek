@@ -18,6 +18,18 @@
   border-radius: 12px;
 }
 
+.variant-primary {
+  border-radius: 20px;
+  background-color: var(--chaek-color-surface-action);
+  color: var(--chaek-color-text-inverse);
+}
+
+.variant-accent {
+  border-radius: 12px;
+  background-color: var(--chaek-color-surface-accent);
+  color: #ffffff;
+}
+
 .spacing-small {
   padding: 12px 14px;
 }
