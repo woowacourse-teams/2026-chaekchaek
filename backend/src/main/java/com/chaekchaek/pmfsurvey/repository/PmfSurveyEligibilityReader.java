@@ -28,7 +28,7 @@ public interface PmfSurveyEligibilityReader extends Repository<com.chaekchaek.pm
                 )
             )
             """, nativeQuery = true)
-    boolean hasCoreActionSince(
+    long hasCoreActionSince(
             @Param("actorId") long actorId,
             @Param("memberId") Long memberId,
             @Param("since") Instant since
