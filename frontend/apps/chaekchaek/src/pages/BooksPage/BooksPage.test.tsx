@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { describe, it, expect, vi } from 'vitest';
@@ -15,10 +15,66 @@ import { BooksPage } from './BooksPage';
 import { harrySearchPage1, harrySearchPage2, martianSearchPage } from './BooksPage.fixtures';
 
 describe('BooksPage', () => {
+  it('검색 전에는 안내 제목을 유지하고 입력만으로 검색하지 않는다', async () => {
+    const searchRequest = vi.fn(() => HttpResponse.json(harrySearchPage1));
+    server.use(http.get(`${ENV.APP_API_URL}/api/v1/books`, searchRequest));
+
+    renderProvider(<BooksPage />);
+    const user = userEvent.setup();
+
+    await user.type(screen.getByRole('textbox', { name: '책 검색' }), '해리');
+
+    expect(screen.getByText('책 제목이나 작가를 입력해 주세요.')).toBeVisible();
+    expect(screen.queryByText('검색 결과가 없어요.')).not.toBeInTheDocument();
+    expect(searchRequest).not.toHaveBeenCalled();
+  });
+
+  it('빈 결과는 검색 성공 후에만 표시하고 다음 검색 중과 오류 시에는 숨긴다', async () => {
+    let resolveResponse!: (response: Response) => void;
+    const searchRequest = vi.fn(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveResponse = resolve;
+        }),
+    );
+    server.use(http.get(`${ENV.APP_API_URL}/api/v1/books`, searchRequest));
+
+    renderProvider(<BooksPage />);
+    const user = userEvent.setup();
+    const input = screen.getByRole('textbox', { name: '책 검색' });
+    await user.type(input, '없는책{Enter}');
+    await waitFor(() => expect(searchRequest).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByText("'없는책' 검색 결과")).toBeVisible();
+    expect(screen.queryByText('검색 결과가 없어요.')).not.toBeInTheDocument();
+
+    resolveResponse(HttpResponse.json({ ...harrySearchPage1, items: [], totalCount: 0 }));
+    expect(await screen.findByText('검색 결과가 없어요.')).toBeVisible();
+
+    await user.clear(input);
+    await user.type(input, '오류검색{Enter}');
+    await waitFor(() => expect(searchRequest).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText('검색 결과가 없어요.')).not.toBeInTheDocument();
+
+    await act(async () => {
+      const responseHandled = new Promise<void>((resolve) => {
+        const handleResponse = () => {
+          server.events.removeListener('response:mocked', handleResponse);
+          resolve();
+        };
+        server.events.on('response:mocked', handleResponse);
+      });
+      resolveResponse(HttpResponse.json({ detail: '검색 오류' }, { status: 500 }));
+      await responseHandled;
+    });
+    expect(screen.queryByText('검색 결과가 없어요.')).not.toBeInTheDocument();
+    expect(screen.getByText("'오류검색' 검색 결과")).toBeVisible();
+  });
+
   it('기본 렌더링이 된다', () => {
     renderProvider(<BooksPage />);
 
-    expect(screen.getByText('책 찾기')).toBeInTheDocument();
+    expect(screen.getByText('검색')).toBeInTheDocument();
   });
 
   it.each(['Enter', '검색 버튼'])('%s로 검색하면 검색 결과를 보여준다', async (trigger) => {
@@ -193,7 +249,7 @@ describe('BooksPage', () => {
     await user.click(within(book!).getByRole('button', { name: '내 서재에 담기' }));
 
     // 담을 책장 고르기 팝업의 안내 문구, 책장 선택 항목과 버튼이 표시되는지 확인한다.
-    expect(await screen.findByText('담을 책장 고르기')).toBeVisible();
+    expect(await screen.findByText('책장 선택하기')).toBeVisible();
     expect(screen.getByText('최근 담은 책장이 선택되어 있어요.')).toBeVisible();
     const checkboxes = screen.getAllByRole('checkbox');
     expect(checkboxes.length).toBeGreaterThan(0);

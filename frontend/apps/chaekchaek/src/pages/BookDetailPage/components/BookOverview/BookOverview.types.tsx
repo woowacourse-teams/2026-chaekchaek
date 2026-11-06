@@ -7,6 +7,7 @@ export type Props = {
   publisher: string | undefined;
   description: string | undefined;
   averageRating: number | undefined;
+  ratingCount: number | undefined;
   reviewCount: number | undefined;
   replyCount: number | undefined;
   coverImageUrl: string | undefined;

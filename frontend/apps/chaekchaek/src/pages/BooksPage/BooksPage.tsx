@@ -6,6 +6,7 @@ import { Layout } from '@/frames';
 import { Header } from '@/frames';
 import { Main } from '@/frames';
 import { Container } from '@/frames/Container';
+import { ScrollToTopButton } from '@/frames/ScrollToTopButton';
 
 import { Chip, Icon, IconButton, Notice, Split, VisuallyHidden } from '@chaekchaek/design-system';
 import { Title } from '@chaekchaek/design-system';
@@ -96,7 +97,7 @@ export const BooksPage = () => {
   }, [keywordQuery, defaultPage]);
 
   const {
-    status: { data },
+    status: { data, status },
     refetch: refetchGEtBooksLoadData,
   } = useLoadData({
     queryFn: getBooksLoadData,
@@ -184,7 +185,7 @@ export const BooksPage = () => {
   const dialogElement = renderDialog(dialog);
 
   return (
-    <Layout>
+    <Layout floating={<ScrollToTopButton />}>
       <Header />
       <Main>
         <Container>
@@ -212,16 +213,16 @@ export const BooksPage = () => {
                   </>
                 }
               >
-                책 찾기
+                검색
               </Title>
             </Split.Side>
             <Split.Content>
               <Title level="main" trailing={<></>} sx={{ mb: 5 }}>
-                '{keywordQuery}' 검색 결과
+                {keywordQuery.length
+                  ? `'${keywordQuery}' 검색 결과`
+                  : '책 제목이나 작가를 입력해 주세요.'}
               </Title>
-              {data && !data?.items?.length && (
-                <Notice height={500}>검색된 데이터가 없습니다.</Notice>
-              )}
+              {data && !data?.items?.length && <Notice height={500}>검색 결과가 없어요.</Notice>}
               <List>
                 {!!data?.items.length &&
                   data?.items.map((item) => {

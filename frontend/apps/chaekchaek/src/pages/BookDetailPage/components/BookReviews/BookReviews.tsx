@@ -88,8 +88,8 @@ export const BookReviews = ({
         sx={{ mt: 4, mb: 4 }}
         value={feed}
         options={[
-          { value: 'ALL', text: '전체 피드' },
-          { value: 'MINE', text: '내 피드' },
+          { value: 'ALL', text: '전체 감상' },
+          { value: 'MINE', text: '내 감상' },
         ]}
         onChange={onFeedChange}
       />
@@ -104,7 +104,7 @@ export const BookReviews = ({
           handleOpenDialog('WriteReviewDialog');
         }}
       >
-        이 순간의 감상 남기기{' '}
+        감상 남기기{' '}
         <Text color="accent" sx={{ ml: 2 }}>
           ↗
         </Text>

@@ -7,6 +7,7 @@ export type GetLibrariesLibraryId = (params: GetLibrariesLibraryIdParams) => Pro
   libraryId: number;
   name: string;
   totalCount: number;
+  maxSize: number;
   items: {
     coverImageUrl: string;
     isbn13: string;

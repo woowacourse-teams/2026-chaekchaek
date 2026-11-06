@@ -1,0 +1,19 @@
+.root {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 24px;
+  appearance: none;
+  background: var(--chaek-color-surface-inverse);
+  color: var(--chaek-color-text-inverse);
+  box-shadow: 2px 5px 9px rgb(0 0 0 / 13.3333%);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}

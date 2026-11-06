@@ -35,7 +35,7 @@ describe('LibrariesPage', () => {
   it('기본 렌더링이 된다', () => {
     renderProvider(<LibrariesPage />);
 
-    expect(screen.getByText('나의 책장')).toBeInTheDocument();
+    expect(screen.getByText('내 책장')).toBeInTheDocument();
   });
 
   it('내 책장에 진입하면 등록된 책장 목록이 표시된다', async () => {
@@ -341,7 +341,7 @@ describe('LibrariesPage', () => {
     for (const book of libraryToEditResponse.items) {
       const bookItem = screen.getByText(book.title).closest<HTMLElement>('.ui-List-Item');
       if (!bookItem) throw new Error('책 목록 항목을 찾을 수 없습니다.');
-      expect(within(bookItem).getByRole('button', { name: /삭제/ })).toBeVisible();
+      expect(within(bookItem).getByRole('button', { name: '빼기' })).toBeVisible();
     }
   });
 

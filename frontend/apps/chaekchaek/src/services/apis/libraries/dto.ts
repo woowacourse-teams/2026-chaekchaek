@@ -16,6 +16,7 @@ export type GetLibrariesResponseDto = ResponseDto<{
     name: string;
     isDefault: boolean;
     totalCount: number;
+    maxSize: number;
     items: {
       bookId: number;
       title: string;

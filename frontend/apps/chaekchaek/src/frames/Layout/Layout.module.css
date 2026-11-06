@@ -6,6 +6,21 @@
   min-width: var(--layout-width);
 }
 
+.floating {
+  position: fixed;
+  right: 24px;
+  bottom: 0;
+  opacity: 0;
+  z-index: 10;
+
+  transition: all .3s;
+}
+
+.floating.is-active {
+  opacity: 1;
+  transform: translateY(-24px);
+}
+
 .env-development:before{
   content: '';
   display: block;

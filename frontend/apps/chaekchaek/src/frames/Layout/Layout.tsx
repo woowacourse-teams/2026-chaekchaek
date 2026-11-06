@@ -1,4 +1,4 @@
-import type { ElementType } from 'react';
+import { useEffect, useState, type ElementType } from 'react';
 
 import { View } from '@chaekchaek/design-system';
 import { createClassName } from '@chaekchaek/design-system';
@@ -18,7 +18,7 @@ const envIndicators = {
 };
 
 export const Layout = <T extends ElementType>(props: Props<T>) => {
-  const { as = 'div', className, ...restProps } = props;
+  const { as = 'div', className, children, floating, ...restProps } = props;
 
   const modifiers = {
     env: styles[envIndicators[ENV.APP_ENV]],
@@ -31,5 +31,28 @@ export const Layout = <T extends ElementType>(props: Props<T>) => {
     className,
   });
 
-  return <View as={as} className={classname} {...restProps} />;
+  const [showFloating, setShowFloating] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = document.documentElement.scrollTop;
+
+      if (scrollTop > 0) return setShowFloating(true);
+      else setShowFloating(false);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [floating]);
+
+  return (
+    <View as={as} className={classname} {...restProps}>
+      {children}
+      {floating && (
+        <div className={`${styles.floating} ${showFloating ? styles['is-active'] : ''}`}>
+          {floating}
+        </div>
+      )}
+    </View>
+  );
 };

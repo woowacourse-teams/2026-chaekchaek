@@ -543,7 +543,7 @@ describe('LibraryPage', () => {
     await user.click(screen.getByRole('button', { name: '책장 삭제' }));
 
     // 서재 페이지로 이동했는지 확인한다.
-    expect(await screen.findByText('나의 책장')).toBeVisible();
+    expect(await screen.findByText('내 책장')).toBeVisible();
   });
 
   it('편집 모드에서 책의 삭제 버튼을 클릭하면 해당 책이 목록에서 제거된다', async () => {
@@ -587,7 +587,7 @@ describe('LibraryPage', () => {
     // 삭제할 책의 목록 항목에 삭제 버튼이 표시되는지 확인한다.
     const bookItem = bookTitle.closest<HTMLElement>('.ui-List-Item');
     if (!bookItem) throw new Error('삭제할 책의 목록 항목을 찾을 수 없습니다.');
-    const deleteButton = within(bookItem).getByRole('button', { name: /삭제/ });
+    const deleteButton = within(bookItem).getByRole('button', { name: '빼기' });
     expect(deleteButton).toBeVisible();
 
     // 해당 책의 삭제 버튼을 클릭한다.
@@ -655,7 +655,7 @@ describe('LibraryPage', () => {
     // 삭제할 책의 목록 항목에 삭제 버튼이 표시되는지 확인한다.
     const bookItem = bookTitle.closest<HTMLElement>('.ui-List-Item');
     if (!bookItem) throw new Error('삭제할 책의 목록 항목을 찾을 수 없습니다.');
-    const deleteButton = within(bookItem).getByRole('button', { name: /삭제/ });
+    const deleteButton = within(bookItem).getByRole('button', { name: '빼기' });
     expect(deleteButton).toBeVisible();
 
     // 해당 책의 삭제 버튼을 클릭한다.

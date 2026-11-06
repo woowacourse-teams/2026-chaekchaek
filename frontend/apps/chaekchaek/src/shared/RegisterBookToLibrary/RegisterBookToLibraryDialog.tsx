@@ -24,8 +24,6 @@ import { deleteLibrariesLibraryIdBooksBookId } from '@/services/apis/librariesLi
 
 type LibraryId = number;
 
-export const LIBRARY_BOOK_MAX_LENGTH = 30;
-
 export const RegisterBookToLibraryDialog = ({
   book,
   onBookRegistered,
@@ -136,14 +134,14 @@ export const RegisterBookToLibraryDialog = ({
     <Dialog onClose={onClose}>
       <Dialog.Container>
         <Dialog.Header subTitle={`최근 담은 책장이 선택되어 있어요.`}>
-          담을 책장 고르기
+          책장 선택하기
         </Dialog.Header>
         <Dialog.Body>
           <List>
             {librariesData?.libraries.map((library) => {
               const isIncluded = selection.includes(library.libraryId);
 
-              const isLimitReached = library.items.length >= LIBRARY_BOOK_MAX_LENGTH;
+              const isLimitReached = library.items.length >= library.maxSize;
 
               const isCheckDisabled = !isIncluded && isLimitReached;
 

@@ -18,6 +18,37 @@ import {
 } from './BookDetailPage.fixtures';
 
 describe('BookDetailPage', () => {
+  it.each([
+    { ratingCount: 0, averageRating: 0, label: '별점 없음' },
+    { ratingCount: 2, averageRating: 4, label: '★ 0 / 4' },
+    { ratingCount: 2, averageRating: 0, label: '★ 0 / 0' },
+    { ratingCount: null, averageRating: 0, label: '★ 0 / 0' },
+  ])(
+    '별점 수 $ratingCount, 평균 $averageRating일 때 $label을 표시한다',
+    async ({ ratingCount, averageRating, label }) => {
+      server.use(
+        http.get(`${ENV.APP_API_URL}/api/v2/books/by-isbn/${bookNotInLibraryResponse.isbn13}`, () =>
+          HttpResponse.json({ ...bookNotInLibraryResponse, ratingCount, averageRating }),
+        ),
+        http.get(`${ENV.APP_API_URL}/api/v1/books/${bookNotInLibraryResponse.bookId}/reviews`, () =>
+          HttpResponse.json(structuredClone(emptyBookReviewsResponse)),
+        ),
+      );
+      renderProvider(
+        <Routes>
+          <Route path="/books/:isbn" element={<BookDetailPage />} />
+        </Routes>,
+        { initialEntries: [`/books/${bookNotInLibraryResponse.isbn13}`] },
+      );
+
+      await screen.findByText(bookNotInLibraryResponse.title);
+      expect(screen.getByText(label)).toBeVisible();
+      if (ratingCount !== 0) {
+        expect(screen.queryByText('별점 없음')).not.toBeInTheDocument();
+      }
+    },
+  );
+
   it('책이 책장에 담겨 있지 않은 경우 내 서재에 담기 버튼이 보인다', async () => {
     server.use(
       http.get(`${ENV.APP_API_URL}/api/v2/books/by-isbn/${bookNotInLibraryResponse.isbn13}`, () =>
