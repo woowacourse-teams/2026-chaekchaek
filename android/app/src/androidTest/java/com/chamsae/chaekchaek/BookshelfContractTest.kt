@@ -130,6 +130,7 @@ class BookshelfContractTest {
         compose.onNodeWithContentDescription("서재 관리").assertDoesNotExist()
         compose.onNodeWithTag("book_detail_back").performClick()
         waitText("책장으로")
+        capture("bookshelf-origin-search-banner.png")
         compose.onNodeWithText("책장으로").performClick()
         waitText("2권")
         compose.onNodeWithText("검증 도서 36").performScrollTo().assertIsDisplayed()

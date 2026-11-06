@@ -234,10 +234,14 @@ fun SearchScreen(
             Text("${originShelfName}에 책 담기", modifier = Modifier.weight(1f),
               style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp))
             if (onReturnToShelf != null) {
-              Text("책장으로", modifier = Modifier.heightIn(min = 28.dp)
-                .clickable(role = Role.Button, onClick = onReturnToShelf),
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, textDecoration = TextDecoration.Underline))
+              Box(
+                modifier = Modifier.heightIn(min = 28.dp)
+                  .clickable(role = Role.Button, onClick = onReturnToShelf),
+                contentAlignment = Alignment.Center,
+              ) {
+                Text("책장으로", color = MaterialTheme.colorScheme.onSurface,
+                  style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, textDecoration = TextDecoration.Underline))
+              }
             }
           }
         }

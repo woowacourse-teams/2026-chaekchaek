@@ -1219,6 +1219,10 @@ final class BookshelfContractUITests: XCTestCase {
         back.tap()
         let returnToShelf = element("책장으로", app)
         XCTAssertTrue(returnToShelf.waitForExistence(timeout: 10))
+        let originBanner = XCTAttachment(screenshot: app.screenshot())
+        originBanner.name = "출발 책장 검색 안내 중앙 정렬"
+        originBanner.lifetime = .keepAlways
+        add(originBanner)
         returnToShelf.tap()
         XCTAssertTrue(element("2권", app).waitForExistence(timeout: 10))
         XCTAssertTrue(element("검증 도서 36", app).waitForExistence(timeout: 10))
