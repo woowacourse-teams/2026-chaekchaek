@@ -26,6 +26,8 @@ Google 로그인 설정, 패키지명 및 Play 서명 변경 점검과 오류 �
 
 ## 설계·구현 문서
 
+- [모바일 PMF 설문](../docs/mobile-pmf-survey.md) - 승인 시안, 노출·제출 정책과 플랫폼별 검증
+
 발견, 피드, 도서 상세의 상태 정책과 검증 결과는 [상태 보존 구현 기록](../docs/android-state-preservation-handoff.md)을 참고한다.
 
 작업을 이어받는다면 [구현 인수인계](docs/implementation-handoff.md)부터 읽는다. 현재 진행
