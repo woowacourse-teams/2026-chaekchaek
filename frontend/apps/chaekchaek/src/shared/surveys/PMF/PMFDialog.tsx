@@ -47,20 +47,44 @@ export const PMFDialog = (props: Props) => {
 
           {question?.options.map((option) => {
             const isChecked = !!answer?.includes(option.answerCode);
+            if (!question.multipleSelection)
+              return (
+                <Radio
+                  sx={{ mt: 2 }}
+                  block
+                  size="large"
+                  id={question.questionCode}
+                  value={option.answerCode}
+                  checked={isChecked}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    changeAnswer(currentIndex, [e.target.value]);
+                  }}
+                >
+                  {option.label}
+                </Radio>
+              );
             return (
-              <Radio
-                sx={{ mt: 2 }}
-                block
-                size="large"
-                id={question.questionCode}
-                value={option.answerCode}
-                checked={isChecked}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                  changeAnswer(currentIndex, [e.target.value]);
-                }}
-              >
-                {option.label}
-              </Radio>
+              answer && (
+                <Checkbox
+                  sx={{ mt: 2 }}
+                  block
+                  size="large"
+                  id={question.questionCode}
+                  value={option.answerCode}
+                  checked={isChecked}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    const value = e.target.value;
+                    const isIncluded = answer?.includes(value);
+                    const newAnswer = isIncluded
+                      ? answer?.filter((a) => a !== value)
+                      : [...answer, value];
+
+                    changeAnswer(currentIndex, newAnswer);
+                  }}
+                >
+                  {option.label}
+                </Checkbox>
+              )
             );
           })}
         </Dialog.Body>
