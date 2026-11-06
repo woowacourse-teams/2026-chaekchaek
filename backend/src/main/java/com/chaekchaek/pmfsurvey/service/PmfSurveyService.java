@@ -139,7 +139,7 @@ public class PmfSurveyService {
             return false;
         }
         Instant since = clock.instant().minus(ELIGIBILITY_PERIOD);
-        return eligibilityReader.hasCoreActionSince(actor.actorId(), actor.memberId(), since);
+        return eligibilityReader.hasCoreActionSince(actor.actorId(), actor.memberId(), since) > 0L;
     }
 
     private List<ValidatedAnswer> validate(PmfSurveySubmitRequest request) {
