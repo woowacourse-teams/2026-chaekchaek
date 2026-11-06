@@ -16,12 +16,14 @@ export const PMFDialog = (props: Props) => {
     setCurrentIndex((prev) => prev + 1);
   };
 
-  const [answers, setAnswers] = useState<string[][]>(() =>
-    Array.from({ length: questions.length }).map(() => []),
+  const [answers, setAnswers] = useState<{ questionCode: string; answerCodes: string[] }[]>(() =>
+    questions.map((question) => ({ questionCode: question.questionCode, answerCodes: [] })),
   );
-  const changeAnswer = (currentIndex: number, currentAnswer: string[]) => {
+  const changeAnswer = (questionCode: string, answerCodes: string[]) => {
     setAnswers(
-      answers.map((answer, answerIndex) => (answerIndex === currentIndex ? currentAnswer : answer)),
+      answers.map((answer) =>
+        answer.questionCode === questionCode ? { ...answer, answerCodes } : answer,
+      ),
     );
   };
 
@@ -32,7 +34,7 @@ export const PMFDialog = (props: Props) => {
   const hasNextQuestion = currentIndex !== answers.length - 1;
   const isLastQuestion = currentIndex === answers.length - 1;
 
-  const hasNOAnswer = !(answer && answer.length > 0);
+  const hasNOAnswer = !(answer && answer.answerCodes.length > 0);
 
   return (
     <Dialog size="large" onClose={onClose}>
@@ -46,7 +48,9 @@ export const PMFDialog = (props: Props) => {
           </Title>
 
           {question?.options.map((option) => {
-            const isChecked = !!answer?.includes(option.answerCode);
+            if (!answer) return;
+            const isChecked = !!answer.answerCodes.includes(option.answerCode);
+
             if (!question.multipleSelection)
               return (
                 <Radio
@@ -57,37 +61,36 @@ export const PMFDialog = (props: Props) => {
                   value={option.answerCode}
                   checked={isChecked}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    changeAnswer(currentIndex, [e.target.value]);
+                    changeAnswer(question.questionCode, [e.target.value]);
                   }}
                 >
                   {option.label}
                 </Radio>
               );
             return (
-              answer && (
-                <Checkbox
-                  sx={{ mt: 2 }}
-                  block
-                  size="large"
-                  id={question.questionCode}
-                  value={option.answerCode}
-                  checked={isChecked}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    const value = e.target.value;
+              <Checkbox
+                sx={{ mt: 2 }}
+                block
+                size="large"
+                id={question.questionCode}
+                value={option.answerCode}
+                checked={isChecked}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                  const value = e.target.value;
 
-                    if (value === 'NO_UNKNOWN_FEATURES') return changeAnswer(currentIndex, [value]);
+                  if (value === 'NO_UNKNOWN_FEATURES')
+                    return changeAnswer(answer.questionCode, [value]);
 
-                    const isIncluded = answer?.includes(value);
-                    const newAnswer = isIncluded
-                      ? answer?.filter((a) => a !== value)
-                      : [...answer, value];
+                  const isIncluded = answer.questionCode.includes(value);
+                  const newAnswer = isIncluded
+                    ? answer.answerCodes.filter((a) => a !== value)
+                    : [...answer.answerCodes, value];
 
-                    changeAnswer(currentIndex, newAnswer);
-                  }}
-                >
-                  {option.label}
-                </Checkbox>
-              )
+                  changeAnswer(answer.questionCode, newAnswer);
+                }}
+              >
+                {option.label}
+              </Checkbox>
             );
           })}
         </Dialog.Body>
