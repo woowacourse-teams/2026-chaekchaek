@@ -12,8 +12,12 @@ export const IntroPage = () => {
     <Layout className={styles[`intro-page`]}>
       <Header />
       <Main className={styles.wrap}>
-        <PopularBooks />
-        <LatestReviews />
+        <div className={styles[`intro-left-side`]}>
+          <PopularBooks />
+        </div>
+        <div className={styles[`intro-right-side`]}>
+          <LatestReviews />
+        </div>
       </Main>
     </Layout>
   );

@@ -11,3 +11,19 @@
   width: var(--layout-width);
   margin: 0 auto;
 }
+
+.intro-left-side {
+  position: relative;
+  display: inline-block;
+  width: 936px;
+  padding-top: 40px;
+  min-height: 700px;
+  vertical-align: top;
+}
+
+.intro-right-side {
+  display: inline-block;
+  width: 464px;
+  height: calc(100vh - 80px);
+  border-left: 1px solid var(--chaek-color-border-divider);
+}
