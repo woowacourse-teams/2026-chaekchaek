@@ -1,38 +1,37 @@
 import { Button, ButtonStack, Dialog, Radio, Checkbox, Title } from '@chaekchaek/design-system';
 
 import type { Props } from './PMFDialog.types';
+import { useState, type ChangeEvent } from 'react';
 
 export const PMFDialog = (props: Props) => {
-  const { onClose } = props;
+  const { questions, submissionToken, onClose } = props;
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const handleClickPrev = () => {
+    if (currentIndex === 0) return;
+    setCurrentIndex((prev) => prev - 1);
+  };
+  const handleClickNext = () => {
+    if (currentIndex === questions.length - 1) return;
+    setCurrentIndex((prev) => prev + 1);
+  };
+
+  const question = questions[currentIndex];
+
   return (
     <Dialog size="large" onClose={onClose}>
       <Dialog.Container>
-        <Dialog.Header>책췍 사용자 설문(1/4)</Dialog.Header>
+        <Dialog.Header>
+          책췍 사용자 설문 ({currentIndex + 1}/ {questions.length})
+        </Dialog.Header>
         <Dialog.Body>
           <Title sx={{ mb: 4 }} level="main" subtitle="하나만 선택해 주세요">
-            이 제품을 더 이상 쓸 수 없다면 어떻겠습니까?
+            {question?.question}
           </Title>
 
-          {[
-            {
-              answerCode: 'VERY_DISAPPOINTED',
-              label: '매우 실망',
-            },
-            {
-              answerCode: 'SLIGHTLY_DISAPPOINTED',
-              label: '약간 실망',
-            },
-            {
-              answerCode: 'NOT_DISAPPOINTED',
-              label: '실망하지 않음',
-            },
-            {
-              answerCode: 'NO_LONGER_USING',
-              label: '더 이상 쓰지 않음',
-            },
-          ].map((option) => {
+          {question?.options.map((option) => {
             return (
-              <Radio sx={{ mt: 2 }} block size="large" id="PMF_CORE" value={option.answerCode}>
+              <Radio sx={{ mt: 2 }} block size="large" id={question.questionCode}>
                 {option.label}
               </Radio>
             );
@@ -40,8 +39,12 @@ export const PMFDialog = (props: Props) => {
         </Dialog.Body>
         <Dialog.Footer>
           <ButtonStack>
-            {/* <Button variant="ghost">이전</Button> */}
-            <Button variant="primary">다음</Button>
+            <Button variant="ghost" onClick={handleClickPrev}>
+              이전
+            </Button>
+            <Button variant="primary" onClick={handleClickNext}>
+              다음
+            </Button>
           </ButtonStack>
         </Dialog.Footer>
       </Dialog.Container>
