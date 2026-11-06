@@ -3,8 +3,14 @@ import { Button, ButtonStack, Dialog, Radio, Checkbox, Title } from '@chaekchaek
 import type { Props } from './PMFDialog.types';
 import { useState, type ChangeEvent } from 'react';
 
+import { postPmfSurveyResponses } from '@/services/apis/pmfSurveyResponses/repository';
+import { useExecute } from '@/services/core/useExecute';
+import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+
 export const PMFDialog = (props: Props) => {
   const { questions, submissionToken, onClose } = props;
+
+  const { guest } = useAuthContext();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const handleClickPrev = () => {
@@ -35,6 +41,26 @@ export const PMFDialog = (props: Props) => {
   const isLastQuestion = currentIndex === answers.length - 1;
 
   const hasNOAnswer = !(answer && answer.answerCodes.length > 0);
+
+  const { mutate: postPmfSurveyMutate } = useExecute({
+    executeFn: postPmfSurveyResponses,
+  });
+
+  const handleSubmitSurvey = async () => {
+    await postPmfSurveyMutate(
+      {
+        submissionToken,
+        answers,
+      },
+      guest?.guestToken
+        ? {
+            guestToken: guest?.guestToken,
+          }
+        : undefined,
+    );
+
+    onClose();
+  };
 
   return (
     <Dialog size="large" onClose={onClose}>
@@ -107,7 +133,7 @@ export const PMFDialog = (props: Props) => {
               </Button>
             )}
             {isLastQuestion && (
-              <Button variant="primary" onClick={() => {}}>
+              <Button variant="primary" onClick={handleSubmitSurvey}>
                 제출
               </Button>
             )}
