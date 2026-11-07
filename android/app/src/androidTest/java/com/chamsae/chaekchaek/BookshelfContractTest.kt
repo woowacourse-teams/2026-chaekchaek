@@ -26,12 +26,105 @@ class BookshelfContractTest {
     @get:Rule val compose = createComposeRule()
     private val origin = ApiConfiguration.current.baseUrl
 
+    @Test fun originShelfSavedButtonRemovesDirectlyInSearchAndDetail() {
+        launchToggleFixture()
+        compose.onNodeWithText("내 서재").performClick()
+        waitTag("bookshelf-2")
+        compose.onNodeWithTag("bookshelf-2").performClick()
+        waitText("+ 책 담기")
+        compose.onNodeWithText("+ 책 담기").performScrollTo().performClick()
+        searchToggleBook()
+        waitText("담았어요")
+        compose.onNodeWithText("담았어요").performClick()
+        compose.waitUntil(15_000) { !bookPlacedIn(2) }
+        compose.onNodeWithText("책을 뺄 책장 고르기").assertDoesNotExist()
+        assertTrue(bookPlacedIn(1))
+        waitText("책 담기")
+        compose.onNodeWithText("검증 도서 36").performClick()
+        waitTag("book_detail_library_save")
+        compose.waitUntil(15_000) { compose.onAllNodes(hasTestTag("book_detail_library_save") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("book_detail_library_save").performClick()
+        compose.waitUntil(15_000) { bookPlacedIn(2) }
+        waitText("담았어요")
+        compose.onNodeWithTag("book_detail_library_save").performClick()
+        compose.waitUntil(15_000) { !bookPlacedIn(2) }
+        waitText("서재에 담기")
+        compose.onNodeWithText("책을 뺄 책장 고르기").assertDoesNotExist()
+        assertTrue(bookPlacedIn(1))
+        capture("origin-shelf-direct-removal.png")
+        compose.onNodeWithTag("book_detail_back").performClick()
+        waitText("책장으로")
+        compose.onNodeWithText("책장으로").performClick()
+        waitText("1권")
+        compose.onNodeWithText("검증 도서 36").assertDoesNotExist()
+    }
+
+    @Test fun generalSavedButtonShowsOnlyContainingShelvesAndRetriesSelectedRemoval() {
+        launchToggleFixture()
+        compose.onNodeWithText("검색").performClick()
+        searchToggleBook()
+        waitText("담았어요")
+        compose.onNodeWithText("담았어요").performClick()
+        waitText("책을 뺄 책장 고르기")
+        compose.onNodeWithTag("shelf-choice-row-1").assertExists()
+        compose.onNodeWithTag("shelf-choice-row-2").assertExists()
+        compose.onNodeWithTag("shelf-choice-row-3").assertDoesNotExist()
+        compose.onNodeWithTag("shelf-choice-create").assertDoesNotExist()
+        capture("remove-choice-multiple-shelves.png")
+        compose.onNodeWithTag("shelf-choice-row-2").performClick()
+        request("/__bookshelf/fail-next", "POST")
+        compose.onNodeWithText("이 책장에서 빼기").performScrollTo().performClick()
+        waitText("다시 시도")
+        assertTrue(bookPlacedIn(2))
+        compose.onNodeWithText("다시 시도").performClick()
+        compose.waitUntil(15_000) { !bookPlacedIn(2) }
+        waitText("담았어요")
+        compose.onNodeWithText("담았어요").performClick()
+        waitText("책을 뺄 책장 고르기")
+        compose.onNodeWithTag("shelf-choice-row-1").assertExists()
+        compose.onNodeWithTag("shelf-choice-row-2").assertDoesNotExist()
+        compose.onNodeWithTag("shelf-choice-row-3").assertDoesNotExist()
+        capture("remove-choice-single-shelf.png")
+        compose.onNodeWithText("닫기").performClick()
+        assertTrue(bookPlacedIn(1))
+        compose.onNodeWithText("담았어요").performClick()
+        waitText("이 책장에서 빼기")
+        compose.onNodeWithText("이 책장에서 빼기").performScrollTo().performClick()
+        compose.waitUntil(15_000) { !bookPlacedIn(1) }
+        waitText("책 담기")
+        compose.onNodeWithText("책 담기").performClick()
+        waitText("담을 책장 고르기")
+        compose.onNodeWithTag("shelf-choice-row-2").assertExists()
+    }
+
+    private fun launchToggleFixture() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
+        request("/__bookshelf/reset", "POST")
+        request("/__bookshelf/toggle-placements", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("검색")
+    }
+
+    private fun searchToggleBook() {
+        waitTag("search-query-field")
+        compose.onNodeWithTag("search-query-field").performTextInput("검증")
+        compose.onNodeWithTag("search-query-field").performImeAction()
+        waitText("검증 도서 36")
+    }
+
+    private fun bookPlacedIn(libraryId: Int): Boolean {
+        val shelves = JSONObject(request("/__bookshelf/state")).getJSONArray("shelves")
+        val shelf = (0 until shelves.length()).map { shelves.getJSONObject(it) }.single { it.getInt("libraryId") == libraryId }
+        val ids = shelf.getJSONArray("books")
+        return (0 until ids.length()).any { ids.getInt(it) == 36 }
+    }
+
     @Test fun searchAndCreateShelfWhileChoosingDestination() {
         Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
         request("/__bookshelf/reset", "POST")
         compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
-        waitText("발견")
-        compose.onNodeWithText("발견").performClick()
+        waitText("검색")
+        compose.onNodeWithText("검색").performClick()
         waitTag("search-query-field")
         compose.onNodeWithTag("search-query-field").performTextInput("검증")
         compose.onNodeWithTag("search-query-field").performImeAction()
@@ -77,12 +170,18 @@ class BookshelfContractTest {
         waitText("+ 책 담기")
         capture("bookshelf-fallback-playlist.png")
         compose.onNodeWithText("+ 책 담기").performScrollTo().performClick()
-        compose.onNodeWithText("검증 도서 3").performScrollTo().performClick()
-        waitText("담을 책장 고르기")
-        // 설치 데이터의 최근 선택과 무관하게 이 시나리오가 검증할 책장 1을 명시한다.
-        compose.onAllNodesWithText("나의 책장").onLast().performScrollTo().performClick()
-        compose.onNodeWithText("이 책장에 담기").performScrollTo().performClick()
-        compose.waitUntil(15_000) { compose.onAllNodesWithText("담을 책장 고르기").fetchSemanticsNodes().isEmpty() }
+        waitTag("search-query-field")
+        waitText("나의 책장에 책 담기")
+        compose.onNodeWithTag("search-query-field").performTextInput("검증")
+        compose.onNodeWithTag("search-query-field").performImeAction()
+        waitText("검색 결과")
+        waitText("검증 도서 36")
+        waitText("책 담기")
+        compose.onNodeWithText("책 담기").performClick()
+        compose.waitUntil(15_000) { requested("POST", "/api/v1/libraries/1") }
+        assertDirectSave(libraryId = 1, bookId = 36)
+        compose.onNodeWithText("담을 책장 고르기").assertDoesNotExist()
+        compose.onNodeWithText("책장으로").performClick()
         waitText("3권")
         compose.waitUntil(15_000) { compose.onAllNodesWithText("내 서재에 담았어요").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithText("편집").performScrollTo().performClick()
@@ -97,6 +196,65 @@ class BookshelfContractTest {
         val calls = (0 until requests.length()).map { requests.getJSONObject(it) }
         assertTrue(calls.any { it.getString("method") == "POST" && it.getString("path") == "/api/v1/libraries/1" })
         assertTrue(calls.any { it.getString("method") == "DELETE" && it.getString("path").contains("/books/") })
+    }
+
+    @Test fun shelfSearchDetailSavesToOriginWithoutChoosingAnotherShelf() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
+        request("/__bookshelf/reset", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("내 서재")
+        compose.onNodeWithText("내 서재").performClick()
+        waitTag("bookshelf-2")
+        compose.onNodeWithTag("bookshelf-2").performClick()
+        waitText("+ 책 담기")
+        compose.onNodeWithText("+ 책 담기").performScrollTo().performClick()
+        waitTag("search-query-field")
+        compose.onNodeWithTag("search-query-field").performTextInput("검증")
+        compose.onNodeWithTag("search-query-field").performImeAction()
+        waitText("검색 결과")
+        waitText("검증 도서 36")
+        compose.onNodeWithText("검증 도서 36").performClick()
+        waitTag("book_detail_library_save")
+        compose.waitUntil(15_000) { compose.onAllNodes(hasTestTag("book_detail_library_save") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("book_detail_library_save").performClick()
+        compose.waitUntil(15_000) { requested("POST", "/api/v1/libraries/2") }
+        assertDirectSave(libraryId = 2, bookId = 36)
+        compose.onNodeWithText("담을 책장 고르기").assertDoesNotExist()
+        compose.onNodeWithContentDescription("서재 관리").assertDoesNotExist()
+        compose.onNodeWithTag("book_detail_back").performClick()
+        waitText("책장으로")
+        capture("bookshelf-origin-search-banner.png")
+        compose.onNodeWithText("책장으로").performClick()
+        waitText("2권")
+        compose.onNodeWithText("검증 도서 36").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun missingAndFailedSpineImagesKeepBooksVisibleAndOpenable() {
+        Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
+        request("/__bookshelf/reset", "POST")
+        request("/__bookshelf/image-failures", "POST")
+        compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
+        waitText("내 서재")
+        compose.onNodeWithText("내 서재").performClick()
+        waitTag("bookshelf-1")
+        waitText("3권")
+        for (bookId in 1..3) {
+            compose.waitUntil(15_000) { compose.onAllNodesWithContentDescription("검증 도서 $bookId 책등", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+            compose.onAllNodesWithContentDescription("검증 도서 $bookId 책등", useUnmergedTree = true).onFirst().assertIsDisplayed()
+        }
+        compose.waitUntil(15_000) { requested("GET", "/assets/missing-spine.png") && requested("GET", "/assets/missing-cover.png") }
+        capture("bookshelf-image-failures-library.png")
+        compose.onNodeWithTag("bookshelf-1").performClick()
+        waitText("+ 책 담기")
+        waitText("3권")
+        for (bookId in 1..3) {
+            compose.onNodeWithContentDescription("검증 도서 $bookId 책등", useUnmergedTree = true).assertIsDisplayed()
+        }
+        compose.waitUntil(15_000) { requested("GET", "/assets/missing-spine.png") && requested("GET", "/assets/missing-cover.png") }
+        capture("bookshelf-image-failures-detail.png")
+        compose.onNodeWithTag("bookshelf-drag-source-spines-1").performTouchInput { click() }
+        waitTag("book_detail_back")
+        compose.onNodeWithText("검증 도서 1").assertExists()
     }
 
     @Test fun shelfHandleDragCancelRestoresAndDropSavesOnce() {
@@ -284,6 +442,20 @@ class BookshelfContractTest {
         File(instrumentation.targetContext.getExternalFilesDir(null), name).outputStream().use {
             assertTrue(bitmap!!.compress(Bitmap.CompressFormat.PNG, 100, it))
         }
+    }
+
+    private fun assertDirectSave(libraryId: Int, bookId: Int) {
+        val state = JSONObject(request("/__bookshelf/state"))
+        val shelves = state.getJSONArray("shelves")
+        val target = (0 until shelves.length()).map { shelves.getJSONObject(it) }.single { it.getInt("libraryId") == libraryId }
+        assertTrue((0 until target.getJSONArray("books").length()).any { target.getJSONArray("books").getInt(it) == bookId })
+        val calls = state.getJSONArray("requests")
+        val writes = (0 until calls.length()).map { calls.getJSONObject(it) }.filter {
+            it.getString("method") == "POST" && it.getString("path").startsWith("/api/v1/libraries/")
+        }
+        assertEquals("출발 책장 직접 담기는 한 번만 요청한다", 1, writes.size)
+        assertEquals("/api/v1/libraries/$libraryId", writes.single().getString("path"))
+        assertEquals("97800000000${bookId.toString().padStart(2, '0')}", writes.single().getJSONObject("body").getString("isbn13"))
     }
 
     private fun requested(method: String, pathPrefix: String): Boolean {

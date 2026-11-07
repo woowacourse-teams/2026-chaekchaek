@@ -62,6 +62,8 @@ import com.chaekchaek.app.ui.bookdetail.ReplyInputSheet
 import com.chaekchaek.app.ui.common.ChaekRefreshLayout
 import com.chaekchaek.app.ui.common.RefreshableEmptyContent
 import com.chaekchaek.app.ui.common.ListBoundary
+import com.chaekchaek.app.ui.common.LazyListScrollTopButton
+import androidx.compose.ui.platform.testTag
 import com.chaekchaek.app.ui.common.BrandHeader
 import com.chaekchaek.app.ui.common.ChaekOneActionDialog
 import com.chaekchaek.app.ui.home.BookDetailTarget
@@ -169,6 +171,13 @@ fun FeedScreen(
                     }
                 }
             }
+        }
+        if ((state as? FeedUiState.Content)?.reviews?.isNotEmpty() == true) {
+            LazyListScrollTopButton(
+                listState,
+                Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp)
+                    .testTag("feed-scroll-top"),
+            )
         }
         ChaekSnackbarHost(snackbarHostState)
     }

@@ -70,6 +70,7 @@ class BookDetailViewModel(
     private var pendingAnalyticsAction: AnalyticsAction? = null
     private var externalLibrarySaveRevision = 0
     private var externallySavedRecord: LibraryRecord? = null
+    private var externallyRegistered: Boolean? = null
 
     fun attachAuthPlatform(authPlatform: AuthPlatformCallbacks) {
         this.authPlatform = authPlatform
@@ -292,7 +293,22 @@ class BookDetailViewModel(
         if (_uiState.value.detail?.isRegisteredInMyLibrary == true) return
         externalLibrarySaveRevision += 1
         externallySavedRecord = record
+        externallyRegistered = true
         updateMyRecord(record)
+    }
+
+    fun acceptShelfRemoval(isbn13: String, savedElsewhere: Boolean) {
+        if (accessToken == null || _uiState.value.displayBook?.isbn13 != isbn13) return
+        externalLibrarySaveRevision += 1
+        externallyRegistered = savedElsewhere
+        if (!savedElsewhere) externallySavedRecord = null
+        _uiState.value = _uiState.value.copy(
+            detail = _uiState.value.detail?.let {
+                it.copy(isRegisteredInMyLibrary = savedElsewhere, myRecord = it.myRecord.takeIf { savedElsewhere })
+            },
+            libraryMessage = "책장에서 뺐어요",
+        )
+        reload()
     }
 
     fun removeFromLibrary(savedBookId: Long, onSuccess: () -> Unit = {}) = mutate(
@@ -678,9 +694,10 @@ class BookDetailViewModel(
                 _uiState.value = _uiState.value.copy(
                     detail = if (librarySaveRevision != externalLibrarySaveRevision) {
                         detail?.let {
-                            val savedRecord = _uiState.value.detail?.myRecord ?: externallySavedRecord
+                            val registered = externallyRegistered ?: true
+                            val savedRecord = (_uiState.value.detail?.myRecord ?: externallySavedRecord).takeIf { registered }
                             it.copy(myRecord = savedRecord, myRating = savedRecord?.rating ?: it.myRating,
-                                isRegisteredInMyLibrary = true)
+                                isRegisteredInMyLibrary = registered)
                         }
                     } else detail,
                     reviews = reviews?.items.orEmpty(),
@@ -988,6 +1005,7 @@ class BookDetailViewModel(
     private fun invalidateRequests() {
         requestGeneration += 1
         externallySavedRecord = null
+        externallyRegistered = null
         resetReviewPagination()
         loadJob?.cancel()
         loadMoreJob?.cancel()

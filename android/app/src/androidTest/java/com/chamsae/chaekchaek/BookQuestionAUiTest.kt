@@ -11,6 +11,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
@@ -21,7 +24,7 @@ import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.StateRestorationTester
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -58,7 +61,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class BookQuestionAUiTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<androidx.activity.ComponentActivity>()
 
     @Test
     fun referenceTabsAndIndependentBodyScrollKeepDetailPosition() {
@@ -132,7 +135,7 @@ class BookQuestionAUiTest {
         val before = detailPosition()
         val listBounds = compose.onNode(hasScrollToIndexAction()).fetchSemanticsNode().boundsInRoot
         val panelBottom = compose.onNodeWithTag("questionReferencePanel").fetchSemanticsNode().boundsInRoot.bottom
-        val footerTop = compose.onNodeWithText("이 순간의 감상 남기기", substring = true)
+        val footerTop = compose.onNodeWithText("피드에 올리기", substring = true)
             .fetchSemanticsNode().boundsInRoot.top
         val start = footerTop - listBounds.top - 24f
         val end = maxOf(panelBottom - listBounds.top + 24f, start - 240f)
@@ -159,8 +162,91 @@ class BookQuestionAUiTest {
         compose.onNodeWithTag("questionReferenceOpen").assertDoesNotExist()
         compose.onNodeWithText("내 독서 기록").assertDoesNotExist()
         compose.onNodeWithText("별점 주기").assertDoesNotExist()
-        compose.onNodeWithText("이 순간의 감상 남기기", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("피드에 올리기", substring = true).assertIsDisplayed()
         capture("no-question", compose.onNode(hasScrollToIndexAction()))
+    }
+
+    @Test
+    fun horizontalRatingDragOnlyChangesDraftAndVerticalDragScrollsUntilExplicitSave() {
+        val submitted = mutableListOf<QuestionAReviewDraft>()
+        // 키보드를 닫은 뒤에도 스크롤할 내용이 남는 가로 화면에서 제스처 충돌을 검사한다.
+        compose.runOnUiThread {
+            compose.activity.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+        compose.setContent {
+            ChaekchaekTheme {
+                BookDetailScreen(state = detailState(), question = question(), onBack = {},
+                    onQuestionAReviewCreate = { submitted += it })
+            }
+        }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            val bounds = compose.onNodeWithTag("book_detail_list").fetchSemanticsNode().boundsInRoot
+            bounds.width > bounds.height
+        }
+        openReview()
+        enterDraft()
+        val quote = compose.onNodeWithContentDescription("인상 깊은 문구 (선택)")
+        quote.performScrollTo().performTouchInput { click() }.assertIsFocused()
+        rating().performScrollTo().performTouchInput {
+            swipe(Offset(width * 0.8f, centerY), Offset(1f, centerY), 500)
+        }
+        rating().assert(ratingDescription("0.5점"))
+        quote.assertIsNotFocused().assertTextEquals(DRAFT_QUOTE)
+        rating().performTouchInput {
+            swipe(Offset(1f, centerY), Offset(width - 1f, centerY), 500)
+        }
+        rating().assert(ratingDescription("5.0점"))
+        compose.runOnIdle { assertTrue(submitted.isEmpty()) }
+        rating().performScrollTo()
+        val scroll = compose.onNodeWithTag("questionAReviewScroll")
+        val range = scroll.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+        val before = range.value()
+        val maximum = range.maxValue()
+        assertTrue("세로 스크롤 가능한 위치에서 검사해야 한다: before=$before, max=$maximum", maximum > 0f && before > 0f)
+        capture("rating-drag-before-vertical", compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.PaneTitle)))
+        rating().performTouchInput {
+            swipe(Offset(centerX, centerY), Offset(centerX, centerY + 120f), 500)
+        }
+        val after = scroll.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
+        assertTrue("별점에서 시작한 세로 드래그는 시트를 스크롤해야 한다: before=$before, after=$after, max=$maximum", after < before)
+        rating().assert(ratingDescription("5.0점"))
+        assertDraft()
+        compose.runOnIdle { assertTrue(submitted.isEmpty()) }
+        submitReview()
+        compose.runOnIdle {
+            assertEquals(QuestionAReviewDraft(DRAFT_CONTENT, DRAFT_QUOTE, rating = 5.0, anonymous = true), submitted.single())
+        }
+    }
+
+    @Test
+    fun reviewBlankTapCloseActionAndQuoteDonePreserveDraftWithoutSubmitting() {
+        val submitted = mutableListOf<QuestionAReviewDraft>()
+        compose.setContent {
+            ChaekchaekTheme {
+                BookDetailScreen(state = detailState(), question = question(), onBack = {},
+                    onQuestionAReviewCreate = { submitted += it })
+            }
+        }
+        openReview()
+        val content = compose.onNodeWithContentDescription("감상 (필수)")
+        val text = "첫 줄\n다음 줄"
+        content.performTouchInput { click() }.assertIsFocused()
+        content.performTextInput(text)
+        compose.onNodeWithTag("questionAReviewScroll").performTouchInput { click(Offset(2f, 2f)) }
+        content.assertIsNotFocused().assertTextEquals(text)
+        content.performTouchInput { click() }.assertIsFocused()
+        compose.onNodeWithText("스포일러 (선택)").performScrollTo().performTouchInput { click() }
+        content.assertIsNotFocused().assertTextEquals(text)
+        content.performScrollTo().performTouchInput { click() }.assertIsFocused()
+        compose.onNodeWithText("키보드 닫기").performScrollTo().performTouchInput { click() }
+        content.assertIsNotFocused().assertTextEquals(text)
+        val quote = compose.onNodeWithContentDescription("인상 깊은 문구 (선택)")
+        quote.performScrollTo().performTouchInput { click() }.assertIsFocused()
+        quote.performTextInput("기억할 문장")
+        quote.performImeAction()
+        quote.assertIsNotFocused().assertTextEquals("기억할 문장")
+        content.assertTextEquals(text)
+        compose.runOnIdle { assertTrue(submitted.isEmpty()) }
     }
 
     @Test
@@ -187,7 +273,7 @@ class BookQuestionAUiTest {
         capture("composer-zero", compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.PaneTitle)))
         submitReview()
         compose.runOnIdle {
-            assertEquals(QuestionAReviewDraft(DRAFT_CONTENT, DRAFT_QUOTE, rating = 0.0), drafts.single())
+            assertEquals(QuestionAReviewDraft(DRAFT_CONTENT, DRAFT_QUOTE, rating = 0.0, anonymous = true), drafts.single())
             state.value = state.value.copy(reviewSubmissionState = ReviewSubmissionState.Failed)
         }
         restoration.emulateSavedInstanceStateRestore()
@@ -218,7 +304,7 @@ class BookQuestionAUiTest {
         rating().performScrollTo().assert(ratingDescription("미선택"))
         submitReview()
         compose.waitUntil(timeoutMillis = 5_000) { submitted != null }
-        compose.runOnIdle { assertEquals(QuestionAReviewDraft(content = DRAFT_CONTENT), submitted) }
+        compose.runOnIdle { assertEquals(QuestionAReviewDraft(content = DRAFT_CONTENT, anonymous = true), submitted) }
     }
 
     @Test
@@ -257,7 +343,7 @@ class BookQuestionAUiTest {
         rating().performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) { it(4f) }
         rating().assert(ratingDescription("4.0점"))
         submitReview()
-        compose.runOnIdle { assertEquals(QuestionAReviewDraft(DRAFT_CONTENT, DRAFT_QUOTE, rating = 4.0), submitted) }
+        compose.runOnIdle { assertEquals(QuestionAReviewDraft(DRAFT_CONTENT, DRAFT_QUOTE, rating = 4.0, anonymous = true), submitted) }
     }
 
     @Test
@@ -317,7 +403,7 @@ class BookQuestionAUiTest {
     }
 
     private fun openReview() {
-        compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
+        compose.onNodeWithText("피드에 올리기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").assertExists()
     }
 

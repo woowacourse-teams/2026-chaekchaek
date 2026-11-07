@@ -529,20 +529,28 @@ class BookDetailViewModelTest {
     }
     val client = testClient(engine)
     val vm = viewModel(client, client, platform({ null }))
-    vm.open(book().copy(isbn13 = "9780000000042"), "member")
-    awaitReal { vm.uiState.first { it.detail != null } }
-    vm.addToLibrary()
-    vm.addToLibrary()
-    awaitReal { vm.uiState.first { it.detail?.myRecord != null && !it.isSavingLibrary } }
-    vm.addToLibrary()
-    runCurrent()
-    assertEquals(1, paths.count { it == "/api/v1/library" })
-    assertFalse(paths.any { it.endsWith("/bulk-delete") })
-    assertEquals("내 서재에 담았어요", vm.uiState.value.libraryMessage)
-    vm.removeFromLibrary(73)
-    awaitReal { vm.uiState.first { it.libraryMessage == "서재에서 삭제했어요" } }
-    assertNull(vm.uiState.value.detail?.myRecord)
-    assertEquals(1, paths.count { it.endsWith("/bulk-delete") })
+    val store = ViewModelStore().also { it.put("detail", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), "member")
+      awaitReal { vm.uiState.first { it.detail != null } }
+      vm.addToLibrary()
+      vm.addToLibrary()
+      awaitReal { vm.uiState.first { it.detail?.myRecord != null && !it.isSavingLibrary } }
+      vm.addToLibrary()
+      runCurrent()
+      assertEquals(1, paths.count { it == "/api/v1/library" })
+      assertFalse(paths.any { it.endsWith("/bulk-delete") })
+      assertEquals("내 서재에 담았어요", vm.uiState.value.libraryMessage)
+      vm.removeFromLibrary(73)
+      awaitReal { vm.uiState.first { it.libraryMessage == "서재에서 삭제했어요" } }
+      assertNull(vm.uiState.value.detail?.myRecord)
+      assertEquals(1, paths.count { it.endsWith("/bulk-delete") })
+    } finally {
+      // 삭제 성공 메시지 뒤 재조회가 이어지므로 Main을 해제하기 전에 VM 작업을 정리한다.
+      store.clear()
+      advanceUntilIdle()
+      client.close()
+    }
   }
 
   @Test
@@ -1891,6 +1899,31 @@ class BookDetailViewModelTest {
     awaitReal { vm.refreshState.first { it.enabled } }
     assertEquals(24, vm.uiState.value.detail?.myRecord?.currentPage)
     assertEquals(1, writes)
+  }
+
+  @Test
+  fun `마지막 책장 빼기 후 재조회가 실패해도 미등록 표시와 별점을 보존한다`() = runViewModelTest {
+    var failReload = false
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        check(!failReload) { "재조회 실패" }
+        respond(DETAIL_WITH_RECORD, headers = jsonHeaders())
+      } else respond(EMPTY_REVIEWS, headers = jsonHeaders())
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val store = ViewModelStore().also { it.put("removal", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), "member")
+      awaitReal { vm.uiState.first { it.detail?.myRecord != null } }
+      vm.acceptShelfRemoval("different-isbn", false)
+      assertTrue(vm.uiState.value.detail!!.isRegisteredInMyLibrary)
+      failReload = true
+      vm.acceptShelfRemoval("9780000000042", false)
+      awaitReal { vm.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.RefreshFailed } }
+      assertFalse(vm.uiState.value.detail!!.isRegisteredInMyLibrary)
+      assertNull(vm.uiState.value.detail?.myRecord)
+      assertEquals(4.0, vm.uiState.value.detail?.myRating)
+    } finally { store.clear(); advanceUntilIdle(); client.close() }
   }
 
   @Test

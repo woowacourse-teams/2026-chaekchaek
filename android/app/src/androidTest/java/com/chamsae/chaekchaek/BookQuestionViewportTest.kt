@@ -45,7 +45,7 @@ class BookQuestionViewportTest {
         compose.onNodeWithTag("book_detail_list").performScrollToNode(hasTestTag(tag))
         val control = compose.onNodeWithTag(tag).performScrollTo()
         repeat(4) {
-            val footerTop = compose.onNodeWithText("이 순간의 감상 남기기", substring = true)
+            val footerTop = compose.onNodeWithText("피드에 올리기", substring = true)
                 .fetchSemanticsNode().boundsInRoot.top
             if (control.fetchSemanticsNode().boundsInRoot.bottom < footerTop) return
             // 스크롤이 안정된 뒤 컨트롤 전체가 보이는지 확인한다.
@@ -87,7 +87,7 @@ class BookQuestionViewportTest {
         val all = compose.onNodeWithTag("review_scope_all").performScrollTo()
         val mine = compose.onNodeWithTag("review_scope_mine")
         val listBounds = list.fetchSemanticsNode().boundsInRoot
-        val footerTop = compose.onNodeWithText("이 순간의 감상 남기기", substring = true)
+        val footerTop = compose.onNodeWithText("피드에 올리기", substring = true)
             .fetchSemanticsNode().boundsInRoot.top
         assertTrue("목록 뷰포트가 고정 작성 버튼과 겹치면 안 된다", listBounds.bottom <= footerTop)
         for (filter in listOf(all, mine)) {
@@ -123,7 +123,7 @@ class BookQuestionViewportTest {
         compose.onNodeWithTag("questionReferenceOpen").performClick()
         val listTop = compose.onNodeWithTag("book_detail_list").fetchSemanticsNode().boundsInRoot.top
         val panelBottom = compose.onNodeWithTag("questionReferencePanel").fetchSemanticsNode().boundsInRoot.bottom
-        val footerTop = compose.onNodeWithText("이 순간의 감상 남기기", substring = true)
+        val footerTop = compose.onNodeWithText("피드에 올리기", substring = true)
             .fetchSemanticsNode().boundsInRoot.top
         val startY = footerTop - listTop - with(compose.density) { 24.dp.toPx() }
         val endY = panelBottom - listTop + with(compose.density) { 16.dp.toPx() }

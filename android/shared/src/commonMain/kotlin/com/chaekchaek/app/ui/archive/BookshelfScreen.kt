@@ -1,5 +1,10 @@
 package com.chaekchaek.app.ui.archive
 
+import com.chaekchaek.app.ui.input.KeyboardDismissalArea
+import com.chaekchaek.app.ui.input.excludeFromKeyboardDismissal
+import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -48,7 +53,7 @@ internal fun BookshelfRoute(
     onLogin: () -> Unit,
     scrollTopRequest: Int,
     onBook: (BookDetailArgs) -> Unit,
-    onAdd: (BookDetailArgs) -> Unit,
+    onAddBooks: (BookshelfDetail) -> Unit,
     token: String?,
     modifier: Modifier = Modifier,
 ) {
@@ -57,9 +62,8 @@ internal fun BookshelfRoute(
     var namingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var creating by rememberSaveable { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<Bookshelf?>(null) }
-    var adding by rememberSaveable { mutableStateOf(false) }
     var sharingShelfId by rememberSaveable { mutableStateOf<Long?>(null) }
-    LaunchedEffect(signedIn, state.memberId) { creating = false; namingId = null; deleting = null; adding = false; sharingShelfId = null; editing = false }
+    LaunchedEffect(signedIn, state.memberId) { creating = false; namingId = null; deleting = null; sharingShelfId = null; editing = false }
     val listState = rememberLazyListState()
     val detailListState = rememberLazyListState()
     LaunchedEffect(scrollTopRequest) { if (state.selectedId == null) listState.scrollToItem(0) else detailListState.scrollToItem(0) }
@@ -136,7 +140,7 @@ internal fun BookshelfRoute(
                         BookshelfSpineRow(detail.items.map { it.asArchive() }, onBook = { onBook(it.asArgs()) }, onMove = if (!canOrder) null else ({ ids: List<Long>, done: (Boolean) -> Unit -> viewModel.orderBooks(detail.libraryId, ids, done) }))
                         HorizontalDivider(thickness = 3.dp, color = ChaekBorder)
                         Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ChaekOverlayButton("+ 책 담기", { adding = true }, modifier = Modifier.weight(1f), enabled = !state.mutating)
+                            ChaekOverlayButton("+ 책 담기", { onAddBooks(detail) }, modifier = Modifier.weight(1f), enabled = !state.mutating)
                             ShelfIconButton(Res.drawable.bookshelf_share, "이미지 공유", { sharingShelfId = detail.libraryId }, enabled = !state.mutating && !state.refreshing && !state.detailRefreshing && !state.detailStale, outlined = true)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -174,7 +178,6 @@ internal fun BookshelfRoute(
             ChaekOverlayButton("삭제", { viewModel.delete(shelf.libraryId) { deleting = null } }, enabled = !state.mutating)
         }
     }
-    if (adding) ShelfAddSheet(state.shelves, onDismiss = { adding = false }, onAdd = { adding = false; onAdd(it) })
     if (detail != null && sharingShelfId == detail.libraryId && token != null && !state.detailStale) {
         BookshelfImageSheet(detail, onDismiss = { sharingShelfId = null })
     }
@@ -213,9 +216,12 @@ private fun ShelfMenuAction(label: String, icon: DrawableResource, destructive: 
 private fun ShelfNameSheet(initial: String, rename: Boolean, saving: Boolean, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     val input = rememberLimitedTextFieldState(BookshelfNameInputPolicy, initial)
     ShelfSheet(if (rename) "책장 이름 바꾸기" else "새 책장 만들기", onDismiss, dismissEnabled = !saving) {
+        val dismissKeyboard = rememberKeyboardDismissal()
         OutlinedTextField(input, inputTransformation = BookshelfNameInputPolicy.inputTransformation,
-            lineLimits = TextFieldLineLimits.SingleLine, label = { Text("책장 이름 (1-10자)") }, modifier = Modifier.fillMaxWidth().testTag("bookshelfName"))
-        ChaekOverlayButton(if (rename) "저장" else "만들기", { onSave(input.text.toString()) }, enabled = !saving)
+            lineLimits = TextFieldLineLimits.SingleLine, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            onKeyboardAction = { dismissKeyboard() }, label = { Text("책장 이름 (1-10자)") },
+            modifier = Modifier.fillMaxWidth().excludeFromKeyboardDismissal().testTag("bookshelfName"))
+        ChaekOverlayButton(if (rename) "저장" else "만들기", { dismissKeyboard(); onSave(input.text.toString()) }, enabled = !saving)
     }
 }
 
@@ -223,17 +229,21 @@ private fun ShelfNameSheet(initial: String, rename: Boolean, saving: Boolean, on
 @Composable
 internal fun ShelfSheet(title: String, onDismiss: () -> Unit, dismissEnabled: Boolean = true, contentSpacing: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
     val canDismiss by rememberUpdatedState(dismissEnabled)
-    ModalBottomSheet(onDismissRequest = { if (canDismiss) onDismiss() }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { canDismiss || it != SheetValue.Hidden }), containerColor = ChaekSurface, scrimColor = Color.Black.copy(alpha = .25f), shape = ChaekOverlayTokens.sheetShape, dragHandle = {
+    val dismissKeyboard = rememberKeyboardDismissal()
+    val closeSheet = { if (canDismiss) { dismissKeyboard(); onDismiss() } }
+    ModalBottomSheet(onDismissRequest = closeSheet, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { canDismiss || it != SheetValue.Hidden }), containerColor = ChaekSurface, scrimColor = Color.Black.copy(alpha = .25f), shape = ChaekOverlayTokens.sheetShape, dragHandle = {
         Box(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 9.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(36.dp, 4.dp).background(Color(0xFFDCDCE0), CircleShape))
         }
     }) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(contentSpacing)) {
-            Row(Modifier.height(44.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium.copy(lineHeight = 29.sp))
-                ChaekCloseButton({ if (dismissEnabled) onDismiss() })
+        KeyboardDismissalArea { keyboardDismissalModifier ->
+            Column(keyboardDismissalModifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 24.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(contentSpacing)) {
+                Row(Modifier.height(44.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium.copy(lineHeight = 29.sp))
+                    ChaekCloseButton(closeSheet)
+                }
+                content()
             }
-            content()
         }
     }
 }
@@ -246,11 +256,12 @@ internal fun ShelfChoiceSheet(viewModel: LibrarySaveViewModel) {
         ShelfNameSheet("", false, state.savingIsbn != null, viewModel::cancelShelfCreation, viewModel::createShelf)
         return
     }
-    ShelfSheet("담을 책장 고르기", viewModel::dismissShelfChoice) {
-        Text("최근 담은 책장이 선택되어 있어요.", style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp), color = ChaekInkSecondary)
+    val removing = state.shelfAction == ShelfBookAction.Remove
+    ShelfSheet(if (removing) "책을 뺄 책장 고르기" else "담을 책장 고르기", viewModel::dismissShelfChoice) {
+        Text(if (removing) "이 책이 담긴 책장만 보여드려요." else "최근 담은 책장이 선택되어 있어요.", style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp), color = ChaekInkSecondary)
         LazyColumn(Modifier.heightIn(max = 320.dp)) {
             items(state.shelves, key = { it.libraryId }) { shelf ->
-                Row(Modifier.fillMaxWidth().clickable(enabled = state.savingIsbn == null) { viewModel.selectShelf(shelf.libraryId) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().testTag("shelf-choice-row-${shelf.libraryId}").clickable(enabled = state.savingIsbn == null) { viewModel.selectShelf(shelf.libraryId) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     ShelfThumbnail(shelf)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
@@ -267,10 +278,10 @@ internal fun ShelfChoiceSheet(viewModel: LibrarySaveViewModel) {
                 HorizontalDivider(color = ChaekBorder)
             }
         }
-        CreateShelfButton(viewModel::beginShelfCreation, state.savingIsbn == null, Modifier.testTag("shelf-choice-create"))
+        if (!removing) CreateShelfButton(viewModel::beginShelfCreation, state.savingIsbn == null, Modifier.testTag("shelf-choice-create"))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ChaekOverlayButton("닫기", viewModel::dismissShelfChoice, enabled = state.savingIsbn == null, secondary = true, modifier = Modifier.weight(1f))
-            ChaekOverlayButton("이 책장에 담기", viewModel::confirmShelf, enabled = state.savingIsbn == null, modifier = Modifier.weight(1f))
+            ChaekOverlayButton(if (removing) "이 책장에서 빼기" else "이 책장에 담기", viewModel::confirmShelf, enabled = state.savingIsbn == null, modifier = Modifier.weight(1f))
         }
         if (state.showLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
     }

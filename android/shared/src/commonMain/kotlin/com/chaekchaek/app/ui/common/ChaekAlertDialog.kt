@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.chaekchaek.app.ui.input.KeyboardDismissalArea
 import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekOverlayTokens
 
@@ -43,7 +44,8 @@ internal fun ChaekTwoActionDialog(
     dismissButton: @Composable (() -> Unit)?,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
-) = ChaekAlertDialog(onDismissRequest, confirmButton, dismissButton, title, text)
+    dismissKeyboardOnTap: Boolean = false,
+) = ChaekAlertDialog(onDismissRequest, confirmButton, dismissButton, title, text, dismissKeyboardOnTap)
 
 @Composable
 private fun ChaekAlertDialog(
@@ -52,6 +54,7 @@ private fun ChaekAlertDialog(
     dismissButton: @Composable (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
+    dismissKeyboardOnTap: Boolean = false,
 ) {
     val canDismiss = onDismissRequest != null
     Dialog(
@@ -62,27 +65,30 @@ private fun ChaekAlertDialog(
             usePlatformDefaultWidth = false,
         ),
     ) {
-        Surface(
-            modifier = Modifier.padding(horizontal = 16.dp).widthIn(max = 358.dp).fillMaxWidth(),
-            shape = ChaekOverlayTokens.containerShape,
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()).padding(ChaekOverlayTokens.contentPadding),
-                verticalArrangement = Arrangement.spacedBy(ChaekOverlayTokens.sectionSpacing),
+        KeyboardDismissalArea(enabled = dismissKeyboardOnTap) { keyboardDismissalModifier ->
+            Surface(
+                modifier = Modifier.padding(horizontal = 16.dp).widthIn(max = 358.dp).fillMaxWidth()
+                    .then(keyboardDismissalModifier),
+                shape = ChaekOverlayTokens.containerShape,
+                color = MaterialTheme.colorScheme.surface,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.weight(1f)) {
-                        CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.titleMedium) {
-                            title?.invoke()
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()).padding(ChaekOverlayTokens.contentPadding),
+                    verticalArrangement = Arrangement.spacedBy(ChaekOverlayTokens.sectionSpacing),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f)) {
+                            CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.titleMedium) {
+                                title?.invoke()
+                            }
                         }
+                        onDismissRequest?.let { ChaekCloseButton(it) }
                     }
-                    onDismissRequest?.let { ChaekCloseButton(it) }
-                }
-                CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodyMedium) { text?.invoke() }
-                Box(Modifier.fillMaxWidth().heightIn(min = ChaekOverlayTokens.buttonHeight), contentAlignment = Alignment.Center) { confirmButton() }
-                dismissButton?.let {
-                    Box(Modifier.fillMaxWidth().heightIn(min = ChaekOverlayTokens.buttonHeight), contentAlignment = Alignment.Center) { it() }
+                    CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.bodyMedium) { text?.invoke() }
+                    Box(Modifier.fillMaxWidth().heightIn(min = ChaekOverlayTokens.buttonHeight), contentAlignment = Alignment.Center) { confirmButton() }
+                    dismissButton?.let {
+                        Box(Modifier.fillMaxWidth().heightIn(min = ChaekOverlayTokens.buttonHeight), contentAlignment = Alignment.Center) { it() }
+                    }
                 }
             }
         }

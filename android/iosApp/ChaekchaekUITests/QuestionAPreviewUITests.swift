@@ -38,6 +38,52 @@ final class QuestionAPreviewUITests: XCTestCase {
     }
 
     @MainActor
+    func testDetailFeedComposerKeyboardAndRatingKeepDraftUntilSubmit() throws {
+        let app = launchPreview()
+        let open = bookFooter(in: app)
+        XCTAssertTrue(open.waitForExistence(timeout: 5))
+        XCTAssertTrue(open.label.contains("피드에 올리기"))
+        open.tap()
+        let content = app.textViews.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 (필수)")).firstMatch
+        XCTAssertTrue(content.waitForExistence(timeout: 5))
+        let draft = "Keyboard draft\nsecond line"
+        content.tap()
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        content.typeText(draft)
+        XCTAssertEqual(content.value as? String, draft)
+        // 접근성 텍스트 프레임은 입력칸 안쪽 패딩을 제외한다. 화면 왼쪽의 실제 시트 여백을 누른다.
+        attachScreenshot(named: "감상 입력과 네이티브 키보드")
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+            dx: 8,
+            dy: content.frame.midY - app.frame.minY
+        )).tap()
+        XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(content.value as? String, draft)
+        content.tap()
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        let dismissKeyboard = app.buttons["키보드 닫기"]
+        reveal(dismissKeyboard, in: app)
+        tapAfterScroll(dismissKeyboard)
+        XCTAssertTrue(keyboard.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(content.value as? String, draft)
+
+        let rating = app.otherElements.matching(NSPredicate(format: "label == %@ AND value != nil", "별점 (선택)")).firstMatch
+        reveal(rating, in: app)
+        rating.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).press(forDuration: 0.05,
+            thenDragTo: rating.coordinate(withNormalizedOffset: CGVector(dx: 0.99, dy: 0.5)))
+        XCTAssertTrue((rating.value as? String)?.contains("5.0점") == true, rating.debugDescription)
+        XCTAssertTrue(content.exists, "별점 드래그만으로 초안을 제출하면 안 됩니다")
+        XCTAssertEqual(content.value as? String, draft)
+        attachScreenshot(named: "감상 초안 별점 5점과 키보드 닫기")
+        let submit = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "감상 남기기")).firstMatch
+        reveal(submit, in: app)
+        tapAfterScroll(submit)
+        XCTAssertTrue(content.waitForNonExistence(timeout: 5))
+        attachScreenshot(named: "상세 피드 작성 키보드와 별점 드래그 명시 제출")
+    }
+
+    @MainActor
     func testComposerDistinguishesUnselectedRatingAndActualZero() throws {
         let app = launchPreview()
         let compose = app.buttons["questionReviewOpen"]
@@ -489,7 +535,7 @@ final class QuestionAPreviewUITests: XCTestCase {
 
     @MainActor
     private func bookFooter(in app: XCUIApplication) -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "이 순간의 감상 남기기")).firstMatch
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "피드에 올리기")).firstMatch
     }
 
     @MainActor
@@ -557,6 +603,55 @@ final class QuestionAPreviewUITests: XCTestCase {
     }
 
     @MainActor
+    func testActualSearchDeduplicatesNineResultsAndTopPreservesQueryAndSort() throws {
+        let fixture = try BookQuestionFixtureServer()
+        defer { fixture.stop() }
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingGuest", "-uiTestingExistingInstallation", "-uiTestingRefresh"]
+        app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = fixture.baseURL
+        app.launch()
+        XCTAssertTrue(app.buttons["홈"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.buttons["홈"].isSelected)
+        app.buttons["검색"].tap()
+        let query = app.textViews["search-query-field"]
+        XCTAssertTrue(query.waitForExistence(timeout: 10))
+        query.tap()
+        query.typeText("archi\n")
+        XCTAssertTrue(app.staticTexts["9건"].waitForExistence(timeout: 10), app.debugDescription)
+        let sort = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "검색 결과 정렬")).firstMatch
+        XCTAssertTrue(sort.waitForExistence(timeout: 5), app.debugDescription)
+        sort.tap()
+        element("감상 많은 순", in: app).tap()
+        let sorted = NSPredicate { _, _ in fixture.searchRequests.contains { $0.query == "archi" && $0.sort == "COMMENT" } }
+        expectation(for: sorted, evaluatedWith: nil)
+        waitForExpectations(timeout: 10)
+        let first = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "archi 검색 도서 1")).firstMatch
+        let last = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "archi 검색 도서 9")).firstMatch
+        XCTAssertTrue(first.waitForExistence(timeout: 10), app.debugDescription)
+        let content = element("search-content", in: app)
+        XCTAssertTrue(content.exists, app.debugDescription)
+        for _ in 0..<6 {
+            if last.exists && last.isHittable { break }
+            content.swipeUp()
+        }
+        XCTAssertTrue(last.exists && last.isHittable, app.debugDescription)
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "중복 ISBN 항목")).firstMatch.exists)
+        let top = element("search-scroll-top", in: app)
+        XCTAssertTrue(top.waitForExistence(timeout: 5), app.debugDescription)
+        let requestCount = fixture.searchRequests.count
+        attachScreenshot(named: "검색 스크롤과 공통 TOP")
+        top.tap()
+        let returnedToFirst = NSPredicate { _, _ in first.exists && first.isHittable && !top.exists }
+        expectation(for: returnedToFirst, evaluatedWith: nil)
+        waitForExpectations(timeout: 10)
+        XCTAssertEqual(query.value as? String, "archi")
+        XCTAssertTrue(sort.label.contains("감상 많은 순"), sort.debugDescription)
+        XCTAssertTrue(app.staticTexts["9건"].exists)
+        XCTAssertEqual(fixture.searchRequests.count, requestCount, "TOP은 검색을 다시 요청하지 않아야 합니다")
+        attachScreenshot(named: "실제 검색 9건 중복 제거와 TOP 입력 정렬 보존")
+    }
+
+    @MainActor
     func testDevelopmentApiQuestionFromActualBookDetail() throws {
         guard ProcessInfo.processInfo.environment["CHAEKCHAEK_QUESTION_DEV_TEST"] == "1" else {
             throw XCTSkip("개발 서버 빌드와 명시적 실행이 필요한 실제 API 확인")
@@ -564,8 +659,8 @@ final class QuestionAPreviewUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-uiTestingGuest", "-uiTestingExistingInstallation"]
         app.launch()
-        XCTAssertTrue(app.buttons["발견"].waitForExistence(timeout: 20))
-        app.buttons["발견"].tap()
+        XCTAssertTrue(app.buttons["검색"].waitForExistence(timeout: 20))
+        app.buttons["검색"].tap()
         let field = app.textViews["search-query-field"]
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         field.tap()
@@ -687,6 +782,10 @@ private final class BookQuestionFixtureServer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "chaekchaek.question-api-test")
     private let lock = NSLock()
     private var requested = false
+    private var recordedSearchRequests: [(query: String, sort: String)] = []
+    var searchRequests: [(query: String, sort: String)] {
+        lock.lock(); defer { lock.unlock() }; return recordedSearchRequests
+    }
     var detailRequested: Bool { lock.lock(); defer { lock.unlock() }; return requested }
     var baseURL: String { "http://127.0.0.1:\(listener.port!.rawValue)" }
 
@@ -715,7 +814,8 @@ private final class BookQuestionFixtureServer: @unchecked Sendable {
                 else { self.receive(connection, buffer: accumulated) }
                 return
             }
-            let path = String(request.split(separator: " ").dropFirst().first ?? "").split(separator: "?").first.map(String.init) ?? ""
+            let target = String(request.split(separator: " ").dropFirst().first ?? "")
+            let path = target.split(separator: "?").first.map(String.init) ?? ""
             let method = request.split(separator: " ").first.map(String.init) ?? ""
             let status = method == "GET" || (method == "POST" && path == "/api/v1/auth/guest-token") ? "200 OK" : "405 Method Not Allowed"
             let body: String
@@ -725,6 +825,25 @@ private final class BookQuestionFixtureServer: @unchecked Sendable {
 
             case "/api/v1/home/popular-books":
                 body = #"{"books":[{"bookId":616,"isbn13":"9780000000616","title":"질문 API 검증 도서","coverImageUrl":"","reviewCount":0,"replyCount":0}]}"#
+            case "/api/v1/books":
+                let parameters = URLComponents(string: "http://localhost\(target)")?.queryItems ?? []
+                self.lock.lock()
+                self.recordedSearchRequests.append((
+                    query: parameters.first { $0.name == "query" }?.value ?? "",
+                    sort: parameters.first { $0.name == "sort" }?.value ?? ""
+                ))
+                self.lock.unlock()
+                var items: [[String: Any]] = (1...9).map { index in
+                    ["bookId": 700 + index, "isbn13": "978000000070\(index)",
+                     "title": "archi 검색 도서 \(index)", "coverImageUrl": "",
+                     "authors": ["검증 작가"], "translators": [String](),
+                     "publisher": "검증 출판사", "publishedDate": "2026-01-01"]
+                }
+                var duplicate = items[0]
+                duplicate["title"] = "중복 ISBN 항목"
+                items.append(duplicate)
+                let json: [String: Any] = ["items": items, "totalCount": 9, "nextPage": NSNull()]
+                body = String(decoding: try! JSONSerialization.data(withJSONObject: json), as: UTF8.self)
             case "/api/v1/books/by-isbn/9780000000616":
                 self.lock.lock(); self.requested = true; self.lock.unlock()
                 body = #"{"bookId":616,"isbn13":"9780000000616","title":"질문 API 검증 도서","authors":[],"translators":[],"publisher":"검증 출판사","category":"소설","coverImageUrl":"","bookQuestion":{"question":"API로 연결된 **질문**입니다.","plot":"API 줄거리 검증 문장","extract":"API 발췌 검증 문장"}}"#
