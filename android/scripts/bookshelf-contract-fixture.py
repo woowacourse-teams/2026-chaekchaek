@@ -91,6 +91,11 @@ class Handler(BaseHTTPRequestHandler):
                 reset()
                 return self.send_json({'fixture': 'bookshelf-contract'})
             if path == '/__bookshelf/state': return self.send_json(STATE)
+            if path == '/__bookshelf/toggle-placements' and method == 'POST':
+                for shelf in STATE['shelves']:
+                    shelf['books'] = [i for i in shelf['books'] if i != 36]
+                    if shelf['libraryId'] in (1, 2): shelf['books'].append(36)
+                return self.send_json({})
             if path == '/__bookshelf/image-failures' and method == 'POST':
                 STATE['image_failures'] = True
                 next(s for s in STATE['shelves'] if s['libraryId'] == 1)['books'] = [1, 2, 3]
@@ -119,7 +124,10 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/v1/books': return self.send_json(dict(items=[dict(BOOKS[36], translators=[], bookId=None, category=None, publishedDate=None)], totalCount=1, nextPage=None))
             if path.startswith('/api/v1/books/by-isbn/'):
                 book = next((b for b in BOOKS.values() if b['isbn13'] == path.rsplit('/', 1)[1]), BOOKS[36])
-                return self.send_json(dict(book, translators=[], myRecord=dict(bookId=book['bookId'], status='READING', currentPage=20, rating=None)))
+                saved = any(book['bookId'] in s['books'] for s in STATE['shelves'])
+                return self.send_json(dict(book, translators=[], isRegisteredInMyLibrary=saved,
+                    myRecord=dict(bookId=book['bookId'], status='READING' if saved else None,
+                                  currentPage=20 if saved else None, myRating=4.5)))
             if re.fullmatch(r'/api/v1/books/\d+/reviews', path):
                 book_id = int(path.split('/')[4])
                 if book_id % 2 == 0: return self.send_json(dict(items=[], totalCount=0, nextPage=None))
@@ -150,7 +158,7 @@ class Handler(BaseHTTPRequestHandler):
                     shelf['books'] = body['bookIds']
                     return self.send_json(None, 204)
                 if match[2]:
-                    shelf['books'].remove(int(match[2]))
+                    shelf['books'] = [i for i in shelf['books'] if i != int(match[2])]
                     return self.send_json(None, 204)
                 if method == 'GET': return self.send_json(dict(summary(shelf), memberId=9, items=[BOOKS[i] for i in shelf['books']]))
                 if method == 'PATCH':

@@ -29,7 +29,7 @@ import com.chaekchaek.app.ui.theme.ChaekIconFontFamily
 import com.chaekchaek.app.ui.theme.ChaekInk
 import com.chaekchaek.app.ui.theme.ChaekSurfaceMuted
 
-/** Saved 상태도 탭을 소비하여 바깥 카드 이동이나 삭제로 이어지지 않는다. */
+/** 담긴 상태의 재선택도 콜백으로 전달하고 책장별 담기·빼기는 상위 조정자가 결정한다. */
 @Composable
 fun LibrarySaveButton(
     bookTitle: String,

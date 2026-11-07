@@ -163,6 +163,7 @@ fun BookDetailScreen(
     onLoginRequired: (BookDetailAuthenticatedAction) -> Unit = {},
     onAddToLibrary: () -> Unit = {},
     onRemoveFromLibrary: () -> Unit = {},
+    onAddToAnotherShelf: () -> Unit = onAddToLibrary,
     onLibraryMessageShown: () -> Unit = {},
     onStatusChange: (ReadingStatus) -> Unit = {},
     onPageSave: (Int, () -> Unit) -> Unit = { _, _ -> },
@@ -314,7 +315,7 @@ fun BookDetailScreen(
                         saving = state.isSavingLibrary || externalLibrarySaving,
                         showSaveLoading = state.isSubmitting || (externalLibrarySaving && externalLibraryLoading),
                         saveEnabled = !state.isLoading && state.detail != null,
-                        onRemoveFromLibrary = onAddToLibrary,
+                        onAddToAnotherShelf = onAddToAnotherShelf,
                         onBack = onBack,
                         onLibraryClick = {
                             authorizeOrRun(BookDetailAuthenticatedAction.AddToLibrary, onAddToLibrary)
@@ -607,7 +608,7 @@ private fun BookHero(
     saving: Boolean,
     showSaveLoading: Boolean,
     saveEnabled: Boolean,
-    onRemoveFromLibrary: () -> Unit,
+    onAddToAnotherShelf: () -> Unit,
     onBack: () -> Unit,
     onLibraryClick: () -> Unit,
     coverContent: (@Composable (BookDetailArgs, Modifier) -> Unit)?,
@@ -655,7 +656,7 @@ private fun BookHero(
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         DropdownMenuItem(
                             text = { Text("다른 책장에 담기") },
-                            onClick = { showMenu = false; onRemoveFromLibrary() },
+                            onClick = { showMenu = false; onAddToAnotherShelf() },
                         )
                     }
                 } else Spacer(Modifier.size(44.dp))

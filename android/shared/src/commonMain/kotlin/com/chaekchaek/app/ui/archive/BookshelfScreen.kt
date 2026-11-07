@@ -256,11 +256,12 @@ internal fun ShelfChoiceSheet(viewModel: LibrarySaveViewModel) {
         ShelfNameSheet("", false, state.savingIsbn != null, viewModel::cancelShelfCreation, viewModel::createShelf)
         return
     }
-    ShelfSheet("담을 책장 고르기", viewModel::dismissShelfChoice) {
-        Text("최근 담은 책장이 선택되어 있어요.", style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp), color = ChaekInkSecondary)
+    val removing = state.shelfAction == ShelfBookAction.Remove
+    ShelfSheet(if (removing) "책을 뺄 책장 고르기" else "담을 책장 고르기", viewModel::dismissShelfChoice) {
+        Text(if (removing) "이 책이 담긴 책장만 보여드려요." else "최근 담은 책장이 선택되어 있어요.", style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp), color = ChaekInkSecondary)
         LazyColumn(Modifier.heightIn(max = 320.dp)) {
             items(state.shelves, key = { it.libraryId }) { shelf ->
-                Row(Modifier.fillMaxWidth().clickable(enabled = state.savingIsbn == null) { viewModel.selectShelf(shelf.libraryId) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().testTag("shelf-choice-row-${shelf.libraryId}").clickable(enabled = state.savingIsbn == null) { viewModel.selectShelf(shelf.libraryId) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     ShelfThumbnail(shelf)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
@@ -277,10 +278,10 @@ internal fun ShelfChoiceSheet(viewModel: LibrarySaveViewModel) {
                 HorizontalDivider(color = ChaekBorder)
             }
         }
-        CreateShelfButton(viewModel::beginShelfCreation, state.savingIsbn == null, Modifier.testTag("shelf-choice-create"))
+        if (!removing) CreateShelfButton(viewModel::beginShelfCreation, state.savingIsbn == null, Modifier.testTag("shelf-choice-create"))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ChaekOverlayButton("닫기", viewModel::dismissShelfChoice, enabled = state.savingIsbn == null, secondary = true, modifier = Modifier.weight(1f))
-            ChaekOverlayButton("이 책장에 담기", viewModel::confirmShelf, enabled = state.savingIsbn == null, modifier = Modifier.weight(1f))
+            ChaekOverlayButton(if (removing) "이 책장에서 빼기" else "이 책장에 담기", viewModel::confirmShelf, enabled = state.savingIsbn == null, modifier = Modifier.weight(1f))
         }
         if (state.showLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
     }

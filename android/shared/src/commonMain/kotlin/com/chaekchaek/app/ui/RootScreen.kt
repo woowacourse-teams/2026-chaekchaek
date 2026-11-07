@@ -177,7 +177,7 @@ internal fun RootScreen(
     }
 
     val saveBook: (BookDetailTarget) -> Unit = { book ->
-        librarySaveViewModel.save(book.toBookDetailArgs())
+        librarySaveViewModel.toggleSavedBook(book.toBookDetailArgs())
     }
 
     NavigationBackHandler(
@@ -230,6 +230,9 @@ internal fun RootScreen(
 
     LaunchedEffect(librarySaveState.savedCount) {
         if (librarySaveViewModel.consumeSaveNotice()) snackbarHost.showSnackbar("내 서재에 담았어요")
+    }
+    LaunchedEffect(librarySaveState.removedCount) {
+        if (librarySaveViewModel.consumeRemovalNotice()) snackbarHost.showSnackbar("책장에서 뺐어요")
     }
     LaunchedEffect(authState.errorMessage) {
         if (authState.errorMessage != null) analytics.endAuthAttempt("failure", "unknown")
@@ -308,7 +311,7 @@ internal fun RootScreen(
                 },
                 onRegisterBook = shelfSearchContext.origin?.let { origin ->
                     { book ->
-                        if (shelfSearchContext.isCurrentSearch(origin, selectedTab) && isShelfSearchOriginActive(origin)) librarySaveViewModel.saveToShelf(
+                        if (shelfSearchContext.isCurrentSearch(origin, selectedTab) && isShelfSearchOriginActive(origin)) librarySaveViewModel.toggleBookInShelf(
                             BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title,
                                 creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages),
                             origin.libraryId,

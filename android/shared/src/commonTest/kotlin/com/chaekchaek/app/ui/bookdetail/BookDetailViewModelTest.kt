@@ -1902,6 +1902,31 @@ class BookDetailViewModelTest {
   }
 
   @Test
+  fun `마지막 책장 빼기 후 재조회가 실패해도 미등록 표시와 별점을 보존한다`() = runViewModelTest {
+    var failReload = false
+    val client = testClient(MockEngine { request ->
+      if (request.url.encodedPath.contains("/by-isbn/")) {
+        check(!failReload) { "재조회 실패" }
+        respond(DETAIL_WITH_RECORD, headers = jsonHeaders())
+      } else respond(EMPTY_REVIEWS, headers = jsonHeaders())
+    })
+    val vm = viewModel(client, client, platform({ null }))
+    val store = ViewModelStore().also { it.put("removal", vm) }
+    try {
+      vm.open(book().copy(isbn13 = "9780000000042"), "member")
+      awaitReal { vm.uiState.first { it.detail?.myRecord != null } }
+      vm.acceptShelfRemoval("different-isbn", false)
+      assertTrue(vm.uiState.value.detail!!.isRegisteredInMyLibrary)
+      failReload = true
+      vm.acceptShelfRemoval("9780000000042", false)
+      awaitReal { vm.uiState.first { it.reviewPageLoadState == ReviewPageLoadState.RefreshFailed } }
+      assertFalse(vm.uiState.value.detail!!.isRegisteredInMyLibrary)
+      assertNull(vm.uiState.value.detail?.myRecord)
+      assertEquals(4.0, vm.uiState.value.detail?.myRating)
+    } finally { store.clear(); advanceUntilIdle(); client.close() }
+  }
+
+  @Test
   fun `마지막 책장 삭제 후 별점은 유지하고 독서 기록과 등록 상태만 제거한다`() = runViewModelTest {
     var removed = false
     val client = testClient(MockEngine { request ->

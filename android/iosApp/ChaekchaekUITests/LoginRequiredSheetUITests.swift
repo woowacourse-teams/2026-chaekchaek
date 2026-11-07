@@ -1289,6 +1289,124 @@ final class BookshelfContractUITests: XCTestCase {
     }
 
     @MainActor
+    func testOriginShelfSavedButtonRemovesDirectlyInSearchAndDetail() async throws {
+        let app = try await launchToggleFixture()
+        app.buttons["내 서재"].tap()
+        XCTAssertTrue(app.buttons["bookshelf-2"].waitForExistence(timeout: 10))
+        app.buttons["bookshelf-2"].tap()
+        XCTAssertTrue(element("+ 책 담기", app).waitForExistence(timeout: 10))
+        element("+ 책 담기", app).tap()
+        searchToggleBook(app)
+        XCTAssertTrue(element("담았어요", app).waitForExistence(timeout: 10))
+        element("담았어요", app).tap()
+        try await assertBookPlacement(2, saved: false)
+        XCTAssertFalse(element("책을 뺄 책장 고르기", app).exists)
+        try await assertBookPlacement(1, saved: true)
+        XCTAssertTrue(element("책 담기", app).waitForExistence(timeout: 10))
+        element("검증 도서 36", app).tap()
+        let save = app.buttons["book_detail_library_save"]
+        XCTAssertTrue(save.waitForExistence(timeout: 10))
+        let ready = expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: save)
+        await fulfillment(of: [ready], timeout: 10)
+        save.tap()
+        try await assertBookPlacement(2, saved: true)
+        XCTAssertTrue(element("담았어요", app).waitForExistence(timeout: 10))
+        save.tap()
+        try await assertBookPlacement(2, saved: false)
+        XCTAssertTrue(element("서재에 담기", app).waitForExistence(timeout: 10))
+        XCTAssertFalse(element("책을 뺄 책장 고르기", app).exists)
+        try await assertBookPlacement(1, saved: true)
+        attachToggleCapture(app, "출발 책장 상세 바로 빼기")
+        app.buttons["book_detail_back"].tap()
+        XCTAssertTrue(element("책장으로", app).waitForExistence(timeout: 10))
+        element("책장으로", app).tap()
+        XCTAssertTrue(element("1권", app).waitForExistence(timeout: 10))
+        XCTAssertFalse(element("검증 도서 36", app).exists)
+    }
+
+    @MainActor
+    func testGeneralSavedButtonShowsOnlyContainingShelvesAndRetriesSelectedRemoval() async throws {
+        let app = try await launchToggleFixture()
+        app.buttons["검색"].tap()
+        searchToggleBook(app)
+        XCTAssertTrue(element("담았어요", app).waitForExistence(timeout: 10))
+        element("담았어요", app).tap()
+        XCTAssertTrue(element("책을 뺄 책장 고르기", app).waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["shelf-choice-row-1"].exists)
+        XCTAssertTrue(app.buttons["shelf-choice-row-2"].exists)
+        XCTAssertFalse(app.buttons["shelf-choice-row-3"].exists)
+        XCTAssertFalse(app.buttons["shelf-choice-create"].exists)
+        attachToggleCapture(app, "빼기 대상 책장 두 개")
+        app.buttons["shelf-choice-row-2"].tap()
+        _ = try await request("/__bookshelf/fail-next", method: "POST")
+        element("이 책장에서 빼기", app).tap()
+        XCTAssertTrue(element("다시 시도", app).waitForExistence(timeout: 10))
+        try await assertBookPlacement(2, saved: true)
+        element("다시 시도", app).tap()
+        try await assertBookPlacement(2, saved: false)
+        XCTAssertTrue(element("담았어요", app).waitForExistence(timeout: 10))
+        element("담았어요", app).tap()
+        XCTAssertTrue(element("책을 뺄 책장 고르기", app).waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["shelf-choice-row-1"].exists)
+        XCTAssertFalse(app.buttons["shelf-choice-row-2"].exists)
+        XCTAssertFalse(app.buttons["shelf-choice-row-3"].exists)
+        attachToggleCapture(app, "빼기 대상 책장 한 개")
+        element("닫기", app).tap()
+        try await assertBookPlacement(1, saved: true)
+        element("담았어요", app).tap()
+        XCTAssertTrue(element("이 책장에서 빼기", app).waitForExistence(timeout: 10))
+        element("이 책장에서 빼기", app).tap()
+        try await assertBookPlacement(1, saved: false)
+        XCTAssertTrue(element("책 담기", app).waitForExistence(timeout: 10))
+        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "책 담기")).firstMatch.tap()
+        XCTAssertTrue(element("담을 책장 고르기", app).waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["shelf-choice-row-2"].exists)
+    }
+
+    @MainActor
+    private func launchToggleFixture() async throws -> XCUIApplication {
+        continueAfterFailure = false
+        guard (try? await request("/__bookshelf")) != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
+        _ = try await request("/__bookshelf/reset", method: "POST")
+        _ = try await request("/__bookshelf/toggle-placements", method: "POST")
+        let app = XCUIApplication()
+        app.launchArguments = ["-uiTestingExistingInstallation", "-uiTestingGuest", "-uiTestingNicknameRestore", "-uiTestingRefresh"]
+        app.launchEnvironment["CHAEKCHAEK_UI_TEST_API_URL"] = origin
+        app.launch()
+        XCTAssertTrue(app.buttons["검색"].waitForExistence(timeout: 15))
+        return app
+    }
+
+    @MainActor
+    private func searchToggleBook(_ app: XCUIApplication) {
+        let search = app.textViews["search-query-field"]
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        search.tap(); search.typeText("book\n")
+        XCTAssertTrue(element("검증 도서 36", app).waitForExistence(timeout: 10))
+    }
+
+    @MainActor
+    private func assertBookPlacement(_ libraryId: Int, saved: Bool) async throws {
+        for _ in 0..<100 {
+            let data = try await request("/__bookshelf/state")
+            let state = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            let shelves = try XCTUnwrap(state["shelves"] as? [[String: Any]])
+            let shelf = try XCTUnwrap(shelves.first { $0["libraryId"] as? Int == libraryId })
+            if (shelf["books"] as? [Int])?.contains(36) == saved { return }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTFail("책장 \(libraryId)의 검증 도서 36 배치가 \(saved)로 바뀌지 않았어요")
+    }
+
+    @MainActor
+    private func attachToggleCapture(_ app: XCUIApplication, _ name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    @MainActor
     private func assertDirectSave(libraryId: Int, bookId: Int) async throws {
         var state: [String: Any] = [:]
         for _ in 0..<100 {

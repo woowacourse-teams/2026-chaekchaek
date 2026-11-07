@@ -302,6 +302,7 @@ private fun AppNavigationContent(
             addBook = detailRepository::addToLibrary,
             onSaved = { _, _ -> bookshelfViewModel.refresh() },
             onShelfCreated = bookshelfViewModel::refresh,
+            onRemoved = { bookshelfViewModel.acceptRemovedBook(it.libraryId, it.bookId) },
             shelves = bookshelfRepository,
             readRecentShelf = shelfPlatform::readRecent,
             writeRecentShelf = shelfPlatform::writeRecent,
@@ -383,7 +384,7 @@ private fun AppNavigationContent(
                     val searchViewModel = viewModel<SearchViewModel> {
                         SearchViewModel(
                             bookSearchRepository = BookSearchRemoteRepository(),
-                            registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
+                            registerBook = { book -> librarySaveViewModel.toggleSavedBook(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
                             isSignedIn = { authViewModel.tokens.value != null },
                             recentSearchStorage = recentSearchStorage,
                             analytics = analytics,
@@ -391,7 +392,7 @@ private fun AppNavigationContent(
                         )
                     }
                     searchViewModel.attachRegistration(
-                        registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
+                        registerBook = { book -> librarySaveViewModel.toggleSavedBook(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
                         isSignedIn = { authViewModel.tokens.value != null },
                     )
                     LaunchedEffect(authTokens?.accessToken, restoringAuthentication) {
@@ -519,6 +520,11 @@ private fun AppNavigationContent(
                             viewModel.acceptSavedLibraryRecord(savedBook.isbn13, savedBook.record)
                         }
                     }
+                    LaunchedEffect(viewModel) {
+                        librarySaveViewModel.removalsCompletedWhileObserving().collect { removed ->
+                            viewModel.acceptShelfRemoval(removed.isbn13, removed.savedElsewhere)
+                        }
+                    }
 
                     if (restoringAuthentication) {
                         AuthenticationRestorationContent(safeContent)
@@ -553,12 +559,15 @@ private fun AppNavigationContent(
                                     val origin = key.shelfSearchOrigin?.inSession(shelfSearchSessionRevision)
                                     val memberId = authViewModel.memberIdFor(authViewModel.tokens.value?.accessToken)
                                     when {
-                                        origin == null -> librarySaveViewModel.save(displayBook)
+                                        origin == null -> librarySaveViewModel.toggleSavedBook(displayBook)
                                         memberId != null && memberId != origin.memberId ->
                                             librarySaveViewModel.errors.confirm("출발한 책장의 계정이 바뀌었어요. 내 서재에서 다시 담아 주세요")
-                                        else -> librarySaveViewModel.saveToShelf(displayBook, origin.libraryId)
+                                        else -> librarySaveViewModel.toggleBookInShelf(displayBook, origin.libraryId)
                                     }
                                 }
+                            },
+                            onAddToAnotherShelf = {
+                                if (backStack.isCurrentDestination(key)) librarySaveViewModel.save(displayBook)
                             },
                             onLibraryMessageShown = viewModel::clearLibraryMessage,
                             onStatusChange = { status ->
