@@ -1,6 +1,9 @@
 import type { ResponseDto } from '@/services/apis/api.types';
+import type { RequestHeaders } from '@/services/context/requestHeaders';
 
-export interface GetPmfSurveyRequestDto {}
+export interface GetPmfSurveyRequestDto {
+  headers?: RequestHeaders;
+}
 
 export type GetPmfSurveyResponseDto = ResponseDto<{
   alreadySubmitted: boolean;

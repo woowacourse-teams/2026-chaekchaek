@@ -1,6 +1,11 @@
+import type { RequestContext } from '@/services/context/requestContext';
+
 export interface GetPmfSurveyParams {}
 
-export type GetPmfSurvey = (params: GetPmfSurveyParams) => Promise<{
+export type GetPmfSurvey = (
+  params: GetPmfSurveyParams,
+  context?: RequestContext,
+) => Promise<{
   alreadySubmitted: boolean;
   eligible: boolean;
   submissionToken: string;
