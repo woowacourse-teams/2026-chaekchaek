@@ -109,7 +109,7 @@ export const PMFDialog = (props: Props) => {
                   if (value === 'NO_UNKNOWN_FEATURES')
                     return changeAnswer(answer.questionCode, [value]);
 
-                  const isIncluded = answer.questionCode.includes(value);
+                  const isIncluded = answer.answerCodes.includes(value);
                   const newAnswer = isIncluded
                     ? answer.answerCodes.filter((a) => a !== value)
                     : [...answer.answerCodes, value];
