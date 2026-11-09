@@ -72,3 +72,5 @@
 - 설문을 열 때 기존 조회를 취소하고 요청 세대를 변경하여 취소를 무시한 응답도 차단한다. 이미 연 다이얼로그의 중복 열기와 완료한 설문의 다시 열기도 차단한다.
 - 수정 후 공통 JVM 테스트 500개가 실패·오류·건너뜀 없이 통과했다. 새 경합 회귀 2개를 포함해 ViewModel 테스트는 10개다.
 - 같은 날 production OpenAPI는 저장소의 `android/openapi3.yaml`과 SHA-256이 일치하며 여전히 설문 경로가 없다. development 조회·제출 계약은 현재 구현과 일치한다.
+- 수정 소스 `ebc4fd7f`의 [빌드·테스트·Lint](https://github.com/woowacourse-teams/2026-chaekchaek/actions/runs/42548842283)는 통과했다. 같은 소스의 iOS 앱·테스트 빌드와 UI 테스트 2개도 동일한 iPhone 17 Pro Simulator에서 통과했다. `/tmp/pr688-review-ios/result.xcresult`에 근거를 남기고 글자 크기 복원, Simulator 종료와 임시 worktree 제거를 완료했다.
+- 병합 시점의 최신 Android 화면 검증과 CI 결과는 [PR #688 검증 절](https://github.com/woowacourse-teams/2026-chaekchaek/pull/688)을 함께 확인한다. 공통 테스트의 경합 검증과 fixture 화면 검증은 실제 서버 제출의 증거가 아니다.
