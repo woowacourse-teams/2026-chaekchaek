@@ -102,6 +102,8 @@ internal enum class RootTab(
 @Composable
 internal fun RootScreen(
     homeViewModel: HomeViewModel,
+    surveyViewModel: com.chaekchaek.app.presentation.survey.PmfSurveyViewModel,
+    onSurveyHomeEntered: () -> Unit,
     feedViewModel: FeedViewModel,
     searchViewModel: SearchViewModel,
     librarySaveViewModel: LibrarySaveViewModel,
@@ -242,6 +244,8 @@ internal fun RootScreen(
         when (selectedTab) {
             RootTab.Home -> HomeScreen(
                 homeViewModel = homeViewModel,
+                surveyViewModel = surveyViewModel,
+                onSurveyHomeEntered = onSurveyHomeEntered,
                 myDisplayName = memberSettingsState.publicNickname,
                 scrollTopRequest = homeScrollTopRequest,
                 modifier = contentModifier,
