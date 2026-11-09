@@ -84,8 +84,6 @@ export type AnalyticsEventMap = {
     actor_type: 'MEMBER' | 'GUEST';
     actor_id: number;
   };
-  current_page_open: undefined;
-  current_page_submit: undefined;
   search: {
     query: string;
   };
