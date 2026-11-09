@@ -18,6 +18,9 @@ export type AnalyticsEventMap = {
     source: 'search' | 'detail_info' | 'detail_required' | 'library' | 'librareis';
     status: 'want_to_read' | 'reading' | 'finished';
   };
+  library_remove: {
+    source: 'search' | 'detail_info' | 'detail_required' | 'library' | 'librareis';
+  };
   library_add_open: {
     source: 'search' | 'detail_info' | 'library';
   };

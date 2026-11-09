@@ -122,7 +122,10 @@ export const RegisterBookToLibraryDialog = ({
 
     if (requests.length) {
       await Promise.all(requests);
-      await onBookRegistered?.();
+      await onBookRegistered?.({
+        added: !!addedLibraries.length,
+        removed: !!deletedLibraries.length,
+      });
     }
 
     onClose();

@@ -143,13 +143,21 @@ export const BooksPage = () => {
     });
   };
 
-  const handleBookRegistered = async () => {
+  const handleBookRegistered = async ({ added, removed }: { added: boolean; removed: boolean }) => {
     await refetchGEtBooksLoadData();
 
-    track('library_add', {
-      source: 'search',
-      status: 'reading',
-    });
+    if (added) {
+      track('library_add', {
+        source: 'search',
+        status: 'reading',
+      });
+    }
+
+    if (removed) {
+      track('library_remove', {
+        source: 'search',
+      });
+    }
   };
 
   const [dialog, setDialog] = useState<'RegisterBookToLibraryDialog' | null>(null);
