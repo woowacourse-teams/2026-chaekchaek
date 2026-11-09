@@ -62,6 +62,10 @@ export const BooksPage = () => {
       },
       { replace: true },
     );
+
+    track('search', {
+      query: query,
+    });
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -73,6 +77,7 @@ export const BooksPage = () => {
   const handleChangeDefaultPage = (defaultPage: number) => {
     track('search_more', {
       page: defaultPage,
+      query: keywordQuery,
     });
 
     setPage(defaultPage);
@@ -142,19 +147,6 @@ export const BooksPage = () => {
       status: 'reading',
     });
   };
-
-  useEffect(() => {
-    if (!query.length) return;
-
-    const TIMEOUT = 500;
-    const timeoutId = setTimeout(() => {
-      track('search');
-    }, TIMEOUT);
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [query]);
 
   const [dialog, setDialog] = useState<'RegisterBookToLibraryDialog' | null>(null);
   const handleOpenDialog = (dialog: 'RegisterBookToLibraryDialog') => {

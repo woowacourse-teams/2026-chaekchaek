@@ -40,8 +40,11 @@ export type AnalyticsEventMap = {
   };
   current_page_open: undefined;
   current_page_submit: undefined;
-  search: undefined;
+  search: {
+    query: string;
+  };
   search_more: {
     page: number;
+    query: string;
   };
 };
