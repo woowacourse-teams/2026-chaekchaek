@@ -63,13 +63,13 @@ class BookTest {
     }
 
     @Test
-    @DisplayName("0 이하의 전체 페이지는 저장할 수 없다")
-    void should_ThrowIllegalArgumentException_When_TotalPagesIsNotPositive() {
+    @DisplayName("음수인 전체 페이지는 저장할 수 없다")
+    void should_ThrowIllegalArgumentException_When_TotalPagesIsNegative() {
         // given
         Book book = bookWithoutTotalPages();
 
         // when & then
-        assertThatThrownBy(() -> book.rememberTotalPages(0))
+        assertThatThrownBy(() -> book.rememberTotalPages(-1))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

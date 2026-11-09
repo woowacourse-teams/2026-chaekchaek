@@ -179,8 +179,8 @@ public class Book {
     }
 
     private static void validateTotalPages(Integer totalPages) {
-        if (totalPages != null && totalPages <= 0) {
-            throw new IllegalArgumentException("Total pages must be positive");
+        if (totalPages != null && totalPages < 0) {
+            throw new IllegalArgumentException("Total pages must not be negative");
         }
     }
 
