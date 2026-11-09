@@ -48,6 +48,7 @@ const getRatingMessageNumber = (rating: number) => {
 };
 
 export const UpdateReviewDialog = ({
+  isbn,
   bookId,
   myRating: defaultRating,
   review,
@@ -99,6 +100,16 @@ export const UpdateReviewDialog = ({
           }
         : undefined,
     );
+
+    const actorType = user?.actorType ?? guest?.actorType;
+    const actorId = user?.actorId ?? guest?.actorId;
+
+    if (!(actorType && actorId)) return;
+    track('review_submit', {
+      actor_type: actorType,
+      actor_id: actorId,
+      isbn,
+    });
   };
 
   const [rating, setRating] = useState(defaultRating || 0);

@@ -104,6 +104,16 @@ export const BookReview = ({
         : undefined,
     );
 
+    const actorType = user?.actorType ?? guest?.actorType;
+    const actorId = user?.actorId ?? guest?.actorId;
+
+    if (!(actorType && actorId)) return;
+    track('review_delete', {
+      actor_type: actorType,
+      actor_id: actorId,
+      isbn,
+    });
+
     onReviewsRefresh();
   };
 
@@ -176,6 +186,16 @@ export const BookReview = ({
   const [dialog, setDialog] = useState<'UpdateReviewDialog' | 'AlertDialog' | null>(null);
   const handleOpenDialog = (dialog: 'UpdateReviewDialog' | 'AlertDialog') => {
     setDialog(dialog);
+
+    const actorType = user?.actorType ?? guest?.actorType;
+    const actorId = user?.actorId ?? guest?.actorId;
+
+    if (!(actorType && actorId)) return;
+    track('review_update_open', {
+      actor_type: actorType,
+      actor_id: actorId,
+      isbn,
+    });
   };
   const handleCloseDialog = () => {
     setDialog(null);
@@ -186,6 +206,7 @@ export const BookReview = ({
       case 'UpdateReviewDialog':
         return (
           <UpdateReviewDialog
+            isbn={isbn}
             bookId={bookId}
             myRating={myRating}
             review={review}

@@ -34,6 +34,21 @@ export type AnalyticsEventMap = {
     actor_id: number;
     isbn: string;
   };
+  review_update_open: {
+    actor_type: 'MEMBER' | 'GUEST';
+    actor_id: number;
+    isbn: string;
+  };
+  review_update: {
+    actor_type: 'MEMBER' | 'GUEST';
+    actor_id: number;
+    isbn: string;
+  };
+  review_delete: {
+    actor_type: 'MEMBER' | 'GUEST';
+    actor_id: number;
+    isbn: string;
+  };
   reply_write_open: {
     actor_type: 'MEMBER' | 'GUEST';
     actor_id: number;
