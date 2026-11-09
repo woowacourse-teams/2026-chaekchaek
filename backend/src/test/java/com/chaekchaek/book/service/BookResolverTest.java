@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.chaekchaek.book.client.BookDetailClient;
+import com.chaekchaek.book.client.yes24.Yes24ClientException;
 import com.chaekchaek.book.client.BookDetailItem;
 import com.chaekchaek.book.domain.Book;
 import com.chaekchaek.book.domain.Isbn13;
@@ -23,6 +24,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 class BookResolverTest {
 
     private static final Isbn13 ISBN13 = new Isbn13("9788925568683");
+    private static final String SPINE_IMAGE_URL = "https://image.yes24.com/goods/118578901/SIDE/L";
 
     @Test
     @DisplayName("등록된 ISBN13으로 책을 조회하거나 생성하면 기존 책을 반환한다")
@@ -154,6 +156,120 @@ class BookResolverTest {
         // then
         assertThat(book.getDescription()).isNull();
         assertThat(book.getTitle()).isEqualTo("마션");
+    }
+
+    @Test
+    @DisplayName("책등이 준비중 이미지면 URL 대신 null로 저장한다")
+    void should_SaveNullSpineImageUrl_When_SpineImageIsPreparing() {
+        // given
+        BookDetailClient client = mock(BookDetailClient.class);
+        BookRepository repository = repositorySavingBook();
+        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+        when(client.findBookByIsbn13(ISBN13)).thenReturn(bookDetailItemWithSpine());
+        when(client.isPreparingImage(SPINE_IMAGE_URL)).thenReturn(true);
+
+        // when
+        Book book = resolver.findOrCreate(ISBN13);
+
+        // then
+        assertThat(book.getSpineImageUrl()).isNull();
+        verify(repository).saveAndFlush(book);
+    }
+
+    @Test
+    @DisplayName("책등이 실제 이미지면 URL을 저장한다")
+    void should_SaveSpineImageUrl_When_SpineImageIsReal() {
+        // given
+        BookDetailClient client = mock(BookDetailClient.class);
+        BookRepository repository = repositorySavingBook();
+        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+        when(client.findBookByIsbn13(ISBN13)).thenReturn(bookDetailItemWithSpine());
+        when(client.isPreparingImage(SPINE_IMAGE_URL)).thenReturn(false);
+
+        // when
+        Book book = resolver.findOrCreate(ISBN13);
+
+        // then
+        assertThat(book.getSpineImageUrl()).isEqualTo(SPINE_IMAGE_URL);
+    }
+
+    @Test
+    @DisplayName("책등 이미지 확인에 실패해도 URL을 유지해 도서를 저장한다")
+    void should_SaveSpineImageUrl_When_ImageCheckFails() {
+        // given
+        BookDetailClient client = mock(BookDetailClient.class);
+        BookRepository repository = repositorySavingBook();
+        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+        when(client.findBookByIsbn13(ISBN13)).thenReturn(bookDetailItemWithSpine());
+        when(client.isPreparingImage(SPINE_IMAGE_URL)).thenThrow(new Yes24ClientException("IMAGE"));
+
+        // when
+        Book book = resolver.findOrCreate(ISBN13);
+
+        // then
+        assertThat(book.getSpineImageUrl()).isEqualTo(SPINE_IMAGE_URL);
+        verify(repository).saveAndFlush(book);
+    }
+
+    @Test
+    @DisplayName("책등 URL이 없으면 이미지를 확인하지 않고 저장한다")
+    void should_NotCheckImage_When_SpineImageUrlIsMissing() {
+        // given
+        BookDetailClient client = mock(BookDetailClient.class);
+        BookRepository repository = repositorySavingBook();
+        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+        when(client.findBookByIsbn13(ISBN13)).thenReturn(bookDetailItem());
+
+        // when
+        Book book = resolver.findOrCreate(ISBN13);
+
+        // then
+        assertThat(book.getSpineImageUrl()).isNull();
+        verify(client, never()).isPreparingImage(ArgumentMatchers.anyString());
+    }
+
+    @Test
+    @DisplayName("저장하지 않는 조회에서는 책등 이미지를 확인하지 않는다")
+    void should_NotCheckImage_When_LookingUpUnregisteredBook() {
+        // given
+        BookDetailClient client = mock(BookDetailClient.class);
+        BookRepository repository = mock(BookRepository.class);
+        BookResolver resolver = new BookResolver(client, repository, mock(PlatformTransactionManager.class));
+        when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
+        when(client.findBookByIsbn13(ISBN13)).thenReturn(bookDetailItemWithSpine());
+
+        // when
+        resolver.lookup(ISBN13);
+
+        // then
+        verify(client, never()).isPreparingImage(ArgumentMatchers.anyString());
+    }
+
+    private BookRepository repositorySavingBook() {
+        BookRepository repository = mock(BookRepository.class);
+        when(repository.findByIsbn13(ISBN13)).thenReturn(Optional.empty());
+        when(repository.saveAndFlush(ArgumentMatchers.any(Book.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        return repository;
+    }
+
+    private BookDetailItem bookDetailItemWithSpine() {
+        return new BookDetailItem(
+                "마션",
+                "https://image.example/martian.jpg",
+                SPINE_IMAGE_URL,
+                null,
+                "책 설명",
+                List.of("앤디 위어"),
+                List.of(),
+                LocalDate.of(2026, 1, 1),
+                ISBN13.value(),
+                "SF",
+                "알에이치코리아",
+                308,
+                "https://www.yes24.com/product/goods/118578901",
+                "yes24"
+        );
     }
 
     private BookDetailItem bookDetailItem() {

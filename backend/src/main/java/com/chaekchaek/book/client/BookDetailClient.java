@@ -5,4 +5,6 @@ import com.chaekchaek.book.domain.Isbn13;
 public interface BookDetailClient {
 
     BookDetailItem findBookByIsbn13(Isbn13 isbn13);
+
+    boolean isPreparingImage(String imageUrl);
 }

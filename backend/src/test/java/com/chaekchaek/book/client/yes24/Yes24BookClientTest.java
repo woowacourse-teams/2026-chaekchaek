@@ -1,5 +1,6 @@
 package com.chaekchaek.book.client.yes24;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.chaekchaek.book.client.BookDetailItem;
@@ -14,6 +15,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.web.client.RestClient;
 
 class Yes24BookClientTest {
@@ -35,6 +38,44 @@ class Yes24BookClientTest {
     @AfterEach
     void tearDown() throws IOException {
         yes24Server.close();
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {1_291L, 2_858L, 4_975L})
+    @DisplayName("이미지 크기가 준비중 이미지와 같으면 준비중으로 판별한다")
+    void should_ReturnTrue_When_ContentLengthMatchesPreparingImage(long contentLength) {
+        // given
+        yes24Server.이미지_크기를_응답한다(contentLength);
+
+        // when
+        boolean result = client.isPreparingImage(yes24Server.baseUrl() + "/goods/1/SIDE/L");
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("이미지 크기가 준비중 이미지와 다르면 준비중이 아니다")
+    void should_ReturnFalse_When_ContentLengthDiffersFromPreparingImage() {
+        // given
+        yes24Server.이미지_크기를_응답한다(3_119L);
+
+        // when
+        boolean result = client.isPreparingImage(yes24Server.baseUrl() + "/goods/1/SIDE/L");
+
+        // then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("이미지 서버가 오류를 반환하면 YES24 클라이언트 예외로 변환한다")
+    void should_ThrowClientException_When_ImageServerFails() {
+        // given
+        yes24Server.응답한다(500, "");
+
+        // when & then
+        assertThatThrownBy(() -> client.isPreparingImage(yes24Server.baseUrl() + "/goods/1/SIDE/L"))
+                .isInstanceOf(Yes24ClientException.class);
     }
 
     @Test

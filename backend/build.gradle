@@ -360,6 +360,10 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		}
 		setEnum('/api/v1/library', 'get', 'status', ['WANT_TO_READ', 'READING', 'FINISHED'])
 		setEnum('/api/v1/library', 'get', 'sort', ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], 'RECENT')
+		setEnum('/api/v2/library', 'get', 'status', ['WANT_TO_READ', 'READING', 'FINISHED'])
+		setEnum('/api/v2/library', 'get', 'sort', ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], 'RECENT')
+		setEnum('/api/v2/members/{memberId}/library', 'get', 'status', ['WANT_TO_READ', 'READING', 'FINISHED'])
+		setEnum('/api/v2/members/{memberId}/library', 'get', 'sort', ['RECENT', 'OLDEST', 'COMMENT', 'RATING', 'TITLE'], 'RECENT')
 		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'feed', ['ALL', 'MINE'], 'ALL')
 		setEnum('/api/v1/books/{bookId}/reviews', 'get', 'sort', ['LATEST', 'OLDEST', 'POPULAR'], 'LATEST')
 
@@ -448,6 +452,10 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 		markRequiredNullable(libraryResponse, 'nextPage')
 		def libraryItem = arrayItemSchema(libraryResponse, 'items')
 		['totalPages', 'rating'].each { propertyName -> markRequiredNullable(libraryItem, propertyName) }
+		markRequiredNullable(arrayItemSchema(responseSchemaForPath('/api/v2/library', 'get', '200'), 'items'), 'spineImageUrl')
+		markRequiredNullable(arrayItemSchema(responseSchemaForPath('/api/v2/members/{memberId}/library', 'get', '200'), 'items'), 'spineImageUrl')
+		markRequiredNullable(arrayItemSchema(arrayItemSchema(responseSchemaForPath('/api/v2/libraries', 'get', '200'), 'libraries'), 'items'), 'spineImageUrl')
+		markRequiredNullable(arrayItemSchema(responseSchemaForPath('/api/v2/libraries/{libraryId}', 'get', '200'), 'items'), 'spineImageUrl')
 		def reviewPageResponse = responseSchemaForPath('/api/v1/books/{bookId}/reviews', 'get', '200')
 		markRequiredNullable(reviewPageResponse, 'nextPage')
 		def reviewItem = arrayItemSchema(reviewPageResponse, 'items')
@@ -549,6 +557,9 @@ tasks.matching { it.name == 'openapi3' }.configureEach {
 					|| path == '/api/v1/reviews/{reviewId}/replies'
 					|| path == '/api/v1/libraries'
 					|| path == '/api/v1/libraries/{libraryId}'
+					|| path == '/api/v2/members/{memberId}/library'
+					|| path == '/api/v2/libraries'
+					|| path == '/api/v2/libraries/{libraryId}'
 		}
 		def memberSecurityRequirement = [[bearerAuth: []], [accessTokenCookie: []]]
 		def guestOnlySecurityRequirement = [[guestToken: []]]
@@ -844,6 +855,9 @@ tasks.register('verifyOpenApi') {
 					|| path.toString() == '/api/v1/reviews/{reviewId}/replies'
 					|| path.toString() == '/api/v1/libraries'
 					|| path.toString() == '/api/v1/libraries/{libraryId}'
+					|| path.toString() == '/api/v2/members/{memberId}/library'
+					|| path.toString() == '/api/v2/libraries'
+					|| path.toString() == '/api/v2/libraries/{libraryId}'
 		}
 		def openApiHttpMethods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as Set
 		paths.each { path, pathItem ->
