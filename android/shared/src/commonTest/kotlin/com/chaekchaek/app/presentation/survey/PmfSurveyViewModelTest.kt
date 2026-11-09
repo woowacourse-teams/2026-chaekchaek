@@ -81,6 +81,30 @@ class PmfSurveyViewModelTest {
         }
     }
 
+    @Test fun `설문을 연 뒤 늦은 홈 조회가 문항과 선택을 지우지 않는다`() = scenario {
+        val pending = CompletableDeferred<SurveyAvailability>()
+        val vm = viewModel(delayedReload(pending))
+        vm.authenticate(SurveyRespondent.Guest("test-guest")); vm.onHomeEntered(); runCurrent()
+        vm.onHomeEntered(); runCurrent(); vm.open(); vm.select("A"); vm.next(); vm.select("B")
+        pending.complete(SurveyAvailability(false, false, null, emptyList())); runCurrent()
+        assertTrue(vm.uiState.value.dialogOpen)
+        assertEquals("UNKNOWN_FEATURES", vm.uiState.value.question?.code)
+        assertEquals(setOf("B"), vm.uiState.value.answers["UNKNOWN_FEATURES"])
+        assertTrue(vm.uiState.value.canContinue)
+    }
+
+    @Test fun `제출 후 늦은 홈 조회가 완료한 설문 바를 다시 표시하지 않는다`() = scenario {
+        val pending = CompletableDeferred<SurveyAvailability>()
+        val vm = viewModel(delayedReload(pending))
+        vm.authenticate(SurveyRespondent.Guest("test-guest")); vm.onHomeEntered(); runCurrent()
+        vm.onHomeEntered(); runCurrent(); vm.open(); vm.select("A"); vm.next(); vm.select("B"); vm.next(); runCurrent()
+        assertTrue(vm.uiState.value.completed)
+        pending.complete(available()); runCurrent()
+        vm.close(); vm.onHomeEntered(); runCurrent()
+        assertTrue(vm.uiState.value.completed)
+        assertFalse(vm.uiState.value.barVisible)
+    }
+
     @Test fun `제출 실패의 선택을 보존하고 재시도 중 중복 제출을 막으며 완료 후 바를 숨긴다`() = scenario {
         val repo = Repository(); repo.fail = true
         val vm = viewModel(repo); vm.authenticate(SurveyRespondent.Member(1, "test-member")); vm.onHomeEntered(); runCurrent(); vm.open()
@@ -120,6 +144,13 @@ class PmfSurveyViewModelTest {
         val vm = viewModel(repo); vm.authenticate(SurveyRespondent.Member(1, "test-old")); vm.onHomeEntered(); runCurrent()
         vm.authenticate(SurveyRespondent.Member(2, "test-new")); runCurrent(); pending.complete(available()); runCurrent()
         assertFalse(vm.uiState.value.barVisible)
+    }
+
+    private fun delayedReload(pending: CompletableDeferred<SurveyAvailability>) = object : PmfSurveyRepository {
+        private var loads = 0
+        override suspend fun availability(respondent: SurveyRespondent): SurveyAvailability =
+            if (++loads == 2) withContext(NonCancellable) { pending.await() } else available()
+        override suspend fun submit(respondent: SurveyRespondent, submissionToken: String, answers: List<SurveyAnswer>) = Unit
     }
 
     private fun viewModel(repo: PmfSurveyRepository = Repository()) = PmfSurveyViewModel(repo, MemoryDismissal(), object : Clock { override fun now() = Instant.fromEpochMilliseconds(0) })

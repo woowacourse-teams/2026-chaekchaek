@@ -98,7 +98,12 @@ class PmfSurveyViewModel(
     }
 
     fun open() {
-        if (state.value.barVisible && availability?.canRespond == true) state.value = state.value.copy(dialogOpen = true)
+        if (state.value.dialogOpen || state.value.completed || !state.value.barVisible || availability?.canRespond != true) return
+        // 응답을 시작한 설문과 제출용 토큰은 늦게 도착한 홈 조회로 교체하지 않는다.
+        generation++
+        request?.cancel()
+        request = null
+        state.value = state.value.copy(dialogOpen = true)
     }
 
     fun close() {
