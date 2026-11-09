@@ -99,4 +99,32 @@ class Yes24SearchRegistrationTest {
         });
     }
 
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @DisplayName("YES24 상세 응답의 쪽수가 0이어도 도서를 등록한다")
+    void should_RegisterBook_When_Yes24PagesIsZero() throws InterruptedException {
+        // given
+        String response = Yes24ResponseFixture.데미안_상세_결과()
+                .replace("9788937460449", "9791172376215")
+                .replace("데미안", "즐거운 학문")
+                .replace("\"pages\": 240", "\"pages\": 0");
+        yes24Server.응답한다(200, response);
+        Yes24BookClient client = new Yes24BookClient(
+                RestClient.builder(),
+                new Yes24Properties(yes24Server.baseUrl(), yes24Server.apiKey())
+        );
+        BookResolver resolver = new BookResolver(client, bookRepository, transactionManager);
+        Isbn13 isbn13 = new Isbn13("9791172376215");
+
+        // when
+        Book book = resolver.findOrCreate(isbn13);
+
+        // then
+        yes24Server.상세_요청을_검증한다(isbn13.value());
+        assertThat(book.getTotalPages()).isZero();
+        assertThat(bookRepository.findByIsbn13(isbn13))
+                .map(Book::getTotalPages)
+                .contains(0);
+    }
+
 }
