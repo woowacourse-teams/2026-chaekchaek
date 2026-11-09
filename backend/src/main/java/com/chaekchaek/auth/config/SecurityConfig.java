@@ -78,6 +78,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
                         "/api/v1/auth/**",
+                        "/api/v1/pmf-survey/responses",
                         "/api/v1/members/me/nickname",
                         "/api/v1/libraries/order",
                         "/api/v1/libraries/*/books/order",
