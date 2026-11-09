@@ -24,6 +24,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -90,6 +92,7 @@ private data object Root : NavKey
 internal data class BookDetailKey(
     val book: BookDetailArgs,
     val entryId: String = Uuid.random().toString(),
+    val shelfSearchOrigin: ShelfSearchOrigin? = null,
 ) : NavKey
 
 @Serializable
@@ -170,6 +173,7 @@ private fun AppNavigationContent(
         )
         return
     }
+    var shelfSearchSessionRevision by rememberSaveable { mutableIntStateOf(0) }
     val authTokens by authViewModel.tokens.collectAsState()
     val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
@@ -298,6 +302,7 @@ private fun AppNavigationContent(
             addBook = detailRepository::addToLibrary,
             onSaved = { _, _ -> bookshelfViewModel.refresh() },
             onShelfCreated = bookshelfViewModel::refresh,
+            onRemoved = { bookshelfViewModel.acceptRemovedBook(it.libraryId, it.bookId) },
             shelves = bookshelfRepository,
             readRecentShelf = shelfPlatform::readRecent,
             writeRecentShelf = shelfPlatform::writeRecent,
@@ -379,7 +384,7 @@ private fun AppNavigationContent(
                     val searchViewModel = viewModel<SearchViewModel> {
                         SearchViewModel(
                             bookSearchRepository = BookSearchRemoteRepository(),
-                            registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
+                            registerBook = { book -> librarySaveViewModel.toggleSavedBook(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
                             isSignedIn = { authViewModel.tokens.value != null },
                             recentSearchStorage = recentSearchStorage,
                             analytics = analytics,
@@ -387,7 +392,7 @@ private fun AppNavigationContent(
                         )
                     }
                     searchViewModel.attachRegistration(
-                        registerBook = { book -> librarySaveViewModel.save(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
+                        registerBook = { book -> librarySaveViewModel.toggleSavedBook(BookDetailArgs(id = book.isbn13, isbn13 = book.isbn13, title = book.title, creator = book.creator, coverUrl = book.coverUrl, totalPages = book.totalPages)) },
                         isSignedIn = { authViewModel.tokens.value != null },
                     )
                     LaunchedEffect(authTokens?.accessToken, restoringAuthentication) {
@@ -403,9 +408,18 @@ private fun AppNavigationContent(
                             memberSettingsViewModel = memberSettingsViewModel,
                             authViewModel = authViewModel,
                             analytics = analytics,
-                            onBookClick = { backStack.navigateFromCurrent(Root, BookDetailKey(it)) },
+                            onBookClick = { book, origin ->
+                                backStack.navigateFromCurrent(Root, BookDetailKey(book, shelfSearchOrigin = origin))
+                            },
                             onMyPage = { backStack.navigateFromCurrent(Root, MyPageKey) },
                             rootBackEnabled = backStack.isCurrentDestination(Root),
+                            isShelfSearchOriginActive = { origin ->
+                                val currentMember = authViewModel.memberIdFor(authViewModel.tokens.value?.accessToken)
+                                backStack.isCurrentDestination(Root) &&
+                                    origin.inSession(shelfSearchSessionRevision) != null &&
+                                    (currentMember == null || currentMember == origin.memberId)
+                            },
+                            shelfSearchSessionRevision = shelfSearchSessionRevision,
                             homeHeaderAction = homeHeaderAction,
                             onExitRequested = {
                                 if (backStack.prepareRootExit(Root)) onExitRequested()
@@ -455,12 +469,14 @@ private fun AppNavigationContent(
                             memberSettingsViewModel.setAnonymousReviews(anonymous, nickname)
                         },
                         onSignOut = {
+                            shelfSearchSessionRevision += 1
                             authViewModel.signOut {
                                 backStack.popDestinationIfCurrent(MyPageKey)
                             }
                         },
                         onWithdraw = {
                             memberSettingsViewModel.withdraw {
+                                shelfSearchSessionRevision += 1
                                 authViewModel.signOut {
                                     backStack.popDestinationIfCurrent(MyPageKey)
                                 }
@@ -504,6 +520,11 @@ private fun AppNavigationContent(
                             viewModel.acceptSavedLibraryRecord(savedBook.isbn13, savedBook.record)
                         }
                     }
+                    LaunchedEffect(viewModel) {
+                        librarySaveViewModel.removalsCompletedWhileObserving().collect { removed ->
+                            viewModel.acceptShelfRemoval(removed.isbn13, removed.savedElsewhere)
+                        }
+                    }
 
                     if (restoringAuthentication) {
                         AuthenticationRestorationContent(safeContent)
@@ -513,7 +534,11 @@ private fun AppNavigationContent(
                             question = state.detail?.bookQuestion?.toUiModel(displayBook.isbn13),
                             onBack = { bookshelfViewModel.refresh(); backStack.popDestinationIfCurrent(key) },
                             modifier = safeContent,
-                            savedToLibrary = state.detail?.isRegisteredInMyLibrary ?: bookshelfState.shelves.any { shelf -> shelf.items.any { it.isbn13 == displayBook.isbn13 } },
+                            savedToLibrary = key.shelfSearchOrigin?.inSession(shelfSearchSessionRevision)?.let { origin ->
+                                bookshelfState.shelves.firstOrNull { it.libraryId == origin.libraryId }
+                                    ?.items?.any { it.isbn13 == displayBook.isbn13 } == true
+                            } ?: (state.detail?.isRegisteredInMyLibrary ?: bookshelfState.shelves.any { shelf -> shelf.items.any { it.isbn13 == displayBook.isbn13 } }),
+                            showOtherShelfMenu = key.shelfSearchOrigin?.inSession(shelfSearchSessionRevision) == null,
                             externalLibrarySaving = librarySaveState.savingIsbn == displayBook.isbn13,
                             externalLibraryLoading = librarySaveState.showLoading,
                             anonymousReviews = anonymousReviews,
@@ -529,7 +554,21 @@ private fun AppNavigationContent(
                             resumedAuthenticatedAction = resumedAction,
                             onAuthenticatedActionHandled = { resumedAction = null },
                             onLoginRequired = viewModel::requestAuthentication,
-                            onAddToLibrary = { librarySaveViewModel.save(displayBook) },
+                            onAddToLibrary = {
+                                if (backStack.isCurrentDestination(key)) {
+                                    val origin = key.shelfSearchOrigin?.inSession(shelfSearchSessionRevision)
+                                    val memberId = authViewModel.memberIdFor(authViewModel.tokens.value?.accessToken)
+                                    when {
+                                        origin == null -> librarySaveViewModel.toggleSavedBook(displayBook)
+                                        memberId != null && memberId != origin.memberId ->
+                                            librarySaveViewModel.errors.confirm("출발한 책장의 계정이 바뀌었어요. 내 서재에서 다시 담아 주세요")
+                                        else -> librarySaveViewModel.toggleBookInShelf(displayBook, origin.libraryId)
+                                    }
+                                }
+                            },
+                            onAddToAnotherShelf = {
+                                if (backStack.isCurrentDestination(key)) librarySaveViewModel.save(displayBook)
+                            },
                             onLibraryMessageShown = viewModel::clearLibraryMessage,
                             onStatusChange = { status ->
                                 viewModel.updateStatus(

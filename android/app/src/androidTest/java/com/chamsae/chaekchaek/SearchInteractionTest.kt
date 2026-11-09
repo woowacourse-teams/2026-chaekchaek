@@ -1,5 +1,6 @@
 package com.chamsae.chaekchaek
 
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,7 +64,7 @@ class SearchInteractionTest {
         field.performClick().assertIsFocused()
         field.performTextInputSelection(TextRange(1))
 
-        compose.onNodeWithText(recentQuery).performClick()
+        compose.onNodeWithText(recentQuery).performTouchInput { click() }
 
         field.assertTextEquals(recentQuery)
             .assertIsFocused()
@@ -184,4 +185,50 @@ class SearchInteractionTest {
         field.assertIsNotFocused()
         compose.runOnIdle { assertEquals(1, bookClicks) }
     }
+
+    @Test
+    fun topReturnsToStartWithoutChangingSearchAndRecompositionKeepsPosition() {
+        val books = (1..30).map { index ->
+            BookSearchResult(
+                title = "검색 결과 $index", creator = "작가", publisher = "출판사",
+                year = "2026", coverUrl = "", isbn13 = "979000000${index.toString().padStart(4, '0')}",
+            )
+        }
+        lateinit var listState: LazyListState
+        var registeredIds by mutableStateOf(emptySet<String>())
+        var searchRequests = 0
+        var sortChanges = 0
+        compose.setContent {
+            listState = rememberLazyListState(initialFirstVisibleItemIndex = 5)
+            ChaekchaekTheme {
+                SearchScreen(
+                    state = SearchUiState.Success(books, books.size, null),
+                    sort = BookSearchSort.LATEST,
+                    query = "보존할 검색어",
+                    recentSearches = emptyList(),
+                    registeredBookIds = registeredIds,
+                    searchResultsListState = listState,
+                    onSearch = { searchRequests++ },
+                    onQueryChange = {}, onClear = {}, onRegister = {}, onLoadMore = {},
+                    onSortSelect = { sortChanges++ },
+                )
+            }
+        }
+        compose.onNodeWithTag("search-scroll-top").assertExists()
+        compose.runOnIdle { registeredIds = setOf(books.first().isbn13) }
+        compose.runOnIdle { assertEquals(5, listState.firstVisibleItemIndex) }
+
+        compose.onNodeWithTag("search-scroll-top").performClick()
+        compose.waitForIdle()
+
+        compose.runOnIdle {
+            assertEquals(0, listState.firstVisibleItemIndex)
+            assertEquals(0, listState.firstVisibleItemScrollOffset)
+            assertEquals(0, searchRequests)
+            assertEquals(0, sortChanges)
+        }
+        compose.onNodeWithTag("search-query-field").assertTextEquals("보존할 검색어")
+        compose.onNodeWithTag("search-scroll-top").assertDoesNotExist()
+    }
+
 }

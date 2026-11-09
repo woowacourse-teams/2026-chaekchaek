@@ -12,6 +12,26 @@ import kotlinx.serialization.decodeFromString
 
 class NavigationBackStackTest {
     @Test
+    fun shelfSearchDetailKeepsItsDestinationAfterNavigationStateRestoration() {
+        val origin = ShelfSearchOrigin(42, "읽고 싶은 책", 7)
+        val detail = BookDetailKey(BookDetailArgs("isbn", title = "책"), shelfSearchOrigin = origin)
+        val restored = Json.decodeFromString<BookDetailKey>(Json.encodeToString(detail))
+        assertEquals(origin, restored.shelfSearchOrigin)
+        assertEquals(42L, restored.shelfSearchOrigin?.libraryId)
+    }
+
+    @Test
+    fun ordinaryDetailEntryDoesNotInheritAnotherSearchEntriesShelf() {
+        val book = BookDetailArgs("isbn", title = "책")
+        val fromShelf = BookDetailKey(book, shelfSearchOrigin = ShelfSearchOrigin(42, "읽고 싶은 책", 7))
+        val ordinary = BookDetailKey(book)
+        val stack = mutableListOf<Any>("root", fromShelf)
+        assertTrue(stack.popDestinationIfCurrent(fromShelf))
+        assertTrue(stack.navigateFromCurrent("root", ordinary))
+        assertEquals(null, (stack.last() as BookDetailKey).shelfSearchOrigin)
+    }
+
+    @Test
     fun sameBookOpenedFromAnotherShelfHasIndependentSerializableEntry() {
         val book = BookDetailArgs(id = "9780000000001", title = "같은 책")
         val first = BookDetailKey(book)

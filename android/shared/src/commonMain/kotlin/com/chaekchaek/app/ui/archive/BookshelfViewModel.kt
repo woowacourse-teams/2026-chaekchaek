@@ -114,6 +114,26 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
 
     fun remove(libraryId: Long, bookId: Long) = mutate { repository.remove(libraryId, bookId, it) }
 
+    /** 외부 담기 버튼의 제거 성공을 즉시 반영하고 이전 조회 응답을 폐기한다. */
+    fun acceptRemovedBook(libraryId: Long, bookId: Long) {
+        readJob?.cancel()
+        detailGeneration++
+        detailJob?.cancel()
+        state.value = state.value.copy(
+            shelves = state.value.shelves.map { shelf ->
+                if (shelf.libraryId == libraryId && shelf.items.any { it.bookId == bookId })
+                    shelf.copy(items = shelf.items.filterNot { it.bookId == bookId }, totalCount = (shelf.totalCount - 1).coerceAtLeast(0))
+                else shelf
+            },
+            detail = state.value.detail?.let { detail ->
+                if (detail.libraryId == libraryId && detail.items.any { it.bookId == bookId })
+                    detail.copy(items = detail.items.filterNot { it.bookId == bookId }, totalCount = (detail.totalCount - 1).coerceAtLeast(0))
+                else detail
+            },
+        )
+        refresh()
+    }
+
     fun orderShelves(ids: List<Long>, onResult: (Boolean) -> Unit = {}) {
         if (state.value.refreshing || state.value.collectionStale || !state.value.loaded ||
             !sameIds(ids, state.value.shelves.map { it.libraryId })) {

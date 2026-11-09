@@ -6,10 +6,14 @@ import kotlinx.coroutines.CancellationException
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import com.chamsae.chaekchaek.auth.RefreshTokenStore
 import com.chamsae.chaekchaek.auth.requestGoogleIdToken
 import com.chamsae.chaekchaek.search.RecentSearchPreferences
@@ -102,23 +106,25 @@ abstract class ChaekchaekActivity : ComponentActivity() {
                     },
                 )
             }
-            App(
-                policyController = remotePolicy.controller,
-                onUpdate = updates::update,
-                authPlatform = authPlatform,
-                analytics = analytics,
-                refreshAnalyticsConfiguration = { PostHogAnalyticsEventLogger.refreshCollectionPolicy(collection) },
-                homeHeaderAction = { HomeHeaderAction() },
-                onExitRequested = { finish() },
-                recentSearchStorage = RecentSearchStorage(
-                    read = recentSearchPreferences::read,
-                    write = recentSearchPreferences::write,
-                ),
-                onboardingStorage = OnboardingStorage(
-                    hasBeenShown = { onboardingPreferences.getBoolean("first_library_shown", false) },
-                    markShown = { onboardingPreferences.edit().putBoolean("first_library_shown", true).apply() },
-                ),
-            )
+            Box(Modifier.semantics { testTagsAsResourceId = true }) {
+                App(
+                    policyController = remotePolicy.controller,
+                    onUpdate = updates::update,
+                    authPlatform = authPlatform,
+                    analytics = analytics,
+                    refreshAnalyticsConfiguration = { PostHogAnalyticsEventLogger.refreshCollectionPolicy(collection) },
+                    homeHeaderAction = { HomeHeaderAction() },
+                    onExitRequested = { finish() },
+                    recentSearchStorage = RecentSearchStorage(
+                        read = recentSearchPreferences::read,
+                        write = recentSearchPreferences::write,
+                    ),
+                    onboardingStorage = OnboardingStorage(
+                        hasBeenShown = { onboardingPreferences.getBoolean("first_library_shown", false) },
+                        markShown = { onboardingPreferences.edit().putBoolean("first_library_shown", true).apply() },
+                    ),
+                )
+            }
         }
     }
 

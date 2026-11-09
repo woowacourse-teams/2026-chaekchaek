@@ -3,6 +3,7 @@ package com.chaekchaek.app.ui.bookdetail
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -63,9 +67,12 @@ import androidx.compose.ui.unit.dp
 import chaekchaek.shared.generated.resources.Res
 import chaekchaek.shared.generated.resources.rating_star_filled
 import com.chaekchaek.app.ui.common.AnonymousReviewSetting
+import com.chaekchaek.app.ui.common.KeyboardDismissButton
 import com.chaekchaek.app.ui.common.ChaekCloseButton
 import com.chaekchaek.app.ui.common.ChaekOverlayButton
 import com.chaekchaek.app.ui.common.ChaekTwoActionDialog
+import com.chaekchaek.app.ui.input.KeyboardDismissalArea
+import com.chaekchaek.app.ui.input.excludeFromKeyboardDismissal
 import com.chaekchaek.app.ui.input.TextInputPolicy
 import com.chaekchaek.app.ui.input.rememberLimitedTextFieldState
 import com.chaekchaek.app.ui.theme.ChaekAccent
@@ -162,7 +169,9 @@ fun QuestionAReviewInputSheet(
         rating = rating,
         anonymous = if (editing || !signedIn) null else anonymous,
     ))
+    val dismissKeyboard = com.chaekchaek.app.ui.input.rememberKeyboardDismissal()
     val requestDismiss = {
+        dismissKeyboard()
         if (!isSaving) {
             if (QuestionAReviewRules.hasChanges(draft, discardBaseline)) showDiscardConfirmation = true else onDismiss()
         }
@@ -178,96 +187,101 @@ fun QuestionAReviewInputSheet(
     ) {
         val focusManager = LocalFocusManager.current
         val keyboardController = LocalSoftwareKeyboardController.current
-        Box {
-            Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).imePadding()
-                    .padding(ChaekOverlayTokens.contentPadding),
-                verticalArrangement = Arrangement.spacedBy(ChaekOverlayTokens.sectionSpacing),
-            ) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (editing) "감상 수정" else "감상 남기기", Modifier.weight(1f), color = ChaekInk, style = MaterialTheme.typography.titleMedium)
-                    ChaekCloseButton {
-                        // 시트의 입력 포커스를 해제해 큰 글꼴의 계속 작성 버튼이 키보드에 가려지지 않게 한다.
-                        focusManager.clearFocus()
-                        keyboardController?.hide()
-                        requestDismiss()
-                    }
-                }
-                Text(
-                    buildAnnotatedString {
-                        append("감상 (")
-                        withStyle(SpanStyle(color = ChaekDanger)) { append("필수") }
-                        append(")")
-                    },
-                    color = ChaekInk,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                QuestionAReviewTextInput(
-                    contentState, BookDetailInputRules.ContentPolicy,
-                    "이 구간을 읽으며 든 생각을 남겨보세요", "감상 (필수)", 120, emphasized = true, readOnly = isSaving,
-                )
-                Text(
-                    "${draft.content.length} / 1,000", modifier = Modifier.fillMaxWidth(),
-                    color = ChaekInkSecondary, textAlign = TextAlign.End, style = MaterialTheme.typography.labelSmall,
-                )
-                Row(
-                    Modifier.fillMaxWidth().heightIn(min = 50.dp)
-                        .background(ChaekSurfaceMuted, ChaekOverlayTokens.inputShape)
-                        .toggleable(
-                            value = spoiler,
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            enabled = !isSaving,
-                            role = Role.Checkbox,
-                            onValueChange = { spoiler = it },
-                        ).padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+        KeyboardDismissalArea { keyboardDismissalModifier ->
+            val dismissKeyboard = com.chaekchaek.app.ui.input.rememberKeyboardDismissal()
+            Box(keyboardDismissalModifier) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().testTag("questionAReviewScroll").verticalScroll(rememberScrollState()).imePadding()
+                        .padding(ChaekOverlayTokens.contentPadding),
+                    verticalArrangement = Arrangement.spacedBy(ChaekOverlayTokens.sectionSpacing),
                 ) {
-                    Text(if (spoiler) "●" else "○", fontFamily = ChaekIconFontFamily(), color = ChaekInkSecondary)
-                    Text("스포일러 (선택)", color = ChaekInk, style = MaterialTheme.typography.bodySmall)
-                }
-                Text("인상 깊은 문구 (선택)", color = ChaekInk, style = MaterialTheme.typography.labelSmall)
-                QuestionAReviewTextInput(
-                    quoteState, BookDetailInputRules.QuotePolicy,
-                    "기억하고 싶은 문장", "인상 깊은 문구 (선택)", 54, readOnly = isSaving,
-                )
-                if (!editing) {
-                    AnonymousReviewSetting(
-                        checked = anonymous,
-                        nickname = nickname,
-                        modifier = Modifier.testTag("reviewAnonymousSetting"),
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(if (editing) "감상 수정" else "감상 남기기", Modifier.weight(1f), color = ChaekInk, style = MaterialTheme.typography.titleMedium)
+                        ChaekCloseButton {
+                            // 시트의 입력 포커스를 해제해 큰 글꼴의 계속 작성 버튼이 키보드에 가려지지 않게 한다.
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            requestDismiss()
+                        }
+                    }
+                    Text(
+                        buildAnnotatedString {
+                            append("감상 (")
+                            withStyle(SpanStyle(color = ChaekDanger)) { append("필수") }
+                            append(")")
+                        },
+                        color = ChaekInk,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    QuestionAReviewTextInput(
+                        contentState, BookDetailInputRules.ContentPolicy,
+                        "이 구간을 읽으며 든 생각을 남겨보세요", "감상 (필수)", 120, emphasized = true, readOnly = isSaving,
+                    )
+                    Text(
+                        "${draft.content.length} / 1,000", modifier = Modifier.fillMaxWidth(),
+                        color = ChaekInkSecondary, textAlign = TextAlign.End, style = MaterialTheme.typography.labelSmall,
+                    )
+                    Row(
+                        Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                            .background(ChaekSurfaceMuted, ChaekOverlayTokens.inputShape)
+                            .toggleable(
+                                value = spoiler,
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                enabled = !isSaving,
+                                role = Role.Checkbox,
+                                onValueChange = { spoiler = it },
+                            ).padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text(if (spoiler) "●" else "○", fontFamily = ChaekIconFontFamily(), color = ChaekInkSecondary)
+                        Text("스포일러 (선택)", color = ChaekInk, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Text("인상 깊은 문구 (선택)", color = ChaekInk, style = MaterialTheme.typography.labelSmall)
+                    QuestionAReviewTextInput(
+                        quoteState, BookDetailInputRules.QuotePolicy,
+                        "기억하고 싶은 문장", "인상 깊은 문구 (선택)", 54, readOnly = isSaving, singleLine = true,
+                    )
+                    if (!editing) {
+                        AnonymousReviewSetting(
+                            checked = anonymous,
+                            nickname = nickname,
+                            modifier = Modifier.testTag("reviewAnonymousSetting"),
+                            enabled = !isSaving,
+                            onClick = {
+                                if (signedIn) onAnonymousChange(!anonymous) else onLoginRequired()
+                            },
+                        )
+                    } else Text(
+                        if (anonymous) "익명으로 ‘${nickname.ifBlank { "익명" }}’가 표시돼요"
+                        else "‘${nickname.ifBlank { "닉네임 없음" }}’으로 표시돼요",
+                        color = ChaekInkSecondary,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                    QuestionAReviewRating(
+                        rating = draft.rating,
+                        allowZeroRating = allowZeroRating,
                         enabled = !isSaving,
-                        onClick = {
-                            if (signedIn) onAnonymousChange(!anonymous) else onLoginRequired()
+                        onSelect = { selected ->
+                            dismissKeyboard()
+                            if (signedIn) {
+                                ratingTouched = true
+                                rating = selected
+                            } else onLoginRequired()
                         },
                     )
-                } else Text(
-                    if (anonymous) "익명으로 ‘${nickname.ifBlank { "익명" }}’가 표시돼요"
-                    else "‘${nickname.ifBlank { "닉네임 없음" }}’으로 표시돼요",
-                    color = ChaekInkSecondary,
-                    style = MaterialTheme.typography.labelSmall,
-                )
-                QuestionAReviewRating(
-                    rating = draft.rating,
-                    allowZeroRating = allowZeroRating,
-                    enabled = !isSaving,
-                    onSelect = { selected ->
-                        if (signedIn) {
-                            ratingTouched = true
-                            rating = selected
-                        } else onLoginRequired()
-                    },
-                )
-                ChaekOverlayButton(if (editing) "수정 저장" else "감상 남기기", modifier = Modifier.semantics { contentDescription = if (editing) "수정 저장" else "감상 남기기" }, enabled = QuestionAReviewRules.canSubmit(draft) && !isSaving, onClick = {
-                    if (QuestionAReviewRules.canSubmit(draft) && !isSaving) {
-                        focusManager.clearFocus()
-                        keyboardController?.hide()
-                        onSave(draft.copy(content = draft.content.trim(), quote = draft.quote.trim()))
-                    }
-                })
+                    KeyboardDismissButton(Modifier.align(Alignment.End))
+                    ChaekOverlayButton(if (editing) "수정 저장" else "감상 남기기", modifier = Modifier.semantics { contentDescription = if (editing) "수정 저장" else "감상 남기기" }, enabled = QuestionAReviewRules.canSubmit(draft) && !isSaving, onClick = {
+                        if (QuestionAReviewRules.canSubmit(draft) && !isSaving) {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            onSave(draft.copy(content = draft.content.trim(), quote = draft.quote.trim()))
+                        }
+                    })
+                }
+                if (showLoading) RequestLoadingOverlay(Modifier.matchParentSize())
             }
-            if (showLoading) RequestLoadingOverlay(Modifier.matchParentSize())
         }
     }
     if (showDiscardConfirmation) {
@@ -290,16 +304,21 @@ private fun QuestionAReviewTextInput(
     height: Int,
     emphasized: Boolean = false,
     readOnly: Boolean = false,
+    singleLine: Boolean = false,
 ) {
+    val dismissKeyboard = com.chaekchaek.app.ui.input.rememberKeyboardDismissal()
     val textStyle = MaterialTheme.typography.bodyMedium
     val minimumLineHeight = with(LocalDensity.current) { textStyle.lineHeight.toDp() } + 24.dp
     BasicTextField(
         state = state,
         readOnly = readOnly,
         inputTransformation = policy.inputTransformation,
-        lineLimits = TextFieldLineLimits.MultiLine(),
+        lineLimits = if (singleLine) TextFieldLineLimits.SingleLine else TextFieldLineLimits.MultiLine(),
+        keyboardOptions = if (singleLine) KeyboardOptions(imeAction = ImeAction.Done) else KeyboardOptions.Default,
+        onKeyboardAction = if (singleLine) KeyboardActionHandler { dismissKeyboard() } else null,
         textStyle = textStyle.copy(color = ChaekInk),
         modifier = Modifier.fillMaxWidth().height(maxOf(height.dp, minimumLineHeight))
+            .excludeFromKeyboardDismissal()
             .background(ChaekSurfaceMuted, ChaekOverlayTokens.inputShape)
             .then(if (emphasized) Modifier.border(1.dp, ChaekInk, ChaekOverlayTokens.inputShape) else Modifier)
             .semantics { contentDescription = label }
@@ -315,6 +334,14 @@ private fun QuestionAReviewTextInput(
 
 @Composable
 private fun QuestionAReviewRating(rating: Double?, allowZeroRating: Boolean, enabled: Boolean, onSelect: (Double) -> Unit) {
+    val selectRating by rememberUpdatedState(onSelect)
+    fun selectAt(x: Float, width: Int, zeroEdge: Float) {
+        val fraction = (x - zeroEdge) / (width - zeroEdge)
+        if (enabled) selectRating(QuestionAReviewRules.ratingAtFraction(
+            if (allowZeroRating && x > zeroEdge) fraction.coerceAtLeast(0.1f) else fraction,
+            allowZeroRating,
+        ))
+    }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -340,16 +367,14 @@ private fun QuestionAReviewRating(rating: Double?, allowZeroRating: Boolean, ena
                         }
                     }
                 }
-                .pointerInput(onSelect, enabled, allowZeroRating) {
-                    detectTapGestures { point ->
-                        // 왼쪽 8dp는 프리뷰의 유효한 0점이며 다시 탭해도 null로 취소하지 않는다.
-                        val zeroEdge = 8.dp.toPx()
-                        val fraction = (point.x - zeroEdge) / (size.width - zeroEdge)
-                        if (enabled) onSelect(QuestionAReviewRules.ratingAtFraction(
-                            if (allowZeroRating && point.x > zeroEdge) fraction.coerceAtLeast(0.1f) else fraction,
-                            allowZeroRating,
-                        ))
-                    }
+                .pointerInput(enabled, allowZeroRating) {
+                    detectTapGestures { point -> selectAt(point.x, size.width, 8.dp.toPx()) }
+                }
+                .pointerInput(enabled, allowZeroRating) {
+                    if (enabled) detectHorizontalDragGestures(
+                        onDragStart = { selectAt(it.x, size.width, 8.dp.toPx()) },
+                        onHorizontalDrag = { change, _ -> selectAt(change.position.x, size.width, 8.dp.toPx()) },
+                    )
                 },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),

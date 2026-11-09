@@ -70,5 +70,7 @@ private fun BookSearchResponseDto.toSearchPage(page: Int): BookSearchPage =
         totalCount = totalCount,
         lastLoadedPage = page,
         nextPage = nextPage,
-        items = items.filter { !it.isbn13.isNullOrBlank() }.map(BookSearchItemDto::toSearchResult),
+        items = items.filter { !it.isbn13.isNullOrBlank() }
+            .distinctBy { it.isbn13 }
+            .map(BookSearchItemDto::toSearchResult),
     )

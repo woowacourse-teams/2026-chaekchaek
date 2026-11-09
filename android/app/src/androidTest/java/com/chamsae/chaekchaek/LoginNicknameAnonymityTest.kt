@@ -126,7 +126,7 @@ class LoginNicknameAnonymityTest {
                 )
             }
         }
-        compose.onNodeWithText("이 순간의 감상 남기기", substring = true).performClick()
+        compose.onNodeWithText("피드에 올리기", substring = true).performClick()
         compose.onNodeWithContentDescription("감상 (필수)").performTextInput("실패해도 보존할 감상")
         compose.onNodeWithTag("reviewAnonymousSetting").performScrollTo().assertIsOn().performClick().assertIsOff()
         assertFalse(preferences.getBoolean("anonymous", true))

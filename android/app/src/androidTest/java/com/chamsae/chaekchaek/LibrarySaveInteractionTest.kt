@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.chaekchaek.app.data.remote.BookDetail
 import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import com.chaekchaek.app.ui.bookdetail.BookDetailScreen
 import com.chaekchaek.app.ui.bookdetail.BookDetailUiState
@@ -28,7 +29,7 @@ class LibrarySaveInteractionTest {
     @get:Rule val compose = createComposeRule()
 
     @Test
-    fun savedButtonConsumesTapWithoutNavigatingOrSavingAgain() {
+    fun savedButtonRequestsShelfChoiceWithoutNavigating() {
         val saved = mutableStateOf(false)
         var saves = 0
         var navigations = 0
@@ -42,7 +43,7 @@ class LibrarySaveInteractionTest {
         compose.onNodeWithContentDescription("책, 서재에 담기").assertHeightIsAtLeast(44.dp).performClick()
         compose.onNodeWithContentDescription("책, 담았어요").assertIsDisplayed().performClick().performClick()
         compose.runOnIdle {
-            assertEquals(1, saves)
+            assertEquals(3, saves)
             assertEquals(0, navigations)
         }
     }
@@ -66,34 +67,57 @@ class LibrarySaveInteractionTest {
     }
 
     @Test
-    fun detailRequiresSeparateMenuAndConfirmationToDelete() {
-        val saved = mutableStateOf(true)
+    fun detailSavedBookButtonAndOtherShelfMenuDoNotDelete() {
         var adds = 0
         var deletes = 0
         compose.setContent {
             ChaekchaekTheme {
                 BookDetailScreen(
-                    state = BookDetailUiState(book = BookDetailArgs("42", title = "검증 도서"), signedIn = true),
-                    savedToLibrary = saved.value,
+                    state = savedDetailState(),
+                    savedToLibrary = true,
                     onBack = {},
                     onAddToLibrary = { adds++ },
-                    onRemoveFromLibrary = { deletes++; saved.value = false },
+                    onRemoveFromLibrary = { deletes++ },
                 )
             }
         }
         compose.onNodeWithContentDescription("검증 도서, 담았어요").performClick()
-        compose.runOnIdle { assertEquals(0, deletes) }
         compose.onNodeWithContentDescription("서재 관리").performClick()
-        compose.onNodeWithText("서재에서 삭제").performClick()
-        compose.onNodeWithText("취소").performClick()
-        compose.runOnIdle { assertEquals(0, deletes) }
-        compose.onNodeWithContentDescription("서재 관리").performClick()
-        compose.onNodeWithText("서재에서 삭제").performClick()
-        compose.onNodeWithText("삭제", useUnmergedTree = true).performClick()
+        compose.onNodeWithText("다른 책장에 담기").performClick()
         compose.runOnIdle {
-            assertEquals(1, deletes)
-            assertEquals(0, adds)
+            assertEquals(2, adds)
+            assertEquals(0, deletes)
         }
-        compose.onNodeWithContentDescription("검증 도서, 서재에 담기").assertIsDisplayed()
+        compose.onNodeWithContentDescription("검증 도서, 담았어요").assertIsDisplayed()
     }
+    @Test
+    fun detailOpenedFromShelfSearchHidesOtherShelfMenuAndKeepsPrimarySave() {
+        var adds = 0
+        compose.setContent {
+            ChaekchaekTheme {
+                BookDetailScreen(
+                    state = savedDetailState(),
+                    savedToLibrary = true,
+                    showOtherShelfMenu = false,
+                    onBack = {},
+                    onAddToLibrary = { adds++ },
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("서재 관리").assertDoesNotExist()
+        compose.onNodeWithText("다른 책장에 담기").assertDoesNotExist()
+        compose.onNodeWithContentDescription("검증 도서, 담았어요").assertIsDisplayed().performClick()
+        compose.runOnIdle { assertEquals(1, adds) }
+    }
+
+    private fun savedDetailState() = BookDetailUiState(
+        book = BookDetailArgs("42", title = "검증 도서"),
+        signedIn = true,
+        detail = BookDetail(
+            bookId = 42, isbn13 = "42", title = "검증 도서", authors = emptyList(),
+            translators = emptyList(), publisher = "", category = "", publishedDate = null,
+            totalPages = 100, coverImageUrl = "", commentCount = 0, averageRating = null,
+            ratingCount = 0, myRecord = null, isRegisteredInMyLibrary = true,
+        ),
+    )
 }

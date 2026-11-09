@@ -148,11 +148,11 @@ class PublicLibraryNavigationTest {
         profile("독자A"); capture("home-profile-after"); waitFor("기본책장"); back()
         compose.onNodeWithText("홈").assertIsSelected()
         assertEquals(homeY, compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().fetchSemanticsNode().boundsInRoot.top, 1f)
-        compose.onNodeWithText("발견").performClick()
+        compose.onNodeWithText("검색").performClick()
         compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().performScrollTo()
         val discoverY = compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().fetchSemanticsNode().boundsInRoot.top
         profile("독자A"); waitFor("기본책장"); systemBack()
-        compose.onNodeWithText("발견").assertIsSelected()
+        compose.onNodeWithText("검색").assertIsSelected()
         assertEquals(discoverY, compose.onAllNodesWithContentDescription("독자A 프로필").onFirst().fetchSemanticsNode().boundsInRoot.top, 1f)
         capture("home-discover-round-trip")
     }
@@ -175,7 +175,7 @@ class PublicLibraryNavigationTest {
         compose.onNodeWithText("읽는 중").assertIsDisplayed()
         compose.onNodeWithContentDescription("뒤로 가기").performTouchInput { doubleClick() }
         waitFor("기본책장"); systemBack(); waitFor("피드")
-        compose.onNodeWithText("발견").performClick(); compose.onNodeWithText("발견").assertIsSelected()
+        compose.onNodeWithText("검색").performClick(); compose.onNodeWithText("검색").assertIsSelected()
         capture("reply-mixed-back-root")
     }
 

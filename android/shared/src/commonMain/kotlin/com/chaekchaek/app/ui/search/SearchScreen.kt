@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -56,13 +58,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,6 +89,10 @@ import com.chaekchaek.app.ui.theme.discoverPopularBookShadow
 import com.chaekchaek.app.ui.theme.discoverReflectionBookShadow
 import com.chaekchaek.app.ui.home.BookDetailTarget
 import com.chaekchaek.app.ui.home.LocalRemoteBookCover
+import com.chaekchaek.app.ui.common.LazyListScrollTopButton
+import com.chaekchaek.app.ui.input.KeyboardDismissalArea
+import com.chaekchaek.app.ui.input.excludeFromKeyboardDismissal
+import com.chaekchaek.app.ui.input.rememberKeyboardDismissal
 import com.chaekchaek.app.ui.common.BrandHeader
 import com.chaekchaek.app.ui.common.ChaekDropdown
 import com.chaekchaek.app.presentation.common.RefreshUiState
@@ -112,6 +118,9 @@ fun SearchRoute(
   onBack: () -> Unit = {},
   onProfileClick: () -> Unit = {},
   onBookClick: (BookDetailTarget) -> Unit = {},
+  originShelfName: String? = null,
+  onReturnToShelf: (() -> Unit)? = null,
+  onRegisterBook: ((BookSearchResult) -> Unit)? = null,
 ) {
   com.chaekchaek.app.ui.common.ErrorRecoveryEffect(viewModel.errors)
   val state by viewModel.uiState.collectAsState()
@@ -143,7 +152,7 @@ fun SearchRoute(
       searchResultsListState.requestScrollToItem(0)
       viewModel.clear()
     },
-    onRegister = viewModel::register,
+    onRegister = onRegisterBook ?: viewModel::register,
     onLoadMore = viewModel::loadMore,
     onSortSelect = {
       if (it != sort) searchResultsListState.requestScrollToItem(0)
@@ -154,6 +163,8 @@ fun SearchRoute(
     onBack = onBack,
     onProfileClick = onProfileClick,
     onBookClick = onBookClick,
+    originShelfName = originShelfName,
+    onReturnToShelf = onReturnToShelf,
   )
 }
 
@@ -180,10 +191,13 @@ fun SearchScreen(
   onBack: () -> Unit = {},
   onProfileClick: () -> Unit = {},
   onBookClick: (BookDetailTarget) -> Unit = {},
+  originShelfName: String? = null,
+  onReturnToShelf: (() -> Unit)? = null,
 ) {
-  val focusManager = LocalFocusManager.current
+  val dismissKeyboard = rememberKeyboardDismissal()
+  val landingListState = rememberLazyListState()
   val submitSearch: (String) -> Unit = {
-    focusManager.clearFocus()
+    dismissKeyboard()
     onSearch(it)
   }
   val leaveSearch = {
@@ -197,80 +211,119 @@ fun SearchScreen(
     onBackCompleted = leaveSearch,
   )
 
-  Column(modifier = modifier.fillMaxSize()) {
-    BrandHeader(onProfileClick)
-    SearchTopBar(
-      query = query,
-      onQueryChange = {
-        onQueryChange(it)
-        if (it.isEmpty()) onClear()
-      },
-      onSearch = submitSearch,
-    )
-    if (recentSearches.isNotEmpty()) {
-      RecentSearches(
-        searches = recentSearches,
-        onSearch = onSearch,
-      )
-    }
-
-    ChaekRefreshLayout(
-      state = refreshState,
-      onRefresh = onRefresh,
-      enabled = state != SearchUiState.Loading && !(state == SearchUiState.Idle && homeState == HomeUiState.Loading),
-      bottomEnabled = state is SearchUiState.Success || (state == SearchUiState.Idle && homeState is HomeUiState.Content),
-      modifier = Modifier.weight(1f).fillMaxWidth()
-        .testTag("search-content")
-        .clearFocusOnTouch(focusManager),
-    ) {
-      when (val current = state) {
-        SearchUiState.Idle -> DiscoverLanding(
-          homeState = homeState,
-          onBookClick = onBookClick,
-          onRetry = onHomeRetry,
-          modifier = Modifier.fillMaxSize(),
+  KeyboardDismissalArea { keyboardDismissal ->
+    Box(modifier = modifier.fillMaxSize().then(keyboardDismissal)) {
+      Column(Modifier.fillMaxSize()) {
+        BrandHeader(onProfileClick)
+        SearchTopBar(
+          query = query,
+          onQueryChange = {
+            onQueryChange(it)
+            if (it.isEmpty()) onClear()
+          },
+          onSearch = submitSearch,
         )
-        SearchUiState.Loading -> SearchLoading(Modifier.fillMaxSize())
-        SearchUiState.Empty ->
-          Column(modifier = Modifier.fillMaxSize()) {
-            SearchResultHeader(count = 0, sort = sort, onSortSelect = onSortSelect)
-            RefreshableEmptyContent(Modifier.weight(1f)) {
-              SearchMessage(title = "검색 결과가 없어요", body = "다른 검색어로 다시 찾아보세요.")
+        if (originShelfName != null) {
+          Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp)
+              .background(ChaekSurfaceMuted, RoundedCornerShape(12.dp))
+              .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            Text("${originShelfName}에 책 담기", modifier = Modifier.weight(1f),
+              style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp))
+            if (onReturnToShelf != null) {
+              Box(
+                modifier = Modifier.heightIn(min = 28.dp)
+                  .clickable(role = Role.Button, onClick = onReturnToShelf),
+                contentAlignment = Alignment.Center,
+              ) {
+                Text("책장으로", color = MaterialTheme.colorScheme.onSurface,
+                  style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, textDecoration = TextDecoration.Underline))
+              }
             }
           }
-        is SearchUiState.Error -> RefreshableEmptyContent { Box(Modifier.fillMaxSize()) }
-        is SearchUiState.Success ->
-          SearchResults(
-            results = current.results,
-            totalCount = current.totalCount,
-            nextPage = current.nextPage,
-            loadingMore = current.loadingMore,
-            showLoadingMore = current.showLoadingMore,
-            loadMoreFailed = current.loadMoreFailed,
-            refreshing = refreshState.isRefreshing,
-            onRetryLoadMore = onRetryLoadMore,
-            sort = sort,
-            registeredBookIds = registeredBookIds,
-            onRegister = onRegister,
-            onLoadMore = onLoadMore,
-            onSortSelect = onSortSelect,
-            onBookClick = onBookClick,
-            listState = searchResultsListState,
-            modifier = Modifier.fillMaxSize(),
+        }
+        if (recentSearches.isNotEmpty()) {
+          RecentSearches(
+            searches = recentSearches,
+            onSearch = onSearch,
           )
+        }
+
+        ChaekRefreshLayout(
+          state = refreshState,
+          onRefresh = onRefresh,
+          enabled = state != SearchUiState.Loading && !(state == SearchUiState.Idle && homeState == HomeUiState.Loading),
+          bottomEnabled = state is SearchUiState.Success || (state == SearchUiState.Idle && homeState is HomeUiState.Content),
+          modifier = Modifier.weight(1f).fillMaxWidth()
+            .testTag("search-content")
+            .dismissKeyboardOnContentTouch(dismissKeyboard),
+        ) {
+          when (val current = state) {
+            SearchUiState.Idle -> DiscoverLanding(
+              homeState = homeState,
+              listState = landingListState,
+              onBookClick = onBookClick,
+              onRetry = onHomeRetry,
+              modifier = Modifier.fillMaxSize(),
+            )
+            SearchUiState.Loading -> SearchLoading(Modifier.fillMaxSize())
+            SearchUiState.Empty ->
+              Column(modifier = Modifier.fillMaxSize()) {
+                SearchResultHeader(count = 0, sort = sort, onSortSelect = onSortSelect)
+                RefreshableEmptyContent(Modifier.weight(1f)) {
+                  SearchMessage(title = "검색 결과가 없어요", body = "다른 검색어로 다시 찾아보세요.")
+                }
+              }
+            is SearchUiState.Error -> RefreshableEmptyContent { Box(Modifier.fillMaxSize()) }
+            is SearchUiState.Success ->
+              SearchResults(
+                results = current.results,
+                totalCount = current.totalCount,
+                nextPage = current.nextPage,
+                loadingMore = current.loadingMore,
+                showLoadingMore = current.showLoadingMore,
+                loadMoreFailed = current.loadMoreFailed,
+                refreshing = refreshState.isRefreshing,
+                onRetryLoadMore = onRetryLoadMore,
+                sort = sort,
+                registeredBookIds = registeredBookIds,
+                onRegister = onRegister,
+                onLoadMore = onLoadMore,
+                onSortSelect = onSortSelect,
+                onBookClick = onBookClick,
+                listState = searchResultsListState,
+                modifier = Modifier.fillMaxSize(),
+              )
+          }
+        }
+      }
+      val activeListState = when (state) {
+        SearchUiState.Idle -> landingListState
+        is SearchUiState.Success -> searchResultsListState
+        else -> null
+      }
+      activeListState?.let { listState ->
+        LazyListScrollTopButton(
+          listState,
+          Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp)
+            .testTag("search-scroll-top"),
+        )
       }
     }
   }
 }
 
-private fun Modifier.clearFocusOnTouch(focusManager: FocusManager): Modifier =
-  pointerInput(focusManager) {
+private fun Modifier.dismissKeyboardOnContentTouch(dismissKeyboard: () -> Unit): Modifier =
+  pointerInput(dismissKeyboard) {
     awaitEachGesture {
       awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
       while (true) {
         val event = awaitPointerEvent(PointerEventPass.Final)
         if (event.changes.all { it.changedToUpIgnoreConsumed() }) {
-          focusManager.clearFocus()
+          dismissKeyboard()
           break
         }
         if (event.changes.none { it.pressed }) break
@@ -297,14 +350,15 @@ private fun SearchTopBar(
 @Composable
 private fun DiscoverLanding(
   homeState: HomeUiState,
+  listState: LazyListState,
   onBookClick: (BookDetailTarget) -> Unit,
   onRetry: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   when (homeState) {
     HomeUiState.Loading -> SearchLoading(modifier)
-    HomeUiState.Empty -> DiscoverContent(emptyList(), onBookClick, modifier)
-    is HomeUiState.Content -> DiscoverContent(homeState.sections, onBookClick, modifier)
+    HomeUiState.Empty -> DiscoverContent(emptyList(), onBookClick, listState, modifier)
+    is HomeUiState.Content -> DiscoverContent(homeState.sections, onBookClick, listState, modifier)
   }
 }
 
@@ -312,11 +366,12 @@ private fun DiscoverLanding(
 private fun DiscoverContent(
   sections: List<FeedSectionUiModel>,
   onBookClick: (BookDetailTarget) -> Unit,
+  listState: LazyListState,
   modifier: Modifier = Modifier,
 ) {
   val popular = sections.filterIsInstance<FeedSectionUiModel.TrendingBooks>().firstOrNull()?.books.orEmpty()
   val recent = sections.filterIsInstance<FeedSectionUiModel.RecentQuotes>().flatMap { it.cards }
-  LazyColumn(modifier = modifier.fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 20.dp)) {
+  LazyColumn(modifier = modifier.fillMaxWidth(), state = listState, contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 20.dp)) {
     item {
       Row(
         modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 28.dp, end = 24.dp),
@@ -476,7 +531,7 @@ private fun RecentSearches(
 @Composable
 private fun RecentSearchChip(label: String, onClick: () -> Unit) {
   Surface(
-    modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
+    modifier = Modifier.excludeFromKeyboardDismissal().clickable(role = Role.Button, onClick = onClick),
     shape = RoundedCornerShape(999.dp),
     color = Color(0xFFF0F0F2),
   ) {
@@ -572,6 +627,7 @@ private fun SearchField(
     modifier =
       modifier
         .testTag("search-query-field")
+        .excludeFromKeyboardDismissal()
         .height(54.dp)
         .background(Color(0xFFF3F3F5), shape)
         .padding(start = 15.dp),
