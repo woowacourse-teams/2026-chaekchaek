@@ -11,7 +11,7 @@ export const ScrollToTopButton = () => {
   };
 
   return (
-    <FloatingButton onClick={handleClick}>
+    <FloatingButton variant="primary" onClick={handleClick}>
       <Icon.LongArrowUpIcon color="inverse" />
     </FloatingButton>
   );

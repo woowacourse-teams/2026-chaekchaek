@@ -42,6 +42,20 @@ export const Dashed: Story = {
   },
 };
 
+export const Primary: Story = {
+  args: {
+    children: <ExampleContent />,
+    variant: 'primary',
+  },
+};
+
+export const Accent: Story = {
+  args: {
+    children: <ExampleContent />,
+    variant: 'accent',
+  },
+};
+
 export const Spacing: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: 16 }}>

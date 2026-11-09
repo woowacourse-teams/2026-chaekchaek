@@ -14,6 +14,7 @@ export const Content = <T extends ElementType>(props: ContentProps<T>) => {
     as = 'div',
     className,
     verticalAlign = 'center',
+    leading,
     title,
     content,
     description,
@@ -33,6 +34,7 @@ export const Content = <T extends ElementType>(props: ContentProps<T>) => {
 
   return (
     <View as={as} className={classname} {...restProps}>
+      {leading && <div className={styles.leading}>{leading}</div>}
       {title && <div className={styles.title}>{title}</div>}
       {content && <div className={styles.content}>{content}</div>}
       {description && <div className={styles.description}>{description}</div>}

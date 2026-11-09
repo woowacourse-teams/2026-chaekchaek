@@ -1,9 +1,4 @@
 .scene {
-  position: relative;
-  display: inline-block;
-  width: 936px;
-  padding-top: 40px;
-  min-height: 700px;
   background: var(--chaek-color-surface-canvas);
   vertical-align: top;
 }

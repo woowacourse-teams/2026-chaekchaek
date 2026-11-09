@@ -12,14 +12,32 @@ const meta = {
   },
   args: {
     'aria-label': '맨 위로 이동',
-    children: <LongArrowUpIcon color="inverse" aria-hidden />,
+    variant: 'default',
+    children: <LongArrowUpIcon aria-hidden />,
   },
   argTypes: {
     children: { control: false },
+    variant: {
+      control: 'inline-radio',
+      options: ['default', 'primary', 'secondary'],
+    },
   },
+  render: (args) => (
+    <FloatingButton {...args}>
+      <LongArrowUpIcon color={args.variant === 'primary' ? 'inverse' : 'default'} aria-hidden />
+    </FloatingButton>
+  ),
 } satisfies Meta<typeof FloatingButton>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Example: Story = {};
+
+export const PrimaryVariant: Story = {
+  args: { variant: 'primary' },
+};
+
+export const SecondaryVariant: Story = {
+  args: { variant: 'secondary' },
+};
