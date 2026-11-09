@@ -14,7 +14,10 @@ public final class PublicEndpointPaths {
             "/api/v1/reviews/*/replies",
             "/api/v1/members/*/library",
             "/api/v1/libraries",
-            "/api/v1/libraries/*"
+            "/api/v1/libraries/*",
+            "/api/v2/members/*/library",
+            "/api/v2/libraries",
+            "/api/v2/libraries/*"
     };
 
     private PublicEndpointPaths() {

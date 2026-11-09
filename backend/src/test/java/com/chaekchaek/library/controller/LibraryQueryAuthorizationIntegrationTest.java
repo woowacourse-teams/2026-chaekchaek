@@ -57,6 +57,24 @@ class LibraryQueryAuthorizationIntegrationTest {
     }
 
     @Test
+    @DisplayName("실제 보안 필터에서 v2 공개 조회는 허용하고 내 서재는 인증을 요구한다")
+    void should_ProtectOnlyMyLibrary_When_UsingV2Paths() throws Exception {
+        // given
+        Member member = members.saveAndFlush(Member.create("익명", null, LocalDateTime.now()));
+        Library library = libraries.saveAndFlush(Library.create(member.getId(), "책장", Instant.now()));
+
+        // when & then
+        mockMvc.perform(get("/api/v2/libraries").param("memberId", member.getId().toString()))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v2/libraries/{libraryId}", library.getId()))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v2/members/{memberId}/library", member.getId()).param("page", "1"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v2/library").param("page", "1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("공개 GET 경로 추가가 같은 경로의 책장 쓰기를 공개하지 않는다")
     void should_KeepWritesProtected_When_ReadPathsArePublic() throws Exception {
         // given
