@@ -1,6 +1,6 @@
 export type AnalyticsEventMap = {
   navigate: {
-    destination: 'book_detail' | 'members_library' | 'libraries' | 'library';
+    destination: 'book_detail' | 'members_library' | 'libraries' | 'library' | 'feed';
     source:
       | 'intro_popular'
       | 'intro_latest_reviews'
