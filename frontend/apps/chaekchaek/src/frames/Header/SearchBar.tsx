@@ -5,10 +5,12 @@ import { Icon, View } from '@chaekchaek/design-system';
 import { Input } from '@chaekchaek/design-system';
 import { createClassName } from '@chaekchaek/design-system';
 
+import { ROUTES } from '@/constants/routes';
+import { track } from '@/analytics/track';
+
 import styles from './Header.module.css';
 
 import type { SearchBarProps } from './Header.types';
-import { ROUTES } from '@/constants/routes';
 
 const classnameDefault = 'frame-Header-SearchBar';
 
@@ -27,6 +29,11 @@ export const SearchBar = <T extends ElementType>(props: SearchBarProps<T>) => {
   const navigation = useNavigate();
 
   const handleClickMoveBooks = () => {
+    track('navigate', {
+      source: 'header',
+      destination: 'search',
+    });
+
     navigation(ROUTES.BOOK_SEARCH);
   };
 
