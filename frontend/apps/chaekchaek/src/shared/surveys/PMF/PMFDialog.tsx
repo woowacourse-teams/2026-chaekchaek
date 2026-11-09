@@ -42,6 +42,32 @@ export const PMFDialog = (props: Props) => {
 
   const hasNOAnswer = !(answer && answer.answerCodes.length > 0);
 
+  const handleChangeMultiSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+
+    if (!answer) return;
+
+    const NONE = 'NO_UNKNOWN_FEATURES';
+
+    const getNextAnswers = (selected: string[], clicked: string) => {
+      // '없음'을 선택하면 다른 선택은 모두 해제
+      if (clicked === NONE) {
+        return [NONE];
+      }
+
+      // 일반 항목을 선택하면 '없음'은 해제
+      const selectedFeatures = selected.filter((code) => code !== NONE);
+
+      // 이미 선택한 항목이면 해제, 아니면 추가
+      return selectedFeatures.includes(clicked)
+        ? selectedFeatures.filter((code) => code !== clicked)
+        : [...selectedFeatures, clicked];
+    };
+
+    const nextAnswers = getNextAnswers(answer.answerCodes, value);
+    changeAnswer(answer.questionCode, nextAnswers);
+  };
+
   const { mutate: postPmfSurveyMutate } = useExecute({
     executeFn: postPmfSurveyResponses,
   });
@@ -103,29 +129,7 @@ export const PMFDialog = (props: Props) => {
                 id={question.questionCode}
                 value={option.answerCode}
                 checked={isChecked}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                  const value = e.target.value;
-
-                  const NONE = 'NO_UNKNOWN_FEATURES';
-
-                  const getNextAnswers = (selected: string[], clicked: string) => {
-                    // '없음'을 선택하면 다른 선택은 모두 해제
-                    if (clicked === NONE) {
-                      return [NONE];
-                    }
-
-                    // 일반 항목을 선택하면 '없음'은 해제
-                    const selectedFeatures = selected.filter((code) => code !== NONE);
-
-                    // 이미 선택한 항목이면 해제, 아니면 추가
-                    return selectedFeatures.includes(clicked)
-                      ? selectedFeatures.filter((code) => code !== clicked)
-                      : [...selectedFeatures, clicked];
-                  };
-
-                  const nextAnswers = getNextAnswers(answer.answerCodes, value);
-                  changeAnswer(answer.questionCode, nextAnswers);
-                }}
+                onChange={handleChangeMultiSelect}
               >
                 {option.label}
               </Checkbox>
