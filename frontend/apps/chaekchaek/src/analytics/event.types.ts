@@ -11,7 +11,6 @@ export type AnalyticsEventMap = {
       | 'library'
       | 'header';
   };
-  rating_open: undefined;
   rating_submit: undefined;
   rating_select: undefined;
   library_add: {
