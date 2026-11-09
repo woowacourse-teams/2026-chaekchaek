@@ -40,7 +40,7 @@ const SPOILER_PLACEHOLDER_REVIEW = '짹짹짹 짹짹 짹짹짹짹. 짹짹짹 짹
 export const BookFeed = memo((props: BookFeedProps) => {
   const { review, onFeedRefresh } = props;
 
-  const { isAuthenticated } = useAuthContext();
+  const { isAuthenticated, user, guest } = useAuthContext();
 
   const [isSpoilerVisible, setIsSpoilerVisible] = useState(false);
 
@@ -92,6 +92,16 @@ export const BookFeed = memo((props: BookFeedProps) => {
     } else {
       await deleteReviewReactionMutate({ reviewId: review.reviewId });
     }
+
+    const actorType = user?.actorType ?? guest?.actorType;
+    const actorId = user?.actorId ?? guest?.actorId;
+
+    if (!(actorType && actorId)) return;
+    track('review_like', {
+      value: !review.likedByMe,
+      actor_type: actorType,
+      actor_id: actorId,
+    });
 
     await onFeedRefresh?.();
   };
