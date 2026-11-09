@@ -106,15 +106,25 @@ export const PMFDialog = (props: Props) => {
                 onChange={(e: ChangeEvent<HTMLInputElement>) => {
                   const value = e.target.value;
 
-                  if (value === 'NO_UNKNOWN_FEATURES')
-                    return changeAnswer(answer.questionCode, [value]);
+                  const NONE = 'NO_UNKNOWN_FEATURES';
 
-                  const isIncluded = answer.answerCodes.includes(value);
-                  const newAnswer = isIncluded
-                    ? answer.answerCodes.filter((a) => a !== value)
-                    : [...answer.answerCodes, value];
+                  const getNextAnswers = (selected: string[], clicked: string) => {
+                    // '없음'을 선택하면 다른 선택은 모두 해제
+                    if (clicked === NONE) {
+                      return [NONE];
+                    }
 
-                  changeAnswer(answer.questionCode, newAnswer);
+                    // 일반 항목을 선택하면 '없음'은 해제
+                    const selectedFeatures = selected.filter((code) => code !== NONE);
+
+                    // 이미 선택한 항목이면 해제, 아니면 추가
+                    return selectedFeatures.includes(clicked)
+                      ? selectedFeatures.filter((code) => code !== clicked)
+                      : [...selectedFeatures, clicked];
+                  };
+
+                  const nextAnswers = getNextAnswers(answer.answerCodes, value);
+                  changeAnswer(answer.questionCode, nextAnswers);
                 }}
               >
                 {option.label}
