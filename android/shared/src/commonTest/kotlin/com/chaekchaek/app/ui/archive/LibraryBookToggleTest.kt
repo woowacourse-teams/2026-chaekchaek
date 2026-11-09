@@ -15,11 +15,17 @@ class LibraryBookToggleTest {
     private fun shelf(id: Long, saved: Boolean = false) = Bookshelf(id, "책장$id", id == 1L,
         if (saved) 1 else 0, if (saved) listOf(item) else emptyList())
 
-    @Test fun `출발 책장의 담긴 책 재선택은 그 책장만 즉시 빼고 다른 책장을 보존한다`() = runToggleTest {
+    @Test fun `출발 책장의 담긴 책 재선택은 확인 후 그 책장만 빼고 다른 책장을 보존한다`() = runToggleTest {
         val repo = ToggleShelves(listOf(shelf(1, true), shelf(2, true)))
         val removed = mutableListOf<RemovedShelfBook>()
         val vm = model(repo, removed::add)
         vm.toggleBookInShelf(book, 2); advanceUntilIdle()
+        assertEquals(2L, vm.uiState.value.removalConfirmation?.shelf?.libraryId)
+        assertTrue(repo.removed.isEmpty())
+        vm.toggleSavedBook(book); advanceUntilIdle()
+        assertNull(vm.uiState.value.choosingBook)
+        vm.confirmShelfRemoval(); vm.confirmShelfRemoval(); advanceUntilIdle()
+        assertNull(vm.uiState.value.removalConfirmation)
         assertEquals(listOf(2L to 42L), repo.removed)
         assertTrue(repo.libraries.first().items.isNotEmpty())
         assertTrue(repo.added.isEmpty())
@@ -92,6 +98,7 @@ class LibraryBookToggleTest {
         val vm = model(repo, removed::add)
         repo.failAfterRemoval = true
         vm.toggleBookInShelf(book, 1); advanceUntilIdle()
+        vm.confirmShelfRemoval(); advanceUntilIdle()
         assertTrue(repo.libraries.single().items.isEmpty())
         repo.failAfterRemoval = false
         vm.errors.takeRecovery(vm.errors.notice.value!!.id)!!(null); advanceUntilIdle()
@@ -107,14 +114,39 @@ class LibraryBookToggleTest {
         vm.toggleBookInShelf(book, 1)
         assertTrue(vm.uiState.value.pendingToggle)
         vm.authenticate("renewed", 9); advanceUntilIdle()
+        assertTrue(repo.removed.isEmpty())
+        vm.confirmShelfRemoval(); advanceUntilIdle()
         assertEquals(listOf(1L to 42L), repo.removed)
         repo.libraries = listOf(shelf(1, true))
         repo.removeGate = CompletableDeferred()
-        vm.toggleBookInShelf(book, 1); runCurrent()
+        vm.toggleBookInShelf(book, 1); advanceUntilIdle()
+        vm.confirmShelfRemoval(); runCurrent()
         vm.authenticate("other", 10)
         repo.removeGate!!.complete(Unit); advanceUntilIdle()
         assertEquals(0, vm.uiState.value.removedCount)
         assertEquals(10L, vm.uiState.value.memberId)
+    }
+
+    @Test fun `출발 책장 빼기 취소와 계정 변경은 삭제 대기와 오래된 재시도를 버린다`() = runToggleTest {
+        val repo = ToggleShelves(listOf(shelf(1, true), shelf(2, true)))
+        val vm = model(repo)
+        vm.toggleBookInShelf(book, 2); advanceUntilIdle()
+        vm.dismissRemovalConfirmation(); vm.confirmShelfRemoval(); advanceUntilIdle()
+        assertTrue(repo.removed.isEmpty())
+        assertNull(vm.uiState.value.removalConfirmation)
+        vm.toggleBookInShelf(book, 2); advanceUntilIdle()
+        repo.removeFails = true
+        vm.confirmShelfRemoval(); advanceUntilIdle()
+        val retry = assertNotNull(vm.errors.takeRecovery(vm.errors.notice.value!!.id))
+        vm.dismissRemovalConfirmation()
+        retry(null); advanceUntilIdle()
+        assertEquals(1, repo.removed.size)
+        vm.toggleBookInShelf(book, 2); advanceUntilIdle()
+        vm.authenticate("other", 10)
+        vm.confirmShelfRemoval(); advanceUntilIdle()
+        assertNull(vm.uiState.value.removalConfirmation)
+        assertEquals(1, repo.removed.size)
+        assertTrue(repo.libraries.all { it.items.isNotEmpty() })
     }
 
     private fun model(repo: ToggleShelves, onRemoved: (RemovedShelfBook) -> Unit = {}) =

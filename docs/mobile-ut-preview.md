@@ -2,6 +2,18 @@
 
 이슈 #675, 통합 Draft PR #676의 UI 확인용 로컬 산출물이다. 2026-11-05 사용자가 Figma 구독 종료로 MCP에 연결할 수 없다고 알렸으며, 이번 작업은 Figma 검증 대신 로컬 HTML로 보여달라고 명시했다. 이 예외는 이번 모바일 UT 작업에 적용한다.
 
+## 출발 책장 빼기 확인창 후속 결정 (2026-11-09)
+
+- 사용자가 출발 책장 빼기에도 확인창을 표시하도록 결정했다. 이전 즉시 빼기는 과거 구현·검증 기록으로만 읽는다.
+- 검색 결과와 책 상세에서 `담았어요`를 누르면 `이 책장에서 뺄까요?`와 대상 책장 이름을 표시한다. `빼기`를 눌러야 해당 배치를 제거하며 취소·X·뒤로가기와 계정 변경은 대기를 버린다.
+- 일반 탐색의 실제 담긴 책장만 표시하는 선택창과 한 책장만 남았을 때의 단일 항목 표시는 유지한다.
+- 디자인 기준은 이번 UT 작업의 승인 HTML `handoff/mobile-ut-preview/index.html`와 2026-11-09 후속 결정이다. 기존 Figma 구독 중단 예외와 공통 다이얼로그를 재사용하며 Figma 등록은 수행하지 않는다.
+- 공통 `:shared:testAndroidHostTest` 513개가 통과했다. 실패·오류·건너뜀은 0이며 Android Debug/AndroidTest APK와 iOS build-for-testing이 통과했다. 검증 전 기록한 Android·HTML 543개 파일의 SHA-256과 최종 소스를 대조했다.
+- iPhone 17 Pro / iOS 26.2 임시 Simulator에서 UI 3개가 실패 없이 통과했다. 검색 결과와 상세의 확인 전 배치 보존, 취소 후 재진입, 확인 후 출발 책장만 제거, 일반 담긴 책장 선택·실패 재시도와 기존 출발 책장 담기를 합성 서버 상태로 확인했다. 확인창 캡처를 직접 확인했고 실행 후 임시 기기를 종료·삭제했다.
+- HTML 390px·320px에서 확인창, 취소와 대상 책장만 제거, 일반 단일 책장 선택 및 가로 넘침 없음을 확인했다.
+- 플리파는 접수 전 목록 조회와 SSH 연결이 시간 초과됐고 미확정 접수 없이 공용 대기열·임대의 로컬 대체 경로를 사용했다. 기존 `medium_phone`은 APK 설치 시 내부 저장 공간 부족으로 실패했다. 자체 16GB 임시 AVD는 설정 보정과 창 모드 재시도에서도 `hvf is not enabled`, `mprotect failed: Permission denied`와 ADB offline이 반복돼 부팅 검증을 마치지 못했다. Android UI 3개와 후속 Jev는 실행하지 못했으며 앱 테스트 실패나 통과로 기록하지 않는다. Jev API 호출은 없었다. 자체 AVD를 종료·삭제하고 임대를 반환했다.
+- 로컬 근거는 `~/.codex/validation/675-confirmation/`의 `validated-source-files.json`, `ios-rerun.xcresult`, `ios-rerun-attachments/`, `android-retry/`, `android-visible/`에 있다. 실기기에는 이번 확인창 빌드를 아직 설치하지 않았으며 운영 회원의 삭제는 미검증이다.
+
 ## 미리보기와 기준
 
 - [HTML 열기](../handoff/mobile-ut-preview/index.html). 파일을 직접 열거나 해당 폴더에서 `python3 -m http.server 18765 --bind 127.0.0.1`로 실행한다.

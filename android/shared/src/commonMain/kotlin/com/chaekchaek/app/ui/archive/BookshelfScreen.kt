@@ -251,6 +251,17 @@ internal fun ShelfSheet(title: String, onDismiss: () -> Unit, dismissEnabled: Bo
 @Composable
 internal fun ShelfChoiceSheet(viewModel: LibrarySaveViewModel) {
     val state by viewModel.uiState.collectAsState()
+    state.removalConfirmation?.let { confirmation ->
+        val busy = state.savingIsbn != null
+        ChaekTwoActionDialog(
+            onDismissRequest = if (busy) null else viewModel::dismissRemovalConfirmation,
+            title = { Text("이 책장에서 뺄까요?") },
+            text = { Text("${confirmation.shelf.name}에서 이 책을 뺍니다. 다른 책장과 감상·별점은 유지돼요.") },
+            confirmButton = { ChaekOverlayButton("빼기", viewModel::confirmShelfRemoval, enabled = !busy, modifier = Modifier.fillMaxWidth()) },
+            dismissButton = { ChaekOverlayButton("취소", viewModel::dismissRemovalConfirmation, enabled = !busy, secondary = true, modifier = Modifier.fillMaxWidth()) },
+        )
+        return
+    }
     if (state.choosingBook == null) return
     if (state.creatingShelf) {
         ShelfNameSheet("", false, state.savingIsbn != null, viewModel::cancelShelfCreation, viewModel::createShelf)

@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 
 data class SavedLibraryBook(val isbn13: String, val record: LibraryRecord)
 data class RemovedShelfBook(val isbn13: String, val libraryId: Long, val bookId: Long, val savedElsewhere: Boolean)
+data class ShelfBookRemovalConfirmation(val book: BookDetailArgs, val shelf: Bookshelf)
 enum class ShelfBookAction { Add, Remove }
 
 data class LibrarySaveUiState(
@@ -28,6 +29,7 @@ data class LibrarySaveUiState(
     val pendingShelfId: Long? = null,
     val pendingToggle: Boolean = false,
     val choosingBook: BookDetailArgs? = null,
+    val removalConfirmation: ShelfBookRemovalConfirmation? = null,
     val shelves: List<Bookshelf> = emptyList(),
     val selectedShelfId: Long? = null,
     val shelfAction: ShelfBookAction = ShelfBookAction.Add,
@@ -42,7 +44,7 @@ data class LibrarySaveUiState(
     val errorMessage: String? = null,
 )
 
-/** 화면 이동 없이 책만 담는 요청과 인증 대기를 관리한다. 저장 여부는 공통 서재 상태가 소유한다. */
+/** 화면 이동 없이 책장 담기·빼기 요청과 인증 대기를 관리한다. 저장 여부는 공통 서재 상태가 소유한다. */
 class LibrarySaveViewModel(
     private val addBook: suspend (String, Int?, String) -> LibraryRecord,
     private val onSaved: (BookDetailArgs, LibraryRecord) -> Unit,
@@ -119,11 +121,11 @@ class LibrarySaveViewModel(
     /** 일반 담기 재선택에서는 실제로 담긴 책장만 빼기 대상으로 보여준다. */
     fun toggleSavedBook(book: BookDetailArgs) = requestSave(book, null, toggle = true)
 
-    /** 출발 책장에서는 담기와 빼기 모두 선택창 없이 해당 책장에만 적용한다. */
+    /** 출발 책장에 바로 담고, 이미 담긴 책은 확인 후 그 책장에서만 뺀다. */
     fun toggleBookInShelf(book: BookDetailArgs, shelfId: Long) = requestSave(book, shelfId, toggle = true)
 
     private fun requestSave(book: BookDetailArgs, targetShelfId: Long?, toggle: Boolean = false) {
-        if ((shelves == null && isSaved(book.isbn13)) || state.value.savingIsbn != null || state.value.pendingBook != null || state.value.choosingBook != null) return
+        if ((shelves == null && isSaved(book.isbn13)) || state.value.savingIsbn != null || state.value.pendingBook != null || state.value.choosingBook != null || state.value.removalConfirmation != null) return
         if (book.isbn13.isBlank()) {
             errors.confirm("이 책의 ISBN 정보를 확인할 수 없어요")
             state.value = state.value.copy(errorMessage = "이 책의 ISBN 정보를 확인할 수 없어요")
@@ -152,6 +154,18 @@ class LibrarySaveViewModel(
 
     fun dismissShelfChoice() {
         if (state.value.savingIsbn == null) state.value = state.value.copy(choosingBook = null, selectedShelfId = null, creatingShelf = false)
+    }
+
+    fun dismissRemovalConfirmation() {
+        if (state.value.removalConfirmation == null || state.value.savingIsbn != null) return
+        generation += 1
+        errors.dismiss()
+        state.value = state.value.copy(removalConfirmation = null)
+    }
+
+    fun confirmShelfRemoval() {
+        val confirmation = state.value.removalConfirmation ?: return
+        removeBook(confirmation.book, confirmation.shelf)
     }
 
     fun beginShelfCreation() {
@@ -271,7 +285,9 @@ class LibrarySaveViewModel(
             if (generation == requestGeneration) directShelf?.let { destination ->
                 accessToken?.let { persistBook(book, it, destination.libraryId, requestGeneration) }
             }
-            if (generation == requestGeneration) directRemoval?.let { removeBook(book, it) }
+            if (generation == requestGeneration) directRemoval?.let { target ->
+                state.value = state.value.copy(removalConfirmation = ShelfBookRemovalConfirmation(book, target))
+            }
         }
     }
 
@@ -290,7 +306,7 @@ class LibrarySaveViewModel(
                 }.getOrThrow()
                 if (generation != requestGeneration) return@launch
                 val removed = RemovedShelfBook(book.isbn13, shelf.libraryId, savedBook.bookId, savedElsewhere)
-                state.value = state.value.copy(choosingBook = null, selectedShelfId = null,
+                state.value = state.value.copy(choosingBook = null, selectedShelfId = null, removalConfirmation = null,
                     removedCount = state.value.removedCount + 1)
                 onRemoved(removed)
                 completedRemovals.emit(removed)

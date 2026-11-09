@@ -1289,7 +1289,7 @@ final class BookshelfContractUITests: XCTestCase {
     }
 
     @MainActor
-    func testOriginShelfSavedButtonRemovesDirectlyInSearchAndDetail() async throws {
+    func testOriginShelfSavedButtonConfirmsRemovalInSearchAndDetail() async throws {
         let app = try await launchToggleFixture()
         app.buttons["내 서재"].tap()
         XCTAssertTrue(app.buttons["bookshelf-2"].waitForExistence(timeout: 10))
@@ -1299,6 +1299,14 @@ final class BookshelfContractUITests: XCTestCase {
         searchToggleBook(app)
         XCTAssertTrue(element("담았어요", app).waitForExistence(timeout: 10))
         element("담았어요", app).tap()
+        XCTAssertTrue(element("이 책장에서 뺄까요?", app).waitForExistence(timeout: 10))
+        try await assertBookPlacement(2, saved: true)
+        element("취소", app).tap()
+        try await assertBookPlacement(2, saved: true)
+        element("담았어요", app).tap()
+        XCTAssertTrue(element("이 책장에서 뺄까요?", app).waitForExistence(timeout: 10))
+        attachToggleCapture(app, "출발 책장 빼기 확인창")
+        element("빼기", app).tap()
         try await assertBookPlacement(2, saved: false)
         XCTAssertFalse(element("책을 뺄 책장 고르기", app).exists)
         try await assertBookPlacement(1, saved: true)
@@ -1312,11 +1320,18 @@ final class BookshelfContractUITests: XCTestCase {
         try await assertBookPlacement(2, saved: true)
         XCTAssertTrue(element("담았어요", app).waitForExistence(timeout: 10))
         save.tap()
+        XCTAssertTrue(element("이 책장에서 뺄까요?", app).waitForExistence(timeout: 10))
+        try await assertBookPlacement(2, saved: true)
+        element("취소", app).tap()
+        XCTAssertTrue(save.exists)
+        save.tap()
+        XCTAssertTrue(element("이 책장에서 뺄까요?", app).waitForExistence(timeout: 10))
+        element("빼기", app).tap()
         try await assertBookPlacement(2, saved: false)
         XCTAssertTrue(element("서재에 담기", app).waitForExistence(timeout: 10))
         XCTAssertFalse(element("책을 뺄 책장 고르기", app).exists)
         try await assertBookPlacement(1, saved: true)
-        attachToggleCapture(app, "출발 책장 상세 바로 빼기")
+        attachToggleCapture(app, "출발 책장 상세 확인 후 빼기")
         app.buttons["book_detail_back"].tap()
         XCTAssertTrue(element("책장으로", app).waitForExistence(timeout: 10))
         element("책장으로", app).tap()

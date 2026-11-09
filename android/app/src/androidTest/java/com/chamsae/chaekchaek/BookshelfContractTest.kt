@@ -26,7 +26,7 @@ class BookshelfContractTest {
     @get:Rule val compose = createComposeRule()
     private val origin = ApiConfiguration.current.baseUrl
 
-    @Test fun originShelfSavedButtonRemovesDirectlyInSearchAndDetail() {
+    @Test fun originShelfSavedButtonConfirmsRemovalInSearchAndDetail() {
         launchToggleFixture()
         compose.onNodeWithText("내 서재").performClick()
         waitTag("bookshelf-2")
@@ -36,6 +36,14 @@ class BookshelfContractTest {
         searchToggleBook()
         waitText("담았어요")
         compose.onNodeWithText("담았어요").performClick()
+        waitText("이 책장에서 뺄까요?")
+        assertTrue(bookPlacedIn(2))
+        compose.onNodeWithText("취소").performClick()
+        assertTrue(bookPlacedIn(2))
+        compose.onNodeWithText("담았어요").performClick()
+        waitText("이 책장에서 뺄까요?")
+        capture("origin-shelf-removal-confirmation.png")
+        compose.onNodeWithText("빼기").performClick()
         compose.waitUntil(15_000) { !bookPlacedIn(2) }
         compose.onNodeWithText("책을 뺄 책장 고르기").assertDoesNotExist()
         assertTrue(bookPlacedIn(1))
@@ -47,11 +55,17 @@ class BookshelfContractTest {
         compose.waitUntil(15_000) { bookPlacedIn(2) }
         waitText("담았어요")
         compose.onNodeWithTag("book_detail_library_save").performClick()
+        waitText("이 책장에서 뺄까요?")
+        assertTrue(bookPlacedIn(2))
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+        compose.onNodeWithTag("book_detail_library_save").assertExists().performClick()
+        waitText("이 책장에서 뺄까요?")
+        compose.onNodeWithText("빼기").performClick()
         compose.waitUntil(15_000) { !bookPlacedIn(2) }
         waitText("서재에 담기")
         compose.onNodeWithText("책을 뺄 책장 고르기").assertDoesNotExist()
         assertTrue(bookPlacedIn(1))
-        capture("origin-shelf-direct-removal.png")
+        capture("origin-shelf-confirmed-removal.png")
         compose.onNodeWithTag("book_detail_back").performClick()
         waitText("책장으로")
         compose.onNodeWithText("책장으로").performClick()
