@@ -8,7 +8,7 @@ import { useExecute } from '@/services/core/useExecute';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
 
 export const PMFDialog = (props: Props) => {
-  const { questions, submissionToken, onClose } = props;
+  const { questions, submissionToken, onSurveySubmitted, onClose } = props;
 
   const { guest } = useAuthContext();
 
@@ -58,6 +58,8 @@ export const PMFDialog = (props: Props) => {
           }
         : undefined,
     );
+
+    await onSurveySubmitted();
 
     onClose();
   };

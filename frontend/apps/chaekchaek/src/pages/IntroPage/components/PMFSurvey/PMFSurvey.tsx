@@ -23,6 +23,7 @@ export const PMFSurvey = () => {
 
   const {
     status: { data: pmfSurveyData },
+    refetch: refetchPmfSurvey,
   } = useLoadData({
     queryFn: getPmfSurveyLoadData,
   });
@@ -47,6 +48,9 @@ export const PMFSurvey = () => {
             <PMFDialog
               questions={pmfSurveyData.questions}
               submissionToken={pmfSurveyData.submissionToken}
+              onSurveySubmitted={async () => {
+                await refetchPmfSurvey();
+              }}
               onClose={handleCloseDialog}
             />
           )

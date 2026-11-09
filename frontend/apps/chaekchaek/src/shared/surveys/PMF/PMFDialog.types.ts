@@ -10,5 +10,6 @@ type Question = {
 export type Props = {
   questions: Question[];
   submissionToken: string;
+  onSurveySubmitted: () => Promise<void>;
   onClose: () => void;
 };
