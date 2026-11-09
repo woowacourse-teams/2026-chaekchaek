@@ -8,7 +8,8 @@ export type AnalyticsEventMap = {
       | 'book_reviews'
       | 'book_feed'
       | 'libraries'
-      | 'library';
+      | 'library'
+      | 'header';
   };
   rating_open: undefined;
   rating_submit: undefined;
