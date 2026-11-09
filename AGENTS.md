@@ -155,6 +155,8 @@ Codex와 Claude Code를 함께 사용한다. 두 도구 모두 이 파일(AGENTS
 
 ## 문서 규칙
 
+- 책 상세 딥링크, 외부 진입 뒤로가기, 온보딩 후 목적지 재개 또는 개발자 도구의 링크 실행을 변경할 때는 [모바일 책 상세 딥링크](docs/mobile-book-detail-deeplinks.md)를 먼저 읽는다. 확정 정책과 Android·iOS 구현·실행 검증 상태를 구분한다.
+
 - 홈 하단 PMF 설문 바, 설문 문항 이동·제출·숨김 또는 대상 판정을 변경할 때는 [모바일 PMF 설문](docs/mobile-pmf-survey.md)을 먼저 읽는다. 승인 HTML, Figma 접근 예외, development·production 계약 차이와 플랫폼별 검증 상태를 구분한다.
 
 - 2026-10-28 QA의 드래그·대체 책등·더보기·검색·닉네임·프로필 사진·책장 이미지 공유를 수정할 때는 [QA 피드백 수정 계획](docs/mobile-qa-feedback-plan-2026-10-28.md)을 먼저 읽는다. 최신 사용자 결정, 병렬 분담과 서버 계약 차이를 구현 전 확인한다.

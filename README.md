@@ -5,6 +5,7 @@
 - [책등 이미지 활용 메모](docs/book-spine-images.md)
 - [Figma 재디자인 앱 적용 핸드오프](docs/figma-redesign-implementation-handoff.md)
 - [첫 책 선택 온보딩 요구사항과 시안](docs/first-library-onboarding.md)
+- [모바일 책 상세 딥링크 정책과 검증 계획](docs/mobile-book-detail-deeplinks.md)
 - [모바일 공통 오류 안내 정책](docs/mobile-error-policy.md)
 - [서재·책장과 책 상세 질문 확정 사항](docs/bookshelf-decisions.md)
 - [서재 저장 상태와 홈·피드 바로 담기](docs/library-save-interaction-plan.md)
