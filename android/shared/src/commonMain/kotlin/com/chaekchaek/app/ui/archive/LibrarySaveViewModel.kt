@@ -55,6 +55,7 @@ class LibrarySaveViewModel(
     private val isSaved: (String) -> Boolean = { false },
     private val onShelfCreated: () -> Unit = {},
     private val onRemoved: (RemovedShelfBook) -> Unit = {},
+    private val onSavedToShelf: (Long, BookDetailArgs, LibraryRecord) -> Unit = { _, _, _ -> },
 ) : ViewModel() {
     val errors = ErrorRecoveryState(analytics.errors)
     private val state = MutableStateFlow(LibrarySaveUiState())
@@ -345,6 +346,7 @@ class LibrarySaveViewModel(
             }.getOrThrow()
             if (generation != requestGeneration) return
             if (shelfId != null) state.value.memberId?.let { writeRecentShelf(it, shelfId) }
+            if (shelfId != null) onSavedToShelf(shelfId, book, record)
             onSaved(book, record)
             val savedBook = SavedLibraryBook(book.isbn13, record)
             state.value = state.value.copy(

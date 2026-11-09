@@ -11,6 +11,37 @@ class BookshelfFlowTest {
     private val book = BookDetailArgs("isbn", "isbn", title = "책")
     private fun shelf(id: Long, books: List<BookshelfBookSummary> = emptyList(), count: Int = books.size) = Bookshelf(id, "책장$id", id == 1L, count, books)
 
+    @Test fun `출발 책장 저장 성공 뒤 재조회 실패도 대상 배치와 상세를 보존한다`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        try {
+            val otherPlacement = BookshelfBookSummary(42, "isbn", "책", "cover", spineImageUrl = "spine")
+            val repo = FakeShelves(listOf(shelf(1, listOf(otherPlacement)), shelf(2)))
+            val bookshelf = BookshelfViewModel(repo)
+            bookshelf.authenticate("token", 9); advanceUntilIdle()
+            bookshelf.open(2); advanceUntilIdle()
+            val save = LibrarySaveViewModel({ _, _, _ -> error("legacy") },
+                { _, _ -> repo.mineFails = true; bookshelf.refresh() }, shelves = repo,
+                onSavedToShelf = bookshelf::acceptSavedBook)
+            save.authenticate("token", 9)
+            save.saveToShelf(book, 2); advanceUntilIdle()
+            assertEquals(listOf(2L), repo.added)
+            assertNull(save.errors.notice.value)
+            assertNotNull(bookshelf.errors.notice.value)
+            val state = bookshelf.uiState.value
+            assertEquals(listOf(1, 1), state.shelves.map { it.totalCount })
+            assertEquals(listOf(42L), state.shelves.single { it.libraryId == 2L }.items.map { it.bookId })
+            assertEquals("spine", state.shelves.last().items.single().spineImageUrl)
+            assertEquals(42L, state.detail!!.items.single().bookId)
+            assertEquals(4.5, save.uiState.value.lastSavedBook!!.record.rating)
+            bookshelf.acceptSavedBook(2, book, LibraryRecord("FINISHED", 100, 4.5, 42))
+            assertEquals(1, bookshelf.uiState.value.shelves.last().totalCount)
+            assertEquals(1, bookshelf.uiState.value.detail!!.totalCount)
+            repo.memberId = 10
+            bookshelf.authenticate("other", 10); advanceUntilIdle()
+            assertTrue(bookshelf.uiState.value.shelves.isEmpty())
+        } finally { Dispatchers.resetMain() }
+    }
+
     @Test fun `담기 중 책장을 만들면 책과 입력 흐름을 보존하고 새 책장에 확정 저장한다`() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         try {

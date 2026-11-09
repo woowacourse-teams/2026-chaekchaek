@@ -46,7 +46,7 @@ def reset():
     STATE.update(shelves=[dict(libraryId=1, name='검증의 책장', isDefault=True, books=[1, 2]),
                           dict(libraryId=2, name='다시 읽기', isDefault=False, books=[3]),
                           dict(libraryId=3, name='이전 35권', isDefault=False, books=list(range(1, 36)))],
-                 next_id=4, requests=[], fail_next=False, image_failures=False)
+                 next_id=4, requests=[], fail_next=False, image_failures=False, fail_reads_after_save=False, reads_failing=False)
 
 
 def summary(shelf):
@@ -100,6 +100,12 @@ class Handler(BaseHTTPRequestHandler):
                 STATE['image_failures'] = True
                 next(s for s in STATE['shelves'] if s['libraryId'] == 1)['books'] = [1, 2, 3]
                 return self.send_json({})
+            if path == '/__bookshelf/restore-reads':
+                STATE['reads_failing'] = False
+                return self.send_json({})
+            if path == '/__bookshelf/fail-reads-after-save':
+                STATE['fail_reads_after_save'] = True
+                return self.send_json({})
             if path == '/__bookshelf/fail-next':
                 STATE['fail_next'] = True
                 return self.send_json({})
@@ -136,6 +142,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(dict(items=[review], totalCount=1, nextPage=None))
             if path == '/api/v1/library':
                 if method == 'GET': return self.send_json(dict(items=[BOOKS[i] for i in STATE['shelves'][0]['books']], totalCount=len(STATE['shelves'][0]['books']), nextPage=None))
+            if STATE['reads_failing'] and path == '/api/v1/libraries' and method == 'GET':
+                return self.send_json({'code': 'INTERNAL_SERVER_ERROR'}, 500)
             if path == '/api/v1/libraries' and method == 'GET':
                 return self.send_json(dict(memberId=9, libraries=[summary(s) for s in STATE['shelves']]))
             if path == '/api/v1/libraries' and method == 'POST':
@@ -176,6 +184,7 @@ class Handler(BaseHTTPRequestHandler):
                     if book_id in shelf['books']: return self.problem('LIBRARY_ITEM_ALREADY_EXISTS')
                     if len(shelf['books']) >= 30: return self.problem('LIBRARY_ITEM_LIMIT_EXCEEDED')
                     shelf['books'].append(book_id)
+                    if STATE['fail_reads_after_save']: STATE['reads_failing'] = True
                     return self.send_json(dict(bookId=book_id, status='READING', currentPage=20, rating=4.5), 201)
             return self.send_json({'code': 'NOT_FOUND', 'path': path}, 404)
 

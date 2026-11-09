@@ -24,7 +24,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -173,10 +172,15 @@ private fun AppNavigationContent(
         )
         return
     }
-    var shelfSearchSessionRevision by rememberSaveable { mutableIntStateOf(0) }
+    var shelfSearchSession by rememberSaveable(stateSaver = ShelfSearchSession.Saver) { mutableStateOf(ShelfSearchSession()) }
+    val shelfSearchSessionRevision = shelfSearchSession.revision
     val authTokens by authViewModel.tokens.collectAsState()
     val restoringAuthentication by authViewModel.isRestoringSession.collectAsState()
     val authState by authViewModel.uiState.collectAsState()
+    val shelfSearchMemberId = authViewModel.memberIdFor(authTokens?.accessToken)
+    LaunchedEffect(shelfSearchMemberId) {
+        shelfSearchSession = shelfSearchSession.authenticatedAs(shelfSearchMemberId)
+    }
     LaunchedEffect(analytics, authTokens?.accessToken) {
         analytics.updateAuthentication(authTokens != null)
     }
@@ -303,6 +307,7 @@ private fun AppNavigationContent(
             onSaved = { _, _ -> bookshelfViewModel.refresh() },
             onShelfCreated = bookshelfViewModel::refresh,
             onRemoved = { bookshelfViewModel.acceptRemovedBook(it.libraryId, it.bookId) },
+            onSavedToShelf = bookshelfViewModel::acceptSavedBook,
             shelves = bookshelfRepository,
             readRecentShelf = shelfPlatform::readRecent,
             writeRecentShelf = shelfPlatform::writeRecent,
@@ -469,14 +474,14 @@ private fun AppNavigationContent(
                             memberSettingsViewModel.setAnonymousReviews(anonymous, nickname)
                         },
                         onSignOut = {
-                            shelfSearchSessionRevision += 1
+                            shelfSearchSession = shelfSearchSession.reset()
                             authViewModel.signOut {
                                 backStack.popDestinationIfCurrent(MyPageKey)
                             }
                         },
                         onWithdraw = {
                             memberSettingsViewModel.withdraw {
-                                shelfSearchSessionRevision += 1
+                                shelfSearchSession = shelfSearchSession.reset()
                                 authViewModel.signOut {
                                     backStack.popDestinationIfCurrent(MyPageKey)
                                 }

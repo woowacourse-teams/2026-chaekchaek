@@ -1185,6 +1185,16 @@ final class BookshelfContractUITests: XCTestCase {
 
     @MainActor
     func testShelfSearchDetailSavesToOriginWithoutChoosingAnotherShelf() async throws {
+        try await checkOriginDetailSave(failRefresh: false)
+    }
+
+    @MainActor
+    func testOriginDetailKeepsSavedStateWhenRefreshFails() async throws {
+        try await checkOriginDetailSave(failRefresh: true)
+    }
+
+    @MainActor
+    private func checkOriginDetailSave(failRefresh: Bool) async throws {
         continueAfterFailure = false
         guard (try? await request("/__bookshelf")) != nil else { throw XCTSkip("bookshelf-contract fixture가 필요합니다") }
         _ = try await request("/__bookshelf/reset", method: "POST")
@@ -1210,8 +1220,20 @@ final class BookshelfContractUITests: XCTestCase {
         XCTAssertTrue(save.waitForExistence(timeout: 10))
         let ready = expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: save)
         await fulfillment(of: [ready], timeout: 10)
+        if failRefresh { _ = try await request("/__bookshelf/fail-reads-after-save", method: "POST") }
         save.tap()
         try await assertDirectSave(libraryId: 2, bookId: 36)
+        if failRefresh {
+            XCTAssertTrue(element("다시 시도", app).waitForExistence(timeout: 10))
+            element("닫기", app).tap()
+            XCTAssertTrue(element("담았어요", app).waitForExistence(timeout: 10))
+            _ = try await request("/__bookshelf/restore-reads", method: "POST")
+            save.tap()
+            XCTAssertTrue(element("이 책장에서 뺄까요?", app).waitForExistence(timeout: 10))
+            try await assertBookPlacement(2, saved: true)
+            attachToggleCapture(app, "재조회 실패 후 저장 상태와 제거 확인")
+            return
+        }
         XCTAssertFalse(element("담을 책장 고르기", app).exists)
         XCTAssertFalse(element("서재 관리", app).exists)
         let back = app.buttons["book_detail_back"]

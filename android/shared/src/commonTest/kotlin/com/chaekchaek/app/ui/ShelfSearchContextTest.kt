@@ -11,6 +11,26 @@ class ShelfSearchContextTest {
     private val origin = ShelfSearchOrigin(42, "읽고 싶은 책", 7)
     private val context = ShelfSearchContext(origin)
 
+    @Test fun `만료 뒤 같은 회원이면 열린 상세를 보존하고 회원이 바뀌면 다시 돌아와도 무효다`() {
+        val initial = ShelfSearchSession().authenticatedAs(7)
+        val detailOrigin = origin.copy(sessionRevision = initial.revision)
+        val renewed = initial.authenticatedAs(null).authenticatedAs(7)
+        assertEquals(detailOrigin, detailOrigin.inSession(renewed.revision))
+        val changed = renewed.authenticatedAs(8)
+        assertNull(detailOrigin.inSession(changed.revision))
+        assertNull(detailOrigin.inSession(changed.authenticatedAs(7).revision))
+        assertNull(detailOrigin.inSession(renewed.reset().revision))
+    }
+
+    @Test fun `프로세스 복원 후에도 마지막 확인 회원으로 열린 상세의 유효성을 판정한다`() {
+        val scope = SaverScope { true }
+        val previous = ShelfSearchSession(3, 7)
+        val saved = with(ShelfSearchSession.Saver) { scope.save(previous) }
+        val restored = ShelfSearchSession.Saver.restore(saved!!)!!
+        assertEquals(previous, restored.authenticatedAs(null).authenticatedAs(7))
+        assertNull(origin.copy(sessionRevision = 3).inSession(restored.authenticatedAs(8).revision))
+    }
+
     @Test fun `검색 탭을 다시 눌러도 출발 책장을 보존한다`() {
         assertEquals(origin, context.selecting(RootTab.Discover).origin)
     }

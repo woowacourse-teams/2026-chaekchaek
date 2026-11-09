@@ -1,5 +1,6 @@
 package com.chaekchaek.app.ui.archive
 
+import com.chaekchaek.app.ui.bookdetail.BookDetailArgs
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaekchaek.app.data.remote.*
@@ -113,6 +114,35 @@ class BookshelfViewModel(private val repository: BookshelfRepository) : ViewMode
     }
 
     fun remove(libraryId: Long, bookId: Long) = mutate { repository.remove(libraryId, bookId, it) }
+
+    /** 저장 성공은 대상 책장에 즉시 반영해 후속 조회 실패가 성공 표시를 되돌리지 않게 한다. */
+    fun acceptSavedBook(libraryId: Long, book: BookDetailArgs, record: LibraryRecord) {
+        val bookId = record.bookId ?: book.bookId ?: return
+        readJob?.cancel()
+        detailGeneration++
+        detailJob?.cancel()
+        val knownBook = state.value.shelves.asSequence().flatMap { it.items.asSequence() }
+            .firstOrNull { it.isbn13 == book.isbn13 }
+        val summary = knownBook ?: BookshelfBookSummary(bookId, book.isbn13, book.title, book.coverUrl,
+            authors = listOf(book.creator).filter { it.isNotBlank() })
+        state.value = state.value.copy(
+            shelves = state.value.shelves.map { shelf ->
+                if (shelf.libraryId == libraryId && shelf.items.none { it.isbn13 == book.isbn13 })
+                    shelf.copy(items = shelf.items + summary, totalCount = shelf.totalCount + 1)
+                else shelf
+            },
+            detail = state.value.detail?.let { detail ->
+                if (detail.libraryId == libraryId && detail.items.none { it.isbn13 == book.isbn13 })
+                    detail.copy(items = detail.items + BookshelfBook(bookId, book.isbn13, book.title, book.coverUrl,
+                        spineImageUrl = summary.spineImageUrl, authors = summary.authors,
+                        currentPage = record.currentPage, totalPages = book.totalPages.takeIf { it > 0 }, status = record.status),
+                        totalCount = detail.totalCount + 1)
+                else detail
+            },
+            loading = false,
+            detailRefreshing = false,
+        )
+    }
 
     /** 외부 담기 버튼의 제거 성공을 즉시 반영하고 이전 조회 응답을 폐기한다. */
     fun acceptRemovedBook(libraryId: Long, bookId: Long) {

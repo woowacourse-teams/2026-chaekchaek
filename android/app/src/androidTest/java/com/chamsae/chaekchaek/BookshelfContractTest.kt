@@ -212,7 +212,11 @@ class BookshelfContractTest {
         assertTrue(calls.any { it.getString("method") == "DELETE" && it.getString("path").contains("/books/") })
     }
 
-    @Test fun shelfSearchDetailSavesToOriginWithoutChoosingAnotherShelf() {
+    @Test fun shelfSearchDetailSavesToOriginWithoutChoosingAnotherShelf() = checkOriginDetailSave(false)
+
+    @Test fun originDetailKeepsSavedStateWhenRefreshFails() = checkOriginDetailSave(true)
+
+    private fun checkOriginDetailSave(failRefresh: Boolean) {
         Assume.assumeTrue("bookshelf-contract local fixture가 필요합니다", ApiConfiguration.environment == "local" && origin in setOf("http://10.0.2.2:19068", "http://127.0.0.1:19068"))
         request("/__bookshelf/reset", "POST")
         compose.setContent { App(AuthPlatformCallbacks({ it(null, null) }, { "fixture-refresh" }, {}, {})) }
@@ -230,9 +234,21 @@ class BookshelfContractTest {
         compose.onNodeWithText("검증 도서 36").performClick()
         waitTag("book_detail_library_save")
         compose.waitUntil(15_000) { compose.onAllNodes(hasTestTag("book_detail_library_save") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+        if (failRefresh) request("/__bookshelf/fail-reads-after-save", "POST")
         compose.onNodeWithTag("book_detail_library_save").performClick()
         compose.waitUntil(15_000) { requested("POST", "/api/v1/libraries/2") }
         assertDirectSave(libraryId = 2, bookId = 36)
+        if (failRefresh) {
+            waitText("다시 시도")
+            compose.onNodeWithText("닫기").performClick()
+            waitText("담았어요")
+            request("/__bookshelf/restore-reads", "POST")
+            compose.onNodeWithTag("book_detail_library_save").performClick()
+            waitText("이 책장에서 뺄까요?")
+            assertTrue(bookPlacedIn(2))
+            assertFalse(requested("DELETE", "/api/v1/libraries/2/books/36"))
+            return
+        }
         compose.onNodeWithText("담을 책장 고르기").assertDoesNotExist()
         compose.onNodeWithContentDescription("서재 관리").assertDoesNotExist()
         compose.onNodeWithTag("book_detail_back").performClick()

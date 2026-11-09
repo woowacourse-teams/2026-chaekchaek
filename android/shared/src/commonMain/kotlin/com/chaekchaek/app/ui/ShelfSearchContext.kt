@@ -14,6 +14,24 @@ internal data class ShelfSearchOrigin(
     fun inSession(revision: Int): ShelfSearchOrigin? = takeIf { sessionRevision == revision }
 }
 
+/** 토큰 갱신과 일시 만료는 보존하고, 확인된 회원 변경은 열린 상세까지 무효화한다. */
+internal data class ShelfSearchSession(val revision: Int = 0, val memberId: Long? = null) {
+    fun authenticatedAs(currentMemberId: Long?): ShelfSearchSession = when {
+        currentMemberId == null -> this
+        memberId == null || memberId == currentMemberId -> copy(memberId = currentMemberId)
+        else -> copy(revision = revision + 1, memberId = currentMemberId)
+    }
+
+    fun reset(): ShelfSearchSession = copy(revision = revision + 1)
+
+    companion object {
+        val Saver = listSaver<ShelfSearchSession, Any>(
+            save = { listOf(it.revision, it.memberId ?: -1L) },
+            restore = { ShelfSearchSession(it[0] as Int, (it[1] as Long).takeIf { id -> id != -1L }) },
+        )
+    }
+}
+
 internal data class ShelfSearchContext(val origin: ShelfSearchOrigin? = null) {
     fun isCurrentSearch(requestedOrigin: ShelfSearchOrigin, tab: RootTab): Boolean =
         tab == RootTab.Discover && origin == requestedOrigin
