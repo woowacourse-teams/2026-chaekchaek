@@ -97,7 +97,13 @@ export const PMFDialog = (props: Props) => {
           책췍 사용자 설문 ({currentIndex + 1}/ {questions.length})
         </Dialog.Header>
         <Dialog.Body>
-          <Title sx={{ mb: 4 }} level="main" subtitle="하나만 선택해 주세요">
+          <Title
+            sx={{ mb: 4 }}
+            level="main"
+            subtitle={
+              !question?.multipleSelection ? '하나만 선택해 주세요' : '여러 개 선택할 수 있어요'
+            }
+          >
             {question?.question}
           </Title>
 
