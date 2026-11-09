@@ -121,6 +121,21 @@ export const BookReview = ({
       await deleteReviewReactionMutate({ reviewId: review.reviewId });
     }
 
+    if (user) {
+      track('review_like', {
+        value: !review.likedByMe,
+        actor_type: user.actorType,
+        actor_id: user.actorId,
+      });
+    }
+    if (guest) {
+      track('review_like', {
+        value: !review.likedByMe,
+        actor_type: guest.actorType,
+        actor_id: guest.actorId,
+      });
+    }
+
     await onReviewsRefresh();
   };
 
