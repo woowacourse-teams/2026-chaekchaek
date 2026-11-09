@@ -18,6 +18,9 @@ export type AnalyticsEventMap = {
     source: 'search' | 'detail_info' | 'detail_required' | 'library' | 'librareis';
     status: 'want_to_read' | 'reading' | 'finished';
   };
+  library_add_open: {
+    source: 'search' | 'detail_info' | 'library';
+  };
   review_write_open: {
     actor_type: 'MEMBER' | 'GUEST';
     actor_id: number;

@@ -137,6 +137,10 @@ export const BooksPage = () => {
 
     setSelectedBook(book);
     handleOpenDialog('RegisterBookToLibraryDialog');
+
+    track('library_add_open', {
+      source: 'search',
+    });
   };
 
   const handleBookRegistered = async () => {
