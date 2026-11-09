@@ -22,7 +22,8 @@
 }
 
 .intro-right-side {
-  display: inline-block;
+  display: inline-flex;
+  flex-direction: column;
   width: 464px;
   height: calc(100vh - 80px);
   border-left: 1px solid var(--chaek-color-border-divider);

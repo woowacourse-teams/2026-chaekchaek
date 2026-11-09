@@ -1,7 +1,7 @@
 .scene-latest-reviews {
   color: var(--chaek-color-text-primary);
   background: var(--chaek-color-surface-canvas);
-  height: calc(100% - 140px);
+  flex: 1;
   overflow-y: auto;
 }
 
