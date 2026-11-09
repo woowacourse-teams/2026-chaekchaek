@@ -13,14 +13,15 @@ import type { ReplyFormValues } from './validator';
 
 import type { UpdateReplyProps } from './UpdateReply.types';
 import { useAuthContext } from '@/contexts/AuthContext/useAuthContext';
+import { track } from '@/analytics/track';
 
-export const UpdateReply = ({ reply, onReplyUpdated }: UpdateReplyProps) => {
+export const UpdateReply = ({ isbn, reply, onReplyUpdated }: UpdateReplyProps) => {
   const { values, errors, onChange, isValid, valids } = useFormValues<ReplyFormValues>({
     initialValues: reply,
     validate: validateReply,
   });
 
-  const { user } = useAuthContext();
+  const { user, guest } = useAuthContext();
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -36,6 +37,16 @@ export const UpdateReply = ({ reply, onReplyUpdated }: UpdateReplyProps) => {
 
   const handleSubmit = async (replyId: number) => {
     await updateReply({ replyId, content: values.content });
+
+    const actorType = user?.actorType ?? guest?.actorType;
+    const actorId = user?.actorId ?? guest?.actorId;
+
+    if (!(actorType && actorId)) return;
+    track('reply_update', {
+      actor_type: actorType,
+      actor_id: actorId,
+      isbn,
+    });
 
     await onReplyUpdated();
   };

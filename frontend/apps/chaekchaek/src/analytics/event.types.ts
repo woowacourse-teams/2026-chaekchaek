@@ -59,6 +59,21 @@ export type AnalyticsEventMap = {
     actor_id: number;
     isbn: string;
   };
+  reply_update_open: {
+    actor_type: 'MEMBER' | 'GUEST';
+    actor_id: number;
+    isbn: string;
+  };
+  reply_update: {
+    actor_type: 'MEMBER' | 'GUEST';
+    actor_id: number;
+    isbn: string;
+  };
+  reply_delete: {
+    actor_type: 'MEMBER' | 'GUEST';
+    actor_id: number;
+    isbn: string;
+  };
   review_like: {
     value: boolean;
     actor_type: 'MEMBER' | 'GUEST';

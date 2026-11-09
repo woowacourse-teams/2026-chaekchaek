@@ -15,6 +15,7 @@ type Reply = {
 };
 
 export type UpdateReplyProps = {
+  isbn: string;
   reply: Reply;
   onReplyUpdated: () => void | Promise<void>;
 };
