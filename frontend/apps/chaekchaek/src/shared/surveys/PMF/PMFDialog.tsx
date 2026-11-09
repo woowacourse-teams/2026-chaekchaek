@@ -149,7 +149,7 @@ export const PMFDialog = (props: Props) => {
               </Button>
             )}
             {isLastQuestion && (
-              <Button variant="primary" onClick={handleSubmitSurvey}>
+              <Button variant="primary" disabled={hasNOAnswer} onClick={handleSubmitSurvey}>
                 제출
               </Button>
             )}
